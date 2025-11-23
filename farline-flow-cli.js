@@ -213,16 +213,16 @@ const commands = {
             }
         }
 
-        // 2. Create Worktree
+// 2. Create Worktree & Analysis Log (if Agent ID provided)
         if (agentId) {
             const match = found.file.match(/^feature-(\d+)-(.*)\.md$/);
             if (!match) return console.warn("⚠️  Could not parse filename for branch creation.");
-            const [_, num, desc] = match;
+            const [_, num, desc] = match; // Extracted description is stored in 'desc'
 
+            // --- A. GIT WORKTREE SETUP (Uses desc) ---
             const branchName = `feature-${num}-${agentId}-${desc}`;
-            // Include description in folder name
             const worktreePath = `../feature-${num}-${agentId}-${desc}`;
-
+            
             console.log(`\n🤖 Setup for Agent ${agentId}...`);
             if (fs.existsSync(worktreePath)) {
                 console.warn(`⚠️  Worktree path ${worktreePath} already exists. Skipping.`);
@@ -230,7 +230,20 @@ const commands = {
                 runGit(`git worktree add ${worktreePath} -b ${branchName}`);
                 console.log(`✅ Worktree created at: ${worktreePath}`);
             }
-        }
+
+            // --- B. AUTO-CREATE LOG FILE (FIXED) ---
+            const analysisDir = path.join(PATHS.features.root, 'analysis');
+            if (!fs.existsSync(analysisDir)) fs.mkdirSync(analysisDir, { recursive: true });
+            
+            // FIX: Inject the description into the log name
+            const logName = `feature-${num}-${agentId}-${desc}-analysis.md`; 
+            const logPath = path.join(analysisDir, logName);
+            
+            if (!fs.existsSync(logPath)) {
+                const template = `# Analysis Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Implementation Plan\n\n## Execution Log\n`;
+                fs.writeFileSync(logPath, template);
+                console.log(`✅ Created analysis log template: specs/features/analysis/${logName}`);
+            }
     },
 
     'feature-eval': (args) => {
@@ -331,7 +344,7 @@ if (agent === 'cc' || agent === 'claude') {
                 // 1. SKILL.md
                 // (No changes needed to SKILL.md content, so reusing previous logic)
                 const skillPath = path.join(process.cwd(), '.claude/skills/farline-manager/SKILL.md');
-                const skillContent = `name: farline-manager
+ const skillContent = `name: farline-manager
 description: Manage the Farline Flow workflow.
 tools:
   - name: ff_prioritise
@@ -357,18 +370,17 @@ system_prompt: |
   
   ## CRITICAL RULES
   1. **Context:** The \`specs/\` folder is the Single Source of Truth.
-  2. **Worktrees:** When implementing code (running \`ff_feature_start\`), you MUST switch to the created directory (e.g., \`../feature-NN-cc\`). Do not write code in the main repo.
-  3. **Logging:** - Write research notes to: \`specs/research-topics/analysis/research-NN-cc-notes.md\`
-     - Write implementation logs to: \`specs/features/analysis/feature-NN-cc-analysis.md\`
+  2. **Worktrees:** When implementing code (running \`ff_feature_start\`), you MUST switch to the created directory (e.g., \`../feature-NN-cc-*\`).
+  3. **Logging Target:** A blank log file has been auto-created for you. Your log file is ALWAYS named \`specs/features/analysis/feature-NN-cc-analysis.md\`. Use this exact path.
   
-  4. **DEFINITION OF DONE:**
+  4. **DEFINITION OF DONE (GUARDRAIL):**
      You MUST NOT run \`ff_feature_done\` until you have updated the analysis file.
-     The analysis file must include:
-     - A summary of the implementation.
-     - Key architectural decisions made.
-     - A list of any manual tests or verification steps performed.
+     The CLI will fail if the log file is empty.
+     The log must include:
+     - Implementation steps and key decisions.
      - A log of user feedback/changes (the "back and forth").`;
-                safeWrite(skillPath, skillContent);
+
+                safeWrite(path.join(process.cwd(), '.claude/skills/farline-manager/SKILL.md'), skillContent);
 
                 // 2. COMMANDS
                 const cmdBase = path.join(process.cwd(), '.claude/commands');
