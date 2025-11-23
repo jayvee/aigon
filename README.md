@@ -109,59 +109,74 @@ Run multiple agents in competition to find the optimal solution.
 
 ## Installation & Setup
 
-### 1. Install the CLI Tool
-Link the `farline-cli` to your global path.
+### 1. Install the CLI
+First, clone this repository and use `npm link` to make the `ff` command globally available.
 
 ```bash
-git clone [https://github.com/yourname/farline-flow.git](https://github.com/yourname/farline-flow.git)
+git clone https://github.com/yourname/farline-flow.git
 cd farline-flow
 npm install
 npm link
 ```
-2. Initialize a Project
 
-Run this in the root of your target application. It creates the specs folder and the specs/README.md context file.
-`ff init`
+### 2. Initialize Your Project
+Navigate to your project's root directory and run `ff init`. This will create the necessary `specs` directory structure.
 
-3. Install Agent Configurations
+```bash
+cd /path/to/your/project
+ff init
+```
 
-Inject the Farline "Skills" and "Commands" into your local agent settings.
+### 3. Install Agent Configurations
+To integrate Farline Flow with your AI agents, run `ff install-agent`. This command injects the required configuration files (skills, commands, or prompts) into your project for the specified agent.
+
+```bash
 # For Claude Code
-`ff install-agent cc`
+ff install-agent cc
 
 # For Gemini CLI
-`ff install-agent gg`
+ff install-agent gg
 
 # For GitHub Copilot/Codex
-`ff install-agent cx`
+ff install-agent cx
+```
+**Important:** You must commit the generated configuration files (e.g., `.claude/`, `.gemini/`, `FARLINE_FLOW.md`) to Git. This ensures that when `ff` creates a new git worktree, the agent configurations are available in that isolated environment.
 
-Note: You must commit the generated config files (.claude/, .gemini/, etc.) to Git so they propagate to the isolated worktrees!
+---
 
 ## CLI Reference
 
-The `ff` (Farline Flow) command automates the state transitions and Git operations, ensuring the directory structure remains consistent.
+The `ff` (Farline Flow) command automates state transitions and Git operations.
 
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| **Prioritize** | `ff feature-prioritise <name>` | Promotes a draft (`XX`) to the next ID (`NN`) and moves to backlog. |
-| **Start** | `ff feature-start <ID> <agent>` | Moves to `in-progress`. **Creates Git Worktree**. **Creates Log Template**. |
-| **Evaluate** | `ff feature-eval <ID>` | Moves to `in-evaluation`. |
-| **Finish** | `ff feature-done-won <ID> <agent>` | **Validates Log**. Merges branch (`--no-ff`). Cleans worktree. Archives logs. |
-| **Cleanup** | `ff cleanup <ID>` | Scans for and deletes any remaining worktrees for a specific feature (e.g., losers). |
-| **Install** | `ff install-agent <cc\|gg>` | Generates the `SKILL.md` or `.toml` files needed for the agent. |
+| **Init** | `ff init` | Creates the `specs` directory structure in the current project. |
+| **Research Prioritise** | `ff research-prioritise <name>` | Promotes a research draft from `inbox` to `backlog` with a new ID. |
+| **Research Start** | `ff research-start <ID>` | Moves a research topic from `backlog` to `in-progress`. |
+| **Research Done** | `ff research-done <ID>` | Moves a research topic from `in-progress` to `done`. |
+| **Feature Prioritise** | `ff feature-prioritise <name>` | Promotes a feature draft from `inbox` to `backlog` with a new ID. |
+| **Feature Start** | `ff feature-start <ID> <agent>` | Moves spec to `in-progress`, creates a Git Worktree, and creates a log template. |
+| **Feature Evaluate** | `ff feature-eval <ID>` | Moves feature from `in-progress` to `in-evaluation`. |
+| **Feature Finish** | `ff feature-done-won <ID> <agent>` | Validates log, merges winning agent's branch, cleans up worktree, and archives logs. |
+| **Cleanup** | `ff cleanup <ID>` | Force-deletes any remaining worktrees for a specific feature ID. |
+| **Install Agent** | `ff install-agent <cc\|gg\|cx>` | Generates the agent-specific configuration files (e.g., `.claude/`, `.gemini/`). |
 
 ---
 
 
 ## Agent Macros
 
-When `ff install-agent cc` is run, it installs special shortcuts for Claude Code to make the workflow seamless.
+When you run `ff install-agent cc`, it installs special slash commands for Claude Code to make the workflow seamless.
 
 | Slash Command | Description |
 | :--- | :--- |
-| **`/ff-implement <ID>`** | **Context Switcher.** Tells Claude to find the correct worktree folder (`../feature-ID-cc...`), `cd` into it, read the spec, and start coding. |
-| `/ff-start <ID>` | Runs `ff feature-start <ID> cc` |
-| `/ff-done <ID>` | Runs `ff feature-done-won <ID> cc` |
+| **`/ff-implement <ID>`** | **Context Switcher.** A detailed prompt that tells Claude to find the correct worktree, `cd` into it, read the spec, and start coding. |
+| `/ff-start <ID>` | Runs `ff feature-start <ID> cc`. |
+| `/ff-eval <ID>` | Runs `ff feature-eval <ID>`. |
+| `/ff-done <ID>` | Runs `ff feature-done-won <ID> cc`. |
+| `/ff-prioritise <name>` | Runs `ff feature-prioritise <name>`. |
+| `/ff-research-start <ID>` | Runs `ff research-start <ID>`. |
+
 
 ---
 
