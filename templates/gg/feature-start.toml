@@ -1,0 +1,3 @@
+name = "feature-start"
+description = "Start a feature and create worktree"
+prompt = "I will start feature {{args}}. Command: !{ff feature-start {{args}} gg}"

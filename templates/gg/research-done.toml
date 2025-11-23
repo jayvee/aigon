@@ -1,0 +1,3 @@
+name = "research-done"
+description = "Complete a research topic"
+prompt = "I will complete research {{args}}. Command: !{ff research-done {{args}}}"

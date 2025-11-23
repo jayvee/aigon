@@ -1,0 +1,11 @@
+{
+  "name": "farline-flow",
+  "version": "1.0.0",
+  "description": "CLI for the Farline Flow Spec-Drive AI Dev Flow",
+  "bin": {
+    "ff": "./farline-flow-cli.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

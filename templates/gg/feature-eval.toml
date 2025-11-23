@@ -1,0 +1,3 @@
+name = "feature-eval"
+description = "Move feature to evaluation phase"
+prompt = "I will submit feature {{args}} for evaluation. Command: !{ff feature-eval {{args}}}"
