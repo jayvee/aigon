@@ -5,17 +5,18 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 // --- Configuration ---
-const SPECS_ROOT = path.join(process.cwd(), 'specs');
+const SPECS_ROOT = path.join(process.cwd(), 'docs', 'specs');
+const TEMPLATES_ROOT = path.join(__dirname, 'templates');
 
 const PATHS = {
     research: {
         root: path.join(SPECS_ROOT, 'research-topics'),
-        folders: ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'paused', 'done'],
+        folders: ['01-inbox', '02-backlog', '03-in-progress', '04-done', '05-paused'],
         prefix: 'research'
     },
     features: {
         root: path.join(SPECS_ROOT, 'features'),
-        folders: ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'paused', 'done'],
+        folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused'],
         prefix: 'feature'
     }
 };
@@ -49,14 +50,33 @@ function findFile(typeConfig, nameOrId, searchFolders = typeConfig.folders) {
         for (const file of files) {
             if (!file.endsWith('.md')) continue;
             if (isId) {
+                // Match files with ID: feature-55-description.md
                 if (file.startsWith(`${typeConfig.prefix}-${nameOrId}-`)) {
                     return { file, folder, fullPath: path.join(dir, file) };
                 }
             } else {
+                // Match files by name (with or without ID)
+                // e.g., "dark-mode" matches both "feature-dark-mode.md" and "feature-55-dark-mode.md"
                 if (file.includes(nameOrId)) {
                     return { file, folder, fullPath: path.join(dir, file) };
                 }
             }
+        }
+    }
+    return null;
+}
+
+// Find unprioritized file (no ID) in inbox: feature-description.md
+function findUnprioritizedFile(typeConfig, name) {
+    const dir = path.join(typeConfig.root, '01-inbox');
+    if (!fs.existsSync(dir)) return null;
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+        if (!file.endsWith('.md')) continue;
+        // Match files WITHOUT an ID: feature-description.md (not feature-55-description.md)
+        const hasId = new RegExp(`^${typeConfig.prefix}-\\d+-`).test(file);
+        if (!hasId && file.includes(name)) {
+            return { file, folder: '01-inbox', fullPath: path.join(dir, file) };
         }
     }
     return null;
@@ -72,28 +92,30 @@ function moveFile(fileObj, targetFolder, newFilename = null) {
     return { ...fileObj, folder: targetFolder, file: destName, fullPath: destPath };
 }
 
-function organizeAnalysisFiles(featureNum, winnerAgentId) {
-    const analysisRoot = path.join(PATHS.features.root, 'analysis');
-    const selectedDir = path.join(analysisRoot, 'selected');
-    const alternativesDir = path.join(analysisRoot, 'alternatives');
-    if (!fs.existsSync(analysisRoot)) return;
+function organizeLogFiles(featureNum, winnerAgentId) {
+    const logsRoot = path.join(PATHS.features.root, 'logs');
+    const selectedDir = path.join(logsRoot, 'selected');
+    const alternativesDir = path.join(logsRoot, 'alternatives');
+    if (!fs.existsSync(logsRoot)) return;
     if (!fs.existsSync(selectedDir)) fs.mkdirSync(selectedDir, { recursive: true });
     if (!fs.existsSync(alternativesDir)) fs.mkdirSync(alternativesDir, { recursive: true });
-    const files = fs.readdirSync(analysisRoot);
-    console.log("\n📁 Organizing Analysis Files...");
+    const files = fs.readdirSync(logsRoot);
+    console.log("\n📁 Organizing Log Files...");
     files.forEach(file => {
-        if (fs.lstatSync(path.join(analysisRoot, file)).isDirectory()) return;
+        if (fs.lstatSync(path.join(logsRoot, file)).isDirectory()) return;
         if (!file.startsWith(`feature-${featureNum}-`)) return;
-        const srcPath = path.join(analysisRoot, file);
-        const isWinner = file.includes(`-${winnerAgentId}-`) || file.includes(`-${winnerAgentId}.`);
+        const srcPath = path.join(logsRoot, file);
+        // In multi-agent mode, winner has agent ID in filename
+        // In solo mode, there's no agent ID so it's always the winner
+        const isWinner = !winnerAgentId || file.includes(`-${winnerAgentId}-`) || file.includes(`-${winnerAgentId}.`) || file === `feature-${featureNum}-log.md`;
         if (isWinner) {
             const destPath = path.join(selectedDir, file);
             fs.renameSync(srcPath, destPath);
-            console.log(`   ⭐ Selected: ${file} -> analysis/selected/`);
+            console.log(`   ⭐ Selected: ${file} -> logs/selected/`);
         } else {
             const destPath = path.join(alternativesDir, file);
             fs.renameSync(srcPath, destPath);
-            console.log(`   📉 Alternative: ${file} -> analysis/alternatives/`);
+            console.log(`   📁 Alternative: ${file} -> logs/alternatives/`);
         }
     });
 }
@@ -107,11 +129,89 @@ function runGit(command) {
     }
 }
 
+function safeWrite(filePath, content) {
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(filePath, content);
+}
+
+// Append or replace content between markers in a file
+const MARKER_START = '<!-- FARLINE_FLOW_START -->';
+const MARKER_END = '<!-- FARLINE_FLOW_END -->';
+
+function upsertMarkedContent(filePath, content) {
+    const markedContent = `${MARKER_START}\n${content}\n${MARKER_END}`;
+
+    if (!fs.existsSync(filePath)) {
+        safeWrite(filePath, markedContent);
+        return 'created';
+    }
+
+    const existing = fs.readFileSync(filePath, 'utf8');
+    const markerRegex = new RegExp(`${MARKER_START}[\\s\\S]*?${MARKER_END}`, 'g');
+
+    if (markerRegex.test(existing)) {
+        // Replace existing marked section
+        const updated = existing.replace(markerRegex, markedContent);
+        fs.writeFileSync(filePath, updated);
+        return 'updated';
+    } else {
+        // Append to end of file
+        fs.writeFileSync(filePath, existing.trimEnd() + '\n\n' + markedContent + '\n');
+        return 'appended';
+    }
+}
+
+// Read template file from templates directory
+function readTemplate(relativePath) {
+    const templatePath = path.join(TEMPLATES_ROOT, relativePath);
+    if (!fs.existsSync(templatePath)) {
+        throw new Error(`Template not found: ${relativePath}`);
+    }
+    return fs.readFileSync(templatePath, 'utf8');
+}
+
+// --- Agent Configuration ---
+
+const AGENT_CONFIGS = {
+    cc: {
+        id: 'cc',
+        name: 'Claude',
+        rootFile: 'CLAUDE.md',
+        agentFile: 'claude.md',
+        templatePath: 'docs/agents/claude.md'
+    },
+    gg: {
+        id: 'gg',
+        name: 'Gemini',
+        rootFile: 'GEMINI.md',
+        agentFile: 'gemini.md',
+        templatePath: 'docs/agents/gemini.md'
+    },
+    cx: {
+        id: 'cx',
+        name: 'Codex',
+        rootFile: 'CODEX.md',
+        agentFile: 'codex.md',
+        templatePath: 'docs/agents/codex.md'
+    }
+};
+
+function getRootFileContent(agentConfig) {
+    return `## Farline Flow
+
+This project uses the Farline Flow development workflow.
+
+- ${agentConfig.name}-specific notes: \`docs/agents/${agentConfig.agentFile}\`
+- Development workflow: \`docs/development_workflow.md\`
+`;
+}
+
 // --- Commands ---
 
 const commands = {
     'init': (args) => {
-        console.log("ACTION: Initializing Farline Flow in ./specs ...");
+        console.log("ACTION: Initializing Farline Flow in ./docs/specs ...");
         const createDirs = (root, folders) => {
             folders.forEach(f => {
                 const p = path.join(root, f);
@@ -120,111 +220,284 @@ const commands = {
         };
         createDirs(PATHS.research.root, PATHS.research.folders);
         createDirs(PATHS.features.root, PATHS.features.folders);
-        const featAnalysis = path.join(PATHS.features.root, 'analysis');
-        if (!fs.existsSync(path.join(featAnalysis, 'selected'))) fs.mkdirSync(path.join(featAnalysis, 'selected'), { recursive: true });
-        if (!fs.existsSync(path.join(featAnalysis, 'alternatives'))) fs.mkdirSync(path.join(featAnalysis, 'alternatives'), { recursive: true });
+        const featLogs = path.join(PATHS.features.root, 'logs');
+        if (!fs.existsSync(path.join(featLogs, 'selected'))) fs.mkdirSync(path.join(featLogs, 'selected'), { recursive: true });
+        if (!fs.existsSync(path.join(featLogs, 'alternatives'))) fs.mkdirSync(path.join(featLogs, 'alternatives'), { recursive: true });
         if (!fs.existsSync(path.join(PATHS.features.root, 'evaluations'))) fs.mkdirSync(path.join(PATHS.features.root, 'evaluations'), { recursive: true });
         const readmePath = path.join(SPECS_ROOT, 'README.md');
         if (!fs.existsSync(readmePath)) {
             const readmeContent = `# Farline Flow Specs\n\n**This folder is the Single Source of Truth.**\n\n## Rules\n1. READ ONLY: backlog, inbox, done.\n2. WRITE: Only edit code if feature spec is in features/in-progress.\n`;
             fs.writeFileSync(readmePath, readmeContent);
         }
-        console.log("✅ ./specs directory structure created.");
+        console.log("✅ ./docs/specs directory structure created.");
+    },
+    'feature-create': (args) => {
+        const name = args[0];
+        if (!name) return console.error("Usage: ff feature-create <name>\nExample: ff feature-create dark-mode");
+
+        // Ensure inbox exists
+        const inboxDir = path.join(PATHS.features.root, '01-inbox');
+        if (!fs.existsSync(inboxDir)) {
+            fs.mkdirSync(inboxDir, { recursive: true });
+        }
+
+        // Create filename: feature-dark-mode.md
+        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const filename = `feature-${slug}.md`;
+        const filePath = path.join(inboxDir, filename);
+
+        if (fs.existsSync(filePath)) {
+            return console.error(`❌ Feature already exists: ${filename}`);
+        }
+
+        // Read template and replace placeholder
+        const template = readTemplate('specs/feature-template.md');
+        const content = template.replace(/\{\{NAME\}\}/g, name);
+
+        fs.writeFileSync(filePath, content);
+        console.log(`✅ Created: ./docs/specs/features/01-inbox/${filename}`);
+        console.log(`📝 Edit the spec, then run: ff feature-prioritise ${slug}`);
+    },
+    'research-create': (args) => {
+        const name = args[0];
+        if (!name) return console.error("Usage: ff research-create <name>\nExample: ff research-create api-design");
+
+        // Ensure inbox exists
+        const inboxDir = path.join(PATHS.research.root, '01-inbox');
+        if (!fs.existsSync(inboxDir)) {
+            fs.mkdirSync(inboxDir, { recursive: true });
+        }
+
+        // Create filename: research-api-design.md
+        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const filename = `research-${slug}.md`;
+        const filePath = path.join(inboxDir, filename);
+
+        if (fs.existsSync(filePath)) {
+            return console.error(`❌ Research topic already exists: ${filename}`);
+        }
+
+        // Read template and replace placeholder
+        const template = readTemplate('specs/research-template.md');
+        const content = template.replace(/\{\{NAME\}\}/g, name);
+
+        fs.writeFileSync(filePath, content);
+        console.log(`✅ Created: ./docs/specs/research-topics/01-inbox/${filename}`);
+        console.log(`📝 Edit the topic, then run: ff research-prioritise ${slug}`);
     },
     'research-prioritise': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: ff research-prioritise <name|XX>");
-        const found = findFile(PATHS.research, name, ['inbox']);
-        if (!found) return console.error(`❌ Could not find research "${name}" in inbox.`);
+        if (!name) return console.error("Usage: ff research-prioritise <name>");
+        const found = findUnprioritizedFile(PATHS.research, name);
+        if (!found) return console.error(`❌ Could not find unprioritized research "${name}" in inbox.`);
         const nextId = getNextId(PATHS.research);
-        const newName = found.file.replace(/-XX-|-xx-/, `-${String(nextId).padStart(2, '0')}-`);
-        if (newName === found.file) return console.error("❌ Filename does not contain 'XX' to replace.");
-        moveFile(found, 'backlog', newName);
+        const paddedId = String(nextId).padStart(2, '0');
+        // Transform: research-topic-name.md -> research-55-topic-name.md
+        const newName = found.file.replace(
+            new RegExp(`^${PATHS.research.prefix}-`),
+            `${PATHS.research.prefix}-${paddedId}-`
+        );
+        moveFile(found, '02-backlog', newName);
+        console.log(`📋 Assigned ID: ${paddedId}`);
     },
     'research-start': (args) => {
         const name = args[0];
         if (!name) return console.error("Usage: ff research-start <name|ID>");
-        const found = findFile(PATHS.research, name, ['backlog']);
+        const found = findFile(PATHS.research, name, ['02-backlog']);
         if (!found) return console.error(`❌ Could not find research "${name}" in backlog.`);
-        moveFile(found, 'in-progress');
+        moveFile(found, '03-in-progress');
     },
     'research-done': (args) => {
         const name = args[0];
         if (!name) return console.error("Usage: ff research-done <name|ID>");
-        const found = findFile(PATHS.research, name, ['in-progress']);
+        const found = findFile(PATHS.research, name, ['03-in-progress']);
         if (!found) return console.error(`❌ Could not find research "${name}" in in-progress.`);
-        moveFile(found, 'done');
+        moveFile(found, '04-done');
     },
     'feature-prioritise': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: ff feature-prioritise <name|XX>");
-        const found = findFile(PATHS.features, name, ['inbox']);
-        if (!found) return console.error(`❌ Could not find feature "${name}" in inbox.`);
+        if (!name) return console.error("Usage: ff feature-prioritise <name>");
+        const found = findUnprioritizedFile(PATHS.features, name);
+        if (!found) return console.error(`❌ Could not find unprioritized feature "${name}" in inbox.`);
         const nextId = getNextId(PATHS.features);
-        const newName = found.file.replace(/-XX-|-xx-/, `-${String(nextId).padStart(2, '0')}-`);
-        if (newName === found.file) return console.error("❌ Filename does not contain 'XX' to replace.");
-        moveFile(found, 'backlog', newName);
+        const paddedId = String(nextId).padStart(2, '0');
+        // Transform: feature-dark-mode.md -> feature-55-dark-mode.md
+        const newName = found.file.replace(
+            new RegExp(`^${PATHS.features.prefix}-`),
+            `${PATHS.features.prefix}-${paddedId}-`
+        );
+        moveFile(found, '02-backlog', newName);
+        console.log(`📋 Assigned ID: ${paddedId}`);
+        console.log(`🚀 Next:`);
+        console.log(`   ff feature-start ${paddedId}          # Solo mode (branch)`);
+        console.log(`   ff feature-start ${paddedId} <agent>  # Multi-agent mode (worktree)`);
     },
     'feature-start': (args) => {
         const name = args[0];
-        const agentId = args[1];
-        if (!name) return console.error("Usage: ff feature-start <name|ID> [agent-id]");
-        let found = findFile(PATHS.features, name, ['backlog']);
+        const agentId = args[1]; // Optional - if provided, multi-agent mode with worktree
+        if (!name) return console.error("Usage: ff feature-start <ID> [agent]\n  Without agent: solo mode (branch only)\n  With agent: multi-agent mode (worktree)");
+
+        // Find and move spec to in-progress
+        let found = findFile(PATHS.features, name, ['02-backlog']);
         if (found) {
-            moveFile(found, 'in-progress');
+            moveFile(found, '03-in-progress');
         } else {
-            found = findFile(PATHS.features, name, ['in-progress']);
+            found = findFile(PATHS.features, name, ['03-in-progress']);
             if (!found) return console.error(`❌ Could not find feature "${name}" in backlog or in-progress.`);
         }
+
+        const match = found.file.match(/^feature-(\d+)-(.*)\.md$/);
+        if (!match) return console.warn("⚠️  Could not parse filename for branch creation.");
+        const [_, num, desc] = match;
+
+        // Create log file (for both modes)
+        const logsDir = path.join(PATHS.features.root, 'logs');
+        if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+
         if (agentId) {
-            const match = found.file.match(/^feature-(\d+)-(.*)\.md$/);
-            if (!match) return console.warn("⚠️  Could not parse filename for branch creation.");
-            const [_, num, desc] = match;
+            // Multi-agent mode: worktree isolation (for bake-offs)
             const branchName = `feature-${num}-${agentId}-${desc}`;
             const worktreePath = `../feature-${num}-${agentId}-${desc}`;
             if (fs.existsSync(worktreePath)) {
                 console.warn(`⚠️  Worktree path ${worktreePath} already exists. Skipping.`);
             } else {
                 runGit(`git worktree add ${worktreePath} -b ${branchName}`);
+                console.log(`📂 Worktree: ${worktreePath}`);
             }
-            const analysisDir = path.join(PATHS.features.root, 'analysis');
-            if (!fs.existsSync(analysisDir)) fs.mkdirSync(analysisDir, { recursive: true });
-            const logName = `feature-${num}-${agentId}-${desc}-analysis.md`;
-            const logPath = path.join(analysisDir, logName);
+            // Create log for this agent
+            const logName = `feature-${num}-${agentId}-${desc}-log.md`;
+            const logPath = path.join(logsDir, logName);
             if (!fs.existsSync(logPath)) {
-                const template = `# Analysis Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Implementation Plan\n\n## Execution Log\n`;
+                const template = `# Implementation Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
                 fs.writeFileSync(logPath, template);
+                console.log(`📝 Log: ./docs/specs/features/logs/${logName}`);
             }
+            console.log(`\n🚀 Multi-agent mode. Next steps:`);
+            console.log(`   cd ${worktreePath}`);
+            console.log(`   # Or in VS Code: code ${worktreePath}`);
+        } else {
+            // Solo mode: branch only (default)
+            const branchName = `feature-${num}-${desc}`;
+            try {
+                runGit(`git checkout -b ${branchName}`);
+                console.log(`🌿 Created branch: ${branchName}`);
+            } catch (e) {
+                // Branch may already exist
+                try {
+                    runGit(`git checkout ${branchName}`);
+                    console.log(`🌿 Switched to branch: ${branchName}`);
+                } catch (e2) {
+                    console.error(`❌ Failed to create/switch branch: ${e2.message}`);
+                    return;
+                }
+            }
+            // Create log for solo mode
+            const logName = `feature-${num}-${desc}-log.md`;
+            const logPath = path.join(logsDir, logName);
+            if (!fs.existsSync(logPath)) {
+                const template = `# Implementation Log: Feature ${num} - ${desc}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
+                fs.writeFileSync(logPath, template);
+                console.log(`📝 Log: ./docs/specs/features/logs/${logName}`);
+            }
+            console.log(`\n🚀 Solo mode. Ready to implement in current directory.`);
+            console.log(`   When done: ff feature-done ${num}`);
         }
     },
     'feature-eval': (args) => {
         const name = args[0];
         if (!name) return console.error("Usage: ff feature-eval <name|ID>");
-        const found = findFile(PATHS.features, name, ['in-progress']);
+        const found = findFile(PATHS.features, name, ['03-in-progress']);
         if (!found) return console.error(`❌ Could not find feature "${name}" in in-progress.`);
-        moveFile(found, 'in-evaluation');
+        moveFile(found, '04-in-evaluation');
     },
-    'feature-done-won': (args) => {
+    'feature-done': (args) => {
         const name = args[0];
-        const winnerAgentId = args[1];
-        if (!name || !winnerAgentId) return console.error("Usage: ff feature-done-won <name|ID> <winning-agent-id>");
-        const found = findFile(PATHS.features, name, ['in-evaluation', 'in-progress']);
+        const agentId = args[1]; // Optional - if provided, multi-agent mode
+        if (!name) return console.error("Usage: ff feature-done <ID> [agent]\n  Without agent: solo mode (merges feature-ID-desc)\n  With agent: multi-agent mode (merges feature-ID-agent-desc, cleans up worktree)");
+
+        const found = findFile(PATHS.features, name, ['04-in-evaluation', '03-in-progress']);
         if (!found) return console.error(`❌ Could not find feature "${name}" in in-evaluation or in-progress.`);
         const match = found.file.match(/^feature-(\d+)-(.*)\.md$/);
         if (!match) return console.warn("⚠️  Bad filename. Cannot parse ID.");
         const [_, num, desc] = match;
-        moveFile(found, 'done');
-        organizeAnalysisFiles(num, winnerAgentId);
-        const branchName = `feature-${num}-${winnerAgentId}-${desc}`;
-        const worktreePath = `../feature-${num}-${winnerAgentId}-${desc}`;
-        runGit(`git merge --no-ff ${branchName} -m "Merge feature ${num} from agent ${winnerAgentId}"`);
-        try {
-            if (fs.existsSync(worktreePath)) {
-                execSync(`git worktree remove "${worktreePath}" --force`);
-            }
-        } catch (e) {
-            console.warn(`⚠️  Could not automatically remove worktree.`);
+
+        let branchName, worktreePath, mode;
+
+        if (agentId) {
+            // Multi-agent mode: feature-55-cc-dark-mode
+            branchName = `feature-${num}-${agentId}-${desc}`;
+            worktreePath = `../feature-${num}-${agentId}-${desc}`;
+            mode = 'multi-agent';
+        } else {
+            // Solo mode: feature-55-dark-mode
+            branchName = `feature-${num}-${desc}`;
+            worktreePath = null;
+            mode = 'solo';
         }
+
+        // Check if branch exists before attempting merge
+        try {
+            execSync(`git rev-parse --verify ${branchName}`, { encoding: 'utf8', stdio: 'pipe' });
+        } catch (e) {
+            // Branch doesn't exist - maybe wrong mode?
+            const altBranch = agentId ? `feature-${num}-${desc}` : `feature-${num}-cc-${desc}`;
+            console.error(`❌ Branch not found: ${branchName}`);
+            console.error(`   Did you mean: ff feature-done ${num}${agentId ? '' : ' <agent>'}?`);
+            console.error(`   Looking for: ${altBranch}`);
+            return;
+        }
+
+        // Merge the branch FIRST (before moving files, so merge doesn't reintroduce them)
+        const mergeMsg = agentId
+            ? `Merge feature ${num} from agent ${agentId}`
+            : `Merge feature ${num}`;
+        try {
+            runGit(`git merge --no-ff ${branchName} -m "${mergeMsg}"`);
+            console.log(`✅ Merged branch: ${branchName}`);
+        } catch (e) {
+            console.error(`❌ Merge failed. You may need to resolve conflicts manually.`);
+            return;
+        }
+
+        // Move spec to done (after merge so it doesn't get reintroduced)
+        // Re-find the file since merge may have changed things
+        const postMergeFound = findFile(PATHS.features, name, ['04-in-evaluation', '03-in-progress']);
+        if (postMergeFound) {
+            moveFile(postMergeFound, '05-done');
+            console.log(`📋 Moved spec to done`);
+        }
+
+        // Organize log files (for both modes)
+        organizeLogFiles(num, agentId);
+
+        // Commit the moved spec and log files
+        try {
+            runGit(`git add docs/specs/features/`);
+            runGit(`git commit -m "chore: complete feature ${num} - move spec and logs"`);
+            console.log(`📝 Committed spec and log file moves`);
+        } catch (e) {
+            // May fail if no changes to commit, that's ok
+        }
+
+        // Clean up worktree if it exists (multi-agent mode)
+        if (worktreePath && fs.existsSync(worktreePath)) {
+            try {
+                execSync(`git worktree remove "${worktreePath}" --force`);
+                console.log(`🧹 Removed worktree: ${worktreePath}`);
+            } catch (e) {
+                console.warn(`⚠️  Could not automatically remove worktree: ${worktreePath}`);
+            }
+        }
+
+        // Delete the merged branch
+        try {
+            runGit(`git branch -d ${branchName}`);
+            console.log(`🗑️  Deleted branch: ${branchName}`);
+        } catch (e) {
+            // Branch deletion is optional, don't fail if it doesn't work
+        }
+
+        console.log(`\n✅ Feature ${num} complete! (${mode} mode)`);
     },
     'cleanup': (args) => {
         const id = args[0];
@@ -248,53 +521,509 @@ const commands = {
         } catch (e) { console.error("❌ Error reading git worktrees."); }
     },
     'install-agent': (args) => {
-        const agent = args[0];
-        if (!agent) return console.error("Usage: ff install-agent <cc|gg|cx>");
-        const safeWrite = (filePath, content) => {
-            const dir = path.dirname(filePath);
-            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-            fs.writeFileSync(filePath, content);
+        if (args.length === 0) {
+            return console.error("Usage: ff install-agent <cc|gg|cx> [cc|gg|cx] ...\nExample: ff install-agent cc gg");
+        }
+
+        // Normalize agent aliases
+        const agentMap = {
+            'cc': 'cc', 'claude': 'cc',
+            'gg': 'gg', 'gemini': 'gg',
+            'cx': 'cx', 'codex': 'cx'
         };
+
+        const agents = args.map(a => agentMap[a.toLowerCase()]).filter(Boolean);
+        if (agents.length === 0) {
+            return console.error("❌ No valid agents specified. Use: cc, gg, or cx");
+        }
+
+        const uniqueAgents = [...new Set(agents)];
+
         try {
-            if (agent === 'cc' || agent === 'claude') {
-                const skillContent = `name: farline-manager\ndescription: Manage the Farline Flow workflow.\ntools:\n  - name: ff_prioritise\n    description: Prioritise a feature draft from inbox to backlog\n    command: ff feature-prioritise {{id}}\n  - name: ff_research_start\n    description: Start a research topic\n    command: ff research-start {{id}}\n  - name: ff_research_done\n    description: Complete a research topic\n    command: ff research-done {{id}}\n  - name: ff_feature_start\n    description: Start a feature and create worktree\n    command: ff feature-start {{id}} cc\n  - name: ff_feature_eval\n    description: Move a feature to evaluation\n    command: ff feature-eval {{id}}\n  - name: ff_feature_done\n    description: Complete a feature and merge\n    command: ff feature-done-won {{id}} cc\nsystem_prompt: |\n  You are the Farline Flow Manager (ID: cc).\n  \n  ## CRITICAL RULES\n  1. **Context:** The \`specs/\` folder is the Single Source of Truth.\n  2. **Worktrees:** When implementing code (running \`ff_feature_start\`), you MUST switch to the created directory (e.g., \`../feature-NN-cc-*\`).\n  3. **Logging Target:** A blank log file has been auto-created for you. Your log file is ALWAYS named \`specs/features/analysis/feature-NN-cc-analysis.md\`. Use this exact path.\n  \n  4. **DEFINITION OF DONE (GUARDRAIL):**\n     You MUST NOT run \`ff_feature_done\` until you have updated the analysis file.\n     The CLI will fail if the log file is empty.\n     The log must include:\n     - Implementation steps and key decisions.\n     - A log of user feedback/changes (the "back and forth").`;
-                safeWrite(path.join(process.cwd(), '.claude/skills/farline-manager/SKILL.md'), skillContent);
-                const cmdBase = path.join(process.cwd(), '.claude/commands');
-                const repoName = path.basename(process.cwd());
-                const cmds = [
-                    { name: 'ff-prioritise', action: 'feature-prioritise', args: '', desc: 'Prioritize feature' },
-                    { name: 'ff-research-start', action: 'research-start', args: '', desc: 'Start research' },
-                    { name: 'ff-start', action: 'feature-start', args: ' cc', desc: 'Start feature' },
-                    { name: 'ff-eval', action: 'feature-eval', args: '', desc: 'Eval feature' },
-                    { name: 'ff-done', action: 'feature-done-won', args: ' cc', desc: 'Finish feature' },
-                    { name: 'ff-implement', isPrompt: true }
-                ];
-                cmds.forEach(c => {
-                    let content;
-                    if (c.isPrompt) {
-                        content = `---\ndescription: Switch context to worktree and implement spec\n---\n# ${c.name}\nRun this command followed by the Feature ID.\nExample: \`/${c.name} 01\`\n1. Find the directory named \`../feature-{{args}}-cc-*\` (ignore the suffix).\n2. Switch your working directory to that folder using \`cd\`.\n3. Read the spec in \`../${repoName}/specs/features/in-progress/\`.\n4. Implement the feature according to the spec and commit your changes.`;
-                    } else {
-                        content = `---\ndescription: ${c.desc}\n---\n# ${c.name}\nRun this command followed by ID.\n\`ff ${c.action} {{args}}${c.args}\``;
-                    }
-                    safeWrite(path.join(cmdBase, `${c.name}.md`), content);
-                });
-            } else if (agent === 'gg' || agent === 'gemini') {
-                const cmdBase = path.join(process.cwd(), '.gemini/commands/farline');
-                const tomls = [
-                    { file: 'feature-start.toml', action: "feature-start {{args}} gg" },
-                    { file: 'feature-eval.toml', action: "feature-eval {{args}}" },
-                    { file: 'feature-done.toml', action: "feature-done-won {{args}} gg" },
-                    { file: 'research-start.toml', action: "research-start {{args}}" },
-                    { file: 'research-done.toml', action: "research-done {{args}}" }
-                ];
-                tomls.forEach(t => {
-                    safeWrite(path.join(cmdBase, t.file), `name = "${t.file.replace('.toml', '')}"\ndescription = "Farline action"\nprompt = "Command: !{ff ${t.action}}"`);
-                });
-            } else if (agent === 'cx' || agent === 'codex') {
-                safeWrite(path.join(process.cwd(), 'FARLINE_FLOW.md'), `# Agent Identity: Codex (ID: cx)\n\n1. Only edit code if feature file is in specs/features/in-progress.\n2. If worktree exists, edit there.\n`);
+            // 1. Create shared workflow documentation (always)
+            const workflowPath = path.join(process.cwd(), 'docs', 'development_workflow.md');
+            const workflowContent = readTemplate('docs/development_workflow.md');
+            safeWrite(workflowPath, workflowContent);
+            console.log(`✅ Created: docs/development_workflow.md`);
+
+            // 2. Install each agent
+            uniqueAgents.forEach(agentKey => {
+                const config = AGENT_CONFIGS[agentKey];
+                if (!config) return;
+
+                // Create/update docs/agents/<agent>.md from template (preserves user additions)
+                const agentDocPath = path.join(process.cwd(), 'docs', 'agents', config.agentFile);
+                const agentTemplateContent = readTemplate(config.templatePath);
+                // Template already contains markers, extract content between them for upsert
+                const markerContentMatch = agentTemplateContent.match(new RegExp(`${MARKER_START}\\n([\\s\\S]*?)\\n${MARKER_END}`));
+                const agentContent = markerContentMatch ? markerContentMatch[1] : agentTemplateContent;
+                const agentAction = upsertMarkedContent(agentDocPath, agentContent);
+                console.log(`✅ ${agentAction.charAt(0).toUpperCase() + agentAction.slice(1)}: docs/agents/${config.agentFile}`);
+
+                // Create/update root <AGENT>.md with markers
+                const rootFilePath = path.join(process.cwd(), config.rootFile);
+                const rootContent = getRootFileContent(config);
+                const action = upsertMarkedContent(rootFilePath, rootContent);
+                console.log(`✅ ${action.charAt(0).toUpperCase() + action.slice(1)}: ${config.rootFile}`);
+
+                // Agent-specific extras
+                if (agentKey === 'cc') {
+                    // Claude: Create skill and slash commands
+                    const skillContent = `name: farline-flow
+description: Farline Flow workflow.
+tools:
+  - name: ff_prioritise
+    description: Prioritise a feature draft from inbox to backlog
+    command: ff feature-prioritise {{id}}
+  - name: ff_research_start
+    description: Start a research topic
+    command: ff research-start {{id}}
+  - name: ff_research_done
+    description: Complete a research topic
+    command: ff research-done {{id}}
+  - name: ff_feature_start
+    description: Start a feature and create worktree
+    command: ff feature-start {{id}} cc
+  - name: ff_feature_eval
+    description: Move a feature to evaluation
+    command: ff feature-eval {{id}}
+  - name: ff_feature_done
+    description: Complete a feature and merge
+    command: ff feature-done {{id}} cc
+system_prompt: |
+  You are the Farline Flow Manager (ID: cc).
+  Read docs/development_workflow.md for the full workflow.
+  Read docs/agents/claude.md for Claude-specific configuration.
+`;
+                    safeWrite(path.join(process.cwd(), '.claude/skills/farline-flow/SKILL.md'), skillContent);
+                    console.log(`   ✅ Created: .claude/skills/farline-flow/SKILL.md`);
+
+                    const cmdBase = path.join(process.cwd(), '.claude/commands');
+                    const cmds = [
+                        { name: 'ff-feature-create', action: 'feature-create', args: '', desc: 'Create feature <name> - creates spec in inbox' },
+                        { name: 'ff-feature-prioritise', action: 'feature-prioritise', args: '', desc: 'Prioritize feature <name> - assigns ID, moves to backlog' },
+                        { name: 'ff-feature-start', isStart: true },
+                        { name: 'ff-feature-implement', isPrompt: true },
+                        { name: 'ff-feature-eval', action: 'feature-eval', args: '', desc: 'Evaluate feature <ID> - submit for review' },
+                        { name: 'ff-feature-done', isDone: true },
+                        { name: 'ff-research-create', action: 'research-create', args: '', desc: 'Create research <name> - creates topic in inbox' },
+                        { name: 'ff-research-start', action: 'research-start', args: '', desc: 'Start research <ID> - moves to in-progress' },
+                        { name: 'ff-help', isHelp: true }
+                    ];
+                    cmds.forEach(c => {
+                        let content;
+                        if (c.isStart) {
+                            content = `---
+description: Start feature <ID> - solo mode (branch), then implement
+---
+# ff-feature-start
+
+Start a feature in **solo mode** and begin implementation.
+
+## Steps
+
+1. Run: \`ff feature-start {{args}}\`
+
+2. Read the spec in \`./docs/specs/features/03-in-progress/feature-{{args}}-*.md\`
+
+3. Implement the feature according to the spec
+
+4. **Test your changes:**
+   - Check if the dev server is running (start it if needed)
+   - Prompt the user to test the changes on the running dev server
+   - Wait for user confirmation before proceeding
+
+5. Commit your changes using conventional commits (\`feat:\`, \`fix:\`, \`chore:\`)
+
+6. **Update the implementation log** in \`./docs/specs/features/logs/\`:
+   - Document key decisions made during implementation
+   - Summarize the conversation between you and the user
+   - Note any issues encountered and how they were resolved
+
+## When Done
+
+Run \`/ff-feature-done {{args}}\` to merge and complete.
+
+---
+
+**Note:** For multi-agent mode (bake-offs with worktrees), run manually:
+\`\`\`
+ff feature-start {{args}} cc
+\`\`\`
+Then use \`/ff-implement {{args}}\` to switch context.`;
+                        } else if (c.isDone) {
+                            content = `---
+description: Complete feature (solo or multi-agent)
+---
+# ff-feature-done
+
+Run this command followed by the Feature ID.
+
+## Modes
+
+**Solo mode** - if you used \`ff feature-start {{args}}\` (no agent):
+\`\`\`
+ff feature-done {{args}}
+\`\`\`
+
+**Multi-agent mode** - if you used \`ff feature-start {{args}} cc\`:
+\`\`\`
+ff feature-done {{args}} cc
+\`\`\`
+
+## What happens
+
+- Moves spec to \`05-done/\`
+- Merges the feature branch to main
+- Moves implementation log to \`logs/selected/\`
+- (Multi-agent only) Removes the worktree and moves other agent logs to \`logs/alternatives/\``;
+                        } else if (c.isPrompt) {
+                            content = `---
+description: Implement feature <ID> - switch context and code
+---
+# ${c.name}
+
+Run this command followed by the Feature ID. Example: \`/${c.name} 55\`
+
+## Steps
+
+1. **Find your workspace:**
+   - Check if a worktree exists: look for \`../feature-{{args}}-cc-*\` directory
+     - If worktree exists: \`cd\` to that directory (multi-agent mode)
+   - If no worktree: run \`git branch --show-current\` to check your branch
+     - If on \`feature-{{args}}-*\`: you're in solo mode, work in current directory
+     - If not on feature branch: run \`/ff-feature-start {{args}}\` first
+
+2. **Read the spec** in \`./docs/specs/features/03-in-progress/feature-{{args}}-*.md\`
+
+3. **Implement** the feature according to the spec
+
+4. **Test your changes:**
+   - Check if the dev server is running (start it if needed)
+   - Prompt the user to test the changes on the running dev server
+   - Wait for user confirmation before proceeding
+
+5. **Commit** your changes using conventional commits (\`feat:\`, \`fix:\`, \`chore:\`)
+
+6. **Update the implementation log** in \`./docs/specs/features/logs/\`:
+   - Document key decisions made during implementation
+   - Summarize the conversation between you and the user
+   - Note any issues encountered and how they were resolved
+
+## When Done
+
+- **Solo mode** (no worktree): Run \`/ff-feature-done {{args}}\` to merge and complete
+- **Multi-agent mode** (worktree): Run \`/ff-feature-eval {{args}}\` to submit for evaluation, or \`/ff-feature-done {{args}} cc\` to merge directly
+
+## VS Code Users
+
+To open a worktree in VS Code, run: \`code ../feature-{{args}}-cc-*\``;
+                        } else if (c.isHelp) {
+                            content = `---
+description: Show Farline Flow commands
+---
+# Farline Flow Commands
+
+| Command | Description |
+|---------|-------------|
+| \`/ff-feature-create <name>\` | Create a new feature spec |
+| \`/ff-feature-prioritise <name>\` | Prioritize a feature draft |
+| \`/ff-feature-start <ID>\` | Start feature and create worktree |
+| \`/ff-feature-implement <ID>\` | Switch to worktree and implement |
+| \`/ff-feature-eval <ID>\` | Submit feature for evaluation |
+| \`/ff-feature-done <ID>\` | Complete and merge feature |
+| \`/ff-research-create <name>\` | Create a new research topic |
+| \`/ff-research-start <ID>\` | Start a research topic |
+
+Run \`ff help\` in terminal for full CLI reference.`;
+                        } else {
+                            content = `---
+description: ${c.desc}
+---
+# ${c.name}
+Run this command followed by ID.
+\`ff ${c.action} {{args}}${c.args}\``;
+                        }
+                        safeWrite(path.join(cmdBase, `${c.name}.md`), content);
+                    });
+                    console.log(`   ✅ Created: .claude/commands/ff-*.md`);
+
+                } else if (agentKey === 'gg') {
+                    // Gemini: Create command files
+                    const cmdBase = path.join(process.cwd(), '.gemini/commands/farline');
+                    const tomls = [
+                        { file: 'feature-create.toml', action: "feature-create {{args}}" },
+                        { file: 'feature-prioritise.toml', action: "feature-prioritise {{args}}" },
+                        { file: 'feature-eval.toml', action: "feature-eval {{args}}" },
+                        { file: 'research-create.toml', action: "research-create {{args}}" },
+                        { file: 'research-start.toml', action: "research-start {{args}}" }
+                    ];
+                    tomls.forEach(t => {
+                        safeWrite(path.join(cmdBase, t.file), `name = "${t.file.replace('.toml', '')}"\ndescription = "Farline action"\nprompt = "Command: !{ff ${t.action}}"`);
+                    });
+                    // Gemini feature-start command (with mode options)
+                    const startContent = `name = "feature-start"
+description = "Start feature (solo or multi-agent)"
+prompt = """
+Run this command followed by the Feature ID.
+
+## Modes
+
+**Solo mode** (default) - work in current directory with a branch:
+\`ff feature-start {{args}}\`
+
+**Multi-agent mode** - create isolated worktree for bake-offs:
+\`ff feature-start {{args}} gg\`
+
+## Steps
+
+1. Run the appropriate command above
+2. Read the spec in \`./docs/specs/features/03-in-progress/feature-{{args}}-*.md\`
+3. Implement the feature according to the spec
+4. **Test your changes:**
+   - Check if the dev server is running (start it if needed)
+   - Prompt the user to test the changes on the running dev server
+   - Wait for user confirmation before proceeding
+5. Commit your changes using conventional commits (\`feat:\`, \`fix:\`, \`chore:\`)
+6. **Update the implementation log** in \`./docs/specs/features/logs/\`:
+   - Document key decisions made during implementation
+   - Summarize the conversation between you and the user
+   - Note any issues encountered and how they were resolved
+
+## When Done
+
+- **Solo mode**: Run \`ff feature-done {{args}}\`
+- **Multi-agent mode**: Run \`ff feature-done {{args}} gg\`
+"""`;
+                    safeWrite(path.join(cmdBase, 'feature-start.toml'), startContent);
+                    // Gemini feature-done command (with mode options)
+                    const doneContent = `name = "feature-done"
+description = "Complete feature (solo or multi-agent)"
+prompt = """
+Run this command followed by the Feature ID.
+
+## Modes
+
+**Solo mode** - if you used \`ff feature-start {{args}}\` (no agent):
+\`ff feature-done {{args}}\`
+
+**Multi-agent mode** - if you used \`ff feature-start {{args}} gg\`:
+\`ff feature-done {{args}} gg\`
+
+## What happens
+
+- Moves spec to \`05-done/\`
+- Merges the feature branch to main
+- Moves implementation log to \`logs/selected/\`
+- (Multi-agent only) Removes the worktree and moves other agent logs to \`logs/alternatives/\`
+"""`;
+                    safeWrite(path.join(cmdBase, 'feature-done.toml'), doneContent);
+                    // Gemini implement command
+                    const implementContent = `name = "feature-implement"
+description = "Switch context and implement feature"
+prompt = """
+Run this command followed by the Feature ID. Example: /feature-implement 55
+
+## Steps
+
+1. **Find your workspace:**
+   - Check if a worktree exists: look for \`../feature-{{args}}-gg-*\` directory
+     - If worktree exists: \`cd\` to that directory (multi-agent mode)
+   - If no worktree: run \`git branch --show-current\` to check your branch
+     - If on \`feature-{{args}}-*\`: you're in solo mode, work in current directory
+     - If not on feature branch: run \`/feature-start {{args}}\` first
+
+2. **Read the spec** in \`./docs/specs/features/03-in-progress/feature-{{args}}-*.md\`
+
+3. **Implement** the feature according to the spec
+
+4. **Test your changes:**
+   - Check if the dev server is running (start it if needed)
+   - Prompt the user to test the changes on the running dev server
+   - Wait for user confirmation before proceeding
+
+5. **Commit** your changes using conventional commits (\`feat:\`, \`fix:\`, \`chore:\`)
+
+6. **Update the implementation log** in \`./docs/specs/features/logs/\`:
+   - Document key decisions made during implementation
+   - Summarize the conversation between you and the user
+   - Note any issues encountered and how they were resolved
+
+## When Done
+
+- **Solo mode** (no worktree): Run \`/feature-done {{args}}\` to merge and complete
+- **Multi-agent mode** (worktree): Run \`ff feature-eval {{args}}\` to submit for evaluation, or \`/feature-done {{args}} gg\` to merge directly
+
+## VS Code Users
+
+To open a worktree in VS Code, run: \`code ../feature-{{args}}-gg-*\`
+"""`;
+                    safeWrite(path.join(cmdBase, 'feature-implement.toml'), implementContent);
+                    console.log(`   ✅ Created: .gemini/commands/farline/*.toml`);
+
+                } else if (agentKey === 'cx') {
+                    // Codex: Create AGENTS.md with commands
+                    const agentsDir = path.join(process.cwd(), 'AGENTS.md');
+                    const codexContent = `# Codex Agent Configuration
+
+## Farline Flow Commands
+
+Run these commands in the terminal:
+
+### Feature Start (two modes)
+
+**Solo mode** (default) - work in current directory with a branch:
+\`ff feature-start <ID>\`
+
+**Multi-agent mode** - create isolated worktree for bake-offs:
+\`ff feature-start <ID> cx\`
+
+### Other Commands
+
+- \`ff feature-eval <ID>\` - Submit feature for evaluation (optional)
+- \`ff feature-done <ID>\` - Complete solo mode feature
+- \`ff feature-done <ID> cx\` - Complete multi-agent mode feature
+- \`ff research-start <ID>\` - Start a research topic
+
+## Feature Implement
+
+When starting implementation on a feature:
+
+1. **Find your workspace:**
+   - Check if a worktree exists: look for \`../feature-<ID>-cx-*\` directory
+     - If worktree exists: \`cd\` to that directory (multi-agent mode)
+   - If no worktree: run \`git branch --show-current\` to check your branch
+     - If on \`feature-<ID>-*\`: you're in solo mode, work in current directory
+     - If not on feature branch: run \`ff feature-start <ID>\` first
+
+2. **Read the spec** in \`./docs/specs/features/03-in-progress/feature-<ID>-*.md\`
+
+3. **Implement** the feature according to the spec
+
+4. **Test your changes:**
+   - Check if the dev server is running (start it if needed)
+   - Prompt the user to test the changes on the running dev server
+   - Wait for user confirmation before proceeding
+
+5. **Commit** your changes using conventional commits (\`feat:\`, \`fix:\`, \`chore:\`)
+
+6. **Update the implementation log** in \`./docs/specs/features/logs/\`:
+   - Document key decisions made during implementation
+   - Summarize the conversation between you and the user
+   - Note any issues encountered and how they were resolved
+
+## When Done
+
+- **Solo mode**: Run \`ff feature-done <ID>\`
+- **Multi-agent mode**: Run \`ff feature-done <ID> cx\`
+
+## Critical Rules
+
+1. **Read the spec first**: Always check \`./docs/specs/features/03-in-progress/\` before coding
+2. **Work in isolation**: Use worktrees or feature branches, never commit directly to main
+3. **Update implementation log**: Document your progress before running \`ff feature-done\`
+4. **Conventional commits**: Use \`feat:\`, \`fix:\`, \`chore:\` prefixes
+`;
+                    safeWrite(agentsDir, codexContent);
+                    console.log(`   ✅ Created: AGENTS.md (for Codex)`);
+                }
+            });
+
+            console.log(`\n🎉 Installed Farline Flow for: ${uniqueAgents.map(a => AGENT_CONFIGS[a].name).join(', ')}`);
+            console.log(`\n📝 Remember to commit these files to Git so they're available in worktrees.`);
+
+        } catch (e) {
+            console.error(`❌ Failed: ${e.message}`);
+        }
+    },
+    'update': () => {
+        console.log("🔄 Updating Farline Flow installation...\n");
+
+        try {
+            // 1. Detect installed agents by checking for root files
+            const installedAgents = [];
+            Object.entries(AGENT_CONFIGS).forEach(([key, config]) => {
+                const rootFilePath = path.join(process.cwd(), config.rootFile);
+                if (fs.existsSync(rootFilePath)) {
+                    installedAgents.push(key);
+                }
+            });
+
+            // 2. Update shared workflow documentation
+            const workflowPath = path.join(process.cwd(), 'docs', 'development_workflow.md');
+            const workflowContent = readTemplate('docs/development_workflow.md');
+            safeWrite(workflowPath, workflowContent);
+            console.log(`✅ Updated: docs/development_workflow.md`);
+
+            // 3. Install/update spec templates
+            const specsTemplatesDir = path.join(process.cwd(), 'docs', 'specs', 'templates');
+            if (!fs.existsSync(specsTemplatesDir)) {
+                fs.mkdirSync(specsTemplatesDir, { recursive: true });
             }
-        } catch (e) { console.error(`❌ Failed: ${e.message}`); }
-    }
+
+            const featureTemplate = readTemplate('specs/feature-template.md');
+            safeWrite(path.join(specsTemplatesDir, 'feature-template.md'), featureTemplate);
+            console.log(`✅ Updated: docs/specs/templates/feature-template.md`);
+
+            const researchTemplate = readTemplate('specs/research-template.md');
+            safeWrite(path.join(specsTemplatesDir, 'research-template.md'), researchTemplate);
+            console.log(`✅ Updated: docs/specs/templates/research-template.md`);
+
+            // 4. Re-run install-agent for detected agents
+            if (installedAgents.length > 0) {
+                console.log(`\n📦 Re-installing agents: ${installedAgents.join(', ')}`);
+                commands['install-agent'](installedAgents);
+            } else {
+                console.log(`\nℹ️  No agents detected. Run 'ff install-agent <cc|gg|cx>' to install.`);
+            }
+
+            console.log(`\n✅ Farline Flow updated successfully.`);
+
+        } catch (e) {
+            console.error(`❌ Update failed: ${e.message}`);
+        }
+    },
+
+    'help': () => {
+        console.log(`
+Farline Flow - Spec-Driven Development for AI Agents
+
+Usage: ff <command> [arguments]
+
+Commands:
+  init                              Initialize ./docs/specs directory structure
+  install-agent <agents...>         Install agent configs (cc, gg, cx)
+  update                            Update Farline Flow files to latest version
+
+  feature-create <name>             Create feature spec in inbox
+  feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
+  feature-start <ID>                Start feature in solo mode (branch only)
+  feature-start <ID> <agent>        Start feature in multi-agent mode (worktree)
+  feature-eval <ID>                 Move feature to evaluation (optional)
+  feature-done <ID>                 Merge solo branch and complete
+  feature-done <ID> <agent>         Merge agent's worktree branch and complete
+
+  research-create <name>            Create research topic in inbox
+  research-prioritise <name>        Move research from inbox to backlog (assigns ID)
+  research-start <ID>               Move research to in-progress
+  research-done <ID>                Move research to done
+
+  cleanup <ID>                      Remove remaining worktrees for a feature
+
+Examples:
+  ff init                           # Setup specs directory
+  ff install-agent cc gg            # Install Claude and Gemini configs
+  ff feature-create "dark-mode"     # Create new feature spec
+  ff feature-prioritise dark-mode   # Assign ID, move to backlog
+  ff feature-start 55 cc            # Start feature 55 with Claude
+  ff feature-done 55 cc             # Merge Claude's implementation
+
+Agents:
+  cc (claude)   - Claude Code
+  gg (gemini)   - Gemini CLI
+  cx (codex)    - GitHub Codex
+`);
+    },
 };
 
 // --- Main Execution ---
@@ -302,8 +1031,12 @@ const args = process.argv.slice(2);
 const commandName = args[0];
 const commandArgs = args.slice(1);
 const cleanCommand = commandName ? commandName.replace(/^ff-/, '') : null;
-if (cleanCommand && commands[cleanCommand]) {
+
+if (!cleanCommand || cleanCommand === 'help' || cleanCommand === '--help' || cleanCommand === '-h') {
+    commands['help']();
+} else if (commands[cleanCommand]) {
     commands[cleanCommand](commandArgs);
 } else {
-    console.log("Command not found. Available commands:", Object.keys(commands).join(', '));
+    console.error(`Unknown command: ${commandName}\n`);
+    commands['help']();
 }
