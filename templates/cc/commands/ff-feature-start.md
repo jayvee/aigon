@@ -1,20 +1,16 @@
-name = "feature-start"
-description = "Start feature <ID> - solo mode (branch), then implement"
-prompt = """
-Run this command followed by the Feature ID.
+---
+description: Start feature <ID> - solo mode (branch), then implement
+---
+# ff-feature-start
+
+Start a feature in **solo mode** and begin implementation.
 
 ## Step 1: Run the CLI command
 
-IMPORTANT: You MUST run one of these commands in the terminal first. This moves the spec file from backlog to in-progress and creates the git branch.
+IMPORTANT: You MUST run this command first. This moves the spec file from backlog to in-progress and creates the git branch.
 
-**Solo mode** (default):
 ```bash
 ff feature-start {{args}}
-```
-
-**Multi-agent mode** (for bake-offs):
-```bash
-ff feature-start {{args}} gg
 ```
 
 ## Step 2: Read the spec
@@ -44,8 +40,16 @@ Update the implementation log in `./docs/specs/features/logs/`:
 
 ## Step 7: Complete
 
-IMPORTANT: Run the CLI command to complete the feature:
+Run the CLI command to complete the feature:
 
-- **Solo mode**: `ff feature-done {{args}}`
-- **Multi-agent mode**: `ff feature-done {{args}} gg`
-"""
+```bash
+ff feature-done {{args}}
+```
+
+---
+
+**Note:** For multi-agent mode (bake-offs with worktrees), run manually:
+```
+ff feature-start {{args}} cc
+```
+Then use `/ff-implement {{args}}` to switch context.

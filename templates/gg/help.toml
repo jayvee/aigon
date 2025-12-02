@@ -1,0 +1,19 @@
+name = "ff-help"
+description = "Show Farline Flow commands"
+prompt = """
+# Farline Flow Commands
+
+| Command | Description |
+|---------|-------------|
+| `/feature-create <name>` | Create a new feature spec |
+| `/feature-prioritise <name>` | Prioritize a feature draft |
+| `/feature-start <ID>` | Start feature and create branch/worktree |
+| `/feature-implement <ID>` | Switch to workspace and implement |
+| `/feature-eval <ID>` | Submit feature for evaluation |
+| `/feature-done <ID>` | Complete and merge feature |
+| `/research-create <name>` | Create a new research topic |
+| `/research-start <ID>` | Start a research topic |
+| `/research-done <ID>` | Complete a research topic |
+
+Run `ff help` in terminal for full CLI reference.
+"""

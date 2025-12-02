@@ -1,3 +1,13 @@
 name = "feature-eval"
-description = "Move feature to evaluation phase"
-prompt = "I will submit feature {{args}} for evaluation. Command: !{ff feature-eval {{args}}}"
+description = "Evaluate feature <ID> - submit for review"
+prompt = """
+Run this command followed by the Feature ID.
+
+```bash
+ff feature-eval {{args}}
+```
+
+This moves the feature from `03-in-progress/` to `04-in-evaluation/` for review.
+
+This step is optional - you can go directly to `ff feature-done` if not doing a multi-agent bake-off.
+"""
