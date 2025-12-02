@@ -631,16 +631,76 @@ system_prompt: |
                     });
                     console.log(`   ✅ Created: .claude/commands/ff-*.md`);
 
+                    // Claude: Add 'Bash(ff:*)' to permissions.allow in settings.json
+                    const settingsPath = path.join(process.cwd(), '.claude', 'settings.json');
+                    let settings = {};
+                    if (fs.existsSync(settingsPath)) {
+                        try {
+                            settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+                        } catch (e) {
+                            console.warn(`   ⚠️  Could not parse existing .claude/settings.json, creating new one`);
+                        }
+                    }
+                    // Ensure permissions object and allow array exist
+                    if (!settings.permissions) {
+                        settings.permissions = {};
+                    }
+                    if (!settings.permissions.allow) {
+                        settings.permissions.allow = [];
+                    }
+                    // Add 'Bash(ff:*)' if not already present
+                    const ffPermission = 'Bash(ff:*)';
+                    if (!settings.permissions.allow.includes(ffPermission)) {
+                        settings.permissions.allow.push(ffPermission);
+                    }
+                    // Add a comment field to indicate Farline Flow permissions
+                    if (!settings._farlineFlow) {
+                        settings._farlineFlow = {
+                            note: 'Permissions added by Farline Flow',
+                            permissions: [ffPermission]
+                        };
+                    }
+                    safeWrite(settingsPath, JSON.stringify(settings, null, 2));
+                    console.log(`   ✅ Added 'Bash(ff:*)' to .claude/settings.json permissions.allow`);
+
                 } else if (agentKey === 'gg') {
                     // Gemini: Copy command files from templates
-                    const cmdBase = path.join(process.cwd(), '.gemini/commands/farline-flow');
+                    // Folder name becomes the prefix, so 'ff' gives /ff:feature-start
+                    const cmdBase = path.join(process.cwd(), '.gemini/commands/ff');
                     const templateDir = path.join(TEMPLATES_ROOT, 'gg');
                     const templateFiles = fs.readdirSync(templateDir).filter(f => f.endsWith('.toml'));
                     templateFiles.forEach(file => {
                         const content = fs.readFileSync(path.join(templateDir, file), 'utf8');
                         safeWrite(path.join(cmdBase, file), content);
                     });
-                    console.log(`   ✅ Created: .gemini/commands/farline-flow/*.toml`);
+                    console.log(`   ✅ Created: .gemini/commands/ff/*.toml`);
+
+                    // Gemini: Add 'ff' to allowedTools in settings.json
+                    const settingsPath = path.join(process.cwd(), '.gemini', 'settings.json');
+                    let settings = {};
+                    if (fs.existsSync(settingsPath)) {
+                        try {
+                            settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+                        } catch (e) {
+                            console.warn(`   ⚠️  Could not parse existing .gemini/settings.json, creating new one`);
+                        }
+                    }
+                    // Ensure allowedTools array exists and contains 'ff'
+                    if (!settings.allowedTools) {
+                        settings.allowedTools = [];
+                    }
+                    if (!settings.allowedTools.includes('ff')) {
+                        settings.allowedTools.push('ff');
+                    }
+                    // Add a comment field to indicate Farline Flow tools
+                    if (!settings._farlineFlow) {
+                        settings._farlineFlow = {
+                            note: 'Tools added by Farline Flow',
+                            tools: ['ff']
+                        };
+                    }
+                    safeWrite(settingsPath, JSON.stringify(settings, null, 2));
+                    console.log(`   ✅ Added 'ff' to .gemini/settings.json allowedTools`);
 
                 } else if (agentKey === 'cx') {
                     // Codex: Copy AGENTS.md from template

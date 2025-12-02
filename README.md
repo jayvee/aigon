@@ -222,15 +222,15 @@ When you run `ff install-agent gg`, it installs special slash commands for Gemin
 
 | Slash Command | Description |
 | :--- | :--- |
-| `/farline-flow:feature-create <name>` | Runs `ff feature-create <name>`. |
-| `/farline-flow:feature-prioritise <name>` | Runs `ff feature-prioritise <name>`. |
-| `/farline-flow:feature-start <ID>` | Runs `ff feature-start <ID>` (solo mode, branch only). For multi-agent, run `ff feature-start <ID> gg` manually. |
-| `/farline-flow:feature-implement <ID>` | **Context Switcher.** Detects solo/multi-agent mode, navigates to workspace, and guides implementation. |
-| `/farline-flow:feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional, for multi-agent review). |
-| `/farline-flow:feature-done <ID>` | Runs `ff feature-done <ID>` (solo mode). For multi-agent, run `ff feature-done <ID> gg` manually. |
-| `/farline-flow:research-create <name>` | Runs `ff research-create <name>`. |
-| `/farline-flow:research-start <ID>` | Runs `ff research-start <ID>`. |
-| `/farline-flow:help` | Shows all available Farline Flow commands. |
+| `/ff:feature-create <name>` | Runs `ff feature-create <name>`. |
+| `/ff:feature-prioritise <name>` | Runs `ff feature-prioritise <name>`. |
+| `/ff:feature-start <ID>` | Runs `ff feature-start <ID>` (solo mode, branch only). For multi-agent, run `ff feature-start <ID> gg` manually. |
+| `/ff:feature-implement <ID>` | **Context Switcher.** Detects solo/multi-agent mode, navigates to workspace, and guides implementation. |
+| `/ff:feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional, for multi-agent review). |
+| `/ff:feature-done <ID>` | Runs `ff feature-done <ID>` (solo mode). For multi-agent, run `ff feature-done <ID> gg` manually. |
+| `/ff:research-create <name>` | Runs `ff research-create <name>`. |
+| `/ff:research-start <ID>` | Runs `ff research-start <ID>`. |
+| `/ff:help` | Shows all available Farline Flow commands. |
 
 
 ---
