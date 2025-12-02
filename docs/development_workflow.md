@@ -56,6 +56,7 @@ docs/specs/
 2. **Worktree Isolation**: All code changes happen in worktrees, not the main repo
 3. **Implementation Logs**: Document implementation decisions in `logs/` before completing
 4. **State-as-Location**: A task's status is determined by which folder it's in
+5. **Research-as-Document**: Unlike features which have separate logs, research findings are written directly into the research topic file itself.
 
 ## Before Completing a Feature
 

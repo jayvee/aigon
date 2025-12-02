@@ -5,15 +5,17 @@ prompt = """
 
 | Command | Description |
 |---------|-------------|
-| `/feature-create <name>` | Create a new feature spec |
-| `/feature-prioritise <name>` | Prioritize a feature draft |
-| `/feature-start <ID>` | Start feature and create branch/worktree |
-| `/feature-implement <ID>` | Switch to workspace and implement |
-| `/feature-eval <ID>` | Submit feature for evaluation |
-| `/feature-done <ID>` | Complete and merge feature |
-| `/research-create <name>` | Create a new research topic |
-| `/research-start <ID>` | Start a research topic |
-| `/research-done <ID>` | Complete a research topic |
+| `/ff:feature-create <name>` | Create a new feature spec |
+| `/ff:feature-prioritise <name>` | Prioritize a feature draft |
+| `/ff:feature-start <ID>` | Start feature and create branch/worktree |
+| `/ff:feature-implement <ID>` | Switch to workspace and implement |
+| `/ff:feature-eval <ID>` | Submit feature for evaluation |
+| `/ff:feature-done <ID>` | Complete and merge feature |
+| `/ff:research-create <name>` | Create a new research topic |
+| `/ff:research-prioritise <name>` | Prioritize a research topic |
+| `/ff:research-start <ID>` | Start a research topic |
+| `/ff:research-done <ID>` | Complete a research topic |
+| `/ff:help` | Show all available Farline Flow commands |
 
 Run `ff help` in terminal for full CLI reference.
 """
