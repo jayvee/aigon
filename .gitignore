@@ -2,6 +2,7 @@
 .claude/commands/
 .claude/skills/
 .gemini/
+.codex/
 AGENTS.md
 CLAUDE.md
 GEMINI.md

@@ -33,7 +33,7 @@ Commit your changes using conventional commits (`feat:`, `fix:`, `chore:`)
 
 ## Step 6: Update the log
 
-Update the implementation log in `./docs/specs/features/logs/`:
+Create or update the implementation log at `./docs/specs/features/logs/feature-{{args}}-log.md`:
 - Document key decisions made during implementation
 - Summarize the conversation between you and the user
 - Note any issues encountered and how they were resolved

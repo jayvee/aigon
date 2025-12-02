@@ -1,0 +1,17 @@
+# --- Farline Flow Configuration Start ---
+# See: https://developers.openai.com/codex/local-config/
+
+# Trust the ff CLI tool - allow it to run without approval prompts
+approval_policy = "untrusted"
+
+# Full access required for git branch operations (checkout, merge, etc.)
+sandbox_mode = "danger-full-access"
+
+[sandbox_workspace_write]
+# Allow network access for git operations (push, pull, fetch)
+network_access = true
+
+[_farlineFlow]
+note = "Configuration added by Farline Flow"
+tools = ["ff"]
+# --- Farline Flow Configuration End ---

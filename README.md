@@ -52,10 +52,10 @@ The architecture separates concerns into distinct, state-driven folders:
 
 ### 1. Research Lifecycle
 Used for exploring complex topics before writing code. Files transition within the `./docs/specs/research-topics` folder.
-* **Create:** `ff research-create "API Design"` creates a templated topic in `/inbox`.
-* **Prioritize:** `ff research-prioritise api-design` moves it to `/backlog` and assigns a global ID.
-* **Execute:** Agents read the file from `/in-progress` and write findings to `/logs`.
-* **Output:** Research results in one or more new Feature Specs in `features/inbox`.
+* **Create:** `ff research-create "API Design"` creates a templated topic in `/01-inbox`.
+* **Prioritize:** `ff research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
+* **Execute:** Agents read the file from `/03-in-progress` and write findings to `/logs`.
+* **Output:** Research results in one or more new Feature Specs in `features/01-inbox`.
 
 ### 2. Feature Lifecycle
 Used for shipping code based on a defined spec. Files transition within the `./docs/specs/features` folder.
@@ -64,12 +64,12 @@ Used for shipping code based on a defined spec. Files transition within the `./d
 2.  **Prioritize:** `ff feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
 3.  **Start:**
     * **Solo Mode:** `ff feature-start 108`
-        * Moves Spec to `/in-progress`.
+        * Moves Spec to `/03-in-progress`.
         * Creates a **Git Branch** (`feature-108-desc`).
         * **Auto-creates** a blank Analysis Log template.
         * Work directly in your current directory.
     * **Multi-Agent Mode:** `ff feature-start 108 cc`
-        * Moves Spec to `/in-progress`.
+        * Moves Spec to `/03-in-progress`.
         * Creates a **Git Branch** (`feature-108-cc-desc`).
         * Creates a **Git Worktree** (`../feature-108-cc-desc`).
         * **Auto-creates** a blank Analysis Log template.

@@ -191,7 +191,7 @@ const AGENT_CONFIGS = {
     cx: {
         id: 'cx',
         name: 'Codex',
-        rootFile: 'CODEX.md',
+        rootFile: null,  // Codex uses ~/.codex/prompt.md instead of a project root file
         agentFile: 'codex.md',
         templatePath: 'docs/agents/codex.md'
     }
@@ -583,11 +583,13 @@ const commands = {
                 const agentAction = upsertMarkedContent(agentDocPath, agentContent);
                 console.log(`✅ ${agentAction.charAt(0).toUpperCase() + agentAction.slice(1)}: docs/agents/${config.agentFile}`);
 
-                // Create/update root <AGENT>.md with markers
-                const rootFilePath = path.join(process.cwd(), config.rootFile);
-                const rootContent = getRootFileContent(config);
-                const action = upsertMarkedContent(rootFilePath, rootContent);
-                console.log(`✅ ${action.charAt(0).toUpperCase() + action.slice(1)}: ${config.rootFile}`);
+                // Create/update root <AGENT>.md with markers (if agent uses one)
+                if (config.rootFile) {
+                    const rootFilePath = path.join(process.cwd(), config.rootFile);
+                    const rootContent = getRootFileContent(config);
+                    const action = upsertMarkedContent(rootFilePath, rootContent);
+                    console.log(`✅ ${action.charAt(0).toUpperCase() + action.slice(1)}: ${config.rootFile}`);
+                }
 
                 // Agent-specific extras
                 if (agentKey === 'cc') {
@@ -703,11 +705,44 @@ system_prompt: |
                     console.log(`   ✅ Added 'ff' to .gemini/settings.json allowedTools`);
 
                 } else if (agentKey === 'cx') {
-                    // Codex: Copy AGENTS.md from template
-                    const agentsPath = path.join(process.cwd(), 'AGENTS.md');
-                    const codexContent = fs.readFileSync(path.join(TEMPLATES_ROOT, 'cx/AGENTS.md'), 'utf8');
-                    safeWrite(agentsPath, codexContent);
-                    console.log(`   ✅ Created: AGENTS.md (for Codex)`);
+                    // Codex: Copy prompt.md to .codex/prompt.md
+                    const promptPath = path.join(process.cwd(), '.codex', 'prompt.md');
+                    const promptContent = fs.readFileSync(path.join(TEMPLATES_ROOT, 'cx/prompt.md'), 'utf8');
+                    safeWrite(promptPath, promptContent);
+                    console.log(`   ✅ Created: .codex/prompt.md`);
+
+                    // Codex: Copy prompts to .codex/prompts/
+                    const promptsDir = path.join(process.cwd(), '.codex', 'prompts');
+                    if (!fs.existsSync(promptsDir)) {
+                        fs.mkdirSync(promptsDir, { recursive: true });
+                    }
+                    const promptsTemplateDir = path.join(TEMPLATES_ROOT, 'cx/prompts');
+                    const promptFiles = fs.readdirSync(promptsTemplateDir).filter(f => f.endsWith('.md'));
+                    promptFiles.forEach(file => {
+                        const content = fs.readFileSync(path.join(promptsTemplateDir, file), 'utf8');
+                        safeWrite(path.join(promptsDir, file), content);
+                    });
+                    console.log(`   ✅ Created: .codex/prompts/ff-*.md`);
+
+                    // Codex: Create/update .codex/config.toml with Farline Flow settings
+                    const configPath = path.join(process.cwd(), '.codex', 'config.toml');
+                    let configContent = '';
+                    if (fs.existsSync(configPath)) {
+                        configContent = fs.readFileSync(configPath, 'utf8');
+                    }
+                    // Check if Farline Flow config already exists
+                    if (!configContent.includes('[_farlineFlow]')) {
+                        // Append Farline Flow configuration
+                        const ffConfig = fs.readFileSync(path.join(TEMPLATES_ROOT, 'cx/config.toml'), 'utf8');
+                        if (configContent.length > 0 && !configContent.endsWith('\n')) {
+                            configContent += '\n';
+                        }
+                        configContent += '\n' + ffConfig;
+                        safeWrite(configPath, configContent);
+                        console.log(`   ✅ Created: .codex/config.toml`);
+                    } else {
+                        console.log(`   ℹ️  .codex/config.toml already has Farline Flow settings`);
+                    }
                 }
             });
 
@@ -725,19 +760,46 @@ system_prompt: |
             // 1. Detect installed agents by checking for root files
             const installedAgents = [];
             Object.entries(AGENT_CONFIGS).forEach(([key, config]) => {
-                const rootFilePath = path.join(process.cwd(), config.rootFile);
-                if (fs.existsSync(rootFilePath)) {
-                    installedAgents.push(key);
+                if (config.rootFile) {
+                    // Claude and Gemini: check for project root file
+                    const rootFilePath = path.join(process.cwd(), config.rootFile);
+                    if (fs.existsSync(rootFilePath)) {
+                        installedAgents.push(key);
+                    }
+                } else if (key === 'cx') {
+                    // Codex: check for .codex/prompt.md with Farline Flow content
+                    const promptPath = path.join(process.cwd(), '.codex', 'prompt.md');
+                    if (fs.existsSync(promptPath)) {
+                        const content = fs.readFileSync(promptPath, 'utf8');
+                        if (content.includes('Farline Flow')) {
+                            installedAgents.push(key);
+                        }
+                    }
                 }
             });
 
-            // 2. Update shared workflow documentation
+            // 2. Ensure spec folder structure exists (same as init)
+            const createDirs = (root, folders) => {
+                folders.forEach(f => {
+                    const p = path.join(root, f);
+                    if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+                });
+            };
+            createDirs(PATHS.research.root, PATHS.research.folders);
+            createDirs(PATHS.features.root, PATHS.features.folders);
+            const featLogs = path.join(PATHS.features.root, 'logs');
+            if (!fs.existsSync(path.join(featLogs, 'selected'))) fs.mkdirSync(path.join(featLogs, 'selected'), { recursive: true });
+            if (!fs.existsSync(path.join(featLogs, 'alternatives'))) fs.mkdirSync(path.join(featLogs, 'alternatives'), { recursive: true });
+            if (!fs.existsSync(path.join(PATHS.features.root, 'evaluations'))) fs.mkdirSync(path.join(PATHS.features.root, 'evaluations'), { recursive: true });
+            console.log(`✅ Verified: docs/specs directory structure`);
+
+            // 3. Update shared workflow documentation
             const workflowPath = path.join(process.cwd(), 'docs', 'development_workflow.md');
             const workflowContent = readTemplate('docs/development_workflow.md');
             safeWrite(workflowPath, workflowContent);
             console.log(`✅ Updated: docs/development_workflow.md`);
 
-            // 3. Install/update spec templates
+            // 4. Install/update spec templates
             const specsTemplatesDir = path.join(process.cwd(), 'docs', 'specs', 'templates');
             if (!fs.existsSync(specsTemplatesDir)) {
                 fs.mkdirSync(specsTemplatesDir, { recursive: true });
@@ -751,7 +813,7 @@ system_prompt: |
             safeWrite(path.join(specsTemplatesDir, 'research-template.md'), researchTemplate);
             console.log(`✅ Updated: docs/specs/templates/research-template.md`);
 
-            // 4. Re-run install-agent for detected agents
+            // 5. Re-run install-agent for detected agents
             if (installedAgents.length > 0) {
                 console.log(`\n📦 Re-installing agents: ${installedAgents.join(', ')}`);
                 commands['install-agent'](installedAgents);

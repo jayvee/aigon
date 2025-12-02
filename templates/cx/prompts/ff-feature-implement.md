@@ -1,19 +1,22 @@
-name = "feature-implement"
-description = "Implement feature <ID> - switch context and code"
-prompt = """
-Run this command followed by the Feature ID. Example: /feature-implement 55
+---
+description: Implement feature <ID> - switch context and code
+args: feature_id
+---
+# ff-feature-implement
+
+Run this command followed by the Feature ID. Example: `/prompts:ff-feature-implement 55`
 
 ## Step 1: Find your workspace
 
-- Check if a worktree exists: look for `../feature-{{args}}-gg-*` directory
+- Check if a worktree exists: look for `../feature-$1-cx-*` directory
   - If worktree exists: `cd` to that directory (multi-agent mode)
 - If no worktree: run `git branch --show-current` to check your branch
-  - If on `feature-{{args}}-*`: you're in solo mode, work in current directory
-  - If not on feature branch: run `ff feature-start {{args}}` first (this is required!)
+  - If on `feature-$1-*`: you're in solo mode, work in current directory
+  - If not on feature branch: run `ff feature-start $ARGUMENTS` first (this is required!)
 
 ## Step 2: Read the spec
 
-Read the spec in `./docs/specs/features/03-in-progress/feature-{{args}}-*.md`
+Read the spec in `./docs/specs/features/03-in-progress/feature-$1-*.md`
 
 ## Step 3: Implement
 
@@ -31,19 +34,18 @@ Commit your changes using conventional commits (`feat:`, `fix:`, `chore:`)
 
 ## Step 6: Update the log
 
-Create or update the implementation log at `./docs/specs/features/logs/feature-{{args}}-log.md`:
+Create or update the implementation log at `./docs/specs/features/logs/feature-$1-log.md`:
 - Document key decisions made during implementation
 - Summarize the conversation between you and the user
 - Note any issues encountered and how they were resolved
 
 ## Step 7: Complete
 
-IMPORTANT: Run the CLI command to complete the feature:
+Run the CLI command to complete the feature:
 
-- **Solo mode**: `ff feature-done {{args}}`
-- **Multi-agent mode**: `ff feature-done {{args}} gg`
+- **Solo mode**: `ff feature-done $ARGUMENTS`
+- **Multi-agent mode**: `ff feature-done $ARGUMENTS cx`
 
 ## VS Code Users
 
-To open a worktree in VS Code, run: `code ../feature-{{args}}-gg-*`
-"""
+To open a worktree in VS Code, run: `code ../feature-$1-cx-*`
