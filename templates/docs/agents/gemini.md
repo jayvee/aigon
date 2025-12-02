@@ -10,14 +10,15 @@
 
 | Command | Description |
 |---------|-------------|
-| `/feature-create <name>` | Create a new feature spec |
-| `/feature-prioritise <name>` | Prioritize a feature draft |
-| `/feature-start <ID>` | Start a feature and create worktree |
-| `/feature-implement <ID>` | Switch to worktree and implement |
-| `/feature-eval <ID>` | Submit feature for evaluation |
-| `/feature-done <ID>` | Complete and merge feature |
-| `/research-create <name>` | Create a new research topic |
-| `/research-start <ID>` | Start a research topic |
+| `/ff:feature-create <name>` | Create a new feature spec |
+| `/ff:feature-prioritise <name>` | Prioritize a feature draft |
+| `/ff:feature-start <ID>` | Start a feature (solo mode) |
+| `/ff:feature-implement <ID>` | Switch to worktree and implement |
+| `/ff:feature-eval <ID>` | Submit feature for evaluation |
+| `/ff:feature-done <ID>` | Complete and merge feature |
+| `/ff:research-create <name>` | Create a new research topic |
+| `/ff:research-start <ID>` | Start a research topic |
+| `/ff:help` | Show all Farline Flow commands |
 
 ## Modes
 
