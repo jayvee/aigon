@@ -1,0 +1,17 @@
+---
+description: Show Farline Flow commands
+---
+# Farline Flow Commands
+
+| Command | Description |
+|---------|-------------|
+| `/ff-feature-create <name>` | Create a new feature spec |
+| `/ff-feature-prioritise <name>` | Prioritize a feature draft |
+| `/ff-feature-start <ID>` | Start feature and create branch/worktree |
+| `/ff-feature-implement <ID>` | Switch to workspace and implement |
+| `/ff-feature-eval <ID>` | Submit feature for evaluation |
+| `/ff-feature-done <ID>` | Complete and merge feature |
+| `/ff-research-create <name>` | Create a new research topic |
+| `/ff-research-start <ID>` | Start a research topic |
+
+Run `ff help` in terminal for full CLI reference.

@@ -1,6 +1,8 @@
-name = "feature-done"
-description = "Complete feature <ID> [gg] - merges branch and cleans up"
-prompt = """
+---
+description: Complete feature <ID> [cc] - merges branch and cleans up
+---
+# ff-feature-done
+
 Run this command followed by the Feature ID.
 
 ## Modes
@@ -10,9 +12,9 @@ Run this command followed by the Feature ID.
 ff feature-done {{args}}
 ```
 
-**Multi-agent mode** - if you used `ff feature-start {{args}} gg`:
+**Multi-agent mode** - if you used `ff feature-start {{args}} cc`:
 ```bash
-ff feature-done {{args}} gg
+ff feature-done {{args}} cc
 ```
 
 ## What happens
@@ -21,4 +23,3 @@ ff feature-done {{args}} gg
 - Merges the feature branch to main
 - Moves implementation log to `logs/selected/`
 - (Multi-agent only) Removes the worktree and moves other agent logs to `logs/alternatives/`
-"""

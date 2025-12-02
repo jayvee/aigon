@@ -1,17 +1,17 @@
 ---
-description: Implement feature <ID> - switch context and code
+description: Start feature <ID> - solo mode (branch), then implement
 ---
-# ff-feature-implement
+# ff-feature-start
 
-Run this command followed by the Feature ID. Example: `/ff-feature-implement 55`
+Start a feature in **solo mode** and begin implementation.
 
-## Step 1: Find your workspace
+## Step 1: Run the CLI command
 
-- Check if a worktree exists: look for `../feature-{{args}}-cc-*` directory
-  - If worktree exists: `cd` to that directory (multi-agent mode)
-- If no worktree: run `git branch --show-current` to check your branch
-  - If on `feature-{{args}}-*`: you're in solo mode, work in current directory
-  - If not on feature branch: run `ff feature-start {{args}}` first (this is required!)
+IMPORTANT: You MUST run this command first. This moves the spec file from backlog to in-progress and creates the git branch.
+
+```bash
+ff feature-start {{args}}
+```
 
 ## Step 2: Read the spec
 
@@ -42,9 +42,14 @@ Update the implementation log in `./docs/specs/features/logs/`:
 
 Run the CLI command to complete the feature:
 
-- **Solo mode**: `ff feature-done {{args}}`
-- **Multi-agent mode**: `ff feature-done {{args}} cc`
+```bash
+ff feature-done {{args}}
+```
 
-## VS Code Users
+---
 
-To open a worktree in VS Code, run: `code ../feature-{{args}}-cc-*`
+**Note:** For multi-agent mode (bake-offs with worktrees), run manually:
+```
+ff feature-start {{args}} cc
+```
+Then use `/ff-implement {{args}}` to switch context.

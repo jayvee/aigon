@@ -1,13 +1,11 @@
----
-description: Implement feature <ID> - switch context and code
----
-# ff-feature-implement
-
-Run this command followed by the Feature ID. Example: `/ff-feature-implement 55`
+name = "feature-implement"
+description = "Implement feature <ID> - switch context and code"
+prompt = """
+Run this command followed by the Feature ID. Example: /feature-implement 55
 
 ## Step 1: Find your workspace
 
-- Check if a worktree exists: look for `../feature-{{args}}-cc-*` directory
+- Check if a worktree exists: look for `../feature-{{args}}-gg-*` directory
   - If worktree exists: `cd` to that directory (multi-agent mode)
 - If no worktree: run `git branch --show-current` to check your branch
   - If on `feature-{{args}}-*`: you're in solo mode, work in current directory
@@ -40,11 +38,12 @@ Update the implementation log in `./docs/specs/features/logs/`:
 
 ## Step 7: Complete
 
-Run the CLI command to complete the feature:
+IMPORTANT: Run the CLI command to complete the feature:
 
 - **Solo mode**: `ff feature-done {{args}}`
-- **Multi-agent mode**: `ff feature-done {{args}} cc`
+- **Multi-agent mode**: `ff feature-done {{args}} gg`
 
 ## VS Code Users
 
-To open a worktree in VS Code, run: `code ../feature-{{args}}-cc-*`
+To open a worktree in VS Code, run: `code ../feature-{{args}}-gg-*`
+"""
