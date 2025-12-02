@@ -446,6 +446,15 @@ const commands = {
             return;
         }
 
+        // Push branch to origin before merging (to save work remotely)
+        try {
+            runGit(`git push -u origin ${branchName}`);
+            console.log(`📤 Pushed branch to origin: ${branchName}`);
+        } catch (e) {
+            // Push failed - warn but continue (remote might not exist or branch already pushed)
+            console.warn(`⚠️  Could not push to origin (continuing anyway): ${e.message || 'push failed'}`);
+        }
+
         // Detect default branch (main or master)
         let defaultBranch;
         try {

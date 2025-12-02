@@ -5,11 +5,7 @@ Complete a feature by merging and cleaning up.
 
 ## Before running this command
 
-1. **Push the branch to origin** to save your work remotely:
-   ```bash
-   git push -u origin <current-branch-name>
-   ```
-2. **Ask the user**: "Do you want to delete the local branch after merge?" (the CLI will delete it by default)
+**Ask the user**: "Do you want to delete the local branch after merge?" (the CLI will delete it by default)
 
 ## Run the command
 
@@ -25,6 +21,7 @@ ff feature-done {{args}} gg
 
 ## What happens
 
+- **Pushes the feature branch to origin** (to save work remotely)
 - Switches to main/master branch
 - Merges the feature branch
 - Moves spec to `05-done/`
