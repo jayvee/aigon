@@ -54,8 +54,8 @@ The architecture separates concerns into distinct, state-driven folders:
 Used for exploring complex topics before writing code. Files transition within the `./docs/specs/research-topics` folder.
 * **Create:** `ff research-create "API Design"` creates a templated topic in `/01-inbox`.
 * **Prioritize:** `ff research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
-* **Execute:** Agents read the file from `/03-in-progress` and write findings to `/logs`.
-* **Output:** Research results in one or more new Feature Specs in `features/01-inbox`.
+*   **Execute:** Agents read the file from `/03-in-progress`, write their findings and recommendations directly into the document, and create new feature specs.
+*   **Output:** The research file becomes a complete record, and its primary output is one or more new Feature Specs in `features/01-inbox`.
 
 ### 2. Feature Lifecycle
 Used for shipping code based on a defined spec. Files transition within the `./docs/specs/features` folder.
@@ -214,7 +214,9 @@ When you run `ff install-agent cc`, it installs special slash commands for Claud
 | `/ff-feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional, for multi-agent review). |
 | `/ff-feature-done <ID>` | Runs `ff feature-done <ID>` (solo mode). For multi-agent, run `ff feature-done <ID> cc` manually. |
 | `/ff-research-create <name>` | Runs `ff research-create <name>`. |
+| `/ff-research-prioritise <name>` | Runs `ff research-prioritise <name>`. |
 | `/ff-research-start <ID>` | Runs `ff research-start <ID>`. |
+| `/ff-research-done <ID>` | Runs `ff research-done <ID>`. |
 | `/ff-help` | Shows all available Farline Flow commands. |
 
 ### Gemini
@@ -229,8 +231,27 @@ When you run `ff install-agent gg`, it installs special slash commands for Gemin
 | `/ff:feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional, for multi-agent review). |
 | `/ff:feature-done <ID>` | Runs `ff feature-done <ID>` (solo mode). For multi-agent, run `ff feature-done <ID> gg` manually. |
 | `/ff:research-create <name>` | Runs `ff research-create <name>`. |
+| `/ff:research-prioritise <name>` | Runs `ff research-prioritise <name>`. |
 | `/ff:research-start <ID>` | Runs `ff research-start <ID>`. |
+| `/ff:research-done <ID>` | Runs `ff research-done <ID>`. |
 | `/ff:help` | Shows all available Farline Flow commands. |
+
+### Codex
+When you run `ff install-agent cx`, it installs special slash commands for Codex to make the workflow seamless.
+
+| Slash Command | Description |
+| :--- | :--- |
+| `/prompts:ff-feature-create <name>` | Runs `ff feature-create <name>`. |
+| `/prompts:ff-feature-prioritise <name>` | Runs `ff feature-prioritise <name>`. |
+| `/prompts:ff-feature-start <ID>` | Runs `ff feature-start <ID>` (solo mode, branch only). For multi-agent, run `ff feature-start <ID> cx` manually. |
+| `/prompts:ff-feature-implement <ID>` | **Context Switcher.** Detects solo/multi-agent mode, navigates to workspace, and guides implementation. |
+| `/prompts:ff-feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional, for multi-agent review). |
+| `/prompts:ff-feature-done <ID>` | Runs `ff feature-done <ID>` (solo mode). For multi-agent, run `ff feature-done <ID> cx` manually. |
+| `/prompts:ff-research-create <name>` | Runs `ff research-create <name>`. |
+| `/prompts:ff-research-prioritise <name>` | Runs `ff research-prioritise <name>`. |
+| `/prompts:ff-research-start <ID>` | Runs `ff research-start <ID>`. |
+| `/prompts:ff-research-done <ID>` | Runs `ff research-done <ID>`. |
+| `/prompts:ff-help` | Shows all available Farline Flow commands. |
 
 
 ---
