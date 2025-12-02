@@ -3,13 +3,18 @@
 ## Summary
 <!-- One paragraph describing what this feature does and why -->
 
+## User Stories
+<!-- Specific, stories describing what the user is trying to acheive -->
+- [ ]
+- [ ]
+
 ## Acceptance Criteria
 <!-- Specific, testable criteria that define "done" -->
 - [ ]
 - [ ]
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints -->
+<!-- High-level approach, key decisions, constraints, non-functional requirements -->
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites -->
