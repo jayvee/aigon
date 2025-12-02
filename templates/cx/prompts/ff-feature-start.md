@@ -1,5 +1,6 @@
 ---
 description: Start feature <ID> - solo mode (branch), then implement
+args: feature_id
 ---
 # ff-feature-start
 
@@ -10,12 +11,12 @@ Start a feature in **solo mode** and begin implementation.
 IMPORTANT: You MUST run this command first. This moves the spec file from backlog to in-progress and creates the git branch.
 
 ```bash
-ff feature-start {{args}}
+ff feature-start $ARGUMENTS
 ```
 
 ## Step 2: Read the spec
 
-Read the spec in `./docs/specs/features/03-in-progress/feature-{{args}}-*.md`
+Read the spec in `./docs/specs/features/03-in-progress/feature-$1-*.md`
 
 ## Step 3: Implement
 
@@ -33,7 +34,7 @@ Commit your changes using conventional commits (`feat:`, `fix:`, `chore:`)
 
 ## Step 6: Update the log
 
-Create or update the implementation log at `./docs/specs/features/logs/feature-{{args}}-log.md`:
+Create or update the implementation log at `./docs/specs/features/logs/feature-$1-log.md`:
 - Document key decisions made during implementation
 - Summarize the conversation between you and the user
 - Note any issues encountered and how they were resolved
@@ -43,13 +44,13 @@ Create or update the implementation log at `./docs/specs/features/logs/feature-{
 Run the CLI command to complete the feature:
 
 ```bash
-ff feature-done {{args}}
+ff feature-done $ARGUMENTS
 ```
 
 ---
 
 **Note:** For multi-agent mode (bake-offs with worktrees), run manually:
 ```
-ff feature-start {{args}} cc
+ff feature-start $ARGUMENTS cx
 ```
-Then use `/ff-implement {{args}}` to switch context.
+Then use `/prompts:ff-feature-implement $ARGUMENTS` to switch context.
