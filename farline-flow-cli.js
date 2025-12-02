@@ -256,7 +256,7 @@ const commands = {
 
         fs.writeFileSync(filePath, content);
         console.log(`✅ Created: ./docs/specs/features/01-inbox/${filename}`);
-        console.log(`📝 Edit the spec, then run: ff feature-prioritise ${slug}`);
+        console.log(`📝 Edit the spec, then prioritise it using command: feature-prioritise ${slug}`);
     },
     'research-create': (args) => {
         const name = args[0];
@@ -283,7 +283,7 @@ const commands = {
 
         fs.writeFileSync(filePath, content);
         console.log(`✅ Created: ./docs/specs/research-topics/01-inbox/${filename}`);
-        console.log(`📝 Edit the topic, then run: ff research-prioritise ${slug}`);
+        console.log(`📝 Edit the topic, then prioritise it using command: research-prioritise ${slug}`);
     },
     'research-prioritise': (args) => {
         const name = args[0];
@@ -328,9 +328,9 @@ const commands = {
         );
         moveFile(found, '02-backlog', newName);
         console.log(`📋 Assigned ID: ${paddedId}`);
-        console.log(`🚀 Next:`);
-        console.log(`   ff feature-start ${paddedId}          # Solo mode (branch)`);
-        console.log(`   ff feature-start ${paddedId} <agent>  # Multi-agent mode (worktree)`);
+        console.log(`🚀 Next: feature-start ${paddedId}`);
+        console.log(`   Solo mode: feature-start ${paddedId}`);
+        console.log(`   Multi-agent: feature-start ${paddedId} <agent>`);
     },
     'feature-start': (args) => {
         const name = args[0];
@@ -372,9 +372,8 @@ const commands = {
                 fs.writeFileSync(logPath, template);
                 console.log(`📝 Log: ./docs/specs/features/logs/${logName}`);
             }
-            console.log(`\n🚀 Multi-agent mode. Next steps:`);
-            console.log(`   cd ${worktreePath}`);
-            console.log(`   # Or in VS Code: code ${worktreePath}`);
+            console.log(`\n🚀 Multi-agent mode. Next: Open the worktree and implement`);
+            console.log(`   Worktree path: ${worktreePath}`);
         } else {
             // Solo mode: branch only (default)
             const branchName = `feature-${num}-${desc}`;
@@ -400,7 +399,7 @@ const commands = {
                 console.log(`📝 Log: ./docs/specs/features/logs/${logName}`);
             }
             console.log(`\n🚀 Solo mode. Ready to implement in current directory.`);
-            console.log(`   When done: ff feature-done ${num}`);
+            console.log(`   When done: feature-done ${num}`);
         }
     },
     'feature-eval': (args) => {
@@ -444,6 +443,30 @@ const commands = {
             console.error(`❌ Branch not found: ${branchName}`);
             console.error(`   Did you mean: ff feature-done ${num}${agentId ? '' : ' <agent>'}?`);
             console.error(`   Looking for: ${altBranch}`);
+            return;
+        }
+
+        // Detect default branch (main or master)
+        let defaultBranch;
+        try {
+            // Try to get the default branch from remote
+            defaultBranch = execSync('git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null || echo refs/heads/main', { encoding: 'utf8' }).trim().replace('refs/remotes/origin/', '').replace('refs/heads/', '');
+        } catch (e) {
+            defaultBranch = 'main';
+        }
+        // Fallback: check if main exists, otherwise use master
+        try {
+            execSync(`git rev-parse --verify ${defaultBranch}`, { encoding: 'utf8', stdio: 'pipe' });
+        } catch (e) {
+            defaultBranch = 'master';
+        }
+
+        // Switch to default branch before merging
+        try {
+            runGit(`git checkout ${defaultBranch}`);
+            console.log(`🌿 Switched to ${defaultBranch}`);
+        } catch (e) {
+            console.error(`❌ Failed to switch to ${defaultBranch}. Are you in the main repository?`);
             return;
         }
 
