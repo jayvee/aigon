@@ -57,6 +57,16 @@ docs/specs/
 3. **Implementation Logs**: Document implementation decisions in `logs/` before completing
 4. **State-as-Location**: A task's status is determined by which folder it's in
 
+## Before Completing a Feature
+
+Before running `feature-done`, always:
+
+1. **Push the branch to origin** to save your work remotely:
+   ```bash
+   git push -u origin <branch-name>
+   ```
+2. **Ask the user** if they want to delete the local branch after merge (the CLI will handle the merge and cleanup)
+
 ## Multi-Agent Bake-offs
 
 Multiple agents can compete on the same feature:

@@ -31,4 +31,14 @@
 2. **Work in isolation**: Solo mode uses branches, multi-agent mode uses worktrees
 3. **Conventional commits**: Use `feat:`, `fix:`, `chore:` prefixes
 4. **Complete properly**: Use `/ff-feature-done` for solo, `/ff-feature-done <ID> cc` for multi-agent
+
+## Before Completing a Feature
+
+Before running `feature-done`, always:
+
+1. **Push the branch to origin** to save your work remotely:
+   ```bash
+   git push -u origin <current-branch-name>
+   ```
+2. **Ask the user** if they want to delete the local branch after merge (the CLI will delete it by default)
 <!-- FARLINE_FLOW_END -->
