@@ -1,0 +1,50 @@
+{
+  "id": "cx",
+  "name": "Codex",
+  "aliases": ["codex", "cx"],
+
+  "placeholders": {
+    "AGENT_ID": "cx",
+    "AGENT_NAME": "Codex",
+    "ARG_SYNTAX": "$ARGUMENTS",
+    "ARG1_SYNTAX": "$1",
+    "CMD_PREFIX": "/prompts:ff-"
+  },
+
+  "output": {
+    "format": "markdown",
+    "commandDir": ".codex/prompts",
+    "commandFilePrefix": "ff-",
+    "commandFileExtension": ".md",
+    "frontmatter": ["description", "args"]
+  },
+
+  "rootFile": null,
+  "agentFile": "codex.md",
+  "templatePath": "docs/agents/codex.md",
+
+  "extras": {
+    "prompt": {
+      "enabled": true,
+      "path": ".codex/prompt.md"
+    },
+    "config": {
+      "enabled": true,
+      "path": ".codex/config.toml"
+    }
+  },
+
+  "commands": [
+    "feature-create",
+    "feature-prioritise",
+    "feature-start",
+    "feature-implement",
+    "feature-eval",
+    "feature-done",
+    "research-create",
+    "research-prioritise",
+    "research-start",
+    "research-done",
+    "help"
+  ]
+}

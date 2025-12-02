@@ -171,7 +171,100 @@ function readTemplate(relativePath) {
     return fs.readFileSync(templatePath, 'utf8');
 }
 
-// --- Agent Configuration ---
+// --- Generic Template System ---
+
+// Load agent config from templates/agents/<id>.json
+function loadAgentConfig(agentId) {
+    const configPath = path.join(TEMPLATES_ROOT, 'agents', `${agentId}.json`);
+    if (!fs.existsSync(configPath)) {
+        return null;
+    }
+    return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+}
+
+// Get list of all available agents by scanning templates/agents/
+function getAvailableAgents() {
+    const agentsDir = path.join(TEMPLATES_ROOT, 'agents');
+    if (!fs.existsSync(agentsDir)) return [];
+    return fs.readdirSync(agentsDir)
+        .filter(f => f.endsWith('.json'))
+        .map(f => f.replace('.json', ''));
+}
+
+// Build alias map dynamically from all agent configs
+function buildAgentAliasMap() {
+    const aliasMap = {};
+    getAvailableAgents().forEach(agentId => {
+        const config = loadAgentConfig(agentId);
+        if (config && config.aliases) {
+            config.aliases.forEach(alias => {
+                aliasMap[alias.toLowerCase()] = agentId;
+            });
+        }
+    });
+    return aliasMap;
+}
+
+// Replace placeholders in template content
+function processTemplate(content, placeholders) {
+    let result = content;
+    Object.entries(placeholders).forEach(([key, value]) => {
+        // Match {{KEY}} pattern (our placeholder syntax)
+        const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+        result = result.replace(regex, value);
+    });
+    return result;
+}
+
+// Read generic template and process with agent config
+function readGenericTemplate(templateName, agentConfig) {
+    const templatePath = path.join(TEMPLATES_ROOT, 'generic', templateName);
+    if (!fs.existsSync(templatePath)) {
+        throw new Error(`Generic template not found: ${templateName}`);
+    }
+    const content = fs.readFileSync(templatePath, 'utf8');
+    return processTemplate(content, agentConfig.placeholders);
+}
+
+// Extract description from template's HTML comment
+function extractDescription(content) {
+    const match = content.match(/<!--\s*description:\s*(.+?)\s*-->/);
+    return match ? match[1].trim() : '';
+}
+
+// Format command output based on agent's output format
+function formatCommandOutput(content, description, commandName, agentConfig) {
+    const output = agentConfig.output;
+
+    // Remove the description comment from the content
+    const cleanContent = content.replace(/<!--\s*description:.*?-->\n?/, '');
+
+    if (output.format === 'markdown') {
+        // Generate frontmatter
+        const frontmatterFields = output.frontmatter || ['description'];
+        const frontmatterLines = [];
+        if (frontmatterFields.includes('description')) {
+            frontmatterLines.push(`description: ${description}`);
+        }
+        if (frontmatterFields.includes('args')) {
+            // For codex, add args hint
+            frontmatterLines.push('args: feature_id');
+        }
+        return `---\n${frontmatterLines.join('\n')}\n---\n${cleanContent}`;
+    }
+    else if (output.format === 'toml') {
+        return `name = "${commandName}"
+description = "${description}"
+prompt = """
+${cleanContent.trim()}
+"""
+`;
+    }
+
+    return cleanContent;
+}
+
+// --- Agent Configuration (Legacy - for backwards compatibility) ---
 
 const AGENT_CONFIGS = {
     cc: {
@@ -553,20 +646,20 @@ const commands = {
         } catch (e) { console.error("❌ Error reading git worktrees."); }
     },
     'install-agent': (args) => {
+        // Use new config-driven approach
+        const availableAgents = getAvailableAgents();
+
         if (args.length === 0) {
-            return console.error("Usage: ff install-agent <cc|gg|cx> [cc|gg|cx] ...\nExample: ff install-agent cc gg");
+            const agentList = availableAgents.join('|');
+            return console.error(`Usage: ff install-agent <${agentList}> [${agentList}] ...\nExample: ff install-agent cc gg`);
         }
 
-        // Normalize agent aliases
-        const agentMap = {
-            'cc': 'cc', 'claude': 'cc',
-            'gg': 'gg', 'gemini': 'gg',
-            'cx': 'cx', 'codex': 'cx'
-        };
+        // Build alias map dynamically from agent configs
+        const agentMap = buildAgentAliasMap();
 
         const agents = args.map(a => agentMap[a.toLowerCase()]).filter(Boolean);
         if (agents.length === 0) {
-            return console.error("❌ No valid agents specified. Use: cc, gg, or cx");
+            return console.error(`❌ No valid agents specified. Available: ${availableAgents.join(', ')}`);
         }
 
         const uniqueAgents = [...new Set(agents)];
@@ -578,10 +671,15 @@ const commands = {
             safeWrite(workflowPath, workflowContent);
             console.log(`✅ Created: docs/development_workflow.md`);
 
-            // 2. Install each agent
+            // 2. Install each agent using its config
             uniqueAgents.forEach(agentKey => {
-                const config = AGENT_CONFIGS[agentKey];
-                if (!config) return;
+                const config = loadAgentConfig(agentKey);
+                if (!config) {
+                    console.warn(`⚠️  No config found for agent: ${agentKey}`);
+                    return;
+                }
+
+                console.log(`\n📦 Installing ${config.name} (${config.id})...`);
 
                 // Create/update docs/agents/<agent>.md from template (preserves user additions)
                 const agentDocPath = path.join(process.cwd(), 'docs', 'agents', config.agentFile);
@@ -590,172 +688,135 @@ const commands = {
                 const markerContentMatch = agentTemplateContent.match(new RegExp(`${MARKER_START}\\n([\\s\\S]*?)\\n${MARKER_END}`));
                 const agentContent = markerContentMatch ? markerContentMatch[1] : agentTemplateContent;
                 const agentAction = upsertMarkedContent(agentDocPath, agentContent);
-                console.log(`✅ ${agentAction.charAt(0).toUpperCase() + agentAction.slice(1)}: docs/agents/${config.agentFile}`);
+                console.log(`   ✅ ${agentAction.charAt(0).toUpperCase() + agentAction.slice(1)}: docs/agents/${config.agentFile}`);
 
                 // Create/update root <AGENT>.md with markers (if agent uses one)
                 if (config.rootFile) {
                     const rootFilePath = path.join(process.cwd(), config.rootFile);
-                    const rootContent = getRootFileContent(config);
+                    // Use legacy config for getRootFileContent compatibility
+                    const legacyConfig = AGENT_CONFIGS[agentKey] || config;
+                    const rootContent = getRootFileContent(legacyConfig);
                     const action = upsertMarkedContent(rootFilePath, rootContent);
-                    console.log(`✅ ${action.charAt(0).toUpperCase() + action.slice(1)}: ${config.rootFile}`);
+                    console.log(`   ✅ ${action.charAt(0).toUpperCase() + action.slice(1)}: ${config.rootFile}`);
                 }
 
-                // Agent-specific extras
-                if (agentKey === 'cc') {
-                    // Claude: Create skill and slash commands
-                    const skillContent = `name: farline-flow
-description: Farline Flow workflow.
-tools:
-  - name: ff_prioritise
-    description: Prioritise a feature draft from inbox to backlog
-    command: ff feature-prioritise {{id}}
-  - name: ff_research_start
-    description: Start a research topic
-    command: ff research-start {{id}}
-  - name: ff_research_done
-    description: Complete a research topic
-    command: ff research-done {{id}}
-  - name: ff_feature_start
-    description: Start a feature and create worktree
-    command: ff feature-start {{id}} cc
-  - name: ff_feature_eval
-    description: Move a feature to evaluation
-    command: ff feature-eval {{id}}
-  - name: ff_feature_done
-    description: Complete a feature and merge
-    command: ff feature-done {{id}} cc
-system_prompt: |
-  You are the Farline Flow Manager (ID: cc).
-  Read docs/development_workflow.md for the full workflow.
-  Read docs/agents/claude.md for Claude-specific configuration.
-`;
-                    safeWrite(path.join(process.cwd(), '.claude/skills/farline-flow/SKILL.md'), skillContent);
-                    console.log(`   ✅ Created: .claude/skills/farline-flow/SKILL.md`);
+                // Generate and install commands from generic templates
+                const cmdDir = path.join(process.cwd(), config.output.commandDir);
+                config.commands.forEach(cmdName => {
+                    // Read generic template and process placeholders
+                    const genericContent = readGenericTemplate(`commands/${cmdName}.md`, config);
+                    const description = extractDescription(genericContent);
 
-                    // Claude: Copy command files from templates
-                    const cmdBase = path.join(process.cwd(), '.claude/commands');
-                    const cmdTemplateDir = path.join(TEMPLATES_ROOT, 'cc/commands');
-                    const cmdTemplateFiles = fs.readdirSync(cmdTemplateDir).filter(f => f.endsWith('.md'));
-                    cmdTemplateFiles.forEach(file => {
-                        const content = fs.readFileSync(path.join(cmdTemplateDir, file), 'utf8');
-                        safeWrite(path.join(cmdBase, file), content);
-                    });
-                    console.log(`   ✅ Created: .claude/commands/ff-*.md`);
+                    // Format output based on agent's output format
+                    const outputContent = formatCommandOutput(genericContent, description, cmdName, config);
 
-                    // Claude: Add 'Bash(ff:*)' to permissions.allow in settings.json
-                    const settingsPath = path.join(process.cwd(), '.claude', 'settings.json');
+                    // Write to agent's command directory
+                    const fileName = `${config.output.commandFilePrefix}${cmdName}${config.output.commandFileExtension}`;
+                    safeWrite(path.join(cmdDir, fileName), outputContent);
+                });
+                console.log(`   ✅ Created: ${config.output.commandDir}/*`);
+
+                // Process extras (skill, settings, prompt, config)
+                const extras = config.extras || {};
+
+                // Claude: SKILL.md
+                if (extras.skill && extras.skill.enabled) {
+                    // Add AGENT_FILE placeholder for skill template
+                    const skillPlaceholders = { ...config.placeholders, AGENT_FILE: config.agentFile.replace('.md', '') };
+                    const skillContent = processTemplate(readTemplate('generic/skill.md'), skillPlaceholders);
+                    safeWrite(path.join(process.cwd(), extras.skill.path), skillContent);
+                    console.log(`   ✅ Created: ${extras.skill.path}`);
+                }
+
+                // Settings files (Claude permissions, Gemini allowedTools)
+                if (extras.settings && extras.settings.enabled) {
+                    const settingsPath = path.join(process.cwd(), extras.settings.path);
                     let settings = {};
                     if (fs.existsSync(settingsPath)) {
                         try {
                             settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
                         } catch (e) {
-                            console.warn(`   ⚠️  Could not parse existing .claude/settings.json, creating new one`);
+                            console.warn(`   ⚠️  Could not parse existing ${extras.settings.path}, creating new one`);
                         }
                     }
-                    // Ensure permissions object and allow array exist
-                    if (!settings.permissions) {
-                        settings.permissions = {};
-                    }
-                    if (!settings.permissions.allow) {
-                        settings.permissions.allow = [];
-                    }
-                    // Add 'Bash(ff:*)' if not already present
-                    const ffPermission = 'Bash(ff:*)';
-                    if (!settings.permissions.allow.includes(ffPermission)) {
-                        settings.permissions.allow.push(ffPermission);
-                    }
-                    // Add a comment field to indicate Farline Flow permissions
-                    if (!settings._farlineFlow) {
-                        settings._farlineFlow = {
-                            note: 'Permissions added by Farline Flow',
-                            permissions: [ffPermission]
-                        };
-                    }
-                    safeWrite(settingsPath, JSON.stringify(settings, null, 2));
-                    console.log(`   ✅ Added 'Bash(ff:*)' to .claude/settings.json permissions.allow`);
 
-                } else if (agentKey === 'gg') {
-                    // Gemini: Copy command files from templates
-                    // Folder name becomes the prefix, so 'ff' gives /ff:feature-start
-                    const cmdBase = path.join(process.cwd(), '.gemini/commands/ff');
-                    const templateDir = path.join(TEMPLATES_ROOT, 'gg');
-                    const templateFiles = fs.readdirSync(templateDir).filter(f => f.endsWith('.toml'));
-                    templateFiles.forEach(file => {
-                        const content = fs.readFileSync(path.join(templateDir, file), 'utf8');
-                        safeWrite(path.join(cmdBase, file), content);
-                    });
-                    console.log(`   ✅ Created: .gemini/commands/ff/*.toml`);
-
-                    // Gemini: Add 'ff' to allowedTools in settings.json
-                    const settingsPath = path.join(process.cwd(), '.gemini', 'settings.json');
-                    let settings = {};
-                    if (fs.existsSync(settingsPath)) {
-                        try {
-                            settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-                        } catch (e) {
-                            console.warn(`   ⚠️  Could not parse existing .gemini/settings.json, creating new one`);
+                    // Add permissions (Claude)
+                    if (extras.settings.permissions) {
+                        if (!settings.permissions) settings.permissions = {};
+                        if (!settings.permissions.allow) settings.permissions.allow = [];
+                        extras.settings.permissions.forEach(perm => {
+                            if (!settings.permissions.allow.includes(perm)) {
+                                settings.permissions.allow.push(perm);
+                            }
+                        });
+                        if (!settings._farlineFlow) {
+                            settings._farlineFlow = {
+                                note: 'Permissions added by Farline Flow',
+                                permissions: extras.settings.permissions
+                            };
                         }
+                        console.log(`   ✅ Added permissions to ${extras.settings.path}`);
                     }
-                    // Ensure allowedTools array exists and contains 'ff'
-                    if (!settings.allowedTools) {
-                        settings.allowedTools = [];
+
+                    // Add allowedTools (Gemini)
+                    if (extras.settings.allowedTools) {
+                        if (!settings.allowedTools) settings.allowedTools = [];
+                        extras.settings.allowedTools.forEach(tool => {
+                            if (!settings.allowedTools.includes(tool)) {
+                                settings.allowedTools.push(tool);
+                            }
+                        });
+                        if (!settings._farlineFlow) {
+                            settings._farlineFlow = {
+                                note: 'Tools added by Farline Flow',
+                                tools: extras.settings.allowedTools
+                            };
+                        }
+                        console.log(`   ✅ Added allowedTools to ${extras.settings.path}`);
                     }
-                    if (!settings.allowedTools.includes('ff')) {
-                        settings.allowedTools.push('ff');
-                    }
-                    // Add a comment field to indicate Farline Flow tools
-                    if (!settings._farlineFlow) {
-                        settings._farlineFlow = {
-                            note: 'Tools added by Farline Flow',
-                            tools: ['ff']
-                        };
-                    }
+
                     safeWrite(settingsPath, JSON.stringify(settings, null, 2));
-                    console.log(`   ✅ Added 'ff' to .gemini/settings.json allowedTools`);
+                }
 
-                } else if (agentKey === 'cx') {
-                    // Codex: Copy prompt.md to .codex/prompt.md
-                    const promptPath = path.join(process.cwd(), '.codex', 'prompt.md');
-                    const promptContent = fs.readFileSync(path.join(TEMPLATES_ROOT, 'cx/prompt.md'), 'utf8');
-                    safeWrite(promptPath, promptContent);
-                    console.log(`   ✅ Created: .codex/prompt.md`);
+                // Codex: prompt.md (uses upsert to preserve user content outside markers)
+                if (extras.prompt && extras.prompt.enabled) {
+                    // Add AGENT_FILE placeholder for prompt template
+                    const promptPlaceholders = { ...config.placeholders, AGENT_FILE: config.agentFile };
+                    const promptContent = processTemplate(readTemplate('generic/prompt.md'), promptPlaceholders);
+                    // Extract content between markers (template already has markers)
+                    const markerContentMatch = promptContent.match(new RegExp(`${MARKER_START}\\n([\\s\\S]*?)\\n${MARKER_END}`));
+                    const innerContent = markerContentMatch ? markerContentMatch[1] : promptContent;
+                    const promptPath = path.join(process.cwd(), extras.prompt.path);
+                    const action = upsertMarkedContent(promptPath, innerContent);
+                    console.log(`   ✅ ${action.charAt(0).toUpperCase() + action.slice(1)}: ${extras.prompt.path}`);
+                }
 
-                    // Codex: Copy prompts to .codex/prompts/
-                    const promptsDir = path.join(process.cwd(), '.codex', 'prompts');
-                    if (!fs.existsSync(promptsDir)) {
-                        fs.mkdirSync(promptsDir, { recursive: true });
-                    }
-                    const promptsTemplateDir = path.join(TEMPLATES_ROOT, 'cx/prompts');
-                    const promptFiles = fs.readdirSync(promptsTemplateDir).filter(f => f.endsWith('.md'));
-                    promptFiles.forEach(file => {
-                        const content = fs.readFileSync(path.join(promptsTemplateDir, file), 'utf8');
-                        safeWrite(path.join(promptsDir, file), content);
-                    });
-                    console.log(`   ✅ Created: .codex/prompts/ff-*.md`);
-
-                    // Codex: Create/update .codex/config.toml with Farline Flow settings
-                    const configPath = path.join(process.cwd(), '.codex', 'config.toml');
+                // Codex: config.toml (uses legacy template - not generic)
+                if (extras.config && extras.config.enabled) {
+                    const configPath = path.join(process.cwd(), extras.config.path);
                     let configContent = '';
                     if (fs.existsSync(configPath)) {
                         configContent = fs.readFileSync(configPath, 'utf8');
                     }
-                    // Check if Farline Flow config already exists
                     if (!configContent.includes('[_farlineFlow]')) {
-                        // Append Farline Flow configuration
                         const ffConfig = fs.readFileSync(path.join(TEMPLATES_ROOT, 'cx/config.toml'), 'utf8');
                         if (configContent.length > 0 && !configContent.endsWith('\n')) {
                             configContent += '\n';
                         }
                         configContent += '\n' + ffConfig;
                         safeWrite(configPath, configContent);
-                        console.log(`   ✅ Created: .codex/config.toml`);
+                        console.log(`   ✅ Created: ${extras.config.path}`);
                     } else {
-                        console.log(`   ℹ️  .codex/config.toml already has Farline Flow settings`);
+                        console.log(`   ℹ️  ${extras.config.path} already has Farline Flow settings`);
                     }
                 }
             });
 
-            console.log(`\n🎉 Installed Farline Flow for: ${uniqueAgents.map(a => AGENT_CONFIGS[a].name).join(', ')}`);
+            const agentNames = uniqueAgents.map(a => {
+                const cfg = loadAgentConfig(a);
+                return cfg ? cfg.name : a;
+            }).join(', ');
+            console.log(`\n🎉 Installed Farline Flow for: ${agentNames}`);
             console.log(`\n📝 Remember to commit these files to Git so they're available in worktrees.`);
 
         } catch (e) {

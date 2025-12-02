@@ -1,0 +1,49 @@
+{
+  "id": "cc",
+  "name": "Claude",
+  "aliases": ["claude", "cc"],
+
+  "placeholders": {
+    "AGENT_ID": "cc",
+    "AGENT_NAME": "Claude",
+    "ARG_SYNTAX": "{{args}}",
+    "ARG1_SYNTAX": "{{args}}",
+    "CMD_PREFIX": "/ff-"
+  },
+
+  "output": {
+    "format": "markdown",
+    "commandDir": ".claude/commands",
+    "commandFilePrefix": "ff-",
+    "commandFileExtension": ".md",
+    "frontmatter": ["description"]
+  },
+
+  "rootFile": "CLAUDE.md",
+  "agentFile": "claude.md",
+  "templatePath": "docs/agents/claude.md",
+
+  "extras": {
+    "skill": {
+      "enabled": true,
+      "path": ".claude/skills/farline-flow/SKILL.md"
+    },
+    "settings": {
+      "enabled": true,
+      "path": ".claude/settings.json",
+      "permissions": ["Bash(ff:*)"]
+    }
+  },
+
+  "commands": [
+    "feature-create",
+    "feature-prioritise",
+    "feature-start",
+    "feature-implement",
+    "feature-eval",
+    "feature-done",
+    "research-create",
+    "research-start",
+    "help"
+  ]
+}
