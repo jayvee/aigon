@@ -1290,14 +1290,13 @@ Solo Mode (single agent):
   feature-create <name>             Create feature spec in inbox
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
   feature-start <ID>                Start feature (branch, move spec to in-progress)
-  feature-eval <ID>                 Move feature to evaluation (optional)
   feature-done <ID>                 Merge branch and complete
 
 Bakeoff Mode (multi-agent):
-  feature-start <ID> <agents...>    Setup bakeoff (worktree per agent)
-  feature-eval <ID>                 Move feature to evaluation
+  feature-start <ID> <agents...>    Create worktrees for each agent
+  feature-eval <ID>                 Compare implementations, choose winner
   feature-done <ID> <agent>         Merge winning agent's branch
-  cleanup <ID>                      Remove remaining worktrees
+  cleanup <ID> [--push]             Remove losing worktrees and branches
 
 Research:
   research-create <name>            Create research topic in inbox
