@@ -273,32 +273,18 @@ When you run `ff install-agent gg`, it installs special slash commands for Gemin
 | `/ff:help` | Shows all available Farline Flow commands. |
 
 ### Codex
-When you run `ff install-agent cx`, it installs special slash commands for Codex to make the workflow seamless.
+When you run `ff install-agent cx`, it installs configuration and documentation for Codex.
 
-#### Solo Mode
+**Note:** Codex does not support project-level slash commands (only global `~/.codex/prompts/`). Instead, Codex uses `ff` CLI commands directly. The workflow is documented in `docs/agents/codex.md`.
 
-| Slash Command | Description |
+| CLI Command | Description |
 | :--- | :--- |
-| `/prompts:ff-feature-create <name>` | Runs `ff feature-create <name>`. |
-| `/prompts:ff-feature-prioritise <name>` | Runs `ff feature-prioritise <name>`. |
-| `/prompts:ff-feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
-| `/prompts:ff-feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional). |
-| `/prompts:ff-feature-done <ID>` | Runs `ff feature-done <ID>`. |
+| `ff feature-start <ID>` | Solo mode: create branch, move spec |
+| `ff feature-start <ID> cx` | Bakeoff: create worktree for Codex |
+| `ff feature-done <ID>` | Solo: merge and complete |
+| `ff feature-done <ID> cx` | Bakeoff: merge Codex's implementation |
 
-#### Bakeoff Mode
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/prompts:ff-bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
-| `/prompts:ff-bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
-
-#### Research
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/prompts:ff-research-create <name>` | Runs `ff research-create <name>`. |
-| `/prompts:ff-research-start <ID>` | Runs `ff research-start <ID>`. |
-| `/prompts:ff-help` | Shows all available Farline Flow commands. |
+See `docs/agents/codex.md` for full workflow documentation.
 
 ---
 
