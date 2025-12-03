@@ -1,13 +1,3 @@
-# Generated agent config files (source is in templates/)
-.claude/commands/
-.claude/skills/
-.gemini/
-.codex/
-AGENTS.md
-CLAUDE.md
-GEMINI.md
-CODEX.md
-
 # Node
 node_modules/
 

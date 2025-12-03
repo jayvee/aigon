@@ -65,14 +65,13 @@ Used for shipping code based on a defined spec. Files transition within the `./d
 
 1.  **Create:** `ff feature-create "Dark Mode"` creates a templated spec in `/inbox`.
 2.  **Prioritize:** `ff feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Start:** `ff feature-start 108`
+3.  **Implement:** Run `/ff-feature-implement 108` (or `ff feature-start 108` via CLI)
     * Moves Spec to `/03-in-progress`.
     * Creates a **Git Branch** (`feature-108-desc`).
     * **Auto-creates** a blank Analysis Log template.
-    * Work directly in your current directory.
-4.  **Implement:** The agent reads the feature spec and codes a solution.
-5.  **Document:** The agent *must* fill out the Analysis Log.
-6.  **Finish:** `ff feature-done 108`
+    * Agent reads the feature spec and codes a solution.
+    * Agent *must* fill out the Analysis Log.
+4.  **Finish:** `ff feature-done 108`
     * **Blocks** if the Analysis Log is empty (Enforced Guardrail).
     * Merges the branch and archives the log.
 
@@ -82,22 +81,21 @@ Run multiple agents in competition to find the optimal solution.
 
 1.  **Create:** `ff feature-create "Dark Mode"` creates a templated spec in `/inbox`.
 2.  **Prioritize:** `ff feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Start:** Start multiple agents with their agent codes:
-    ```bash
-    ff feature-start 108 cc
-    ff feature-start 108 gg
-    ```
+3.  **Setup Bakeoff:** Run `/ff-bakeoff-setup 108 cc gg cx` (or via CLI: `ff feature-start 108 cc gg cx`)
     * Moves Spec to `/03-in-progress`.
-    * Creates agent-specific **Git Branches** (`feature-108-cc-desc`, `feature-108-gg-desc`).
+    * Creates agent-specific **Git Branches** (`feature-108-cc-desc`, `feature-108-gg-desc`, `feature-108-cx-desc`).
     * Creates **Git Worktrees** in sibling folders:
         * `../feature-108-cc-darkmode` (Claude)
         * `../feature-108-gg-darkmode` (Gemini)
+        * `../feature-108-cx-darkmode` (Codex)
     * **Auto-creates** blank Analysis Log templates for each agent.
-4.  **Compete:** Each agent builds the feature independently in their isolated worktree, user runs `ff feature-implement 108` in worktree folder.
-5.  **Document:** Each agent *must* fill out their Analysis Log.
-6.  **Evaluate:** Back in the main working folder - `ff feature-eval 108` moves the feature to `/in-evaluation` for review.
-7.  **Judge:** Review and compare solutions in `/features/in-evaluation`.
-8.  **Merge Winner:**
+    * **STOPS** - does not implement (user must open each worktree separately).
+4.  **Implement:** Open each worktree in a separate editor session and run `/ff-bakeoff-implement 108`.
+    * Each agent builds the feature independently in their isolated worktree.
+    * Each agent *must* fill out their Analysis Log.
+5.  **Evaluate:** Back in the main working folder - `ff feature-eval 108` moves the feature to `/in-evaluation` for review.
+6.  **Judge:** Review and compare solutions in `/features/in-evaluation`.
+7.  **Merge Winner:**
     ```bash
     ff feature-done 108 cc
     ```
@@ -106,7 +104,7 @@ Run multiple agents in competition to find the optimal solution.
     * Moves winning agent's log to `logs/selected`.
     * Moves losing agent's logs to `logs/alternatives` (preserving history).
     * Cleans up winner's worktree.
-9.  **Cleanup Loser:**
+8.  **Cleanup Losers:**
     ```bash
     ff cleanup 108
     ```
@@ -177,21 +175,39 @@ your-project/
 
 The `ff` (Farline Flow) command automates state transitions and Git operations.
 
+### Solo Mode (single agent)
+
 | Command | Usage | Description |
 | :--- | :--- | :--- |
 | **Init** | `ff init` | Creates the `./docs/specs` directory structure in the current project. |
 | **Feature Create** | `ff feature-create <name>` | Creates a new feature spec from template in `features/inbox`. |
 | **Feature Prioritise** | `ff feature-prioritise <name>` | Promotes a feature draft from `inbox` to `backlog` with a new ID. |
-| **Feature Start (solo)** | `ff feature-start <ID>` | Solo mode: creates branch `feature-ID-desc`, work in current directory. |
-| **Feature Start (multi)** | `ff feature-start <ID> <agent>` | Multi-agent mode: creates branch + worktree `../feature-ID-agent-desc`. |
-| **Feature Evaluate** | `ff feature-eval <ID>` | Moves feature to evaluation (optional, for multi-agent review). |
-| **Feature Finish (solo)** | `ff feature-done <ID>` | Merges solo branch (`feature-ID-desc`) and completes. |
-| **Feature Finish (multi)** | `ff feature-done <ID> <agent>` | Merges agent's worktree branch, cleans up worktree. |
+| **Feature Start** | `ff feature-start <ID>` | Creates branch `feature-ID-desc`, moves spec to in-progress. |
+| **Feature Evaluate** | `ff feature-eval <ID>` | Moves feature to evaluation (optional). |
+| **Feature Finish** | `ff feature-done <ID>` | Merges branch and completes. |
+
+### Bakeoff Mode (multi-agent)
+
+| Command | Usage | Description |
+| :--- | :--- | :--- |
+| **Bakeoff Setup** | `ff feature-start <ID> <agents...>` | Creates worktrees for multiple agents (e.g., `ff feature-start 55 cc gg cx`). |
+| **Feature Evaluate** | `ff feature-eval <ID>` | Moves feature to evaluation for comparison. |
+| **Feature Finish** | `ff feature-done <ID> <agent>` | Merges winning agent's branch, cleans up. |
+| **Cleanup** | `ff cleanup <ID>` | Force-deletes remaining worktrees. |
+
+### Research
+
+| Command | Usage | Description |
+| :--- | :--- | :--- |
 | **Research Create** | `ff research-create <name>` | Creates a new research topic from template in `research-topics/inbox`. |
 | **Research Prioritise** | `ff research-prioritise <name>` | Promotes a research draft from `inbox` to `backlog` with a new ID. |
 | **Research Start** | `ff research-start <ID>` | Moves a research topic from `backlog` to `in-progress`. |
 | **Research Done** | `ff research-done <ID>` | Moves a research topic from `in-progress` to `done`. |
-| **Cleanup** | `ff cleanup <ID>` | Force-deletes any remaining worktrees for a specific feature ID. |
+
+### Utilities
+
+| Command | Usage | Description |
+| :--- | :--- | :--- |
 | **Install Agent** | `ff install-agent <agents...>` | Generates agent configuration files. Accepts multiple agents: `cc`, `gg`, `cx`. |
 | **Update** | `ff update` | Updates all Farline Flow files to latest version. Re-installs detected agents. |
 
@@ -203,52 +219,85 @@ The `ff` (Farline Flow) command automates state transitions and Git operations.
 ### Claude Code
 When you run `ff install-agent cc`, it installs special slash commands for Claude Code to make the workflow seamless.
 
+#### Solo Mode
+
 | Slash Command | Description |
 | :--- | :--- |
 | `/ff-feature-create <name>` | Runs `ff feature-create <name>`. |
 | `/ff-feature-prioritise <name>` | Runs `ff feature-prioritise <name>`. |
-| `/ff-feature-start <ID>` | Runs `ff feature-start <ID>` (solo mode, branch only). For multi-agent, run `ff feature-start <ID> cc` manually. |
-| `/ff-feature-implement <ID>` | **Context Switcher.** Detects solo/multi-agent mode, navigates to workspace, and guides implementation. |
-| `/ff-feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional, for multi-agent review). |
-| `/ff-feature-done <ID>` | Runs `ff feature-done <ID>` (solo mode). For multi-agent, run `ff feature-done <ID> cc` manually. |
+| `/ff-feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
+| `/ff-feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional). |
+| `/ff-feature-done <ID>` | Runs `ff feature-done <ID>`. |
+
+#### Bakeoff Mode
+
+| Slash Command | Description |
+| :--- | :--- |
+| `/ff-bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
+| `/ff-bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
+
+#### Research
+
+| Slash Command | Description |
+| :--- | :--- |
 | `/ff-research-create <name>` | Runs `ff research-create <name>`. |
-| `/ff-research-prioritise <name>` | Runs `ff research-prioritise <name>`. |
 | `/ff-research-start <ID>` | Runs `ff research-start <ID>`. |
-| `/ff-research-done <ID>` | Runs `ff research-done <ID>`. |
 | `/ff-help` | Shows all available Farline Flow commands. |
 
 ### Gemini
 When you run `ff install-agent gg`, it installs special slash commands for Gemini to make the workflow seamless.
 
+#### Solo Mode
+
 | Slash Command | Description |
 | :--- | :--- |
 | `/ff:feature-create <name>` | Runs `ff feature-create <name>`. |
 | `/ff:feature-prioritise <name>` | Runs `ff feature-prioritise <name>`. |
-| `/ff:feature-start <ID>` | Runs `ff feature-start <ID>` (solo mode, branch only). For multi-agent, run `ff feature-start <ID> gg` manually. |
-| `/ff:feature-implement <ID>` | **Context Switcher.** Detects solo/multi-agent mode, navigates to workspace, and guides implementation. |
-| `/ff:feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional, for multi-agent review). |
-| `/ff:feature-done <ID>` | Runs `ff feature-done <ID>` (solo mode). For multi-agent, run `ff feature-done <ID> gg` manually. |
+| `/ff:feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
+| `/ff:feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional). |
+| `/ff:feature-done <ID>` | Runs `ff feature-done <ID>`. |
+
+#### Bakeoff Mode
+
+| Slash Command | Description |
+| :--- | :--- |
+| `/ff:bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
+| `/ff:bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
+
+#### Research
+
+| Slash Command | Description |
+| :--- | :--- |
 | `/ff:research-create <name>` | Runs `ff research-create <name>`. |
-| `/ff:research-prioritise <name>` | Runs `ff research-prioritise <name>`. |
 | `/ff:research-start <ID>` | Runs `ff research-start <ID>`. |
-| `/ff:research-done <ID>` | Runs `ff research-done <ID>`. |
 | `/ff:help` | Shows all available Farline Flow commands. |
 
 ### Codex
 When you run `ff install-agent cx`, it installs special slash commands for Codex to make the workflow seamless.
 
+#### Solo Mode
+
 | Slash Command | Description |
 | :--- | :--- |
 | `/prompts:ff-feature-create <name>` | Runs `ff feature-create <name>`. |
 | `/prompts:ff-feature-prioritise <name>` | Runs `ff feature-prioritise <name>`. |
-| `/prompts:ff-feature-start <ID>` | Runs `ff feature-start <ID>` (solo mode, branch only). For multi-agent, run `ff feature-start <ID> cx` manually. |
-| `/prompts:ff-feature-implement <ID>` | **Context Switcher.** Detects solo/multi-agent mode, navigates to workspace, and guides implementation. |
-| `/prompts:ff-feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional, for multi-agent review). |
-| `/prompts:ff-feature-done <ID>` | Runs `ff feature-done <ID>` (solo mode). For multi-agent, run `ff feature-done <ID> cx` manually. |
+| `/prompts:ff-feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
+| `/prompts:ff-feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional). |
+| `/prompts:ff-feature-done <ID>` | Runs `ff feature-done <ID>`. |
+
+#### Bakeoff Mode
+
+| Slash Command | Description |
+| :--- | :--- |
+| `/prompts:ff-bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
+| `/prompts:ff-bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
+
+#### Research
+
+| Slash Command | Description |
+| :--- | :--- |
 | `/prompts:ff-research-create <name>` | Runs `ff research-create <name>`. |
-| `/prompts:ff-research-prioritise <name>` | Runs `ff research-prioritise <name>`. |
 | `/prompts:ff-research-start <ID>` | Runs `ff research-start <ID>`. |
-| `/prompts:ff-research-done <ID>` | Runs `ff research-done <ID>`. |
 | `/prompts:ff-help` | Shows all available Farline Flow commands. |
 
 ---

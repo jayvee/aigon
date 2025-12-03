@@ -38,10 +38,11 @@
   "commands": [
     "feature-create",
     "feature-prioritise",
-    "feature-start",
     "feature-implement",
     "feature-eval",
     "feature-done",
+    "bakeoff-setup",
+    "bakeoff-implement",
     "research-create",
     "research-start",
     "help"

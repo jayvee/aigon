@@ -39,13 +39,31 @@ docs/specs/
 
 ## Workflow Commands
 
+### Solo Mode (single agent)
+
 | Command | Description |
 |---------|-------------|
 | `ff init` | Initialize the specs directory structure |
+| `ff feature-create <name>` | Create feature spec in inbox |
 | `ff feature-prioritise <name>` | Move feature from inbox to backlog, assign ID |
-| `ff feature-start <ID> <agent>` | Start feature, create worktree |
+| `ff feature-start <ID>` | Start feature (creates branch, moves spec to in-progress) |
 | `ff feature-eval <ID>` | Submit feature for evaluation |
-| `ff feature-done <ID> <agent>` | Merge feature, cleanup worktree |
+| `ff feature-done <ID>` | Merge feature branch and complete |
+
+### Bakeoff Mode (multi-agent)
+
+| Command | Description |
+|---------|-------------|
+| `ff feature-start <ID> <agents...>` | Setup bakeoff with multiple agents (creates worktrees) |
+| `ff feature-eval <ID>` | Submit feature for evaluation |
+| `ff feature-done <ID> <agent>` | Merge winning agent's branch, cleanup |
+| `ff cleanup <ID>` | Remove remaining worktrees |
+
+### Research
+
+| Command | Description |
+|---------|-------------|
+| `ff research-create <name>` | Create research topic in inbox |
 | `ff research-prioritise <name>` | Move research from inbox to backlog |
 | `ff research-start <ID>` | Start research topic |
 | `ff research-done <ID>` | Complete research topic |
@@ -70,16 +88,24 @@ Before running `feature-done`, always:
 
 ## Multi-Agent Bake-offs
 
-Multiple agents can compete on the same feature:
+Multiple agents can compete on the same feature using a single setup command:
 
 ```bash
-ff feature-start 55 cc   # Claude's worktree: ../feature-55-cc-description
-ff feature-start 55 gg   # Gemini's worktree: ../feature-55-gg-description
+# Setup bakeoff with multiple agents at once
+ff feature-start 55 cc gg cx
 ```
 
-After review, merge the winner and archive alternatives:
+This creates:
+- `../feature-55-cc-description` (Claude's worktree)
+- `../feature-55-gg-description` (Gemini's worktree)
+- `../feature-55-cx-description` (Codex's worktree)
+
+Each agent implements in their isolated worktree using `/ff-bakeoff-implement <ID>`.
+
+After all agents complete, evaluate and merge the winner:
 
 ```bash
-ff feature-done 55 cc    # Merge Claude's work, archive Gemini's log
+ff feature-eval 55       # Compare implementations
+ff feature-done 55 cc    # Merge Claude's work, archive others' logs
 ff cleanup 55            # Remove remaining worktrees
 ```

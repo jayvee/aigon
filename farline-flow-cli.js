@@ -2,7 +2,56 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
+
+// --- Editor Detection & Auto-Open ---
+
+function detectEditor() {
+    // 1. Explicit override (FF_EDITOR=code, or FF_EDITOR=none to disable)
+    const override = process.env.FF_EDITOR;
+    if (override) {
+        if (override === 'none' || override === 'false' || override === '0') {
+            return null;
+        }
+        return override;
+    }
+
+    // 2. Detect IDE from environment (order matters - check forks before VS Code)
+
+    // Cursor (VS Code fork)
+    if (process.env.CURSOR_TRACE_ID) {
+        return 'cursor';
+    }
+
+    // Windsurf (VS Code fork)
+    if (process.env.TERM_PROGRAM === 'windsurf') {
+        return 'windsurf';
+    }
+
+    // VS Code (check after forks)
+    if (process.env.TERM_PROGRAM === 'vscode' || process.env.VSCODE_IPC_HOOK_CLI) {
+        return 'code';
+    }
+
+    // Zed
+    if (process.env.TERM_PROGRAM === 'zed') {
+        return 'zed';
+    }
+
+    // No IDE detected - don't auto-open (avoid hijacking terminal with vim/nano)
+    return null;
+}
+
+function openInEditor(filePath) {
+    const editor = detectEditor();
+    if (!editor) return;
+
+    try {
+        spawnSync(editor, [filePath], { stdio: 'ignore' });
+    } catch (e) {
+        // Silently fail - opening editor is nice-to-have, not critical
+    }
+}
 
 // --- Configuration ---
 const SPECS_ROOT = path.join(process.cwd(), 'docs', 'specs');
@@ -364,6 +413,7 @@ const commands = {
 
         fs.writeFileSync(filePath, content);
         console.log(`✅ Created: ./docs/specs/features/01-inbox/${filename}`);
+        openInEditor(filePath);
         console.log(`📝 Edit the spec, then prioritise it using command: feature-prioritise ${slug}`);
     },
     'research-create': (args) => {
@@ -391,6 +441,7 @@ const commands = {
 
         fs.writeFileSync(filePath, content);
         console.log(`✅ Created: ./docs/specs/research-topics/01-inbox/${filename}`);
+        openInEditor(filePath);
         console.log(`📝 Edit the topic, then prioritise it using command: research-prioritise ${slug}`);
     },
     'research-prioritise': (args) => {
@@ -448,12 +499,12 @@ const commands = {
         console.log(`📋 Assigned ID: ${paddedId}`);
         console.log(`🚀 Next: feature-start ${paddedId}`);
         console.log(`   Solo mode: feature-start ${paddedId}`);
-        console.log(`   Multi-agent: feature-start ${paddedId} <agent>`);
+        console.log(`   Multi-agent: feature-start ${paddedId} <agent> [agent2] [agent3]`);
     },
     'feature-start': (args) => {
         const name = args[0];
-        const agentId = args[1]; // Optional - if provided, multi-agent mode with worktree
-        if (!name) return console.error("Usage: ff feature-start <ID> [agent]\n  Without agent: solo mode (branch only)\n  With agent: multi-agent mode (worktree)");
+        const agentIds = args.slice(1); // Optional - if provided, multi-agent mode with worktree(s)
+        if (!name) return console.error("Usage: ff feature-start <ID> [agent] [agent2] [agent3]\n  Without agent: solo mode (branch only)\n  With agent(s): multi-agent mode (worktree per agent)\n\nExamples:\n  ff feature-start 55           # Solo mode\n  ff feature-start 55 cc        # Single agent worktree\n  ff feature-start 55 cc gg cx  # Bakeoff with 3 agents");
 
         // Find and move spec to in-progress
         let found = findFile(PATHS.features, name, ['02-backlog']);
@@ -476,7 +527,7 @@ const commands = {
         const logsDir = path.join(PATHS.features.root, 'logs');
         if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
 
-        if (agentId) {
+        if (agentIds.length > 0) {
             // Multi-agent mode: commit the spec move first so worktree has it
             if (movedFromBacklog) {
                 try {
@@ -487,25 +538,47 @@ const commands = {
                     console.warn(`⚠️  Could not commit spec move: ${e.message}`);
                 }
             }
-            // Multi-agent mode: worktree isolation (for bake-offs)
-            const branchName = `feature-${num}-${agentId}-${desc}`;
-            const worktreePath = `../feature-${num}-${agentId}-${desc}`;
-            if (fs.existsSync(worktreePath)) {
-                console.warn(`⚠️  Worktree path ${worktreePath} already exists. Skipping.`);
+
+            // Create worktree for each agent
+            const createdWorktrees = [];
+            agentIds.forEach(agentId => {
+                const branchName = `feature-${num}-${agentId}-${desc}`;
+                const worktreePath = `../feature-${num}-${agentId}-${desc}`;
+
+                if (fs.existsSync(worktreePath)) {
+                    console.warn(`⚠️  Worktree path ${worktreePath} already exists. Skipping.`);
+                } else {
+                    try {
+                        runGit(`git worktree add ${worktreePath} -b ${branchName}`);
+                        console.log(`📂 Worktree: ${worktreePath}`);
+                        createdWorktrees.push({ agentId, worktreePath });
+                    } catch (e) {
+                        console.error(`❌ Failed to create worktree for ${agentId}: ${e.message}`);
+                    }
+                }
+
+                // Create log for this agent
+                const logName = `feature-${num}-${agentId}-${desc}-log.md`;
+                const logPath = path.join(logsDir, logName);
+                if (!fs.existsSync(logPath)) {
+                    const template = `# Implementation Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
+                    fs.writeFileSync(logPath, template);
+                    console.log(`📝 Log: ./docs/specs/features/logs/${logName}`);
+                }
+            });
+
+            if (agentIds.length > 1) {
+                console.log(`\n🏁 Bakeoff started with ${agentIds.length} agents!`);
             } else {
-                runGit(`git worktree add ${worktreePath} -b ${branchName}`);
-                console.log(`📂 Worktree: ${worktreePath}`);
+                console.log(`\n🚀 Multi-agent mode started.`);
             }
-            // Create log for this agent
-            const logName = `feature-${num}-${agentId}-${desc}-log.md`;
-            const logPath = path.join(logsDir, logName);
-            if (!fs.existsSync(logPath)) {
-                const template = `# Implementation Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
-                fs.writeFileSync(logPath, template);
-                console.log(`📝 Log: ./docs/specs/features/logs/${logName}`);
-            }
-            console.log(`\n🚀 Multi-agent mode. Next: Open the worktree and implement`);
-            console.log(`   Worktree path: ${worktreePath}`);
+            console.log(`\n📂 Worktrees created:`);
+            agentIds.forEach(agentId => {
+                const worktreePath = `../feature-${num}-${agentId}-${desc}`;
+                console.log(`   ${agentId}: ${worktreePath}`);
+            });
+            console.log(`\n💡 Next: Open each worktree in a separate editor/terminal and implement`);
+            console.log(`   When done: ff feature-eval ${num}`);
         } else {
             // Solo mode: branch only (default)
             const branchName = `feature-${num}-${desc}`;
@@ -1127,33 +1200,39 @@ Farline Flow - Spec-Driven Development for AI Agents
 
 Usage: ff <command> [arguments]
 
-Commands:
+Setup:
   init                              Initialize ./docs/specs directory structure
   install-agent <agents...>         Install agent configs (cc, gg, cx)
   update                            Update Farline Flow files to latest version
 
+Solo Mode (single agent):
   feature-create <name>             Create feature spec in inbox
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
-  feature-start <ID>                Start feature in solo mode (branch only)
-  feature-start <ID> <agent>        Start feature in multi-agent mode (worktree)
+  feature-start <ID>                Start feature (branch, move spec to in-progress)
   feature-eval <ID>                 Move feature to evaluation (optional)
-  feature-done <ID>                 Merge solo branch and complete
-  feature-done <ID> <agent>         Merge agent's worktree branch and complete
+  feature-done <ID>                 Merge branch and complete
 
+Bakeoff Mode (multi-agent):
+  feature-start <ID> <agents...>    Setup bakeoff (worktree per agent)
+  feature-eval <ID>                 Move feature to evaluation
+  feature-done <ID> <agent>         Merge winning agent's branch
+  cleanup <ID>                      Remove remaining worktrees
+
+Research:
   research-create <name>            Create research topic in inbox
   research-prioritise <name>        Move research from inbox to backlog (assigns ID)
   research-start <ID>               Move research to in-progress
   research-done <ID>                Move research to done
-
-  cleanup <ID>                      Remove remaining worktrees for a feature
 
 Examples:
   ff init                           # Setup specs directory
   ff install-agent cc gg            # Install Claude and Gemini configs
   ff feature-create "dark-mode"     # Create new feature spec
   ff feature-prioritise dark-mode   # Assign ID, move to backlog
-  ff feature-start 55 cc            # Start feature 55 with Claude
-  ff feature-done 55 cc             # Merge Claude's implementation
+  ff feature-start 55               # Solo mode (branch only)
+  ff feature-start 55 cc gg cx      # Bakeoff with 3 agents
+  ff feature-done 55                # Complete solo feature
+  ff feature-done 55 cc             # Merge Claude's bakeoff implementation
 
 Agents:
   cc (claude)   - Claude Code
