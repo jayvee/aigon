@@ -37,7 +37,7 @@ All workflow state is maintained in a strictly structured directory called **`./
 
 The architecture separates concerns into distinct, state-driven folders:
 
-* **Primary Domains:** `./docs/specs/research-topics` (The "Why") and `docs/specs/features` (The "How").
+* **Primary Domains:** `./docs/specs/research-topics` (Exploring options for building something) and `docs/specs/features` (Specific features to be built).
 * **State Folders (Kanban):** Numbered for visual ordering: `01-inbox`, `02-backlog`, `03-in-progress`, `04-in-evaluation`, `05-done`, `06-paused`.
 * **Documentation:** `./docs/specs/logs` (stores implementation logs) and `./docs/specs/evaluations` (stores LLM Judge reports).
 * **History:** The `./docs/specs/logs/selected` folder contains the final, merged documentation, and `./docs/specs/logs/alternatives` contains the logs from the losing agents.
@@ -45,7 +45,7 @@ The architecture separates concerns into distinct, state-driven folders:
 ### Naming Conventions
 * **Drafts:** `feature-description.md` (Unprioritized, in `01-inbox`)
 * **Prioritized:** `feature-55-description.md` (Global Sequential ID assigned on prioritization)
-* **Worktrees:** `../feature-55-cc-description` (Sibling directory to your repo)
+* **Multi-Mode:** `../feature-55-cc-description` (Has a specific agent 2 letter code to indicate agent specific content)
 
 ---
 
@@ -61,58 +61,55 @@ Used for exploring complex topics before writing code. Files transition within t
 ### 2. Feature Lifecycle
 Used for shipping code based on a defined spec. Files transition within the `./docs/specs/features` folder.
 
+#### 2.1 Single Agent Feature Lifecycle
+
 1.  **Create:** `ff feature-create "Dark Mode"` creates a templated spec in `/inbox`.
 2.  **Prioritize:** `ff feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Start:**
-    * **Solo Mode:** `ff feature-start 108`
-        * Moves Spec to `/03-in-progress`.
-        * Creates a **Git Branch** (`feature-108-desc`).
-        * **Auto-creates** a blank Analysis Log template.
-        * Work directly in your current directory.
-    * **Multi-Agent Mode:** `ff feature-start 108 cc`
-        * Moves Spec to `/03-in-progress`.
-        * Creates a **Git Branch** (`feature-108-cc-desc`).
-        * Creates a **Git Worktree** (`../feature-108-cc-desc`).
-        * **Auto-creates** a blank Analysis Log template.
+3.  **Start:** `ff feature-start 108`
+    * Moves Spec to `/03-in-progress`.
+    * Creates a **Git Branch** (`feature-108-desc`).
+    * **Auto-creates** a blank Analysis Log template.
+    * Work directly in your current directory.
 4.  **Implement:** The agent reads the feature spec and codes a solution.
 5.  **Document:** The agent *must* fill out the Analysis Log.
-6.  **Eval (multi-agent only):** `ff feature-eval 108` moves the feature to `/in-evaluation` for review.
-7.  **Finish:**
-    * **Solo Mode:** `ff feature-done 108`
-    * **Multi-Agent Mode:** `ff feature-done 108 cc`
+6.  **Finish:** `ff feature-done 108`
     * **Blocks** if the Analysis Log is empty (Enforced Guardrail).
     * Merges the branch and archives the log.
-    * (Multi-agent only) Cleans up the worktree.
 
----
-
-## Multi-Agent "Bake-Offs"
+#### 2.2 Multi-Agent Bake-Off Feature Lifecycle
 
 Run multiple agents in competition to find the optimal solution.
 
-### How it works:
-1.  **Launch:**
+1.  **Create:** `ff feature-create "Dark Mode"` creates a templated spec in `/inbox`.
+2.  **Prioritize:** `ff feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
+3.  **Start:** Start multiple agents with their agent codes:
     ```bash
     ff feature-start 108 cc
     ff feature-start 108 gg
     ```
-2.  **Isolate:** This creates two sibling folders sharing your repo history:
-    * `../feature-108-cc-darkmode` (Claude)
-    * `../feature-108-gg-darkmode` (Gemini)
-3.  **Compete:** Each agent builds the feature independently.
-4.  **Judge:** Review solutions in `/features/in-evaluation`.
-5.  **Merge Winner:**
+    * Moves Spec to `/03-in-progress`.
+    * Creates agent-specific **Git Branches** (`feature-108-cc-desc`, `feature-108-gg-desc`).
+    * Creates **Git Worktrees** in sibling folders:
+        * `../feature-108-cc-darkmode` (Claude)
+        * `../feature-108-gg-darkmode` (Gemini)
+    * **Auto-creates** blank Analysis Log templates for each agent.
+4.  **Compete:** Each agent builds the feature independently in their isolated worktree, user runs `ff feature-implement 108` in worktree folder.
+5.  **Document:** Each agent *must* fill out their Analysis Log.
+6.  **Evaluate:** Back in the main working folder - `ff feature-eval 108` moves the feature to `/in-evaluation` for review.
+7.  **Judge:** Review and compare solutions in `/features/in-evaluation`.
+8.  **Merge Winner:**
     ```bash
     ff feature-done 108 cc
     ```
-    * Merges Claude's branch.
-    * Moves Claude's log to `logs/selected`.
-    * Moves Gemini's log to `logs/alternatives` (preserving history).
-6.  **Cleanup Loser:**
+    * **Blocks** if the Analysis Log is empty (Enforced Guardrail).
+    * Merges winner's branch.
+    * Moves winning agent's log to `logs/selected`.
+    * Moves losing agent's logs to `logs/alternatives` (preserving history).
+    * Cleans up winner's worktree.
+9.  **Cleanup Loser:**
     ```bash
     ff cleanup 108
     ```
-    * Force-deletes the remaining Gemini worktree.
 
 ---
 
@@ -152,7 +149,7 @@ ff install-agent cc gg cx
 |-------|-------|-------------|
 | `cc` | `claude` | Claude Code |
 | `gg` | `gemini` | Gemini CLI |
-| `cx` | `codex` | GitHub Copilot/Codex |
+| `cx` | `codex` | Codex |
 
 **Generated Files:**
 ```
