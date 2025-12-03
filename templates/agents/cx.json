@@ -5,7 +5,19 @@
 
   "placeholders": {
     "AGENT_ID": "cx",
-    "AGENT_NAME": "Codex"
+    "AGENT_NAME": "Codex",
+    "ARG_SYNTAX": "$ARGUMENTS",
+    "ARG1_SYNTAX": "$1",
+    "CMD_PREFIX": "/prompts:ff-"
+  },
+
+  "output": {
+    "format": "markdown",
+    "commandDir": "~/.codex/prompts",
+    "commandFilePrefix": "ff-",
+    "commandFileExtension": ".md",
+    "frontmatter": ["description", "args"],
+    "global": true
   },
 
   "rootFile": null,
@@ -23,5 +35,18 @@
     }
   },
 
-  "commands": []
+  "commands": [
+    "feature-create",
+    "feature-prioritise",
+    "feature-implement",
+    "feature-eval",
+    "feature-done",
+    "bakeoff-setup",
+    "bakeoff-implement",
+    "research-create",
+    "research-prioritise",
+    "research-start",
+    "research-done",
+    "help"
+  ]
 }

@@ -273,18 +273,34 @@ When you run `ff install-agent gg`, it installs special slash commands for Gemin
 | `/ff:help` | Shows all available Farline Flow commands. |
 
 ### Codex
-When you run `ff install-agent cx`, it installs configuration and documentation for Codex.
+When you run `ff install-agent cx`, it installs slash commands to your **global** `~/.codex/prompts/` folder.
 
-**Note:** Codex does not support project-level slash commands (only global `~/.codex/prompts/`). Instead, Codex uses `ff` CLI commands directly. The workflow is documented in `docs/agents/codex.md`.
+**Note:** Codex only supports global prompts (not project-level). This means the same Farline Flow commands are available across all your projects.
 
-| CLI Command | Description |
+#### Solo Mode
+
+| Slash Command | Description |
 | :--- | :--- |
-| `ff feature-start <ID>` | Solo mode: create branch, move spec |
-| `ff feature-start <ID> cx` | Bakeoff: create worktree for Codex |
-| `ff feature-done <ID>` | Solo: merge and complete |
-| `ff feature-done <ID> cx` | Bakeoff: merge Codex's implementation |
+| `/prompts:ff-feature-create <name>` | Create a new feature spec |
+| `/prompts:ff-feature-prioritise <name>` | Prioritize a feature draft |
+| `/prompts:ff-feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
+| `/prompts:ff-feature-eval <ID>` | Submit feature for evaluation (optional) |
+| `/prompts:ff-feature-done <ID>` | Complete and merge feature |
 
-See `docs/agents/codex.md` for full workflow documentation.
+#### Bakeoff Mode
+
+| Slash Command | Description |
+| :--- | :--- |
+| `/prompts:ff-bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
+| `/prompts:ff-bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
+
+#### Research
+
+| Slash Command | Description |
+| :--- | :--- |
+| `/prompts:ff-research-create <name>` | Create a new research topic |
+| `/prompts:ff-research-start <ID>` | Start a research topic |
+| `/prompts:ff-help` | Shows all available Farline Flow commands |
 
 ---
 
