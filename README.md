@@ -6,6 +6,9 @@ Aigon is a **100% file-based system** that uses simple folder and file naming co
 
 Aigon supports single-agent development as well as parallel multi-agent "bake-offs"—where agents like Claude Code, Gemini, and Codex compete to implement specs—while keeping your workflow portable, transparent, and under your control.
 
+Aigon derives its name from the fusion of "AI" and the ancient Greek concept of Agon (ἀγών), which signifies a **contest**, **struggle**, or gathering to prove one's merit. This reflects the library's core philosophy: a structured arena where multiple AI models—such as Claude, Gemini, and Codex—compete to interpret specifications and produce the highest quality code. Just as an agon drove ancient competitors to strive for excellence, Aigon drives your agent workforce to outperform one another in a "bake-off," ensuring your final codebase is forged through rigorous comparison and selection rather than a single assumption.
+
+
 ---
 
 ## 📖 Table of Contents
