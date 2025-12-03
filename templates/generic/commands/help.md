@@ -1,5 +1,5 @@
-<!-- description: Show Farline Flow commands -->
-# Farline Flow Commands
+<!-- description: Show Aigon commands -->
+# Aigon Commands
 
 ## Solo Mode (single agent)
 
@@ -28,4 +28,4 @@
 | `{{CMD_PREFIX}}research-start <ID>` | Start a research topic |
 | `{{CMD_PREFIX}}research-done <ID>` | Complete a research topic |
 
-Run `ff help` in terminal for full CLI reference.
+Run `aigon help` in terminal for full CLI reference.

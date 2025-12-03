@@ -1,4 +1,4 @@
-<!-- FARLINE_FLOW_START -->
+<!-- AIGON_START -->
 # Gemini CLI Configuration
 
 ## Agent Identity
@@ -11,37 +11,37 @@
 ### Solo Mode
 | Command | Description |
 |---------|-------------|
-| `/ff:feature-create <name>` | Create a new feature spec |
-| `/ff:feature-prioritise <name>` | Prioritize a feature draft |
-| `/ff:feature-implement <ID>` | Implement feature (branch, code, complete) |
-| `/ff:feature-eval <ID>` | Submit feature for evaluation |
-| `/ff:feature-done <ID>` | Complete and merge feature |
+| `/aigon:feature-create <name>` | Create a new feature spec |
+| `/aigon:feature-prioritise <name>` | Prioritize a feature draft |
+| `/aigon:feature-implement <ID>` | Implement feature (branch, code, complete) |
+| `/aigon:feature-eval <ID>` | Submit feature for evaluation |
+| `/aigon:feature-done <ID>` | Complete and merge feature |
 
 ### Bakeoff Mode
 | Command | Description |
 |---------|-------------|
-| `/ff:bakeoff-setup <ID> <agents>` | Create worktrees for multiple agents |
-| `/ff:bakeoff-implement <ID>` | Implement in current worktree |
-| `/ff:bakeoff-cleanup <ID>` | Clean up losing worktrees and branches |
+| `/aigon:bakeoff-setup <ID> <agents>` | Create worktrees for multiple agents |
+| `/aigon:bakeoff-implement <ID>` | Implement in current worktree |
+| `/aigon:bakeoff-cleanup <ID>` | Clean up losing worktrees and branches |
 
 ### Research
 | Command | Description |
 |---------|-------------|
-| `/ff:research-create <name>` | Create a new research topic |
-| `/ff:research-start <ID>` | Start a research topic |
-| `/ff:help` | Show all Farline Flow commands |
+| `/aigon:research-create <name>` | Create a new research topic |
+| `/aigon:research-start <ID>` | Start a research topic |
+| `/aigon:help` | Show all Aigon commands |
 
 ## Modes
 
-- **Solo mode**: `ff feature-start <ID>` - Creates branch only, work in current directory
-- **Multi-agent mode**: `ff feature-start <ID> gg` - Creates worktree for bake-offs
+- **Solo mode**: `aigon feature-start <ID>` - Creates branch only, work in current directory
+- **Multi-agent mode**: `aigon feature-start <ID> gg` - Creates worktree for bake-offs
 
 ## Critical Rules
 
 1. **Read the spec first**: Always check `./docs/specs/features/03-in-progress/` before coding
 2. **Work in isolation**: Solo mode uses branches, multi-agent mode uses worktrees
 3. **Conventional commits**: Use `feat:`, `fix:`, `chore:` prefixes
-4. **Complete properly**: Use `ff feature-done <ID>` for solo, `ff feature-done <ID> gg` for multi-agent
+4. **Complete properly**: Use `aigon feature-done <ID>` for solo, `aigon feature-done <ID> gg` for multi-agent
 
 ## Before Completing a Feature
 
@@ -52,4 +52,4 @@ Before running `feature-done`, always:
    git push -u origin <current-branch-name>
    ```
 2. **Ask the user** if they want to delete the local branch after merge (the CLI will delete it by default)
-<!-- FARLINE_FLOW_END -->
+<!-- AIGON_END -->

@@ -1,5 +1,5 @@
 <!-- description: Complete feature <ID> [agent] - merges branch and cleans up -->
-# ff-feature-done
+# aigon-feature-done
 
 Complete a feature by merging and cleaning up.
 
@@ -11,12 +11,12 @@ Complete a feature by merging and cleaning up.
 
 **Solo mode** - if you used `feature-start {{ARG_SYNTAX}}` (no agent):
 ```bash
-ff feature-done {{ARG_SYNTAX}}
+aigon feature-done {{ARG_SYNTAX}}
 ```
 
 **Multi-agent mode** - if you used `feature-start {{ARG_SYNTAX}} {{AGENT_ID}}`:
 ```bash
-ff feature-done {{ARG_SYNTAX}} {{AGENT_ID}}
+aigon feature-done {{ARG_SYNTAX}} {{AGENT_ID}}
 ```
 
 ## What happens

@@ -1,5 +1,5 @@
 <!-- description: Implement bakeoff <ID> - implement feature in current worktree -->
-# ff-bakeoff-implement
+# aigon-bakeoff-implement
 
 Implement a feature in the current bakeoff worktree.
 
@@ -63,6 +63,6 @@ After completing steps 1-6:
    - Complete implementations in other agent worktrees
    - Return to the main repository
    - Run `{{CMD_PREFIX}}feature-eval <ID>` to compare all implementations
-   - Choose a winner and run `ff feature-done <ID> <winning-agent>`
+   - Choose a winner and run `aigon feature-done <ID> <winning-agent>`
 
 **This bakeoff worktree session is complete.**

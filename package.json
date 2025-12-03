@@ -1,9 +1,9 @@
 {
-  "name": "farline-flow",
+  "name": "aigon",
   "version": "1.0.0",
-  "description": "CLI for the Farline Flow Spec-Drive AI Dev Flow",
+  "description": "CLI for the Aigon Spec-Driven AI Dev Flow",
   "bin": {
-    "ff": "./farline-flow-cli.js"
+    "aigon": "./aigon-cli.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

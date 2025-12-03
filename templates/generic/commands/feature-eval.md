@@ -1,5 +1,5 @@
 <!-- description: Evaluate feature <ID> - submit for review -->
-# ff-feature-eval
+# aigon-feature-eval
 
 Evaluate and compare multiple agent implementations of a feature.
 
@@ -10,7 +10,7 @@ Evaluate and compare multiple agent implementations of a feature.
 IMPORTANT: You MUST run this command first. This moves the spec to evaluation and creates the evaluation template.
 
 ```bash
-ff feature-eval {{ARG_SYNTAX}}
+aigon feature-eval {{ARG_SYNTAX}}
 ```
 
 This will:
@@ -31,7 +31,7 @@ For each agent worktree listed:
    - Multi-agent: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-<agent>-log.md`
    - Solo: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-log.md`
 2. **Examine the actual code changes** in each worktree - this is the primary source of truth
-3. Run `git diff main...HEAD` in each worktree to see all changes
+3. Run `git diaigonmain...HEAD` in each worktree to see all changes
 4. Check if the implementation meets the spec requirements
 
 **Worktree locations:** `../feature-{{ARG1_SYNTAX}}-<agent>-*`
@@ -69,7 +69,7 @@ After completing the evaluation:
 Once the user has chosen, tell them to run (from the main repo, not a worktree):
 
 ```bash
-ff feature-done {{ARG_SYNTAX}} <winning-agent>
+aigon feature-done {{ARG_SYNTAX}} <winning-agent>
 ```
 
-For example: `ff feature-done {{ARG1_SYNTAX}} cc` if Claude's implementation wins.
+For example: `aigon feature-done {{ARG1_SYNTAX}} cc` if Claude's implementation wins.
