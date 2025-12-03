@@ -28,7 +28,8 @@ Codex uses `ff` CLI commands directly (no slash commands).
 | `ff feature-start <ID> cx gg cc` | Create worktrees for multiple agents |
 | `ff feature-eval <ID>` | Move feature to evaluation |
 | `ff feature-done <ID> cx` | Merge this agent's branch |
-| `ff cleanup <ID>` | Remove remaining worktrees |
+| `ff cleanup <ID>` | Remove losing worktrees and local branches |
+| `ff cleanup <ID> --push` | Push losing branches to origin first, then cleanup |
 
 ### Research
 
@@ -61,6 +62,7 @@ Codex uses `ff` CLI commands directly (no slash commands).
    - **STOP** - Do NOT run `feature-done` from worktree
 4. Return to main repo for evaluation: `ff feature-eval <ID>`
 5. Merge winner: `ff feature-done <ID> cx`
+6. Clean up losers: `ff cleanup <ID> --push` (to save branches) or `ff cleanup <ID>` (to delete)
 
 ## Critical Rules
 

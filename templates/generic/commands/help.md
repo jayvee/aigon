@@ -17,6 +17,7 @@
 |---------|-------------|
 | `{{CMD_PREFIX}}bakeoff-setup <ID> <agents...>` | Create worktrees for multiple agents |
 | `{{CMD_PREFIX}}bakeoff-implement <ID>` | Implement in current worktree (run in each worktree) |
+| `{{CMD_PREFIX}}bakeoff-cleanup <ID>` | Clean up losing worktrees and branches after evaluation |
 
 ## Research
 

@@ -925,10 +925,10 @@ ${agentList}
             if (losingBranches.length > 0) {
                 console.log(`\n📦 Found ${losingBranches.length} other implementation(s):`);
                 losingBranches.forEach(b => console.log(`   - ${b}`));
-                console.log(`\n💡 To push these to origin for safekeeping, run:`);
-                losingBranches.forEach(b => console.log(`   git push -u origin ${b}`));
-                console.log(`\n🧹 To clean up losing worktrees and branches, run:`);
-                console.log(`   ff cleanup ${num}`);
+                console.log(`\n🧹 Cleanup options:`);
+                console.log(`   ff cleanup ${num}         # Delete worktrees and local branches`);
+                console.log(`   ff cleanup ${num} --push  # Push branches to origin first, then delete`);
+                console.log(`\n   Or use: /ff-bakeoff-cleanup ${num}`);
             }
         }
 
