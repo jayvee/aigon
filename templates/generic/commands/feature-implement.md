@@ -1,15 +1,15 @@
-<!-- description: Implement feature <ID> - switch context and code -->
+<!-- description: Implement feature <ID> - solo mode (branch, implement, complete) -->
 # ff-feature-implement
 
-Run this command followed by the Feature ID. Example: `{{CMD_PREFIX}}feature-implement 55`
+Implement a feature in **solo mode** (single agent, no worktree).
 
-## Step 1: Find your workspace
+## Step 1: Run the CLI command
 
-- Check if a worktree exists: look for `../feature-{{ARG1_SYNTAX}}-{{AGENT_ID}}-*` directory
-  - If worktree exists: `cd` to that directory (multi-agent mode)
-- If no worktree: run `git branch --show-current` to check your branch
-  - If on `feature-{{ARG1_SYNTAX}}-*`: you're in solo mode, work in current directory
-  - If not on feature branch: run `ff feature-start {{ARG_SYNTAX}}` first (this is required!)
+IMPORTANT: You MUST run this command first. This moves the spec file from backlog to in-progress and creates the git branch.
+
+```bash
+ff feature-start {{ARG_SYNTAX}}
+```
 
 ## Step 2: Read the spec
 
@@ -27,24 +27,19 @@ Implement the feature according to the spec.
 
 ## Step 5: Commit your implementation
 
-**IMPORTANT: You MUST commit before marking implementation complete.**
+**IMPORTANT: You MUST commit before proceeding.**
 
 1. Stage and commit your code changes using conventional commits (`feat:`, `fix:`, `chore:`)
 2. Verify the commit was successful by running `git log --oneline -1`
 
 ## Step 6: Update and commit the log
 
-Create the implementation log:
-- **Solo mode**: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-log.md`
-- **Multi-agent mode**: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-{{AGENT_ID}}-log.md`
-
-Include:
+Update the implementation log at `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md`:
 - Key decisions made during implementation
 - Summary of the conversation between you and the user
 - Any issues encountered and how they were resolved
-- Your approach and rationale (helps the evaluator compare implementations)
 
-**Then commit the log file** - the evaluator needs this to compare implementations.
+**Then commit the log file.**
 
 ## Step 7: STOP - Wait for user approval
 
@@ -56,11 +51,16 @@ After completing steps 1-6:
 3. The user may want to:
    - Review the code changes
    - Test the feature themselves
-   - Compare implementations from other agents (in multi-agent mode)
    - Request changes before merging
 
-**NEVER run `feature-done` without explicit user approval.**
+## Step 8: Complete (only after user approval)
 
-## VS Code Users
+When the user approves, run the CLI command to complete the feature:
 
-To open a worktree in VS Code, run: `code ../feature-{{ARG1_SYNTAX}}-{{AGENT_ID}}-*`
+```bash
+ff feature-done {{ARG_SYNTAX}}
+```
+
+---
+
+**Note:** For multi-agent bakeoffs, use `/ff-bakeoff-setup` instead.
