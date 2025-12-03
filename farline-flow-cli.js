@@ -1289,19 +1289,14 @@ Setup:
 Solo Mode (single agent):
   feature-create <name>             Create feature spec in inbox
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
-  feature-start <ID>                Create branch, move spec to in-progress
+  feature-implement <ID>            Create branch, move spec to in-progress
   feature-done <ID>                 Merge branch and complete
 
 Bakeoff Mode (multi-agent):
-  feature-start <ID> <agents...>    Create worktrees for each agent
-  feature-eval <ID>                 Compare implementations, choose winner
+  bakeoff-setup <ID> <agents>       Setup bakeoff worktrees
+  bakeoff-implement <ID>            Implement in current worktree
   feature-done <ID> <agent>         Merge winning agent's branch
-  cleanup <ID> [--push]             Remove losing worktrees and branches
-
-Agent Slash Commands (use in agent sessions):
-  /ff-bakeoff-setup <ID> <agents>   Setup bakeoff worktrees
-  /ff-bakeoff-implement <ID>        Implement in current worktree
-  /ff-bakeoff-cleanup <ID>          Clean up after bakeoff (prompts for --push)
+  bakeoff-cleanup <ID>              Clean up after bakeoff (prompts for --push)
 
 Research:
   research-create <name>            Create research topic in inbox
@@ -1314,8 +1309,8 @@ Examples:
   ff install-agent cc gg            # Install Claude and Gemini configs
   ff feature-create "dark-mode"     # Create new feature spec
   ff feature-prioritise dark-mode   # Assign ID, move to backlog
-  ff feature-start 55               # Solo mode (branch only)
-  ff feature-start 55 cc gg cx      # Bakeoff with 3 agents
+  ff feature-implement 55           # Solo mode (branch only)
+  ff bakeoff-setup 55 cc gg cx      # Bakeoff with 3 agents
   ff feature-done 55                # Complete solo feature
   ff feature-done 55 cc             # Merge Claude's bakeoff implementation
 
