@@ -997,20 +997,35 @@ ${agentList}
                 }
 
                 // Generate and install commands from generic templates
-                const cmdDir = path.join(process.cwd(), config.output.commandDir);
-                config.commands.forEach(cmdName => {
-                    // Read generic template and process placeholders
-                    const genericContent = readGenericTemplate(`commands/${cmdName}.md`, config);
-                    const description = extractDescription(genericContent);
+                if (config.commands && config.commands.length > 0 && config.output) {
+                    // Expand ~ to home directory for global commands
+                    let cmdDir = config.output.commandDir;
+                    if (cmdDir.startsWith('~')) {
+                        cmdDir = cmdDir.replace('~', process.env.HOME || process.env.USERPROFILE);
+                    } else {
+                        cmdDir = path.join(process.cwd(), cmdDir);
+                    }
 
-                    // Format output based on agent's output format
-                    const outputContent = formatCommandOutput(genericContent, description, cmdName, config);
+                    config.commands.forEach(cmdName => {
+                        // Read generic template and process placeholders
+                        const genericContent = readGenericTemplate(`commands/${cmdName}.md`, config);
+                        const description = extractDescription(genericContent);
 
-                    // Write to agent's command directory
-                    const fileName = `${config.output.commandFilePrefix}${cmdName}${config.output.commandFileExtension}`;
-                    safeWrite(path.join(cmdDir, fileName), outputContent);
-                });
-                console.log(`   ✅ Created: ${config.output.commandDir}/*`);
+                        // Format output based on agent's output format
+                        const outputContent = formatCommandOutput(genericContent, description, cmdName, config);
+
+                        // Write to agent's command directory
+                        const fileName = `${config.output.commandFilePrefix}${cmdName}${config.output.commandFileExtension}`;
+                        safeWrite(path.join(cmdDir, fileName), outputContent);
+                    });
+
+                    if (config.output.global) {
+                        console.log(`   ✅ Installed global prompts: ${config.output.commandDir}`);
+                        console.log(`   ⚠️  Note: Codex prompts are global (shared across all projects)`);
+                    } else {
+                        console.log(`   ✅ Created: ${config.output.commandDir}/*`);
+                    }
+                }
 
                 // Process extras (skill, settings, prompt, config)
                 const extras = config.extras || {};
