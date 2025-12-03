@@ -16,6 +16,7 @@ Farline Flow supports single-agent development as well as parallel multi-agent "
 5. [Installation & Setup](#installation--setup)
 6. [CLI Reference](#cli-reference)
 7. [Agent Macros](#agent-macros)
+8. [Multi-Agent Evaluation](#multi-agent-evaluation)
 
 ---
 
@@ -253,5 +254,113 @@ When you run `ff install-agent cx`, it installs special slash commands for Codex
 | `/prompts:ff-research-done <ID>` | Runs `ff research-done <ID>`. |
 | `/prompts:ff-help` | Shows all available Farline Flow commands. |
 
+---
+
+## Multi-Agent Evaluation
+
+When running multi-agent bake-offs, use `ff feature-eval <ID>` to generate an evaluation template and compare implementations. For unbiased evaluation, **use a different model as the evaluator** than the ones that wrote the code.
+
+### Evaluator Model Recommendation
+
+If using Claude as the evaluator, start it with a different model:
+
+```bash
+# If implementations were written by Opus, evaluate with Sonnet
+claude --model sonnet
+
+# Then run the evaluation command
+/ff-feature-eval 10
+```
+
+### Example Evaluation Output
+
+Here's an example of what a multi-agent evaluation produces:
+
+```markdown
+# Evaluation: Feature 10 - add-search-box
+
+## Spec
+See: `./docs/specs/features/04-in-evaluation/feature-10-add-search-box.md`
+
+## Implementations to Compare
+
+- [x] **cc**: `~/src/feature-10-cc-add-search-box` - ✅ IMPLEMENTED
+- [x] **cx**: `~/src/feature-10-cx-add-search-box` - ✅ IMPLEMENTED
+- [x] **gg**: `~/src/feature-10-gg-add-search-box` - ✅ IMPLEMENTED
+
+## Evaluation Criteria
+
+| Criteria | cc | cx | gg |
+|----------|----|----|-----|
+| Code Quality | 9/10 | 10/10 | 6/10 |
+| Spec Compliance | 10/10 | 10/10 | 7/10 |
+| Performance | 9/10 | 10/10 | 8/10 |
+| Maintainability | 9/10 | 10/10 | 6/10 |
+| **TOTAL** | **37/40** | **40/40** | **27/40** |
+
+## Summary
+
+### Strengths & Weaknesses
+
+#### cc (Claude Code)
+**Strengths:**
+- ✅ **Perfect spec compliance**: All acceptance criteria met
+- ✅ **Proper normalization**: Implements punctuation removal (`/[^\w\s]/g`) and case-insensitive search
+- ✅ **Smart data mapping**: Created `SWELL_DIRECTION_MAP` to handle mismatch between UI abbreviations and data model full names
+- ✅ **Type safety**: Strong TypeScript typing with proper type narrowing
+- ✅ **Custom debounce hook**: Clean `useDebounce` implementation
+- ✅ **Performance**: Uses `useMemo` for filtered results
+- ✅ **Good UI**: Labels on filters, responsive design
+- ✅ **Comprehensive documentation**: Detailed implementation log
+
+**Weaknesses:**
+- ⚠️ **Non-breaking but complex**: Mapping layer adds some complexity (though it preserves data integrity)
+- ⚠️ **Separate normalize calls**: Calls `normalizeSearchText()` twice per location (once for name, once for description)
+
+#### cx (Claude via Cursor)
+**Strengths:**
+- ✅ **Perfect spec compliance**: All acceptance criteria met flawlessly
+- ✅ **Excellent normalization**: Robust `normalizeText()` function handles punctuation, underscores, and extra whitespace
+- ✅ **Optimal performance**: Uses `useMemo` for both sorting and filtering with proper dependency arrays
+- ✅ **Superior code organization**: Clean, readable, well-structured
+- ✅ **Enhanced UI/UX**: Professional design with card-based filter section, pills for attributes, improved layout
+- ✅ **Accessibility**: Proper labels with semantic HTML, clear visual hierarchy
+- ✅ **Explicit trim**: `setDebouncedSearch(searchTerm.trim())` - exactly as spec requires
+- ✅ **Modified data model cleanly**: Changed to abbreviations to match spec (same as gg but implemented better)
+- ✅ **No code waste**: Every line serves a purpose
+
+**Weaknesses:**
+- (None identified - this is a production-ready implementation)
+
+#### gg (Gemini)
+**Strengths:**
+- ✅ **Functional implementation**: Core search and filter functionality works
+- ✅ **Debounce implemented**: Correct 300ms debounce delay
+- ✅ **Modified data model**: Changed swellDirection to use abbreviations directly
+
+**Weaknesses:**
+- ❌ **Spec violation - punctuation handling**: Does NOT remove punctuation - "pipeline!" would NOT match "Pipeline"
+- ❌ **Spec violation - whitespace trimming**: Missing explicit trim on debounce tick
+- ❌ **Poor normalization**: Only uses `.toLowerCase()`, doesn't handle punctuation
+- ⚠️ **Less optimal performance**: Uses `useEffect` + `useState` instead of `useMemo` for filtering
+- ⚠️ **Code inefficiency**: Has unused `sortedLocations` variable on line 50
+- ⚠️ **Poor UX**: No labels on filter dropdowns, less accessible
+- ⚠️ **Fragile code**: Uses `.toLowerCase()` for swell comparison which could break with data changes
+```
+
+### After Evaluation
+
+Once you've chosen a winner, merge their implementation:
+
+```bash
+# Merge the winning implementation
+ff feature-done 10 cx
+
+# Push losing branches to origin for safekeeping (optional)
+ff cleanup 10 --push
+
+# Or just delete losing branches locally
+ff cleanup 10
+```
 
 ---

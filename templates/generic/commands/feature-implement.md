@@ -25,23 +25,41 @@ Implement the feature according to the spec.
 - Ask the user to test the changes on the running dev server
 - **STOP and WAIT for user confirmation before proceeding** - do NOT continue until the user confirms testing is complete
 
-## Step 5: Commit
+## Step 5: Commit your implementation
 
-Commit your changes using conventional commits (`feat:`, `fix:`, `chore:`)
+**IMPORTANT: You MUST commit before marking implementation complete.**
 
-## Step 6: Update the log
+1. Stage and commit your code changes using conventional commits (`feat:`, `fix:`, `chore:`)
+2. Verify the commit was successful by running `git log --oneline -1`
 
-Create or update the implementation log at `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-log.md`:
-- Document key decisions made during implementation
-- Summarize the conversation between you and the user
-- Note any issues encountered and how they were resolved
+## Step 6: Update and commit the log
 
-## Step 7: Complete
+Create the implementation log:
+- **Solo mode**: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-log.md`
+- **Multi-agent mode**: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-{{AGENT_ID}}-log.md`
 
-Run the CLI command to complete the feature:
+Include:
+- Key decisions made during implementation
+- Summary of the conversation between you and the user
+- Any issues encountered and how they were resolved
+- Your approach and rationale (helps the evaluator compare implementations)
 
-- **Solo mode**: `ff feature-done {{ARG_SYNTAX}}`
-- **Multi-agent mode**: `ff feature-done {{ARG_SYNTAX}} {{AGENT_ID}}`
+**Then commit the log file** - the evaluator needs this to compare implementations.
+
+## Step 7: STOP - Wait for user approval
+
+**CRITICAL: Do NOT proceed to feature-done automatically.**
+
+After completing steps 1-6:
+1. Tell the user: "Implementation complete. Ready for your review."
+2. **STOP and WAIT** for the user to explicitly request `feature-done`
+3. The user may want to:
+   - Review the code changes
+   - Test the feature themselves
+   - Compare implementations from other agents (in multi-agent mode)
+   - Request changes before merging
+
+**NEVER run `feature-done` without explicit user approval.**
 
 ## VS Code Users
 

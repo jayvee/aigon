@@ -50,8 +50,12 @@ function findFile(typeConfig, nameOrId, searchFolders = typeConfig.folders) {
         for (const file of files) {
             if (!file.endsWith('.md')) continue;
             if (isId) {
-                // Match files with ID: feature-55-description.md
-                if (file.startsWith(`${typeConfig.prefix}-${nameOrId}-`)) {
+                // Match files with ID: feature-55-description.md or feature-01-description.md
+                // Support both padded (01) and unpadded (1) IDs
+                const paddedId = String(nameOrId).padStart(2, '0');
+                const unpadded = String(parseInt(nameOrId, 10));
+                if (file.startsWith(`${typeConfig.prefix}-${paddedId}-`) ||
+                    file.startsWith(`${typeConfig.prefix}-${unpadded}-`)) {
                     return { file, folder, fullPath: path.join(dir, file) };
                 }
             } else {
@@ -120,12 +124,13 @@ function organizeLogFiles(featureNum, winnerAgentId) {
     });
 }
 
-function runGit(command) {
+function runGit(command, options = {}) {
+    console.log(`Running git: ${command}`);
     try {
-        console.log(`Running git: ${command}`);
-        execSync(command, { stdio: 'inherit' });
+        execSync(command, { stdio: 'inherit', ...options });
     } catch (e) {
         console.error("❌ Git command failed.");
+        throw e; // Re-throw so callers can handle the failure
     }
 }
 
@@ -309,6 +314,11 @@ const commands = {
             folders.forEach(f => {
                 const p = path.join(root, f);
                 if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+                // Add .gitkeep to ensure empty directories are tracked by git
+                const gitkeepPath = path.join(p, '.gitkeep');
+                if (!fs.existsSync(gitkeepPath)) {
+                    fs.writeFileSync(gitkeepPath, '');
+                }
             });
         };
         createDirs(PATHS.research.root, PATHS.research.folders);
@@ -317,6 +327,11 @@ const commands = {
         if (!fs.existsSync(path.join(featLogs, 'selected'))) fs.mkdirSync(path.join(featLogs, 'selected'), { recursive: true });
         if (!fs.existsSync(path.join(featLogs, 'alternatives'))) fs.mkdirSync(path.join(featLogs, 'alternatives'), { recursive: true });
         if (!fs.existsSync(path.join(PATHS.features.root, 'evaluations'))) fs.mkdirSync(path.join(PATHS.features.root, 'evaluations'), { recursive: true });
+        // Add .gitkeep to log and evaluation folders
+        [path.join(featLogs, 'selected'), path.join(featLogs, 'alternatives'), path.join(PATHS.features.root, 'evaluations')].forEach(p => {
+            const gitkeepPath = path.join(p, '.gitkeep');
+            if (!fs.existsSync(gitkeepPath)) fs.writeFileSync(gitkeepPath, '');
+        });
         const readmePath = path.join(SPECS_ROOT, 'README.md');
         if (!fs.existsSync(readmePath)) {
             const readmeContent = `# Farline Flow Specs\n\n**This folder is the Single Source of Truth.**\n\n## Rules\n1. READ ONLY: backlog, inbox, done.\n2. WRITE: Only edit code if feature spec is in features/in-progress.\n`;
@@ -420,6 +435,16 @@ const commands = {
             `${PATHS.features.prefix}-${paddedId}-`
         );
         moveFile(found, '02-backlog', newName);
+
+        // Commit the prioritisation so it's available in worktrees
+        try {
+            runGit(`git add docs/specs/features/`);
+            runGit(`git commit -m "chore: prioritise feature ${paddedId} - move to backlog"`);
+            console.log(`📝 Committed feature prioritisation`);
+        } catch (e) {
+            console.warn(`⚠️  Could not commit: ${e.message}`);
+        }
+
         console.log(`📋 Assigned ID: ${paddedId}`);
         console.log(`🚀 Next: feature-start ${paddedId}`);
         console.log(`   Solo mode: feature-start ${paddedId}`);
@@ -432,8 +457,12 @@ const commands = {
 
         // Find and move spec to in-progress
         let found = findFile(PATHS.features, name, ['02-backlog']);
+        let movedFromBacklog = false;
         if (found) {
             moveFile(found, '03-in-progress');
+            movedFromBacklog = true;
+            // Update found to point to new location
+            found = findFile(PATHS.features, name, ['03-in-progress']);
         } else {
             found = findFile(PATHS.features, name, ['03-in-progress']);
             if (!found) return console.error(`❌ Could not find feature "${name}" in backlog or in-progress.`);
@@ -448,6 +477,16 @@ const commands = {
         if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
 
         if (agentId) {
+            // Multi-agent mode: commit the spec move first so worktree has it
+            if (movedFromBacklog) {
+                try {
+                    runGit(`git add docs/specs/features/`);
+                    runGit(`git commit -m "chore: start feature ${num} - move spec to in-progress"`);
+                    console.log(`📝 Committed spec move to in-progress`);
+                } catch (e) {
+                    console.warn(`⚠️  Could not commit spec move: ${e.message}`);
+                }
+            }
             // Multi-agent mode: worktree isolation (for bake-offs)
             const branchName = `feature-${num}-${agentId}-${desc}`;
             const worktreePath = `../feature-${num}-${agentId}-${desc}`;
@@ -497,10 +536,121 @@ const commands = {
     },
     'feature-eval': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: ff feature-eval <name|ID>");
-        const found = findFile(PATHS.features, name, ['03-in-progress']);
-        if (!found) return console.error(`❌ Could not find feature "${name}" in in-progress.`);
-        moveFile(found, '04-in-evaluation');
+        if (!name) return console.error("Usage: ff feature-eval <ID>");
+
+        // Find the feature (may already be in evaluation)
+        let found = findFile(PATHS.features, name, ['03-in-progress']);
+        if (found) {
+            moveFile(found, '04-in-evaluation');
+            found = findFile(PATHS.features, name, ['04-in-evaluation']);
+        } else {
+            found = findFile(PATHS.features, name, ['04-in-evaluation']);
+            if (!found) return console.error(`❌ Could not find feature "${name}" in in-progress or in-evaluation.`);
+            console.log(`ℹ️  Feature already in evaluation: ${found.file}`);
+        }
+
+        const match = found.file.match(/^feature-(\d+)-(.*)\.md$/);
+        if (!match) return console.warn("⚠️  Could not parse filename.");
+        const [_, num, desc] = match;
+
+        // Find all worktrees for this feature
+        let worktrees = [];
+        try {
+            const stdout = execSync('git worktree list', { encoding: 'utf8' });
+            const lines = stdout.split('\n');
+            lines.forEach(line => {
+                const wtMatch = line.match(/^([^\s]+)\s+/);
+                if (!wtMatch) return;
+                const wtPath = wtMatch[1];
+                // Match worktrees for this feature: ../feature-10-cc-desc, ../feature-10-gg-desc
+                const featureMatch = wtPath.match(new RegExp(`feature-${num}-(\\w+)-`));
+                if (featureMatch) {
+                    const agentId = featureMatch[1];
+                    // Look up agent name from config
+                    const agentConfig = loadAgentConfig(agentId);
+                    const agentName = agentConfig ? agentConfig.name : agentId;
+                    worktrees.push({ path: wtPath, agent: agentId, name: agentName });
+                }
+            });
+        } catch (e) {
+            console.warn("⚠️  Could not list worktrees");
+        }
+
+        // Create evaluation template
+        const evalsDir = path.join(PATHS.features.root, 'evaluations');
+        if (!fs.existsSync(evalsDir)) fs.mkdirSync(evalsDir, { recursive: true });
+
+        const evalFile = path.join(evalsDir, `feature-${num}-eval.md`);
+        if (!fs.existsSync(evalFile)) {
+            const agentList = worktrees.length > 0
+                ? worktrees.map(w => `- [ ] **${w.agent}** (${w.name}): \`${w.path}\``).join('\n')
+                : '- [ ] (no worktrees found - check git worktree list)';
+
+            const evalTemplate = `# Evaluation: Feature ${num} - ${desc}
+
+## Spec
+See: \`./docs/specs/features/04-in-evaluation/${found.file}\`
+
+## Implementations to Compare
+
+${agentList}
+
+## Evaluation Criteria
+
+| Criteria | ${worktrees.map(w => w.agent).join(' | ') || 'agent1 | agent2 | agent3'} |
+|----------|${worktrees.map(() => '---').join('|') || '---|---|---'}|
+| Code Quality | | ${worktrees.length > 1 ? '|'.repeat(worktrees.length - 1) : '| |'} |
+| Spec Compliance | | ${worktrees.length > 1 ? '|'.repeat(worktrees.length - 1) : '| |'} |
+| Performance | | ${worktrees.length > 1 ? '|'.repeat(worktrees.length - 1) : '| |'} |
+| Maintainability | | ${worktrees.length > 1 ? '|'.repeat(worktrees.length - 1) : '| |'} |
+
+## Summary
+
+### Strengths & Weaknesses
+
+#### Agent 1
+- Strengths:
+- Weaknesses:
+
+#### Agent 2
+- Strengths:
+- Weaknesses:
+
+#### Agent 3
+- Strengths:
+- Weaknesses:
+
+## Recommendation
+
+**Winner:** (to be determined after review)
+
+**Rationale:**
+
+`;
+            fs.writeFileSync(evalFile, evalTemplate);
+            console.log(`📝 Created: ./docs/specs/features/evaluations/feature-${num}-eval.md`);
+        } else {
+            console.log(`ℹ️  Evaluation file already exists: feature-${num}-eval.md`);
+        }
+
+        // Commit the changes
+        try {
+            runGit(`git add docs/specs/features/`);
+            runGit(`git commit -m "chore: move feature ${num} to evaluation"`);
+            console.log(`📝 Committed evaluation setup`);
+        } catch (e) {
+            // May fail if no changes, that's ok
+        }
+
+        console.log(`\n📋 Feature ${num} ready for evaluation`);
+        console.log(`\n🔍 Next steps:`);
+        console.log(`   1. Review implementations in each worktree`);
+        console.log(`   2. Fill in ./docs/specs/features/evaluations/feature-${num}-eval.md`);
+        console.log(`   3. Pick a winner and run: ff feature-done ${num} <winning-agent>`);
+        if (worktrees.length > 0) {
+            console.log(`\n📂 Worktrees found:`);
+            worktrees.forEach(w => console.log(`   - ${w.agent}: ${w.path}`));
+        }
     },
     'feature-done': (args) => {
         const name = args[0];
@@ -614,7 +764,7 @@ const commands = {
             }
         }
 
-        // Delete the merged branch
+        // Delete the merged (winning) branch locally
         try {
             runGit(`git branch -d ${branchName}`);
             console.log(`🗑️  Deleted branch: ${branchName}`);
@@ -622,28 +772,101 @@ const commands = {
             // Branch deletion is optional, don't fail if it doesn't work
         }
 
+        // In multi-agent mode, handle losing branches
+        if (agentId) {
+            // Find all other branches for this feature
+            const losingBranches = [];
+            try {
+                const branchOutput = execSync('git branch --list', { encoding: 'utf8' });
+                const branches = branchOutput.split('\n').map(b => b.trim().replace('* ', ''));
+                branches.forEach(branch => {
+                    // Match feature-NUM-AGENT-desc but not the winning branch
+                    const featurePattern = new RegExp(`^feature-${num}-\\w+-`);
+                    if (featurePattern.test(branch) && branch !== branchName) {
+                        losingBranches.push(branch);
+                    }
+                });
+            } catch (e) {
+                // Ignore errors listing branches
+            }
+
+            if (losingBranches.length > 0) {
+                console.log(`\n📦 Found ${losingBranches.length} other implementation(s):`);
+                losingBranches.forEach(b => console.log(`   - ${b}`));
+                console.log(`\n💡 To push these to origin for safekeeping, run:`);
+                losingBranches.forEach(b => console.log(`   git push -u origin ${b}`));
+                console.log(`\n🧹 To clean up losing worktrees and branches, run:`);
+                console.log(`   ff cleanup ${num}`);
+            }
+        }
+
         console.log(`\n✅ Feature ${num} complete! (${mode} mode)`);
     },
     'cleanup': (args) => {
         const id = args[0];
-        if (!id) return console.error("Usage: ff cleanup <ID>");
+        const pushFlag = args.includes('--push');
+        if (!id) return console.error("Usage: ff cleanup <ID> [--push]\n  --push: Push branches to origin before deleting locally");
+
+        const paddedId = String(id).padStart(2, '0');
+        const unpaddedId = String(parseInt(id, 10));
+
+        // Remove worktrees
+        let worktreeCount = 0;
         try {
             const stdout = execSync('git worktree list', { encoding: 'utf8' });
             const lines = stdout.split('\n');
-            let count = 0;
             lines.forEach(line => {
                 const match = line.match(/^([^\s]+)\s+/);
                 if (!match) return;
                 const wtPath = match[1];
                 if (wtPath === process.cwd()) return;
-                if (wtPath.includes(`feature-${id}-`)) {
-                    console.log(`   Removing: ${wtPath}`);
-                    try { execSync(`git worktree remove "${wtPath}" --force`); count++; } 
+                if (wtPath.includes(`feature-${paddedId}-`) || wtPath.includes(`feature-${unpaddedId}-`)) {
+                    console.log(`   Removing worktree: ${wtPath}`);
+                    try { execSync(`git worktree remove "${wtPath}" --force`); worktreeCount++; }
                     catch (err) { console.error(`   ❌ Failed to remove ${wtPath}`); }
                 }
             });
-            console.log(`✅ Removed ${count} worktrees.`);
         } catch (e) { console.error("❌ Error reading git worktrees."); }
+
+        // Find and handle branches
+        const featureBranches = [];
+        try {
+            const branchOutput = execSync('git branch --list', { encoding: 'utf8' });
+            const branches = branchOutput.split('\n').map(b => b.trim().replace('* ', '')).filter(b => b);
+            branches.forEach(branch => {
+                if (branch.startsWith(`feature-${paddedId}-`) || branch.startsWith(`feature-${unpaddedId}-`)) {
+                    featureBranches.push(branch);
+                }
+            });
+        } catch (e) {
+            // Ignore errors
+        }
+
+        let branchCount = 0;
+        if (featureBranches.length > 0) {
+            featureBranches.forEach(branch => {
+                if (pushFlag) {
+                    try {
+                        execSync(`git push -u origin ${branch}`, { stdio: 'pipe' });
+                        console.log(`   📤 Pushed: ${branch}`);
+                    } catch (e) {
+                        console.warn(`   ⚠️  Could not push ${branch} (may already exist on remote)`);
+                    }
+                }
+                try {
+                    execSync(`git branch -D ${branch}`, { stdio: 'pipe' });
+                    console.log(`   🗑️  Deleted local branch: ${branch}`);
+                    branchCount++;
+                } catch (e) {
+                    console.error(`   ❌ Failed to delete ${branch}`);
+                }
+            });
+        }
+
+        console.log(`\n✅ Cleanup complete: ${worktreeCount} worktree(s), ${branchCount} branch(es) removed.`);
+        if (!pushFlag && branchCount > 0) {
+            console.log(`💡 Tip: Use 'ff cleanup ${id} --push' to push branches to origin before deleting.`);
+        }
     },
     'install-agent': (args) => {
         // Use new config-driven approach
