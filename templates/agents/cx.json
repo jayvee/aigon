@@ -8,13 +8,13 @@
     "AGENT_NAME": "Codex",
     "ARG_SYNTAX": "$ARGUMENTS",
     "ARG1_SYNTAX": "$1",
-    "CMD_PREFIX": "/prompts:ff-"
+    "CMD_PREFIX": "/prompts:aigon-"
   },
 
   "output": {
     "format": "markdown",
     "commandDir": "~/.codex/prompts",
-    "commandFilePrefix": "ff-",
+    "commandFilePrefix": "aigon-",
     "commandFileExtension": ".md",
     "frontmatter": ["description", "args"],
     "global": true

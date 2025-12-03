@@ -8,12 +8,12 @@
     "AGENT_NAME": "Gemini",
     "ARG_SYNTAX": "{{args}}",
     "ARG1_SYNTAX": "{{args}}",
-    "CMD_PREFIX": "/ff:"
+    "CMD_PREFIX": "/aigon:"
   },
 
   "output": {
     "format": "toml",
-    "commandDir": ".gemini/commands/ff",
+    "commandDir": ".gemini/commands/aigon",
     "commandFilePrefix": "",
     "commandFileExtension": ".toml"
   },
@@ -26,7 +26,7 @@
     "settings": {
       "enabled": true,
       "path": ".gemini/settings.json",
-      "allowedTools": ["ff"]
+      "allowedTools": ["aigon"]
     }
   },
 

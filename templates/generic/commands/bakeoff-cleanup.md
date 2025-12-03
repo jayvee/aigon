@@ -1,5 +1,5 @@
 <!-- description: Cleanup bakeoff <ID> - remove losing worktrees and branches -->
-# ff-bakeoff-cleanup
+# aigon-bakeoff-cleanup
 
 Clean up after a bakeoff by removing losing agents' worktrees and branches.
 
@@ -18,12 +18,12 @@ Based on user choice:
 
 **If pushing to origin first:**
 ```bash
-ff cleanup {{ARG1_SYNTAX}} --push
+aigoncleanup {{ARG1_SYNTAX}} --push
 ```
 
 **If just deleting locally:**
 ```bash
-ff cleanup {{ARG1_SYNTAX}}
+aigoncleanup {{ARG1_SYNTAX}}
 ```
 
 ## What this does

@@ -8,13 +8,13 @@
     "AGENT_NAME": "Claude",
     "ARG_SYNTAX": "{{args}}",
     "ARG1_SYNTAX": "{{args}}",
-    "CMD_PREFIX": "/ff-"
+    "CMD_PREFIX": "/aigon-"
   },
 
   "output": {
     "format": "markdown",
     "commandDir": ".claude/commands",
-    "commandFilePrefix": "ff-",
+    "commandFilePrefix": "aigon-",
     "commandFileExtension": ".md",
     "frontmatter": ["description"]
   },
@@ -26,12 +26,12 @@
   "extras": {
     "skill": {
       "enabled": true,
-      "path": ".claude/skills/farline-flow/SKILL.md"
+      "path": ".claude/skills/aigon/SKILL.md"
     },
     "settings": {
       "enabled": true,
       "path": ".claude/settings.json",
-      "permissions": ["Bash(ff:*)"]
+      "permissions": ["Bash(aigon:*)"]
     }
   },
 

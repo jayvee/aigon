@@ -23,5 +23,5 @@
 <!-- Summary of recommended approach based on findings -->
 
 ## Output
-<!-- Based on your recommendation, create the necessary feature specs by running the `ff feature-create "<name>"` command. Link the newly created files below. -->
+<!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Link the newly created files below. -->
 - [ ] Feature:

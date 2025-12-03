@@ -1,4 +1,4 @@
-<!-- FARLINE_FLOW_START -->
+<!-- AIGON_START -->
 # Codex Configuration
 
 ## Agent Identity
@@ -8,51 +8,51 @@
 
 ## CLI Commands
 
-Codex uses `ff` CLI commands directly (no slash commands).
+Codex uses `aigon` CLI commands directly (no slash commands).
 
 ### Solo Mode (single agent)
 
 | Command | Description |
 |---------|-------------|
-| `ff feature-create <name>` | Create a new feature spec in inbox |
-| `ff feature-prioritise <name>` | Move feature to backlog, assign ID |
-| `ff feature-start <ID>` | Create branch, move spec to in-progress |
-| `ff feature-eval <ID>` | Move feature to evaluation (optional) |
-| `ff feature-done <ID>` | Merge branch and complete |
+| `aigon feature-create <name>` | Create a new feature spec in inbox |
+| `aigon feature-prioritise <name>` | Move feature to backlog, assign ID |
+| `aigon feature-start <ID>` | Create branch, move spec to in-progress |
+| `aigon feature-eval <ID>` | Move feature to evaluation (optional) |
+| `aigon feature-done <ID>` | Merge branch and complete |
 
 ### Bakeoff Mode (multi-agent)
 
 | Command | Description |
 |---------|-------------|
-| `ff feature-start <ID> cx` | Create worktree for this agent |
-| `ff feature-start <ID> cx gg cc` | Create worktrees for multiple agents |
-| `ff feature-eval <ID>` | Move feature to evaluation |
-| `ff feature-done <ID> cx` | Merge this agent's branch |
-| `ff cleanup <ID>` | Remove losing worktrees and local branches |
-| `ff cleanup <ID> --push` | Push losing branches to origin first, then cleanup |
+| `aigon feature-start <ID> cx` | Create worktree for this agent |
+| `aigon feature-start <ID> cx gg cc` | Create worktrees for multiple agents |
+| `aigon feature-eval <ID>` | Move feature to evaluation |
+| `aigon feature-done <ID> cx` | Merge this agent's branch |
+| `aigon cleanup <ID>` | Remove losing worktrees and local branches |
+| `aigon cleanup <ID> --push` | Push losing branches to origin first, then cleanup |
 
 ### Research
 
 | Command | Description |
 |---------|-------------|
-| `ff research-create <name>` | Create research topic in inbox |
-| `ff research-prioritise <name>` | Move research to backlog |
-| `ff research-start <ID>` | Move research to in-progress |
-| `ff research-done <ID>` | Complete research topic |
+| `aigon research-create <name>` | Create research topic in inbox |
+| `aigon research-prioritise <name>` | Move research to backlog |
+| `aigon research-start <ID>` | Move research to in-progress |
+| `aigon research-done <ID>` | Complete research topic |
 
 ## Solo Mode Workflow
 
-1. Run `ff feature-start <ID>` to create branch and move spec
+1. Run `aigon feature-start <ID>` to create branch and move spec
 2. Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
 3. Implement the feature according to the spec
 4. Test your changes and wait for user confirmation
 5. Commit using conventional commits (`feat:`, `fix:`, `chore:`)
 6. Update the implementation log in `./docs/specs/features/logs/`
-7. **STOP** - Wait for user to approve before running `ff feature-done <ID>`
+7. **STOP** - Wait for user to approve before running `aigon feature-done <ID>`
 
 ## Bakeoff Mode Workflow
 
-1. Run `ff feature-start <ID> cx` (or with multiple agents) to create worktree(s)
+1. Run `aigon feature-start <ID> cx` (or with multiple agents) to create worktree(s)
 2. **STOP** - Tell the user to open the worktree in a separate session
 3. In the worktree session:
    - Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
@@ -60,9 +60,9 @@ Codex uses `ff` CLI commands directly (no slash commands).
    - Commit your changes
    - Update the implementation log
    - **STOP** - Do NOT run `feature-done` from worktree
-4. Return to main repo for evaluation: `ff feature-eval <ID>`
-5. Merge winner: `ff feature-done <ID> cx`
-6. Clean up losers: `ff cleanup <ID> --push` (to save branches) or `ff cleanup <ID>` (to delete)
+4. Return to main repo for evaluation: `aigon feature-eval <ID>`
+5. Merge winner: `aigon feature-done <ID> cx`
+6. Clean up losers: `aigon cleanup <ID> --push` (to save branches) or `aigon cleanup <ID>` (to delete)
 
 ## Critical Rules
 
@@ -80,4 +80,4 @@ Before running `feature-done`, always:
    git push -u origin <current-branch-name>
    ```
 2. **Ask the user** if they want to delete the local branch after merge
-<!-- FARLINE_FLOW_END -->
+<!-- AIGON_END -->

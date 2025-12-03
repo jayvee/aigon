@@ -1,10 +1,10 @@
 # Development Workflow
 
-This project uses **Farline Flow**, a spec-driven development workflow for AI agents.
+This project uses **Aigon**, a spec-driven development workflow for AI agents.
 
 ## Overview
 
-Farline Flow enforces a structured **Research → Specification → Implementation** loop:
+Aigon enforces a structured **Research → Specification → Implementation** loop:
 
 1. **Research Topics** explore the "why" before building
 2. **Feature Specs** define the "what" to build
@@ -41,14 +41,14 @@ docs/specs/
 
 | Command | Description |
 |---------|-------------|
-| `ff init` | Initialize the specs directory structure |
-| `ff feature-prioritise <name>` | Move feature from inbox to backlog, assign ID |
-| `ff feature-start <ID> <agent>` | Start feature, create worktree |
-| `ff feature-eval <ID>` | Submit feature for evaluation |
-| `ff feature-done <ID> <agent>` | Merge feature, cleanup worktree |
-| `ff research-prioritise <name>` | Move research from inbox to backlog |
-| `ff research-start <ID>` | Start research topic |
-| `ff research-done <ID>` | Complete research topic |
+| `aigon init` | Initialize the specs directory structure |
+| `aigon feature-prioritise <name>` | Move feature from inbox to backlog, assign ID |
+| `aigon feature-start <ID> <agent>` | Start feature, create worktree |
+| `aigon feature-eval <ID>` | Submit feature for evaluation |
+| `aigon feature-done <ID> <agent>` | Merge feature, cleanup worktree |
+| `aigon research-prioritise <name>` | Move research from inbox to backlog |
+| `aigon research-start <ID>` | Start research topic |
+| `aigon research-done <ID>` | Complete research topic |
 
 ## Key Rules
 
@@ -72,13 +72,13 @@ Before running `feature-done`, always:
 Multiple agents can compete on the same feature:
 
 ```bash
-ff feature-start 55 cc   # Claude's worktree: ../feature-55-cc-description
-ff feature-start 55 gg   # Gemini's worktree: ../feature-55-gg-description
+aigon feature-start 55 cc   # Claude's worktree: ../feature-55-cc-description
+aigon feature-start 55 gg   # Gemini's worktree: ../feature-55-gg-description
 ```
 
 After review, merge the winner and archive alternatives:
 
 ```bash
-ff feature-done 55 cc    # Merge Claude's work, archive Gemini's log
-ff cleanup 55            # Remove remaining worktrees
+aigon feature-done 55 cc    # Merge Claude's work, archive Gemini's log
+aigon cleanup 55            # Remove remaining worktrees
 ```

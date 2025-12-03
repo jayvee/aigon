@@ -1,10 +1,10 @@
-# Farline Flow
+# Aigon
 
 **A lightweight, Spec-Driven framework for AI-native software engineering.**
 
-Farline Flow is a **100% file-based system** that uses simple folder and file naming conventions to guide AI agents through a clear **Research → Feature Specification → Code** loop. It requires **no external databases, servers or integration to work tracking tools**. Everything lives as text files in your repository and your interaction and the decisions of agents are saved alongside your codebase.
+Aigon is a **100% file-based system** that uses simple folder and file naming conventions to guide AI agents through a clear **Research → Feature Specification → Code** loop. It requires **no external databases, servers or integration to work tracking tools**. Everything lives as text files in your repository and your interaction and the decisions of agents are saved alongside your codebase.
 
-Farline Flow supports single-agent development as well as parallel multi-agent "bake-offs"—where agents like Claude Code, Gemini, and Codex compete to implement specs—while keeping your workflow portable, transparent, and under your control.
+Aigon supports single-agent development as well as parallel multi-agent "bake-offs"—where agents like Claude Code, Gemini, and Codex compete to implement specs—while keeping your workflow portable, transparent, and under your control.
 
 ---
 
@@ -22,9 +22,9 @@ Farline Flow supports single-agent development as well as parallel multi-agent "
 
 ## Core Philosophy
 
-Farline Flow implements spec driven AI development, where your specs are self-contained in your codebase and the workflow is implemented by simple shell scripts or agent comands.
+Aigon implements spec driven AI development, where your specs are self-contained in your codebase and the workflow is implemented by simple shell scripts or agent comands.
 
-Farline Flow provides this structure via Git and the filesystem:
+Aigon provides this structure via Git and the filesystem:
 * **State-as-Folders:** The status of a task is defined by *where it lives* (`inbox`, `backlog`, `in-progress`), not by a separate database record.
 * **Decoupled Lifecycles:** Research and Features are separate entities. Research explores *what* to build; Features define *how* to build it.
 * **Traceable History:** All agent conversations and implementation attempts are preserved as Markdown files within the repository itself.
@@ -53,8 +53,8 @@ The architecture separates concerns into distinct, state-driven folders:
 
 ### 1. Research Lifecycle
 Used for exploring complex topics before writing code. Files transition within the `./docs/specs/research-topics` folder.
-* **Create:** `ff research-create "API Design"` creates a templated topic in `/01-inbox`.
-* **Prioritize:** `ff research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
+* **Create:** `aigon research-create "API Design"` creates a templated topic in `/01-inbox`.
+* **Prioritize:** `aigon research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
 *   **Execute:** Agents read the file from `/03-in-progress`, write their findings and recommendations directly into the document, and create new feature specs.
 *   **Output:** The research file becomes a complete record, and its primary output is one or more new Feature Specs in `features/01-inbox`.
 
@@ -63,15 +63,15 @@ Used for shipping code based on a defined spec. Files transition within the `./d
 
 #### 2.1 Single Agent Feature Lifecycle
 
-1.  **Create:** `ff feature-create "Dark Mode"` creates a templated spec in `/inbox`.
-2.  **Prioritize:** `ff feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Implement:** Run `/ff-feature-implement 108` (or `ff feature-start 108` via CLI)
+1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
+2.  **Prioritize:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
+3.  **Implement:** Run `/aigon-feature-implement 108` (or `aigon feature-start 108` via CLI)
     * Moves Spec to `/03-in-progress`.
     * Creates a **Git Branch** (`feature-108-desc`).
     * **Auto-creates** a blank Analysis Log template.
     * Agent reads the feature spec and codes a solution.
     * Agent *must* fill out the Analysis Log.
-4.  **Finish:** `ff feature-done 108`
+4.  **Finish:** `aigon feature-done 108`
     * **Blocks** if the Analysis Log is empty (Enforced Guardrail).
     * Merges the branch and archives the log.
 
@@ -79,9 +79,9 @@ Used for shipping code based on a defined spec. Files transition within the `./d
 
 Run multiple agents in competition to find the optimal solution.
 
-1.  **Create:** `ff feature-create "Dark Mode"` creates a templated spec in `/inbox`.
-2.  **Prioritize:** `ff feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Setup Bakeoff:** Run `/ff-bakeoff-setup 108 cc gg cx` (or via CLI: `ff feature-start 108 cc gg cx`)
+1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
+2.  **Prioritize:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
+3.  **Setup Bakeoff:** Run `/aigon-bakeoff-setup 108 cc gg cx` (or via CLI: `aigon feature-start 108 cc gg cx`)
     * Moves Spec to `/03-in-progress`.
     * Creates agent-specific **Git Branches** (`feature-108-cc-desc`, `feature-108-gg-desc`, `feature-108-cx-desc`).
     * Creates **Git Worktrees** in sibling folders:
@@ -90,14 +90,14 @@ Run multiple agents in competition to find the optimal solution.
         * `../feature-108-cx-darkmode` (Codex)
     * **Auto-creates** blank Analysis Log templates for each agent.
     * **STOPS** - does not implement (user must open each worktree separately).
-4.  **Implement:** Open each worktree in a separate editor session and run `/ff-bakeoff-implement 108`.
+4.  **Implement:** Open each worktree in a separate editor session and run `/aigon-bakeoff-implement 108`.
     * Each agent builds the feature independently in their isolated worktree.
     * Each agent *must* fill out their Analysis Log.
-5.  **Evaluate:** Back in the main working folder - `ff feature-eval 108` moves the feature to `/in-evaluation` for review.
+5.  **Evaluate:** Back in the main working folder - `aigon feature-eval 108` moves the feature to `/in-evaluation` for review.
 6.  **Judge:** Review and compare solutions in `/features/in-evaluation`.
 7.  **Merge Winner:**
     ```bash
-    ff feature-done 108 cc
+    aigon feature-done 108 cc
     ```
     * **Blocks** if the Analysis Log is empty (Enforced Guardrail).
     * Merges winner's branch.
@@ -106,7 +106,7 @@ Run multiple agents in competition to find the optimal solution.
     * Cleans up winner's worktree.
 8.  **Cleanup Losers:**
     ```bash
-    ff cleanup 108
+    aigon cleanup 108
     ```
 
 ---
@@ -114,32 +114,32 @@ Run multiple agents in competition to find the optimal solution.
 ## Installation & Setup
 
 ### 1. Install the CLI
-First, clone this repository and use `npm link` to make the `ff` command globally available.
+First, clone this repository and use `npm link` to make the `aigon` command globally available.
 
 ```bash
-git clone https://github.com/yourname/farline-flow.git
-cd farline-flow
+git clone https://github.com/yourname/aigon.git
+cd aigon
 npm install
 npm link
 ```
 
 ### 2. Initialize Your Project
-Navigate to your project's root directory and run `ff init`. This will create the necessary `docs/specs` directory structure.
+Navigate to your project's root directory and run `aigon init`. This will create the necessary `docs/specs` directory structure.
 
 ```bash
 cd /path/to/your/project
-ff init
+aigon init
 ```
 
 ### 3. Install Agent Configurations
-To integrate Farline Flow with your AI agents, run `ff install-agent`. This command generates the required configuration files for the specified agents. You can install multiple agents at once.
+To integrate Aigon with your AI agents, run `aigon install-agent`. This command generates the required configuration files for the specified agents. You can install multiple agents at once.
 
 ```bash
 # Install single agent
-ff install-agent cc
+aigon install-agent cc
 
 # Install multiple agents at once
-ff install-agent cc gg cx
+aigon install-agent cc gg cx
 ```
 
 **Supported Agents:**
@@ -165,51 +165,51 @@ your-project/
 └── .gemini/                       # Gemini command files
 ```
 
-**Re-installation:** Running `install-agent` again will update the Farline Flow sections while preserving any custom content you've added outside the `<!-- FARLINE_FLOW_START/END -->` markers.
+**Re-installation:** Running `install-agent` again will update the Aigon sections while preserving any custom content you've added outside the `<!-- AIGON_START/END -->` markers.
 
-**Important:** You must commit the generated configuration files to Git. This ensures that when `ff` creates a new git worktree, the agent configurations are available in that isolated environment.
+**Important:** You must commit the generated configuration files to Git. This ensures that when `aigon` creates a new git worktree, the agent configurations are available in that isolated environment.
 
 ---
 
 ## CLI Reference
 
-The `ff` (Farline Flow) command automates state transitions and Git operations.
+The `aigon` (Aigon) command automates state transitions and Git operations.
 
 ### Solo Mode (single agent)
 
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| **Init** | `ff init` | Creates the `./docs/specs` directory structure in the current project. |
-| **Feature Create** | `ff feature-create <name>` | Creates a new feature spec from template in `features/inbox`. |
-| **Feature Prioritise** | `ff feature-prioritise <name>` | Promotes a feature draft from `inbox` to `backlog` with a new ID. |
-| **Feature Start** | `ff feature-start <ID>` | Creates branch `feature-ID-desc`, moves spec to in-progress. |
-| **Feature Evaluate** | `ff feature-eval <ID>` | Moves feature to evaluation (optional). |
-| **Feature Finish** | `ff feature-done <ID>` | Merges branch and completes. |
+| **Init** | `aigon init` | Creates the `./docs/specs` directory structure in the current project. |
+| **Feature Create** | `aigon feature-create <name>` | Creates a new feature spec from template in `features/inbox`. |
+| **Feature Prioritise** | `aigon feature-prioritise <name>` | Promotes a feature draft from `inbox` to `backlog` with a new ID. |
+| **Feature Start** | `aigon feature-start <ID>` | Creates branch `feature-ID-desc`, moves spec to in-progress. |
+| **Feature Evaluate** | `aigon feature-eval <ID>` | Moves feature to evaluation (optional). |
+| **Feature Finish** | `aigon feature-done <ID>` | Merges branch and completes. |
 
 ### Bakeoff Mode (multi-agent)
 
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| **Bakeoff Setup** | `ff feature-start <ID> <agents...>` | Creates worktrees for multiple agents (e.g., `ff feature-start 55 cc gg cx`). |
-| **Feature Evaluate** | `ff feature-eval <ID>` | Moves feature to evaluation for comparison. |
-| **Feature Finish** | `ff feature-done <ID> <agent>` | Merges winning agent's branch, cleans up. |
-| **Cleanup** | `ff cleanup <ID>` | Force-deletes remaining worktrees. |
+| **Bakeoff Setup** | `aigon feature-start <ID> <agents...>` | Creates worktrees for multiple agents (e.g., `aigon feature-start 55 cc gg cx`). |
+| **Feature Evaluate** | `aigon feature-eval <ID>` | Moves feature to evaluation for comparison. |
+| **Feature Finish** | `aigon feature-done <ID> <agent>` | Merges winning agent's branch, cleans up. |
+| **Cleanup** | `aigoncleanup <ID>` | Force-deletes remaining worktrees. |
 
 ### Research
 
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| **Research Create** | `ff research-create <name>` | Creates a new research topic from template in `research-topics/inbox`. |
-| **Research Prioritise** | `ff research-prioritise <name>` | Promotes a research draft from `inbox` to `backlog` with a new ID. |
-| **Research Start** | `ff research-start <ID>` | Moves a research topic from `backlog` to `in-progress`. |
-| **Research Done** | `ff research-done <ID>` | Moves a research topic from `in-progress` to `done`. |
+| **Research Create** | `aigon research-create <name>` | Creates a new research topic from template in `research-topics/inbox`. |
+| **Research Prioritise** | `aigon research-prioritise <name>` | Promotes a research draft from `inbox` to `backlog` with a new ID. |
+| **Research Start** | `aigon research-start <ID>` | Moves a research topic from `backlog` to `in-progress`. |
+| **Research Done** | `aigon research-done <ID>` | Moves a research topic from `in-progress` to `done`. |
 
 ### Utilities
 
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| **Install Agent** | `ff install-agent <agents...>` | Generates agent configuration files. Accepts multiple agents: `cc`, `gg`, `cx`. |
-| **Update** | `ff update` | Updates all Farline Flow files to latest version. Re-installs detected agents. |
+| **Install Agent** | `aigon install-agent <agents...>` | Generates agent configuration files. Accepts multiple agents: `cc`, `gg`, `cx`. |
+| **Update** | `aigonupdate` | Updates all Aigon files to latest version. Re-installs detected agents. |
 
 ---
 
@@ -217,96 +217,96 @@ The `ff` (Farline Flow) command automates state transitions and Git operations.
 ## Agent Macros
 
 ### Claude Code
-When you run `ff install-agent cc`, it installs special slash commands for Claude Code to make the workflow seamless.
+When you run `aigon install-agent cc`, it installs special slash commands for Claude Code to make the workflow seamless.
 
 #### Solo Mode
 
 | Slash Command | Description |
 | :--- | :--- |
-| `/ff-feature-create <name>` | Runs `ff feature-create <name>`. |
-| `/ff-feature-prioritise <name>` | Runs `ff feature-prioritise <name>`. |
-| `/ff-feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
-| `/ff-feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional). |
-| `/ff-feature-done <ID>` | Runs `ff feature-done <ID>`. |
+| `/aigon-feature-create <name>` | Runs `aigon feature-create <name>`. |
+| `/aigon-feature-prioritise <name>` | Runs `aigon feature-prioritise <name>`. |
+| `/aigon-feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
+| `/aigon-feature-eval <ID>` | Runs `aigon feature-eval <ID>` (optional). |
+| `/aigon-feature-done <ID>` | Runs `aigon feature-done <ID>`. |
 
 #### Bakeoff Mode
 
 | Slash Command | Description |
 | :--- | :--- |
-| `/ff-bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
-| `/ff-bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
+| `/aigon-bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
+| `/aigon-bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
 
 #### Research
 
 | Slash Command | Description |
 | :--- | :--- |
-| `/ff-research-create <name>` | Runs `ff research-create <name>`. |
-| `/ff-research-start <ID>` | Runs `ff research-start <ID>`. |
-| `/ff-help` | Shows all available Farline Flow commands. |
+| `/aigon-research-create <name>` | Runs `aigon research-create <name>`. |
+| `/aigon-research-start <ID>` | Runs `aigon research-start <ID>`. |
+| `/aigon-help` | Shows all available Aigon commands. |
 
 ### Gemini
-When you run `ff install-agent gg`, it installs special slash commands for Gemini to make the workflow seamless.
+When you run `aigon install-agent gg`, it installs special slash commands for Gemini to make the workflow seamless.
 
 #### Solo Mode
 
 | Slash Command | Description |
 | :--- | :--- |
-| `/ff:feature-create <name>` | Runs `ff feature-create <name>`. |
-| `/ff:feature-prioritise <name>` | Runs `ff feature-prioritise <name>`. |
-| `/ff:feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
-| `/ff:feature-eval <ID>` | Runs `ff feature-eval <ID>` (optional). |
-| `/ff:feature-done <ID>` | Runs `ff feature-done <ID>`. |
+| `/aigon:feature-create <name>` | Runs `aigon feature-create <name>`. |
+| `/aigon:feature-prioritise <name>` | Runs `aigon feature-prioritise <name>`. |
+| `/aigon:feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
+| `/aigon:feature-eval <ID>` | Runs `aigon feature-eval <ID>` (optional). |
+| `/aigon:feature-done <ID>` | Runs `aigon feature-done <ID>`. |
 
 #### Bakeoff Mode
 
 | Slash Command | Description |
 | :--- | :--- |
-| `/ff:bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
-| `/ff:bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
+| `/aigon:bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
+| `/aigon:bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
 
 #### Research
 
 | Slash Command | Description |
 | :--- | :--- |
-| `/ff:research-create <name>` | Runs `ff research-create <name>`. |
-| `/ff:research-start <ID>` | Runs `ff research-start <ID>`. |
-| `/ff:help` | Shows all available Farline Flow commands. |
+| `/aigon:research-create <name>` | Runs `aigon research-create <name>`. |
+| `/aigon:research-start <ID>` | Runs `aigon research-start <ID>`. |
+| `/aigon:help` | Shows all available Aigon commands. |
 
 ### Codex
-When you run `ff install-agent cx`, it installs slash commands to your **global** `~/.codex/prompts/` folder.
+When you run `aigon install-agent cx`, it installs slash commands to your **global** `~/.codex/prompts/` folder.
 
-**Note:** Codex only supports global prompts (not project-level). This means the same Farline Flow commands are available across all your projects.
+**Note:** Codex only supports global prompts (not project-level). This means the same Aigon commands are available across all your projects.
 
 #### Solo Mode
 
 | Slash Command | Description |
 | :--- | :--- |
-| `/prompts:ff-feature-create <name>` | Create a new feature spec |
-| `/prompts:ff-feature-prioritise <name>` | Prioritize a feature draft |
-| `/prompts:ff-feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
-| `/prompts:ff-feature-eval <ID>` | Submit feature for evaluation (optional) |
-| `/prompts:ff-feature-done <ID>` | Complete and merge feature |
+| `/prompts:aigon-feature-create <name>` | Create a new feature spec |
+| `/prompts:aigon-feature-prioritise <name>` | Prioritize a feature draft |
+| `/prompts:aigon-feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
+| `/prompts:aigon-feature-eval <ID>` | Submit feature for evaluation (optional) |
+| `/prompts:aigon-feature-done <ID>` | Complete and merge feature |
 
 #### Bakeoff Mode
 
 | Slash Command | Description |
 | :--- | :--- |
-| `/prompts:ff-bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
-| `/prompts:ff-bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
+| `/prompts:aigon-bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
+| `/prompts:aigon-bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
 
 #### Research
 
 | Slash Command | Description |
 | :--- | :--- |
-| `/prompts:ff-research-create <name>` | Create a new research topic |
-| `/prompts:ff-research-start <ID>` | Start a research topic |
-| `/prompts:ff-help` | Shows all available Farline Flow commands |
+| `/prompts:aigon-research-create <name>` | Create a new research topic |
+| `/prompts:aigon-research-start <ID>` | Start a research topic |
+| `/prompts:aigon-help` | Shows all available Aigon commands |
 
 ---
 
 ## Multi-Agent Evaluation
 
-When running multi-agent bake-offs, use `ff feature-eval <ID>` to generate an evaluation template and compare implementations. For unbiased evaluation, **use a different model as the evaluator** than the ones that wrote the code.
+When running multi-agent bake-offs, use `aigon feature-eval <ID>` to generate an evaluation template and compare implementations. For unbiased evaluation, **use a different model as the evaluator** than the ones that wrote the code.
 
 ### Evaluator Model Recommendation
 
@@ -317,7 +317,7 @@ If using Claude as the evaluator, start it with a different model:
 claude --model sonnet
 
 # Then run the evaluation command
-/ff-feature-eval 10
+/aigon-feature-eval 10
 ```
 
 ### Example Evaluation Output
@@ -402,13 +402,13 @@ Once you've chosen a winner, merge their implementation:
 
 ```bash
 # Merge the winning implementation
-ff feature-done 10 cx
+aigon feature-done 10 cx
 
 # Push losing branches to origin for safekeeping (optional)
-ff cleanup 10 --push
+aigon cleanup 10 --push
 
 # Or just delete losing branches locally
-ff cleanup 10
+aigon cleanup 10
 ```
 
 ---

@@ -7,8 +7,8 @@ const { execSync, spawnSync } = require('child_process');
 // --- Editor Detection & Auto-Open ---
 
 function detectEditor() {
-    // 1. Explicit override (FF_EDITOR=code, or FF_EDITOR=none to disable)
-    const override = process.env.FF_EDITOR;
+    // 1. Explicit override (AIGON_EDITOR=code, or AIGON_EDITOR=none to disable)
+    const override = process.env.AIGON_EDITOR;
     if (override) {
         if (override === 'none' || override === 'false' || override === '0') {
             return null;
@@ -245,8 +245,8 @@ function safeWrite(filePath, content) {
 }
 
 // Append or replace content between markers in a file
-const MARKER_START = '<!-- FARLINE_FLOW_START -->';
-const MARKER_END = '<!-- FARLINE_FLOW_END -->';
+const MARKER_START = '<!-- AIGON_START -->';
+const MARKER_END = '<!-- AIGON_END -->';
 
 function upsertMarkedContent(filePath, content) {
     const markedContent = `${MARKER_START}\n${content}\n${MARKER_END}`;
@@ -400,9 +400,9 @@ const AGENT_CONFIGS = {
 };
 
 function getRootFileContent(agentConfig) {
-    return `## Farline Flow
+    return `## Aigon
 
-This project uses the Farline Flow development workflow.
+This project uses the Aigon development workflow.
 
 - ${agentConfig.name}-specific notes: \`docs/agents/${agentConfig.agentFile}\`
 - Development workflow: \`docs/development_workflow.md\`
@@ -413,7 +413,7 @@ This project uses the Farline Flow development workflow.
 
 const commands = {
     'init': (args) => {
-        console.log("ACTION: Initializing Farline Flow in ./docs/specs ...");
+        console.log("ACTION: Initializing Aigon in ./docs/specs ...");
         const createDirs = (root, folders) => {
             folders.forEach(f => {
                 const p = path.join(root, f);
@@ -438,14 +438,14 @@ const commands = {
         });
         const readmePath = path.join(SPECS_ROOT, 'README.md');
         if (!fs.existsSync(readmePath)) {
-            const readmeContent = `# Farline Flow Specs\n\n**This folder is the Single Source of Truth.**\n\n## Rules\n1. READ ONLY: backlog, inbox, done.\n2. WRITE: Only edit code if feature spec is in features/in-progress.\n`;
+            const readmeContent = `# Aigon Specs\n\n**This folder is the Single Source of Truth.**\n\n## Rules\n1. READ ONLY: backlog, inbox, done.\n2. WRITE: Only edit code if feature spec is in features/in-progress.\n`;
             fs.writeFileSync(readmePath, readmeContent);
         }
         console.log("✅ ./docs/specs directory structure created.");
     },
     'feature-create': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: ff feature-create <name>\nExample: ff feature-create dark-mode");
+        if (!name) return console.error("Usage: aigon feature-create <name>\nExample: aigon feature-create dark-mode");
 
         // Ensure inbox exists
         const inboxDir = path.join(PATHS.features.root, '01-inbox');
@@ -473,7 +473,7 @@ const commands = {
     },
     'research-create': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: ff research-create <name>\nExample: ff research-create api-design");
+        if (!name) return console.error("Usage: aigon research-create <name>\nExample: aigon research-create api-design");
 
         // Ensure inbox exists
         const inboxDir = path.join(PATHS.research.root, '01-inbox');
@@ -501,7 +501,7 @@ const commands = {
     },
     'research-prioritise': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: ff research-prioritise <name>");
+        if (!name) return console.error("Usage: aigon research-prioritise <name>");
         const found = findUnprioritizedFile(PATHS.research, name);
         if (!found) return console.error(`❌ Could not find unprioritized research "${name}" in inbox.`);
         const nextId = getNextId(PATHS.research);
@@ -516,21 +516,21 @@ const commands = {
     },
     'research-start': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: ff research-start <name|ID>");
+        if (!name) return console.error("Usage: aigon research-start <name|ID>");
         const found = findFile(PATHS.research, name, ['02-backlog']);
         if (!found) return console.error(`❌ Could not find research "${name}" in backlog.`);
         moveFile(found, '03-in-progress');
     },
     'research-done': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: ff research-done <name|ID>");
+        if (!name) return console.error("Usage: aigon research-done <name|ID>");
         const found = findFile(PATHS.research, name, ['03-in-progress']);
         if (!found) return console.error(`❌ Could not find research "${name}" in in-progress.`);
         moveFile(found, '04-done');
     },
     'feature-prioritise': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: ff feature-prioritise <name>");
+        if (!name) return console.error("Usage: aigon feature-prioritise <name>");
         const found = findUnprioritizedFile(PATHS.features, name);
         if (!found) return console.error(`❌ Could not find unprioritized feature "${name}" in inbox.`);
         const nextId = getNextId(PATHS.features);
@@ -559,7 +559,7 @@ const commands = {
     'feature-start': (args) => {
         const name = args[0];
         const agentIds = args.slice(1); // Optional - if provided, multi-agent mode with worktree(s)
-        if (!name) return console.error("Usage: ff feature-start <ID> [agent] [agent2] [agent3]\n  Without agent: solo mode (branch only)\n  With agent(s): multi-agent mode (worktree per agent)\n\nExamples:\n  ff feature-start 55           # Solo mode\n  ff feature-start 55 cc        # Single agent worktree\n  ff feature-start 55 cc gg cx  # Bakeoff with 3 agents");
+        if (!name) return console.error("Usage: aigon feature-start <ID> [agent] [agent2] [agent3]\n  Without agent: solo mode (branch only)\n  With agent(s): multi-agent mode (worktree per agent)\n\nExamples:\n  aigon feature-start 55           # Solo mode\n  aigon feature-start 55 cc        # Single agent worktree\n  aigon feature-start 55 cc gg cx  # Bakeoff with 3 agents");
 
         // Find and move spec to in-progress
         let found = findFile(PATHS.features, name, ['02-backlog']);
@@ -637,7 +637,7 @@ const commands = {
                 console.log(`   ${agentId}: ${worktreePath}`);
             });
             console.log(`\n💡 Next: Open each worktree in a separate editor/terminal and implement`);
-            console.log(`   When done: ff feature-eval ${num}`);
+            console.log(`   When done: aigon feature-eval ${num}`);
         } else {
             // Solo mode: branch only (default)
             const branchName = `feature-${num}-${desc}`;
@@ -668,7 +668,7 @@ const commands = {
     },
     'feature-eval': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: ff feature-eval <ID>");
+        if (!name) return console.error("Usage: aigon feature-eval <ID>");
 
         // Find the feature (may already be in evaluation)
         let found = findFile(PATHS.features, name, ['03-in-progress']);
@@ -778,7 +778,7 @@ ${agentList}
         console.log(`\n🔍 Next steps:`);
         console.log(`   1. Review implementations in each worktree`);
         console.log(`   2. Fill in ./docs/specs/features/evaluations/feature-${num}-eval.md`);
-        console.log(`   3. Pick a winner and run: ff feature-done ${num} <winning-agent>`);
+        console.log(`   3. Pick a winner and run: aigon feature-done ${num} <winning-agent>`);
         if (worktrees.length > 0) {
             console.log(`\n📂 Worktrees found:`);
             worktrees.forEach(w => console.log(`   - ${w.agent}: ${w.path}`));
@@ -787,7 +787,7 @@ ${agentList}
     'feature-done': (args) => {
         const name = args[0];
         const agentId = args[1]; // Optional - if provided, multi-agent mode
-        if (!name) return console.error("Usage: ff feature-done <ID> [agent]\n  Without agent: solo mode (merges feature-ID-desc)\n  With agent: multi-agent mode (merges feature-ID-agent-desc, cleans up worktree)");
+        if (!name) return console.error("Usage: aigon feature-done <ID> [agent]\n  Without agent: solo mode (merges feature-ID-desc)\n  With agent: multi-agent mode (merges feature-ID-agent-desc, cleans up worktree)");
 
         const found = findFile(PATHS.features, name, ['04-in-evaluation', '03-in-progress']);
         if (!found) return console.error(`❌ Could not find feature "${name}" in in-evaluation or in-progress.`);
@@ -816,7 +816,7 @@ ${agentList}
             // Branch doesn't exist - maybe wrong mode?
             const altBranch = agentId ? `feature-${num}-${desc}` : `feature-${num}-cc-${desc}`;
             console.error(`❌ Branch not found: ${branchName}`);
-            console.error(`   Did you mean: ff feature-done ${num}${agentId ? '' : ' <agent>'}?`);
+            console.error(`   Did you mean: aigon feature-done ${num}${agentId ? '' : ' <agent>'}?`);
             console.error(`   Looking for: ${altBranch}`);
             return;
         }
@@ -926,9 +926,9 @@ ${agentList}
                 console.log(`\n📦 Found ${losingBranches.length} other implementation(s):`);
                 losingBranches.forEach(b => console.log(`   - ${b}`));
                 console.log(`\n🧹 Cleanup options:`);
-                console.log(`   ff cleanup ${num}         # Delete worktrees and local branches`);
-                console.log(`   ff cleanup ${num} --push  # Push branches to origin first, then delete`);
-                console.log(`\n   Or use: /ff-bakeoff-cleanup ${num}`);
+                console.log(`   aigon cleanup ${num}         # Delete worktrees and local branches`);
+                console.log(`   aigon cleanup ${num} --push  # Push branches to origin first, then delete`);
+                console.log(`\n   Or use: /aigon-bakeoff-cleanup ${num}`);
             }
         }
 
@@ -937,7 +937,7 @@ ${agentList}
     'cleanup': (args) => {
         const id = args[0];
         const pushFlag = args.includes('--push');
-        if (!id) return console.error("Usage: ff cleanup <ID> [--push]\n  --push: Push branches to origin before deleting locally");
+        if (!id) return console.error("Usage: aigon cleanup <ID> [--push]\n  --push: Push branches to origin before deleting locally");
 
         const paddedId = String(id).padStart(2, '0');
         const unpaddedId = String(parseInt(id, 10));
@@ -1004,7 +1004,7 @@ ${agentList}
 
         console.log(`\n✅ Cleanup complete: ${worktreeCount} worktree(s), ${branchCount} branch(es) removed.`);
         if (!pushFlag && branchCount > 0) {
-            console.log(`💡 Tip: Use 'ff cleanup ${id} --push' to push branches to origin before deleting.`);
+            console.log(`💡 Tip: Use 'aigon cleanup ${id} --push' to push branches to origin before deleting.`);
         }
     },
     'install-agent': (args) => {
@@ -1013,7 +1013,7 @@ ${agentList}
 
         if (args.length === 0) {
             const agentList = availableAgents.join('|');
-            return console.error(`Usage: ff install-agent <${agentList}> [${agentList}] ...\nExample: ff install-agent cc gg`);
+            return console.error(`Usage: aigon install-agent <${agentList}> [${agentList}] ...\nExample: aigon install-agent cc gg`);
         }
 
         // Build alias map dynamically from agent configs
@@ -1126,9 +1126,9 @@ ${agentList}
                                 settings.permissions.allow.push(perm);
                             }
                         });
-                        if (!settings._farlineFlow) {
-                            settings._farlineFlow = {
-                                note: 'Permissions added by Farline Flow',
+                        if (!settings._aigon) {
+                            settings._aigon = {
+                                note: 'Permissions added by Aigon',
                                 permissions: extras.settings.permissions
                             };
                         }
@@ -1143,9 +1143,9 @@ ${agentList}
                                 settings.allowedTools.push(tool);
                             }
                         });
-                        if (!settings._farlineFlow) {
-                            settings._farlineFlow = {
-                                note: 'Tools added by Farline Flow',
+                        if (!settings._aigon) {
+                            settings._aigon = {
+                                note: 'Tools added by Aigon',
                                 tools: extras.settings.allowedTools
                             };
                         }
@@ -1175,7 +1175,7 @@ ${agentList}
                     if (fs.existsSync(configPath)) {
                         configContent = fs.readFileSync(configPath, 'utf8');
                     }
-                    if (!configContent.includes('[_farlineFlow]')) {
+                    if (!configContent.includes('[_aigon]')) {
                         const ffConfig = fs.readFileSync(path.join(TEMPLATES_ROOT, 'cx/config.toml'), 'utf8');
                         if (configContent.length > 0 && !configContent.endsWith('\n')) {
                             configContent += '\n';
@@ -1184,7 +1184,7 @@ ${agentList}
                         safeWrite(configPath, configContent);
                         console.log(`   ✅ Created: ${extras.config.path}`);
                     } else {
-                        console.log(`   ℹ️  ${extras.config.path} already has Farline Flow settings`);
+                        console.log(`   ℹ️  ${extras.config.path} already has Aigon settings`);
                     }
                 }
             });
@@ -1193,7 +1193,7 @@ ${agentList}
                 const cfg = loadAgentConfig(a);
                 return cfg ? cfg.name : a;
             }).join(', ');
-            console.log(`\n🎉 Installed Farline Flow for: ${agentNames}`);
+            console.log(`\n🎉 Installed Aigon for: ${agentNames}`);
             console.log(`\n📝 Remember to commit these files to Git so they're available in worktrees.`);
 
         } catch (e) {
@@ -1201,7 +1201,7 @@ ${agentList}
         }
     },
     'update': () => {
-        console.log("🔄 Updating Farline Flow installation...\n");
+        console.log("🔄 Updating Aigon installation...\n");
 
         try {
             // 1. Detect installed agents by checking for root files
@@ -1214,11 +1214,11 @@ ${agentList}
                         installedAgents.push(key);
                     }
                 } else if (key === 'cx') {
-                    // Codex: check for .codex/prompt.md with Farline Flow content
+                    // Codex: check for .codex/prompt.md with Aigon content
                     const promptPath = path.join(process.cwd(), '.codex', 'prompt.md');
                     if (fs.existsSync(promptPath)) {
                         const content = fs.readFileSync(promptPath, 'utf8');
-                        if (content.includes('Farline Flow')) {
+                        if (content.includes('Aigon')) {
                             installedAgents.push(key);
                         }
                     }
@@ -1265,10 +1265,10 @@ ${agentList}
                 console.log(`\n📦 Re-installing agents: ${installedAgents.join(', ')}`);
                 commands['install-agent'](installedAgents);
             } else {
-                console.log(`\nℹ️  No agents detected. Run 'ff install-agent <cc|gg|cx>' to install.`);
+                console.log(`\nℹ️  No agents detected. Run 'aigon install-agent <cc|gg|cx>' to install.`);
             }
 
-            console.log(`\n✅ Farline Flow updated successfully.`);
+            console.log(`\n✅ Aigon updated successfully.`);
 
         } catch (e) {
             console.error(`❌ Update failed: ${e.message}`);
@@ -1277,14 +1277,14 @@ ${agentList}
 
     'help': () => {
         console.log(`
-Farline Flow - Spec-Driven Development for AI Agents
+Aigon - Spec-Driven Development for AI Agents
 
-Usage: ff <command> [arguments]
+Usage: aigon <command> [arguments]
 
 Setup:
   init                              Initialize ./docs/specs directory structure
   install-agent <agents...>         Install agent configs (cc, gg, cx)
-  update                            Update Farline Flow files to latest version
+  update                            Update Aigon files to latest version
 
 Solo Mode (single agent):
   feature-create <name>             Create feature spec in inbox
@@ -1305,14 +1305,14 @@ Research:
   research-done <ID>                Move research to done
 
 Examples:
-  ff init                           # Setup specs directory
-  ff install-agent cc gg            # Install Claude and Gemini configs
-  ff feature-create "dark-mode"     # Create new feature spec
-  ff feature-prioritise dark-mode   # Assign ID, move to backlog
-  ff feature-implement 55           # Solo mode (branch only)
-  ff bakeoff-setup 55 cc gg cx      # Bakeoff with 3 agents
-  ff feature-done 55                # Complete solo feature
-  ff feature-done 55 cc             # Merge Claude's bakeoff implementation
+  aigon init                           # Setup specs directory
+  aigon install-agent cc gg            # Install Claude and Gemini configs
+  aigon feature-create "dark-mode"     # Create new feature spec
+  aigon feature-prioritise dark-mode   # Assign ID, move to backlog
+  aigon feature-implement 55           # Solo mode (branch only)
+  aigon bakeoff-setup 55 cc gg cx      # Bakeoff with 3 agents
+  aigon feature-done 55                # Complete solo feature
+  aigon feature-done 55 cc             # Merge Claude's bakeoff implementation
 
 Agents:
   cc (claude)   - Claude Code
@@ -1326,7 +1326,7 @@ Agents:
 const args = process.argv.slice(2);
 const commandName = args[0];
 const commandArgs = args.slice(1);
-const cleanCommand = commandName ? commandName.replace(/^ff-/, '') : null;
+const cleanCommand = commandName ? commandName.replace(/^aigon-/, '') : null;
 
 if (!cleanCommand || cleanCommand === 'help' || cleanCommand === '--help' || cleanCommand === '-h') {
     commands['help']();

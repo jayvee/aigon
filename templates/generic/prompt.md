@@ -1,10 +1,10 @@
-<!-- FARLINE_FLOW_START -->
-# Farline Flow
+<!-- AIGON_START -->
+# Aigon
 
-This project uses the **Farline Flow** development workflow.
+This project uses the **Aigon** development workflow.
 
 - {{AGENT_NAME}}-specific notes: `docs/agents/{{AGENT_FILE}}`
 - Development workflow: `docs/development_workflow.md`
 
 Read these docs before starting any feature work.
-<!-- FARLINE_FLOW_END -->
+<!-- AIGON_END -->
