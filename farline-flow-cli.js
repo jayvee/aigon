@@ -56,6 +56,61 @@ function openInEditor(filePath) {
 // --- Configuration ---
 const SPECS_ROOT = path.join(process.cwd(), 'docs', 'specs');
 const TEMPLATES_ROOT = path.join(__dirname, 'templates');
+const CLAUDE_SETTINGS_PATH = path.join(process.cwd(), '.claude', 'settings.json');
+
+// --- Worktree Permission Helpers ---
+
+function addWorktreePermissions(worktreePaths) {
+    // Add read permissions for worktrees to Claude settings
+    if (!fs.existsSync(CLAUDE_SETTINGS_PATH)) return;
+
+    try {
+        const settings = JSON.parse(fs.readFileSync(CLAUDE_SETTINGS_PATH, 'utf8'));
+        if (!settings.permissions) settings.permissions = {};
+        if (!settings.permissions.allow) settings.permissions.allow = [];
+
+        // Convert relative paths to absolute for permissions
+        const cwd = process.cwd();
+        worktreePaths.forEach(relativePath => {
+            const absolutePath = path.resolve(cwd, relativePath);
+            const readPermission = `Read(${absolutePath}/**)`;
+
+            if (!settings.permissions.allow.includes(readPermission)) {
+                settings.permissions.allow.push(readPermission);
+            }
+        });
+
+        fs.writeFileSync(CLAUDE_SETTINGS_PATH, JSON.stringify(settings, null, 2));
+        console.log(`🔓 Added worktree read permissions to .claude/settings.json`);
+    } catch (e) {
+        console.warn(`⚠️  Could not update Claude settings: ${e.message}`);
+    }
+}
+
+function removeWorktreePermissions(worktreePaths) {
+    // Remove read permissions for worktrees from Claude settings
+    if (!fs.existsSync(CLAUDE_SETTINGS_PATH)) return;
+
+    try {
+        const settings = JSON.parse(fs.readFileSync(CLAUDE_SETTINGS_PATH, 'utf8'));
+        if (!settings.permissions || !settings.permissions.allow) return;
+
+        const cwd = process.cwd();
+        worktreePaths.forEach(relativePath => {
+            const absolutePath = path.resolve(cwd, relativePath);
+            const readPermission = `Read(${absolutePath}/**)`;
+
+            const index = settings.permissions.allow.indexOf(readPermission);
+            if (index > -1) {
+                settings.permissions.allow.splice(index, 1);
+            }
+        });
+
+        fs.writeFileSync(CLAUDE_SETTINGS_PATH, JSON.stringify(settings, null, 2));
+    } catch (e) {
+        // Silent fail on cleanup
+    }
+}
 
 const PATHS = {
     research: {
@@ -567,6 +622,10 @@ const commands = {
                 }
             });
 
+            // Add read permissions for all worktrees to Claude settings
+            const allWorktreePaths = agentIds.map(agentId => `../feature-${num}-${agentId}-${desc}`);
+            addWorktreePermissions(allWorktreePaths);
+
             if (agentIds.length > 1) {
                 console.log(`\n🏁 Bakeoff started with ${agentIds.length} agents!`);
             } else {
@@ -883,8 +942,9 @@ ${agentList}
         const paddedId = String(id).padStart(2, '0');
         const unpaddedId = String(parseInt(id, 10));
 
-        // Remove worktrees
+        // Remove worktrees and collect paths for permission cleanup
         let worktreeCount = 0;
+        const removedWorktreePaths = [];
         try {
             const stdout = execSync('git worktree list', { encoding: 'utf8' });
             const lines = stdout.split('\n');
@@ -895,11 +955,17 @@ ${agentList}
                 if (wtPath === process.cwd()) return;
                 if (wtPath.includes(`feature-${paddedId}-`) || wtPath.includes(`feature-${unpaddedId}-`)) {
                     console.log(`   Removing worktree: ${wtPath}`);
+                    removedWorktreePaths.push(wtPath);
                     try { execSync(`git worktree remove "${wtPath}" --force`); worktreeCount++; }
                     catch (err) { console.error(`   ❌ Failed to remove ${wtPath}`); }
                 }
             });
         } catch (e) { console.error("❌ Error reading git worktrees."); }
+
+        // Clean up worktree permissions from Claude settings
+        if (removedWorktreePaths.length > 0) {
+            removeWorktreePermissions(removedWorktreePaths);
+        }
 
         // Find and handle branches
         const featureBranches = [];
