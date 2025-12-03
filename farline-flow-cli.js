@@ -1286,15 +1286,22 @@ Setup:
   install-agent <agents...>         Install agent configs (cc, gg, cx)
   update                            Update Farline Flow files to latest version
 
-Feature Workflow:
+Solo Mode (single agent):
   feature-create <name>             Create feature spec in inbox
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
-  feature-start <ID>                Solo: create branch, move spec to in-progress
-  feature-start <ID> <agents...>    Bakeoff: create worktrees for each agent
-  feature-eval <ID>                 Compare bakeoff implementations, choose winner
-  feature-done <ID>                 Solo: merge branch and complete
-  feature-done <ID> <agent>         Bakeoff: merge winning agent's branch
+  feature-start <ID>                Create branch, move spec to in-progress
+  feature-done <ID>                 Merge branch and complete
+
+Bakeoff Mode (multi-agent):
+  feature-start <ID> <agents...>    Create worktrees for each agent
+  feature-eval <ID>                 Compare implementations, choose winner
+  feature-done <ID> <agent>         Merge winning agent's branch
   cleanup <ID> [--push]             Remove losing worktrees and branches
+
+Agent Slash Commands (use in agent sessions):
+  /ff-bakeoff-setup <ID> <agents>   Setup bakeoff worktrees
+  /ff-bakeoff-implement <ID>        Implement in current worktree
+  /ff-bakeoff-cleanup <ID>          Clean up after bakeoff (prompts for --push)
 
 Research:
   research-create <name>            Create research topic in inbox
