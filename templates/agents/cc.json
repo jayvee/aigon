@@ -43,6 +43,7 @@
     "feature-done",
     "bakeoff-setup",
     "bakeoff-implement",
+    "bakeoff-cleanup",
     "research-create",
     "research-start",
     "help"

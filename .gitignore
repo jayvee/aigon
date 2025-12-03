@@ -3,3 +3,11 @@ node_modules/
 
 # OS
 .DS_Store
+
+# Generated agent files (source is in templates/)
+.claude/
+.codex/
+.gemini/
+CLAUDE.md
+GEMINI.md
+docs/agents/
