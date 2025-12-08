@@ -45,7 +45,9 @@
     "bakeoff-implement",
     "bakeoff-cleanup",
     "research-create",
+    "research-prioritise",
     "research-start",
+    "research-done",
     "help"
   ]
 }
