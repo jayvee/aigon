@@ -31,8 +31,8 @@ Implement the feature according to the spec.
 ## Step 4: Test your changes
 
 - Check if the dev server is running (start it if needed)
-- **IMPORTANT:** Each agent's worktree has a unique PORT in `.env.local` (cc=3001, gg=3002, cx=3003). Ensure the dev server uses this PORT to avoid conflicts with other agents.
-- Ask the user to test the changes on the running dev server
+- **IMPORTANT:** Each agent's worktree has a unique PORT in `.env.local` (cc=3001, gg=3002, cx=3003). Read the PORT value from `.env.local` and start the dev server with: `PORT=<port> npm run dev`
+- Ask the user to test the changes on the running dev server at `http://localhost:<port>`
 - **STOP and WAIT for user confirmation before proceeding** - do NOT continue until the user confirms testing is complete
 
 ## Step 5: Commit your implementation
