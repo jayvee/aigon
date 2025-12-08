@@ -8,10 +8,10 @@ Setup a multi-agent bakeoff by creating isolated worktrees for each agent.
 IMPORTANT: You MUST include the feature ID AND at least two agent codes.
 
 ```bash
-aigon feature-start {{ARG_SYNTAX}}
+aigon bakeoff-setup {{ARG_SYNTAX}}
 ```
 
-Example: `aigon feature-start 55 cc gg cx`
+Example: `aigon bakeoff-setup 55 cc gg cx`
 
 This will:
 - Move the spec from backlog to `03-in-progress`
