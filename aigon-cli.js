@@ -381,21 +381,24 @@ const AGENT_CONFIGS = {
         name: 'Claude',
         rootFile: 'CLAUDE.md',
         agentFile: 'claude.md',
-        templatePath: 'docs/agents/claude.md'
+        templatePath: 'docs/agents/claude.md',
+        port: 3001
     },
     gg: {
         id: 'gg',
         name: 'Gemini',
         rootFile: 'GEMINI.md',
         agentFile: 'gemini.md',
-        templatePath: 'docs/agents/gemini.md'
+        templatePath: 'docs/agents/gemini.md',
+        port: 3002
     },
     cx: {
         id: 'cx',
         name: 'Codex',
         rootFile: null,  // Codex uses ~/.codex/prompt.md instead of a project root file
         agentFile: 'codex.md',
-        templatePath: 'docs/agents/codex.md'
+        templatePath: 'docs/agents/codex.md',
+        port: 3003
     }
 };
 
@@ -607,6 +610,17 @@ const commands = {
                         runGit(`git worktree add ${worktreePath} -b ${branchName}`);
                         console.log(`📂 Worktree: ${worktreePath}`);
                         createdWorktrees.push({ agentId, worktreePath });
+
+                        // Copy .env.local with agent-specific PORT
+                        const envLocalPath = path.join(process.cwd(), '.env.local');
+                        if (fs.existsSync(envLocalPath)) {
+                            const envContent = fs.readFileSync(envLocalPath, 'utf8');
+                            const agentConfig = AGENT_CONFIGS[agentId];
+                            const port = agentConfig ? agentConfig.port : 3000;
+                            const newEnvContent = envContent.trimEnd() + `\n\n# Bakeoff port for agent ${agentId}\nPORT=${port}\n`;
+                            fs.writeFileSync(path.join(worktreePath, '.env.local'), newEnvContent);
+                            console.log(`   📋 .env.local copied with PORT=${port}`);
+                        }
                     } catch (e) {
                         console.error(`❌ Failed to create worktree for ${agentId}: ${e.message}`);
                     }
