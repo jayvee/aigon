@@ -10,5 +10,7 @@ aigon feature-prioritise {{ARG_SYNTAX}}
 This assigns an ID to the feature and moves it from `01-inbox/` to `02-backlog/`.
 
 Next step:
-- **Solo mode**: `aigon feature-start <ID>` (branch only)
-- **Multi-agent mode**: `aigon feature-start <ID> {{AGENT_ID}}` (worktree)
+- **Solo mode**: `aigon feature-implement <ID>` (branch only)
+- **Multi-agent mode**: 
+-- `aigon bakeoff-setup <ID> <agents>` (in worktree)
+-- `aigon bakeoff-implement <ID>` (in worktree)

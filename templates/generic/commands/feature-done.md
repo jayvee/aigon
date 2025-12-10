@@ -9,12 +9,12 @@ Complete a feature by merging and cleaning up.
 
 ## Run the command
 
-**Solo mode** - if you used `feature-start {{ARG_SYNTAX}}` (no agent):
+**Solo mode** - if you used `feature-implement {{ARG_SYNTAX}}` (no agent):
 ```bash
 aigon feature-done {{ARG_SYNTAX}}
 ```
 
-**Multi-agent mode** - if you used `feature-start {{ARG_SYNTAX}} {{AGENT_ID}}`:
+**Multi-agent mode** - if you used `bakeoff-implement {{ARG_SYNTAX}} {{AGENT_ID}}`:
 ```bash
 aigon feature-done {{ARG_SYNTAX}} {{AGENT_ID}}
 ```

@@ -1,44 +1,12 @@
-# Development Workflow
+<!-- AIGON_START -->
+# {{AGENT_TITLE}}
 
-This project uses **Aigon**, a spec-driven development workflow for AI agents.
+## Agent Identity
+- **Agent ID**: `{{AGENT_ID}}`
+- **Worktree Pattern**: `../feature-NN-{{AGENT_ID}}-description`
+- **Implementation Log**: `./docs/specs/features/logs/feature-NN-{{AGENT_ID}}-log.md`
 
-## Overview
-
-Aigon enforces a structured **Research → Specification → Implementation** loop:
-
-1. **Research Topics** explore the "why" before building
-2. **Feature Specs** define the "what" to build
-
-For feature implementation, Aigon can be used in "Solo mode" or "Multi-agent mode".
-1. "Solo mode" - use one agent to implement the feature based on the spec to completion.
-2. "Multi-agent backeoff mode" - use multiple agents to implement a feature in parallel, use a different agent to run a "bake off" and evaluate solutions and propose a winner.
-
-## Directory Structure
-
-All workflow state lives in `./docs/specs/`. Folders are numbered for visual ordering:
-
-```
-docs/specs/
-├── research-topics/
-│   ├── 01-inbox/        # New research ideas
-│   ├── 02-backlog/      # Prioritized research
-│   ├── 03-in-progress/  # Active research
-│   ├── 04-done/         # Completed research
-│   └── 05-paused/       # On hold
-├── features/
-│   ├── 01-inbox/        # New feature ideas (feature-description.md)
-│   ├── 02-backlog/      # Prioritized features (feature-NN-description.md)
-│   ├── 03-in-progress/  # Active features
-│   ├── 04-in-evaluation/# Features awaiting review
-│   ├── 05-done/         # Completed features
-│   ├── 06-paused/       # On hold
-│   ├── logs/            # Implementation logs
-│   │   ├── selected/    # Winning agent logs
-│   │   └── alternatives/# Other agent attempts
-│   └── evaluations/     # LLM Judge reports
-├── templates/           # Spec templates
-└── README.md
-```
+## CLI Commands
 
 ### Solo Mode
 | Command | Description |
@@ -49,19 +17,33 @@ docs/specs/
 | `aigon feature-eval <ID>` | Evaluate feature implementations in a bake-off, propose winner |
 | `aigon feature-done <ID>` | Complete and merge feature |
 
-### Multi-Agent Mode
+### Bakeoff Mode
 | Command | Description |
 |---------|-------------|
 | `aigon bakeoff-setup <ID> <agents>` | Create worktrees for multiple agents to implement feature  |
 | `aigon bakeoff-implement <ID>` | Implement feature (branch, code) in current worktree |
 | `aigon bakeoff-cleanup <ID> --push` | Clean up losing worktrees and branches |
 
-## Key Rules
+### Research
+| Command | Description |
+|---------|-------------|
+| `aigon research-create <name>` | Create a new research topic |
+| `aigon research-prioritise <name>` | Prioritize a research topic |
+| `aigon research-start <ID>` | Start a research topic |
+| `aigon research-done <ID>` | Complete research topic |
+| `aigon help` | Show all Aigon commands |
 
-1. **Spec-Driven**: Never write code without a spec in `features/03-in-progress/`
+## Modes
+
+- **Solo mode**: `aigon feature-implement <ID>` - Creates branch only, work in current directory
+- **Multi-agent mode**: `aigon bakeoff-setup <ID> <agents>` - Creates worktrees for the specified agents for bake-offs
+
+## Critical Rules
+
+1. **Read the spec first**: Always check `./docs/specs/features/03-in-progress/` before coding
 2. **Work in isolation**: Solo mode uses branches, multi-agent mode uses worktrees
-3. **Implementation Logs**: Document implementation decisions in `logs/` before completing
-4. **State-as-Location**: A task's status is determined by which folder it's in
+3. **Conventional commits**: Use `feat:`, `fix:`, `chore:` prefixes
+4. **Complete properly**: Use `aigon feature-done` for solo, `aigon feature-done <ID> {{AGENT_ID}}` for multi-agent
 
 ## Solo Mode Workflow
 
@@ -97,3 +79,4 @@ Before running `feature-done`, always:
    git push -u origin <current-branch-name>
    ```
 2. **Ask the user** if they want to delete the local branch after merge (the CLI will delete it by default)
+<!-- AIGON_END -->

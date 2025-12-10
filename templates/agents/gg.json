@@ -6,6 +6,7 @@
   "placeholders": {
     "AGENT_ID": "gg",
     "AGENT_NAME": "Gemini",
+    "AGENT_TITLE": "Gemini CLI Configuration",
     "ARG_SYNTAX": "{{args}}",
     "ARG1_SYNTAX": "{{args}}",
     "CMD_PREFIX": "/aigon:"
@@ -20,7 +21,7 @@
 
   "rootFile": "GEMINI.md",
   "agentFile": "gemini.md",
-  "templatePath": "docs/agents/gemini.md",
+  "templatePath": "generic/docs/agent.md",
 
   "extras": {
     "settings": {
