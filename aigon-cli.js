@@ -1082,7 +1082,9 @@ ${agentList}
 
                 // Create/update docs/agents/<agent>.md from template (preserves user additions)
                 const agentDocPath = path.join(process.cwd(), 'docs', 'agents', config.agentFile);
-                const agentTemplateContent = readTemplate(config.templatePath);
+                const agentTemplateRaw = readTemplate(config.templatePath);
+                // Process template with agent-specific placeholders
+                const agentTemplateContent = processTemplate(agentTemplateRaw, config.placeholders);
                 // Template already contains markers, extract content between them for upsert
                 const markerContentMatch = agentTemplateContent.match(new RegExp(`${MARKER_START}\\n([\\s\\S]*?)\\n${MARKER_END}`));
                 const agentContent = markerContentMatch ? markerContentMatch[1] : agentTemplateContent;

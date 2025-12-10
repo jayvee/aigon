@@ -6,6 +6,7 @@
   "placeholders": {
     "AGENT_ID": "cc",
     "AGENT_NAME": "Claude",
+    "AGENT_TITLE": "Claude Code Configuration",
     "ARG_SYNTAX": "{{args}}",
     "ARG1_SYNTAX": "{{args}}",
     "CMD_PREFIX": "/aigon-"
@@ -21,7 +22,7 @@
 
   "rootFile": "CLAUDE.md",
   "agentFile": "claude.md",
-  "templatePath": "docs/agents/claude.md",
+  "templatePath": "generic/docs/agent.md",
 
   "extras": {
     "skill": {

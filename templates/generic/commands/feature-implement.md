@@ -8,7 +8,7 @@ Implement a feature in **solo mode** (single agent, no worktree).
 IMPORTANT: You MUST run this command first. This moves the spec file from backlog to in-progress and creates the git branch.
 
 ```bash
-aigon feature-start {{ARG_SYNTAX}}
+aigon feature-implement {{ARG_SYNTAX}}
 ```
 
 ## Step 2: Read the spec
@@ -63,4 +63,4 @@ aigon feature-done {{ARG_SYNTAX}}
 
 ---
 
-**Note:** For multi-agent bakeoffs, use `/aigon-bakeoff-setup` instead.
+**Note:** For multi-agent bakeoffs, use `aigon bakeoff-setup {{ARG_SYNTAX}}` followed by the `aigon bakeoff-implement {{ARG_SYNTAX}}` command instead.

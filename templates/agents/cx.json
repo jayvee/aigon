@@ -6,6 +6,7 @@
   "placeholders": {
     "AGENT_ID": "cx",
     "AGENT_NAME": "Codex",
+    "AGENT_TITLE": "Codex Configuration",
     "ARG_SYNTAX": "$ARGUMENTS",
     "ARG1_SYNTAX": "$1",
     "CMD_PREFIX": "/prompts:aigon-"
@@ -22,7 +23,7 @@
 
   "rootFile": null,
   "agentFile": "codex.md",
-  "templatePath": "docs/agents/codex.md",
+  "templatePath": "generic/docs/agent.md",
 
   "extras": {
     "prompt": {

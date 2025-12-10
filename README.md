@@ -68,7 +68,7 @@ Used for shipping code based on a defined spec. Files transition within the `./d
 
 1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
 2.  **Prioritize:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Implement:** Run `/aigon-feature-implement 108` (or `aigon feature-start 108` via CLI)
+3.  **Implement:** Run `/aigon-feature-implement 108` (or `aigon feature-implement 108` via CLI)
     * Moves Spec to `/03-in-progress`.
     * Creates a **Git Branch** (`feature-108-desc`).
     * **Auto-creates** a blank Analysis Log template.
@@ -84,7 +84,7 @@ Run multiple agents in competition to find the optimal solution.
 
 1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
 2.  **Prioritize:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Setup Bakeoff:** Run `/aigon-bakeoff-setup 108 cc gg cx` (or via CLI: `aigon feature-start 108 cc gg cx`)
+3.  **Setup Bakeoff:** Run `/aigon-bakeoff-setup 108 cc gg cx` (or via CLI: `aigon bakeoff-setup 108 cc gg cx`)
     * Moves Spec to `/03-in-progress`.
     * Creates agent-specific **Git Branches** (`feature-108-cc-desc`, `feature-108-gg-desc`, `feature-108-cx-desc`).
     * Creates **Git Worktrees** in sibling folders:
@@ -179,24 +179,20 @@ your-project/
 The `aigon` (Aigon) command automates state transitions and Git operations.
 
 ### Solo Mode (single agent)
-
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| **Init** | `aigon init` | Creates the `./docs/specs` directory structure in the current project. |
-| **Feature Create** | `aigon feature-create <name>` | Creates a new feature spec from template in `features/inbox`. |
-| **Feature Prioritise** | `aigon feature-prioritise <name>` | Promotes a feature draft from `inbox` to `backlog` with a new ID. |
-| **Feature Start** | `aigon feature-start <ID>` | Creates branch `feature-ID-desc`, moves spec to in-progress. |
-| **Feature Evaluate** | `aigon feature-eval <ID>` | Moves feature to evaluation (optional). |
-| **Feature Finish** | `aigon feature-done <ID>` | Merges branch and completes. |
+| **Feature Create** | `aigon feature-create <name>` | Create a new feature spec |
+| **Feature Prioritise** |  `aigon feature-prioritise <name>` | Prioritize a feature draft |
+| **Feature Implement** |  `aigon feature-implement <ID>` | Creates branch `feature-ID-desc`, moves spec to in-progress and implements solution |
+| **Feature Evaluate** |  `aigon feature-eval <ID>` | Evaluate feature implementations in a bake-off, propose winner |
+| **Feature Finish** |  `aigon feature-done <ID>` | Complete and merge feature |
 
-### Bakeoff Mode (multi-agent)
-
+### Multi-Agent Mode
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| **Bakeoff Setup** | `aigon feature-start <ID> <agents...>` | Creates worktrees for multiple agents (e.g., `aigon feature-start 55 cc gg cx`). |
-| **Feature Evaluate** | `aigon feature-eval <ID>` | Moves feature to evaluation for comparison. |
-| **Feature Finish** | `aigon feature-done <ID> <agent>` | Merges winning agent's branch, cleans up. |
-| **Cleanup** | `aigoncleanup <ID>` | Force-deletes remaining worktrees. |
+| **Bakeoff Setup** | `aigon bakeoff-setup <ID> <agents>` | Create worktrees for multiple agents to implement feature  |
+| **Bakeoff Implement** | `aigon bakeoff-implement <ID>` | Implement feature (branch, code) in current worktree |
+| **Bakeoff Cleanup** | `aigon bakeoff-cleanup <ID> --push` | Clean up losing worktrees and branches |
 
 ### Research
 
@@ -211,8 +207,9 @@ The `aigon` (Aigon) command automates state transitions and Git operations.
 
 | Command | Usage | Description |
 | :--- | :--- | :--- |
+| **Init** | `aigon init` | Creates the `./docs/specs` directory structure in the current project. |
 | **Install Agent** | `aigon install-agent <agents...>` | Generates agent configuration files. Accepts multiple agents: `cc`, `gg`, `cx`. |
-| **Update** | `aigonupdate` | Updates all Aigon files to latest version. Re-installs detected agents. |
+| **Update** | `aigon update` | Updates all Aigon files to latest version. Re-installs detected agents. |
 
 ---
 
