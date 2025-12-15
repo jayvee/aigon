@@ -11,7 +11,7 @@ Aigon enforces a structured **Research → Specification → Implementation** lo
 
 For feature implementation, Aigon can be used in "Solo mode" or "Multi-agent mode".
 1. "Solo mode" - use one agent to implement the feature based on the spec to completion.
-2. "Multi-agent backeoff mode" - use multiple agents to implement a feature in parallel, use a different agent to run a "bake off" and evaluate solutions and propose a winner.
+2. "Multi-agent bake-off mode" - use multiple agents to implement a feature in parallel, use a different agent to run a "bake off" and evaluate solutions and propose a winner.
 
 ## Directory Structure
 
@@ -21,13 +21,13 @@ All workflow state lives in `./docs/specs/`. Folders are numbered for visual ord
 docs/specs/
 ├── research-topics/
 │   ├── 01-inbox/        # New research ideas
-│   ├── 02-backlog/      # Prioritized research
+│   ├── 02-backlog/      # Prioritised research
 │   ├── 03-in-progress/  # Active research
 │   ├── 04-done/         # Completed research
 │   └── 05-paused/       # On hold
 ├── features/
 │   ├── 01-inbox/        # New feature ideas (feature-description.md)
-│   ├── 02-backlog/      # Prioritized features (feature-NN-description.md)
+│   ├── 02-backlog/      # Prioritised features (feature-NN-description.md)
 │   ├── 03-in-progress/  # Active features
 │   ├── 04-in-evaluation/# Features awaiting review
 │   ├── 05-done/         # Completed features
@@ -44,7 +44,7 @@ docs/specs/
 | Command | Description |
 |---------|-------------|
 | `aigon feature-create <name>` | Create a new feature spec |
-| `aigon feature-prioritise <name>` | Prioritize a feature draft |
+| `aigon feature-prioritise <name>` | Prioritise a feature draft |
 | `aigon feature-implement <ID>` | Implement feature (branch, code, complete) |
 | `aigon feature-eval <ID>` | Evaluate feature implementations in a bake-off, propose winner |
 | `aigon feature-done <ID>` | Complete and merge feature |
@@ -86,7 +86,7 @@ docs/specs/
    - **STOP** - Do NOT run `feature-done` from worktree
 4. Return to main repo for evaluation: `aigon feature-eval <ID>`
 5. Merge winner: `aigon feature-done <ID> cx`
-6. Clean up losers: `aigon cleanup <ID> --push` (to save branches) or `aigon cleanup <ID>` (to delete)
+6. Clean up losers: `aigon bakeoff-cleanup <ID> --push` (to save branches) or `aigon bakeoff-cleanup <ID>` (to delete)
 
 ## Before Completing a Feature
 

@@ -18,12 +18,12 @@ Based on user choice:
 
 **If pushing to origin first:**
 ```bash
-aigoncleanup {{ARG1_SYNTAX}} --push
+aigon bakeoff-cleanup {{ARG1_SYNTAX}} --push
 ```
 
 **If just deleting locally:**
 ```bash
-aigoncleanup {{ARG1_SYNTAX}}
+aigon bakeoff-cleanup {{ARG1_SYNTAX}}
 ```
 
 ## What this does

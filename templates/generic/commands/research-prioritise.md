@@ -1,4 +1,4 @@
-<!-- description: Prioritize research <name> - assigns ID, moves to backlog -->
+<!-- description: Prioritise research <name> - assigns ID, moves to backlog -->
 # aigon-research-prioritise
 
 Run this command followed by the research topic name.
