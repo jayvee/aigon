@@ -699,6 +699,57 @@ const commands = {
         console.log(`\n💡 Next: Open each worktree in a separate editor/terminal and implement`);
         console.log(`   When done: aigon feature-eval ${num}`);
     },
+    'bakeoff-implement': (args) => {
+        const id = args[0];
+        if (!id) return console.error("Usage: aigon bakeoff-implement <ID>\n\nThis command should be run from within a worktree (e.g., ../feature-55-cc-dark-mode)");
+
+        // Check if we're in a worktree by examining the current directory name
+        const cwd = process.cwd();
+        const dirName = path.basename(cwd);
+        const worktreeMatch = dirName.match(/^feature-(\d+)-(\w+)-(.+)$/);
+
+        if (!worktreeMatch) {
+            console.error(`❌ Not in a worktree directory.`);
+            console.error(`   Current directory: ${dirName}`);
+            console.error(`\n   Expected pattern: feature-<ID>-<agent>-<description>`);
+            console.error(`   Example: feature-55-cc-dark-mode`);
+            console.error(`\n💡 Open the worktree first: code ../feature-${id}-<agent>-*`);
+            return;
+        }
+
+        const [_, featureNum, agentId, desc] = worktreeMatch;
+
+        if (featureNum !== id && featureNum !== String(id).padStart(2, '0')) {
+            console.warn(`⚠️  Warning: Directory feature ID (${featureNum}) doesn't match argument (${id})`);
+        }
+
+        console.log(`\n🚀 Bakeoff Implementation Mode`);
+        console.log(`   Agent: ${agentId}`);
+        console.log(`   Feature: ${featureNum}`);
+        console.log(`   Worktree: ${dirName}`);
+
+        // Check if spec exists
+        const specPath = path.join(cwd, 'docs', 'specs', 'features', '03-in-progress');
+        if (fs.existsSync(specPath)) {
+            const specFiles = fs.readdirSync(specPath).filter(f => f.startsWith(`feature-${featureNum}-`) && f.endsWith('.md'));
+            if (specFiles.length > 0) {
+                console.log(`\n📋 Spec: ./docs/specs/features/03-in-progress/${specFiles[0]}`);
+            }
+        }
+
+        console.log(`\n📝 Next Steps:`);
+        console.log(`   1. Read the spec in ./docs/specs/features/03-in-progress/`);
+        console.log(`   2. Implement the feature according to the spec`);
+        console.log(`   3. Test your changes (check .env.local for PORT)`);
+        console.log(`   4. Commit your code with conventional commits (feat:, fix:, chore:)`);
+        console.log(`   5. Update the implementation log in ./docs/specs/features/logs/`);
+        console.log(`   6. Commit the log file`);
+
+        console.log(`\n⚠️  IMPORTANT:`);
+        console.log(`   - Do NOT run 'aigon feature-done' from a worktree`);
+        console.log(`   - Return to main repo when done`);
+        console.log(`   - Run 'aigon feature-eval ${featureNum}' to compare implementations`);
+    },
     'feature-eval': (args) => {
         const name = args[0];
         if (!name) return console.error("Usage: aigon feature-eval <ID>");
@@ -1041,8 +1092,12 @@ ${agentList}
 
         console.log(`\n✅ Cleanup complete: ${worktreeCount} worktree(s), ${branchCount} branch(es) removed.`);
         if (!pushFlag && branchCount > 0) {
-            console.log(`💡 Tip: Use 'aigon cleanup ${id} --push' to push branches to origin before deleting.`);
+            console.log(`💡 Tip: Use 'aigon bakeoff-cleanup ${id} --push' to push branches to origin before deleting.`);
         }
+    },
+    'bakeoff-cleanup': (args) => {
+        // Alias for cleanup command
+        commands['cleanup'](args);
     },
     'install-agent': (args) => {
         // Use new config-driven approach
@@ -1350,8 +1405,10 @@ Examples:
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
   aigon feature-implement 55           # Solo mode (branch only)
   aigon bakeoff-setup 55 cc gg cx      # Bakeoff with 3 agents
-  aigon feature-done 55                # Complete solo feature
+  aigon bakeoff-implement 55           # Implement in worktree (run in each worktree)
+  aigon feature-eval 55                # Evaluate bakeoff implementations
   aigon feature-done 55 cc             # Merge Claude's bakeoff implementation
+  aigon bakeoff-cleanup 55 --push      # Clean up losing branches
 
 Agents:
   cc (claude)   - Claude Code

@@ -47,7 +47,7 @@ The architecture separates concerns into distinct, state-driven folders:
 
 ### Naming Conventions
 * **Drafts:** `feature-description.md` (Unprioritized, in `01-inbox`)
-* **Prioritized:** `feature-55-description.md` (Global Sequential ID assigned on prioritization)
+* **Prioritised:** `feature-55-description.md` (Global Sequential ID assigned on prioritization)
 * **Multi-Mode:** `../feature-55-cc-description` (Has a specific agent 2 letter code to indicate agent specific content)
 
 ---
@@ -57,7 +57,7 @@ The architecture separates concerns into distinct, state-driven folders:
 ### 1. Research Lifecycle
 Used for exploring complex topics before writing code. Files transition within the `./docs/specs/research-topics` folder.
 * **Create:** `aigon research-create "API Design"` creates a templated topic in `/01-inbox`.
-* **Prioritize:** `aigon research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
+* **Prioritise:** `aigon research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
 *   **Execute:** Agents read the file from `/03-in-progress`, write their findings and recommendations directly into the document, and create new feature specs.
 *   **Output:** The research file becomes a complete record, and its primary output is one or more new Feature Specs in `features/01-inbox`.
 
@@ -67,7 +67,7 @@ Used for shipping code based on a defined spec. Files transition within the `./d
 #### 2.1 Single Agent Feature Lifecycle
 
 1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
-2.  **Prioritize:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
+2.  **Prioritise:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
 3.  **Implement:** Run `/aigon-feature-implement 108` (or `aigon feature-implement 108` via CLI)
     * Moves Spec to `/03-in-progress`.
     * Creates a **Git Branch** (`feature-108-desc`).
@@ -83,7 +83,7 @@ Used for shipping code based on a defined spec. Files transition within the `./d
 Run multiple agents in competition to find the optimal solution.
 
 1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
-2.  **Prioritize:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
+2.  **Prioritise:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
 3.  **Setup Bakeoff:** Run `/aigon-bakeoff-setup 108 cc gg cx` (or via CLI: `aigon bakeoff-setup 108 cc gg cx`)
     * Moves Spec to `/03-in-progress`.
     * Creates agent-specific **Git Branches** (`feature-108-cc-desc`, `feature-108-gg-desc`, `feature-108-cx-desc`).
@@ -96,7 +96,7 @@ Run multiple agents in competition to find the optimal solution.
 4.  **Implement:** Open each worktree in a separate editor session and run `/aigon-bakeoff-implement 108`.
     * Each agent builds the feature independently in their isolated worktree.
     * Each agent *must* fill out their Analysis Log.
-5.  **Evaluate:** Back in the main working folder - `aigon feature-eval 108` moves the feature to `/in-evaluation` for review.
+5.  **Evaluate:** Back in the main working folder, changed to an eval model (eg sonnet) and run - `aigon feature-eval 108` moves the feature to `/in-evaluation` for review.
 6.  **Judge:** Review and compare solutions in `/features/in-evaluation`.
 7.  **Merge Winner:**
     ```bash
@@ -109,7 +109,7 @@ Run multiple agents in competition to find the optimal solution.
     * Cleans up winner's worktree.
 8.  **Cleanup Losers:**
     ```bash
-    aigon cleanup 108
+    aigon bakeoff-cleanup 108
     ```
 
 ---
@@ -163,10 +163,14 @@ your-project/
 │       └── codex.md               # Codex-specific instructions
 ├── CLAUDE.md                      # Root file for Claude Code
 ├── GEMINI.md                      # Root file for Gemini CLI
-├── CODEX.md                       # Root file for Codex
 ├── .claude/                       # Claude skills & slash commands
-└── .gemini/                       # Gemini command files
+├── .gemini/                       # Gemini command files
+└── .codex/                        # Codex prompts & config
+    ├── prompt.md                  # Project-level Codex instructions
+    └── config.toml                # Codex configuration
 ```
+
+**Note:** Codex also installs global prompts in `~/.codex/prompts/` (shared across all projects).
 
 **Re-installation:** Running `install-agent` again will update the Aigon sections while preserving any custom content you've added outside the `<!-- AIGON_START/END -->` markers.
 
@@ -182,7 +186,7 @@ The `aigon` (Aigon) command automates state transitions and Git operations.
 | Command | Usage | Description |
 | :--- | :--- | :--- |
 | **Feature Create** | `aigon feature-create <name>` | Create a new feature spec |
-| **Feature Prioritise** |  `aigon feature-prioritise <name>` | Prioritize a feature draft |
+| **Feature Prioritise** |  `aigon feature-prioritise <name>` | Prioritise a feature draft |
 | **Feature Implement** |  `aigon feature-implement <ID>` | Creates branch `feature-ID-desc`, moves spec to in-progress and implements solution |
 | **Feature Evaluate** |  `aigon feature-eval <ID>` | Evaluate feature implementations in a bake-off, propose winner |
 | **Feature Finish** |  `aigon feature-done <ID>` | Complete and merge feature |
@@ -282,7 +286,7 @@ When you run `aigon install-agent cx`, it installs slash commands to your **glob
 | Slash Command | Description |
 | :--- | :--- |
 | `/prompts:aigon-feature-create <name>` | Create a new feature spec |
-| `/prompts:aigon-feature-prioritise <name>` | Prioritize a feature draft |
+| `/prompts:aigon-feature-prioritise <name>` | Prioritise a feature draft |
 | `/prompts:aigon-feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
 | `/prompts:aigon-feature-eval <ID>` | Submit feature for evaluation (optional) |
 | `/prompts:aigon-feature-done <ID>` | Complete and merge feature |
@@ -405,10 +409,10 @@ Once you've chosen a winner, merge their implementation:
 aigon feature-done 10 cx
 
 # Push losing branches to origin for safekeeping (optional)
-aigon cleanup 10 --push
+aigon bakeoff-cleanup 10 --push
 
 # Or just delete losing branches locally
-aigon cleanup 10
+aigon bakeoff-cleanup 10
 ```
 
 ---

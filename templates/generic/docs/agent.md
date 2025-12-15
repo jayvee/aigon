@@ -12,7 +12,7 @@
 | Command | Description |
 |---------|-------------|
 | `aigon feature-create <name>` | Create a new feature spec |
-| `aigon feature-prioritise <name>` | Prioritize a feature draft |
+| `aigon feature-prioritise <name>` | Prioritise a feature draft |
 | `aigon feature-implement <ID>` | Implement feature (branch, code, complete) |
 | `aigon feature-eval <ID>` | Evaluate feature implementations in a bake-off, propose winner |
 | `aigon feature-done <ID>` | Complete and merge feature |
@@ -28,7 +28,7 @@
 | Command | Description |
 |---------|-------------|
 | `aigon research-create <name>` | Create a new research topic |
-| `aigon research-prioritise <name>` | Prioritize a research topic |
+| `aigon research-prioritise <name>` | Prioritise a research topic |
 | `aigon research-start <ID>` | Start a research topic |
 | `aigon research-done <ID>` | Complete research topic |
 | `aigon help` | Show all Aigon commands |
@@ -68,7 +68,7 @@
    - **STOP** - Do NOT run `feature-done` from worktree
 4. Return to main repo for evaluation: `aigon feature-eval <ID>`
 5. Merge winner: `aigon feature-done <ID> cx`
-6. Clean up losers: `aigon cleanup <ID> --push` (to save branches) or `aigon cleanup <ID>` (to delete)
+6. Clean up losers: `aigon bakeoff-cleanup <ID> --push` (to save branches) or `aigon bakeoff-cleanup <ID>` (to delete)
 
 ## Before Completing a Feature
 

@@ -1,4 +1,4 @@
-<!-- description: Prioritize feature <name> - assigns ID, moves to backlog -->
+<!-- description: Prioritise feature <name> - assigns ID, moves to backlog -->
 # aigon-feature-prioritise
 
 Run this command followed by the feature name.
