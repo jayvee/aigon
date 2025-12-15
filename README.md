@@ -369,7 +369,7 @@ See: `./docs/specs/features/04-in-evaluation/feature-10-add-search-box.md`
 - ⚠️ **Non-breaking but complex**: Mapping layer adds some complexity (though it preserves data integrity)
 - ⚠️ **Separate normalize calls**: Calls `normalizeSearchText()` twice per location (once for name, once for description)
 
-#### cx (Claude via Cursor)
+#### cx (Codex)
 **Strengths:**
 - ✅ **Perfect spec compliance**: All acceptance criteria met flawlessly
 - ✅ **Excellent normalization**: Robust `normalizeText()` function handles punctuation, underscores, and extra whitespace
