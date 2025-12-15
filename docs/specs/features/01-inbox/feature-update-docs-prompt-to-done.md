@@ -1,0 +1,2 @@
+# Purpose
+Add instructions to the feature-done and equivalent commands to prompt the agent to not only update it's log, but update any documentation, such as architecture docs and diagrams, with the changes just made by the feature.
