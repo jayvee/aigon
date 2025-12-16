@@ -18,8 +18,9 @@ Aigon derives its name from the fusion of "AI" and the ancient Greek concept of 
 4. [Multi-Agent "Bake-Offs"](#multi-agent-bake-offs)
 5. [Installation & Setup](#installation--setup)
 6. [CLI Reference](#cli-reference)
-7. [Agent Macros](#agent-macros)
-8. [Multi-Agent Evaluation](#multi-agent-evaluation)
+7. [Hooks](#hooks)
+8. [Agent Macros](#agent-macros)
+9. [Multi-Agent Evaluation](#multi-agent-evaluation)
 
 ---
 
@@ -214,6 +215,88 @@ The `aigon` (Aigon) command automates state transitions and Git operations.
 | **Init** | `aigon init` | Creates the `./docs/specs` directory structure in the current project. |
 | **Install Agent** | `aigon install-agent <agents...>` | Generates agent configuration files. Accepts multiple agents: `cc`, `gg`, `cx`. |
 | **Update** | `aigon update` | Updates all Aigon files to latest version. Re-installs detected agents. |
+| **Hooks List** | `aigon hooks [list]` | List all defined hooks from `docs/aigon-hooks.md`. |
+
+---
+
+## Hooks
+
+Hooks allow you to run custom scripts before and after Aigon commands. This is useful for integrating with your specific infrastructure (databases, deployment platforms, etc.) without modifying the core Aigon commands.
+
+### Hooks File
+
+Define hooks in `docs/aigon-hooks.md`. Aigon automatically detects and runs hooks based on heading names.
+
+### Hooks Format
+
+```markdown
+# Aigon Hooks
+
+## pre-bakeoff-setup
+
+Creates database branches for each agent worktree.
+
+```bash
+for agent in $AIGON_AGENTS; do
+  neon branches create --name "bakeoff-${AIGON_FEATURE_ID}-${agent}"
+done
+```
+
+## post-bakeoff-setup
+
+```bash
+echo "Database branches created for feature $AIGON_FEATURE_ID"
+```
+
+## pre-bakeoff-cleanup
+
+Clean up database branches before removing worktrees.
+
+```bash
+for agent in $AIGON_AGENTS; do
+  neon branches delete "bakeoff-${AIGON_FEATURE_ID}-${agent}" --force
+done
+```
+```
+
+### Supported Hooks
+
+| Hook | Description |
+|------|-------------|
+| `pre-feature-implement` | Runs before starting solo implementation |
+| `post-feature-implement` | Runs after solo implementation setup |
+| `pre-bakeoff-setup` | Runs before creating bakeoff worktrees |
+| `post-bakeoff-setup` | Runs after bakeoff worktrees are created |
+| `pre-feature-done` | Runs before merging a feature |
+| `post-feature-done` | Runs after a feature is merged |
+| `pre-bakeoff-cleanup` | Runs before cleaning up bakeoff |
+| `post-bakeoff-cleanup` | Runs after bakeoff cleanup |
+
+### Environment Variables
+
+Hooks have access to context via environment variables:
+
+| Variable | Description | Available In |
+|----------|-------------|--------------|
+| `AIGON_COMMAND` | The command being run | All hooks |
+| `AIGON_PROJECT_ROOT` | Root directory of the project | All hooks |
+| `AIGON_FEATURE_ID` | Feature ID (e.g., "01") | Feature commands |
+| `AIGON_FEATURE_NAME` | Feature name slug | Feature commands |
+| `AIGON_AGENTS` | Space-separated list of agents | bakeoff-setup, bakeoff-cleanup |
+| `AIGON_AGENT` | Current agent name | bakeoff-implement, feature-done |
+| `AIGON_WORKTREE_PATH` | Path to current worktree | bakeoff-implement |
+
+### Hook Behavior
+
+- **Pre-hooks**: Run before the command executes. If a pre-hook fails (non-zero exit), the command is **aborted**.
+- **Post-hooks**: Run after the command completes successfully. If a post-hook fails, a **warning** is shown but the command is considered complete.
+- **Missing hooks file**: Silently ignored - hooks are optional.
+
+### List Defined Hooks
+
+```bash
+aigon hooks list
+```
 
 ---
 
