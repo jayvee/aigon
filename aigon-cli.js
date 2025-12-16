@@ -133,7 +133,7 @@ function parseHooksFile() {
 
     while ((match = hookPattern.exec(content)) !== null) {
         const hookType = match[1]; // 'pre-' or 'post-'
-        const commandName = match[2]; // e.g., 'bakeoff-setup'
+        const commandName = match[2]; // e.g., 'feature-setup'
         const script = match[3].trim();
         const hookName = `${hookType}${commandName}`;
         hooks[hookName] = script;
@@ -161,7 +161,7 @@ function getDefinedHooks() {
 
 /**
  * Execute a hook with the given context
- * @param {string} hookName - Name of the hook (e.g., 'pre-bakeoff-setup')
+ * @param {string} hookName - Name of the hook (e.g., 'pre-feature-setup')
  * @param {Object} context - Context variables to pass as environment variables
  * @returns {Object} {success: boolean, output?: string, error?: string}
  */
@@ -182,6 +182,7 @@ function executeHook(hookName, context = {}) {
         AIGON_COMMAND: context.command || '',
         AIGON_FEATURE_ID: context.featureId || '',
         AIGON_FEATURE_NAME: context.featureName || '',
+        AIGON_MODE: context.mode || '',  // 'solo' or 'arena'
         AIGON_AGENTS: context.agents ? context.agents.join(' ') : '',
         AIGON_AGENT: context.agent || '',
         AIGON_WORKTREE_PATH: context.worktreePath || ''
@@ -213,7 +214,7 @@ function executeHook(hookName, context = {}) {
 
 /**
  * Run pre-hook for a command. Aborts if hook fails.
- * @param {string} commandName - Name of the command (e.g., 'bakeoff-setup')
+ * @param {string} commandName - Name of the command (e.g., 'feature-setup')
  * @param {Object} context - Context variables to pass to the hook
  * @returns {boolean} true if should continue, false if should abort
  */
@@ -235,7 +236,7 @@ function runPreHook(commandName, context = {}) {
 
 /**
  * Run post-hook for a command. Warns but doesn't fail on error.
- * @param {string} commandName - Name of the command (e.g., 'bakeoff-setup')
+ * @param {string} commandName - Name of the command (e.g., 'feature-setup')
  * @param {Object} context - Context variables to pass to the hook
  */
 function runPostHook(commandName, context = {}) {
@@ -691,82 +692,20 @@ const commands = {
 
         console.log(`📋 Assigned ID: ${paddedId}`);
         console.log(`🚀 Next steps:`);
-        console.log(`   Solo mode: aigon feature-implement ${paddedId}`);
-        console.log(`   Bakeoff mode: aigon bakeoff-setup ${paddedId} <agent1> <agent2> [agent3]`);
+        console.log(`   Solo mode: aigon feature-setup ${paddedId}`);
+        console.log(`   Arena mode: aigon feature-setup ${paddedId} <agent1> <agent2> [agent3]`);
     },
-    'feature-implement': (args) => {
-        const name = args[0];
-        if (!name) return console.error("Usage: aigon feature-implement <ID>\n\nExample: aigon feature-implement 55");
-
-        // Find feature first to get context for hooks
-        let found = findFile(PATHS.features, name, ['02-backlog', '03-in-progress']);
-        if (!found) return console.error(`❌ Could not find feature "${name}" in backlog or in-progress.`);
-
-        const preMatch = found.file.match(/^feature-(\d+)-(.*)\.md$/);
-        const featureId = preMatch ? preMatch[1] : name;
-        const featureName = preMatch ? preMatch[2] : '';
-
-        // Run pre-hook (can abort the command)
-        const hookContext = {
-            featureId,
-            featureName
-        };
-        if (!runPreHook('feature-implement', hookContext)) {
-            return;
-        }
-
-        // Re-find and move spec to in-progress
-        found = findFile(PATHS.features, name, ['02-backlog']);
-        if (found) {
-            moveFile(found, '03-in-progress');
-            found = findFile(PATHS.features, name, ['03-in-progress']);
-        } else {
-            found = findFile(PATHS.features, name, ['03-in-progress']);
-            if (!found) return console.error(`❌ Could not find feature "${name}" in backlog or in-progress.`);
-        }
-
-        const match = found.file.match(/^feature-(\d+)-(.*)\.md$/);
-        if (!match) return console.warn("⚠️  Could not parse filename for branch creation.");
-        const [_, num, desc] = match;
-
-        // Create branch
-        const branchName = `feature-${num}-${desc}`;
-        try {
-            runGit(`git checkout -b ${branchName}`);
-            console.log(`🌿 Created branch: ${branchName}`);
-        } catch (e) {
-            // Branch may already exist
-            try {
-                runGit(`git checkout ${branchName}`);
-                console.log(`🌿 Switched to branch: ${branchName}`);
-            } catch (e2) {
-                console.error(`❌ Failed to create/switch branch: ${e2.message}`);
-                return;
-            }
-        }
-
-        // Create log file
-        const logsDir = path.join(PATHS.features.root, 'logs');
-        if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
-        const logName = `feature-${num}-${desc}-log.md`;
-        const logPath = path.join(logsDir, logName);
-        if (!fs.existsSync(logPath)) {
-            const template = `# Implementation Log: Feature ${num} - ${desc}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
-            fs.writeFileSync(logPath, template);
-            console.log(`📝 Log: ./docs/specs/features/logs/${logName}`);
-        }
-        console.log(`\n🚀 Solo mode. Ready to implement in current directory.`);
-        console.log(`   When done: aigon feature-done ${num}`);
-
-        // Run post-hook (won't fail the command)
-        runPostHook('feature-implement', hookContext);
-    },
-
-    'bakeoff-setup': (args) => {
+    'feature-setup': (args) => {
         const name = args[0];
         const agentIds = args.slice(1);
-        if (!name || agentIds.length < 2) {
-            return console.error("Usage: aigon bakeoff-setup <ID> <agent1> <agent2> [agent3...]\n\nExample: aigon bakeoff-setup 55 cc gg cx");
+        const mode = agentIds.length > 0 ? 'arena' : 'solo';
+
+        if (!name) {
+            return console.error("Usage: aigon feature-setup <ID> [agents...]\n\nExamples:\n  aigon feature-setup 55              # Solo mode\n  aigon feature-setup 55 cc gg cx     # Arena mode");
+        }
+
+        if (mode === 'arena' && agentIds.length < 2) {
+            return console.error("Arena mode requires at least 2 agents.\n\nExample: aigon feature-setup 55 cc gg cx");
         }
 
         // Find the feature first to get context for hooks
@@ -781,9 +720,10 @@ const commands = {
         const hookContext = {
             featureId,
             featureName,
+            mode,
             agents: agentIds
         };
-        if (!runPreHook('bakeoff-setup', hookContext)) {
+        if (!runPreHook('feature-setup', hookContext)) {
             return;
         }
 
@@ -803,7 +743,7 @@ const commands = {
         if (!match) return console.warn("⚠️  Could not parse filename for branch creation.");
         const [_, num, desc] = match;
 
-        // Commit the spec move first so worktrees have it
+        // Commit the spec move first (important for worktrees)
         if (movedFromBacklog) {
             try {
                 runGit(`git add docs/specs/features/`);
@@ -818,117 +758,183 @@ const commands = {
         const logsDir = path.join(PATHS.features.root, 'logs');
         if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
 
-        // Create worktree for each agent
-        const createdWorktrees = [];
-        agentIds.forEach(agentId => {
-            const branchName = `feature-${num}-${agentId}-${desc}`;
-            const worktreePath = `../feature-${num}-${agentId}-${desc}`;
-
-            if (fs.existsSync(worktreePath)) {
-                console.warn(`⚠️  Worktree path ${worktreePath} already exists. Skipping.`);
-            } else {
+        if (mode === 'solo') {
+            // Solo mode: Create branch
+            const branchName = `feature-${num}-${desc}`;
+            try {
+                runGit(`git checkout -b ${branchName}`);
+                console.log(`🌿 Created branch: ${branchName}`);
+            } catch (e) {
+                // Branch may already exist
                 try {
-                    runGit(`git worktree add ${worktreePath} -b ${branchName}`);
-                    console.log(`📂 Worktree: ${worktreePath}`);
-                    createdWorktrees.push({ agentId, worktreePath });
-
-                    // Create .env.local with agent-specific PORT (copy base if exists)
-                    const envLocalPath = path.join(process.cwd(), '.env.local');
-                    const agentConfig = AGENT_CONFIGS[agentId];
-                    const port = agentConfig ? agentConfig.port : 3000;
-                    let envContent = '';
-                    if (fs.existsSync(envLocalPath)) {
-                        envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
-                    }
-                    envContent += `# Bakeoff port for agent ${agentId}\nPORT=${port}\n`;
-                    fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
-                    console.log(`   📋 .env.local created with PORT=${port}`);
-                } catch (e) {
-                    console.error(`❌ Failed to create worktree for ${agentId}: ${e.message}`);
+                    runGit(`git checkout ${branchName}`);
+                    console.log(`🌿 Switched to branch: ${branchName}`);
+                } catch (e2) {
+                    console.error(`❌ Failed to create/switch branch: ${e2.message}`);
+                    return;
                 }
             }
 
-            // Create log for this agent
-            const logName = `feature-${num}-${agentId}-${desc}-log.md`;
+            // Create log file
+            const logName = `feature-${num}-${desc}-log.md`;
             const logPath = path.join(logsDir, logName);
             if (!fs.existsSync(logPath)) {
-                const template = `# Implementation Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
+                const template = `# Implementation Log: Feature ${num} - ${desc}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
                 fs.writeFileSync(logPath, template);
-                console.log(`   📝 Log: ./docs/specs/features/logs/${logName}`);
+                console.log(`📝 Log: ./docs/specs/features/logs/${logName}`);
             }
-        });
 
-        // Add read permissions for all worktrees to Claude settings
-        const allWorktreePaths = agentIds.map(agentId => `../feature-${num}-${agentId}-${desc}`);
-        addWorktreePermissions(allWorktreePaths);
+            console.log(`\n🚀 Solo mode. Ready to implement in current directory.`);
+            console.log(`   When done: aigon feature-done ${num}`);
+        } else {
+            // Arena mode: Create worktrees
+            const createdWorktrees = [];
+            agentIds.forEach(agentId => {
+                const branchName = `feature-${num}-${agentId}-${desc}`;
+                const worktreePath = `../feature-${num}-${agentId}-${desc}`;
 
-        console.log(`\n🏁 Bakeoff started with ${agentIds.length} agents!`);
-        console.log(`\n📂 Worktrees created:`);
-        agentIds.forEach(agentId => {
-            const agentConfig = AGENT_CONFIGS[agentId];
-            const port = agentConfig ? agentConfig.port : 3000;
-            console.log(`   ${agentId}: ../feature-${num}-${agentId}-${desc} (PORT=${port})`);
-        });
-        console.log(`\n💡 Next: Open each worktree in a separate editor/terminal and implement`);
-        console.log(`   When done: aigon feature-eval ${num}`);
+                if (fs.existsSync(worktreePath)) {
+                    console.warn(`⚠️  Worktree path ${worktreePath} already exists. Skipping.`);
+                } else {
+                    try {
+                        runGit(`git worktree add ${worktreePath} -b ${branchName}`);
+                        console.log(`📂 Worktree: ${worktreePath}`);
+                        createdWorktrees.push({ agentId, worktreePath });
+
+                        // Create .env.local with agent-specific PORT (copy base if exists)
+                        const envLocalPath = path.join(process.cwd(), '.env.local');
+                        const agentConfig = AGENT_CONFIGS[agentId];
+                        const port = agentConfig ? agentConfig.port : 3000;
+                        let envContent = '';
+                        if (fs.existsSync(envLocalPath)) {
+                            envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
+                        }
+                        envContent += `# Arena port for agent ${agentId}\nPORT=${port}\n`;
+                        fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
+                        console.log(`   📋 .env.local created with PORT=${port}`);
+
+                        // Create log for this agent in the worktree
+                        const worktreeLogsDir = path.join(worktreePath, 'docs/specs/features/logs');
+                        if (!fs.existsSync(worktreeLogsDir)) {
+                            fs.mkdirSync(worktreeLogsDir, { recursive: true });
+                        }
+                        const logName = `feature-${num}-${agentId}-${desc}-log.md`;
+                        const logPath = path.join(worktreeLogsDir, logName);
+                        const template = `# Implementation Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
+                        fs.writeFileSync(logPath, template);
+                        console.log(`   📝 Log: docs/specs/features/logs/${logName}`);
+                    } catch (e) {
+                        console.error(`❌ Failed to create worktree for ${agentId}: ${e.message}`);
+                    }
+                }
+            });
+
+            // Add read permissions for all worktrees to Claude settings
+            const allWorktreePaths = agentIds.map(agentId => `../feature-${num}-${agentId}-${desc}`);
+            addWorktreePermissions(allWorktreePaths);
+
+            console.log(`\n🏁 Arena started with ${agentIds.length} agents!`);
+            console.log(`\n📂 Worktrees created:`);
+            agentIds.forEach(agentId => {
+                const agentConfig = AGENT_CONFIGS[agentId];
+                const port = agentConfig ? agentConfig.port : 3000;
+                console.log(`   ${agentId}: ../feature-${num}-${agentId}-${desc} (PORT=${port})`);
+            });
+            console.log(`\n💡 Next: Open each worktree in a separate editor/terminal`);
+            console.log(`   Run /aigon-feature-implement ${num} in each worktree`);
+            console.log(`   When done: aigon feature-eval ${num}`);
+        }
 
         // Run post-hook (won't fail the command)
-        runPostHook('bakeoff-setup', hookContext);
+        runPostHook('feature-setup', hookContext);
     },
-    'bakeoff-implement': (args) => {
+    'feature-implement': (args) => {
         const id = args[0];
-        if (!id) return console.error("Usage: aigon bakeoff-implement <ID>\n\nThis command should be run from within a worktree (e.g., ../feature-55-cc-dark-mode)");
+        if (!id) return console.error("Usage: aigon feature-implement <ID>\n\nRun this after 'aigon feature-setup <ID>'\n\nExamples:\n  aigon feature-implement 55     # In solo mode branch\n  aigon feature-implement 55     # In arena mode worktree");
 
-        // Check if we're in a worktree by examining the current directory name
+        // Find the feature spec
+        let found = findFile(PATHS.features, id, ['03-in-progress']);
+        if (!found) return console.error(`❌ Could not find feature "${id}" in in-progress.\n\nRun 'aigon feature-setup ${id}' first.`);
+
+        const match = found.file.match(/^feature-(\d+)-(.*)\.md$/);
+        if (!match) return console.warn("⚠️  Could not parse filename.");
+        const [_, num, desc] = match;
+
+        // Detect mode based on current location
         const cwd = process.cwd();
         const dirName = path.basename(cwd);
         const worktreeMatch = dirName.match(/^feature-(\d+)-(\w+)-(.+)$/);
 
-        if (!worktreeMatch) {
-            console.error(`❌ Not in a worktree directory.`);
-            console.error(`   Current directory: ${dirName}`);
-            console.error(`\n   Expected pattern: feature-<ID>-<agent>-<description>`);
-            console.error(`   Example: feature-55-cc-dark-mode`);
-            console.error(`\n💡 Open the worktree first: code ../feature-${id}-<agent>-*`);
-            return;
+        let mode, agentId;
+        if (worktreeMatch) {
+            // Arena mode: in a worktree
+            mode = 'arena';
+            agentId = worktreeMatch[2];
+
+            // Verify we're in the right worktree
+            const [_, wtNum, wtAgent, wtDesc] = worktreeMatch;
+            if (wtNum !== num && wtNum !== String(num).padStart(2, '0')) {
+                console.warn(`⚠️  Warning: Directory feature ID (${wtNum}) doesn't match argument (${num})`);
+            }
+
+            console.log(`\n🏟️  Arena Mode - Agent: ${agentId}`);
+            console.log(`   Feature: ${num} - ${desc}`);
+            console.log(`   Worktree: ${dirName}`);
+        } else {
+            // Solo mode: check if we're on the right branch
+            mode = 'solo';
+            try {
+                const currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
+                const expectedBranch = `feature-${num}-${desc}`;
+
+                if (currentBranch !== expectedBranch) {
+                    console.warn(`⚠️  Warning: Current branch (${currentBranch}) doesn't match expected (${expectedBranch})`);
+                    console.warn(`    Run 'aigon feature-setup ${num}' first.`);
+                }
+
+                console.log(`\n🚀 Solo Mode`);
+                console.log(`   Feature: ${num} - ${desc}`);
+                console.log(`   Branch: ${currentBranch}`);
+            } catch (e) {
+                console.error(`❌ Could not determine git branch: ${e.message}`);
+                return;
+            }
         }
-
-        const [_, featureNum, agentId, desc] = worktreeMatch;
-
-        if (featureNum !== id && featureNum !== String(id).padStart(2, '0')) {
-            console.warn(`⚠️  Warning: Directory feature ID (${featureNum}) doesn't match argument (${id})`);
-        }
-
-        console.log(`\n🚀 Bakeoff Implementation Mode`);
-        console.log(`   Agent: ${agentId}`);
-        console.log(`   Feature: ${featureNum}`);
-        console.log(`   Worktree: ${dirName}`);
 
         // Check if spec exists
         const specPath = path.join(cwd, 'docs', 'specs', 'features', '03-in-progress');
         if (fs.existsSync(specPath)) {
-            const specFiles = fs.readdirSync(specPath).filter(f => f.startsWith(`feature-${featureNum}-`) && f.endsWith('.md'));
+            const specFiles = fs.readdirSync(specPath).filter(f => f.startsWith(`feature-${num}-`) && f.endsWith('.md'));
             if (specFiles.length > 0) {
                 console.log(`\n📋 Spec: ./docs/specs/features/03-in-progress/${specFiles[0]}`);
             }
         }
 
+        // Show log file location
+        const logDir = './docs/specs/features/logs/';
+        const logPattern = mode === 'arena' ? `feature-${num}-${agentId}-*-log.md` : `feature-${num}-*-log.md`;
+        console.log(`📝 Log: ${logDir}${logPattern}`);
+
         console.log(`\n📝 Next Steps:`);
         console.log(`   1. Read the spec in ./docs/specs/features/03-in-progress/`);
         console.log(`   2. Implement the feature according to the spec`);
-        console.log(`   3. Test your changes (check .env.local for PORT)`);
+        console.log(`   3. Test your changes`);
         console.log(`   4. Commit your code with conventional commits (feat:, fix:, chore:)`);
-        console.log(`   5. Update the implementation log in ./docs/specs/features/logs/`);
+        console.log(`   5. Update the implementation log`);
         console.log(`   6. Commit the log file`);
 
-        console.log(`\n⚠️  IMPORTANT:`);
-        console.log(`   - Do NOT run 'aigon feature-done' from a worktree`);
-        console.log(`   - Return to main repo when done`);
-        console.log(`   - Run 'aigon feature-eval ${featureNum}' to compare implementations`);
+        if (mode === 'arena') {
+            console.log(`\n⚠️  IMPORTANT:`);
+            console.log(`   - Do NOT run 'aigon feature-done' from a worktree`);
+            console.log(`   - Return to main repo when done`);
+            console.log(`   - Run 'aigon feature-eval ${num}' to compare implementations`);
+        } else {
+            console.log(`\n   When done: aigon feature-done ${num}`);
+        }
     },
     'feature-eval': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: aigon feature-eval <ID>");
+        if (!name) return console.error("Usage: aigon feature-eval <ID>\n\nExamples:\n  aigon feature-eval 55     # Solo mode: code review\n  aigon feature-eval 55     # Arena mode: compare implementations");
 
         // Find the feature (may already be in evaluation)
         let found = findFile(PATHS.features, name, ['03-in-progress']);
@@ -945,7 +951,7 @@ const commands = {
         if (!match) return console.warn("⚠️  Could not parse filename.");
         const [_, num, desc] = match;
 
-        // Find all worktrees for this feature
+        // Detect mode: Find all worktrees for this feature
         let worktrees = [];
         try {
             const stdout = execSync('git worktree list', { encoding: 'utf8' });
@@ -968,17 +974,23 @@ const commands = {
             console.warn("⚠️  Could not list worktrees");
         }
 
+        const mode = worktrees.length > 0 ? 'arena' : 'solo';
+
         // Create evaluation template
         const evalsDir = path.join(PATHS.features.root, 'evaluations');
         if (!fs.existsSync(evalsDir)) fs.mkdirSync(evalsDir, { recursive: true });
 
         const evalFile = path.join(evalsDir, `feature-${num}-eval.md`);
         if (!fs.existsSync(evalFile)) {
-            const agentList = worktrees.length > 0
-                ? worktrees.map(w => `- [ ] **${w.agent}** (${w.name}): \`${w.path}\``).join('\n')
-                : '- [ ] (no worktrees found - check git worktree list)';
+            let evalTemplate;
 
-            const evalTemplate = `# Evaluation: Feature ${num} - ${desc}
+            if (mode === 'arena') {
+                // Arena mode: comparison template
+                const agentList = worktrees.map(w => `- [ ] **${w.agent}** (${w.name}): \`${w.path}\``).join('\n');
+
+                evalTemplate = `# Evaluation: Feature ${num} - ${desc}
+
+**Mode:** Arena (Multi-agent comparison)
 
 ## Spec
 See: \`./docs/specs/features/04-in-evaluation/${found.file}\`
@@ -989,28 +1001,21 @@ ${agentList}
 
 ## Evaluation Criteria
 
-| Criteria | ${worktrees.map(w => w.agent).join(' | ') || 'agent1 | agent2 | agent3'} |
-|----------|${worktrees.map(() => '---').join('|') || '---|---|---'}|
-| Code Quality | | ${worktrees.length > 1 ? '|'.repeat(worktrees.length - 1) : '| |'} |
-| Spec Compliance | | ${worktrees.length > 1 ? '|'.repeat(worktrees.length - 1) : '| |'} |
-| Performance | | ${worktrees.length > 1 ? '|'.repeat(worktrees.length - 1) : '| |'} |
-| Maintainability | | ${worktrees.length > 1 ? '|'.repeat(worktrees.length - 1) : '| |'} |
+| Criteria | ${worktrees.map(w => w.agent).join(' | ')} |
+|----------|${worktrees.map(() => '---').join('|')}|
+| Code Quality | ${worktrees.map(() => '').join(' | ')} |
+| Spec Compliance | ${worktrees.map(() => '').join(' | ')} |
+| Performance | ${worktrees.map(() => '').join(' | ')} |
+| Maintainability | ${worktrees.map(() => '').join(' | ')} |
 
 ## Summary
 
 ### Strengths & Weaknesses
 
-#### Agent 1
+${worktrees.map(w => `#### ${w.agent} (${w.name})
 - Strengths:
 - Weaknesses:
-
-#### Agent 2
-- Strengths:
-- Weaknesses:
-
-#### Agent 3
-- Strengths:
-- Weaknesses:
+`).join('\n')}
 
 ## Recommendation
 
@@ -1019,6 +1024,64 @@ ${agentList}
 **Rationale:**
 
 `;
+            } else {
+                // Solo mode: code review template
+                evalTemplate = `# Evaluation: Feature ${num} - ${desc}
+
+**Mode:** Solo (Code review)
+
+## Spec
+See: \`./docs/specs/features/04-in-evaluation/${found.file}\`
+
+## Implementation
+Branch: \`feature-${num}-${desc}\`
+
+## Code Review Checklist
+
+### Spec Compliance
+- [ ] All requirements from spec are met
+- [ ] Feature works as described
+- [ ] Edge cases are handled
+
+### Code Quality
+- [ ] Follows project coding standards
+- [ ] Code is readable and maintainable
+- [ ] Proper error handling
+- [ ] No obvious bugs or issues
+
+### Testing
+- [ ] Feature has been tested manually
+- [ ] Tests pass (if applicable)
+- [ ] Edge cases are tested
+
+### Documentation
+- [ ] Code is adequately commented where needed
+- [ ] README updated (if needed)
+- [ ] Breaking changes documented (if any)
+
+### Security
+- [ ] No obvious security vulnerabilities
+- [ ] Input validation where needed
+- [ ] No hardcoded secrets or credentials
+
+## Review Notes
+
+### Strengths
+
+
+### Areas for Improvement
+
+
+## Decision
+
+- [ ] **Approved** - Ready to merge
+- [ ] **Needs Changes** - Issues must be addressed before merging
+
+**Rationale:**
+
+`;
+            }
+
             fs.writeFileSync(evalFile, evalTemplate);
             console.log(`📝 Created: ./docs/specs/features/evaluations/feature-${num}-eval.md`);
         } else {
@@ -1035,17 +1098,20 @@ ${agentList}
         }
 
         console.log(`\n📋 Feature ${num} ready for evaluation`);
-        if (worktrees.length > 0) {
+        console.log(`   Mode: ${mode === 'arena' ? '🏟️  Arena (comparison)' : '🚀 Solo (code review)'}`);
+
+        if (mode === 'arena') {
             console.log(`\n📂 Worktrees to compare:`);
             worktrees.forEach(w => console.log(`   ${w.agent}: ${w.path}`));
-        }
-        console.log(`\n🔍 Review each implementation, then pick a winner.`);
-        console.log(`\n⚠️  TO MERGE THE WINNER INTO MAIN, run:`);
-        worktrees.forEach(w => {
-            console.log(`   aigon feature-done ${num} ${w.agent}    # merge ${w.name}'s implementation`);
-        });
-        if (worktrees.length === 0) {
-            console.log(`   aigon feature-done ${num} <agent>    # e.g. cc, gg, cx`);
+            console.log(`\n🔍 Review each implementation, then pick a winner.`);
+            console.log(`\n⚠️  TO MERGE THE WINNER INTO MAIN, run:`);
+            worktrees.forEach(w => {
+                console.log(`   aigon feature-done ${num} ${w.agent}    # merge ${w.name}'s implementation`);
+            });
+        } else {
+            console.log(`\n🔍 Review the implementation and complete the evaluation checklist.`);
+            console.log(`\n⚠️  TO MERGE INTO MAIN, run:`);
+            console.log(`   aigon feature-done ${num}`);
         }
     },
     'feature-done': (args) => {
@@ -1202,9 +1268,8 @@ ${agentList}
                 console.log(`\n📦 Found ${losingBranches.length} other implementation(s):`);
                 losingBranches.forEach(b => console.log(`   - ${b}`));
                 console.log(`\n🧹 Cleanup options:`);
-                console.log(`   aigon cleanup ${num}         # Delete worktrees and local branches`);
-                console.log(`   aigon cleanup ${num} --push  # Push branches to origin first, then delete`);
-                console.log(`\n   Or use: /aigon-bakeoff-cleanup ${num}`);
+                console.log(`   aigon feature-cleanup ${num}         # Delete worktrees and local branches`);
+                console.log(`   aigon feature-cleanup ${num} --push  # Push branches to origin first, then delete`);
             }
         }
 
@@ -1213,10 +1278,10 @@ ${agentList}
         // Run post-hook (won't fail the command)
         runPostHook('feature-done', hookContext);
     },
-    'cleanup': (args) => {
+    'feature-cleanup': (args) => {
         const id = args[0];
         const pushFlag = args.includes('--push');
-        if (!id) return console.error("Usage: aigon cleanup <ID> [--push]\n  --push: Push branches to origin before deleting locally");
+        if (!id) return console.error("Usage: aigon feature-cleanup <ID> [--push]\n\nRemoves all worktrees and branches for a feature.\n\nOptions:\n  --push  Push branches to origin before deleting locally\n\nExample: aigon feature-cleanup 55");
 
         const paddedId = String(id).padStart(2, '0');
         const unpaddedId = String(parseInt(id, 10));
@@ -1227,7 +1292,7 @@ ${agentList}
         };
 
         // Run pre-hook (can abort the command)
-        if (!runPreHook('bakeoff-cleanup', hookContext)) {
+        if (!runPreHook('feature-cleanup', hookContext)) {
             return;
         }
 
@@ -1293,15 +1358,11 @@ ${agentList}
 
         console.log(`\n✅ Cleanup complete: ${worktreeCount} worktree(s), ${branchCount} branch(es) removed.`);
         if (!pushFlag && branchCount > 0) {
-            console.log(`💡 Tip: Use 'aigon bakeoff-cleanup ${id} --push' to push branches to origin before deleting.`);
+            console.log(`💡 Tip: Use 'aigon feature-cleanup ${id} --push' to push branches to origin before deleting.`);
         }
 
         // Run post-hook (won't fail the command)
-        runPostHook('bakeoff-cleanup', hookContext);
-    },
-    'bakeoff-cleanup': (args) => {
-        // Alias for cleanup command
-        commands['cleanup'](args);
+        runPostHook('feature-cleanup', hookContext);
     },
     'install-agent': (args) => {
         // Use new config-driven approach
@@ -1571,9 +1632,9 @@ ${agentList}
                 console.log(`\n🪝 No hooks defined.`);
                 console.log(`\n   Create hooks in: docs/aigon-hooks.md`);
                 console.log(`\n   Example format:`);
-                console.log(`   ## pre-bakeoff-setup`);
+                console.log(`   ## pre-feature-setup`);
                 console.log(`   \`\`\`bash`);
-                console.log(`   echo "Setting up bakeoff for feature $AIGON_FEATURE_ID"`);
+                console.log(`   echo "Setting up feature $AIGON_FEATURE_ID in $AIGON_MODE mode"`);
                 console.log(`   \`\`\``);
                 return;
             }
@@ -1616,17 +1677,14 @@ Setup:
   update                            Update Aigon files to latest version
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
 
-Solo Mode (single agent):
+Feature Commands (unified for solo and arena modes):
   feature-create <name>             Create feature spec in inbox
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
-  feature-implement <ID>            Create branch, move spec to in-progress
-  feature-done <ID>                 Merge branch and complete
-
-Bakeoff Mode (multi-agent):
-  bakeoff-setup <ID> <agents>       Setup bakeoff worktrees
-  bakeoff-implement <ID>            Implement in current worktree
-  feature-done <ID> <agent>         Merge winning agent's branch
-  bakeoff-cleanup <ID>              Clean up after bakeoff (prompts for --push)
+  feature-setup <ID> [agents...]    Setup for solo (branch) or arena (worktrees)
+  feature-implement <ID>            Implement feature in current branch/worktree
+  feature-eval <ID>                 Create evaluation (code review or comparison)
+  feature-done <ID> [agent]         Merge and complete feature
+  feature-cleanup <ID>              Clean up arena worktrees and branches
 
 Research:
   research-create <name>            Create research topic in inbox
@@ -1639,12 +1697,12 @@ Examples:
   aigon install-agent cc gg            # Install Claude and Gemini configs
   aigon feature-create "dark-mode"     # Create new feature spec
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
-  aigon feature-implement 55           # Solo mode (branch only)
-  aigon bakeoff-setup 55 cc gg cx      # Bakeoff with 3 agents
-  aigon bakeoff-implement 55           # Implement in worktree (run in each worktree)
-  aigon feature-eval 55                # Evaluate bakeoff implementations
-  aigon feature-done 55 cc             # Merge Claude's bakeoff implementation
-  aigon bakeoff-cleanup 55 --push      # Clean up losing branches
+  aigon feature-setup 55               # Solo mode (creates branch)
+  aigon feature-setup 55 cc gg cx      # Arena mode (creates worktrees)
+  aigon feature-implement 55           # Implement in current branch/worktree
+  aigon feature-eval 55                # Evaluate implementations
+  aigon feature-done 55 cc             # Merge Claude's arena implementation
+  aigon feature-cleanup 55 --push      # Clean up losing arena branches
 
 Agents:
   cc (claude)   - Claude Code
