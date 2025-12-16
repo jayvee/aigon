@@ -28,6 +28,8 @@ Read the spec in `./docs/specs/features/03-in-progress/feature-{{ARG1_SYNTAX}}-*
 
 Implement the feature according to the spec.
 
+**CRITICAL:** Maintain the worktree directory as your working directory throughout implementation. Use relative paths (e.g., `./src/file.js`) not absolute paths to the main repository.
+
 ## Step 4: Test your changes
 
 - Check if the dev server is running (start it if needed)
@@ -39,6 +41,15 @@ Implement the feature according to the spec.
 
 **IMPORTANT: You MUST commit before marking implementation complete.**
 
+**Before committing, verify you're in the worktree directory:**
+```bash
+pwd
+```
+Expected output should show: `.../ feature-{{ARG1_SYNTAX}}-<agent>-<description>`
+
+If you're not in the worktree directory, navigate to it or inform the user of the issue.
+
+**Now commit your changes:**
 1. Stage and commit your code changes using conventional commits (`feat:`, `fix:`, `chore:`)
 2. Verify the commit was successful by running `git log --oneline -1`
 
