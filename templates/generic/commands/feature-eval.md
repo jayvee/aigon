@@ -1,65 +1,106 @@
-<!-- description: Evaluate feature <ID> - submit for review -->
+<!-- description: Evaluate feature <ID> - code review or comparison -->
 # aigon-feature-eval
 
-Evaluate and compare multiple agent implementations of a feature.
-
-> **Tip:** If using Claude as the evaluator, use a different model than the one that wrote the code to avoid bias. For example: `claude --model sonnet` to have Sonnet evaluate implementations written by Opus.
+Evaluate a feature implementation. Works in both solo mode (code review) and arena mode (comparison).
 
 ## Step 1: Run the CLI command
 
-IMPORTANT: You MUST run this command first. This moves the spec to evaluation and creates the evaluation template.
+IMPORTANT: You MUST run this command first.
 
 ```bash
-aigon feature-eval {{ARG_SYNTAX}}
+aigon feature-eval {{ARG1_SYNTAX}}
 ```
 
 This will:
 - Move the spec to `04-in-evaluation/` (if not already there)
 - Create an evaluation template at `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`
-- List all worktrees for this feature
+- Detect mode (solo or arena)
 - Commit the changes
 
 ## Step 2: Read the spec
 
 Read the feature spec in `./docs/specs/features/04-in-evaluation/feature-{{ARG1_SYNTAX}}-*.md`
 
-## Step 3: Review each implementation
+## Step 3: Review the implementation(s)
 
-For each agent worktree listed:
+### Solo Mode (Code Review)
 
-1. Read the implementation log from each **worktree** (not the main repo):
-   - CC: `../feature-{{ARG1_SYNTAX}}-cc-*/docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-cc-*-log.md`
-   - GG: `../feature-{{ARG1_SYNTAX}}-gg-*/docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-gg-*-log.md`
-   - CX: `../feature-{{ARG1_SYNTAX}}-cx-*/docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-cx-*-log.md`
-2. **Examine the actual code changes** in each worktree - this is the primary source of truth
-3. Run `git diff main...HEAD` in each worktree to see all changes
-4. Check if the implementation meets the spec requirements
+Review the single implementation:
 
-**Worktree locations:** `../feature-{{ARG1_SYNTAX}}-<agent>-*`
+1. Read the implementation log: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md`
+2. Review the code changes: `git diff main...feature-{{ARG1_SYNTAX}}-*`
+3. Check if the implementation meets the spec requirements
+4. Verify code quality, testing, documentation, security
 
-**Important:** Each agent's log is in THEIR worktree, not in the main repo. The main repo only has empty templates.
+### Arena Mode (Comparison)
 
-**Note:** If logs are empty or missing, focus on examining the code directly. Use `git log --oneline` in each worktree to see commit history.
+Review each agent's implementation:
+
+1. For each agent worktree listed:
+   - Read implementation log from the worktree (e.g., `../feature-{{ARG1_SYNTAX}}-cc-*/docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-cc-*-log.md`)
+   - **Examine the actual code changes** in each worktree
+   - Run `git diff main...HEAD` in each worktree to see all changes
+   - Check spec compliance
+
+2. **Worktree locations:** `../feature-{{ARG1_SYNTAX}}-<agent>-*`
+
+> **Tip:** If using Claude as the evaluator, use a different model than the one that implemented to avoid bias.
 
 ## Step 4: Write the evaluation
 
-Update `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md` with:
+Update `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`:
 
-1. **Evaluation table** - Score each implementation on:
-   - Code Quality
-   - Spec Compliance
-   - Performance
-   - Maintainability
+### Solo Mode
 
-2. **Strengths & Weaknesses** for each agent's implementation
+Complete the code review checklist:
+- Spec Compliance
+- Code Quality
+- Testing
+- Documentation
+- Security
 
-3. **Recommendation** - Your suggested winner and rationale
+Add notes on:
+- Strengths
+- Areas for Improvement
+- Approval decision (Approved / Needs Changes)
 
-## Step 5: Present to user and STOP
+### Arena Mode
+
+Fill in the evaluation table scoring each implementation on:
+- Code Quality
+- Spec Compliance
+- Performance
+- Maintainability
+
+Document:
+- Strengths & Weaknesses for each agent
+- Your recommendation for the winner
+
+## Step 5: Present evaluation and STOP
+
+### Solo Mode
 
 After completing the evaluation:
 
-1. Present a summary of your findings to the user
+1. Present a summary of your review to the user
+2. Highlight strengths and any concerns
+3. State your recommendation (Approved / Needs Changes)
+4. **ASK the user**: "Would you like to proceed with merging this implementation?"
+5. **STOP and WAIT** for the user's decision
+
+**CRITICAL: Do NOT run `feature-done` automatically.**
+
+Once the user approves, tell them to run:
+
+```bash
+aigon feature-done {{ARG1_SYNTAX}}
+```
+
+### Arena Mode
+
+After completing the evaluation:
+
+1. Present a summary of your comparison to the user
 2. Show the scores/comparison
 3. State your recommendation
 4. **ASK the user**: "Which implementation would you like to merge?"
@@ -67,12 +108,10 @@ After completing the evaluation:
 
 **CRITICAL: Do NOT run `feature-done` automatically. The user must explicitly choose the winner.**
 
-## Step 6: After user picks winner
-
 Once the user has chosen, tell them to run (from the main repo, not a worktree):
 
 ```bash
-aigon feature-done {{ARG_SYNTAX}} <winning-agent>
+aigon feature-done {{ARG1_SYNTAX}} <winning-agent>
 ```
 
 For example: `aigon feature-done {{ARG1_SYNTAX}} cc` if Claude's implementation wins.
