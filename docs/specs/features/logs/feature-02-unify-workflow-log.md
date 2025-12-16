@@ -128,6 +128,20 @@ Before continuing to documentation:
 4. Check agent config generation with `aigon install-agent cc`
 5. Verify hooks fire with correct environment variables
 
+## Bugs Found During Testing
+
+### Arena Log File Merge Conflict (Fixed in 3c20688)
+
+**Issue**: When merging the winning arena branch, merge conflicts occurred in log files.
+
+**Root Cause**: `feature-setup` in arena mode created log files in the main repo's `docs/specs/features/logs/` directory. When agents worked in worktrees and filled in these logs, merging created conflicts between:
+- Main's empty template
+- Feature branch's filled log
+
+**Fix**: Moved log file creation inside each worktree after it's created. Log files now write to `worktreePath/docs/specs/features/logs/` instead of main repo, so they only exist on feature branches and merge cleanly.
+
+**Code changed**: `aigon-cli.js:816-825` - log creation moved inside worktree setup try block
+
 ## Next Steps
 
 After testing and approval:
