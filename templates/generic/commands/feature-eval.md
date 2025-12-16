@@ -27,14 +27,17 @@ Read the feature spec in `./docs/specs/features/04-in-evaluation/feature-{{ARG1_
 
 For each agent worktree listed:
 
-1. Read the implementation log (if it exists):
-   - Multi-agent: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-<agent>-log.md`
-   - Solo: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-log.md`
+1. Read the implementation log from each **worktree** (not the main repo):
+   - CC: `../feature-{{ARG1_SYNTAX}}-cc-*/docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-cc-*-log.md`
+   - GG: `../feature-{{ARG1_SYNTAX}}-gg-*/docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-gg-*-log.md`
+   - CX: `../feature-{{ARG1_SYNTAX}}-cx-*/docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-cx-*-log.md`
 2. **Examine the actual code changes** in each worktree - this is the primary source of truth
-3. Run `git diaigonmain...HEAD` in each worktree to see all changes
+3. Run `git diff main...HEAD` in each worktree to see all changes
 4. Check if the implementation meets the spec requirements
 
 **Worktree locations:** `../feature-{{ARG1_SYNTAX}}-<agent>-*`
+
+**Important:** Each agent's log is in THEIR worktree, not in the main repo. The main repo only has empty templates.
 
 **Note:** If logs are empty or missing, focus on examining the code directly. Use `git log --oneline` in each worktree to see commit history.
 
