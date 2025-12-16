@@ -1,22 +1,25 @@
 # Purpose
-Unify feature workflow commands and rename "bakeoff" terminology to "arena" for better alignment with AI dev workflow industry standards.
+Simplify aigon's feature lifecycle by consolidating solo and multi-agent workflows into a single unified command structure.
 
-## Rationale
+## Problem
+Currently aigon has two separate command structures for essentially the same workflow:
+- **Solo mode**: `feature-create`, `feature-prioritise`, `feature-implement`, `feature-done`
+- **Multi-agent mode**: `bakeoff-setup`, `bakeoff-implement`, `bakeoff-cleanup`, `feature-eval`
 
-### Industry Alignment
-The term "arena" is well-established in the AI/ML community for agent comparison and competition:
-- Berkeley/LM Arena's "Agent Arena" - Interactive sandbox for comparing agentic workflows
-- Microsoft's "Windows Agent Arena" - Platform for testing agents in parallel
-- Masa's "AI Agent Arena" - Competitive platform for AI agents
+This creates unnecessary complexity:
+- Users must learn two different command sets
+- Commands are mode-specific rather than workflow-specific
+- The term "bakeoff" is not industry-standard
+- Unclear when to use which commands
 
-"Arena" is more recognizable and professional than "bakeoff" in this context.
+## Solution
+Create a single unified workflow where mode is determined by parameters, not by command names:
+- One set of `feature-*` commands that work in both modes
+- Mode inferred from usage (presence of agent parameters)
+- Industry-standard "arena" terminology for multi-agent comparisons
+- Clearer command naming ("setup" vs "start" for preparation)
 
-### Simplified Command Structure
-Currently aigon has two parallel command structures:
-- Solo mode: `feature-*` commands
-- Multi-agent mode: `bakeoff-*` commands
-
-This creates unnecessary complexity when it's really just two modes of the same workflow. The new structure uses a single set of commands with mode determined by parameters.
+This makes the feature lifecycle simpler and more intuitive regardless of whether you're working solo or comparing multiple agent implementations.
 
 ## New Command Structure
 
