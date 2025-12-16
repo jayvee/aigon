@@ -1,10 +1,10 @@
 # Purpose
-Simplify aigon's feature lifecycle by consolidating solo and multi-agent workflows into a single unified command structure.
+Simplify aigon's feature lifecycle by consolidating solo and arena workflows into a single unified command structure.
 
 ## Problem
 Currently aigon has two separate command structures for essentially the same workflow:
 - **Solo mode**: `feature-create`, `feature-prioritise`, `feature-implement`, `feature-done`
-- **Multi-agent mode**: `bakeoff-setup`, `bakeoff-implement`, `bakeoff-cleanup`, `feature-eval`
+- **Arena mode**: `bakeoff-setup`, `bakeoff-implement`, `bakeoff-cleanup`, `feature-eval`
 
 This creates unnecessary complexity:
 - Users must learn two different command sets
@@ -16,10 +16,10 @@ This creates unnecessary complexity:
 Create a single unified workflow where mode is determined by parameters, not by command names:
 - One set of `feature-*` commands that work in both modes
 - Mode inferred from usage (presence of agent parameters)
-- Industry-standard "arena" terminology for multi-agent comparisons
+- Industry-standard "arena" terminology for agent comparisons
 - Clearer command naming ("setup" vs "start" for preparation)
 
-This makes the feature lifecycle simpler and more intuitive regardless of whether you're working solo or comparing multiple agent implementations.
+This makes the feature lifecycle simpler and more intuitive regardless of whether you're working solo or running an arena to compare agent implementations.
 
 ## New Command Structure
 
@@ -31,11 +31,11 @@ aigon feature-prioritise <name>
 aigon feature-implement <ID>    # Solo implementation
 aigon feature-done <ID>
 
-# Multi-agent mode (separate commands)
+# Arena mode (separate commands)
 aigon bakeoff-setup <ID> <agents...>
 aigon bakeoff-implement <ID>
 aigon bakeoff-cleanup <ID>
-aigon feature-eval <ID>          # Only for multi-agent
+aigon feature-eval <ID>          # Only for arena
 aigon feature-done <ID> <agent>
 ```
 
@@ -104,8 +104,9 @@ Commands read spec metadata as fallback/validation if git state is ambiguous.
 
 ### Terminology Changes (229 occurrences)
 - "bakeoff" → "arena" (everywhere)
-- "multi-agent bakeoff" → "multi-agent arena" or "arena mode"
+- "multi-agent bakeoff" → "arena mode"
 - "bakeoff worktree" → "arena worktree"
+- "multi-agent mode" → "arena mode"
 
 ### Command Renames
 - ❌ `bakeoff-setup` → ✅ `feature-setup <ID> <agents...>`
