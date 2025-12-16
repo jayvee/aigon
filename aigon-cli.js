@@ -1438,9 +1438,6 @@ ${agentList}
                         console.log(`   ✅ Added allowedTools to ${extras.settings.path}`);
                     }
 
-                    // Remove any _aigon metadata that may have been added by older versions
-                    delete settings._aigon;
-
                     safeWrite(settingsPath, JSON.stringify(settings, null, 2));
                 }
 
