@@ -142,12 +142,53 @@ Before continuing to documentation:
 
 **Code changed**: `aigon-cli.js:816-825` - log creation moved inside worktree setup try block
 
+### Phase 4: Documentation Updates ✅ (Commits 37d5779, 41e7ea0, 9e30d66)
+
+**README.md** (37d5779):
+- Replaced "bake-off" with "arena" throughout
+- Documented unified feature-setup command for both modes
+- Updated CLI reference table with new commands
+- Updated hooks section with new names and AIGON_MODE variable
+- Simplified agent macro tables for all three agents
+
+**development_workflow.md** (41e7ea0):
+- Updated to show unified feature commands
+- Clarified two-step setup (feature-setup then feature-implement)
+- Replaced "bakeoff mode" with "arena mode"
+
+**Inbox feature specs** (9e30d66):
+- Updated feature-change-banner-in-bakeoff.md
+- Updated feature-subdomain-configuration-for-bakeoff-mode.md
+
+### Phase 5: Remove Remaining "bakeoff" References ✅ (Commits 951adcd, b1cf475)
+
+**CLI Updates** (951adcd):
+- Updated help command text to show unified workflow
+- Updated code comments to use new command names
+- Replaced examples to use feature-setup/feature-cleanup
+
+**Template Updates** (b1cf475):
+- templates/generic/skill.md: Updated tool definitions
+- templates/generic/commands/help.md: Unified command table
+
+**Final Status**:
+- All active code uses new unified commands
+- Generated docs (docs/agents/*.md) updated via templates
+- Historical references in spec logs are preserved (acceptable)
+
+## Completion Summary
+
+All phases complete! The unified workflow is fully implemented:
+- ✅ Phase 1: CLI refactor (67d228e)
+- ✅ Phase 2: Template updates (192f6dc)
+- ✅ Phase 3: Agent configs (4557efc)
+- ✅ Bug Fix: Arena log merge conflicts (3c20688)
+- ✅ Phase 4: Documentation (37d5779, 41e7ea0, 9e30d66)
+- ✅ Phase 5: Cleanup references (951adcd, b1cf475)
+
 ## Next Steps
 
-After testing and approval:
-1. Update README.md with new command structure and examples
-2. Update docs/development_workflow.md
-3. Update inbox feature specs
-4. Search for remaining "bakeoff" references
-5. Update version to 2.0.0
-6. Create migration guide for existing users
+After user approval:
+1. Update version to 2.0.0 (breaking changes)
+2. Create migration guide for existing users
+3. Optional: Move feature spec to done
