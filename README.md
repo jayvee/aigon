@@ -4,9 +4,9 @@
 
 Aigon is a **100% file-based system** that uses simple folder and file naming conventions to guide AI agents through a clear **Research → Feature Specification → Code** loop. It requires **no external databases, servers or integration to work tracking tools**. Everything lives as text files in your repository and your interaction and the decisions of agents are saved alongside your codebase.
 
-Aigon supports single-agent development as well as parallel multi-agent "bake-offs"—where agents like Claude Code, Gemini, and Codex compete to implement specs—while keeping your workflow portable, transparent, and under your control.
+Aigon supports single-agent development as well as parallel multi-agent arenas—where agents like Claude Code, Gemini, and Codex compete to implement specs—while keeping your workflow portable, transparent, and under your control.
 
-Aigon derives its name from the fusion of "AI" and the ancient Greek concept of Agon (ἀγών), which signifies a **contest**, **struggle**, or gathering to prove one's merit. This reflects the library's core philosophy: a structured arena where multiple AI models—such as Claude, Gemini, and Codex—compete to interpret specifications and produce the highest quality code. Just as an agon drove ancient competitors to strive for excellence, Aigon drives your agent workforce to outperform one another in a "bake-off," ensuring your final codebase is forged through rigorous comparison and selection rather than a single assumption.
+Aigon derives its name from the fusion of "AI" and the ancient Greek concept of Agon (ἀγών), which signifies a **contest**, **struggle**, or gathering to prove one's merit. This reflects the library's core philosophy: a structured arena where multiple AI models—such as Claude, Gemini, and Codex—compete to interpret specifications and produce the highest quality code. Just as an agon drove ancient competitors to strive for excellence, Aigon drives your agent workforce to outperform one another in an arena, ensuring your final codebase is forged through rigorous comparison and selection rather than a single assumption.
 
 
 ---
@@ -15,12 +15,11 @@ Aigon derives its name from the fusion of "AI" and the ancient Greek concept of 
 1. [Core Philosophy](#core-philosophy)
 2. [The Specs Architecture](#the-specs-architecture)
 3. [The Workflow](#the-workflow)
-4. [Multi-Agent "Bake-Offs"](#multi-agent-bake-offs)
-5. [Installation & Setup](#installation--setup)
-6. [CLI Reference](#cli-reference)
-7. [Hooks](#hooks)
-8. [Agent Macros](#agent-macros)
-9. [Multi-Agent Evaluation](#multi-agent-evaluation)
+4. [Installation & Setup](#installation--setup)
+5. [CLI Reference](#cli-reference)
+6. [Hooks](#hooks)
+7. [Agent Macros](#agent-macros)
+8. [Multi-Agent Evaluation](#multi-agent-evaluation)
 
 ---
 
@@ -65,53 +64,58 @@ Used for exploring complex topics before writing code. Files transition within t
 ### 2. Feature Lifecycle
 Used for shipping code based on a defined spec. Files transition within the `./docs/specs/features` folder.
 
-#### 2.1 Single Agent Feature Lifecycle
+#### 2.1 Solo Mode (Single Agent)
 
 1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
 2.  **Prioritise:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Implement:** Run `/aigon-feature-implement 108` (or `aigon feature-implement 108` via CLI)
+3.  **Setup:** `aigon feature-setup 108` (or `/aigon-feature-setup 108` in agent)
     * Moves Spec to `/03-in-progress`.
-    * Creates a **Git Branch** (`feature-108-desc`).
-    * **Auto-creates** a blank Analysis Log template.
+    * Creates a **Git Branch** (`feature-108-dark-mode`).
+    * **Auto-creates** a blank Implementation Log template.
+4.  **Implement:** Run `/aigon-feature-implement 108` in the agent
     * Agent reads the feature spec and codes a solution.
-    * Agent *must* fill out the Analysis Log.
-4.  **Finish:** `aigon feature-done 108`
-    * **Blocks** if the Analysis Log is empty (Enforced Guardrail).
+    * Agent *must* fill out the Implementation Log.
+5.  **Evaluate (Optional):** `aigon feature-eval 108`
+    * Creates code review checklist for the implementation.
+6.  **Finish:** `aigon feature-done 108`
     * Merges the branch and archives the log.
 
-#### 2.2 Multi-Agent Bake-Off Feature Lifecycle
+#### 2.2 Arena Mode (Multi-Agent Competition)
 
 Run multiple agents in competition to find the optimal solution.
 
 1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
 2.  **Prioritise:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Setup Bakeoff:** Run `/aigon-bakeoff-setup 108 cc gg cx` (or via CLI: `aigon bakeoff-setup 108 cc gg cx`)
+3.  **Setup Arena:** `aigon feature-setup 108 cc gg cx` (or `/aigon-feature-setup 108 cc gg cx`)
     * Moves Spec to `/03-in-progress`.
-    * Creates agent-specific **Git Branches** (`feature-108-cc-desc`, `feature-108-gg-desc`, `feature-108-cx-desc`).
+    * Creates agent-specific **Git Branches** (`feature-108-cc-dark-mode`, `feature-108-gg-dark-mode`, `feature-108-cx-dark-mode`).
     * Creates **Git Worktrees** in sibling folders:
-        * `../feature-108-cc-darkmode` (Claude)
-        * `../feature-108-gg-darkmode` (Gemini)
-        * `../feature-108-cx-darkmode` (Codex)
-    * **Auto-creates** blank Analysis Log templates for each agent.
+        * `../feature-108-cc-dark-mode` (Claude)
+        * `../feature-108-gg-dark-mode` (Gemini)
+        * `../feature-108-cx-dark-mode` (Codex)
+    * **Auto-creates** blank Implementation Log templates in each worktree.
     * **STOPS** - does not implement (user must open each worktree separately).
-4.  **Implement:** Open each worktree in a separate editor session and run `/aigon-bakeoff-implement 108`.
+4.  **Implement:** Open each worktree in a separate editor session and run `/aigon-feature-implement 108`.
     * Each agent builds the feature independently in their isolated worktree.
-    * Each agent *must* fill out their Analysis Log.
-5.  **Evaluate:** Back in the main working folder, changed to an eval model (eg sonnet) and run - `aigon feature-eval 108` moves the feature to `/in-evaluation` for review.
-6.  **Judge:** Review and compare solutions in `/features/in-evaluation`.
+    * Each agent *must* fill out their Implementation Log.
+5.  **Evaluate:** Back in the main folder, switch to an eval model (eg sonnet) and run `aigon feature-eval 108`
+    * Moves the feature to `/in-evaluation`.
+    * Creates comparison template with all implementations.
+6.  **Judge:** Review and compare solutions, fill in the evaluation.
 7.  **Merge Winner:**
     ```bash
     aigon feature-done 108 cc
     ```
-    * **Blocks** if the Analysis Log is empty (Enforced Guardrail).
     * Merges winner's branch.
     * Moves winning agent's log to `logs/selected`.
     * Moves losing agent's logs to `logs/alternatives` (preserving history).
     * Cleans up winner's worktree.
 8.  **Cleanup Losers:**
     ```bash
-    aigon bakeoff-cleanup 108
+    aigon feature-cleanup 108 [--push]
     ```
+    * Removes losing worktrees and branches.
+    * Optional `--push` flag pushes branches to origin before deleting.
 
 ---
 
@@ -181,23 +185,18 @@ your-project/
 
 ## CLI Reference
 
-The `aigon` (Aigon) command automates state transitions and Git operations.
+The `aigon` command automates state transitions and Git operations. The workflow uses a unified set of commands that work in both solo and arena modes.
 
-### Solo Mode (single agent)
+### Feature Commands
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| **Feature Create** | `aigon feature-create <name>` | Create a new feature spec |
-| **Feature Prioritise** |  `aigon feature-prioritise <name>` | Prioritise a feature draft |
-| **Feature Implement** |  `aigon feature-implement <ID>` | Creates branch `feature-ID-desc`, moves spec to in-progress and implements solution |
-| **Feature Evaluate** |  `aigon feature-eval <ID>` | Evaluate feature implementations in a bake-off, propose winner |
-| **Feature Finish** |  `aigon feature-done <ID>` | Complete and merge feature |
-
-### Multi-Agent Mode
-| Command | Usage | Description |
-| :--- | :--- | :--- |
-| **Bakeoff Setup** | `aigon bakeoff-setup <ID> <agents>` | Create worktrees for multiple agents to implement feature  |
-| **Bakeoff Implement** | `aigon bakeoff-implement <ID>` | Implement feature (branch, code) in current worktree |
-| **Bakeoff Cleanup** | `aigon bakeoff-cleanup <ID> --push` | Clean up losing worktrees and branches |
+| **Feature Create** | `aigon feature-create <name>` | Create a new feature spec in inbox |
+| **Feature Prioritise** | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
+| **Feature Setup** | `aigon feature-setup <ID> [agents...]` | Setup for implementation. Solo: creates branch. Arena: creates worktrees for multiple agents |
+| **Feature Implement** | `aigon feature-implement <ID>` | Auto-detects mode. Implements feature in current branch/worktree |
+| **Feature Evaluate** | `aigon feature-eval <ID>` | Move to evaluation. Solo: code review checklist. Arena: comparison template |
+| **Feature Done** | `aigon feature-done <ID> [agent]` | Merge and complete. Solo: merge branch. Arena: merge winner's branch |
+| **Feature Cleanup** | `aigon feature-cleanup <ID> [--push]` | Clean up arena mode worktrees and branches |
 
 ### Research
 
@@ -232,29 +231,31 @@ Define hooks in `docs/aigon-hooks.md`. Aigon automatically detects and runs hook
 ```markdown
 # Aigon Hooks
 
-## pre-bakeoff-setup
+## pre-feature-setup
 
-Creates database branches for each agent worktree.
+Creates database branches for each agent worktree (arena mode).
+
+```bash
+if [ "$AIGON_MODE" = "arena" ]; then
+  for agent in $AIGON_AGENTS; do
+    neon branches create --name "feature-${AIGON_FEATURE_ID}-${agent}"
+  done
+fi
+```
+
+## post-feature-setup
+
+```bash
+echo "Setup complete for feature $AIGON_FEATURE_ID in $AIGON_MODE mode"
+```
+
+## pre-feature-cleanup
+
+Clean up database branches before removing worktrees (arena mode).
 
 ```bash
 for agent in $AIGON_AGENTS; do
-  neon branches create --name "bakeoff-${AIGON_FEATURE_ID}-${agent}"
-done
-```
-
-## post-bakeoff-setup
-
-```bash
-echo "Database branches created for feature $AIGON_FEATURE_ID"
-```
-
-## pre-bakeoff-cleanup
-
-Clean up database branches before removing worktrees.
-
-```bash
-for agent in $AIGON_AGENTS; do
-  neon branches delete "bakeoff-${AIGON_FEATURE_ID}-${agent}" --force
+  neon branches delete "feature-${AIGON_FEATURE_ID}-${agent}" --force
 done
 ```
 ```
@@ -263,14 +264,14 @@ done
 
 | Hook | Description |
 |------|-------------|
-| `pre-feature-implement` | Runs before starting solo implementation |
-| `post-feature-implement` | Runs after solo implementation setup |
-| `pre-bakeoff-setup` | Runs before creating bakeoff worktrees |
-| `post-bakeoff-setup` | Runs after bakeoff worktrees are created |
+| `pre-feature-setup` | Runs before creating branch (solo) or worktrees (arena) |
+| `post-feature-setup` | Runs after setup completes |
+| `pre-feature-implement` | Runs before implementation begins |
+| `post-feature-implement` | Runs after implementation setup |
 | `pre-feature-done` | Runs before merging a feature |
 | `post-feature-done` | Runs after a feature is merged |
-| `pre-bakeoff-cleanup` | Runs before cleaning up bakeoff |
-| `post-bakeoff-cleanup` | Runs after bakeoff cleanup |
+| `pre-feature-cleanup` | Runs before cleaning up arena worktrees |
+| `post-feature-cleanup` | Runs after arena cleanup |
 
 ### Environment Variables
 
@@ -280,11 +281,12 @@ Hooks have access to context via environment variables:
 |----------|-------------|--------------|
 | `AIGON_COMMAND` | The command being run | All hooks |
 | `AIGON_PROJECT_ROOT` | Root directory of the project | All hooks |
+| `AIGON_MODE` | Current mode: "solo" or "arena" | Feature commands |
 | `AIGON_FEATURE_ID` | Feature ID (e.g., "01") | Feature commands |
 | `AIGON_FEATURE_NAME` | Feature name slug | Feature commands |
-| `AIGON_AGENTS` | Space-separated list of agents | bakeoff-setup, bakeoff-cleanup |
-| `AIGON_AGENT` | Current agent name | bakeoff-implement, feature-done |
-| `AIGON_WORKTREE_PATH` | Path to current worktree | bakeoff-implement |
+| `AIGON_AGENTS` | Space-separated list of agents | feature-setup (arena), feature-cleanup |
+| `AIGON_AGENT` | Current agent name | feature-implement (arena), feature-done (arena) |
+| `AIGON_WORKTREE_PATH` | Path to current worktree | feature-implement (arena) |
 
 ### Hook Behavior
 
@@ -306,22 +308,15 @@ aigon hooks list
 ### Claude Code
 When you run `aigon install-agent cc`, it installs special slash commands for Claude Code to make the workflow seamless.
 
-#### Solo Mode
-
 | Slash Command | Description |
 | :--- | :--- |
-| `/aigon-feature-create <name>` | Runs `aigon feature-create <name>`. |
-| `/aigon-feature-prioritise <name>` | Runs `aigon feature-prioritise <name>`. |
-| `/aigon-feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
-| `/aigon-feature-eval <ID>` | Runs `aigon feature-eval <ID>` (optional). |
-| `/aigon-feature-done <ID>` | Runs `aigon feature-done <ID>`. |
-
-#### Bakeoff Mode
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/aigon-bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
-| `/aigon-bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
+| `/aigon-feature-create <name>` | Create a new feature spec |
+| `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
+| `/aigon-feature-implement <ID>` | Implement feature in current branch/worktree |
+| `/aigon-feature-eval <ID>` | Create evaluation template (code review or comparison) |
+| `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon-feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
 #### Research
 
@@ -334,22 +329,15 @@ When you run `aigon install-agent cc`, it installs special slash commands for Cl
 ### Gemini
 When you run `aigon install-agent gg`, it installs special slash commands for Gemini to make the workflow seamless.
 
-#### Solo Mode
-
 | Slash Command | Description |
 | :--- | :--- |
-| `/aigon:feature-create <name>` | Runs `aigon feature-create <name>`. |
-| `/aigon:feature-prioritise <name>` | Runs `aigon feature-prioritise <name>`. |
-| `/aigon:feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
-| `/aigon:feature-eval <ID>` | Runs `aigon feature-eval <ID>` (optional). |
-| `/aigon:feature-done <ID>` | Runs `aigon feature-done <ID>`. |
-
-#### Bakeoff Mode
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/aigon:bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
-| `/aigon:bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
+| `/aigon:feature-create <name>` | Create a new feature spec |
+| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon:feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
+| `/aigon:feature-implement <ID>` | Implement feature in current branch/worktree |
+| `/aigon:feature-eval <ID>` | Create evaluation template (code review or comparison) |
+| `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon:feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
 #### Research
 
@@ -364,22 +352,15 @@ When you run `aigon install-agent cx`, it installs slash commands to your **glob
 
 **Note:** Codex only supports global prompts (not project-level). This means the same Aigon commands are available across all your projects.
 
-#### Solo Mode
-
 | Slash Command | Description |
 | :--- | :--- |
 | `/prompts:aigon-feature-create <name>` | Create a new feature spec |
-| `/prompts:aigon-feature-prioritise <name>` | Prioritise a feature draft |
-| `/prompts:aigon-feature-implement <ID>` | **Full workflow.** Creates branch, implements feature, guides to completion. |
-| `/prompts:aigon-feature-eval <ID>` | Submit feature for evaluation (optional) |
-| `/prompts:aigon-feature-done <ID>` | Complete and merge feature |
-
-#### Bakeoff Mode
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/prompts:aigon-bakeoff-setup <ID> <agents...>` | Creates worktrees for multiple agents. **Stops after setup.** |
-| `/prompts:aigon-bakeoff-implement <ID>` | Implements in current worktree. Run in each agent's worktree. |
+| `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
+| `/prompts:aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
+| `/prompts:aigon-feature-implement <ID>` | Implement feature in current branch/worktree |
+| `/prompts:aigon-feature-eval <ID>` | Create evaluation template (code review or comparison) |
+| `/prompts:aigon-feature-done <ID> [agent]` | Merge and complete feature |
+| `/prompts:aigon-feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
 #### Research
 
@@ -393,7 +374,7 @@ When you run `aigon install-agent cx`, it installs slash commands to your **glob
 
 ## Multi-Agent Evaluation
 
-When running multi-agent bake-offs, use `aigon feature-eval <ID>` to generate an evaluation template and compare implementations. For unbiased evaluation, **use a different model as the evaluator** than the ones that wrote the code.
+When running multi-agent arenas, use `aigon feature-eval <ID>` to generate an evaluation template and compare implementations. For unbiased evaluation, **use a different model as the evaluator** than the ones that wrote the code.
 
 ### Evaluator Model Recommendation
 
@@ -492,10 +473,10 @@ Once you've chosen a winner, merge their implementation:
 aigon feature-done 10 cx
 
 # Push losing branches to origin for safekeeping (optional)
-aigon bakeoff-cleanup 10 --push
+aigon feature-cleanup 10 --push
 
 # Or just delete losing branches locally
-aigon bakeoff-cleanup 10
+aigon feature-cleanup 10
 ```
 
 ---
