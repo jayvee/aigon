@@ -133,7 +133,7 @@ function parseHooksFile() {
 
     while ((match = hookPattern.exec(content)) !== null) {
         const hookType = match[1]; // 'pre-' or 'post-'
-        const commandName = match[2]; // e.g., 'bakeoff-setup'
+        const commandName = match[2]; // e.g., 'feature-setup'
         const script = match[3].trim();
         const hookName = `${hookType}${commandName}`;
         hooks[hookName] = script;
@@ -161,7 +161,7 @@ function getDefinedHooks() {
 
 /**
  * Execute a hook with the given context
- * @param {string} hookName - Name of the hook (e.g., 'pre-bakeoff-setup')
+ * @param {string} hookName - Name of the hook (e.g., 'pre-feature-setup')
  * @param {Object} context - Context variables to pass as environment variables
  * @returns {Object} {success: boolean, output?: string, error?: string}
  */
@@ -214,7 +214,7 @@ function executeHook(hookName, context = {}) {
 
 /**
  * Run pre-hook for a command. Aborts if hook fails.
- * @param {string} commandName - Name of the command (e.g., 'bakeoff-setup')
+ * @param {string} commandName - Name of the command (e.g., 'feature-setup')
  * @param {Object} context - Context variables to pass to the hook
  * @returns {boolean} true if should continue, false if should abort
  */
@@ -236,7 +236,7 @@ function runPreHook(commandName, context = {}) {
 
 /**
  * Run post-hook for a command. Warns but doesn't fail on error.
- * @param {string} commandName - Name of the command (e.g., 'bakeoff-setup')
+ * @param {string} commandName - Name of the command (e.g., 'feature-setup')
  * @param {Object} context - Context variables to pass to the hook
  */
 function runPostHook(commandName, context = {}) {
@@ -1632,9 +1632,9 @@ Branch: \`feature-${num}-${desc}\`
                 console.log(`\n🪝 No hooks defined.`);
                 console.log(`\n   Create hooks in: docs/aigon-hooks.md`);
                 console.log(`\n   Example format:`);
-                console.log(`   ## pre-bakeoff-setup`);
+                console.log(`   ## pre-feature-setup`);
                 console.log(`   \`\`\`bash`);
-                console.log(`   echo "Setting up bakeoff for feature $AIGON_FEATURE_ID"`);
+                console.log(`   echo "Setting up feature $AIGON_FEATURE_ID in $AIGON_MODE mode"`);
                 console.log(`   \`\`\``);
                 return;
             }
@@ -1677,17 +1677,14 @@ Setup:
   update                            Update Aigon files to latest version
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
 
-Solo Mode (single agent):
+Feature Commands (unified for solo and arena modes):
   feature-create <name>             Create feature spec in inbox
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
-  feature-implement <ID>            Create branch, move spec to in-progress
-  feature-done <ID>                 Merge branch and complete
-
-Bakeoff Mode (multi-agent):
-  bakeoff-setup <ID> <agents>       Setup bakeoff worktrees
-  bakeoff-implement <ID>            Implement in current worktree
-  feature-done <ID> <agent>         Merge winning agent's branch
-  bakeoff-cleanup <ID>              Clean up after bakeoff (prompts for --push)
+  feature-setup <ID> [agents...]    Setup for solo (branch) or arena (worktrees)
+  feature-implement <ID>            Implement feature in current branch/worktree
+  feature-eval <ID>                 Create evaluation (code review or comparison)
+  feature-done <ID> [agent]         Merge and complete feature
+  feature-cleanup <ID>              Clean up arena worktrees and branches
 
 Research:
   research-create <name>            Create research topic in inbox
@@ -1700,12 +1697,12 @@ Examples:
   aigon install-agent cc gg            # Install Claude and Gemini configs
   aigon feature-create "dark-mode"     # Create new feature spec
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
-  aigon feature-implement 55           # Solo mode (branch only)
-  aigon bakeoff-setup 55 cc gg cx      # Bakeoff with 3 agents
-  aigon bakeoff-implement 55           # Implement in worktree (run in each worktree)
-  aigon feature-eval 55                # Evaluate bakeoff implementations
-  aigon feature-done 55 cc             # Merge Claude's bakeoff implementation
-  aigon bakeoff-cleanup 55 --push      # Clean up losing branches
+  aigon feature-setup 55               # Solo mode (creates branch)
+  aigon feature-setup 55 cc gg cx      # Arena mode (creates worktrees)
+  aigon feature-implement 55           # Implement in current branch/worktree
+  aigon feature-eval 55                # Evaluate implementations
+  aigon feature-done 55 cc             # Merge Claude's arena implementation
+  aigon feature-cleanup 55 --push      # Clean up losing arena branches
 
 Agents:
   cc (claude)   - Claude Code
