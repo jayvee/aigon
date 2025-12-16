@@ -1,23 +1,17 @@
 <!-- description: Show Aigon commands -->
 # Aigon Commands
 
-## Solo Mode (single agent)
+## Feature Commands (unified for solo and arena modes)
 
 | Command | Description |
 |---------|-------------|
 | `{{CMD_PREFIX}}feature-create <name>` | Create a new feature spec |
-| `{{CMD_PREFIX}}feature-prioritise <name>` | Prioritise a feature draft |
-| `{{CMD_PREFIX}}feature-implement <ID>` | Implement feature (branch, code, complete) |
-| `{{CMD_PREFIX}}feature-eval <ID>` | Submit feature for evaluation |
-| `{{CMD_PREFIX}}feature-done <ID>` | Complete and merge feature |
-
-## Bakeoff Mode (multi-agent)
-
-| Command | Description |
-|---------|-------------|
-| `{{CMD_PREFIX}}bakeoff-setup <ID> <agents...>` | Create worktrees for multiple agents |
-| `{{CMD_PREFIX}}bakeoff-implement <ID>` | Implement in current worktree (run in each worktree) |
-| `{{CMD_PREFIX}}bakeoff-cleanup <ID>` | Clean up losing worktrees and branches after evaluation |
+| `{{CMD_PREFIX}}feature-prioritise <name>` | Assign ID and move to backlog |
+| `{{CMD_PREFIX}}feature-setup <ID> [agents...]` | Setup for solo (branch) or arena (worktrees) |
+| `{{CMD_PREFIX}}feature-implement <ID>` | Implement feature in current branch/worktree |
+| `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
+| `{{CMD_PREFIX}}feature-done <ID> [agent]` | Merge and complete feature |
+| `{{CMD_PREFIX}}feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
 ## Research
 
