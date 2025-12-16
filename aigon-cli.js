@@ -812,18 +812,20 @@ const commands = {
                         envContent += `# Arena port for agent ${agentId}\nPORT=${port}\n`;
                         fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
                         console.log(`   📋 .env.local created with PORT=${port}`);
+
+                        // Create log for this agent in the worktree
+                        const worktreeLogsDir = path.join(worktreePath, 'docs/specs/features/logs');
+                        if (!fs.existsSync(worktreeLogsDir)) {
+                            fs.mkdirSync(worktreeLogsDir, { recursive: true });
+                        }
+                        const logName = `feature-${num}-${agentId}-${desc}-log.md`;
+                        const logPath = path.join(worktreeLogsDir, logName);
+                        const template = `# Implementation Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
+                        fs.writeFileSync(logPath, template);
+                        console.log(`   📝 Log: docs/specs/features/logs/${logName}`);
                     } catch (e) {
                         console.error(`❌ Failed to create worktree for ${agentId}: ${e.message}`);
                     }
-                }
-
-                // Create log for this agent
-                const logName = `feature-${num}-${agentId}-${desc}-log.md`;
-                const logPath = path.join(logsDir, logName);
-                if (!fs.existsSync(logPath)) {
-                    const template = `# Implementation Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
-                    fs.writeFileSync(logPath, template);
-                    console.log(`   📝 Log: ./docs/specs/features/logs/${logName}`);
                 }
             });
 
