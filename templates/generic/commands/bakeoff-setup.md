@@ -42,6 +42,11 @@ To start each agent's implementation:
 
 When all agents have finished, return to this main repository and run `{{CMD_PREFIX}}feature-eval <ID>` to compare implementations.
 
+**Tip:** Before running an evaluation, switch to a different model for unbiased judging. For example if this session is running with claude code and the opus model, switch to the sonnet model
+```
+/model sonnet
+```
+
 ---
 
 **Do NOT proceed with any implementation in this session.**
