@@ -1,19 +1,19 @@
-# Feature: Subdomain Configuration for Bakeoff Mode
+# Feature: Subdomain Configuration for Arena Mode
 
 ## Summary
 
-When running Aigon in bakeoff (multi-agent) mode, each agent works in a separate worktree and runs its own Next.js dev server. Currently, agents access their servers via `localhost` with different ports (3001, 3002, 3003), making it difficult to distinguish which agent you're testing in browser tabs and history. This feature adds automatic subdomain configuration so each agent gets a meaningful URL like `http://cc.myapp.test:3001`, making multi-agent testing more intuitive and organized.
+When running Aigon in arena (multi-agent) mode, each agent works in a separate worktree and runs its own Next.js dev server. Currently, agents access their servers via `localhost` with different ports (3001, 3002, 3003), making it difficult to distinguish which agent you're testing in browser tabs and history. This feature adds automatic subdomain configuration so each agent gets a meaningful URL like `http://cc.myapp.test:3001`, making multi-agent testing more intuitive and organized.
 
 ## User Stories
 
-- [ ] As a developer running a bakeoff, I want each agent's dev server to have a distinct subdomain (e.g., `cc.myapp.test`, `gg.myapp.test`) so I can easily identify which agent's implementation I'm testing in my browser
+- [ ] As a developer running an arena, I want each agent's dev server to have a distinct subdomain (e.g., `cc.myapp.test`, `gg.myapp.test`) so I can easily identify which agent's implementation I'm testing in my browser
 - [ ] As a developer, I want Aigon to automatically detect my project name from `package.json` and use it in subdomain generation so I don't have to manually configure domain names
 - [ ] As a developer, I want clear setup instructions for configuring local DNS resolution so I can get subdomains working with minimal friction
-- [ ] As a developer who hasn't set up DNS resolution, I want the system to gracefully fall back to `localhost` URLs so I can still run bakeoffs without additional setup
+- [ ] As a developer who hasn't set up DNS resolution, I want the system to gracefully fall back to `localhost` URLs so I can still run arenas without additional setup
 
 ## Acceptance Criteria
 
-- [ ] When running `aigon bakeoff-setup`, each agent's `.env.local` includes both `PORT` and `HOSTNAME` environment variables
+- [ ] When running `aigon feature-setup <ID> <agents>`, each agent's `.env.local` includes both `PORT` and `HOSTNAME` environment variables
 - [ ] The `HOSTNAME` follows the pattern `{agent-id}.{project-name}.test` (e.g., `cc.surfing-explorer.test`)
 - [ ] Project name is auto-detected from `package.json` name field, with fallback to current directory name
 - [ ] Project names are sanitized for domain usage (lowercase, remove npm scope, replace invalid characters with hyphens)
@@ -46,7 +46,7 @@ When running Aigon in bakeoff (multi-agent) mode, each agent works in a separate
      cc: { id: 'cc', subdomain: 'cc', port: 3001, ... }
      ```
 
-3. **Modify bakeoff-setup Command** (`aigon-cli.js`)
+3. **Modify feature-setup Command** (`aigon-cli.js`)
    - In worktree `.env.local` creation:
      ```js
      const projectName = getProjectName();
@@ -95,7 +95,7 @@ When running Aigon in bakeoff (multi-agent) mode, each agent works in a separate
 - Next.js version that supports `HOSTNAME` environment variable (most recent versions)
 
 **No Aigon Code Dependencies:**
-- This feature extends existing `bakeoff-setup` command only
+- This feature extends existing `feature-setup` command only
 - No changes to other Aigon commands
 
 ## Out of Scope
@@ -119,9 +119,9 @@ When running Aigon in bakeoff (multi-agent) mode, each agent works in a separate
 
 ## Open Questions
 
-- Should we add a verification step in `bakeoff-setup` that checks if DNS resolution works and warns users if not?
+- Should we add a verification step in `feature-setup` that checks if DNS resolution works and warns users if not?
 - Should we support an alternative to dnsmasq for users who prefer different DNS solutions?
-- Should single-agent mode also use subdomains for consistency, or keep using `localhost`?
+- Should solo mode also use subdomains for consistency, or keep using `localhost`?
 - How should we handle projects without `package.json` (non-Node.js projects in future)?
 
 ## Related
