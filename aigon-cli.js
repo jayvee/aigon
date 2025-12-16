@@ -57,6 +57,7 @@ function openInEditor(filePath) {
 const SPECS_ROOT = path.join(process.cwd(), 'docs', 'specs');
 const TEMPLATES_ROOT = path.join(__dirname, 'templates');
 const CLAUDE_SETTINGS_PATH = path.join(process.cwd(), '.claude', 'settings.json');
+const HOOKS_FILE_PATH = path.join(process.cwd(), 'docs', 'aigon-hooks.md');
 
 // --- Worktree Permission Helpers ---
 
@@ -109,6 +110,140 @@ function removeWorktreePermissions(worktreePaths) {
         fs.writeFileSync(CLAUDE_SETTINGS_PATH, JSON.stringify(settings, null, 2));
     } catch (e) {
         // Silent fail on cleanup
+    }
+}
+
+// --- Hooks System ---
+
+/**
+ * Parse hooks file and extract all defined hooks
+ * @returns {Object} Map of hook names to their shell scripts
+ */
+function parseHooksFile() {
+    if (!fs.existsSync(HOOKS_FILE_PATH)) {
+        return {};
+    }
+
+    const content = fs.readFileSync(HOOKS_FILE_PATH, 'utf8');
+    const hooks = {};
+
+    // Match ## hook-name sections followed by ```bash code blocks
+    const hookPattern = /^##\s+(pre-|post-)([a-z-]+)\s*\n[\s\S]*?```bash\n([\s\S]*?)```/gm;
+    let match;
+
+    while ((match = hookPattern.exec(content)) !== null) {
+        const hookType = match[1]; // 'pre-' or 'post-'
+        const commandName = match[2]; // e.g., 'bakeoff-setup'
+        const script = match[3].trim();
+        const hookName = `${hookType}${commandName}`;
+        hooks[hookName] = script;
+    }
+
+    return hooks;
+}
+
+/**
+ * Get all defined hooks from the hooks file
+ * @returns {Array} Array of {name, type, command, script} objects
+ */
+function getDefinedHooks() {
+    const hooks = parseHooksFile();
+    return Object.entries(hooks).map(([name, script]) => {
+        const match = name.match(/^(pre|post)-(.+)$/);
+        return {
+            name,
+            type: match ? match[1] : 'unknown',
+            command: match ? match[2] : name,
+            script
+        };
+    });
+}
+
+/**
+ * Execute a hook with the given context
+ * @param {string} hookName - Name of the hook (e.g., 'pre-bakeoff-setup')
+ * @param {Object} context - Context variables to pass as environment variables
+ * @returns {Object} {success: boolean, output?: string, error?: string}
+ */
+function executeHook(hookName, context = {}) {
+    const hooks = parseHooksFile();
+    const script = hooks[hookName];
+
+    if (!script) {
+        return { success: true, skipped: true };
+    }
+
+    console.log(`\n🪝 Running hook: ${hookName}`);
+
+    // Build environment variables
+    const env = {
+        ...process.env,
+        AIGON_PROJECT_ROOT: process.cwd(),
+        AIGON_COMMAND: context.command || '',
+        AIGON_FEATURE_ID: context.featureId || '',
+        AIGON_FEATURE_NAME: context.featureName || '',
+        AIGON_AGENTS: context.agents ? context.agents.join(' ') : '',
+        AIGON_AGENT: context.agent || '',
+        AIGON_WORKTREE_PATH: context.worktreePath || ''
+    };
+
+    try {
+        const output = execSync(script, {
+            encoding: 'utf8',
+            env,
+            cwd: process.cwd(),
+            stdio: ['pipe', 'pipe', 'pipe'],
+            shell: true
+        });
+
+        if (output.trim()) {
+            console.log(output.trim().split('\n').map(line => `   ${line}`).join('\n'));
+        }
+        console.log(`   ✅ Hook completed: ${hookName}`);
+        return { success: true, output };
+    } catch (e) {
+        const errorOutput = e.stderr || e.message;
+        console.error(`   ❌ Hook failed: ${hookName}`);
+        if (errorOutput) {
+            console.error(errorOutput.trim().split('\n').map(line => `   ${line}`).join('\n'));
+        }
+        return { success: false, error: errorOutput };
+    }
+}
+
+/**
+ * Run pre-hook for a command. Aborts if hook fails.
+ * @param {string} commandName - Name of the command (e.g., 'bakeoff-setup')
+ * @param {Object} context - Context variables to pass to the hook
+ * @returns {boolean} true if should continue, false if should abort
+ */
+function runPreHook(commandName, context = {}) {
+    const hookName = `pre-${commandName}`;
+    const result = executeHook(hookName, { ...context, command: commandName });
+
+    if (result.skipped) {
+        return true; // No hook defined, continue
+    }
+
+    if (!result.success) {
+        console.error(`\n❌ Pre-hook failed. Command '${commandName}' aborted.`);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Run post-hook for a command. Warns but doesn't fail on error.
+ * @param {string} commandName - Name of the command (e.g., 'bakeoff-setup')
+ * @param {Object} context - Context variables to pass to the hook
+ */
+function runPostHook(commandName, context = {}) {
+    const hookName = `post-${commandName}`;
+    const result = executeHook(hookName, { ...context, command: commandName });
+
+    if (!result.skipped && !result.success) {
+        console.warn(`\n⚠️  Post-hook '${hookName}' failed but command completed.`);
     }
 }
 
@@ -563,8 +698,25 @@ const commands = {
         const name = args[0];
         if (!name) return console.error("Usage: aigon feature-implement <ID>\n\nExample: aigon feature-implement 55");
 
-        // Find and move spec to in-progress
-        let found = findFile(PATHS.features, name, ['02-backlog']);
+        // Find feature first to get context for hooks
+        let found = findFile(PATHS.features, name, ['02-backlog', '03-in-progress']);
+        if (!found) return console.error(`❌ Could not find feature "${name}" in backlog or in-progress.`);
+
+        const preMatch = found.file.match(/^feature-(\d+)-(.*)\.md$/);
+        const featureId = preMatch ? preMatch[1] : name;
+        const featureName = preMatch ? preMatch[2] : '';
+
+        // Run pre-hook (can abort the command)
+        const hookContext = {
+            featureId,
+            featureName
+        };
+        if (!runPreHook('feature-implement', hookContext)) {
+            return;
+        }
+
+        // Re-find and move spec to in-progress
+        found = findFile(PATHS.features, name, ['02-backlog']);
         if (found) {
             moveFile(found, '03-in-progress');
             found = findFile(PATHS.features, name, ['03-in-progress']);
@@ -605,6 +757,9 @@ const commands = {
         }
         console.log(`\n🚀 Solo mode. Ready to implement in current directory.`);
         console.log(`   When done: aigon feature-done ${num}`);
+
+        // Run post-hook (won't fail the command)
+        runPostHook('feature-implement', hookContext);
     },
 
     'bakeoff-setup': (args) => {
@@ -614,8 +769,26 @@ const commands = {
             return console.error("Usage: aigon bakeoff-setup <ID> <agent1> <agent2> [agent3...]\n\nExample: aigon bakeoff-setup 55 cc gg cx");
         }
 
-        // Find and move spec to in-progress
-        let found = findFile(PATHS.features, name, ['02-backlog']);
+        // Find the feature first to get context for hooks
+        let found = findFile(PATHS.features, name, ['02-backlog', '03-in-progress']);
+        if (!found) return console.error(`❌ Could not find feature "${name}" in backlog or in-progress.`);
+
+        const preMatch = found.file.match(/^feature-(\d+)-(.*)\.md$/);
+        const featureId = preMatch ? preMatch[1] : name;
+        const featureName = preMatch ? preMatch[2] : '';
+
+        // Run pre-hook (can abort the command)
+        const hookContext = {
+            featureId,
+            featureName,
+            agents: agentIds
+        };
+        if (!runPreHook('bakeoff-setup', hookContext)) {
+            return;
+        }
+
+        // Re-find and move spec to in-progress
+        found = findFile(PATHS.features, name, ['02-backlog']);
         let movedFromBacklog = false;
         if (found) {
             moveFile(found, '03-in-progress');
@@ -698,6 +871,9 @@ const commands = {
         });
         console.log(`\n💡 Next: Open each worktree in a separate editor/terminal and implement`);
         console.log(`   When done: aigon feature-eval ${num}`);
+
+        // Run post-hook (won't fail the command)
+        runPostHook('bakeoff-setup', hookContext);
     },
     'bakeoff-implement': (args) => {
         const id = args[0];
@@ -883,6 +1059,18 @@ ${agentList}
         if (!match) return console.warn("⚠️  Bad filename. Cannot parse ID.");
         const [_, num, desc] = match;
 
+        // Build hook context
+        const hookContext = {
+            featureId: num,
+            featureName: desc,
+            agent: agentId || ''
+        };
+
+        // Run pre-hook (can abort the command)
+        if (!runPreHook('feature-done', hookContext)) {
+            return;
+        }
+
         let branchName, worktreePath, mode;
 
         if (agentId) {
@@ -1021,6 +1209,9 @@ ${agentList}
         }
 
         console.log(`\n✅ Feature ${num} complete! (${mode} mode)`);
+
+        // Run post-hook (won't fail the command)
+        runPostHook('feature-done', hookContext);
     },
     'cleanup': (args) => {
         const id = args[0];
@@ -1029,6 +1220,16 @@ ${agentList}
 
         const paddedId = String(id).padStart(2, '0');
         const unpaddedId = String(parseInt(id, 10));
+
+        // Build hook context
+        const hookContext = {
+            featureId: paddedId
+        };
+
+        // Run pre-hook (can abort the command)
+        if (!runPreHook('bakeoff-cleanup', hookContext)) {
+            return;
+        }
 
         // Remove worktrees and collect paths for permission cleanup
         let worktreeCount = 0;
@@ -1094,6 +1295,9 @@ ${agentList}
         if (!pushFlag && branchCount > 0) {
             console.log(`💡 Tip: Use 'aigon bakeoff-cleanup ${id} --push' to push branches to origin before deleting.`);
         }
+
+        // Run post-hook (won't fail the command)
+        runPostHook('bakeoff-cleanup', hookContext);
     },
     'bakeoff-cleanup': (args) => {
         // Alias for cleanup command
@@ -1220,12 +1424,6 @@ ${agentList}
                                 settings.permissions.allow.push(perm);
                             }
                         });
-                        if (!settings._aigon) {
-                            settings._aigon = {
-                                note: 'Permissions added by Aigon',
-                                permissions: extras.settings.permissions
-                            };
-                        }
                         console.log(`   ✅ Added permissions to ${extras.settings.path}`);
                     }
 
@@ -1237,14 +1435,11 @@ ${agentList}
                                 settings.allowedTools.push(tool);
                             }
                         });
-                        if (!settings._aigon) {
-                            settings._aigon = {
-                                note: 'Tools added by Aigon',
-                                tools: extras.settings.allowedTools
-                            };
-                        }
                         console.log(`   ✅ Added allowedTools to ${extras.settings.path}`);
                     }
+
+                    // Remove any _aigon metadata that may have been added by older versions
+                    delete settings._aigon;
 
                     safeWrite(settingsPath, JSON.stringify(settings, null, 2));
                 }
@@ -1369,6 +1564,49 @@ ${agentList}
         }
     },
 
+    'hooks': (args) => {
+        const subcommand = args[0] || 'list';
+
+        if (subcommand === 'list') {
+            const hooks = getDefinedHooks();
+
+            if (hooks.length === 0) {
+                console.log(`\n🪝 No hooks defined.`);
+                console.log(`\n   Create hooks in: docs/aigon-hooks.md`);
+                console.log(`\n   Example format:`);
+                console.log(`   ## pre-bakeoff-setup`);
+                console.log(`   \`\`\`bash`);
+                console.log(`   echo "Setting up bakeoff for feature $AIGON_FEATURE_ID"`);
+                console.log(`   \`\`\``);
+                return;
+            }
+
+            console.log(`\n🪝 Defined Hooks (${hooks.length}):\n`);
+
+            // Group by command
+            const byCommand = {};
+            hooks.forEach(hook => {
+                if (!byCommand[hook.command]) {
+                    byCommand[hook.command] = [];
+                }
+                byCommand[hook.command].push(hook);
+            });
+
+            Object.entries(byCommand).forEach(([command, cmdHooks]) => {
+                console.log(`   ${command}:`);
+                cmdHooks.forEach(hook => {
+                    const preview = hook.script.split('\n')[0].substring(0, 50);
+                    console.log(`      ${hook.type}: ${preview}${hook.script.length > 50 ? '...' : ''}`);
+                });
+            });
+
+            console.log(`\n   Hooks file: docs/aigon-hooks.md`);
+        } else {
+            console.error(`Unknown hooks subcommand: ${subcommand}`);
+            console.error(`Usage: aigon hooks [list]`);
+        }
+    },
+
     'help': () => {
         console.log(`
 Aigon - Spec-Driven Development for AI Agents
@@ -1379,6 +1617,7 @@ Setup:
   init                              Initialize ./docs/specs directory structure
   install-agent <agents...>         Install agent configs (cc, gg, cx)
   update                            Update Aigon files to latest version
+  hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
 
 Solo Mode (single agent):
   feature-create <name>             Create feature spec in inbox
