@@ -7,7 +7,16 @@ Implement a feature in the current bakeoff worktree.
 
 ## Step 1: Verify you're in a worktree
 
-Check the current directory name to confirm you're in a worktree:
+**CRITICAL: Before proceeding, verify you're in the worktree directory.**
+
+Check your current working directory:
+```bash
+pwd
+```
+
+The path should end with: `.../feature-<ID>-<agent>-<description>`
+
+Also check the directory name:
 ```bash
 basename $(pwd)
 ```
@@ -16,9 +25,12 @@ The directory name should match the pattern: `feature-<ID>-<agent>-<description>
 
 Extract your agent ID from the directory/branch name (e.g., `cc`, `gg`, `cx`).
 
-If you're NOT in a worktree, tell the user to:
-1. Open the worktree in a new editor window: `code ../feature-{{ARG1_SYNTAX}}-<agent>-*`
-2. Run this command again from that window
+**If you're NOT in a worktree, STOP immediately and tell the user:**
+1. You cannot proceed - this command must run from within the worktree
+2. They need to open the worktree in a new editor window: `code ../feature-{{ARG1_SYNTAX}}-<agent>-*`
+3. They should run this command again from that window
+
+**Do not proceed with Steps 2-7 if you're not in the worktree directory.**
 
 ## Step 2: Read the spec
 
