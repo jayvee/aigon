@@ -20,6 +20,14 @@
 
 ## Suggested Features
 
-<!-- List specific features to create based on this research -->
-<!-- Format: feature-name: Brief description -->
-<!-- Example: dark-mode-toggle: Add toggle in settings to switch between light/dark themes -->
+<!--
+Use the table format below. Guidelines:
+- feature-name: Use kebab-case, be specific (e.g., "user-auth-jwt" not "authentication")
+- description: One sentence explaining the capability
+- priority: high (must-have), medium (should-have), low (nice-to-have)
+- depends-on: Other feature names this depends on, or "none"
+-->
+
+| Feature Name | Description | Priority | Depends On |
+|--------------|-------------|----------|------------|
+| example-feature | Brief description of what this feature does | high | none |
