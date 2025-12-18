@@ -1,93 +1,117 @@
 <!-- description: Synthesize research <ID> - compare findings and select features -->
 # aigon-research-synthesize
 
-Synthesize research findings from ALL agents in an arena mode research topic, help the user select features, and update the main research document.
+Synthesize research findings from ALL agents, help the user select features, and update the main research document.
 
 ## Recommended: Use a Different Model
 
-For unbiased synthesis, use a **different model** than the ones that conducted the research.
+For unbiased synthesis, use a **different model** than those that conducted the research.
 
 ```bash
-# If research was conducted by Opus, Gemini, Codex - synthesize with Sonnet
 claude --model sonnet
 /aigon-research-synthesize 05
 ```
 
-## Your Task
+## Step 1: Read All Findings
 
-### Step 1: Read All Findings
-
-Find and read ALL findings files for this research ID:
+Find and read ALL findings files:
 ```
 docs/specs/research-topics/logs/research-{ID}-*-findings.md
 ```
 
-Also read the main research topic to understand the original questions:
+Also read the main research topic:
 ```
 docs/specs/research-topics/03-in-progress/research-{ID}-*.md
 ```
 
-### Step 2: Synthesize and Present
+## Step 2: Synthesize Findings
 
-Present a synthesis to the user:
+Present to the user:
 
-1. **Consensus findings** - what all agents agree on
-2. **Divergent perspectives** - where agents disagree and why
-3. **All suggested features** with:
-   - Which agents suggested each (duplicates = stronger signal)
-   - Brief description
-   - Your recommended priority
+### Consensus
+What all agents agree on.
 
-Example format:
+### Divergent Views
+Where agents disagree and why - be specific about which agent said what.
+
+## Step 3: Consolidate Features
+
+Extract the `## Suggested Features` table from each agent's findings file.
+
+**Deduplication rules:**
+1. **Exact match**: Same feature name from multiple agents = one entry, note all agents
+2. **Similar concept**: Different names but same idea = merge into one, pick the best name
+3. **Related but distinct**: Keep separate but note the relationship
+4. **Unique**: One agent only = keep, but flag for user attention
+
+**Present a consolidated table:**
+
+```markdown
+## Consolidated Features
+
+| # | Feature Name | Description | Priority | Agents | Status |
+|---|--------------|-------------|----------|--------|--------|
+| 1 | feature-name | Best description | high | cc, gg | Consensus |
+| 2 | another-feat | Description | medium | cc | Unique to Claude |
+| 3 | third-feat | Description | low | gg, cx | Consensus |
 ```
-## Suggested Features
 
-| # | Feature | Suggested By | Description | Recommended |
-|---|---------|--------------|-------------|-------------|
-| 1 | feature-a | cc, gg | Both agents suggested this | Yes |
-| 2 | feature-b | cc | Unique to Claude | Yes |
-| 3 | feature-c | gg | Unique to Gemini | Maybe |
-| 4 | feature-d | cx | Unique to Codex | No |
-```
+**Status values:**
+- `Consensus` - Multiple agents suggested (stronger signal)
+- `Unique to [Agent]` - Only one agent suggested
+- `Merged` - Combined similar suggestions from multiple agents
 
-### Step 3: Ask User for Selection
+## Step 4: Get User Approval
 
-Ask the user which features to include. Offer options like:
-- "Which features should I include? (e.g., '1,2,3' or 'all' or 'recommended')"
-- Let them approve your recommendations or customize
+Ask the user:
 
-### Step 4: Update the Main Research Doc
+> "Here are the consolidated features. Which should I include in the final research output?
+> - Enter numbers to include (e.g., `1,2,3`)
+> - Enter `all` to include everything
+> - Enter `consensus` to include only consensus items
+> - Enter `none` to skip feature selection"
 
-Once the user confirms their selection, update the main research document's `## Output` section:
+Wait for user response before proceeding.
+
+## Step 5: Update Main Research Doc
+
+Once user confirms, update the main research document:
+
+**Update `## Recommendation`** with your synthesized recommendation.
+
+**Update `## Output`** with the selected features:
 
 ```markdown
 ## Output
 
-**Selected features from research:**
-- feature-a: Description
-- feature-b: Description
+### Selected Features
 
-**Feature specs to create:**
-- [ ] Feature: feature-a
-- [ ] Feature: feature-b
+| Feature Name | Description | Priority | Create Command |
+|--------------|-------------|----------|----------------|
+| feature-name | Description | high | `aigon feature-create "feature-name"` |
+
+### Feature Dependencies
+<!-- If any features have dependencies, list them here -->
+- feature-b depends on feature-a
+
+### Not Selected
+<!-- Features discussed but not selected, for reference -->
+- other-feature: Reason not selected
 ```
 
-Also update the `## Recommendation` section with your synthesized recommendation.
-
-### Step 5: Complete
+## Step 6: Complete
 
 After updating the document, run:
 ```bash
 aigon research-done {ID} --complete
 ```
 
-This moves the research to done and preserves the findings files in `logs/`.
-
 ## Important
 
 - Read ALL findings files, not just your own
-- Present findings objectively before asking for selection
-- Only modify the main research doc after user confirms feature selection
+- Be objective when presenting - don't favor your own findings
+- Wait for user confirmation before updating files
+- Use the exact table format so output is clean and actionable
 
 
 ARGUMENTS: {{ARG_SYNTAX}}
