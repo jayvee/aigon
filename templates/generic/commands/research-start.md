@@ -26,11 +26,11 @@ This moves the research topic from `02-backlog/` to `03-in-progress/`.
 
 6. **Write recommendation**: Provide your recommended approach based on findings
 
-7. **Suggest specific features**: Based on your findings, suggest concrete features that should be created. Include:
-   - Feature names (suitable for `aigon feature-create`)
-   - Brief description of what each feature would accomplish
-   - Priority order if multiple features are suggested
-   - Dependencies between features if any
+7. **Suggest specific features**: Fill in the `## Suggested Features` table with:
+   - **Feature Name**: Use kebab-case, be specific (e.g., `user-auth-jwt` not `authentication`)
+   - **Description**: One sentence explaining the capability
+   - **Priority**: `high` (must-have), `medium` (should-have), `low` (nice-to-have)
+   - **Depends On**: Other feature names this depends on, or `none`
 
 ## When You're Done
 
