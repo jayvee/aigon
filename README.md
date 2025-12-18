@@ -79,7 +79,8 @@ Run multiple agents to get diverse perspectives on a research topic.
 * **Execute:** Run each agent with `/aigon-research-start 05`.
     * Each agent writes ONLY to their own findings file.
     * Agents must NOT run `research-done` (user handles synthesis).
-* **Synthesize:** `aigon research-done 05` shows an interactive summary:
+* **Synthesize (optional):** Run `/aigon-research-synthesize 05` with any agent to get a comparison of all findings. The agent will read ALL findings files and provide a synthesis summary.
+* **Select Features:** `aigon research-done 05` shows an interactive summary:
     * Displays each agent's key findings and recommendations.
     * Auto-deduplicates suggested features across agents.
     * Prompts user to select features: use one agent's list, combine all, or pick individually.
@@ -351,10 +352,11 @@ When you run `aigon install-agent cc`, it installs special slash commands for Cl
 | `/aigon-research-create <name>` | Create a new research topic |
 | `/aigon-research-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon-research-start <ID>` | Start research (detects solo/arena mode automatically) |
+| `/aigon-research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
 | `/aigon-research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
 | `/aigon-help` | Shows all available Aigon commands |
 
-**Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Only the user runs `research-done` to synthesize.
+**Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Use `research-synthesize` to have an agent compare all findings, then user runs `research-done` to select features.
 
 ### Gemini
 When you run `aigon install-agent gg`, it installs special slash commands for Gemini to make the workflow seamless.
@@ -376,10 +378,11 @@ When you run `aigon install-agent gg`, it installs special slash commands for Ge
 | `/aigon:research-create <name>` | Create a new research topic |
 | `/aigon:research-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon:research-start <ID>` | Start research (detects solo/arena mode automatically) |
+| `/aigon:research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
 | `/aigon:research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
 | `/aigon:help` | Shows all available Aigon commands |
 
-**Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Only the user runs `research-done` to synthesize.
+**Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Use `research-synthesize` to have an agent compare all findings, then user runs `research-done` to select features.
 
 ### Codex
 When you run `aigon install-agent cx`, it installs slash commands to your **global** `~/.codex/prompts/` folder.
@@ -403,10 +406,11 @@ When you run `aigon install-agent cx`, it installs slash commands to your **glob
 | `/prompts:aigon-research-create <name>` | Create a new research topic |
 | `/prompts:aigon-research-prioritise <name>` | Assign ID and move to backlog |
 | `/prompts:aigon-research-start <ID>` | Start research (detects solo/arena mode automatically) |
+| `/prompts:aigon-research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
 | `/prompts:aigon-research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
 | `/prompts:aigon-help` | Shows all available Aigon commands |
 
-**Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Only the user runs `research-done` to synthesize.
+**Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Use `research-synthesize` to have an agent compare all findings, then user runs `research-done` to select features.
 
 ---
 
