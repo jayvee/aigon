@@ -3,6 +3,62 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync, spawnSync } = require('child_process');
+const readline = require('readline');
+
+// --- Interactive Prompts ---
+
+function createPrompt() {
+    return readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+}
+
+function askQuestion(rl, question) {
+    return new Promise(resolve => {
+        rl.question(question, answer => {
+            resolve(answer.trim());
+        });
+    });
+}
+
+// Deduplicate features by extracting the feature name (before the colon)
+function dedupeFeatures(features) {
+    const seen = new Map(); // featureName -> { agents: [], description: string }
+
+    features.forEach(({ agent, feature }) => {
+        // Extract feature name (e.g., "- research-export: description" -> "research-export")
+        const match = feature.match(/^-?\s*([a-z0-9-]+):\s*(.*)$/i);
+        if (match) {
+            const [, name, description] = match;
+            if (seen.has(name)) {
+                seen.get(name).agents.push(agent);
+            } else {
+                seen.set(name, { name, description, agents: [agent] });
+            }
+        } else {
+            // No standard format, use the whole feature as key
+            const key = feature.replace(/^-?\s*/, '');
+            if (!seen.has(key)) {
+                seen.set(key, { name: key, description: '', agents: [agent] });
+            } else {
+                seen.get(key).agents.push(agent);
+            }
+        }
+    });
+
+    return Array.from(seen.values());
+}
+
+// Format features for display/output
+function formatFeatureList(features) {
+    return features.map(f => {
+        if (f.description) {
+            return `- ${f.name}: ${f.description}`;
+        }
+        return `- ${f.name}`;
+    }).join('\n');
+}
 
 // --- Editor Detection & Auto-Open ---
 
@@ -654,18 +710,274 @@ const commands = {
         console.log(`📋 Assigned ID: ${paddedId}`);
     },
     'research-start': (args) => {
-        const name = args[0];
-        if (!name) return console.error("Usage: aigon research-start <name|ID>");
-        const found = findFile(PATHS.research, name, ['02-backlog']);
-        if (!found) return console.error(`❌ Could not find research "${name}" in backlog.`);
-        moveFile(found, '03-in-progress');
+        const id = args[0];
+        const agentIds = args.slice(1);
+        const mode = agentIds.length > 0 ? 'arena' : 'solo';
+
+        if (!id) {
+            return console.error("Usage: aigon research-start <ID> [agents...]\n\nExamples:\n  aigon research-start 05              # Solo mode\n  aigon research-start 05 cc gg        # Arena mode");
+        }
+
+        // Find in backlog or in-progress (may already be started)
+        let found = findFile(PATHS.research, id, ['02-backlog', '03-in-progress']);
+        if (!found) return console.error(`❌ Could not find research "${id}" in backlog or in-progress.`);
+
+        // Extract research name from filename
+        const match = found.file.match(/^research-(\d+)-(.*)\.md$/);
+        const researchNum = match ? match[1] : id;
+        const researchName = match ? match[2] : 'research';
+
+        // Move to in-progress if in backlog
+        if (found.folder === '02-backlog') {
+            found = moveFile(found, '03-in-progress');
+        } else {
+            console.log(`ℹ️  Research already in progress: ${found.file}`);
+        }
+
+        if (mode === 'arena') {
+            // Arena mode: Create findings files for each agent
+            const logsDir = path.join(PATHS.research.root, 'logs');
+            if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+
+            const findingsTemplate = readTemplate('specs/research-findings-template.md');
+            const createdFiles = [];
+
+            agentIds.forEach(agentId => {
+                const agentConfig = loadAgentConfig(agentId);
+                const agentName = agentConfig ? agentConfig.name : agentId;
+
+                const findingsFilename = `research-${researchNum}-${agentId}-findings.md`;
+                const findingsPath = path.join(logsDir, findingsFilename);
+
+                if (fs.existsSync(findingsPath)) {
+                    console.log(`ℹ️  Findings file already exists: ${findingsFilename}`);
+                } else {
+                    // Process template with placeholders
+                    const content = findingsTemplate
+                        .replace(/\{\{TOPIC_NAME\}\}/g, researchName.replace(/-/g, ' '))
+                        .replace(/\{\{AGENT_NAME\}\}/g, agentName)
+                        .replace(/\{\{AGENT_ID\}\}/g, agentId)
+                        .replace(/\{\{ID\}\}/g, researchNum)
+                        .replace(/\{\{DATE\}\}/g, new Date().toISOString().split('T')[0]);
+
+                    fs.writeFileSync(findingsPath, content);
+                    createdFiles.push(findingsFilename);
+                    console.log(`📝 Created: logs/${findingsFilename}`);
+                }
+            });
+
+            console.log(`\n🏟️  Arena mode started with ${agentIds.length} agents!`);
+            console.log(`\n📋 Research topic: ./docs/specs/research-topics/03-in-progress/${found.file}`);
+            console.log(`\n📂 Agent findings files:`);
+            agentIds.forEach(agentId => {
+                const agentConfig = loadAgentConfig(agentId);
+                const agentName = agentConfig ? agentConfig.name : agentId;
+                console.log(`   ${agentId} (${agentName}): logs/research-${researchNum}-${agentId}-findings.md`);
+            });
+            console.log(`\n💡 Next: Run each agent with /aigon-research-start ${researchNum}`);
+            console.log(`   When done: aigon research-done ${researchNum}`);
+        } else {
+            // Solo mode: Just move to in-progress
+            console.log(`\n🚀 Solo mode. Research moved to in-progress.`);
+            console.log(`📋 Topic: ./docs/specs/research-topics/03-in-progress/${found.file}`);
+            console.log(`\n💡 Next: Run agent with /aigon-research-start ${researchNum}`);
+            console.log(`   When done: aigon research-done ${researchNum}`);
+        }
     },
-    'research-done': (args) => {
-        const name = args[0];
-        if (!name) return console.error("Usage: aigon research-done <name|ID>");
-        const found = findFile(PATHS.research, name, ['03-in-progress']);
-        if (!found) return console.error(`❌ Could not find research "${name}" in in-progress.`);
+    'research-done': async (args) => {
+        const id = args[0];
+        const forceComplete = args.includes('--complete');
+
+        if (!id) return console.error("Usage: aigon research-done <ID> [--complete]\n\nOptions:\n  --complete  Skip findings review and move directly to done");
+
+        const found = findFile(PATHS.research, id, ['03-in-progress']);
+        if (!found) return console.error(`❌ Could not find research "${id}" in in-progress.`);
+
+        // Extract research ID from filename
+        const match = found.file.match(/^research-(\d+)-(.*)\.md$/);
+        const researchNum = match ? match[1] : id;
+        const researchName = match ? match[2] : 'research';
+
+        // Check for arena mode by looking for findings files
+        const logsDir = path.join(PATHS.research.root, 'logs');
+        let findingsFiles = [];
+        if (fs.existsSync(logsDir)) {
+            const files = fs.readdirSync(logsDir);
+            findingsFiles = files.filter(f =>
+                f.startsWith(`research-${researchNum}-`) && f.endsWith('-findings.md')
+            );
+        }
+
+        const isArenaMode = findingsFiles.length > 0;
+
+        if (isArenaMode && !forceComplete) {
+            // Arena mode: Show findings summary first
+            console.log(`\n📋 Research ${researchNum}: ${researchName.replace(/-/g, ' ')} - Arena Mode Detected`);
+            console.log(`\nFound ${findingsFiles.length} agent findings:\n`);
+
+            const allSuggestedFeatures = [];
+            const agentFeatures = {}; // agentId -> [features]
+            const agentIds = [];
+
+            findingsFiles.forEach(file => {
+                // Extract agent ID from filename: research-05-cc-findings.md -> cc
+                const agentMatch = file.match(/^research-\d+-(\w+)-findings\.md$/);
+                const agentId = agentMatch ? agentMatch[1] : 'unknown';
+                const agentConfig = loadAgentConfig(agentId);
+                const agentName = agentConfig ? agentConfig.name : agentId;
+                agentIds.push(agentId);
+                agentFeatures[agentId] = [];
+
+                const filePath = path.join(logsDir, file);
+                const content = fs.readFileSync(filePath, 'utf8');
+
+                // Extract key sections from findings file
+                const keyFindingsMatch = content.match(/## Key Findings\n\n([\s\S]*?)(?=\n## |$)/);
+                const recommendationMatch = content.match(/## Recommendation\n\n([\s\S]*?)(?=\n## |$)/);
+                const suggestedFeaturesMatch = content.match(/## Suggested Features\n\n([\s\S]*?)(?=\n## |$)/);
+
+                const keyFindings = keyFindingsMatch ? keyFindingsMatch[1].trim() : '(no findings documented)';
+                const recommendation = recommendationMatch ? recommendationMatch[1].trim() : '(no recommendation)';
+                const suggestedFeatures = suggestedFeaturesMatch ? suggestedFeaturesMatch[1].trim() : '';
+
+                // Collect suggested features from this agent
+                if (suggestedFeatures && !suggestedFeatures.includes('<!--')) {
+                    suggestedFeatures.split('\n').forEach(line => {
+                        const trimmed = line.trim();
+                        if (trimmed && !trimmed.startsWith('<!--')) {
+                            allSuggestedFeatures.push({ agent: agentId, feature: trimmed });
+                            agentFeatures[agentId].push(trimmed);
+                        }
+                    });
+                }
+
+                // Check if content is just placeholder
+                const isPlaceholder = keyFindings.includes('<!-- ') || keyFindings === '(no findings documented)';
+
+                console.log(`─── ${agentName} (${agentId}) ${'─'.repeat(Math.max(0, 40 - agentName.length - agentId.length))}`);
+                if (isPlaceholder) {
+                    console.log(`   Status: Not yet completed`);
+                } else {
+                    // Show truncated summary
+                    const findingsPreview = keyFindings.split('\n').slice(0, 3).join('\n   ');
+                    console.log(`   Key findings:\n   ${findingsPreview}`);
+                    if (keyFindings.split('\n').length > 3) console.log(`   ...`);
+
+                    const recPreview = recommendation.split('\n')[0];
+                    console.log(`   Recommendation: ${recPreview.substring(0, 80)}${recPreview.length > 80 ? '...' : ''}`);
+
+                    // Show suggested features if any
+                    if (suggestedFeatures && !suggestedFeatures.includes('<!--')) {
+                        const featuresPreview = suggestedFeatures.split('\n').slice(0, 2).join('\n      ');
+                        console.log(`   Suggested features:\n      ${featuresPreview}`);
+                        if (suggestedFeatures.split('\n').length > 2) console.log(`      ...`);
+                    }
+                }
+                console.log('');
+            });
+
+            console.log(`${'─'.repeat(50)}`);
+
+            // Interactive feature selection if there are suggested features
+            if (allSuggestedFeatures.length > 0) {
+                // Deduplicate features
+                const dedupedFeatures = dedupeFeatures(allSuggestedFeatures);
+
+                console.log(`\n🎯 Suggested Features (${allSuggestedFeatures.length} total, ${dedupedFeatures.length} unique):\n`);
+                dedupedFeatures.forEach(f => {
+                    const agentList = f.agents.join(', ');
+                    console.log(`   [${agentList}] ${f.name}${f.description ? ': ' + f.description : ''}`);
+                });
+
+                // Interactive selection
+                const rl = createPrompt();
+
+                console.log(`\n📝 How would you like to select features?\n`);
+                console.log(`   1. Use all from one agent`);
+                console.log(`   2. Combine all (deduplicated)`);
+                console.log(`   3. Select individually`);
+                console.log(`   4. Skip (no features)`);
+
+                const choice = await askQuestion(rl, '\nYour choice [1-4]: ');
+
+                let selectedFeatures = [];
+
+                if (choice === '1') {
+                    // Select agent
+                    console.log(`\nAvailable agents: ${agentIds.join(', ')}`);
+                    const agentChoice = await askQuestion(rl, 'Which agent? ');
+                    if (agentFeatures[agentChoice]) {
+                        selectedFeatures = agentFeatures[agentChoice].map(f => {
+                            const match = f.match(/^-?\s*([a-z0-9-]+):\s*(.*)$/i);
+                            if (match) return { name: match[1], description: match[2], agents: [agentChoice] };
+                            return { name: f.replace(/^-?\s*/, ''), description: '', agents: [agentChoice] };
+                        });
+                        console.log(`\n✅ Selected ${selectedFeatures.length} features from ${agentChoice}`);
+                    } else {
+                        console.log(`\n❌ Unknown agent: ${agentChoice}`);
+                    }
+                } else if (choice === '2') {
+                    // Use all deduplicated
+                    selectedFeatures = dedupedFeatures;
+                    console.log(`\n✅ Selected all ${selectedFeatures.length} unique features`);
+                } else if (choice === '3') {
+                    // Select individually
+                    console.log(`\nSelect features (y/n for each):\n`);
+                    for (const f of dedupedFeatures) {
+                        const agentList = f.agents.join(', ');
+                        const answer = await askQuestion(rl, `   [${agentList}] ${f.name}${f.description ? ': ' + f.description : ''} [y/n]: `);
+                        if (answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
+                            selectedFeatures.push(f);
+                        }
+                    }
+                    console.log(`\n✅ Selected ${selectedFeatures.length} features`);
+                } else {
+                    console.log(`\n⏭️  Skipping feature selection`);
+                }
+
+                rl.close();
+
+                // Update the main research doc with selected features
+                if (selectedFeatures.length > 0) {
+                    const mainDocPath = found.fullPath;
+                    let mainDocContent = fs.readFileSync(mainDocPath, 'utf8');
+
+                    // Find the Output section and update it
+                    const outputSection = formatFeatureList(selectedFeatures);
+                    const featureLinks = selectedFeatures.map(f => `- [ ] Feature: ${f.name}`).join('\n');
+
+                    // Replace or append to Output section
+                    if (mainDocContent.includes('## Output')) {
+                        mainDocContent = mainDocContent.replace(
+                            /## Output\n([\s\S]*?)(?=\n## |$)/,
+                            `## Output\n\n**Selected features from research:**\n${outputSection}\n\n**Feature specs to create:**\n${featureLinks}\n`
+                        );
+                    } else {
+                        mainDocContent += `\n## Output\n\n**Selected features from research:**\n${outputSection}\n\n**Feature specs to create:**\n${featureLinks}\n`;
+                    }
+
+                    fs.writeFileSync(mainDocPath, mainDocContent);
+                    console.log(`\n📝 Updated main research doc with ${selectedFeatures.length} selected features`);
+                }
+            }
+
+            console.log(`\n📋 Main research doc: ./docs/specs/research-topics/03-in-progress/${found.file}`);
+            console.log(`\n💡 Next steps:`);
+            console.log(`   1. Review and edit the ## Output section if needed`);
+            console.log(`   2. Update the ## Recommendation section`);
+            console.log(`   3. Run: aigon research-done ${researchNum} --complete`);
+            return;
+        }
+
+        // Move to done (both modes, or arena with --complete)
         moveFile(found, '04-done');
+
+        if (isArenaMode) {
+            console.log(`\n✅ Research ${researchNum} complete! (arena mode)`);
+            console.log(`📂 Findings files preserved in: ./docs/specs/research-topics/logs/`);
+        } else {
+            console.log(`\n✅ Research ${researchNum} complete! (solo mode)`);
+        }
     },
     'feature-prioritise': (args) => {
         const name = args[0];
@@ -1686,15 +1998,17 @@ Feature Commands (unified for solo and arena modes):
   feature-done <ID> [agent]         Merge and complete feature
   feature-cleanup <ID>              Clean up arena worktrees and branches
 
-Research:
+Research (unified for solo and arena modes):
   research-create <name>            Create research topic in inbox
   research-prioritise <name>        Move research from inbox to backlog (assigns ID)
-  research-start <ID>               Move research to in-progress
-  research-done <ID>                Move research to done
+  research-start <ID> [agents...]   Start solo (no agents) or arena (with agents) research
+  research-done <ID> [--complete]   Complete research (shows summary in arena mode)
 
 Examples:
   aigon init                           # Setup specs directory
   aigon install-agent cc gg            # Install Claude and Gemini configs
+
+  # Feature workflow
   aigon feature-create "dark-mode"     # Create new feature spec
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
   aigon feature-setup 55               # Solo mode (creates branch)
@@ -1703,6 +2017,14 @@ Examples:
   aigon feature-eval 55                # Evaluate implementations
   aigon feature-done 55 cc             # Merge Claude's arena implementation
   aigon feature-cleanup 55 --push      # Clean up losing arena branches
+
+  # Research workflow
+  aigon research-create "api-design"   # Create new research topic
+  aigon research-prioritise api-design # Assign ID, move to backlog
+  aigon research-start 05              # Solo mode (one agent)
+  aigon research-start 05 cc gg        # Arena mode (multiple agents)
+  aigon research-done 05               # Shows findings summary (arena)
+  aigon research-done 05 --complete    # Complete research
 
 Agents:
   cc (claude)   - Claude Code
@@ -1718,11 +2040,18 @@ const commandName = args[0];
 const commandArgs = args.slice(1);
 const cleanCommand = commandName ? commandName.replace(/^aigon-/, '') : null;
 
-if (!cleanCommand || cleanCommand === 'help' || cleanCommand === '--help' || cleanCommand === '-h') {
-    commands['help']();
-} else if (commands[cleanCommand]) {
-    commands[cleanCommand](commandArgs);
-} else {
-    console.error(`Unknown command: ${commandName}\n`);
-    commands['help']();
+async function main() {
+    if (!cleanCommand || cleanCommand === 'help' || cleanCommand === '--help' || cleanCommand === '-h') {
+        commands['help']();
+    } else if (commands[cleanCommand]) {
+        await commands[cleanCommand](commandArgs);
+    } else {
+        console.error(`Unknown command: ${commandName}\n`);
+        commands['help']();
+    }
 }
+
+main().catch(err => {
+    console.error(`❌ Error: ${err.message}`);
+    process.exit(1);
+});
