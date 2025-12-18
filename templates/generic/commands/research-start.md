@@ -32,7 +32,16 @@ This moves the research topic from `02-backlog/` to `03-in-progress/`.
    - Priority order if multiple features are suggested
    - Dependencies between features if any
 
-When done: Run `aigon research-done {{ARG_SYNTAX}}`
+## When You're Done
+
+**If arena mode (findings file exists):**
+- STOP after completing your findings file
+- Do NOT run `aigon research-done`
+- The user will run `research-done` to review all agents' findings and synthesize them
+- Your task is complete once your findings file is filled in
+
+**If solo mode (no findings file):**
+- Run `aigon research-done {{ARG_SYNTAX}}` to complete the research
 
 
 ARGUMENTS: {{ARG_SYNTAX}}
