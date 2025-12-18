@@ -4,26 +4,22 @@
 Run this command followed by the Research ID.
 
 ```bash
-aigon research-done {{ARG_SYNTAX}}
+aigon research-done {{ARG_SYNTAX}} [--complete]
 ```
 
 This moves the research topic from `03-in-progress/` to `04-done/`.
 
-## IMPORTANT: Check for Arena Mode First
+## Usage
 
-Before running this command, check if this is arena mode research:
+**Solo mode:** Run directly after completing your research findings.
 
-**Look for findings files at:** `docs/specs/research-topics/logs/research-{ID}-*-findings.md`
+**Arena mode:**
+- First run `/aigon-research-synthesize {ID}` to compare all agents' findings and select features
+- The synthesize command will run `research-done --complete` automatically when finished
 
-**If findings files exist (arena mode):**
-- **STOP - Do NOT run this command**
-- Arena mode research has multiple agents contributing findings
-- Only the USER should run `research-done` to synthesize all agents' findings
-- Your task is complete once your findings file is filled in
+## Options
 
-**If no findings files exist (solo mode):**
-- Ensure your research findings are documented in the main research doc
-- Then run this command to complete the research
+- `--complete` - Move directly to done (required for arena mode after synthesis)
 
 
 ARGUMENTS: {{ARG_SYNTAX}}

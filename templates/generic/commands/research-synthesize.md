@@ -76,20 +76,18 @@ Also update the `## Recommendation` section with your synthesized recommendation
 
 ### Step 5: Complete
 
-After updating the document, tell the user:
+After updating the document, run:
+```bash
+aigon research-done {ID} --complete
 ```
-Research synthesis complete! The main document has been updated.
 
-To finalize and move to done, run:
-  aigon research-done {ID} --complete
-```
+This moves the research to done and preserves the findings files in `logs/`.
 
 ## Important
 
 - Read ALL findings files, not just your own
 - Present findings objectively before asking for selection
 - Only modify the main research doc after user confirms feature selection
-- Do NOT run `aigon research-done` yourself
 
 
 ARGUMENTS: {{ARG_SYNTAX}}
