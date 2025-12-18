@@ -5,6 +5,16 @@ Help the user synthesize research findings from ALL agents in an arena mode rese
 
 **IMPORTANT:** This is a synthesis task. You are NOT conducting new research. Your job is to read, compare, and help the user understand the findings from ALL agents.
 
+## Recommended: Use a Different Model
+
+For unbiased synthesis, use a **different model** than the ones that conducted the research. This avoids the synthesizer favoring its own findings.
+
+```bash
+# If research was conducted by Opus, Gemini, Codex - synthesize with Sonnet
+claude --model sonnet
+/aigon-research-synthesize 05
+```
+
 ## Your Task
 
 1. **Find all findings files** for this research ID:

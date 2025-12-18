@@ -79,7 +79,7 @@ Run multiple agents to get diverse perspectives on a research topic.
 * **Execute:** Run each agent with `/aigon-research-start 05`.
     * Each agent writes ONLY to their own findings file.
     * Agents must NOT run `research-done` (user handles synthesis).
-* **Synthesize (optional):** Run `/aigon-research-synthesize 05` with any agent to get a comparison of all findings. The agent will read ALL findings files and provide a synthesis summary.
+* **Synthesize (optional):** Run `/aigon-research-synthesize 05` with any agent to get a comparison of all findings. The agent will read ALL findings files and provide a synthesis summary. **Tip:** Use a different model than those that conducted the research for unbiased synthesis (e.g., if research was by Opus/Gemini/Codex, synthesize with Sonnet).
 * **Select Features:** `aigon research-done 05` shows an interactive summary:
     * Displays each agent's key findings and recommendations.
     * Auto-deduplicates suggested features across agents.
