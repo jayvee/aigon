@@ -28,9 +28,15 @@ tools:
   - name: aigon_research_prioritise
     description: Prioritise a research topic from inbox to backlog
     command: aigon research-prioritise {{id}}
-  - name: aigon_research_start
-    description: Start a research topic
-    command: aigon research-start {{id}}
+  - name: aigon_research_setup_solo
+    description: Setup for solo research
+    command: aigon research-setup {{id}}
+  - name: aigon_research_setup_arena
+    description: Setup for arena research with multiple agents
+    command: aigon research-setup {{id}} {{agents}}
+  - name: aigon_research_conduct
+    description: Conduct research (write findings)
+    command: aigon research-conduct {{id}}
   - name: aigon_research_done
     description: Complete a research topic
     command: aigon research-done {{id}}

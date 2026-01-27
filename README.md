@@ -60,8 +60,8 @@ Used for exploring complex topics before writing code. Files transition within t
 #### 1.1 Solo Mode (Single Agent)
 * **Create:** `aigon research-create "API Design"` creates a templated topic in `/01-inbox`.
 * **Prioritise:** `aigon research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
-* **Start:** `aigon research-start 05` moves to `/03-in-progress`.
-* **Execute:** Agent reads the topic file, writes findings and recommendations directly into the document.
+* **Setup:** `aigon research-setup 05` moves to `/03-in-progress`.
+* **Execute:** Run `/aigon-research-conduct 05`. Agent reads the topic file, writes findings and recommendations directly into the document.
 * **Done:** `aigon research-done 05` moves to `/04-done`.
 * **Output:** The research file becomes a complete record, with suggested features in the Output section.
 
@@ -70,13 +70,13 @@ Run multiple agents to get diverse perspectives on a research topic.
 
 * **Create:** `aigon research-create "API Design"` creates a templated topic in `/01-inbox`.
 * **Prioritise:** `aigon research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
-* **Start Arena:** `aigon research-start 05 cc gg cx`
+* **Setup Arena:** `aigon research-setup 05 cc gg cx`
     * Moves topic to `/03-in-progress`.
     * Creates **separate findings files** for each agent in `logs/`:
         * `research-05-cc-findings.md` (Claude)
         * `research-05-gg-findings.md` (Gemini)
         * `research-05-cx-findings.md` (Codex)
-* **Execute:** Run each agent with `/aigon-research-start 05`.
+* **Execute:** Run each agent with `/aigon-research-conduct 05`.
     * Each agent writes ONLY to their own findings file.
     * Agents must NOT run `research-done` (user handles synthesis).
 * **Synthesize:** Run `/aigon-research-synthesize 05` with an agent to:
@@ -231,7 +231,8 @@ The `aigon` command automates state transitions and Git operations. The workflow
 | :--- | :--- | :--- |
 | **Research Create** | `aigon research-create <name>` | Creates a new research topic from template in `research-topics/inbox`. |
 | **Research Prioritise** | `aigon research-prioritise <name>` | Promotes a research draft from `inbox` to `backlog` with a new ID. |
-| **Research Start** | `aigon research-start <ID> [agents...]` | Start research. Solo: no agents. Arena: creates findings files for each agent. |
+| **Research Setup** | `aigon research-setup <ID> [agents...]` | Setup research. Solo: no agents. Arena: creates findings files for each agent. |
+| **Research Conduct** | `aigon research-conduct <ID>` | Conduct research. Agent writes findings (detects solo/arena mode). |
 | **Research Done** | `aigon research-done <ID> [--complete]` | Complete research. Arena: shows interactive synthesis, `--complete` finalizes. |
 
 ### Utilities
@@ -351,7 +352,8 @@ When you run `aigon install-agent cc`, it installs special slash commands for Cl
 | :--- | :--- |
 | `/aigon-research-create <name>` | Create a new research topic |
 | `/aigon-research-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon-research-start <ID>` | Start research (detects solo/arena mode automatically) |
+| `/aigon-research-setup <ID> [agents...]` | Setup research (solo or arena mode) |
+| `/aigon-research-conduct <ID>` | Conduct research (write findings) |
 | `/aigon-research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
 | `/aigon-research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
 | `/aigon-help` | Shows all available Aigon commands |
@@ -377,7 +379,8 @@ When you run `aigon install-agent gg`, it installs special slash commands for Ge
 | :--- | :--- |
 | `/aigon:research-create <name>` | Create a new research topic |
 | `/aigon:research-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:research-start <ID>` | Start research (detects solo/arena mode automatically) |
+| `/aigon:research-setup <ID> [agents...]` | Setup research (solo or arena mode) |
+| `/aigon:research-conduct <ID>` | Conduct research (write findings) |
 | `/aigon:research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
 | `/aigon:research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
 | `/aigon:help` | Shows all available Aigon commands |
@@ -405,7 +408,8 @@ When you run `aigon install-agent cx`, it installs slash commands to your **glob
 | :--- | :--- |
 | `/prompts:aigon-research-create <name>` | Create a new research topic |
 | `/prompts:aigon-research-prioritise <name>` | Assign ID and move to backlog |
-| `/prompts:aigon-research-start <ID>` | Start research (detects solo/arena mode automatically) |
+| `/prompts:aigon-research-setup <ID> [agents...]` | Setup research (solo or arena mode) |
+| `/prompts:aigon-research-conduct <ID>` | Conduct research (write findings) |
 | `/prompts:aigon-research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
 | `/prompts:aigon-research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
 | `/prompts:aigon-help` | Shows all available Aigon commands |
