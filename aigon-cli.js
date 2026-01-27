@@ -653,13 +653,13 @@ const commands = {
         moveFile(found, '02-backlog', newName);
         console.log(`📋 Assigned ID: ${paddedId}`);
     },
-    'research-start': (args) => {
+    'research-setup': (args) => {
         const id = args[0];
         const agentIds = args.slice(1);
         const mode = agentIds.length > 0 ? 'arena' : 'solo';
 
         if (!id) {
-            return console.error("Usage: aigon research-start <ID> [agents...]\n\nExamples:\n  aigon research-start 05              # Solo mode\n  aigon research-start 05 cc gg        # Arena mode");
+            return console.error("Usage: aigon research-setup <ID> [agents...]\n\nExamples:\n  aigon research-setup 05              # Solo mode\n  aigon research-setup 05 cc gg        # Arena mode");
         }
 
         // Find in backlog or in-progress (may already be started)
@@ -718,14 +718,68 @@ const commands = {
                 const agentName = agentConfig ? agentConfig.name : agentId;
                 console.log(`   ${agentId} (${agentName}): logs/research-${researchNum}-${agentId}-findings.md`);
             });
-            console.log(`\n💡 Next: Run each agent with /aigon-research-start ${researchNum}`);
+            console.log(`\n💡 Next: Run each agent with /aigon-research-conduct ${researchNum}`);
             console.log(`   When done: aigon research-done ${researchNum}`);
         } else {
             // Solo mode: Just move to in-progress
             console.log(`\n🚀 Solo mode. Research moved to in-progress.`);
             console.log(`📋 Topic: ./docs/specs/research-topics/03-in-progress/${found.file}`);
-            console.log(`\n💡 Next: Run agent with /aigon-research-start ${researchNum}`);
+            console.log(`\n💡 Next: Run agent with /aigon-research-conduct ${researchNum}`);
             console.log(`   When done: aigon research-done ${researchNum}`);
+        }
+    },
+    'research-conduct': (args) => {
+        const id = args[0];
+        if (!id) return console.error("Usage: aigon research-conduct <ID>\n\nRun this after 'aigon research-setup <ID>'\n\nExamples:\n  aigon research-conduct 05     # In solo mode\n  aigon research-conduct 05     # In arena mode (writes to your findings file)");
+
+        // Find the research topic
+        let found = findFile(PATHS.research, id, ['03-in-progress']);
+        if (!found) return console.error(`❌ Could not find research "${id}" in in-progress.\n\nRun 'aigon research-setup ${id}' first.`);
+
+        const match = found.file.match(/^research-(\d+)-(.*)\.md$/);
+        if (!match) return console.warn("⚠️  Could not parse filename.");
+        const [_, num, desc] = match;
+
+        // Check for arena mode by looking for findings files
+        const logsDir = path.join(PATHS.research.root, 'logs');
+        let findingsFiles = [];
+        if (fs.existsSync(logsDir)) {
+            const files = fs.readdirSync(logsDir);
+            findingsFiles = files.filter(f =>
+                f.startsWith(`research-${num}-`) && f.endsWith('-findings.md')
+            );
+        }
+
+        const isArenaMode = findingsFiles.length > 0;
+
+        console.log(`\n📋 Research ${num}: ${desc.replace(/-/g, ' ')}`);
+        console.log(`   Mode: ${isArenaMode ? '🏟️  Arena' : '🚀 Solo'}`);
+        console.log(`\n📄 Topic: ./docs/specs/research-topics/03-in-progress/${found.file}`);
+
+        if (isArenaMode) {
+            console.log(`\n📂 Findings files:`);
+            findingsFiles.forEach(file => {
+                const agentMatch = file.match(/^research-\d+-(\w+)-findings\.md$/);
+                const agentId = agentMatch ? agentMatch[1] : 'unknown';
+                const agentConfig = loadAgentConfig(agentId);
+                const agentName = agentConfig ? agentConfig.name : agentId;
+                console.log(`   ${agentId} (${agentName}): logs/${file}`);
+            });
+
+            console.log(`\n📝 Next Steps:`);
+            console.log(`   1. Read the research topic (questions and scope)`);
+            console.log(`   2. Write your findings to YOUR findings file only`);
+            console.log(`   3. Do NOT modify other agents' files or the main doc`);
+            console.log(`\n⚠️  IMPORTANT:`);
+            console.log(`   - Do NOT run 'aigon research-done' from an agent session`);
+            console.log(`   - The user will run 'aigon research-done ${num}' to synthesize`);
+        } else {
+            console.log(`\n📝 Next Steps:`);
+            console.log(`   1. Read the research topic`);
+            console.log(`   2. Conduct research based on questions and scope`);
+            console.log(`   3. Write findings to the ## Findings section of the topic file`);
+            console.log(`   4. Include sources and recommendation`);
+            console.log(`\n   When done: aigon research-done ${num}`);
         }
     },
     'research-done': (args) => {
@@ -1807,7 +1861,8 @@ Feature Commands (unified for solo and arena modes):
 Research (unified for solo and arena modes):
   research-create <name>            Create research topic in inbox
   research-prioritise <name>        Move research from inbox to backlog (assigns ID)
-  research-start <ID> [agents...]   Start solo (no agents) or arena (with agents) research
+  research-setup <ID> [agents...]   Setup solo (no agents) or arena (with agents) research
+  research-conduct <ID>             Conduct research (agent writes findings)
   research-done <ID> [--complete]   Complete research (shows summary in arena mode)
 
 Examples:
@@ -1827,8 +1882,9 @@ Examples:
   # Research workflow
   aigon research-create "api-design"   # Create new research topic
   aigon research-prioritise api-design # Assign ID, move to backlog
-  aigon research-start 05              # Solo mode (one agent)
-  aigon research-start 05 cc gg        # Arena mode (multiple agents)
+  aigon research-setup 05              # Solo mode (one agent)
+  aigon research-setup 05 cc gg        # Arena mode (multiple agents)
+  aigon research-conduct 05            # Agent conducts research
   aigon research-done 05               # Shows findings summary (arena)
   aigon research-done 05 --complete    # Complete research
 
