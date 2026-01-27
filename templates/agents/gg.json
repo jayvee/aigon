@@ -41,7 +41,9 @@
     "feature-cleanup",
     "research-create",
     "research-prioritise",
-    "research-start",
+    "research-setup",
+    "research-conduct",
+    "research-synthesize",
     "research-done",
     "help"
   ]
