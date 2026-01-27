@@ -2,7 +2,7 @@
 
 ## Summary
 
-Enable arena mode for research topics where multiple AI models (Claude, Gemini, Codex) contribute findings simultaneously. Unlike feature arena mode which uses separate worktrees and branches, research arena uses a simpler approach: each model writes to its own findings file on the same branch. This feature extends existing commands (`research-start`, `research-done`) rather than adding new ones.
+Enable arena mode for research topics where multiple AI models (Claude, Gemini, Codex) contribute findings simultaneously. Unlike feature arena mode which uses separate worktrees and branches, research arena uses a simpler approach: each model writes to its own findings file on the same branch. This feature introduces `research-setup` (for solo/arena setup) and `research-conduct` (for agents to write findings), mirroring the feature workflow pattern.
 
 ## User Stories
 
@@ -13,9 +13,9 @@ Enable arena mode for research topics where multiple AI models (Claude, Gemini, 
 
 ## Acceptance Criteria
 
-- [ ] `research-start <ID> [agents...]` extended to support arena mode when agents specified
+- [ ] `research-setup <ID> [agents...]` extended to support arena mode when agents specified
 - [ ] `research-done <ID>` extended to detect arena mode and display findings summary
-- [ ] Agent command template `research-start` updated to be arena-aware (detects findings file)
+- [ ] Agent command template `research-conduct` created for agents to write findings (arena-aware)
 - [ ] Findings files created in `docs/specs/research-topics/logs/`
 - [ ] Main research doc remains authoritative record; findings files are supporting evidence
 - [ ] No new CLI commands required
@@ -28,8 +28,8 @@ Extend existing commands with optional parameters rather than creating new comma
 
 | Command | Current Behavior | Extended Behavior |
 |---------|------------------|-------------------|
-| `research-start <ID>` | Move to in-progress | Same (solo mode) |
-| `research-start <ID> <agents...>` | N/A | Create findings files + move to in-progress (arena mode) |
+| `research-setup <ID>` | Move to in-progress | Same (solo mode) |
+| `research-setup <ID> <agents...>` | N/A | Create findings files + move to in-progress (arena mode) |
 | `research-done <ID>` | Move to done | Auto-detect mode; show findings summary if arena |
 
 ### Solo Mode vs Arena Mode
@@ -38,7 +38,7 @@ Extend existing commands with optional parameters rather than creating new comma
 
 **When to use:** One agent researches a topic independently.
 
-**Command:** `aigon research-start <ID>`
+**Command:** `aigon research-setup <ID>`
 
 **Behavior:**
 - Moves research file from `02-backlog/` to `03-in-progress/`
@@ -56,8 +56,8 @@ docs/specs/research-topics/
 ```
 aigon research-create topic-name
 aigon research-prioritise topic-name     → ID: 05
-aigon research-start 05                  → solo mode
-[Run agent] /aigon-research-start 05     → writes to main doc
+aigon research-setup 05                  → solo mode
+[Run agent] /aigon-research-conduct 05    → writes to main doc
 aigon research-done 05                   → moves to done
 ```
 
@@ -75,7 +75,7 @@ Write your findings in the ## Findings section of this document.
 
 **When to use:** Multiple agents research the same topic to get diverse perspectives.
 
-**Command:** `aigon research-start <ID> <agent1> <agent2> [...]`
+**Command:** `aigon research-setup <ID> <agent1> <agent2> [...]`
 
 **Behavior:**
 - Creates `logs/` directory if needed
@@ -97,9 +97,9 @@ docs/specs/research-topics/
 ```
 aigon research-create topic-name
 aigon research-prioritise topic-name     → ID: 05
-aigon research-start 05 cc gg            → arena mode, creates findings files
-[Run Claude]  /aigon-research-start 05   → writes to research-05-cc-findings.md
-[Run Gemini]  /aigon:research-start 05   → writes to research-05-gg-findings.md
+aigon research-setup 05 cc gg            → arena mode, creates findings files
+[Run Claude]  /aigon-research-conduct 05  → writes to research-05-cc-findings.md
+[Run Gemini]  /aigon:research-conduct 05 → writes to research-05-gg-findings.md
 aigon research-done 05                   → shows summary, moves to done
 ```
 
@@ -123,7 +123,7 @@ Important:
 
 | Aspect | Solo Mode | Arena Mode |
 |--------|-----------|------------|
-| Command | `research-start 05` | `research-start 05 cc gg` |
+| Command | `research-setup 05` | `research-setup 05 cc gg` |
 | Agents | 1 | 2+ |
 | Findings location | Main research doc | Separate files per agent |
 | Files created | None | `research-{ID}-{agent}-findings.md` |
@@ -144,7 +144,7 @@ const isArenaMode = findingsFiles.length > 0;
 ```
 
 This allows:
-- `research-start 05 cc gg` to explicitly start arena mode
+- `research-setup 05 cc gg` to explicitly start arena mode
 - `research-done 05` to auto-detect and show summary
 - Agent commands to auto-detect and route to correct file
 
@@ -185,7 +185,7 @@ Next steps:
 
 ### Findings File Template
 
-Created by `research-start` in arena mode:
+Created by `research-setup` in arena mode:
 
 ```markdown
 # Research Findings: {TOPIC_NAME}
@@ -213,9 +213,9 @@ Created by `research-start` in arena mode:
 
 ### Implementation Changes
 
-**1. Extend `research-start` command**
+**1. Extend `research-setup` command**
 ```javascript
-case 'research-start':
+case 'research-setup':
   const [id, ...agents] = args;
 
   if (agents.length > 0) {
@@ -231,9 +231,9 @@ case 'research-start':
 
   // Output next steps
   if (agents.length > 0) {
-    console.log(`Arena mode: Run each agent with /aigon-research-start ${id}`);
+    console.log(`Arena mode: Run each agent with /aigon-research-conduct ${id}`);
   } else {
-    console.log(`Solo mode: Run agent with /aigon-research-start ${id}`);
+    console.log(`Solo mode: Run agent with /aigon-research-conduct ${id}`);
   }
 ```
 
@@ -253,12 +253,12 @@ case 'research-done':
   moveToDone(id);
 ```
 
-**3. Update agent command template: `research-start.md`**
+**3. Update agent command template: `research-conduct.md`**
 
 Make template arena-aware using conditional logic:
 
 ```markdown
-# Template: research-start.md
+# Template: research-conduct.md
 
 Read the research topic:
   `docs/specs/research-topics/03-in-progress/research-{ID}-*.md`
@@ -277,7 +277,7 @@ Document your findings in the ## Findings section of the research topic file.
 
 **4. New template: `research-findings-template.md`**
 - Standard structure for agent findings files
-- Used by `research-start` when creating arena findings files
+- Used by `research-setup` when creating arena findings files
 
 ---
 
@@ -296,11 +296,11 @@ Document your findings in the ## Findings section of the research topic file.
 ## Open Questions
 
 - Should findings files be archived after `research-done`? (e.g., move to `logs/archive/`)
-- Should `research-start` auto-commit the created findings files?
+- Should `research-setup` auto-commit the created findings files?
 - Should agents be able to append to findings (multiple contributions) or overwrite?
 
 ## Related
 
 - Feature arena mode: `feature-setup`, `feature-eval`
-- Research workflow: `research-create`, `research-start`, `research-done`
+- Research workflow: `research-create`, `research-setup`, `research-conduct`, `research-done`
 - Agent configs: `templates/agents/*.json`

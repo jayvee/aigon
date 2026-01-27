@@ -29,7 +29,8 @@
 |---------|-------------|
 | `aigon research-create <name>` | Create a new research topic |
 | `aigon research-prioritise <name>` | Prioritise a research topic |
-| `aigon research-start <ID>` | Start a research topic |
+| `aigon research-setup <ID> [agents...]` | Setup for solo or arena research |
+| `aigon research-conduct <ID>` | Conduct research (write findings) |
 | `aigon research-done <ID>` | Complete research topic |
 | `aigon help` | Show all Aigon commands |
 
