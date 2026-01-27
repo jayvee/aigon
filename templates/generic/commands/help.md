@@ -13,13 +13,14 @@
 | `{{CMD_PREFIX}}feature-done <ID> [agent]` | Merge and complete feature |
 | `{{CMD_PREFIX}}feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
-## Research
+## Research (unified for solo and arena modes)
 
 | Command | Description |
 |---------|-------------|
 | `{{CMD_PREFIX}}research-create <name>` | Create a new research topic |
 | `{{CMD_PREFIX}}research-prioritise <name>` | Prioritise a research topic |
-| `{{CMD_PREFIX}}research-start <ID>` | Start a research topic |
+| `{{CMD_PREFIX}}research-setup <ID> [agents...]` | Setup for solo or arena research |
+| `{{CMD_PREFIX}}research-conduct <ID>` | Conduct research (write findings) |
 | `{{CMD_PREFIX}}research-done <ID>` | Complete a research topic |
 
 Run `aigon help` in terminal for full CLI reference.
