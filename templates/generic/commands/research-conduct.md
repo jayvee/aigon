@@ -1,13 +1,13 @@
-<!-- description: Start research <ID> - moves to in-progress -->
-# aigon-research-start
+<!-- description: Conduct research <ID> - agent writes findings -->
+# aigon-research-conduct
 
 Run this command followed by the Research ID.
 
 ```bash
-aigon research-start {{ARG_SYNTAX}}
+aigon research-conduct {{ARG_SYNTAX}}
 ```
 
-This moves the research topic from `02-backlog/` to `03-in-progress/`.
+This command is for agents to conduct research after setup is complete.
 
 ## Your Task
 
