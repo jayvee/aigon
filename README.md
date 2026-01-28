@@ -183,6 +183,7 @@ aigon install-agent cc gg cx
 | `cc` | `claude` | Claude Code |
 | `gg` | `gemini` | Gemini CLI |
 | `cx` | `codex` | Codex |
+| `cu` | `cursor` | Cursor |
 
 **Generated Files:**
 ```
@@ -192,14 +193,18 @@ your-project/
 │   └── agents/
 │       ├── claude.md              # Claude-specific instructions
 │       ├── gemini.md              # Gemini-specific instructions
-│       └── codex.md               # Codex-specific instructions
+│       ├── codex.md               # Codex-specific instructions
+│       └── cursor.md              # Cursor-specific instructions
 ├── CLAUDE.md                      # Root file for Claude Code
 ├── GEMINI.md                      # Root file for Gemini CLI
 ├── .claude/                       # Claude skills & slash commands
 ├── .gemini/                       # Gemini command files
-└── .codex/                        # Codex prompts & config
-    ├── prompt.md                  # Project-level Codex instructions
-    └── config.toml                # Codex configuration
+├── .codex/                        # Codex prompts & config
+│   ├── prompt.md                  # Project-level Codex instructions
+│   └── config.toml                # Codex configuration
+└── .cursor/                       # Cursor commands & config
+    ├── commands/                  # Slash commands for Cursor
+    └── cli.json                   # CLI permissions configuration
 ```
 
 **Note:** Codex also installs global prompts in `~/.codex/prompts/` (shared across all projects).
@@ -413,6 +418,35 @@ When you run `aigon install-agent cx`, it installs slash commands to your **glob
 | `/prompts:aigon-research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
 | `/prompts:aigon-research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
 | `/prompts:aigon-help` | Shows all available Aigon commands |
+
+**Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Use `research-synthesize` to have an agent compare all findings, then user runs `research-done` to select features.
+
+### Cursor
+When you run `aigon install-agent cu`, it installs slash commands to your project's `.cursor/commands/` folder.
+
+**Note:** Cursor uses plain Markdown files without frontmatter. Commands are accessed by typing `/` in the Agent input.
+
+| Slash Command | Description |
+| :--- | :--- |
+| `/aigon-feature-create <name>` | Create a new feature spec |
+| `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
+| `/aigon-feature-implement <ID>` | Implement feature in current branch/worktree |
+| `/aigon-feature-eval <ID>` | Create evaluation template (code review or comparison) |
+| `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon-feature-cleanup <ID>` | Clean up arena worktrees and branches |
+
+#### Research
+
+| Slash Command | Description |
+| :--- | :--- |
+| `/aigon-research-create <name>` | Create a new research topic |
+| `/aigon-research-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon-research-setup <ID> [agents...]` | Setup research (solo or arena mode) |
+| `/aigon-research-conduct <ID>` | Conduct research (write findings) |
+| `/aigon-research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
+| `/aigon-research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
+| `/aigon-help` | Shows all available Aigon commands |
 
 **Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Use `research-synthesize` to have an agent compare all findings, then user runs `research-done` to select features.
 
