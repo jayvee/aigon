@@ -505,6 +505,10 @@ ${cleanContent.trim()}
 """
 `;
     }
+    else if (output.format === 'plain') {
+        // Plain markdown with no frontmatter (Cursor)
+        return cleanContent;
+    }
 
     return cleanContent;
 }
@@ -535,6 +539,14 @@ const AGENT_CONFIGS = {
         agentFile: 'codex.md',
         templatePath: 'docs/agents/codex.md',
         port: 3003
+    },
+    cu: {
+        id: 'cu',
+        name: 'Cursor',
+        rootFile: null,  // Cursor uses .cursorrules instead of a project root file
+        agentFile: 'cursor.md',
+        templatePath: 'docs/agents/cursor.md',
+        port: 3004
     }
 };
 
@@ -873,11 +885,11 @@ const commands = {
         const mode = agentIds.length > 0 ? 'arena' : 'solo';
 
         if (!name) {
-            return console.error("Usage: aigon feature-setup <ID> [agents...]\n\nExamples:\n  aigon feature-setup 55              # Solo mode\n  aigon feature-setup 55 cc gg cx     # Arena mode");
+            return console.error("Usage: aigon feature-setup <ID> [agents...]\n\nExamples:\n  aigon feature-setup 55              # Solo mode\n  aigon feature-setup 55 cc gg cx cu     # Arena mode");
         }
 
         if (mode === 'arena' && agentIds.length < 2) {
-            return console.error("Arena mode requires at least 2 agents.\n\nExample: aigon feature-setup 55 cc gg cx");
+            return console.error("Arena mode requires at least 2 agents.\n\nExample: aigon feature-setup 55 cc gg cx cu");
         }
 
         // Find the feature first to get context for hooks
@@ -1648,10 +1660,11 @@ Branch: \`feature-${num}-${desc}\`
                         }
                     }
 
-                    // Add permissions (Claude)
+                    // Add permissions (Claude, Cursor)
                     if (extras.settings.permissions) {
                         if (!settings.permissions) settings.permissions = {};
                         if (!settings.permissions.allow) settings.permissions.allow = [];
+                        if (!settings.permissions.deny) settings.permissions.deny = [];
                         extras.settings.permissions.forEach(perm => {
                             if (!settings.permissions.allow.includes(perm)) {
                                 settings.permissions.allow.push(perm);
@@ -1741,6 +1754,15 @@ Branch: \`feature-${num}-${desc}\`
                             installedAgents.push(key);
                         }
                     }
+                } else if (key === 'cu') {
+                    // Cursor: check for .cursor/commands/ with aigon commands
+                    const cursorCmdsDir = path.join(process.cwd(), '.cursor', 'commands');
+                    if (fs.existsSync(cursorCmdsDir)) {
+                        const files = fs.readdirSync(cursorCmdsDir);
+                        if (files.some(f => f.startsWith('aigon-'))) {
+                            installedAgents.push(key);
+                        }
+                    }
                 }
             });
 
@@ -1784,7 +1806,7 @@ Branch: \`feature-${num}-${desc}\`
                 console.log(`\n📦 Re-installing agents: ${installedAgents.join(', ')}`);
                 commands['install-agent'](installedAgents);
             } else {
-                console.log(`\nℹ️  No agents detected. Run 'aigon install-agent <cc|gg|cx>' to install.`);
+                console.log(`\nℹ️  No agents detected. Run 'aigon install-agent <cc|gg|cx|cu>' to install.`);
             }
 
             console.log(`\n✅ Aigon updated successfully.`);
@@ -1845,7 +1867,7 @@ Usage: aigon <command> [arguments]
 
 Setup:
   init                              Initialize ./docs/specs directory structure
-  install-agent <agents...>         Install agent configs (cc, gg, cx)
+  install-agent <agents...>         Install agent configs (cc, gg, cx, cu)
   update                            Update Aigon files to latest version
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
 
@@ -1873,7 +1895,7 @@ Examples:
   aigon feature-create "dark-mode"     # Create new feature spec
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
   aigon feature-setup 55               # Solo mode (creates branch)
-  aigon feature-setup 55 cc gg cx      # Arena mode (creates worktrees)
+  aigon feature-setup 55 cc gg cx cu      # Arena mode (creates worktrees)
   aigon feature-implement 55           # Implement in current branch/worktree
   aigon feature-eval 55                # Evaluate implementations
   aigon feature-done 55 cc             # Merge Claude's arena implementation
