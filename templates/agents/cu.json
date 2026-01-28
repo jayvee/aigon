@@ -1,0 +1,51 @@
+{
+  "id": "cu",
+  "name": "Cursor",
+  "aliases": ["cursor", "cu"],
+
+  "placeholders": {
+    "AGENT_ID": "cu",
+    "AGENT_NAME": "Cursor",
+    "AGENT_TITLE": "Cursor Configuration",
+    "ARG_SYNTAX": "<args>",
+    "ARG1_SYNTAX": "<name>",
+    "CMD_PREFIX": "/aigon-"
+  },
+
+  "output": {
+    "format": "plain",
+    "commandDir": ".cursor/commands",
+    "commandFilePrefix": "aigon-",
+    "commandFileExtension": ".md",
+    "frontmatter": []
+  },
+
+  "rootFile": null,
+  "agentFile": "cursor.md",
+  "templatePath": "generic/docs/agent.md",
+
+  "extras": {
+    "settings": {
+      "enabled": true,
+      "path": ".cursor/cli.json",
+      "permissions": ["Shell(aigon:*)"]
+    }
+  },
+
+  "commands": [
+    "feature-create",
+    "feature-prioritise",
+    "feature-setup",
+    "feature-implement",
+    "feature-eval",
+    "feature-done",
+    "feature-cleanup",
+    "research-create",
+    "research-prioritise",
+    "research-setup",
+    "research-conduct",
+    "research-synthesize",
+    "research-done",
+    "help"
+  ]
+}

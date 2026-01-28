@@ -1,4 +1,3 @@
-<!-- description: Complete feature <ID> [agent] - merges branch and cleans up -->
 # aigon-feature-done
 
 Complete a feature by merging the implementation and cleaning up.
@@ -10,18 +9,18 @@ Complete a feature by merging the implementation and cleaning up.
 ## Usage
 
 ### Solo mode
-If you used `feature-setup {{ARG1_SYNTAX}}` (no agents):
+If you used `feature-setup <name>` (no agents):
 ```bash
-aigon feature-done {{ARG1_SYNTAX}}
+aigon feature-done <name>
 ```
 
 ### Arena mode
-If you used `feature-setup {{ARG1_SYNTAX}} cc gg cx cu`:
+If you used `feature-setup <name> cc gg cx`:
 ```bash
-aigon feature-done {{ARG1_SYNTAX}} <winning-agent>
+aigon feature-done <name> <winning-agent>
 ```
 
-Example: `aigon feature-done {{ARG1_SYNTAX}} cc` to merge Claude's implementation
+Example: `aigon feature-done <name> cc` to merge Claude's implementation
 
 ## What happens
 
@@ -54,15 +53,15 @@ Example: `aigon feature-done {{ARG1_SYNTAX}} cc` to merge Claude's implementatio
 After merging the winner, you'll see cleanup options for the losing implementations:
 
 ```bash
-aigon feature-cleanup {{ARG1_SYNTAX}}         # Delete locally
-aigon feature-cleanup {{ARG1_SYNTAX}} --push  # Push to remote first
+aigon feature-cleanup <name>         # Delete locally
+aigon feature-cleanup <name> --push  # Push to remote first
 ```
 
 Use `--push` if you want to preserve the alternative implementations on the remote repository.
 
 ## Important Notes
 
-- **Arena mode**: The agent parameter is REQUIRED (e.g., `cc`, `gg`, `cx`, `cu`)
+- **Arena mode**: The agent parameter is REQUIRED (e.g., `cc`, `gg`, `cx`)
 - **Do NOT run from a worktree**: Always run from the main repository
 - The command uses `--no-ff` merge to preserve feature history
 - Alternative implementations are preserved in `logs/alternatives/` for future reference
