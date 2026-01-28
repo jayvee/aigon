@@ -53,9 +53,9 @@ Example: `aigon feature-done {{ARG1_SYNTAX}} cc` to merge Claude's implementatio
 
 After merging the winner, you'll see cleanup options for the losing implementations:
 
-```bash
-aigon feature-cleanup {{ARG1_SYNTAX}}         # Delete locally
-aigon feature-cleanup {{ARG1_SYNTAX}} --push  # Push to remote first
+```
+{{CMD_PREFIX}}feature-cleanup {{ARG1_SYNTAX}}         # Delete locally
+{{CMD_PREFIX}}feature-cleanup {{ARG1_SYNTAX}} --push  # Push to remote first
 ```
 
 Use `--push` if you want to preserve the alternative implementations on the remote repository.

@@ -41,8 +41,11 @@ docs/specs/
 ```
 
 ### Feature Commands (Unified for Solo and Arena modes)
-| Command | Description |
-|---------|-------------|
+
+Commands can be run as CLI (`aigon feature-*`) or as slash commands in your agent (e.g., `/aigon-feature-*` for Claude Code).
+
+| CLI Command | Description |
+|-------------|-------------|
 | `aigon feature-create <name>` | Create a new feature spec |
 | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
 | `aigon feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |

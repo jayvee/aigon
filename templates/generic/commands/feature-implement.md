@@ -98,6 +98,6 @@ After completing steps 1-6:
    - Complete implementations in other agent worktrees
    - Return to the main repository
    - Run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` to compare all implementations
-   - Choose a winner and run `aigon feature-done {{ARG1_SYNTAX}} <winning-agent>`
+   - Choose a winner and run `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}} <winning-agent>`
 
 **This implementation session is complete.**

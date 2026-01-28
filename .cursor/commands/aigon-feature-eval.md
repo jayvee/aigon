@@ -91,8 +91,8 @@ After completing the evaluation:
 
 Once the user approves, tell them to run:
 
-```bash
-aigon feature-done <name>
+```
+/aigon-feature-done <name>
 ```
 
 ### Arena Mode
@@ -109,8 +109,8 @@ After completing the evaluation:
 
 Once the user has chosen, tell them to run (from the main repo, not a worktree):
 
-```bash
-aigon feature-done <name> <winning-agent>
+```
+/aigon-feature-done <name> <winning-agent>
 ```
 
-For example: `aigon feature-done <name> cc` if Claude's implementation wins.
+For example: `/aigon-feature-done <name> cc` if Claude's implementation wins.

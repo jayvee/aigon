@@ -97,6 +97,6 @@ After completing steps 1-6:
    - Complete implementations in other agent worktrees
    - Return to the main repository
    - Run `/aigon-feature-eval <name>` to compare all implementations
-   - Choose a winner and run `aigon feature-done <name> <winning-agent>`
+   - Choose a winner and run `/aigon-feature-done <name> <winning-agent>`
 
 **This implementation session is complete.**
