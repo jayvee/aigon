@@ -1,4 +1,3 @@
-<!-- description: Setup feature <ID> [agents...] - prepare workspace for implementation -->
 # aigon-feature-setup
 
 Prepare your workspace to implement a feature in either solo or arena mode.
@@ -7,10 +6,10 @@ Prepare your workspace to implement a feature in either solo or arena mode.
 
 ```bash
 # Solo mode (single agent, creates branch)
-aigon feature-setup {{ARG1_SYNTAX}}
+aigon feature-setup <name>
 
 # Arena mode (multiple agents, creates worktrees)
-aigon feature-setup {{ARG1_SYNTAX}} <agent1> <agent2> [agent3...]
+aigon feature-setup <name> <agent1> <agent2> [agent3...]
 ```
 
 ## Mode Selection
@@ -35,7 +34,7 @@ This will:
 
 Next steps:
 ```bash
-{{CMD_PREFIX}}feature-implement 55     # Start implementing
+/aigon-feature-implement 55     # Start implementing
 ```
 
 ## Arena Mode
@@ -44,7 +43,7 @@ Creates separate worktrees for multiple agents to implement in parallel.
 
 Example:
 ```bash
-aigon feature-setup 55 cc gg cx cu
+aigon feature-setup 55 cc gg cx
 ```
 
 This will:
@@ -53,15 +52,14 @@ This will:
   - `../feature-55-cc-description` (Claude Code)
   - `../feature-55-gg-description` (Gemini)
   - `../feature-55-cx-description` (Codex)
-  - `../feature-55-cu-description` (Cursor)
 - Create `.env.local` in each worktree with agent-specific PORT
 - Create implementation logs for each agent
 
 Next steps:
 1. Open each worktree in a separate editor window
-2. In each worktree, run `{{CMD_PREFIX}}feature-implement 55`
+2. In each worktree, run `/aigon-feature-implement 55`
 3. After all implementations complete, return to main repo
-4. Run `{{CMD_PREFIX}}feature-eval 55` to compare
+4. Run `/aigon-feature-eval 55` to compare
 
 ## Important Notes
 

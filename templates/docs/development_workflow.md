@@ -71,7 +71,7 @@ docs/specs/
 
 ## Arena Mode Workflow
 
-1. Run `aigon feature-setup <ID> cc gg cx` to create worktrees for each agent
+1. Run `aigon feature-setup <ID> cc gg cx cu` to create worktrees for each agent
 2. **STOP** - Tell the user to open each worktree in a separate session
 3. In each worktree session:
    - Run `aigon feature-implement <ID>`
