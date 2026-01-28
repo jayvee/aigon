@@ -12,13 +12,13 @@ This assigns an ID to the feature and moves it from `01-inbox/` to `02-backlog/`
 Next step - choose your mode:
 
 **Solo mode** (single agent):
-```bash
-aigon feature-setup <ID>
+```
+{{CMD_PREFIX}}feature-setup <ID>
 ```
 
 **Arena mode** (multiple agents compete):
-```bash
-aigon feature-setup <ID> <agent1> <agent2> [agent3...]
+```
+{{CMD_PREFIX}}feature-setup <ID> <agent1> <agent2> [agent3...]
 ```
 
-Example arena: `aigon feature-setup 55 cc gg cx cu`
+Example arena: `{{CMD_PREFIX}}feature-setup 55 cc gg cx cu`

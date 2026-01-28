@@ -6,78 +6,70 @@
 - **Worktree Pattern**: `../feature-NN-{{AGENT_ID}}-description`
 - **Implementation Log**: `./docs/specs/features/logs/feature-NN-{{AGENT_ID}}-log.md`
 
-## CLI Commands
+## Commands
 
-### Solo Mode
+### Feature Commands (unified for solo and arena modes)
 | Command | Description |
 |---------|-------------|
-| `aigon feature-create <name>` | Create a new feature spec |
-| `aigon feature-prioritise <name>` | Prioritise a feature draft |
-| `aigon feature-setup <ID>` | Setup feature branch |
-| `aigon feature-implement <ID>` | Implement feature |
-| `aigon feature-eval <ID>` | Create code review checklist |
-| `aigon feature-done <ID>` | Complete and merge feature |
+| `{{CMD_PREFIX}}feature-create <name>` | Create a new feature spec |
+| `{{CMD_PREFIX}}feature-prioritise <name>` | Assign ID and move to backlog |
+| `{{CMD_PREFIX}}feature-setup <ID> [agents...]` | Setup for solo (branch) or arena (worktrees) |
+| `{{CMD_PREFIX}}feature-implement <ID>` | Implement feature in current branch/worktree |
+| `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
+| `{{CMD_PREFIX}}feature-done <ID> [agent]` | Merge and complete feature |
+| `{{CMD_PREFIX}}feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
-### Arena Mode
+### Research Commands (unified for solo and arena modes)
 | Command | Description |
 |---------|-------------|
-| `aigon feature-setup <ID> <agents...>` | Create worktrees for multiple agents |
-| `aigon feature-implement <ID>` | Implement feature in current worktree |
-| `aigon feature-eval <ID>` | Compare implementations, propose winner |
-| `aigon feature-done <ID> <agent>` | Merge winning agent's implementation |
-| `aigon feature-cleanup <ID> [--push]` | Clean up losing worktrees and branches |
-
-### Research
-| Command | Description |
-|---------|-------------|
-| `aigon research-create <name>` | Create a new research topic |
-| `aigon research-prioritise <name>` | Prioritise a research topic |
-| `aigon research-setup <ID> [agents...]` | Setup for solo or arena research |
-| `aigon research-conduct <ID>` | Conduct research (write findings) |
-| `aigon research-done <ID>` | Complete research topic |
-| `aigon help` | Show all Aigon commands |
+| `{{CMD_PREFIX}}research-create <name>` | Create a new research topic |
+| `{{CMD_PREFIX}}research-prioritise <name>` | Prioritise a research topic |
+| `{{CMD_PREFIX}}research-setup <ID> [agents...]` | Setup for solo or arena research |
+| `{{CMD_PREFIX}}research-conduct <ID>` | Conduct research (write findings) |
+| `{{CMD_PREFIX}}research-done <ID>` | Complete research topic |
+| `{{CMD_PREFIX}}help` | Show all Aigon commands |
 
 ## Modes
 
-- **Solo mode**: `aigon feature-setup <ID>` - Creates branch only, work in current directory
-- **Arena mode**: `aigon feature-setup <ID> <agents...>` - Creates worktrees for parallel implementation
+- **Solo mode**: `{{CMD_PREFIX}}feature-setup <ID>` - Creates branch only, work in current directory
+- **Arena mode**: `{{CMD_PREFIX}}feature-setup <ID> <agents...>` - Creates worktrees for parallel implementation
 
 ## Critical Rules
 
 1. **Read the spec first**: Always check `./docs/specs/features/03-in-progress/` before coding
 2. **Work in isolation**: Solo mode uses branches, arena mode uses worktrees
 3. **Conventional commits**: Use `feat:`, `fix:`, `chore:` prefixes
-4. **Complete properly**: Use `aigon feature-done` for solo, `aigon feature-done <ID> {{AGENT_ID}}` for arena
+4. **Complete properly**: Use `{{CMD_PREFIX}}feature-done <ID>` for solo, `{{CMD_PREFIX}}feature-done <ID> {{AGENT_ID}}` for arena
 
 ## Solo Mode Workflow
 
-1. Run `aigon feature-setup <ID>` to create branch and move spec
-2. Run `aigon feature-implement <ID>` to begin implementation
+1. Run `{{CMD_PREFIX}}feature-setup <ID>` to create branch and move spec
+2. Run `{{CMD_PREFIX}}feature-implement <ID>` to begin implementation
 3. Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
 4. Implement the feature according to the spec
 5. Test your changes and wait for user confirmation
 6. Commit using conventional commits (`feat:`, `fix:`, `chore:`)
 7. Update the implementation log in `./docs/specs/features/logs/`
-8. **STOP** - Wait for user to approve before running `aigon feature-done <ID>`
+8. **STOP** - Wait for user to approve before running `{{CMD_PREFIX}}feature-done <ID>`
 
 ## Arena Mode Workflow
 
-1. Run `aigon feature-setup <ID> cc cx gg cu` to create worktrees for each agent
+1. Run `{{CMD_PREFIX}}feature-setup <ID> cc cx gg cu` to create worktrees for each agent
 2. **STOP** - Tell the user to open the worktree in a separate session
 3. In the worktree session:
-   - Run `aigon feature-implement <ID>`
+   - Run `{{CMD_PREFIX}}feature-implement <ID>`
    - Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
    - Implement the feature
    - Commit your changes
    - Update the implementation log
    - **STOP** - Do NOT run `feature-done` from worktree
-4. Return to main repo for evaluation: `aigon feature-eval <ID>`
-5. Merge winner: `aigon feature-done <ID> cx`
-6. Clean up losers: `aigon feature-cleanup <ID> --push` (to save branches) or `aigon feature-cleanup <ID>` (to delete)
+4. Return to main repo for evaluation: `{{CMD_PREFIX}}feature-eval <ID>`
+5. Merge winner: `{{CMD_PREFIX}}feature-done <ID> cx`
+6. Clean up losers: `{{CMD_PREFIX}}feature-cleanup <ID> --push` (to save branches) or `{{CMD_PREFIX}}feature-cleanup <ID>` (to delete)
 
 ## Before Completing a Feature
 
-Before running `feature-done`, always:
+Before running `{{CMD_PREFIX}}feature-done`, always:
 
 1. **Push the branch to origin** to save your work remotely:
    ```bash

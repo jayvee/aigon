@@ -9,4 +9,4 @@ aigon research-create {{ARG_SYNTAX}}
 
 This creates a new research topic in `./docs/specs/research-topics/01-inbox/`.
 
-Next step: Edit the topic, then run `aigon research-prioritise {{ARG_SYNTAX}}` to assign an ID and move to backlog.
+Next step: Edit the topic, then run `{{CMD_PREFIX}}research-prioritise {{ARG_SYNTAX}}` to assign an ID and move to backlog.

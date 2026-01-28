@@ -92,8 +92,8 @@ After completing the evaluation:
 
 Once the user approves, tell them to run:
 
-```bash
-aigon feature-done {{ARG1_SYNTAX}}
+```
+{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}}
 ```
 
 ### Arena Mode
@@ -110,8 +110,8 @@ After completing the evaluation:
 
 Once the user has chosen, tell them to run (from the main repo, not a worktree):
 
-```bash
-aigon feature-done {{ARG1_SYNTAX}} <winning-agent>
+```
+{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}} <winning-agent>
 ```
 
-For example: `aigon feature-done {{ARG1_SYNTAX}} cc` if Claude's implementation wins.
+For example: `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}} cc` if Claude's implementation wins.
