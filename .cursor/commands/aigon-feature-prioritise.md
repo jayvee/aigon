@@ -20,4 +20,4 @@ Next step - choose your mode:
 /aigon-feature-setup <ID> <agent1> <agent2> [agent3...]
 ```
 
-Example arena: `/aigon-feature-setup 55 cc gg cx`
+Example arena: `/aigon-feature-setup 55 cc gg cx cu`

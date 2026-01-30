@@ -41,11 +41,8 @@ docs/specs/
 ```
 
 ### Feature Commands (Unified for Solo and Arena modes)
-
-Commands can be run as CLI (`aigon feature-*`) or as slash commands in your agent (e.g., `/aigon-feature-*` for Claude Code).
-
-| CLI Command | Description |
-|-------------|-------------|
+| Command | Description |
+|---------|-------------|
 | `aigon feature-create <name>` | Create a new feature spec |
 | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
 | `aigon feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
@@ -74,7 +71,7 @@ Commands can be run as CLI (`aigon feature-*`) or as slash commands in your agen
 
 ## Arena Mode Workflow
 
-1. Run `aigon feature-setup <ID> cc gg cx` to create worktrees for each agent
+1. Run `aigon feature-setup <ID> cc gg cx cu` to create worktrees for each agent
 2. **STOP** - Tell the user to open each worktree in a separate session
 3. In each worktree session:
    - Run `aigon feature-implement <ID>`

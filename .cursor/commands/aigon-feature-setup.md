@@ -43,7 +43,7 @@ Creates separate worktrees for multiple agents to implement in parallel.
 
 Example:
 ```bash
-aigon feature-setup 55 cc gg cx
+aigon feature-setup 55 cc gg cx cu
 ```
 
 This will:
@@ -52,6 +52,7 @@ This will:
   - `../feature-55-cc-description` (Claude Code)
   - `../feature-55-gg-description` (Gemini)
   - `../feature-55-cx-description` (Codex)
+  - `../feature-55-cu-description` (Cursor)
 - Create `.env.local` in each worktree with agent-specific PORT
 - Create implementation logs for each agent
 
