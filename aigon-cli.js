@@ -380,6 +380,29 @@ function safeWrite(filePath, content) {
     fs.writeFileSync(filePath, content);
 }
 
+function removeDeprecatedCommands(cmdDir, config) {
+    if (!fs.existsSync(cmdDir)) return [];
+
+    const prefix = config.output.commandFilePrefix;
+    const ext = config.output.commandFileExtension;
+    const expectedFiles = new Set(
+        config.commands.map(cmd => `${prefix}${cmd}${ext}`)
+    );
+
+    const removed = [];
+    for (const file of fs.readdirSync(cmdDir)) {
+        if (!file.startsWith(prefix) || !file.endsWith(ext)) continue;
+        if (expectedFiles.has(file)) continue;
+        try {
+            fs.unlinkSync(path.join(cmdDir, file));
+            removed.push(file);
+        } catch (e) {
+            console.warn(`   ⚠️  Could not remove deprecated command ${file}: ${e.message}`);
+        }
+    }
+    return removed;
+}
+
 // Append or replace content between markers in a file
 const MARKER_START = '<!-- AIGON_START -->';
 const MARKER_END = '<!-- AIGON_END -->';
@@ -1628,11 +1651,16 @@ Branch: \`feature-${num}-${desc}\`
                         safeWrite(path.join(cmdDir, fileName), outputContent);
                     });
 
+                    const removed = removeDeprecatedCommands(cmdDir, config);
+
                     if (config.output.global) {
                         console.log(`   ✅ Installed global prompts: ${config.output.commandDir}`);
                         console.log(`   ⚠️  Note: Codex prompts are global (shared across all projects)`);
                     } else {
                         console.log(`   ✅ Created: ${config.output.commandDir}/*`);
+                    }
+                    if (removed.length > 0) {
+                        console.log(`   🧹 Removed ${removed.length} deprecated command(s): ${removed.join(', ')}`);
                     }
                 }
 

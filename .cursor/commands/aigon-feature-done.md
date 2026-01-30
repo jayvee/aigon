@@ -15,7 +15,7 @@ aigon feature-done <name>
 ```
 
 ### Arena mode
-If you used `feature-setup <name> cc gg cx`:
+If you used `feature-setup <name> cc gg cx cu`:
 ```bash
 aigon feature-done <name> <winning-agent>
 ```
@@ -61,7 +61,7 @@ Use `--push` if you want to preserve the alternative implementations on the remo
 
 ## Important Notes
 
-- **Arena mode**: The agent parameter is REQUIRED (e.g., `cc`, `gg`, `cx`)
+- **Arena mode**: The agent parameter is REQUIRED (e.g., `cc`, `gg`, `cx`, `cu`)
 - **Do NOT run from a worktree**: Always run from the main repository
 - The command uses `--no-ff` merge to preserve feature history
 - Alternative implementations are preserved in `logs/alternatives/` for future reference
