@@ -22,9 +22,11 @@ The command will:
 
 Read the spec in `./docs/specs/features/03-in-progress/feature-{{ARG1_SYNTAX}}-*.md`
 
-## Step 3: Implement
+## Step 3: Implement and break into tasks from acceptance criteria
 
-Implement the feature according to the spec.
+Before writing code, create a task for each **Acceptance Criterion** from the spec. This gives the user visibility into implementation progress via the task list.
+
+Then implement the feature according to the spec. Mark tasks as in-progress when you start working on them, and completed when satisfied. If you discover sub-tasks during implementation, add them to the list.
 
 **For arena mode:** Use relative paths throughout implementation. Maintain the worktree directory as your working directory.
 
