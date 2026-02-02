@@ -1,8 +1,15 @@
 # aigon-feature-implement
 
-Implement a feature. Works in both solo mode (branch) and arena mode (worktree).
+Implement a feature. Works in solo mode (branch), solo worktree mode (parallel development), and arena mode (competition).
 
 **IMPORTANT:** Run `/aigon-feature-setup <ID>` first to prepare your workspace.
+
+## Argument Resolution
+
+If no ID is provided, or the ID doesn't match an existing feature in progress:
+1. List all files in `./docs/specs/features/03-in-progress/` matching `feature-*.md`
+2. If a partial ID or name was given, filter to matches
+3. Present the matching features and ask the user to choose one
 
 ## Step 1: Run the CLI command
 
@@ -13,7 +20,7 @@ aigon feature-implement <name>
 ```
 
 The command will:
-- Detect if you're in a worktree (arena mode) or on a branch (solo mode)
+- Detect your mode: solo (branch), solo worktree, or arena
 - Display the spec location and log file
 - Show implementation steps
 
@@ -21,20 +28,22 @@ The command will:
 
 Read the spec in `./docs/specs/features/03-in-progress/feature-<name>-*.md`
 
-## Step 3: Implement
+## Step 3: Implement and break into tasks from acceptance criteria
 
-Implement the feature according to the spec.
+Before writing code, create a task for each **Acceptance Criterion** from the spec. This gives the user visibility into implementation progress via the task list.
 
-**For arena mode:** Use relative paths throughout implementation. Maintain the worktree directory as your working directory.
+Then implement the feature according to the spec. Mark tasks as in-progress when you start working on them, and completed when satisfied. If you discover sub-tasks during implementation, add them to the list.
+
+**For worktree modes (solo worktree or arena):** Use relative paths throughout implementation. Maintain the worktree directory as your working directory.
 
 ## Step 4: Test your changes
 
-### Solo Mode
+### Solo Mode (branch)
 - Start the dev server if needed
 - Test the changes
 - Ask the user to verify
 
-### Arena Mode
+### Worktree Mode (solo worktree or arena)
 - Check `.env.local` for your agent-specific PORT
 - Start dev server: `PORT=<port> npm run dev`
 - Test on `http://localhost:<port>`
@@ -52,8 +61,8 @@ pwd
 ```
 
 Expected output:
-- Solo mode: Main repository path
-- Arena mode: `.../feature-<name>-<agent>-<description>`
+- Solo mode (branch): Main repository path
+- Worktree mode: `.../feature-<name>-<agent>-<description>`
 
 **Now commit your changes:**
 1. Stage and commit your code changes using conventional commits (`feat:`, `fix:`, `chore:`)
@@ -62,8 +71,8 @@ Expected output:
 ## Step 6: Update and commit the log
 
 Find your implementation log:
-- Solo mode: `./docs/specs/features/logs/feature-<name>-*-log.md`
-- Arena mode: `./docs/specs/features/logs/feature-<name>-<agent>-*-log.md`
+- Solo mode (branch): `./docs/specs/features/logs/feature-<name>-*-log.md`
+- Worktree mode: `./docs/specs/features/logs/feature-<name>-<agent>-*-log.md`
 
 Update it with:
 - Key decisions made during implementation
@@ -75,7 +84,7 @@ Update it with:
 
 ## Step 7: STOP - Implementation complete
 
-### Solo Mode
+### Solo Mode (branch)
 
 **CRITICAL: Do NOT proceed to feature-done automatically.**
 
@@ -86,6 +95,17 @@ After completing steps 1-6:
    - Test the feature themselves
    - Optionally run `/aigon-feature-eval <name>` for code review
    - Approve with `/aigon-feature-done <name>`
+
+### Solo Worktree Mode
+
+**CRITICAL: Do NOT run `aigon feature-done` from a worktree.**
+
+After completing steps 1-6:
+1. Tell the user: "Implementation complete in this worktree. Ready for your review."
+2. **STOP** - The user needs to:
+   - Return to the main repository
+   - Optionally run `/aigon-feature-eval <name>` for code review
+   - Approve with `/aigon-feature-done <name>` (auto-detects the worktree)
 
 ### Arena Mode
 
