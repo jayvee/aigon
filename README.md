@@ -58,7 +58,7 @@ The architecture separates concerns into distinct, state-driven folders:
 Used for exploring complex topics before writing code. Files transition within the `./docs/specs/research-topics` folder. Research supports both **solo mode** (single agent) and **arena mode** (multiple agents with different perspectives).
 
 #### 1.1 Solo Mode (Single Agent)
-* **Create:** `aigon research-create "API Design"` creates a templated topic in `/01-inbox`.
+* **Create:** `aigon research-create "API Design"` creates a templated topic in `/01-inbox`. The agent **explores the codebase** before writing the topic to understand relevant existing code and constraints.
 * **Prioritise:** `aigon research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
 * **Setup:** `aigon research-setup 05` moves to `/03-in-progress`.
 * **Execute:** Run `/aigon-research-conduct 05`. Agent reads the topic file, writes findings and recommendations directly into the document.
@@ -68,7 +68,7 @@ Used for exploring complex topics before writing code. Files transition within t
 #### 1.2 Arena Mode (Multi-Agent Research)
 Run multiple agents to get diverse perspectives on a research topic.
 
-* **Create:** `aigon research-create "API Design"` creates a templated topic in `/01-inbox`.
+* **Create:** `aigon research-create "API Design"` creates a templated topic in `/01-inbox`. The agent **explores the codebase** first.
 * **Prioritise:** `aigon research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
 * **Setup Arena:** `aigon research-setup 05 cc gg cx`
     * Moves topic to `/03-in-progress`.
@@ -93,38 +93,43 @@ Used for shipping code based on a defined spec. Files transition within the `./d
 
 #### 2.1 Solo Mode (Single Agent)
 
+Solo mode supports two workspace styles: **branch** (work in the current repo) or **worktree** (isolated directory for parallel development).
+
 1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
+    * The agent **explores the codebase** before writing the spec to understand existing architecture, patterns, and constraints.
 2.  **Prioritise:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Setup:** `aigon feature-setup 108` (or `/aigon-feature-setup 108` in agent)
-    * Moves Spec to `/03-in-progress`.
-    * Creates a **Git Branch** (`feature-108-dark-mode`).
-    * **Auto-creates** a blank Implementation Log template.
-4.  **Implement:** Run `/aigon-feature-implement 108` in the agent
-    * Agent reads the feature spec and codes a solution.
-    * Agent *must* fill out the Implementation Log.
+3.  **Setup:**
+    * **Branch mode:** `aigon feature-setup 108` — creates a Git branch (`feature-108-dark-mode`) in the current repo.
+    * **Worktree mode:** `aigon feature-setup 108 cc` — creates an isolated worktree at `../<repo>-worktrees/feature-108-cc-dark-mode`, ideal for working on multiple features in parallel.
+    * Both modes auto-create a blank Implementation Log template.
+4.  **Implement:** Run `/aigon-feature-implement 108` in the agent (or from the worktree).
+    * Agent reads the feature spec and creates **tasks from the acceptance criteria** for progress tracking.
+    * Agent codes the solution and *must* fill out the Implementation Log.
 5.  **Evaluate (Optional):** `aigon feature-eval 108`
     * Creates code review checklist for the implementation.
 6.  **Finish:** `aigon feature-done 108`
     * Merges the branch and archives the log.
+    * For solo worktree mode, the agent is auto-detected — no need to specify it.
 
 #### 2.2 Arena Mode (Multi-Agent Competition)
 
 Run multiple agents in competition to find the optimal solution.
 
 1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
+    * The agent **explores the codebase** before writing the spec.
 2.  **Prioritise:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
 3.  **Setup Arena:** `aigon feature-setup 108 cc gg cx` (or `/aigon-feature-setup 108 cc gg cx`)
     * Moves Spec to `/03-in-progress`.
     * Creates agent-specific **Git Branches** (`feature-108-cc-dark-mode`, `feature-108-gg-dark-mode`, `feature-108-cx-dark-mode`).
-    * Creates **Git Worktrees** in sibling folders:
-        * `../feature-108-cc-dark-mode` (Claude)
-        * `../feature-108-gg-dark-mode` (Gemini)
-        * `../feature-108-cx-dark-mode` (Codex)
+    * Creates **Git Worktrees** in a grouped folder:
+        * `../<repo>-worktrees/feature-108-cc-dark-mode` (Claude)
+        * `../<repo>-worktrees/feature-108-gg-dark-mode` (Gemini)
+        * `../<repo>-worktrees/feature-108-cx-dark-mode` (Codex)
     * **Auto-creates** blank Implementation Log templates in each worktree.
     * **STOPS** - does not implement (user must open each worktree separately).
 4.  **Implement:** Open each worktree in a separate editor session and run `/aigon-feature-implement 108`.
     * Each agent builds the feature independently in their isolated worktree.
-    * Each agent *must* fill out their Implementation Log.
+    * Each agent creates **tasks from the acceptance criteria** and *must* fill out their Implementation Log.
 5.  **Evaluate:** Back in the main folder, switch to an eval model (eg sonnet) and run `aigon feature-eval 108`
     * Moves the feature to `/in-evaluation`.
     * Creates comparison template with all implementations.
@@ -224,10 +229,11 @@ The `aigon` command automates state transitions and Git operations. The workflow
 | :--- | :--- | :--- |
 | **Feature Create** | `aigon feature-create <name>` | Create a new feature spec in inbox |
 | **Feature Prioritise** | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
-| **Feature Setup** | `aigon feature-setup <ID> [agents...]` | Setup for implementation. Solo: creates branch. Arena: creates worktrees for multiple agents |
-| **Feature Implement** | `aigon feature-implement <ID>` | Auto-detects mode. Implements feature in current branch/worktree |
+| **Feature Setup** | `aigon feature-setup <ID> [agents...]` | Setup for implementation. No agents: branch. 1 agent: solo worktree. 2+: arena |
+| **Feature List** | `aigon feature-list [--flags]` | List features by status, mode, and location. Flags: `--all`, `--active`, `--inbox`, `--backlog`, `--done` |
+| **Feature Implement** | `aigon feature-implement <ID>` | Auto-detects mode (branch, solo worktree, arena). Implements feature |
 | **Feature Evaluate** | `aigon feature-eval <ID>` | Move to evaluation. Solo: code review checklist. Arena: comparison template |
-| **Feature Done** | `aigon feature-done <ID> [agent]` | Merge and complete. Solo: merge branch. Arena: merge winner's branch |
+| **Feature Done** | `aigon feature-done <ID> [agent]` | Merge and complete. Solo worktree auto-detects agent. Arena: specify winner |
 | **Feature Cleanup** | `aigon feature-cleanup <ID> [--push]` | Clean up arena mode worktrees and branches |
 
 ### Research Commands
@@ -345,7 +351,8 @@ When you run `aigon install-agent cc`, it installs special slash commands for Cl
 | :--- | :--- |
 | `/aigon-feature-create <name>` | Create a new feature spec |
 | `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
+| `/aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
+| `/aigon-feature-list` | List features by status, mode, and location |
 | `/aigon-feature-implement <ID>` | Implement feature in current branch/worktree |
 | `/aigon-feature-eval <ID>` | Create evaluation template (code review or comparison) |
 | `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
@@ -372,7 +379,8 @@ When you run `aigon install-agent gg`, it installs special slash commands for Ge
 | :--- | :--- |
 | `/aigon:feature-create <name>` | Create a new feature spec |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
+| `/aigon:feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
+| `/aigon:feature-list` | List features by status, mode, and location |
 | `/aigon:feature-implement <ID>` | Implement feature in current branch/worktree |
 | `/aigon:feature-eval <ID>` | Create evaluation template (code review or comparison) |
 | `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
@@ -401,7 +409,8 @@ When you run `aigon install-agent cx`, it installs slash commands to your **glob
 | :--- | :--- |
 | `/prompts:aigon-feature-create <name>` | Create a new feature spec |
 | `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
-| `/prompts:aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
+| `/prompts:aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
+| `/prompts:aigon-feature-list` | List features by status, mode, and location |
 | `/prompts:aigon-feature-implement <ID>` | Implement feature in current branch/worktree |
 | `/prompts:aigon-feature-eval <ID>` | Create evaluation template (code review or comparison) |
 | `/prompts:aigon-feature-done <ID> [agent]` | Merge and complete feature |
@@ -430,7 +439,8 @@ When you run `aigon install-agent cu`, it installs slash commands to your projec
 | :--- | :--- |
 | `/aigon-feature-create <name>` | Create a new feature spec |
 | `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
+| `/aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
+| `/aigon-feature-list` | List features by status, mode, and location |
 | `/aigon-feature-implement <ID>` | Implement feature in current branch/worktree |
 | `/aigon-feature-eval <ID>` | Create evaluation template (code review or comparison) |
 | `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
