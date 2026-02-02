@@ -91,7 +91,16 @@ Run multiple agents to get diverse perspectives on a research topic.
 ### 2. Feature Lifecycle
 Used for shipping code based on a defined spec. Files transition within the `./docs/specs/features` folder.
 
-#### 2.1 Solo Mode (Single Agent)
+#### 2.1 Fast-Track (Solo Branch)
+
+For features where you want to go from idea to implementation immediately:
+
+* **Now:** `aigon feature-now dark-mode` — creates spec directly in `/in-progress`, assigns an ID, creates a solo branch, and commits atomically. Then write the spec and implement in one session.
+* **Done:** `aigon feature-done <ID>` merges and completes.
+
+This skips the inbox/backlog/setup steps entirely. Use the `/aigon-feature-now` slash command for the full guided experience.
+
+#### 2.2 Solo Mode (Single Agent)
 
 Solo mode supports two workspace styles: **branch** (work in the current repo) or **worktree** (isolated directory for parallel development).
 
@@ -111,7 +120,7 @@ Solo mode supports two workspace styles: **branch** (work in the current repo) o
     * Merges the branch and archives the log.
     * For solo worktree mode, the agent is auto-detected — no need to specify it.
 
-#### 2.2 Arena Mode (Multi-Agent Competition)
+#### 2.3 Arena Mode (Multi-Agent Competition)
 
 Run multiple agents in competition to find the optimal solution.
 
@@ -228,6 +237,7 @@ The `aigon` command automates state transitions and Git operations. The workflow
 | Command | Usage | Description |
 | :--- | :--- | :--- |
 | **Feature Create** | `aigon feature-create <name>` | Create a new feature spec in inbox |
+| **Feature Now** | `aigon feature-now <name>` | Fast-track: create + prioritise + setup in one step (solo branch) |
 | **Feature Prioritise** | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
 | **Feature Setup** | `aigon feature-setup <ID> [agents...]` | Setup for implementation. No agents: branch. 1 agent: solo worktree. 2+: arena |
 | **Feature List** | `aigon feature-list [--flags]` | List features by status, mode, and location. Flags: `--all`, `--active`, `--inbox`, `--backlog`, `--done` |
@@ -303,6 +313,8 @@ done
 
 | Hook | Description |
 |------|-------------|
+| `pre-feature-now` | Runs before fast-track feature creation |
+| `post-feature-now` | Runs after fast-track feature creation completes |
 | `pre-feature-setup` | Runs before creating branch (solo) or worktrees (arena) |
 | `post-feature-setup` | Runs after setup completes |
 | `pre-feature-implement` | Runs before implementation begins |
@@ -350,6 +362,7 @@ When you run `aigon install-agent cc`, it installs special slash commands for Cl
 | Slash Command | Description |
 | :--- | :--- |
 | `/aigon-feature-create <name>` | Create a new feature spec |
+| `/aigon-feature-now <name>` | Fast-track: create + setup + implement in one step (solo branch) |
 | `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
 | `/aigon-feature-list` | List features by status, mode, and location |
@@ -378,6 +391,7 @@ When you run `aigon install-agent gg`, it installs special slash commands for Ge
 | Slash Command | Description |
 | :--- | :--- |
 | `/aigon:feature-create <name>` | Create a new feature spec |
+| `/aigon:feature-now <name>` | Fast-track: create + setup + implement in one step (solo branch) |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon:feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
 | `/aigon:feature-list` | List features by status, mode, and location |
@@ -408,6 +422,7 @@ When you run `aigon install-agent cx`, it installs slash commands to your **glob
 | Slash Command | Description |
 | :--- | :--- |
 | `/prompts:aigon-feature-create <name>` | Create a new feature spec |
+| `/prompts:aigon-feature-now <name>` | Fast-track: create + setup + implement in one step (solo branch) |
 | `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
 | `/prompts:aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
 | `/prompts:aigon-feature-list` | List features by status, mode, and location |
@@ -438,6 +453,7 @@ When you run `aigon install-agent cu`, it installs slash commands to your projec
 | Slash Command | Description |
 | :--- | :--- |
 | `/aigon-feature-create <name>` | Create a new feature spec |
+| `/aigon-feature-now <name>` | Fast-track: create + setup + implement in one step (solo branch) |
 | `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
 | `/aigon-feature-list` | List features by status, mode, and location |
