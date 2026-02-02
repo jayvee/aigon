@@ -7,6 +7,13 @@ Run this command followed by the feature name.
 aigon feature-prioritise {{ARG_SYNTAX}}
 ```
 
+## Argument Resolution
+
+If no name is provided, or the name doesn't match an existing feature in the inbox:
+1. List all files in `./docs/specs/features/01-inbox/` matching `feature-*.md`
+2. If a partial name was given, filter to files containing that text
+3. Present the matching features and ask the user to choose one
+
 This assigns an ID to the feature and moves it from `01-inbox/` to `02-backlog/`.
 
 Next step - choose your mode:
