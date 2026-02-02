@@ -2,17 +2,25 @@
 
 Complete a feature by merging the implementation and cleaning up.
 
+## Argument Resolution
+
+If no ID is provided, or the ID doesn't match an existing feature:
+1. List all files in `./docs/specs/features/03-in-progress/` and `./docs/specs/features/04-in-evaluation/` matching `feature-*.md`
+2. If a partial ID or name was given, filter to matches
+3. Present the matching features and ask the user to choose one
+
 ## Before running this command
 
 **Ask the user**: "Do you want to delete the local branch after merge?" (the CLI will delete it by default)
 
 ## Usage
 
-### Solo mode
-If you used `feature-setup <name>` (no agents):
+### Solo mode (branch or worktree)
+If you used `feature-setup <name>` or `feature-setup <name> <agent>`:
 ```bash
 aigon feature-done <name>
 ```
+The command auto-detects whether the feature uses a branch or a solo worktree.
 
 ### Arena mode
 If you used `feature-setup <name> cc gg cx cu`:
@@ -61,6 +69,7 @@ Use `--push` if you want to preserve the alternative implementations on the remo
 
 ## Important Notes
 
+- **Solo worktree**: The agent is auto-detected — no need to specify it
 - **Arena mode**: The agent parameter is REQUIRED (e.g., `cc`, `gg`, `cx`, `cu`)
 - **Do NOT run from a worktree**: Always run from the main repository
 - The command uses `--no-ff` merge to preserve feature history

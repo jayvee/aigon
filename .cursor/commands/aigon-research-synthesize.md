@@ -2,6 +2,13 @@
 
 Synthesize research findings from ALL agents, help the user select features, and update the main research document.
 
+## Argument Resolution
+
+If no ID is provided, or the ID doesn't match an existing topic in progress:
+1. List all files in `./docs/specs/research-topics/03-in-progress/` matching `research-*.md`
+2. If a partial ID or name was given, filter to matches
+3. Present the matching topics and ask the user to choose one
+
 ## Recommended: Use a Different Model
 
 For unbiased synthesis, use a **different model** than those that conducted the research.
