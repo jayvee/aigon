@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2026-02-02
+
+### Added
+- `feature-now` command — fast-track a feature from idea to implementation in one step (create + prioritise + setup, solo branch)
+- `feature-now` slash command template for guided spec writing and implementation
+- `feature-now` to all agent configs (cc, gg, cx, cu)
+- `pre-feature-now` / `post-feature-now` hook support
+- `feature-now` documentation in README (workflow, CLI reference, agent macros, hooks)
+
+## [2.4.0] - 2026-02-02
+
+### Added
+- `feature-list` command to show features by status, mode, and location
+- Solo worktree mode — `feature-setup <ID> <agent>` creates an isolated worktree for parallel development of multiple features
+- Argument resolution to slash command templates — agents can now resolve partial or missing IDs interactively
+- Worktree reorganization — worktrees grouped under `../<repo>-worktrees/` directory
+- `feature-done` auto-detects solo worktree agent
+
+### Changed
+- Slash command templates updated with codebase exploration before spec writing
+- Agents instructed to create tasks from acceptance criteria during implementation
+- README updated with solo worktree mode, feature-list, and worktree reorganization docs
+
 ## [2.3.0] - 2025-01-30
 
 ### Added
