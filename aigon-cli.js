@@ -59,6 +59,13 @@ const TEMPLATES_ROOT = path.join(__dirname, 'templates');
 const CLAUDE_SETTINGS_PATH = path.join(process.cwd(), '.claude', 'settings.json');
 const HOOKS_FILE_PATH = path.join(process.cwd(), 'docs', 'aigon-hooks.md');
 
+// --- Worktree Helpers ---
+
+function getWorktreeBase() {
+    const repoName = path.basename(process.cwd());
+    return `../${repoName}-worktrees`;
+}
+
 // --- Worktree Permission Helpers ---
 
 function addWorktreePermissions(worktreePaths) {
@@ -899,8 +906,9 @@ const commands = {
 
         console.log(`📋 Assigned ID: ${paddedId}`);
         console.log(`🚀 Next steps:`);
-        console.log(`   Solo mode: aigon feature-setup ${paddedId}`);
-        console.log(`   Arena mode: aigon feature-setup ${paddedId} <agent1> <agent2> [agent3]`);
+        console.log(`   Solo (branch):    aigon feature-setup ${paddedId}`);
+        console.log(`   Solo (worktree):  aigon feature-setup ${paddedId} <agent>`);
+        console.log(`   Arena:            aigon feature-setup ${paddedId} <agent1> <agent2> [agent3]`);
     },
     'feature-setup': (args) => {
         const name = args[0];
@@ -908,11 +916,7 @@ const commands = {
         const mode = agentIds.length > 0 ? 'arena' : 'solo';
 
         if (!name) {
-            return console.error("Usage: aigon feature-setup <ID> [agents...]\n\nExamples:\n  aigon feature-setup 55              # Solo mode\n  aigon feature-setup 55 cc gg cx cu     # Arena mode");
-        }
-
-        if (mode === 'arena' && agentIds.length < 2) {
-            return console.error("Arena mode requires at least 2 agents.\n\nExample: aigon feature-setup 55 cc gg cx cu");
+            return console.error("Usage: aigon feature-setup <ID> [agents...]\n\nExamples:\n  aigon feature-setup 55              # Solo mode (branch)\n  aigon feature-setup 55 cc           # Solo mode (worktree, for parallel development)\n  aigon feature-setup 55 cc gg cx cu  # Arena mode (multiple agents compete)");
         }
 
         // Find the feature first to get context for hooks
@@ -994,11 +998,16 @@ const commands = {
             console.log(`\n🚀 Solo mode. Ready to implement in current directory.`);
             console.log(`   When done: aigon feature-done ${num}`);
         } else {
-            // Arena mode: Create worktrees
+            // Arena/worktree mode: Create worktrees
+            const wtBase = getWorktreeBase();
+            if (!fs.existsSync(wtBase)) {
+                fs.mkdirSync(wtBase, { recursive: true });
+            }
+
             const createdWorktrees = [];
             agentIds.forEach(agentId => {
                 const branchName = `feature-${num}-${agentId}-${desc}`;
-                const worktreePath = `../feature-${num}-${agentId}-${desc}`;
+                const worktreePath = `${wtBase}/feature-${num}-${agentId}-${desc}`;
 
                 if (fs.existsSync(worktreePath)) {
                     console.warn(`⚠️  Worktree path ${worktreePath} already exists. Skipping.`);
@@ -1037,19 +1046,29 @@ const commands = {
             });
 
             // Add read permissions for all worktrees to Claude settings
-            const allWorktreePaths = agentIds.map(agentId => `../feature-${num}-${agentId}-${desc}`);
+            const allWorktreePaths = agentIds.map(agentId => `${wtBase}/feature-${num}-${agentId}-${desc}`);
             addWorktreePermissions(allWorktreePaths);
 
-            console.log(`\n🏁 Arena started with ${agentIds.length} agents!`);
-            console.log(`\n📂 Worktrees created:`);
-            agentIds.forEach(agentId => {
-                const agentConfig = AGENT_CONFIGS[agentId];
+            if (agentIds.length === 1) {
+                const agentConfig = AGENT_CONFIGS[agentIds[0]];
                 const port = agentConfig ? agentConfig.port : 3000;
-                console.log(`   ${agentId}: ../feature-${num}-${agentId}-${desc} (PORT=${port})`);
-            });
-            console.log(`\n💡 Next: Open each worktree in a separate editor/terminal`);
-            console.log(`   Run /aigon-feature-implement ${num} in each worktree`);
-            console.log(`   When done: aigon feature-eval ${num}`);
+                console.log(`\n🚀 Solo worktree created for parallel development!`);
+                console.log(`\n📂 Worktree: ${wtBase}/feature-${num}-${agentIds[0]}-${desc} (PORT=${port})`);
+                console.log(`\n💡 Next: Open the worktree in your editor/terminal`);
+                console.log(`   Run /aigon-feature-implement ${num} in the worktree`);
+                console.log(`   When done: aigon feature-done ${num}`);
+            } else {
+                console.log(`\n🏁 Arena started with ${agentIds.length} agents!`);
+                console.log(`\n📂 Worktrees created:`);
+                agentIds.forEach(agentId => {
+                    const agentConfig = AGENT_CONFIGS[agentId];
+                    const port = agentConfig ? agentConfig.port : 3000;
+                    console.log(`   ${agentId}: ${wtBase}/feature-${num}-${agentId}-${desc} (PORT=${port})`);
+                });
+                console.log(`\n💡 Next: Open each worktree in a separate editor/terminal`);
+                console.log(`   Run /aigon-feature-implement ${num} in each worktree`);
+                console.log(`   When done: aigon feature-eval ${num}`);
+            }
         }
 
         // Run post-hook (won't fail the command)
@@ -1074,8 +1093,6 @@ const commands = {
 
         let mode, agentId;
         if (worktreeMatch) {
-            // Arena mode: in a worktree
-            mode = 'arena';
             agentId = worktreeMatch[2];
 
             // Verify we're in the right worktree
@@ -1084,7 +1101,29 @@ const commands = {
                 console.warn(`⚠️  Warning: Directory feature ID (${wtNum}) doesn't match argument (${num})`);
             }
 
-            console.log(`\n🏟️  Arena Mode - Agent: ${agentId}`);
+            // Count worktrees for this feature to distinguish solo-wt from arena
+            let featureWorktreeCount = 0;
+            try {
+                const wtOutput = execSync('git worktree list', { encoding: 'utf8' });
+                const paddedNum = String(num).padStart(2, '0');
+                const unpaddedNum = String(parseInt(num, 10));
+                wtOutput.split('\n').forEach(line => {
+                    if (line.match(new RegExp(`feature-(${paddedNum}|${unpaddedNum})-\\w+-`))) {
+                        featureWorktreeCount++;
+                    }
+                });
+            } catch (e) {
+                // Default to arena if we can't count
+                featureWorktreeCount = 2;
+            }
+
+            mode = featureWorktreeCount > 1 ? 'arena' : 'solo-wt';
+
+            if (mode === 'arena') {
+                console.log(`\n🏟️  Arena Mode - Agent: ${agentId}`);
+            } else {
+                console.log(`\n🚀 Solo Mode (worktree) - Agent: ${agentId}`);
+            }
             console.log(`   Feature: ${num} - ${desc}`);
             console.log(`   Worktree: ${dirName}`);
         } else {
@@ -1119,7 +1158,7 @@ const commands = {
 
         // Show log file location
         const logDir = './docs/specs/features/logs/';
-        const logPattern = mode === 'arena' ? `feature-${num}-${agentId}-*-log.md` : `feature-${num}-*-log.md`;
+        const logPattern = (mode === 'arena' || mode === 'solo-wt') ? `feature-${num}-${agentId}-*-log.md` : `feature-${num}-*-log.md`;
         console.log(`📝 Log: ${logDir}${logPattern}`);
 
         console.log(`\n📝 Next Steps:`);
@@ -1135,6 +1174,11 @@ const commands = {
             console.log(`   - Do NOT run 'aigon feature-done' from a worktree`);
             console.log(`   - Return to main repo when done`);
             console.log(`   - Run 'aigon feature-eval ${num}' to compare implementations`);
+        } else if (mode === 'solo-wt') {
+            console.log(`\n⚠️  IMPORTANT:`);
+            console.log(`   - Do NOT run 'aigon feature-done' from a worktree`);
+            console.log(`   - Return to main repo when done`);
+            console.log(`   - Run 'aigon feature-done ${num}' from the main repo`);
         } else {
             console.log(`\n   When done: aigon feature-done ${num}`);
         }
@@ -1167,7 +1211,7 @@ const commands = {
                 const wtMatch = line.match(/^([^\s]+)\s+/);
                 if (!wtMatch) return;
                 const wtPath = wtMatch[1];
-                // Match worktrees for this feature: ../feature-10-cc-desc, ../feature-10-gg-desc
+                // Match worktrees for this feature by path pattern
                 const featureMatch = wtPath.match(new RegExp(`feature-${num}-(\\w+)-`));
                 if (featureMatch) {
                     const agentId = featureMatch[1];
@@ -1181,7 +1225,7 @@ const commands = {
             console.warn("⚠️  Could not list worktrees");
         }
 
-        const mode = worktrees.length > 0 ? 'arena' : 'solo';
+        const mode = worktrees.length > 1 ? 'arena' : 'solo';
 
         // Create evaluation template
         const evalsDir = path.join(PATHS.features.root, 'evaluations');
@@ -1233,6 +1277,10 @@ ${worktrees.map(w => `#### ${w.agent} (${w.name})
 `;
             } else {
                 // Solo mode: code review template
+                // Determine branch name: if there's a solo worktree, use its branch name
+                const soloBranch = worktrees.length === 1
+                    ? `feature-${num}-${worktrees[0].agent}-${desc}`
+                    : `feature-${num}-${desc}`;
                 evalTemplate = `# Evaluation: Feature ${num} - ${desc}
 
 **Mode:** Solo (Code review)
@@ -1241,7 +1289,7 @@ ${worktrees.map(w => `#### ${w.agent} (${w.name})
 See: \`./docs/specs/features/04-in-evaluation/${found.file}\`
 
 ## Implementation
-Branch: \`feature-${num}-${desc}\`
+Branch: \`${soloBranch}\`
 
 ## Code Review Checklist
 
@@ -1349,7 +1397,7 @@ Branch: \`feature-${num}-${desc}\`
         if (agentId) {
             // Multi-agent mode: feature-55-cc-dark-mode
             branchName = `feature-${num}-${agentId}-${desc}`;
-            worktreePath = `../feature-${num}-${agentId}-${desc}`;
+            worktreePath = `${getWorktreeBase()}/feature-${num}-${agentId}-${desc}`;
             mode = 'multi-agent';
         } else {
             // Solo mode: feature-55-dark-mode
@@ -1362,12 +1410,61 @@ Branch: \`feature-${num}-${desc}\`
         try {
             execSync(`git rev-parse --verify ${branchName}`, { encoding: 'utf8', stdio: 'pipe' });
         } catch (e) {
-            // Branch doesn't exist - maybe wrong mode?
-            const altBranch = agentId ? `feature-${num}-${desc}` : `feature-${num}-cc-${desc}`;
-            console.error(`❌ Branch not found: ${branchName}`);
-            console.error(`   Did you mean: aigon feature-done ${num}${agentId ? '' : ' <agent>'}?`);
-            console.error(`   Looking for: ${altBranch}`);
-            return;
+            if (agentId) {
+                // Explicit agent specified but branch not found
+                const altBranch = `feature-${num}-${desc}`;
+                console.error(`❌ Branch not found: ${branchName}`);
+                console.error(`   Did you mean: aigon feature-done ${num}?`);
+                console.error(`   Looking for: ${altBranch}`);
+                return;
+            }
+
+            // Solo branch not found — check for solo worktree (auto-detect)
+            let featureWorktrees = [];
+            try {
+                const wtOutput = execSync('git worktree list', { encoding: 'utf8' });
+                const paddedNum = String(num).padStart(2, '0');
+                const unpaddedNum = String(parseInt(num, 10));
+                wtOutput.split('\n').forEach(line => {
+                    const wtMatch = line.match(/^([^\s]+)\s+/);
+                    if (!wtMatch) return;
+                    const wtPath = wtMatch[1];
+                    const featureMatch = wtPath.match(new RegExp(`feature-(${paddedNum}|${unpaddedNum})-(\\w+)-`));
+                    if (featureMatch) {
+                        featureWorktrees.push({ path: wtPath, agent: featureMatch[2] });
+                    }
+                });
+            } catch (wtErr) {
+                // Ignore worktree listing errors
+            }
+
+            if (featureWorktrees.length === 1) {
+                // Auto-detect: single worktree = solo worktree mode
+                const detectedAgent = featureWorktrees[0].agent;
+                branchName = `feature-${num}-${detectedAgent}-${desc}`;
+                worktreePath = featureWorktrees[0].path;
+                mode = 'multi-agent';
+                console.log(`🔍 Auto-detected solo worktree (agent: ${detectedAgent})`);
+
+                // Verify this branch exists
+                try {
+                    execSync(`git rev-parse --verify ${branchName}`, { encoding: 'utf8', stdio: 'pipe' });
+                } catch (e2) {
+                    console.error(`❌ Branch not found: ${branchName}`);
+                    return;
+                }
+            } else if (featureWorktrees.length > 1) {
+                console.error(`❌ Branch not found: ${branchName}`);
+                console.error(`   Multiple worktrees found for feature ${num}. Specify the agent:`);
+                featureWorktrees.forEach(wt => {
+                    console.error(`   aigon feature-done ${num} ${wt.agent}`);
+                });
+                return;
+            } else {
+                console.error(`❌ Branch not found: ${branchName}`);
+                console.error(`   Run 'aigon feature-setup ${num}' first.`);
+                return;
+            }
         }
 
         // Push branch to origin before merging (to save work remotely)
@@ -1435,22 +1532,35 @@ Branch: \`feature-${num}-${desc}\`
             // May fail if no changes to commit, that's ok
         }
 
-        // Clean up worktree if it exists (multi-agent mode)
+        // Clean up worktree if it exists (multi-agent mode or solo-wt)
+        let worktreeRemoved = false;
         if (worktreePath && fs.existsSync(worktreePath)) {
             try {
                 execSync(`git worktree remove "${worktreePath}" --force`);
                 console.log(`🧹 Removed worktree: ${worktreePath}`);
+                worktreeRemoved = true;
             } catch (e) {
                 console.warn(`⚠️  Could not automatically remove worktree: ${worktreePath}`);
             }
         }
 
-        // Delete the merged (winning) branch locally
-        try {
-            runGit(`git branch -d ${branchName}`);
-            console.log(`🗑️  Deleted branch: ${branchName}`);
-        } catch (e) {
-            // Branch deletion is optional, don't fail if it doesn't work
+        // Delete the merged branch locally (skip if worktree removal already handled it)
+        if (worktreeRemoved) {
+            // Worktree removal may have already deleted the branch; clean up if it still exists
+            try {
+                execSync(`git rev-parse --verify ${branchName}`, { stdio: 'pipe' });
+                runGit(`git branch -d ${branchName}`);
+                console.log(`🗑️  Deleted branch: ${branchName}`);
+            } catch (e) {
+                // Branch already gone from worktree removal — expected
+            }
+        } else {
+            try {
+                runGit(`git branch -d ${branchName}`);
+                console.log(`🗑️  Deleted branch: ${branchName}`);
+            } catch (e) {
+                // Branch deletion is optional, don't fail if it doesn't work
+            }
         }
 
         // In multi-agent mode, handle losing branches
@@ -1570,6 +1680,130 @@ Branch: \`feature-${num}-${desc}\`
 
         // Run post-hook (won't fail the command)
         runPostHook('feature-cleanup', hookContext);
+    },
+    'feature-list': (args) => {
+        const flags = new Set(args.filter(a => a.startsWith('--')));
+        const showAll = flags.has('--all');
+        const showActive = flags.has('--active');
+        const showInbox = flags.has('--inbox');
+        const showBacklog = flags.has('--backlog');
+        const showDone = flags.has('--done');
+        const hasFilter = showAll || showActive || showInbox || showBacklog || showDone;
+
+        // Determine which folders to show
+        const folderFilter = new Set();
+        if (showAll) {
+            PATHS.features.folders.forEach(f => folderFilter.add(f));
+        } else if (hasFilter) {
+            if (showInbox) folderFilter.add('01-inbox');
+            if (showBacklog) folderFilter.add('02-backlog');
+            if (showActive) { folderFilter.add('03-in-progress'); folderFilter.add('04-in-evaluation'); }
+            if (showDone) folderFilter.add('05-done');
+        } else {
+            // Default: everything except done
+            PATHS.features.folders.forEach(f => { if (f !== '05-done') folderFilter.add(f); });
+        }
+
+        // Get worktree info for enriching in-progress features
+        const worktreeMap = {}; // featureNum -> [{ path, agent, branch }]
+        try {
+            const wtOutput = execSync('git worktree list', { encoding: 'utf8' });
+            wtOutput.split('\n').forEach(line => {
+                const wtMatch = line.match(/^([^\s]+)\s+/);
+                if (!wtMatch) return;
+                const wtPath = wtMatch[1];
+                const featureMatch = wtPath.match(/feature-(\d+)-(\w+)-(.+)$/);
+                if (featureMatch) {
+                    const fNum = featureMatch[1];
+                    const agent = featureMatch[2];
+                    if (!worktreeMap[fNum]) worktreeMap[fNum] = [];
+                    worktreeMap[fNum].push({ path: wtPath, agent });
+                }
+            });
+        } catch (e) {
+            // Ignore worktree listing errors
+        }
+
+        // Get current branch for solo branch detection
+        let currentBranch = '';
+        try {
+            currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
+        } catch (e) {
+            // Ignore
+        }
+
+        // Scan folders and collect features
+        const folderLabels = {
+            '01-inbox': 'Inbox',
+            '02-backlog': 'Backlog',
+            '03-in-progress': 'In Progress',
+            '04-in-evaluation': 'In Evaluation',
+            '05-done': 'Done',
+            '06-paused': 'Paused'
+        };
+
+        let totalCount = 0;
+
+        PATHS.features.folders.forEach(folder => {
+            if (!folderFilter.has(folder)) return;
+            const dir = path.join(PATHS.features.root, folder);
+            if (!fs.existsSync(dir)) return;
+
+            const files = fs.readdirSync(dir)
+                .filter(f => f.startsWith('feature-') && f.endsWith('.md'))
+                .sort();
+
+            if (files.length === 0) return;
+
+            const label = folderLabels[folder] || folder;
+            console.log(`\n${label} (${files.length}):`);
+
+            files.forEach(file => {
+                // Match both "feature-55-desc.md" (has ID) and "feature-desc.md" (no ID, inbox)
+                const idMatch = file.match(/^feature-(\d+)-(.*)\.md$/);
+                const noIdMatch = !idMatch && file.match(/^feature-(.*)\.md$/);
+                if (!idMatch && !noIdMatch) return;
+
+                const fNum = idMatch ? idMatch[1] : null;
+                const fDesc = idMatch ? idMatch[2] : noIdMatch[1];
+                totalCount++;
+
+                let detail = '';
+
+                if (folder === '03-in-progress' && fNum) {
+                    const wts = worktreeMap[fNum] || worktreeMap[String(parseInt(fNum, 10))] || [];
+                    if (wts.length === 0) {
+                        // Solo branch mode — check if branch exists
+                        const branchName = `feature-${fNum}-${fDesc}`;
+                        let branchExists = false;
+                        try {
+                            execSync(`git rev-parse --verify ${branchName}`, { stdio: 'pipe' });
+                            branchExists = true;
+                        } catch (e) {
+                            // Branch doesn't exist
+                        }
+                        const active = currentBranch === branchName ? ' *' : '';
+                        detail = branchExists ? `  solo (branch)${active}` : '';
+                    } else if (wts.length === 1) {
+                        detail = `  solo-wt (${wts[0].agent})  ${wts[0].path}`;
+                    } else {
+                        const agents = wts.map(w => w.agent).join(', ');
+                        detail = `  arena (${agents})`;
+                    }
+                }
+
+                const prefix = fNum ? `#${fNum}` : '   ';
+                console.log(`   ${prefix}  ${fDesc}${detail}`);
+            });
+        });
+
+        if (totalCount === 0) {
+            console.log('\nNo features found.');
+        }
+
+        if (!showAll && !showDone) {
+            console.log(`\nUse --all to include done features, --active for in-progress only.`);
+        }
     },
     'install-agent': (args) => {
         // Use new config-driven approach
