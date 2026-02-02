@@ -7,6 +7,13 @@ Run this command followed by the Research ID.
 aigon research-conduct {{ARG_SYNTAX}}
 ```
 
+## Argument Resolution
+
+If no ID is provided, or the ID doesn't match an existing topic in progress:
+1. List all files in `./docs/specs/research-topics/03-in-progress/` matching `research-*.md`
+2. If a partial ID or name was given, filter to matches
+3. Present the matching topics and ask the user to choose one
+
 This command is for agents to conduct research after setup is complete.
 
 ## Your Task
