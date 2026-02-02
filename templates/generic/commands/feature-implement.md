@@ -25,6 +25,14 @@ The command will:
 - Display the spec location and log file
 - Show implementation steps
 
+**If the CLI fails with "Could not find feature in in-progress"** and you're in a worktree: the spec move was likely not committed before the worktree was created. Fix by running these commands from the worktree:
+```bash
+# Bring the spec into this worktree from the main branch
+git checkout main -- docs/specs/features/03-in-progress/
+git commit -m "chore: sync spec to worktree branch"
+```
+Then re-run `aigon feature-implement`.
+
 ## Step 2: Read the spec
 
 Read the spec in `./docs/specs/features/03-in-progress/feature-{{ARG1_SYNTAX}}-*.md`
