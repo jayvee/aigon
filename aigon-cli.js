@@ -1047,6 +1047,12 @@ const commands = {
                 runGit(`git commit -m "chore: start feature ${num} - move spec to in-progress"`);
                 console.log(`📝 Committed spec move to in-progress`);
             } catch (e) {
+                if (mode !== 'solo') {
+                    console.error(`❌ Could not commit spec move: ${e.message}`);
+                    console.error(`   Worktrees require the spec move to be committed before creation.`);
+                    console.error(`   Fix any uncommitted changes and try again.`);
+                    return;
+                }
                 console.warn(`⚠️  Could not commit spec move: ${e.message}`);
             }
         }
@@ -1102,6 +1108,17 @@ const commands = {
                         runGit(`git worktree add ${worktreePath} -b ${branchName}`);
                         console.log(`📂 Worktree: ${worktreePath}`);
                         createdWorktrees.push({ agentId, worktreePath });
+
+                        // Verify spec exists in the worktree
+                        const wtSpecDir = path.join(worktreePath, 'docs', 'specs', 'features', '03-in-progress');
+                        const specExistsInWt = fs.existsSync(wtSpecDir) &&
+                            fs.readdirSync(wtSpecDir).some(f => f.startsWith(`feature-${num}-`) && f.endsWith('.md'));
+                        if (!specExistsInWt) {
+                            console.warn(`⚠️  Spec not found in worktree 03-in-progress.`);
+                            console.warn(`   The spec move may not have been committed. Run from the worktree:`);
+                            console.warn(`   git checkout main -- docs/specs/features/03-in-progress/`);
+                            console.warn(`   git commit -m "chore: sync spec to worktree branch"`);
+                        }
 
                         // Create .env.local with agent-specific PORT (copy base if exists)
                         const envLocalPath = path.join(process.cwd(), '.env.local');
