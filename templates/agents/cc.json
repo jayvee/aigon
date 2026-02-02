@@ -44,6 +44,7 @@
     "feature-eval",
     "feature-done",
     "feature-cleanup",
+    "feature-list",
     "research-create",
     "research-prioritise",
     "research-setup",

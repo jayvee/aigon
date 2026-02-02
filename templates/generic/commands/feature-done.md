@@ -9,11 +9,12 @@ Complete a feature by merging the implementation and cleaning up.
 
 ## Usage
 
-### Solo mode
-If you used `feature-setup {{ARG1_SYNTAX}}` (no agents):
+### Solo mode (branch or worktree)
+If you used `feature-setup {{ARG1_SYNTAX}}` or `feature-setup {{ARG1_SYNTAX}} <agent>`:
 ```bash
 aigon feature-done {{ARG1_SYNTAX}}
 ```
+The command auto-detects whether the feature uses a branch or a solo worktree.
 
 ### Arena mode
 If you used `feature-setup {{ARG1_SYNTAX}} cc gg cx cu`:
@@ -62,6 +63,7 @@ Use `--push` if you want to preserve the alternative implementations on the remo
 
 ## Important Notes
 
+- **Solo worktree**: The agent is auto-detected — no need to specify it
 - **Arena mode**: The agent parameter is REQUIRED (e.g., `cc`, `gg`, `cx`, `cu`)
 - **Do NOT run from a worktree**: Always run from the main repository
 - The command uses `--no-ff` merge to preserve feature history
