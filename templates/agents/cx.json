@@ -38,6 +38,7 @@
 
   "commands": [
     "feature-create",
+    "feature-now",
     "feature-prioritise",
     "feature-setup",
     "feature-implement",
