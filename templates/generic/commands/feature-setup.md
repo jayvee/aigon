@@ -16,6 +16,13 @@ aigon feature-setup {{ARG1_SYNTAX}} <agent>
 aigon feature-setup {{ARG1_SYNTAX}} <agent1> <agent2> [agent3...]
 ```
 
+## Argument Resolution
+
+If no ID is provided, or the ID doesn't match an existing feature in the backlog:
+1. List all files in `./docs/specs/features/02-backlog/` matching `feature-*.md`
+2. If a partial ID or name was given, filter to matches
+3. Present the matching features and ask the user to choose one
+
 ## Mode Selection
 
 The mode is determined automatically based on parameters:
