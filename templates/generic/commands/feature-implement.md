@@ -5,6 +5,13 @@ Implement a feature. Works in solo mode (branch), solo worktree mode (parallel d
 
 **IMPORTANT:** Run `{{CMD_PREFIX}}feature-setup <ID>` first to prepare your workspace.
 
+## Argument Resolution
+
+If no ID is provided, or the ID doesn't match an existing feature in progress:
+1. List all files in `./docs/specs/features/03-in-progress/` matching `feature-*.md`
+2. If a partial ID or name was given, filter to matches
+3. Present the matching features and ask the user to choose one
+
 ## Step 1: Run the CLI command
 
 This command detects whether you're in solo or arena mode and provides guidance.
