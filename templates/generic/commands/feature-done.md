@@ -14,6 +14,8 @@ If no ID is provided, or the ID doesn't match an existing feature:
 
 **Ask the user**: "Do you want to delete the local branch after merge?" (the CLI will delete it by default)
 
+If the user wants to **keep** the branch, add `--keep-branch` to the command.
+
 ## Usage
 
 ### Solo mode (branch or worktree)
