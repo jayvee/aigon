@@ -454,6 +454,93 @@ function safeWrite(filePath, content) {
     fs.writeFileSync(filePath, content);
 }
 
+// Returns 'created', 'updated', or 'unchanged'
+function safeWriteWithStatus(filePath, content) {
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    if (fs.existsSync(filePath)) {
+        const existing = fs.readFileSync(filePath, 'utf8');
+        if (existing === content) {
+            return 'unchanged';
+        }
+        fs.writeFileSync(filePath, content);
+        return 'updated';
+    }
+    fs.writeFileSync(filePath, content);
+    return 'created';
+}
+
+// Get the Aigon CLI version from package.json
+function getAigonVersion() {
+    const pkgPath = path.join(__dirname, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+        return pkg.version;
+    }
+    return null;
+}
+
+// Get/set the installed version for a project
+const VERSION_FILE = '.aigon/version';
+
+function getInstalledVersion() {
+    const versionPath = path.join(process.cwd(), VERSION_FILE);
+    if (fs.existsSync(versionPath)) {
+        return fs.readFileSync(versionPath, 'utf8').trim();
+    }
+    return null;
+}
+
+function setInstalledVersion(version) {
+    const versionPath = path.join(process.cwd(), VERSION_FILE);
+    safeWrite(versionPath, version);
+}
+
+// Parse changelog and return entries between two versions
+function getChangelogEntriesSince(fromVersion) {
+    const changelogPath = path.join(__dirname, 'CHANGELOG.md');
+    if (!fs.existsSync(changelogPath)) {
+        return [];
+    }
+
+    const content = fs.readFileSync(changelogPath, 'utf8');
+    const entries = [];
+
+    // Split by version headers: ## [x.y.z]
+    const versionPattern = /^## \[(\d+\.\d+\.\d+)\]/gm;
+    const sections = content.split(versionPattern);
+
+    // sections alternates: [preamble, version1, content1, version2, content2, ...]
+    for (let i = 1; i < sections.length; i += 2) {
+        const version = sections[i];
+        let body = sections[i + 1] || '';
+
+        // Remove the date suffix (e.g., " - 2026-02-02") from the start of body
+        body = body.replace(/^\s*-\s*\d{4}-\d{2}-\d{2}\s*/, '').trim();
+
+        // Stop if we've reached fromVersion or older
+        if (fromVersion && compareVersions(version, fromVersion) <= 0) {
+            break;
+        }
+
+        entries.push({ version, body });
+    }
+
+    return entries;
+}
+
+// Compare semver versions: returns >0 if a > b, <0 if a < b, 0 if equal
+function compareVersions(a, b) {
+    const pa = a.split('.').map(Number);
+    const pb = b.split('.').map(Number);
+    for (let i = 0; i < 3; i++) {
+        if (pa[i] > pb[i]) return 1;
+        if (pa[i] < pb[i]) return -1;
+    }
+    return 0;
+}
+
 function removeDeprecatedCommands(cmdDir, config) {
     if (!fs.existsSync(cmdDir)) return [];
 
@@ -2167,16 +2254,57 @@ Branch: \`${soloBranch}\`
                 return cfg ? cfg.name : a;
             }).join(', ');
             console.log(`\n🎉 Installed Aigon for: ${agentNames}`);
-            console.log(`\n📝 Remember to commit these files to Git so they're available in worktrees.`);
+
+            // Update installed version
+            const currentVersion = getAigonVersion();
+            if (currentVersion) {
+                setInstalledVersion(currentVersion);
+            }
+
+            // Git commit suggestion with copy-pasteable commands
+            console.log(`\n📝 To commit these changes:`);
+            console.log(`   git add docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: install Aigon v${currentVersion || 'latest'}"`);
 
         } catch (e) {
             console.error(`❌ Failed: ${e.message}`);
         }
     },
     'update': () => {
-        console.log("🔄 Updating Aigon installation...\n");
+        const currentVersion = getAigonVersion();
+        const installedVersion = getInstalledVersion();
+
+        console.log("🔄 Updating Aigon installation...");
+        if (installedVersion && currentVersion) {
+            console.log(`   ${installedVersion} → ${currentVersion}`);
+        } else if (currentVersion) {
+            console.log(`   Installing version ${currentVersion}`);
+        }
+        console.log();
+
+        // Show changelog entries since last installed version
+        if (installedVersion && currentVersion && compareVersions(currentVersion, installedVersion) > 0) {
+            const entries = getChangelogEntriesSince(installedVersion);
+            if (entries.length > 0) {
+                console.log(`📋 What's new since ${installedVersion}:\n`);
+                entries.forEach(entry => {
+                    console.log(`   ## ${entry.version}`);
+                    // Show just the section headers and first items, not full body
+                    const lines = entry.body.split('\n').filter(l => l.trim());
+                    lines.slice(0, 6).forEach(line => {
+                        console.log(`   ${line}`);
+                    });
+                    if (lines.length > 6) {
+                        console.log(`   ... (${lines.length - 6} more lines)`);
+                    }
+                    console.log();
+                });
+            }
+        }
 
         try {
+            // Track changed files for summary
+            const changes = { created: [], updated: [], unchanged: [] };
+
             // 1. Detect installed agents by checking for root files
             const installedAgents = [];
             Object.entries(AGENT_CONFIGS).forEach(([key, config]) => {
@@ -2225,8 +2353,11 @@ Branch: \`${soloBranch}\`
             // 3. Update shared workflow documentation
             const workflowPath = path.join(process.cwd(), 'docs', 'development_workflow.md');
             const workflowContent = readTemplate('docs/development_workflow.md');
-            safeWrite(workflowPath, workflowContent);
-            console.log(`✅ Updated: docs/development_workflow.md`);
+            const workflowStatus = safeWriteWithStatus(workflowPath, workflowContent);
+            changes[workflowStatus].push('docs/development_workflow.md');
+            if (workflowStatus !== 'unchanged') {
+                console.log(`✅ ${workflowStatus.charAt(0).toUpperCase() + workflowStatus.slice(1)}: docs/development_workflow.md`);
+            }
 
             // 4. Install/update spec templates
             const specsTemplatesDir = path.join(process.cwd(), 'docs', 'specs', 'templates');
@@ -2235,12 +2366,18 @@ Branch: \`${soloBranch}\`
             }
 
             const featureTemplate = readTemplate('specs/feature-template.md');
-            safeWrite(path.join(specsTemplatesDir, 'feature-template.md'), featureTemplate);
-            console.log(`✅ Updated: docs/specs/templates/feature-template.md`);
+            const featureStatus = safeWriteWithStatus(path.join(specsTemplatesDir, 'feature-template.md'), featureTemplate);
+            changes[featureStatus].push('docs/specs/templates/feature-template.md');
+            if (featureStatus !== 'unchanged') {
+                console.log(`✅ ${featureStatus.charAt(0).toUpperCase() + featureStatus.slice(1)}: docs/specs/templates/feature-template.md`);
+            }
 
             const researchTemplate = readTemplate('specs/research-template.md');
-            safeWrite(path.join(specsTemplatesDir, 'research-template.md'), researchTemplate);
-            console.log(`✅ Updated: docs/specs/templates/research-template.md`);
+            const researchStatus = safeWriteWithStatus(path.join(specsTemplatesDir, 'research-template.md'), researchTemplate);
+            changes[researchStatus].push('docs/specs/templates/research-template.md');
+            if (researchStatus !== 'unchanged') {
+                console.log(`✅ ${researchStatus.charAt(0).toUpperCase() + researchStatus.slice(1)}: docs/specs/templates/research-template.md`);
+            }
 
             // 5. Re-run install-agent for detected agents
             if (installedAgents.length > 0) {
@@ -2250,7 +2387,30 @@ Branch: \`${soloBranch}\`
                 console.log(`\nℹ️  No agents detected. Run 'aigon install-agent <cc|gg|cx|cu>' to install.`);
             }
 
-            console.log(`\n✅ Aigon updated successfully.`);
+            // 6. Update installed version
+            if (currentVersion) {
+                setInstalledVersion(currentVersion);
+            }
+
+            // Summary
+            const totalChanged = changes.created.length + changes.updated.length;
+            if (totalChanged === 0) {
+                console.log(`\n✅ Aigon is already up to date (v${currentVersion || 'unknown'}).`);
+            } else {
+                console.log(`\n✅ Aigon updated to v${currentVersion || 'unknown'}.`);
+                if (changes.created.length > 0) {
+                    console.log(`   Created: ${changes.created.length} file(s)`);
+                }
+                if (changes.updated.length > 0) {
+                    console.log(`   Updated: ${changes.updated.length} file(s)`);
+                }
+            }
+
+            // Git commit suggestion with copy-pasteable commands
+            if (totalChanged > 0) {
+                console.log(`\n📝 To commit these changes:`);
+                console.log(`   git add docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: update Aigon to v${currentVersion || 'latest'}"`);
+            }
 
         } catch (e) {
             console.error(`❌ Update failed: ${e.message}`);
