@@ -3,6 +3,12 @@
   "name": "Claude",
   "aliases": ["claude", "cc"],
 
+  "cli": {
+    "command": "claude",
+    "implementFlag": "--dangerously-skip-permissions",
+    "implementPrompt": "/aigon-feature-implement {featureId}"
+  },
+
   "placeholders": {
     "AGENT_ID": "cc",
     "AGENT_NAME": "Claude",
@@ -47,6 +53,7 @@
     "feature-done",
     "feature-cleanup",
     "feature-list",
+    "worktree-open",
     "research-create",
     "research-prioritise",
     "research-setup",

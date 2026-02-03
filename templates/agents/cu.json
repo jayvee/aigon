@@ -3,6 +3,12 @@
   "name": "Cursor",
   "aliases": ["cursor", "cu"],
 
+  "cli": {
+    "command": "agent",
+    "implementFlag": "--force",
+    "implementPrompt": "/aigon-feature-implement {featureId}"
+  },
+
   "placeholders": {
     "AGENT_ID": "cu",
     "AGENT_NAME": "Cursor",
@@ -43,6 +49,7 @@
     "feature-done",
     "feature-cleanup",
     "feature-list",
+    "worktree-open",
     "research-create",
     "research-prioritise",
     "research-setup",

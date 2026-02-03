@@ -3,6 +3,12 @@
   "name": "Gemini",
   "aliases": ["gemini", "gg"],
 
+  "cli": {
+    "command": "gemini",
+    "implementFlag": "--yolo",
+    "implementPrompt": "/aigon:feature-implement {featureId}"
+  },
+
   "placeholders": {
     "AGENT_ID": "gg",
     "AGENT_NAME": "Gemini",
@@ -42,6 +48,7 @@
     "feature-done",
     "feature-cleanup",
     "feature-list",
+    "worktree-open",
     "research-create",
     "research-prioritise",
     "research-setup",

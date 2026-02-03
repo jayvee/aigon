@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { execSync, spawnSync } = require('child_process');
 
 // --- Editor Detection & Auto-Open ---
@@ -58,6 +59,72 @@ const SPECS_ROOT = path.join(process.cwd(), 'docs', 'specs');
 const TEMPLATES_ROOT = path.join(__dirname, 'templates');
 const CLAUDE_SETTINGS_PATH = path.join(process.cwd(), '.claude', 'settings.json');
 const HOOKS_FILE_PATH = path.join(process.cwd(), 'docs', 'aigon-hooks.md');
+
+// --- Global User Configuration ---
+const GLOBAL_CONFIG_DIR = path.join(os.homedir(), '.aigon');
+const GLOBAL_CONFIG_PATH = path.join(GLOBAL_CONFIG_DIR, 'config.json');
+
+const DEFAULT_GLOBAL_CONFIG = {
+    terminal: 'warp',
+    agents: {
+        cc: { cli: 'claude' },
+        cu: { cli: 'agent' },
+        gg: { cli: 'gemini' },
+        cx: { cli: 'codex' }
+    }
+};
+
+/**
+ * Load global Aigon configuration from ~/.aigon/config.json
+ * @returns {Object} Merged config (defaults + user overrides)
+ */
+function loadGlobalConfig() {
+    let userConfig = {};
+    if (fs.existsSync(GLOBAL_CONFIG_PATH)) {
+        try {
+            userConfig = JSON.parse(fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf8'));
+        } catch (e) {
+            console.warn(`⚠️  Could not parse ~/.aigon/config.json: ${e.message}`);
+        }
+    }
+
+    // Deep merge: user config overrides defaults
+    const merged = { ...DEFAULT_GLOBAL_CONFIG };
+    if (userConfig.terminal) merged.terminal = userConfig.terminal;
+    if (userConfig.agents) {
+        merged.agents = { ...DEFAULT_GLOBAL_CONFIG.agents };
+        Object.entries(userConfig.agents).forEach(([key, value]) => {
+            merged.agents[key] = { ...merged.agents[key], ...value };
+        });
+    }
+
+    // Environment variable override for terminal
+    if (process.env.AIGON_TERMINAL) {
+        merged.terminal = process.env.AIGON_TERMINAL;
+    }
+
+    return merged;
+}
+
+/**
+ * Get the CLI command for an agent, with user override support
+ * @param {string} agentId - Agent ID (cc, cu, gg, cx)
+ * @returns {Object} CLI config with command, implementFlag, implementPrompt
+ */
+function getAgentCliConfig(agentId) {
+    const agentConfig = loadAgentConfig(agentId);
+    const globalConfig = loadGlobalConfig();
+
+    // Start with defaults from agent config
+    const cli = agentConfig?.cli || { command: agentId, implementFlag: '', implementPrompt: '' };
+
+    // Override command from global config if set
+    if (globalConfig.agents?.[agentId]?.cli) {
+        cli.command = globalConfig.agents[agentId].cli;
+    }
+
+    return cli;
+}
 
 // --- Worktree Helpers ---
 
@@ -1157,8 +1224,10 @@ const commands = {
                 const port = agentConfig ? agentConfig.port : 3000;
                 console.log(`\n🚀 Solo worktree created for parallel development!`);
                 console.log(`\n📂 Worktree: ${wtBase}/feature-${num}-${agentIds[0]}-${desc} (PORT=${port})`);
-                console.log(`\n💡 Next: Open the worktree in your editor/terminal`);
-                console.log(`   Run /aigon-feature-implement ${num} in the worktree`);
+                console.log(`\n💡 Next: Open the worktree with the agent CLI:`);
+                console.log(`   aigon worktree-open ${num}                    # Opens in configured terminal (default: Warp)`);
+                console.log(`   aigon worktree-open ${num} --terminal=code    # Opens in VS Code`);
+                console.log(`\n   Or manually: Open the worktree and run /aigon-feature-implement ${num}`);
                 console.log(`   When done: aigon feature-done ${num}`);
             } else {
                 console.log(`\n🏁 Arena started with ${agentIds.length} agents!`);
@@ -1168,8 +1237,11 @@ const commands = {
                     const port = agentConfig ? agentConfig.port : 3000;
                     console.log(`   ${agentId}: ${wtBase}/feature-${num}-${agentId}-${desc} (PORT=${port})`);
                 });
-                console.log(`\n💡 Next: Open each worktree in a separate editor/terminal`);
-                console.log(`   Run /aigon-feature-implement ${num} in each worktree`);
+                console.log(`\n💡 Next: Open each worktree with the agent CLI:`);
+                agentIds.forEach(agentId => {
+                    console.log(`   aigon worktree-open ${num} ${agentId}`);
+                });
+                console.log(`\n   Or manually: Open each worktree and run /aigon-feature-implement ${num}`);
                 console.log(`   When done: aigon feature-eval ${num}`);
             }
         }
@@ -2224,6 +2296,211 @@ Branch: \`${soloBranch}\`
         }
     },
 
+    'config': (args) => {
+        const subcommand = args[0];
+
+        if (subcommand === 'init') {
+            // Create default config file
+            if (!fs.existsSync(GLOBAL_CONFIG_DIR)) {
+                fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
+            }
+
+            if (fs.existsSync(GLOBAL_CONFIG_PATH)) {
+                console.log(`ℹ️  Config already exists: ${GLOBAL_CONFIG_PATH}`);
+                console.log(`   Edit it to customize agent CLI commands.`);
+                return;
+            }
+
+            fs.writeFileSync(GLOBAL_CONFIG_PATH, JSON.stringify(DEFAULT_GLOBAL_CONFIG, null, 2));
+            console.log(`✅ Created: ${GLOBAL_CONFIG_PATH}`);
+            console.log(`\n   You can customize:`);
+            console.log(`   - terminal: Terminal to use (currently only "warp" supported)`);
+            console.log(`   - agents.{id}.cli: Override CLI command for each agent`);
+        } else if (subcommand === 'show') {
+            const config = loadGlobalConfig();
+            console.log(`\n📋 Aigon Configuration:\n`);
+            console.log(JSON.stringify(config, null, 2));
+            console.log(`\n   Config file: ${GLOBAL_CONFIG_PATH}`);
+            console.log(`   Exists: ${fs.existsSync(GLOBAL_CONFIG_PATH) ? 'yes' : 'no (using defaults)'}`);
+        } else {
+            console.error(`Usage: aigon config <init|show>`);
+            console.error(`\n  init  - Create default config at ~/.aigon/config.json`);
+            console.error(`  show  - Show current configuration`);
+        }
+    },
+
+    'worktree-open': (args) => {
+        // Parse arguments: [feature-id] [agent-code] [--terminal=<type>]
+        let featureId = null;
+        let agentCode = null;
+        let terminalOverride = null;
+
+        args.forEach(arg => {
+            if (arg.startsWith('--terminal=')) {
+                terminalOverride = arg.split('=')[1];
+            } else if (arg.startsWith('-t=')) {
+                terminalOverride = arg.split('=')[1];
+            } else if (!featureId && /^\d+$/.test(arg)) {
+                featureId = arg;
+            } else if (!agentCode && !arg.startsWith('-')) {
+                agentCode = arg;
+            }
+        });
+
+        // Find worktrees
+        let worktrees = [];
+        try {
+            const wtOutput = execSync('git worktree list', { encoding: 'utf8' });
+            wtOutput.split('\n').forEach(line => {
+                const wtMatch = line.match(/^([^\s]+)\s+/);
+                if (!wtMatch) return;
+                const wtPath = wtMatch[1];
+                if (wtPath === process.cwd()) return; // Skip main worktree
+
+                // Parse worktree path: feature-{id}-{agent}-{desc}
+                const featureMatch = path.basename(wtPath).match(/^feature-(\d+)-(\w+)-(.+)$/);
+                if (featureMatch) {
+                    worktrees.push({
+                        path: wtPath,
+                        featureId: featureMatch[1],
+                        agent: featureMatch[2],
+                        desc: featureMatch[3],
+                        mtime: fs.existsSync(wtPath) ? fs.statSync(wtPath).mtime : new Date(0)
+                    });
+                }
+            });
+        } catch (e) {
+            return console.error(`❌ Could not list worktrees: ${e.message}`);
+        }
+
+        if (worktrees.length === 0) {
+            return console.error(`❌ No worktrees found.\n\n   Create one with: aigon feature-setup <ID> <agent>`);
+        }
+
+        // Filter by feature ID if provided
+        if (featureId) {
+            const paddedId = String(featureId).padStart(2, '0');
+            const unpaddedId = String(parseInt(featureId, 10));
+            worktrees = worktrees.filter(wt =>
+                wt.featureId === paddedId || wt.featureId === unpaddedId
+            );
+
+            if (worktrees.length === 0) {
+                return console.error(`❌ No worktrees found for feature ${featureId}`);
+            }
+        }
+
+        // Filter by agent if provided
+        if (agentCode) {
+            const agentMap = buildAgentAliasMap();
+            const normalizedAgent = agentMap[agentCode.toLowerCase()] || agentCode.toLowerCase();
+            worktrees = worktrees.filter(wt => wt.agent === normalizedAgent);
+
+            if (worktrees.length === 0) {
+                return console.error(`❌ No worktree found for feature ${featureId} with agent ${agentCode}`);
+            }
+        }
+
+        // Select worktree: if multiple, pick most recently modified
+        let selectedWt;
+        if (worktrees.length === 1) {
+            selectedWt = worktrees[0];
+        } else {
+            // Sort by mtime descending (most recent first)
+            worktrees.sort((a, b) => b.mtime - a.mtime);
+            selectedWt = worktrees[0];
+            console.log(`ℹ️  Multiple worktrees found, opening most recent:`);
+            worktrees.forEach((wt, i) => {
+                const marker = i === 0 ? '→' : ' ';
+                console.log(`   ${marker} ${wt.featureId}-${wt.agent}: ${wt.path}`);
+            });
+        }
+
+        // Get agent CLI config and determine terminal
+        const cliConfig = getAgentCliConfig(selectedWt.agent);
+        const globalConfig = loadGlobalConfig();
+        const terminal = terminalOverride || globalConfig.terminal;
+
+        // Build the agent command
+        const prompt = cliConfig.implementPrompt.replace('{featureId}', selectedWt.featureId);
+        let agentCommand;
+        if (cliConfig.implementFlag) {
+            agentCommand = `${cliConfig.command} ${cliConfig.implementFlag} "${prompt}"`;
+        } else {
+            agentCommand = `${cliConfig.command} "${prompt}"`;
+        }
+
+        // Open based on terminal type
+        if (terminal === 'warp') {
+            // Create Warp launch configuration
+            const wtBasename = path.basename(selectedWt.path);
+            const configName = `worktree-${wtBasename}`;
+            const warpConfigDir = path.join(os.homedir(), '.warp', 'launch_configurations');
+            const configFile = path.join(warpConfigDir, `${configName}.yaml`);
+
+            const yamlContent = `---
+name: ${configName}
+windows:
+  - tabs:
+      - layout:
+          cwd: "${selectedWt.path}"
+          commands:
+            - exec: ${agentCommand}
+`;
+
+            try {
+                if (!fs.existsSync(warpConfigDir)) {
+                    fs.mkdirSync(warpConfigDir, { recursive: true });
+                }
+                fs.writeFileSync(configFile, yamlContent);
+                execSync(`open "warp://launch/${configName}"`);
+
+                console.log(`\n🚀 Opening worktree in Warp:`);
+                console.log(`   Feature: ${selectedWt.featureId} - ${selectedWt.desc}`);
+                console.log(`   Agent: ${selectedWt.agent}`);
+                console.log(`   Path: ${selectedWt.path}`);
+                console.log(`   Command: ${agentCommand}`);
+            } catch (e) {
+                console.error(`❌ Failed to open Warp: ${e.message}`);
+            }
+        } else if (terminal === 'code' || terminal === 'vscode') {
+            // Open in VS Code
+            try {
+                execSync(`code "${selectedWt.path}"`);
+
+                console.log(`\n🚀 Opening worktree in VS Code:`);
+                console.log(`   Feature: ${selectedWt.featureId} - ${selectedWt.desc}`);
+                console.log(`   Agent: ${selectedWt.agent}`);
+                console.log(`   Path: ${selectedWt.path}`);
+                console.log(`\n📋 Run this command in the VS Code terminal:`);
+                console.log(`   ${agentCommand}`);
+            } catch (e) {
+                console.error(`❌ Failed to open VS Code: ${e.message}`);
+                console.error(`   Make sure the 'code' CLI is installed (VS Code: Cmd+Shift+P > "Install 'code' command")`);
+            }
+        } else if (terminal === 'cursor') {
+            // Open in Cursor
+            try {
+                execSync(`cursor "${selectedWt.path}"`);
+
+                console.log(`\n🚀 Opening worktree in Cursor:`);
+                console.log(`   Feature: ${selectedWt.featureId} - ${selectedWt.desc}`);
+                console.log(`   Agent: ${selectedWt.agent}`);
+                console.log(`   Path: ${selectedWt.path}`);
+                console.log(`\n📋 Run this command in the Cursor terminal:`);
+                console.log(`   ${agentCommand}`);
+            } catch (e) {
+                console.error(`❌ Failed to open Cursor: ${e.message}`);
+                console.error(`   Make sure the 'cursor' CLI is installed`);
+            }
+        } else {
+            console.error(`❌ Terminal "${terminal}" not supported.`);
+            console.error(`   Supported terminals: warp, code (VS Code), cursor`);
+            console.error(`\n   Override with: aigon worktree-open <ID> --terminal=warp`);
+            console.error(`   Or set default: Edit ~/.aigon/config.json`);
+        }
+    },
+
     'help': () => {
         console.log(`
 Aigon - Spec-Driven Development for AI Agents
@@ -2235,6 +2512,12 @@ Setup:
   install-agent <agents...>         Install agent configs (cc, gg, cx, cu)
   update                            Update Aigon files to latest version
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
+  config <init|show>                Manage global config (~/.aigon/config.json)
+
+Worktree:
+  worktree-open [ID] [agent] [--terminal=<type>]
+                                    Open worktree in terminal with agent CLI
+                                    Terminals: warp (auto-runs), code, cursor
 
 Feature Commands (unified for solo and arena modes):
   feature-create <name>             Create feature spec in inbox
@@ -2263,6 +2546,7 @@ Examples:
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
   aigon feature-setup 55               # Solo mode (creates branch)
   aigon feature-setup 55 cc gg cx cu      # Arena mode (creates worktrees)
+  aigon worktree-open 55 cc            # Open worktree in Warp with Claude CLI
   aigon feature-implement 55           # Implement in current branch/worktree
   aigon feature-eval 55                # Evaluate implementations
   aigon feature-done 55 cc             # Merge Claude's arena implementation
@@ -2279,8 +2563,9 @@ Examples:
 
 Agents:
   cc (claude)   - Claude Code
+  cu (cursor)   - Cursor
   gg (gemini)   - Gemini CLI
-  cx (codex)    - GitHub Codex
+  cx (codex)    - OpenAI Codex
 `);
     },
 };

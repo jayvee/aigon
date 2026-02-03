@@ -3,6 +3,12 @@
   "name": "Codex",
   "aliases": ["codex", "cx"],
 
+  "cli": {
+    "command": "codex",
+    "implementFlag": "--full-auto",
+    "implementPrompt": "/prompts:aigon-feature-implement {featureId}"
+  },
+
   "placeholders": {
     "AGENT_ID": "cx",
     "AGENT_NAME": "Codex",
@@ -47,6 +53,7 @@
     "feature-done",
     "feature-cleanup",
     "feature-list",
+    "worktree-open",
     "research-create",
     "research-prioritise",
     "research-setup",
