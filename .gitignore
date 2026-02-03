@@ -12,3 +12,6 @@ CLAUDE.md
 GEMINI.md
 docs/agents/
 .cursor/
+
+# Aigon version tracking (per-project)
+.aigon/

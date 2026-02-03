@@ -48,7 +48,6 @@ docs/specs/
 | `aigon feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
 | `aigon feature-implement <ID>` | Implement feature in current branch/worktree |
 | `aigon feature-eval <ID>` | Create evaluation (code review for solo, comparison for arena) |
-| `aigon feature-review <ID>` | Code review with fixes by a different agent |
 | `aigon feature-done <ID> [agent]` | Merge and complete (specify agent in arena mode) |
 | `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
@@ -84,32 +83,6 @@ docs/specs/
 4. Return to main repo for evaluation: `aigon feature-eval <ID>`
 5. Merge winner: `aigon feature-done <ID> cc`
 6. Clean up losers: `aigon feature-cleanup <ID> --push` (to save branches) or `aigon feature-cleanup <ID>` (to delete)
-
-## Cross-Agent Code Review (Optional)
-
-After implementation but before completing, you can have a different agent review the code and commit fixes:
-
-1. Agent A implements the feature and commits (using `/aigon-feature-implement`)
-2. Agent A stops and tells the user implementation is complete
-3. User opens a session with Agent B (ideally a different model)
-4. Agent B runs `/aigon-feature-review <ID>` to:
-   - Read the spec and implementation log
-   - Review `git diff main...HEAD`
-   - Make targeted fixes (bugs, security issues, missing edge cases)
-   - Commit fixes with `fix(review):` prefix
-   - Update the implementation log with review notes
-5. User (or Agent A) reviews Agent B's commits
-6. User runs `/aigon-feature-done <ID>` to merge
-
-**Benefits**:
-- Cross-model review catches different types of issues
-- Fix commits are clearly labeled and easy to inspect
-- Implementation log documents who reviewed and what was found
-
-**When to use**:
-- Critical features where quality matters
-- Complex implementations with security implications
-- When you want a second opinion before merging
 
 ## Before Completing a Feature
 
