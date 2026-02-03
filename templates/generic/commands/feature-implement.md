@@ -102,7 +102,8 @@ After completing steps 1-6:
 2. **STOP and WAIT** for the user to:
    - Review the code changes
    - Test the feature themselves
-   - Optionally run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` for code review
+   - Optionally run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` for evaluation
+   - Optionally run `{{CMD_PREFIX}}feature-review {{ARG1_SYNTAX}}` with a different agent for cross-agent code review
    - Approve with `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}}`
 
 ### Solo Worktree Mode
@@ -112,8 +113,9 @@ After completing steps 1-6:
 After completing steps 1-6:
 1. Tell the user: "Implementation complete in this worktree. Ready for your review."
 2. **STOP** - The user needs to:
+   - Optionally run `{{CMD_PREFIX}}feature-review {{ARG1_SYNTAX}}` with a different agent (in this worktree) for cross-agent code review
    - Return to the main repository
-   - Optionally run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` for code review
+   - Optionally run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` for evaluation
    - Approve with `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}}` (auto-detects the worktree)
 
 ### Arena Mode
@@ -124,6 +126,7 @@ After completing steps 1-6:
 1. Tell the user: "Implementation complete in this worktree. Ready for evaluation."
 2. **STOP** - The user needs to:
    - Complete implementations in other agent worktrees
+   - Optionally run `{{CMD_PREFIX}}feature-review {{ARG1_SYNTAX}}` with a different agent on each worktree for cross-agent code review
    - Return to the main repository
    - Run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` to compare all implementations
    - Choose a winner and run `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}} <winning-agent>`
