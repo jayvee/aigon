@@ -116,7 +116,12 @@ Solo mode supports two workspace styles: **branch** (work in the current repo) o
     * Agent codes the solution and *must* fill out the Implementation Log.
 5.  **Evaluate (Optional):** `aigon feature-eval 108`
     * Creates code review checklist for the implementation.
-6.  **Finish:** `aigon feature-done 108`
+6.  **Cross-Agent Review (Optional):** Have a different agent review the code and commit fixes:
+    * Open a session with a different agent (e.g., Codex if Claude implemented)
+    * Run `/aigon-feature-review 108`
+    * The reviewing agent reads the spec, reviews `git diff main...HEAD`, and commits targeted fixes with `fix(review):` prefix
+    * Review the fix commits before proceeding
+7.  **Finish:** `aigon feature-done 108`
     * Merges the branch and archives the log.
     * For solo worktree mode, the agent is auto-detected — no need to specify it.
 
@@ -139,11 +144,15 @@ Run multiple agents in competition to find the optimal solution.
 4.  **Implement:** Open each worktree in a separate editor session and run `/aigon-feature-implement 108`.
     * Each agent builds the feature independently in their isolated worktree.
     * Each agent creates **tasks from the acceptance criteria** and *must* fill out their Implementation Log.
-5.  **Evaluate:** Back in the main folder, switch to an eval model (eg sonnet) and run `aigon feature-eval 108`
+5.  **Cross-Agent Review (Optional):** Before evaluation, have different agents review each implementation:
+    * In each worktree, open a session with a different agent
+    * Run `/aigon-feature-review 108`
+    * Reviewing agent commits fixes with `fix(review):` prefix
+6.  **Evaluate:** Back in the main folder, switch to an eval model (eg sonnet) and run `aigon feature-eval 108`
     * Moves the feature to `/in-evaluation`.
     * Creates comparison template with all implementations.
-6.  **Judge:** Review and compare solutions, fill in the evaluation.
-7.  **Merge Winner:**
+7.  **Judge:** Review and compare solutions, fill in the evaluation.
+8.  **Merge Winner:**
     ```bash
     aigon feature-done 108 cc
     ```
@@ -151,7 +160,7 @@ Run multiple agents in competition to find the optimal solution.
     * Moves winning agent's log to `logs/selected`.
     * Moves losing agent's logs to `logs/alternatives` (preserving history).
     * Cleans up winner's worktree.
-8.  **Cleanup Losers:**
+9.  **Cleanup Losers:**
     ```bash
     aigon feature-cleanup 108 [--push]
     ```
@@ -229,6 +238,23 @@ your-project/
 
 ---
 
+## Contributing / Developing Aigon
+
+If you're working on Aigon itself, be aware of the template system:
+
+- **Source of truth**: `templates/generic/commands/` and `templates/generic/docs/`
+- **Working copies**: `.claude/commands/`, `.cursor/commands/`, `.gemini/commands/` (gitignored, generated)
+
+The agent directories (`.claude/`, `.cursor/`, etc.) and root files (`CLAUDE.md`, `GEMINI.md`) are gitignored because they're generated from templates during `aigon install-agent`.
+
+**Development workflow:**
+1. Edit templates in `templates/generic/commands/`
+2. Run `aigon update` or `aigon install-agent cc` to regenerate working copies
+3. Test the commands in your agent session
+4. Commit only the template changes (the working copies stay local)
+
+---
+
 ## CLI Reference
 
 The `aigon` command automates state transitions and Git operations. The workflow uses a unified set of commands that work in both solo and arena modes.
@@ -243,6 +269,7 @@ The `aigon` command automates state transitions and Git operations. The workflow
 | **Feature List** | `aigon feature-list [--flags]` | List features by status, mode, and location. Flags: `--all`, `--active`, `--inbox`, `--backlog`, `--done` |
 | **Feature Implement** | `aigon feature-implement <ID>` | Auto-detects mode (branch, solo worktree, arena). Implements feature |
 | **Feature Evaluate** | `aigon feature-eval <ID>` | Move to evaluation. Solo: code review checklist. Arena: comparison template |
+| **Feature Review** | `aigon feature-review <ID>` | Cross-agent code review with fixes (use different agent than implementer) |
 | **Feature Done** | `aigon feature-done <ID> [agent]` | Merge and complete. Solo worktree auto-detects agent. Arena: specify winner |
 | **Feature Cleanup** | `aigon feature-cleanup <ID> [--push]` | Clean up arena mode worktrees and branches |
 
@@ -368,6 +395,7 @@ When you run `aigon install-agent cc`, it installs special slash commands for Cl
 | `/aigon-feature-list` | List features by status, mode, and location |
 | `/aigon-feature-implement <ID>` | Implement feature in current branch/worktree |
 | `/aigon-feature-eval <ID>` | Create evaluation template (code review or comparison) |
+| `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
 | `/aigon-feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
@@ -397,6 +425,7 @@ When you run `aigon install-agent gg`, it installs special slash commands for Ge
 | `/aigon:feature-list` | List features by status, mode, and location |
 | `/aigon:feature-implement <ID>` | Implement feature in current branch/worktree |
 | `/aigon:feature-eval <ID>` | Create evaluation template (code review or comparison) |
+| `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
 | `/aigon:feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
@@ -428,6 +457,7 @@ When you run `aigon install-agent cx`, it installs slash commands to your **glob
 | `/prompts:aigon-feature-list` | List features by status, mode, and location |
 | `/prompts:aigon-feature-implement <ID>` | Implement feature in current branch/worktree |
 | `/prompts:aigon-feature-eval <ID>` | Create evaluation template (code review or comparison) |
+| `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
 | `/prompts:aigon-feature-done <ID> [agent]` | Merge and complete feature |
 | `/prompts:aigon-feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
@@ -459,6 +489,7 @@ When you run `aigon install-agent cu`, it installs slash commands to your projec
 | `/aigon-feature-list` | List features by status, mode, and location |
 | `/aigon-feature-implement <ID>` | Implement feature in current branch/worktree |
 | `/aigon-feature-eval <ID>` | Create evaluation template (code review or comparison) |
+| `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
 | `/aigon-feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
