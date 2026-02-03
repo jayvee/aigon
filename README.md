@@ -229,6 +229,23 @@ your-project/
 
 ---
 
+## Contributing / Developing Aigon
+
+If you're working on Aigon itself, be aware of the template system:
+
+- **Source of truth**: `templates/generic/commands/` and `templates/generic/docs/`
+- **Working copies**: `.claude/commands/`, `.cursor/commands/`, `.gemini/commands/` (gitignored, generated)
+
+The agent directories (`.claude/`, `.cursor/`, etc.) and root files (`CLAUDE.md`, `GEMINI.md`) are gitignored because they're generated from templates during `aigon install-agent`.
+
+**Development workflow:**
+1. Edit templates in `templates/generic/commands/`
+2. Run `aigon update` or `aigon install-agent cc` to regenerate working copies
+3. Test the commands in your agent session
+4. Commit only the template changes (the working copies stay local)
+
+---
+
 ## CLI Reference
 
 The `aigon` command automates state transitions and Git operations. The workflow uses a unified set of commands that work in both solo and arena modes.
