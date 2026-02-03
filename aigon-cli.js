@@ -1545,9 +1545,11 @@ Branch: \`${soloBranch}\`
         }
     },
     'feature-done': (args) => {
-        const name = args[0];
-        const agentId = args[1]; // Optional - if provided, multi-agent mode
-        if (!name) return console.error("Usage: aigon feature-done <ID> [agent]\n  Without agent: solo mode (merges feature-ID-desc)\n  With agent: multi-agent mode (merges feature-ID-agent-desc, cleans up worktree)");
+        const keepBranch = args.includes('--keep-branch');
+        const filteredArgs = args.filter(a => a !== '--keep-branch');
+        const name = filteredArgs[0];
+        const agentId = filteredArgs[1]; // Optional - if provided, multi-agent mode
+        if (!name) return console.error("Usage: aigon feature-done <ID> [agent] [--keep-branch]\n  Without agent: solo mode (merges feature-ID-desc)\n  With agent: multi-agent mode (merges feature-ID-agent-desc, cleans up worktree)\n  --keep-branch: Don't delete the local branch after merge");
 
         const found = findFile(PATHS.features, name, ['04-in-evaluation', '03-in-progress']);
         if (!found) return console.error(`❌ Could not find feature "${name}" in in-evaluation or in-progress.`);
@@ -1719,8 +1721,10 @@ Branch: \`${soloBranch}\`
             }
         }
 
-        // Delete the merged branch locally (skip if worktree removal already handled it)
-        if (worktreeRemoved) {
+        // Delete the merged branch locally (skip if --keep-branch or worktree removal already handled it)
+        if (keepBranch) {
+            console.log(`📌 Keeping branch: ${branchName} (--keep-branch)`);
+        } else if (worktreeRemoved) {
             // Worktree removal may have already deleted the branch; clean up if it still exists
             try {
                 execSync(`git rev-parse --verify ${branchName}`, { stdio: 'pipe' });
