@@ -141,7 +141,9 @@ Run multiple agents in competition to find the optimal solution.
         * `../<repo>-worktrees/feature-108-cx-dark-mode` (Codex)
     * **Auto-creates** blank Implementation Log templates in each worktree.
     * **STOPS** - does not implement (user must open each worktree separately).
-4.  **Implement:** Open each worktree in a separate editor session and run `/aigon-feature-implement 108`.
+4.  **Implement:** Open each worktree using `aigon worktree-open 108 <agent>` (or manually open and run `/aigon-feature-implement 108`).
+    * With Warp: `aigon worktree-open 108 cc` opens the worktree and auto-starts Claude with the implement command.
+    * With VS Code: `aigon worktree-open 108 cc --terminal=code` opens the folder; run the agent manually.
     * Each agent builds the feature independently in their isolated worktree.
     * Each agent creates **tasks from the acceptance criteria** and *must* fill out their Implementation Log.
 5.  **Cross-Agent Review (Optional):** Before evaluation, have different agents review each implementation:
@@ -236,6 +238,56 @@ your-project/
 
 **Important:** You must commit the generated configuration files to Git. This ensures that when `aigon` creates a new git worktree, the agent configurations are available in that isolated environment.
 
+### 4. Configure Global Settings (Optional)
+
+Create a global configuration file to customize terminal and agent CLI settings:
+
+```bash
+aigon config init
+```
+
+This creates `~/.aigon/config.json`:
+
+```json
+{
+  "terminal": "warp",
+  "agents": {
+    "cc": { "cli": "claude" },
+    "cu": { "cli": "agent" },
+    "gg": { "cli": "gemini" },
+    "cx": { "cli": "codex" }
+  }
+}
+```
+
+**Configuration options:**
+- `terminal`: Default terminal for `worktree-open`. Options: `warp` (auto-runs agent), `code` (VS Code), `cursor`
+- `agents.{id}.cli`: Override the CLI command for each agent
+
+**Environment variable override:** Set `AIGON_TERMINAL=code` to override the terminal for a single session.
+
+### 5. Opening Worktrees
+
+After setting up a feature with worktrees, use `worktree-open` to quickly open them in your configured terminal:
+
+```bash
+# Open most recent worktree in default terminal (Warp)
+aigon worktree-open
+
+# Open specific feature's worktree
+aigon worktree-open 55
+
+# Open specific agent's worktree for a feature
+aigon worktree-open 55 cc
+
+# Override terminal for this invocation
+aigon worktree-open 55 cc --terminal=code
+```
+
+**Terminal behavior:**
+- **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with `/aigon-feature-implement <ID>`
+- **VS Code / Cursor**: Opens the folder; you'll need to run the agent command manually (shown in output)
+
 ---
 
 ## Contributing / Developing Aigon
@@ -291,6 +343,8 @@ The `aigon` command automates state transitions and Git operations. The workflow
 | **Install Agent** | `aigon install-agent <agents...>` | Generates agent configuration files. Accepts multiple agents: `cc`, `gg`, `cx`. |
 | **Update** | `aigon update` | Updates all Aigon files to latest version. Re-installs detected agents. |
 | **Hooks List** | `aigon hooks [list]` | List all defined hooks from `docs/aigon-hooks.md`. |
+| **Config** | `aigon config <init\|show>` | Manage global config at `~/.aigon/config.json`. |
+| **Worktree Open** | `aigon worktree-open [ID] [agent] [--terminal=<type>]` | Open worktree in terminal with agent CLI. Terminals: `warp` (auto-runs), `code`, `cursor`. |
 
 ---
 
