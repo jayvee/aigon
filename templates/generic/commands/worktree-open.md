@@ -1,0 +1,44 @@
+<!-- description: Open worktree in terminal with agent CLI -->
+# worktree-open
+
+Open a worktree in Warp terminal and automatically run the AI agent with `{{CMD_PREFIX}}feature-implement`.
+
+## Usage
+
+```
+{{CMD_PREFIX}}worktree-open [feature-id] [agent-code]
+```
+
+- `{{CMD_PREFIX}}worktree-open` — open the most recently created worktree
+- `{{CMD_PREFIX}}worktree-open 77` — open any worktree for feature 77
+- `{{CMD_PREFIX}}worktree-open 77 cx` — open specifically the cx (Codex) worktree for feature 77
+
+## Agent Mappings
+
+| Code | Agent | Command | Auto-approve flag |
+|------|-------|---------|-------------------|
+| cc | Claude Code | `claude --dangerously-skip-permissions` | Bypasses all permissions |
+| cu | Cursor | `agent --force` | Force allows commands |
+| gg | Gemini | `gemini --yolo` | YOLO mode |
+| cx | Codex | `codex --full-auto` | Sandboxed auto-execution |
+
+All agents auto-approve commands. Safe in worktrees since you can always `git reset --hard`.
+
+## Step 1: Run the CLI command
+
+```bash
+aigon worktree-open {{ARG_SYNTAX}}
+```
+
+This will:
+1. Find the matching worktree
+2. Create a Warp launch configuration
+3. Open Warp with the worktree directory
+4. Auto-run the agent CLI with `{{CMD_PREFIX}}feature-implement <ID>`
+
+## Step 2: Confirm to user
+
+Tell the user:
+- Which worktree was opened
+- Which agent was launched with which feature ID
+- That the agent should start implementing automatically

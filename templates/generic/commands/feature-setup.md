@@ -50,15 +50,25 @@ After the CLI completes:
 
 ### Solo Worktree Mode (parallel development)
 
-After the CLI completes, ask the user if they want you to switch to the worktree and start implementing. If yes, `cd` to the worktree directory and run `{{CMD_PREFIX}}feature-implement` from there. Remember that `{{CMD_PREFIX}}feature-done` must be run from the main repo later.
+After the CLI completes, open the worktree using:
+```
+{{CMD_PREFIX}}worktree-open 55
+```
+
+This opens Warp terminal with the agent CLI running `{{CMD_PREFIX}}feature-implement` automatically.
+
+Remember that `{{CMD_PREFIX}}feature-done` must be run from the main repo later.
 
 ### Arena Mode (competition)
 
-After the CLI completes:
-1. Open each worktree in a separate editor window
-2. In each worktree, run `{{CMD_PREFIX}}feature-implement 55`
-3. After all implementations complete, return to main repo
-4. Run `{{CMD_PREFIX}}feature-eval 55` to compare
+After the CLI completes, open each worktree:
+```
+{{CMD_PREFIX}}worktree-open 55 cc    # Open Claude's worktree
+{{CMD_PREFIX}}worktree-open 55 gg    # Open Gemini's worktree
+{{CMD_PREFIX}}worktree-open 55 cx    # Open Codex's worktree
+```
+
+Each terminal opens with the agent CLI running `{{CMD_PREFIX}}feature-implement` automatically. After all implementations complete, return to main repo and run `{{CMD_PREFIX}}feature-eval 55` to compare.
 
 ## Important Notes
 
