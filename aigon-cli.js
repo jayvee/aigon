@@ -2399,18 +2399,22 @@ Branch: \`${soloBranch}\`
                 setInstalledVersion(currentVersion);
             }
 
-            // Summary - check git status for actual changes
-            let hasChanges = false;
+            // Summary - version changed OR file changes means we updated
+            const versionChanged = installedVersion && currentVersion && installedVersion !== currentVersion;
+            let hasFileChanges = false;
             try {
                 const gitStatus = execSync('git status --porcelain docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null', { encoding: 'utf8' });
-                hasChanges = gitStatus.trim().length > 0;
+                hasFileChanges = gitStatus.trim().length > 0;
             } catch (e) {
-                // Not a git repo - assume changes were made
-                hasChanges = true;
+                // Not a git repo - can't determine
             }
 
-            if (hasChanges) {
+            if (versionChanged || hasFileChanges) {
                 console.log(`\n✅ Aigon updated to v${currentVersion || 'unknown'}.`);
+                if (hasFileChanges) {
+                    console.log(`\n📝 To commit these changes:`);
+                    console.log(`   git add docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: update Aigon to v${currentVersion || 'latest'}"`);
+                }
             } else {
                 console.log(`\n✅ Aigon is already up to date (v${currentVersion || 'unknown'}).`);
             }
