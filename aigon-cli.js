@@ -582,6 +582,9 @@ function upsertMarkedContent(filePath, content) {
     if (markerRegex.test(existing)) {
         // Replace existing marked section
         const updated = existing.replace(markerRegex, markedContent);
+        if (updated === existing) {
+            return 'unchanged';
+        }
         fs.writeFileSync(filePath, updated);
         return 'updated';
     } else {
@@ -2094,8 +2097,10 @@ Branch: \`${soloBranch}\`
             // 1. Create shared workflow documentation (always)
             const workflowPath = path.join(process.cwd(), 'docs', 'development_workflow.md');
             const workflowContent = readTemplate('docs/development_workflow.md');
-            safeWrite(workflowPath, workflowContent);
-            console.log(`✅ Created: docs/development_workflow.md`);
+            const workflowStatus = safeWriteWithStatus(workflowPath, workflowContent);
+            if (workflowStatus !== 'unchanged') {
+                console.log(`✅ ${workflowStatus.charAt(0).toUpperCase() + workflowStatus.slice(1)}: docs/development_workflow.md`);
+            }
 
             // 2. Install each agent using its config
             uniqueAgents.forEach(agentKey => {
@@ -2116,7 +2121,9 @@ Branch: \`${soloBranch}\`
                 const markerContentMatch = agentTemplateContent.match(new RegExp(`${MARKER_START}\\n([\\s\\S]*?)\\n${MARKER_END}`));
                 const agentContent = markerContentMatch ? markerContentMatch[1] : agentTemplateContent;
                 const agentAction = upsertMarkedContent(agentDocPath, agentContent);
-                console.log(`   ✅ ${agentAction.charAt(0).toUpperCase() + agentAction.slice(1)}: docs/agents/${config.agentFile}`);
+                if (agentAction !== 'unchanged') {
+                    console.log(`   ✅ ${agentAction.charAt(0).toUpperCase() + agentAction.slice(1)}: docs/agents/${config.agentFile}`);
+                }
 
                 // Create/update root <AGENT>.md with markers (if agent uses one)
                 if (config.rootFile) {
@@ -2125,7 +2132,9 @@ Branch: \`${soloBranch}\`
                     const legacyConfig = AGENT_CONFIGS[agentKey] || config;
                     const rootContent = getRootFileContent(legacyConfig);
                     const action = upsertMarkedContent(rootFilePath, rootContent);
-                    console.log(`   ✅ ${action.charAt(0).toUpperCase() + action.slice(1)}: ${config.rootFile}`);
+                    if (action !== 'unchanged') {
+                        console.log(`   ✅ ${action.charAt(0).toUpperCase() + action.slice(1)}: ${config.rootFile}`);
+                    }
                 }
 
                 // Generate and install commands from generic templates
@@ -2138,6 +2147,7 @@ Branch: \`${soloBranch}\`
                         cmdDir = path.join(process.cwd(), cmdDir);
                     }
 
+                    let cmdChanges = { created: 0, updated: 0 };
                     config.commands.forEach(cmdName => {
                         // Read generic template and process placeholders
                         const genericContent = readGenericTemplate(`commands/${cmdName}.md`, config);
@@ -2148,19 +2158,28 @@ Branch: \`${soloBranch}\`
 
                         // Write to agent's command directory
                         const fileName = `${config.output.commandFilePrefix}${cmdName}${config.output.commandFileExtension}`;
-                        safeWrite(path.join(cmdDir, fileName), outputContent);
+                        const status = safeWriteWithStatus(path.join(cmdDir, fileName), outputContent);
+                        if (status === 'created') cmdChanges.created++;
+                        else if (status === 'updated') cmdChanges.updated++;
                     });
 
                     const removed = removeDeprecatedCommands(cmdDir, config);
 
-                    if (config.output.global) {
-                        console.log(`   ✅ Installed global prompts: ${config.output.commandDir}`);
-                        console.log(`   ⚠️  Note: Codex prompts are global (shared across all projects)`);
-                    } else {
-                        console.log(`   ✅ Created: ${config.output.commandDir}/*`);
-                    }
-                    if (removed.length > 0) {
-                        console.log(`   🧹 Removed ${removed.length} deprecated command(s): ${removed.join(', ')}`);
+                    // Only report if there were actual changes
+                    const totalChanges = cmdChanges.created + cmdChanges.updated + removed.length;
+                    if (totalChanges > 0) {
+                        if (config.output.global) {
+                            console.log(`   ✅ Installed global prompts: ${config.output.commandDir}`);
+                            console.log(`   ⚠️  Note: Codex prompts are global (shared across all projects)`);
+                        } else {
+                            const parts = [];
+                            if (cmdChanges.created > 0) parts.push(`${cmdChanges.created} created`);
+                            if (cmdChanges.updated > 0) parts.push(`${cmdChanges.updated} updated`);
+                            console.log(`   ✅ Commands: ${parts.join(', ') || 'synced'}`);
+                        }
+                        if (removed.length > 0) {
+                            console.log(`   🧹 Removed ${removed.length} deprecated command(s): ${removed.join(', ')}`);
+                        }
                     }
                 }
 
@@ -2172,21 +2191,27 @@ Branch: \`${soloBranch}\`
                     // Add AGENT_FILE placeholder for skill template
                     const skillPlaceholders = { ...config.placeholders, AGENT_FILE: config.agentFile.replace('.md', '') };
                     const skillContent = processTemplate(readTemplate('generic/skill.md'), skillPlaceholders);
-                    safeWrite(path.join(process.cwd(), extras.skill.path), skillContent);
-                    console.log(`   ✅ Created: ${extras.skill.path}`);
+                    const skillStatus = safeWriteWithStatus(path.join(process.cwd(), extras.skill.path), skillContent);
+                    if (skillStatus !== 'unchanged') {
+                        console.log(`   ✅ ${skillStatus.charAt(0).toUpperCase() + skillStatus.slice(1)}: ${extras.skill.path}`);
+                    }
                 }
 
                 // Settings files (Claude permissions, Gemini allowedTools)
                 if (extras.settings && extras.settings.enabled) {
                     const settingsPath = path.join(process.cwd(), extras.settings.path);
                     let settings = {};
+                    let existingContent = '';
                     if (fs.existsSync(settingsPath)) {
                         try {
-                            settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+                            existingContent = fs.readFileSync(settingsPath, 'utf8');
+                            settings = JSON.parse(existingContent);
                         } catch (e) {
                             console.warn(`   ⚠️  Could not parse existing ${extras.settings.path}, creating new one`);
                         }
                     }
+
+                    let settingsChanged = false;
 
                     // Add permissions (Claude, Cursor)
                     if (extras.settings.permissions) {
@@ -2196,23 +2221,35 @@ Branch: \`${soloBranch}\`
                         extras.settings.permissions.forEach(perm => {
                             if (!settings.permissions.allow.includes(perm)) {
                                 settings.permissions.allow.push(perm);
+                                settingsChanged = true;
                             }
                         });
-                        console.log(`   ✅ Added permissions to ${extras.settings.path}`);
+                        if (settingsChanged) {
+                            console.log(`   ✅ Added permissions to ${extras.settings.path}`);
+                        }
                     }
 
                     // Add allowedTools (Gemini)
                     if (extras.settings.allowedTools) {
                         if (!settings.allowedTools) settings.allowedTools = [];
+                        let toolsAdded = false;
                         extras.settings.allowedTools.forEach(tool => {
                             if (!settings.allowedTools.includes(tool)) {
                                 settings.allowedTools.push(tool);
+                                toolsAdded = true;
                             }
                         });
-                        console.log(`   ✅ Added allowedTools to ${extras.settings.path}`);
+                        if (toolsAdded) {
+                            console.log(`   ✅ Added allowedTools to ${extras.settings.path}`);
+                            settingsChanged = true;
+                        }
                     }
 
-                    safeWrite(settingsPath, JSON.stringify(settings, null, 2));
+                    // Only write if something changed
+                    const newContent = JSON.stringify(settings, null, 2);
+                    if (newContent !== existingContent) {
+                        safeWrite(settingsPath, newContent);
+                    }
                 }
 
                 // Codex: prompt.md (uses upsert to preserve user content outside markers)
@@ -2225,7 +2262,9 @@ Branch: \`${soloBranch}\`
                     const innerContent = markerContentMatch ? markerContentMatch[1] : promptContent;
                     const promptPath = path.join(process.cwd(), extras.prompt.path);
                     const action = upsertMarkedContent(promptPath, innerContent);
-                    console.log(`   ✅ ${action.charAt(0).toUpperCase() + action.slice(1)}: ${extras.prompt.path}`);
+                    if (action !== 'unchanged') {
+                        console.log(`   ✅ ${action.charAt(0).toUpperCase() + action.slice(1)}: ${extras.prompt.path}`);
+                    }
                 }
 
                 // Codex: config.toml (uses legacy template - not generic)
