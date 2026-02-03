@@ -45,6 +45,26 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 
 **For worktree modes (solo worktree or arena):** Use relative paths throughout implementation. Maintain the worktree directory as your working directory.
 
+## Step 3.5: Install dependencies (worktree only)
+
+**Worktrees do not share `node_modules/` with the main repo.** Before running or testing, check if dependencies need to be installed:
+
+```bash
+# Check if node_modules exists
+test -d node_modules && echo "Dependencies installed" || echo "Need to install dependencies"
+```
+
+If missing, install them using the project's package manager:
+```bash
+# Detect and run the appropriate install command
+if [ -f "pnpm-lock.yaml" ]; then pnpm install
+elif [ -f "yarn.lock" ]; then yarn install
+elif [ -f "bun.lockb" ]; then bun install
+elif [ -f "package-lock.json" ]; then npm install
+elif [ -f "package.json" ]; then npm install
+fi
+```
+
 ## Step 4: Test your changes
 
 ### Solo Mode (branch)
@@ -102,7 +122,8 @@ After completing steps 1-6:
 2. **STOP and WAIT** for the user to:
    - Review the code changes
    - Test the feature themselves
-   - Optionally run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` for code review
+   - Optionally run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` for evaluation
+   - Optionally run `{{CMD_PREFIX}}feature-review {{ARG1_SYNTAX}}` with a different agent for cross-agent code review
    - Approve with `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}}`
 
 ### Solo Worktree Mode
@@ -112,8 +133,9 @@ After completing steps 1-6:
 After completing steps 1-6:
 1. Tell the user: "Implementation complete in this worktree. Ready for your review."
 2. **STOP** - The user needs to:
+   - Optionally run `{{CMD_PREFIX}}feature-review {{ARG1_SYNTAX}}` with a different agent (in this worktree) for cross-agent code review
    - Return to the main repository
-   - Optionally run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` for code review
+   - Optionally run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` for evaluation
    - Approve with `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}}` (auto-detects the worktree)
 
 ### Arena Mode
@@ -124,6 +146,7 @@ After completing steps 1-6:
 1. Tell the user: "Implementation complete in this worktree. Ready for evaluation."
 2. **STOP** - The user needs to:
    - Complete implementations in other agent worktrees
+   - Optionally run `{{CMD_PREFIX}}feature-review {{ARG1_SYNTAX}}` with a different agent on each worktree for cross-agent code review
    - Return to the main repository
    - Run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` to compare all implementations
    - Choose a winner and run `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}} <winning-agent>`

@@ -16,6 +16,7 @@
 | `{{CMD_PREFIX}}feature-setup <ID> [agents...]` | Setup for solo (branch) or arena (worktrees) |
 | `{{CMD_PREFIX}}feature-implement <ID>` | Implement feature in current branch/worktree |
 | `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
+| `{{CMD_PREFIX}}feature-review <ID>` | Code review with fixes by a different agent |
 | `{{CMD_PREFIX}}feature-done <ID> [agent]` | Merge and complete feature |
 | `{{CMD_PREFIX}}feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
