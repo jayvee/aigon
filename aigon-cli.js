@@ -2261,9 +2261,16 @@ Branch: \`${soloBranch}\`
                 setInstalledVersion(currentVersion);
             }
 
-            // Git commit suggestion with copy-pasteable commands
-            console.log(`\n📝 To commit these changes:`);
-            console.log(`   git add docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: install Aigon v${currentVersion || 'latest'}"`);
+            // Git commit suggestion - only if there are actual changes
+            try {
+                const gitStatus = execSync('git status --porcelain docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null', { encoding: 'utf8' });
+                if (gitStatus.trim()) {
+                    console.log(`\n📝 To commit these changes:`);
+                    console.log(`   git add docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: install Aigon v${currentVersion || 'latest'}"`);
+                }
+            } catch (e) {
+                // Not a git repo or git not available - skip suggestion
+            }
 
         } catch (e) {
             console.error(`❌ Failed: ${e.message}`);
@@ -2392,24 +2399,20 @@ Branch: \`${soloBranch}\`
                 setInstalledVersion(currentVersion);
             }
 
-            // Summary
-            const totalChanged = changes.created.length + changes.updated.length;
-            if (totalChanged === 0) {
-                console.log(`\n✅ Aigon is already up to date (v${currentVersion || 'unknown'}).`);
-            } else {
-                console.log(`\n✅ Aigon updated to v${currentVersion || 'unknown'}.`);
-                if (changes.created.length > 0) {
-                    console.log(`   Created: ${changes.created.length} file(s)`);
-                }
-                if (changes.updated.length > 0) {
-                    console.log(`   Updated: ${changes.updated.length} file(s)`);
-                }
+            // Summary - check git status for actual changes
+            let hasChanges = false;
+            try {
+                const gitStatus = execSync('git status --porcelain docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null', { encoding: 'utf8' });
+                hasChanges = gitStatus.trim().length > 0;
+            } catch (e) {
+                // Not a git repo - assume changes were made
+                hasChanges = true;
             }
 
-            // Git commit suggestion with copy-pasteable commands
-            if (totalChanged > 0) {
-                console.log(`\n📝 To commit these changes:`);
-                console.log(`   git add docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: update Aigon to v${currentVersion || 'latest'}"`);
+            if (hasChanges) {
+                console.log(`\n✅ Aigon updated to v${currentVersion || 'unknown'}.`);
+            } else {
+                console.log(`\n✅ Aigon is already up to date (v${currentVersion || 'unknown'}).`);
             }
 
         } catch (e) {
