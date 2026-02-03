@@ -38,6 +38,7 @@
     "feature-setup",
     "feature-implement",
     "feature-eval",
+    "feature-review",
     "feature-done",
     "feature-cleanup",
     "feature-list",
