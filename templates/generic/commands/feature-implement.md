@@ -47,23 +47,7 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 
 ## Step 3.5: Install dependencies (worktree only)
 
-**Worktrees do not share `node_modules/` with the main repo.** Before running or testing, check if dependencies need to be installed:
-
-```bash
-# Check if node_modules exists
-test -d node_modules && echo "Dependencies installed" || echo "Need to install dependencies"
-```
-
-If missing, install them using the project's package manager:
-```bash
-# Detect and run the appropriate install command
-if [ -f "pnpm-lock.yaml" ]; then pnpm install
-elif [ -f "yarn.lock" ]; then yarn install
-elif [ -f "bun.lockb" ]; then bun install
-elif [ -f "package-lock.json" ]; then npm install
-elif [ -f "package.json" ]; then npm install
-fi
-```
+{{WORKTREE_DEP_CHECK}}
 
 ## Step 4: Test your changes
 
@@ -73,10 +57,7 @@ fi
 - Ask the user to verify
 
 ### Worktree Mode (solo worktree or arena)
-- Check `.env.local` for your agent-specific PORT
-- Start dev server: `PORT=<port> npm run dev`
-- Test on `http://localhost:<port>`
-- Ask the user to verify
+{{WORKTREE_TEST_INSTRUCTIONS}}
 
 **STOP and WAIT for user confirmation before proceeding** - do NOT continue until the user confirms testing is complete
 

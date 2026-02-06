@@ -35,7 +35,7 @@ The CLI will:
 - **Commit the spec move** (so worktrees inherit it)
 - Create branch or worktree(s)
 - Create implementation log(s)
-- Set up `.env.local` with agent-specific PORT (worktree modes)
+{{SETUP_ENV_LOCAL_LINE}}
 
 **If the CLI reports any errors or warnings about committing the spec move, resolve them before proceeding.** Worktrees branch from HEAD — if the spec move isn't committed, the worktree won't have the spec in `03-in-progress` and `feature-implement` will fail.
 
