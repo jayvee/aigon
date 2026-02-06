@@ -71,4 +71,10 @@ Next steps:
 - Findings files are created in `docs/specs/research-topics/logs/`
 
 
+## Prompt Suggestion
+
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
+
+`{{CMD_PREFIX}}research-conduct <ID>`
+
 ARGUMENTS: {{ARG_SYNTAX}}
