@@ -20,3 +20,9 @@ Explore the codebase to understand the existing architecture, patterns, and code
 Use this understanding to write a well-informed spec — especially the **Technical Approach**, **Dependencies**, and **Acceptance Criteria** sections.
 
 Next step: Once the spec is complete, run `{{CMD_PREFIX}}feature-prioritise {{ARG_SYNTAX}}` to assign an ID and move to backlog.
+
+## Prompt Suggestion
+
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual feature name:
+
+`{{CMD_PREFIX}}feature-prioritise <name>`

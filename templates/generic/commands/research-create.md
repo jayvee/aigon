@@ -20,3 +20,9 @@ Explore the codebase to understand the current state of the area under research.
 Use this understanding to write focused **Questions to Answer** and well-defined **Scope** sections.
 
 Next step: Once the topic is complete, run `{{CMD_PREFIX}}research-prioritise {{ARG_SYNTAX}}` to assign an ID and move to backlog.
+
+## Prompt Suggestion
+
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual topic name:
+
+`{{CMD_PREFIX}}research-prioritise <name>`

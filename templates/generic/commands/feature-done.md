@@ -77,3 +77,9 @@ Use `--push` if you want to preserve the alternative implementations on the remo
 - **Do NOT run from a worktree**: Always run from the main repository
 - The command uses `--no-ff` merge to preserve feature history
 - Alternative implementations are preserved in `logs/alternatives/` for future reference
+
+## Prompt Suggestion
+
+If the feature used arena mode and has remaining worktrees, end your response with the cleanup command on its own line. This influences Claude Code's prompt suggestion (grey text):
+
+`{{CMD_PREFIX}}feature-cleanup <ID>`

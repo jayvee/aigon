@@ -134,3 +134,9 @@ The user or original implementing agent should then:
 - **Use a different model**: For best results, the reviewing agent should be a different model than the implementer (e.g., Claude implements → Codex reviews)
 - **Check tests**: Run the test suite if available to catch regressions
 - **Review commit history**: Use `git log --oneline main..HEAD` to see all implementation commits before reviewing
+
+## Prompt Suggestion
+
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
+
+`{{CMD_PREFIX}}feature-done <ID>`
