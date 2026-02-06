@@ -266,7 +266,41 @@ This creates `~/.aigon/config.json`:
 
 **Environment variable override:** Set `AIGON_TERMINAL=code` to override the terminal for a single session.
 
-### 5. Opening Worktrees
+### 5. Project Profiles (Optional)
+
+Aigon auto-detects your project type and adapts arena behavior accordingly. For non-web projects (iOS, Android, libraries), this means no PORT assignment, no `.env.local` creation, and appropriate test instructions in templates.
+
+**Auto-detection** checks for:
+| Profile | Detected By |
+|---------|-------------|
+| `ios` | `*.xcodeproj`, `*.xcworkspace`, `Package.swift` (root or `ios/` subdir) |
+| `android` | `build.gradle`, `build.gradle.kts` (root or `android/` subdir) |
+| `web` | `package.json` with `scripts.dev` + framework config (`next.config.*`, `vite.config.*`, etc.) |
+| `api` | `manage.py`, `app.py`, `main.go`, `server.js`, `server.ts` |
+| `library` | `Cargo.toml`, `go.mod`, `pyproject.toml`, `setup.py`, or `package.json` without dev script |
+| `generic` | Fallback when nothing matches |
+
+```bash
+# See what Aigon auto-detects
+aigon profile detect
+
+# View current profile and settings
+aigon profile show
+
+# Override auto-detection
+aigon profile set ios
+
+# After changing profile, regenerate templates
+aigon update
+```
+
+The profile is stored in `.aigon/config.json` alongside the existing `.aigon/version` file. If no config exists, auto-detection is used.
+
+**Profile behavior:**
+- **`web` / `api`**: Dev server enabled, agent-specific ports assigned, `.env.local` created in worktrees
+- **`ios` / `android` / `library` / `generic`**: No dev server, no PORT, templates show project-appropriate test instructions
+
+### 6. Opening Worktrees
 
 After setting up a feature with worktrees, use `worktree-open` to quickly open them in your configured terminal:
 
@@ -344,6 +378,7 @@ The `aigon` command automates state transitions and Git operations. The workflow
 | **Update** | `aigon update` | Updates all Aigon files to latest version. Re-installs detected agents. |
 | **Hooks List** | `aigon hooks [list]` | List all defined hooks from `docs/aigon-hooks.md`. |
 | **Config** | `aigon config <init\|show>` | Manage global config at `~/.aigon/config.json`. |
+| **Profile** | `aigon profile [show\|set\|detect]` | Manage project profile. Auto-detects or override with `set <type>`. |
 | **Worktree Open** | `aigon worktree-open [ID] [agent] [--terminal=<type>]` | Open worktree in terminal with agent CLI. Terminals: `warp` (auto-runs), `code`, `cursor`. |
 
 ---

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-02-07
+
+### Added
+- **Project profile system** for non-web project support (`aigon profile`)
+- Six profiles: `web`, `api`, `ios`, `android`, `library`, `generic`
+- Auto-detection from project files (Xcode, Gradle, Next.js, Cargo.toml, etc.)
+- Checks `ios/` and `android/` subdirectories for mobile projects
+- Explicit override via `.aigon/config.json` (`aigon profile set <type>`)
+- Profile-aware arena mode: dev server, ports, `.env.local`, and template content adapt to project type
+- `aigon profile show` — display current profile and settings
+- `aigon profile set <type>` — set project profile explicitly
+- `aigon profile detect` — show what auto-detection would choose
+- Project profile summary in `aigon config show`
+
+### Changed
+- Templates use `{{PLACEHOLDER}}` values for test instructions, dependency checks, and `.env.local` setup
+- `feature-setup` only creates `.env.local` with PORT when dev server is enabled (web/api profiles)
+- `processTemplate()` uses callback replacement to prevent `$` back-reference issues in multi-line values
+
 ## [2.8.0] - 2026-02-06
 
 ### Added
