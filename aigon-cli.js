@@ -60,6 +60,9 @@ const TEMPLATES_ROOT = path.join(__dirname, 'templates');
 const CLAUDE_SETTINGS_PATH = path.join(process.cwd(), '.claude', 'settings.json');
 const HOOKS_FILE_PATH = path.join(process.cwd(), 'docs', 'aigon-hooks.md');
 
+// --- Project Configuration ---
+const PROJECT_CONFIG_PATH = path.join(process.cwd(), '.aigon', 'config.json');
+
 // --- Global User Configuration ---
 const GLOBAL_CONFIG_DIR = path.join(os.homedir(), '.aigon');
 const GLOBAL_CONFIG_PATH = path.join(GLOBAL_CONFIG_DIR, 'config.json');
@@ -104,6 +107,201 @@ function loadGlobalConfig() {
     }
 
     return merged;
+}
+
+// --- Project Profile System ---
+
+const PROFILE_PRESETS = {
+    web: {
+        devServer: {
+            enabled: true,
+            ports: { cc: 3001, gg: 3002, cx: 3003, cu: 3004 }
+        },
+        testInstructions: '- Check `.env.local` for your agent-specific PORT\n- Start dev server: `PORT=<port> npm run dev`\n- Test on `http://localhost:<port>`\n- Ask the user to verify',
+        depCheck: '**Worktrees do not share `node_modules/` with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Check if node_modules exists\ntest -d node_modules && echo "Dependencies installed" || echo "Need to install dependencies"\n```\n\nIf missing, install them using the project\'s package manager:\n```bash\n# Detect and run the appropriate install command\nif [ -f "pnpm-lock.yaml" ]; then pnpm install\nelif [ -f "yarn.lock" ]; then yarn install\nelif [ -f "bun.lockb" ]; then bun install\nelif [ -f "package-lock.json" ]; then npm install\nelif [ -f "package.json" ]; then npm install\nfi\n```',
+        setupEnvLine: '- Set up `.env.local` with agent-specific PORT (worktree modes)'
+    },
+    api: {
+        devServer: {
+            enabled: true,
+            ports: { cc: 8001, gg: 8002, cx: 8003, cu: 8004 }
+        },
+        testInstructions: '- Check `.env.local` for your agent-specific PORT\n- Start the API server on the assigned PORT\n- Test endpoints using `curl` or a REST client\n- Ask the user to verify',
+        depCheck: '**Worktrees do not share dependencies with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Detect and install dependencies\nif [ -f "requirements.txt" ]; then pip install -r requirements.txt\nelif [ -f "Pipfile" ]; then pipenv install\nelif [ -f "go.mod" ]; then go mod download\nelif [ -f "package.json" ]; then npm install\nfi\n```',
+        setupEnvLine: '- Set up `.env.local` with agent-specific PORT (worktree modes)'
+    },
+    ios: {
+        devServer: { enabled: false, ports: {} },
+        testInstructions: '- Build and test in Xcode/Simulator\n- Verify the changes work on the target device/simulator\n- Ask the user to verify',
+        depCheck: '',
+        setupEnvLine: ''
+    },
+    android: {
+        devServer: { enabled: false, ports: {} },
+        testInstructions: '- Build and test on emulator/device\n- Verify the changes work on the target device/emulator\n- Ask the user to verify',
+        depCheck: '',
+        setupEnvLine: ''
+    },
+    library: {
+        devServer: { enabled: false, ports: {} },
+        testInstructions: '- Run the test suite to verify changes\n- Ask the user to verify',
+        depCheck: '**Worktrees do not share dependencies with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Detect and install dependencies\nif [ -f "Cargo.toml" ]; then cargo build\nelif [ -f "go.mod" ]; then go mod download\nelif [ -f "requirements.txt" ]; then pip install -r requirements.txt\nelif [ -f "pyproject.toml" ]; then pip install -e .\nelif [ -f "package.json" ]; then npm install\nfi\n```',
+        setupEnvLine: ''
+    },
+    generic: {
+        devServer: { enabled: false, ports: {} },
+        testInstructions: '- Test the changes according to the project\'s testing approach\n- Ask the user to verify',
+        depCheck: '',
+        setupEnvLine: ''
+    }
+};
+
+/**
+ * Load project-level Aigon config from .aigon/config.json
+ * @returns {Object} Project config or empty object if not found
+ */
+function loadProjectConfig() {
+    if (!fs.existsSync(PROJECT_CONFIG_PATH)) {
+        return {};
+    }
+    try {
+        return JSON.parse(fs.readFileSync(PROJECT_CONFIG_PATH, 'utf8'));
+    } catch (e) {
+        console.warn(`⚠️  Could not parse .aigon/config.json: ${e.message}`);
+        return {};
+    }
+}
+
+/**
+ * Save project-level Aigon config to .aigon/config.json
+ * @param {Object} config - Config object to save
+ */
+function saveProjectConfig(config) {
+    safeWrite(PROJECT_CONFIG_PATH, JSON.stringify(config, null, 2) + '\n');
+}
+
+/**
+ * Auto-detect project profile from project files
+ * @returns {string} Profile name (web, api, ios, android, library, generic)
+ */
+function detectProjectProfile() {
+    const cwd = process.cwd();
+
+    // iOS: Xcode project, workspace, or Swift Package Manager (root or ios/ subdir)
+    const entries = fs.readdirSync(cwd);
+    const hasIosFiles = (dir) => {
+        try {
+            return fs.readdirSync(dir).some(f => f.endsWith('.xcodeproj') || f.endsWith('.xcworkspace'));
+        } catch (e) { return false; }
+    };
+    if (hasIosFiles(cwd) || hasIosFiles(path.join(cwd, 'ios')) ||
+        fs.existsSync(path.join(cwd, 'Package.swift'))) {
+        return 'ios';
+    }
+
+    // Android: Gradle build file (root or android/ subdir)
+    if (fs.existsSync(path.join(cwd, 'build.gradle')) || fs.existsSync(path.join(cwd, 'build.gradle.kts')) ||
+        fs.existsSync(path.join(cwd, 'android', 'build.gradle')) || fs.existsSync(path.join(cwd, 'android', 'build.gradle.kts'))) {
+        return 'android';
+    }
+
+    // Web: package.json with dev script + framework config
+    const pkgPath = path.join(cwd, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+        try {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+            if (pkg.scripts && pkg.scripts.dev) {
+                // Check for web framework indicators
+                if (entries.some(f => f.startsWith('next.config')) ||
+                    entries.some(f => f.startsWith('vite.config')) ||
+                    entries.some(f => f.startsWith('nuxt.config')) ||
+                    entries.some(f => f.startsWith('svelte.config')) ||
+                    entries.some(f => f.startsWith('astro.config')) ||
+                    entries.some(f => f.startsWith('remix.config')) ||
+                    entries.some(f => f.startsWith('angular.json'))) {
+                    return 'web';
+                }
+            }
+        } catch (e) { /* ignore parse errors */ }
+    }
+
+    // API: server entry points
+    if (fs.existsSync(path.join(cwd, 'manage.py')) ||
+        fs.existsSync(path.join(cwd, 'app.py')) ||
+        fs.existsSync(path.join(cwd, 'main.go')) ||
+        fs.existsSync(path.join(cwd, 'server.js')) ||
+        fs.existsSync(path.join(cwd, 'server.ts'))) {
+        return 'api';
+    }
+
+    // Library: build system config without dev server indicators
+    if (fs.existsSync(path.join(cwd, 'Cargo.toml')) ||
+        fs.existsSync(path.join(cwd, 'go.mod')) ||
+        fs.existsSync(path.join(cwd, 'pyproject.toml')) ||
+        fs.existsSync(path.join(cwd, 'setup.py'))) {
+        return 'library';
+    }
+
+    // Library: package.json without dev script (npm library)
+    if (fs.existsSync(pkgPath)) {
+        try {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+            if (!pkg.scripts || !pkg.scripts.dev) {
+                return 'library';
+            }
+            // Has dev script but no framework config — still treat as web
+            return 'web';
+        } catch (e) { /* ignore */ }
+    }
+
+    return 'generic';
+}
+
+/**
+ * Get the active profile: explicit config > auto-detect
+ * Merges user overrides on top of preset defaults
+ * @returns {Object} Resolved profile with devServer, testInstructions, depCheck, setupEnvLine, and metadata
+ */
+function getActiveProfile() {
+    const projectConfig = loadProjectConfig();
+    const profileName = projectConfig.profile || detectProjectProfile();
+    const preset = PROFILE_PRESETS[profileName] || PROFILE_PRESETS.generic;
+
+    // Start with preset defaults
+    const profile = {
+        name: profileName,
+        detected: !projectConfig.profile,
+        devServer: { ...preset.devServer, ports: { ...preset.devServer.ports } },
+        testInstructions: preset.testInstructions,
+        depCheck: preset.depCheck,
+        setupEnvLine: preset.setupEnvLine
+    };
+
+    // Apply user overrides from .aigon/config.json
+    if (projectConfig.arena) {
+        if (projectConfig.arena.testInstructions) {
+            profile.testInstructions = projectConfig.arena.testInstructions;
+        }
+        if (projectConfig.arena.ports) {
+            profile.devServer.ports = { ...profile.devServer.ports, ...projectConfig.arena.ports };
+        }
+    }
+
+    return profile;
+}
+
+/**
+ * Get template placeholders derived from the active profile
+ * @returns {Object} Placeholder key-value pairs for template processing
+ */
+function getProfilePlaceholders() {
+    const profile = getActiveProfile();
+
+    return {
+        WORKTREE_TEST_INSTRUCTIONS: profile.testInstructions,
+        WORKTREE_DEP_CHECK: profile.depCheck,
+        SETUP_ENV_LOCAL_LINE: profile.setupEnvLine
+    };
 }
 
 /**
@@ -643,7 +841,7 @@ function processTemplate(content, placeholders) {
     Object.entries(placeholders).forEach(([key, value]) => {
         // Match {{KEY}} pattern (our placeholder syntax)
         const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-        result = result.replace(regex, value);
+        result = result.replace(regex, () => value);
     });
     return result;
 }
@@ -1253,6 +1451,7 @@ const commands = {
                 fs.mkdirSync(wtBase, { recursive: true });
             }
 
+            const profile = getActiveProfile();
             const createdWorktrees = [];
             agentIds.forEach(agentId => {
                 const branchName = `feature-${num}-${agentId}-${desc}`;
@@ -1277,17 +1476,23 @@ const commands = {
                             console.warn(`   git commit -m "chore: sync spec to worktree branch"`);
                         }
 
-                        // Create .env.local with agent-specific PORT (copy base if exists)
+                        // Create .env.local (with PORT if devServer enabled)
                         const envLocalPath = path.join(process.cwd(), '.env.local');
-                        const agentConfig = AGENT_CONFIGS[agentId];
-                        const port = agentConfig ? agentConfig.port : 3000;
-                        let envContent = '';
-                        if (fs.existsSync(envLocalPath)) {
-                            envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
+                        if (profile.devServer.enabled) {
+                            const port = profile.devServer.ports[agentId] || AGENT_CONFIGS[agentId]?.port || 3000;
+                            let envContent = '';
+                            if (fs.existsSync(envLocalPath)) {
+                                envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
+                            }
+                            envContent += `# Arena port for agent ${agentId}\nPORT=${port}\n`;
+                            fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
+                            console.log(`   📋 .env.local created with PORT=${port}`);
+                        } else if (fs.existsSync(envLocalPath)) {
+                            // Copy base .env.local for non-port env vars
+                            const envContent = fs.readFileSync(envLocalPath, 'utf8');
+                            fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
+                            console.log(`   📋 .env.local copied (no PORT — dev server not used)`);
                         }
-                        envContent += `# Arena port for agent ${agentId}\nPORT=${port}\n`;
-                        fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
-                        console.log(`   📋 .env.local created with PORT=${port}`);
 
                         // Create log for this agent in the worktree
                         const worktreeLogsDir = path.join(worktreePath, 'docs/specs/features/logs');
@@ -1310,10 +1515,11 @@ const commands = {
             addWorktreePermissions(allWorktreePaths);
 
             if (agentIds.length === 1) {
-                const agentConfig = AGENT_CONFIGS[agentIds[0]];
-                const port = agentConfig ? agentConfig.port : 3000;
+                const portSuffix = profile.devServer.enabled
+                    ? ` (PORT=${profile.devServer.ports[agentIds[0]] || AGENT_CONFIGS[agentIds[0]]?.port || 3000})`
+                    : '';
                 console.log(`\n🚀 Solo worktree created for parallel development!`);
-                console.log(`\n📂 Worktree: ${wtBase}/feature-${num}-${agentIds[0]}-${desc} (PORT=${port})`);
+                console.log(`\n📂 Worktree: ${wtBase}/feature-${num}-${agentIds[0]}-${desc}${portSuffix}`);
                 console.log(`\n💡 Next: Open the worktree with the agent CLI:`);
                 console.log(`   aigon worktree-open ${num}                    # Opens in configured terminal (default: Warp)`);
                 console.log(`   aigon worktree-open ${num} --terminal=code    # Opens in VS Code`);
@@ -1323,9 +1529,10 @@ const commands = {
                 console.log(`\n🏁 Arena started with ${agentIds.length} agents!`);
                 console.log(`\n📂 Worktrees created:`);
                 agentIds.forEach(agentId => {
-                    const agentConfig = AGENT_CONFIGS[agentId];
-                    const port = agentConfig ? agentConfig.port : 3000;
-                    console.log(`   ${agentId}: ${wtBase}/feature-${num}-${agentId}-${desc} (PORT=${port})`);
+                    const portSuffix = profile.devServer.enabled
+                        ? ` (PORT=${profile.devServer.ports[agentId] || AGENT_CONFIGS[agentId]?.port || 3000})`
+                        : '';
+                    console.log(`   ${agentId}: ${wtBase}/feature-${num}-${agentId}-${desc}${portSuffix}`);
                 });
                 console.log(`\n💡 Next: Open each worktree with the agent CLI:`);
                 agentIds.forEach(agentId => {
@@ -2147,10 +2354,14 @@ Branch: \`${soloBranch}\`
                         cmdDir = path.join(process.cwd(), cmdDir);
                     }
 
+                    // Merge profile-derived placeholders into config
+                    const profilePlaceholders = getProfilePlaceholders();
+                    const mergedConfig = { ...config, placeholders: { ...config.placeholders, ...profilePlaceholders } };
+
                     let cmdChanges = { created: 0, updated: 0 };
-                    config.commands.forEach(cmdName => {
-                        // Read generic template and process placeholders
-                        const genericContent = readGenericTemplate(`commands/${cmdName}.md`, config);
+                    mergedConfig.commands.forEach(cmdName => {
+                        // Read generic template and process placeholders (includes profile-derived values)
+                        const genericContent = readGenericTemplate(`commands/${cmdName}.md`, mergedConfig);
                         const description = extractDescription(genericContent);
 
                         // Format output based on agent's output format
@@ -2532,10 +2743,79 @@ Branch: \`${soloBranch}\`
             console.log(JSON.stringify(config, null, 2));
             console.log(`\n   Config file: ${GLOBAL_CONFIG_PATH}`);
             console.log(`   Exists: ${fs.existsSync(GLOBAL_CONFIG_PATH) ? 'yes' : 'no (using defaults)'}`);
+
+            // Show project profile summary
+            const profile = getActiveProfile();
+            console.log(`\n📋 Project Profile: ${profile.name}${profile.detected ? ' (auto-detected)' : ''}`);
+            console.log(`   Dev server: ${profile.devServer.enabled ? 'enabled' : 'disabled'}`);
+            console.log(`   Run 'aigon profile show' for full details.`);
         } else {
             console.error(`Usage: aigon config <init|show>`);
             console.error(`\n  init  - Create default config at ~/.aigon/config.json`);
             console.error(`  show  - Show current configuration`);
+        }
+    },
+
+    'profile': (args) => {
+        const subcommand = args[0] || 'show';
+
+        if (subcommand === 'show') {
+            const profile = getActiveProfile();
+            const projectConfig = loadProjectConfig();
+            console.log(`\n📋 Project Profile: ${profile.name}${profile.detected ? ' (auto-detected)' : ' (set in .aigon/config.json)'}`);
+            console.log(`\n   Dev server: ${profile.devServer.enabled ? 'enabled' : 'disabled'}`);
+            if (profile.devServer.enabled && Object.keys(profile.devServer.ports).length > 0) {
+                console.log(`   Ports: ${Object.entries(profile.devServer.ports).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+            }
+            console.log(`\n   Test instructions:`);
+            profile.testInstructions.split('\n').forEach(line => console.log(`     ${line}`));
+            if (profile.depCheck) {
+                console.log(`\n   Dependency check: yes`);
+            }
+            if (profile.setupEnvLine) {
+                console.log(`   .env.local setup: yes`);
+            }
+            console.log(`\n   Config file: ${PROJECT_CONFIG_PATH}`);
+            console.log(`   Exists: ${fs.existsSync(PROJECT_CONFIG_PATH) ? 'yes' : 'no (using auto-detection)'}`);
+            if (Object.keys(projectConfig).length > 0) {
+                console.log(`\n   Raw config:`);
+                console.log(`   ${JSON.stringify(projectConfig, null, 2).split('\n').join('\n   ')}`);
+            }
+        } else if (subcommand === 'set') {
+            const profileName = args[1];
+            if (!profileName) {
+                console.error(`Usage: aigon profile set <type>`);
+                console.error(`\nAvailable profiles: ${Object.keys(PROFILE_PRESETS).join(', ')}`);
+                return;
+            }
+            if (!PROFILE_PRESETS[profileName]) {
+                console.error(`❌ Unknown profile: ${profileName}`);
+                console.error(`Available profiles: ${Object.keys(PROFILE_PRESETS).join(', ')}`);
+                return;
+            }
+            const projectConfig = loadProjectConfig();
+            projectConfig.profile = profileName;
+            saveProjectConfig(projectConfig);
+            console.log(`✅ Profile set to: ${profileName}`);
+            console.log(`   Saved to: ${PROJECT_CONFIG_PATH}`);
+            console.log(`\n💡 Run 'aigon update' to regenerate templates with the new profile.`);
+        } else if (subcommand === 'detect') {
+            const detected = detectProjectProfile();
+            console.log(`\n🔍 Auto-detected profile: ${detected}`);
+            const preset = PROFILE_PRESETS[detected];
+            console.log(`   Dev server: ${preset.devServer.enabled ? 'enabled' : 'disabled'}`);
+            if (preset.devServer.enabled && Object.keys(preset.devServer.ports).length > 0) {
+                console.log(`   Ports: ${Object.entries(preset.devServer.ports).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+            }
+            const projectConfig = loadProjectConfig();
+            if (projectConfig.profile) {
+                console.log(`\n   ⚠️  Note: .aigon/config.json overrides detection with profile "${projectConfig.profile}"`);
+            }
+        } else {
+            console.error(`Usage: aigon profile [show|set|detect]`);
+            console.error(`\n  show    - Display current profile and settings`);
+            console.error(`  set     - Set project profile (web, api, ios, android, library, generic)`);
+            console.error(`  detect  - Show what auto-detection would choose`);
         }
     },
 
@@ -2723,6 +3003,7 @@ Setup:
   update                            Update Aigon files to latest version
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
   config <init|show>                Manage global config (~/.aigon/config.json)
+  profile [show|set|detect]         Manage project profile (web, api, ios, etc.)
 
 Worktree:
   worktree-open [ID] [agent] [--terminal=<type>]
