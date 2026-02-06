@@ -122,3 +122,10 @@ Once the user has chosen, tell them to run (from the main repo, not a worktree):
 ```
 
 For example: `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}} cc` if Claude's implementation wins.
+
+## Prompt Suggestion
+
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
+
+- **Solo mode:** `{{CMD_PREFIX}}feature-done <ID>`
+- **Arena mode:** `{{CMD_PREFIX}}feature-done <ID> <winning-agent>`

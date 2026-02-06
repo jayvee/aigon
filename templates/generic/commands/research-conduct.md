@@ -50,5 +50,10 @@ This command is for agents to conduct research after setup is complete.
 **If solo mode (no findings file):**
 - Run `aigon research-done {{ARG_SYNTAX}}` to complete the research
 
+## Prompt Suggestion
+
+If solo mode, end your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
+
+`{{CMD_PREFIX}}research-done <ID>`
 
 ARGUMENTS: {{ARG_SYNTAX}}

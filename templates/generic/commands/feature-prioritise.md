@@ -39,3 +39,9 @@ Choose your mode:
 
 Example solo worktree: `{{CMD_PREFIX}}feature-setup 55 cc`
 Example arena: `{{CMD_PREFIX}}feature-setup 55 cc gg cx cu`
+
+## Prompt Suggestion
+
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID assigned by the CLI:
+
+`{{CMD_PREFIX}}feature-setup <ID>`

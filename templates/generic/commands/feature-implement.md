@@ -152,3 +152,10 @@ After completing steps 1-6:
    - Choose a winner and run `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}} <winning-agent>`
 
 **This implementation session is complete.**
+
+## Prompt Suggestion
+
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
+
+- **Solo mode:** `{{CMD_PREFIX}}feature-done <ID>`
+- **Arena / worktree:** `{{CMD_PREFIX}}feature-eval <ID>`

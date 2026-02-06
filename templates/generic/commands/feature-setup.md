@@ -76,3 +76,10 @@ Each terminal opens with the agent CLI running `{{CMD_PREFIX}}feature-implement`
 - **Solo worktree mode**: You'll work in an isolated worktree — ideal for parallel development of multiple features
 - **Arena mode**: Multiple agents compete on the same feature in their own worktrees
 - Worktrees are created in `../<repo>-worktrees/` to keep them grouped with the project
+
+## Prompt Suggestion
+
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID and choose based on mode:
+
+- **Solo mode (branch):** `{{CMD_PREFIX}}feature-implement <ID>`
+- **Solo worktree / Arena:** `{{CMD_PREFIX}}worktree-open <ID>`
