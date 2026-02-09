@@ -50,6 +50,8 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 
 {{WORKTREE_DEP_CHECK}}
 
+> **Project-specific steps?** Check your root instructions file (e.g. CLAUDE.md) for dependency commands.
+
 ## Step 4: Test your changes
 
 ### Solo Mode (branch)
@@ -59,6 +61,8 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 
 ### Worktree Mode (solo worktree or arena)
 {{WORKTREE_TEST_INSTRUCTIONS}}
+
+> **Project-specific steps?** Check your root instructions file (e.g. CLAUDE.md) for test commands.
 
 **STOP and WAIT for user confirmation before proceeding** - do NOT continue until the user confirms testing is complete
 
