@@ -24,6 +24,11 @@ This will:
 - Detect mode (solo or arena)
 - Commit the changes
 
+**IMPORTANT:** After the CLI command completes, open the evaluation file in markdown preview mode in a separate window:
+- File: `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`
+- Open the file, then use Cursor's command palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and run: `Markdown: Open Preview` (or press `Cmd+Shift+V` / `Ctrl+Shift+V`)
+- This will open the markdown preview in a separate window for easy reference while you work
+
 ## Step 2: Read the spec
 
 Read the feature spec in `./docs/specs/features/04-in-evaluation/feature-{{ARG1_SYNTAX}}-*.md`
