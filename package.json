@@ -1,6 +1,6 @@
 {
   "name": "aigon",
-  "version": "2.11.0",
+  "version": "2.11.1",
   "description": "CLI for the Aigon Spec-Driven AI Dev Flow",
   "bin": {
     "aigon": "./aigon-cli.js"
