@@ -15,7 +15,9 @@
     "AGENT_TITLE": "Claude Code Configuration",
     "ARG_SYNTAX": "{{args}}",
     "ARG1_SYNTAX": "{{args}}",
-    "CMD_PREFIX": "/aigon-"
+    "CMD_PREFIX": "/aigon-",
+    "AGENT_TEAMS_RESEARCH_NOTE": "\n### Agent Teams (optional)\n\nFor complex research topics with multiple questions, consider creating an agent team. Spawn teammates to investigate different questions in parallel with adversarial debate — have them challenge each other's findings. Use delegate mode so you coordinate without researching yourself. Reference: https://code.claude.com/docs/en/agent-teams\n",
+    "AGENT_TEAMS_FEATURE_NOTE": "\n### Agent Teams (optional)\n\nFor features with multiple independent acceptance criteria spanning different areas (e.g., frontend, backend, tests), consider creating an agent team. Assign each teammate a distinct slice of the implementation with clear file ownership boundaries to avoid conflicts. Use delegate mode and require plan approval before teammates begin implementing. Reference: https://code.claude.com/docs/en/agent-teams\n"
   },
 
   "output": {

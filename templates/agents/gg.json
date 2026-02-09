@@ -15,7 +15,9 @@
     "AGENT_TITLE": "Gemini CLI Configuration",
     "ARG_SYNTAX": "{{args}}",
     "ARG1_SYNTAX": "{{args}}",
-    "CMD_PREFIX": "/aigon:"
+    "CMD_PREFIX": "/aigon:",
+    "AGENT_TEAMS_RESEARCH_NOTE": "",
+    "AGENT_TEAMS_FEATURE_NOTE": ""
   },
 
   "output": {
