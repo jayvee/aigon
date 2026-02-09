@@ -334,7 +334,7 @@ function getWorktreeBase() {
 // --- Worktree Permission Helpers ---
 
 function addWorktreePermissions(worktreePaths) {
-    // Add read permissions for worktrees to Claude settings
+    // Add read and bash permissions for worktrees to Claude settings
     if (!fs.existsSync(CLAUDE_SETTINGS_PATH)) return;
 
     try {
@@ -346,22 +346,28 @@ function addWorktreePermissions(worktreePaths) {
         const cwd = process.cwd();
         worktreePaths.forEach(relativePath => {
             const absolutePath = path.resolve(cwd, relativePath);
-            const readPermission = `Read(${absolutePath}/**)`;
+            const permissions = [
+                `Read(${absolutePath}/**)`,
+                `Bash(cd ${absolutePath}:*)`,
+                `Bash(git -C ${absolutePath}:*)`,
+            ];
 
-            if (!settings.permissions.allow.includes(readPermission)) {
-                settings.permissions.allow.push(readPermission);
-            }
+            permissions.forEach(perm => {
+                if (!settings.permissions.allow.includes(perm)) {
+                    settings.permissions.allow.push(perm);
+                }
+            });
         });
 
         fs.writeFileSync(CLAUDE_SETTINGS_PATH, JSON.stringify(settings, null, 2));
-        console.log(`🔓 Added worktree read permissions to .claude/settings.json`);
+        console.log(`🔓 Added worktree permissions to .claude/settings.json`);
     } catch (e) {
         console.warn(`⚠️  Could not update Claude settings: ${e.message}`);
     }
 }
 
 function removeWorktreePermissions(worktreePaths) {
-    // Remove read permissions for worktrees from Claude settings
+    // Remove read and bash permissions for worktrees from Claude settings
     if (!fs.existsSync(CLAUDE_SETTINGS_PATH)) return;
 
     try {
@@ -371,12 +377,18 @@ function removeWorktreePermissions(worktreePaths) {
         const cwd = process.cwd();
         worktreePaths.forEach(relativePath => {
             const absolutePath = path.resolve(cwd, relativePath);
-            const readPermission = `Read(${absolutePath}/**)`;
+            const permissions = [
+                `Read(${absolutePath}/**)`,
+                `Bash(cd ${absolutePath}:*)`,
+                `Bash(git -C ${absolutePath}:*)`,
+            ];
 
-            const index = settings.permissions.allow.indexOf(readPermission);
-            if (index > -1) {
-                settings.permissions.allow.splice(index, 1);
-            }
+            permissions.forEach(perm => {
+                const index = settings.permissions.allow.indexOf(perm);
+                if (index > -1) {
+                    settings.permissions.allow.splice(index, 1);
+                }
+            });
         });
 
         fs.writeFileSync(CLAUDE_SETTINGS_PATH, JSON.stringify(settings, null, 2));
@@ -2991,6 +3003,136 @@ windows:
         }
     },
 
+    'open-worktrees': (args) => {
+        // Parse arguments: <feature-id> [--terminal=<type>]
+        let featureId = null;
+        let terminalOverride = null;
+
+        args.forEach(arg => {
+            if (arg.startsWith('--terminal=')) {
+                terminalOverride = arg.split('=')[1];
+            } else if (arg.startsWith('-t=')) {
+                terminalOverride = arg.split('=')[1];
+            } else if (!featureId && /^\d+$/.test(arg)) {
+                featureId = arg;
+            }
+        });
+
+        if (!featureId) {
+            return console.error(`❌ Feature ID is required.\n\n   Usage: aigon open-worktrees <ID> [--terminal=<type>]`);
+        }
+
+        // Find worktrees
+        let worktrees = [];
+        try {
+            const wtOutput = execSync('git worktree list', { encoding: 'utf8' });
+            wtOutput.split('\n').forEach(line => {
+                const wtMatch = line.match(/^([^\s]+)\s+/);
+                if (!wtMatch) return;
+                const wtPath = wtMatch[1];
+                if (wtPath === process.cwd()) return; // Skip main worktree
+
+                // Parse worktree path: feature-{id}-{agent}-{desc}
+                const featureMatch = path.basename(wtPath).match(/^feature-(\d+)-(\w+)-(.+)$/);
+                if (featureMatch) {
+                    worktrees.push({
+                        path: wtPath,
+                        featureId: featureMatch[1],
+                        agent: featureMatch[2],
+                        desc: featureMatch[3]
+                    });
+                }
+            });
+        } catch (e) {
+            return console.error(`❌ Could not list worktrees: ${e.message}`);
+        }
+
+        // Filter by feature ID
+        const paddedId = String(featureId).padStart(2, '0');
+        const unpaddedId = String(parseInt(featureId, 10));
+        worktrees = worktrees.filter(wt =>
+            wt.featureId === paddedId || wt.featureId === unpaddedId
+        );
+
+        if (worktrees.length === 0) {
+            return console.error(`❌ No worktrees found for feature ${featureId}.\n\n   Create worktrees with: aigon feature-setup ${featureId} cc gg`);
+        }
+
+        if (worktrees.length < 2) {
+            return console.error(`❌ Only 1 worktree found for feature ${featureId}. Use \`aigon worktree-open ${featureId}\` for single worktrees.\n\n   To add more agents: aigon feature-setup ${featureId} cc gg cx`);
+        }
+
+        // Sort alphabetically by agent for consistent ordering
+        worktrees.sort((a, b) => a.agent.localeCompare(b.agent));
+
+        // Determine terminal
+        const globalConfig = loadGlobalConfig();
+        const terminal = terminalOverride || globalConfig.terminal;
+
+        // Build agent commands for each worktree
+        const worktreeConfigs = worktrees.map(wt => {
+            const cliConfig = getAgentCliConfig(wt.agent);
+            const prompt = cliConfig.implementPrompt.replace('{featureId}', wt.featureId);
+            let agentCommand;
+            if (cliConfig.implementFlag) {
+                agentCommand = `${cliConfig.command} ${cliConfig.implementFlag} "${prompt}"`;
+            } else {
+                agentCommand = `${cliConfig.command} "${prompt}"`;
+            }
+            return { ...wt, agentCommand };
+        });
+
+        if (terminal === 'warp') {
+            // Build Warp launch config with split panes
+            const configName = `arena-feature-${paddedId}`;
+            const warpConfigDir = path.join(os.homedir(), '.warp', 'launch_configurations');
+            const configFile = path.join(warpConfigDir, `${configName}.yaml`);
+
+            const panes = worktreeConfigs.map(wt => {
+                return `              - cwd: "${wt.path}"\n                commands:\n                  - exec: ${wt.agentCommand}`;
+            }).join('\n');
+
+            const desc = worktreeConfigs[0].desc;
+            const yamlContent = `---
+name: ${configName}
+windows:
+  - tabs:
+      - title: "Arena: Feature ${paddedId} - ${desc}"
+        layout:
+          split_direction: vertical
+          panes:
+${panes}
+`;
+
+            try {
+                if (!fs.existsSync(warpConfigDir)) {
+                    fs.mkdirSync(warpConfigDir, { recursive: true });
+                }
+                fs.writeFileSync(configFile, yamlContent);
+                execSync(`open "warp://launch/${configName}"`);
+
+                console.log(`\n🚀 Opening ${worktreeConfigs.length} worktrees side-by-side in Warp:`);
+                console.log(`   Feature: ${paddedId} - ${desc}\n`);
+                worktreeConfigs.forEach(wt => {
+                    console.log(`   ${wt.agent.padEnd(8)} → ${wt.path}`);
+                });
+                console.log(`\n   Warp config: ${configFile}`);
+            } catch (e) {
+                console.error(`❌ Failed to open Warp: ${e.message}`);
+            }
+        } else {
+            // Non-Warp terminals: print commands for manual setup
+            const desc = worktreeConfigs[0].desc;
+            console.log(`\n📋 Arena worktrees for feature ${paddedId} - ${desc}:`);
+            console.log(`   (Side-by-side launch requires Warp terminal. Use --terminal=warp)\n`);
+            worktreeConfigs.forEach(wt => {
+                console.log(`   ${wt.agent}:`);
+                console.log(`     cd ${wt.path}`);
+                console.log(`     ${wt.agentCommand}\n`);
+            });
+        }
+    },
+
     'help': () => {
         console.log(`
 Aigon - Spec-Driven Development for AI Agents
@@ -3009,6 +3151,8 @@ Worktree:
   worktree-open [ID] [agent] [--terminal=<type>]
                                     Open worktree in terminal with agent CLI
                                     Terminals: warp (auto-runs), code, cursor
+  open-worktrees <ID> [--terminal=<type>]
+                                    Open all arena worktrees side-by-side
 
 Feature Commands (unified for solo and arena modes):
   feature-create <name>             Create feature spec in inbox
@@ -3038,6 +3182,7 @@ Examples:
   aigon feature-setup 55               # Solo mode (creates branch)
   aigon feature-setup 55 cc gg cx cu      # Arena mode (creates worktrees)
   aigon worktree-open 55 cc            # Open worktree in Warp with Claude CLI
+  aigon open-worktrees 55              # Open all worktrees side-by-side in Warp
   aigon feature-implement 55           # Implement in current branch/worktree
   aigon feature-eval 55                # Evaluate implementations
   aigon feature-done 55 cc             # Merge Claude's arena implementation
