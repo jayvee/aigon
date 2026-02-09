@@ -401,7 +401,7 @@ windows:
   - tabs:
       - title: "${title}"
         layout:
-          split_direction: vertical
+          split_direction: horizontal
           panes:
 ${panes}
 `;
