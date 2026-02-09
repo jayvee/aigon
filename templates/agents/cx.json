@@ -15,7 +15,9 @@
     "AGENT_TITLE": "Codex Configuration",
     "ARG_SYNTAX": "$ARGUMENTS",
     "ARG1_SYNTAX": "$1",
-    "CMD_PREFIX": "/prompts:aigon-"
+    "CMD_PREFIX": "/prompts:aigon-",
+    "AGENT_TEAMS_RESEARCH_NOTE": "",
+    "AGENT_TEAMS_FEATURE_NOTE": ""
   },
 
   "output": {
