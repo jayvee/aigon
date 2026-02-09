@@ -24,6 +24,7 @@ This command is for agents to conduct research after setup is complete.
    `docs/specs/research-topics/logs/research-{ID}-{{AGENT_ID}}-findings.md`
 
 3. **Conduct research** based on the questions and scope in the main research doc
+{{AGENT_TEAMS_RESEARCH_NOTE}}
 
 4. **Document your findings**:
    - **If findings file exists (arena mode)**: Write ONLY to your findings file. Do not modify the main research doc or other agents' files.
