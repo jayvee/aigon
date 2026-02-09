@@ -141,8 +141,9 @@ Run multiple agents in competition to find the optimal solution.
         * `../<repo>-worktrees/feature-108-cx-dark-mode` (Codex)
     * **Auto-creates** blank Implementation Log templates in each worktree.
     * **STOPS** - does not implement (user must open each worktree separately).
-4.  **Implement:** Open each worktree using `aigon worktree-open 108 <agent>` (or manually open and run `/aigon-feature-implement 108`).
-    * With Warp: `aigon worktree-open 108 cc` opens the worktree and auto-starts Claude with the implement command.
+4.  **Implement:** Open all worktrees side-by-side with `aigon worktree-open 108 --all`, or individually with `aigon worktree-open 108 cc`.
+    * With Warp: `aigon worktree-open 108 --all` opens all agents side-by-side and auto-starts each.
+    * Single agent: `aigon worktree-open 108 cc` opens one worktree.
     * With VS Code: `aigon worktree-open 108 cc --terminal=code` opens the folder; run the agent manually.
     * Each agent builds the feature independently in their isolated worktree.
     * Each agent creates **tasks from the acceptance criteria** and *must* fill out their Implementation Log.
@@ -305,22 +306,25 @@ The profile is stored in `.aigon/config.json` alongside the existing `.aigon/ver
 After setting up a feature with worktrees, use `worktree-open` to quickly open them in your configured terminal:
 
 ```bash
-# Open most recent worktree in default terminal (Warp)
-aigon worktree-open
-
-# Open specific feature's worktree
+# Open specific feature's worktree (picks most recent if multiple)
 aigon worktree-open 55
 
 # Open specific agent's worktree for a feature
 aigon worktree-open 55 cc
+
+# Open all arena agents side-by-side (Warp split panes)
+aigon worktree-open 55 --all
+
+# Open multiple features side-by-side (parallel mode)
+aigon worktree-open 100 101 102 --agent=cc
 
 # Override terminal for this invocation
 aigon worktree-open 55 cc --terminal=code
 ```
 
 **Terminal behavior:**
-- **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with `/aigon-feature-implement <ID>`
-- **VS Code / Cursor**: Opens the folder; you'll need to run the agent command manually (shown in output)
+- **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with `/aigon-feature-implement <ID>`. Arena (`--all`) and parallel modes open split panes.
+- **VS Code / Cursor**: Opens the folder; you'll need to run the agent command manually (shown in output). Split pane modes print commands for manual setup.
 
 ---
 
@@ -379,7 +383,9 @@ The `aigon` command automates state transitions and Git operations. The workflow
 | **Hooks List** | `aigon hooks [list]` | List all defined hooks from `docs/aigon-hooks.md`. |
 | **Config** | `aigon config <init\|show>` | Manage global config at `~/.aigon/config.json`. |
 | **Profile** | `aigon profile [show\|set\|detect]` | Manage project profile. Auto-detects or override with `set <type>`. |
-| **Worktree Open** | `aigon worktree-open [ID] [agent] [--terminal=<type>]` | Open worktree in terminal with agent CLI. Terminals: `warp` (auto-runs), `code`, `cursor`. |
+| **Worktree Open** | `aigon worktree-open <ID> [agent] [--terminal=<type>]` | Open worktree in terminal with agent CLI. |
+| **Worktree Open (Arena)** | `aigon worktree-open <ID> --all` | Open all arena worktrees side-by-side. |
+| **Worktree Open (Parallel)** | `aigon worktree-open <ID> <ID>... [--agent=<code>]` | Open multiple features side-by-side. |
 
 ---
 
