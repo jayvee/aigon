@@ -62,7 +62,7 @@ Used for exploring complex topics before writing code. Files transition within t
 * **Create:** `aigon research-create "API Design"` creates a templated topic in `/01-inbox`. The agent **explores the codebase** before writing the topic to understand relevant existing code and constraints.
 * **Prioritise:** `aigon research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
 * **Setup:** `aigon research-setup 05` moves to `/03-in-progress`.
-* **Execute:** Run `/aigon-research-conduct 05`. Agent reads the topic file, writes findings and recommendations directly into the document.
+* **Execute:** Run the `research-conduct` slash command (e.g., `/aigon:research-conduct 05` for Claude). Agent reads the topic file, writes findings and recommendations directly into the document.
 * **Done:** `aigon research-done 05` moves to `/04-done`.
 * **Output:** The research file becomes a complete record, with suggested features in the Output section.
 
@@ -77,10 +77,10 @@ Run multiple agents to get diverse perspectives on a research topic.
         * `research-05-cc-findings.md` (Claude)
         * `research-05-gg-findings.md` (Gemini)
         * `research-05-cx-findings.md` (Codex)
-* **Execute:** Run each agent with `/aigon-research-conduct 05`.
+* **Execute:** Run the `research-conduct` slash command in each agent session.
     * Each agent writes ONLY to their own findings file.
     * Agents must NOT run `research-done` (user handles synthesis).
-* **Synthesize:** Run `/aigon-research-synthesize 05` with an agent to:
+* **Synthesize:** Run the `research-synthesize` command with an agent to:
     * Read and compare ALL agents' findings
     * Present a synthesis with recommendations
     * Ask you which features to include (via chat)
@@ -99,7 +99,7 @@ For features where you want to go from idea to implementation immediately:
 * **Now:** `aigon feature-now dark-mode` — creates spec directly in `/in-progress`, assigns an ID, creates a solo branch, and commits atomically. Then write the spec and implement in one session.
 * **Done:** `aigon feature-done <ID>` merges and completes.
 
-This skips the inbox/backlog/setup steps entirely. Use the `/aigon-feature-now` slash command for the full guided experience.
+This skips the inbox/backlog/setup steps entirely. Use the `feature-now` slash command for the full guided experience.
 
 #### 2.2 Solo Mode (Single Agent)
 
@@ -112,14 +112,14 @@ Solo mode supports two workspace styles: **branch** (work in the current repo) o
     * **Branch mode:** `aigon feature-setup 108` — creates a Git branch (`feature-108-dark-mode`) in the current repo.
     * **Worktree mode:** `aigon feature-setup 108 cc` — creates an isolated worktree at `../<repo>-worktrees/feature-108-cc-dark-mode`, ideal for working on multiple features in parallel.
     * Both modes auto-create a blank Implementation Log template.
-4.  **Implement:** Run `/aigon-feature-implement 108` in the agent (or from the worktree).
+4.  **Implement:** Run the `feature-implement` slash command in the agent (or from the worktree).
     * Agent reads the feature spec and creates **tasks from the acceptance criteria** for progress tracking.
     * Agent codes the solution and *must* fill out the Implementation Log.
 5.  **Evaluate (Optional):** `aigon feature-eval 108`
     * Creates code review checklist for the implementation.
 6.  **Cross-Agent Review (Optional):** Have a different agent review the code and commit fixes:
     * Open a session with a different agent (e.g., Codex if Claude implemented)
-    * Run `/aigon-feature-review 108`
+    * Run the `feature-review` slash command
     * The reviewing agent reads the spec, reviews `git diff main...HEAD`, and commits targeted fixes with `fix(review):` prefix
     * Review the fix commits before proceeding
 7.  **Finish:** `aigon feature-done 108`
@@ -133,7 +133,7 @@ Run multiple agents in competition to find the optimal solution.
 1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
     * The agent **explores the codebase** before writing the spec.
 2.  **Prioritise:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Setup Arena:** `aigon feature-setup 108 cc gg cx` (or `/aigon-feature-setup 108 cc gg cx`)
+3.  **Setup Arena:** `aigon feature-setup 108 cc gg cx`
     * Moves Spec to `/03-in-progress`.
     * Creates agent-specific **Git Branches** (`feature-108-cc-dark-mode`, `feature-108-gg-dark-mode`, `feature-108-cx-dark-mode`).
     * Creates **Git Worktrees** in a grouped folder:
@@ -150,7 +150,7 @@ Run multiple agents in competition to find the optimal solution.
     * Each agent creates **tasks from the acceptance criteria** and *must* fill out their Implementation Log.
 5.  **Cross-Agent Review (Optional):** Before evaluation, have different agents review each implementation:
     * In each worktree, open a session with a different agent
-    * Run `/aigon-feature-review 108`
+    * Run the `feature-review` slash command
     * Reviewing agent commits fixes with `fix(review):` prefix
 6.  **Evaluate:** Back in the main folder, switch to an eval model (eg sonnet) and run `aigon feature-eval 108`
     * Moves the feature to `/in-evaluation`.
@@ -224,7 +224,7 @@ your-project/
 │       └── cursor.md              # Cursor-specific instructions
 ├── CLAUDE.md                      # Root file for Claude Code
 ├── GEMINI.md                      # Root file for Gemini CLI
-├── .claude/                       # Claude skills & slash commands
+├── .claude/                       # Claude skills & slash commands (aigon/ subdirectory)
 ├── .gemini/                       # Gemini command files
 ├── .codex/                        # Codex prompts & config
 │   ├── prompt.md                  # Project-level Codex instructions
@@ -324,7 +324,7 @@ aigon worktree-open 55 cc --terminal=code
 ```
 
 **Terminal behavior:**
-- **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with `/aigon-feature-implement <ID>`. Arena (`--all`) and parallel modes open split panes.
+- **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with the `feature-implement` slash command. Arena (`--all`) and parallel modes open split panes.
 - **VS Code / Cursor**: Opens the folder; you'll need to run the agent command manually (shown in output). Split pane modes print commands for manual setup.
 
 ---
@@ -480,32 +480,32 @@ aigon hooks list
 ## Agent Macros
 
 ### Claude Code
-When you run `aigon install-agent cc`, it installs special slash commands for Claude Code to make the workflow seamless.
+When you run `aigon install-agent cc`, it installs slash commands into `.claude/commands/aigon/`, giving them a clean `/aigon:` namespace in the slash menu. Commands include argument hints and destructive commands are protected from autonomous invocation.
 
 | Slash Command | Description |
 | :--- | :--- |
-| `/aigon-feature-create <name>` | Create a new feature spec |
-| `/aigon-feature-now <name>` | Fast-track: create + setup + implement in one step (solo branch) |
-| `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
-| `/aigon-feature-list` | List features by status, mode, and location |
-| `/aigon-feature-implement <ID>` | Implement feature in current branch/worktree |
-| `/aigon-feature-eval <ID>` | Create evaluation template (code review or comparison) |
-| `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
-| `/aigon-feature-cleanup <ID>` | Clean up arena worktrees and branches |
+| `/aigon:feature-create <name>` | Create a new feature spec |
+| `/aigon:feature-now <name>` | Fast-track: create + setup + implement in one step (solo branch) |
+| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon:feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
+| `/aigon:feature-list` | List features by status, mode, and location |
+| `/aigon:feature-implement <ID>` | Implement feature in current branch/worktree |
+| `/aigon:feature-eval <ID>` | Create evaluation template (code review or comparison) |
+| `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
+| `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon:feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
 #### Research
 
 | Slash Command | Description |
 | :--- | :--- |
-| `/aigon-research-create <name>` | Create a new research topic |
-| `/aigon-research-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon-research-setup <ID> [agents...]` | Setup research (solo or arena mode) |
-| `/aigon-research-conduct <ID>` | Conduct research (write findings) |
-| `/aigon-research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
-| `/aigon-research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
-| `/aigon-help` | Shows all available Aigon commands |
+| `/aigon:research-create <name>` | Create a new research topic |
+| `/aigon:research-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon:research-setup <ID> [agents...]` | Setup research (solo or arena mode) |
+| `/aigon:research-conduct <ID>` | Conduct research (write findings) |
+| `/aigon:research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
+| `/aigon:research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
+| `/aigon:help` | Shows all available Aigon commands |
 
 **Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Use `research-synthesize` to have an agent compare all findings, then user runs `research-done` to select features.
 
@@ -618,7 +618,7 @@ If using Claude as the evaluator, start it with a different model:
 claude --model sonnet
 
 # Then run the evaluation command
-/aigon-feature-eval 10
+/aigon:feature-eval 10
 ```
 
 ### Example Evaluation Output
