@@ -17,7 +17,8 @@
     "ARG1_SYNTAX": "{{args}}",
     "CMD_PREFIX": "/aigon-",
     "AGENT_TEAMS_RESEARCH_NOTE": "\n### Agent Teams (optional)\n\nFor complex research topics with multiple questions, consider creating an agent team. Spawn teammates to investigate different questions in parallel with adversarial debate — have them challenge each other's findings. Use delegate mode so you coordinate without researching yourself. Reference: https://code.claude.com/docs/en/agent-teams\n",
-    "AGENT_TEAMS_FEATURE_NOTE": "\n### Agent Teams (optional)\n\nFor features with multiple independent acceptance criteria spanning different areas (e.g., frontend, backend, tests), consider creating an agent team. Assign each teammate a distinct slice of the implementation with clear file ownership boundaries to avoid conflicts. Use delegate mode and require plan approval before teammates begin implementing. Reference: https://code.claude.com/docs/en/agent-teams\n"
+    "AGENT_TEAMS_FEATURE_NOTE": "\n### Agent Teams (optional)\n\nFor features with multiple independent acceptance criteria spanning different areas (e.g., frontend, backend, tests), consider creating an agent team. Assign each teammate a distinct slice of the implementation with clear file ownership boundaries to avoid conflicts. Use delegate mode and require plan approval before teammates begin implementing. Reference: https://code.claude.com/docs/en/agent-teams\n",
+    "PERMISSION_SAVE_NOTE": "\n## Saving Permissions\n\nWhen the user says \"save that permission\", \"remember that\", or asks you to persist a permission you were just granted:\n\n1. Read `.claude/settings.json`\n2. Add the tool pattern to the `permissions.allow` array\n3. Write the updated file\n4. Confirm what you saved\n\nUse the narrowest pattern that covers the user's intent:\n- Specific: `Bash(npm test)`, `Bash(git push:*)`\n- Broad: `Bash(npm:*)`, `Bash(node:*)`\n\nPrefer specific patterns — broad Bash allows can be chained to bypass deny rules. Ask the user if unsure whether to save narrowly or broadly.\n"
   },
 
   "output": {
@@ -40,7 +41,13 @@
     "settings": {
       "enabled": true,
       "path": ".claude/settings.json",
-      "permissions": ["Bash(aigon:*)"]
+      "permissions": ["Bash(aigon:*)"],
+      "denyPermissions": [
+        "Bash(rm -rf /)",
+        "Bash(rm -rf ~)",
+        "Bash(sudo:*)",
+        "Bash(su:*)"
+      ]
     }
   },
 

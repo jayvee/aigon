@@ -69,6 +69,7 @@
 5. Merge winner: `{{CMD_PREFIX}}feature-done <ID> cx`
 6. Clean up losers: `{{CMD_PREFIX}}feature-cleanup <ID> --push` (to save branches) or `{{CMD_PREFIX}}feature-cleanup <ID>` (to delete)
 
+{{PERMISSION_SAVE_NOTE}}
 ## Before Completing a Feature
 
 Before running `{{CMD_PREFIX}}feature-done`, always:
