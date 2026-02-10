@@ -2650,6 +2650,23 @@ Branch: \`${soloBranch}\`
                         }
                     }
 
+                    // Add deny permissions (Claude)
+                    if (extras.settings.denyPermissions) {
+                        if (!settings.permissions) settings.permissions = {};
+                        if (!settings.permissions.deny) settings.permissions.deny = [];
+                        let deniesAdded = false;
+                        extras.settings.denyPermissions.forEach(perm => {
+                            if (!settings.permissions.deny.includes(perm)) {
+                                settings.permissions.deny.push(perm);
+                                deniesAdded = true;
+                            }
+                        });
+                        if (deniesAdded) {
+                            console.log(`   🛡️  Added deny rules to ${extras.settings.path}`);
+                            settingsChanged = true;
+                        }
+                    }
+
                     // Add allowedTools (Gemini)
                     if (extras.settings.allowedTools) {
                         if (!settings.allowedTools) settings.allowedTools = [];
