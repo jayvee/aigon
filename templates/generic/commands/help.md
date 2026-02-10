@@ -33,11 +33,13 @@
 
 ### Agent CLI Mappings (used by worktree-open)
 
-| Code | Agent | Command | Auto-approve flag |
-|------|-------|---------|-------------------|
-| cc | Claude Code | `claude --dangerously-skip-permissions` | Bypasses all permissions |
-| cu | Cursor | `agent --force` | Force allows commands |
-| gg | Gemini | `gemini --yolo` | YOLO mode |
-| cx | Codex | `codex --full-auto` | Sandboxed auto-execution |
+| Code | Agent | Command | Mode |
+|------|-------|---------|------|
+| cc | Claude Code | `claude --permission-mode acceptEdits` | Auto-edits, prompts for risky Bash |
+| cu | Cursor | `agent` | Prompts for terminal commands |
+| gg | Gemini | `gemini --sandbox --yolo` | Auto-approves all, sandboxed |
+| cx | Codex | `codex --full-auto` | Workspace-write, smart approval |
+
+**Quick-allow when prompted:** Claude `Shift+Tab` • Gemini `2` for always • Cursor "Add to allowlist" • Codex "Allow and remember"
 
 Run `aigon help` in terminal for full CLI reference.
