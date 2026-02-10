@@ -929,6 +929,37 @@ function removeDeprecatedCommands(cmdDir, config) {
     return removed;
 }
 
+// Clean up old flat commands when an agent migrates to subdirectory layout
+// e.g., CC moved from .claude/commands/aigon-*.md to .claude/commands/aigon/*.md
+function migrateOldFlatCommands(cmdDir, config) {
+    const parentDir = path.dirname(cmdDir);
+    // Only migrate if commands are in a subdirectory (not already at root level)
+    if (parentDir === cmdDir || !fs.existsSync(parentDir)) return [];
+
+    const ext = config.output.commandFileExtension;
+    const subDirName = path.basename(cmdDir);
+    const oldPrefix = `${subDirName}-`;
+
+    const migrated = [];
+    try {
+        for (const file of fs.readdirSync(parentDir)) {
+            if (!file.startsWith(oldPrefix) || !file.endsWith(ext)) continue;
+            // Check the command name matches one we know about
+            const cmdName = file.slice(oldPrefix.length, -ext.length);
+            if (!config.commands.includes(cmdName)) continue;
+            try {
+                fs.unlinkSync(path.join(parentDir, file));
+                migrated.push(file);
+            } catch (e) {
+                console.warn(`   ⚠️  Could not remove old command ${file}: ${e.message}`);
+            }
+        }
+    } catch (e) {
+        // Parent dir not readable, skip migration
+    }
+    return migrated;
+}
+
 // Append or replace content between markers in a file
 const MARKER_START = '<!-- AIGON_START -->';
 const MARKER_END = '<!-- AIGON_END -->';
@@ -1029,6 +1060,35 @@ function extractDescription(content) {
     return match ? match[1].trim() : '';
 }
 
+// Commands that should not be autonomously invoked by the agent
+const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
+    'feature-done',
+    'feature-cleanup',
+    'worktree-open',
+]);
+
+// Per-command argument hints for frontmatter
+const COMMAND_ARG_HINTS = {
+    'feature-create': '<feature-name>',
+    'feature-now': '<feature-name>',
+    'feature-prioritise': '<feature-name>',
+    'feature-setup': '<ID> [agents...]',
+    'feature-implement': '<ID>',
+    'feature-eval': '<ID>',
+    'feature-review': '<ID>',
+    'feature-done': '<ID> [agent]',
+    'feature-cleanup': '<ID> [--push]',
+    'feature-list': '',
+    'worktree-open': '[ID] [agent]',
+    'research-create': '<topic-name>',
+    'research-prioritise': '<topic-name>',
+    'research-setup': '<ID> [agents...]',
+    'research-conduct': '<ID>',
+    'research-synthesize': '<ID>',
+    'research-done': '<ID>',
+    'help': '',
+};
+
 // Format command output based on agent's output format
 function formatCommandOutput(content, description, commandName, agentConfig) {
     const output = agentConfig.output;
@@ -1043,9 +1103,20 @@ function formatCommandOutput(content, description, commandName, agentConfig) {
         if (frontmatterFields.includes('description')) {
             frontmatterLines.push(`description: ${description}`);
         }
+        if (frontmatterFields.includes('argument-hint')) {
+            const hint = COMMAND_ARG_HINTS[commandName];
+            if (hint) {
+                frontmatterLines.push(`argument-hint: "${hint}"`);
+            }
+        }
+        if (frontmatterFields.includes('disable-model-invocation')) {
+            if (COMMANDS_DISABLE_MODEL_INVOCATION.has(commandName)) {
+                frontmatterLines.push('disable-model-invocation: true');
+            }
+        }
         if (frontmatterFields.includes('args')) {
-            // For codex, add args hint
-            frontmatterLines.push('args: feature_id');
+            const hint = COMMAND_ARG_HINTS[commandName] || '';
+            frontmatterLines.push(`args: ${hint || 'none'}`);
         }
         return `---\n${frontmatterLines.join('\n')}\n---\n${cleanContent}`;
     }
@@ -2586,8 +2657,12 @@ Branch: \`${soloBranch}\`
 
                     const removed = removeDeprecatedCommands(cmdDir, config);
 
+                    // Migrate: clean up old flat commands when agent now uses subdirectory
+                    // e.g., CC moved from .claude/commands/aigon-*.md to .claude/commands/aigon/*.md
+                    const migrated = migrateOldFlatCommands(cmdDir, config);
+
                     // Only report if there were actual changes
-                    const totalChanges = cmdChanges.created + cmdChanges.updated + removed.length;
+                    const totalChanges = cmdChanges.created + cmdChanges.updated + removed.length + migrated.length;
                     if (totalChanges > 0) {
                         if (config.output.global) {
                             console.log(`   ✅ Installed global prompts: ${config.output.commandDir}`);
@@ -2600,6 +2675,9 @@ Branch: \`${soloBranch}\`
                         }
                         if (removed.length > 0) {
                             console.log(`   🧹 Removed ${removed.length} deprecated command(s): ${removed.join(', ')}`);
+                        }
+                        if (migrated.length > 0) {
+                            console.log(`   🔄 Migrated: removed ${migrated.length} old flat command(s) from parent directory`);
                         }
                     }
                 }
