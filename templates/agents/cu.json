@@ -17,7 +17,8 @@
     "ARG1_SYNTAX": "<name>",
     "CMD_PREFIX": "/aigon-",
     "AGENT_TEAMS_RESEARCH_NOTE": "",
-    "AGENT_TEAMS_FEATURE_NOTE": ""
+    "AGENT_TEAMS_FEATURE_NOTE": "",
+    "PERMISSION_SAVE_NOTE": ""
   },
 
   "output": {
