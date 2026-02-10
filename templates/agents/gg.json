@@ -5,7 +5,7 @@
 
   "cli": {
     "command": "gemini",
-    "implementFlag": "--yolo",
+    "implementFlag": "--sandbox --yolo",
     "implementPrompt": "/aigon:feature-implement {featureId}"
   },
 

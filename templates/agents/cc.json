@@ -5,7 +5,7 @@
 
   "cli": {
     "command": "claude",
-    "implementFlag": "--dangerously-skip-permissions",
+    "implementFlag": "--permission-mode acceptEdits",
     "implementPrompt": "/aigon-feature-implement {featureId}"
   },
 
