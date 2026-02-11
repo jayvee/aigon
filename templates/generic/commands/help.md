@@ -22,6 +22,7 @@
 | `{{CMD_PREFIX}}research-create <name>` | Create a new research topic |
 | `{{CMD_PREFIX}}research-prioritise <name>` | Prioritise a research topic |
 | `{{CMD_PREFIX}}research-setup <ID> [agents...]` | Setup for solo or arena research |
+| `{{CMD_PREFIX}}research-open <ID>` | Open all arena agents side-by-side for parallel research |
 | `{{CMD_PREFIX}}research-conduct <ID>` | Conduct research (write findings) |
 | `{{CMD_PREFIX}}research-done <ID>` | Complete a research topic |
 
