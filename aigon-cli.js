@@ -382,6 +382,28 @@ function buildAgentCommand(wt) {
 }
 
 /**
+ * Build the agent CLI command string for research conduct.
+ * @param {string} agentId - Agent ID (cc, gg, cx, cu)
+ * @param {string} researchId - Research ID (padded, e.g., "05")
+ * @returns {string} Command string to run the agent CLI with research-conduct
+ */
+function buildResearchAgentCommand(agentId, researchId) {
+    const cliConfig = getAgentCliConfig(agentId);
+    const agentConfig = loadAgentConfig(agentId);
+    
+    // Research commands use the agent's CMD_PREFIX placeholder
+    // e.g., "/aigon:research-conduct" for Claude/Gemini, "/aigon-research-conduct" for Cursor
+    const cmdPrefix = agentConfig?.placeholders?.CMD_PREFIX || '/aigon:';
+    const prompt = `${cmdPrefix}research-conduct ${researchId}`;
+    
+    // Use the same flag pattern as feature-implement (e.g., --permission-mode acceptEdits)
+    if (cliConfig.implementFlag) {
+        return `${cliConfig.command} ${cliConfig.implementFlag} "${prompt}"`;
+    }
+    return `${cliConfig.command} "${prompt}"`;
+}
+
+/**
  * Open multiple worktrees side-by-side in Warp using split panes.
  * @param {Array<{path: string, agent: string, desc: string, featureId: string, agentCommand: string}>} worktreeConfigs
  * @param {string} configName - Warp launch config name
@@ -1385,8 +1407,15 @@ const commands = {
                 const agentName = agentConfig ? agentConfig.name : agentId;
                 console.log(`   ${agentId} (${agentName}): logs/research-${researchNum}-${agentId}-findings.md`);
             });
-            console.log(`\n💡 Next: Run each agent with /aigon-research-conduct ${researchNum}`);
-            console.log(`   When done: aigon research-done ${researchNum}`);
+            console.log(`\n💡 Next steps:`);
+            console.log(`   Option 1: Open all agents side-by-side:`);
+            console.log(`     aigon research-open ${researchNum}`);
+            console.log(`\n   Option 2: Run each agent individually:`);
+            const firstAgent = agentIds[0];
+            const firstAgentConfig = loadAgentConfig(firstAgent);
+            const cmdPrefix = firstAgentConfig?.placeholders?.CMD_PREFIX || '/aigon:';
+            console.log(`     [Open each agent terminal] ${cmdPrefix}research-conduct ${researchNum}`);
+            console.log(`\n   When done: aigon research-done ${researchNum}`);
         } else {
             // Solo mode: Just move to in-progress
             console.log(`\n🚀 Solo mode. Research moved to in-progress.`);
@@ -1504,6 +1533,135 @@ const commands = {
             console.log(`📂 Findings files preserved in: ./docs/specs/research-topics/logs/`);
         } else {
             console.log(`\n✅ Research ${researchNum} complete! (solo mode)`);
+        }
+    },
+    'research-open': (args) => {
+        const id = args[0];
+        let terminalOverride = null;
+
+        // Parse terminal override flag
+        args.forEach(arg => {
+            if (arg.startsWith('--terminal=')) {
+                terminalOverride = arg.split('=')[1];
+            } else if (arg.startsWith('-t=')) {
+                terminalOverride = arg.split('=')[1];
+            }
+        });
+
+        if (!id) {
+            console.error(`❌ Research ID is required.\n`);
+            console.error(`Usage:`);
+            console.error(`  aigon research-open <ID> [--terminal=<type>]`);
+            console.error(`\nExamples:`);
+            console.error(`  aigon research-open 05              # Open all arena agents side-by-side`);
+            console.error(`  aigon research-open 05 --terminal=code # Open in VS Code (manual setup)`);
+            return;
+        }
+
+        // Find the research topic
+        let found = findFile(PATHS.research, id, ['03-in-progress']);
+        if (!found) {
+            return console.error(`❌ Could not find research "${id}" in progress.\n\nRun 'aigon research-setup ${id} [agents...]' first.`);
+        }
+
+        const match = found.file.match(/^research-(\d+)-(.*)\.md$/);
+        if (!match) {
+            return console.error(`❌ Could not parse research filename: ${found.file}`);
+        }
+        const [_, researchNum, researchName] = match;
+        const paddedId = String(researchNum).padStart(2, '0');
+
+        // Check for arena mode by looking for findings files
+        const logsDir = path.join(PATHS.research.root, 'logs');
+        let findingsFiles = [];
+        if (fs.existsSync(logsDir)) {
+            const files = fs.readdirSync(logsDir);
+            findingsFiles = files.filter(f =>
+                f.startsWith(`research-${researchNum}-`) && f.endsWith('-findings.md')
+            );
+        }
+
+        if (findingsFiles.length === 0) {
+            return console.error(`❌ Research ${paddedId} is not in arena mode.\n\nTo start arena research:\n  aigon research-setup ${paddedId} cc gg cx\n\nFor solo research, open a terminal manually and run:\n  /aigon:research-conduct ${paddedId}`);
+        }
+
+        // Extract agent IDs from findings filenames
+        const agentConfigs = [];
+        const errors = [];
+
+        findingsFiles.forEach(file => {
+            const agentMatch = file.match(/^research-\d+-(\w+)-findings\.md$/);
+            if (!agentMatch) {
+                errors.push(`Could not parse agent ID from filename: ${file}`);
+                return;
+            }
+
+            const agentId = agentMatch[1];
+            const agentConfig = loadAgentConfig(agentId);
+            
+            if (!agentConfig) {
+                errors.push(`Agent "${agentId}" is not configured. Install with: aigon install-agent ${agentId}`);
+                return;
+            }
+
+            agentConfigs.push({
+                agent: agentId,
+                agentName: agentConfig.name || agentId,
+                researchId: paddedId,
+                agentCommand: buildResearchAgentCommand(agentId, paddedId)
+            });
+        });
+
+        if (errors.length > 0) {
+            console.error(`❌ Errors detected:\n`);
+            errors.forEach(err => console.error(`   ${err}`));
+            return;
+        }
+
+        if (agentConfigs.length === 0) {
+            return console.error(`❌ No valid agents found for research ${paddedId}.`);
+        }
+
+        // Sort alphabetically by agent for consistent ordering
+        agentConfigs.sort((a, b) => a.agent.localeCompare(b.agent));
+
+        // Determine terminal
+        const globalConfig = loadGlobalConfig();
+        const terminal = terminalOverride || globalConfig.terminal;
+
+        if (terminal === 'warp') {
+            const configName = `arena-research-${paddedId}`;
+            const title = `Arena Research: ${paddedId} - ${researchName.replace(/-/g, ' ')}`;
+
+            // Create config objects for Warp (all use main repo directory)
+            const researchConfigs = agentConfigs.map(config => ({
+                path: process.cwd(),
+                agent: config.agent,
+                researchId: config.researchId,
+                agentCommand: config.agentCommand
+            }));
+
+            try {
+                const configFile = openInWarpSplitPanes(researchConfigs, configName, title);
+
+                console.log(`\n🚀 Opening ${agentConfigs.length} agents side-by-side in Warp:`);
+                console.log(`   Research: ${paddedId} - ${researchName.replace(/-/g, ' ')}\n`);
+                agentConfigs.forEach(config => {
+                    console.log(`   ${config.agent.padEnd(8)} → ${process.cwd()}`);
+                });
+                console.log(`\n   Warp config: ${configFile}`);
+            } catch (e) {
+                console.error(`❌ Failed to open Warp: ${e.message}`);
+            }
+        } else {
+            // Non-Warp terminals: print manual setup instructions
+            console.log(`\n📋 Arena research ${paddedId} - ${researchName.replace(/-/g, ' ')}:`);
+            console.log(`   (Side-by-side launch requires Warp terminal. Use --terminal=warp)\n`);
+            agentConfigs.forEach(config => {
+                console.log(`   ${config.agent} (${config.agentName}):`);
+                console.log(`     cd ${process.cwd()}`);
+                console.log(`     ${config.agentCommand}\n`);
+            });
         }
     },
     'feature-prioritise': (args) => {
@@ -3357,6 +3515,7 @@ Research (unified for solo and arena modes):
   research-create <name>            Create research topic in inbox
   research-prioritise <name>        Move research from inbox to backlog (assigns ID)
   research-setup <ID> [agents...]   Setup solo (no agents) or arena (with agents) research
+  research-open <ID>                Open all arena agents side-by-side for parallel research
   research-conduct <ID>             Conduct research (agent writes findings)
   research-done <ID> [--complete]   Complete research (shows summary in arena mode)
 
@@ -3383,6 +3542,7 @@ Examples:
   aigon research-prioritise api-design # Assign ID, move to backlog
   aigon research-setup 05              # Solo mode (one agent)
   aigon research-setup 05 cc gg        # Arena mode (multiple agents)
+  aigon research-open 05               # Open all arena agents side-by-side
   aigon research-conduct 05            # Agent conducts research
   aigon research-done 05               # Shows findings summary (arena)
   aigon research-done 05 --complete    # Complete research
