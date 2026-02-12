@@ -19,6 +19,7 @@ Comprehensive overhaul of the README.md to reflect the current state of Aigon, i
 ### Content Updates
 - [ ] **Value proposition statement** added near the top explaining: CLI-based, vendor-independent, works with any agent, no lock-in
 - [ ] **Context-in-repo advantage** explained: all feature specs, research, logs, and evaluations live in your repo — AI agents can use this history as context for future development, unlike third-party tools where context is locked away
+- [ ] **Aigon builds Aigon** — point out that this repo itself uses Aigon for its own development, so readers can browse `docs/specs/` to see real feature specs, research topics, implementation logs, and evaluations as living examples of the workflow in action
 - [ ] **Slash commands as primary** — all workflow examples default to slash command syntax (e.g. `/aigon:feature-create dark-mode`) with CLI equivalents shown as secondary/reference
 - [ ] **Cursor CLI support** documented — explain `agent` CLI command and Cursor's `composer` model are now supported, show in agent table
 - [ ] **Installation & Setup** updated:
