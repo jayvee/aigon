@@ -61,7 +61,12 @@ Remember that `{{CMD_PREFIX}}feature-done` must be run from the main repo later.
 
 ### Arena Mode (competition)
 
-After the CLI completes, open each worktree:
+After the CLI completes, open all worktrees side-by-side:
+```bash
+aigon worktree-open 55 --all         # Opens all arena agents side-by-side in Warp
+```
+
+Or open individually:
 ```
 {{CMD_PREFIX}}worktree-open 55 cc    # Open Claude's worktree
 {{CMD_PREFIX}}worktree-open 55 gg    # Open Gemini's worktree
@@ -82,4 +87,5 @@ Each terminal opens with the agent CLI running `{{CMD_PREFIX}}feature-implement`
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID and choose based on mode:
 
 - **Solo mode (branch):** `{{CMD_PREFIX}}feature-implement <ID>`
-- **Solo worktree / Arena:** `{{CMD_PREFIX}}worktree-open <ID>`
+- **Solo worktree:** `{{CMD_PREFIX}}worktree-open <ID>`
+- **Arena:** `aigon worktree-open <ID> --all`
