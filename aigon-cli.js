@@ -1373,12 +1373,29 @@ function displayKanbanSection(title, typeConfig, options) {
     };
 
     const columns = columnMap[typeConfig.prefix];
-    const displayFolders = typeConfig.folders.filter(f => folderFilter.has(f));
+    const candidateFolders = typeConfig.folders.filter(f => folderFilter.has(f));
+
+    // Auto-collapse: only show columns with items
+    const displayFolders = candidateFolders.filter(f => {
+        const folderItems = items[f] || [];
+        return folderItems.length > 0;
+    });
+
+    // Skip section entirely if no items
+    if (displayFolders.length === 0) {
+        return;
+    }
 
     console.log(`${title}`);
 
-    // Column headers
-    const colWidth = 20;
+    // Dynamic column width based on terminal size
+    const terminalWidth = process.stdout.columns || 120;
+    const numCols = displayFolders.length;
+    const bordersAndPadding = (numCols * 3) + 4; // │ separators + margins
+    const availableWidth = terminalWidth - bordersAndPadding;
+    const calculatedWidth = Math.floor(availableWidth / numCols);
+    const colWidth = Math.max(12, Math.min(30, calculatedWidth)); // Min 12, max 30
+
     const header = displayFolders.map(f => (columns[f] || f).padEnd(colWidth).substring(0, colWidth)).join(' │ ');
     const separator = displayFolders.map(() => '─'.repeat(colWidth)).join('─┼─');
 
