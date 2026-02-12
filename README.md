@@ -651,4 +651,20 @@ The command set is consistent across agents. Differences are only command prefix
 
 ---
 
+## Comparing Aigon to Other Tools
+
+Wondering how Aigon compares to Cursor IDE, Windsurf, or other integrated AI development tools?
+
+See [COMPARISONS.md](COMPARISONS.md) for strategic analysis including:
+- Philosophy and architecture differences
+- Feature comparison tables
+- Strengths and weaknesses
+- Cost analysis
+- When to choose which tool
+- How to use Aigon + Cursor together
+
+**Key insight:** Aigon and tools like Cursor can complement each other—use Aigon for vendor-independent workflow orchestration and include Cursor as one agent in arena mode.
+
+---
+
 📘 **For detailed workflows, hooks, project profiles, and advanced configuration, see the [Complete Guide](docs/GUIDE.md)**
