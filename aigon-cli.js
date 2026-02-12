@@ -1306,24 +1306,54 @@ function getCurrentBranch() {
     }
 }
 
+function saveBoardMapping(mapping) {
+    const mappingDir = path.join(process.cwd(), '.aigon');
+    const mappingPath = path.join(mappingDir, '.board-map.json');
+    if (!fs.existsSync(mappingDir)) fs.mkdirSync(mappingDir, { recursive: true });
+    try {
+        fs.writeFileSync(mappingPath, JSON.stringify(mapping, null, 2));
+    } catch (e) {
+        // Silently fail
+    }
+}
+
+function loadBoardMapping() {
+    const mappingPath = path.join(process.cwd(), '.aigon', '.board-map.json');
+    if (!fs.existsSync(mappingPath)) return null;
+    try {
+        const mapping = JSON.parse(fs.readFileSync(mappingPath, 'utf8'));
+        const age = Date.now() - (mapping.timestamp || 0);
+        if (age > 24 * 60 * 60 * 1000) return null; // Expired
+        return mapping;
+    } catch (e) {
+        return null;
+    }
+}
+
 function displayBoardKanbanView(options) {
     const { includeFeatures, includeResearch, showAll, showActive, showInbox, showBacklog, showDone } = options;
+
+    const boardMapping = { features: {}, research: {}, timestamp: Date.now() };
+    let letterIndex = 0;
 
     console.log('╔═══════════════════════ Aigon Board ════════════════════════╗\n');
 
     if (includeFeatures) {
-        displayKanbanSection('FEATURES', PATHS.features, options);
+        letterIndex = displayKanbanSection('FEATURES', PATHS.features, options, boardMapping.features, letterIndex);
     }
 
     if (includeResearch) {
-        if (includeFeatures) console.log(''); // Spacing between sections
-        displayKanbanSection('RESEARCH', PATHS.research, options);
+        if (includeFeatures) console.log('');
+        letterIndex = displayKanbanSection('RESEARCH', PATHS.research, options, boardMapping.research, letterIndex);
     }
+
+    saveBoardMapping(boardMapping);
 }
 
-function displayKanbanSection(title, typeConfig, options) {
+function displayKanbanSection(title, typeConfig, options, mapping = {}, startLetterIndex = 0) {
     const { showAll, showActive, showInbox, showBacklog, showDone } = options;
     const hasFilter = showAll || showActive || showInbox || showBacklog || showDone;
+    let letterIndex = startLetterIndex;
 
     // Determine which folders to show
     const folderFilter = new Set();
@@ -1415,6 +1445,14 @@ function displayKanbanSection(title, typeConfig, options) {
             const item = folderItems[i];
             let display = item.id ? `#${item.id} ${item.name}` : item.name;
 
+            // Add letter label for unprioritized inbox items
+            if (folder === '01-inbox' && !item.id) {
+                const letter = String.fromCharCode(97 + letterIndex);
+                display = `${letter}) ${display}`;
+                mapping[letter] = item.name;
+                letterIndex++;
+            }
+
             // Add worktree/mode indicator for in-progress items
             if (folder === '03-in-progress' && item.id) {
                 const wts = worktreeMap[item.id] || [];
@@ -1449,6 +1487,8 @@ function displayKanbanSection(title, typeConfig, options) {
     console.log('├─' + separator + '─┤');
     console.log('│ ' + counts + ' │');
     console.log('└─' + separator + '─┘');
+
+    return letterIndex;
 }
 
 function displayBoardListView(options) {
@@ -1658,8 +1698,21 @@ const commands = {
         console.log(`📝 Edit the topic, then prioritise it using command: research-prioritise ${slug}`);
     },
     'research-prioritise': (args) => {
-        const name = args[0];
-        if (!name) return console.error("Usage: aigon research-prioritise <name>");
+        let name = args[0];
+        if (!name) return console.error("Usage: aigon research-prioritise <name or letter>");
+
+        // Check if argument is a single letter (from board mapping)
+        if (name.length === 1 && name >= 'a' && name <= 'z') {
+            const mapping = loadBoardMapping();
+            if (mapping && mapping.research[name]) {
+                const mappedName = mapping.research[name];
+                console.log(`📍 Letter '${name}' maps to: ${mappedName}`);
+                name = mappedName;
+            } else {
+                return console.error(`❌ Letter '${name}' not found in board mapping. Run 'aigon board' first.`);
+            }
+        }
+
         const found = findUnprioritizedFile(PATHS.research, name);
         if (!found) return console.error(`❌ Could not find unprioritized research "${name}" in inbox.`);
         const nextId = getNextId(PATHS.research);
@@ -1995,8 +2048,21 @@ const commands = {
         }
     },
     'feature-prioritise': (args) => {
-        const name = args[0];
-        if (!name) return console.error("Usage: aigon feature-prioritise <name>");
+        let name = args[0];
+        if (!name) return console.error("Usage: aigon feature-prioritise <name or letter>");
+
+        // Check if argument is a single letter (from board mapping)
+        if (name.length === 1 && name >= 'a' && name <= 'z') {
+            const mapping = loadBoardMapping();
+            if (mapping && mapping.features[name]) {
+                const mappedName = mapping.features[name];
+                console.log(`📍 Letter '${name}' maps to: ${mappedName}`);
+                name = mappedName;
+            } else {
+                return console.error(`❌ Letter '${name}' not found in board mapping. Run 'aigon board' first.`);
+            }
+        }
+
         const found = findUnprioritizedFile(PATHS.features, name);
         if (!found) return console.error(`❌ Could not find unprioritized feature "${name}" in inbox.`);
         const nextId = getNextId(PATHS.features);
