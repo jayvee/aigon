@@ -1093,17 +1093,17 @@ const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
 const COMMAND_ARG_HINTS = {
     'feature-create': '<feature-name>',
     'feature-now': '<feature-name>',
-    'feature-prioritise': '<feature-name>',
+    'feature-prioritise': '<feature-name or letter>',
     'feature-setup': '<ID> [agents...]',
     'feature-implement': '<ID>',
     'feature-eval': '<ID>',
     'feature-review': '<ID>',
     'feature-done': '<ID> [agent]',
     'feature-cleanup': '<ID> [--push]',
-    'feature-list': '',
+    'board': '[--list] [--features] [--research] [--active] [--all] [--inbox] [--backlog] [--done]',
     'worktree-open': '[ID] [agent]',
     'research-create': '<topic-name>',
-    'research-prioritise': '<topic-name>',
+    'research-prioritise': '<topic-name or letter>',
     'research-setup': '<ID> [agents...]',
     'research-conduct': '<ID>',
     'research-synthesize': '<ID>',
@@ -1237,6 +1237,376 @@ This project uses the Aigon development workflow.
 `;
 }
 
+// --- Board Display Helpers ---
+
+function collectBoardItems(typeConfig, folderFilter) {
+    const items = {};
+    typeConfig.folders.forEach(folder => {
+        if (!folderFilter.has(folder)) return;
+        const dir = path.join(typeConfig.root, folder);
+        if (!fs.existsSync(dir)) return;
+
+        const files = fs.readdirSync(dir)
+            .filter(f => f.startsWith(typeConfig.prefix + '-') && f.endsWith('.md'))
+            .sort();
+
+        items[folder] = files.map(file => {
+            const idMatch = file.match(new RegExp(`^${typeConfig.prefix}-(\\d+)-(.*)\.md$`));
+            const noIdMatch = !idMatch && file.match(new RegExp(`^${typeConfig.prefix}-(.*)\.md$`));
+            if (!idMatch && !noIdMatch) return null;
+
+            return {
+                id: idMatch ? idMatch[1] : null,
+                name: idMatch ? idMatch[2] : noIdMatch[1],
+                file
+            };
+        }).filter(Boolean);
+    });
+    return items;
+}
+
+function getWorktreeInfo() {
+    const worktreeMap = {}; // featureNum -> [{ path, agent }]
+    try {
+        const wtOutput = execSync('git worktree list', { encoding: 'utf8' });
+        wtOutput.split('\n').forEach(line => {
+            const wtMatch = line.match(/^([^\s]+)\s+/);
+            if (!wtMatch) return;
+            const wtPath = wtMatch[1];
+
+            // Match feature worktrees
+            const featureMatch = wtPath.match(/feature-(\d+)-(\w+)-(.+)$/);
+            if (featureMatch) {
+                const fNum = featureMatch[1];
+                const agent = featureMatch[2];
+                if (!worktreeMap[fNum]) worktreeMap[fNum] = [];
+                worktreeMap[fNum].push({ path: wtPath, agent, type: 'feature' });
+            }
+
+            // Match research worktrees
+            const researchMatch = wtPath.match(/research-(\d+)-(\w+)-(.+)$/);
+            if (researchMatch) {
+                const rNum = researchMatch[1];
+                const agent = researchMatch[2];
+                if (!worktreeMap[rNum]) worktreeMap[rNum] = [];
+                worktreeMap[rNum].push({ path: wtPath, agent, type: 'research' });
+            }
+        });
+    } catch (e) {
+        // Ignore worktree listing errors
+    }
+    return worktreeMap;
+}
+
+function getCurrentBranch() {
+    try {
+        return execSync('git branch --show-current', { encoding: 'utf8' }).trim();
+    } catch (e) {
+        return '';
+    }
+}
+
+function saveBoardMapping(mapping) {
+    const mappingDir = path.join(process.cwd(), '.aigon');
+    const mappingPath = path.join(mappingDir, '.board-map.json');
+    if (!fs.existsSync(mappingDir)) fs.mkdirSync(mappingDir, { recursive: true });
+    try {
+        fs.writeFileSync(mappingPath, JSON.stringify(mapping, null, 2));
+    } catch (e) {
+        // Silently fail
+    }
+}
+
+function loadBoardMapping() {
+    const mappingPath = path.join(process.cwd(), '.aigon', '.board-map.json');
+    if (!fs.existsSync(mappingPath)) return null;
+    try {
+        const mapping = JSON.parse(fs.readFileSync(mappingPath, 'utf8'));
+        const age = Date.now() - (mapping.timestamp || 0);
+        if (age > 24 * 60 * 60 * 1000) return null; // Expired
+        return mapping;
+    } catch (e) {
+        return null;
+    }
+}
+
+function displayBoardKanbanView(options) {
+    const { includeFeatures, includeResearch, showAll, showActive, showInbox, showBacklog, showDone } = options;
+
+    const boardMapping = { features: {}, research: {}, timestamp: Date.now() };
+    let letterIndex = 0;
+
+    console.log('╔═══════════════════════ Aigon Board ════════════════════════╗\n');
+
+    if (includeFeatures) {
+        letterIndex = displayKanbanSection('FEATURES', PATHS.features, options, boardMapping.features, letterIndex);
+    }
+
+    if (includeResearch) {
+        if (includeFeatures) console.log('');
+        letterIndex = displayKanbanSection('RESEARCH', PATHS.research, options, boardMapping.research, letterIndex);
+    }
+
+    saveBoardMapping(boardMapping);
+}
+
+function displayKanbanSection(title, typeConfig, options, mapping = {}, startLetterIndex = 0) {
+    const { showAll, showActive, showInbox, showBacklog, showDone } = options;
+    const hasFilter = showAll || showActive || showInbox || showBacklog || showDone;
+    let letterIndex = startLetterIndex;
+
+    // Determine which folders to show
+    const folderFilter = new Set();
+    if (showAll) {
+        typeConfig.folders.forEach(f => folderFilter.add(f));
+    } else if (hasFilter) {
+        if (showInbox) folderFilter.add('01-inbox');
+        if (showBacklog) folderFilter.add('02-backlog');
+        if (showActive) {
+            folderFilter.add('03-in-progress');
+            if (typeConfig.prefix === 'feature') folderFilter.add('04-in-evaluation');
+            if (typeConfig.prefix === 'research') folderFilter.add('04-done');
+        }
+        if (showDone) {
+            if (typeConfig.prefix === 'feature') folderFilter.add('05-done');
+            if (typeConfig.prefix === 'research') folderFilter.add('04-done');
+        }
+    } else {
+        // Default: everything except done
+        typeConfig.folders.forEach(f => {
+            if (typeConfig.prefix === 'feature' && f !== '05-done') folderFilter.add(f);
+            if (typeConfig.prefix === 'research' && f !== '04-done') folderFilter.add(f);
+        });
+    }
+
+    const items = collectBoardItems(typeConfig, folderFilter);
+    const worktreeMap = getWorktreeInfo();
+    const currentBranch = getCurrentBranch();
+
+    // Folder labels for display
+    const columnMap = {
+        'feature': {
+            '01-inbox': 'Inbox',
+            '02-backlog': 'Backlog',
+            '03-in-progress': 'In Progress',
+            '04-in-evaluation': 'Evaluation',
+            '05-done': 'Done',
+            '06-paused': 'Paused'
+        },
+        'research': {
+            '01-inbox': 'Inbox',
+            '02-backlog': 'Backlog',
+            '03-in-progress': 'In Progress',
+            '04-done': 'Done',
+            '05-paused': 'Paused'
+        }
+    };
+
+    const columns = columnMap[typeConfig.prefix];
+    const candidateFolders = typeConfig.folders.filter(f => folderFilter.has(f));
+
+    // Auto-collapse: only show columns with items
+    const displayFolders = candidateFolders.filter(f => {
+        const folderItems = items[f] || [];
+        return folderItems.length > 0;
+    });
+
+    // Skip section entirely if no items
+    if (displayFolders.length === 0) {
+        return;
+    }
+
+    console.log(`${title}`);
+
+    // Dynamic column width based on terminal size
+    const terminalWidth = process.stdout.columns || 120;
+    const numCols = displayFolders.length;
+    const bordersAndPadding = (numCols * 3) + 4; // │ separators + margins
+    const availableWidth = terminalWidth - bordersAndPadding;
+    const calculatedWidth = Math.floor(availableWidth / numCols);
+    const colWidth = Math.max(12, Math.min(30, calculatedWidth)); // Min 12, max 30
+
+    const header = displayFolders.map(f => (columns[f] || f).padEnd(colWidth).substring(0, colWidth)).join(' │ ');
+    const separator = displayFolders.map(() => '─'.repeat(colWidth)).join('─┼─');
+
+    console.log('┌─' + separator + '─┐');
+    console.log('│ ' + header + ' │');
+    console.log('├─' + separator + '─┤');
+
+    // Find max rows
+    const maxRows = Math.max(...displayFolders.map(f => (items[f] || []).length), 0);
+
+    // Display rows
+    for (let i = 0; i < maxRows; i++) {
+        const row = displayFolders.map(folder => {
+            const folderItems = items[folder] || [];
+            if (i >= folderItems.length) return ''.padEnd(colWidth);
+
+            const item = folderItems[i];
+            let display = item.id ? `#${item.id} ${item.name}` : item.name;
+
+            // Add letter label for unprioritized inbox items
+            if (folder === '01-inbox' && !item.id) {
+                const letter = String.fromCharCode(97 + letterIndex);
+                display = `${letter}) ${display}`;
+                mapping[letter] = item.name;
+                letterIndex++;
+            }
+
+            // Add worktree/mode indicator for in-progress items
+            if (folder === '03-in-progress' && item.id) {
+                const wts = worktreeMap[item.id] || [];
+                if (wts.length > 1) {
+                    // Arena mode - show agent count
+                    display += ` [${wts.length}]`;
+                } else if (wts.length === 1) {
+                    // Solo worktree
+                    display += ' [wt]';
+                } else {
+                    // Solo branch - check if it's current
+                    const branchName = `${typeConfig.prefix}-${item.id}-${item.name}`;
+                    if (currentBranch === branchName) {
+                        display += ' *';
+                    }
+                }
+            }
+
+            // Truncate to fit column
+            return display.padEnd(colWidth).substring(0, colWidth);
+        }).join(' │ ');
+
+        console.log('│ ' + row + ' │');
+    }
+
+    // Display counts
+    const counts = displayFolders.map(f => {
+        const count = (items[f] || []).length;
+        return `(${count})`.padEnd(colWidth).substring(0, colWidth);
+    }).join(' │ ');
+
+    console.log('├─' + separator + '─┤');
+    console.log('│ ' + counts + ' │');
+    console.log('└─' + separator + '─┘');
+
+    return letterIndex;
+}
+
+function displayBoardListView(options) {
+    const { includeFeatures, includeResearch, showAll, showActive, showInbox, showBacklog, showDone } = options;
+
+    if (includeFeatures) {
+        displayListSection('FEATURES', PATHS.features, options);
+    }
+
+    if (includeResearch) {
+        if (includeFeatures) console.log(''); // Spacing
+        displayListSection('RESEARCH', PATHS.research, options);
+    }
+}
+
+function displayListSection(title, typeConfig, options) {
+    const { showAll, showActive, showInbox, showBacklog, showDone } = options;
+    const hasFilter = showAll || showActive || showInbox || showBacklog || showDone;
+
+    // Determine which folders to show
+    const folderFilter = new Set();
+    if (showAll) {
+        typeConfig.folders.forEach(f => folderFilter.add(f));
+    } else if (hasFilter) {
+        if (showInbox) folderFilter.add('01-inbox');
+        if (showBacklog) folderFilter.add('02-backlog');
+        if (showActive) {
+            folderFilter.add('03-in-progress');
+            if (typeConfig.prefix === 'feature') folderFilter.add('04-in-evaluation');
+            if (typeConfig.prefix === 'research') folderFilter.add('04-done');
+        }
+        if (showDone) {
+            if (typeConfig.prefix === 'feature') folderFilter.add('05-done');
+            if (typeConfig.prefix === 'research') folderFilter.add('04-done');
+        }
+    } else {
+        // Default: everything except done
+        typeConfig.folders.forEach(f => {
+            if (typeConfig.prefix === 'feature' && f !== '05-done') folderFilter.add(f);
+            if (typeConfig.prefix === 'research' && f !== '04-done') folderFilter.add(f);
+        });
+    }
+
+    const folderLabels = {
+        '01-inbox': 'Inbox',
+        '02-backlog': 'Backlog',
+        '03-in-progress': 'In Progress',
+        '04-in-evaluation': 'In Evaluation',
+        '04-done': 'Done',
+        '05-done': 'Done',
+        '06-paused': 'Paused',
+        '05-paused': 'Paused'
+    };
+
+    const worktreeMap = getWorktreeInfo();
+    const currentBranch = getCurrentBranch();
+
+    console.log(`${title}\n`);
+
+    let totalCount = 0;
+
+    typeConfig.folders.forEach(folder => {
+        if (!folderFilter.has(folder)) return;
+        const dir = path.join(typeConfig.root, folder);
+        if (!fs.existsSync(dir)) return;
+
+        const files = fs.readdirSync(dir)
+            .filter(f => f.startsWith(typeConfig.prefix + '-') && f.endsWith('.md'))
+            .sort();
+
+        if (files.length === 0) return;
+
+        const label = folderLabels[folder] || folder;
+        console.log(`${label} (${files.length}):`);
+
+        files.forEach(file => {
+            const idMatch = file.match(new RegExp(`^${typeConfig.prefix}-(\\d+)-(.*)\.md$`));
+            const noIdMatch = !idMatch && file.match(new RegExp(`^${typeConfig.prefix}-(.*)\.md$`));
+            if (!idMatch && !noIdMatch) return;
+
+            const itemId = idMatch ? idMatch[1] : null;
+            const itemName = idMatch ? idMatch[2] : noIdMatch[1];
+            totalCount++;
+
+            let detail = '';
+
+            if (folder === '03-in-progress' && itemId) {
+                const wts = worktreeMap[itemId] || [];
+                if (wts.length === 0) {
+                    // Solo branch mode
+                    const branchName = `${typeConfig.prefix}-${itemId}-${itemName}`;
+                    let branchExists = false;
+                    try {
+                        execSync(`git rev-parse --verify ${branchName}`, { stdio: 'pipe' });
+                        branchExists = true;
+                    } catch (e) {
+                        // Branch doesn't exist
+                    }
+                    const active = currentBranch === branchName ? ' *' : '';
+                    detail = branchExists ? `  solo (branch)${active}` : '';
+                } else if (wts.length === 1) {
+                    detail = `  solo-wt (${wts[0].agent})  ${wts[0].path}`;
+                } else {
+                    const agents = wts.map(w => w.agent).join(', ');
+                    detail = `  arena (${agents})`;
+                }
+            }
+
+            const prefix = itemId ? `#${itemId}` : '   ';
+            console.log(`   ${prefix}  ${itemName}${detail}`);
+        });
+    });
+
+    if (totalCount === 0) {
+        console.log(`No ${title.toLowerCase()} found.`);
+    }
+}
+
 // --- Commands ---
 
 const commands = {
@@ -1328,8 +1698,21 @@ const commands = {
         console.log(`📝 Edit the topic, then prioritise it using command: research-prioritise ${slug}`);
     },
     'research-prioritise': (args) => {
-        const name = args[0];
-        if (!name) return console.error("Usage: aigon research-prioritise <name>");
+        let name = args[0];
+        if (!name) return console.error("Usage: aigon research-prioritise <name or letter>");
+
+        // Check if argument is a single letter (from board mapping)
+        if (name.length === 1 && name >= 'a' && name <= 'z') {
+            const mapping = loadBoardMapping();
+            if (mapping && mapping.research[name]) {
+                const mappedName = mapping.research[name];
+                console.log(`📍 Letter '${name}' maps to: ${mappedName}`);
+                name = mappedName;
+            } else {
+                return console.error(`❌ Letter '${name}' not found in board mapping. Run 'aigon board' first.`);
+            }
+        }
+
         const found = findUnprioritizedFile(PATHS.research, name);
         if (!found) return console.error(`❌ Could not find unprioritized research "${name}" in inbox.`);
         const nextId = getNextId(PATHS.research);
@@ -1665,8 +2048,21 @@ const commands = {
         }
     },
     'feature-prioritise': (args) => {
-        const name = args[0];
-        if (!name) return console.error("Usage: aigon feature-prioritise <name>");
+        let name = args[0];
+        if (!name) return console.error("Usage: aigon feature-prioritise <name or letter>");
+
+        // Check if argument is a single letter (from board mapping)
+        if (name.length === 1 && name >= 'a' && name <= 'z') {
+            const mapping = loadBoardMapping();
+            if (mapping && mapping.features[name]) {
+                const mappedName = mapping.features[name];
+                console.log(`📍 Letter '${name}' maps to: ${mappedName}`);
+                name = mappedName;
+            } else {
+                return console.error(`❌ Letter '${name}' not found in board mapping. Run 'aigon board' first.`);
+            }
+        }
+
         const found = findUnprioritizedFile(PATHS.features, name);
         if (!found) return console.error(`❌ Could not find unprioritized feature "${name}" in inbox.`);
         const nextId = getNextId(PATHS.features);
@@ -2595,128 +2991,43 @@ Branch: \`${soloBranch}\`
         // Run post-hook (won't fail the command)
         runPostHook('feature-cleanup', hookContext);
     },
-    'feature-list': (args) => {
+    'board': (args) => {
         const flags = new Set(args.filter(a => a.startsWith('--')));
+        const listMode = flags.has('--list');
+        const showFeatures = flags.has('--features');
+        const showResearch = flags.has('--research');
         const showAll = flags.has('--all');
         const showActive = flags.has('--active');
         const showInbox = flags.has('--inbox');
         const showBacklog = flags.has('--backlog');
         const showDone = flags.has('--done');
-        const hasFilter = showAll || showActive || showInbox || showBacklog || showDone;
 
-        // Determine which folders to show
-        const folderFilter = new Set();
-        if (showAll) {
-            PATHS.features.folders.forEach(f => folderFilter.add(f));
-        } else if (hasFilter) {
-            if (showInbox) folderFilter.add('01-inbox');
-            if (showBacklog) folderFilter.add('02-backlog');
-            if (showActive) { folderFilter.add('03-in-progress'); folderFilter.add('04-in-evaluation'); }
-            if (showDone) folderFilter.add('05-done');
+        // If neither --features nor --research, show both
+        const includeFeatures = !showResearch || showFeatures;
+        const includeResearch = !showFeatures || showResearch;
+
+        if (listMode) {
+            // Detailed list view
+            displayBoardListView({
+                includeFeatures,
+                includeResearch,
+                showAll,
+                showActive,
+                showInbox,
+                showBacklog,
+                showDone
+            });
         } else {
-            // Default: everything except done
-            PATHS.features.folders.forEach(f => { if (f !== '05-done') folderFilter.add(f); });
-        }
-
-        // Get worktree info for enriching in-progress features
-        const worktreeMap = {}; // featureNum -> [{ path, agent, branch }]
-        try {
-            const wtOutput = execSync('git worktree list', { encoding: 'utf8' });
-            wtOutput.split('\n').forEach(line => {
-                const wtMatch = line.match(/^([^\s]+)\s+/);
-                if (!wtMatch) return;
-                const wtPath = wtMatch[1];
-                const featureMatch = wtPath.match(/feature-(\d+)-(\w+)-(.+)$/);
-                if (featureMatch) {
-                    const fNum = featureMatch[1];
-                    const agent = featureMatch[2];
-                    if (!worktreeMap[fNum]) worktreeMap[fNum] = [];
-                    worktreeMap[fNum].push({ path: wtPath, agent });
-                }
+            // Kanban board view
+            displayBoardKanbanView({
+                includeFeatures,
+                includeResearch,
+                showAll,
+                showActive,
+                showInbox,
+                showBacklog,
+                showDone
             });
-        } catch (e) {
-            // Ignore worktree listing errors
-        }
-
-        // Get current branch for solo branch detection
-        let currentBranch = '';
-        try {
-            currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
-        } catch (e) {
-            // Ignore
-        }
-
-        // Scan folders and collect features
-        const folderLabels = {
-            '01-inbox': 'Inbox',
-            '02-backlog': 'Backlog',
-            '03-in-progress': 'In Progress',
-            '04-in-evaluation': 'In Evaluation',
-            '05-done': 'Done',
-            '06-paused': 'Paused'
-        };
-
-        let totalCount = 0;
-
-        PATHS.features.folders.forEach(folder => {
-            if (!folderFilter.has(folder)) return;
-            const dir = path.join(PATHS.features.root, folder);
-            if (!fs.existsSync(dir)) return;
-
-            const files = fs.readdirSync(dir)
-                .filter(f => f.startsWith('feature-') && f.endsWith('.md'))
-                .sort();
-
-            if (files.length === 0) return;
-
-            const label = folderLabels[folder] || folder;
-            console.log(`\n${label} (${files.length}):`);
-
-            files.forEach(file => {
-                // Match both "feature-55-desc.md" (has ID) and "feature-desc.md" (no ID, inbox)
-                const idMatch = file.match(/^feature-(\d+)-(.*)\.md$/);
-                const noIdMatch = !idMatch && file.match(/^feature-(.*)\.md$/);
-                if (!idMatch && !noIdMatch) return;
-
-                const fNum = idMatch ? idMatch[1] : null;
-                const fDesc = idMatch ? idMatch[2] : noIdMatch[1];
-                totalCount++;
-
-                let detail = '';
-
-                if (folder === '03-in-progress' && fNum) {
-                    const wts = worktreeMap[fNum] || worktreeMap[String(parseInt(fNum, 10))] || [];
-                    if (wts.length === 0) {
-                        // Solo branch mode — check if branch exists
-                        const branchName = `feature-${fNum}-${fDesc}`;
-                        let branchExists = false;
-                        try {
-                            execSync(`git rev-parse --verify ${branchName}`, { stdio: 'pipe' });
-                            branchExists = true;
-                        } catch (e) {
-                            // Branch doesn't exist
-                        }
-                        const active = currentBranch === branchName ? ' *' : '';
-                        detail = branchExists ? `  solo (branch)${active}` : '';
-                    } else if (wts.length === 1) {
-                        detail = `  solo-wt (${wts[0].agent})  ${wts[0].path}`;
-                    } else {
-                        const agents = wts.map(w => w.agent).join(', ');
-                        detail = `  arena (${agents})`;
-                    }
-                }
-
-                const prefix = fNum ? `#${fNum}` : '   ';
-                console.log(`   ${prefix}  ${fDesc}${detail}`);
-            });
-        });
-
-        if (totalCount === 0) {
-            console.log('\nNo features found.');
-        }
-
-        if (!showAll && !showDone) {
-            console.log(`\nUse --all to include done features, --active for in-progress only.`);
         }
     },
     'install-agent': (args) => {
@@ -3526,6 +3837,14 @@ Research (unified for solo and arena modes):
   research-open <ID>                Open all arena agents side-by-side for parallel research
   research-conduct <ID>             Conduct research (agent writes findings)
   research-done <ID> [--complete]   Complete research (shows summary in arena mode)
+
+Visualization:
+  board                             Show Kanban board view of features and research
+  board --list                      Show detailed list view (features and research)
+  board --features                  Show only features
+  board --research                  Show only research
+  board --active                    Show only in-progress items
+  board --all                       Include done items
 
 Examples:
   aigon init                           # Setup specs directory
