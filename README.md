@@ -66,9 +66,8 @@ docs/specs/
 9. [Workflow Examples](#workflow-examples)
 10. [Hooks](#hooks)
 11. [Multi-Agent Evaluation](#multi-agent-evaluation)
-12. [Sample Workflow Chat](#sample-workflow-chat)
-13. [CLI Reference](#cli-reference)
-14. [Agent Slash Commands](#agent-slash-commands)
+12. [CLI Reference](#cli-reference)
+13. [Agent Slash Commands](#agent-slash-commands)
 
 ---
 
@@ -478,99 +477,6 @@ After selecting a winner:
 aigon feature-done 55 cx
 aigon feature-cleanup 55 --push
 ```
-
----
-
-## Sample Workflow Chat
-
-Here's a real example showing the Aigon workflow in action — from feature creation through to arena setup.
-
----
-
-<table>
-<tr><td>
-
-> **🟦 User:**
->
-> Can you create a feature called "show-current-project" — I want to show the current project at the top of the page in a new pane or banner area that is independent of the AI builder or the advanced edit mode. Right now it is not clear what the current project is. Please add information to the feature based on this prompt. Use the best possible UX approach.
-
-</td></tr>
-<tr><td>
-
-**⬜ Agent:**
-
-I'll create a comprehensive feature spec for showing the current project. Let me use the Aigon workflow:
-
-```
-⏺ Bash(/aigon:feature-create show-current-project)
-  ⎿  ✅ Created: ./docs/specs/features/01-inbox/feature-show-current-project.md
-     📝 Edit the spec, then prioritise it using: /aigon:feature-prioritise show-current-project
-```
-
-Perfect! I've created a comprehensive feature spec for "Show Current Project" at:
-`docs/specs/features/01-inbox/feature-show-current-project.md`
-
-> **Next step:** Run `/aigon:feature-prioritise show-current-project` to assign an ID and move it to the backlog.
-
-</td></tr>
-<tr><td>
-
-> **🟦 User:**
->
-> Yes please prioritise
-
-</td></tr>
-<tr><td>
-
-**⬜ Agent:**
-
-```
-⏺ Bash(/aigon:feature-prioritise show-current-project)
-  ⎿  ✅ Moved: feature-show-current-project.md -> 02-backlog/feature-50-show-current-project.md
-     Running git: git add docs/specs/features/
-     Running git: git commit -m "chore: prioritise feature 50 - move to backlog"
-     📋 Assigned ID: 50
-```
-
-Feature prioritized as **feature-50-show-current-project** and moved to backlog.
-
-> **Next step:** To implement now (solo): `/aigon:feature-setup 50`
-> Or for an arena (multiple agents compete): `/aigon:feature-setup 50 cc cx gg`
-
-</td></tr>
-<tr><td>
-
-> **🟦 User:**
->
-> Can you setup an arena for 50 with cc cx gg
-
-</td></tr>
-<tr><td>
-
-**⬜ Agent:**
-
-```
-⏺ Bash(/aigon:feature-setup 50 cc cx gg)
-  ⎿  ✅ Moved: feature-50-show-current-project.md -> 03-in-progress/feature-50-show-current-project.md
-     Running git: git commit -m "chore: start feature 50 - move spec to in-progress"
-     🌿 Created worktree: ../aigon-worktrees/feature-50-cc-show-current-project
-     🌿 Created worktree: ../aigon-worktrees/feature-50-cx-show-current-project
-     🌿 Created worktree: ../aigon-worktrees/feature-50-gg-show-current-project
-```
-
-Bakeoff setup complete for feature 50 with 3 agents 🏁
-
-| Agent | Worktree | Branch |
-|-------|----------|--------|
-| cc | `../aigon-worktrees/feature-50-cc-show-current-project` | `feature-50-cc-show-current-project` |
-| cx | `../aigon-worktrees/feature-50-cx-show-current-project` | `feature-50-cx-show-current-project` |
-| gg | `../aigon-worktrees/feature-50-gg-show-current-project` | `feature-50-gg-show-current-project` |
-
-> **Next step:** Open all worktrees side-by-side: `/aigon:worktree-open 50 --all`
-> Each agent will independently implement the feature. When all are done, return here and run: `/aigon:feature-eval 50`
-
-</td></tr>
-</table>
 
 ---
 
