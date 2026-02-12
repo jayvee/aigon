@@ -108,6 +108,43 @@ Create a unified `aigon board` command that:
 
 None - implementation went smoothly.
 
+## Post-Implementation Improvements
+
+### User Feedback Round 1: Truncation and Slash Commands
+
+**Issue**: Column width of 14 chars was too narrow, most names truncated
+
+**Solution 1**: Increased fixed width to 20 chars
+- Commit: "feat: improve board display and add slash commands"
+- Result: Names like "parallel-features" and "plugin-distribution" now show fully
+
+**Solution 2**: Added slash command templates
+- Created `templates/generic/commands/board.md`
+- Updated all agent configs (cc, gg, cu, cx) to include `board` command
+- Generated slash commands: `/aigon:board`, `/aigon-board`, `/prompts:aigon-board`
+- Removed old `feature-list.md` template
+
+### User Feedback Round 2: Dynamic Layout
+
+**Issue**: Fixed width doesn't use available terminal space, empty columns waste space
+
+**Solution 1**: Dynamic column width (commit: 629ad30)
+- Detects terminal width using `process.stdout.columns`
+- Calculates optimal column width: `(terminalWidth - borders) / numColumns`
+- Enforces bounds: min 12 chars, max 30 chars
+- Result: Columns expand to use available space
+
+**Solution 2**: Auto-collapse empty columns
+- Filters out columns with zero items before rendering
+- Only shows columns that have content
+- Result: Compact board, focuses on relevant stages
+- Example: If Backlog and Evaluation are empty, only shows Inbox, In Progress, Done
+
+**Impact**: Board is now highly readable and efficient:
+- 2 columns with items → ~30 chars each (nearly full names)
+- 5 columns with items → ~20 chars each (still readable)
+- Empty stages don't clutter the display
+
 ## Next Steps
 
-None - feature complete.
+None - feature complete with user-requested enhancements.
