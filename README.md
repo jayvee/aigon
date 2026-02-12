@@ -1,182 +1,111 @@
 # Aigon
 
-**A lightweight, Spec-Driven framework for AI-native software engineering.**
+**CLI-first, vendor-independent AI engineering workflows that keep your context in your repo.**
 
-Aigon is a **100% file-based system** that uses simple folder and file naming conventions to guide AI agents through a clear **Research → Feature Specification → Code** loop. It requires **no external databases, servers or integration to work tracking tools**. Everything lives as text files in your repository and your interaction and the decisions of agents are saved alongside your codebase.
+Aigon gives you a consistent spec workflow across Claude, Gemini, Codex, and Cursor without locking your team to one IDE or one model provider.
 
-Aigon supports single-agent development as well as parallel multi-agent arenas for **both research and implementation**. Multiple agents like Claude Code, Gemini, and Codex can compete to implement features, or collaborate on research topics to provide diverse perspectives—while keeping your workflow portable, transparent, and under your control.
+- **CLI based:** plain files + git + terminal commands
+- **Vendor independent:** works across multiple agent ecosystems
+- **Slash-command native:** use agent commands day to day, keep CLI as universal fallback
+- **No lock-in:** your specs, logs, research, and evaluations remain in your repository
 
-Aigon derives its name from the fusion of "AI" and the ancient Greek concept of Agon (ἀγών), which signifies a **contest**, **struggle**, or gathering to prove one's merit. This reflects the library's core philosophy: a structured arena where multiple AI models—such as Claude, Gemini, and Codex—compete to interpret specifications and produce the highest quality code. Just as an agon drove ancient competitors to strive for excellence, Aigon drives your agent workforce to outperform one another in an arena, ensuring your final codebase is forged through rigorous comparison and selection rather than a single assumption.
+Aigon itself is built with Aigon. Browse `docs/specs/` in this repo to see real feature specs, implementation logs, research topics, and evaluations used to build and maintain the project.
 
+![Specs folder structure showing Aigon workflow state in-repo](docs/images/aigon-specs-folder-structure.png)
 
 ---
 
-## 📖 Table of Contents
-1. [Core Philosophy](#core-philosophy)
-2. [The Specs Architecture](#the-specs-architecture)
-3. [The Workflow](#the-workflow)
-4. [Installation & Setup](#installation--setup)
-5. [CLI Reference](#cli-reference)
-6. [Hooks](#hooks)
-7. [Agent Macros](#agent-macros)
-8. [Multi-Agent Evaluation](#multi-agent-evaluation)
-9. [Sample Workflow Chat](#sample-workflow-chat)
+📘 **New to Aigon?** This README covers the essentials. For detailed workflows, hooks, and advanced configuration, see the [Complete Guide](docs/GUIDE.md)
+
+---
+
+## Table of Contents
+
+1. [Why Aigon](#why-aigon)
+2. [Core Philosophy](#core-philosophy)
+3. [The Specs Architecture](#the-specs-architecture)
+4. [Quick Start](#quick-start)
+5. [Installation, Agents, and Updates](#installation-agents-and-updates)
+6. [Project-Specific Agent Instructions](#project-specific-agent-instructions)
+7. [Slash Command Prefixes](#slash-command-prefixes)
+8. [Workflow Overview](#workflow-overview)
+9. [Workflow Examples](#workflow-examples)
+10. [Agent Slash Commands](#agent-slash-commands)
+11. [CLI Reference](#cli-reference)
+12. [Hooks](#hooks)
+13. [Multi-Agent Evaluation](#multi-agent-evaluation)
+14. [Sample Workflow Chat](#sample-workflow-chat)
+
+---
+
+## Why Aigon
+
+Aigon is for teams that want AI acceleration without handing their project memory to a third-party platform.
+
+### Context stays with your code
+
+Everything is stored in your repo:
+
+- feature specs (`docs/specs/features/`)
+- research topics and findings (`docs/specs/research-topics/`)
+- implementation logs (`docs/specs/features/logs/`)
+- evaluation reports (`docs/specs/features/04-in-evaluation/`)
+
+That history becomes reusable context for future AI sessions, code reviews, and onboarding. In contrast, tool-hosted chat history is typically siloed per vendor account and hard to reuse across tools.
+
+### Built for real multi-agent workflows
+
+Aigon supports:
+
+- **solo branch mode**
+- **solo worktree mode**
+- **arena mode** (multiple agents implement the same feature in parallel)
+- **research mode** (parallel findings + synthesis)
 
 ---
 
 ## Core Philosophy
 
-Aigon implements spec driven AI development, where your specs are self-contained in your codebase and the workflow is implemented by simple shell scripts or agent comands.
+Aigon implements spec-driven AI development using Git and the filesystem as the foundation:
 
-Aigon provides this structure via Git and the filesystem:
-* **State-as-Folders:** The status of a task is defined by *where it lives* (`inbox`, `backlog`, `in-progress`), not by a separate database record.
-* **Decoupled Lifecycles:** Research and Features are separate entities. Research explores *what* to build; Features define *how* to build it.
-* **Traceable History:** All agent conversations and implementation attempts are preserved as Markdown files within the repository itself.
+- **State-as-Folders:** Task status is defined by *where it lives* (`inbox`, `backlog`, `in-progress`), not by database records
+- **Decoupled Lifecycles:** Research explores *what* to build; Features define *how* to build it
+- **Traceable History:** All agent conversations and implementation attempts are preserved as Markdown files in your repository
+
+This approach keeps your workflow transparent, portable, and fully version-controlled.
 
 ---
 
 ## The Specs Architecture
 
-All workflow state is maintained in a strictly structured directory called **`./docs/specs`**. This folder (fully compatible with external knowledge tools like Obsidian) serves as the project's single source of truth.
+All workflow state lives in `./docs/specs`, organized into:
 
-The architecture separates concerns into distinct, state-driven folders:
+**Primary domains:**
+- `research-topics/` — Exploring what to build
+- `features/` — Specific features to implement
 
-* **Primary Domains:** `./docs/specs/research-topics` (Exploring options for building something) and `docs/specs/features` (Specific features to be built).
-* **State Folders (Kanban):** Numbered for visual ordering: `01-inbox`, `02-backlog`, `03-in-progress`, `04-in-evaluation`, `05-done`, `06-paused`.
-* **Documentation:** `./docs/specs/logs` (stores implementation logs) and `./docs/specs/evaluations` (stores LLM Judge reports).
-* **History:** The `./docs/specs/logs/selected` folder contains the final, merged documentation, and `./docs/specs/logs/alternatives` contains the logs from the losing agents.
+**State folders (Kanban):**
+- `01-inbox/` — New, unprioritized items
+- `02-backlog/` — Prioritized, ready to start
+- `03-in-progress/` — Currently being worked on
+- `04-in-evaluation/` — Completed, being reviewed
+- `05-done/` — Finished and merged
+- `06-paused/` — Temporarily on hold
 
-### Naming Conventions
-* **Drafts:** `feature-description.md` (Unprioritized, in `01-inbox`)
-* **Prioritised:** `feature-55-description.md` (Global Sequential ID assigned on prioritization)
-* **Multi-Mode:** `../feature-55-cc-description` (Has a specific agent 2 letter code to indicate agent specific content)
+**Documentation:**
+- `logs/` — Implementation logs (selected winners + alternatives)
+- `evaluations/` — Arena comparison reports
 
----
-
-## The Workflow
-
-### 1. Research Lifecycle
-Used for exploring complex topics before writing code. Files transition within the `./docs/specs/research-topics` folder. Research supports both **solo mode** (single agent) and **arena mode** (multiple agents with different perspectives).
-
-#### 1.1 Solo Mode (Single Agent)
-* **Create:** `aigon research-create "API Design"` creates a templated topic in `/01-inbox`. The agent **explores the codebase** before writing the topic to understand relevant existing code and constraints.
-* **Prioritise:** `aigon research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
-* **Setup:** `aigon research-setup 05` moves to `/03-in-progress`.
-* **Execute:** Run the `research-conduct` slash command (e.g., `/aigon:research-conduct 05` for Claude). Agent reads the topic file, writes findings and recommendations directly into the document.
-* **Done:** `aigon research-done 05` moves to `/04-done`.
-* **Output:** The research file becomes a complete record, with suggested features in the Output section.
-
-#### 1.2 Arena Mode (Multi-Agent Research)
-Run multiple agents to get diverse perspectives on a research topic.
-
-* **Create:** `aigon research-create "API Design"` creates a templated topic in `/01-inbox`. The agent **explores the codebase** first.
-* **Prioritise:** `aigon research-prioritise api-design` moves it to `/02-backlog` and assigns a global ID.
-* **Setup Arena:** `aigon research-setup 05 cc gg cx`
-    * Moves topic to `/03-in-progress`.
-    * Creates **separate findings files** for each agent in `logs/`:
-        * `research-05-cc-findings.md` (Claude)
-        * `research-05-gg-findings.md` (Gemini)
-        * `research-05-cx-findings.md` (Codex)
-* **Execute:** Run the `research-conduct` slash command in each agent session.
-    * Each agent writes ONLY to their own findings file.
-    * Agents must NOT run `research-done` (user handles synthesis).
-* **Synthesize:** Run the `research-synthesize` command with an agent to:
-    * Read and compare ALL agents' findings
-    * Present a synthesis with recommendations
-    * Ask you which features to include (via chat)
-    * Update the main research doc with your selections
-    * **Tip:** Use a different model than those that conducted the research for unbiased synthesis
-* **Complete:** `aigon research-done 05 --complete` moves to `/04-done`.
-* **Output:** The main research file contains the synthesized recommendation, with findings files preserved in `logs/`.
-
-### 2. Feature Lifecycle
-Used for shipping code based on a defined spec. Files transition within the `./docs/specs/features` folder.
-
-#### 2.1 Fast-Track (Solo Branch)
-
-For features where you want to go from idea to implementation immediately:
-
-* **Now:** `aigon feature-now dark-mode` — creates spec directly in `/in-progress`, assigns an ID, creates a solo branch, and commits atomically. Then write the spec and implement in one session.
-* **Done:** `aigon feature-done <ID>` merges and completes.
-
-This skips the inbox/backlog/setup steps entirely. Use the `feature-now` slash command for the full guided experience.
-
-#### 2.2 Solo Mode (Single Agent)
-
-Solo mode supports two workspace styles: **branch** (work in the current repo) or **worktree** (isolated directory for parallel development).
-
-1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
-    * The agent **explores the codebase** before writing the spec to understand existing architecture, patterns, and constraints.
-2.  **Prioritise:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Setup:**
-    * **Branch mode:** `aigon feature-setup 108` — creates a Git branch (`feature-108-dark-mode`) in the current repo.
-    * **Worktree mode:** `aigon feature-setup 108 cc` — creates an isolated worktree at `../<repo>-worktrees/feature-108-cc-dark-mode`, ideal for working on multiple features in parallel.
-    * Both modes auto-create a blank Implementation Log template.
-4.  **Implement:** Run the `feature-implement` slash command in the agent (or from the worktree).
-    * Agent reads the feature spec and creates **tasks from the acceptance criteria** for progress tracking.
-    * Agent codes the solution and *must* fill out the Implementation Log.
-5.  **Evaluate (Optional):** `aigon feature-eval 108`
-    * Creates code review checklist for the implementation.
-6.  **Cross-Agent Review (Optional):** Have a different agent review the code and commit fixes:
-    * Open a session with a different agent (e.g., Codex if Claude implemented)
-    * Run the `feature-review` slash command
-    * The reviewing agent reads the spec, reviews `git diff main...HEAD`, and commits targeted fixes with `fix(review):` prefix
-    * Review the fix commits before proceeding
-7.  **Finish:** `aigon feature-done 108`
-    * Merges the branch and archives the log.
-    * For solo worktree mode, the agent is auto-detected — no need to specify it.
-
-#### 2.3 Arena Mode (Multi-Agent Competition)
-
-Run multiple agents in competition to find the optimal solution.
-
-1.  **Create:** `aigon feature-create "Dark Mode"` creates a templated spec in `/inbox`.
-    * The agent **explores the codebase** before writing the spec.
-2.  **Prioritise:** `aigon feature-prioritise dark-mode` assigns an ID and moves to `/backlog`.
-3.  **Setup Arena:** `aigon feature-setup 108 cc gg cx`
-    * Moves Spec to `/03-in-progress`.
-    * Creates agent-specific **Git Branches** (`feature-108-cc-dark-mode`, `feature-108-gg-dark-mode`, `feature-108-cx-dark-mode`).
-    * Creates **Git Worktrees** in a grouped folder:
-        * `../<repo>-worktrees/feature-108-cc-dark-mode` (Claude)
-        * `../<repo>-worktrees/feature-108-gg-dark-mode` (Gemini)
-        * `../<repo>-worktrees/feature-108-cx-dark-mode` (Codex)
-    * **Auto-creates** blank Implementation Log templates in each worktree.
-    * **STOPS** - does not implement (user must open each worktree separately).
-4.  **Implement:** Open all worktrees side-by-side with `aigon worktree-open 108 --all`, or individually with `aigon worktree-open 108 cc`.
-    * With Warp: `aigon worktree-open 108 --all` opens all agents side-by-side and auto-starts each.
-    * Single agent: `aigon worktree-open 108 cc` opens one worktree.
-    * With VS Code: `aigon worktree-open 108 cc --terminal=code` opens the folder; run the agent manually.
-    * Each agent builds the feature independently in their isolated worktree.
-    * Each agent creates **tasks from the acceptance criteria** and *must* fill out their Implementation Log.
-5.  **Cross-Agent Review (Optional):** Before evaluation, have different agents review each implementation:
-    * In each worktree, open a session with a different agent
-    * Run the `feature-review` slash command
-    * Reviewing agent commits fixes with `fix(review):` prefix
-6.  **Evaluate:** Back in the main folder, switch to an eval model (eg sonnet) and run `aigon feature-eval 108`
-    * Moves the feature to `/in-evaluation`.
-    * Creates comparison template with all implementations.
-7.  **Judge:** Review and compare solutions, fill in the evaluation.
-8.  **Merge Winner:**
-    ```bash
-    aigon feature-done 108 cc
-    ```
-    * Merges winner's branch.
-    * Moves winning agent's log to `logs/selected`.
-    * Moves losing agent's logs to `logs/alternatives` (preserving history).
-    * Cleans up winner's worktree.
-9.  **Cleanup Losers:**
-    ```bash
-    aigon feature-cleanup 108 [--push]
-    ```
-    * Removes losing worktrees and branches.
-    * Optional `--push` flag pushes branches to origin before deleting.
+**Naming conventions:**
+- Drafts: `feature-description.md` (in inbox)
+- Prioritized: `feature-55-description.md` (global ID assigned)
+- Agent-specific: `feature-55-cc-description-log.md` (arena mode)
 
 ---
 
-## Installation & Setup
+## Quick Start
 
-### 1. Install the CLI
-First, clone this repository and use `npm link` to make the `aigon` command globally available.
+### 1. Install Aigon CLI
 
 ```bash
 git clone https://github.com/yourname/aigon.git
@@ -185,542 +114,409 @@ npm install
 npm link
 ```
 
-### 2. Initialize Your Project
-Navigate to your project's root directory and run `aigon init`. This will create the necessary `docs/specs` directory structure.
+### 2. Initialize your project
 
 ```bash
 cd /path/to/your/project
 aigon init
 ```
 
-### 3. Install Agent Configurations
-To integrate Aigon with your AI agents, run `aigon install-agent`. This command generates the required configuration files for the specified agents. You can install multiple agents at once.
+![Terminal output of aigon init in a fresh project](docs/images/aigon-init-output.png)
+
+### 3. Install agent integrations
 
 ```bash
-# Install single agent
+# Install one agent
 aigon install-agent cc
 
-# Install multiple agents at once
-aigon install-agent cc gg cx
+# Install multiple agents
+aigon install-agent cc gg cx cu
 ```
 
-**Supported Agents:**
-| Agent | Alias | Description |
-|-------|-------|-------------|
-| `cc` | `claude` | Claude Code |
-| `gg` | `gemini` | Gemini CLI |
-| `cx` | `codex` | Codex |
-| `cu` | `cursor` | Cursor |
+![Terminal output for multi-agent install-agent run](docs/images/aigon-install-agents.png)
 
-**Generated Files:**
-```
-your-project/
-├── docs/
-│   ├── development_workflow.md    # Shared workflow documentation
-│   └── agents/
-│       ├── claude.md              # Claude-specific instructions
-│       ├── gemini.md              # Gemini-specific instructions
-│       ├── codex.md               # Codex-specific instructions
-│       └── cursor.md              # Cursor-specific instructions
-├── CLAUDE.md                      # Root file for Claude Code
-├── GEMINI.md                      # Root file for Gemini CLI
-├── .claude/                       # Claude skills & slash commands (aigon/ subdirectory)
-├── .gemini/                       # Gemini command files
-├── .codex/                        # Codex prompts & config
-│   ├── prompt.md                  # Project-level Codex instructions
-│   └── config.toml                # Codex configuration
-└── .cursor/                       # Cursor commands & config
-    ├── commands/                  # Slash commands for Cursor
-    └── cli.json                   # CLI permissions configuration
-```
+### 4. Use slash commands in your agent
 
-**Note:** Codex also installs global prompts in `~/.codex/prompts/` (shared across all projects).
+Primary day-to-day usage is via slash commands.
 
-**Re-installation:** Running `install-agent` again will update the Aigon sections while preserving any custom content you've added outside the `<!-- AIGON_START/END -->` markers.
+- Claude / Gemini: `/aigon:feature-create dark-mode`
+- Codex: `/prompts:aigon-feature-create dark-mode`
+- Cursor: `/aigon-feature-create dark-mode`
 
-**Important:** You must commit the generated configuration files to Git. This ensures that when `aigon` creates a new git worktree, the agent configurations are available in that isolated environment.
-
-### 4. Configure Global Settings (Optional)
-
-Create a global configuration file to customize terminal and agent CLI settings:
-
-```bash
-aigon config init
-```
-
-This creates `~/.aigon/config.json`:
-
-```json
-{
-  "terminal": "warp",
-  "agents": {
-    "cc": { "cli": "claude" },
-    "cu": { "cli": "agent" },
-    "gg": { "cli": "gemini" },
-    "cx": { "cli": "codex" }
-  }
-}
-```
-
-**Configuration options:**
-- `terminal`: Default terminal for `worktree-open`. Options: `warp` (auto-runs agent), `code` (VS Code), `cursor`
-- `agents.{id}.cli`: Override the CLI command for each agent
-
-**Environment variable override:** Set `AIGON_TERMINAL=code` to override the terminal for a single session.
-
-### 5. Project Profiles (Optional)
-
-Aigon auto-detects your project type and adapts arena behavior accordingly. For non-web projects (iOS, Android, libraries), this means no PORT assignment, no `.env.local` creation, and appropriate test instructions in templates.
-
-**Auto-detection** checks for:
-| Profile | Detected By |
-|---------|-------------|
-| `ios` | `*.xcodeproj`, `*.xcworkspace`, `Package.swift` (root or `ios/` subdir) |
-| `android` | `build.gradle`, `build.gradle.kts` (root or `android/` subdir) |
-| `web` | `package.json` with `scripts.dev` + framework config (`next.config.*`, `vite.config.*`, etc.) |
-| `api` | `manage.py`, `app.py`, `main.go`, `server.js`, `server.ts` |
-| `library` | `Cargo.toml`, `go.mod`, `pyproject.toml`, `setup.py`, or `package.json` without dev script |
-| `generic` | Fallback when nothing matches |
-
-```bash
-# See what Aigon auto-detects
-aigon profile detect
-
-# View current profile and settings
-aigon profile show
-
-# Override auto-detection
-aigon profile set ios
-
-# After changing profile, regenerate templates
-aigon update
-```
-
-The profile is stored in `.aigon/config.json` alongside the existing `.aigon/version` file. If no config exists, auto-detection is used.
-
-**Profile behavior:**
-- **`web` / `api`**: Dev server enabled, agent-specific ports assigned, `.env.local` created in worktrees
-- **`ios` / `android` / `library` / `generic`**: No dev server, no PORT, templates show project-appropriate test instructions
-
-### 6. Opening Worktrees
-
-After setting up a feature with worktrees, use `worktree-open` to quickly open them in your configured terminal:
-
-```bash
-# Open specific feature's worktree (picks most recent if multiple)
-aigon worktree-open 55
-
-# Open specific agent's worktree for a feature
-aigon worktree-open 55 cc
-
-# Open all arena agents side-by-side (Warp split panes)
-aigon worktree-open 55 --all
-
-# Open multiple features side-by-side (parallel mode)
-aigon worktree-open 100 101 102 --agent=cc
-
-# Override terminal for this invocation
-aigon worktree-open 55 cc --terminal=code
-```
-
-**Terminal behavior:**
-- **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with the `feature-implement` slash command. Arena (`--all`) and parallel modes open split panes.
-- **VS Code / Cursor**: Opens the folder; you'll need to run the agent command manually (shown in output). Split pane modes print commands for manual setup.
+![Slash command menu showing Aigon commands](docs/images/aigon-slash-commands-menu.png)
 
 ---
 
-## Contributing / Developing Aigon
+## Installation, Agents, and Updates
 
-If you're working on Aigon itself, be aware of the template system:
+### Supported agents
 
-- **Source of truth**: `templates/generic/commands/` and `templates/generic/docs/`
-- **Working copies**: `.claude/commands/`, `.cursor/commands/`, `.gemini/commands/` (gitignored, generated)
+| Code | Agent | Slash prefix | CLI command | Notes |
+|------|-------|--------------|-------------|-------|
+| `cc` | Claude Code | `/aigon:` | `claude` | Namespaced slash commands in `.claude/commands/aigon/` |
+| `gg` | Gemini CLI | `/aigon:` | `gemini` | Commands in `.gemini/commands/aigon/` |
+| `cx` | Codex | `/prompts:aigon-` | `codex` | Global prompts in `~/.codex/prompts/` |
+| `cu` | Cursor | `/aigon-` | `agent` | Supports Cursor Agent and Composer command flows |
 
-The agent directories (`.claude/`, `.cursor/`, etc.) and root files (`CLAUDE.md`, `GEMINI.md`) are gitignored because they're generated from templates during `aigon install-agent`.
+### Generated files
 
-**Development workflow:**
-1. Edit templates in `templates/generic/commands/`
-2. Run `aigon update` or `aigon install-agent cc` to regenerate working copies
-3. Test the commands in your agent session
-4. Commit only the template changes (the working copies stay local)
+`aigon install-agent` creates/upgrades agent docs and command files, including:
+
+- root files like `CLAUDE.md`, `GEMINI.md` (where applicable)
+- `docs/agents/*.md`
+- command files under `.claude/`, `.gemini/`, `.cursor/`, and `~/.codex/prompts/`
+- Cursor settings file `.cursor/cli.json`
+
+### Updating safely
+
+Use:
+
+```bash
+aigon update
+```
+
+Aigon updates only the managed blocks wrapped with:
+
+- `<!-- AIGON_START -->`
+- `<!-- AIGON_END -->`
+
+Custom content outside those markers is preserved. This is how you keep project-specific instructions while still receiving template updates.
+
+![AIGON_START/AIGON_END marker example preserving custom instructions](docs/images/aigon-update-markers.png)
+
+---
+
+## Project-Specific Agent Instructions
+
+Add your project-specific rules outside managed marker blocks in generated files such as `CLAUDE.md` and `GEMINI.md`.
+
+Example pattern:
+
+```markdown
+# CLAUDE.md
+
+Project custom instructions here (outside marker block)
+
+<!-- AIGON_START -->
+... Aigon-managed generated content ...
+<!-- AIGON_END -->
+
+More project custom instructions here (outside marker block)
+```
+
+When you run `aigon update` or `aigon install-agent ...` again, the Aigon-managed block updates and your custom sections remain.
+
+---
+
+## Slash Command Prefixes
+
+Aigon command naming by agent:
+
+- Claude / Gemini: `/aigon:<command>`
+- Cursor: `/aigon-<command>`
+- Codex: `/prompts:aigon-<command>`
+
+Examples for the same action:
+
+- Claude: `/aigon:feature-implement 42`
+- Gemini: `/aigon:feature-implement 42`
+- Cursor: `/aigon-feature-implement 42`
+- Codex: `/prompts:aigon-feature-implement 42`
+
+---
+
+## Workflow Overview
+
+### Feature lifecycle
+
+1. Create spec: `feature-create`
+2. Prioritise: `feature-prioritise`
+3. Setup: `feature-setup`
+4. Implement: `feature-implement`
+5. Evaluate (optional but recommended): `feature-eval`
+6. Finish and merge: `feature-done`
+7. Cleanup losing arena branches/worktrees (arena only): `feature-cleanup`
+
+### Research lifecycle
+
+1. Create topic: `research-create`
+2. Prioritise: `research-prioritise`
+3. Setup: `research-setup`
+4. Open agents (arena): `research-open`
+5. Conduct: `research-conduct`
+6. Synthesize (arena): `research-synthesize`
+7. Complete: `research-done`
+
+---
+
+## Workflow Examples
+
+### Solo development (fast-track branch mode)
+
+Slash command first:
+
+```text
+/aigon:feature-now dark-mode
+```
+
+Use this when you want to go from idea to implementation in one session.
+
+### Arena competition (parallel worktrees)
+
+Setup arena:
+
+```text
+/aigon:feature-setup 55 cc gg cx
+```
+
+Open all worktrees side-by-side in Warp:
+
+```text
+/aigon:worktree-open 55 --all
+```
+
+![Warp split view with arena worktrees side-by-side](docs/images/aigon-warp-arena-split.png)
+![worktree-open command output for a feature](docs/images/aigon-worktree-open.png)
+
+### Multi-agent research (create -> conduct -> synthesize)
+
+1. Create and prioritise:
+
+```text
+/aigon:research-create plugin-distribution
+/aigon:research-prioritise plugin-distribution
+```
+
+2. Setup arena research:
+
+```text
+/aigon:research-setup 03 cc gg cx
+/aigon:research-open 03
+```
+
+3. In each agent pane:
+
+```text
+/aigon:research-conduct 03
+```
+
+4. Synthesize findings:
+
+```text
+/aigon:research-synthesize 03
+```
+
+5. Finalize from CLI:
+
+```bash
+aigon research-done 03 --complete
+```
+
+### Parallel solo worktree workflow (multiple features)
+
+Run independent features in parallel with one agent:
+
+```bash
+aigon feature-setup 100 cc
+aigon feature-setup 101 cc
+aigon feature-setup 102 cc
+aigon worktree-open 100 101 102 --agent=cc
+```
+
+---
+
+## Agent Slash Commands
+
+The command set is consistent across agents. Differences are only command prefix and storage location.
+
+### Claude (`/aigon:`)
+
+| Slash Command | Description |
+|---|---|
+| `/aigon:feature-create <name>` | Create a feature spec |
+| `/aigon:feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
+| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/aigon:feature-list` | List features by status and mode |
+| `/aigon:feature-implement <ID>` | Implement in current branch/worktree |
+| `/aigon:feature-eval <ID>` | Generate review/comparison template |
+| `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
+| `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon:feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
+| `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
+| `/aigon:research-create <name>` | Create a research topic |
+| `/aigon:research-prioritise <name>` | Prioritise a research topic |
+| `/aigon:research-setup <ID> [agents...]` | Setup solo/arena research |
+| `/aigon:research-open <ID>` | Open arena research agents side-by-side |
+| `/aigon:research-conduct <ID>` | Write findings |
+| `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
+| `/aigon:research-done <ID>` | Complete research topic |
+| `/aigon:help` | Show available Aigon commands |
+
+### Gemini (`/aigon:`)
+
+| Slash Command | Description |
+|---|---|
+| `/aigon:feature-create <name>` | Create a feature spec |
+| `/aigon:feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
+| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/aigon:feature-list` | List features by status and mode |
+| `/aigon:feature-implement <ID>` | Implement in current branch/worktree |
+| `/aigon:feature-eval <ID>` | Generate review/comparison template |
+| `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
+| `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon:feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
+| `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
+| `/aigon:research-create <name>` | Create a research topic |
+| `/aigon:research-prioritise <name>` | Prioritise a research topic |
+| `/aigon:research-setup <ID> [agents...]` | Setup solo/arena research |
+| `/aigon:research-open <ID>` | Open arena research agents side-by-side |
+| `/aigon:research-conduct <ID>` | Write findings |
+| `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
+| `/aigon:research-done <ID>` | Complete research topic |
+| `/aigon:help` | Show available Aigon commands |
+
+### Codex (`/prompts:aigon-`)
+
+| Slash Command | Description |
+|---|---|
+| `/prompts:aigon-feature-create <name>` | Create a feature spec |
+| `/prompts:aigon-feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
+| `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
+| `/prompts:aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/prompts:aigon-feature-list` | List features by status and mode |
+| `/prompts:aigon-feature-implement <ID>` | Implement in current branch/worktree |
+| `/prompts:aigon-feature-eval <ID>` | Generate review/comparison template |
+| `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
+| `/prompts:aigon-feature-done <ID> [agent]` | Merge and complete feature |
+| `/prompts:aigon-feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
+| `/prompts:aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
+| `/prompts:aigon-research-create <name>` | Create a research topic |
+| `/prompts:aigon-research-prioritise <name>` | Prioritise a research topic |
+| `/prompts:aigon-research-setup <ID> [agents...]` | Setup solo/arena research |
+| `/prompts:aigon-research-open <ID>` | Open arena research agents side-by-side |
+| `/prompts:aigon-research-conduct <ID>` | Write findings |
+| `/prompts:aigon-research-synthesize <ID>` | Compare and synthesize all findings |
+| `/prompts:aigon-research-done <ID>` | Complete research topic |
+| `/prompts:aigon-help` | Show available Aigon commands |
+
+### Cursor (`/aigon-`)
+
+| Slash Command | Description |
+|---|---|
+| `/aigon-feature-create <name>` | Create a feature spec |
+| `/aigon-feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
+| `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/aigon-feature-list` | List features by status and mode |
+| `/aigon-feature-implement <ID>` | Implement in current branch/worktree |
+| `/aigon-feature-eval <ID>` | Generate review/comparison template |
+| `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
+| `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon-feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
+| `/aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
+| `/aigon-research-create <name>` | Create a research topic |
+| `/aigon-research-prioritise <name>` | Prioritise a research topic |
+| `/aigon-research-setup <ID> [agents...]` | Setup solo/arena research |
+| `/aigon-research-open <ID>` | Open arena research agents side-by-side |
+| `/aigon-research-conduct <ID>` | Write findings |
+| `/aigon-research-synthesize <ID>` | Compare and synthesize all findings |
+| `/aigon-research-done <ID>` | Complete research topic |
+| `/aigon-help` | Show available Aigon commands |
 
 ---
 
 ## CLI Reference
 
-The `aigon` command automates state transitions and Git operations. The workflow uses a unified set of commands that work in both solo and arena modes.
+### Feature commands
 
-### Feature Commands
-| Command | Usage | Description |
-| :--- | :--- | :--- |
-| **Feature Create** | `aigon feature-create <name>` | Create a new feature spec in inbox |
-| **Feature Now** | `aigon feature-now <name>` | Fast-track: create + prioritise + setup in one step (solo branch) |
-| **Feature Prioritise** | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
-| **Feature Setup** | `aigon feature-setup <ID> [agents...]` | Setup for implementation. No agents: branch. 1 agent: solo worktree. 2+: arena |
-| **Feature List** | `aigon feature-list [--flags]` | List features by status, mode, and location. Flags: `--all`, `--active`, `--inbox`, `--backlog`, `--done` |
-| **Feature Implement** | `aigon feature-implement <ID>` | Auto-detects mode (branch, solo worktree, arena). Implements feature |
-| **Feature Evaluate** | `aigon feature-eval <ID>` | Move to evaluation. Solo: code review checklist. Arena: comparison template |
-| **Feature Review** | `aigon feature-review <ID>` | Cross-agent code review with fixes (use different agent than implementer) |
-| **Feature Done** | `aigon feature-done <ID> [agent]` | Merge and complete. Solo worktree auto-detects agent. Arena: specify winner |
-| **Feature Cleanup** | `aigon feature-cleanup <ID> [--push]` | Clean up arena mode worktrees and branches |
+| Command | Usage |
+|---|---|
+| Feature Create | `aigon feature-create <name>` |
+| Feature Now | `aigon feature-now <name>` |
+| Feature Prioritise | `aigon feature-prioritise <name>` |
+| Feature Setup | `aigon feature-setup <ID> [agents...]` |
+| Feature List | `aigon feature-list [--all\|--active\|--inbox\|--backlog\|--done]` |
+| Feature Implement | `aigon feature-implement <ID>` |
+| Feature Eval | `aigon feature-eval <ID>` |
+| Feature Review | `aigon feature-review <ID>` |
+| Feature Done | `aigon feature-done <ID> [agent]` |
+| Feature Cleanup | `aigon feature-cleanup <ID> [--push]` |
+| Worktree Open | `aigon worktree-open <ID> [agent] [--terminal=<type>]` |
+| Worktree Open (Arena) | `aigon worktree-open <ID> --all` |
+| Worktree Open (Parallel) | `aigon worktree-open <ID> <ID>... [--agent=<code>]` |
 
-### Research Commands
+### Research commands
 
-| Command | Usage | Description |
-| :--- | :--- | :--- |
-| **Research Create** | `aigon research-create <name>` | Creates a new research topic from template in `research-topics/inbox`. |
-| **Research Prioritise** | `aigon research-prioritise <name>` | Promotes a research draft from `inbox` to `backlog` with a new ID. |
-| **Research Setup** | `aigon research-setup <ID> [agents...]` | Setup research. Solo: no agents. Arena: creates findings files for each agent. |
-| **Research Conduct** | `aigon research-conduct <ID>` | Conduct research. Agent writes findings (detects solo/arena mode). |
-| **Research Done** | `aigon research-done <ID> [--complete]` | Complete research. Arena: shows interactive synthesis, `--complete` finalizes. |
+| Command | Usage |
+|---|---|
+| Research Create | `aigon research-create <name>` |
+| Research Prioritise | `aigon research-prioritise <name>` |
+| Research Setup | `aigon research-setup <ID> [agents...]` |
+| Research Open | `aigon research-open <ID>` |
+| Research Conduct | `aigon research-conduct <ID>` |
+| Research Synthesize | `aigon research-synthesize <ID>` |
+| Research Done | `aigon research-done <ID> [--complete]` |
 
-### Utilities
+### Utility commands
 
-| Command | Usage | Description |
-| :--- | :--- | :--- |
-| **Init** | `aigon init` | Creates the `./docs/specs` directory structure in the current project. |
-| **Install Agent** | `aigon install-agent <agents...>` | Generates agent configuration files. Accepts multiple agents: `cc`, `gg`, `cx`. |
-| **Update** | `aigon update` | Updates all Aigon files to latest version. Re-installs detected agents. |
-| **Hooks List** | `aigon hooks [list]` | List all defined hooks from `docs/aigon-hooks.md`. |
-| **Config** | `aigon config <init\|show>` | Manage global config at `~/.aigon/config.json`. |
-| **Profile** | `aigon profile [show\|set\|detect]` | Manage project profile. Auto-detects or override with `set <type>`. |
-| **Worktree Open** | `aigon worktree-open <ID> [agent] [--terminal=<type>]` | Open worktree in terminal with agent CLI. |
-| **Worktree Open (Arena)** | `aigon worktree-open <ID> --all` | Open all arena worktrees side-by-side. |
-| **Worktree Open (Parallel)** | `aigon worktree-open <ID> <ID>... [--agent=<code>]` | Open multiple features side-by-side. |
+| Command | Usage |
+|---|---|
+| Init | `aigon init` |
+| Install Agent | `aigon install-agent <cc\|gg\|cx\|cu> [more...]` |
+| Update | `aigon update` |
+| Hooks | `aigon hooks [list]` |
+| Config | `aigon config <init\|show>` |
+| Profile | `aigon profile [show\|set\|detect]` |
+
+![Feature list output across states and modes](docs/images/aigon-feature-list.png)
 
 ---
 
 ## Hooks
 
-Hooks allow you to run custom scripts before and after Aigon commands. This is useful for integrating with your specific infrastructure (databases, deployment platforms, etc.) without modifying the core Aigon commands.
+Hooks let you run custom scripts before and after Aigon commands.
 
-### Hooks File
+- Define hooks in `docs/aigon-hooks.md`
+- Hook names follow `pre-<command>` and `post-<command>` headings
+- Pre-hook failure aborts the command
+- Post-hook failure warns but does not roll back completed command
 
-Define hooks in `docs/aigon-hooks.md`. Aigon automatically detects and runs hooks based on heading names.
+Common use cases:
 
-### Hooks Format
+- database branch setup/teardown
+- service orchestration
+- project-specific automation steps
 
-```markdown
-# Aigon Hooks
-
-## pre-feature-setup
-
-Creates database branches for each agent worktree (arena mode).
-
-```bash
-if [ "$AIGON_MODE" = "arena" ]; then
-  for agent in $AIGON_AGENTS; do
-    neon branches create --name "feature-${AIGON_FEATURE_ID}-${agent}"
-  done
-fi
-```
-
-## post-feature-setup
-
-```bash
-echo "Setup complete for feature $AIGON_FEATURE_ID in $AIGON_MODE mode"
-```
-
-## pre-feature-cleanup
-
-Clean up database branches before removing worktrees (arena mode).
-
-```bash
-for agent in $AIGON_AGENTS; do
-  neon branches delete "feature-${AIGON_FEATURE_ID}-${agent}" --force
-done
-```
-```
-
-### Supported Hooks
-
-| Hook | Description |
-|------|-------------|
-| `pre-feature-now` | Runs before fast-track feature creation |
-| `post-feature-now` | Runs after fast-track feature creation completes |
-| `pre-feature-setup` | Runs before creating branch (solo) or worktrees (arena) |
-| `post-feature-setup` | Runs after setup completes |
-| `pre-feature-implement` | Runs before implementation begins |
-| `post-feature-implement` | Runs after implementation setup |
-| `pre-feature-done` | Runs before merging a feature |
-| `post-feature-done` | Runs after a feature is merged |
-| `pre-feature-cleanup` | Runs before cleaning up arena worktrees |
-| `post-feature-cleanup` | Runs after arena cleanup |
-
-### Environment Variables
-
-Hooks have access to context via environment variables:
-
-| Variable | Description | Available In |
-|----------|-------------|--------------|
-| `AIGON_COMMAND` | The command being run | All hooks |
-| `AIGON_PROJECT_ROOT` | Root directory of the project | All hooks |
-| `AIGON_MODE` | Current mode: "solo" or "arena" | Feature commands |
-| `AIGON_FEATURE_ID` | Feature ID (e.g., "01") | Feature commands |
-| `AIGON_FEATURE_NAME` | Feature name slug | Feature commands |
-| `AIGON_AGENTS` | Space-separated list of agents | feature-setup (arena), feature-cleanup |
-| `AIGON_AGENT` | Current agent name | feature-implement (arena), feature-done (arena) |
-| `AIGON_WORKTREE_PATH` | Path to current worktree | feature-implement (arena) |
-
-### Hook Behavior
-
-- **Pre-hooks**: Run before the command executes. If a pre-hook fails (non-zero exit), the command is **aborted**.
-- **Post-hooks**: Run after the command completes successfully. If a post-hook fails, a **warning** is shown but the command is considered complete.
-- **Missing hooks file**: Silently ignored - hooks are optional.
-
-### List Defined Hooks
-
-```bash
-aigon hooks list
-```
-
----
-
-
-## Agent Macros
-
-### Claude Code
-When you run `aigon install-agent cc`, it installs slash commands into `.claude/commands/aigon/`, giving them a clean `/aigon:` namespace in the slash menu. Commands include argument hints and destructive commands are protected from autonomous invocation.
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/aigon:feature-create <name>` | Create a new feature spec |
-| `/aigon:feature-now <name>` | Fast-track: create + setup + implement in one step (solo branch) |
-| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
-| `/aigon:feature-list` | List features by status, mode, and location |
-| `/aigon:feature-implement <ID>` | Implement feature in current branch/worktree |
-| `/aigon:feature-eval <ID>` | Create evaluation template (code review or comparison) |
-| `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
-| `/aigon:feature-cleanup <ID>` | Clean up arena worktrees and branches |
-
-#### Research
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/aigon:research-create <name>` | Create a new research topic |
-| `/aigon:research-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:research-setup <ID> [agents...]` | Setup research (solo or arena mode) |
-| `/aigon:research-conduct <ID>` | Conduct research (write findings) |
-| `/aigon:research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
-| `/aigon:research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
-| `/aigon:help` | Shows all available Aigon commands |
-
-**Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Use `research-synthesize` to have an agent compare all findings, then user runs `research-done` to select features.
-
-### Gemini
-When you run `aigon install-agent gg`, it installs special slash commands for Gemini to make the workflow seamless.
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/aigon:feature-create <name>` | Create a new feature spec |
-| `/aigon:feature-now <name>` | Fast-track: create + setup + implement in one step (solo branch) |
-| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
-| `/aigon:feature-list` | List features by status, mode, and location |
-| `/aigon:feature-implement <ID>` | Implement feature in current branch/worktree |
-| `/aigon:feature-eval <ID>` | Create evaluation template (code review or comparison) |
-| `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
-| `/aigon:feature-cleanup <ID>` | Clean up arena worktrees and branches |
-
-#### Research
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/aigon:research-create <name>` | Create a new research topic |
-| `/aigon:research-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:research-setup <ID> [agents...]` | Setup research (solo or arena mode) |
-| `/aigon:research-conduct <ID>` | Conduct research (write findings) |
-| `/aigon:research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
-| `/aigon:research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
-| `/aigon:help` | Shows all available Aigon commands |
-
-**Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Use `research-synthesize` to have an agent compare all findings, then user runs `research-done` to select features.
-
-### Codex
-When you run `aigon install-agent cx`, it installs slash commands to your **global** `~/.codex/prompts/` folder.
-
-**Note:** Codex only supports global prompts (not project-level). This means the same Aigon commands are available across all your projects.
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/prompts:aigon-feature-create <name>` | Create a new feature spec |
-| `/prompts:aigon-feature-now <name>` | Fast-track: create + setup + implement in one step (solo branch) |
-| `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
-| `/prompts:aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
-| `/prompts:aigon-feature-list` | List features by status, mode, and location |
-| `/prompts:aigon-feature-implement <ID>` | Implement feature in current branch/worktree |
-| `/prompts:aigon-feature-eval <ID>` | Create evaluation template (code review or comparison) |
-| `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
-| `/prompts:aigon-feature-done <ID> [agent]` | Merge and complete feature |
-| `/prompts:aigon-feature-cleanup <ID>` | Clean up arena worktrees and branches |
-
-#### Research
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/prompts:aigon-research-create <name>` | Create a new research topic |
-| `/prompts:aigon-research-prioritise <name>` | Assign ID and move to backlog |
-| `/prompts:aigon-research-setup <ID> [agents...]` | Setup research (solo or arena mode) |
-| `/prompts:aigon-research-conduct <ID>` | Conduct research (write findings) |
-| `/prompts:aigon-research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
-| `/prompts:aigon-research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
-| `/prompts:aigon-help` | Shows all available Aigon commands |
-
-**Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Use `research-synthesize` to have an agent compare all findings, then user runs `research-done` to select features.
-
-### Cursor
-When you run `aigon install-agent cu`, it installs slash commands to your project's `.cursor/commands/` folder.
-
-**Note:** Cursor uses plain Markdown files without frontmatter. Commands are accessed by typing `/` in the Agent input.
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/aigon-feature-create <name>` | Create a new feature spec |
-| `/aigon-feature-now <name>` | Fast-track: create + setup + implement in one step (solo branch) |
-| `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon-feature-setup <ID> [agents...]` | Setup for solo (no agents), solo worktree (1 agent), or arena (2+ agents) |
-| `/aigon-feature-list` | List features by status, mode, and location |
-| `/aigon-feature-implement <ID>` | Implement feature in current branch/worktree |
-| `/aigon-feature-eval <ID>` | Create evaluation template (code review or comparison) |
-| `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
-| `/aigon-feature-cleanup <ID>` | Clean up arena worktrees and branches |
-
-#### Research
-
-| Slash Command | Description |
-| :--- | :--- |
-| `/aigon-research-create <name>` | Create a new research topic |
-| `/aigon-research-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon-research-setup <ID> [agents...]` | Setup research (solo or arena mode) |
-| `/aigon-research-conduct <ID>` | Conduct research (write findings) |
-| `/aigon-research-synthesize <ID>` | Compare ALL agents' findings (arena mode - read-only analysis) |
-| `/aigon-research-done <ID>` | Complete research (solo mode only - agents should NOT run in arena mode) |
-| `/aigon-help` | Shows all available Aigon commands |
-
-**Arena Mode Note:** In arena mode, agents write to their findings file and STOP. Use `research-synthesize` to have an agent compare all findings, then user runs `research-done` to select features.
+Run `aigon hooks list` to inspect discovered hooks.
 
 ---
 
 ## Multi-Agent Evaluation
 
-When running multi-agent arenas, use `aigon feature-eval <ID>` to generate an evaluation template and compare implementations. For unbiased evaluation, **use a different model as the evaluator** than the ones that wrote the code.
-
-### Evaluator Model Recommendation
-
-If using Claude as the evaluator, start it with a different model:
+After arena implementations are complete:
 
 ```bash
-# If implementations were written by Opus, evaluate with Sonnet
-claude --model sonnet
-
-# Then run the evaluation command
-/aigon:feature-eval 10
+aigon feature-eval 55
 ```
 
-### Example Evaluation Output
+This generates a structured comparison template so you can score implementations against spec compliance, quality, maintainability, and performance.
 
-Here's an example of what a multi-agent evaluation produces:
+![Example output from feature-eval comparison](docs/images/aigon-feature-eval-output.png)
 
-```markdown
-# Evaluation: Feature 10 - add-search-box
-
-## Spec
-See: `./docs/specs/features/04-in-evaluation/feature-10-add-search-box.md`
-
-## Implementations to Compare
-
-- [x] **cc**: `~/src/feature-10-cc-add-search-box` - ✅ IMPLEMENTED
-- [x] **cx**: `~/src/feature-10-cx-add-search-box` - ✅ IMPLEMENTED
-- [x] **gg**: `~/src/feature-10-gg-add-search-box` - ✅ IMPLEMENTED
-
-## Evaluation Criteria
-
-| Criteria | cc | cx | gg |
-|----------|----|----|-----|
-| Code Quality | 9/10 | 10/10 | 6/10 |
-| Spec Compliance | 10/10 | 10/10 | 7/10 |
-| Performance | 9/10 | 10/10 | 8/10 |
-| Maintainability | 9/10 | 10/10 | 6/10 |
-| **TOTAL** | **37/40** | **40/40** | **27/40** |
-
-## Summary
-
-### Strengths & Weaknesses
-
-#### cc (Claude Code)
-**Strengths:**
-- ✅ **Perfect spec compliance**: All acceptance criteria met
-- ✅ **Proper normalization**: Implements punctuation removal (`/[^\w\s]/g`) and case-insensitive search
-- ✅ **Smart data mapping**: Created `SWELL_DIRECTION_MAP` to handle mismatch between UI abbreviations and data model full names
-- ✅ **Type safety**: Strong TypeScript typing with proper type narrowing
-- ✅ **Custom debounce hook**: Clean `useDebounce` implementation
-- ✅ **Performance**: Uses `useMemo` for filtered results
-- ✅ **Good UI**: Labels on filters, responsive design
-- ✅ **Comprehensive documentation**: Detailed implementation log
-
-**Weaknesses:**
-- ⚠️ **Non-breaking but complex**: Mapping layer adds some complexity (though it preserves data integrity)
-- ⚠️ **Separate normalize calls**: Calls `normalizeSearchText()` twice per location (once for name, once for description)
-
-#### cx (Codex)
-**Strengths:**
-- ✅ **Perfect spec compliance**: All acceptance criteria met flawlessly
-- ✅ **Excellent normalization**: Robust `normalizeText()` function handles punctuation, underscores, and extra whitespace
-- ✅ **Optimal performance**: Uses `useMemo` for both sorting and filtering with proper dependency arrays
-- ✅ **Superior code organization**: Clean, readable, well-structured
-- ✅ **Enhanced UI/UX**: Professional design with card-based filter section, pills for attributes, improved layout
-- ✅ **Accessibility**: Proper labels with semantic HTML, clear visual hierarchy
-- ✅ **Explicit trim**: `setDebouncedSearch(searchTerm.trim())` - exactly as spec requires
-- ✅ **Modified data model cleanly**: Changed to abbreviations to match spec (same as gg but implemented better)
-- ✅ **No code waste**: Every line serves a purpose
-
-**Weaknesses:**
-- (None identified - this is a production-ready implementation)
-
-#### gg (Gemini)
-**Strengths:**
-- ✅ **Functional implementation**: Core search and filter functionality works
-- ✅ **Debounce implemented**: Correct 300ms debounce delay
-- ✅ **Modified data model**: Changed swellDirection to use abbreviations directly
-
-**Weaknesses:**
-- ❌ **Spec violation - punctuation handling**: Does NOT remove punctuation - "pipeline!" would NOT match "Pipeline"
-- ❌ **Spec violation - whitespace trimming**: Missing explicit trim on debounce tick
-- ❌ **Poor normalization**: Only uses `.toLowerCase()`, doesn't handle punctuation
-- ⚠️ **Less optimal performance**: Uses `useEffect` + `useState` instead of `useMemo` for filtering
-- ⚠️ **Code inefficiency**: Has unused `sortedLocations` variable on line 50
-- ⚠️ **Poor UX**: No labels on filter dropdowns, less accessible
-- ⚠️ **Fragile code**: Uses `.toLowerCase()` for swell comparison which could break with data changes
-```
-
-### After Evaluation
-
-Once you've chosen a winner, merge their implementation:
+After selecting a winner:
 
 ```bash
-# Merge the winning implementation
-aigon feature-done 10 cx
-
-# Push losing branches to origin for safekeeping (optional)
-aigon feature-cleanup 10 --push
-
-# Or just delete losing branches locally
-aigon feature-cleanup 10
+aigon feature-done 55 cx
+aigon feature-cleanup 55 --push
 ```
 
 ---
 
 ## Sample Workflow Chat
 
-Here's a real example showing the Aigon workflow in action — from feature creation through to arena setup. The conversation demonstrates three types of interaction:
-
-- 🟦 **User prompts** — what you type
-- ⬜ **Agent responses** — tool calls, output, and narrative
-- 🟩 **Workflow guidance** — Aigon-specific next steps and suggestions
+Here's a real example showing the Aigon workflow in action — from feature creation through to arena setup.
 
 ---
 
@@ -739,26 +535,15 @@ Here's a real example showing the Aigon workflow in action — from feature crea
 I'll create a comprehensive feature spec for showing the current project. Let me use the Aigon workflow:
 
 ```
-⏺ Bash(aigon feature-create show-current-project)
+⏺ Bash(/aigon:feature-create show-current-project)
   ⎿  ✅ Created: ./docs/specs/features/01-inbox/feature-show-current-project.md
-     📝 Edit the spec, then prioritise it using command: feature-prioritise show-current-project
-
-⏺ Read(docs/specs/features/01-inbox/feature-show-current-project.md)
-  ⎿  Read 34 lines
-
-⏺ Write(docs/specs/features/01-inbox/feature-show-current-project.md)
-  ⎿  Updated with 184 additions and 17 removals
+     📝 Edit the spec, then prioritise it using: /aigon:feature-prioritise show-current-project
 ```
 
 Perfect! I've created a comprehensive feature spec for "Show Current Project" at:
 `docs/specs/features/01-inbox/feature-show-current-project.md`
 
-> [!NOTE]
-> 🟩 **Workflow Guidance**
->
-> Next step: Run `aigon feature-prioritise show-current-project` to assign an ID and move it to the backlog!
->
-> Would you like me to prioritize this feature now, or would you like to review/modify the spec first?
+> **Next step:** Run `/aigon:feature-prioritise show-current-project` to assign an ID and move it to the backlog.
 
 </td></tr>
 <tr><td>
@@ -773,7 +558,7 @@ Perfect! I've created a comprehensive feature spec for "Show Current Project" at
 **⬜ Agent:**
 
 ```
-⏺ Bash(aigon feature-prioritise show-current-project)
+⏺ Bash(/aigon:feature-prioritise show-current-project)
   ⎿  ✅ Moved: feature-show-current-project.md -> 02-backlog/feature-50-show-current-project.md
      Running git: git add docs/specs/features/
      Running git: git commit -m "chore: prioritise feature 50 - move to backlog"
@@ -782,20 +567,8 @@ Perfect! I've created a comprehensive feature spec for "Show Current Project" at
 
 Feature prioritized as **feature-50-show-current-project** and moved to backlog.
 
-> [!NOTE]
-> 🟩 **Workflow Guidance**
->
-> To implement now (solo):
-> ```
-> aigon feature-setup 50
-> ```
->
-> Or for an arena (multiple agents compete):
-> ```
-> aigon feature-setup 50 cc cx gg
-> ```
->
-> Would you like me to implement this feature now, or save it for later?
+> **Next step:** To implement now (solo): `/aigon:feature-setup 50`
+> Or for an arena (multiple agents compete): `/aigon:feature-setup 50 cc cx gg`
 
 </td></tr>
 <tr><td>
@@ -810,7 +583,7 @@ Feature prioritized as **feature-50-show-current-project** and moved to backlog.
 **⬜ Agent:**
 
 ```
-⏺ Bash(aigon feature-setup 50 cc cx gg)
+⏺ Bash(/aigon:feature-setup 50 cc cx gg)
   ⎿  ✅ Moved: feature-50-show-current-project.md -> 03-in-progress/feature-50-show-current-project.md
      Running git: git commit -m "chore: start feature 50 - move spec to in-progress"
      🌿 Created worktree: ../aigon-worktrees/feature-50-cc-show-current-project
@@ -826,26 +599,28 @@ Bakeoff setup complete for feature 50 with 3 agents 🏁
 | cx | `../aigon-worktrees/feature-50-cx-show-current-project` | `feature-50-cx-show-current-project` |
 | gg | `../aigon-worktrees/feature-50-gg-show-current-project` | `feature-50-gg-show-current-project` |
 
-> [!NOTE]
-> 🟩 **Workflow Guidance**
->
-> Open each worktree to start the agents:
-> ```
-> aigon worktree-open 50 --all     # All agents side-by-side
-> ```
-> Or individually:
-> ```
-> aigon worktree-open 50 cc
-> aigon worktree-open 50 cx
-> aigon worktree-open 50 gg
-> ```
->
-> Each agent will independently implement the feature. When all are done, return here and run:
-> ```
-> aigon feature-eval 50
-> ```
+> **Next step:** Open all worktrees side-by-side: `/aigon:worktree-open 50 --all`
+> Each agent will independently implement the feature. When all are done, return here and run: `/aigon:feature-eval 50`
 
 </td></tr>
 </table>
 
 ---
+
+## Screenshot Placeholders Checklist
+
+Drop screenshots into `docs/images/` with these filenames:
+
+- `docs/images/aigon-init-output.png`
+- `docs/images/aigon-install-agents.png`
+- `docs/images/aigon-feature-list.png`
+- `docs/images/aigon-warp-arena-split.png`
+- `docs/images/aigon-worktree-open.png`
+- `docs/images/aigon-slash-commands-menu.png`
+- `docs/images/aigon-feature-eval-output.png`
+- `docs/images/aigon-specs-folder-structure.png`
+- `docs/images/aigon-update-markers.png`
+
+---
+
+📘 **For detailed workflows, hooks, project profiles, and advanced configuration, see the [Complete Guide](docs/GUIDE.md)**
