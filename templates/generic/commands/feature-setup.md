@@ -63,7 +63,7 @@ Remember that `{{CMD_PREFIX}}feature-done` must be run from the main repo later.
 
 After the CLI completes, open all worktrees side-by-side:
 ```bash
-aigon worktree-open 55 --all         # Opens all arena agents side-by-side in Warp
+{{CMD_PREFIX}}worktree-open 55 --all         # Opens all arena agents side-by-side in Warp
 ```
 
 Or open individually:
@@ -88,4 +88,4 @@ End your response with the suggested next command on its own line. This influenc
 
 - **Solo mode (branch):** `{{CMD_PREFIX}}feature-implement <ID>`
 - **Solo worktree:** `{{CMD_PREFIX}}worktree-open <ID>`
-- **Arena:** `aigon worktree-open <ID> --all`
+- **Arena:** `{{CMD_PREFIX}}worktree-open <ID> --all`
