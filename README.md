@@ -378,6 +378,8 @@ Open all worktrees side-by-side in Warp:
 /aigon:research-open 03
 ```
 
+![Research agents side-by-side in terminal](docs/images/aigon-research-arena-split.png)
+
 3. In each agent pane:
 
 ```text
