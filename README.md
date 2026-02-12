@@ -64,10 +64,10 @@ docs/specs/
 7. [Slash Command Prefixes](#slash-command-prefixes)
 8. [Workflow Overview](#workflow-overview)
 9. [Workflow Examples](#workflow-examples)
-10. [CLI Reference](#cli-reference)
-11. [Hooks](#hooks)
-12. [Multi-Agent Evaluation](#multi-agent-evaluation)
-13. [Sample Workflow Chat](#sample-workflow-chat)
+10. [Hooks](#hooks)
+11. [Multi-Agent Evaluation](#multi-agent-evaluation)
+12. [Sample Workflow Chat](#sample-workflow-chat)
+13. [CLI Reference](#cli-reference)
 14. [Agent Slash Commands](#agent-slash-commands)
 
 ---
@@ -411,75 +411,6 @@ aigon worktree-open 100 101 102 --agent=cc
 
 ---
 
-## CLI Reference
-
-### Feature commands
-
-| Command | Usage |
-|---|---|
-| Feature Create | `aigon feature-create <name>` |
-| Feature Now | `aigon feature-now <name>` |
-| Feature Prioritise | `aigon feature-prioritise <name>` |
-| Feature Setup | `aigon feature-setup <ID> [agents...]` |
-| Feature List | `aigon feature-list [--all\|--active\|--inbox\|--backlog\|--done]` |
-| Feature Implement | `aigon feature-implement <ID>` |
-| Feature Eval | `aigon feature-eval <ID>` |
-| Feature Review | `aigon feature-review <ID>` |
-| Feature Done | `aigon feature-done <ID> [agent]` |
-| Feature Cleanup | `aigon feature-cleanup <ID> [--push]` |
-| Worktree Open | `aigon worktree-open <ID> [agent] [--terminal=<type>]` |
-| Worktree Open (Arena) | `aigon worktree-open <ID> --all` |
-| Worktree Open (Parallel) | `aigon worktree-open <ID> <ID>... [--agent=<code>]` |
-
-### Research commands
-
-| Command | Usage |
-|---|---|
-| Research Create | `aigon research-create <name>` |
-| Research Prioritise | `aigon research-prioritise <name>` |
-| Research Setup | `aigon research-setup <ID> [agents...]` |
-| Research Open | `aigon research-open <ID>` |
-| Research Conduct | `aigon research-conduct <ID>` |
-| Research Synthesize | `aigon research-synthesize <ID>` |
-| Research Done | `aigon research-done <ID> [--complete]` |
-
-### Utility commands
-
-| Command | Usage |
-|---|---|
-| Init | `aigon init` |
-| Install Agent | `aigon install-agent <cc\|gg\|cx\|cu> [more...]` |
-| Update | `aigon update` |
-| Hooks | `aigon hooks [list]` |
-| Config | `aigon config <init\|show>` |
-| Profile | `aigon profile [show\|set\|detect]` |
-
-Example output from `aigon feature-list --all`:
-```
-Inbox (8):
-        base-port-config
-        change-banner-in-bakeoff
-        create-plugin
-        parallel-features
-        refactor-aigon-sub-commands
-        research-open-arena
-        subdomain-configuration-for-bakeoff-mode
-        update-docs-prompt-to-done
-
-Done (9):
-   #01  support-hooks
-   #02  unify-workflow
-   #03  arena-research
-   #04  add-sample-chat-for-workflow
-   #05  command-metadata-improvements
-   #06  readme-uplift
-        change-worktree-location
-        install-agent-cleanup-old-commands
-        worktree-open-terminal
-```
-
----
-
 ## Hooks
 
 Hooks let you run custom scripts before and after Aigon commands.
@@ -640,6 +571,75 @@ Bakeoff setup complete for feature 50 with 3 agents 🏁
 
 </td></tr>
 </table>
+
+---
+
+## CLI Reference
+
+### Feature commands
+
+| Command | Usage |
+|---|---|
+| Feature Create | `aigon feature-create <name>` |
+| Feature Now | `aigon feature-now <name>` |
+| Feature Prioritise | `aigon feature-prioritise <name>` |
+| Feature Setup | `aigon feature-setup <ID> [agents...]` |
+| Feature List | `aigon feature-list [--all\|--active\|--inbox\|--backlog\|--done]` |
+| Feature Implement | `aigon feature-implement <ID>` |
+| Feature Eval | `aigon feature-eval <ID>` |
+| Feature Review | `aigon feature-review <ID>` |
+| Feature Done | `aigon feature-done <ID> [agent]` |
+| Feature Cleanup | `aigon feature-cleanup <ID> [--push]` |
+| Worktree Open | `aigon worktree-open <ID> [agent] [--terminal=<type>]` |
+| Worktree Open (Arena) | `aigon worktree-open <ID> --all` |
+| Worktree Open (Parallel) | `aigon worktree-open <ID> <ID>... [--agent=<code>]` |
+
+### Research commands
+
+| Command | Usage |
+|---|---|
+| Research Create | `aigon research-create <name>` |
+| Research Prioritise | `aigon research-prioritise <name>` |
+| Research Setup | `aigon research-setup <ID> [agents...]` |
+| Research Open | `aigon research-open <ID>` |
+| Research Conduct | `aigon research-conduct <ID>` |
+| Research Synthesize | `aigon research-synthesize <ID>` |
+| Research Done | `aigon research-done <ID> [--complete]` |
+
+### Utility commands
+
+| Command | Usage |
+|---|---|
+| Init | `aigon init` |
+| Install Agent | `aigon install-agent <cc\|gg\|cx\|cu> [more...]` |
+| Update | `aigon update` |
+| Hooks | `aigon hooks [list]` |
+| Config | `aigon config <init\|show>` |
+| Profile | `aigon profile [show\|set\|detect]` |
+
+Example output from `aigon feature-list --all`:
+```
+Inbox (8):
+        base-port-config
+        change-banner-in-bakeoff
+        create-plugin
+        parallel-features
+        refactor-aigon-sub-commands
+        research-open-arena
+        subdomain-configuration-for-bakeoff-mode
+        update-docs-prompt-to-done
+
+Done (9):
+   #01  support-hooks
+   #02  unify-workflow
+   #03  arena-research
+   #04  add-sample-chat-for-workflow
+   #05  command-metadata-improvements
+   #06  readme-uplift
+        change-worktree-location
+        install-agent-cleanup-old-commands
+        worktree-open-terminal
+```
 
 ---
 
