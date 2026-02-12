@@ -5,7 +5,7 @@ Visualize features and research topics in Kanban board or detailed list view.
 
 **IMPORTANT**:
 - After running the command, display the board output directly in your response text using a markdown code block so the user can see it immediately without expanding tool results.
-- When suggesting what to work on next, reference items by their letter labels (e.g., "You could prioritize item c) create-plugin") so users can quickly run `aigon feature-prioritise c`.
+- When suggesting what to work on next, reference items by their letter labels (e.g., "You could prioritize item c) create-plugin") and use **slash command format** for suggestions (e.g., `{{CMD_PREFIX}}feature-prioritise c`) not CLI format.
 
 ```bash
 aigon board {{ARG_SYNTAX}}

@@ -1093,7 +1093,7 @@ const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
 const COMMAND_ARG_HINTS = {
     'feature-create': '<feature-name>',
     'feature-now': '<feature-name>',
-    'feature-prioritise': '<feature-name>',
+    'feature-prioritise': '<feature-name or letter>',
     'feature-setup': '<ID> [agents...]',
     'feature-implement': '<ID>',
     'feature-eval': '<ID>',
@@ -1103,7 +1103,7 @@ const COMMAND_ARG_HINTS = {
     'board': '[--list] [--features] [--research] [--active] [--all] [--inbox] [--backlog] [--done]',
     'worktree-open': '[ID] [agent]',
     'research-create': '<topic-name>',
-    'research-prioritise': '<topic-name>',
+    'research-prioritise': '<topic-name or letter>',
     'research-setup': '<ID> [agents...]',
     'research-conduct': '<ID>',
     'research-synthesize': '<ID>',
