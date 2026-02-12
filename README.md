@@ -417,7 +417,7 @@ Aigon provides two views of your backlog: **Kanban board** (visual overview) and
 ### Kanban Board View (default)
 
 ```bash
-aigon board
+aigon board --all    # Show all including done items
 ```
 
 Output:
@@ -425,31 +425,62 @@ Output:
 ╔═══════════════════════ Aigon Board ════════════════════════╗
 
 FEATURES
-┌────────────────┼────────────────┼────────────────┼────────────────┼────────────────┐
-│ Inbox          │ Backlog        │ In Progress    │ Evaluation     │ Paused         │
-├────────────────┼────────────────┼────────────────┼────────────────┼────────────────┤
-│ base-port-conf │                │ #07 backlog-vi │                │                │
-│ create-plugin  │                │                │                │                │
-│ parallel-featu │                │                │                │                │
-│ refactor-aigon │                │                │                │                │
-├────────────────┼────────────────┼────────────────┼────────────────┼────────────────┤
-│ (4)            │ (0)            │ (1)            │ (0)            │ (0)            │
-└────────────────┼────────────────┼────────────────┼────────────────┼────────────────┘
+┌────────────────────────────────┼────────────────────────────────┼────────────────────────────────┐
+│ Inbox                          │ In Progress                    │ Done                           │
+├────────────────────────────────┼────────────────────────────────┼────────────────────────────────┤
+│ a) base-port-config            │ #07 backlog-visualisation *    │ #01 support-hooks              │
+│ b) change-banner-in-bakeoff    │                                │ #02 unify-workflow             │
+│ c) create-plugin               │                                │ #03 arena-research             │
+│ d) parallel-features           │                                │ #04 add-sample-chat-for-workfl │
+│ e) refactor-aigon-sub-commands │                                │ #05 command-metadata-improveme │
+│ f) research-open-arena         │                                │ #06 readme-uplift              │
+│ g) subdomain-configuration-for │                                │ change-worktree-location       │
+│ h) update-docs-prompt-to-done  │                                │ install-agent-cleanup-old-comm │
+│                                │                                │ open-worktrees-in-side-by-side │
+│                                │                                │ worktree-open-terminal         │
+├────────────────────────────────┼────────────────────────────────┼────────────────────────────────┤
+│ (8)                            │ (1)                            │ (10)                           │
+└────────────────────────────────┼────────────────────────────────┼────────────────────────────────┘
 
 RESEARCH
-┌────────────────┼────────────────┼────────────────┼────────────────┐
-│ Inbox          │ Backlog        │ In Progress    │ Paused         │
-├────────────────┼────────────────┼────────────────┼────────────────┤
-│ plugin-distrib │                │                │                │
-├────────────────┼────────────────┼────────────────┼────────────────┤
-│ (1)            │ (0)            │ (0)            │ (0)            │
-└────────────────┼────────────────┼────────────────┼────────────────┘
+┌────────────────────────────────┼────────────────────────────────┐
+│ Inbox                          │ Done                           │
+├────────────────────────────────┼────────────────────────────────┤
+│ i) plugin-distribution         │ #01 subdomains-for-multi-agent │
+│                                │ #02 claude-agent-teams-integra │
+│                                │ #03 simplify-command-parameter │
+├────────────────────────────────┼────────────────────────────────┤
+│ (1)                            │ (3)                            │
+└────────────────────────────────┼────────────────────────────────┘
+```
+
+**Current Status:**
+- **8 features** in inbox (unprioritized) with letter shortcuts (a-h)
+- **1 feature in progress**: #07 backlog-visualisation (current branch ★)
+- **10 features** completed
+- **1 research topic** in inbox with letter shortcut (i)
+- **3 research topics** completed
+
+**Quick Actions:**
+
+Pick an inbox item to prioritize:
+```bash
+/aigon:feature-prioritise a    # base-port-config
+/aigon:feature-prioritise c    # create-plugin
+/aigon:feature-prioritise d    # parallel-features
+/aigon:research-prioritise i   # plugin-distribution
+```
+
+Or fast-track a feature:
+```bash
+/aigon:feature-now c           # create plugin feature in one step
 ```
 
 **Indicators in Kanban view:**
 - `*` = current branch
 - `[2]` = arena mode (2 agents)
 - `[wt]` = solo worktree mode
+- `a), b), c)...` = letter shortcuts for quick prioritization
 
 ### Detailed List View
 
