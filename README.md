@@ -410,6 +410,114 @@ aigon worktree-open 100 101 102 --agent=cc
 
 ---
 
+## Visualizing Work
+
+Aigon provides two views of your backlog: **Kanban board** (visual overview) and **detailed list** (with work mode indicators).
+
+### Kanban Board View (default)
+
+```bash
+aigon board --all    # Show all including done items
+```
+
+Output:
+```
+╔═══════════════════════ Aigon Board ════════════════════════╗
+
+FEATURES
+┌────────────────────────────────┼────────────────────────────────┼────────────────────────────────┐
+│ Inbox                          │ In Progress                    │ Done                           │
+├────────────────────────────────┼────────────────────────────────┼────────────────────────────────┤
+│ a) base-port-config            │ #07 backlog-visualisation *    │ #01 support-hooks              │
+│ b) change-banner-in-bakeoff    │                                │ #02 unify-workflow             │
+│ c) create-plugin               │                                │ #03 arena-research             │
+│ d) parallel-features           │                                │ #04 add-sample-chat-for-workfl │
+│ e) refactor-aigon-sub-commands │                                │ #05 command-metadata-improveme │
+│ f) research-open-arena         │                                │ #06 readme-uplift              │
+│ g) subdomain-configuration-for │                                │ change-worktree-location       │
+│ h) update-docs-prompt-to-done  │                                │ install-agent-cleanup-old-comm │
+│                                │                                │ open-worktrees-in-side-by-side │
+│                                │                                │ worktree-open-terminal         │
+├────────────────────────────────┼────────────────────────────────┼────────────────────────────────┤
+│ (8)                            │ (1)                            │ (10)                           │
+└────────────────────────────────┼────────────────────────────────┼────────────────────────────────┘
+
+RESEARCH
+┌────────────────────────────────┼────────────────────────────────┐
+│ Inbox                          │ Done                           │
+├────────────────────────────────┼────────────────────────────────┤
+│ i) plugin-distribution         │ #01 subdomains-for-multi-agent │
+│                                │ #02 claude-agent-teams-integra │
+│                                │ #03 simplify-command-parameter │
+├────────────────────────────────┼────────────────────────────────┤
+│ (1)                            │ (3)                            │
+└────────────────────────────────┼────────────────────────────────┘
+```
+
+**Current Status:**
+- **8 features** in inbox (unprioritized) with letter shortcuts (a-h)
+- **1 feature in progress**: #07 backlog-visualisation (current branch ★)
+- **10 features** completed
+- **1 research topic** in inbox with letter shortcut (i)
+- **3 research topics** completed
+
+**Quick Actions:**
+
+Pick an inbox item to prioritize:
+```bash
+/aigon:feature-prioritise a    # base-port-config
+/aigon:feature-prioritise c    # create-plugin
+/aigon:feature-prioritise d    # parallel-features
+/aigon:research-prioritise i   # plugin-distribution
+```
+
+Or fast-track a feature:
+```bash
+/aigon:feature-now c           # create plugin feature in one step
+```
+
+**Indicators in Kanban view:**
+- `*` = current branch
+- `[2]` = arena mode (2 agents)
+- `[wt]` = solo worktree mode
+- `a), b), c)...` = letter shortcuts for quick prioritization
+
+### Detailed List View
+
+```bash
+aigon board --list
+```
+
+Output:
+```
+FEATURES
+
+Inbox (4):
+        base-port-config
+        create-plugin
+        parallel-features
+        refactor-aigon-sub-commands
+
+In Progress (1):
+   #07  backlog-visualisation  solo (branch) *
+
+RESEARCH
+
+Inbox (1):
+        plugin-distribution
+```
+
+**Filtering options:**
+```bash
+aigon board --features          # Show only features
+aigon board --research          # Show only research
+aigon board --active            # Show only in-progress items
+aigon board --list --active     # Detailed list of active items
+aigon board --all               # Include done items
+```
+
+---
+
 ## Hooks
 
 Hooks let you run custom scripts before and after Aigon commands.
@@ -490,7 +598,6 @@ aigon feature-cleanup 55 --push
 | Feature Now | `aigon feature-now <name>` |
 | Feature Prioritise | `aigon feature-prioritise <name>` |
 | Feature Setup | `aigon feature-setup <ID> [agents...]` |
-| Feature List | `aigon feature-list [--all\|--active\|--inbox\|--backlog\|--done]` |
 | Feature Implement | `aigon feature-implement <ID>` |
 | Feature Eval | `aigon feature-eval <ID>` |
 | Feature Review | `aigon feature-review <ID>` |
@@ -512,6 +619,14 @@ aigon feature-cleanup 55 --push
 | Research Synthesize | `aigon research-synthesize <ID>` |
 | Research Done | `aigon research-done <ID> [--complete]` |
 
+### Visualization commands
+
+| Command | Usage |
+|---|---|
+| Board | `aigon board` |
+| Board (List View) | `aigon board --list` |
+| Board (Filtered) | `aigon board [--features\|--research] [--active\|--all\|--inbox\|--backlog\|--done]` |
+
 ### Utility commands
 
 | Command | Usage |
@@ -523,7 +638,7 @@ aigon feature-cleanup 55 --push
 | Config | `aigon config <init\|show>` |
 | Profile | `aigon profile [show\|set\|detect]` |
 
-Example output from `aigon feature-list --all`:
+Example output from `aigon board --list --all`:
 ```
 Inbox (8):
         base-port-config
@@ -561,7 +676,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
-| `/aigon:feature-list` | List features by status and mode |
+| `/aigon:board` | Show Kanban board or list view |
 | `/aigon:feature-implement <ID>` | Implement in current branch/worktree |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
@@ -585,7 +700,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
-| `/aigon:feature-list` | List features by status and mode |
+| `/aigon:board` | Show Kanban board or list view |
 | `/aigon:feature-implement <ID>` | Implement in current branch/worktree |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
@@ -609,7 +724,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/prompts:aigon-feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
 | `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
 | `/prompts:aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
-| `/prompts:aigon-feature-list` | List features by status and mode |
+| `/prompts:aigon-board` | Show Kanban board or list view |
 | `/prompts:aigon-feature-implement <ID>` | Implement in current branch/worktree |
 | `/prompts:aigon-feature-eval <ID>` | Generate review/comparison template |
 | `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
@@ -633,7 +748,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon-feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
 | `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
-| `/aigon-feature-list` | List features by status and mode |
+| `/aigon-board` | Show Kanban board or list view |
 | `/aigon-feature-implement <ID>` | Implement in current branch/worktree |
 | `/aigon-feature-eval <ID>` | Generate review/comparison template |
 | `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
