@@ -1922,6 +1922,14 @@ const commands = {
                             console.log(`   📋 .env.local copied (no PORT — dev server not used)`);
                         }
 
+                        // Install agent commands in worktree (gitignored files don't exist in new worktrees)
+                        try {
+                            execSync(`aigon install-agent ${agentId}`, { cwd: worktreePath, stdio: 'pipe' });
+                            console.log(`   🔧 Installed ${agentId} commands in worktree`);
+                        } catch (installErr) {
+                            console.warn(`   ⚠️  Failed to install ${agentId} commands in worktree: ${installErr.message}`);
+                        }
+
                         // Create log for this agent in the worktree
                         const worktreeLogsDir = path.join(worktreePath, 'docs/specs/features/logs');
                         if (!fs.existsSync(worktreeLogsDir)) {
