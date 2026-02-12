@@ -1,4 +1,4 @@
-# Aigon Developer Guide
+# Aigon: Detailed Workflows & Configuration
 
 **Comprehensive reference for detailed workflows, advanced configuration, and best practices.**
 

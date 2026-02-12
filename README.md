@@ -15,7 +15,7 @@ Aigon itself is built with Aigon. Browse `docs/specs/` in this repo to see real 
 
 ---
 
-📘 **For detailed documentation, workflows, and advanced topics, see [GUIDE.md](docs/GUIDE.md)**
+📘 **New to Aigon?** This README covers the essentials. For detailed workflows, hooks, and advanced configuration, see the [Complete Guide](docs/GUIDE.md)
 
 ---
 
@@ -623,4 +623,4 @@ Drop screenshots into `docs/images/` with these filenames:
 
 ---
 
-📘 **For detailed workflows, hooks documentation, project profiles, and advanced topics, see [GUIDE.md](docs/GUIDE.md)**
+📘 **For detailed workflows, hooks, project profiles, and advanced configuration, see the [Complete Guide](docs/GUIDE.md)**
