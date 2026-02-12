@@ -10,12 +10,6 @@ If no ID is provided, or the ID doesn't match an existing feature:
 2. If a partial ID or name was given, filter to matches
 3. Present the matching features and ask the user to choose one
 
-## Before running this command
-
-**Ask the user**: "Do you want to delete the local branch after merge?" (the CLI will delete it by default)
-
-If the user wants to **keep** the branch, add `--keep-branch` to the command.
-
 ## Usage
 
 ### Solo mode (branch or worktree)
@@ -78,8 +72,20 @@ Use `--push` if you want to preserve the alternative implementations on the remo
 - The command uses `--no-ff` merge to preserve feature history
 - Alternative implementations are preserved in `logs/alternatives/` for future reference
 
+## Suggest Next Action
+
+After the command completes, check the pipeline and suggest the most useful next step:
+
+1. If the feature used **arena mode** and has remaining worktrees, suggest cleanup first:
+   `{{CMD_PREFIX}}feature-cleanup <ID>`
+
+2. Otherwise, check the pipeline:
+   - List files in `./docs/specs/features/02-backlog/` matching `feature-*.md`
+   - If features exist in **backlog**: suggest setting up the next one — `{{CMD_PREFIX}}feature-setup <next-ID>`
+   - If backlog is empty, list files in `./docs/specs/features/01-inbox/` matching `feature-*.md`
+   - If features exist in **inbox**: suggest prioritising — `{{CMD_PREFIX}}feature-prioritise`
+   - If both are empty: let the user know the pipeline is clear
+
 ## Prompt Suggestion
 
-If the feature used arena mode and has remaining worktrees, end your response with the cleanup command on its own line. This influences Claude Code's prompt suggestion (grey text):
-
-`{{CMD_PREFIX}}feature-cleanup <ID>`
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID/name from the pipeline check above.
