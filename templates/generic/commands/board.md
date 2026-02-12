@@ -3,7 +3,9 @@
 
 Visualize features and research topics in Kanban board or detailed list view.
 
-**IMPORTANT**: After running the command, display the board output directly in your response text using a markdown code block so the user can see it immediately without expanding tool results.
+**IMPORTANT**:
+- After running the command, display the board output directly in your response text using a markdown code block so the user can see it immediately without expanding tool results.
+- When suggesting what to work on next, reference items by their letter labels (e.g., "You could prioritize item c) create-plugin") so users can quickly run `aigon feature-prioritise c`.
 
 ```bash
 aigon board {{ARG_SYNTAX}}
@@ -37,6 +39,22 @@ aigon board --list
 - `*` = current active branch
 - `[2]` = arena mode (2 agents)
 - `[wt]` = solo worktree mode
+- `a), b), c)...` = letter shortcuts for quick prioritization
+
+## Quick Prioritize
+
+Unprioritized inbox items show letter labels. Use them for quick prioritization:
+
+```bash
+# After running 'aigon board' and seeing:
+# a) base-port-config
+# b) create-plugin
+
+aigon feature-prioritise b    # Quickly prioritizes "create-plugin"
+aigon research-prioritise i   # Works for research too
+```
+
+Letters are saved in `.aigon/.board-map.json` (expires after 24 hours).
 
 ## Example: Kanban View
 
