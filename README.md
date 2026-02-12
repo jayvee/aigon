@@ -11,7 +11,41 @@ Aigon gives you a consistent spec workflow across Claude, Gemini, Codex, and Cur
 
 Aigon itself is built with Aigon. Browse `docs/specs/` in this repo to see real feature specs, implementation logs, research topics, and evaluations used to build and maintain the project.
 
-![Specs folder structure showing Aigon workflow state in-repo](docs/images/aigon-specs-folder-structure.png)
+```
+docs/specs/
+├── features/
+│   ├── 01-inbox/
+│   │   ├── feature-base-port-config.md
+│   │   ├── feature-create-plugin.md
+│   │   └── ...
+│   ├── 02-backlog/
+│   ├── 03-in-progress/
+│   │   └── feature-open-worktrees-in-side-by-side-tabs/
+│   ├── 04-in-evaluation/
+│   ├── 05-done/
+│   │   ├── feature-01-support-hooks.md
+│   │   ├── feature-02-unify-workflow.md
+│   │   ├── feature-06-readme-uplift.md
+│   │   └── ...
+│   ├── 06-paused/
+│   ├── evaluations/
+│   │   └── feature-06-eval.md
+│   └── logs/
+│       ├── selected/
+│       └── alternatives/
+├── research-topics/
+│   ├── 01-inbox/
+│   ├── 02-backlog/
+│   ├── 03-in-progress/
+│   ├── 04-done/
+│   │   ├── research-01-subdomains-for-multi-agent-mode.md
+│   │   └── research-03-simplify-command-parameters.md
+│   ├── 05-paused/
+│   └── logs/
+└── templates/
+    ├── feature-template.md
+    └── research-template.md
+```
 
 ---
 
@@ -121,7 +155,42 @@ cd /path/to/your/project
 aigon init
 ```
 
-![Terminal output of aigon init in a fresh project](docs/images/aigon-init-output.png)
+Output:
+```
+aigon init
+ACTION: Initializing Aigon in ./docs/specs ...
+✅ ./docs/specs directory structure created.
+aigon install-agent cc cx gg cu
+✅ Created: docs/development_workflow.md
+
+📦 Installing Claude (cc)...
+   ✅ Created: docs/agents/claude.md
+   ✅ Created: CLAUDE.md
+   ✅ Commands: 19 created
+   ✅ Created: .claude/skills/aigon/SKILL.md
+   ✅ Added permissions to .claude/settings.json
+   🛡️  Added deny rules to .claude/settings.json
+
+📦 Installing Codex (cx)...
+   ✅ Created: docs/agents/codex.md
+   ✅ Installed global prompts: ~/.codex/prompts
+   ⚠️  Note: Codex prompts are global (shared across all projects)
+   ✅ Created: .codex/prompt.md
+   ✅ Created: .codex/config.toml
+
+📦 Installing Gemini (gg)...
+   ✅ Created: docs/agents/gemini.md
+   ✅ Created: GEMINI.md
+   ✅ Commands: 19 created
+   ✅ Added allowedTools to .gemini/settings.json
+
+📦 Installing Cursor (cu)...
+   ✅ Created: docs/agents/cursor.md
+   ✅ Commands: 19 created
+   ✅ Added permissions to .cursor/cli.json
+
+🎉 Installed Aigon for: Claude, Codex, Gemini, Cursor
+```
 
 ### 3. Install agent integrations
 
@@ -132,8 +201,6 @@ aigon install-agent cc
 # Install multiple agents
 aigon install-agent cc gg cx cu
 ```
-
-![Terminal output for multi-agent install-agent run](docs/images/aigon-install-agents.png)
 
 ### 4. Use slash commands in your agent
 
@@ -182,7 +249,25 @@ Aigon updates only the managed blocks wrapped with:
 
 Custom content outside those markers is preserved. This is how you keep project-specific instructions while still receiving template updates.
 
-![AIGON_START/AIGON_END marker example preserving custom instructions](docs/images/aigon-update-markers.png)
+Example from `CLAUDE.md`:
+```markdown
+# Project Instructions
+
+Your custom instructions here...
+
+<!-- AIGON_START -->
+## Aigon
+
+This project uses the Aigon development workflow.
+
+- Claude-specific notes: `docs/agents/claude.md`
+- Development workflow: `docs/development_workflow.md`
+<!-- AIGON_END -->
+
+More custom instructions here...
+```
+
+When you run `aigon update`, only the content between `AIGON_START` and `AIGON_END` is updated. Your custom content remains untouched.
 
 ---
 
@@ -276,7 +361,6 @@ Open all worktrees side-by-side in Warp:
 ```
 
 ![Warp split view with arena worktrees side-by-side](docs/images/aigon-warp-arena-split.png)
-![worktree-open command output for a feature](docs/images/aigon-worktree-open.png)
 
 ### Multi-agent research (create -> conduct -> synthesize)
 
@@ -470,7 +554,29 @@ The command set is consistent across agents. Differences are only command prefix
 | Config | `aigon config <init\|show>` |
 | Profile | `aigon profile [show\|set\|detect]` |
 
-![Feature list output across states and modes](docs/images/aigon-feature-list.png)
+Example output from `aigon feature-list --all`:
+```
+Inbox (8):
+        base-port-config
+        change-banner-in-bakeoff
+        create-plugin
+        parallel-features
+        refactor-aigon-sub-commands
+        research-open-arena
+        subdomain-configuration-for-bakeoff-mode
+        update-docs-prompt-to-done
+
+Done (9):
+   #01  support-hooks
+   #02  unify-workflow
+   #03  arena-research
+   #04  add-sample-chat-for-workflow
+   #05  command-metadata-improvements
+   #06  readme-uplift
+        change-worktree-location
+        install-agent-cleanup-old-commands
+        worktree-open-terminal
+```
 
 ---
 
@@ -503,7 +609,37 @@ aigon feature-eval 55
 
 This generates a structured comparison template so you can score implementations against spec compliance, quality, maintainability, and performance.
 
-![Example output from feature-eval comparison](docs/images/aigon-feature-eval-output.png)
+**Meta example:** This very README was improved using arena mode! Three agents (Claude, Cursor, Codex) each created their own implementation, and the best approach was selected through evaluation.
+
+### Real Arena Evaluation: Feature 06 - README Uplift
+
+**Mode:** Arena (Multi-agent comparison)
+
+**Implementations:**
+- **cc** (Claude): Hybrid approach - README + GUIDE split
+- **cu** (Cursor): Comprehensive single-file (1091 lines)
+- **cx** (Codex): Ultra-concise single-file (530 lines)
+
+**Evaluation Criteria:**
+
+| Criteria | cc | cu | cx |
+|----------|----|----|-----|
+| Spec Compliance | 8/10 | 10/10 | 9/10 |
+| Code Quality | 7/10 | 9/10 | 8/10 |
+| Documentation | 3/10 | 10/10 | 7/10 |
+| Completeness | 7/10 | 10/10 | 8/10 |
+| Maintainability | 9/10 | 9/10 | 6/10 |
+| **TOTAL** | **34/50** | **48/50** | **38/50** |
+
+**Winner: cc (Claude) - Hybrid Approach** ⭐
+
+After initial evaluation, a hybrid approach was developed combining Codex's concise structure with Cursor's comprehensive content:
+- **README.md** (626 lines): Scannable quick reference
+- **docs/GUIDE.md** (465 lines): Detailed workflows and configuration
+- **Best of both worlds**: Conciseness for first-time visitors + completeness for advanced users
+- **Clear reader journey**: Quick start → detailed documentation
+
+See the complete evaluation with detailed strengths/weaknesses analysis in [`docs/specs/features/evaluations/feature-06-eval.md`](docs/specs/features/evaluations/feature-06-eval.md).
 
 After selecting a winner:
 
@@ -575,7 +711,7 @@ Feature prioritized as **feature-50-show-current-project** and moved to backlog.
 
 > **🟦 User:**
 >
-> Can you setup a bakeoff for 50 with cc cx gg
+> Can you setup an arena for 50 with cc cx gg
 
 </td></tr>
 <tr><td>
@@ -606,20 +742,6 @@ Bakeoff setup complete for feature 50 with 3 agents 🏁
 </table>
 
 ---
-
-## Screenshot Placeholders Checklist
-
-Drop screenshots into `docs/images/` with these filenames:
-
-- `docs/images/aigon-init-output.png`
-- `docs/images/aigon-install-agents.png`
-- `docs/images/aigon-feature-list.png`
-- `docs/images/aigon-warp-arena-split.png`
-- `docs/images/aigon-worktree-open.png`
-- `docs/images/aigon-slash-commands-menu.png`
-- `docs/images/aigon-feature-eval-output.png`
-- `docs/images/aigon-specs-folder-structure.png`
-- `docs/images/aigon-update-markers.png`
 
 ---
 
