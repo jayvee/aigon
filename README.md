@@ -64,11 +64,11 @@ docs/specs/
 7. [Slash Command Prefixes](#slash-command-prefixes)
 8. [Workflow Overview](#workflow-overview)
 9. [Workflow Examples](#workflow-examples)
-10. [Agent Slash Commands](#agent-slash-commands)
-11. [CLI Reference](#cli-reference)
-12. [Hooks](#hooks)
-13. [Multi-Agent Evaluation](#multi-agent-evaluation)
-14. [Sample Workflow Chat](#sample-workflow-chat)
+10. [CLI Reference](#cli-reference)
+11. [Hooks](#hooks)
+12. [Multi-Agent Evaluation](#multi-agent-evaluation)
+13. [Sample Workflow Chat](#sample-workflow-chat)
+14. [Agent Slash Commands](#agent-slash-commands)
 
 ---
 
@@ -409,108 +409,6 @@ aigon worktree-open 100 101 102 --agent=cc
 
 ---
 
-## Agent Slash Commands
-
-The command set is consistent across agents. Differences are only command prefix and storage location.
-
-### Claude (`/aigon:`)
-
-| Slash Command | Description |
-|---|---|
-| `/aigon:feature-create <name>` | Create a feature spec |
-| `/aigon:feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
-| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
-| `/aigon:feature-list` | List features by status and mode |
-| `/aigon:feature-implement <ID>` | Implement in current branch/worktree |
-| `/aigon:feature-eval <ID>` | Generate review/comparison template |
-| `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
-| `/aigon:feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
-| `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
-| `/aigon:research-create <name>` | Create a research topic |
-| `/aigon:research-prioritise <name>` | Prioritise a research topic |
-| `/aigon:research-setup <ID> [agents...]` | Setup solo/arena research |
-| `/aigon:research-open <ID>` | Open arena research agents side-by-side |
-| `/aigon:research-conduct <ID>` | Write findings |
-| `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
-| `/aigon:research-done <ID>` | Complete research topic |
-| `/aigon:help` | Show available Aigon commands |
-
-### Gemini (`/aigon:`)
-
-| Slash Command | Description |
-|---|---|
-| `/aigon:feature-create <name>` | Create a feature spec |
-| `/aigon:feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
-| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
-| `/aigon:feature-list` | List features by status and mode |
-| `/aigon:feature-implement <ID>` | Implement in current branch/worktree |
-| `/aigon:feature-eval <ID>` | Generate review/comparison template |
-| `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
-| `/aigon:feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
-| `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
-| `/aigon:research-create <name>` | Create a research topic |
-| `/aigon:research-prioritise <name>` | Prioritise a research topic |
-| `/aigon:research-setup <ID> [agents...]` | Setup solo/arena research |
-| `/aigon:research-open <ID>` | Open arena research agents side-by-side |
-| `/aigon:research-conduct <ID>` | Write findings |
-| `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
-| `/aigon:research-done <ID>` | Complete research topic |
-| `/aigon:help` | Show available Aigon commands |
-
-### Codex (`/prompts:aigon-`)
-
-| Slash Command | Description |
-|---|---|
-| `/prompts:aigon-feature-create <name>` | Create a feature spec |
-| `/prompts:aigon-feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
-| `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
-| `/prompts:aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
-| `/prompts:aigon-feature-list` | List features by status and mode |
-| `/prompts:aigon-feature-implement <ID>` | Implement in current branch/worktree |
-| `/prompts:aigon-feature-eval <ID>` | Generate review/comparison template |
-| `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
-| `/prompts:aigon-feature-done <ID> [agent]` | Merge and complete feature |
-| `/prompts:aigon-feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
-| `/prompts:aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
-| `/prompts:aigon-research-create <name>` | Create a research topic |
-| `/prompts:aigon-research-prioritise <name>` | Prioritise a research topic |
-| `/prompts:aigon-research-setup <ID> [agents...]` | Setup solo/arena research |
-| `/prompts:aigon-research-open <ID>` | Open arena research agents side-by-side |
-| `/prompts:aigon-research-conduct <ID>` | Write findings |
-| `/prompts:aigon-research-synthesize <ID>` | Compare and synthesize all findings |
-| `/prompts:aigon-research-done <ID>` | Complete research topic |
-| `/prompts:aigon-help` | Show available Aigon commands |
-
-### Cursor (`/aigon-`)
-
-| Slash Command | Description |
-|---|---|
-| `/aigon-feature-create <name>` | Create a feature spec |
-| `/aigon-feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
-| `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
-| `/aigon-feature-list` | List features by status and mode |
-| `/aigon-feature-implement <ID>` | Implement in current branch/worktree |
-| `/aigon-feature-eval <ID>` | Generate review/comparison template |
-| `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
-| `/aigon-feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
-| `/aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
-| `/aigon-research-create <name>` | Create a research topic |
-| `/aigon-research-prioritise <name>` | Prioritise a research topic |
-| `/aigon-research-setup <ID> [agents...]` | Setup solo/arena research |
-| `/aigon-research-open <ID>` | Open arena research agents side-by-side |
-| `/aigon-research-conduct <ID>` | Write findings |
-| `/aigon-research-synthesize <ID>` | Compare and synthesize all findings |
-| `/aigon-research-done <ID>` | Complete research topic |
-| `/aigon-help` | Show available Aigon commands |
-
----
-
 ## CLI Reference
 
 ### Feature commands
@@ -742,6 +640,106 @@ Bakeoff setup complete for feature 50 with 3 agents 🏁
 </table>
 
 ---
+
+## Agent Slash Commands
+
+The command set is consistent across agents. Differences are only command prefix and storage location.
+
+### Claude (`/aigon:`)
+
+| Slash Command | Description |
+|---|---|
+| `/aigon:feature-create <name>` | Create a feature spec |
+| `/aigon:feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
+| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/aigon:feature-list` | List features by status and mode |
+| `/aigon:feature-implement <ID>` | Implement in current branch/worktree |
+| `/aigon:feature-eval <ID>` | Generate review/comparison template |
+| `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
+| `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon:feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
+| `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
+| `/aigon:research-create <name>` | Create a research topic |
+| `/aigon:research-prioritise <name>` | Prioritise a research topic |
+| `/aigon:research-setup <ID> [agents...]` | Setup solo/arena research |
+| `/aigon:research-open <ID>` | Open arena research agents side-by-side |
+| `/aigon:research-conduct <ID>` | Write findings |
+| `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
+| `/aigon:research-done <ID>` | Complete research topic |
+| `/aigon:help` | Show available Aigon commands |
+
+### Gemini (`/aigon:`)
+
+| Slash Command | Description |
+|---|---|
+| `/aigon:feature-create <name>` | Create a feature spec |
+| `/aigon:feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
+| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/aigon:feature-list` | List features by status and mode |
+| `/aigon:feature-implement <ID>` | Implement in current branch/worktree |
+| `/aigon:feature-eval <ID>` | Generate review/comparison template |
+| `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
+| `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon:feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
+| `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
+| `/aigon:research-create <name>` | Create a research topic |
+| `/aigon:research-prioritise <name>` | Prioritise a research topic |
+| `/aigon:research-setup <ID> [agents...]` | Setup solo/arena research |
+| `/aigon:research-open <ID>` | Open arena research agents side-by-side |
+| `/aigon:research-conduct <ID>` | Write findings |
+| `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
+| `/aigon:research-done <ID>` | Complete research topic |
+| `/aigon:help` | Show available Aigon commands |
+
+### Codex (`/prompts:aigon-`)
+
+| Slash Command | Description |
+|---|---|
+| `/prompts:aigon-feature-create <name>` | Create a feature spec |
+| `/prompts:aigon-feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
+| `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
+| `/prompts:aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/prompts:aigon-feature-list` | List features by status and mode |
+| `/prompts:aigon-feature-implement <ID>` | Implement in current branch/worktree |
+| `/prompts:aigon-feature-eval <ID>` | Generate review/comparison template |
+| `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
+| `/prompts:aigon-feature-done <ID> [agent]` | Merge and complete feature |
+| `/prompts:aigon-feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
+| `/prompts:aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
+| `/prompts:aigon-research-create <name>` | Create a research topic |
+| `/prompts:aigon-research-prioritise <name>` | Prioritise a research topic |
+| `/prompts:aigon-research-setup <ID> [agents...]` | Setup solo/arena research |
+| `/prompts:aigon-research-open <ID>` | Open arena research agents side-by-side |
+| `/prompts:aigon-research-conduct <ID>` | Write findings |
+| `/prompts:aigon-research-synthesize <ID>` | Compare and synthesize all findings |
+| `/prompts:aigon-research-done <ID>` | Complete research topic |
+| `/prompts:aigon-help` | Show available Aigon commands |
+
+### Cursor (`/aigon-`)
+
+| Slash Command | Description |
+|---|---|
+| `/aigon-feature-create <name>` | Create a feature spec |
+| `/aigon-feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
+| `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/aigon-feature-list` | List features by status and mode |
+| `/aigon-feature-implement <ID>` | Implement in current branch/worktree |
+| `/aigon-feature-eval <ID>` | Generate review/comparison template |
+| `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
+| `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon-feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
+| `/aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
+| `/aigon-research-create <name>` | Create a research topic |
+| `/aigon-research-prioritise <name>` | Prioritise a research topic |
+| `/aigon-research-setup <ID> [agents...]` | Setup solo/arena research |
+| `/aigon-research-open <ID>` | Open arena research agents side-by-side |
+| `/aigon-research-conduct <ID>` | Write findings |
+| `/aigon-research-synthesize <ID>` | Compare and synthesize all findings |
+| `/aigon-research-done <ID>` | Complete research topic |
+| `/aigon-help` | Show available Aigon commands |
 
 ---
 
