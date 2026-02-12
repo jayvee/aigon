@@ -1378,7 +1378,7 @@ function displayKanbanSection(title, typeConfig, options) {
     console.log(`${title}`);
 
     // Column headers
-    const colWidth = 14;
+    const colWidth = 20;
     const header = displayFolders.map(f => (columns[f] || f).padEnd(colWidth).substring(0, colWidth)).join(' │ ');
     const separator = displayFolders.map(() => '─'.repeat(colWidth)).join('─┼─');
 
