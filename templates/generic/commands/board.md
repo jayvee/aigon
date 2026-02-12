@@ -3,6 +3,8 @@
 
 Visualize features and research topics in Kanban board or detailed list view.
 
+**IMPORTANT**: After running the command, display the board output directly in your response text using a markdown code block so the user can see it immediately without expanding tool results.
+
 ```bash
 aigon board {{ARG_SYNTAX}}
 ```
