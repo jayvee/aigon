@@ -315,18 +315,47 @@ This creates `~/.aigon/config.json`:
 {
   "terminal": "warp",
   "agents": {
-    "cc": { "cli": "claude" },
-    "cu": { "cli": "agent" },
-    "gg": { "cli": "gemini" },
-    "cx": { "cli": "codex" }
+    "cc": { "cli": "claude", "implementFlag": "--permission-mode acceptEdits" },
+    "cu": { "cli": "agent", "implementFlag": "--force" },
+    "gg": { "cli": "gemini", "implementFlag": "--sandbox --yolo" },
+    "cx": { "cli": "codex", "implementFlag": "--full-auto" }
   }
 }
 ```
+
+**To use stricter permissions:** Set `implementFlag` to `""` (empty string) for any agent to require manual approval prompts.
 
 ### Configuration Options
 
 - `terminal`: Default terminal for `worktree-open`. Options: `warp` (auto-runs agent), `code` (VS Code), `cursor`
 - `agents.{id}.cli`: Override the CLI command for each agent
+- `agents.{id}.implementFlag`: Override CLI flags to control permission prompts (useful for corporate environments)
+
+### CLI Flag Overrides
+
+By default, Aigon uses "yolo mode" flags that auto-approve commands:
+- **cc** (Claude): `--permission-mode acceptEdits` (auto-edits, prompts for risky Bash)
+- **cu** (Cursor): `--force` (auto-approves commands)
+- **gg** (Gemini): `--sandbox --yolo` (auto-approves all, sandboxed)
+- **cx** (Codex): `--full-auto` (workspace-write, smart approval)
+
+For stricter security (e.g., corporate environments), you can override these flags in `~/.aigon/config.json`:
+
+```json
+{
+  "terminal": "warp",
+  "agents": {
+    "cc": { "cli": "claude", "implementFlag": "" },
+    "cu": { "cli": "agent", "implementFlag": "" },
+    "gg": { "cli": "gemini", "implementFlag": "--sandbox" },
+    "cx": { "cli": "codex", "implementFlag": "" }
+  }
+}
+```
+
+Set `implementFlag` to `""` (empty string) to remove auto-approval flags and require manual permission prompts.
+
+**Priority order:** Project config (`.aigon/config.json`) > Global config (`~/.aigon/config.json`) > Template defaults
 
 ### Environment Variable Override
 

@@ -37,10 +37,12 @@
 | Code | Agent | Command | Mode |
 |------|-------|---------|------|
 | cc | Claude Code | `claude --permission-mode acceptEdits` | Auto-edits, prompts for risky Bash |
-| cu | Cursor | `agent` | Prompts for terminal commands |
+| cu | Cursor | `agent --force` | Auto-approves commands (yolo mode) |
 | gg | Gemini | `gemini --sandbox --yolo` | Auto-approves all, sandboxed |
 | cx | Codex | `codex --full-auto` | Workspace-write, smart approval |
 
 **Quick-allow when prompted:** Claude `Shift+Tab` • Gemini `2` for always • Cursor "Add to allowlist" • Codex "Allow and remember"
+
+**Override defaults:** Set `agents.{id}.implementFlag` in `~/.aigon/config.json` to use stricter permissions (e.g., `""` to require manual approval). Project config (`.aigon/config.json`) takes precedence over global config.
 
 Run `aigon help` in terminal for full CLI reference.

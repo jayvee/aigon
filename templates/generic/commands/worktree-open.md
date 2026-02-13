@@ -18,7 +18,7 @@ Open a worktree in Warp terminal and automatically run the AI agent with `{{CMD_
 | Code | Agent | Command | Mode |
 |------|-------|---------|------|
 | cc | Claude Code | `claude --permission-mode acceptEdits` | Auto-edits, prompts for risky Bash |
-| cu | Cursor | `agent` | Prompts for terminal commands |
+| cu | Cursor | `agent --force` | Auto-approves commands (yolo mode) |
 | gg | Gemini | `gemini --sandbox --yolo` | Auto-approves all, sandboxed |
 | cx | Codex | `codex --full-auto` | Workspace-write, smart approval |
 

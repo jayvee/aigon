@@ -70,10 +70,10 @@ const GLOBAL_CONFIG_PATH = path.join(GLOBAL_CONFIG_DIR, 'config.json');
 const DEFAULT_GLOBAL_CONFIG = {
     terminal: 'warp',
     agents: {
-        cc: { cli: 'claude' },
-        cu: { cli: 'agent' },
-        gg: { cli: 'gemini' },
-        cx: { cli: 'codex' }
+        cc: { cli: 'claude', implementFlag: '--permission-mode acceptEdits' },
+        cu: { cli: 'agent', implementFlag: '--force' },
+        gg: { cli: 'gemini', implementFlag: '--sandbox --yolo' },
+        cx: { cli: 'codex', implementFlag: '--full-auto' }
     }
 };
 
@@ -83,12 +83,25 @@ const DEFAULT_GLOBAL_CONFIG = {
  */
 function loadGlobalConfig() {
     let userConfig = {};
-    if (fs.existsSync(GLOBAL_CONFIG_PATH)) {
+    const configExists = fs.existsSync(GLOBAL_CONFIG_PATH);
+    
+    if (configExists) {
         try {
             userConfig = JSON.parse(fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf8'));
         } catch (e) {
             console.warn(`⚠️  Could not parse ~/.aigon/config.json: ${e.message}`);
         }
+    }
+
+    // Only use DEFAULT_GLOBAL_CONFIG if config file exists (user has initialized config)
+    // If no config file exists, return empty object so template defaults are used
+    if (!configExists) {
+        // Environment variable override for terminal still works
+        const result = {};
+        if (process.env.AIGON_TERMINAL) {
+            result.terminal = process.env.AIGON_TERMINAL;
+        }
+        return result;
     }
 
     // Deep merge: user config overrides defaults
@@ -306,19 +319,36 @@ function getProfilePlaceholders() {
 
 /**
  * Get the CLI command for an agent, with user override support
+ * Priority: project config > global config > agent template defaults
  * @param {string} agentId - Agent ID (cc, cu, gg, cx)
  * @returns {Object} CLI config with command, implementFlag, implementPrompt
  */
 function getAgentCliConfig(agentId) {
     const agentConfig = loadAgentConfig(agentId);
     const globalConfig = loadGlobalConfig();
+    const projectConfig = loadProjectConfig();
 
     // Start with defaults from agent config
     const cli = agentConfig?.cli || { command: agentId, implementFlag: '', implementPrompt: '' };
 
-    // Override command from global config if set
-    if (globalConfig.agents?.[agentId]?.cli) {
-        cli.command = globalConfig.agents[agentId].cli;
+    // Override from global config (user-wide defaults)
+    if (globalConfig.agents?.[agentId]) {
+        if (globalConfig.agents[agentId].cli) {
+            cli.command = globalConfig.agents[agentId].cli;
+        }
+        if (globalConfig.agents[agentId].implementFlag !== undefined) {
+            cli.implementFlag = globalConfig.agents[agentId].implementFlag;
+        }
+    }
+
+    // Override from project config (highest priority - project-specific, overrides global)
+    if (projectConfig.agents?.[agentId]) {
+        if (projectConfig.agents[agentId].cli) {
+            cli.command = projectConfig.agents[agentId].cli;
+        }
+        if (projectConfig.agents[agentId].implementFlag !== undefined) {
+            cli.implementFlag = projectConfig.agents[agentId].implementFlag;
+        }
     }
 
     return cli;
@@ -3516,9 +3546,27 @@ Branch: \`${soloBranch}\`
 
             fs.writeFileSync(GLOBAL_CONFIG_PATH, JSON.stringify(DEFAULT_GLOBAL_CONFIG, null, 2));
             console.log(`✅ Created: ${GLOBAL_CONFIG_PATH}`);
+            console.log(`\n   The config includes default "yolo mode" flags that auto-approve commands.`);
+            console.log(`   To use stricter permissions, set implementFlag to "" (empty string) for any agent.`);
             console.log(`\n   You can customize:`);
-            console.log(`   - terminal: Terminal to use (currently only "warp" supported)`);
+            console.log(`   - terminal: Terminal to use (warp, code, cursor)`);
             console.log(`   - agents.{id}.cli: Override CLI command for each agent`);
+            console.log(`   - agents.{id}.implementFlag: Override CLI flags (set to "" to require manual approval)`);
+            console.log(`\n   Example (corporate/safer defaults - removes auto-approval flags):`);
+            console.log(`   {`);
+            console.log(`     "terminal": "warp",`);
+            console.log(`     "agents": {`);
+            console.log(`       "cc": { "cli": "claude", "implementFlag": "" },`);
+            console.log(`       "cu": { "cli": "agent", "implementFlag": "" },`);
+            console.log(`       "gg": { "cli": "gemini", "implementFlag": "--sandbox" },`);
+            console.log(`       "cx": { "cli": "codex", "implementFlag": "" }`);
+            console.log(`     }`);
+            console.log(`   }`);
+            console.log(`\n   Default flags (can be overridden):`);
+            console.log(`   - cc: --permission-mode acceptEdits`);
+            console.log(`   - cu: --force`);
+            console.log(`   - gg: --sandbox --yolo`);
+            console.log(`   - cx: --full-auto`);
         } else if (subcommand === 'show') {
             const config = loadGlobalConfig();
             console.log(`\n📋 Aigon Configuration:\n`);
