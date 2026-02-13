@@ -315,13 +315,15 @@ This creates `~/.aigon/config.json`:
 {
   "terminal": "warp",
   "agents": {
-    "cc": { "cli": "claude" },
-    "cu": { "cli": "agent" },
-    "gg": { "cli": "gemini" },
-    "cx": { "cli": "codex" }
+    "cc": { "cli": "claude", "implementFlag": "--permission-mode acceptEdits" },
+    "cu": { "cli": "agent", "implementFlag": "--force" },
+    "gg": { "cli": "gemini", "implementFlag": "--sandbox --yolo" },
+    "cx": { "cli": "codex", "implementFlag": "--full-auto" }
   }
 }
 ```
+
+**To use stricter permissions:** Set `implementFlag` to `""` (empty string) for any agent to require manual approval prompts.
 
 ### Configuration Options
 
