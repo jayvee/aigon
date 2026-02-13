@@ -268,6 +268,34 @@ More custom instructions here...
 
 When you run `aigon update`, only the content between `AIGON_START` and `AIGON_END` is updated. Your custom content remains untouched.
 
+### Configuration and Security
+
+**Default behavior:** Aigon uses permissive "yolo mode" flags by default that auto-approve agent commands:
+- **cc** (Claude): `--permission-mode acceptEdits` (auto-edits, prompts for risky Bash)
+- **cu** (Cursor): `--force` (auto-approves commands)
+- **gg** (Gemini): `--sandbox --yolo` (auto-approves all, sandboxed)
+- **cx** (Codex): `--full-auto` (workspace-write, smart approval)
+
+**To use stricter permissions** (e.g., for corporate environments):
+
+1. Run `aigon config init` to create `~/.aigon/config.json`
+2. Edit the file and set `implementFlag` to `""` (empty string) for any agent to require manual approval prompts
+
+Example config for stricter security:
+```json
+{
+  "terminal": "warp",
+  "agents": {
+    "cc": { "cli": "claude", "implementFlag": "" },
+    "cu": { "cli": "agent", "implementFlag": "" },
+    "gg": { "cli": "gemini", "implementFlag": "" },
+    "cx": { "cli": "codex", "implementFlag": "" }
+  }
+}
+```
+
+See the [Complete Guide](docs/GUIDE.md#configuration-and-security) for more details.
+
 ---
 
 ## Project-Specific Agent Instructions
