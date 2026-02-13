@@ -68,9 +68,30 @@ Implement CLI flag override system allowing users to customize agent permission 
 - Verified `config show` displays flag settings in JSON output
 - Verified documentation is complete and accurate
 
+## Additional Improvements
+
+### Explicit Default Config Flags
+- Updated `DEFAULT_GLOBAL_CONFIG` to include explicit `implementFlag` values
+- When user runs `aigon config init`, flags are now visible in the config file
+- Makes it clear what flags are being used and easier to modify
+
+### Fixed Config Loading Behavior
+- Modified `loadGlobalConfig()` to only use `DEFAULT_GLOBAL_CONFIG` when config file exists
+- Before `config init`: Uses template defaults (permissive, not visible)
+- After `config init`: Uses explicit config file (permissive, visible, editable)
+- Ensures flags are only explicit after user creates config file
+
+### Enhanced Documentation
+- Added "Configuration and Security" section to README.md
+- Clearly explains default permissive behavior
+- Provides step-by-step instructions for stricter permissions
+- Updated GUIDE.md to show flags in default config example
+- Enhanced `config init` output with explanation of flag visibility
+
 ## Notes
 
 - Feature was implemented during initial conversation before feature spec was created
 - Implementation matches spec exactly
 - All acceptance criteria satisfied
+- Additional UX improvements made based on user feedback
 - Ready for review and testing
