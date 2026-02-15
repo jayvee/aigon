@@ -194,6 +194,145 @@ function saveProjectConfig(config) {
 }
 
 /**
+ * Save global Aigon config to ~/.aigon/config.json
+ * @param {Object} config - Config object to save
+ */
+function saveGlobalConfig(config) {
+    safeWrite(GLOBAL_CONFIG_PATH, JSON.stringify(config, null, 2) + '\n');
+}
+
+/**
+ * Get a nested value from an object using dot-notation path
+ * @param {Object} obj - Object to get value from
+ * @param {string} path - Dot-notation path (e.g., "arena.testInstructions")
+ * @returns {any} Value at path, or undefined if not found
+ */
+function getNestedValue(obj, path) {
+    const keys = path.split('.');
+    let current = obj;
+    for (const key of keys) {
+        if (current === null || current === undefined || typeof current !== 'object') {
+            return undefined;
+        }
+        current = current[key];
+    }
+    return current;
+}
+
+/**
+ * Set a nested value in an object using dot-notation path
+ * @param {Object} obj - Object to set value in
+ * @param {string} path - Dot-notation path (e.g., "arena.testInstructions")
+ * @param {any} value - Value to set
+ */
+function setNestedValue(obj, path, value) {
+    const keys = path.split('.');
+    let current = obj;
+    for (let i = 0; i < keys.length - 1; i++) {
+        const key = keys[i];
+        if (!(key in current) || typeof current[key] !== 'object' || current[key] === null) {
+            current[key] = {};
+        }
+        current = current[key];
+    }
+    current[keys[keys.length - 1]] = value;
+}
+
+/**
+ * Determine config scope from command arguments
+ * @param {string[]} args - Command arguments
+ * @returns {{scope: 'global'|'project', remainingArgs: string[]}} Scope and remaining args
+ */
+function parseConfigScope(args) {
+    const scopeIndex = args.indexOf('--global');
+    if (scopeIndex !== -1) {
+        return { scope: 'global', remainingArgs: args.filter((_, i) => i !== scopeIndex) };
+    }
+    const projectIndex = args.indexOf('--project');
+    if (projectIndex !== -1) {
+        return { scope: 'project', remainingArgs: args.filter((_, i) => i !== projectIndex) };
+    }
+    // Default to project scope
+    return { scope: 'project', remainingArgs: args };
+}
+
+/**
+ * Get effective config value with provenance tracking
+ * Precedence: project config > global config > defaults
+ * @param {string} key - Dot-notation key path
+ * @returns {{value: any, source: 'project'|'global'|'default', path: string}} Value with provenance
+ */
+function getConfigValueWithProvenance(key) {
+    const projectConfig = loadProjectConfig();
+    const globalConfig = loadGlobalConfig();
+    
+    // Check project config first (highest priority)
+    const projectValue = getNestedValue(projectConfig, key);
+    if (projectValue !== undefined) {
+        return { value: projectValue, source: 'project', path: PROJECT_CONFIG_PATH };
+    }
+    
+    // Check global config
+    const globalValue = getNestedValue(globalConfig, key);
+    if (globalValue !== undefined) {
+        return { value: globalValue, source: 'global', path: GLOBAL_CONFIG_PATH };
+    }
+    
+    // Check defaults
+    const defaultValue = getNestedValue(DEFAULT_GLOBAL_CONFIG, key);
+    if (defaultValue !== undefined) {
+        return { value: defaultValue, source: 'default', path: 'default' };
+    }
+    
+    return { value: undefined, source: 'none', path: 'none' };
+}
+
+/**
+ * Get merged effective config from all levels
+ * @returns {Object} Merged config object
+ */
+function getEffectiveConfig() {
+    const projectConfig = loadProjectConfig();
+    const globalConfig = loadGlobalConfig();
+    
+    // Deep merge: project > global > defaults
+    const merged = JSON.parse(JSON.stringify(DEFAULT_GLOBAL_CONFIG));
+    
+    // Merge global config
+    if (globalConfig.terminal) merged.terminal = globalConfig.terminal;
+    if (globalConfig.agents) {
+        merged.agents = { ...merged.agents };
+        Object.entries(globalConfig.agents).forEach(([key, value]) => {
+            merged.agents[key] = { ...merged.agents[key], ...value };
+        });
+    }
+    // Merge other global config keys (deep copy to avoid reference issues)
+    Object.keys(globalConfig).forEach(key => {
+        if (key !== 'terminal' && key !== 'agents') {
+            if (typeof globalConfig[key] === 'object' && globalConfig[key] !== null && !Array.isArray(globalConfig[key])) {
+                merged[key] = { ...merged[key], ...globalConfig[key] };
+            } else {
+                merged[key] = globalConfig[key];
+            }
+        }
+    });
+    
+    // Merge project config (highest priority)
+    Object.keys(projectConfig).forEach(key => {
+        if (key === 'agents' && projectConfig.agents) {
+            if (!merged.agents) merged.agents = {};
+            Object.entries(projectConfig.agents).forEach(([agentId, agentConfig]) => {
+                merged.agents[agentId] = { ...merged.agents[agentId], ...agentConfig };
+            });
+        } else {
+            merged[key] = projectConfig[key];
+        }
+    });
+    
+    return merged;
+}
+
+/**
  * Read PORT from env files in the project root.
  * Checks .env.local first (local overrides), then .env (shared defaults).
  * @returns {{port: number, source: string}|null}
@@ -3676,56 +3815,197 @@ Branch: \`${soloBranch}\`
         const subcommand = args[0];
 
         if (subcommand === 'init') {
-            // Create default config file
-            if (!fs.existsSync(GLOBAL_CONFIG_DIR)) {
-                fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
-            }
+            const { scope, remainingArgs } = parseConfigScope(args.slice(1));
+            
+            if (scope === 'global') {
+                // Create global config file
+                if (!fs.existsSync(GLOBAL_CONFIG_DIR)) {
+                    fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
+                }
 
-            if (fs.existsSync(GLOBAL_CONFIG_PATH)) {
-                console.log(`ℹ️  Config already exists: ${GLOBAL_CONFIG_PATH}`);
-                console.log(`   Edit it to customize agent CLI commands.`);
+                if (fs.existsSync(GLOBAL_CONFIG_PATH)) {
+                    console.log(`ℹ️  Config already exists: ${GLOBAL_CONFIG_PATH}`);
+                    console.log(`   Edit it to customize agent CLI commands.`);
+                    return;
+                }
+
+                fs.writeFileSync(GLOBAL_CONFIG_PATH, JSON.stringify(DEFAULT_GLOBAL_CONFIG, null, 2));
+                console.log(`✅ Created: ${GLOBAL_CONFIG_PATH}`);
+                console.log(`\n   The config includes default "yolo mode" flags that auto-approve commands.`);
+                console.log(`   To use stricter permissions, set implementFlag to "" (empty string) for any agent.`);
+                console.log(`\n   You can customize:`);
+                console.log(`   - terminal: Terminal to use (warp, code, cursor)`);
+                console.log(`   - agents.{id}.cli: Override CLI command for each agent`);
+                console.log(`   - agents.{id}.implementFlag: Override CLI flags (set to "" to require manual approval)`);
+                console.log(`\n   Example (corporate/safer defaults - removes auto-approval flags):`);
+                console.log(`   {`);
+                console.log(`     "terminal": "warp",`);
+                console.log(`     "agents": {`);
+                console.log(`       "cc": { "cli": "claude", "implementFlag": "" },`);
+                console.log(`       "cu": { "cli": "agent", "implementFlag": "" },`);
+                console.log(`       "gg": { "cli": "gemini", "implementFlag": "" },`);
+                console.log(`       "cx": { "cli": "codex", "implementFlag": "" }`);
+                console.log(`     }`);
+                console.log(`   }`);
+                console.log(`\n   Default flags (can be overridden):`);
+                console.log(`   - cc: --permission-mode acceptEdits`);
+                console.log(`   - cu: --force`);
+                console.log(`   - gg: --yolo`);
+                console.log(`   - cx: --full-auto`);
+            } else {
+                // Create project config file with detected profile
+                const detectedProfile = detectProjectProfile();
+                const projectConfig = {
+                    profile: detectedProfile
+                };
+                
+                if (fs.existsSync(PROJECT_CONFIG_PATH)) {
+                    console.log(`ℹ️  Config already exists: ${PROJECT_CONFIG_PATH}`);
+                    console.log(`   Edit it to customize project settings.`);
+                    return;
+                }
+
+                saveProjectConfig(projectConfig);
+                console.log(`✅ Created: ${PROJECT_CONFIG_PATH}`);
+                console.log(`\n   Profile: ${detectedProfile} (auto-detected)`);
+                console.log(`\n   You can customize:`);
+                console.log(`   - profile: Project profile (web, api, ios, android, library, generic)`);
+                console.log(`   - arena.testInstructions: Custom test instructions`);
+                console.log(`   - agents.{id}.cli: Override CLI command for each agent`);
+                console.log(`   - agents.{id}.implementFlag: Override CLI flags`);
+                console.log(`\n💡 Run 'aigon update' to regenerate templates with the new profile.`);
+            }
+        } else if (subcommand === 'set') {
+            const { scope, remainingArgs } = parseConfigScope(args.slice(1));
+            
+            if (remainingArgs.length < 2) {
+                console.error(`Usage: aigon config set [--global|--project] <key> <value>`);
+                console.error(`\n  --global   - Set in global config (~/.aigon/config.json)`);
+                console.error(`  --project   - Set in project config (.aigon/config.json) [default]`);
+                console.error(`\n  Examples:`);
+                console.error(`    aigon config set profile web`);
+                console.error(`    aigon config set --global terminal warp`);
+                console.error(`    aigon config set arena.testInstructions "run npm test"`);
                 return;
             }
-
-            fs.writeFileSync(GLOBAL_CONFIG_PATH, JSON.stringify(DEFAULT_GLOBAL_CONFIG, null, 2));
-            console.log(`✅ Created: ${GLOBAL_CONFIG_PATH}`);
-            console.log(`\n   The config includes default "yolo mode" flags that auto-approve commands.`);
-            console.log(`   To use stricter permissions, set implementFlag to "" (empty string) for any agent.`);
-            console.log(`\n   You can customize:`);
-            console.log(`   - terminal: Terminal to use (warp, code, cursor)`);
-            console.log(`   - agents.{id}.cli: Override CLI command for each agent`);
-            console.log(`   - agents.{id}.implementFlag: Override CLI flags (set to "" to require manual approval)`);
-            console.log(`\n   Example (corporate/safer defaults - removes auto-approval flags):`);
-            console.log(`   {`);
-            console.log(`     "terminal": "warp",`);
-            console.log(`     "agents": {`);
-            console.log(`       "cc": { "cli": "claude", "implementFlag": "" },`);
-            console.log(`       "cu": { "cli": "agent", "implementFlag": "" },`);
-            console.log(`       "gg": { "cli": "gemini", "implementFlag": "" },`);
-            console.log(`       "cx": { "cli": "codex", "implementFlag": "" }`);
-            console.log(`     }`);
-            console.log(`   }`);
-            console.log(`\n   Default flags (can be overridden):`);
-            console.log(`   - cc: --permission-mode acceptEdits`);
-            console.log(`   - cu: --force`);
-            console.log(`   - gg: --yolo`);
-            console.log(`   - cx: --full-auto`);
+            
+            const key = remainingArgs[0];
+            const value = remainingArgs.slice(1).join(' '); // Join remaining args in case value has spaces
+            
+            // Try to parse as JSON if it looks like JSON, otherwise treat as string
+            let parsedValue = value;
+            if ((value.startsWith('{') && value.endsWith('}')) || 
+                (value.startsWith('[') && value.endsWith(']'))) {
+                try {
+                    parsedValue = JSON.parse(value);
+                } catch (e) {
+                    // Not valid JSON, use as string
+                }
+            } else if (value === 'true') {
+                parsedValue = true;
+            } else if (value === 'false') {
+                parsedValue = false;
+            } else if (value === 'null') {
+                parsedValue = null;
+            } else if (/^-?\d+$/.test(value)) {
+                parsedValue = parseInt(value, 10);
+            } else if (/^-?\d+\.\d+$/.test(value)) {
+                parsedValue = parseFloat(value);
+            }
+            
+            if (scope === 'global') {
+                const config = loadGlobalConfig();
+                setNestedValue(config, key, parsedValue);
+                saveGlobalConfig(config);
+                console.log(`✅ Set ${key} = ${JSON.stringify(parsedValue)}`);
+                console.log(`   Saved to: ${GLOBAL_CONFIG_PATH}`);
+            } else {
+                const config = loadProjectConfig();
+                setNestedValue(config, key, parsedValue);
+                saveProjectConfig(config);
+                console.log(`✅ Set ${key} = ${JSON.stringify(parsedValue)}`);
+                console.log(`   Saved to: ${PROJECT_CONFIG_PATH}`);
+            }
+        } else if (subcommand === 'get') {
+            if (args.length < 2) {
+                console.error(`Usage: aigon config get <key>`);
+                console.error(`\n  Examples:`);
+                console.error(`    aigon config get profile`);
+                console.error(`    aigon config get terminal`);
+                console.error(`    aigon config get arena.testInstructions`);
+                return;
+            }
+            
+            const key = args[1];
+            const result = getConfigValueWithProvenance(key);
+            
+            if (result.value === undefined) {
+                console.log(`❌ Config key "${key}" not found`);
+                return;
+            }
+            
+            const valueStr = typeof result.value === 'string' ? result.value : JSON.stringify(result.value);
+            let sourceStr;
+            if (result.source === 'project') {
+                sourceStr = `.aigon/config.json`;
+            } else if (result.source === 'global') {
+                sourceStr = `~/.aigon/config.json`;
+            } else {
+                sourceStr = `default`;
+            }
+            
+            console.log(`${valueStr} (from ${sourceStr})`);
         } else if (subcommand === 'show') {
-            const config = loadGlobalConfig();
-            console.log(`\n📋 Aigon Configuration:\n`);
-            console.log(JSON.stringify(config, null, 2));
-            console.log(`\n   Config file: ${GLOBAL_CONFIG_PATH}`);
-            console.log(`   Exists: ${fs.existsSync(GLOBAL_CONFIG_PATH) ? 'yes' : 'no (using defaults)'}`);
-
-            // Show project profile summary
-            const profile = getActiveProfile();
-            console.log(`\n📋 Project Profile: ${profile.name}${profile.detected ? ' (auto-detected)' : ''}`);
-            console.log(`   Dev server: ${profile.devServer.enabled ? 'enabled' : 'disabled'}`);
-            console.log(`   Run 'aigon profile show' for full details.`);
+            // For 'show', check flags directly (don't default to project - default to merged)
+            const hasGlobal = args.slice(1).includes('--global');
+            const hasProject = args.slice(1).includes('--project');
+            
+            if (hasGlobal) {
+                const config = loadGlobalConfig();
+                console.log(`\n📋 Global Configuration (~/.aigon/config.json):\n`);
+                console.log(JSON.stringify(config, null, 2));
+                console.log(`\n   Config file: ${GLOBAL_CONFIG_PATH}`);
+                console.log(`   Exists: ${fs.existsSync(GLOBAL_CONFIG_PATH) ? 'yes' : 'no (using defaults)'}`);
+            } else if (hasProject) {
+                const config = loadProjectConfig();
+                console.log(`\n📋 Project Configuration (.aigon/config.json):\n`);
+                if (Object.keys(config).length === 0) {
+                    console.log(`   (empty - using auto-detection)`);
+                } else {
+                    console.log(JSON.stringify(config, null, 2));
+                }
+                console.log(`\n   Config file: ${PROJECT_CONFIG_PATH}`);
+                console.log(`   Exists: ${fs.existsSync(PROJECT_CONFIG_PATH) ? 'yes' : 'no (using auto-detection)'}`);
+            } else {
+                // Show merged effective config (default for 'show')
+                const effectiveConfig = getEffectiveConfig();
+                const projectConfig = loadProjectConfig();
+                const globalConfig = loadGlobalConfig();
+                
+                console.log(`\n📋 Effective Configuration (merged from all levels):\n`);
+                console.log(JSON.stringify(effectiveConfig, null, 2));
+                console.log(`\n   Precedence: project > global > defaults`);
+                console.log(`\n   Project config: ${PROJECT_CONFIG_PATH}`);
+                console.log(`   ${fs.existsSync(PROJECT_CONFIG_PATH) ? '✅ exists' : '❌ not found (using auto-detection)'}`);
+                console.log(`\n   Global config: ${GLOBAL_CONFIG_PATH}`);
+                console.log(`   ${fs.existsSync(GLOBAL_CONFIG_PATH) ? '✅ exists' : '❌ not found (using defaults)'}`);
+            }
         } else {
-            console.error(`Usage: aigon config <init|show>`);
-            console.error(`\n  init  - Create default config at ~/.aigon/config.json`);
-            console.error(`  show  - Show current configuration`);
+            console.error(`Usage: aigon config <init|set|get|show>`);
+            console.error(`\n  init [--global]     - Initialize config (project by default, --global for user-wide)`);
+            console.error(`  set [--global] <key> <value>`);
+            console.error(`                       - Set config value (project by default)`);
+            console.error(`  get <key>           - Get config value with provenance`);
+            console.error(`  show [--global|--project]`);
+            console.error(`                       - Show config (merged by default, --global or --project for specific level)`);
+            console.error(`\n  Examples:`);
+            console.error(`    aigon config init                    # Create project config`);
+            console.error(`    aigon config init --global           # Create global config`);
+            console.error(`    aigon config set profile web        # Set project profile`);
+            console.error(`    aigon config set --global terminal warp`);
+            console.error(`    aigon config get profile             # Show value + source`);
+            console.error(`    aigon config show                   # Show merged config`);
+            console.error(`    aigon config show --project         # Show project config only`);
         }
     },
 
