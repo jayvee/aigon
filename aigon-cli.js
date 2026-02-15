@@ -295,6 +295,17 @@ function getActiveProfile() {
         if (projectConfig.arena.testInstructions) {
             profile.testInstructions = projectConfig.arena.testInstructions;
         }
+        // Support basePort auto-calculation: basePort + offset per agent
+        if (projectConfig.arena.basePort) {
+            const base = projectConfig.arena.basePort;
+            const agentOffsets = { cc: 1, gg: 2, cx: 3, cu: 4 };
+            const autoPorts = {};
+            for (const [agentId, offset] of Object.entries(agentOffsets)) {
+                autoPorts[agentId] = base + offset;
+            }
+            profile.devServer.ports = { ...profile.devServer.ports, ...autoPorts };
+        }
+        // Explicit ports override basePort-derived values
         if (projectConfig.arena.ports) {
             profile.devServer.ports = { ...profile.devServer.ports, ...projectConfig.arena.ports };
         }
@@ -3673,7 +3684,9 @@ Branch: \`${soloBranch}\`
             console.log(`\n📋 Project Profile: ${profile.name}${profile.detected ? ' (auto-detected)' : ' (set in .aigon/config.json)'}`);
             console.log(`\n   Dev server: ${profile.devServer.enabled ? 'enabled' : 'disabled'}`);
             if (profile.devServer.enabled && Object.keys(profile.devServer.ports).length > 0) {
-                console.log(`   Ports: ${Object.entries(profile.devServer.ports).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+                const portsStr = Object.entries(profile.devServer.ports).map(([k, v]) => `${k}=${v}`).join(', ');
+                const basePortSuffix = projectConfig.arena?.basePort ? ` (basePort: ${projectConfig.arena.basePort})` : '';
+                console.log(`   Ports: ${portsStr}${basePortSuffix}`);
             }
             console.log(`\n   Test instructions:`);
             profile.testInstructions.split('\n').forEach(line => console.log(`     ${line}`));
@@ -3719,11 +3732,35 @@ Branch: \`${soloBranch}\`
             if (projectConfig.profile) {
                 console.log(`\n   ⚠️  Note: .aigon/config.json overrides detection with profile "${projectConfig.profile}"`);
             }
+        } else if (subcommand === 'set-base-port') {
+            const portArg = args[1];
+            if (!portArg) {
+                console.error(`Usage: aigon profile set-base-port <port>`);
+                console.error(`\nExample: aigon profile set-base-port 3800`);
+                console.error(`  Result: cc=3801, gg=3802, cx=3803, cu=3804`);
+                return;
+            }
+            const basePort = parseInt(portArg, 10);
+            if (isNaN(basePort) || basePort < 1 || basePort > 65530) {
+                console.error(`❌ Invalid port: ${portArg}`);
+                console.error(`   Must be a number between 1 and 65530`);
+                return;
+            }
+            const projectConfig = loadProjectConfig();
+            if (!projectConfig.arena) projectConfig.arena = {};
+            projectConfig.arena.basePort = basePort;
+            saveProjectConfig(projectConfig);
+            const agentOffsets = { cc: 1, gg: 2, cx: 3, cu: 4 };
+            const portsStr = Object.entries(agentOffsets).map(([k, v]) => `${k}=${basePort + v}`).join(', ');
+            console.log(`✅ Base port set to: ${basePort}`);
+            console.log(`   Agent ports: ${portsStr}`);
+            console.log(`   Saved to: ${PROJECT_CONFIG_PATH}`);
         } else {
-            console.error(`Usage: aigon profile [show|set|detect]`);
-            console.error(`\n  show    - Display current profile and settings`);
-            console.error(`  set     - Set project profile (web, api, ios, android, library, generic)`);
-            console.error(`  detect  - Show what auto-detection would choose`);
+            console.error(`Usage: aigon profile [show|set|set-base-port|detect]`);
+            console.error(`\n  show           - Display current profile and settings`);
+            console.error(`  set            - Set project profile (web, api, ios, android, library, generic)`);
+            console.error(`  set-base-port  - Set base port for arena agent dev servers`);
+            console.error(`  detect         - Show what auto-detection would choose`);
         }
     },
 
@@ -3937,7 +3974,8 @@ Setup:
   update                            Update Aigon files to latest version
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
   config <init|show>                Manage global config (~/.aigon/config.json)
-  profile [show|set|detect]         Manage project profile (web, api, ios, etc.)
+  profile [show|set|set-base-port|detect]
+                                    Manage project profile (web, api, ios, etc.)
 
 Worktree:
   worktree-open <ID> [agent] [--terminal=<type>]
