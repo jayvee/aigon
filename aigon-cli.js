@@ -221,15 +221,21 @@ function showPortSummary() {
     if (!profile.devServer.enabled) return;
 
     const result = readBasePort();
+    const projectConfig = loadProjectConfig();
+    const hasExplicitPorts = !!projectConfig.arena?.ports;
+    const ports = profile.devServer.ports;
+    const portsStr = Object.entries(ports).map(([k, v]) => `${k}=${v}`).join(', ');
+
     if (result) {
-        const ports = profile.devServer.ports;
-        const portsStr = Object.entries(ports).map(([k, v]) => `${k}=${v}`).join(', ');
         console.log(`\n📋 Ports (from ${result.source} PORT=${result.port}):`);
         console.log(`   Main:  ${result.port}`);
         console.log(`   Arena: ${portsStr}`);
+        if (hasExplicitPorts) {
+            const overrides = Object.entries(projectConfig.arena.ports).map(([k, v]) => `${k}=${v}`).join(', ');
+            console.log(`   ⚠️  Overridden by arena.ports in .aigon/config.json: ${overrides}`);
+            console.log(`   💡 Remove arena.ports from .aigon/config.json to use PORT-derived values`);
+        }
     } else {
-        const ports = profile.devServer.ports;
-        const portsStr = Object.entries(ports).map(([k, v]) => `${k}=${v}`).join(', ');
         console.log(`\n⚠️  No PORT found in .env.local or .env`);
         console.log(`   Using defaults — Main: 3000, Arena: ${portsStr}`);
         console.log(`   💡 Add PORT=<number> to .env.local to avoid clashes with other projects`);
@@ -338,24 +344,22 @@ function getActiveProfile() {
         if (projectConfig.arena.testInstructions) {
             profile.testInstructions = projectConfig.arena.testInstructions;
         }
-        if (projectConfig.arena.ports) {
-            profile.devServer.ports = { ...profile.devServer.ports, ...projectConfig.arena.ports };
-        }
     }
 
-    // If dev server is enabled, derive arena ports from .env/.env.local PORT
+    // Derive arena ports from .env/.env.local PORT (overrides profile defaults)
     if (profile.devServer.enabled) {
         const result = readBasePort();
         if (result) {
             const agentOffsets = { cc: 1, gg: 2, cx: 3, cu: 4 };
             for (const [agentId, offset] of Object.entries(agentOffsets)) {
-                // Only override if still using profile defaults (don't override explicit arena.ports)
-                const presetPort = preset.devServer.ports[agentId];
-                if (profile.devServer.ports[agentId] === presetPort) {
-                    profile.devServer.ports[agentId] = result.port + offset;
-                }
+                profile.devServer.ports[agentId] = result.port + offset;
             }
         }
+    }
+
+    // Explicit arena.ports override everything (highest priority)
+    if (projectConfig.arena?.ports) {
+        profile.devServer.ports = { ...profile.devServer.ports, ...projectConfig.arena.ports };
     }
 
     return profile;
