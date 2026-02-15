@@ -12,7 +12,6 @@ When multiple Aigon-managed projects run agent worktrees simultaneously, their d
 - [ ] Aigon reads PORT from `.env` in the project root
 - [ ] Arena agent ports are derived as PORT+1 (cc), PORT+2 (gg), PORT+3 (cx), PORT+4 (cu)
 - [ ] Worktrees created with `aigon feature-setup` write the correct derived PORT to `.env.local`
-- [ ] Explicit `arena.ports` in `.aigon/config.json` still works and takes precedence
 - [ ] `aigon profile show` displays the port configuration with source
 - [ ] `aigon init`, `aigon update`, and `aigon install-agent` show a port summary
 - [ ] When no PORT is in `.env`, falls back to profile defaults and suggests setting one
@@ -30,7 +29,7 @@ When `.env` has PORT and the profile has dev server enabled, override default po
 PORT=3800 in .env → cc=3801, gg=3802, cx=3803, cu=3804
 ```
 
-Explicit `arena.ports` in `.aigon/config.json` still overrides derived values.
+No per-port config in `.aigon/config.json` — ports are always derived from `.env` PORT with standard offsets.
 
 ### Show port summary
 
