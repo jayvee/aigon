@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Base port configuration** — reads PORT from `.env.local` or `.env` and derives arena agent ports as PORT+1 (cc), PORT+2 (gg), PORT+3 (cx), PORT+4 (cu)
+- `readBasePort()` helper to parse PORT from env files (checks `.env.local` first, then `.env`)
+- `showPortSummary()` displays port configuration during `init`, `update`, `install-agent`, and `profile show`
+- Warning during `feature-setup` when no PORT found for web/api profiles
+- Port label echo in arena split panes (`🔌 Claude — Port 3401`) so each pane shows its port on launch
+
+### Changed
+- Arena split panes now sort by port offset order (cc, gg, cx, cu) instead of alphabetically
+- Ports are always derived from `.env` PORT — removed `arena.ports` config override support
+
 ## [2.9.0] - 2026-02-07
 
 ### Added
