@@ -50,18 +50,21 @@ docs/specs/
 `aigon board` visualizes your pipeline as a Kanban board:
 
 ```
-╔════════════════════════════ Aigon Board ════════════════════════════╗
+╔═══════════════════════ Aigon Board ════════════════════════╗
 
 FEATURES
-┌──────────────────────┬──────────────────────┬──────────────────────┐
-│ Inbox                │ Backlog              │ In Progress          │
-├──────────────────────┼──────────────────────┼──────────────────────┤
-│ create-plugin        │ #13 dark-mode        │ #11 search-api [wt]  │
-│ email-templates      │                      │ #12 auth-flow *      │
-│                      │                      │ #14 profile-page [2] │
-├──────────────────────┼──────────────────────┼──────────────────────┤
-│ (2)                  │ (1)                  │ (3)                  │
-└──────────────────────┴──────────────────────┴──────────────────────┘
+┌────────────────────────────────┼────────────────────────────────┼────────────────────────────────┐
+│ Inbox                          │ In Progress                    │ Done                           │
+├────────────────────────────────┼────────────────────────────────┼────────────────────────────────┤
+│ a) base-port-config            │ #07 backlog-visualisation *    │ #01 support-hooks              │
+│ b) change-banner-in-bakeoff    │                                │ #02 unify-workflow             │
+│ c) create-plugin               │                                │ #03 arena-research             │
+│ d) parallel-features           │                                │ #04 add-sample-chat-for-workfl │
+│ e) refactor-aigon-sub-commands │                                │ #05 command-metadata-improveme │
+│ f) research-open-arena         │                                │ #06 readme-uplift              │
+├────────────────────────────────┼────────────────────────────────┼────────────────────────────────┤
+│ (6)                            │ (1)                            │ (6)                            │
+└────────────────────────────────┼────────────────────────────────┼────────────────────────────────┘
 ```
 
 `*` = current branch, `[wt]` = solo worktree, `[2]` = arena mode (2 agents competing)
