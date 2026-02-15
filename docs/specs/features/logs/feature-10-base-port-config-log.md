@@ -2,21 +2,22 @@
 
 ## Plan
 
-- Add `arena.basePort` support to `getActiveProfile()` with agent offsets (+1 through +4)
-- Update `aigon profile show` to display basePort when configured
-- Add `aigon profile set-base-port <port>` CLI command for easy setup
+- Read PORT from `.env` as the single source of truth for base port
+- Derive arena agent ports as PORT+1 through PORT+4 in `getActiveProfile()`
+- Show port summary during `aigon init`, `update`, `install-agent`, and `profile show`
 
 ## Progress
 
-- Modified `getActiveProfile()` to apply basePort before explicit ports (so ports override)
-- Updated `profile show` to append `(basePort: N)` to ports display
-- Added `set-base-port` subcommand with validation (1-65530)
-- Updated help text to include new subcommand
-- Tested all cases: no config, basePort only, basePort + explicit override, legacy explicit ports
+- Added `readBasePort()` helper to parse PORT from `.env`
+- Added `showPortSummary()` to display port config with source info
+- Modified `getActiveProfile()` to derive arena ports from `.env` PORT
+- Added port summary to `init`, `update`, `install-agent`, and `profile show`
+- Explicit `arena.ports` in `.aigon/config.json` still overrides derived values
 
 ## Decisions
 
-- Agent offsets are fixed: cc=+1, gg=+2, cx=+3, cu=+4 (matches existing default port ordering)
-- basePort value itself (e.g., 3800) is reserved for the main repo dev server
-- `set-base-port` writes to `.aigon/config.json`, creating it if needed (via existing `saveProjectConfig()`)
-- No separate project config init command needed — `profile set` and `set-base-port` both create the file on demand
+- **Approach changed mid-implementation**: Originally built `arena.basePort` in `.aigon/config.json` + `set-base-port` CLI command. Reverted in favour of reading PORT from `.env` to avoid duplication (user was already setting PORT in `.env` for their dev server)
+- `.env` is the source of truth — Aigon reads it, doesn't write it
+- Worktree `.env.local` files are derived artifacts written by Aigon during `feature-setup`
+- Port summary shown during setup commands so users can spot conflicts early
+- When no PORT in `.env`, falls back to profile defaults and suggests setting one
