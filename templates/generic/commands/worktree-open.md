@@ -19,7 +19,7 @@ Open a worktree in Warp terminal and automatically run the AI agent with `{{CMD_
 |------|-------|---------|------|
 | cc | Claude Code | `claude --permission-mode acceptEdits` | Auto-edits, prompts for risky Bash |
 | cu | Cursor | `agent --force` | Auto-approves commands (yolo mode) |
-| gg | Gemini | `gemini --sandbox --yolo` | Auto-approves all, sandboxed |
+| gg | Gemini | `gemini --yolo` | Auto-approves all |
 | cx | Codex | `codex --full-auto` | Workspace-write, smart approval |
 
 Safe in worktrees since you can always `git reset --hard`.
