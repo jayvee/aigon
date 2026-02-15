@@ -317,7 +317,7 @@ This creates `~/.aigon/config.json`:
   "agents": {
     "cc": { "cli": "claude", "implementFlag": "--permission-mode acceptEdits" },
     "cu": { "cli": "agent", "implementFlag": "--force" },
-    "gg": { "cli": "gemini", "implementFlag": "--sandbox --yolo" },
+    "gg": { "cli": "gemini", "implementFlag": "--yolo" },
     "cx": { "cli": "codex", "implementFlag": "--full-auto" }
   }
 }
@@ -336,7 +336,7 @@ This creates `~/.aigon/config.json`:
 By default, Aigon uses "yolo mode" flags that auto-approve commands:
 - **cc** (Claude): `--permission-mode acceptEdits` (auto-edits, prompts for risky Bash)
 - **cu** (Cursor): `--force` (auto-approves commands)
-- **gg** (Gemini): `--sandbox --yolo` (auto-approves all, sandboxed)
+- **gg** (Gemini): `--yolo` (auto-approves all)
 - **cx** (Codex): `--full-auto` (workspace-write, smart approval)
 
 For stricter security (e.g., corporate environments), you can override these flags in `~/.aigon/config.json`:
@@ -347,7 +347,7 @@ For stricter security (e.g., corporate environments), you can override these fla
   "agents": {
     "cc": { "cli": "claude", "implementFlag": "" },
     "cu": { "cli": "agent", "implementFlag": "" },
-    "gg": { "cli": "gemini", "implementFlag": "--sandbox" },
+    "gg": { "cli": "gemini", "implementFlag": "" },
     "cx": { "cli": "codex", "implementFlag": "" }
   }
 }
