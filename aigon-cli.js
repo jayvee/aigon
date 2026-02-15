@@ -221,8 +221,6 @@ function showPortSummary() {
     if (!profile.devServer.enabled) return;
 
     const result = readBasePort();
-    const projectConfig = loadProjectConfig();
-    const hasExplicitPorts = !!projectConfig.arena?.ports;
     const ports = profile.devServer.ports;
     const portsStr = Object.entries(ports).map(([k, v]) => `${k}=${v}`).join(', ');
 
@@ -230,15 +228,10 @@ function showPortSummary() {
         console.log(`\n📋 Ports (from ${result.source} PORT=${result.port}):`);
         console.log(`   Main:  ${result.port}`);
         console.log(`   Arena: ${portsStr}`);
-        if (hasExplicitPorts) {
-            const overrides = Object.entries(projectConfig.arena.ports).map(([k, v]) => `${k}=${v}`).join(', ');
-            console.log(`   ⚠️  Overridden by arena.ports in .aigon/config.json: ${overrides}`);
-            console.log(`   💡 Remove arena.ports from .aigon/config.json to use PORT-derived values`);
-        }
     } else {
         console.log(`\n⚠️  No PORT found in .env.local or .env`);
         console.log(`   Using defaults — Main: 3000, Arena: ${portsStr}`);
-        console.log(`   💡 Add PORT=<number> to .env.local to avoid clashes with other projects`);
+        console.log(`   💡 Add PORT=<number> to .env to avoid clashes with other projects`);
     }
 }
 
@@ -357,11 +350,6 @@ function getActiveProfile() {
         }
     }
 
-    // Explicit arena.ports override everything (highest priority)
-    if (projectConfig.arena?.ports) {
-        profile.devServer.ports = { ...profile.devServer.ports, ...projectConfig.arena.ports };
-    }
-
     return profile;
 }
 
@@ -375,7 +363,10 @@ function getProfilePlaceholders() {
     return {
         WORKTREE_TEST_INSTRUCTIONS: profile.testInstructions,
         WORKTREE_DEP_CHECK: profile.depCheck,
-        SETUP_ENV_LOCAL_LINE: profile.setupEnvLine
+        SETUP_ENV_LOCAL_LINE: profile.setupEnvLine,
+        STOP_DEV_SERVER_STEP: profile.devServer.enabled
+            ? '## Step 2: Stop the dev server\n\nIf a dev server is running in this session (started via `npm run dev` or similar), stop it now:\n```bash\n# Kill any dev server process running on this worktree\'s port\nkill $(lsof -ti:$PORT) 2>/dev/null || true\n```'
+            : ''
     };
 }
 
@@ -507,7 +498,12 @@ function openInWarpSplitPanes(worktreeConfigs, configName, title, tabColor) {
     const configFile = path.join(warpConfigDir, `${configName}.yaml`);
 
     const panes = worktreeConfigs.map(wt => {
-        return `              - cwd: "${wt.path}"\n                commands:\n                  - exec: ${wt.agentCommand}`;
+        const commands = [];
+        if (wt.portLabel) {
+            commands.push(`                  - exec: echo "\\n${wt.portLabel}\\n"`);
+        }
+        commands.push(`                  - exec: ${wt.agentCommand}`);
+        return `              - cwd: "${wt.path}"\n                commands:\n${commands.join('\n')}`;
     }).join('\n');
 
     const colorLine = tabColor ? `\n        color: ${tabColor}` : '';
@@ -3920,13 +3916,25 @@ Branch: \`${soloBranch}\`
                 return console.error(`❌ Only 1 worktree found for feature ${featureId}. Use \`aigon worktree-open ${featureId}\` for single worktrees.\n\n   To add more agents: aigon feature-setup ${featureId} cc gg cx`);
             }
 
-            // Sort alphabetically by agent for consistent ordering
-            worktrees.sort((a, b) => a.agent.localeCompare(b.agent));
+            // Sort by port offset order (cc=+1, gg=+2, cx=+3, cu=+4)
+            const agentOrder = ['cc', 'gg', 'cx', 'cu'];
+            worktrees.sort((a, b) => {
+                const aIdx = agentOrder.indexOf(a.agent);
+                const bIdx = agentOrder.indexOf(b.agent);
+                return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
+            });
 
-            const worktreeConfigs = worktrees.map(wt => ({
-                ...wt,
-                agentCommand: buildAgentCommand(wt)
-            }));
+            const profile = getActiveProfile();
+            const worktreeConfigs = worktrees.map(wt => {
+                const agentMeta = AGENT_CONFIGS[wt.agent] || {};
+                const port = profile.devServer.enabled ? (profile.devServer.ports[wt.agent] || agentMeta.port) : null;
+                const portLabel = port ? `🔌 ${agentMeta.name || wt.agent} — Port ${port}` : null;
+                return {
+                    ...wt,
+                    agentCommand: buildAgentCommand(wt),
+                    portLabel
+                };
+            });
 
             if (terminal === 'warp') {
                 const configName = `arena-feature-${paddedId}`;
