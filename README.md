@@ -273,7 +273,7 @@ When you run `aigon update`, only the content between `AIGON_START` and `AIGON_E
 **Default behavior:** Aigon uses permissive "yolo mode" flags by default that auto-approve agent commands:
 - **cc** (Claude): `--permission-mode acceptEdits` (auto-edits, prompts for risky Bash)
 - **cu** (Cursor): `--force` (auto-approves commands)
-- **gg** (Gemini): `--sandbox --yolo` (auto-approves all, sandboxed)
+- **gg** (Gemini): `--yolo` (auto-approves all)
 - **cx** (Codex): `--full-auto` (workspace-write, smart approval)
 
 **To use stricter permissions** (e.g., for corporate environments):

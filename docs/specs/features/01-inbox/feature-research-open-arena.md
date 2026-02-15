@@ -221,7 +221,7 @@ windows:
                 - exec: claude --permission-mode acceptEdits "/aigon:research-conduct 05"
             - cwd: "/path/to/main/repo"
               commands:
-                - exec: gemini --sandbox --yolo "/aigon:research-conduct 05"
+                - exec: gemini --yolo "/aigon:research-conduct 05"
             - cwd: "/path/to/main/repo"
               commands:
                 - exec: codex [flags] "/prompts:aigon-research-conduct 05"
