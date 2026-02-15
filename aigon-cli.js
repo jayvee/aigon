@@ -194,6 +194,48 @@ function saveProjectConfig(config) {
 }
 
 /**
+ * Read PORT from env files in the project root.
+ * Checks .env.local first (local overrides), then .env (shared defaults).
+ * @returns {{port: number, source: string}|null}
+ */
+function readBasePort() {
+    const envFiles = ['.env.local', '.env'];
+    for (const file of envFiles) {
+        const envPath = path.join(process.cwd(), file);
+        if (!fs.existsSync(envPath)) continue;
+        try {
+            const content = fs.readFileSync(envPath, 'utf8');
+            const match = content.match(/^PORT=(\d+)/m);
+            if (match) return { port: parseInt(match[1], 10), source: file };
+        } catch (e) { /* ignore read errors */ }
+    }
+    return null;
+}
+
+/**
+ * Display port configuration summary.
+ * Shows base port from env files and derived arena ports.
+ */
+function showPortSummary() {
+    const profile = getActiveProfile();
+    if (!profile.devServer.enabled) return;
+
+    const result = readBasePort();
+    const ports = profile.devServer.ports;
+    const portsStr = Object.entries(ports).map(([k, v]) => `${k}=${v}`).join(', ');
+
+    if (result) {
+        console.log(`\n📋 Ports (from ${result.source} PORT=${result.port}):`);
+        console.log(`   Main:  ${result.port}`);
+        console.log(`   Arena: ${portsStr}`);
+    } else {
+        console.log(`\n⚠️  No PORT found in .env.local or .env`);
+        console.log(`   Using defaults — Main: 3000, Arena: ${portsStr}`);
+        console.log(`   💡 Add PORT=<number> to .env to avoid clashes with other projects`);
+    }
+}
+
+/**
  * Auto-detect project profile from project files
  * @returns {string} Profile name (web, api, ios, android, library, generic)
  */
@@ -295,8 +337,16 @@ function getActiveProfile() {
         if (projectConfig.arena.testInstructions) {
             profile.testInstructions = projectConfig.arena.testInstructions;
         }
-        if (projectConfig.arena.ports) {
-            profile.devServer.ports = { ...profile.devServer.ports, ...projectConfig.arena.ports };
+    }
+
+    // Derive arena ports from .env/.env.local PORT (overrides profile defaults)
+    if (profile.devServer.enabled) {
+        const result = readBasePort();
+        if (result) {
+            const agentOffsets = { cc: 1, gg: 2, cx: 3, cu: 4 };
+            for (const [agentId, offset] of Object.entries(agentOffsets)) {
+                profile.devServer.ports[agentId] = result.port + offset;
+            }
         }
     }
 
@@ -313,7 +363,10 @@ function getProfilePlaceholders() {
     return {
         WORKTREE_TEST_INSTRUCTIONS: profile.testInstructions,
         WORKTREE_DEP_CHECK: profile.depCheck,
-        SETUP_ENV_LOCAL_LINE: profile.setupEnvLine
+        SETUP_ENV_LOCAL_LINE: profile.setupEnvLine,
+        STOP_DEV_SERVER_STEP: profile.devServer.enabled
+            ? '## Step 2: Stop the dev server\n\nIf a dev server is running in this session (started via `npm run dev` or similar), stop it now:\n```bash\n# Kill any dev server process running on this worktree\'s port\nkill $(lsof -ti:$PORT) 2>/dev/null || true\n```'
+            : ''
     };
 }
 
@@ -445,7 +498,12 @@ function openInWarpSplitPanes(worktreeConfigs, configName, title, tabColor) {
     const configFile = path.join(warpConfigDir, `${configName}.yaml`);
 
     const panes = worktreeConfigs.map(wt => {
-        return `              - cwd: "${wt.path}"\n                commands:\n                  - exec: ${wt.agentCommand}`;
+        const commands = [];
+        if (wt.portLabel) {
+            commands.push(`                  - exec: echo "\\n${wt.portLabel}\\n"`);
+        }
+        commands.push(`                  - exec: ${wt.agentCommand}`);
+        return `              - cwd: "${wt.path}"\n                commands:\n${commands.join('\n')}`;
     }).join('\n');
 
     const colorLine = tabColor ? `\n        color: ${tabColor}` : '';
@@ -1735,6 +1793,7 @@ const commands = {
         ensureBoardMapInGitignore();
         
         console.log("✅ ./docs/specs directory structure created.");
+        showPortSummary();
     },
     'feature-create': (args) => {
         const name = args[0];
@@ -2371,6 +2430,10 @@ const commands = {
             }
 
             const profile = getActiveProfile();
+            if (profile.devServer.enabled && !readBasePort()) {
+                console.warn(`\n⚠️  No PORT found in .env.local or .env — using default ports`);
+                console.warn(`   💡 Add PORT=<number> to .env.local to avoid clashes with other projects`);
+            }
             const createdWorktrees = [];
             agentIds.forEach(agentId => {
                 const branchName = `feature-${num}-${agentId}-${desc}`;
@@ -3391,6 +3454,7 @@ Branch: \`${soloBranch}\`
                 return cfg ? cfg.name : a;
             }).join(', ');
             console.log(`\n🎉 Installed Aigon for: ${agentNames}`);
+            showPortSummary();
 
             // Ensure .aigon/.board-map.json is in .gitignore
             ensureBoardMapInGitignore();
@@ -3551,6 +3615,7 @@ Branch: \`${soloBranch}\`
 
             if (versionChanged || hasFileChanges) {
                 console.log(`\n✅ Aigon updated to v${currentVersion || 'unknown'}.`);
+                showPortSummary();
                 if (hasFileChanges) {
                     console.log(`\n📝 To commit these changes:`);
                     console.log(`   git add docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: update Aigon to v${currentVersion || 'latest'}"`);
@@ -3672,8 +3737,8 @@ Branch: \`${soloBranch}\`
             const projectConfig = loadProjectConfig();
             console.log(`\n📋 Project Profile: ${profile.name}${profile.detected ? ' (auto-detected)' : ' (set in .aigon/config.json)'}`);
             console.log(`\n   Dev server: ${profile.devServer.enabled ? 'enabled' : 'disabled'}`);
-            if (profile.devServer.enabled && Object.keys(profile.devServer.ports).length > 0) {
-                console.log(`   Ports: ${Object.entries(profile.devServer.ports).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+            if (profile.devServer.enabled) {
+                showPortSummary();
             }
             console.log(`\n   Test instructions:`);
             profile.testInstructions.split('\n').forEach(line => console.log(`     ${line}`));
@@ -3851,13 +3916,25 @@ Branch: \`${soloBranch}\`
                 return console.error(`❌ Only 1 worktree found for feature ${featureId}. Use \`aigon worktree-open ${featureId}\` for single worktrees.\n\n   To add more agents: aigon feature-setup ${featureId} cc gg cx`);
             }
 
-            // Sort alphabetically by agent for consistent ordering
-            worktrees.sort((a, b) => a.agent.localeCompare(b.agent));
+            // Sort by port offset order (cc=+1, gg=+2, cx=+3, cu=+4)
+            const agentOrder = ['cc', 'gg', 'cx', 'cu'];
+            worktrees.sort((a, b) => {
+                const aIdx = agentOrder.indexOf(a.agent);
+                const bIdx = agentOrder.indexOf(b.agent);
+                return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
+            });
 
-            const worktreeConfigs = worktrees.map(wt => ({
-                ...wt,
-                agentCommand: buildAgentCommand(wt)
-            }));
+            const profile = getActiveProfile();
+            const worktreeConfigs = worktrees.map(wt => {
+                const agentMeta = AGENT_CONFIGS[wt.agent] || {};
+                const port = profile.devServer.enabled ? (profile.devServer.ports[wt.agent] || agentMeta.port) : null;
+                const portLabel = port ? `🔌 ${agentMeta.name || wt.agent} — Port ${port}` : null;
+                return {
+                    ...wt,
+                    agentCommand: buildAgentCommand(wt),
+                    portLabel
+                };
+            });
 
             if (terminal === 'warp') {
                 const configName = `arena-feature-${paddedId}`;
