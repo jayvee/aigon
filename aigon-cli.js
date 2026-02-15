@@ -438,8 +438,9 @@ function buildResearchAgentCommand(agentId, researchId) {
  * @param {Array<{path: string, agent: string, desc: string, featureId: string, agentCommand: string}>} worktreeConfigs
  * @param {string} configName - Warp launch config name
  * @param {string} title - Tab title for the Warp window
+ * @param {string} [tabColor] - Optional Warp tab ANSI color (Red, Green, Yellow, Blue, Magenta, Cyan)
  */
-function openInWarpSplitPanes(worktreeConfigs, configName, title) {
+function openInWarpSplitPanes(worktreeConfigs, configName, title, tabColor) {
     const warpConfigDir = path.join(os.homedir(), '.warp', 'launch_configurations');
     const configFile = path.join(warpConfigDir, `${configName}.yaml`);
 
@@ -447,11 +448,12 @@ function openInWarpSplitPanes(worktreeConfigs, configName, title) {
         return `              - cwd: "${wt.path}"\n                commands:\n                  - exec: ${wt.agentCommand}`;
     }).join('\n');
 
+    const colorLine = tabColor ? `\n        color: ${tabColor}` : '';
     const yamlContent = `---
 name: ${configName}
 windows:
   - tabs:
-      - title: "${title}"
+      - title: "${title}"${colorLine}
         layout:
           split_direction: horizontal
           panes:
@@ -477,11 +479,23 @@ function openSingleWorktree(wt, agentCommand, terminal) {
         const warpConfigDir = path.join(os.homedir(), '.warp', 'launch_configurations');
         const configFile = path.join(warpConfigDir, `${configName}.yaml`);
 
+        const agentMeta = AGENT_CONFIGS[wt.agent] || {};
+        const paddedId = String(wt.featureId).padStart(2, '0');
+        const profile = getActiveProfile();
+        const port = profile.devServer.enabled
+            ? (profile.devServer.ports[wt.agent] || agentMeta.port || 3000)
+            : null;
+        const portSuffix = port ? ` | Port ${port}` : '';
+        const tabTitle = `Feature #${paddedId} - ${agentMeta.name || wt.agent}${portSuffix}`;
+        const tabColor = agentMeta.terminalColor || 'cyan';
+
         const yamlContent = `---
 name: ${configName}
 windows:
   - tabs:
-      - layout:
+      - title: "${tabTitle}"
+        color: ${tabColor}
+        layout:
           cwd: "${wt.path}"
           commands:
             - exec: ${agentCommand}
@@ -1197,7 +1211,9 @@ const AGENT_CONFIGS = {
         rootFile: 'CLAUDE.md',
         agentFile: 'claude.md',
         templatePath: 'docs/agents/claude.md',
-        port: 3001
+        port: 3001,
+        terminalColor: 'blue',     // Warp tab color
+        bannerColor: '#3B82F6'     // Browser banner hex color
     },
     gg: {
         id: 'gg',
@@ -1205,7 +1221,9 @@ const AGENT_CONFIGS = {
         rootFile: 'GEMINI.md',
         agentFile: 'gemini.md',
         templatePath: 'docs/agents/gemini.md',
-        port: 3002
+        port: 3002,
+        terminalColor: 'green',
+        bannerColor: '#22C55E'
     },
     cx: {
         id: 'cx',
@@ -1213,7 +1231,9 @@ const AGENT_CONFIGS = {
         rootFile: null,  // Codex uses ~/.codex/prompt.md instead of a project root file
         agentFile: 'codex.md',
         templatePath: 'docs/agents/codex.md',
-        port: 3003
+        port: 3003,
+        terminalColor: 'magenta',
+        bannerColor: '#A855F7'
     },
     cu: {
         id: 'cu',
@@ -1221,7 +1241,9 @@ const AGENT_CONFIGS = {
         rootFile: null,  // Cursor uses .cursorrules instead of a project root file
         agentFile: 'cursor.md',
         templatePath: 'docs/agents/cursor.md',
-        port: 3004
+        port: 3004,
+        terminalColor: 'yellow',
+        bannerColor: '#F97316'
     }
 };
 
@@ -2373,22 +2395,32 @@ const commands = {
                             console.warn(`   git commit -m "chore: sync spec to worktree branch"`);
                         }
 
-                        // Create .env.local (with PORT if devServer enabled)
+                        // Create .env.local (with PORT and banner env vars)
                         const envLocalPath = path.join(process.cwd(), '.env.local');
+                        const agentMeta = AGENT_CONFIGS[agentId] || {};
+                        const paddedFeatureId = String(num).padStart(2, '0');
                         if (profile.devServer.enabled) {
-                            const port = profile.devServer.ports[agentId] || AGENT_CONFIGS[agentId]?.port || 3000;
+                            const port = profile.devServer.ports[agentId] || agentMeta.port || 3000;
                             let envContent = '';
                             if (fs.existsSync(envLocalPath)) {
                                 envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
                             }
-                            envContent += `# Arena port for agent ${agentId}\nPORT=${port}\n`;
+                            envContent += `# Arena config for agent ${agentId}\n`;
+                            envContent += `PORT=${port}\n`;
+                            envContent += `AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
+                            envContent += `AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
+                            envContent += `AIGON_FEATURE_ID=${paddedFeatureId}\n`;
                             fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
-                            console.log(`   📋 .env.local created with PORT=${port}`);
+                            console.log(`   📋 .env.local created with PORT=${port}, banner vars`);
                         } else if (fs.existsSync(envLocalPath)) {
-                            // Copy base .env.local for non-port env vars
-                            const envContent = fs.readFileSync(envLocalPath, 'utf8');
+                            // Copy base .env.local and append banner vars
+                            let envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
+                            envContent += `# Arena config for agent ${agentId}\n`;
+                            envContent += `AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
+                            envContent += `AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
+                            envContent += `AIGON_FEATURE_ID=${paddedFeatureId}\n`;
                             fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
-                            console.log(`   📋 .env.local copied (no PORT — dev server not used)`);
+                            console.log(`   📋 .env.local created with banner vars (no PORT — dev server not used)`);
                         }
 
                         // Install agent commands in worktree (gitignored files don't exist in new worktrees)
@@ -3833,7 +3865,7 @@ Branch: \`${soloBranch}\`
                 const title = `Arena: Feature ${paddedId} - ${desc}`;
 
                 try {
-                    const configFile = openInWarpSplitPanes(worktreeConfigs, configName, title);
+                    const configFile = openInWarpSplitPanes(worktreeConfigs, configName, title, 'cyan');
 
                     console.log(`\n🚀 Opening ${worktreeConfigs.length} worktrees side-by-side in Warp:`);
                     console.log(`   Feature: ${paddedId} - ${desc}\n`);
