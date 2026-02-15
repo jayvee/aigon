@@ -99,3 +99,19 @@ Refactor config commands to unify under `aigon config` with scope flags (`--glob
 
 3. **Config merging:** Needed to ensure proper deep merging of nested objects
    - **Fix:** Improved `getEffectiveConfig()` to handle nested object merging correctly
+
+## Code Review
+
+**Reviewed by**: cc (Claude)
+**Date**: 2026-02-16
+
+### Findings
+- **Provenance bug**: `getConfigValueWithProvenance()` used `loadGlobalConfig()` which pre-merges defaults. This caused `config get terminal` to report "from ~/.aigon/config.json" even when the user never set `terminal` — the value was actually from defaults.
+- **Unused variables**: `remainingArgs` in `config init`, `projectConfig`/`globalConfig` in `config show` merged view were declared but never used.
+
+### Fixes Applied
+- `fix(review): use raw global config for accurate provenance tracking` — reads raw config file instead of merged result for correct source attribution. Removed unused variables.
+
+### Notes
+- Implementation is solid overall — good helper abstractions, clean command structure
+- Deep merge in `getEffectiveConfig()` handles `agents` specially which is correct but will need updating if more nested config sections are added
