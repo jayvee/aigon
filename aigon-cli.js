@@ -194,43 +194,45 @@ function saveProjectConfig(config) {
 }
 
 /**
- * Read PORT from .env file in the project root.
- * Returns the port number or null if not found.
- * @returns {number|null}
+ * Read PORT from env files in the project root.
+ * Checks .env.local first (local overrides), then .env (shared defaults).
+ * @returns {{port: number, source: string}|null}
  */
 function readBasePort() {
-    const envPath = path.join(process.cwd(), '.env');
-    if (!fs.existsSync(envPath)) return null;
-    try {
-        const content = fs.readFileSync(envPath, 'utf8');
-        const match = content.match(/^PORT=(\d+)/m);
-        if (match) return parseInt(match[1], 10);
-    } catch (e) { /* ignore read errors */ }
+    const envFiles = ['.env.local', '.env'];
+    for (const file of envFiles) {
+        const envPath = path.join(process.cwd(), file);
+        if (!fs.existsSync(envPath)) continue;
+        try {
+            const content = fs.readFileSync(envPath, 'utf8');
+            const match = content.match(/^PORT=(\d+)/m);
+            if (match) return { port: parseInt(match[1], 10), source: file };
+        } catch (e) { /* ignore read errors */ }
+    }
     return null;
 }
 
 /**
  * Display port configuration summary.
- * Shows base port from .env and derived arena ports.
+ * Shows base port from env files and derived arena ports.
  */
 function showPortSummary() {
     const profile = getActiveProfile();
     if (!profile.devServer.enabled) return;
 
-    const basePort = readBasePort();
-    if (basePort) {
+    const result = readBasePort();
+    if (result) {
         const ports = profile.devServer.ports;
         const portsStr = Object.entries(ports).map(([k, v]) => `${k}=${v}`).join(', ');
-        console.log(`\n📋 Ports (from .env PORT=${basePort}):`);
-        console.log(`   Main:  ${basePort}`);
+        console.log(`\n📋 Ports (from ${result.source} PORT=${result.port}):`);
+        console.log(`   Main:  ${result.port}`);
         console.log(`   Arena: ${portsStr}`);
     } else {
         const ports = profile.devServer.ports;
         const portsStr = Object.entries(ports).map(([k, v]) => `${k}=${v}`).join(', ');
-        console.log(`\n📋 Ports (defaults — no PORT in .env):`);
-        console.log(`   Main:  3000 (framework default)`);
-        console.log(`   Arena: ${portsStr}`);
-        console.log(`   💡 Set PORT in .env to avoid clashes with other projects`);
+        console.log(`\n⚠️  No PORT found in .env.local or .env`);
+        console.log(`   Using defaults — Main: 3000, Arena: ${portsStr}`);
+        console.log(`   💡 Add PORT=<number> to .env.local to avoid clashes with other projects`);
     }
 }
 
@@ -341,16 +343,16 @@ function getActiveProfile() {
         }
     }
 
-    // If dev server is enabled, derive arena ports from .env PORT
+    // If dev server is enabled, derive arena ports from .env/.env.local PORT
     if (profile.devServer.enabled) {
-        const basePort = readBasePort();
-        if (basePort) {
+        const result = readBasePort();
+        if (result) {
             const agentOffsets = { cc: 1, gg: 2, cx: 3, cu: 4 };
             for (const [agentId, offset] of Object.entries(agentOffsets)) {
                 // Only override if still using profile defaults (don't override explicit arena.ports)
                 const presetPort = preset.devServer.ports[agentId];
                 if (profile.devServer.ports[agentId] === presetPort) {
-                    profile.devServer.ports[agentId] = basePort + offset;
+                    profile.devServer.ports[agentId] = result.port + offset;
                 }
             }
         }
@@ -2428,6 +2430,10 @@ const commands = {
             }
 
             const profile = getActiveProfile();
+            if (profile.devServer.enabled && !readBasePort()) {
+                console.warn(`\n⚠️  No PORT found in .env.local or .env — using default ports`);
+                console.warn(`   💡 Add PORT=<number> to .env.local to avoid clashes with other projects`);
+            }
             const createdWorktrees = [];
             agentIds.forEach(agentId => {
                 const branchName = `feature-${num}-${agentId}-${desc}`;
