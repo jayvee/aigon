@@ -266,6 +266,26 @@ The profile is stored in `.aigon/config.json` alongside the existing `.aigon/ver
 - **`web` / `api`**: Dev server enabled, agent-specific ports assigned, `.env.local` created in worktrees
 - **`ios` / `android` / `library` / `generic`**: No dev server, no PORT, templates show project-appropriate test instructions
 
+### Port Configuration
+
+For `web` and `api` profiles, Aigon reads `PORT` from your `.env.local` or `.env` file and derives arena agent ports using fixed offsets:
+
+```
+PORT=3400 in .env → cc=3401, gg=3402, cx=3403, cu=3404
+```
+
+This avoids port clashes when running multiple Aigon projects simultaneously. Each worktree gets a `.env.local` with the agent-specific PORT written during `aigon feature-setup`.
+
+A port summary is shown during `aigon init`, `aigon update`, `aigon install-agent`, and `aigon profile show`:
+
+```
+📋 Ports (from .env.local PORT=3400):
+   Main:  3400
+   Arena: cc=3401, gg=3402, cx=3403, cu=3404
+```
+
+If no PORT is found, Aigon falls back to profile defaults (3001-3004 for web, 8001-8004 for api) and suggests setting one.
+
 ---
 
 ## Opening Worktrees
@@ -296,20 +316,49 @@ After setting up a feature with worktrees, use `/aigon:worktree-open` (or `aigon
 
 ### Terminal Behavior
 
-- **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with the `feature-implement` slash command. Arena (`--all`) and parallel modes open split panes.
+- **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with the `feature-implement` slash command. Arena (`--all`) and parallel modes open split panes. Each pane echoes its port label on launch (e.g., `🔌 Claude — Port 3401`). Panes are ordered by port offset (cc, gg, cx, cu).
 - **VS Code / Cursor**: Opens the folder; you'll need to run the agent command manually (shown in output). Split pane modes print commands for manual setup.
 
 ---
 
-## Global Configuration
+## Configuration
 
-Create a global configuration file to customize terminal and agent CLI settings:
+Aigon uses a unified `aigon config` command with two scopes:
+
+- **Project** (`.aigon/config.json`) — per-project settings like profile, test instructions
+- **Global** (`~/.aigon/config.json`) — user-wide settings like terminal, agent CLI flags
+
+Project scope is the default. Use `--global` for user-wide settings.
+
+### Config Commands
 
 ```bash
-aigon config init
+# Initialize config
+aigon config init                           # Create project config (auto-detects profile)
+aigon config init --global                  # Create global config
+
+# Set values (dot-notation for nested keys)
+aigon config set profile web                # Project: set profile
+aigon config set --global terminal warp     # Global: set terminal
+aigon config set arena.testInstructions "run npm test"
+
+# Get values (shows where the value comes from)
+aigon config get terminal                   # → warp (from ~/.aigon/config.json)
+aigon config get profile                    # → web (from .aigon/config.json)
+
+# Show config
+aigon config show                           # Merged effective config (all levels)
+aigon config show --global                  # Global config only
+aigon config show --project                 # Project config only
 ```
 
-This creates `~/.aigon/config.json`:
+### Global Config
+
+```bash
+aigon config init --global
+```
+
+Creates `~/.aigon/config.json`:
 
 ```json
 {
@@ -323,13 +372,27 @@ This creates `~/.aigon/config.json`:
 }
 ```
 
-**To use stricter permissions:** Set `implementFlag` to `""` (empty string) for any agent to require manual approval prompts.
+### Project Config
+
+```bash
+aigon config init
+```
+
+Creates `.aigon/config.json` with the auto-detected profile:
+
+```json
+{
+  "profile": "web"
+}
+```
 
 ### Configuration Options
 
 - `terminal`: Default terminal for `worktree-open`. Options: `warp` (auto-runs agent), `code` (VS Code), `cursor`
+- `profile`: Project profile (`web`, `api`, `ios`, `android`, `library`, `generic`)
 - `agents.{id}.cli`: Override the CLI command for each agent
-- `agents.{id}.implementFlag`: Override CLI flags to control permission prompts (useful for corporate environments)
+- `agents.{id}.implementFlag`: Override CLI flags to control permission prompts
+- `arena.testInstructions`: Custom test instructions for arena mode
 
 ### CLI Flag Overrides
 
@@ -339,23 +402,20 @@ By default, Aigon uses "yolo mode" flags that auto-approve commands:
 - **gg** (Gemini): `--yolo` (auto-approves all)
 - **cx** (Codex): `--full-auto` (workspace-write, smart approval)
 
-For stricter security (e.g., corporate environments), you can override these flags in `~/.aigon/config.json`:
+For stricter security (e.g., corporate environments):
 
-```json
-{
-  "terminal": "warp",
-  "agents": {
-    "cc": { "cli": "claude", "implementFlag": "" },
-    "cu": { "cli": "agent", "implementFlag": "" },
-    "gg": { "cli": "gemini", "implementFlag": "" },
-    "cx": { "cli": "codex", "implementFlag": "" }
-  }
-}
+```bash
+aigon config set --global agents.cc.implementFlag ""
+aigon config set --global agents.cu.implementFlag ""
 ```
 
 Set `implementFlag` to `""` (empty string) to remove auto-approval flags and require manual permission prompts.
 
-**Priority order:** Project config (`.aigon/config.json`) > Global config (`~/.aigon/config.json`) > Template defaults
+### Precedence
+
+**Priority order:** Project config > Global config > Defaults
+
+Use `aigon config get <key>` to see which level a value comes from.
 
 ### Environment Variable Override
 

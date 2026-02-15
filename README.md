@@ -278,23 +278,23 @@ When you run `aigon update`, only the content between `AIGON_START` and `AIGON_E
 
 **To use stricter permissions** (e.g., for corporate environments):
 
-1. Run `aigon config init` to create `~/.aigon/config.json`
-2. Edit the file and set `implementFlag` to `""` (empty string) for any agent to require manual approval prompts
-
-Example config for stricter security:
-```json
-{
-  "terminal": "warp",
-  "agents": {
-    "cc": { "cli": "claude", "implementFlag": "" },
-    "cu": { "cli": "agent", "implementFlag": "" },
-    "gg": { "cli": "gemini", "implementFlag": "" },
-    "cx": { "cli": "codex", "implementFlag": "" }
-  }
-}
+```bash
+aigon config init --global                              # Create global config
+aigon config set --global agents.cc.implementFlag ""    # Remove auto-approval for Claude
 ```
 
-See the [Complete Guide](docs/GUIDE.md#configuration-and-security) for more details.
+Set `implementFlag` to `""` (empty string) for any agent to require manual approval prompts.
+
+**Project-level config** defaults to project scope:
+
+```bash
+aigon config init                       # Create project config (auto-detects profile)
+aigon config set profile web            # Set project profile
+aigon config get terminal               # Show value + where it comes from
+aigon config show                       # Show merged effective config
+```
+
+See the [Complete Guide](docs/GUIDE.md#configuration) for all config commands and options.
 
 ---
 
@@ -663,7 +663,7 @@ aigon feature-cleanup 55 --push
 | Install Agent | `aigon install-agent <cc\|gg\|cx\|cu> [more...]` |
 | Update | `aigon update` |
 | Hooks | `aigon hooks [list]` |
-| Config | `aigon config <init\|show>` |
+| Config | `aigon config <init\|set\|get\|show> [--global\|--project]` |
 | Profile | `aigon profile [show\|set\|detect]` |
 
 Example output from `aigon board --list --all`:
