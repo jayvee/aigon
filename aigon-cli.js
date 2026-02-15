@@ -264,26 +264,33 @@ function parseConfigScope(args) {
  */
 function getConfigValueWithProvenance(key) {
     const projectConfig = loadProjectConfig();
-    const globalConfig = loadGlobalConfig();
-    
+
+    // Read raw global config (not merged with defaults) for accurate provenance
+    let rawGlobalConfig = {};
+    try {
+        if (fs.existsSync(GLOBAL_CONFIG_PATH)) {
+            rawGlobalConfig = JSON.parse(fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf8'));
+        }
+    } catch (e) { /* ignore parse errors */ }
+
     // Check project config first (highest priority)
     const projectValue = getNestedValue(projectConfig, key);
     if (projectValue !== undefined) {
         return { value: projectValue, source: 'project', path: PROJECT_CONFIG_PATH };
     }
-    
-    // Check global config
-    const globalValue = getNestedValue(globalConfig, key);
+
+    // Check raw global config (only values the user actually set)
+    const globalValue = getNestedValue(rawGlobalConfig, key);
     if (globalValue !== undefined) {
         return { value: globalValue, source: 'global', path: GLOBAL_CONFIG_PATH };
     }
-    
+
     // Check defaults
     const defaultValue = getNestedValue(DEFAULT_GLOBAL_CONFIG, key);
     if (defaultValue !== undefined) {
         return { value: defaultValue, source: 'default', path: 'default' };
     }
-    
+
     return { value: undefined, source: 'none', path: 'none' };
 }
 
@@ -3815,8 +3822,8 @@ Branch: \`${soloBranch}\`
         const subcommand = args[0];
 
         if (subcommand === 'init') {
-            const { scope, remainingArgs } = parseConfigScope(args.slice(1));
-            
+            const { scope } = parseConfigScope(args.slice(1));
+
             if (scope === 'global') {
                 // Create global config file
                 if (!fs.existsSync(GLOBAL_CONFIG_DIR)) {
@@ -3979,8 +3986,6 @@ Branch: \`${soloBranch}\`
             } else {
                 // Show merged effective config (default for 'show')
                 const effectiveConfig = getEffectiveConfig();
-                const projectConfig = loadProjectConfig();
-                const globalConfig = loadGlobalConfig();
                 
                 console.log(`\n📋 Effective Configuration (merged from all levels):\n`);
                 console.log(JSON.stringify(effectiveConfig, null, 2));
