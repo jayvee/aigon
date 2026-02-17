@@ -511,7 +511,7 @@ function getProfilePlaceholders() {
         WORKTREE_DEP_CHECK: profile.depCheck,
         SETUP_ENV_LOCAL_LINE: profile.setupEnvLine,
         STOP_DEV_SERVER_STEP: profile.devServer.enabled
-            ? '## Step 2: Stop the dev server\n\nIf a dev server is running in this session (started via `npm run dev` or similar), stop it now:\n```bash\n# Kill any dev server process running on this worktree\'s port\nkill $(lsof -ti:$PORT) 2>/dev/null || true\n```'
+            ? '## Step 2: Stop the dev server\n\nIf a dev server is running in this session (started via `npm run dev` or similar), stop it now:\n```bash\n# Read port from .env.local and kill the dev server on that port\nPORT=$(grep "^PORT=" .env.local 2>/dev/null | cut -d= -f2)\nif [ -n "$PORT" ]; then kill $(lsof -ti:$PORT) 2>/dev/null || true; fi\n```'
             : ''
     };
 }
