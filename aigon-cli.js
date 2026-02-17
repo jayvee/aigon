@@ -130,7 +130,7 @@ const PROFILE_PRESETS = {
             enabled: true,
             ports: { cc: 3001, gg: 3002, cx: 3003, cu: 3004 }
         },
-        testInstructions: '- Run `npm run dev` to start the dev server (PORT is pre-configured in `.env.local`)\n- Check `.env.local` for the port number and test on that URL\n- Ask the user to verify',
+        testInstructions: '- Run `aigon dev-server start` — this starts the dev server, allocates a port, registers with the proxy, and waits for healthy\n- Use `aigon dev-server logs` to check startup output if anything seems wrong\n- Ask the user to verify',
         depCheck: '**Worktrees do not share `node_modules/` with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Check if node_modules exists\ntest -d node_modules && echo "Dependencies installed" || echo "Need to install dependencies"\n```\n\nIf missing, install them using the project\'s package manager:\n```bash\n# Detect and run the appropriate install command\nif [ -f "pnpm-lock.yaml" ]; then pnpm install\nelif [ -f "yarn.lock" ]; then yarn install\nelif [ -f "bun.lockb" ]; then bun install\nelif [ -f "package-lock.json" ]; then npm install\nelif [ -f "package.json" ]; then npm install\nfi\n```',
         setupEnvLine: '- Set up `.env.local` with agent-specific PORT (worktree modes)'
     },
@@ -139,7 +139,7 @@ const PROFILE_PRESETS = {
             enabled: true,
             ports: { cc: 8001, gg: 8002, cx: 8003, cu: 8004 }
         },
-        testInstructions: '- Run the start command to launch the API server (PORT is pre-configured in `.env.local`)\n- Check `.env.local` for the port number and test endpoints using `curl` or a REST client\n- Ask the user to verify',
+        testInstructions: '- Run `aigon dev-server start` — this starts the server, allocates a port, registers with the proxy, and waits for healthy\n- Use `aigon dev-server logs` to check startup output if anything seems wrong\n- Test endpoints using `curl` or a REST client\n- Ask the user to verify',
         depCheck: '**Worktrees do not share dependencies with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Detect and install dependencies\nif [ -f "requirements.txt" ]; then pip install -r requirements.txt\nelif [ -f "Pipfile" ]; then pipenv install\nelif [ -f "go.mod" ]; then go mod download\nelif [ -f "package.json" ]; then npm install\nfi\n```',
         setupEnvLine: '- Set up `.env.local` with agent-specific PORT (worktree modes)'
     },
@@ -381,6 +381,377 @@ function showPortSummary() {
     }
 }
 
+// --- Dev Proxy System ---
+
+const DEV_PROXY_DIR = path.join(os.homedir(), '.aigon', 'dev-proxy');
+const DEV_PROXY_REGISTRY = path.join(DEV_PROXY_DIR, 'servers.json');
+const DEV_PROXY_CADDYFILE = path.join(DEV_PROXY_DIR, 'Caddyfile');
+const DEV_PROXY_LOGS_DIR = path.join(DEV_PROXY_DIR, 'logs');
+
+/**
+ * Sanitize a string for use as a DNS label.
+ * Lowercase, strip npm scope, replace non-alphanumeric with hyphens.
+ * @param {string} name - Raw name
+ * @returns {string} DNS-safe label
+ */
+function sanitizeForDns(name) {
+    return name
+        .toLowerCase()
+        .replace(/^@[^/]+\//, '')          // strip npm scope
+        .replace(/[^a-z0-9]+/g, '-')       // replace non-alphanumeric
+        .replace(/^-+|-+$/g, '')           // trim leading/trailing hyphens
+        .replace(/-{2,}/g, '-');           // collapse multiple hyphens
+}
+
+/**
+ * Get the app ID for dev proxy URLs.
+ * Priority: .aigon/config.json appId > package.json name > dirname
+ * @returns {string} DNS-safe app ID
+ */
+function getAppId() {
+    // 1. Explicit config
+    const projectConfig = loadProjectConfig();
+    if (projectConfig.appId) return sanitizeForDns(projectConfig.appId);
+
+    // 2. package.json name
+    const pkgPath = path.join(process.cwd(), 'package.json');
+    if (fs.existsSync(pkgPath)) {
+        try {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+            if (pkg.name) return sanitizeForDns(pkg.name);
+        } catch (e) { /* ignore */ }
+    }
+
+    // 3. Directory name
+    return sanitizeForDns(path.basename(process.cwd()));
+}
+
+/**
+ * Check if a port is available by attempting to listen on it.
+ * @param {number} port - Port to check
+ * @returns {Promise<boolean>} True if available
+ */
+function isPortAvailable(port) {
+    return new Promise((resolve) => {
+        const net = require('net');
+        const server = net.createServer();
+        server.once('error', () => resolve(false));
+        server.once('listening', () => {
+            server.close(() => resolve(true));
+        });
+        server.listen(port, '127.0.0.1');
+    });
+}
+
+/**
+ * Find an available port, starting from preferred.
+ * @param {number} preferred - Preferred port to try first
+ * @returns {Promise<number>} Available port
+ */
+async function allocatePort(preferred) {
+    for (let port = preferred; port < preferred + 100; port++) {
+        if (await isPortAvailable(port)) return port;
+    }
+    throw new Error(`No available port found in range ${preferred}-${preferred + 99}`);
+}
+
+/**
+ * Check if the dev proxy (Caddy + dnsmasq) is available.
+ * @returns {boolean} True if Caddy is installed and the Caddyfile symlink is in place
+ */
+function isProxyAvailable() {
+    try {
+        execSync('caddy version', { stdio: 'pipe' });
+        // Check that our Caddyfile symlink is in place (proxy has been set up)
+        return fs.existsSync(DEV_PROXY_CADDYFILE);
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Load the dev proxy server registry.
+ * @returns {Object} Registry object { appId: { serverId: { port, worktree, pid, started } } }
+ */
+function loadProxyRegistry() {
+    if (!fs.existsSync(DEV_PROXY_REGISTRY)) return {};
+    try {
+        return JSON.parse(fs.readFileSync(DEV_PROXY_REGISTRY, 'utf8'));
+    } catch (e) {
+        return {};
+    }
+}
+
+/**
+ * Save the dev proxy server registry.
+ * @param {Object} registry - Registry object
+ */
+function saveProxyRegistry(registry) {
+    if (!fs.existsSync(DEV_PROXY_DIR)) {
+        fs.mkdirSync(DEV_PROXY_DIR, { recursive: true });
+    }
+    fs.writeFileSync(DEV_PROXY_REGISTRY, JSON.stringify(registry, null, 2) + '\n');
+}
+
+/**
+ * Generate a Caddyfile from the registry.
+ * @param {Object} registry - Registry object
+ * @returns {string} Caddyfile content
+ */
+function generateCaddyfile(registry) {
+    let caddyfile = '# Auto-generated by aigon — do not edit manually\n';
+    caddyfile += '{\n    auto_https off\n}\n';
+
+    for (const [appId, servers] of Object.entries(registry)) {
+        if (Object.keys(servers).length === 0) continue;
+        caddyfile += `\n# ${appId}\n`;
+        for (const [serverId, info] of Object.entries(servers)) {
+            const hostname = serverId ? `${serverId}.${appId}.test` : `${appId}.test`;
+            caddyfile += `http://${hostname} {\n    reverse_proxy localhost:${info.port}\n}\n`;
+        }
+    }
+
+    return caddyfile;
+}
+
+/**
+ * Write Caddyfile and reload Caddy.
+ * @param {Object} registry - Registry object to generate from
+ * @returns {boolean} True if reload succeeded
+ */
+function reloadCaddy(registry) {
+    if (!fs.existsSync(DEV_PROXY_DIR)) {
+        fs.mkdirSync(DEV_PROXY_DIR, { recursive: true });
+    }
+    const caddyfile = generateCaddyfile(registry);
+    fs.writeFileSync(DEV_PROXY_CADDYFILE, caddyfile);
+
+    try {
+        // Try admin API reload first (works when Caddy is running)
+        execSync(`caddy reload --config "${DEV_PROXY_CADDYFILE}"`, { stdio: 'pipe' });
+        return true;
+    } catch (e) {
+        // Fall back to brew services restart (sudo for port 80)
+        try {
+            execSync('sudo brew services restart caddy', { stdio: 'pipe' });
+            return true;
+        } catch (e2) {
+            console.warn(`⚠️  Could not reload Caddy: ${e2.message}`);
+            return false;
+        }
+    }
+}
+
+/**
+ * Register a dev server with the proxy.
+ * @param {string} appId - App identifier
+ * @param {string} serverId - Server identifier (e.g., "cc-119" or "" for main)
+ * @param {number} port - Port number
+ * @param {string} worktreePath - Worktree or repo path
+ * @param {number} pid - Process ID (0 if not started yet)
+ */
+function registerDevServer(appId, serverId, port, worktreePath, pid) {
+    const registry = loadProxyRegistry();
+    if (!registry[appId]) registry[appId] = {};
+    registry[appId][serverId] = {
+        port,
+        worktree: worktreePath,
+        pid: pid || 0,
+        started: new Date().toISOString()
+    };
+    saveProxyRegistry(registry);
+    reloadCaddy(registry);
+}
+
+/**
+ * Deregister a dev server from the proxy.
+ * @param {string} appId - App identifier
+ * @param {string} serverId - Server identifier
+ */
+function deregisterDevServer(appId, serverId) {
+    const registry = loadProxyRegistry();
+    if (registry[appId]) {
+        delete registry[appId][serverId];
+        if (Object.keys(registry[appId]).length === 0) {
+            delete registry[appId];
+        }
+    }
+    saveProxyRegistry(registry);
+    if (isProxyAvailable()) {
+        reloadCaddy(registry);
+    }
+}
+
+/**
+ * Remove registry entries for dead processes.
+ * @returns {number} Number of entries removed
+ */
+function gcDevServers() {
+    const registry = loadProxyRegistry();
+    let removed = 0;
+
+    for (const [appId, servers] of Object.entries(registry)) {
+        for (const [serverId, info] of Object.entries(servers)) {
+            if (info.pid && info.pid > 0) {
+                try {
+                    // Signal 0 checks if process exists without killing it
+                    process.kill(info.pid, 0);
+                } catch (e) {
+                    // Process doesn't exist
+                    delete registry[appId][serverId];
+                    removed++;
+                }
+            }
+        }
+        if (Object.keys(registry[appId]).length === 0) {
+            delete registry[appId];
+        }
+    }
+
+    if (removed > 0) {
+        saveProxyRegistry(registry);
+        if (isProxyAvailable()) {
+            reloadCaddy(registry);
+        }
+    }
+
+    return removed;
+}
+
+/**
+ * Detect the dev server context from the current directory.
+ * Returns appId, agentId, featureId based on worktree path or branch name.
+ * @returns {{ appId: string, agentId: string|null, featureId: string|null, serverId: string }}
+ */
+function detectDevServerContext() {
+    const appId = getAppId();
+    let agentId = null;
+    let featureId = null;
+
+    // Try to detect from worktree path: .../feature-119-cc-description
+    const dirname = path.basename(process.cwd());
+    const wtMatch = dirname.match(/^feature-(\d+)-([a-z]{2})-/);
+    if (wtMatch) {
+        featureId = wtMatch[1];
+        agentId = wtMatch[2];
+    } else {
+        // Try to detect from branch name: feature-119-description or feature-119-cc-description
+        try {
+            const branch = execSync('git branch --show-current', { stdio: 'pipe' }).toString().trim();
+            const branchMatch = branch.match(/^feature-(\d+)(?:-([a-z]{2}))?-/);
+            if (branchMatch) {
+                featureId = branchMatch[1];
+                agentId = branchMatch[2] || null;
+            }
+        } catch (e) { /* not in a git repo */ }
+    }
+
+    // If no agent detected, try from AIGON_AGENT_NAME env or default to 'dev'
+    if (!agentId) {
+        const envAgent = process.env.AIGON_AGENT_ID;
+        agentId = envAgent || null;
+    }
+
+    const serverId = agentId && featureId ? `${agentId}-${featureId}` : '';
+
+    return { appId, agentId, featureId, serverId };
+}
+
+/**
+ * Get the dev proxy URL for a given context.
+ * @param {string} appId - App identifier
+ * @param {string} serverId - Server identifier
+ * @returns {string} URL (e.g., "http://cc-119.farline.test")
+ */
+function getDevProxyUrl(appId, serverId) {
+    if (serverId) {
+        return `http://${serverId}.${appId}.test`;
+    }
+    return `http://${appId}.test`;
+}
+
+/**
+ * Get the log file path for a dev server.
+ * @param {string} appId - App identifier
+ * @param {string} serverId - Server identifier
+ * @returns {string} Log file path
+ */
+function getDevServerLogPath(appId, serverId) {
+    const label = serverId ? `${appId}-${serverId}` : appId;
+    return path.join(DEV_PROXY_LOGS_DIR, `${label}.log`);
+}
+
+/**
+ * Spawn a dev server process in the background.
+ * @param {string} command - Command to run (e.g., "npm run dev")
+ * @param {number} port - Port number to pass as PORT env var
+ * @param {string} logPath - Path to write stdout/stderr
+ * @param {string} cwd - Working directory
+ * @returns {number} PID of the spawned process
+ */
+function spawnDevServer(command, port, logPath, cwd) {
+    const { spawn } = require('child_process');
+
+    // Ensure log directory exists
+    if (!fs.existsSync(DEV_PROXY_LOGS_DIR)) {
+        fs.mkdirSync(DEV_PROXY_LOGS_DIR, { recursive: true });
+    }
+
+    // Open log file for writing
+    const logFd = fs.openSync(logPath, 'w');
+
+    // Parse command into parts
+    const parts = command.split(/\s+/);
+    const cmd = parts[0];
+    const cmdArgs = parts.slice(1);
+
+    // Spawn detached process with PORT in env
+    const child = spawn(cmd, cmdArgs, {
+        cwd,
+        detached: true,
+        stdio: ['ignore', logFd, logFd],
+        env: { ...process.env, PORT: String(port) },
+        shell: true
+    });
+
+    child.unref();
+    fs.closeSync(logFd);
+
+    return child.pid;
+}
+
+/**
+ * Wait for a dev server to become healthy by polling a URL.
+ * @param {string} url - URL to poll (e.g., "http://localhost:3847/")
+ * @param {number} timeoutMs - Maximum time to wait in ms
+ * @param {number} intervalMs - Polling interval in ms
+ * @returns {Promise<boolean>} True if healthy, false if timed out
+ */
+async function waitForHealthy(url, timeoutMs = 30000, intervalMs = 500) {
+    const http = require('http');
+    const start = Date.now();
+
+    while (Date.now() - start < timeoutMs) {
+        try {
+            const ok = await new Promise((resolve) => {
+                const req = http.get(url, { timeout: 2000 }, (res) => {
+                    // Any response means the server is up (even 404)
+                    res.resume();
+                    resolve(true);
+                });
+                req.on('error', () => resolve(false));
+                req.on('timeout', () => { req.destroy(); resolve(false); });
+            });
+            if (ok) return true;
+        } catch (e) {
+            // ignore
+        }
+        await new Promise(r => setTimeout(r, intervalMs));
+    }
+
+    return false;
+}
+
 /**
  * Auto-detect project profile from project files
  * @returns {string} Profile name (web, api, ios, android, library, generic)
@@ -511,7 +882,7 @@ function getProfilePlaceholders() {
         WORKTREE_DEP_CHECK: profile.depCheck,
         SETUP_ENV_LOCAL_LINE: profile.setupEnvLine,
         STOP_DEV_SERVER_STEP: profile.devServer.enabled
-            ? '## Step 2: Stop the dev server\n\nIf a dev server is running in this session (started via `npm run dev` or similar), stop it now:\n```bash\n# Read port from .env.local and kill the dev server on that port\nPORT=$(grep "^PORT=" .env.local 2>/dev/null | cut -d= -f2)\nif [ -n "$PORT" ]; then kill $(lsof -ti:$PORT) 2>/dev/null || true; fi\n```'
+            ? '## Step 2: Stop the dev server\n\nIf a dev server is running in this session (started via `npm run dev` or similar), stop it now:\n```bash\n# Kill the dev server and deregister from proxy\nPORT=$(grep "^PORT=" .env.local 2>/dev/null | cut -d= -f2)\nif [ -n "$PORT" ]; then kill $(lsof -ti:$PORT) 2>/dev/null || true; fi\naigon dev-server stop 2>/dev/null || true\n```'
             : ''
     };
 }
@@ -2614,6 +2985,9 @@ const commands = {
                         const paddedFeatureId = String(num).padStart(2, '0');
                         if (profile.devServer.enabled) {
                             const port = profile.devServer.ports[agentId] || agentMeta.port || 3000;
+                            const appId = getAppId();
+                            const serverId = `${agentId}-${num}`;
+                            const devUrl = getDevProxyUrl(appId, serverId);
                             let envContent = '';
                             if (fs.existsSync(envLocalPath)) {
                                 envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
@@ -2623,8 +2997,14 @@ const commands = {
                             envContent += `AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
                             envContent += `AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
                             envContent += `AIGON_FEATURE_ID=${paddedFeatureId}\n`;
+                            envContent += `AIGON_DEV_URL=${devUrl}\n`;
+                            // NEXT_PUBLIC_ prefixed vars for browser access (Next.js, Vite, etc.)
+                            envContent += `NEXT_PUBLIC_AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
+                            envContent += `NEXT_PUBLIC_AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
+                            envContent += `NEXT_PUBLIC_AIGON_FEATURE_ID=${paddedFeatureId}\n`;
+                            envContent += `NEXT_PUBLIC_AIGON_DEV_URL=${devUrl}\n`;
                             fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
-                            console.log(`   📋 .env.local created with PORT=${port}, banner vars`);
+                            console.log(`   📋 .env.local created with PORT=${port}, banner vars, dev URL`);
                         } else if (fs.existsSync(envLocalPath)) {
                             // Copy base .env.local and append banner vars
                             let envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
@@ -2632,6 +3012,9 @@ const commands = {
                             envContent += `AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
                             envContent += `AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
                             envContent += `AIGON_FEATURE_ID=${paddedFeatureId}\n`;
+                            envContent += `NEXT_PUBLIC_AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
+                            envContent += `NEXT_PUBLIC_AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
+                            envContent += `NEXT_PUBLIC_AIGON_FEATURE_ID=${paddedFeatureId}\n`;
                             fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
                             console.log(`   📋 .env.local created with banner vars (no PORT — dev server not used)`);
                         }
@@ -4291,6 +4674,421 @@ Branch: \`${soloBranch}\`
         }
     },
 
+    'proxy-setup': async () => {
+        console.log('\n🔧 Setting up local dev proxy (Caddy + dnsmasq)...\n');
+
+        // Check for Homebrew
+        try {
+            execSync('brew --version', { stdio: 'pipe' });
+        } catch (e) {
+            console.error('❌ Homebrew is required. Install from https://brew.sh');
+            return;
+        }
+
+        // Install/verify Caddy
+        try {
+            const version = execSync('caddy version', { stdio: 'pipe' }).toString().trim();
+            console.log(`   ✅ Caddy installed: ${version}`);
+        } catch (e) {
+            console.log('   📦 Installing Caddy...');
+            try {
+                execSync('brew install caddy', { stdio: 'inherit' });
+                console.log('   ✅ Caddy installed');
+            } catch (e2) {
+                console.error(`   ❌ Failed to install Caddy: ${e2.message}`);
+                return;
+            }
+        }
+
+        // Install/verify dnsmasq
+        try {
+            execSync('brew list dnsmasq', { stdio: 'pipe' });
+            console.log('   ✅ dnsmasq installed');
+        } catch (e) {
+            console.log('   📦 Installing dnsmasq...');
+            try {
+                execSync('brew install dnsmasq', { stdio: 'inherit' });
+                console.log('   ✅ dnsmasq installed');
+            } catch (e2) {
+                console.error(`   ❌ Failed to install dnsmasq: ${e2.message}`);
+                return;
+            }
+        }
+
+        // Configure dnsmasq for .test wildcard
+        const brewPrefix = execSync('brew --prefix', { stdio: 'pipe' }).toString().trim();
+        const dnsmasqConf = path.join(brewPrefix, 'etc', 'dnsmasq.conf');
+        const testEntry = 'address=/.test/127.0.0.1';
+
+        try {
+            const confContent = fs.existsSync(dnsmasqConf) ? fs.readFileSync(dnsmasqConf, 'utf8') : '';
+            if (!confContent.includes(testEntry)) {
+                fs.appendFileSync(dnsmasqConf, `\n# Aigon dev proxy — resolve *.test to localhost\n${testEntry}\n`);
+                console.log('   ✅ Configured dnsmasq for *.test → 127.0.0.1');
+            } else {
+                console.log('   ✅ dnsmasq already configured for *.test');
+            }
+        } catch (e) {
+            console.error(`   ❌ Could not configure dnsmasq: ${e.message}`);
+            return;
+        }
+
+        // Start dnsmasq service
+        try {
+            execSync('sudo brew services start dnsmasq', { stdio: 'inherit' });
+            console.log('   ✅ dnsmasq service started');
+        } catch (e) {
+            console.warn(`   ⚠️  Could not start dnsmasq: ${e.message}`);
+        }
+
+        // Create /etc/resolver/test
+        const resolverDir = '/etc/resolver';
+        const resolverFile = path.join(resolverDir, 'test');
+        try {
+            if (fs.existsSync(resolverFile)) {
+                console.log('   ✅ /etc/resolver/test already exists');
+            } else {
+                console.log('\n   📝 Creating /etc/resolver/test (requires sudo)...');
+                execSync(`sudo mkdir -p ${resolverDir} && sudo bash -c 'echo "nameserver 127.0.0.1" > ${resolverFile}'`, { stdio: 'inherit' });
+                console.log('   ✅ /etc/resolver/test created');
+            }
+        } catch (e) {
+            console.error(`   ❌ Could not create resolver: ${e.message}`);
+            console.error(`   Manual fix: sudo mkdir -p /etc/resolver && sudo bash -c 'echo "nameserver 127.0.0.1" > /etc/resolver/test'`);
+        }
+
+        // Write initial Caddyfile and configure Caddy via Homebrew service
+        if (!fs.existsSync(DEV_PROXY_DIR)) {
+            fs.mkdirSync(DEV_PROXY_DIR, { recursive: true });
+        }
+        const registry = loadProxyRegistry();
+        const caddyfile = generateCaddyfile(registry);
+        fs.writeFileSync(DEV_PROXY_CADDYFILE, caddyfile);
+
+        // Symlink our Caddyfile to Homebrew's expected location
+        const brewCaddyfile = path.join(brewPrefix, 'etc', 'Caddyfile');
+        try {
+            // Back up existing Caddyfile if it's not already our symlink
+            if (fs.existsSync(brewCaddyfile)) {
+                const stat = fs.lstatSync(brewCaddyfile);
+                if (stat.isSymbolicLink()) {
+                    const target = fs.readlinkSync(brewCaddyfile);
+                    if (target === DEV_PROXY_CADDYFILE) {
+                        console.log('   ✅ Caddyfile symlink already configured');
+                    } else {
+                        fs.unlinkSync(brewCaddyfile);
+                        fs.symlinkSync(DEV_PROXY_CADDYFILE, brewCaddyfile);
+                        console.log('   ✅ Caddyfile symlink updated');
+                    }
+                } else {
+                    const backupPath = brewCaddyfile + '.bak';
+                    fs.renameSync(brewCaddyfile, backupPath);
+                    fs.symlinkSync(DEV_PROXY_CADDYFILE, brewCaddyfile);
+                    console.log(`   ✅ Caddyfile symlinked (original backed up to ${backupPath})`);
+                }
+            } else {
+                fs.symlinkSync(DEV_PROXY_CADDYFILE, brewCaddyfile);
+                console.log('   ✅ Caddyfile symlinked');
+            }
+        } catch (e) {
+            console.warn(`   ⚠️  Could not symlink Caddyfile: ${e.message}`);
+            console.warn(`   Manual fix: ln -sf "${DEV_PROXY_CADDYFILE}" "${brewCaddyfile}"`);
+        }
+
+        // Start/restart Caddy via brew services as root (required for port 80)
+        try {
+            try { execSync('brew services stop caddy', { stdio: 'pipe' }); } catch (e) { /* not running */ }
+            try { execSync('sudo brew services stop caddy', { stdio: 'pipe' }); } catch (e) { /* not running */ }
+            execSync('sudo brew services start caddy', { stdio: 'inherit' });
+            console.log('   ✅ Caddy service started (root, port 80)');
+        } catch (e) {
+            console.warn(`   ⚠️  Could not start Caddy service: ${e.message}`);
+            console.warn('   Manual fix: sudo brew services start caddy');
+        }
+
+        // Verify
+        console.log('\n   🔍 Verifying setup...');
+        try {
+            const result = execSync('dig +short test.test @127.0.0.1', { stdio: 'pipe' }).toString().trim();
+            if (result === '127.0.0.1') {
+                console.log('   ✅ DNS resolution working: *.test → 127.0.0.1');
+            } else {
+                console.warn(`   ⚠️  DNS returned "${result}" instead of "127.0.0.1"`);
+                console.warn('   dnsmasq may need a restart: sudo brew services restart dnsmasq');
+            }
+        } catch (e) {
+            console.warn('   ⚠️  Could not verify DNS (dig command failed)');
+            console.warn('   Try: dig +short anything.test @127.0.0.1');
+        }
+
+        console.log('\n✅ Dev proxy setup complete!');
+        console.log('   All *.test domains now resolve to localhost.');
+        console.log('   Use `aigon dev-server start` in any project to register a dev server.\n');
+    },
+
+    'dev-server': async (args) => {
+        const subcommand = args[0];
+
+        if (subcommand === 'start') {
+            const registerOnly = args.includes('--register-only');
+            const context = detectDevServerContext();
+            const proxyAvailable = isProxyAvailable();
+            const projectConfig = loadProjectConfig();
+            const profile = getActiveProfile();
+
+            // Determine preferred port
+            const devProxy = projectConfig.devProxy || {};
+            const basePort = devProxy.basePort || 3000;
+            const agentOffsets = { cc: 1, gg: 2, cx: 3, cu: 4 };
+            const offset = context.agentId ? (agentOffsets[context.agentId] || 0) : 0;
+
+            // Check for explicit --port flag
+            const portFlagIdx = args.indexOf('--port');
+            let preferredPort;
+            if (portFlagIdx !== -1 && args[portFlagIdx + 1]) {
+                preferredPort = parseInt(args[portFlagIdx + 1], 10);
+            } else {
+                preferredPort = basePort + offset;
+            }
+
+            // Allocate port
+            let port;
+            try {
+                port = await allocatePort(preferredPort);
+            } catch (e) {
+                console.error(`❌ ${e.message}`);
+                return;
+            }
+
+            // Write PORT to .env.local
+            const envLocalPath = path.join(process.cwd(), '.env.local');
+            let envContent = '';
+            if (fs.existsSync(envLocalPath)) {
+                envContent = fs.readFileSync(envLocalPath, 'utf8');
+                // Replace existing PORT line
+                if (envContent.match(/^PORT=\d+/m)) {
+                    envContent = envContent.replace(/^PORT=\d+/m, `PORT=${port}`);
+                } else {
+                    envContent = envContent.trimEnd() + `\nPORT=${port}\n`;
+                }
+            } else {
+                envContent = `PORT=${port}\n`;
+            }
+            fs.writeFileSync(envLocalPath, envContent);
+
+            const startCmd = devProxy.command || 'npm run dev';
+            const useProxy = proxyAvailable && profile.devServer && profile.devServer.enabled;
+            const url = useProxy ? getDevProxyUrl(context.appId, context.serverId) : `http://localhost:${port}`;
+            const logPath = getDevServerLogPath(context.appId, context.serverId);
+            const healthCheckPath = devProxy.healthCheck || '/';
+            const healthUrl = `http://localhost:${port}${healthCheckPath}`;
+
+            if (useProxy) {
+                // Register with proxy (PID 0 for now, updated after spawn)
+                registerDevServer(context.appId, context.serverId, port, process.cwd(), 0);
+            }
+
+            if (!registerOnly) {
+                // Spawn the dev server process
+                console.log(`\n⏳ Starting dev server: ${startCmd}`);
+                const pid = spawnDevServer(startCmd, port, logPath, process.cwd());
+
+                // Update registry with real PID
+                if (useProxy) {
+                    registerDevServer(context.appId, context.serverId, port, process.cwd(), pid);
+                }
+
+                // Wait for health check
+                process.stdout.write(`   Waiting for server on port ${port}...`);
+                const healthy = await waitForHealthy(healthUrl);
+
+                if (healthy) {
+                    console.log(' ready!');
+                } else {
+                    console.log(' (timeout — server may still be starting)');
+                    console.log(`   Check logs: aigon dev-server logs`);
+                }
+
+                if (useProxy) {
+                    console.log(`\n🌐 Dev server running`);
+                    console.log(`   URL:  ${url}`);
+                    console.log(`   Port: ${port}  PID: ${pid}`);
+                    if (context.serverId) {
+                        console.log(`   ID:   ${context.serverId} (${context.appId})`);
+                    }
+                    console.log(`   Logs: aigon dev-server logs`);
+                    console.log(`\n   Open: ${url}\n`);
+                } else {
+                    console.log(`\n📡 Dev server running`);
+                    console.log(`   URL:  ${url}`);
+                    console.log(`   Port: ${port}  PID: ${pid}`);
+                    if (!proxyAvailable) {
+                        console.log(`\n   💡 Run \`aigon proxy-setup\` for subdomain routing (e.g., ${getDevProxyUrl(context.appId, context.serverId)})`);
+                    }
+                    console.log(`   Logs: aigon dev-server logs`);
+                    console.log(`\n   Open: ${url}\n`);
+                }
+            } else {
+                // Register-only mode (manual process management)
+                if (useProxy) {
+                    console.log(`\n🌐 Dev server registered with proxy`);
+                    console.log(`   URL:  ${url}`);
+                    console.log(`   Port: ${port}`);
+                    if (context.serverId) {
+                        console.log(`   ID:   ${context.serverId} (${context.appId})`);
+                    }
+                    console.log(`\n   Start your dev server: PORT=${port} ${startCmd}`);
+                    console.log(`   Then open: ${url}\n`);
+                } else {
+                    console.log(`\n📡 Dev server configured`);
+                    console.log(`   Port: ${port}`);
+                    console.log(`   URL:  ${url}`);
+                    if (!proxyAvailable) {
+                        console.log(`\n   💡 Run \`aigon proxy-setup\` for subdomain routing (e.g., ${getDevProxyUrl(context.appId, context.serverId)})`);
+                    }
+                    console.log(`\n   Start your dev server: PORT=${port} ${startCmd}\n`);
+                }
+            }
+
+        } else if (subcommand === 'stop') {
+            const serverId = args[1];
+            const context = detectDevServerContext();
+            const targetServerId = serverId || context.serverId;
+            const appId = context.appId;
+
+            if (!targetServerId && targetServerId !== '') {
+                console.error('❌ Could not detect server ID. Specify it: aigon dev-server stop <serverId>');
+                console.error('   Run `aigon dev-server list` to see active servers.');
+                return;
+            }
+
+            // Kill the process if it's running
+            const registry = loadProxyRegistry();
+            const serverEntry = registry[appId] && registry[appId][targetServerId];
+            if (serverEntry && serverEntry.pid > 0) {
+                try {
+                    // Kill the process group (negative PID kills the group)
+                    process.kill(-serverEntry.pid, 'SIGTERM');
+                    console.log(`   Stopped process (PID ${serverEntry.pid})`);
+                } catch (e) {
+                    if (e.code !== 'ESRCH') {
+                        // ESRCH = process doesn't exist, which is fine
+                        try { process.kill(serverEntry.pid, 'SIGTERM'); } catch (e2) { /* ignore */ }
+                    }
+                }
+            }
+
+            deregisterDevServer(appId, targetServerId);
+            const hostname = targetServerId ? `${targetServerId}.${appId}.test` : `${appId}.test`;
+            console.log(`✅ Stopped and deregistered ${hostname}`);
+
+        } else if (subcommand === 'list') {
+            const registry = loadProxyRegistry();
+            const hasEntries = Object.keys(registry).length > 0 &&
+                Object.values(registry).some(servers => Object.keys(servers).length > 0);
+
+            if (!hasEntries) {
+                console.log('\nNo active dev servers.\n');
+                console.log('   Start one: aigon dev-server start');
+                return;
+            }
+
+            console.log('\n   APP            SERVER      PORT   URL                              PID');
+            console.log('   ' + '─'.repeat(75));
+            for (const [appId, servers] of Object.entries(registry)) {
+                for (const [serverId, info] of Object.entries(servers)) {
+                    const url = getDevProxyUrl(appId, serverId);
+                    const pidStr = info.pid ? String(info.pid) : '-';
+                    // Check if PID is alive
+                    let alive = false;
+                    if (info.pid > 0) {
+                        try { process.kill(info.pid, 0); alive = true; } catch (e) { /* dead */ }
+                    }
+                    const status = alive ? '' : ' (dead)';
+                    console.log(`   ${appId.padEnd(15)} ${(serverId || '(main)').padEnd(11)} ${String(info.port).padEnd(6)} ${url.padEnd(36)} ${pidStr}${status}`);
+                }
+            }
+            console.log('');
+
+        } else if (subcommand === 'gc') {
+            const removed = gcDevServers();
+            if (removed > 0) {
+                console.log(`✅ Removed ${removed} dead server${removed === 1 ? '' : 's'} from registry`);
+            } else {
+                console.log('No dead servers found.');
+            }
+
+        } else if (subcommand === 'logs') {
+            const serverId = args[1];
+            const context = detectDevServerContext();
+            const targetServerId = serverId || context.serverId;
+            const appId = context.appId;
+            const logPath = getDevServerLogPath(appId, targetServerId);
+
+            if (!fs.existsSync(logPath)) {
+                console.error(`No log file found at ${logPath}`);
+                console.error('   The dev server may not have been started with `aigon dev-server start`.');
+                return;
+            }
+
+            // Check for --follow / -f flag
+            const follow = args.includes('--follow') || args.includes('-f');
+            // Check for --tail / -n flag
+            const tailIdx = args.indexOf('--tail');
+            const nIdx = args.indexOf('-n');
+            const tailLines = tailIdx !== -1 ? parseInt(args[tailIdx + 1], 10) : (nIdx !== -1 ? parseInt(args[nIdx + 1], 10) : 50);
+
+            if (follow) {
+                // Use tail -f to follow logs (blocks until Ctrl+C)
+                const { spawn: spawnFollow } = require('child_process');
+                const tail = spawnFollow('tail', ['-f', '-n', String(tailLines), logPath], {
+                    stdio: 'inherit'
+                });
+                tail.on('exit', () => process.exit(0));
+                // Handle Ctrl+C gracefully
+                process.on('SIGINT', () => { tail.kill(); process.exit(0); });
+            } else {
+                // Print last N lines
+                const content = fs.readFileSync(logPath, 'utf8');
+                const lines = content.split('\n');
+                const start = Math.max(0, lines.length - tailLines);
+                console.log(lines.slice(start).join('\n'));
+            }
+
+        } else if (subcommand === 'url') {
+            const context = detectDevServerContext();
+            const proxyAvailable = isProxyAvailable();
+
+            if (proxyAvailable) {
+                const url = getDevProxyUrl(context.appId, context.serverId);
+                // Output just the URL for scripting
+                console.log(url);
+            } else {
+                // Fallback: try to read port from .env.local
+                const envLocalPath = path.join(process.cwd(), '.env.local');
+                if (fs.existsSync(envLocalPath)) {
+                    const content = fs.readFileSync(envLocalPath, 'utf8');
+                    const match = content.match(/^PORT=(\d+)/m);
+                    if (match) {
+                        console.log(`http://localhost:${match[1]}`);
+                        return;
+                    }
+                }
+                console.log('http://localhost:3000');
+            }
+
+        } else {
+            console.error(`Usage: aigon dev-server <start|stop|list|logs|gc|url>`);
+            console.error(`\n  start [--port N]       - Start dev server, register with proxy`);
+            console.error(`  start --register-only  - Register port mapping only (don't start process)`);
+            console.error(`  stop [serverId]        - Stop process and deregister from proxy`);
+            console.error(`  list                   - Show all active dev servers`);
+            console.error(`  logs [-f] [-n N]       - Show dev server output (default: last 50 lines)`);
+            console.error(`  gc                     - Remove entries for dead processes`);
+            console.error(`  url                    - Print URL for current context (for scripting)`);
+        }
+    },
+
     'help': () => {
         console.log(`
 Aigon - Spec-Driven Development for AI Agents
@@ -4304,6 +5102,16 @@ Setup:
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
   config <init|show>                Manage global config (~/.aigon/config.json)
   profile [show|set|detect]         Manage project profile (web, api, ios, etc.)
+  proxy-setup                       One-time setup: install Caddy + dnsmasq for *.test domains
+
+Dev Server (web/api profiles):
+  dev-server start [--port N]       Start dev server, register with proxy, wait for healthy
+  dev-server start --register-only  Register port mapping only (don't start process)
+  dev-server stop [serverId]        Stop process and deregister from proxy
+  dev-server list                   Show all active dev servers across all apps
+  dev-server logs [-f] [-n N]       Show dev server output (default: last 50 lines, -f to follow)
+  dev-server gc                     Remove entries for dead processes
+  dev-server url                    Print URL for current context (for scripting)
 
 Worktree:
   worktree-open <ID> [agent] [--terminal=<type>]
@@ -4356,6 +5164,13 @@ Examples:
   aigon feature-done 55 cc             # Merge Claude's arena implementation
   aigon feature-cleanup 55 --push      # Clean up losing arena branches
 
+  # Dev proxy (web/api projects)
+  aigon proxy-setup                   # One-time: install Caddy + dnsmasq
+  aigon dev-server start              # Register dev server → http://cc-119.myapp.test
+  aigon dev-server list               # Show all running dev servers
+  aigon dev-server stop               # Deregister current dev server
+  BASE_URL=$(aigon dev-server url) npx playwright test  # E2E tests
+
   # Research workflow
   aigon research-create "api-design"   # Create new research topic
   aigon research-prioritise api-design # Assign ID, move to backlog
@@ -4384,7 +5199,11 @@ const cleanCommand = commandName ? commandName.replace(/^aigon-/, '') : null;
 if (!cleanCommand || cleanCommand === 'help' || cleanCommand === '--help' || cleanCommand === '-h') {
     commands['help']();
 } else if (commands[cleanCommand]) {
-    commands[cleanCommand](commandArgs);
+    const result = commands[cleanCommand](commandArgs);
+    // Handle async commands (proxy-setup, dev-server)
+    if (result && typeof result.catch === 'function') {
+        result.catch(e => { console.error(`❌ ${e.message}`); process.exit(1); });
+    }
 } else {
     console.error(`Unknown command: ${commandName}\n`);
     commands['help']();

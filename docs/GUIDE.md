@@ -12,10 +12,11 @@ For a quick overview and getting started, see the main [README.md](../README.md)
 2. [Detailed Research Lifecycle](#detailed-research-lifecycle)
 3. [Hooks Deep Dive](#hooks-deep-dive)
 4. [Project Profiles](#project-profiles)
-5. [Opening Worktrees](#opening-worktrees)
-6. [Global Configuration](#global-configuration)
-7. [Multi-Agent Evaluation Examples](#multi-agent-evaluation-examples)
-8. [Contributing / Developing Aigon](#contributing--developing-aigon)
+5. [Local Dev Proxy](#local-dev-proxy)
+6. [Opening Worktrees](#opening-worktrees)
+7. [Configuration](#configuration)
+8. [Multi-Agent Evaluation Examples](#multi-agent-evaluation-examples)
+9. [Contributing / Developing Aigon](#contributing--developing-aigon)
 
 ---
 
@@ -285,6 +286,295 @@ A port summary is shown during `aigon init`, `aigon update`, `aigon install-agen
 ```
 
 If no PORT is found, Aigon falls back to profile defaults (3001-3004 for web, 8001-8004 for api) and suggests setting one.
+
+---
+
+## Local Dev Proxy
+
+The dev proxy gives every dev server instance a meaningful subdomain URL instead of a port number. Agents run `aigon dev-server start`, get a URL like `http://cc-119.whenswell.test`, and everything just works — no port juggling, no collisions, no confusion.
+
+### Why use the proxy?
+
+Without the proxy, each agent worktree gets a static port (cc=3001, gg=3002). This causes friction:
+
+- Agents forget to read `.env.local` or use the wrong port
+- Two features by the same agent both want the same port
+- Two projects on the same machine collide (both want 3001)
+- Browser tabs at `localhost:3001` vs `localhost:3002` are hard to distinguish
+- E2E tests need a stable base URL
+
+With the proxy, every dev server gets a unique, memorable URL based on agent, feature, and app.
+
+### URL Scheme
+
+**Format:** `http://{agent}-{featureId}.{appId}.test`
+
+| Scenario | URL |
+|---|---|
+| Claude on feature 119 of whenswell | `http://cc-119.whenswell.test` |
+| Gemini on feature 119 of whenswell | `http://gg-119.whenswell.test` |
+| Claude on feature 120 of whenswell | `http://cc-120.whenswell.test` |
+| Claude on feature 5 of shopkeeper | `http://cc-5.shopkeeper.test` |
+| Main branch / general dev | `http://whenswell.test` |
+
+The `.test` TLD is IETF-reserved (RFC 6761) for testing. It won't conflict with real domains and works system-wide on macOS (Safari, curl, Node fetch, everything).
+
+### Architecture
+
+```
+Browser: http://cc-119.whenswell.test
+    ↓
+dnsmasq: *.test → 127.0.0.1
+    ↓
+Caddy (:80): reverse_proxy → localhost:{dynamic-port}
+    ↓
+Dev server (port allocated dynamically)
+```
+
+### One-Time Machine Setup
+
+Run this once on your machine:
+
+```bash
+aigon proxy-setup
+```
+
+This will:
+
+1. **Install Caddy and dnsmasq** via Homebrew (if not already installed)
+2. **Configure dnsmasq** to resolve all `*.test` domains to `127.0.0.1`
+3. **Create `/etc/resolver/test`** so macOS uses dnsmasq for `.test` lookups (requires sudo — you'll be prompted)
+4. **Start both services** via `brew services` (Caddy needs sudo for port 80)
+5. **Verify** the setup works
+
+The command is idempotent — safe to run multiple times. If anything is already installed, it skips those steps.
+
+**Prerequisites:** Homebrew must be installed. macOS only for now.
+
+#### What gets installed
+
+| Component | Purpose | Managed by |
+|---|---|---|
+| dnsmasq | Resolves `*.test` → 127.0.0.1 | `brew services` |
+| Caddy | Reverse proxy on port 80, routes subdomains to backend ports | `sudo brew services` |
+| `/etc/resolver/test` | Tells macOS to use dnsmasq for `.test` domains | File (created by proxy-setup) |
+
+#### Verifying the setup
+
+```bash
+# Check DNS resolution
+dig anything.test @127.0.0.1
+
+# Check services
+brew services list | grep -E 'caddy|dnsmasq'
+
+# Check resolver
+cat /etc/resolver/test
+# Should show: nameserver 127.0.0.1
+```
+
+### Per-Project Configuration
+
+Add a `devProxy` section to your project's `.aigon/config.json`:
+
+```json
+{
+  "profile": "web",
+  "appId": "whenswell",
+  "devProxy": {
+    "command": "npm run dev",
+    "healthCheck": "/api/health",
+    "basePort": 3000
+  }
+}
+```
+
+| Field | Purpose | Default |
+|---|---|---|
+| `appId` | The app domain (`whenswell.test`) | `package.json` name or directory name |
+| `devProxy.command` | How to start the dev server | `npm run dev` |
+| `devProxy.healthCheck` | Path to verify the server is up | `/` |
+| `devProxy.basePort` | Preferred starting port for allocation | `3000` |
+
+Set values with:
+
+```bash
+aigon config set appId whenswell
+aigon config set devProxy.basePort 3100
+aigon config set devProxy.command "npm run dev"
+```
+
+The `appId` is auto-detected from `package.json` name or the git directory name if not set explicitly. It's sanitized for DNS (lowercased, `@scope/` stripped, non-alphanumeric replaced with hyphens).
+
+**Only `web` and `api` profiles** use the dev proxy. iOS, Android, library, and generic profiles have no dev server, so `devProxy` doesn't apply.
+
+### Dev Server Commands
+
+#### `aigon dev-server start`
+
+Starts the dev server process, allocates a port, registers with the proxy, and waits for the server to become healthy:
+
+```bash
+$ aigon dev-server start
+
+⏳ Starting dev server: npm run dev
+   Waiting for server on port 3847... ready!
+
+🌐 Dev server running
+   URL:  http://cc-119.whenswell.test
+   Port: 3847  PID: 73524
+   ID:   cc-119 (whenswell)
+   Logs: aigon dev-server logs
+
+   Open: http://cc-119.whenswell.test
+```
+
+The command:
+
+1. **Auto-detects context** — app ID (from `.aigon/config.json`, `package.json`, or dirname), agent ID and feature ID (from worktree path or branch name)
+2. **Allocates a port** — tries `basePort` + agent offset (cc=+1, gg=+2, cx=+3, cu=+4), scans upward if occupied
+3. **Writes `PORT=<allocated>` to `.env.local`**
+4. **Spawns the dev server** in the background using the `devProxy.command` from config (default: `npm run dev`), with `PORT` set in the environment
+5. **Redirects output** to a log file at `~/.aigon/dev-proxy/logs/{appId}-{serverId}.log`
+6. **Registers with the proxy** and reloads Caddy
+7. **Waits for healthy** — polls the health check URL (default `/`) until the server responds (30s timeout)
+
+On the main branch with no feature, it registers as the bare app domain (e.g., `http://whenswell.test`).
+
+**Flags:**
+
+- `--port N` — Use a specific port instead of auto-allocating
+- `--register-only` — Only register the port mapping with the proxy; don't start the process (for manual process management)
+
+#### `aigon dev-server stop`
+
+Stops the dev server process and deregisters from the proxy:
+
+```bash
+aigon dev-server stop           # Auto-detects from context
+aigon dev-server stop cc-119    # Specify server ID explicitly
+```
+
+This kills the process (using the PID from the registry) and removes the Caddy routing entry.
+
+#### `aigon dev-server logs`
+
+View dev server output:
+
+```bash
+aigon dev-server logs           # Last 50 lines (auto-detects server)
+aigon dev-server logs -f        # Follow logs in real time (like tail -f)
+aigon dev-server logs -n 100    # Last 100 lines
+aigon dev-server logs cc-119    # Specify server ID
+```
+
+Log files are stored at `~/.aigon/dev-proxy/logs/{appId}-{serverId}.log`.
+
+#### `aigon dev-server list`
+
+Shows all active dev servers across all apps, with live PID status:
+
+```bash
+$ aigon dev-server list
+
+   APP            SERVER      PORT   URL                              PID
+   ───────────────────────────────────────────────────────────────────────────
+   whenswell         cc-119      3847   http://cc-119.whenswell.test       73524
+   whenswell         gg-119      4201   http://gg-119.whenswell.test       73801
+   shopkeeper      cc-5        5832   http://cc-5.shopkeeper.test      75000
+```
+
+Dead processes are marked with `(dead)`.
+
+#### `aigon dev-server gc`
+
+Removes registry entries whose process is no longer running:
+
+```bash
+aigon dev-server gc
+```
+
+#### `aigon dev-server url`
+
+Prints just the URL for the current context — useful in scripts:
+
+```bash
+BASE_URL=$(aigon dev-server url)
+npx playwright test --base-url "$BASE_URL"
+```
+
+### How Agents Use the Dev Server
+
+All agents (Claude Code, Gemini, Codex, Cursor) use the same `aigon dev-server start` command. This eliminates inconsistencies in how different agents handle dev servers:
+
+- **No port guessing** — the port is allocated and set automatically
+- **No background process management** — aigon spawns the process internally via Node.js `child_process.spawn` with `detached: true`, so agents don't need to figure out `&`, `nohup`, or PTY sessions
+- **Logs are always available** — agents can run `aigon dev-server logs` to check startup output and diagnose errors
+- **Cleanup is reliable** — `aigon dev-server stop` kills the process by PID, no guessing
+
+The `feature-implement` template instructs agents to run `aigon dev-server start` at the testing step. Since the command handles everything (port allocation, process spawning, proxy registration, health check), all agents behave identically regardless of their runtime environment.
+
+### Fallback (No Proxy)
+
+If Caddy isn't installed or running, `aigon dev-server start` still works — it spawns the process, allocates a port, and uses `localhost:<port>` URLs:
+
+```
+⏳ Starting dev server: npm run dev
+   Waiting for server on port 3001... ready!
+
+📡 Dev server running
+   URL:  http://localhost:3001
+   Port: 3001  PID: 73524
+
+   💡 Run `aigon proxy-setup` for subdomain routing (e.g., http://cc-119.whenswell.test)
+   Logs: aigon dev-server logs
+
+   Open: http://localhost:3001
+```
+
+All existing functionality continues to work unchanged.
+
+### Multiple Apps on One Machine
+
+Each app sets its own `appId`, so URLs are unique across projects:
+
+- `http://cc-119.whenswell.test` (whenswell project)
+- `http://cc-5.shopkeeper.test` (shopkeeper project)
+
+Ports are allocated dynamically and can't collide — if one app takes port 3000, the next app automatically gets the next available port. You can optionally set different `devProxy.basePort` values per app for predictable port ranges:
+
+```bash
+# In whenswell
+aigon config set devProxy.basePort 3000
+
+# In shopkeeper
+aigon config set devProxy.basePort 4000
+```
+
+### Runtime State
+
+The proxy's runtime state lives in `~/.aigon/dev-proxy/`:
+
+| File | Purpose |
+|---|---|
+| `servers.json` | Registry of currently running dev servers (app, port, PID, worktree path) |
+| `Caddyfile` | Auto-generated Caddy config — regenerated on every start/stop |
+
+These are ephemeral — not checked into any repo. The `servers.json` registry is the source of truth for what's currently running, and the Caddyfile is regenerated from it each time.
+
+### Troubleshooting
+
+**`aigon proxy-setup` hangs:** It may be waiting for your sudo password. Check the terminal for a password prompt.
+
+**Caddy can't bind port 80:** Caddy needs root privileges for port 80. The proxy-setup uses `sudo brew services start caddy`. If Caddy is running as your user, stop it first: `brew services stop caddy`, then `sudo brew services start caddy`.
+
+**DNS not resolving `.test` domains:** Verify `/etc/resolver/test` exists and contains `nameserver 127.0.0.1`. Then verify dnsmasq is running: `brew services list | grep dnsmasq`.
+
+**`curl` works but browser doesn't:** Some browsers cache DNS. Try a hard refresh or clear the browser DNS cache. Safari works reliably with `.test` domains.
+
+**Dev server starts but proxy returns 502:** The dev server may not be ready yet. Caddy is proxying to the registered port, but the dev server hasn't finished starting. Wait a moment and retry.
+
+**Port already in use:** `aigon dev-server start` auto-allocates an available port. If you see errors, run `aigon dev-server gc` to clean up stale entries from crashed processes, then try again.
 
 ---
 
