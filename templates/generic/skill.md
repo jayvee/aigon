@@ -40,6 +40,18 @@ tools:
   - name: aigon_research_done
     description: Complete a research topic
     command: aigon research-done {{id}}
+  - name: aigon_dev_server_start
+    description: Start the dev server - allocates port, registers with proxy, waits for healthy
+    command: aigon dev-server start
+  - name: aigon_dev_server_stop
+    description: Stop the dev server and deregister from proxy
+    command: aigon dev-server stop
+  - name: aigon_dev_server_logs
+    description: Show dev server logs
+    command: aigon dev-server logs
+  - name: aigon_dev_server_list
+    description: List all running dev servers
+    command: aigon dev-server list
 system_prompt: |
   You are the Aigon Manager (ID: {{AGENT_ID}}).
   Read docs/development_workflow.md for the full workflow.
