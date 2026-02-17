@@ -61,7 +61,7 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 
 ### Worktree Mode (solo worktree or arena)
 {{WORKTREE_TEST_INSTRUCTIONS}}
-
+{{AGENT_DEV_SERVER_NOTE}}
 > **Project-specific steps?** Check your root instructions file (e.g. CLAUDE.md) for test commands.
 
 **STOP and WAIT for user confirmation before proceeding** - do NOT continue until the user confirms testing is complete
@@ -116,32 +116,19 @@ After completing steps 1-6:
 
 **CRITICAL: Do NOT run `aigon feature-done` from a worktree.**
 
-After completing steps 1-6:
-1. Tell the user: "Implementation complete in this worktree. Ready for your review."
-2. **STOP** - The user needs to:
-   - Optionally run `{{CMD_PREFIX}}feature-review {{ARG1_SYNTAX}}` with a different agent (in this worktree) for cross-agent code review
-   - Return to the main repository
-   - Optionally run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` for evaluation
-   - Approve with `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}}` (auto-detects the worktree)
+After completing steps 1-4, **STOP and WAIT** for the user. They will run `{{CMD_PREFIX}}feature-submit` to trigger steps 5-6 (commit + log). Do NOT commit or write the log until the user runs that command.
 
 ### Arena Mode
 
 **CRITICAL: Do NOT run `aigon feature-done` from a worktree.**
 
-After completing steps 1-6:
-1. Tell the user: "Implementation complete in this worktree. Ready for evaluation."
-2. **STOP** - The user needs to:
-   - Complete implementations in other agent worktrees
-   - Optionally run `{{CMD_PREFIX}}feature-review {{ARG1_SYNTAX}}` with a different agent on each worktree for cross-agent code review
-   - Return to the main repository
-   - Run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` to compare all implementations
-   - Choose a winner and run `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}} <winning-agent>`
+After completing steps 1-4, **STOP and WAIT** for the user. They will run `{{CMD_PREFIX}}feature-submit` to trigger steps 5-6 (commit + log). Do NOT commit or write the log until the user runs that command.
 
-**This implementation session is complete.**
+**This implementation session is complete after the user runs `{{CMD_PREFIX}}feature-submit`.**
 
 ## Prompt Suggestion
 
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
 
 - **Solo mode:** `{{CMD_PREFIX}}feature-done <ID>`
-- **Arena / worktree:** `{{CMD_PREFIX}}feature-eval <ID>`
+- **Arena / worktree:** `{{CMD_PREFIX}}feature-submit`

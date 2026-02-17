@@ -130,7 +130,7 @@ const PROFILE_PRESETS = {
             enabled: true,
             ports: { cc: 3001, gg: 3002, cx: 3003, cu: 3004 }
         },
-        testInstructions: '- Check `.env.local` for your agent-specific PORT\n- Start dev server: `PORT=<port> npm run dev`\n- Test on `http://localhost:<port>`\n- Ask the user to verify',
+        testInstructions: '- Run `npm run dev` to start the dev server (PORT is pre-configured in `.env.local`)\n- Check `.env.local` for the port number and test on that URL\n- Ask the user to verify',
         depCheck: '**Worktrees do not share `node_modules/` with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Check if node_modules exists\ntest -d node_modules && echo "Dependencies installed" || echo "Need to install dependencies"\n```\n\nIf missing, install them using the project\'s package manager:\n```bash\n# Detect and run the appropriate install command\nif [ -f "pnpm-lock.yaml" ]; then pnpm install\nelif [ -f "yarn.lock" ]; then yarn install\nelif [ -f "bun.lockb" ]; then bun install\nelif [ -f "package-lock.json" ]; then npm install\nelif [ -f "package.json" ]; then npm install\nfi\n```',
         setupEnvLine: '- Set up `.env.local` with agent-specific PORT (worktree modes)'
     },
@@ -139,7 +139,7 @@ const PROFILE_PRESETS = {
             enabled: true,
             ports: { cc: 8001, gg: 8002, cx: 8003, cu: 8004 }
         },
-        testInstructions: '- Check `.env.local` for your agent-specific PORT\n- Start the API server on the assigned PORT\n- Test endpoints using `curl` or a REST client\n- Ask the user to verify',
+        testInstructions: '- Run the start command to launch the API server (PORT is pre-configured in `.env.local`)\n- Check `.env.local` for the port number and test endpoints using `curl` or a REST client\n- Ask the user to verify',
         depCheck: '**Worktrees do not share dependencies with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Detect and install dependencies\nif [ -f "requirements.txt" ]; then pip install -r requirements.txt\nelif [ -f "Pipfile" ]; then pipenv install\nelif [ -f "go.mod" ]; then go mod download\nelif [ -f "package.json" ]; then npm install\nfi\n```',
         setupEnvLine: '- Set up `.env.local` with agent-specific PORT (worktree modes)'
     },
@@ -604,10 +604,12 @@ function filterByFeatureId(worktrees, featureId) {
 function buildAgentCommand(wt) {
     const cliConfig = getAgentCliConfig(wt.agent);
     const prompt = cliConfig.implementPrompt.replace('{featureId}', wt.featureId);
+    // Unset CLAUDECODE to prevent "nested session" error when launched from a Claude Code terminal
+    const prefix = cliConfig.command === 'claude' ? 'unset CLAUDECODE && ' : '';
     if (cliConfig.implementFlag) {
-        return `${cliConfig.command} ${cliConfig.implementFlag} "${prompt}"`;
+        return `${prefix}${cliConfig.command} ${cliConfig.implementFlag} "${prompt}"`;
     }
-    return `${cliConfig.command} "${prompt}"`;
+    return `${prefix}${cliConfig.command} "${prompt}"`;
 }
 
 /**
@@ -619,17 +621,19 @@ function buildAgentCommand(wt) {
 function buildResearchAgentCommand(agentId, researchId) {
     const cliConfig = getAgentCliConfig(agentId);
     const agentConfig = loadAgentConfig(agentId);
-    
+
     // Research commands use the agent's CMD_PREFIX placeholder
     // e.g., "/aigon:research-conduct" for Claude/Gemini, "/aigon-research-conduct" for Cursor
     const cmdPrefix = agentConfig?.placeholders?.CMD_PREFIX || '/aigon:';
     const prompt = `${cmdPrefix}research-conduct ${researchId}`;
-    
+
+    // Unset CLAUDECODE to prevent "nested session" error when launched from a Claude Code terminal
+    const prefix = cliConfig.command === 'claude' ? 'unset CLAUDECODE && ' : '';
     // Use the same flag pattern as feature-implement (e.g., --permission-mode acceptEdits)
     if (cliConfig.implementFlag) {
-        return `${cliConfig.command} ${cliConfig.implementFlag} "${prompt}"`;
+        return `${prefix}${cliConfig.command} ${cliConfig.implementFlag} "${prompt}"`;
     }
-    return `${cliConfig.command} "${prompt}"`;
+    return `${prefix}${cliConfig.command} "${prompt}"`;
 }
 
 /**
@@ -1340,7 +1344,7 @@ const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
 // Per-command argument hints for frontmatter
 const COMMAND_ARG_HINTS = {
     'feature-create': '<feature-name>',
-    'feature-now': '<feature-name>',
+    'feature-now': '<existing-feature-name> OR <feature-description>',
     'feature-prioritise': '<feature-name or letter>',
     'feature-setup': '<ID> [agents...]',
     'feature-implement': '<ID>',
