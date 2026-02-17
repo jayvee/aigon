@@ -18,6 +18,7 @@
     "CMD_PREFIX": "/aigon:",
     "AGENT_TEAMS_RESEARCH_NOTE": "",
     "AGENT_TEAMS_FEATURE_NOTE": "",
+    "AGENT_DEV_SERVER_NOTE": "",
     "PERMISSION_SAVE_NOTE": "\n## Saving Permissions\n\nWhen the user says \"save that permission\" or \"remember that\":\n\n1. Read `.gemini/settings.json`\n2. Add the tool name to the `allowedTools` array\n3. Write the updated file\n\nNote: Gemini's \"always allow\" from the approval prompt does not persist across sessions. Editing the settings file is the reliable way to save permissions.\n"
   },
 
@@ -46,6 +47,7 @@
     "feature-prioritise",
     "feature-setup",
     "feature-implement",
+    "feature-submit",
     "feature-eval",
     "feature-review",
     "feature-done",

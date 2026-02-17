@@ -18,7 +18,8 @@
     "CMD_PREFIX": "/prompts:aigon-",
     "AGENT_TEAMS_RESEARCH_NOTE": "",
     "AGENT_TEAMS_FEATURE_NOTE": "",
-    "PERMISSION_SAVE_NOTE": ""
+    "PERMISSION_SAVE_NOTE": "",
+    "AGENT_DEV_SERVER_NOTE": "\n> **Codex runtime note:** Background processes (`&`, `nohup`) are killed when the shell command exits in this sandbox. To keep a dev server running, use a persistent PTY / background terminal session (e.g. `/ps`, `/terminal`) instead of backgrounding with `&`.\n"
   },
 
   "output": {
@@ -51,6 +52,7 @@
     "feature-prioritise",
     "feature-setup",
     "feature-implement",
+    "feature-submit",
     "feature-eval",
     "feature-review",
     "feature-done",
