@@ -87,9 +87,10 @@ FEATURES
 8. [Workflow Overview](#workflow-overview)
 9. [Workflow Examples](#workflow-examples)
 10. [Hooks](#hooks)
-11. [Multi-Agent Evaluation](#multi-agent-evaluation)
-12. [CLI Reference](#cli-reference)
-13. [Agent Slash Commands](#agent-slash-commands)
+11. [Local Dev Proxy](#local-dev-proxy)
+12. [Multi-Agent Evaluation](#multi-agent-evaluation)
+13. [CLI Reference](#cli-reference)
+14. [Agent Slash Commands](#agent-slash-commands)
 
 ---
 
@@ -588,6 +589,50 @@ Run `aigon hooks list` to inspect discovered hooks.
 
 ---
 
+## Local Dev Proxy
+
+When running multiple agents on the same web app, managing port numbers is painful. Aigon's dev proxy replaces ports with meaningful subdomain URLs using Caddy and dnsmasq.
+
+**URL scheme:** `{agent}-{featureId}.{appId}.test`
+
+| Scenario | URL |
+|---|---|
+| Claude on feature 119 of whenswell | `http://cc-119.whenswell.test` |
+| Gemini on feature 119 of whenswell | `http://gg-119.whenswell.test` |
+| Claude on feature 120 of whenswell | `http://cc-120.whenswell.test` |
+| Main branch / general dev | `http://whenswell.test` |
+
+### Quick setup
+
+```bash
+# One-time machine setup (installs Caddy + dnsmasq)
+aigon proxy-setup
+
+# In your project — start dev server and get its URL
+aigon dev-server start
+#   ⏳ Starting dev server: npm run dev
+#      Waiting for server on port 3847... ready!
+#   🌐 Dev server running
+#      URL:  http://cc-119.whenswell.test
+#      Port: 3847  PID: 73524
+
+# Manage servers
+aigon dev-server logs      # View dev server output
+aigon dev-server logs -f   # Follow logs in real time
+aigon dev-server list      # Show all active servers
+aigon dev-server stop      # Stop process and deregister
+aigon dev-server gc        # Clean up dead entries
+aigon dev-server url       # Print URL for scripting
+```
+
+If the proxy isn't set up, everything falls back to `localhost:<port>` — existing workflows are unaffected.
+
+Only **web** and **api** profiles use the dev proxy. iOS, Android, library, and generic profiles are not affected.
+
+See the [Complete Guide](docs/GUIDE.md#local-dev-proxy) for detailed setup instructions, per-project configuration, and troubleshooting.
+
+---
+
 ## Multi-Agent Evaluation
 
 After arena implementations are complete:
@@ -677,6 +722,19 @@ aigon feature-cleanup 55 --push
 | Board | `aigon board` |
 | Board (List View) | `aigon board --list` |
 | Board (Filtered) | `aigon board [--features\|--research] [--active\|--all\|--inbox\|--backlog\|--done]` |
+
+### Dev server commands
+
+| Command | Usage |
+|---|---|
+| Proxy Setup | `aigon proxy-setup` (one-time machine setup) |
+| Dev Server Start | `aigon dev-server start [--port N]` (starts process, registers with proxy) |
+| Dev Server Start (register only) | `aigon dev-server start --register-only` |
+| Dev Server Stop | `aigon dev-server stop [serverId]` (kills process + deregisters) |
+| Dev Server List | `aigon dev-server list` |
+| Dev Server Logs | `aigon dev-server logs [-f] [-n N]` |
+| Dev Server GC | `aigon dev-server gc` |
+| Dev Server URL | `aigon dev-server url` |
 
 ### Utility commands
 
