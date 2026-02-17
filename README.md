@@ -393,7 +393,7 @@ Slash command first:
 /aigon:feature-now dark-mode
 ```
 
-Use this when you want to go from idea to implementation in one session.
+Use this when you want to go from idea to implementation in one session. If `dark-mode` matches a feature already in the inbox, it will prioritise → setup → implement it. Otherwise it creates a new feature from scratch.
 
 ### Arena competition (parallel worktrees)
 
@@ -521,9 +521,10 @@ Pick an inbox item to prioritize:
 /aigon:research-prioritise i   # plugin-distribution
 ```
 
-Or fast-track a feature:
+Or fast-track a feature (matches inbox letter shortcuts too):
 ```bash
-/aigon:feature-now c           # create plugin feature in one step
+/aigon:feature-now c           # matches create-plugin in inbox → prioritise + setup + implement
+/aigon:feature-now dark-mode   # no inbox match → creates new feature + implement
 ```
 
 **Indicators in Kanban view:**
@@ -645,7 +646,7 @@ aigon feature-cleanup 55 --push
 | Command | Usage |
 |---|---|
 | Feature Create | `aigon feature-create <name>` |
-| Feature Now | `aigon feature-now <name>` |
+| Feature Now | `aigon feature-now <name>` (inbox match → prioritise + setup + implement; no match → create new) |
 | Feature Prioritise | `aigon feature-prioritise <name>` |
 | Feature Setup | `aigon feature-setup <ID> [agents...]` |
 | Feature Implement | `aigon feature-implement <ID>` |
@@ -723,7 +724,7 @@ The command set is consistent across agents. Differences are only command prefix
 | Slash Command | Description |
 |---|---|
 | `/aigon:feature-create <name>` | Create a feature spec |
-| `/aigon:feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
+| `/aigon:feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
 | `/aigon:board` | Show Kanban board or list view |
@@ -747,7 +748,7 @@ The command set is consistent across agents. Differences are only command prefix
 | Slash Command | Description |
 |---|---|
 | `/aigon:feature-create <name>` | Create a feature spec |
-| `/aigon:feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
+| `/aigon:feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
 | `/aigon:board` | Show Kanban board or list view |
@@ -771,7 +772,7 @@ The command set is consistent across agents. Differences are only command prefix
 | Slash Command | Description |
 |---|---|
 | `/prompts:aigon-feature-create <name>` | Create a feature spec |
-| `/prompts:aigon-feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
+| `/prompts:aigon-feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
 | `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
 | `/prompts:aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
 | `/prompts:aigon-board` | Show Kanban board or list view |
@@ -795,7 +796,7 @@ The command set is consistent across agents. Differences are only command prefix
 | Slash Command | Description |
 |---|---|
 | `/aigon-feature-create <name>` | Create a feature spec |
-| `/aigon-feature-now <name>` | Fast-track: create + setup + implement (solo branch) |
+| `/aigon-feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
 | `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
 | `/aigon-board` | Show Kanban board or list view |

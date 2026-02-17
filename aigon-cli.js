@@ -4310,7 +4310,7 @@ Worktree:
 
 Feature Commands (unified for solo and arena modes):
   feature-create <name>             Create feature spec in inbox
-  feature-now <name>                Create + prioritise + setup in one step (solo branch)
+  feature-now <name>                Fast-track: inbox match → prioritise + setup + implement; or create new + implement
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
   feature-setup <ID> [agents...]    Setup for solo (branch) or arena (worktrees)
   feature-implement <ID>            Implement feature in current branch/worktree
@@ -4340,7 +4340,7 @@ Examples:
 
   # Feature workflow
   aigon feature-create "dark-mode"     # Create new feature spec
-  aigon feature-now dark-mode          # Fast-track: create + setup + start immediately
+  aigon feature-now dark-mode          # Fast-track: inbox match or create new + implement
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
   aigon feature-setup 55               # Solo mode (creates branch)
   aigon feature-setup 55 cc gg cx cu      # Arena mode (creates worktrees)
