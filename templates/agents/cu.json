@@ -18,6 +18,7 @@
     "CMD_PREFIX": "/aigon-",
     "AGENT_TEAMS_RESEARCH_NOTE": "",
     "AGENT_TEAMS_FEATURE_NOTE": "",
+    "AGENT_DEV_SERVER_NOTE": "",
     "PERMISSION_SAVE_NOTE": ""
   },
 
@@ -47,6 +48,7 @@
     "feature-prioritise",
     "feature-setup",
     "feature-implement",
+    "feature-submit",
     "feature-eval",
     "feature-review",
     "feature-done",
