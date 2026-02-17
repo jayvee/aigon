@@ -25,7 +25,7 @@ For a quick overview and getting started, see the main [README.md](../README.md)
 
 For features where you want to go from idea to implementation immediately:
 
-* **Now:** `/aigon:feature-now dark-mode` (or `aigon feature-now dark-mode`) — creates spec directly in `/in-progress`, assigns an ID, creates a solo branch, and commits atomically. Then write the spec and implement in one session.
+* **Now:** `/aigon:feature-now dark-mode` (or `aigon feature-now dark-mode`) — if `dark-mode` matches an existing feature in the inbox, it runs prioritise → setup → implement. Otherwise it creates a new spec directly in `/in-progress`, assigns an ID, creates a solo branch, and commits atomically. Either way, you go from name to implementation in one session.
 * **Implement:** `/aigon:feature-implement <ID>` (or `/aigon-feature-implement <ID>` for Cursor, `/prompts:aigon-feature-implement <ID>` for Codex) to implement the feature.
 * **Done:** `/aigon:feature-done <ID>` (or `aigon feature-done <ID>`) merges and completes.
 
