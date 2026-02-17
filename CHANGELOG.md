@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.17.0] - 2026-02-18
+
+### Added
+- **Local dev proxy with subdomain routing** — `aigon proxy-setup` installs Caddy + dnsmasq for `*.test` domain routing; `aigon dev-server start` spawns the dev server, allocates a port, registers with the proxy, and waits for a health check
+- URL scheme: `http://{agent}-{featureId}.{appId}.test` (e.g., `http://cc-119.whenswell.test`)
+- `aigon dev-server` subcommands: `start`, `stop`, `logs`, `list`, `gc`, `url`
+- `dev-server start` spawns the process in the background with output captured to `~/.aigon/dev-proxy/logs/`
+- `dev-server logs [-f] [-n N]` to view and follow dev server output
+- `dev-server stop` kills the process by PID and deregisters from the proxy
+- `--register-only` flag for manual process management
+- `/aigon:dev-server` slash command template for all agents
+- Skill tools (`aigon_dev_server_start`, `aigon_dev_server_stop`, `aigon_dev_server_logs`, `aigon_dev_server_list`) so agents discover dev-server commands from natural language
+- Per-project `devProxy` config in `.aigon/config.json` (command, healthCheck, basePort)
+- `NEXT_PUBLIC_AIGON_*` env vars in `.env.local` for in-app dev banner support
+- Fallback to `localhost:<port>` when proxy is not set up
+- README and GUIDE documentation with setup, usage, and troubleshooting
+
+### Changed
+- `feature-implement` template updated: agents use `aigon dev-server start` instead of manual PORT management
+- Web/API profile `testInstructions` updated to reference `aigon dev-server start`
+- `STOP_DEV_SERVER_STEP` includes `aigon dev-server stop`
+
+## [2.16.3] - 2026-02-17
+
+### Fixed
+- `STOP_DEV_SERVER_STEP` reads PORT from `.env.local` instead of assuming `$PORT` is set in the shell
+
+## [2.16.2] - 2026-02-17
+
+### Fixed
+- Prevent nested Claude Code session error when opening worktrees — prepend `unset CLAUDECODE &&` to agent launch commands
+- `AGENT_DEV_SERVER_NOTE` placeholder for Codex PTY/background process warning
+- Clearer dev server instructions in worktree test steps (removed confusing `PORT=<port>` literal)
+
+## [2.16.1] - 2026-02-16
+
+### Added
+- `feature-now` detects inbox features and fast-tracks them (prioritise + setup + implement)
+- Kanban board example in README opening section
+
+### Changed
+- README and GUIDE updated for config refactor and port configuration
+
 ## [2.16.0] - 2026-02-16
 
 ### Added
