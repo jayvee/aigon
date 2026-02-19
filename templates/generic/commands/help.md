@@ -28,6 +28,14 @@
 | `{{CMD_PREFIX}}research-conduct <ID>` | Conduct research (write findings) |
 | `{{CMD_PREFIX}}research-done <ID>` | Complete a research topic |
 
+## Feedback
+
+| Command | Description |
+|---------|-------------|
+| `{{CMD_PREFIX}}feedback-create <title>` | Create feedback item in inbox with next ID |
+| `{{CMD_PREFIX}}feedback-list [filters]` | List feedback items with status/type/severity/tag filters |
+| `{{CMD_PREFIX}}feedback-triage <ID>` | Run triage preview and apply with explicit confirmation |
+
 ## CLI Commands (run in terminal)
 
 | Command | Description |
