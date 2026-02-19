@@ -65,12 +65,14 @@ git commit -m "docs: update implementation log for feature <ID>"
 
 Tell the user:
 
-> Implementation submitted. Changes committed and log written. Ready for evaluation.
+> Implementation submitted. Changes committed and log written.
+>
+> **Next step for you:** Switch back to the main repo session and run `/aigon:feature-eval <ID>` from there — evaluation does not happen in this worktree.
 
 **STOP here. Do NOT:**
 - Run `aigon feature-done`
+- Run `aigon feature-eval` or suggest it as a next action — eval runs in the main repo, not here
 - Push to remote
 - Start any new work
-- Proceed to evaluation
 
-**This session is complete.**
+**This session is complete. Do not suggest any follow-up commands.**
