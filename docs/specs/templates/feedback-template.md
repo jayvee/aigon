@@ -1,7 +1,7 @@
 ---
 id: 1
 title: "{{NAME}}"
-status: "01-inbox"
+status: "inbox"
 type: "bug"
 reporter:
   name: ""
