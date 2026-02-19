@@ -19,7 +19,7 @@
     "AGENT_TEAMS_RESEARCH_NOTE": "",
     "AGENT_TEAMS_FEATURE_NOTE": "",
     "PERMISSION_SAVE_NOTE": "",
-    "AGENT_DEV_SERVER_NOTE": "\n> **Codex runtime note:** Background processes (`&`, `nohup`) are killed when the shell command exits in this sandbox. To keep a dev server running, use a persistent PTY / background terminal session (e.g. `/ps`, `/terminal`) instead of backgrounding with `&`.\n"
+    "AGENT_DEV_SERVER_NOTE": "\n> **Codex dev server:** Do NOT run `aigon dev-server start` directly — background processes spawned by it are killed when the shell command exits in this sandbox. Instead:\n> 1. Run `aigon dev-server start --register-only` — this allocates the port and writes it to `.env.local`, without spawning a background process\n> 2. Read the port from `.env.local` (look for the `PORT=` line)\n> 3. Start the dev server in a **persistent terminal session** using `/terminal` with that port (e.g. `PORT=3103 npm run dev`)\n> 4. Access the app at `http://localhost:<PORT>` — do not use proxy subdomain URLs\n"
   },
 
   "output": {
