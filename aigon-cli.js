@@ -405,7 +405,7 @@ function sanitizeForDns(name) {
 
 /**
  * Get the app ID for dev proxy URLs.
- * Priority: .aigon/config.json appId > package.json name > dirname
+ * Priority: .aigon/config.json appId > package.json name > main repo dirname (worktree) > dirname
  * @returns {string} DNS-safe app ID
  */
 function getAppId() {
@@ -422,7 +422,16 @@ function getAppId() {
         } catch (e) { /* ignore */ }
     }
 
-    // 3. Directory name
+    // 3. If in a git worktree, use the main repo's directory name
+    // git rev-parse --git-common-dir returns an absolute path in worktrees, relative '.git' in main repo
+    try {
+        const commonDir = execSync('git rev-parse --git-common-dir', { stdio: 'pipe' }).toString().trim();
+        if (path.isAbsolute(commonDir)) {
+            return sanitizeForDns(path.basename(path.dirname(commonDir)));
+        }
+    } catch (e) { /* not in git */ }
+
+    // 4. Directory name
     return sanitizeForDns(path.basename(process.cwd()));
 }
 
