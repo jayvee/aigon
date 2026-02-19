@@ -1351,6 +1351,11 @@ const PATHS = {
         root: path.join(SPECS_ROOT, 'features'),
         folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused'],
         prefix: 'feature'
+    },
+    feedback: {
+        root: path.join(SPECS_ROOT, 'feedback'),
+        folders: ['01-inbox', '02-triaged', '03-actionable', '04-done', '05-wont-fix', '06-duplicate'],
+        prefix: 'feedback'
     }
 };
 
@@ -2304,6 +2309,7 @@ const commands = {
         };
         createDirs(PATHS.research.root, PATHS.research.folders);
         createDirs(PATHS.features.root, PATHS.features.folders);
+        createDirs(PATHS.feedback.root, PATHS.feedback.folders);
         const featLogs = path.join(PATHS.features.root, 'logs');
         if (!fs.existsSync(path.join(featLogs, 'selected'))) fs.mkdirSync(path.join(featLogs, 'selected'), { recursive: true });
         if (!fs.existsSync(path.join(featLogs, 'alternatives'))) fs.mkdirSync(path.join(featLogs, 'alternatives'), { recursive: true });
@@ -4097,6 +4103,7 @@ Branch: \`${soloBranch}\`
             };
             createDirs(PATHS.research.root, PATHS.research.folders);
             createDirs(PATHS.features.root, PATHS.features.folders);
+            createDirs(PATHS.feedback.root, PATHS.feedback.folders);
             const featLogs = path.join(PATHS.features.root, 'logs');
             if (!fs.existsSync(path.join(featLogs, 'selected'))) fs.mkdirSync(path.join(featLogs, 'selected'), { recursive: true });
             if (!fs.existsSync(path.join(featLogs, 'alternatives'))) fs.mkdirSync(path.join(featLogs, 'alternatives'), { recursive: true });
@@ -4130,6 +4137,13 @@ Branch: \`${soloBranch}\`
             changes[researchStatus].push('docs/specs/templates/research-template.md');
             if (researchStatus !== 'unchanged') {
                 console.log(`✅ ${researchStatus.charAt(0).toUpperCase() + researchStatus.slice(1)}: docs/specs/templates/research-template.md`);
+            }
+
+            const feedbackTemplate = readTemplate('specs/feedback-template.md');
+            const feedbackStatus = safeWriteWithStatus(path.join(specsTemplatesDir, 'feedback-template.md'), feedbackTemplate);
+            changes[feedbackStatus].push('docs/specs/templates/feedback-template.md');
+            if (feedbackStatus !== 'unchanged') {
+                console.log(`✅ ${feedbackStatus.charAt(0).toUpperCase() + feedbackStatus.slice(1)}: docs/specs/templates/feedback-template.md`);
             }
 
             // 5. Re-run install-agent for detected agents
