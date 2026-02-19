@@ -29,6 +29,17 @@
 | `{{CMD_PREFIX}}research-open <ID>` | Open all arena agents side-by-side for parallel research |
 | `{{CMD_PREFIX}}research-conduct <ID>` | Conduct research (write findings) |
 | `{{CMD_PREFIX}}research-done <ID>` | Complete research topic |
+
+### Feedback Commands
+| Command | Description |
+|---------|-------------|
+| `{{CMD_PREFIX}}feedback-create <title>` | Create a feedback item in inbox |
+| `{{CMD_PREFIX}}feedback-list [filters]` | List feedback by status/type/severity/tag |
+| `{{CMD_PREFIX}}feedback-triage <ID>` | Triage feedback with explicit apply confirmation |
+
+### Utility Commands
+| Command | Description |
+|---------|-------------|
 | `{{CMD_PREFIX}}help` | Show all Aigon commands |
 
 ## Modes

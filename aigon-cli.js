@@ -1359,7 +1359,632 @@ const PATHS = {
     }
 };
 
+const FEEDBACK_STATUS_TO_FOLDER = {
+    'inbox': '01-inbox',
+    'triaged': '02-triaged',
+    'actionable': '03-actionable',
+    'done': '04-done',
+    'wont-fix': '05-wont-fix',
+    'duplicate': '06-duplicate'
+};
+const FEEDBACK_FOLDER_TO_STATUS = Object.fromEntries(
+    Object.entries(FEEDBACK_STATUS_TO_FOLDER).map(([status, folder]) => [folder, status])
+);
+const FEEDBACK_STATUS_FLAG_TO_FOLDER = {
+    'inbox': FEEDBACK_STATUS_TO_FOLDER['inbox'],
+    'triaged': FEEDBACK_STATUS_TO_FOLDER['triaged'],
+    'actionable': FEEDBACK_STATUS_TO_FOLDER['actionable'],
+    'done': FEEDBACK_STATUS_TO_FOLDER['done'],
+    'wont-fix': FEEDBACK_STATUS_TO_FOLDER['wont-fix'],
+    'duplicate': FEEDBACK_STATUS_TO_FOLDER['duplicate']
+};
+const FEEDBACK_ACTION_TO_STATUS = {
+    'keep': 'triaged',
+    'mark-duplicate': 'duplicate',
+    'duplicate': 'duplicate',
+    'promote-feature': 'actionable',
+    'promote-research': 'actionable',
+    'wont-fix': 'wont-fix'
+};
+const FEEDBACK_DEFAULT_LIST_FOLDERS = [
+    FEEDBACK_STATUS_TO_FOLDER['inbox'],
+    FEEDBACK_STATUS_TO_FOLDER['triaged'],
+    FEEDBACK_STATUS_TO_FOLDER['actionable']
+];
+
 // --- Helper Functions ---
+
+function slugify(value) {
+    const text = String(value || '').trim().toLowerCase();
+    const slug = text.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return slug || 'untitled';
+}
+
+function parseCliOptions(args) {
+    const options = { _: [] };
+
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        if (!arg.startsWith('--')) {
+            options._.push(arg);
+            continue;
+        }
+
+        const eqIndex = arg.indexOf('=');
+        let key;
+        let value;
+
+        if (eqIndex !== -1) {
+            key = arg.slice(2, eqIndex);
+            value = arg.slice(eqIndex + 1);
+        } else {
+            key = arg.slice(2);
+            const nextArg = args[i + 1];
+            if (nextArg && !nextArg.startsWith('--')) {
+                value = nextArg;
+                i++;
+            } else {
+                value = true;
+            }
+        }
+
+        if (options[key] === undefined) {
+            options[key] = value;
+        } else if (Array.isArray(options[key])) {
+            options[key].push(value);
+        } else {
+            options[key] = [options[key], value];
+        }
+    }
+
+    return options;
+}
+
+function getOptionValue(options, key) {
+    const value = options[key];
+    if (Array.isArray(value)) {
+        return value[value.length - 1];
+    }
+    return value;
+}
+
+function getOptionValues(options, key) {
+    const value = options[key];
+    if (value === undefined) {
+        return [];
+    }
+    return Array.isArray(value) ? value : [value];
+}
+
+function normalizeFeedbackStatus(value) {
+    if (value === undefined || value === null) return null;
+    const normalized = String(value).trim().toLowerCase();
+    const aliasMap = {
+        'inbox': 'inbox',
+        'triaged': 'triaged',
+        'actionable': 'actionable',
+        'done': 'done',
+        'wont-fix': 'wont-fix',
+        'wontfix': 'wont-fix',
+        'wont_fix': 'wont-fix',
+        'duplicate': 'duplicate'
+    };
+    return aliasMap[normalized] || null;
+}
+
+function getFeedbackFolderFromStatus(status) {
+    return FEEDBACK_STATUS_TO_FOLDER[normalizeFeedbackStatus(status)] || null;
+}
+
+function normalizeFeedbackSeverity(value) {
+    if (value === undefined || value === null) return null;
+    const normalized = String(value).trim().toLowerCase();
+    if (!normalized || normalized === 'none' || normalized === 'null') {
+        return null;
+    }
+    return normalized;
+}
+
+function normalizeTag(value) {
+    if (value === undefined || value === null) return null;
+    const normalized = String(value).trim().toLowerCase().replace(/\s+/g, '-');
+    return normalized || null;
+}
+
+function parseTagListValue(value) {
+    if (value === undefined || value === null) return null;
+    const rawValues = Array.isArray(value) ? value : [value];
+    const tags = [];
+    let shouldClear = false;
+
+    rawValues.forEach(entry => {
+        const text = String(entry).trim();
+        if (!text) return;
+        if (text.toLowerCase() === 'none' || text.toLowerCase() === 'null') {
+            shouldClear = true;
+            return;
+        }
+        text.split(',').forEach(part => {
+            const tag = normalizeTag(part);
+            if (tag) tags.push(tag);
+        });
+    });
+
+    if (shouldClear) {
+        return [];
+    }
+    return [...new Set(tags)];
+}
+
+function normalizeTagList(value) {
+    if (value === undefined || value === null) return [];
+    const tags = parseTagListValue(value);
+    if (!tags) return [];
+    return tags;
+}
+
+function parseNumericArray(value) {
+    if (value === undefined || value === null) return [];
+    const values = Array.isArray(value) ? value : [value];
+    const parsed = values
+        .map(v => parseInt(v, 10))
+        .filter(v => Number.isFinite(v) && v > 0);
+    return [...new Set(parsed)];
+}
+
+function stripInlineYamlComment(value) {
+    let inSingle = false;
+    let inDouble = false;
+    let escaped = false;
+
+    for (let i = 0; i < value.length; i++) {
+        const ch = value[i];
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+        if (ch === '\\') {
+            escaped = true;
+            continue;
+        }
+        if (ch === '"' && !inSingle) {
+            inDouble = !inDouble;
+            continue;
+        }
+        if (ch === '\'' && !inDouble) {
+            inSingle = !inSingle;
+            continue;
+        }
+        if (ch === '#' && !inSingle && !inDouble && (i === 0 || /\s/.test(value[i - 1]))) {
+            return value.slice(0, i).trimEnd();
+        }
+    }
+
+    return value.trimEnd();
+}
+
+function splitInlineYamlArray(value) {
+    const parts = [];
+    let current = '';
+    let inSingle = false;
+    let inDouble = false;
+    let escaped = false;
+
+    for (let i = 0; i < value.length; i++) {
+        const ch = value[i];
+        if (escaped) {
+            current += ch;
+            escaped = false;
+            continue;
+        }
+        if (ch === '\\') {
+            current += ch;
+            escaped = true;
+            continue;
+        }
+        if (ch === '"' && !inSingle) {
+            inDouble = !inDouble;
+            current += ch;
+            continue;
+        }
+        if (ch === '\'' && !inDouble) {
+            inSingle = !inSingle;
+            current += ch;
+            continue;
+        }
+        if (ch === ',' && !inSingle && !inDouble) {
+            parts.push(current.trim());
+            current = '';
+            continue;
+        }
+        current += ch;
+    }
+
+    if (current.trim()) {
+        parts.push(current.trim());
+    }
+    return parts;
+}
+
+function parseYamlScalar(rawValue) {
+    const value = stripInlineYamlComment(String(rawValue)).trim();
+    if (value === '') return '';
+
+    if (value.startsWith('"') && value.endsWith('"')) {
+        try {
+            return JSON.parse(value);
+        } catch (e) {
+            return value.slice(1, -1);
+        }
+    }
+    if (value.startsWith('\'') && value.endsWith('\'')) {
+        return value.slice(1, -1).replace(/\\'/g, '\'');
+    }
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    if (value === 'null' || value === '~') return null;
+    if (/^-?\d+$/.test(value)) return parseInt(value, 10);
+    if (value.startsWith('[') && value.endsWith(']')) {
+        const inner = value.slice(1, -1).trim();
+        if (!inner) return [];
+        return splitInlineYamlArray(inner).map(parseYamlScalar);
+    }
+    return value;
+}
+
+function parseFrontMatter(content) {
+    const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+    if (!match) {
+        return { data: {}, body: content, hasFrontMatter: false };
+    }
+
+    const data = {};
+    let currentObjectKey = null;
+    const rawFrontMatter = match[1];
+
+    rawFrontMatter.split(/\r?\n/).forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) return;
+
+        const indent = (line.match(/^\s*/) || [''])[0].length;
+        const kvMatch = trimmed.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
+        if (!kvMatch) return;
+        const [, key, rawValue] = kvMatch;
+
+        if (indent === 0) {
+            if (rawValue === '') {
+                data[key] = {};
+                currentObjectKey = key;
+            } else {
+                data[key] = parseYamlScalar(rawValue);
+                currentObjectKey = null;
+            }
+            return;
+        }
+
+        if (currentObjectKey &&
+            typeof data[currentObjectKey] === 'object' &&
+            !Array.isArray(data[currentObjectKey])) {
+            data[currentObjectKey][key] = parseYamlScalar(rawValue);
+        }
+    });
+
+    const body = content.slice(match[0].length);
+    return { data, body, hasFrontMatter: true };
+}
+
+function serializeYamlScalar(value) {
+    if (value === null || value === undefined) return 'null';
+    if (Array.isArray(value)) {
+        return `[${value.map(v => serializeYamlScalar(v)).join(', ')}]`;
+    }
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return String(value);
+    }
+    if (typeof value === 'boolean') {
+        return value ? 'true' : 'false';
+    }
+    return JSON.stringify(String(value));
+}
+
+function serializeFeedbackFrontMatter(metadata) {
+    const reporter = metadata.reporter || {};
+    const source = metadata.source || {};
+    const lines = [
+        '---',
+        `id: ${Number.isFinite(metadata.id) ? metadata.id : 0}`,
+        `title: ${serializeYamlScalar(metadata.title || '')}`,
+        `status: ${serializeYamlScalar(normalizeFeedbackStatus(metadata.status) || 'inbox')}`,
+        `type: ${serializeYamlScalar(metadata.type || 'unknown')}`,
+        'reporter:',
+        `  name: ${serializeYamlScalar(reporter.name || '')}`,
+        `  identifier: ${serializeYamlScalar(reporter.identifier || '')}`,
+        'source:',
+        `  channel: ${serializeYamlScalar(source.channel || '')}`,
+        `  reference: ${serializeYamlScalar(source.reference || '')}`
+    ];
+
+    if (source.url) {
+        lines.push(`  url: ${serializeYamlScalar(source.url)}`);
+    }
+    if (metadata.severity) {
+        lines.push(`severity: ${serializeYamlScalar(metadata.severity)}`);
+    }
+    if (Array.isArray(metadata.tags) && metadata.tags.length > 0) {
+        lines.push(`tags: ${serializeYamlScalar(metadata.tags)}`);
+    }
+    if (Number.isFinite(metadata.votes)) {
+        lines.push(`votes: ${metadata.votes}`);
+    }
+    if (Number.isFinite(metadata.duplicate_of) && metadata.duplicate_of > 0) {
+        lines.push(`duplicate_of: ${metadata.duplicate_of}`);
+    }
+    if (Array.isArray(metadata.linked_features) && metadata.linked_features.length > 0) {
+        lines.push(`linked_features: ${serializeYamlScalar(metadata.linked_features)}`);
+    }
+    if (Array.isArray(metadata.linked_research) && metadata.linked_research.length > 0) {
+        lines.push(`linked_research: ${serializeYamlScalar(metadata.linked_research)}`);
+    }
+
+    lines.push('---');
+    return lines.join('\n');
+}
+
+function escapeRegex(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function extractMarkdownSection(body, heading) {
+    const sectionRegex = new RegExp(
+        `^##\\s+${escapeRegex(heading)}\\s*\\r?\\n([\\s\\S]*?)(?=^##\\s+|\\Z)`,
+        'im'
+    );
+    const match = body.match(sectionRegex);
+    if (!match) return '';
+    return match[1]
+        .replace(/<!--[\s\S]*?-->/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function extractFeedbackSummary(body) {
+    return extractMarkdownSection(body, 'Summary');
+}
+
+function normalizeFeedbackMetadata(data, defaults = {}) {
+    const reporterDefaults = defaults.reporter && typeof defaults.reporter === 'object' ? defaults.reporter : {};
+    const sourceDefaults = defaults.source && typeof defaults.source === 'object' ? defaults.source : {};
+    const reporterData = data.reporter && typeof data.reporter === 'object' ? data.reporter : {};
+    const sourceData = data.source && typeof data.source === 'object' ? data.source : {};
+
+    const idCandidate = data.id !== undefined ? parseInt(data.id, 10) : parseInt(defaults.id, 10);
+    const status = normalizeFeedbackStatus(data.status) ||
+        normalizeFeedbackStatus(defaults.status) ||
+        'inbox';
+    const type = String(data.type !== undefined ? data.type : (defaults.type || 'unknown')).trim() || 'unknown';
+
+    const metadata = {
+        id: Number.isFinite(idCandidate) ? idCandidate : 0,
+        title: String(data.title !== undefined ? data.title : (defaults.title || '')),
+        status,
+        type,
+        reporter: {
+            name: String(reporterData.name !== undefined ? reporterData.name : (reporterDefaults.name || '')),
+            identifier: String(reporterData.identifier !== undefined ? reporterData.identifier : (reporterDefaults.identifier || ''))
+        },
+        source: {
+            channel: String(sourceData.channel !== undefined ? sourceData.channel : (sourceDefaults.channel || '')),
+            reference: String(sourceData.reference !== undefined ? sourceData.reference : (sourceDefaults.reference || ''))
+        }
+    };
+
+    const sourceUrl = sourceData.url !== undefined ? sourceData.url : sourceDefaults.url;
+    if (sourceUrl) {
+        metadata.source.url = String(sourceUrl);
+    }
+
+    const severityValue = data.severity !== undefined ? data.severity : defaults.severity;
+    const severity = normalizeFeedbackSeverity(severityValue);
+    if (severity) {
+        metadata.severity = severity;
+    }
+
+    const tagsValue = data.tags !== undefined ? data.tags : defaults.tags;
+    const tags = normalizeTagList(tagsValue);
+    if (tags.length > 0) {
+        metadata.tags = tags;
+    }
+
+    const votesValue = data.votes !== undefined ? data.votes : defaults.votes;
+    const votes = parseInt(votesValue, 10);
+    if (Number.isFinite(votes)) {
+        metadata.votes = votes;
+    }
+
+    const duplicateValue = data.duplicate_of !== undefined ? data.duplicate_of : defaults.duplicate_of;
+    const duplicateOf = parseInt(duplicateValue, 10);
+    if (Number.isFinite(duplicateOf) && duplicateOf > 0) {
+        metadata.duplicate_of = duplicateOf;
+    }
+
+    const linkedFeaturesValue = data.linked_features !== undefined ? data.linked_features : defaults.linked_features;
+    const linkedFeatures = parseNumericArray(linkedFeaturesValue);
+    if (linkedFeatures.length > 0) {
+        metadata.linked_features = linkedFeatures;
+    }
+
+    const linkedResearchValue = data.linked_research !== undefined ? data.linked_research : defaults.linked_research;
+    const linkedResearch = parseNumericArray(linkedResearchValue);
+    if (linkedResearch.length > 0) {
+        metadata.linked_research = linkedResearch;
+    }
+
+    return metadata;
+}
+
+function buildFeedbackDocumentContent(metadata, body) {
+    const normalizedBody = body ? body.replace(/^\r?\n/, '') : '';
+    const ensuredBody = normalizedBody ? (normalizedBody.endsWith('\n') ? normalizedBody : `${normalizedBody}\n`) : '';
+    return `${serializeFeedbackFrontMatter(metadata)}\n\n${ensuredBody}`;
+}
+
+function readFeedbackDocument(fileObj) {
+    const content = fs.readFileSync(fileObj.fullPath, 'utf8');
+    const parsed = parseFrontMatter(content);
+    const fileMatch = fileObj.file.match(/^feedback-(\d+)-(.*)\.md$/);
+    const fallbackId = fileMatch ? parseInt(fileMatch[1], 10) : 0;
+    const fallbackTitle = fileMatch ? fileMatch[2].replace(/-/g, ' ') : '';
+    const fallbackStatus = FEEDBACK_FOLDER_TO_STATUS[fileObj.folder] || 'inbox';
+
+    const metadata = normalizeFeedbackMetadata(parsed.data, {
+        id: fallbackId,
+        title: fallbackTitle,
+        status: fallbackStatus,
+        type: 'unknown',
+        reporter: { name: '', identifier: '' },
+        source: { channel: '', reference: '' }
+    });
+    const summary = extractFeedbackSummary(parsed.body);
+
+    return {
+        ...fileObj,
+        metadata,
+        body: parsed.body,
+        summary
+    };
+}
+
+function collectFeedbackItems(folders = PATHS.feedback.folders) {
+    const items = [];
+
+    folders.forEach(folder => {
+        const folderPath = path.join(PATHS.feedback.root, folder);
+        if (!fs.existsSync(folderPath)) return;
+
+        const files = fs.readdirSync(folderPath)
+            .filter(file => file.startsWith(`${PATHS.feedback.prefix}-`) && file.endsWith('.md'))
+            .sort();
+
+        files.forEach(file => {
+            const fullPath = path.join(folderPath, file);
+            items.push(readFeedbackDocument({ file, folder, fullPath }));
+        });
+    });
+
+    items.sort((a, b) => {
+        const aId = Number.isFinite(a.metadata.id) ? a.metadata.id : Number.MAX_SAFE_INTEGER;
+        const bId = Number.isFinite(b.metadata.id) ? b.metadata.id : Number.MAX_SAFE_INTEGER;
+        if (aId !== bId) return aId - bId;
+        return a.file.localeCompare(b.file);
+    });
+
+    return items;
+}
+
+function tokenizeText(value) {
+    return new Set(
+        String(value || '')
+            .toLowerCase()
+            .match(/[a-z0-9]+/g) || []
+    );
+}
+
+function jaccardSimilarity(setA, setB) {
+    if (setA.size === 0 || setB.size === 0) return 0;
+    let intersection = 0;
+    setA.forEach(token => {
+        if (setB.has(token)) intersection++;
+    });
+    const union = new Set([...setA, ...setB]).size;
+    return union === 0 ? 0 : intersection / union;
+}
+
+function findDuplicateFeedbackCandidates(targetItem, allItems, limit = 3) {
+    const targetTitleTokens = tokenizeText(targetItem.metadata.title);
+    const targetSummaryTokens = tokenizeText(targetItem.summary);
+    const targetCombinedTokens = new Set([...targetTitleTokens, ...targetSummaryTokens]);
+
+    return allItems
+        .filter(item => item.fullPath !== targetItem.fullPath && item.metadata.id !== targetItem.metadata.id)
+        .map(item => {
+            const titleTokens = tokenizeText(item.metadata.title);
+            const summaryTokens = tokenizeText(item.summary);
+            const combinedTokens = new Set([...titleTokens, ...summaryTokens]);
+
+            const titleScore = jaccardSimilarity(targetTitleTokens, titleTokens);
+            const summaryScore = jaccardSimilarity(targetSummaryTokens, summaryTokens);
+            const combinedScore = jaccardSimilarity(targetCombinedTokens, combinedTokens);
+            const weightedScore = (titleScore * 0.7) + (summaryScore * 0.3);
+            const score = Math.max(weightedScore, combinedScore);
+
+            return {
+                id: item.metadata.id,
+                title: item.metadata.title,
+                status: item.metadata.status,
+                score,
+                file: item.file
+            };
+        })
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+}
+
+function buildFeedbackTriageRecommendation(metadata, duplicateCandidates) {
+    const topDuplicate = duplicateCandidates[0];
+    if (metadata.duplicate_of) {
+        return {
+            action: 'mark-duplicate',
+            reason: `duplicate_of is set (#${metadata.duplicate_of})`
+        };
+    }
+    if (topDuplicate && topDuplicate.score >= 0.72) {
+        return {
+            action: 'mark-duplicate',
+            reason: `high similarity to #${topDuplicate.id} (${Math.round(topDuplicate.score * 100)}%)`
+        };
+    }
+    if (metadata.status === 'wont-fix') {
+        return {
+            action: 'wont-fix',
+            reason: 'status is already set to wont-fix'
+        };
+    }
+
+    const severity = normalizeFeedbackSeverity(metadata.severity);
+    const type = String(metadata.type || '').toLowerCase();
+    if (severity === 'high' || severity === 'critical') {
+        if (['bug', 'performance', 'reliability'].includes(type)) {
+            return {
+                action: 'promote-to-feature',
+                reason: 'high-severity defect should be routed into implementation'
+            };
+        }
+        if (['feature-request', 'ux', 'usability'].includes(type)) {
+            return {
+                action: 'promote-to-feature',
+                reason: 'high-impact request should become actionable'
+            };
+        }
+        return {
+            action: 'promote-to-research',
+            reason: 'high-severity signal needs investigation before implementation'
+        };
+    }
+
+    return {
+        action: 'keep',
+        reason: 'no strong duplicate or escalation signal'
+    };
+}
+
+function formatFeedbackFieldValue(value) {
+    if (value === undefined || value === null || value === '') return 'unset';
+    if (Array.isArray(value)) {
+        return value.length ? value.join(', ') : 'none';
+    }
+    return String(value);
+}
 
 function getNextId(typeConfig) {
     let maxId = 0;
@@ -1745,6 +2370,9 @@ const COMMAND_ARG_HINTS = {
     'research-conduct': '<ID>',
     'research-synthesize': '<ID>',
     'research-done': '<ID>',
+    'feedback-create': '<title>',
+    'feedback-list': '[--inbox|--triaged|--actionable|--done|--wont-fix|--duplicate|--all] [--type <type>] [--severity <severity>] [--tag <tag>]',
+    'feedback-triage': '<ID> [--type <type>] [--severity <severity|none>] [--tags <csv|none>] [--status <status>] [--duplicate-of <ID|none>] [--action <keep|mark-duplicate|promote-feature|promote-research|wont-fix>] [--apply] [--yes]',
     'help': '',
 };
 
@@ -2386,6 +3014,328 @@ const commands = {
         console.log(`✅ Created: ./docs/specs/research-topics/01-inbox/${filename}`);
         openInEditor(filePath);
         console.log(`📝 Edit the topic, then prioritise it using command: research-prioritise ${slug}`);
+    },
+    'feedback-create': (args) => {
+        const title = args[0];
+        if (!title) return console.error("Usage: aigon feedback-create <title>\nExample: aigon feedback-create \"Login fails on Safari\"");
+
+        const inboxDir = path.join(PATHS.feedback.root, FEEDBACK_STATUS_TO_FOLDER['inbox']);
+        if (!fs.existsSync(inboxDir)) {
+            fs.mkdirSync(inboxDir, { recursive: true });
+        }
+
+        const nextId = getNextId(PATHS.feedback);
+        const slug = slugify(title);
+        const filename = `feedback-${nextId}-${slug}.md`;
+        const filePath = path.join(inboxDir, filename);
+
+        if (fs.existsSync(filePath)) {
+            return console.error(`❌ Feedback already exists: ${filename}`);
+        }
+
+        const projectTemplatePath = path.join(SPECS_ROOT, 'templates', 'feedback-template.md');
+        const template = fs.existsSync(projectTemplatePath)
+            ? fs.readFileSync(projectTemplatePath, 'utf8')
+            : readTemplate('specs/feedback-template.md');
+        const parsedTemplate = parseFrontMatter(template);
+
+        const metadata = normalizeFeedbackMetadata(parsedTemplate.data, {
+            id: nextId,
+            title,
+            status: 'inbox',
+            type: 'bug',
+            reporter: { name: '', identifier: '' },
+            source: { channel: '', reference: '' }
+        });
+        metadata.id = nextId;
+        metadata.title = title;
+        metadata.status = 'inbox';
+
+        const content = buildFeedbackDocumentContent(metadata, parsedTemplate.body);
+        fs.writeFileSync(filePath, content);
+
+        console.log(`✅ Created: ./docs/specs/feedback/01-inbox/${filename}`);
+        openInEditor(filePath);
+        console.log(`📝 Next: fill in summary/evidence, then triage with: aigon feedback-triage ${nextId}`);
+    },
+    'feedback-list': (args) => {
+        const options = parseCliOptions(args);
+        const includeAll = options.all !== undefined;
+
+        const explicitStatusFlags = Object.keys(FEEDBACK_STATUS_FLAG_TO_FOLDER)
+            .filter(flag => options[flag] !== undefined);
+        const targetFolders = includeAll
+            ? PATHS.feedback.folders
+            : explicitStatusFlags.length > 0
+                ? explicitStatusFlags.map(flag => FEEDBACK_STATUS_FLAG_TO_FOLDER[flag])
+                : FEEDBACK_DEFAULT_LIST_FOLDERS;
+
+        const typeFilterRaw = getOptionValue(options, 'type');
+        const typeFilter = typeFilterRaw ? String(typeFilterRaw).trim().toLowerCase() : null;
+        const severityFilter = normalizeFeedbackSeverity(getOptionValue(options, 'severity'));
+
+        const tagFilters = [...new Set([
+            ...normalizeTagList(getOptionValue(options, 'tags')),
+            ...normalizeTagList(options.tag !== undefined ? getOptionValues(options, 'tag') : [])
+        ])];
+
+        const items = collectFeedbackItems(targetFolders).filter(item => {
+            const itemType = String(item.metadata.type || '').toLowerCase();
+            const itemSeverity = normalizeFeedbackSeverity(item.metadata.severity);
+            const itemTags = normalizeTagList(item.metadata.tags);
+
+            if (typeFilter && itemType !== typeFilter) return false;
+            if (severityFilter && itemSeverity !== severityFilter) return false;
+            if (tagFilters.length > 0 && !tagFilters.every(tag => itemTags.includes(tag))) return false;
+            return true;
+        });
+
+        const filterParts = [];
+        if (includeAll) {
+            filterParts.push('status=all');
+        } else if (explicitStatusFlags.length > 0) {
+            filterParts.push(`status=${explicitStatusFlags.join(',')}`);
+        } else {
+            filterParts.push('status=inbox,triaged,actionable');
+        }
+        if (typeFilter) filterParts.push(`type=${typeFilter}`);
+        if (severityFilter) filterParts.push(`severity=${severityFilter}`);
+        if (tagFilters.length > 0) filterParts.push(`tag=${tagFilters.join(',')}`);
+
+        if (items.length === 0) {
+            console.log('\nNo feedback items matched the current filters.');
+            console.log(`   Filters: ${filterParts.join(' | ')}`);
+            return;
+        }
+
+        console.log(`\n📬 Feedback items (${items.length})`);
+        console.log(`   Filters: ${filterParts.join(' | ')}`);
+
+        items.forEach(item => {
+            const idLabel = item.metadata.id > 0 ? `#${item.metadata.id}` : '#?';
+            const typeLabel = item.metadata.type || 'unknown';
+            const severityLabel = item.metadata.severity || '-';
+            const tagsLabel = item.metadata.tags && item.metadata.tags.length > 0
+                ? item.metadata.tags.join(', ')
+                : '-';
+            const relPath = `./${path.relative(process.cwd(), item.fullPath)}`;
+
+            console.log(`\n- ${idLabel} [${item.metadata.status}] ${item.metadata.title}`);
+            console.log(`  type=${typeLabel}  severity=${severityLabel}  tags=${tagsLabel}`);
+            if (item.metadata.duplicate_of) {
+                console.log(`  duplicate_of=#${item.metadata.duplicate_of}`);
+            }
+            console.log(`  path=${relPath}`);
+        });
+    },
+    'feedback-triage': (args) => {
+        const id = args[0];
+        if (!id) {
+            return console.error(
+                "Usage: aigon feedback-triage <ID> [--type <type>] [--severity <severity|none>] [--tags <csv|none>] [--tag <tag>] [--status <status>] [--duplicate-of <ID|none>] [--action <keep|mark-duplicate|promote-feature|promote-research|wont-fix>] [--apply] [--yes]"
+            );
+        }
+
+        const options = parseCliOptions(args.slice(1));
+        const found = findFile(PATHS.feedback, id, PATHS.feedback.folders);
+        if (!found) return console.error(`❌ Could not find feedback "${id}" in docs/specs/feedback/.`);
+
+        const item = readFeedbackDocument(found);
+        const allItems = collectFeedbackItems(PATHS.feedback.folders);
+        const duplicateCandidates = findDuplicateFeedbackCandidates(item, allItems, 5);
+
+        const proposed = JSON.parse(JSON.stringify(item.metadata));
+
+        const typeOption = getOptionValue(options, 'type');
+        if (typeOption !== undefined) {
+            const normalizedType = String(typeOption).trim().toLowerCase();
+            if (!normalizedType) {
+                return console.error('❌ --type cannot be empty.');
+            }
+            proposed.type = normalizedType;
+        }
+
+        const severityOption = getOptionValue(options, 'severity');
+        if (severityOption !== undefined) {
+            const normalizedSeverity = normalizeFeedbackSeverity(severityOption);
+            if (normalizedSeverity) {
+                proposed.severity = normalizedSeverity;
+            } else {
+                delete proposed.severity;
+            }
+        }
+
+        let clearTags = false;
+        const collectedTags = [];
+        if (options.tags !== undefined) {
+            const tags = parseTagListValue(getOptionValue(options, 'tags'));
+            if (Array.isArray(tags) && tags.length === 0) clearTags = true;
+            if (Array.isArray(tags) && tags.length > 0) collectedTags.push(...tags);
+        }
+        if (options.tag !== undefined) {
+            const tags = parseTagListValue(getOptionValues(options, 'tag'));
+            if (Array.isArray(tags) && tags.length === 0) clearTags = true;
+            if (Array.isArray(tags) && tags.length > 0) collectedTags.push(...tags);
+        }
+        if (options.tags !== undefined || options.tag !== undefined) {
+            if (clearTags) {
+                delete proposed.tags;
+            } else {
+                const uniqueTags = [...new Set(collectedTags)];
+                if (uniqueTags.length > 0) {
+                    proposed.tags = uniqueTags;
+                } else {
+                    delete proposed.tags;
+                }
+            }
+        }
+
+        const duplicateOption = getOptionValue(options, 'duplicate-of');
+        if (duplicateOption !== undefined) {
+            const duplicateText = String(duplicateOption).trim().toLowerCase();
+            if (duplicateText === 'none' || duplicateText === 'null') {
+                delete proposed.duplicate_of;
+            } else {
+                const duplicateId = parseInt(duplicateText, 10);
+                if (!Number.isFinite(duplicateId) || duplicateId <= 0) {
+                    return console.error('❌ --duplicate-of must be a positive numeric ID or "none".');
+                }
+                if (duplicateId === proposed.id) {
+                    return console.error('❌ --duplicate-of cannot reference the same feedback ID.');
+                }
+                proposed.duplicate_of = duplicateId;
+            }
+        }
+
+        const statusRaw = getOptionValue(options, 'status');
+        const statusOption = statusRaw !== undefined ? normalizeFeedbackStatus(statusRaw) : null;
+        if (statusRaw !== undefined && !statusOption) {
+            return console.error('❌ Invalid --status. Use: inbox, triaged, actionable, done, wont-fix, duplicate');
+        }
+
+        const actionAliases = {
+            'keep': 'keep',
+            'mark-duplicate': 'mark-duplicate',
+            'mark_duplicate': 'mark-duplicate',
+            'duplicate': 'duplicate',
+            'promote-feature': 'promote-feature',
+            'promote_feature': 'promote-feature',
+            'promote-research': 'promote-research',
+            'promote_research': 'promote-research',
+            'wont-fix': 'wont-fix',
+            'wontfix': 'wont-fix'
+        };
+        const actionRaw = getOptionValue(options, 'action');
+        const actionOption = actionRaw !== undefined
+            ? actionAliases[String(actionRaw).trim().toLowerCase()]
+            : null;
+        if (actionRaw !== undefined && !actionOption) {
+            return console.error('❌ Invalid --action. Use: keep, mark-duplicate, promote-feature, promote-research, wont-fix');
+        }
+
+        let nextStatus = statusOption;
+        if (!nextStatus && actionOption) {
+            nextStatus = FEEDBACK_ACTION_TO_STATUS[actionOption];
+        }
+        if (!nextStatus) {
+            nextStatus = item.metadata.status === 'inbox' ? 'triaged' : (item.metadata.status || 'triaged');
+        }
+        proposed.status = nextStatus;
+
+        if (proposed.duplicate_of && statusRaw === undefined && actionRaw === undefined) {
+            proposed.status = 'duplicate';
+        }
+        if (proposed.status === 'duplicate' && !proposed.duplicate_of && duplicateCandidates.length > 0) {
+            proposed.duplicate_of = duplicateCandidates[0].id;
+        }
+        if (proposed.status !== 'duplicate') {
+            delete proposed.duplicate_of;
+        }
+
+        const recommendation = buildFeedbackTriageRecommendation(proposed, duplicateCandidates);
+        const targetFolder = getFeedbackFolderFromStatus(proposed.status) || found.folder;
+
+        const changedFields = [];
+        const trackedFields = ['type', 'severity', 'status', 'duplicate_of'];
+        trackedFields.forEach(field => {
+            const currentValue = item.metadata[field];
+            const nextValue = proposed[field];
+            if (JSON.stringify(currentValue) !== JSON.stringify(nextValue)) {
+                changedFields.push(`${field}: ${formatFeedbackFieldValue(currentValue)} -> ${formatFeedbackFieldValue(nextValue)}`);
+            }
+        });
+        const currentTags = normalizeTagList(item.metadata.tags);
+        const nextTags = normalizeTagList(proposed.tags);
+        if (JSON.stringify(currentTags) !== JSON.stringify(nextTags)) {
+            changedFields.push(`tags: ${formatFeedbackFieldValue(currentTags)} -> ${formatFeedbackFieldValue(nextTags)}`);
+        }
+        if (found.folder !== targetFolder) {
+            changedFields.push(`folder: ${found.folder} -> ${targetFolder}`);
+        }
+
+        console.log(`\n📋 Feedback #${item.metadata.id}: ${item.metadata.title}`);
+        console.log(`   Path: ./${path.relative(process.cwd(), found.fullPath)}`);
+        console.log(`   Current: status=${item.metadata.status}, type=${item.metadata.type}, severity=${item.metadata.severity || 'unset'}, tags=${formatFeedbackFieldValue(item.metadata.tags)}`);
+        console.log(`   Proposed: status=${proposed.status}, type=${proposed.type}, severity=${proposed.severity || 'unset'}, tags=${formatFeedbackFieldValue(proposed.tags)}`);
+        if (proposed.duplicate_of) {
+            console.log(`   Proposed duplicate_of: #${proposed.duplicate_of}`);
+        }
+
+        if (duplicateCandidates.length > 0) {
+            console.log('\n🔎 Duplicate candidates:');
+            duplicateCandidates.forEach(candidate => {
+                console.log(`   #${candidate.id} (${Math.round(candidate.score * 100)}%) [${candidate.status}] ${candidate.title}`);
+            });
+        } else {
+            console.log('\n🔎 Duplicate candidates: none found');
+        }
+
+        console.log(`\n🤖 Suggested next action: ${recommendation.action}`);
+        console.log(`   Reason: ${recommendation.reason}`);
+
+        if (changedFields.length === 0) {
+            console.log('\nℹ️  No metadata changes are proposed.');
+        } else {
+            console.log('\n🛠️  Proposed changes:');
+            changedFields.forEach(change => console.log(`   - ${change}`));
+        }
+
+        const applyRequested = options.apply !== undefined;
+        const confirmed = options.yes !== undefined;
+        const replayArgs = args
+            .slice(1)
+            .filter(arg => arg !== '--apply' && arg !== '--yes');
+
+        if (!applyRequested) {
+            console.log('\n🔒 Preview only. No changes written.');
+            console.log(`   To apply: aigon feedback-triage ${id}${replayArgs.length ? ` ${replayArgs.join(' ')}` : ''} --apply --yes`);
+            return;
+        }
+
+        if (!confirmed) {
+            console.log('\n⚠️  Confirmation required. Re-run with --yes to apply these changes.');
+            return;
+        }
+
+        if (proposed.status === 'duplicate' && !proposed.duplicate_of) {
+            return console.error('❌ Duplicate status requires duplicate_of. Pass --duplicate-of <ID>.');
+        }
+
+        if (changedFields.length === 0) {
+            console.log('\n✅ Nothing to apply.');
+            return;
+        }
+
+        const updatedContent = buildFeedbackDocumentContent(proposed, item.body);
+        fs.writeFileSync(found.fullPath, updatedContent);
+
+        if (targetFolder !== found.folder) {
+            moveFile(found, targetFolder);
+        } else {
+            console.log(`✅ Updated: ./${path.relative(process.cwd(), found.fullPath)}`);
+        }
+
+        console.log(`✅ Applied triage for feedback #${proposed.id}.`);
     },
     'research-prioritise': (args) => {
         let name = args[0];
@@ -5161,6 +6111,11 @@ Research (unified for solo and arena modes):
   research-conduct <ID>             Conduct research (agent writes findings)
   research-done <ID> [--complete]   Complete research (shows summary in arena mode)
 
+Feedback:
+  feedback-create <title>           Create feedback doc in inbox (assigns next ID)
+  feedback-list [filters...]        List feedback items by status/type/severity/tag
+  feedback-triage <ID> [options]    Preview and apply triage updates (requires --apply --yes)
+
 Visualization:
   board                             Show Kanban board view of features and research
   board --list                      Show detailed list view (features and research)
@@ -5203,6 +6158,13 @@ Examples:
   aigon research-conduct 05            # Agent conducts research
   aigon research-done 05               # Shows findings summary (arena)
   aigon research-done 05 --complete    # Complete research
+
+  # Feedback workflow
+  aigon feedback-create "Save fails"   # Create feedback in inbox
+  aigon feedback-list --inbox          # List inbox feedback
+  aigon feedback-list --all --tag auth # Filter by tag
+  aigon feedback-triage 14             # Preview triage suggestions
+  aigon feedback-triage 14 --type bug --severity high --tags auth,regression --apply --yes
 
 Agents:
   cc (claude)   - Claude Code
