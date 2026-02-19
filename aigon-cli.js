@@ -72,7 +72,7 @@ const DEFAULT_GLOBAL_CONFIG = {
     agents: {
         cc: { cli: 'claude', implementFlag: '--permission-mode acceptEdits' },
         cu: { cli: 'agent', implementFlag: '--force' },
-        gg: { cli: 'gemini', implementFlag: '--sandbox --yolo' },
+        gg: { cli: 'gemini', implementFlag: '--yolo' },
         cx: { cli: 'codex', implementFlag: '--full-auto' }
     }
 };
