@@ -72,6 +72,9 @@
     "research-conduct",
     "research-synthesize",
     "research-done",
+    "feedback-create",
+    "feedback-list",
+    "feedback-triage",
     "dev-server",
     "help"
   ]
