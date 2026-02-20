@@ -54,3 +54,11 @@ Agent: cx
 - Kept feedback doc parsing/writing local to `aigon-cli.js` (no new dependencies) to match existing single-file CLI architecture.
 - Implemented lightweight duplicate scoring with token-based similarity over title + summary (MVP-appropriate; deterministic and fast).
 - Defaulted `feedback-list` (no status flags) to active lanes (`inbox`, `triaged`, `actionable`) and preserved `--all` for full lifecycle visibility.
+
+## Submission
+- Implementation commit: `39c9b1c` (`feat: add feedback triage workflow commands`).
+- Final verification before submission:
+  - `node --check aigon-cli.js`
+  - end-to-end feedback flow in temp repo (`create` -> `list` -> `triage preview` -> `triage apply`)
+  - duplicate status path validation (`--status duplicate` auto-link behavior)
+  - `install-agent` command generation validation for new feedback prompt templates
