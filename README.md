@@ -395,6 +395,16 @@ Examples for the same action:
 
 ## Workflow Overview
 
+### Research lifecycle
+
+1. Create topic: `research-create`
+2. Prioritise: `research-prioritise`
+3. Setup: `research-setup`
+4. Open agents (arena): `research-open`
+5. Conduct: `research-conduct`
+6. Synthesize (arena): `research-synthesize`
+7. Complete: `research-done`
+
 ### Feature lifecycle
 
 1. Create spec: `feature-create`
@@ -405,15 +415,13 @@ Examples for the same action:
 6. Finish and merge: `feature-done`
 7. Cleanup losing arena branches/worktrees (arena only): `feature-cleanup`
 
-### Research lifecycle
+### Feedback lifecycle
 
-1. Create topic: `research-create`
-2. Prioritise: `research-prioritise`
-3. Setup: `research-setup`
-4. Open agents (arena): `research-open`
-5. Conduct: `research-conduct`
-6. Synthesize (arena): `research-synthesize`
-7. Complete: `research-done`
+1. Create feedback: `feedback-create "<title>"`
+2. List and filter: `feedback-list [--inbox|--triaged|--actionable]`
+3. Triage (AI-assisted): `feedback-triage <ID>`
+4. Apply changes: `feedback-triage <ID> --type <type> --severity <severity> --tags <csv> --status <status> --apply --yes`
+5. Promote to research/feature: `feedback-promote <ID>` (upcoming in feature #15)
 
 ---
 
