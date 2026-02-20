@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.18.0] - 2026-02-20
+
+### Added
+- **Feedback workflow** — Complete lifecycle for capturing and triaging user/customer input
+- `docs/specs/feedback/` with six lifecycle folders (inbox, triaged, actionable, done, wont-fix, duplicate)
+- Feedback template with YAML front matter schema (attribution, provenance, severity, tags, links)
+- `aigon feedback-create <title>` — Create feedback items with auto-assigned IDs
+- `aigon feedback-list` — List and filter feedback by status, type, severity, tags
+- `aigon feedback-triage <ID>` — AI-assisted triage with classification, duplicate detection, and status management
+- AI duplicate detection using token-based similarity (title + summary)
+- Preview-first safety model (requires `--apply --yes` to commit changes)
+- Agent prompt templates for feedback-create, feedback-list, feedback-triage
+- Feedback commands in all agent configs (cc, gg, cx, cu)
+- "The Big Picture: Closing the Loop" section in GUIDE.md explaining research → features → feedback cycle
+- Complete product lifecycle documentation with forward/backward traceability
+
+### Changed
+- README.md: Added feedback to "Why Aigon" section with full lifecycle explanation
+- README.md: Updated directory structure to show research → features → feedback flow
+- README.md: Added feedback commands to CLI Reference
+- README.md: Updated all agent slash command tables to include feedback commands
+- GUIDE.md: Added "Detailed Feedback Lifecycle" section
+- GUIDE.md: Added conceptual overview of the three-pillar system (research, features, feedback)
+- docs/specs/README.md: Listed feedback as third area alongside research and features
+
 ## [2.17.0] - 2026-02-18
 
 ### Added
