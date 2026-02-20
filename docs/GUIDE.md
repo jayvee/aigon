@@ -8,15 +8,17 @@ For a quick overview and getting started, see the main [README.md](../README.md)
 
 ## Table of Contents
 
-1. [Detailed Feature Lifecycle](#detailed-feature-lifecycle)
-2. [Detailed Research Lifecycle](#detailed-research-lifecycle)
-3. [Hooks Deep Dive](#hooks-deep-dive)
-4. [Project Profiles](#project-profiles)
-5. [Local Dev Proxy](#local-dev-proxy)
-6. [Opening Worktrees](#opening-worktrees)
-7. [Configuration](#configuration)
-8. [Multi-Agent Evaluation Examples](#multi-agent-evaluation-examples)
-9. [Contributing / Developing Aigon](#contributing--developing-aigon)
+1. [Detailed Research Lifecycle](#detailed-research-lifecycle)
+2. [Detailed Feature Lifecycle](#detailed-feature-lifecycle)
+3. [Detailed Feedback Lifecycle](#detailed-feedback-lifecycle)
+4. [The Big Picture: Closing the Loop](#the-big-picture-closing-the-loop)
+5. [Hooks Deep Dive](#hooks-deep-dive)
+6. [Project Profiles](#project-profiles)
+7. [Local Dev Proxy](#local-dev-proxy)
+8. [Opening Worktrees](#opening-worktrees)
+9. [Configuration](#configuration)
+10. [Multi-Agent Evaluation Examples](#multi-agent-evaluation-examples)
+11. [Contributing / Developing Aigon](#contributing--developing-aigon)
 
 ---
 
@@ -140,6 +142,185 @@ Run multiple agents to get diverse perspectives on a research topic.
     * **Tip:** Use a different model than those that conducted the research for unbiased synthesis
 * **Complete:** `/aigon:research-done 05 --complete` (or `aigon research-done 05 --complete`) moves to `/04-done`.
 * **Output:** The main research file contains the synthesized recommendation, with findings files preserved in `logs/`.
+
+---
+
+## Detailed Feedback Lifecycle
+
+Feedback captures raw user/customer input and routes it back into your product workflow. Unlike features (what to build) and research (how to explore), feedback represents **external signal** that closes the loop between shipped code and user experience.
+
+### Create Feedback Item
+
+Create a new feedback item in the inbox:
+
+```bash
+/aigon:feedback-create "User login is slow on mobile"
+# or: aigon feedback-create "User login is slow on mobile"
+```
+
+This creates `docs/specs/feedback/01-inbox/feedback-01-user-login-is-slow-on-mobile.md` with:
+- Auto-assigned numeric ID
+- YAML front matter (status, type, reporter, source)
+- Sections for Summary, Evidence, Triage Notes, and Proposed Next Action
+
+**Fill in attribution:**
+- `reporter`: Who provided the feedback (name/email)
+- `source`: Where it came from (support-ticket, slack, user-interview, etc.)
+- `source.url`: Optional link to original source (system-agnostic)
+
+### List and Filter Feedback
+
+View feedback items with various filters:
+
+```bash
+/aigon:feedback-list
+# or: aigon feedback-list
+
+# Active lanes only (inbox, triaged, actionable)
+aigon feedback-list
+
+# Specific status
+aigon feedback-list --inbox
+aigon feedback-list --triaged
+aigon feedback-list --actionable
+
+# By metadata
+aigon feedback-list --type bug
+aigon feedback-list --severity critical
+aigon feedback-list --tag mobile
+
+# All feedback (including done, wont-fix, duplicate)
+aigon feedback-list --all
+```
+
+### Triage Feedback (AI-Assisted)
+
+Triage feedback with AI assistance for classification and duplicate detection:
+
+```bash
+/aigon:feedback-triage 01
+# or: aigon feedback-triage 01
+```
+
+**The triage workflow:**
+
+1. **AI analyzes** the feedback and suggests:
+   - Type (bug, feature-request, question, etc.)
+   - Severity (low, medium, high, critical)
+   - Tags for categorization
+   - Duplicate candidates (based on title + summary similarity)
+   - Next action (keep, mark-duplicate, promote-feature, promote-research, wont-fix)
+
+2. **You confirm** the suggestions and apply changes:
+```bash
+aigon feedback-triage 01 \
+  --type bug \
+  --severity high \
+  --tags "mobile,performance" \
+  --status triaged \
+  --apply --yes
+```
+
+3. **File moves** to `02-triaged/` and YAML front matter is updated
+
+**Duplicate handling:**
+```bash
+# Mark as duplicate and link to canonical item
+aigon feedback-triage 05 \
+  --status duplicate \
+  --duplicate-of 02 \
+  --apply --yes
+```
+File moves to `06-duplicate/` with `duplicate_of: 02` in front matter.
+
+**Mark as actionable:**
+```bash
+# Ready to promote to research/feature
+aigon feedback-triage 01 \
+  --status actionable \
+  --apply --yes
+```
+File moves to `03-actionable/`, ready for promotion (handled by feature #15: feedback-promote-traceability).
+
+### Safety Model
+
+Feedback triage uses a **preview-first** approach:
+- Default: Shows what would change without modifying files
+- Apply: Requires explicit `--apply --yes` to commit changes
+- No interactive prompts (safe for automation)
+
+This prevents accidental data corruption while allowing scripted workflows.
+
+---
+
+## The Big Picture: Closing the Loop
+
+Aigon manages the complete product development cycle as a continuous loop:
+
+```
+    ┌─────────────────────────────────────────┐
+    │                                         │
+    ▼                                         │
+RESEARCH ──> FEATURES ──> SHIPPED CODE ──> FEEDBACK
+(explore)   (implement)    (production)    (users)
+    │           ▲                              │
+    │           │                              │
+    └───────────┴──────────────────────────────┘
+         promotes to new work
+```
+
+### The Three Pillars
+
+**1. Research (Internal Exploration)**
+- Broad technical investigations
+- "What options exist?"
+- Multiple agents can conduct parallel findings
+- Synthesis produces recommendations
+- Low volume, curated, deliberate
+
+**2. Features (Delivery Pipeline)**
+- Specific implementation specs
+- "How do we build this?"
+- Informed by research findings
+- Acceptance criteria define "done"
+- Implementation logs track decisions
+
+**3. Feedback (External Signal)**
+- Raw user/customer input
+- "What problems exist in prod?"
+- High volume, noisy, needs triage
+- Attribution + provenance required
+- Rapid response for high-severity
+
+### Traceability Links
+
+**Forward traceability** (why we built this):
+- Feature spec references feedback IDs and research IDs
+- Implementation log explains which inputs drove decisions
+- "Feature #108 addresses feedback #42 and was informed by research #07"
+
+**Backward traceability** (what happened to my request):
+- Feedback item's `linked_features` field tracks spawned work
+- Research topic's output section lists created features
+- "Feedback #42 resulted in feature #108, shipped in v2.1"
+
+**Circular flow:**
+- Shipped features generate new feedback
+- Feedback spawns research topics or new features
+- Research findings inform feature implementation
+- The loop continues, creating an auditable product history
+
+### Example Flow
+
+1. **User reports bug** → `aigon feedback-create "Export broken on Safari"`
+2. **Triage suggests type=bug, severity=high** → Move to triaged
+3. **Product decision** → Mark as actionable
+4. **Promote to feature** → `aigon feedback-promote 12` creates feature #55 with link back to feedback #12
+5. **Implement and ship** → Feature #55 goes through normal workflow
+6. **User confirms fix** → Mark feedback #12 as done
+7. **New feedback arrives** → Cycle continues
+
+This creates a transparent, evidence-based product development process where every decision traces back to user needs or technical exploration.
 
 ---
 
