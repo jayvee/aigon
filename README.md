@@ -13,27 +13,7 @@ Aigon itself is built with Aigon. Browse `docs/specs/` in this repo to see real 
 
 ```
 docs/specs/
-├── features/
-│   ├── 01-inbox/
-│   │   ├── feature-base-port-config.md
-│   │   ├── feature-create-plugin.md
-│   │   └── ...
-│   ├── 02-backlog/
-│   ├── 03-in-progress/
-│   │   └── feature-open-worktrees-in-side-by-side-tabs/
-│   ├── 04-in-evaluation/
-│   ├── 05-done/
-│   │   ├── feature-01-support-hooks.md
-│   │   ├── feature-02-unify-workflow.md
-│   │   ├── feature-06-readme-uplift.md
-│   │   └── ...
-│   ├── 06-paused/
-│   ├── evaluations/
-│   │   └── feature-06-eval.md
-│   └── logs/
-│       ├── selected/
-│       └── alternatives/
-├── research-topics/
+├── research-topics/            # Internal investigations (inbound funnel)
 │   ├── 01-inbox/
 │   ├── 02-backlog/
 │   ├── 03-in-progress/
@@ -42,9 +22,36 @@ docs/specs/
 │   │   └── research-03-simplify-command-parameters.md
 │   ├── 05-paused/
 │   └── logs/
+├── features/                   # Implementation specs (delivery pipeline)
+│   ├── 01-inbox/
+│   │   ├── feature-base-port-config.md
+│   │   ├── feature-create-plugin.md
+│   │   └── ...
+│   ├── 02-backlog/
+│   ├── 03-in-progress/
+│   ├── 04-in-evaluation/
+│   ├── 05-done/
+│   │   ├── feature-01-support-hooks.md
+│   │   ├── feature-13-feedback-foundation.md
+│   │   ├── feature-14-feedback-triage-workflow.md
+│   │   └── ...
+│   ├── 06-paused/
+│   ├── evaluations/
+│   │   └── feature-14-eval.md
+│   └── logs/
+│       ├── selected/
+│       └── alternatives/
+├── feedback/                    # User/customer input (closes the loop)
+│   ├── 01-inbox/               # New feedback awaiting triage
+│   ├── 02-triaged/             # Classified and validated
+│   ├── 03-actionable/          # Ready to promote to research/features
+│   ├── 04-done/                # Resolved and closed
+│   ├── 05-wont-fix/            # Reviewed and intentionally not actioned
+│   └── 06-duplicate/           # Duplicates linked to canonical items
 └── templates/
+    ├── research-template.md
     ├── feature-template.md
-    └── research-template.md
+    └── feedback-template.md
 ```
 
 `aigon board` visualizes your pipeline as a Kanban board:
@@ -102,12 +109,32 @@ Aigon is for teams that want AI acceleration without handing their project memor
 
 Everything is stored in your repo:
 
-- feature specs (`docs/specs/features/`)
-- research topics and findings (`docs/specs/research-topics/`)
-- implementation logs (`docs/specs/features/logs/`)
-- evaluation reports (`docs/specs/features/04-in-evaluation/`)
+- **feedback items** (`docs/specs/feedback/`) — raw user/customer input with attribution
+- **research topics** and findings (`docs/specs/research-topics/`) — internal investigations
+- **feature specs** (`docs/specs/features/`) — implementation plans with acceptance criteria
+- **implementation logs** (`docs/specs/features/logs/`) — what was built and why
+- **evaluation reports** (`docs/specs/features/04-in-evaluation/`) — code reviews and comparisons
 
 That history becomes reusable context for future AI sessions, code reviews, and onboarding. In contrast, tool-hosted chat history is typically siloed per vendor account and hard to reuse across tools.
+
+### Complete product lifecycle: Research → Ideas → Features → Feedback (loop)
+
+Aigon handles the **full lifecycle of changes**, creating a closed loop from exploration to shipped code and back:
+
+1. **Research** (internal exploration) — Investigate technical possibilities, evaluate options, and synthesize recommendations before committing to implementation.
+
+2. **Ideas** (feature specs) — Define what to build with acceptance criteria, informed by research findings.
+
+3. **Features** (implementation + delivery) — Build, evaluate, and ship the code.
+
+4. **Feedback** (external signal) — Capture user reports, support tickets, and customer requests from shipped features. Triage with AI assistance to classify, deduplicate, and route actionable items back into research or new features.
+
+**The loop closes:** Feedback from end users spawns new research topics or features, creating an auditable trail:
+- "This feature addresses feedback #42 and was informed by research #07"
+- "Feedback #42 about the dark mode shipped in v2.1 resulted in feature #108"
+- "Research #07 was triggered by feedback #35, #36, and #41"
+
+This answers both "why did we build this?" (forward traceability) and "what happened to my request?" (backward traceability), keeping product decisions transparent and evidence-based.
 
 ### Built for real multi-agent workflows
 
@@ -134,16 +161,22 @@ This approach keeps your workflow transparent, portable, and fully version-contr
 
 ## The Specs Architecture
 
-All workflow state lives in `./docs/specs`, organized into:
+All workflow state lives in `./docs/specs`, organized into three pillars:
 
-**Primary domains:**
-- `research-topics/` — Exploring what to build
-- `features/` — Specific features to implement
+**Inbound funnels (what to build):**
+- `feedback/` — Raw user/customer input requiring triage and routing
+- `research-topics/` — Internal investigations exploring technical possibilities
 
-**State folders (Kanban):**
+**Delivery pipeline (how to build it):**
+- `features/` — Implementation specs with acceptance criteria
+
+**Lifecycle folders (Kanban):**
+Each pillar uses folder-based status:
 - `01-inbox/` — New, unprioritized items
-- `02-backlog/` — Prioritized, ready to start
+- `02-backlog/` — Prioritized, ready to start (research/features only)
+- `02-triaged/` — Classified and validated (feedback only)
 - `03-in-progress/` — Currently being worked on
+- `03-actionable/` — Ready to promote to research/features (feedback only)
 - `04-in-evaluation/` — Completed, being reviewed
 - `05-done/` — Finished and merged
 - `06-paused/` — Temporarily on hold
@@ -686,6 +719,18 @@ aigon feature-cleanup 55 --push
 
 ## CLI Reference
 
+### Research commands
+
+| Command | Usage |
+|---|---|
+| Research Create | `aigon research-create <name>` |
+| Research Prioritise | `aigon research-prioritise <name>` |
+| Research Setup | `aigon research-setup <ID> [agents...]` |
+| Research Open | `aigon research-open <ID>` |
+| Research Conduct | `aigon research-conduct <ID>` |
+| Research Synthesize | `aigon research-synthesize <ID>` |
+| Research Done | `aigon research-done <ID> [--complete]` |
+
 ### Feature commands
 
 | Command | Usage |
@@ -703,17 +748,13 @@ aigon feature-cleanup 55 --push
 | Worktree Open (Arena) | `aigon worktree-open <ID> --all` |
 | Worktree Open (Parallel) | `aigon worktree-open <ID> <ID>... [--agent=<code>]` |
 
-### Research commands
+### Feedback commands
 
 | Command | Usage |
 |---|---|
-| Research Create | `aigon research-create <name>` |
-| Research Prioritise | `aigon research-prioritise <name>` |
-| Research Setup | `aigon research-setup <ID> [agents...]` |
-| Research Open | `aigon research-open <ID>` |
-| Research Conduct | `aigon research-conduct <ID>` |
-| Research Synthesize | `aigon research-synthesize <ID>` |
-| Research Done | `aigon research-done <ID> [--complete]` |
+| Feedback Create | `aigon feedback-create "<title>"` |
+| Feedback List | `aigon feedback-list [--inbox\|--triaged\|--actionable\|--all] [--type <type>] [--severity <severity>] [--tag <tag>]` |
+| Feedback Triage | `aigon feedback-triage <ID> [--type <type>] [--severity <severity>] [--tags <csv>] [--status <status>] [--duplicate-of <ID>] [--apply --yes]` |
 
 ### Visualization commands
 
@@ -799,6 +840,9 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:research-conduct <ID>` | Write findings |
 | `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
 | `/aigon:research-done <ID>` | Complete research topic |
+| `/aigon:feedback-create <title>` | Create a feedback item |
+| `/aigon:feedback-list [filters...]` | List and filter feedback items |
+| `/aigon:feedback-triage <ID>` | Triage feedback with AI assistance |
 | `/aigon:help` | Show available Aigon commands |
 
 ### Gemini (`/aigon:`)
@@ -823,6 +867,9 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:research-conduct <ID>` | Write findings |
 | `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
 | `/aigon:research-done <ID>` | Complete research topic |
+| `/aigon:feedback-create <title>` | Create a feedback item |
+| `/aigon:feedback-list [filters...]` | List and filter feedback items |
+| `/aigon:feedback-triage <ID>` | Triage feedback with AI assistance |
 | `/aigon:help` | Show available Aigon commands |
 
 ### Codex (`/prompts:aigon-`)
@@ -847,6 +894,9 @@ The command set is consistent across agents. Differences are only command prefix
 | `/prompts:aigon-research-conduct <ID>` | Write findings |
 | `/prompts:aigon-research-synthesize <ID>` | Compare and synthesize all findings |
 | `/prompts:aigon-research-done <ID>` | Complete research topic |
+| `/prompts:aigon-feedback-create <title>` | Create a feedback item |
+| `/prompts:aigon-feedback-list [filters...]` | List and filter feedback items |
+| `/prompts:aigon-feedback-triage <ID>` | Triage feedback with AI assistance |
 | `/prompts:aigon-help` | Show available Aigon commands |
 
 ### Cursor (`/aigon-`)
@@ -871,6 +921,9 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon-research-conduct <ID>` | Write findings |
 | `/aigon-research-synthesize <ID>` | Compare and synthesize all findings |
 | `/aigon-research-done <ID>` | Complete research topic |
+| `/aigon-feedback-create <title>` | Create a feedback item |
+| `/aigon-feedback-list [filters...]` | List and filter feedback items |
+| `/aigon-feedback-triage <ID>` | Triage feedback with AI assistance |
 | `/aigon-help` | Show available Aigon commands |
 
 ---
