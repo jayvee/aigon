@@ -63,15 +63,34 @@ git commit -m "docs: update implementation log for feature <ID>"
 
 ## Signal completion
 
-Tell the user:
+**First, detect the mode by counting worktrees:**
+```bash
+git worktree list | grep -c "feature-<ID>-"
+```
 
-> Implementation submitted. Changes committed and log written.
+Replace `<ID>` with the actual feature ID (padded with leading zero if needed, e.g., "01").
+
+**Then tell the user based on the mode:**
+
+**If 2+ worktrees exist (Arena Mode):**
+
+> Implementation submitted ✅
 >
-> **Next step for you:** Switch back to the main repo session and run `/aigon:feature-eval <ID>` from there — evaluation does not happen in this worktree.
+> Changes committed and log written.
+>
+> **Next step for you:** Switch back to the main repo session and run `/aigon:feature-eval <ID>` from there to compare all implementations.
+
+**If only 1 worktree exists (Solo Worktree Mode):**
+
+> Implementation submitted ✅
+>
+> Changes committed and log written.
+>
+> **Next step for you:** Switch back to the main repo session and run `/aigon:feature-done <ID>` to merge your implementation.
 
 **STOP here. Do NOT:**
-- Run `aigon feature-done`
-- Run `aigon feature-eval` or suggest it as a next action — eval runs in the main repo, not here
+- Run `aigon feature-done` from this worktree
+- Run `aigon feature-eval` from this worktree
 - Push to remote
 - Start any new work
 
