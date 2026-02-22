@@ -37,6 +37,31 @@ Then re-run `aigon feature-implement`.
 
 Read the spec in `./docs/specs/features/03-in-progress/feature-{{ARG1_SYNTAX}}-*.md`
 
+## Step 2.5: Consider Plan Mode
+
+For non-trivial features, **use plan mode** before implementation to explore the codebase and design your approach:
+
+**Use plan mode when**:
+- Feature touches 3+ files
+- Architectural decisions required (choosing between patterns, libraries, approaches)
+- Multiple valid implementation approaches exist
+- Complex acceptance criteria requiring coordination across components
+- Unclear how to integrate with existing codebase
+
+**Skip plan mode for**:
+- Single-file changes with obvious implementation
+- Clear, detailed specifications with one straightforward approach
+- Simple bug fixes or small tweaks
+- Very specific user instructions with implementation details provided
+
+**In plan mode, you should**:
+- Explore the codebase thoroughly (Glob, Grep, Read existing files)
+- Understand existing patterns and conventions
+- Design your implementation approach
+- Identify files that need changes
+- Present your plan for user approval
+- Exit plan mode when ready to implement
+
 ## Step 3: Implement and break into tasks from acceptance criteria
 
 Before writing code, create a task for each **Acceptance Criterion** from the spec. This gives the user visibility into implementation progress via the task list.
