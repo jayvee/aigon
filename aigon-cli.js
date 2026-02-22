@@ -1039,13 +1039,13 @@ function openInWarpSplitPanes(worktreeConfigs, configName, title, tabColor) {
                 : wt.featureId
                     ? `Feature #${String(wt.featureId).padStart(2, '0')} - ${agentName}`
                     : agentName;
-            commands.push(`                  - exec: echo -ne "\\033]0;${paneTitle}\\007"`);
+            commands.push(`                  - exec: 'echo -ne "\\033]0;${paneTitle}\\007"'`);
         }
 
         if (wt.portLabel) {
-            commands.push(`                  - exec: echo "\\n${wt.portLabel}\\n"`);
+            commands.push(`                  - exec: 'echo "\\n${wt.portLabel}\\n"'`);
         }
-        commands.push(`                  - exec: ${wt.agentCommand}`);
+        commands.push(`                  - exec: '${wt.agentCommand}'`);
         return `              - cwd: "${wt.path}"\n                commands:\n${commands.join('\n')}`;
     }).join('\n');
 
@@ -1099,7 +1099,7 @@ windows:
         layout:
           cwd: "${wt.path}"
           commands:
-            - exec: ${agentCommand}
+            - exec: '${agentCommand}'
 `;
 
         try {
