@@ -31,6 +31,7 @@
   },
 
   "rootFile": "CLAUDE.md",
+  "supportsAgentsMd": false,
   "agentFile": "claude.md",
   "templatePath": "generic/docs/agent.md",
 

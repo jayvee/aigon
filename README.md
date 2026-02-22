@@ -217,6 +217,7 @@ ACTION: Initializing Aigon in ./docs/specs ...
 ✅ ./docs/specs directory structure created.
 aigon install-agent cc cx gg cu
 ✅ Created: docs/development_workflow.md
+✅ Created: AGENTS.md
 
 📦 Installing Claude (cc)...
    ✅ Created: docs/agents/claude.md
@@ -230,12 +231,10 @@ aigon install-agent cc cx gg cu
    ✅ Created: docs/agents/codex.md
    ✅ Installed global prompts: ~/.codex/prompts
    ⚠️  Note: Codex prompts are global (shared across all projects)
-   ✅ Created: .codex/prompt.md
    ✅ Created: .codex/config.toml
 
 📦 Installing Gemini (gg)...
    ✅ Created: docs/agents/gemini.md
-   ✅ Created: GEMINI.md
    ✅ Commands: 19 created
    ✅ Added allowedTools to .gemini/settings.json
 
@@ -284,7 +283,7 @@ Primary day-to-day usage is via slash commands.
 
 `aigon install-agent` creates/upgrades agent docs and command files, including:
 
-- root files like `CLAUDE.md`, `GEMINI.md` (where applicable)
+- root files like `AGENTS.md`, plus `CLAUDE.md` for Claude compatibility
 - `docs/agents/*.md`
 - command files under `.claude/`, `.gemini/`, `.cursor/`, and `~/.codex/prompts/`
 - Cursor settings file `.cursor/cli.json`
@@ -315,6 +314,7 @@ Your custom instructions here...
 
 This project uses the Aigon development workflow.
 
+- Shared project instructions: `AGENTS.md`
 - Claude-specific notes: `docs/agents/claude.md`
 - Development workflow: `docs/development_workflow.md`
 <!-- AIGON_END -->
@@ -356,12 +356,12 @@ See the [Complete Guide](docs/GUIDE.md#configuration) for all config commands an
 
 ## Project-Specific Agent Instructions
 
-Add your project-specific rules outside managed marker blocks in generated files such as `CLAUDE.md` and `GEMINI.md`.
+Add shared project rules in `AGENTS.md` outside managed marker blocks. Use `CLAUDE.md` for Claude-only compatibility instructions when needed.
 
 Example pattern:
 
 ```markdown
-# CLAUDE.md
+# AGENTS.md
 
 Project custom instructions here (outside marker block)
 
