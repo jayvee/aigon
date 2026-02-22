@@ -32,12 +32,13 @@
   },
 
   "rootFile": null,
+  "supportsAgentsMd": true,
   "agentFile": "codex.md",
   "templatePath": "generic/docs/agent.md",
 
   "extras": {
     "prompt": {
-      "enabled": true,
+      "enabled": false,
       "path": ".codex/prompt.md"
     },
     "config": {
