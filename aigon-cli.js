@@ -2457,6 +2457,7 @@ const AGENT_CONFIGS = {
         id: 'cc',
         name: 'Claude',
         rootFile: 'CLAUDE.md',
+        supportsAgentsMd: false,
         agentFile: 'claude.md',
         templatePath: 'docs/agents/claude.md',
         port: 3001,
@@ -2466,7 +2467,8 @@ const AGENT_CONFIGS = {
     gg: {
         id: 'gg',
         name: 'Gemini',
-        rootFile: 'GEMINI.md',
+        rootFile: null,  // Gemini reads AGENTS.md
+        supportsAgentsMd: true,
         agentFile: 'gemini.md',
         templatePath: 'docs/agents/gemini.md',
         port: 3002,
@@ -2476,7 +2478,8 @@ const AGENT_CONFIGS = {
     cx: {
         id: 'cx',
         name: 'Codex',
-        rootFile: null,  // Codex uses ~/.codex/prompt.md instead of a project root file
+        rootFile: null,  // Codex reads AGENTS.md
+        supportsAgentsMd: true,
         agentFile: 'codex.md',
         templatePath: 'docs/agents/codex.md',
         port: 3003,
@@ -2486,7 +2489,8 @@ const AGENT_CONFIGS = {
     cu: {
         id: 'cu',
         name: 'Cursor',
-        rootFile: null,  // Cursor uses .cursorrules instead of a project root file
+        rootFile: null,  // Cursor reads AGENTS.md
+        supportsAgentsMd: true,
         agentFile: 'cursor.md',
         templatePath: 'docs/agents/cursor.md',
         port: 3004,
@@ -2495,7 +2499,7 @@ const AGENT_CONFIGS = {
     }
 };
 
-// Generate scaffold content for new root instruction files (e.g. CLAUDE.md)
+// Generate scaffold content for new root instruction files (e.g. AGENTS.md, CLAUDE.md)
 // Only used on first creation — users fill in the sections, which are preserved on update
 function getScaffoldContent() {
     return `# Project Instructions
@@ -2532,9 +2536,25 @@ function getRootFileContent(agentConfig) {
 
 This project uses the Aigon development workflow.
 
+- Shared project instructions: \`AGENTS.md\`
 - ${agentConfig.name}-specific notes: \`docs/agents/${agentConfig.agentFile}\`
 - Development workflow: \`docs/development_workflow.md\`
 `;
+}
+
+function syncAgentsMdFile() {
+    const agentsFilePath = path.join(process.cwd(), 'AGENTS.md');
+    const agentsTemplate = readTemplate('generic/agents-md.md');
+    const markerContentMatch = agentsTemplate.match(new RegExp(`${MARKER_START}\\n([\\s\\S]*?)\\n${MARKER_END}`));
+    const agentsContent = markerContentMatch ? markerContentMatch[1] : agentsTemplate;
+
+    if (!fs.existsSync(agentsFilePath)) {
+        const markedContent = `${MARKER_START}\n${agentsContent}\n${MARKER_END}`;
+        safeWrite(agentsFilePath, getScaffoldContent() + markedContent + '\n');
+        return 'created';
+    }
+
+    return upsertMarkedContent(agentsFilePath, agentsContent);
 }
 
 // --- Board Display Helpers ---
@@ -4763,7 +4783,13 @@ Branch: \`${soloBranch}\`
                 console.log(`✅ ${workflowStatus.charAt(0).toUpperCase() + workflowStatus.slice(1)}: docs/development_workflow.md`);
             }
 
-            // 2. Install each agent using its config
+            // 2. Create/update shared AGENTS.md root instructions
+            const agentsMdStatus = syncAgentsMdFile();
+            if (agentsMdStatus !== 'unchanged') {
+                console.log(`✅ ${agentsMdStatus.charAt(0).toUpperCase() + agentsMdStatus.slice(1)}: AGENTS.md`);
+            }
+
+            // 3. Install each agent using its config
             uniqueAgents.forEach(agentKey => {
                 const config = loadAgentConfig(agentKey);
                 if (!config) {
@@ -4789,9 +4815,7 @@ Branch: \`${soloBranch}\`
                 // Create/update root <AGENT>.md with markers (if agent uses one)
                 if (config.rootFile) {
                     const rootFilePath = path.join(process.cwd(), config.rootFile);
-                    // Use legacy config for getRootFileContent compatibility
-                    const legacyConfig = AGENT_CONFIGS[agentKey] || config;
-                    const rootContent = getRootFileContent(legacyConfig);
+                    const rootContent = getRootFileContent(config);
                     const markedContent = `${MARKER_START}\n${rootContent}\n${MARKER_END}`;
 
                     if (!fs.existsSync(rootFilePath)) {
@@ -5004,10 +5028,10 @@ Branch: \`${soloBranch}\`
 
             // Git commit suggestion - only if there are actual changes
             try {
-                const gitStatus = execSync('git status --porcelain docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null', { encoding: 'utf8' });
+                const gitStatus = execSync('git status --porcelain docs/ AGENTS.md CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null', { encoding: 'utf8' });
                 if (gitStatus.trim()) {
                     console.log(`\n📝 To commit these changes:`);
-                    console.log(`   git add docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: install Aigon v${currentVersion || 'latest'}"`);
+                    console.log(`   git add docs/ AGENTS.md CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: install Aigon v${currentVersion || 'latest'}"`);
                 }
             } catch (e) {
                 // Not a git repo or git not available - skip suggestion
@@ -5053,35 +5077,52 @@ Branch: \`${soloBranch}\`
             // Track changed files for summary
             const changes = { created: [], updated: [], unchanged: [] };
 
-            // 1. Detect installed agents by checking for root files
+            // 1. Detect installed agents from project artifacts
             const installedAgents = [];
-            Object.entries(AGENT_CONFIGS).forEach(([key, config]) => {
-                if (config.rootFile) {
-                    // Claude and Gemini: check for project root file
-                    const rootFilePath = path.join(process.cwd(), config.rootFile);
-                    if (fs.existsSync(rootFilePath)) {
-                        installedAgents.push(key);
-                    }
-                } else if (key === 'cx') {
-                    // Codex: check for .codex/prompt.md with Aigon content
-                    const promptPath = path.join(process.cwd(), '.codex', 'prompt.md');
-                    if (fs.existsSync(promptPath)) {
-                        const content = fs.readFileSync(promptPath, 'utf8');
-                        if (content.includes('Aigon')) {
-                            installedAgents.push(key);
-                        }
-                    }
-                } else if (key === 'cu') {
-                    // Cursor: check for .cursor/commands/ with aigon commands
-                    const cursorCmdsDir = path.join(process.cwd(), '.cursor', 'commands');
-                    if (fs.existsSync(cursorCmdsDir)) {
-                        const files = fs.readdirSync(cursorCmdsDir);
-                        if (files.some(f => f.startsWith('aigon-'))) {
-                            installedAgents.push(key);
-                        }
-                    }
+            const legacyGeminiRootPath = path.join(process.cwd(), 'GEMINI.md');
+            const legacyCodexPromptPath = path.join(process.cwd(), '.codex', 'prompt.md');
+            getAvailableAgents().forEach(agentId => {
+                const config = loadAgentConfig(agentId);
+                if (!config) return;
+
+                const docsAgentPath = config.agentFile
+                    ? path.join(process.cwd(), 'docs', 'agents', config.agentFile)
+                    : null;
+                const localCommandDir = (config.output && !config.output.global && config.output.commandDir)
+                    ? path.join(process.cwd(), config.output.commandDir)
+                    : null;
+                const rootFilePath = config.rootFile ? path.join(process.cwd(), config.rootFile) : null;
+                const extras = config.extras || {};
+                const settingsPath = extras.settings?.enabled ? path.join(process.cwd(), extras.settings.path) : null;
+                const configPath = extras.config?.enabled ? path.join(process.cwd(), extras.config.path) : null;
+
+                const isInstalled =
+                    (rootFilePath && fs.existsSync(rootFilePath)) ||
+                    (docsAgentPath && fs.existsSync(docsAgentPath)) ||
+                    (localCommandDir && fs.existsSync(localCommandDir)) ||
+                    (settingsPath && fs.existsSync(settingsPath)) ||
+                    (configPath && fs.existsSync(configPath)) ||
+                    (agentId === 'gg' && fs.existsSync(legacyGeminiRootPath)) ||
+                    (agentId === 'cx' && fs.existsSync(legacyCodexPromptPath));
+
+                if (isInstalled) {
+                    installedAgents.push(agentId);
                 }
             });
+
+            const uniqueInstalledAgents = [...new Set(installedAgents)];
+
+            // 1.5 Migration notices for legacy root files
+            if (fs.existsSync(legacyGeminiRootPath) || fs.existsSync(legacyCodexPromptPath)) {
+                console.log(`⚠️  Migration notice: AGENTS.md is now the shared root instruction file.`);
+                if (fs.existsSync(legacyGeminiRootPath)) {
+                    console.log(`   - Detected legacy GEMINI.md. New installs no longer generate this file.`);
+                }
+                if (fs.existsSync(legacyCodexPromptPath)) {
+                    console.log(`   - Detected legacy .codex/prompt.md. New installs no longer generate this file.`);
+                }
+                console.log(`   - Legacy files are not auto-deleted. Review and remove them manually when ready.\n`);
+            }
 
             // 2. Ensure spec folder structure exists (same as init)
             const createDirs = (root, folders) => {
@@ -5136,9 +5177,9 @@ Branch: \`${soloBranch}\`
             }
 
             // 5. Re-run install-agent for detected agents
-            if (installedAgents.length > 0) {
-                console.log(`\n📦 Re-installing agents: ${installedAgents.join(', ')}`);
-                commands['install-agent'](installedAgents);
+            if (uniqueInstalledAgents.length > 0) {
+                console.log(`\n📦 Re-installing agents: ${uniqueInstalledAgents.join(', ')}`);
+                commands['install-agent'](uniqueInstalledAgents);
             } else {
                 console.log(`\nℹ️  No agents detected. Run 'aigon install-agent <cc|gg|cx|cu>' to install.`);
             }
@@ -5152,7 +5193,7 @@ Branch: \`${soloBranch}\`
             const versionChanged = installedVersion && currentVersion && installedVersion !== currentVersion;
             let hasFileChanges = false;
             try {
-                const gitStatus = execSync('git status --porcelain docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null', { encoding: 'utf8' });
+                const gitStatus = execSync('git status --porcelain docs/ AGENTS.md CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null', { encoding: 'utf8' });
                 hasFileChanges = gitStatus.trim().length > 0;
             } catch (e) {
                 // Not a git repo - can't determine
@@ -5163,7 +5204,7 @@ Branch: \`${soloBranch}\`
                 showPortSummary();
                 if (hasFileChanges) {
                     console.log(`\n📝 To commit these changes:`);
-                    console.log(`   git add docs/ CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: update Aigon to v${currentVersion || 'latest'}"`);
+                    console.log(`   git add docs/ AGENTS.md CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: update Aigon to v${currentVersion || 'latest'}"`);
                 }
             } else {
                 console.log(`\n✅ Aigon is already up to date (v${currentVersion || 'unknown'}).`);

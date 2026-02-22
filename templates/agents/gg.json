@@ -29,7 +29,8 @@
     "commandFileExtension": ".toml"
   },
 
-  "rootFile": "GEMINI.md",
+  "rootFile": null,
+  "supportsAgentsMd": true,
   "agentFile": "gemini.md",
   "templatePath": "generic/docs/agent.md",
 

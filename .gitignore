@@ -9,6 +9,7 @@ node_modules/
 .codex/
 .gemini/
 CLAUDE.md
+AGENTS.md
 GEMINI.md
 docs/agents/
 .cursor/
