@@ -5028,10 +5028,10 @@ Branch: \`${soloBranch}\`
 
             // Git commit suggestion - only if there are actual changes
             try {
-                const gitStatus = execSync('git status --porcelain docs/ AGENTS.md CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null', { encoding: 'utf8' });
+                const gitStatus = execSync('git status --porcelain docs/ AGENTS.md CLAUDE.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null', { encoding: 'utf8' });
                 if (gitStatus.trim()) {
                     console.log(`\n📝 To commit these changes:`);
-                    console.log(`   git add docs/ AGENTS.md CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: install Aigon v${currentVersion || 'latest'}"`);
+                    console.log(`   git add docs/ AGENTS.md CLAUDE.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: install Aigon v${currentVersion || 'latest'}"`);
                 }
             } catch (e) {
                 // Not a git repo or git not available - skip suggestion
@@ -5193,7 +5193,7 @@ Branch: \`${soloBranch}\`
             const versionChanged = installedVersion && currentVersion && installedVersion !== currentVersion;
             let hasFileChanges = false;
             try {
-                const gitStatus = execSync('git status --porcelain docs/ AGENTS.md CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null', { encoding: 'utf8' });
+                const gitStatus = execSync('git status --porcelain docs/ AGENTS.md CLAUDE.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null', { encoding: 'utf8' });
                 hasFileChanges = gitStatus.trim().length > 0;
             } catch (e) {
                 // Not a git repo - can't determine
@@ -5204,7 +5204,7 @@ Branch: \`${soloBranch}\`
                 showPortSummary();
                 if (hasFileChanges) {
                     console.log(`\n📝 To commit these changes:`);
-                    console.log(`   git add docs/ AGENTS.md CLAUDE.md GEMINI.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: update Aigon to v${currentVersion || 'latest'}"`);
+                    console.log(`   git add docs/ AGENTS.md CLAUDE.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: update Aigon to v${currentVersion || 'latest'}"`);
                 }
             } else {
                 console.log(`\n✅ Aigon is already up to date (v${currentVersion || 'unknown'}).`);
