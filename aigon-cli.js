@@ -1027,38 +1027,37 @@ function openInWarpSplitPanes(worktreeConfigs, configName, title, tabColor) {
     const warpConfigDir = path.join(os.homedir(), '.warp', 'launch_configurations');
     const configFile = path.join(warpConfigDir, `${configName}.yaml`);
 
-    const panes = worktreeConfigs.map(wt => {
+    // Generate one tab per agent (Warp doesn't support per-pane titles)
+    const tabs = worktreeConfigs.map(wt => {
         const commands = [];
 
-        // Set pane title using ANSI escape sequence (for individual pane identification)
-        if (wt.agent) {
-            const agentConfig = AGENT_CONFIGS[wt.agent] || {};
-            const agentName = agentConfig.name || wt.agent;
-            const paneTitle = wt.researchId
-                ? `Research #${wt.researchId} - ${agentName}`
-                : wt.featureId
-                    ? `Feature #${String(wt.featureId).padStart(2, '0')} - ${agentName}`
-                    : agentName;
-            commands.push(`                  - exec: 'echo -ne "\\033]0;${paneTitle}\\007"'`);
-        }
-
         if (wt.portLabel) {
-            commands.push(`                  - exec: 'echo "\\n${wt.portLabel}\\n"'`);
+            commands.push(`            - exec: 'echo "\\n${wt.portLabel}\\n"'`);
         }
-        commands.push(`                  - exec: '${wt.agentCommand}'`);
-        return `              - cwd: "${wt.path}"\n                commands:\n${commands.join('\n')}`;
+        commands.push(`            - exec: '${wt.agentCommand}'`);
+
+        const agentConfig = AGENT_CONFIGS[wt.agent] || {};
+        const agentName = agentConfig.name || wt.agent;
+        const agentColor = agentConfig.terminalColor || tabColor || 'cyan';
+        const tabTitle = wt.researchId
+            ? `Research ${wt.researchId} - ${agentName}`
+            : wt.featureId
+                ? `Feature ${String(wt.featureId).padStart(2, '0')} - ${agentName}`
+                : `${title} - ${agentName}`;
+
+        return `      - title: "${tabTitle}"
+        color: ${agentColor}
+        layout:
+          cwd: "${wt.path}"
+          commands:
+${commands.join('\n')}`;
     }).join('\n');
 
-    const colorLine = tabColor ? `\n        color: ${tabColor}` : '';
     const yamlContent = `---
 name: ${configName}
 windows:
   - tabs:
-      - title: "${title}"${colorLine}
-        layout:
-          split_direction: horizontal
-          panes:
-${panes}
+${tabs}
 `;
 
     if (!fs.existsSync(warpConfigDir)) {
