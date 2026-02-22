@@ -130,7 +130,7 @@ const PROFILE_PRESETS = {
             enabled: true,
             ports: { cc: 3001, gg: 3002, cx: 3003, cu: 3004 }
         },
-        testInstructions: '- Run `aigon dev-server start` — this starts the dev server, allocates a port, registers with the proxy, and waits for healthy\n- Use `aigon dev-server logs` to check startup output if anything seems wrong\n- Ask the user to verify',
+        testInstructions: '- **NEVER run `npm run dev` or `next dev` directly** — this bypasses port allocation and will bind to port 3000 (the main app)\n- Run `aigon dev-server start` — allocates your agent\'s unique port, starts the server, registers with the proxy, and waits for healthy\n- Use the URL printed by the command (e.g. `http://cx-121.myapp.test`) — never use `http://localhost:3000`\n- Use `aigon dev-server logs` to check startup output if anything seems wrong\n- Ask the user to verify',
         depCheck: '**Worktrees do not share `node_modules/` with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Check if node_modules exists\ntest -d node_modules && echo "Dependencies installed" || echo "Need to install dependencies"\n```\n\nIf missing, install them using the project\'s package manager:\n```bash\n# Detect and run the appropriate install command\nif [ -f "pnpm-lock.yaml" ]; then pnpm install\nelif [ -f "yarn.lock" ]; then yarn install\nelif [ -f "bun.lockb" ]; then bun install\nelif [ -f "package-lock.json" ]; then npm install\nelif [ -f "package.json" ]; then npm install\nfi\n```',
         setupEnvLine: '- Set up `.env.local` with agent-specific PORT (worktree modes)'
     },
@@ -139,7 +139,7 @@ const PROFILE_PRESETS = {
             enabled: true,
             ports: { cc: 8001, gg: 8002, cx: 8003, cu: 8004 }
         },
-        testInstructions: '- Run `aigon dev-server start` — this starts the server, allocates a port, registers with the proxy, and waits for healthy\n- Use `aigon dev-server logs` to check startup output if anything seems wrong\n- Test endpoints using `curl` or a REST client\n- Ask the user to verify',
+        testInstructions: '- **NEVER run your dev command directly** — this bypasses port allocation and will cause port conflicts\n- Run `aigon dev-server start` — allocates your agent\'s unique port, starts the server, registers with the proxy, and waits for healthy\n- Use the URL printed by the command — never use `http://localhost:3000` or the default port\n- Use `aigon dev-server logs` to check startup output if anything seems wrong\n- Test endpoints using `curl` or a REST client\n- Ask the user to verify',
         depCheck: '**Worktrees do not share dependencies with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Detect and install dependencies\nif [ -f "requirements.txt" ]; then pip install -r requirements.txt\nelif [ -f "Pipfile" ]; then pipenv install\nelif [ -f "go.mod" ]; then go mod download\nelif [ -f "package.json" ]; then npm install\nfi\n```',
         setupEnvLine: '- Set up `.env.local` with agent-specific PORT (worktree modes)'
     },
@@ -6086,7 +6086,13 @@ Branch: \`${soloBranch}\`
                         return;
                     }
                 }
-                console.log('http://localhost:3000');
+                // Use basePort + agent offset instead of hardcoded 3000
+                const projectConfig = loadProjectConfig();
+                const devProxy = projectConfig.devProxy || {};
+                const basePort = devProxy.basePort || 3000;
+                const agentOffsets = { cc: 1, gg: 2, cx: 3, cu: 4 };
+                const offset = context.agentId ? (agentOffsets[context.agentId] || 0) : 0;
+                console.log(`http://localhost:${basePort + offset}`);
             }
 
         } else {
