@@ -1029,6 +1029,19 @@ function openInWarpSplitPanes(worktreeConfigs, configName, title, tabColor) {
 
     const panes = worktreeConfigs.map(wt => {
         const commands = [];
+
+        // Set pane title using ANSI escape sequence (for individual pane identification)
+        if (wt.agent) {
+            const agentConfig = AGENT_CONFIGS[wt.agent] || {};
+            const agentName = agentConfig.name || wt.agent;
+            const paneTitle = wt.researchId
+                ? `Research #${wt.researchId} - ${agentName}`
+                : wt.featureId
+                    ? `Feature #${String(wt.featureId).padStart(2, '0')} - ${agentName}`
+                    : agentName;
+            commands.push(`                  - exec: echo -ne "\\033]0;${paneTitle}\\007"`);
+        }
+
         if (wt.portLabel) {
             commands.push(`                  - exec: echo "\\n${wt.portLabel}\\n"`);
         }
@@ -2094,6 +2107,20 @@ function runGit(command, options = {}) {
     } catch (e) {
         console.error("❌ Git command failed.");
         throw e; // Re-throw so callers can handle the failure
+    }
+}
+
+/**
+ * Set terminal tab/window title using ANSI escape sequences.
+ * Works in most terminals including Warp, iTerm2, Terminal.app, etc.
+ * @param {string} title - The title to set
+ */
+function setTerminalTitle(title) {
+    // Only set title if we're in an interactive terminal (not piped)
+    if (process.stdout.isTTY) {
+        // OSC 0 = set icon name and window title
+        // ESC ] 0 ; <title> BEL
+        process.stdout.write(`\x1b]0;${title}\x07`);
     }
 }
 
@@ -4091,9 +4118,17 @@ const commands = {
 
             mode = featureWorktreeCount > 1 ? 'arena' : 'solo-wt';
 
+            // Get agent name for display
+            const agentConfig = AGENT_CONFIGS[agentId] || {};
+            const agentName = agentConfig.name || agentId;
+            const paddedNum = String(num).padStart(2, '0');
+
+            // Set terminal tab title
             if (mode === 'arena') {
+                setTerminalTitle(`🏟️ Feature #${paddedNum} - ${agentName}`);
                 console.log(`\n🏟️  Arena Mode - Agent: ${agentId}`);
             } else {
+                setTerminalTitle(`🚀 Feature #${paddedNum} - ${agentName}`);
                 console.log(`\n🚀 Solo Mode (worktree) - Agent: ${agentId}`);
             }
             console.log(`   Feature: ${num} - ${desc}`);
@@ -4109,6 +4144,10 @@ const commands = {
                     console.warn(`⚠️  Warning: Current branch (${currentBranch}) doesn't match expected (${expectedBranch})`);
                     console.warn(`    Run 'aigon feature-setup ${num}' first.`);
                 }
+
+                // Set terminal tab title for solo mode
+                const paddedNum = String(num).padStart(2, '0');
+                setTerminalTitle(`🚀 Feature #${paddedNum}`);
 
                 console.log(`\n🚀 Solo Mode`);
                 console.log(`   Feature: ${num} - ${desc}`);
