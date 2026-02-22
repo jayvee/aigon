@@ -31,6 +31,7 @@
   },
 
   "rootFile": null,
+  "supportsAgentsMd": true,
   "agentFile": "cursor.md",
   "templatePath": "generic/docs/agent.md",
 

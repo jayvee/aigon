@@ -1000,7 +1000,7 @@ If you're working on Aigon itself, be aware of the template system:
 - **Source of truth**: `templates/generic/commands/` and `templates/generic/docs/`
 - **Working copies**: `.claude/commands/`, `.cursor/commands/`, `.gemini/commands/` (gitignored, generated)
 
-The agent directories (`.claude/`, `.cursor/`, etc.) and root files (`CLAUDE.md`, `GEMINI.md`) are gitignored because they're generated from templates during `aigon install-agent`.
+The agent directories (`.claude/`, `.cursor/`, etc.) and root files (`AGENTS.md`, `CLAUDE.md`) are gitignored because they're generated from templates during `aigon install-agent`.
 
 ### Development Workflow
 
@@ -1013,7 +1013,7 @@ The agent directories (`.claude/`, `.cursor/`, etc.) and root files (`CLAUDE.md`
 
 When you run `aigon install-agent`, it creates:
 
-- Root files like `CLAUDE.md`, `GEMINI.md` (where applicable)
+- Root files like `AGENTS.md`, plus `CLAUDE.md` for Claude compatibility
 - `docs/agents/*.md`
 - Command files under `.claude/`, `.gemini/`, `.cursor/`, and `~/.codex/prompts/`
 - Agent-specific config files (`.cursor/cli.json`, etc.)
