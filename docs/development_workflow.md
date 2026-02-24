@@ -47,6 +47,7 @@ docs/specs/
 | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
 | `aigon feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
 | `aigon feature-implement <ID>` | Implement feature in current branch/worktree |
+| `aigon ralph <ID> [options]` | Loop implement+validate with fresh agent sessions |
 | `aigon feature-eval <ID>` | Create evaluation (code review for solo, comparison for arena) |
 | `aigon feature-done <ID> [agent]` | Merge and complete (specify agent in arena mode) |
 | `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |
@@ -61,7 +62,7 @@ docs/specs/
 ## Solo Mode Workflow
 
 1. Run `aigon feature-setup <ID>` to create branch and move spec to in-progress
-2. Run `aigon feature-implement <ID>` to begin implementation
+2. Run `aigon feature-implement <ID>` to begin implementation (or `aigon ralph <ID>` for iterative loop mode)
 3. Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
 4. Implement the feature according to the spec
 5. Test your changes and wait for user confirmation

@@ -748,6 +748,7 @@ aigon feature-cleanup 55 --push
 | Feature Prioritise | `aigon feature-prioritise <name>` |
 | Feature Setup | `aigon feature-setup <ID> [agents...]` |
 | Feature Implement | `aigon feature-implement <ID>` |
+| Ralph Loop | `aigon ralph <ID> [--max-iterations=N] [--agent=<id>] [--dry-run]` |
 | Feature Eval | `aigon feature-eval <ID>` |
 | Feature Review | `aigon feature-review <ID>` |
 | Feature Done | `aigon feature-done <ID> [agent]` |
@@ -836,6 +837,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
 | `/aigon:board` | Show Kanban board or list view |
 | `/aigon:feature-implement <ID>` | Implement in current branch/worktree |
+| `/aigon:ralph <ID> [options]` | Run iterative implement+validate loop |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
@@ -863,6 +865,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
 | `/aigon:board` | Show Kanban board or list view |
 | `/aigon:feature-implement <ID>` | Implement in current branch/worktree |
+| `/aigon:ralph <ID> [options]` | Run iterative implement+validate loop |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
@@ -890,6 +893,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/prompts:aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
 | `/prompts:aigon-board` | Show Kanban board or list view |
 | `/prompts:aigon-feature-implement <ID>` | Implement in current branch/worktree |
+| `/prompts:aigon-ralph <ID> [options]` | Run iterative implement+validate loop |
 | `/prompts:aigon-feature-eval <ID>` | Generate review/comparison template |
 | `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
 | `/prompts:aigon-feature-done <ID> [agent]` | Merge and complete feature |
@@ -917,6 +921,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
 | `/aigon-board` | Show Kanban board or list view |
 | `/aigon-feature-implement <ID>` | Implement in current branch/worktree |
+| `/aigon-ralph <ID> [options]` | Run iterative implement+validate loop |
 | `/aigon-feature-eval <ID>` | Generate review/comparison template |
 | `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
