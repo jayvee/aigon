@@ -20,6 +20,14 @@ This command detects whether you're in solo or arena mode and provides guidance.
 aigon feature-implement {{ARG1_SYNTAX}}
 ```
 
+To run autonomous retry loop mode (Ralph):
+
+```bash
+aigon feature-implement {{ARG1_SYNTAX}} --loop
+# or
+aigon ralph {{ARG1_SYNTAX}}
+```
+
 The command will:
 - Detect your mode: solo (branch), solo worktree, or arena
 - Display the spec location and log file
