@@ -1,338 +1,136 @@
-# Feature: ralph-wiggum
+# Feature 16: Ralph Wiggum Loop
 
 ## Summary
 
-The Ralph Wiggum technique enables autonomous, iterative feature implementation where an agent continuously attempts to implement a feature, runs validation checks, and automatically retries until all acceptance criteria are satisfied or a maximum iteration limit is reached. Named after the character known for cheerful persistence, this technique transforms the current "implement once and stop" workflow into a self-healing loop that pursues completion until success.
+The Ralph Wiggum technique: a single-agent loop that repeatedly spawns a fresh AI agent to work through a task list until all items are done. Inspired by the [original Ralph pattern](https://ghuntley.com/ralph/) — cheerful persistence through simplicity. At its core: `while tasks remain; do aigon feature-implement; done`.
+
+Each iteration gets a fresh context window. Progress persists via files (git history, progress log, task status). No orchestrator, no multi-agent coordination — just one agent, one task, loop until done.
+
+## Inspiration
+
+- [ghuntley.com/ralph](https://ghuntley.com/ralph/) — the original Ralph technique
+- [minicodemonkey/chief](https://github.com/minicodemonkey/chief) — Go CLI that runs Claude in a loop, one commit per task
+- [snarktank/ralph](https://github.com/snarktank/ralph) — autonomous agent loop with PRD-driven task tracking
 
 ## User Stories
 
-- [ ] As a developer, I want an agent to automatically retry implementation when tests fail so I don't have to manually restart the process
-- [ ] As a developer, I want the agent to validate against acceptance criteria on each iteration so I can trust the feature is complete
-- [ ] As a developer, I want a maximum iteration limit to prevent infinite loops when a feature can't be automatically fixed
-- [ ] As a developer, I want detailed logs of each iteration's attempts and failures so I can understand what was tried
-- [ ] As a developer, I want to be able to intervene during the loop if needed without losing progress
-- [ ] As a team lead, I want to use this technique in both solo and arena modes for consistent autonomous implementation
+- [ ] As a developer, I want an agent to automatically retry implementation when validation fails so I don't have to manually restart the process
+- [ ] As a developer, I want a maximum iteration limit to prevent runaway loops
+- [ ] As a developer, I want to see what happened in each iteration so I can understand what was tried
+- [ ] As a developer, I want to interrupt and resume the loop without losing progress
 
 ## Acceptance Criteria
 
-- [ ] New command flag `--loop` or `--ralph` added to `feature-implement` to enable autonomous iteration mode
-- [ ] Agent automatically validates implementation against acceptance criteria after each attempt
-- [ ] Agent runs validation checks (tests, build, linting) and checks results after each iteration
-- [ ] Agent automatically fixes issues and retries when validation fails
-- [ ] Maximum iteration limit (default: 5, configurable) prevents infinite loops
-- [ ] Each iteration's attempt, validation results, and fixes are logged to the implementation log
-- [ ] Loop terminates successfully when all acceptance criteria are satisfied
-- [ ] Loop terminates with failure report after max iterations if criteria remain unsatisfied
-- [ ] User can interrupt the loop at any time and resume later
-- [ ] Works in solo mode (branch), solo worktree mode, and arena mode
-- [ ] Integration with existing task tracking system to update task status during loop
-- [ ] Configuration option to define custom validation scripts per project profile
+- [ ] New command `aigon ralph <feature-id>` (or `aigon feature-implement <id> --loop`) starts the loop
+- [ ] Each iteration spawns a fresh agent session with clean context
+- [ ] Agent runs validation after implementation (exit code from profile test/build commands)
+- [ ] Loop stops on success (validation passes) or max iterations reached (default: 5)
+- [ ] Progress file (`docs/specs/features/logs/feature-<id>-ralph-progress.md`) persists across iterations
+- [ ] Each iteration commits its work before the next begins
+- [ ] User can Ctrl+C to stop; re-running the command resumes from where it left off
+- [ ] Works in solo mode (branch or worktree)
 
 ## Technical Approach
 
-### Core Loop Architecture
-
-Add a `--loop` flag to `feature-implement` command that wraps the standard implementation workflow in an autonomous iteration loop:
-
-```javascript
-async function featureImplementLoop(featureId, options = {}) {
-  const maxIterations = options.maxIterations || 5;
-  const validationScript = options.validationScript || getDefaultValidation();
-
-  for (let iteration = 1; iteration <= maxIterations; iteration++) {
-    logIteration(featureId, iteration);
-
-    // 1. Implement (or fix issues from previous iteration)
-    const implementation = await runImplementation(featureId, iteration);
-
-    // 2. Run validation checks
-    const validation = await runValidation(featureId, validationScript);
-
-    // 3. Check acceptance criteria
-    const criteriaCheck = await checkAcceptanceCriteria(featureId);
-
-    // 4. Update iteration log
-    await logIterationResults(featureId, iteration, {
-      implementation,
-      validation,
-      criteriaCheck
-    });
-
-    // 5. Success condition: all criteria met and validation passed
-    if (criteriaCheck.allMet && validation.passed) {
-      console.log(`✅ Success on iteration ${iteration}!`);
-      return { success: true, iterations: iteration };
-    }
-
-    // 6. Prepare feedback for next iteration
-    const feedback = generateFeedback(validation, criteriaCheck);
-    await prepareNextIteration(featureId, feedback);
-  }
-
-  // Max iterations reached without success
-  return {
-    success: false,
-    iterations: maxIterations,
-    remainingIssues: await summarizeRemainingIssues(featureId)
-  };
-}
-```
-
-### Validation System
-
-**Built-in Validation Checks:**
-1. **Test execution** - Run test suite and check for failures
-2. **Build verification** - Ensure code compiles/builds successfully
-3. **Linting** - Run linters and check for violations
-4. **Type checking** - Run type checker if applicable (TypeScript, mypy, etc.)
-5. **Git status** - Ensure all changes are committed
-
-**Profile-Specific Validation:**
-- Web profile: `npm test`, `npm run build`, `npm run lint`
-- API profile: test suite + endpoint validation
-- iOS profile: `xcodebuild test`
-- Android profile: `./gradlew test`
-- Library profile: test suite + build
-- Generic profile: user-defined validation script
-
-**Custom Validation Scripts:**
-Projects can define `.aigon/validation.sh` for custom checks:
-```bash
-#!/bin/bash
-# Custom validation script
-# Exit 0 for success, non-zero for failure
-
-npm test || exit 1
-npm run lint || exit 2
-npm run type-check || exit 3
-# Add any project-specific checks
-exit 0
-```
-
-### Acceptance Criteria Checking
-
-Parse acceptance criteria from the feature spec markdown:
-```markdown
-## Acceptance Criteria
-- [ ] Feature X works correctly
-- [ ] Tests pass
-- [ ] Documentation updated
-```
-
-**Checking mechanism:**
-1. Extract unchecked criteria from spec (`- [ ]` checkboxes)
-2. Use LLM to evaluate each criterion against:
-   - Code changes (git diff)
-   - Test results
-   - Build output
-   - Implementation log
-3. Auto-check criteria that are objectively verified (e.g., "tests pass")
-4. For subjective criteria (e.g., "code quality is good"), use LLM judgment
-5. Update spec file with checked criteria (`- [x]`)
-
-**Example evaluation prompt:**
-```
-Given this acceptance criterion: "Feature X works correctly"
-
-Code changes:
-{git diff output}
-
-Test results:
-{test output}
-
-Does this implementation satisfy the criterion? Answer YES or NO with brief reasoning.
-```
-
-### Iteration Logging
-
-Each iteration creates a detailed log entry in the implementation log:
-
-```markdown
-## Iteration 1 (2024-02-13 10:15:23)
-
-### Implementation
-- Added feature X to component Y
-- Created tests for edge cases
-- Updated documentation
-
-### Validation Results
-- ✅ Tests: 15/15 passed
-- ❌ Build: Failed (missing import)
-- ✅ Lint: No issues
-- ⚠️ Type check: 1 warning
-
-### Acceptance Criteria Status
-- [ ] Feature X works correctly (Tests pass, but build fails)
-- [ ] Tests pass (15/15 tests passing)
-- [ ] Documentation updated (README updated)
-
-### Issues Found
-1. Missing import in `components/Y.tsx`
-2. Type warning in function signature
-
-### Next Iteration Plan
-- Fix missing import
-- Resolve type warning
-- Re-run validation
-
----
-
-## Iteration 2 (2024-02-13 10:18:45)
-...
-```
-
-### Agent Command Template Updates
-
-**Update `feature-implement.md` template:**
-
-```markdown
-## Loop Mode (Ralph Wiggum Technique)
-
-To enable autonomous iteration mode, add the `--loop` flag:
+### Core Loop (in aigon-cli.js)
 
 ```bash
-aigon feature-implement {{ARG1_SYNTAX}} --loop
+# The essence — everything else is polish around this
+while [ $iteration -le $max_iterations ]; do
+  # Spawn fresh agent with context
+  $agent_cli "$prompt"
+
+  # Run validation
+  $validation_command
+  if [ $? -eq 0 ]; then
+    echo "Success on iteration $iteration"
+    break
+  fi
+
+  iteration=$((iteration + 1))
+done
 ```
 
-This will:
-1. Implement the feature
-2. Run validation checks
-3. Check acceptance criteria
-4. If not satisfied, automatically fix issues and retry (up to 5 iterations)
-5. Stop when all criteria are met or max iterations reached
+### Implementation in JS
 
-**Configuration:**
-- Max iterations: `--max-iterations=N` (default: 5)
-- Custom validation: Define `.aigon/validation.sh` in project root
-- Skip validation: `--skip-validation` (only check criteria)
+New CLI command `ralph` that:
 
-**Interrupting the loop:**
-- Press Ctrl+C to pause after current iteration completes
-- Resume with `aigon feature-implement {{ARG1_SYNTAX}} --loop --resume`
+1. Reads the feature spec to get acceptance criteria
+2. Reads progress file (if resuming) to get context from prior iterations
+3. Builds a prompt that includes: the spec, prior progress, and instruction to implement + commit
+4. Spawns the agent CLI as a child process (fresh context each time)
+5. After agent exits, runs validation (profile-aware: `npm test`, `xcodebuild test`, etc.)
+6. Appends iteration results to the progress file
+7. If validation fails and iterations remain, loops back to step 2
+
+### Progress File Format
+
+```markdown
+# Ralph Progress: Feature 16
+
+## Iteration 1 (2026-02-24 10:15:23)
+**Status:** Failed
+**Validation:** npm test exited with code 1
+**Summary:** Implemented core loop but tests fail on edge case
+**Files changed:** aigon-cli.js, templates/generic/commands/ralph.md
+
+## Iteration 2 (2026-02-24 10:22:45)
+**Status:** Success
+**Validation:** All checks passed
+**Summary:** Fixed edge case, all tests passing
+**Files changed:** aigon-cli.js
 ```
 
-### CLI Implementation Changes
+### Agent Prompt Template
 
-**New CLI arguments for `feature-implement`:**
-- `--loop` / `--ralph` - Enable autonomous iteration mode
-- `--max-iterations=N` - Set maximum iterations (default: 5)
-- `--skip-validation` - Skip validation checks, only check criteria
-- `--resume` - Resume a previously interrupted loop
-- `--validation-script=PATH` - Custom validation script path
+The prompt sent to each fresh agent session includes:
+- The feature spec (acceptance criteria)
+- The progress file (what was tried, what failed)
+- Profile validation commands (what will be checked)
+- Instruction: implement/fix, commit, then exit
 
-**Configuration in `.aigon/config.json`:**
+### CLI Arguments
+
+- `aigon ralph <feature-id>` — start or resume the loop
+- `--max-iterations=N` — override default (5)
+- `--agent=<id>` — which agent to use (default: cc)
+- `--dry-run` — show what would run without executing
+
+### Configuration in `.aigon/config.json`
+
 ```json
 {
-  "profile": "web",
   "ralph": {
-    "enabled": true,
-    "maxIterations": 5,
-    "validationScript": ".aigon/validation.sh",
-    "autoCheckCriteria": true,
-    "stopOnFirstFailure": false
+    "maxIterations": 5
   }
 }
 ```
 
-### Integration with Task Tracking
+### Validation
 
-Tasks created from acceptance criteria are automatically updated during the loop:
+Uses the existing profile system's test/build commands (WORKTREE_TEST_INSTRUCTIONS placeholder). No LLM-based criteria checking — that's a separate feature (Feature 17).
 
-1. **Before loop starts:** Create tasks from acceptance criteria (existing behavior)
-2. **During each iteration:** Update task status based on validation:
-   - Mark task as `in_progress` when working on related code
-   - Mark task as `completed` when its criterion is verified
-   - Add iteration notes to task description
-3. **After loop completes:** All tasks should be `completed` or flagged for manual review
+## Out of Scope (see related features)
 
-### Error Handling & Safety
+- LLM-based acceptance criteria evaluation → Feature 17: Smart Validation
+- Multi-agent orchestration / arena-mode loops → Feature 18: Conductor
+- Custom validation scripts (`.aigon/validation.sh`) → Feature 17
+- Task tracking integration during loop → Feature 18
+- Cross-iteration learning
 
-**Infinite Loop Prevention:**
-1. Hard limit on max iterations (default: 5, max: 20)
-2. Detect repeating failures (same error 3+ times) and abort
-3. Resource monitoring - abort if disk/memory issues detected
-4. Timeout per iteration (configurable, default: 30 minutes)
+## Open Questions
 
-**User Intervention:**
-- Graceful handling of Ctrl+C - complete current iteration before stopping
-- Save loop state to `.aigon/loop-state-{featureId}.json`
-- Allow resume from last successful iteration
-- Provide detailed failure report on abort
-
-**Failure Modes:**
-1. **Validation never passes** - Report unresolved issues, suggest manual intervention
-2. **Criteria remain unchecked** - List subjective criteria needing human review
-3. **Resource exhaustion** - Clean abort with state saved
-4. **User interrupt** - Save state, allow resume
-
-### Mode Compatibility
-
-**Solo Mode (branch):**
-- Loop runs in main repo on feature branch
-- All iterations committed to same branch
-- Final state when loop completes or is interrupted
-
-**Solo Worktree Mode:**
-- Loop runs in worktree directory
-- Each iteration committed within worktree
-- Return to main repo for `feature-done`
-
-**Arena Mode:**
-- Each agent runs their own loop in their worktree
-- Iterations logged separately per agent
-- Evaluation compares final results after all agents complete
-- Agents may complete in different numbers of iterations
+1. **Iteration budget**: Is 5 a good default? Should it be higher for complex features?
+2. **Resume behavior**: Re-run last iteration or start fresh from its output?
+3. **Agent selection**: Default to `cc` or use whatever's configured?
 
 ## Dependencies
 
 - Existing `feature-implement` command and workflow
-- Task tracking system (`TaskCreate`, `TaskUpdate`)
-- Profile system for validation commands
-- Git worktree support
-- Agent command templates
-- LLM API for criteria evaluation (using existing agent's model)
-
-## Out of Scope
-
-- Visual progress dashboard (terminal output only for now)
-- Parallel iteration attempts (sequential only)
-- Learning from previous features to improve iteration strategy
-- Cross-feature learning (each loop is isolated)
-- Automatic performance optimization (only correctness validation)
-- Integration with external CI/CD systems (local validation only)
-- Real-time collaboration (multi-user intervention during loop)
-
-## Open Questions
-
-1. **Criteria evaluation accuracy**: How reliable is LLM evaluation of subjective acceptance criteria? Should we require explicit user approval for subjective criteria?
-
-2. **Iteration budget**: Is 5 iterations a good default? Should it vary by feature complexity?
-
-3. **Validation timeout**: What's a reasonable per-iteration timeout? 30 minutes? Should it be configurable per profile?
-
-4. **Resume behavior**: When resuming an interrupted loop, should we:
-   - Start from last successful iteration?
-   - Re-run the last iteration with fresh context?
-   - Let user choose?
-
-5. **Arena mode coordination**: Should all agents in arena mode complete their loops before evaluation, or can we evaluate incrementally?
-
-6. **Cost implications**: Running multiple iterations with LLM calls could be expensive. Should we:
-   - Add cost warnings before starting?
-   - Use cheaper models for criteria checking?
-   - Provide dry-run mode?
-
-7. **Validation cache**: Should we cache validation results for unchanged code to speed up iterations?
-
-8. **Partial success**: If 90% of criteria are met but one fails after max iterations, should we:
-   - Commit the partial implementation?
-   - Rollback everything?
-   - Let user decide?
+- Profile system for validation commands (WORKTREE_TEST_INSTRUCTIONS)
+- Git for progress persistence
 
 ## Related
 
-- Research: Automated testing strategies for AI-generated code
-- Research: LLM-based code evaluation reliability
-- Feature: `feature-implement` command (will be extended)
-- Feature: Task tracking system (integration point)
-- Feature: Profile system (validation commands per profile)
+- Feature 17: Smart Validation (enhances Ralph with LLM-based criteria checking)
+- Feature 18: Conductor (orchestrates multiple Ralph loops across agents)
