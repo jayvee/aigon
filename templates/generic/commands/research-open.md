@@ -43,11 +43,6 @@ This opens Warp with 3 panes:
 - **Pane 2 (gg)**: `gemini --yolo "/aigon:research-conduct 05"`
 - **Pane 3 (cx)**: `codex --full-auto "/prompts:aigon-research-conduct 05"`
 
-## Terminal Support
-
-- **Warp**: Opens split panes automatically (recommended)
-- **VS Code / Cursor**: Prints manual setup instructions with commands for each agent
-
 ## Error Cases
 
 - **Not in arena mode**: Shows error with instructions to run `research-setup` with agents
@@ -55,6 +50,8 @@ This opens Warp with 3 panes:
 - **Agent not configured**: Lists which agents need to be installed
 
 ## Step 1: Run the CLI command
+
+**Always run this command** — do NOT skip it or try to detect the terminal yourself. The CLI reads the user's terminal preference from `~/.aigon/config.json` and handles everything:
 
 ```bash
 aigon research-open {{ARG_SYNTAX}}
