@@ -59,9 +59,9 @@ This will:
   - `logs/research-05-gg-findings.md` (Gemini)
 
 Next steps:
-1. Run each agent with `{{CMD_PREFIX}}research-conduct 05`
+1. Run `{{CMD_PREFIX}}research-open 05` to open all agents side-by-side
 2. Each agent writes to their own findings file
-3. After all agents complete, run `aigon research-done 05` to synthesize
+3. After all agents complete, run `{{CMD_PREFIX}}research-synthesize 05` to compare and select features
 
 ## Important Notes
 
@@ -75,6 +75,7 @@ Next steps:
 
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
 
-`{{CMD_PREFIX}}research-conduct <ID>`
+- **Solo mode**: `{{CMD_PREFIX}}research-conduct <ID>`
+- **Arena mode**: `{{CMD_PREFIX}}research-open <ID>`
 
 ARGUMENTS: {{ARG_SYNTAX}}
