@@ -1038,6 +1038,24 @@ function buildResearchAgentCommand(agentId, researchId) {
     return `${prefix}${cliConfig.command} "${prompt}"`;
 }
 
+function buildEvalAgentCommand(agentId, featureId) {
+    const cliConfig = getAgentCliConfig(agentId);
+    const agentConfig = loadAgentConfig(agentId);
+    const cmdPrefix = agentConfig?.placeholders?.CMD_PREFIX || '/aigon:';
+    const prompt = `${cmdPrefix}feature-eval ${featureId}`;
+    const prefix = cliConfig.command === 'claude' ? 'unset CLAUDECODE && ' : '';
+    const model = cliConfig.models?.['evaluate'];
+    if (agentId === 'cu' && model) {
+        console.warn(`⚠️  Model config ignored for Cursor — model selection is UI-only (no --model flag)`);
+    }
+    const modelFlag = (model && agentId !== 'cu') ? `--model ${model}` : '';
+    const flags = [cliConfig.implementFlag, modelFlag].filter(Boolean).join(' ');
+    if (flags) {
+        return `${prefix}${cliConfig.command} ${flags} "${prompt}"`;
+    }
+    return `${prefix}${cliConfig.command} "${prompt}"`;
+}
+
 /**
  * Open multiple worktrees side-by-side in Warp using split panes.
  * @param {Array<{path: string, agent: string, desc: string, featureId: string, agentCommand: string}>} worktreeConfigs
@@ -2488,6 +2506,15 @@ ${cleanContent.trim()}
 
     return cleanContent;
 }
+
+// --- Provider Family Mapping (for cross-provider eval bias detection) ---
+
+const PROVIDER_FAMILIES = {
+    cc: 'anthropic',
+    cu: 'varies',
+    gg: 'google',
+    cx: 'openai',
+};
 
 // --- Agent Configuration (Legacy - for backwards compatibility) ---
 
@@ -4254,7 +4281,11 @@ const commands = {
         }
     },
     'feature-eval': (args) => {
-        const name = args[0];
+        const allowSameModelJudge = args.includes('--allow-same-model-judge');
+        const agentFlagEntry = args.find(a => a.startsWith('--agent='));
+        const overrideEvalAgent = agentFlagEntry ? agentFlagEntry.split('=')[1] : null;
+        const filteredArgs = args.filter(a => !a.startsWith('--allow-same-model-judge') && !a.startsWith('--agent='));
+        const name = filteredArgs[0];
         if (!name) return console.error("Usage: aigon feature-eval <ID>\n\nExamples:\n  aigon feature-eval 55     # Solo mode: code review\n  aigon feature-eval 55     # Arena mode: compare implementations");
 
         // Find the feature (may already be in evaluation)
@@ -4438,6 +4469,85 @@ Branch: \`${soloBranch}\`
             console.log(`\n⚠️  TO MERGE INTO MAIN, run:`);
             console.log(`   aigon feature-done ${num}`);
         }
+
+        // --- Cross-provider eval guidance ---
+        {
+            const availableAgents = getAvailableAgents();
+            const getFamily = id => PROVIDER_FAMILIES[id] || id;
+
+            if (mode === 'solo') {
+                const implementerAgent = worktrees.length === 1 ? worktrees[0].agent : null;
+
+                // Bias check: only when both parties are known
+                if (implementerAgent && overrideEvalAgent && !allowSameModelJudge) {
+                    const implFamily = getFamily(implementerAgent);
+                    const evalFamily = getFamily(overrideEvalAgent);
+                    if (implFamily === evalFamily && implFamily !== 'varies') {
+                        const implName = loadAgentConfig(implementerAgent)?.name || implementerAgent;
+                        const evalName = loadAgentConfig(overrideEvalAgent)?.name || overrideEvalAgent;
+                        console.warn(`\n⚠️  Self-evaluation bias warning:`);
+                        console.warn(`   Implementer: ${implementerAgent} (${implName})`);
+                        console.warn(`   Evaluator:   ${overrideEvalAgent} (${evalName})`);
+                        console.warn(`\n   Same-family evaluation inflates win rates by ~25% (MT-Bench, 2023).`);
+                        const alts = availableAgents.filter(a => getFamily(a) !== implFamily && getFamily(a) !== 'varies');
+                        if (alts.length > 0) {
+                            console.warn(`   Consider: aigon feature-eval ${num} --agent=${alts[0]}`);
+                        }
+                        console.warn(`   Or suppress: aigon feature-eval ${num} --allow-same-model-judge`);
+                    }
+                }
+
+                // Show eval command(s)
+                if (overrideEvalAgent) {
+                    console.log(`\n🤖 Run evaluation with ${overrideEvalAgent}:`);
+                    console.log(`   ${buildEvalAgentCommand(overrideEvalAgent, num)}`);
+                } else if (implementerAgent) {
+                    const implFamily = getFamily(implementerAgent);
+                    const crossAgents = availableAgents.filter(a => getFamily(a) !== implFamily && getFamily(a) !== 'varies');
+                    if (crossAgents.length > 0) {
+                        console.log(`\n💡 Cross-provider eval suggested (avoids self-evaluation bias):`);
+                        crossAgents.forEach(a => {
+                            const aName = loadAgentConfig(a)?.name || a;
+                            console.log(`   ${buildEvalAgentCommand(a, num)}   # ${aName}`);
+                        });
+                    }
+                } else {
+                    // Branch-only solo — show all available agents
+                    console.log(`\n🤖 Run evaluation with:`);
+                    availableAgents.forEach(a => {
+                        const aName = loadAgentConfig(a)?.name || a;
+                        console.log(`   ${buildEvalAgentCommand(a, num)}   # ${aName}`);
+                    });
+                }
+            } else {
+                // Arena mode
+                const implFamilies = new Set(worktrees.map(w => getFamily(w.agent)));
+                const suggestedEvaluators = availableAgents.filter(a => !implFamilies.has(getFamily(a)) && getFamily(a) !== 'varies');
+
+                if (overrideEvalAgent) {
+                    const evalFamily = getFamily(overrideEvalAgent);
+                    if (implFamilies.has(evalFamily) && !allowSameModelJudge) {
+                        const evalName = loadAgentConfig(overrideEvalAgent)?.name || overrideEvalAgent;
+                        console.warn(`\n⚠️  Self-evaluation bias warning:`);
+                        console.warn(`   Evaluator: ${overrideEvalAgent} (${evalName}) shares a provider family with an implementer.`);
+                        console.warn(`   Same-family evaluation inflates win rates by ~25% (MT-Bench, 2023).`);
+                        if (suggestedEvaluators.length > 0) {
+                            console.warn(`   Consider: aigon feature-eval ${num} --agent=${suggestedEvaluators[0]}`);
+                        }
+                        console.warn(`   Or suppress: aigon feature-eval ${num} --allow-same-model-judge`);
+                    }
+                    console.log(`\n🤖 Run evaluation with ${overrideEvalAgent}:`);
+                    console.log(`   ${buildEvalAgentCommand(overrideEvalAgent, num)}`);
+                } else if (suggestedEvaluators.length > 0) {
+                    console.log(`\n💡 Cross-provider eval suggested (avoids self-evaluation bias):`);
+                    suggestedEvaluators.forEach(a => {
+                        const aName = loadAgentConfig(a)?.name || a;
+                        console.log(`   ${buildEvalAgentCommand(a, num)}   # ${aName} — different provider from all implementers`);
+                    });
+                }
+            }
+        }
+        // --- end cross-provider eval ---
     },
     'feature-done': (args) => {
         const keepBranch = args.includes('--keep-branch');
