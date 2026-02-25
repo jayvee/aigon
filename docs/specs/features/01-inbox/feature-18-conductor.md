@@ -83,20 +83,41 @@ async function decomposeFeature(specContent) {
 }
 ```
 
+### Agent Status Signal
+
+Each agent writes a machine-readable status file as its final step after submitting. This is the contract between agent and conductor (and other commands like `sessions-close`).
+
+**File**: `docs/specs/features/logs/feature-<ID>-<agent>-status.json`
+
+```json
+{
+  "featureId": "55",
+  "agent": "cc",
+  "status": "submitted",
+  "submittedAt": "2026-02-25T10:30:00Z"
+}
+```
+
+**Lifecycle values**: `in-progress` → `submitted` → `done`
+
+This requires:
+- New `aigon feature-signal <ID> <status>` CLI command that writes the status file
+- `feature-submit.md` template updated to call `aigon feature-signal <ID> submitted` as its final step
+- `sessions-close` pre-close check: warn if any worktree's status file is missing or not `submitted`
+- `feature-eval` and `feature-done` can also gate on submission status
+
 ### Progress Monitoring
 
-Conductor polls agent progress files periodically:
+Conductor polls agent status files periodically:
 
 ```javascript
 async function monitorAgents(agents) {
   for (const agent of agents) {
-    const progressFile = `logs/feature-${id}-${agent.id}-ralph-progress.md`;
-    const status = parseProgressFile(progressFile);
+    const statusFile = `docs/specs/features/logs/feature-${id}-${agent.id}-status.json`;
+    const status = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
 
-    if (status.lastIteration?.status === 'Success') {
+    if (status.status === 'submitted') {
       agent.state = 'completed';
-    } else if (status.iteration >= agent.maxIterations) {
-      agent.state = 'failed';
     }
   }
 }
