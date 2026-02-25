@@ -909,6 +909,7 @@ function getAgentCliConfig(agentId) {
 
     // Start with defaults from agent config
     const cli = agentConfig?.cli || { command: agentId, implementFlag: '', implementPrompt: '' };
+    cli.models = { ...(agentConfig?.cli?.models || {}) };
 
     // Override from global config (user-wide defaults)
     if (globalConfig.agents?.[agentId]) {
@@ -917,6 +918,9 @@ function getAgentCliConfig(agentId) {
         }
         if (globalConfig.agents[agentId].implementFlag !== undefined) {
             cli.implementFlag = globalConfig.agents[agentId].implementFlag;
+        }
+        if (globalConfig.agents[agentId].models) {
+            cli.models = { ...cli.models, ...globalConfig.agents[agentId].models };
         }
     }
 
@@ -927,6 +931,9 @@ function getAgentCliConfig(agentId) {
         }
         if (projectConfig.agents[agentId].implementFlag !== undefined) {
             cli.implementFlag = projectConfig.agents[agentId].implementFlag;
+        }
+        if (projectConfig.agents[agentId].models) {
+            cli.models = { ...cli.models, ...projectConfig.agents[agentId].models };
         }
     }
 
@@ -981,13 +988,21 @@ function filterByFeatureId(worktrees, featureId) {
 /**
  * Build the agent CLI command string for a worktree.
  */
-function buildAgentCommand(wt) {
+function buildAgentCommand(wt, taskType = 'implement') {
     const cliConfig = getAgentCliConfig(wt.agent);
     const prompt = cliConfig.implementPrompt.replace('{featureId}', wt.featureId);
     // Unset CLAUDECODE to prevent "nested session" error when launched from a Claude Code terminal
     const prefix = cliConfig.command === 'claude' ? 'unset CLAUDECODE && ' : '';
-    if (cliConfig.implementFlag) {
-        return `${prefix}${cliConfig.command} ${cliConfig.implementFlag} "${prompt}"`;
+
+    const model = cliConfig.models?.[taskType];
+    if (wt.agent === 'cu' && model) {
+        console.warn(`⚠️  Model config ignored for Cursor — model selection is UI-only (no --model flag)`);
+    }
+    const modelFlag = (model && wt.agent !== 'cu') ? `--model ${model}` : '';
+
+    const flags = [cliConfig.implementFlag, modelFlag].filter(Boolean).join(' ');
+    if (flags) {
+        return `${prefix}${cliConfig.command} ${flags} "${prompt}"`;
     }
     return `${prefix}${cliConfig.command} "${prompt}"`;
 }
@@ -1009,9 +1024,16 @@ function buildResearchAgentCommand(agentId, researchId) {
 
     // Unset CLAUDECODE to prevent "nested session" error when launched from a Claude Code terminal
     const prefix = cliConfig.command === 'claude' ? 'unset CLAUDECODE && ' : '';
-    // Use the same flag pattern as feature-implement (e.g., --permission-mode acceptEdits)
-    if (cliConfig.implementFlag) {
-        return `${prefix}${cliConfig.command} ${cliConfig.implementFlag} "${prompt}"`;
+
+    const model = cliConfig.models?.['research'];
+    if (agentId === 'cu' && model) {
+        console.warn(`⚠️  Model config ignored for Cursor — model selection is UI-only (no --model flag)`);
+    }
+    const modelFlag = (model && agentId !== 'cu') ? `--model ${model}` : '';
+
+    const flags = [cliConfig.implementFlag, modelFlag].filter(Boolean).join(' ');
+    if (flags) {
+        return `${prefix}${cliConfig.command} ${flags} "${prompt}"`;
     }
     return `${prefix}${cliConfig.command} "${prompt}"`;
 }
@@ -1068,6 +1090,22 @@ ${panes}
     execSync(`open "warp://launch/${configName}"`);
 
     return configFile;
+}
+
+/**
+ * Close a Warp window whose tab title contains the given hint.
+ * Returns true if AppleScript executed without error (window found + closed).
+ */
+function closeWarpWindow(titleHint) {
+    try {
+        execSync(
+            `osascript -e 'try' -e 'tell application "Warp" to close (first window whose name contains "${titleHint}")' -e 'end try'`,
+            { stdio: 'ignore' }
+        );
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
 /**
@@ -2391,6 +2429,7 @@ const COMMAND_ARG_HINTS = {
     'feature-cleanup': '<ID> [--push]',
     'board': '[--list] [--features] [--research] [--active] [--all] [--inbox] [--backlog] [--done]',
     'worktree-open': '[ID] [agent]',
+    'sessions-close': '<ID>',
     'research-create': '<topic-name>',
     'research-prioritise': '<topic-name or letter>',
     'research-setup': '<ID> [agents...]',
@@ -5727,6 +5766,74 @@ Branch: \`${soloBranch}\`
         }
     },
 
+    'sessions-close': (args) => {
+        const id = args.find(a => !a.startsWith('--'));
+
+        if (!id) {
+            console.error('Usage: aigon sessions-close <ID>');
+            console.error('\n  aigon sessions-close 05   # Kill all agents + close Warp tab for #05');
+            return;
+        }
+
+        const paddedId = String(parseInt(id, 10)).padStart(2, '0');
+
+        // Kill agent processes for this ID across all agent types and command types
+        const killPatterns = [
+            `aigon:feature-implement ${paddedId}`,
+            `aigon:feature-review ${paddedId}`,
+            `aigon:research-conduct ${paddedId}`,
+        ];
+
+        console.log(`\nClosing all agent sessions for #${paddedId}...\n`);
+
+        let foundAny = false;
+        killPatterns.forEach(pattern => {
+            try {
+                // SIGTERM (default) — graceful exit; agents flush buffers and close connections
+                execSync(`pkill -f "${pattern}"`, { stdio: 'ignore' });
+                foundAny = true;
+                console.log(`   ✓ ${pattern}`);
+            } catch (e) {
+                // pkill exits 1 when no processes match — that's fine
+            }
+        });
+
+        // Brief wait for processes to exit cleanly, then SIGKILL any stragglers
+        if (foundAny) {
+            try { execSync('sleep 1', { stdio: 'ignore' }); } catch (e) { /* ignore */ }
+            killPatterns.forEach(pattern => {
+                try {
+                    execSync(`pkill -9 -f "${pattern}"`, { stdio: 'ignore' });
+                } catch (e) {
+                    // Already exited — this is the expected path
+                }
+            });
+        }
+
+        if (!foundAny) {
+            console.log('   (no running agent processes found for this ID)');
+        }
+
+        // Try to close the Warp arena tab/window
+        const warpTitleHints = [
+            `Arena Research: ${paddedId}`,
+            `Arena: Feature ${paddedId}`,
+        ];
+
+        let warpClosed = false;
+        for (const hint of warpTitleHints) {
+            if (closeWarpWindow(hint)) {
+                warpClosed = true;
+            }
+        }
+
+        if (warpClosed) {
+            console.log('\n✅ Warp arena tab closed.');
+        } else {
+            console.log('\n✅ Done. (Close the Warp tab manually if still open.)');
+        }
+    },
+
     'proxy-setup': async () => {
         console.log('\n🔧 Setting up local dev proxy (Caddy + dnsmasq)...\n');
 
@@ -6178,6 +6285,7 @@ Worktree:
   worktree-open <ID> --all          Open all arena worktrees side-by-side
   worktree-open <ID> <ID>... [--agent=<code>]
                                     Open multiple features side-by-side
+  sessions-close <ID>               Kill all agent sessions for a feature/research ID and close Warp tab
 
 Feature Commands (unified for solo and arena modes):
   feature-create <name>             Create feature spec in inbox
@@ -6223,6 +6331,7 @@ Examples:
   aigon worktree-open 55 cc            # Open worktree in Warp with Claude CLI
   aigon worktree-open 55 --all         # Open all arena agents side-by-side
   aigon worktree-open 100 101 102      # Open features side-by-side (parallel)
+  aigon sessions-close 55              # Kill all arena agents + close Warp tab
   aigon feature-implement 55           # Implement in current branch/worktree
   aigon feature-eval 55                # Evaluate implementations
   aigon feature-done 55 cc             # Merge Claude's arena implementation
