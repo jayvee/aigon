@@ -23,7 +23,17 @@ This command is for agents to conduct research after setup is complete.
 2. **Check for arena mode**: Look for your findings file at:
    `docs/specs/research-topics/logs/research-{ID}-{{AGENT_ID}}-findings.md`
 
-3. **Conduct research** based on the questions and scope in the main research doc
+3. **Conduct deep research** to answer each question in the research doc. Go broad before going deep:
+
+   **How to research thoroughly:**
+   - **Search the web** for documentation, blog posts, comparisons, and real-world usage. Don't rely only on what's in the codebase.
+   - **Read primary sources** — official docs, GitHub repos, RFCs — not just summaries.
+   - **Explore multiple approaches** before settling on one. For each question, consider at least 2-3 alternatives.
+   - **Look at the codebase** to understand current patterns, constraints, and what's already been tried.
+   - **Compare trade-offs** with evidence, not just intuition. Include concrete pros/cons.
+   - **Cite your sources** — every claim should link back to where you found it.
+
+   Spend the majority of your time here. Rushed research leads to shallow recommendations.
 {{AGENT_TEAMS_RESEARCH_NOTE}}
 
 4. **Document your findings**:

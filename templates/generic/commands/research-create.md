@@ -9,15 +9,25 @@ aigon research-create {{ARG_SYNTAX}}
 
 This creates a new research topic in `./docs/specs/research-topics/01-inbox/`.
 
-## Before writing the research topic
+## Important: Create the document only — do NOT conduct research
 
-Explore the codebase to understand the current state of the area under research. Plan your approach before writing. Consider:
+Your job is ONLY to create a research topic document. You are NOT researching, investigating, or answering questions. You are writing down what SHOULD be researched later by a different agent (or yourself in a later step).
 
-- What existing code or patterns are relevant to this research?
-- What has already been tried or decided in this area?
-- What specific gaps in understanding need to be filled?
+**Do NOT:**
+- Read source code to investigate the topic
+- Search the web for answers
+- Write findings, recommendations, or conclusions
+- Fill in answers to the questions you define
+- Explore the codebase beyond what's needed to phrase good questions
 
-Use this understanding to write focused **Questions to Answer** and well-defined **Scope** sections.
+**Do:**
+- Ask the user what they want to learn (if unclear from the topic name)
+- Write a clear **Context** section explaining why this research matters
+- Write focused **Questions to Answer** as a checklist (unchecked `- [ ]`)
+- Define **Scope** (in scope / out of scope) to keep the research bounded
+- Optionally note any **Inspiration** or starting-point references the user mentions
+
+The output should be a short, well-structured document that frames the research — not the research itself. Think of it as a brief for another agent.
 
 Next step: Once the topic is complete, run `{{CMD_PREFIX}}research-prioritise {{ARG_SYNTAX}}` to assign an ID and move to backlog.
 
