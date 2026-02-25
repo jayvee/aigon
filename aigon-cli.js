@@ -2413,6 +2413,7 @@ function extractDescription(content) {
 const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
     'feature-done',
     'feature-cleanup',
+    'feature-validate',
     'worktree-open',
 ]);
 
@@ -2423,6 +2424,7 @@ const COMMAND_ARG_HINTS = {
     'feature-prioritise': '<feature-name or letter>',
     'feature-setup': '<ID> [agents...]',
     'feature-implement': '<ID> [--ralph] [--max-iterations=N] [--agent=<id>] [--dry-run]',
+    'feature-validate': '<ID> [--dry-run] [--no-update]',
     'feature-eval': '<ID>',
     'feature-review': '<ID>',
     'feature-done': '<ID> [agent]',
@@ -3062,6 +3064,13 @@ function parseFeatureValidation(specContent) {
         .filter(Boolean);
 }
 
+function detectNodePackageManager() {
+    if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) return 'pnpm';
+    if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) return 'yarn';
+    if (fs.existsSync(path.join(process.cwd(), 'bun.lockb'))) return 'bun';
+    return 'npm';
+}
+
 function detectNodeTestCommand() {
     if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) return 'pnpm test';
     if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) return 'yarn test';
@@ -3099,23 +3108,28 @@ function buildRalphPrompt({
     featureDesc,
     iteration,
     maxIterations,
-    validationCommand,
+    profileValidations,
     featureValidationCommands,
     specContent,
-    priorProgress
+    priorProgress,
+    criteriaFeedback
 }) {
     const validationLines = [];
-    if (validationCommand) validationLines.push(`  [Project] ${validationCommand}`);
+    (profileValidations || []).forEach(({ label, cmd }) => validationLines.push(`  [${label}] ${cmd}`));
     featureValidationCommands.forEach(cmd => validationLines.push(`  [Feature] ${cmd}`));
     const validationBlock = validationLines.length
         ? validationLines.join('\n')
         : '  (none configured — loop will mark success automatically)';
 
+    const criteriaSection = criteriaFeedback
+        ? `\nCriteria feedback from previous iteration (items that still need attention):\n${criteriaFeedback}\n`
+        : '';
+
     return `You are iteration ${iteration} of ${maxIterations} for Feature ${featureNum} (${featureDesc}) in the Ralph loop.
 
 Goal:
 - Implement/fix the feature so all validation checks pass.
-
+${criteriaSection}
 Hard requirements:
 - Work only in the current repository and branch/worktree.
 - Implement the spec faithfully.
@@ -3360,6 +3374,15 @@ function appendRalphProgressEntry(progressPath, featureNum, featureDesc, entry) 
     lines.push(`**Summary:** ${entry.summary}`);
     lines.push(`**Files changed:** ${entry.filesChanged.length ? entry.filesChanged.join(', ') : 'none'}`);
     lines.push(`**Commits:** ${entry.commits.length ? entry.commits.join(' | ') : 'none'}`);
+    if (entry.criteriaResults && entry.criteriaResults.length > 0) {
+        const passCount = entry.criteriaResults.filter(r => r.passed === true).length;
+        const failCount = entry.criteriaResults.filter(r => r.passed === false).length;
+        lines.push(`**Criteria:** ${passCount} passed, ${failCount} failed`);
+        entry.criteriaResults.forEach(r => {
+            const icon = r.skipped ? '⏭' : r.passed ? '✅' : '❌';
+            lines.push(`  ${icon} ${r.text}${r.reasoning ? ` (${r.reasoning})` : ''}`);
+        });
+    }
     lines.push('');
 
     fs.appendFileSync(progressPath, `${lines.join('\n')}\n`);
@@ -3417,9 +3440,9 @@ function runRalphCommand(args) {
 
     const profile = getActiveProfile();
     const projectConfig = loadProjectConfig();
-    const validationCommand = detectValidationCommand(profile.name, projectConfig);
+    const profileValidations = getProfileValidationCommands(profile.name, projectConfig);
 
-    const specContent = fs.readFileSync(found.fullPath, 'utf8');
+    let specContent;
     const progressPath = path.join(PATHS.features.root, 'logs', `feature-${featureNum}-ralph-progress.md`);
     const existingProgress = fs.existsSync(progressPath) ? fs.readFileSync(progressPath, 'utf8') : '';
     const previousIterations = parseRalphProgress(existingProgress);
@@ -3441,10 +3464,11 @@ function runRalphCommand(args) {
         return;
     }
 
+    const validationDisplay = profileValidations.map(v => v.cmd).join(', ') || '(not configured)';
     console.log(`\n🔁 Ralph Loop: Feature ${featureNum} - ${featureDesc}`);
     console.log(`   Agent: ${selectedAgent}`);
     console.log(`   Iterations: ${startIteration}..${maxIterations}`);
-    console.log(`   Validation: ${validationCommand || '(not configured)'}`);
+    console.log(`   Validation: ${validationDisplay}`);
     console.log(`   Progress: ./docs/specs/features/logs/feature-${featureNum}-ralph-progress.md`);
     if (dryRun) {
         console.log(`   Mode: dry-run`);
@@ -3457,8 +3481,11 @@ function runRalphCommand(args) {
     process.on('SIGINT', sigintHandler);
 
     let loopSucceeded = false;
+    let criteriaFeedback = null;
     try {
         for (let iteration = startIteration; iteration <= maxIterations; iteration++) {
+            // Re-read spec each iteration to reflect any checkbox updates
+            specContent = fs.readFileSync(found.fullPath, 'utf8');
             const timestamp = formatTimestamp();
             const progressBeforeIteration = fs.existsSync(progressPath) ? fs.readFileSync(progressPath, 'utf8') : existingProgress;
             const featureValidationCommands = parseFeatureValidation(specContent);
@@ -3467,10 +3494,11 @@ function runRalphCommand(args) {
                 featureDesc,
                 iteration,
                 maxIterations,
-                validationCommand,
+                profileValidations,
                 featureValidationCommands,
                 specContent,
-                priorProgress: progressBeforeIteration
+                priorProgress: progressBeforeIteration,
+                criteriaFeedback
             });
 
             console.log(`\n🚀 Iteration ${iteration}/${maxIterations}`);
@@ -3480,15 +3508,16 @@ function runRalphCommand(args) {
             let status = 'Failed';
             let summary = agentResult.summary;
             let validationResult = { ok: false, exitCode: 1, summary: 'Validation skipped (agent step did not complete)' };
+            let smartResult = null;
 
             if (interrupted || agentResult.signal === 'SIGINT' || agentResult.exitCode === 130) {
                 status = 'Interrupted';
                 summary = 'Interrupted by Ctrl+C';
             } else if (agentResult.ok) {
-                const featureValidationCommands = parseFeatureValidation(specContent);
+                const currentFeatureValidationCommands = parseFeatureValidation(specContent);
                 const allValidations = [
-                    ...(validationCommand ? [{ label: 'Project', cmd: validationCommand }] : []),
-                    ...featureValidationCommands.map(cmd => ({ label: 'Feature', cmd }))
+                    ...profileValidations,
+                    ...currentFeatureValidationCommands.map(cmd => ({ label: 'Feature', cmd }))
                 ];
 
                 if (allValidations.length === 0) {
@@ -3517,6 +3546,31 @@ function runRalphCommand(args) {
                 summary = validationResult.ok
                     ? `Validation passed on iteration ${iteration}`
                     : `Validation failed on iteration ${iteration}`;
+
+                // Smart validation: evaluate acceptance criteria when commands pass
+                if (validationResult.ok) {
+                    smartResult = runSmartValidation({
+                        featureNum,
+                        specPath: found.fullPath,
+                        specContent,
+                        dryRun,
+                        updateSpec: !dryRun
+                    });
+                    if (smartResult.criteriaResults.length > 0) {
+                        console.log(`\n🧠 Criteria evaluation:`);
+                        console.log(formatCriteriaResults(smartResult.criteriaResults));
+                        console.log(`   ${smartResult.summary}`);
+                    }
+                    if (!smartResult.allPassed) {
+                        status = 'Failed';
+                        summary = `Criteria check: ${smartResult.summary}`;
+                        criteriaFeedback = formatCriteriaResults(
+                            smartResult.criteriaResults.filter(r => r.passed === false)
+                        );
+                    } else {
+                        criteriaFeedback = null;
+                    }
+                }
             }
 
             let commitResult;
@@ -3546,7 +3600,8 @@ function runRalphCommand(args) {
                     validation: validationSummary,
                     summary,
                     filesChanged,
-                    commits
+                    commits,
+                    criteriaResults: smartResult ? smartResult.criteriaResults : null
                 });
             }
 
@@ -3573,6 +3628,372 @@ function runRalphCommand(args) {
 
     if (loopSucceeded) {
         console.log(`\n📌 Next: review progress in ./docs/specs/features/logs/feature-${featureNum}-ralph-progress.md`);
+    }
+}
+
+// --- Smart Validation (Feature 17) ---
+
+function parseAcceptanceCriteria(specContent) {
+    const criteria = [];
+    if (!specContent) return criteria;
+    const lines = specContent.split('\n');
+    let inSection = false;
+    for (const line of lines) {
+        if (/^## Acceptance Criteria/.test(line)) { inSection = true; continue; }
+        if (inSection && /^## /.test(line)) break;
+        if (!inSection) continue;
+        const match = line.match(/^- \[([ x])\] (.+)$/);
+        if (match) {
+            criteria.push({
+                checked: match[1] === 'x',
+                text: match[2].trim(),
+                type: classifyCriterion(match[2].trim())
+            });
+        }
+    }
+    return criteria;
+}
+
+function classifyCriterion(text) {
+    const objectivePatterns = [
+        /\btests?\s*(pass|fail|run|suite)/i,
+        /\bbuilds?\s*(succeed|pass|fail|compil)/i,
+        /\blint/i,
+        /\btype.?check/i,
+        /\bno\s+errors?/i,
+        /\bcompiles?\b/i,
+        /\bexit\s+code/i,
+        /\bsyntax\s*(check|valid)/i,
+    ];
+    return objectivePatterns.some(p => p.test(text)) ? 'objective' : 'subjective';
+}
+
+function getPackageJsonScripts() {
+    try {
+        const pkgPath = path.join(process.cwd(), 'package.json');
+        if (!fs.existsSync(pkgPath)) return {};
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+        return pkg.scripts || {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function getProfileValidationCommands(profileName, projectConfig = {}) {
+    // 1. Explicit config takes priority
+    const configured = projectConfig?.ralph?.validationCommand;
+    if (configured && typeof configured === 'string' && configured.trim()) {
+        return [{ label: 'Project', cmd: configured.trim() }];
+    }
+
+    // 2. Custom .aigon/validation.sh replaces profile presets
+    const customScript = path.join(process.cwd(), '.aigon', 'validation.sh');
+    if (fs.existsSync(customScript)) {
+        return [{ label: 'Custom', cmd: 'bash .aigon/validation.sh' }];
+    }
+
+    // 3. Profile-specific presets
+    switch (profileName) {
+        case 'ios':
+            return [{ label: 'Test', cmd: 'xcodebuild test' }];
+        case 'android':
+            return [{ label: 'Test', cmd: './gradlew test' }];
+        case 'web':
+        case 'api':
+        case 'library':
+        case 'generic':
+        default: {
+            if (fs.existsSync(path.join(process.cwd(), 'Cargo.toml'))) {
+                return [{ label: 'Test', cmd: 'cargo test' }];
+            }
+            if (fs.existsSync(path.join(process.cwd(), 'go.mod'))) {
+                return [{ label: 'Test', cmd: 'go test ./...' }];
+            }
+            if (fs.existsSync(path.join(process.cwd(), 'pyproject.toml')) ||
+                fs.existsSync(path.join(process.cwd(), 'requirements.txt'))) {
+                return [{ label: 'Test', cmd: 'pytest' }];
+            }
+            // Node.js: multi-command based on available scripts
+            const scripts = getPackageJsonScripts();
+            const pm = detectNodePackageManager();
+            const cmds = [];
+            const nodeTestCmd = detectNodeTestCommand();
+            if (nodeTestCmd) cmds.push({ label: 'Test', cmd: nodeTestCmd });
+            if (profileName === 'web' && scripts.build) {
+                cmds.push({ label: 'Build', cmd: `${pm} run build` });
+            }
+            if (scripts.lint) {
+                cmds.push({ label: 'Lint', cmd: `${pm} run lint` });
+            }
+            if (scripts['type-check'] || scripts.typecheck) {
+                const script = scripts['type-check'] ? 'type-check' : 'typecheck';
+                cmds.push({ label: 'TypeCheck', cmd: `${pm} run ${script}` });
+            }
+            return cmds;
+        }
+    }
+}
+
+function evaluateAllSubjectiveCriteria(criteria, { diff, logContent }) {
+    if (criteria.length === 0) return [];
+    const criteriaList = criteria.map((c, i) => `${i + 1}. ${c.text}`).join('\n');
+    const diffSnippet = diff ? diff.slice(0, 4000) : '(not available)';
+    const logSnippet = logContent ? logContent.slice(0, 1000) : '(not available)';
+
+    const prompt = `You are evaluating whether a software implementation satisfies acceptance criteria.
+
+Criteria to evaluate:
+${criteriaList}
+
+Code changes (git diff, truncated):
+${diffSnippet}
+
+Implementation notes:
+${logSnippet}
+
+For each criterion, respond with one line in this exact format:
+1. YES: <brief reason>
+2. NO: <brief reason>
+(one line per criterion, numbered to match the list above)`;
+
+    const env = { ...process.env };
+    delete env.CLAUDECODE;
+
+    try {
+        const result = spawnSync('claude', ['-p', prompt], {
+            encoding: 'utf8',
+            timeout: 60000,
+            env
+        });
+
+        if (result.error || result.status !== 0) {
+            return criteria.map(() => ({ passed: null, reasoning: 'LLM evaluation unavailable', skipped: true }));
+        }
+
+        const outputLines = (result.stdout || '').trim().split('\n');
+        return criteria.map((_, i) => {
+            const line = outputLines.find(l => l.match(new RegExp(`^${i + 1}\\.\\s*(YES|NO)`, 'i'))) || '';
+            const yesMatch = line.match(/^\d+\.\s*YES[:\s]*(.*)/i);
+            const noMatch = line.match(/^\d+\.\s*NO[:\s]*(.*)/i);
+            if (yesMatch) return { passed: true, reasoning: yesMatch[1].trim(), skipped: false };
+            if (noMatch) return { passed: false, reasoning: noMatch[1].trim(), skipped: false };
+            return { passed: null, reasoning: 'No response for this criterion', skipped: true };
+        });
+    } catch (e) {
+        return criteria.map(() => ({ passed: null, reasoning: e.message, skipped: true }));
+    }
+}
+
+function updateSpecCheckboxes(specPath, checkedTexts) {
+    if (!checkedTexts || checkedTexts.length === 0) return;
+    let content = fs.readFileSync(specPath, 'utf8');
+    for (const text of checkedTexts) {
+        const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        content = content.replace(new RegExp(`^- \\[ \\] ${escaped}$`, 'm'), `- [x] ${text}`);
+    }
+    fs.writeFileSync(specPath, content, 'utf8');
+}
+
+function runSmartValidation({ featureNum, specPath, specContent, dryRun = false, updateSpec = true }) {
+    const criteria = parseAcceptanceCriteria(specContent);
+
+    if (criteria.length === 0) {
+        return { allPassed: true, criteriaResults: [], summary: 'No acceptance criteria found' };
+    }
+
+    if (dryRun) {
+        const results = criteria.map(c => ({
+            ...c, passed: null, reasoning: '[dry-run] evaluation skipped', skipped: true
+        }));
+        const report = criteria.map(c => `  [${c.type}] ${c.checked ? '[x]' : '[ ]'} ${c.text}`).join('\n');
+        return { allPassed: true, criteriaResults: results, summary: `[dry-run] Would evaluate ${criteria.length} criteria:\n${report}` };
+    }
+
+    // Get git diff for LLM context
+    let diff = '';
+    try {
+        diff = execSync('git diff HEAD~1 HEAD 2>/dev/null || git diff --cached 2>/dev/null || echo ""',
+            { encoding: 'utf8', timeout: 10000 }).slice(0, 5000);
+    } catch (e) { /* no diff available */ }
+
+    // Find implementation log for context
+    let logContent = '';
+    try {
+        const logsDir = path.join(PATHS.features.root, 'logs');
+        const prefix = `feature-${featureNum}-`;
+        const logFiles = fs.readdirSync(logsDir)
+            .filter(f => f.startsWith(prefix) && f.endsWith('-log.md'));
+        if (logFiles.length > 0) {
+            logContent = fs.readFileSync(path.join(logsDir, logFiles[0]), 'utf8').slice(0, 2000);
+        }
+    } catch (e) { /* no log */ }
+
+    // Separate unchecked subjective criteria for batched LLM call
+    const uncheckedSubjective = criteria.filter(c => !c.checked && c.type === 'subjective');
+    const subjectiveEvals = evaluateAllSubjectiveCriteria(uncheckedSubjective, { diff, logContent });
+
+    const criteriaResults = [];
+    const passedTexts = [];
+    let allPassed = true;
+    let subjIdx = 0;
+
+    for (const criterion of criteria) {
+        if (criterion.checked) {
+            criteriaResults.push({ ...criterion, passed: true, reasoning: 'Previously verified', skipped: false });
+            continue;
+        }
+
+        if (criterion.type === 'objective') {
+            // Objective criteria: considered passed when all validation commands passed
+            criteriaResults.push({ ...criterion, passed: true, reasoning: 'Objective — validation commands passed', skipped: false });
+            passedTexts.push(criterion.text);
+        } else {
+            const evalResult = subjectiveEvals[subjIdx++] || { passed: null, reasoning: 'No evaluation', skipped: true };
+            criteriaResults.push({ ...criterion, ...evalResult });
+            if (evalResult.passed === true) {
+                passedTexts.push(criterion.text);
+            } else if (evalResult.passed === false) {
+                allPassed = false;
+            }
+            // skipped (null) does not block success
+        }
+    }
+
+    // Update spec checkboxes for newly-passed criteria
+    if (updateSpec && passedTexts.length > 0) {
+        try {
+            updateSpecCheckboxes(specPath, passedTexts);
+        } catch (e) { /* non-fatal */ }
+    }
+
+    const passCount = criteriaResults.filter(r => r.passed === true).length;
+    const failCount = criteriaResults.filter(r => r.passed === false).length;
+    const skipCount = criteriaResults.filter(r => r.skipped).length;
+
+    return {
+        allPassed,
+        criteriaResults,
+        summary: `Criteria: ${passCount} passed, ${failCount} failed, ${skipCount} skipped`
+    };
+}
+
+function formatCriteriaResults(criteriaResults) {
+    if (!criteriaResults || criteriaResults.length === 0) return '';
+    return criteriaResults.map(r => {
+        const icon = r.skipped ? '⏭' : r.passed ? '✅' : '❌';
+        const tag = r.skipped ? 'skip' : r.passed ? 'pass' : 'FAIL';
+        const note = r.reasoning ? ` — ${r.reasoning}` : '';
+        return `  ${icon} [${tag}] ${r.text}${note}`;
+    }).join('\n');
+}
+
+function runFeatureValidateCommand(args) {
+    const options = parseCliOptions(args);
+    const id = options._[0];
+    if (!id) {
+        console.error('Usage: aigon feature-validate <ID> [--dry-run] [--no-update]');
+        process.exitCode = 1;
+        return;
+    }
+
+    const found = findFile(PATHS.features, id, ['03-in-progress']);
+    if (!found) {
+        console.error(`❌ Could not find feature "${id}" in 03-in-progress.`);
+        process.exitCode = 1;
+        return;
+    }
+
+    const match = found.file.match(/^feature-(\d+)-(.*)\.md$/);
+    if (!match) {
+        console.error(`❌ Could not parse feature filename: ${found.file}`);
+        process.exitCode = 1;
+        return;
+    }
+    const [, featureNum] = match;
+
+    const dryRun = Boolean(getOptionValue(options, 'dry-run'));
+    const noUpdate = Boolean(getOptionValue(options, 'no-update'));
+
+    const specContent = fs.readFileSync(found.fullPath, 'utf8');
+    const criteria = parseAcceptanceCriteria(specContent);
+
+    if (criteria.length === 0) {
+        console.log('ℹ️  No acceptance criteria found in spec.');
+        return;
+    }
+
+    const profile = getActiveProfile();
+    const projectConfig = loadProjectConfig();
+    const profileValidations = getProfileValidationCommands(profile.name, projectConfig);
+    const featureValidationCommands = parseFeatureValidation(specContent);
+    const allValidations = [
+        ...profileValidations,
+        ...featureValidationCommands.map(cmd => ({ label: 'Feature', cmd }))
+    ];
+
+    console.log(`\n🔍 Smart Validation: Feature ${featureNum}`);
+    console.log(`   Profile: ${profile.name}`);
+    if (dryRun) console.log(`   Mode: dry-run`);
+
+    if (allValidations.length > 0) {
+        console.log(`\nValidation commands:`);
+        allValidations.forEach(({ label, cmd }) => console.log(`  [${label}] ${cmd}`));
+    }
+
+    console.log(`\nAcceptance criteria (${criteria.length} total):`);
+    criteria.forEach(c => {
+        const icon = c.checked ? '[x]' : '[ ]';
+        console.log(`  ${icon} [${c.type}] ${c.text}`);
+    });
+
+    if (dryRun) {
+        console.log('\n[dry-run] No validation run. Use without --dry-run to execute.');
+        return;
+    }
+
+    // Run validation commands
+    console.log('\n🧪 Running validation:');
+    let validationPassed = true;
+    if (allValidations.length === 0) {
+        console.log('  (no validation commands configured)');
+    } else {
+        for (const { label, cmd } of allValidations) {
+            console.log(`  [${label}] ${cmd}`);
+            const result = runRalphValidation(cmd, false);
+            if (!result.ok) {
+                console.log(`  ❌ Failed: ${result.summary}`);
+                validationPassed = false;
+                break;
+            }
+        }
+    }
+
+    if (!validationPassed) {
+        console.log('\n❌ Validation commands failed. Fix before running smart validation.');
+        process.exitCode = 1;
+        return;
+    }
+
+    // Run smart validation
+    console.log('\n🧠 Evaluating acceptance criteria:');
+    const result = runSmartValidation({
+        featureNum,
+        specPath: found.fullPath,
+        specContent,
+        dryRun: false,
+        updateSpec: !noUpdate
+    });
+
+    const formatted = formatCriteriaResults(result.criteriaResults);
+    if (formatted) console.log(formatted);
+
+    console.log(`\n${result.summary}`);
+    if (result.allPassed) {
+        console.log('✅ All criteria satisfied.');
+        if (!noUpdate) console.log('   Spec checkboxes updated.');
+    } else {
+        console.log('❌ Some criteria not satisfied. Review and address failing items.');
+        process.exitCode = 1;
     }
 }
 
@@ -4828,6 +5249,9 @@ const commands = {
         } else {
             console.log(`\n   When done: aigon feature-done ${num}`);
         }
+    },
+    'feature-validate': (args) => {
+        return runFeatureValidateCommand(args);
     },
     'feature-eval': (args) => {
         const name = args[0];
@@ -6869,6 +7293,7 @@ Feature Commands (unified for solo and arena modes):
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
   feature-setup <ID> [agents...]    Setup for solo (branch) or arena (worktrees)
   feature-implement <ID> [--ralph]  Implement feature; add --ralph for autonomous retry loop
+  feature-validate <ID>             Evaluate acceptance criteria (smart validation)
   feature-eval <ID>                 Create evaluation (code review or comparison)
   feature-done <ID> [agent]         Merge and complete feature
   feature-cleanup <ID>              Clean up arena worktrees and branches
@@ -6911,6 +7336,8 @@ Examples:
   aigon feature-implement 55           # Implement in current branch/worktree
   aigon feature-implement 55 --ralph               # Run autonomous Ralph loop
   aigon feature-implement 55 --ralph --max-iterations=8 --agent=cx  # Ralph with options
+  aigon feature-validate 55            # Evaluate acceptance criteria (smart validation)
+  aigon feature-validate 55 --dry-run  # Show what would be checked without running
   aigon feature-eval 55                # Evaluate implementations
   aigon feature-done 55 cc             # Merge Claude's arena implementation
   aigon feature-cleanup 55 --push      # Clean up losing arena branches
