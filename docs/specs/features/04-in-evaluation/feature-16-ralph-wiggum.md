@@ -110,6 +110,14 @@ The prompt sent to each fresh agent session includes:
 
 Uses the existing profile system's test/build commands (WORKTREE_TEST_INSTRUCTIONS placeholder). No LLM-based criteria checking — that's a separate feature (Feature 17).
 
+## Validation
+
+```bash
+node --check aigon-cli.js
+node aigon-cli.js ralph --help 2>&1 | grep -q "ralph"
+node aigon-cli.js ralph 16 --dry-run --max-iterations=1 --agent=cc
+```
+
 ## Out of Scope (see related features)
 
 - LLM-based acceptance criteria evaluation → Feature 17: Smart Validation

@@ -20,6 +20,16 @@ This command detects whether you're in solo or arena mode and provides guidance.
 aigon feature-implement {{ARG1_SYNTAX}}
 ```
 
+To run in **Ralph mode** — autonomous retry loop where a fresh agent session is spawned each iteration until validation passes:
+
+```bash
+aigon feature-implement {{ARG1_SYNTAX}} --ralph
+```
+
+Optional flags: `--max-iterations=N` (default 5) · `--agent=<id>` · `--dry-run`
+
+> **What is Ralph?** The Ralph technique runs an agent in a loop: implement → validate → if fail, repeat with fresh context until success or max iterations. Named after the [original pattern by Geoffrey Huntley](https://ghuntley.com/ralph/) and [similar implementations](https://github.com/minicodemonkey/chief) that treat autonomous iteration as the primary dev loop. Add a `## Validation` section to your feature spec to define feature-specific checks alongside project-level validation.
+
 The command will:
 - Detect your mode: solo (branch), solo worktree, or arena
 - Display the spec location and log file
