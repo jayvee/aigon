@@ -15,6 +15,7 @@
 | `{{CMD_PREFIX}}feature-prioritise <name>` | Assign ID and move to backlog |
 | `{{CMD_PREFIX}}feature-setup <ID> [agents...]` | Setup for solo (branch) or arena (worktrees) |
 | `{{CMD_PREFIX}}feature-implement <ID>` | Implement feature in current branch/worktree |
+| `{{CMD_PREFIX}}ralph <ID> [options]` | Run iterative implement+validate loop with fresh agent sessions |
 | `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `{{CMD_PREFIX}}feature-review <ID>` | Code review with fixes by a different agent |
 | `{{CMD_PREFIX}}feature-done <ID> [agent]` | Merge and complete feature |

@@ -747,7 +747,7 @@ aigon feature-cleanup 55 --push
 | Feature Now | `aigon feature-now <name>` (inbox match → prioritise + setup + implement; no match → create new) |
 | Feature Prioritise | `aigon feature-prioritise <name>` |
 | Feature Setup | `aigon feature-setup <ID> [agents...]` |
-| Feature Implement | `aigon feature-implement <ID>` |
+| Feature Implement | `aigon feature-implement <ID> [--ralph]` |
 | Feature Eval | `aigon feature-eval <ID>` |
 | Feature Review | `aigon feature-review <ID>` |
 | Feature Done | `aigon feature-done <ID> [agent]` |
@@ -835,7 +835,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
 | `/aigon:board` | Show Kanban board or list view |
-| `/aigon:feature-implement <ID>` | Implement in current branch/worktree |
+| `/aigon:feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
@@ -862,7 +862,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
 | `/aigon:board` | Show Kanban board or list view |
-| `/aigon:feature-implement <ID>` | Implement in current branch/worktree |
+| `/aigon:feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
@@ -889,7 +889,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
 | `/prompts:aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
 | `/prompts:aigon-board` | Show Kanban board or list view |
-| `/prompts:aigon-feature-implement <ID>` | Implement in current branch/worktree |
+| `/prompts:aigon-feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
 | `/prompts:aigon-feature-eval <ID>` | Generate review/comparison template |
 | `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
 | `/prompts:aigon-feature-done <ID> [agent]` | Merge and complete feature |
@@ -916,7 +916,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
 | `/aigon-board` | Show Kanban board or list view |
-| `/aigon-feature-implement <ID>` | Implement in current branch/worktree |
+| `/aigon-feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
 | `/aigon-feature-eval <ID>` | Generate review/comparison template |
 | `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
