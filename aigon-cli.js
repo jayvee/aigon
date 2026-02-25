@@ -1133,7 +1133,7 @@ windows:
         }
     } else if (terminal === 'cursor') {
         try {
-            execSync(`cursor "${wt.path}"`);
+            execSync(`cursor --trust-workspace "${wt.path}"`);
 
             console.log(`\n🚀 Opening worktree in Cursor:`);
             console.log(`   Feature: ${wt.featureId} - ${wt.desc}`);
