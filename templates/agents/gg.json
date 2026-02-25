@@ -6,7 +6,12 @@
   "cli": {
     "command": "gemini",
     "implementFlag": "--yolo",
-    "implementPrompt": "/aigon:feature-implement {featureId}"
+    "implementPrompt": "/aigon:feature-implement {featureId}",
+    "models": {
+      "research": "gemini-2.5-pro",
+      "implement": "gemini-2.5-pro",
+      "evaluate": "gemini-2.5-flash"
+    }
   },
 
   "placeholders": {
@@ -55,6 +60,7 @@
     "feature-cleanup",
     "board",
     "worktree-open",
+    "sessions-close",
     "research-create",
     "research-prioritise",
     "research-setup",
