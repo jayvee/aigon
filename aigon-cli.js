@@ -2422,7 +2422,7 @@ const COMMAND_ARG_HINTS = {
     'feature-now': '<existing-feature-name> OR <feature-description>',
     'feature-prioritise': '<feature-name or letter>',
     'feature-setup': '<ID> [agents...]',
-    'feature-implement': '<ID>',
+    'feature-implement': '<ID> [--ralph] [--max-iterations=N] [--agent=<id>] [--dry-run]',
     'feature-eval': '<ID>',
     'feature-review': '<ID>',
     'feature-done': '<ID> [agent]',
@@ -3002,6 +3002,577 @@ function ensureBoardMapInGitignore() {
         }
         content += `${entry}\n`;
         fs.writeFileSync(gitignorePath, content);
+    }
+}
+
+// --- Ralph Loop Helpers ---
+
+function formatTimestamp(date = new Date()) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function parseRalphProgress(progressContent) {
+    const iterations = [];
+    if (!progressContent) return iterations;
+
+    const headerRegex = /^## Iteration (\d+) \(([^)]+)\)$/gm;
+    const headers = [];
+    let headerMatch;
+    while ((headerMatch = headerRegex.exec(progressContent)) !== null) {
+        headers.push({
+            number: parseInt(headerMatch[1], 10),
+            timestamp: headerMatch[2],
+            index: headerMatch.index,
+            headerTextLength: headerMatch[0].length
+        });
+    }
+
+    headers.forEach((header, idx) => {
+        const start = header.index + header.headerTextLength;
+        const end = idx + 1 < headers.length ? headers[idx + 1].index : progressContent.length;
+        const body = progressContent.slice(start, end);
+        const statusMatch = body.match(/^\*\*Status:\*\*\s*(.+)$/m);
+        const status = statusMatch ? statusMatch[1].trim() : 'Unknown';
+        iterations.push({
+            number: header.number,
+            timestamp: header.timestamp,
+            status,
+            success: /^success$/i.test(status)
+        });
+    });
+
+    return iterations;
+}
+
+function parseFeatureValidation(specContent) {
+    // Extract commands from an optional "## Validation" section in the feature spec.
+    // Accepts fenced bash blocks or plain indented/bullet lines.
+    // Returns an array of command strings, or empty array if section absent.
+    if (!specContent) return [];
+    const sectionMatch = specContent.match(/^## Validation\s*\n([\s\S]*?)(?=^## |\Z)/m);
+    if (!sectionMatch) return [];
+    const body = sectionMatch[1];
+    // Pull commands from fenced code block first
+    const fencedMatch = body.match(/```(?:bash|sh|shell)?\n([\s\S]*?)\n```/);
+    const rawText = fencedMatch ? fencedMatch[1] : body;
+    return rawText
+        .split('\n')
+        .map(line => line.replace(/#.*$/, '').replace(/^[-*]\s+/, '').trim())
+        .filter(Boolean);
+}
+
+function detectNodeTestCommand() {
+    if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) return 'pnpm test';
+    if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) return 'yarn test';
+    if (fs.existsSync(path.join(process.cwd(), 'bun.lockb'))) return 'bun test';
+    if (fs.existsSync(path.join(process.cwd(), 'package.json'))) return 'npm test';
+    return null;
+}
+
+function detectValidationCommand(profileName, projectConfig = {}) {
+    const configured = projectConfig?.ralph?.validationCommand;
+    if (configured && typeof configured === 'string' && configured.trim()) {
+        return configured.trim();
+    }
+
+    switch (profileName) {
+        case 'ios':
+            return 'xcodebuild test';
+        case 'android':
+            return './gradlew test';
+        case 'web':
+        case 'api':
+        case 'library':
+        case 'generic':
+        default: {
+            if (fs.existsSync(path.join(process.cwd(), 'Cargo.toml'))) return 'cargo test';
+            if (fs.existsSync(path.join(process.cwd(), 'go.mod'))) return 'go test ./...';
+            if (fs.existsSync(path.join(process.cwd(), 'pyproject.toml')) || fs.existsSync(path.join(process.cwd(), 'requirements.txt'))) return 'pytest';
+            return detectNodeTestCommand();
+        }
+    }
+}
+
+function buildRalphPrompt({
+    featureNum,
+    featureDesc,
+    iteration,
+    maxIterations,
+    validationCommand,
+    featureValidationCommands,
+    specContent,
+    priorProgress
+}) {
+    const validationLines = [];
+    if (validationCommand) validationLines.push(`  [Project] ${validationCommand}`);
+    featureValidationCommands.forEach(cmd => validationLines.push(`  [Feature] ${cmd}`));
+    const validationBlock = validationLines.length
+        ? validationLines.join('\n')
+        : '  (none configured — loop will mark success automatically)';
+
+    return `You are iteration ${iteration} of ${maxIterations} for Feature ${featureNum} (${featureDesc}) in the Ralph loop.
+
+Goal:
+- Implement/fix the feature so all validation checks pass.
+
+Hard requirements:
+- Work only in the current repository and branch/worktree.
+- Implement the spec faithfully.
+- Commit your code changes before you exit this iteration.
+- Use a conventional commit message (feat:, fix:, or chore:).
+- Exit when done.
+
+Validation checks that will run after you exit (all must pass):
+${validationBlock}
+
+Feature spec:
+--- SPEC START ---
+${specContent}
+--- SPEC END ---
+
+Prior Ralph progress:
+--- PROGRESS START ---
+${priorProgress || '(no prior progress)'}
+--- PROGRESS END ---
+`;
+}
+
+function getCurrentHead() {
+    try {
+        return execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+    } catch (e) {
+        return null;
+    }
+}
+
+function getGitStatusPorcelain() {
+    try {
+        return execSync('git status --porcelain', { encoding: 'utf8' }).trim();
+    } catch (e) {
+        return '';
+    }
+}
+
+function getChangedFilesInRange(fromSha, toSha) {
+    if (!fromSha || !toSha || fromSha === toSha) {
+        return [];
+    }
+    try {
+        const output = execSync(`git diff --name-only ${fromSha}..${toSha}`, { encoding: 'utf8' }).trim();
+        if (!output) return [];
+        return output.split('\n').map(line => line.trim()).filter(Boolean);
+    } catch (e) {
+        return [];
+    }
+}
+
+function getCommitSummariesInRange(fromSha, toSha) {
+    if (!fromSha || !toSha || fromSha === toSha) {
+        return [];
+    }
+    try {
+        const output = execSync(`git log --format=%h\\ %s --reverse ${fromSha}..${toSha}`, { encoding: 'utf8' }).trim();
+        if (!output) return [];
+        return output.split('\n').map(line => line.trim()).filter(Boolean);
+    } catch (e) {
+        return [];
+    }
+}
+
+function ensureRalphCommit(featureNum, iteration) {
+    const statusBefore = getGitStatusPorcelain();
+    if (!statusBefore) {
+        return {
+            ok: true,
+            committed: false,
+            autoCommitted: false,
+            message: 'No uncommitted changes after iteration.'
+        };
+    }
+
+    const message = `chore: ralph iteration ${iteration} for feature ${String(featureNum).padStart(2, '0')}`;
+
+    const addResult = spawnSync('git', ['add', '-A'], { stdio: 'inherit' });
+    if (addResult.error || addResult.status !== 0) {
+        return {
+            ok: false,
+            committed: false,
+            autoCommitted: false,
+            message: addResult.error ? addResult.error.message : `git add failed with status ${addResult.status}`
+        };
+    }
+
+    const commitResult = spawnSync('git', ['commit', '-m', message], { stdio: 'inherit' });
+    if (commitResult.error) {
+        return {
+            ok: false,
+            committed: false,
+            autoCommitted: false,
+            message: commitResult.error.message
+        };
+    }
+    if (commitResult.status !== 0) {
+        const remaining = getGitStatusPorcelain();
+        if (!remaining) {
+            return {
+                ok: true,
+                committed: false,
+                autoCommitted: false,
+                message: 'No additional commit needed after iteration.'
+            };
+        }
+        return {
+            ok: false,
+            committed: false,
+            autoCommitted: false,
+            message: `git commit failed with status ${commitResult.status}`
+        };
+    }
+
+    return {
+        ok: true,
+        committed: true,
+        autoCommitted: true,
+        message: `Auto-committed pending changes: ${message}`
+    };
+}
+
+function runRalphAgentIteration(agentId, prompt, dryRun = false) {
+    const cliConfig = getAgentCliConfig(agentId);
+    const command = cliConfig?.command;
+    if (!command) {
+        return {
+            ok: false,
+            exitCode: 1,
+            signal: null,
+            summary: `No CLI command configured for agent '${agentId}'.`
+        };
+    }
+
+    const flagTokens = cliConfig.implementFlag
+        ? String(cliConfig.implementFlag).trim().split(/\s+/).filter(Boolean)
+        : [];
+    const args = [...flagTokens, prompt];
+
+    if (dryRun) {
+        return {
+            ok: true,
+            exitCode: 0,
+            signal: null,
+            summary: `[dry-run] ${command} ${args.join(' ')}`
+        };
+    }
+
+    const env = { ...process.env };
+    if (command === 'claude') {
+        delete env.CLAUDECODE;
+    }
+
+    const result = spawnSync(command, args, {
+        stdio: 'inherit',
+        env
+    });
+
+    if (result.error) {
+        return {
+            ok: false,
+            exitCode: 1,
+            signal: null,
+            summary: `Agent CLI failed to start: ${result.error.message}`
+        };
+    }
+
+    if (result.signal) {
+        return {
+            ok: false,
+            exitCode: 130,
+            signal: result.signal,
+            summary: `Agent exited via signal ${result.signal}`
+        };
+    }
+
+    const exitCode = typeof result.status === 'number' ? result.status : 1;
+    return {
+        ok: exitCode === 0,
+        exitCode,
+        signal: null,
+        summary: `Agent exited with code ${exitCode}`
+    };
+}
+
+function runRalphValidation(validationCommand, dryRun = false) {
+    if (!validationCommand) {
+        return {
+            ok: false,
+            exitCode: 1,
+            summary: 'Validation command not configured'
+        };
+    }
+
+    if (dryRun) {
+        return {
+            ok: true,
+            exitCode: 0,
+            summary: `[dry-run] ${validationCommand}`
+        };
+    }
+
+    const result = spawnSync(validationCommand, {
+        stdio: 'inherit',
+        shell: true
+    });
+
+    if (result.error) {
+        return {
+            ok: false,
+            exitCode: 1,
+            summary: `Validation failed to start: ${result.error.message}`
+        };
+    }
+    if (result.signal) {
+        return {
+            ok: false,
+            exitCode: 130,
+            summary: `Validation exited via signal ${result.signal}`
+        };
+    }
+
+    const exitCode = typeof result.status === 'number' ? result.status : 1;
+    return {
+        ok: exitCode === 0,
+        exitCode,
+        summary: `${validationCommand} exited with code ${exitCode}`
+    };
+}
+
+function appendRalphProgressEntry(progressPath, featureNum, featureDesc, entry) {
+    if (!fs.existsSync(progressPath)) {
+        const header = `# Ralph Progress: Feature ${featureNum} - ${featureDesc}\n\n`;
+        safeWrite(progressPath, header);
+    }
+
+    const lines = [];
+    lines.push(`## Iteration ${entry.iteration} (${entry.timestamp})`);
+    lines.push(`**Status:** ${entry.status}`);
+    lines.push(`**Agent:** ${entry.agent}`);
+    lines.push(`**Validation:** ${entry.validation}`);
+    lines.push(`**Summary:** ${entry.summary}`);
+    lines.push(`**Files changed:** ${entry.filesChanged.length ? entry.filesChanged.join(', ') : 'none'}`);
+    lines.push(`**Commits:** ${entry.commits.length ? entry.commits.join(' | ') : 'none'}`);
+    lines.push('');
+
+    fs.appendFileSync(progressPath, `${lines.join('\n')}\n`);
+}
+
+function runRalphCommand(args) {
+    const options = parseCliOptions(args);
+    const id = options._[0];
+    if (!id) {
+        console.error(`Usage: aigon feature-implement <feature-id> --ralph [--max-iterations=N] [--agent=<id>] [--dry-run]`);
+        console.error(`\nExamples:`);
+        console.error(`  aigon feature-implement 16 --ralph`);
+        console.error(`  aigon feature-implement 16 --ralph --max-iterations=8 --agent=cx`);
+        process.exitCode = 1;
+        return;
+    }
+
+    const found = findFile(PATHS.features, id, ['03-in-progress']);
+    if (!found) {
+        console.error(`❌ Could not find feature "${id}" in 03-in-progress.`);
+        process.exitCode = 1;
+        return;
+    }
+
+    const match = found.file.match(/^feature-(\d+)-(.*)\.md$/);
+    if (!match) {
+        console.error(`❌ Could not parse feature filename: ${found.file}`);
+        process.exitCode = 1;
+        return;
+    }
+    const [, featureNum, featureDesc] = match;
+
+    const availableAgents = getAvailableAgents();
+    const configuredDefaultMax = loadProjectConfig()?.ralph?.maxIterations;
+    const defaultMaxIterations = Number.isInteger(configuredDefaultMax) && configuredDefaultMax > 0
+        ? configuredDefaultMax
+        : 5;
+    const maxIterationsRaw = getOptionValue(options, 'max-iterations');
+    const maxIterations = maxIterationsRaw !== undefined ? parseInt(maxIterationsRaw, 10) : defaultMaxIterations;
+    if (!Number.isInteger(maxIterations) || maxIterations <= 0) {
+        console.error(`❌ Invalid --max-iterations value: ${maxIterationsRaw}`);
+        process.exitCode = 1;
+        return;
+    }
+
+    const selectedAgentRaw = String(getOptionValue(options, 'agent') || 'cc').toLowerCase();
+    if (!availableAgents.includes(selectedAgentRaw)) {
+        console.error(`❌ Unknown agent '${selectedAgentRaw}'. Available: ${availableAgents.join(', ')}`);
+        process.exitCode = 1;
+        return;
+    }
+    const selectedAgent = selectedAgentRaw;
+
+    const dryRun = Boolean(getOptionValue(options, 'dry-run'));
+
+    const profile = getActiveProfile();
+    const projectConfig = loadProjectConfig();
+    const validationCommand = detectValidationCommand(profile.name, projectConfig);
+
+    const specContent = fs.readFileSync(found.fullPath, 'utf8');
+    const progressPath = path.join(PATHS.features.root, 'logs', `feature-${featureNum}-ralph-progress.md`);
+    const existingProgress = fs.existsSync(progressPath) ? fs.readFileSync(progressPath, 'utf8') : '';
+    const previousIterations = parseRalphProgress(existingProgress);
+    const completedSuccess = previousIterations.find(entry => entry.success);
+    if (completedSuccess) {
+        console.log(`✅ Ralph loop already succeeded on iteration ${completedSuccess.number}.`);
+        console.log(`   Progress file: ./docs/specs/features/logs/feature-${featureNum}-ralph-progress.md`);
+        return;
+    }
+
+    const startIteration = previousIterations.length
+        ? Math.max(...previousIterations.map(entry => entry.number)) + 1
+        : 1;
+
+    if (startIteration > maxIterations) {
+        console.error(`❌ No iterations remaining. Last recorded iteration is ${startIteration - 1}, max is ${maxIterations}.`);
+        console.error(`   Re-run with a higher limit: --max-iterations=<N>`);
+        process.exitCode = 1;
+        return;
+    }
+
+    console.log(`\n🔁 Ralph Loop: Feature ${featureNum} - ${featureDesc}`);
+    console.log(`   Agent: ${selectedAgent}`);
+    console.log(`   Iterations: ${startIteration}..${maxIterations}`);
+    console.log(`   Validation: ${validationCommand || '(not configured)'}`);
+    console.log(`   Progress: ./docs/specs/features/logs/feature-${featureNum}-ralph-progress.md`);
+    if (dryRun) {
+        console.log(`   Mode: dry-run`);
+    }
+
+    let interrupted = false;
+    const sigintHandler = () => {
+        interrupted = true;
+    };
+    process.on('SIGINT', sigintHandler);
+
+    let loopSucceeded = false;
+    try {
+        for (let iteration = startIteration; iteration <= maxIterations; iteration++) {
+            const timestamp = formatTimestamp();
+            const progressBeforeIteration = fs.existsSync(progressPath) ? fs.readFileSync(progressPath, 'utf8') : existingProgress;
+            const featureValidationCommands = parseFeatureValidation(specContent);
+            const prompt = buildRalphPrompt({
+                featureNum,
+                featureDesc,
+                iteration,
+                maxIterations,
+                validationCommand,
+                featureValidationCommands,
+                specContent,
+                priorProgress: progressBeforeIteration
+            });
+
+            console.log(`\n🚀 Iteration ${iteration}/${maxIterations}`);
+            const headBefore = dryRun ? null : getCurrentHead();
+            const agentResult = runRalphAgentIteration(selectedAgent, prompt, dryRun);
+
+            let status = 'Failed';
+            let summary = agentResult.summary;
+            let validationResult = { ok: false, exitCode: 1, summary: 'Validation skipped (agent step did not complete)' };
+
+            if (interrupted || agentResult.signal === 'SIGINT' || agentResult.exitCode === 130) {
+                status = 'Interrupted';
+                summary = 'Interrupted by Ctrl+C';
+            } else if (agentResult.ok) {
+                const featureValidationCommands = parseFeatureValidation(specContent);
+                const allValidations = [
+                    ...(validationCommand ? [{ label: 'Project', cmd: validationCommand }] : []),
+                    ...featureValidationCommands.map(cmd => ({ label: 'Feature', cmd }))
+                ];
+
+                if (allValidations.length === 0) {
+                    console.log(`\n⚠️  No validation configured — marking as success.`);
+                    validationResult = { ok: true, exitCode: 0, summary: 'No validation configured' };
+                } else {
+                    console.log(`\n🧪 Running validation (${allValidations.length} check${allValidations.length > 1 ? 's' : ''}):`);
+                    let allPassed = true;
+                    const summaries = [];
+                    for (const { label, cmd } of allValidations) {
+                        console.log(`   [${label}] ${cmd}`);
+                        const result = runRalphValidation(cmd, dryRun);
+                        summaries.push(`${label}: ${result.summary}`);
+                        if (!result.ok) {
+                            validationResult = result;
+                            allPassed = false;
+                            break;
+                        }
+                        validationResult = result;
+                    }
+                    validationResult = { ...validationResult, summary: summaries.join(' | ') };
+                    if (allPassed) validationResult.ok = true;
+                }
+
+                status = validationResult.ok ? 'Success' : 'Failed';
+                summary = validationResult.ok
+                    ? `Validation passed on iteration ${iteration}`
+                    : `Validation failed on iteration ${iteration}`;
+            }
+
+            let commitResult;
+            if (dryRun) {
+                commitResult = { ok: true, committed: false, autoCommitted: false, message: 'Skipped commit step in dry-run mode.' };
+            } else if (status === 'Interrupted') {
+                commitResult = { ok: true, committed: false, autoCommitted: false, message: 'Skipped commit step because iteration was interrupted.' };
+            } else {
+                commitResult = ensureRalphCommit(featureNum, iteration);
+            }
+            if (!commitResult.ok) {
+                status = 'Failed';
+                summary = `Commit step failed: ${commitResult.message}`;
+            }
+
+            const headAfter = dryRun ? null : getCurrentHead();
+            const filesChanged = dryRun ? [] : getChangedFilesInRange(headBefore, headAfter);
+            const commits = dryRun ? [] : getCommitSummariesInRange(headBefore, headAfter);
+            const validationSummary = validationResult.summary || 'Validation not run';
+
+            if (!dryRun) {
+                appendRalphProgressEntry(progressPath, featureNum, featureDesc, {
+                    iteration,
+                    timestamp,
+                    status,
+                    agent: selectedAgent,
+                    validation: validationSummary,
+                    summary,
+                    filesChanged,
+                    commits
+                });
+            }
+
+            if (status === 'Success') {
+                loopSucceeded = true;
+                console.log(`✅ Ralph loop succeeded on iteration ${iteration}.`);
+                break;
+            }
+            if (status === 'Interrupted') {
+                console.log(`⏸️  Ralph loop interrupted on iteration ${iteration}. Re-run to resume.`);
+                process.exitCode = 130;
+                break;
+            }
+            if (iteration === maxIterations) {
+                console.log(`❌ Ralph loop reached max iterations (${maxIterations}) without passing validation.`);
+                process.exitCode = 1;
+                break;
+            }
+            console.log(`↩️  Iteration ${iteration} failed. Continuing to next iteration...`);
+        }
+    } finally {
+        process.removeListener('SIGINT', sigintHandler);
+    }
+
+    if (loopSucceeded) {
+        console.log(`\n📌 Next: review progress in ./docs/specs/features/logs/feature-${featureNum}-ralph-progress.md`);
     }
 }
 
@@ -4133,8 +4704,13 @@ const commands = {
         runPostHook('feature-setup', hookContext);
     },
     'feature-implement': (args) => {
-        const id = args[0];
-        if (!id) return console.error("Usage: aigon feature-implement <ID>\n\nRun this after 'aigon feature-setup <ID>'\n\nExamples:\n  aigon feature-implement 55     # In solo mode branch\n  aigon feature-implement 55     # In arena mode worktree");
+        const options = parseCliOptions(args);
+        const id = options._[0];
+        const ralphRequested = getOptionValue(options, 'ralph');
+        if (ralphRequested) {
+            return runRalphCommand(args);
+        }
+        if (!id) return console.error("Usage: aigon feature-implement <ID> [--ralph]\n\nRun this after 'aigon feature-setup <ID>'\n\nExamples:\n  aigon feature-implement 55             # In solo mode branch\n  aigon feature-implement 55 --ralph     # Run Ralph autonomous loop\n  aigon feature-implement 55             # In arena mode worktree");
 
         // Find the feature spec
         let found = findFile(PATHS.features, id, ['03-in-progress']);
@@ -6292,7 +6868,7 @@ Feature Commands (unified for solo and arena modes):
   feature-now <name>                Fast-track: inbox match → prioritise + setup + implement; or create new + implement
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
   feature-setup <ID> [agents...]    Setup for solo (branch) or arena (worktrees)
-  feature-implement <ID>            Implement feature in current branch/worktree
+  feature-implement <ID> [--ralph]  Implement feature; add --ralph for autonomous retry loop
   feature-eval <ID>                 Create evaluation (code review or comparison)
   feature-done <ID> [agent]         Merge and complete feature
   feature-cleanup <ID>              Clean up arena worktrees and branches
@@ -6333,6 +6909,8 @@ Examples:
   aigon worktree-open 100 101 102      # Open features side-by-side (parallel)
   aigon sessions-close 55              # Kill all arena agents + close Warp tab
   aigon feature-implement 55           # Implement in current branch/worktree
+  aigon feature-implement 55 --ralph               # Run autonomous Ralph loop
+  aigon feature-implement 55 --ralph --max-iterations=8 --agent=cx  # Ralph with options
   aigon feature-eval 55                # Evaluate implementations
   aigon feature-done 55 cc             # Merge Claude's arena implementation
   aigon feature-cleanup 55 --push      # Clean up losing arena branches
