@@ -6,7 +6,8 @@
   "cli": {
     "command": "codex",
     "implementFlag": "--full-auto",
-    "implementPrompt": "/prompts:aigon-feature-implement {featureId}"
+    "implementPrompt": "/prompts:aigon-feature-implement {featureId}",
+    "models": {}
   },
 
   "placeholders": {
@@ -60,6 +61,7 @@
     "feature-cleanup",
     "board",
     "worktree-open",
+    "sessions-close",
     "research-create",
     "research-prioritise",
     "research-setup",
