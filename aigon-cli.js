@@ -2376,7 +2376,6 @@ const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
     'feature-done',
     'feature-cleanup',
     'worktree-open',
-    'ralph',
 ]);
 
 // Per-command argument hints for frontmatter
@@ -2385,8 +2384,7 @@ const COMMAND_ARG_HINTS = {
     'feature-now': '<existing-feature-name> OR <feature-description>',
     'feature-prioritise': '<feature-name or letter>',
     'feature-setup': '<ID> [agents...]',
-    'feature-implement': '<ID> [--loop] [--max-iterations=N] [--agent=<id>] [--dry-run]',
-    'ralph': '<ID> [--max-iterations=N] [--agent=<id>] [--dry-run]',
+    'feature-implement': '<ID> [--ralph] [--max-iterations=N] [--agent=<id>] [--dry-run]',
     'feature-eval': '<ID>',
     'feature-review': '<ID>',
     'feature-done': '<ID> [agent]',
@@ -3332,11 +3330,10 @@ function runRalphCommand(args) {
     const options = parseCliOptions(args);
     const id = options._[0];
     if (!id) {
-        console.error(`Usage: aigon ralph <feature-id> [--max-iterations=N] [--agent=<id>] [--dry-run]`);
+        console.error(`Usage: aigon feature-implement <feature-id> --ralph [--max-iterations=N] [--agent=<id>] [--dry-run]`);
         console.error(`\nExamples:`);
-        console.error(`  aigon ralph 16`);
-        console.error(`  aigon ralph 16 --max-iterations=8 --agent=cx`);
-        console.error(`  aigon feature-implement 16 --loop`);
+        console.error(`  aigon feature-implement 16 --ralph`);
+        console.error(`  aigon feature-implement 16 --ralph --max-iterations=8 --agent=cx`);
         process.exitCode = 1;
         return;
     }
@@ -4670,11 +4667,11 @@ const commands = {
     'feature-implement': (args) => {
         const options = parseCliOptions(args);
         const id = options._[0];
-        const loopRequested = getOptionValue(options, 'loop');
-        if (loopRequested) {
+        const ralphRequested = getOptionValue(options, 'ralph');
+        if (ralphRequested) {
             return runRalphCommand(args);
         }
-        if (!id) return console.error("Usage: aigon feature-implement <ID> [--loop]\n\nRun this after 'aigon feature-setup <ID>'\n\nExamples:\n  aigon feature-implement 55            # In solo mode branch\n  aigon feature-implement 55 --loop     # Start Ralph loop\n  aigon feature-implement 55            # In arena mode worktree");
+        if (!id) return console.error("Usage: aigon feature-implement <ID> [--ralph]\n\nRun this after 'aigon feature-setup <ID>'\n\nExamples:\n  aigon feature-implement 55             # In solo mode branch\n  aigon feature-implement 55 --ralph     # Run Ralph autonomous loop\n  aigon feature-implement 55             # In arena mode worktree");
 
         // Find the feature spec
         let found = findFile(PATHS.features, id, ['03-in-progress']);
@@ -4792,9 +4789,6 @@ const commands = {
         } else {
             console.log(`\n   When done: aigon feature-done ${num}`);
         }
-    },
-    'ralph': (args) => {
-        runRalphCommand(args);
     },
     'feature-eval': (args) => {
         const name = args[0];
@@ -6766,8 +6760,7 @@ Feature Commands (unified for solo and arena modes):
   feature-now <name>                Fast-track: inbox match → prioritise + setup + implement; or create new + implement
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
   feature-setup <ID> [agents...]    Setup for solo (branch) or arena (worktrees)
-  feature-implement <ID>            Implement feature in current branch/worktree
-  ralph <ID> [options]              Loop implementation + validation with fresh agent sessions
+  feature-implement <ID> [--ralph]  Implement feature; add --ralph for autonomous retry loop
   feature-eval <ID>                 Create evaluation (code review or comparison)
   feature-done <ID> [agent]         Merge and complete feature
   feature-cleanup <ID>              Clean up arena worktrees and branches
@@ -6806,9 +6799,9 @@ Examples:
   aigon worktree-open 55 cc            # Open worktree in Warp with Claude CLI
   aigon worktree-open 55 --all         # Open all arena agents side-by-side
   aigon worktree-open 100 101 102      # Open features side-by-side (parallel)
-  aigon feature-implement 55           # Implement in current branch/worktree
-  aigon feature-implement 55 --loop    # Run Ralph loop from feature-implement
-  aigon ralph 55 --max-iterations=8    # Direct Ralph loop invocation
+  aigon feature-implement 55                       # Implement in current branch/worktree
+  aigon feature-implement 55 --ralph               # Run autonomous Ralph loop
+  aigon feature-implement 55 --ralph --max-iterations=8 --agent=cx  # Ralph with options
   aigon feature-eval 55                # Evaluate implementations
   aigon feature-done 55 cc             # Merge Claude's arena implementation
   aigon feature-cleanup 55 --push      # Clean up losing arena branches
