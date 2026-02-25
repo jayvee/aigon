@@ -3008,6 +3008,23 @@ function parseRalphProgress(progressContent) {
     return iterations;
 }
 
+function parseFeatureValidation(specContent) {
+    // Extract commands from an optional "## Validation" section in the feature spec.
+    // Accepts fenced bash blocks or plain indented/bullet lines.
+    // Returns an array of command strings, or empty array if section absent.
+    if (!specContent) return [];
+    const sectionMatch = specContent.match(/^## Validation\s*\n([\s\S]*?)(?=^## |\Z)/m);
+    if (!sectionMatch) return [];
+    const body = sectionMatch[1];
+    // Pull commands from fenced code block first
+    const fencedMatch = body.match(/```(?:bash|sh|shell)?\n([\s\S]*?)\n```/);
+    const rawText = fencedMatch ? fencedMatch[1] : body;
+    return rawText
+        .split('\n')
+        .map(line => line.replace(/#.*$/, '').replace(/^[-*]\s+/, '').trim())
+        .filter(Boolean);
+}
+
 function detectNodeTestCommand() {
     if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) return 'pnpm test';
     if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) return 'yarn test';
@@ -3046,13 +3063,21 @@ function buildRalphPrompt({
     iteration,
     maxIterations,
     validationCommand,
+    featureValidationCommands,
     specContent,
     priorProgress
 }) {
+    const validationLines = [];
+    if (validationCommand) validationLines.push(`  [Project] ${validationCommand}`);
+    featureValidationCommands.forEach(cmd => validationLines.push(`  [Feature] ${cmd}`));
+    const validationBlock = validationLines.length
+        ? validationLines.join('\n')
+        : '  (none configured — loop will mark success automatically)';
+
     return `You are iteration ${iteration} of ${maxIterations} for Feature ${featureNum} (${featureDesc}) in the Ralph loop.
 
 Goal:
-- Implement/fix the feature so validation passes.
+- Implement/fix the feature so all validation checks pass.
 
 Hard requirements:
 - Work only in the current repository and branch/worktree.
@@ -3061,8 +3086,8 @@ Hard requirements:
 - Use a conventional commit message (feat:, fix:, or chore:).
 - Exit when done.
 
-Validation command that will run after you exit:
-\`${validationCommand || 'UNCONFIGURED (validation will fail)'}\`
+Validation checks that will run after you exit (all must pass):
+${validationBlock}
 
 Feature spec:
 --- SPEC START ---
@@ -3400,12 +3425,14 @@ function runRalphCommand(args) {
         for (let iteration = startIteration; iteration <= maxIterations; iteration++) {
             const timestamp = formatTimestamp();
             const progressBeforeIteration = fs.existsSync(progressPath) ? fs.readFileSync(progressPath, 'utf8') : existingProgress;
+            const featureValidationCommands = parseFeatureValidation(specContent);
             const prompt = buildRalphPrompt({
                 featureNum,
                 featureDesc,
                 iteration,
                 maxIterations,
                 validationCommand,
+                featureValidationCommands,
                 specContent,
                 priorProgress: progressBeforeIteration
             });
@@ -3422,8 +3449,34 @@ function runRalphCommand(args) {
                 status = 'Interrupted';
                 summary = 'Interrupted by Ctrl+C';
             } else if (agentResult.ok) {
-                console.log(`\n🧪 Running validation: ${validationCommand || '(not configured)'}`);
-                validationResult = runRalphValidation(validationCommand, dryRun);
+                const featureValidationCommands = parseFeatureValidation(specContent);
+                const allValidations = [
+                    ...(validationCommand ? [{ label: 'Project', cmd: validationCommand }] : []),
+                    ...featureValidationCommands.map(cmd => ({ label: 'Feature', cmd }))
+                ];
+
+                if (allValidations.length === 0) {
+                    console.log(`\n⚠️  No validation configured — marking as success.`);
+                    validationResult = { ok: true, exitCode: 0, summary: 'No validation configured' };
+                } else {
+                    console.log(`\n🧪 Running validation (${allValidations.length} check${allValidations.length > 1 ? 's' : ''}):`);
+                    let allPassed = true;
+                    const summaries = [];
+                    for (const { label, cmd } of allValidations) {
+                        console.log(`   [${label}] ${cmd}`);
+                        const result = runRalphValidation(cmd, dryRun);
+                        summaries.push(`${label}: ${result.summary}`);
+                        if (!result.ok) {
+                            validationResult = result;
+                            allPassed = false;
+                            break;
+                        }
+                        validationResult = result;
+                    }
+                    validationResult = { ...validationResult, summary: summaries.join(' | ') };
+                    if (allPassed) validationResult.ok = true;
+                }
+
                 status = validationResult.ok ? 'Success' : 'Failed';
                 summary = validationResult.ok
                     ? `Validation passed on iteration ${iteration}`
