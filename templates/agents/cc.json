@@ -6,7 +6,12 @@
   "cli": {
     "command": "claude",
     "implementFlag": "--permission-mode acceptEdits",
-    "implementPrompt": "/aigon:feature-implement {featureId}"
+    "implementPrompt": "/aigon:feature-implement {featureId}",
+    "models": {
+      "research": "opus",
+      "implement": "sonnet",
+      "evaluate": "sonnet"
+    }
   },
 
   "placeholders": {
@@ -66,6 +71,7 @@
     "feature-cleanup",
     "board",
     "worktree-open",
+    "sessions-close",
     "research-create",
     "research-prioritise",
     "research-setup",
