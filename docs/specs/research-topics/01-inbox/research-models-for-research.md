@@ -7,7 +7,7 @@ Currently, Aigon has no model configuration. When an agent is launched (e.g., `c
 Different task types have fundamentally different cognitive requirements:
 - **Research exploration**: breadth of knowledge, creative association, summarisation, comparison
 - **Feature implementation**: precise code generation, instruction following, tool use, attention to detail
-- **Code review / feature-eval**: critical analysis, pattern recognition, conciseness
+- **Code review / feature-eval**: critical analysis, pattern recognition, conciseness — and crucially, independence from the model that wrote the code (to avoid self-evaluation bias)
 - **Feature review (fix-based)**: a blend of implementation precision and critical analysis
 
 Model providers already differentiate their offerings along these lines (e.g., Claude Opus for complex reasoning, Claude Sonnet for speed and cost, Claude Haiku for lightweight tasks). Aigon's multi-agent architecture — with distinct `buildAgentCommand()` and `buildResearchAgentCommand()` functions — already separates these code paths, making model selection a natural extension point.
@@ -37,15 +37,22 @@ None of these currently accept or pass a `--model` flag.
 - [ ] Should model selection be automatic (Aigon picks the best model per task) or user-configurable (the user specifies models)? Or both with sensible defaults?
 - [ ] What's the cost/performance trade-off? If research uses a cheaper model, does that meaningfully reduce costs for arena mode where multiple agents run in parallel?
 - [ ] How should this interact with the existing arena mode? In an arena with `cc gg cx`, each already uses a different provider. Should model selection only apply within a single agent's different workflows?
+- [ ] What model is most appropriate for `feature-eval` and `research-synthesize` (evaluation tasks)? Currently the user manually switches model (e.g., to Sonnet) to avoid Opus evaluating Opus. Should evaluation use a different model from the implementer, a different provider entirely, or a stronger model acting as judge?
+- [ ] Is there an "evaluator bias" problem — does a model favour its own output style? What does the research say about LLM-as-judge when the judge is the same model that produced the work?
+- [ ] Should the model switch be per task type across all three categories: research, implementation, and evaluation? What are the ideal model characteristics for each?
 
 ## Scope
 
 ### In Scope
 - Model flag support for Claude Code (`--model`), Gemini CLI, and Cursor (if applicable)
-- Configuration schema design for per-task-type model selection
+- Configuration schema design for per-task-type model selection across three categories:
+  - **Research**: models for `research-conduct` and `research-synthesize`
+  - **Implementation**: models for `feature-implement` and `feature-review`
+  - **Evaluation**: models for `feature-eval`, `research-synthesize` (judge role), and comparison tasks
 - Integration points in `buildAgentCommand()` and `buildResearchAgentCommand()`
 - User overrides at global (`~/.aigon/config.json`) and project (`.aigon/config.json`) levels
-- Sensible defaults (e.g., Opus for implementation, Sonnet for research if using Claude)
+- Sensible defaults per task type (e.g., which model class suits research vs. implementation vs. evaluation)
+- LLM-as-judge considerations: whether the evaluator should be a different model/provider from the implementer to avoid self-evaluation bias
 
 ### Out of Scope
 - Benchmarking or running actual comparative tests (that's a follow-up feature)
