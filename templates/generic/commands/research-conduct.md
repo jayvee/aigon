@@ -53,10 +53,14 @@ This command is for agents to conduct research after setup is complete.
 ## When You're Done
 
 **If arena mode (findings file exists):**
-- STOP after completing your findings file
-- Do NOT run `aigon research-done`
-- The user will run `research-done` to review all agents' findings and synthesize them
-- Your task is complete once your findings file is filled in
+1. **Open your findings file** so the user can read along as you summarize:
+   ```bash
+   open docs/specs/research-topics/logs/research-{ID}-{{AGENT_ID}}-findings.md
+   ```
+
+2. **Briefly summarize your top findings and recommendation** to the user in chat.
+
+3. **STOP** — do NOT run `aigon research-done`. The user will synthesize all agents' findings.
 
 **If solo mode (no findings file):**
 - Run `aigon research-done {{ARG_SYNTAX}}` to complete the research
