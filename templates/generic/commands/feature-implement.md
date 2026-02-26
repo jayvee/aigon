@@ -164,7 +164,7 @@ After completing steps 1-4, **STOP and WAIT** for the user. They will run `{{CMD
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
+**IMPORTANT:** End your final response with the suggested next command on its own line. This tells the user what to run next and enables prompt suggestions. Use the actual feature ID:
 
 - **Solo mode:** `{{CMD_PREFIX}}feature-done <ID>`
 - **Arena / worktree:** `{{CMD_PREFIX}}feature-submit`
