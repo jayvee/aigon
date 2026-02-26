@@ -59,6 +59,7 @@ For non-trivial features, **use plan mode** before implementation to explore the
 - Unclear how to integrate with existing codebase
 
 **Skip plan mode for**:
+- **Worktree or arena mode** — there is no interactive user to approve plans; implement directly
 - Single-file changes with obvious implementation
 - Clear, detailed specifications with one straightforward approach
 - Simple bug fixes or small tweaks
