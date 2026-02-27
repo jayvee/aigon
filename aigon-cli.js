@@ -1079,7 +1079,48 @@ function getAgentCliConfig(agentId) {
         }
     }
 
+    // Override from env vars (highest priority)
+    for (const taskType of ['research', 'implement', 'evaluate']) {
+        const envKey = `AIGON_${agentId.toUpperCase()}_${taskType.toUpperCase()}_MODEL`;
+        if (process.env[envKey]) {
+            cli.models[taskType] = process.env[envKey];
+        }
+    }
+
     return cli;
+}
+
+/**
+ * Determine where a model config value comes from (provenance).
+ * Checks in priority order: env var > project config > global config > template default.
+ * @returns {{ value: string|undefined, source: 'env'|'project'|'global'|'template'|'none' }}
+ */
+function getModelProvenance(agentId, taskType) {
+    // 1. Env var (highest priority)
+    const envKey = `AIGON_${agentId.toUpperCase()}_${taskType.toUpperCase()}_MODEL`;
+    if (process.env[envKey]) {
+        return { value: process.env[envKey], source: 'env' };
+    }
+
+    // 2. Project config
+    const projectConfig = loadProjectConfig();
+    if (projectConfig.agents?.[agentId]?.models?.[taskType]) {
+        return { value: projectConfig.agents[agentId].models[taskType], source: 'project' };
+    }
+
+    // 3. Global config
+    const globalConfig = loadGlobalConfig();
+    if (globalConfig.agents?.[agentId]?.models?.[taskType]) {
+        return { value: globalConfig.agents[agentId].models[taskType], source: 'global' };
+    }
+
+    // 4. Template default
+    const agentConfig = loadAgentConfig(agentId);
+    if (agentConfig?.cli?.models?.[taskType]) {
+        return { value: agentConfig.cli.models[taskType], source: 'template' };
+    }
+
+    return { value: undefined, source: 'none' };
 }
 
 // --- Worktree Helpers ---
@@ -6721,14 +6762,59 @@ Branch: \`${soloBranch}\`
                 console.log(`\n   Global config: ${GLOBAL_CONFIG_PATH}`);
                 console.log(`   ${fs.existsSync(GLOBAL_CONFIG_PATH) ? '✅ exists' : '❌ not found (using defaults)'}`);
             }
+        } else if (subcommand === 'models') {
+            const agents = getAvailableAgents();
+            const taskTypes = ['research', 'implement', 'evaluate'];
+            // Agents without --model CLI flag support
+            const noModelFlag = new Set(['cu']);
+
+            const rows = [];
+            for (const agentId of agents) {
+                const agentConfig = loadAgentConfig(agentId);
+                if (!agentConfig) continue;
+
+                for (const taskType of taskTypes) {
+                    const provenance = getModelProvenance(agentId, taskType);
+                    let model, source;
+                    if (noModelFlag.has(agentId)) {
+                        model = '(n/a — no CLI flag)';
+                        source = '-';
+                    } else if (provenance.source === 'none') {
+                        model = '(not set)';
+                        source = '-';
+                    } else {
+                        model = provenance.value;
+                        source = provenance.source;
+                    }
+                    rows.push({ agent: agentId, task: taskType, model, source });
+                }
+            }
+
+            // Calculate column widths
+            const colAgent = Math.max(5, ...rows.map(r => r.agent.length));
+            const colTask = Math.max(10, ...rows.map(r => r.task.length));
+            const colModel = Math.max(5, ...rows.map(r => r.model.length));
+            const colSource = Math.max(6, ...rows.map(r => r.source.length));
+
+            console.log(`\nModel Configuration (resolved):\n`);
+            console.log(`  ${'AGENT'.padEnd(colAgent + 2)}${'TASK'.padEnd(colTask + 2)}${'MODEL'.padEnd(colModel + 2)}SOURCE`);
+            console.log(`  ${'─'.repeat(colAgent)}  ${'─'.repeat(colTask)}  ${'─'.repeat(colModel)}  ${'─'.repeat(colSource)}`);
+
+            for (const row of rows) {
+                console.log(`  ${row.agent.padEnd(colAgent + 2)}${row.task.padEnd(colTask + 2)}${row.model.padEnd(colModel + 2)}${row.source}`);
+            }
+
+            console.log(`\n  Precedence: env var > project config > global config > template default`);
+            console.log(`  Env var pattern: AIGON_{AGENT}_{TASK}_MODEL (e.g. AIGON_CC_RESEARCH_MODEL=haiku)`);
         } else {
-            console.error(`Usage: aigon config <init|set|get|show>`);
+            console.error(`Usage: aigon config <init|set|get|show|models>`);
             console.error(`\n  init [--global]     - Initialize config (project by default, --global for user-wide)`);
             console.error(`  set [--global] <key> <value>`);
             console.error(`                       - Set config value (project by default)`);
             console.error(`  get <key>           - Get config value with provenance`);
             console.error(`  show [--global|--project]`);
             console.error(`                       - Show config (merged by default, --global or --project for specific level)`);
+            console.error(`  models              - Show resolved model configuration for all agents`);
             console.error(`\n  Examples:`);
             console.error(`    aigon config init                    # Create project config`);
             console.error(`    aigon config init --global           # Create global config`);
@@ -6737,6 +6823,7 @@ Branch: \`${soloBranch}\`
             console.error(`    aigon config get profile             # Show value + source`);
             console.error(`    aigon config show                   # Show merged config`);
             console.error(`    aigon config show --project         # Show project config only`);
+            console.error(`    aigon config models                 # Show model config for all agents`);
         }
     },
 
@@ -7249,6 +7336,52 @@ Branch: \`${soloBranch}\`
         if (unregisteredCount > 0 && !doRegister) {
             console.log(`💡 Run \`aigon doctor --register\` to register the current project.`);
         }
+
+        // --- Model Checks ---
+        console.log('\nModel Health Check\n──────────────────');
+        const agents = getAvailableAgents();
+        const noModelFlag = new Set(['cu']);
+        let modelWarnings = 0;
+        let modelInfos = 0;
+
+        for (const agentId of agents) {
+            const agentConfig = loadAgentConfig(agentId);
+            if (!agentConfig) {
+                console.log(`  ❌ ${agentId}: Agent template not found`);
+                modelWarnings++;
+                continue;
+            }
+
+            const hasModels = agentConfig.cli?.models && Object.keys(agentConfig.cli.models).length > 0;
+
+            // Warn if Cursor has models configured (they won't be used)
+            if (noModelFlag.has(agentId)) {
+                const cliConfig = getAgentCliConfig(agentId);
+                const configuredModels = Object.entries(cliConfig.models).filter(([, v]) => v);
+                if (configuredModels.length > 0) {
+                    console.log(`  ⚠️  ${agentId} (${agentConfig.name}): Models configured but CLI has no --model flag`);
+                    modelWarnings++;
+                } else {
+                    console.log(`  ✅ ${agentId} (${agentConfig.name}): No model flag (expected)`);
+                }
+                continue;
+            }
+
+            if (!hasModels) {
+                console.log(`  ℹ️  ${agentId} (${agentConfig.name}): No default models in template`);
+                modelInfos++;
+            } else {
+                console.log(`  ✅ ${agentId} (${agentConfig.name}): Template models loaded`);
+            }
+        }
+
+        console.log('');
+        if (modelWarnings > 0) {
+            console.log(`${modelWarnings} model warning${modelWarnings === 1 ? '' : 's'}.`);
+        } else {
+            console.log('No model issues found.');
+        }
+        console.log(`💡 Run \`aigon config models\` for full model configuration table.`);
     },
 
     'proxy-setup': async () => {
@@ -7717,9 +7850,9 @@ Setup:
   install-agent <agents...>         Install agent configs (cc, gg, cx, cu)
   update                            Update Aigon files to latest version
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
-  config <init|show>                Manage global config (~/.aigon/config.json)
+  config <init|show|models>         Manage config and view model configuration
   profile [show|set|detect]         Manage project profile (web, api, ios, etc.)
-  doctor [--register]                Check port assignments across projects, flag conflicts
+  doctor [--register]               Check port assignments and model configuration
   proxy-setup                       One-time setup: install Caddy + dnsmasq for *.test domains
 
 Dev Server (web/api profiles):
