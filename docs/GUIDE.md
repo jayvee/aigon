@@ -98,7 +98,16 @@ Run multiple agents in competition to find the optimal solution.
     * Moves winning agent's log to `logs/selected`.
     * Moves losing agent's logs to `logs/alternatives` (preserving history).
     * Cleans up winner's worktree.
-9.  **Cleanup Losers:**
+9.  **Adopt from Losers (Optional):** Cherry-pick valuable improvements from losing agents:
+    ```bash
+    /aigon:feature-done 108 cc --adopt all
+    # or: aigon feature-done 108 cc --adopt gg cx
+    ```
+    * Merges the winner as normal, then prints diffs from each losing agent.
+    * Review diffs for extra tests, error handling, docs, and edge cases.
+    * Selectively apply improvements, test, and commit.
+    * Adopted agent branches are kept for reference until cleanup.
+10. **Cleanup Losers:**
     ```bash
     /aigon:feature-cleanup 108 [--push]
     # or: aigon feature-cleanup 108 [--push]
@@ -982,6 +991,10 @@ Once you've chosen a winner, merge their implementation:
 /aigon:feature-done 10 cx
 # or: aigon feature-done 10 cx
 
+# Or merge and adopt valuable improvements from losers
+/aigon:feature-done 10 cx --adopt all
+# or: aigon feature-done 10 cx --adopt cc gg
+
 # Push losing branches to origin for safekeeping (optional)
 /aigon:feature-cleanup 10 --push
 # or: aigon feature-cleanup 10 --push
@@ -990,6 +1003,8 @@ Once you've chosen a winner, merge their implementation:
 /aigon:feature-cleanup 10
 # or: aigon feature-cleanup 10
 ```
+
+The `--adopt` flag prints diffs from losing agents after merging the winner. Review for extra tests, better error handling, documentation, and edge cases worth keeping.
 
 ---
 
