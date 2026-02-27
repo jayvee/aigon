@@ -46,6 +46,20 @@ aigon dev-server stop
 aigon dev-server list
 ```
 
+### Open in browser
+
+```bash
+aigon dev-server open
+```
+
+Opens the dev server URL in the default browser. Uses the proxy subdomain URL if available, otherwise falls back to localhost.
+
+You can also auto-open when starting the server:
+
+```bash
+aigon dev-server start --open
+```
+
 ### Get the URL for the current context
 
 ```bash
