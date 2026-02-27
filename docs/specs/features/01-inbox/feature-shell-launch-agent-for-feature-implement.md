@@ -16,6 +16,7 @@ Today `aigon feature-implement <ID>` behaves as an instruction helper: it detect
 ### CLI Behavior
 
 - [ ] `aigon feature-implement <ID>` accepts an optional `--agent=<cc|gg|cx|cu>` flag in non-Ralph mode
+- [ ] CLI help and usage examples show both the default shell-launch form (`aigon feature-implement <ID>`) and an explicit agent example (`aigon feature-implement <ID> --agent=cx`)
 - [ ] When `--ralph` is not present and no active agent session is detected, `aigon feature-implement <ID>` launches an implementation agent instead of only printing instructions
 - [ ] In plain-shell mode with no `--agent` provided, the default agent is `cc`
 - [ ] `aigon feature-implement <ID> --agent=cx` launches the configured Codex CLI for that feature
