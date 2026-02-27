@@ -830,6 +830,9 @@ aigon config get profile                    # → web (from .aigon/config.json)
 aigon config show                           # Merged effective config (all levels)
 aigon config show --global                  # Global config only
 aigon config show --project                 # Project config only
+
+# View model configuration
+aigon config models                         # Show resolved models for all agents
 ```
 
 ### Global Config
@@ -891,9 +894,34 @@ aigon config set --global agents.cu.implementFlag ""
 
 Set `implementFlag` to `""` (empty string) to remove auto-approval flags and require manual permission prompts.
 
+### Model Selection
+
+Aigon supports per-agent, per-task model selection. Each agent can use different models for research, implementation, and evaluation.
+
+```bash
+# View all resolved model configurations
+aigon config models
+
+# Override a model for a specific agent/task (project-level)
+aigon config set agents.cc.models.research haiku
+aigon config set agents.gg.models.evaluate gemini-2.5-flash
+
+# Override globally (user-wide)
+aigon config set --global agents.cc.models.implement opus
+
+# Per-session override via env var (highest priority)
+AIGON_CC_RESEARCH_MODEL=haiku aigon config models
+```
+
+**Precedence order:** Env var > Project config > Global config > Template default
+
+Env var pattern: `AIGON_{AGENT}_{TASK}_MODEL` where AGENT is `CC`, `GG`, `CX`, `CU` and TASK is `RESEARCH`, `IMPLEMENT`, `EVALUATE`.
+
+**Note:** Cursor (`cu`) does not support `--model` CLI flag — model selection is UI-only. Models configured for Cursor are ignored.
+
 ### Precedence
 
-**Priority order:** Project config > Global config > Defaults
+**Priority order:** Env var > Project config > Global config > Defaults
 
 Use `aigon config get <key>` to see which level a value comes from.
 
