@@ -1440,6 +1440,66 @@ function removeWorktreePermissions(worktreePaths) {
     }
 }
 
+/**
+ * Pre-seed Claude Code workspace trust for worktree directories.
+ * Claude Code stores trust state in ~/.claude.json under projects.<path>.hasTrustDialogAccepted.
+ * Without this, each new worktree triggers an interactive trust dialog that blocks automated launches.
+ * @param {string[]} worktreePaths - Array of worktree paths (relative or absolute)
+ */
+function presetWorktreeTrust(worktreePaths) {
+    const claudeJsonPath = path.join(os.homedir(), '.claude.json');
+    try {
+        let config = {};
+        if (fs.existsSync(claudeJsonPath)) {
+            config = JSON.parse(fs.readFileSync(claudeJsonPath, 'utf8'));
+        }
+        if (!config.projects) config.projects = {};
+
+        const cwd = process.cwd();
+        let changed = false;
+        worktreePaths.forEach(relativePath => {
+            const absolutePath = path.resolve(cwd, relativePath);
+            if (!config.projects[absolutePath]) {
+                config.projects[absolutePath] = {};
+            }
+            if (!config.projects[absolutePath].hasTrustDialogAccepted) {
+                config.projects[absolutePath].hasTrustDialogAccepted = true;
+                changed = true;
+            }
+        });
+
+        if (changed) {
+            fs.writeFileSync(claudeJsonPath, JSON.stringify(config, null, 2));
+            console.log(`🔓 Pre-seeded Claude Code workspace trust for worktree(s)`);
+        }
+    } catch (e) {
+        console.warn(`⚠️  Could not pre-seed Claude Code trust: ${e.message}`);
+    }
+}
+
+/**
+ * Remove Claude Code workspace trust entries for worktree directories.
+ * @param {string[]} worktreePaths - Array of worktree paths (relative or absolute)
+ */
+function removeWorktreeTrust(worktreePaths) {
+    const claudeJsonPath = path.join(os.homedir(), '.claude.json');
+    try {
+        if (!fs.existsSync(claudeJsonPath)) return;
+        const config = JSON.parse(fs.readFileSync(claudeJsonPath, 'utf8'));
+        if (!config.projects) return;
+
+        const cwd = process.cwd();
+        worktreePaths.forEach(relativePath => {
+            const absolutePath = path.resolve(cwd, relativePath);
+            delete config.projects[absolutePath];
+        });
+
+        fs.writeFileSync(claudeJsonPath, JSON.stringify(config, null, 2));
+    } catch (e) {
+        // Silent fail on cleanup
+    }
+}
+
 // --- Hooks System ---
 
 /**
@@ -5271,6 +5331,34 @@ const commands = {
                             console.warn(`   ⚠️  Failed to install ${agentId} commands in worktree: ${installErr.message}`);
                         }
 
+                        // Add CC notification hooks so the user gets a macOS alert
+                        // when the agent needs attention (permission prompt, question, etc.)
+                        if (agentId === 'cc') {
+                            try {
+                                const localSettingsPath = path.join(worktreePath, '.claude', 'settings.local.json');
+                                let localSettings = {};
+                                if (fs.existsSync(localSettingsPath)) {
+                                    localSettings = JSON.parse(fs.readFileSync(localSettingsPath, 'utf8'));
+                                }
+                                const agentLabel = AGENT_CONFIGS[agentId]?.name || agentId;
+                                const title = `Feature #${paddedFeatureId} - ${agentLabel}`;
+                                localSettings.hooks = {
+                                    ...(localSettings.hooks || {}),
+                                    Notification: [{
+                                        matcher: '',
+                                        hooks: [{
+                                            type: 'command',
+                                            command: `osascript -e 'display notification "Agent needs your attention" with title "${title}"'`
+                                        }]
+                                    }]
+                                };
+                                fs.writeFileSync(localSettingsPath, JSON.stringify(localSettings, null, 2));
+                                console.log(`   🔔 Notification hook added for ${agentLabel}`);
+                            } catch (hookErr) {
+                                console.warn(`   ⚠️  Could not add notification hook: ${hookErr.message}`);
+                            }
+                        }
+
                         // Create log for this agent in the worktree
                         const worktreeLogsDir = path.join(worktreePath, 'docs/specs/features/logs');
                         if (!fs.existsSync(worktreeLogsDir)) {
@@ -5290,6 +5378,7 @@ const commands = {
             // Add read permissions for all worktrees to Claude settings
             const allWorktreePaths = agentIds.map(agentId => `${wtBase}/feature-${num}-${agentId}-${desc}`);
             addWorktreePermissions(allWorktreePaths);
+            presetWorktreeTrust(allWorktreePaths);
 
             if (agentIds.length === 1) {
                 const portSuffix = profile.devServer.enabled
@@ -5995,9 +6084,10 @@ Branch: \`${soloBranch}\`
             });
         } catch (e) { console.error("❌ Error reading git worktrees."); }
 
-        // Clean up worktree permissions from Claude settings
+        // Clean up worktree permissions and trust from Claude settings
         if (removedWorktreePaths.length > 0) {
             removeWorktreePermissions(removedWorktreePaths);
+            removeWorktreeTrust(removedWorktreePaths);
         }
 
         // Find and handle branches
