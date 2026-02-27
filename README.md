@@ -723,6 +723,15 @@ aigon feature-done 55 cx
 aigon feature-cleanup 55 --push
 ```
 
+To adopt valuable improvements from losing agents (extra tests, error handling, edge cases):
+
+```bash
+aigon feature-done 55 cx --adopt all        # Review diffs from all losers
+aigon feature-done 55 cx --adopt gg cu      # Review diffs from specific agents
+```
+
+The `--adopt` flag prints diffs from each losing agent after merging the winner, so you can selectively apply their best contributions.
+
 ---
 
 ## CLI Reference
@@ -750,7 +759,7 @@ aigon feature-cleanup 55 --push
 | Feature Implement | `aigon feature-implement <ID> [--ralph]` |
 | Feature Eval | `aigon feature-eval <ID>` |
 | Feature Review | `aigon feature-review <ID>` |
-| Feature Done | `aigon feature-done <ID> [agent]` |
+| Feature Done | `aigon feature-done <ID> [agent] [--adopt <agents...\|all>]` |
 | Feature Cleanup | `aigon feature-cleanup <ID> [--push]` |
 | Worktree Open | `aigon worktree-open <ID> [agent] [--terminal=<type>]` |
 | Worktree Open (Arena) | `aigon worktree-open <ID> --all` |
@@ -838,7 +847,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon:feature-done <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
 | `/aigon:feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
 | `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/aigon:research-create <name>` | Create a research topic |
@@ -865,7 +874,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon:feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon:feature-done <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
 | `/aigon:feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
 | `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/aigon:research-create <name>` | Create a research topic |
@@ -892,7 +901,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/prompts:aigon-feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
 | `/prompts:aigon-feature-eval <ID>` | Generate review/comparison template |
 | `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
-| `/prompts:aigon-feature-done <ID> [agent]` | Merge and complete feature |
+| `/prompts:aigon-feature-done <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
 | `/prompts:aigon-feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
 | `/prompts:aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/prompts:aigon-research-create <name>` | Create a research topic |
@@ -919,7 +928,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon-feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
 | `/aigon-feature-eval <ID>` | Generate review/comparison template |
 | `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon-feature-done <ID> [agent]` | Merge and complete feature |
+| `/aigon-feature-done <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
 | `/aigon-feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
 | `/aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/aigon-research-create <name>` | Create a research topic |
