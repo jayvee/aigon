@@ -802,8 +802,10 @@ The `--adopt` flag prints diffs from each losing agent after merging the winner,
 | Install Agent | `aigon install-agent <cc\|gg\|cx\|cu> [more...]` |
 | Update | `aigon update` |
 | Hooks | `aigon hooks [list]` |
-| Config | `aigon config <init\|set\|get\|show> [--global\|--project]` |
+| Config | `aigon config <init\|set\|get\|show\|models> [--global\|--project]` |
+| Config Models | `aigon config models` (show resolved model configuration for all agents) |
 | Profile | `aigon profile [show\|set\|detect]` |
+| Doctor | `aigon doctor [--register]` (port + model health checks) |
 
 Example output from `aigon board --list --all`:
 ```
