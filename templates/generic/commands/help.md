@@ -55,4 +55,22 @@
 
 **Override defaults:** Set `agents.{id}.implementFlag` in `~/.aigon/config.json` to use stricter permissions (e.g., `""` to require manual approval). Project config (`.aigon/config.json`) takes precedence over global config.
 
+## Shortcuts
+
+All commands have top-level short aliases prefixed with `a` (for aigon):
+
+| Shortcut | Command | Shortcut | Command |
+|----------|---------|----------|---------|
+| `/afc` | feature-create | `/arc` | research-create |
+| `/afn` | feature-now | `/arp` | research-prioritise |
+| `/afp` | feature-prioritise | `/arse` | research-setup |
+| `/afse` | feature-setup | `/aro` | research-open |
+| `/afi` | feature-implement | `/ard` | research-conduct |
+| `/afs` | feature-submit | `/ars` | research-synthesize |
+| `/afe` | feature-eval | `/ardn` | research-done |
+| `/afr` | feature-review | `/afbc` | feedback-create |
+| `/afd` | feature-done | `/afbl` | feedback-list |
+| `/ab` | board | `/afbt` | feedback-triage |
+| `/ads` | dev-server | `/ah` | help |
+
 Run `aigon help` in terminal for full CLI reference.
