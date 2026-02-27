@@ -388,6 +388,9 @@ const DEV_PROXY_REGISTRY = path.join(DEV_PROXY_DIR, 'servers.json');
 const DEV_PROXY_CADDYFILE = path.join(DEV_PROXY_DIR, 'Caddyfile');
 const DEV_PROXY_LOGS_DIR = path.join(DEV_PROXY_DIR, 'logs');
 
+// --- Global Port Registry ---
+const PORT_REGISTRY_PATH = path.join(os.homedir(), '.aigon', 'ports.json');
+
 /**
  * Sanitize a string for use as a DNS label.
  * Lowercase, strip npm scope, replace non-alphanumeric with hyphens.
@@ -500,6 +503,135 @@ function saveProxyRegistry(registry) {
         fs.mkdirSync(DEV_PROXY_DIR, { recursive: true });
     }
     fs.writeFileSync(DEV_PROXY_REGISTRY, JSON.stringify(registry, null, 2) + '\n');
+}
+
+/**
+ * Load the global port registry.
+ * @returns {Object} Registry object { name: { basePort, path } }
+ */
+function loadPortRegistry() {
+    if (!fs.existsSync(PORT_REGISTRY_PATH)) return {};
+    try {
+        return JSON.parse(fs.readFileSync(PORT_REGISTRY_PATH, 'utf8'));
+    } catch (e) {
+        return {};
+    }
+}
+
+/**
+ * Save the global port registry.
+ * @param {Object} registry - Registry object
+ */
+function savePortRegistry(registry) {
+    const dir = path.dirname(PORT_REGISTRY_PATH);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(PORT_REGISTRY_PATH, JSON.stringify(registry, null, 2) + '\n');
+}
+
+/**
+ * Register a project's base port in the global registry.
+ * Warns if another project is already using the same port range.
+ * @param {string} name - Project name
+ * @param {number} basePort - Base port number
+ * @param {string} repoPath - Absolute path to the repo
+ * @returns {string[]} Names of conflicting projects (empty if none)
+ */
+function registerPort(name, basePort, repoPath) {
+    const registry = loadPortRegistry();
+    const conflicts = [];
+
+    for (const [existingName, entry] of Object.entries(registry)) {
+        if (existingName === name) continue;
+        // Conflict if port ranges overlap (each project claims base + 0..4)
+        if (Math.abs(entry.basePort - basePort) < 5) {
+            conflicts.push(existingName);
+        }
+    }
+
+    registry[name] = { basePort, path: repoPath };
+    savePortRegistry(registry);
+
+    if (conflicts.length > 0) {
+        console.warn(`\n⚠️  Port conflict: ${name} (port ${basePort}) overlaps with: ${conflicts.join(', ')}`);
+        console.warn(`   Run \`aigon doctor\` to see all port assignments.`);
+    }
+
+    return conflicts;
+}
+
+/**
+ * Deregister a project from the global port registry.
+ * @param {string} name - Project name to remove
+ */
+function deregisterPort(name) {
+    const registry = loadPortRegistry();
+    if (registry[name]) {
+        delete registry[name];
+        savePortRegistry(registry);
+    }
+}
+
+/**
+ * Scan filesystem for projects with port configurations.
+ * Checks sibling directories for .aigon/config.json and .env.local/.env files.
+ * @param {string} [scanDir] - Directory to scan (default: parent of cwd)
+ * @returns {Array<{name: string, basePort: number, path: string, source: string}>}
+ */
+function scanPortsFromFilesystem(scanDir) {
+    scanDir = scanDir || path.dirname(process.cwd());
+    const results = [];
+
+    let entries;
+    try {
+        entries = fs.readdirSync(scanDir, { withFileTypes: true });
+    } catch (e) {
+        return results;
+    }
+
+    for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const dirPath = path.join(scanDir, entry.name);
+
+        // Check .aigon/config.json for devProxy.basePort
+        const aigonConfigPath = path.join(dirPath, '.aigon', 'config.json');
+        if (fs.existsSync(aigonConfigPath)) {
+            try {
+                const config = JSON.parse(fs.readFileSync(aigonConfigPath, 'utf8'));
+                if (config.devProxy?.basePort) {
+                    results.push({
+                        name: entry.name,
+                        basePort: config.devProxy.basePort,
+                        path: dirPath,
+                        source: '.aigon/config.json'
+                    });
+                    continue; // Config takes precedence, skip env files
+                }
+            } catch (e) { /* ignore parse errors */ }
+        }
+
+        // Check .env.local and .env for PORT=
+        for (const envFile of ['.env.local', '.env']) {
+            const envPath = path.join(dirPath, envFile);
+            if (!fs.existsSync(envPath)) continue;
+            try {
+                const content = fs.readFileSync(envPath, 'utf8');
+                const match = content.match(/^PORT=(\d+)/m);
+                if (match) {
+                    results.push({
+                        name: entry.name,
+                        basePort: parseInt(match[1], 10),
+                        path: dirPath,
+                        source: envFile
+                    });
+                    break; // .env.local takes precedence over .env
+                }
+            } catch (e) { /* ignore read errors */ }
+        }
+    }
+
+    return results;
 }
 
 /**
@@ -4036,6 +4168,15 @@ const commands = {
         
         console.log("✅ ./docs/specs directory structure created.");
         showPortSummary();
+
+        // Auto-register in global port registry
+        const initProfile = getActiveProfile();
+        if (initProfile.devServer.enabled) {
+            const portResult = readBasePort();
+            if (portResult) {
+                registerPort(path.basename(process.cwd()), portResult.port, process.cwd());
+            }
+        }
     },
     'feature-create': (args) => {
         const name = args[0];
@@ -4998,6 +5139,15 @@ const commands = {
                 console.warn(`\n⚠️  No PORT found in .env.local or .env — using default ports`);
                 console.warn(`   💡 Add PORT=<number> to .env.local to avoid clashes with other projects`);
             }
+
+            // Auto-register in global port registry
+            if (profile.devServer.enabled) {
+                const portResult = readBasePort();
+                if (portResult) {
+                    registerPort(path.basename(process.cwd()), portResult.port, process.cwd());
+                }
+            }
+
             const createdWorktrees = [];
             agentIds.forEach(agentId => {
                 const branchName = `feature-${num}-${agentId}-${desc}`;
@@ -6921,6 +7071,176 @@ Branch: \`${soloBranch}\`
         }
     },
 
+    'doctor': (args) => {
+        const doRegister = args.includes('--register');
+        const registry = loadPortRegistry();
+        const scanned = scanPortsFromFilesystem();
+
+        // Merge: registry entries + discovered projects (dedup by path)
+        const byPath = new Map();
+
+        // Add registry entries first
+        for (const [name, entry] of Object.entries(registry)) {
+            byPath.set(entry.path, {
+                name,
+                basePort: entry.basePort,
+                path: entry.path,
+                registered: true
+            });
+        }
+
+        // Add scanned entries (don't overwrite registered ones, but update port if different)
+        for (const project of scanned) {
+            if (byPath.has(project.path)) {
+                const existing = byPath.get(project.path);
+                existing.scanned = true;
+                existing.source = project.source;
+            } else {
+                byPath.set(project.path, {
+                    name: project.name,
+                    basePort: project.basePort,
+                    path: project.path,
+                    registered: false,
+                    scanned: true,
+                    source: project.source
+                });
+            }
+        }
+
+        const allProjects = Array.from(byPath.values());
+
+        // Register current project if --register
+        if (doRegister) {
+            const profile = getActiveProfile();
+            if (profile.devServer.enabled) {
+                const result = readBasePort();
+                const basePort = result ? result.port : 3000;
+                const name = path.basename(process.cwd());
+                registerPort(name, basePort, process.cwd());
+                console.log(`✅ Registered ${name} (port ${basePort}) in global port registry.`);
+
+                // Refresh the data for display
+                const updatedEntry = byPath.get(process.cwd());
+                if (updatedEntry) {
+                    updatedEntry.registered = true;
+                } else {
+                    allProjects.push({
+                        name,
+                        basePort,
+                        path: process.cwd(),
+                        registered: true,
+                        scanned: true
+                    });
+                }
+            } else {
+                console.log(`ℹ️  Dev server not enabled for this project profile — nothing to register.`);
+            }
+        }
+
+        if (allProjects.length === 0) {
+            console.log('\nPort Health Check\n─────────────────');
+            console.log('No projects with port configurations found.');
+            return;
+        }
+
+        // Sort by port, then name
+        allProjects.sort((a, b) => a.basePort - b.basePort || a.name.localeCompare(b.name));
+
+        // Group by basePort to detect conflicts
+        const portGroups = new Map();
+        for (const project of allProjects) {
+            const key = project.basePort;
+            if (!portGroups.has(key)) portGroups.set(key, []);
+            portGroups.get(key).push(project);
+        }
+
+        // Also check for overlapping ranges (each project uses base..base+4)
+        const rangeConflicts = new Map(); // port -> [conflicting project names]
+        const sortedProjects = [...allProjects];
+        for (let i = 0; i < sortedProjects.length; i++) {
+            for (let j = i + 1; j < sortedProjects.length; j++) {
+                const a = sortedProjects[i];
+                const b = sortedProjects[j];
+                if (a.basePort === b.basePort) continue; // handled by portGroups
+                if (Math.abs(a.basePort - b.basePort) < 5) {
+                    const key = Math.min(a.basePort, b.basePort);
+                    if (!rangeConflicts.has(key)) rangeConflicts.set(key, new Set());
+                    rangeConflicts.get(key).add(a.name);
+                    rangeConflicts.get(key).add(b.name);
+                }
+            }
+        }
+
+        // Display table
+        const homedir = os.homedir();
+        const shortenPath = (p) => p.startsWith(homedir) ? '~' + p.slice(homedir.length) : p;
+
+        console.log('\nPort Health Check\n─────────────────');
+
+        // Calculate column widths
+        const maxNameLen = Math.max(4, ...allProjects.map(p => p.name.length));
+        const maxPathLen = Math.max(4, ...allProjects.map(p => shortenPath(p.path).length));
+
+        const header = `  ${'PORT'.padEnd(7)}${'REPO'.padEnd(maxNameLen + 2)}${'PATH'.padEnd(maxPathLen + 2)}REGISTERED`;
+        console.log(header);
+
+        let conflictCount = 0;
+        let unregisteredCount = 0;
+
+        for (const [port, projects] of [...portGroups.entries()].sort((a, b) => a[0] - b[0])) {
+            const isConflict = projects.length > 1;
+            if (isConflict) conflictCount++;
+
+            for (const project of projects) {
+                if (!project.registered) unregisteredCount++;
+                const portStr = String(project.basePort).padEnd(7);
+                const nameStr = project.name.padEnd(maxNameLen + 2);
+                const pathStr = shortenPath(project.path).padEnd(maxPathLen + 2);
+                const regStr = project.registered ? 'yes' : 'no';
+                console.log(`  ${portStr}${nameStr}${pathStr}${regStr}`);
+            }
+
+            if (isConflict) {
+                const names = projects.map(p => p.name).join(' and ');
+                console.log(`         ⚠️  CONFLICT: ${names} both use port ${port}`);
+            }
+
+            // Check range overlaps for this port group's projects
+            for (const project of projects) {
+                for (const [, conflictNames] of rangeConflicts) {
+                    if (conflictNames.has(project.name) && conflictNames.size > 1) {
+                        // Only print range conflict once per group
+                    }
+                }
+            }
+
+            console.log('');
+        }
+
+        // Print range conflicts (different base ports but overlapping ranges)
+        for (const [, names] of rangeConflicts) {
+            const nameArr = [...names];
+            const involved = allProjects.filter(p => nameArr.includes(p.name));
+            const portsStr = involved.map(p => `${p.name}:${p.basePort}`).join(', ');
+            console.log(`  ⚠️  RANGE OVERLAP: ${portsStr} — ranges within 5 of each other`);
+            conflictCount++;
+        }
+
+        // Summary
+        if (conflictCount > 0 || unregisteredCount > 0) {
+            const parts = [];
+            if (conflictCount > 0) parts.push(`${conflictCount} conflict${conflictCount === 1 ? '' : 's'} found`);
+            if (unregisteredCount > 0) parts.push(`${unregisteredCount} unregistered project${unregisteredCount === 1 ? '' : 's'}`);
+            console.log(parts.join('. ') + '.');
+        } else {
+            console.log('No conflicts found.');
+        }
+
+        if (unregisteredCount > 0 && !doRegister) {
+            console.log(`💡 Run \`aigon doctor --register\` to register the current project.`);
+        }
+    },
+
     'proxy-setup': async () => {
         console.log('\n🔧 Setting up local dev proxy (Caddy + dnsmasq)...\n');
 
@@ -7355,6 +7675,7 @@ Setup:
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
   config <init|show>                Manage global config (~/.aigon/config.json)
   profile [show|set|detect]         Manage project profile (web, api, ios, etc.)
+  doctor [--register]                Check port assignments across projects, flag conflicts
   proxy-setup                       One-time setup: install Caddy + dnsmasq for *.test domains
 
 Dev Server (web/api profiles):
@@ -7428,6 +7749,10 @@ Examples:
   aigon feature-eval 55                # Evaluate implementations
   aigon feature-done 55 cc             # Merge Claude's arena implementation
   aigon feature-cleanup 55 --push      # Clean up losing arena branches
+
+  # Port health check
+  aigon doctor                        # Show port assignments, flag conflicts
+  aigon doctor --register             # Register current project in global registry
 
   # Dev proxy (web/api projects)
   aigon proxy-setup                   # One-time: install Caddy + dnsmasq
