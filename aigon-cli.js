@@ -1377,7 +1377,7 @@ windows:
 // --- Worktree Permission Helpers ---
 
 function addWorktreePermissions(worktreePaths) {
-    // Add read and bash permissions for worktrees to Claude settings
+    // Add full file and bash permissions for worktrees to Claude settings
     if (!fs.existsSync(CLAUDE_SETTINGS_PATH)) return;
 
     try {
@@ -1391,6 +1391,8 @@ function addWorktreePermissions(worktreePaths) {
             const absolutePath = path.resolve(cwd, relativePath);
             const permissions = [
                 `Read(${absolutePath}/**)`,
+                `Edit(${absolutePath}/**)`,
+                `Write(${absolutePath}/**)`,
                 `Bash(cd ${absolutePath}:*)`,
                 `Bash(git -C ${absolutePath}:*)`,
             ];
@@ -1410,7 +1412,7 @@ function addWorktreePermissions(worktreePaths) {
 }
 
 function removeWorktreePermissions(worktreePaths) {
-    // Remove read and bash permissions for worktrees from Claude settings
+    // Remove all worktree permissions from Claude settings
     if (!fs.existsSync(CLAUDE_SETTINGS_PATH)) return;
 
     try {
@@ -1420,18 +1422,10 @@ function removeWorktreePermissions(worktreePaths) {
         const cwd = process.cwd();
         worktreePaths.forEach(relativePath => {
             const absolutePath = path.resolve(cwd, relativePath);
-            const permissions = [
-                `Read(${absolutePath}/**)`,
-                `Bash(cd ${absolutePath}:*)`,
-                `Bash(git -C ${absolutePath}:*)`,
-            ];
-
-            permissions.forEach(perm => {
-                const index = settings.permissions.allow.indexOf(perm);
-                if (index > -1) {
-                    settings.permissions.allow.splice(index, 1);
-                }
-            });
+            // Remove any permission that references this worktree path
+            settings.permissions.allow = settings.permissions.allow.filter(
+                perm => !perm.includes(absolutePath)
+            );
         });
 
         fs.writeFileSync(CLAUDE_SETTINGS_PATH, JSON.stringify(settings, null, 2));
