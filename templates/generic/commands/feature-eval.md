@@ -114,9 +114,13 @@ After completing the evaluation:
 
 1. Present a summary of your comparison to the user
 2. Show the scores/comparison
-3. State your recommendation
-4. **ASK the user**: "Which implementation would you like to merge?"
-5. **STOP and WAIT** for the user's decision
+3. State your recommendation clearly (e.g., "Merge cc's implementation")
+4. **Explicitly address cross-pollination:** After naming the winner, you MUST state one of:
+   - **If there are aspects worth adopting:** "Before merging, consider adopting from `<agent>`: `<specific aspect>`" — be concrete about what to take and from which implementation.
+   - **If there is nothing worth adopting:** "The other implementations don't have particular features or aspects worth adopting beyond what the winner already provides."
+   Do NOT skip this step or leave it ambiguous. The user needs a clear, actionable statement.
+5. **ASK the user**: "Which implementation would you like to merge?"
+6. **STOP and WAIT** for the user's decision
 
 **CRITICAL: Do NOT run `feature-done` automatically. The user must explicitly choose the winner.**
 
