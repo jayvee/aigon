@@ -88,11 +88,23 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 
 > **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for dependency commands.
 
+## Step 3.8: Write tests for your implementation
+
+**You MUST write tests for any new functionality you implement.** This is not optional. Test coverage is a key evaluation criterion in arena mode and a merge requirement.
+
+- **Write unit tests** for new modules, functions, resolvers, and utilities
+- **Write integration tests** for new UI components (render tests, interaction tests)
+- **Add test cases** to existing test files when extending existing modules
+- **Follow existing test patterns** — look at nearby `*.test.js`, `*.test.jsx`, or `*.test.ts` files for conventions (test runner, assertion style, mocking approach)
+- **Run the test suite** to verify all tests pass (both new and existing)
+
+> **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for test commands and conventions.
+
 ## Step 4: Test your changes
 
 ### Solo Mode (branch)
 - Start the dev server if needed
-- Test the changes
+- Run the full test suite and verify all tests pass
 - Ask the user to verify
 
 ### Worktree Mode (solo worktree or arena)
