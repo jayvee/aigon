@@ -49,7 +49,7 @@ Examples:
 6. Deletes the local feature branch
 7. Commits the spec and log moves
 
-### Arena Mode
+### Arena Mode (without --adopt)
 
 1. Pushes the winning agent's branch to origin
 2. Switches to main/master branch
@@ -65,12 +65,29 @@ Examples:
 
 ### Arena Mode with Adoption
 
-When `--adopt` is used, the CLI prints diffs from losing agents after merging the winner. The diffs show what each losing agent has that the winner doesn't.
+**CRITICAL SEQUENCING: When `--adopt` is used, do NOT delete any worktrees or branches for the adopted-from agents until adoption is complete.** The adopted agents' worktrees must remain accessible so you can read their code and cherry-pick changes.
+
+**Order of operations:**
+
+1. Push the winning agent's branch to origin
+2. Switch to main/master branch
+3. Merge the winning agent's branch with `--no-ff`
+4. Move spec to `05-done/`, organize logs, commit
+5. Remove only the **winning agent's** worktree and branch (its code is now on main)
+6. **KEEP all adopted-from agents' worktrees and branches alive**
+7. Review the evaluation's cross-pollination recommendations (in `docs/specs/features/evaluations/`)
+8. **Read the actual source files** from the adopted agents' worktrees — do NOT rely only on diffs
+9. Apply selected changes to main (cherry-pick files, copy code, adapt patterns)
+10. Run tests to ensure adopted changes work with the winner's implementation
+11. Commit the adopted improvements as a separate commit (e.g., `feat: adopt cc's ARIA patterns and layout constants`)
+12. **Only after adoption is committed**, clean up the remaining worktrees and branches
 
 **What to review and adopt:**
 - Extra tests and edge case coverage
 - Better error handling or validation
-- Documentation improvements (comments, docstrings, README updates)
+- Accessibility improvements (ARIA roles, keyboard navigation)
+- Layout/styling refinements
+- Documentation improvements (comments, docstrings)
 - Edge case handling the winner missed
 - Performance optimizations
 
@@ -79,18 +96,9 @@ When `--adopt` is used, the CLI prints diffs from losing agents after merging th
 - Duplicate implementations of the same logic
 - Code that contradicts the winner's design decisions
 
-**Steps after reviewing diffs:**
-1. Review each diff section — look for valuable additions
-2. Apply selected changes manually (copy relevant code from the diff)
-3. Run tests to ensure adopted changes work with the winner's implementation
-4. Commit the adopted improvements
-5. Clean up remaining branches with `{{CMD_PREFIX}}feature-cleanup`
-
-Adopted agent branches are kept for reference until you run cleanup.
-
 ### Cleanup after Arena
 
-After merging the winner, you'll see cleanup options for the losing implementations:
+After merging the winner (and completing adoption if applicable), clean up remaining worktrees:
 
 ```
 {{CMD_PREFIX}}feature-cleanup {{ARG1_SYNTAX}}         # Delete locally
