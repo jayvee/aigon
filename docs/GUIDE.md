@@ -29,7 +29,7 @@ For a quick overview and getting started, see the main [README.md](../README.md)
 For features where you want to go from idea to implementation immediately:
 
 * **Now:** `/aigon:feature-now dark-mode` (or `aigon feature-now dark-mode`) — if `dark-mode` matches an existing feature in the inbox, it runs prioritise → setup → implement. Otherwise it creates a new spec directly in `/in-progress`, assigns an ID, creates a solo branch, and commits atomically. Either way, you go from name to implementation in one session.
-* **Implement:** `/aigon:feature-implement <ID>` (or `/aigon-feature-implement <ID>` for Cursor, `/prompts:aigon-feature-implement <ID>` for Codex) to implement the feature.
+* **Implement:** `aigon feature-implement <ID>` (launches the default `cc` agent from a plain shell) or `aigon feature-implement <ID> --agent=cx` (launches Codex). Inside an agent session use `/aigon:feature-implement <ID>` (or `/aigon-feature-implement <ID>` for Cursor, `/prompts:aigon-feature-implement <ID>` for Codex).
 * **Done:** `/aigon:feature-done <ID>` (or `aigon feature-done <ID>`) merges and completes.
 
 This skips the inbox/backlog/setup steps entirely. Use the slash command for the full guided experience.
@@ -45,7 +45,9 @@ Solo mode supports two workspace styles: **branch** (work in the current repo) o
     * **Branch mode:** `/aigon:feature-setup 108` (or `aigon feature-setup 108`) — creates a Git branch (`feature-108-dark-mode`) in the current repo.
     * **Worktree mode:** `/aigon:feature-setup 108 cc` (or `aigon feature-setup 108 cc`) — creates an isolated worktree at `../<repo>-worktrees/feature-108-cc-dark-mode`, ideal for working on multiple features in parallel.
     * Both modes auto-create a blank Implementation Log template.
-4.  **Implement:** `/aigon:feature-implement 108` (or `/aigon-feature-implement 108` for Cursor, `/prompts:aigon-feature-implement 108` for Codex).
+4.  **Implement:** `aigon feature-implement 108` (launches the default `cc` agent from a plain shell) or `aigon feature-implement 108 --agent=cx` (launch Codex). Inside an active agent session, use `/aigon:feature-implement 108` (or `/aigon-feature-implement 108` for Cursor, `/prompts:aigon-feature-implement 108` for Codex) to show instructions without launching a nested agent.
+    * **Shell-launch mode** (plain terminal, no active agent): Aigon detects no agent session and spawns the chosen agent directly. Default agent is `cc`; override with `--agent=<cc|gg|cx|cu>`.
+    * **Instruction mode** (inside an agent session): Aigon detects the active session and shows spec location and next steps instead of launching another agent.
     * Agent reads the feature spec and creates **tasks from the acceptance criteria** for progress tracking.
     * Agent codes the solution and *must* fill out the Implementation Log.
 5.  **Evaluate (Optional):** `/aigon:feature-eval 108` (or `aigon feature-eval 108`)
@@ -75,10 +77,11 @@ Run multiple agents in competition to find the optimal solution.
         * `../<repo>-worktrees/feature-108-cx-dark-mode` (Codex)
     * **Auto-creates** blank Implementation Log templates in each worktree.
     * **STOPS** - does not implement (user must open each worktree separately).
-4.  **Implement:** Open all worktrees side-by-side with `/aigon:worktree-open 108 --all` (or `aigon worktree-open 108 --all`), or individually with `/aigon:worktree-open 108 cc` (or `aigon worktree-open 108 cc`).
+4.  **Implement:** Open all worktrees side-by-side with `aigon worktree-open 108 --all` (or individually with `aigon worktree-open 108 cc`), or launch an agent directly from a worktree shell with `aigon feature-implement 108`.
     * With Warp: Opens all agents side-by-side and auto-starts each with `/aigon:feature-implement 108`.
     * Single agent: Opens one worktree with agent CLI pre-loaded.
-    * With VS Code: Opens the folder; run `/aigon:feature-implement 108` manually.
+    * With VS Code: Opens the folder; run `aigon feature-implement 108` in the integrated terminal — Aigon detects no active session and launches the agent automatically. Alternatively run `/aigon:feature-implement 108` inside an already-open agent session.
+    * **Arena mismatch protection:** If `--agent=gg` is specified inside a `feature-108-cc-*` worktree, Aigon exits with a clear error instead of launching the wrong agent.
     * Each agent builds the feature independently in their isolated worktree.
     * Each agent creates **tasks from the acceptance criteria** and *must* fill out their Implementation Log.
 5.  **Cross-Agent Review (Optional):** Before evaluation, have different agents review each implementation:

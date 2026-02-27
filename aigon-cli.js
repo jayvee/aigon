@@ -54,6 +54,45 @@ function openInEditor(filePath) {
     }
 }
 
+/**
+ * Detect whether Aigon is currently running inside an active agent session
+ * (Claude Code, Gemini CLI, Codex CLI, Cursor, or similar agent host).
+ *
+ * Returns { detected: boolean, agentId: string|null, agentName: string|null }
+ *
+ * This shared helper is used by shell-launch commands (e.g. feature-implement)
+ * to avoid spawning nested agent sessions.
+ */
+function detectActiveAgentSession() {
+    // Claude Code sets the CLAUDECODE environment variable
+    if (process.env.CLAUDECODE) {
+        return { detected: true, agentId: 'cc', agentName: 'Claude Code' };
+    }
+
+    // Cursor sets CURSOR_TRACE_ID
+    if (process.env.CURSOR_TRACE_ID) {
+        return { detected: true, agentId: 'cu', agentName: 'Cursor' };
+    }
+
+    // Gemini CLI and Codex CLI: check parent process name as a heuristic
+    try {
+        const ppid = process.ppid;
+        if (ppid) {
+            const parentCmd = execSync(`ps -p ${ppid} -o comm=`, { encoding: 'utf8' }).trim();
+            if (parentCmd === 'gemini') {
+                return { detected: true, agentId: 'gg', agentName: 'Gemini CLI' };
+            }
+            if (parentCmd === 'codex') {
+                return { detected: true, agentId: 'cx', agentName: 'Codex CLI' };
+            }
+        }
+    } catch (_) {
+        // Silently ignore if parent process detection fails
+    }
+
+    return { detected: false, agentId: null, agentName: null };
+}
+
 // --- Configuration ---
 const SPECS_ROOT = path.join(process.cwd(), 'docs', 'specs');
 const TEMPLATES_ROOT = path.join(__dirname, 'templates');
@@ -2695,7 +2734,7 @@ const COMMAND_ARG_HINTS = {
     'feature-now': '<existing-feature-name> OR <feature-description>',
     'feature-prioritise': '<feature-name or letter>',
     'feature-setup': '<ID> [agents...]',
-    'feature-implement': '<ID> [--ralph] [--max-iterations=N] [--agent=<id>] [--dry-run]',
+    'feature-implement': '<ID> [--agent=<cc|gg|cx|cu>] [--ralph] [--max-iterations=N] [--dry-run]',
     'feature-validate': '<ID> [--dry-run] [--no-update]',
     'feature-eval': '<ID>',
     'feature-review': '<ID>',
@@ -5450,7 +5489,15 @@ const commands = {
         if (ralphRequested) {
             return runRalphCommand(args);
         }
-        if (!id) return console.error("Usage: aigon feature-implement <ID> [--ralph]\n\nRun this after 'aigon feature-setup <ID>'\n\nExamples:\n  aigon feature-implement 55             # In solo mode branch\n  aigon feature-implement 55 --ralph     # Run Ralph autonomous loop\n  aigon feature-implement 55             # In arena mode worktree");
+        if (!id) return console.error(
+            "Usage: aigon feature-implement <ID> [--agent=<cc|gg|cx|cu>]\n\n" +
+            "Run this after 'aigon feature-setup <ID>'\n\n" +
+            "Examples:\n" +
+            "  aigon feature-implement 55             # Launch default agent (cc) from shell\n" +
+            "  aigon feature-implement 55 --agent=cx  # Launch Codex from shell\n" +
+            "  aigon feature-implement 55 --ralph     # Run Ralph autonomous loop\n" +
+            "  /aigon:feature-implement 55            # Inside agent session: show instructions"
+        );
 
         // Find the feature spec
         let found = findFile(PATHS.features, id, ['03-in-progress']);
@@ -5470,7 +5517,7 @@ const commands = {
             agentId = worktreeMatch[2];
 
             // Verify we're in the right worktree
-            const [_, wtNum, wtAgent, wtDesc] = worktreeMatch;
+            const [__, wtNum] = worktreeMatch;
             if (wtNum !== num && wtNum !== String(num).padStart(2, '0')) {
                 console.warn(`⚠️  Warning: Directory feature ID (${wtNum}) doesn't match argument (${num})`);
             }
@@ -5492,13 +5539,56 @@ const commands = {
             }
 
             mode = featureWorktreeCount > 1 ? 'arena' : 'solo-wt';
+        } else {
+            mode = 'solo';
+        }
 
-            // Get agent name for display
+        // Resolve the agent to use, taking worktree context into account
+        const availableAgents = getAvailableAgents();
+        const agentArgRaw = getOptionValue(options, 'agent');
+        const agentAliasMap = buildAgentAliasMap();
+        let resolvedAgent;
+
+        if (agentId) {
+            // Inside a worktree: default to the worktree's own agent
+            if (agentArgRaw) {
+                const normalized = agentAliasMap[agentArgRaw.toLowerCase()] || agentArgRaw.toLowerCase();
+                if (normalized !== agentId) {
+                    console.error(`❌ Agent mismatch: this worktree belongs to agent '${agentId}', but --agent='${normalized}' was requested.`);
+                    console.error(`   Remove --agent to use '${agentId}', or open the correct worktree.`);
+                    process.exitCode = 1;
+                    return;
+                }
+                resolvedAgent = normalized;
+            } else {
+                resolvedAgent = agentId;
+            }
+        } else {
+            // Solo branch mode: default to cc
+            if (agentArgRaw) {
+                const normalized = agentAliasMap[agentArgRaw.toLowerCase()] || agentArgRaw.toLowerCase();
+                if (!availableAgents.includes(normalized)) {
+                    console.error(`❌ Unknown agent '${agentArgRaw}'. Supported agents: ${availableAgents.join(', ')}`);
+                    process.exitCode = 1;
+                    return;
+                }
+                resolvedAgent = normalized;
+            } else {
+                resolvedAgent = 'cc';
+            }
+        }
+
+        if (!availableAgents.includes(resolvedAgent)) {
+            console.error(`❌ Unknown agent '${resolvedAgent}'. Supported agents: ${availableAgents.join(', ')}`);
+            process.exitCode = 1;
+            return;
+        }
+
+        // Display header (common to both launch mode and instruction mode)
+        const paddedNum = String(num).padStart(2, '0');
+        if (agentId) {
             const agentConfig = AGENT_CONFIGS[agentId] || {};
             const agentName = agentConfig.name || agentId;
-            const paddedNum = String(num).padStart(2, '0');
-
-            // Set terminal tab title
             if (mode === 'arena') {
                 setTerminalTitle(`🏟️ Feature #${paddedNum} - ${agentName}`);
                 console.log(`\n🏟️  Arena Mode - Agent: ${agentId}`);
@@ -5509,21 +5599,14 @@ const commands = {
             console.log(`   Feature: ${num} - ${desc}`);
             console.log(`   Worktree: ${dirName}`);
         } else {
-            // Solo mode: check if we're on the right branch
-            mode = 'solo';
+            setTerminalTitle(`🚀 Feature #${paddedNum}`);
             try {
                 const currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
                 const expectedBranch = `feature-${num}-${desc}`;
-
                 if (currentBranch !== expectedBranch) {
                     console.warn(`⚠️  Warning: Current branch (${currentBranch}) doesn't match expected (${expectedBranch})`);
                     console.warn(`    Run 'aigon feature-setup ${num}' first.`);
                 }
-
-                // Set terminal tab title for solo mode
-                const paddedNum = String(num).padStart(2, '0');
-                setTerminalTitle(`🚀 Feature #${paddedNum}`);
-
                 console.log(`\n🚀 Solo Mode`);
                 console.log(`   Feature: ${num} - ${desc}`);
                 console.log(`   Branch: ${currentBranch}`);
@@ -5532,6 +5615,50 @@ const commands = {
                 return;
             }
         }
+
+        // Detect whether we're already inside an active agent session
+        const sessionInfo = detectActiveAgentSession();
+
+        if (!sessionInfo.detected) {
+            // --- LAUNCH MODE: spawn the selected agent in this context ---
+            const cliConfig = getAgentCliConfig(resolvedAgent);
+            const featureId = paddedNum;
+            const prompt = cliConfig.implementPrompt.replace('{featureId}', featureId);
+            const model = cliConfig.models?.['implement'];
+
+            if (resolvedAgent === 'cu' && model) {
+                console.warn(`⚠️  Model config ignored for Cursor — model selection is UI-only (no --model flag)`);
+            }
+            const modelTokens = (model && resolvedAgent !== 'cu') ? ['--model', model] : [];
+            const flagTokens = cliConfig.implementFlag
+                ? String(cliConfig.implementFlag).trim().split(/\s+/).filter(Boolean)
+                : [];
+            const spawnArgs = [...flagTokens, ...modelTokens, prompt];
+
+            const agentDisplayName = AGENT_CONFIGS[resolvedAgent]?.name || resolvedAgent;
+            console.log(`\n🚀 Launching ${agentDisplayName}...`);
+            console.log(`   Agent:   ${resolvedAgent}`);
+            console.log(`   Command: ${cliConfig.command} ${spawnArgs.join(' ')}`);
+            console.log(`   Dir:     ${cwd}\n`);
+
+            const env = { ...process.env };
+            if (cliConfig.command === 'claude') {
+                // Unset CLAUDECODE to prevent "nested session" error
+                delete env.CLAUDECODE;
+            }
+
+            const result = spawnSync(cliConfig.command, spawnArgs, { stdio: 'inherit', env, cwd });
+            if (result.error) {
+                console.error(`❌ Failed to launch agent: ${result.error.message}`);
+                process.exitCode = 1;
+            } else if (result.status !== 0) {
+                process.exitCode = result.status || 1;
+            }
+            return;
+        }
+
+        // --- INSTRUCTION MODE: already inside an agent session, show next steps ---
+        console.log(`\nℹ️  Running inside ${sessionInfo.agentName} session — showing instructions (nested launch prevented).`);
 
         // Check if spec exists
         const specPath = path.join(cwd, 'docs', 'specs', 'features', '03-in-progress');
@@ -8036,7 +8163,7 @@ Feature Commands (unified for solo and arena modes):
   feature-now <name>                Fast-track: inbox match → prioritise + setup + implement; or create new + implement
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
   feature-setup <ID> [agents...]    Setup for solo (branch) or arena (worktrees)
-  feature-implement <ID> [--ralph]  Implement feature; add --ralph for autonomous retry loop
+  feature-implement <ID> [--agent=<id>] [--ralph]  Implement feature; launches agent from shell, shows instructions inside agent session
   feature-validate <ID>             Evaluate acceptance criteria (smart validation)
   feature-eval <ID>                 Create evaluation (code review or comparison)
   feature-done <ID> [agent]         Merge and complete feature
@@ -8077,7 +8204,8 @@ Examples:
   aigon worktree-open 55 --all         # Open all arena agents side-by-side
   aigon worktree-open 100 101 102      # Open features side-by-side (parallel)
   aigon sessions-close 55              # Kill all arena agents + close Warp tab
-  aigon feature-implement 55           # Implement in current branch/worktree
+  aigon feature-implement 55             # Launch default agent (cc) from plain shell
+  aigon feature-implement 55 --agent=cx  # Launch Codex from plain shell
   aigon feature-implement 55 --ralph               # Run autonomous Ralph loop
   aigon feature-implement 55 --ralph --max-iterations=8 --agent=cx  # Ralph with options
   aigon feature-validate 55            # Evaluate acceptance criteria (smart validation)
