@@ -2427,7 +2427,7 @@ const COMMAND_ARG_HINTS = {
     'feature-validate': '<ID> [--dry-run] [--no-update]',
     'feature-eval': '<ID>',
     'feature-review': '<ID>',
-    'feature-done': '<ID> [agent]',
+    'feature-done': '<ID> [agent] [--adopt <agents...|all>]',
     'feature-cleanup': '<ID> [--push]',
     'board': '[--list] [--features] [--research] [--active] [--all] [--inbox] [--backlog] [--done]',
     'worktree-open': '[ID] [agent]',
@@ -5441,10 +5441,34 @@ Branch: \`${soloBranch}\`
     },
     'feature-done': (args) => {
         const keepBranch = args.includes('--keep-branch');
-        const filteredArgs = args.filter(a => a !== '--keep-branch');
-        const name = filteredArgs[0];
-        const agentId = filteredArgs[1]; // Optional - if provided, multi-agent mode
-        if (!name) return console.error("Usage: aigon feature-done <ID> [agent] [--keep-branch]\n  Without agent: solo mode (merges feature-ID-desc)\n  With agent: multi-agent mode (merges feature-ID-agent-desc, cleans up worktree)\n  --keep-branch: Don't delete the local branch after merge");
+
+        // Parse --adopt flag and its trailing values (e.g. --adopt cc cu, --adopt all)
+        let adoptAgents = [];
+        const adoptIdx = args.indexOf('--adopt');
+        if (adoptIdx !== -1) {
+            for (let i = adoptIdx + 1; i < args.length; i++) {
+                if (args[i].startsWith('--')) break;
+                adoptAgents.push(args[i].toLowerCase());
+            }
+            if (adoptAgents.length === 0) {
+                return console.error("Usage: --adopt requires at least one agent code or 'all'\n  Example: aigon feature-done 12 cx --adopt cc cu");
+            }
+        }
+
+        // Positional args: everything before any flags
+        const positionalArgs = [];
+        for (const a of args) {
+            if (a.startsWith('--')) break;
+            positionalArgs.push(a);
+        }
+        const name = positionalArgs[0];
+        const agentId = positionalArgs[1]; // Optional - if provided, multi-agent mode
+        if (!name) return console.error("Usage: aigon feature-done <ID> [agent] [--adopt <agents...|all>] [--keep-branch]\n  Without agent: solo mode (merges feature-ID-desc)\n  With agent: multi-agent mode (merges feature-ID-agent-desc, cleans up worktree)\n  --adopt: print diffs from losing agents for selective adoption (arena only)\n  --keep-branch: Don't delete the local branch after merge");
+
+        // Validate --adopt is only used in arena (multi-agent) mode
+        if (adoptAgents.length > 0 && !agentId) {
+            return console.error("❌ --adopt is only available in arena (multi-agent) mode.\n   Usage: aigon feature-done <ID> <winning-agent> --adopt <agents...|all>");
+        }
 
         const found = findFile(PATHS.features, name, ['04-in-evaluation', '03-in-progress']);
         if (!found) return console.error(`❌ Could not find feature "${name}" in in-evaluation or in-progress.`);
@@ -5456,7 +5480,8 @@ Branch: \`${soloBranch}\`
         const hookContext = {
             featureId: num,
             featureName: desc,
-            agent: agentId || ''
+            agent: agentId || '',
+            adoptAgents: adoptAgents
         };
 
         // Run pre-hook (can abort the command)
@@ -5637,30 +5662,92 @@ Branch: \`${soloBranch}\`
             }
         }
 
-        // In multi-agent mode, handle losing branches
+        // In multi-agent mode, handle losing branches and adoption
         if (agentId) {
-            // Find all other branches for this feature
-            const losingBranches = [];
+            // Find all other branches for this feature, extracting agent ID from each
+            const losingBranches = []; // { branch, agent }
             try {
                 const branchOutput = execSync('git branch --list', { encoding: 'utf8' });
                 const branches = branchOutput.split('\n').map(b => b.trim().replace('* ', ''));
+                const featurePattern = new RegExp(`^feature-${num}-(\\w+)-`);
                 branches.forEach(branch => {
-                    // Match feature-NUM-AGENT-desc but not the winning branch
-                    const featurePattern = new RegExp(`^feature-${num}-\\w+-`);
-                    if (featurePattern.test(branch) && branch !== branchName) {
-                        losingBranches.push(branch);
+                    const m = branch.match(featurePattern);
+                    if (m && branch !== branchName) {
+                        losingBranches.push({ branch, agent: m[1] });
                     }
                 });
             } catch (e) {
                 // Ignore errors listing branches
             }
 
+            // Resolve --adopt all to all losing agent IDs
+            if (adoptAgents.includes('all')) {
+                if (losingBranches.length === 0) {
+                    console.warn(`\n⚠️  --adopt all: no losing branches found. Continuing normally.`);
+                    adoptAgents = [];
+                } else {
+                    adoptAgents = losingBranches.map(lb => lb.agent);
+                }
+            }
+
+            // Validate requested adopt agents exist in losing branches
+            if (adoptAgents.length > 0) {
+                const losingAgentIds = losingBranches.map(lb => lb.agent);
+                const invalidAgents = adoptAgents.filter(a => !losingAgentIds.includes(a));
+                if (invalidAgents.length > 0) {
+                    console.error(`❌ No losing branch found for agent(s): ${invalidAgents.join(', ')}`);
+                    if (losingAgentIds.length > 0) {
+                        console.error(`   Available losing agents: ${losingAgentIds.join(', ')}`);
+                    }
+                    return;
+                }
+            }
+
+            // Print adoption diffs
+            if (adoptAgents.length > 0) {
+                console.log(`\n🔍 Adoption diffs from ${adoptAgents.length} agent(s):`);
+                for (const adoptAgent of adoptAgents) {
+                    const lb = losingBranches.find(l => l.agent === adoptAgent);
+                    if (!lb) continue;
+                    console.log(`\n${'='.repeat(72)}`);
+                    console.log(`📋 DIFF FROM AGENT: ${adoptAgent} (${lb.branch})`);
+                    console.log(`${'='.repeat(72)}`);
+                    try {
+                        const diff = execSync(`git diff HEAD ${lb.branch}`, {
+                            encoding: 'utf8',
+                            maxBuffer: 10 * 1024 * 1024
+                        });
+                        if (diff.trim()) {
+                            console.log(diff);
+                        } else {
+                            console.log(`   (no unique changes — diff is empty)`);
+                        }
+                    } catch (diffErr) {
+                        console.error(`   ❌ Failed to generate diff for ${adoptAgent}: ${diffErr.message || 'diff failed'}`);
+                    }
+                }
+                console.log(`\n${'='.repeat(72)}`);
+                console.log(`END OF ADOPTION DIFFS`);
+                console.log(`${'='.repeat(72)}`);
+            }
+
             if (losingBranches.length > 0) {
                 console.log(`\n📦 Found ${losingBranches.length} other implementation(s):`);
-                losingBranches.forEach(b => console.log(`   - ${b}`));
-                console.log(`\n🧹 Cleanup options:`);
-                console.log(`   aigon feature-cleanup ${num}         # Delete worktrees and local branches`);
-                console.log(`   aigon feature-cleanup ${num} --push  # Push branches to origin first, then delete`);
+
+                // Partition: adopted branches kept for reference, others show cleanup
+                const adoptedBranches = losingBranches.filter(lb => adoptAgents.includes(lb.agent));
+                const nonAdoptedBranches = losingBranches.filter(lb => !adoptAgents.includes(lb.agent));
+
+                if (adoptedBranches.length > 0) {
+                    console.log(`\n   📌 Kept for adoption reference:`);
+                    adoptedBranches.forEach(lb => console.log(`      - ${lb.branch} (agent: ${lb.agent})`));
+                }
+                if (nonAdoptedBranches.length > 0) {
+                    nonAdoptedBranches.forEach(lb => console.log(`   - ${lb.branch}`));
+                    console.log(`\n🧹 Cleanup options:`);
+                    console.log(`   aigon feature-cleanup ${num}         # Delete worktrees and local branches`);
+                    console.log(`   aigon feature-cleanup ${num} --push  # Push branches to origin first, then delete`);
+                }
             }
         }
 
