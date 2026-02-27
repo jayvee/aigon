@@ -10,7 +10,7 @@
     "models": {
       "research": "opus",
       "implement": "sonnet",
-      "evaluate": "sonnet"
+      "evaluate": "opus"
     }
   },
 

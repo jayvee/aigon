@@ -13,6 +13,15 @@
 - [ ]
 - [ ]
 
+## Validation
+<!-- Optional: commands Ralph runs after each iteration (in addition to project-level validation).
+     Use for feature-specific checks that don't fit in the general test suite.
+     All commands must exit 0 for the iteration to be considered successful.
+-->
+```bash
+# Example: node --check aigon-cli.js
+```
+
 ## Technical Approach
 <!-- High-level approach, key decisions, constraints, non-functional requirements -->
 
