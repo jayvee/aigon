@@ -1,42 +1,40 @@
 # Feature: dev-server-open
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Add an `open` subcommand to `aigon dev-server` that opens the default browser to the dev server's URL (e.g., `http://farline.test` or `http://localhost:3001`). Also add an `--open` flag to `aigon dev-server start` to open the browser automatically after the server is healthy.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As a developer, I want to type `aigon dev-server open` to quickly open my running dev server in my default browser
+- [ ] As a developer, I want `aigon dev-server start --open` to automatically open the browser once the server is ready
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] `aigon dev-server open` opens the default browser to the dev server URL for the current context
+- [ ] Uses proxy URL (e.g., `http://farline.test`) when proxy is available, falls back to `http://localhost:PORT`
+- [ ] `aigon dev-server start --open` opens the browser after the health check passes
+- [ ] URL resolution reuses the same logic as the existing `url` subcommand
+- [ ] Works on macOS (`open`), Linux (`xdg-open`), and Windows (`start`)
+- [ ] Help text is updated to include the new subcommand and flag
+- [ ] `node --check aigon-cli.js` passes (syntax valid)
 
 ## Validation
-<!-- Optional: commands Ralph runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+node --check aigon-cli.js
 ```
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+- Add a helper function `openInBrowser(url)` that uses `child_process.execSync` with the platform-appropriate command (`open` on macOS, `xdg-open` on Linux, `start` on Windows)
+- Add `open` as a new subcommand in the `dev-server` command handler, reusing the URL resolution logic from the `url` subcommand
+- Add `--open` flag parsing in the `start` subcommand, calling `openInBrowser(url)` after a successful health check
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites -->
--
+- Existing `getDevProxyUrl()`, `detectDevServerContext()`, and `isProxyAvailable()` functions
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- Opening specific paths/routes within the app
+- Choosing a specific browser
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- None
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research:
+- `dev-server url` subcommand (reuses same URL resolution)
