@@ -894,6 +894,16 @@ async function waitForHealthy(url, timeoutMs = 30000, intervalMs = 500) {
 }
 
 /**
+ * Open a URL in the default browser (cross-platform).
+ * @param {string} url - URL to open
+ */
+function openInBrowser(url) {
+    const platform = process.platform;
+    const cmd = platform === 'darwin' ? 'open' : platform === 'win32' ? 'start' : 'xdg-open';
+    execSync(`${cmd} ${JSON.stringify(url)}`, { stdio: 'ignore' });
+}
+
+/**
  * Auto-detect project profile from project files
  * @returns {string} Profile name (web, api, ios, android, library, generic)
  */
@@ -7398,6 +7408,7 @@ Branch: \`${soloBranch}\`
 
         if (subcommand === 'start') {
             const registerOnly = args.includes('--register-only');
+            const autoOpen = args.includes('--open');
             const context = detectDevServerContext();
             const proxyAvailable = isProxyAvailable();
             const projectConfig = loadProjectConfig();
@@ -7471,6 +7482,9 @@ Branch: \`${soloBranch}\`
 
                 if (healthy) {
                     console.log(' ready!');
+                    if (autoOpen) {
+                        openInBrowser(url);
+                    }
                 } else {
                     console.log(' (timeout — server may still be starting)');
                     console.log(`   Check logs: aigon dev-server logs`);
@@ -7650,15 +7664,45 @@ Branch: \`${soloBranch}\`
                 console.log(`http://localhost:${basePort + offset}`);
             }
 
+        } else if (subcommand === 'open') {
+            const context = detectDevServerContext();
+            const proxyAvailable = isProxyAvailable();
+
+            let url;
+            if (proxyAvailable) {
+                url = getDevProxyUrl(context.appId, context.serverId);
+            } else {
+                const envLocalPath = path.join(process.cwd(), '.env.local');
+                if (fs.existsSync(envLocalPath)) {
+                    const content = fs.readFileSync(envLocalPath, 'utf8');
+                    const match = content.match(/^PORT=(\d+)/m);
+                    if (match) {
+                        url = `http://localhost:${match[1]}`;
+                    }
+                }
+                if (!url) {
+                    const projectConfig = loadProjectConfig();
+                    const devProxy = projectConfig.devProxy || {};
+                    const basePort = devProxy.basePort || 3000;
+                    const agentOffsets = { cc: 1, gg: 2, cx: 3, cu: 4 };
+                    const offset = context.agentId ? (agentOffsets[context.agentId] || 0) : 0;
+                    url = `http://localhost:${basePort + offset}`;
+                }
+            }
+
+            console.log(`🌐 Opening ${url}`);
+            openInBrowser(url);
+
         } else {
-            console.error(`Usage: aigon dev-server <start|stop|list|logs|gc|url>`);
-            console.error(`\n  start [--port N]       - Start dev server, register with proxy`);
-            console.error(`  start --register-only  - Register port mapping only (don't start process)`);
-            console.error(`  stop [serverId]        - Stop process and deregister from proxy`);
-            console.error(`  list                   - Show all active dev servers`);
-            console.error(`  logs [-f] [-n N]       - Show dev server output (default: last 50 lines)`);
-            console.error(`  gc                     - Remove entries for dead processes`);
-            console.error(`  url                    - Print URL for current context (for scripting)`);
+            console.error(`Usage: aigon dev-server <start|stop|list|logs|gc|url|open>`);
+            console.error(`\n  start [--port N] [--open]  - Start dev server, register with proxy`);
+            console.error(`  start --register-only      - Register port mapping only (don't start process)`);
+            console.error(`  stop [serverId]            - Stop process and deregister from proxy`);
+            console.error(`  open                       - Open dev server URL in default browser`);
+            console.error(`  list                       - Show all active dev servers`);
+            console.error(`  logs [-f] [-n N]           - Show dev server output (default: last 50 lines)`);
+            console.error(`  gc                         - Remove entries for dead processes`);
+            console.error(`  url                        - Print URL for current context (for scripting)`);
         }
     },
 
@@ -7679,9 +7723,10 @@ Setup:
   proxy-setup                       One-time setup: install Caddy + dnsmasq for *.test domains
 
 Dev Server (web/api profiles):
-  dev-server start [--port N]       Start dev server, register with proxy, wait for healthy
+  dev-server start [--port N] [--open]  Start dev server, register with proxy, wait for healthy
   dev-server start --register-only  Register port mapping only (don't start process)
   dev-server stop [serverId]        Stop process and deregister from proxy
+  dev-server open                   Open dev server URL in default browser
   dev-server list                   Show all active dev servers across all apps
   dev-server logs [-f] [-n N]       Show dev server output (default: last 50 lines, -f to follow)
   dev-server gc                     Remove entries for dead processes
@@ -7757,6 +7802,8 @@ Examples:
   # Dev proxy (web/api projects)
   aigon proxy-setup                   # One-time: install Caddy + dnsmasq
   aigon dev-server start              # Register dev server → http://cc-119.myapp.test
+  aigon dev-server start --open       # Start and open browser automatically
+  aigon dev-server open               # Open dev server URL in browser
   aigon dev-server list               # Show all running dev servers
   aigon dev-server stop               # Deregister current dev server
   BASE_URL=$(aigon dev-server url) npx playwright test  # E2E tests
