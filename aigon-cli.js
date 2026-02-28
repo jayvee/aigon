@@ -6195,7 +6195,7 @@ Branch: \`${soloBranch}\`
             const losingBranches = []; // { branch, agent }
             try {
                 const branchOutput = execSync('git branch --list', { encoding: 'utf8' });
-                const branches = branchOutput.split('\n').map(b => b.trim().replace('* ', ''));
+                const branches = branchOutput.split('\n').map(b => b.trim().replace(/^[*+]\s+/, ''));
                 const featurePattern = new RegExp(`^feature-${num}-(\\w+)-`);
                 branches.forEach(branch => {
                     const m = branch.match(featurePattern);
