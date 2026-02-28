@@ -2,7 +2,7 @@
 # See: https://developers.openai.com/codex/local-config/
 
 # Trust the aigon CLI tool - allow it to run without approval prompts
-approval_policy = "untrusted"
+approval_policy = "never"
 
 # Full access required for git branch operations (checkout, merge, etc.)
 sandbox_mode = "danger-full-access"
