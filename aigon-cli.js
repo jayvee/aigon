@@ -64,30 +64,36 @@ function openInEditor(filePath) {
  * to avoid spawning nested agent sessions.
  */
 function detectActiveAgentSession() {
-    // Claude Code sets the CLAUDECODE environment variable
-    if (process.env.CLAUDECODE) {
-        return { detected: true, agentId: 'cc', agentName: 'Claude Code' };
-    }
-
-    // Cursor sets CURSOR_TRACE_ID
-    if (process.env.CURSOR_TRACE_ID) {
-        return { detected: true, agentId: 'cu', agentName: 'Cursor' };
-    }
-
-    // Gemini CLI and Codex CLI: check parent process name as a heuristic
+    // Walk up the process tree (up to 4 levels) looking for a known agent.
+    // Env-var-only checks (like CLAUDECODE) are unreliable because the var
+    // leaks into child shells (e.g. new Warp tabs) that aren't actual agent sessions.
+    // We walk multiple levels because agents spawn commands through shells:
+    //   claude → bash → node (aigon)   — agent is the grandparent
+    const agentProcesses = {
+        claude: { agentId: 'cc', agentName: 'Claude Code' },
+        gemini: { agentId: 'gg', agentName: 'Gemini CLI' },
+        codex:  { agentId: 'cx', agentName: 'Codex CLI' },
+    };
     try {
-        const ppid = process.ppid;
-        if (ppid) {
-            const parentCmd = execSync(`ps -p ${ppid} -o comm=`, { encoding: 'utf8' }).trim();
-            if (parentCmd === 'gemini') {
-                return { detected: true, agentId: 'gg', agentName: 'Gemini CLI' };
+        let pid = process.ppid;
+        for (let depth = 0; depth < 4 && pid && pid > 1; depth++) {
+            const cmd = execSync(`ps -p ${pid} -o comm=,ppid=`, { encoding: 'utf8' }).trim();
+            const parts = cmd.split(/\s+/);
+            const procName = parts[0];
+            const nextPid = parseInt(parts[1], 10);
+            if (agentProcesses[procName]) {
+                return { detected: true, ...agentProcesses[procName] };
             }
-            if (parentCmd === 'codex') {
-                return { detected: true, agentId: 'cx', agentName: 'Codex CLI' };
-            }
+            pid = nextPid;
         }
     } catch (_) {
         // Silently ignore if parent process detection fails
+    }
+
+    // Cursor sets CURSOR_TRACE_ID — env var is fine here because Cursor
+    // is a GUI app and won't leak the var to unrelated terminal tabs.
+    if (process.env.CURSOR_TRACE_ID) {
+        return { detected: true, agentId: 'cu', agentName: 'Cursor' };
     }
 
     return { detected: false, agentId: null, agentName: null };
@@ -4786,10 +4792,10 @@ const commands = {
         const nextId = getNextId(PATHS.research);
         const paddedId = String(nextId).padStart(2, '0');
         // Transform: research-topic-name.md -> research-55-topic-name.md
-        const newName = found.file.replace(
-            new RegExp(`^${PATHS.research.prefix}-`),
-            `${PATHS.research.prefix}-${paddedId}-`
-        );
+        // Also handles files without the prefix (e.g. topic-name.md -> research-55-topic-name.md)
+        const prefix = PATHS.research.prefix;
+        const baseName = found.file.replace(/\.md$/, '').replace(new RegExp(`^${prefix}-`), '');
+        const newName = `${prefix}-${paddedId}-${baseName}.md`;
         moveFile(found, '02-backlog', newName);
         console.log(`📋 Assigned ID: ${paddedId}`);
     },
@@ -5141,10 +5147,10 @@ const commands = {
         const nextId = getNextId(PATHS.features);
         const paddedId = String(nextId).padStart(2, '0');
         // Transform: feature-dark-mode.md -> feature-55-dark-mode.md
-        const newName = found.file.replace(
-            new RegExp(`^${PATHS.features.prefix}-`),
-            `${PATHS.features.prefix}-${paddedId}-`
-        );
+        // Also handles files without the prefix (e.g. dark-mode.md -> feature-55-dark-mode.md)
+        const prefix = PATHS.features.prefix;
+        const baseName = found.file.replace(/\.md$/, '').replace(new RegExp(`^${prefix}-`), '');
+        const newName = `${prefix}-${paddedId}-${baseName}.md`;
         moveFile(found, '02-backlog', newName);
 
         // Commit the prioritisation so it's available in worktrees
