@@ -4140,7 +4140,7 @@ For each criterion, respond with one line in this exact format:
     try {
         const result = spawnSync('claude', ['-p', prompt], {
             encoding: 'utf8',
-            timeout: 60000,
+            timeout: 180000,
             env
         });
 
