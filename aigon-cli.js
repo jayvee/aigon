@@ -4145,6 +4145,9 @@ For each criterion, respond with one line in this exact format:
         });
 
         if (result.error || result.status !== 0) {
+            const reason = result.error ? result.error.message : `claude exited with status ${result.status}`;
+            console.warn(`   ⚠️  LLM criteria evaluation failed: ${reason}`);
+            if (result.stderr) console.warn(`   stderr: ${result.stderr.trim().slice(0, 200)}`);
             return criteria.map(() => ({ passed: null, reasoning: 'LLM evaluation unavailable', skipped: true }));
         }
 
@@ -4247,6 +4250,12 @@ function runSmartValidation({ featureNum, specPath, specContent, dryRun = false,
     const passCount = criteriaResults.filter(r => r.passed === true).length;
     const failCount = criteriaResults.filter(r => r.passed === false).length;
     const skipCount = criteriaResults.filter(r => r.skipped).length;
+
+    // If no criteria actually passed and some were skipped (e.g. LLM unavailable),
+    // don't treat it as success — nothing was actually validated
+    if (passCount === 0 && skipCount > 0) {
+        allPassed = false;
+    }
 
     return {
         allPassed,
