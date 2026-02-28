@@ -3641,6 +3641,10 @@ function runRalphAgentIteration(agentId, prompt, dryRun = false) {
     const flagTokens = cliConfig.implementFlag
         ? String(cliConfig.implementFlag).trim().split(/\s+/).filter(Boolean)
         : [];
+    // Claude needs -p (print mode) so it exits after completing the prompt
+    if (command === 'claude' && !flagTokens.includes('-p') && !flagTokens.includes('--print')) {
+        flagTokens.unshift('-p');
+    }
     const args = [...flagTokens, prompt];
 
     if (dryRun) {
