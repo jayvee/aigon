@@ -1569,6 +1569,33 @@ function removeWorktreeTrust(worktreePaths) {
     }
 }
 
+/**
+ * Pre-seed Codex project trust so worktrees can load project-level config.
+ * Adds the current project root as trusted in ~/.codex/config.toml.
+ */
+function presetCodexTrust() {
+    const codexConfigPath = path.join(os.homedir(), '.codex', 'config.toml');
+    try {
+        let config = '';
+        if (fs.existsSync(codexConfigPath)) {
+            config = fs.readFileSync(codexConfigPath, 'utf8');
+        }
+
+        const projectRoot = process.cwd();
+        const entry = `[projects."${projectRoot}"]`;
+
+        if (config.includes(entry)) return; // already trusted
+
+        if (config.length > 0 && !config.endsWith('\n')) config += '\n';
+        config += `\n${entry}\ntrust_level = "trusted"\n`;
+
+        safeWrite(codexConfigPath, config);
+        console.log(`🔓 Pre-seeded Codex project trust for ${projectRoot}`);
+    } catch (e) {
+        console.warn(`⚠️  Could not pre-seed Codex trust: ${e.message}`);
+    }
+}
+
 // --- Hooks System ---
 
 /**
@@ -5488,6 +5515,9 @@ const commands = {
             const allWorktreePaths = agentIds.map(agentId => `${wtBase}/feature-${num}-${agentId}-${desc}`);
             addWorktreePermissions(allWorktreePaths);
             presetWorktreeTrust(allWorktreePaths);
+            if (agentIds.includes('cx')) {
+                presetCodexTrust();
+            }
 
             if (agentIds.length === 1) {
                 const portSuffix = profile.devServer.enabled
