@@ -93,6 +93,36 @@ function detectActiveAgentSession() {
     return { detected: false, agentId: null, agentName: null };
 }
 
+/**
+ * Print a warning when an agent-required command is run from a bare shell.
+ * No-ops if running inside a recognised agent session.
+ *
+ * @param {string} commandName  e.g. 'feature-implement'
+ * @param {string|undefined} id  The feature/research ID (for the suggested command)
+ */
+function printAgentContextWarning(commandName, id) {
+    const session = detectActiveAgentSession();
+    if (session.detected) return;
+
+    const idPart = id ? ` ${id}` : '';
+    const hasRalph = commandName === 'feature-implement';
+
+    console.log('');
+    console.log(`⚠️  This command is meant to run inside an AI agent session.`);
+    console.log('');
+    console.log(`Running 'aigon ${commandName}' from the terminal will print instructions`);
+    console.log(`that an agent should read — but without an agent, nothing will happen.`);
+    console.log('');
+    console.log(`Open your agent (Claude Code, Cursor, Gemini, Codex) and run:`);
+    console.log(`  /aigon:${commandName}${idPart}`);
+    if (hasRalph) {
+        console.log('');
+        console.log(`Or, let Ralph handle it autonomously:`);
+        console.log(`  aigon ${commandName}${idPart} --ralph`);
+    }
+    console.log('');
+}
+
 // --- Configuration ---
 const SPECS_ROOT = path.join(process.cwd(), 'docs', 'specs');
 const TEMPLATES_ROOT = path.join(__dirname, 'templates');
@@ -4847,6 +4877,7 @@ const commands = {
     },
     'research-conduct': (args) => {
         const id = args[0];
+        printAgentContextWarning('research-conduct', id);
         if (!id) return console.error("Usage: aigon research-conduct <ID>\n\nRun this after 'aigon research-setup <ID>'\n\nExamples:\n  aigon research-conduct 05     # In solo mode\n  aigon research-conduct 05     # In arena mode (writes to your findings file)");
 
         // Find the research topic
@@ -4898,6 +4929,10 @@ const commands = {
             console.log(`   4. Include sources and recommendation`);
             console.log(`\n   When done: aigon research-done ${num}`);
         }
+    },
+    'research-synthesize': (args) => {
+        const id = args[0];
+        printAgentContextWarning('research-synthesize', id);
     },
     'research-done': (args) => {
         const id = args[0];
@@ -5489,6 +5524,7 @@ const commands = {
         if (ralphRequested) {
             return runRalphCommand(args);
         }
+        printAgentContextWarning('feature-implement', id);
         if (!id) return console.error(
             "Usage: aigon feature-implement <ID> [--agent=<cc|gg|cx|cu>]\n\n" +
             "Run this after 'aigon feature-setup <ID>'\n\n" +
@@ -5701,6 +5737,7 @@ const commands = {
     },
     'feature-eval': (args) => {
         const name = args[0];
+        printAgentContextWarning('feature-eval', name);
         if (!name) return console.error("Usage: aigon feature-eval <ID>\n\nExamples:\n  aigon feature-eval 55     # Solo mode: code review\n  aigon feature-eval 55     # Arena mode: compare implementations");
 
         // Find the feature (may already be in evaluation)
@@ -5884,6 +5921,10 @@ Branch: \`${soloBranch}\`
             console.log(`\n⚠️  TO MERGE INTO MAIN, run:`);
             console.log(`   aigon feature-done ${num}`);
         }
+    },
+    'feature-review': (args) => {
+        const id = args[0];
+        printAgentContextWarning('feature-review', id);
     },
     'feature-done': (args) => {
         const keepBranch = args.includes('--keep-branch');
