@@ -41,6 +41,18 @@
       "enabled": true,
       "path": ".cursor/cli.json",
       "permissions": ["Shell(aigon:*)"]
+    },
+    "hooks": {
+      "enabled": true,
+      "path": ".cursor/hooks.json",
+      "content": {
+        "hooks": {
+          "sessionStart": [{
+            "command": "aigon check-version",
+            "timeout": 30
+          }]
+        }
+      }
     }
   },
 
