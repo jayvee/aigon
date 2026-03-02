@@ -55,6 +55,12 @@
 
 **Override defaults:** Set `agents.{id}.implementFlag` in `~/.aigon/config.json` to use stricter permissions (e.g., `""` to require manual approval). Project config (`.aigon/config.json`) takes precedence over global config.
 
+## Context-Aware
+
+| Command | Description |
+|---------|-------------|
+| `{{CMD_PREFIX}}next` | Detect current context and suggest the most likely next workflow action |
+
 ## Shortcuts
 
 All commands have top-level short aliases prefixed with `a` (for aigon):
@@ -72,5 +78,6 @@ All commands have top-level short aliases prefixed with `a` (for aigon):
 | `/afd` | feature-done | `/afbl` | feedback-list |
 | `/ab` | board | `/afbt` | feedback-triage |
 | `/ads` | dev-server | `/ah` | help |
+| `/an` | next | | |
 
 Run `aigon help` in terminal for full CLI reference.
