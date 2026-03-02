@@ -2753,7 +2753,6 @@ const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
     'feature-done',
     'feature-cleanup',
     'feature-validate',
-    'worktree-open',
 ]);
 
 // Short aliases for commands (alias → full command name)
