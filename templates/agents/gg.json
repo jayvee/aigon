@@ -8,9 +8,9 @@
     "implementFlag": "--yolo",
     "implementPrompt": "/aigon:feature-implement {featureId}",
     "models": {
-      "research": "gemini-2.5-pro",
-      "implement": "gemini-2.5-pro",
-      "evaluate": "gemini-2.5-flash"
+      "research": "gemini-3.1-pro-preview",
+      "implement": "gemini-3-flash-preview",
+      "evaluate": "gemini-3.1-pro-preview"
     }
   },
 
