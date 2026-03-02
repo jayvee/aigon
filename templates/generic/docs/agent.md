@@ -41,6 +41,7 @@
 ### Utility Commands
 | Command | Description |
 |---------|-------------|
+| `{{CMD_PREFIX}}next` (alias: `{{CMD_PREFIX}}n`) | Suggest the most likely next workflow command |
 | `{{CMD_PREFIX}}help` | Show all Aigon commands |
 
 ## Modes

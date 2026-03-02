@@ -845,6 +845,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/aigon:next` (alias: `/aigon:n`) | Suggest the most likely next workflow command |
 | `/aigon:board` | Show Kanban board or list view |
 | `/aigon:feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
@@ -872,6 +873,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/aigon:next` (alias: `/aigon:n`) | Suggest the most likely next workflow command |
 | `/aigon:board` | Show Kanban board or list view |
 | `/aigon:feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
@@ -899,6 +901,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/prompts:aigon-feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
 | `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
 | `/prompts:aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/prompts:aigon-next` (alias: `/prompts:aigon-n`) | Suggest the most likely next workflow command |
 | `/prompts:aigon-board` | Show Kanban board or list view |
 | `/prompts:aigon-feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
 | `/prompts:aigon-feature-eval <ID>` | Generate review/comparison template |
@@ -926,6 +929,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon-feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
 | `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/aigon-next` (alias: `/aigon-n`) | Suggest the most likely next workflow command |
 | `/aigon-board` | Show Kanban board or list view |
 | `/aigon-feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
 | `/aigon-feature-eval <ID>` | Generate review/comparison template |
