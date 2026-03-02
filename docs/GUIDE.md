@@ -88,9 +88,10 @@ Run multiple agents in competition to find the optimal solution.
     * In each worktree, open a session with a different agent
     * `/aigon:feature-review 108` (or `/aigon-feature-review 108` for Cursor, `/prompts:aigon-feature-review 108` for Codex)
     * Reviewing agent commits fixes with `fix(review):` prefix
-6.  **Evaluate:** Back in the main folder, switch to an eval model (eg sonnet) and run `/aigon:feature-eval 108` (or `aigon feature-eval 108`)
+6.  **Evaluate:** Back in the main folder, run `/aigon:feature-eval 108` (or `aigon feature-eval 108`).
     * Moves the feature to `/in-evaluation`.
     * Creates comparison template with all implementations.
+    * Warns if the evaluator shares a provider family with the implementer (use `--allow-same-model-judge` to suppress).
 7.  **Judge:** Review and compare solutions, fill in the evaluation.
 8.  **Merge Winner:**
     ```bash
@@ -936,19 +937,14 @@ Set `AIGON_TERMINAL=code` to override the terminal for a single session.
 
 ## Multi-Agent Evaluation Examples
 
-When running multi-agent arenas, use `/aigon:feature-eval <ID>` (or `aigon feature-eval <ID>`) to generate an evaluation template and compare implementations. For unbiased evaluation, **use a different model as the evaluator** than the ones that wrote the code.
+When running multi-agent arenas, use `/aigon:feature-eval <ID>` (or `aigon feature-eval <ID>`) to generate an evaluation template and compare implementations. Aigon automatically detects same-family evaluation bias and warns you.
 
-### Evaluator Model Recommendation
+### Evaluator Bias Detection
 
-If using Claude as the evaluator, start it with a different model:
+`feature-eval` warns if the evaluator shares a provider family with the implementer (e.g., Claude evaluating Claude's work). To suppress:
 
 ```bash
-# If implementations were written by Opus, evaluate with Sonnet
-claude --model sonnet
-
-# Then run the evaluation command
-/aigon:feature-eval 10
-# or: aigon feature-eval 10
+aigon feature-eval 10 --allow-same-model-judge
 ```
 
 ### Example Evaluation Output

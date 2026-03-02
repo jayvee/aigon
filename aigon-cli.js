@@ -2820,7 +2820,7 @@ const COMMAND_ARG_HINTS = {
     'feature-setup': '<ID> [agents...]',
     'feature-implement': '<ID> [--agent=<cc|gg|cx|cu>] [--ralph] [--max-iterations=N] [--dry-run]',
     'feature-validate': '<ID> [--dry-run] [--no-update]',
-    'feature-eval': '<ID>',
+    'feature-eval': '<ID> [--allow-same-model-judge]',
     'feature-review': '<ID>',
     'feature-done': '<ID> [agent] [--adopt <agents...|all>]',
     'feature-cleanup': '<ID> [--push]',
