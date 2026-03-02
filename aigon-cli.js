@@ -6762,10 +6762,80 @@ Branch: \`${soloBranch}\`
                         }
                     }
 
+                    // Add SessionStart hooks (Claude, Gemini — embedded in settings file)
+                    if (extras.settings.hooks) {
+                        if (!settings.hooks) settings.hooks = {};
+                        Object.entries(extras.settings.hooks).forEach(([event, hookConfigs]) => {
+                            if (!settings.hooks[event]) settings.hooks[event] = [];
+                            hookConfigs.forEach(hookConfig => {
+                                // Check if an Aigon hook already exists (by matching command string)
+                                const aigonCmd = 'aigon check-version';
+                                const alreadyExists = settings.hooks[event].some(existing => {
+                                    // Claude/Gemini format: nested hooks array with command field
+                                    if (existing.hooks) {
+                                        return existing.hooks.some(h => h.command && h.command.includes(aigonCmd));
+                                    }
+                                    // Flat format: command field directly
+                                    return existing.command && existing.command.includes(aigonCmd);
+                                });
+                                if (!alreadyExists) {
+                                    settings.hooks[event].push(hookConfig);
+                                    settingsChanged = true;
+                                }
+                            });
+                        });
+                        if (settingsChanged) {
+                            console.log(`   🔄 Added SessionStart hook to ${extras.settings.path}`);
+                        }
+                    }
+
                     // Only write if something changed
                     const newContent = JSON.stringify(settings, null, 2);
                     if (newContent !== existingContent) {
                         safeWrite(settingsPath, newContent);
+                    }
+                }
+
+                // Standalone hooks file (Cursor — separate from settings)
+                if (extras.hooks && extras.hooks.enabled) {
+                    const hooksPath = path.join(process.cwd(), extras.hooks.path);
+                    let hooksFile = {};
+                    let existingHooksContent = '';
+                    if (fs.existsSync(hooksPath)) {
+                        try {
+                            existingHooksContent = fs.readFileSync(hooksPath, 'utf8');
+                            hooksFile = JSON.parse(existingHooksContent);
+                        } catch (e) {
+                            console.warn(`   ⚠️  Could not parse existing ${extras.hooks.path}, creating new one`);
+                        }
+                    }
+
+                    // Merge hook content
+                    const hookContent = extras.hooks.content;
+                    let hooksChanged = false;
+                    if (hookContent.hooks) {
+                        if (!hooksFile.hooks) hooksFile.hooks = {};
+                        Object.entries(hookContent.hooks).forEach(([event, hookConfigs]) => {
+                            if (!hooksFile.hooks[event]) hooksFile.hooks[event] = [];
+                            hookConfigs.forEach(hookConfig => {
+                                const aigonCmd = 'aigon check-version';
+                                const alreadyExists = hooksFile.hooks[event].some(existing =>
+                                    existing.command && existing.command.includes(aigonCmd)
+                                );
+                                if (!alreadyExists) {
+                                    hooksFile.hooks[event].push(hookConfig);
+                                    hooksChanged = true;
+                                }
+                            });
+                        });
+                    }
+
+                    if (hooksChanged) {
+                        const newHooksContent = JSON.stringify(hooksFile, null, 2);
+                        if (newHooksContent !== existingHooksContent) {
+                            safeWrite(hooksPath, newHooksContent);
+                            console.log(`   🔄 Added SessionStart hook to ${extras.hooks.path}`);
+                        }
                     }
                 }
 
@@ -6834,6 +6904,23 @@ Branch: \`${soloBranch}\`
 
         } catch (e) {
             console.error(`❌ Failed: ${e.message}`);
+        }
+    },
+    'check-version': () => {
+        const currentVersion = getAigonVersion();
+        const installedVersion = getInstalledVersion();
+
+        if (!currentVersion) {
+            console.error('❌ Could not determine Aigon CLI version');
+            process.exit(1);
+        }
+
+        if (!installedVersion || compareVersions(currentVersion, installedVersion) !== 0) {
+            const from = installedVersion || 'unknown';
+            console.log(`🔄 Aigon version mismatch (project: ${from}, CLI: ${currentVersion}). Updating...`);
+            commands['update']();
+        } else {
+            console.log(`✅ Aigon is up to date (v${currentVersion})`);
         }
     },
     'update': () => {
