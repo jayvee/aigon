@@ -118,27 +118,16 @@ Use `--push` if you want to preserve the alternative implementations on the remo
 
 ## Update Documentation
 
-After merging (and adoption if applicable), check whether the feature's changes require updates to project documentation. Review the diff on main to understand what changed, then scan for docs that reference affected areas:
+After merging (and adoption if applicable), check whether the feature's changes require updates to project documentation.
 
-**Docs to check:**
-- `README.md` — command tables, feature descriptions, usage examples
-- `AGENTS.md` — agent instructions, workflow steps
-- `docs/GUIDE.md` — user-facing guide and walkthroughs
-- `docs/development_workflow.md` — workflow documentation
-- `docs/agents/*.md` — agent-specific notes
-- `templates/generic/docs/agent.md` — agent template docs
-- `templates/generic/commands/help.md` — help command reference
-
-**What to update:**
-- New commands or flags → add to command tables and help references
-- Changed workflow steps → update workflow docs and guide
-- New config options → document in README and agent docs
-- Removed or renamed features → remove stale references
-
-**What NOT to update:**
-- Don't update docs for purely internal refactors with no user-facing changes
-- Don't add documentation for changes already covered by the implementation commits
-- Don't create new doc files — only update existing ones
+1. Review the merged diff to understand what changed
+2. Search the repo for existing documentation — look for `README.md`, architecture docs, API docs, design docs, guides, wikis, or any markdown files that describe the areas you just changed
+3. Update any docs that reference affected areas — for example:
+   - New public APIs or commands → update relevant reference docs
+   - Changed behaviour or workflows → update guides or architecture docs
+   - New config options or environment variables → document where appropriate
+   - Removed or renamed features → remove stale references
+4. Skip this step entirely if the feature was a purely internal refactor with no user-facing or architectural changes
 
 If updates are needed, commit them as a separate commit:
 ```bash
