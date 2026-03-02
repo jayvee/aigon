@@ -2782,6 +2782,7 @@ const COMMAND_ALIASES = {
     'afbt': 'feedback-triage',
     'ads':  'dev-server',
     'ah':   'help',
+    'an':   'next',
 };
 
 // Reverse map: full command name → list of aliases
@@ -2816,6 +2817,7 @@ const COMMAND_ARG_HINTS = {
     'feedback-list': '[--inbox|--triaged|--actionable|--done|--wont-fix|--duplicate|--all] [--type <type>] [--severity <severity>] [--tag <tag>]',
     'feedback-triage': '<ID> [--type <type>] [--severity <severity|none>] [--tags <csv|none>] [--status <status>] [--duplicate-of <ID|none>] [--action <keep|mark-duplicate|promote-feature|promote-research|wont-fix>] [--apply] [--yes]',
     'help': '',
+    'next': '',
 };
 
 // Format command output based on agent's output format
@@ -8214,6 +8216,10 @@ Branch: \`${soloBranch}\`
         }
     },
 
+    'next': () => {
+        console.log(`ℹ️  'aigon next' is an agent-only command.\n\nRun it inside your agent session:\n  /aigon:next\n\nOr use the short alias:\n  /an`);
+    },
+
     'help': () => {
         console.log(`
 Aigon - Spec-Driven Development for AI Agents
@@ -8279,6 +8285,9 @@ Visualization:
   board --research                  Show only research
   board --active                    Show only in-progress items
   board --all                       Include done items
+
+Context-Aware:
+  next                              (agent-only) Detect current context and suggest next workflow action
 
 Examples:
   aigon init                           # Setup specs directory
