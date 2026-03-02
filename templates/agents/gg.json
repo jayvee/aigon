@@ -43,7 +43,17 @@
     "settings": {
       "enabled": true,
       "path": ".gemini/settings.json",
-      "allowedTools": ["aigon"]
+      "allowedTools": ["aigon"],
+      "hooks": {
+        "SessionStart": [{
+          "matcher": "startup",
+          "hooks": [{
+            "type": "command",
+            "command": "aigon check-version",
+            "timeout": 30
+          }]
+        }]
+      }
     }
   },
 
