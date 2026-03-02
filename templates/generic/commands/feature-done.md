@@ -67,7 +67,7 @@ Examples:
 
 **CRITICAL SEQUENCING: When `--adopt` is used, do NOT delete any worktrees or branches for the adopted-from agents until adoption is complete.** The adopted agents' worktrees must remain accessible so you can read their code and cherry-pick changes.
 
-**Order of operations:**
+**Phase 1 — Merge the winner (handled by CLI):**
 
 1. Push the winning agent's branch to origin
 2. Switch to main/master branch
@@ -75,26 +75,68 @@ Examples:
 4. Move spec to `05-done/`, organize logs, commit
 5. Remove only the **winning agent's** worktree and branch (its code is now on main)
 6. **KEEP all adopted-from agents' worktrees and branches alive**
-7. Review the evaluation's cross-pollination recommendations (in `docs/specs/features/evaluations/`)
-8. **Read the actual source files** from the adopted agents' worktrees — do NOT rely only on diffs
-9. Apply selected changes to main (cherry-pick files, copy code, adapt patterns)
-10. Run tests to ensure adopted changes work with the winner's implementation
-11. Commit the adopted improvements as a separate commit (e.g., `feat: adopt cc's ARIA patterns and layout constants`)
-12. **Only after adoption is committed**, clean up the remaining worktrees and branches
+7. Print the raw diffs from each adopted agent
 
-**What to review and adopt:**
-- Extra tests and edge case coverage
-- Better error handling or validation
-- Accessibility improvements (ARIA roles, keyboard navigation)
-- Layout/styling refinements
-- Documentation improvements (comments, docstrings)
-- Edge case handling the winner missed
-- Performance optimizations
+**Phase 2 — Review and categorize (your job):**
 
-**What NOT to adopt:**
-- Architectural changes that conflict with the winner's approach
-- Duplicate implementations of the same logic
-- Code that contradicts the winner's design decisions
+After the CLI prints the adoption diffs, you must systematically review them. For each adopted agent:
+
+1. Read the evaluation's cross-pollination recommendations in `docs/specs/features/evaluations/`
+2. **Read the actual source files** from the adopted agent's worktree — do NOT rely only on diffs. Navigate to the worktree directory and read the files to understand context.
+3. Categorize each change into one of these types:
+   - **Tests** — new test cases, edge case coverage, test utilities
+   - **Error handling** — try/catch blocks, validation, guard clauses, null checks
+   - **Documentation** — comments, docstrings, README additions
+   - **Edge cases** — boundary handling, defensive code the winner missed
+   - **Other additive** — utility functions, constants, accessibility improvements, performance optimizations
+
+4. For each change, decide: **adopt** or **skip**. Skip if it:
+   - Conflicts with the winner's architecture or design decisions
+   - Duplicates logic already present in the winner
+   - Depends on code structure the winner didn't use
+   - Would require significant refactoring to integrate
+
+**Phase 3 — Apply adoptions:**
+
+For each accepted change:
+
+1. **Adapt** it to fit the winner's code on main:
+   - Adjust file paths if the winner organized code differently
+   - Update import paths to match the winner's module structure
+   - Rename variables/functions to match the winner's naming conventions
+   - Merge test cases into the winner's existing test files rather than creating parallel files
+2. **Apply** the adapted change to the working tree on main
+3. If a change cannot be cleanly adapted, skip it and note why
+
+**Phase 4 — Verify:**
+
+After all adoptions are applied, run the project's test suite. If tests fail:
+- Diagnose whether the failure is caused by an adopted change
+- Fix the adaptation or revert that specific adoption
+- Re-run tests until green
+- If no adoptions can be made to pass, revert all and note what was attempted
+
+**Phase 5 — Commit (one commit per adopted agent):**
+
+For each agent you adopted from, create a separate commit:
+
+```bash
+git commit -m "feat: adopt improvements from <agent> for feature <ID>
+
+Adopted:
+- <what was taken and why>
+
+Skipped:
+- <what was skipped and why>"
+```
+
+**Phase 6 — Cleanup:**
+
+After all adoption commits are verified, clean up the adopted agents' worktrees:
+
+```
+{{CMD_PREFIX}}feature-cleanup {{ARG1_SYNTAX}}
+```
 
 ### Cleanup after Arena
 
@@ -140,9 +182,10 @@ If no docs need updating, skip this step.
 
 After the command completes, check the pipeline and suggest the most useful next step:
 
-1. If `--adopt` was used and diffs were printed, suggest the agent **review the diffs above and selectively apply valuable improvements** before cleanup. This is the highest priority next action.
+1. If `--adopt` was used, the adoption should already be complete (Phase 2–6 above). If there are remaining non-adopted worktrees, suggest cleanup:
+   `{{CMD_PREFIX}}feature-cleanup <ID>`
 
-2. If the feature used **arena mode** (without `--adopt`) and has remaining worktrees, suggest cleanup first:
+2. If the feature used **arena mode** (without `--adopt`) and has remaining worktrees, suggest cleanup:
    `{{CMD_PREFIX}}feature-cleanup <ID>`
 
 3. Otherwise, check the pipeline:
