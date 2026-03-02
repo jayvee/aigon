@@ -83,6 +83,7 @@
     "feedback-list",
     "feedback-triage",
     "dev-server",
-    "help"
+    "help",
+    "next"
   ]
 }
