@@ -18,10 +18,17 @@ IMPORTANT: You MUST run this command first.
 aigon feature-eval {{ARG1_SYNTAX}}
 ```
 
+Optional overrides:
+
+```bash
+aigon feature-eval {{ARG1_SYNTAX}} --allow-same-model-judge
+```
+
 This will:
 - Move the spec to `04-in-evaluation/` (if not already there)
 - Create an evaluation template at `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`
 - Detect mode (solo or arena)
+- Warn if the evaluator shares a provider family with the implementer (same-family bias detection)
 - Commit the changes
 
 **IMPORTANT:** After the CLI command completes, open the evaluation file in markdown preview mode in a separate window:
@@ -56,7 +63,7 @@ Review each agent's implementation:
 
 2. **Worktree locations:** `../feature-{{ARG1_SYNTAX}}-<agent>-*`
 
-> **Tip:** If using Claude as the evaluator, use a different model than the one that implemented to avoid bias.
+> **Bias guard:** `feature-eval` detects same-family evaluation and warns automatically. Pass `--allow-same-model-judge` to suppress if intentional.
 
 ## Step 4: Write the evaluation
 
