@@ -116,6 +116,26 @@ Use `--push` if you want to preserve the alternative implementations on the remo
 - The command uses `--no-ff` merge to preserve feature history
 - Alternative implementations are preserved in `logs/alternatives/` for future reference
 
+## Update Documentation
+
+After merging (and adoption if applicable), check whether the feature's changes require updates to project documentation.
+
+1. Review the merged diff to understand what changed
+2. Search the repo for existing documentation — look for `README.md`, architecture docs, API docs, design docs, guides, wikis, or any markdown files that describe the areas you just changed
+3. Update any docs that reference affected areas — for example:
+   - New public APIs or commands → update relevant reference docs
+   - Changed behaviour or workflows → update guides or architecture docs
+   - New config options or environment variables → document where appropriate
+   - Removed or renamed features → remove stale references
+4. Skip this step entirely if the feature was a purely internal refactor with no user-facing or architectural changes
+
+If updates are needed, commit them as a separate commit:
+```bash
+git commit -m "docs: update documentation for feature <ID>"
+```
+
+If no docs need updating, skip this step.
+
 ## Suggest Next Action
 
 After the command completes, check the pipeline and suggest the most useful next step:
