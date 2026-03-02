@@ -129,6 +129,27 @@ function printAgentContextWarning(commandName, id) {
     console.log('');
 }
 
+// --- Provider Family Map (for self-evaluation bias detection) ---
+const PROVIDER_FAMILIES = {
+    cc: 'anthropic',
+    cu: 'varies',   // Cursor proxies multiple providers
+    gg: 'google',
+    cx: 'openai',
+};
+
+/**
+ * Check if two agents are from the same provider family.
+ * Returns true when both are known AND their families match.
+ * 'varies' (Cursor) never triggers the warning.
+ */
+function isSameProviderFamily(agentA, agentB) {
+    const familyA = PROVIDER_FAMILIES[agentA];
+    const familyB = PROVIDER_FAMILIES[agentB];
+    if (!familyA || !familyB) return false;
+    if (familyA === 'varies' || familyB === 'varies') return false;
+    return familyA === familyB;
+}
+
 // --- Configuration ---
 const SPECS_ROOT = path.join(process.cwd(), 'docs', 'specs');
 const TEMPLATES_ROOT = path.join(__dirname, 'templates');
@@ -5786,9 +5807,12 @@ const commands = {
         return runFeatureValidateCommand(args);
     },
     'feature-eval': (args) => {
-        const name = args[0];
+        const allowSameModel = args.includes('--allow-same-model-judge');
+        // Strip flag so positional arg parsing is unaffected
+        const positionalArgs = args.filter(a => a !== '--allow-same-model-judge');
+        const name = positionalArgs[0];
         printAgentContextWarning('feature-eval', name);
-        if (!name) return console.error("Usage: aigon feature-eval <ID>\n\nExamples:\n  aigon feature-eval 55     # Solo mode: code review\n  aigon feature-eval 55     # Arena mode: compare implementations");
+        if (!name) return console.error("Usage: aigon feature-eval <ID> [--allow-same-model-judge]\n\nExamples:\n  aigon feature-eval 55     # Solo mode: code review\n  aigon feature-eval 55     # Arena mode: compare implementations\n  aigon feature-eval 55 --allow-same-model-judge  # Skip bias warning");
 
         // Find the feature (may already be in evaluation)
         let found = findFile(PATHS.features, name, ['03-in-progress']);
@@ -5829,6 +5853,70 @@ const commands = {
         }
 
         const mode = worktrees.length > 1 ? 'arena' : 'solo';
+
+        // --- Cross-provider bias detection ---
+        const evalSession = detectActiveAgentSession();
+        const evalAgent = evalSession.detected ? evalSession.agentId : null;
+        const evalCliConfig = evalAgent ? getAgentCliConfig(evalAgent) : null;
+        const evalModel = evalCliConfig?.models?.['evaluate'] || null;
+
+        if (!allowSameModel && evalAgent) {
+            if (mode === 'arena') {
+                // Arena: warn if evaluator matches ANY implementer's family
+                const sameFamily = worktrees.filter(w => isSameProviderFamily(evalAgent, w.agent));
+                if (sameFamily.length > 0) {
+                    const evalFamily = PROVIDER_FAMILIES[evalAgent] || evalAgent;
+                    const implAgents = sameFamily.map(w => w.agent).join(', ');
+                    const altAgents = Object.keys(PROVIDER_FAMILIES)
+                        .filter(a => !isSameProviderFamily(evalAgent, a) && PROVIDER_FAMILIES[a] !== 'varies')
+                        .slice(0, 2);
+                    console.log('');
+                    console.log('⚠️  Self-evaluation bias warning:');
+                    console.log(`   Evaluator:    ${evalAgent} (${evalFamily})`);
+                    console.log(`   Implementer(s) same family: ${implAgents}`);
+                    console.log('');
+                    console.log('   Same-family evaluation inflates win rates by ~25% (MT-Bench, 2023).');
+                    if (altAgents.length > 0) {
+                        const alt = altAgents[0];
+                        console.log(`   Consider:  aigon feature-eval ${num} --agent=${alt}`);
+                    }
+                    console.log(`   Or suppress: aigon feature-eval ${num} --allow-same-model-judge`);
+                    console.log('');
+                }
+            } else {
+                // Solo: detect implementer from worktree or branch
+                let implAgent = null;
+                if (worktrees.length === 1) {
+                    implAgent = worktrees[0].agent;
+                } else {
+                    // Try to infer from branch name
+                    try {
+                        const branch = execSync('git branch --show-current', { stdio: 'pipe', encoding: 'utf8' }).trim();
+                        const branchMatch = branch.match(/^feature-\d+-([a-z]{2})-/);
+                        if (branchMatch) implAgent = branchMatch[1];
+                    } catch (_) { /* ignore */ }
+                }
+
+                if (implAgent && isSameProviderFamily(evalAgent, implAgent)) {
+                    const evalFamily = PROVIDER_FAMILIES[evalAgent] || evalAgent;
+                    const altAgents = Object.keys(PROVIDER_FAMILIES)
+                        .filter(a => !isSameProviderFamily(evalAgent, a) && PROVIDER_FAMILIES[a] !== 'varies')
+                        .slice(0, 2);
+                    console.log('');
+                    console.log('⚠️  Self-evaluation bias warning:');
+                    console.log(`   Implementer: ${implAgent} (${PROVIDER_FAMILIES[implAgent] || implAgent})`);
+                    console.log(`   Evaluator:   ${evalAgent} (${evalFamily})`);
+                    console.log('');
+                    console.log('   Same-family evaluation inflates win rates by ~25% (MT-Bench, 2023).');
+                    if (altAgents.length > 0) {
+                        const alt = altAgents[0];
+                        console.log(`   Consider:  aigon feature-eval ${num} --agent=${alt}`);
+                    }
+                    console.log(`   Or suppress: aigon feature-eval ${num} --allow-same-model-judge`);
+                    console.log('');
+                }
+            }
+        }
 
         // Create evaluation template
         const evalsDir = path.join(PATHS.features.root, 'evaluations');
@@ -5957,6 +6045,10 @@ Branch: \`${soloBranch}\`
 
         console.log(`\n📋 Feature ${num} ready for evaluation`);
         console.log(`   Mode: ${mode === 'arena' ? '🏟️  Arena (comparison)' : '🚀 Solo (code review)'}`);
+        if (evalAgent) {
+            const modelDisplay = evalModel ? evalModel : '(default)';
+            console.log(`   Evaluator: ${evalAgent} (${PROVIDER_FAMILIES[evalAgent] || 'unknown'}) — model: ${modelDisplay}`);
+        }
 
         if (mode === 'arena') {
             console.log(`\n📂 Worktrees to compare:`);
