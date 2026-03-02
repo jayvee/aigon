@@ -116,6 +116,37 @@ Use `--push` if you want to preserve the alternative implementations on the remo
 - The command uses `--no-ff` merge to preserve feature history
 - Alternative implementations are preserved in `logs/alternatives/` for future reference
 
+## Update Documentation
+
+After merging (and adoption if applicable), check whether the feature's changes require updates to project documentation. Review the diff on main to understand what changed, then scan for docs that reference affected areas:
+
+**Docs to check:**
+- `README.md` — command tables, feature descriptions, usage examples
+- `AGENTS.md` — agent instructions, workflow steps
+- `docs/GUIDE.md` — user-facing guide and walkthroughs
+- `docs/development_workflow.md` — workflow documentation
+- `docs/agents/*.md` — agent-specific notes
+- `templates/generic/docs/agent.md` — agent template docs
+- `templates/generic/commands/help.md` — help command reference
+
+**What to update:**
+- New commands or flags → add to command tables and help references
+- Changed workflow steps → update workflow docs and guide
+- New config options → document in README and agent docs
+- Removed or renamed features → remove stale references
+
+**What NOT to update:**
+- Don't update docs for purely internal refactors with no user-facing changes
+- Don't add documentation for changes already covered by the implementation commits
+- Don't create new doc files — only update existing ones
+
+If updates are needed, commit them as a separate commit:
+```bash
+git commit -m "docs: update documentation for feature <ID>"
+```
+
+If no docs need updating, skip this step.
+
 ## Suggest Next Action
 
 After the command completes, check the pipeline and suggest the most useful next step:
