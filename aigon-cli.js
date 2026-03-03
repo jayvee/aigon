@@ -2832,7 +2832,7 @@ const COMMAND_ARG_HINTS = {
     'feature-review': '<ID>',
     'feature-done': '<ID> [agent] [--adopt <agents...|all>]',
     'feature-cleanup': '<ID> [--push]',
-    'board': '[--list] [--features] [--research] [--active] [--all] [--inbox] [--backlog] [--done]',
+    'board': '[--list] [--features] [--research] [--active] [--all] [--inbox] [--backlog] [--done] [--no-actions]',
     'worktree-open': '[ID] [agent]',
     'sessions-close': '<ID>',
     'research-create': '<topic-name>',
@@ -3095,6 +3095,44 @@ function loadBoardMapping() {
     }
 }
 
+/**
+ * Get the suggested next CLI action for a board item.
+ * @param {string} typePrefix - 'feature' or 'research'
+ * @param {string} folder - Stage folder (e.g. '01-inbox', '03-in-progress')
+ * @param {Object} item - { id, name }
+ * @param {Object} worktreeMap - Map of id -> [{path, agent}]
+ * @returns {string|null} Slash command string, or null if no action applies
+ */
+function getBoardAction(typePrefix, folder, item, worktreeMap) {
+    const { id, name } = item;
+
+    if (folder === '01-inbox') {
+        if (typePrefix === 'feature') return `/afn ${name}`;
+        if (typePrefix === 'research') return `/arp ${name}`;
+    }
+
+    if (folder === '02-backlog' && id) {
+        if (typePrefix === 'feature') return `/afse ${id}`;
+        if (typePrefix === 'research') return `/arse ${id}`;
+    }
+
+    if (folder === '03-in-progress' && id) {
+        const wts = worktreeMap[id] || [];
+        if (typePrefix === 'feature') {
+            return wts.length >= 2 ? `/afe ${id}` : `/afd ${id}`;
+        }
+        if (typePrefix === 'research') {
+            return wts.length >= 2 ? `/ars ${id}` : `/ardn ${id}`;
+        }
+    }
+
+    if (folder === '04-in-evaluation' && typePrefix === 'feature' && id) {
+        return `/afd ${id}`;
+    }
+
+    return null;
+}
+
 function displayBoardKanbanView(options) {
     const { includeFeatures, includeResearch, showAll, showActive, showInbox, showBacklog, showDone } = options;
 
@@ -3116,7 +3154,7 @@ function displayBoardKanbanView(options) {
 }
 
 function displayKanbanSection(title, typeConfig, options, mapping = {}, startLetterIndex = 0) {
-    const { showAll, showActive, showInbox, showBacklog, showDone } = options;
+    const { showAll, showActive, showInbox, showBacklog, showDone, showActions } = options;
     const hasFilter = showAll || showActive || showInbox || showBacklog || showDone;
     let letterIndex = startLetterIndex;
 
@@ -3253,6 +3291,23 @@ function displayKanbanSection(title, typeConfig, options, mapping = {}, startLet
     console.log('│ ' + counts + ' │');
     console.log('└─' + separator + '─┘');
 
+    // Next actions block
+    if (showActions) {
+        const actionLines = [];
+        displayFolders.forEach(folder => {
+            (items[folder] || []).forEach(item => {
+                const action = getBoardAction(typeConfig.prefix, folder, item, worktreeMap);
+                if (!action) return;
+                const label = item.id ? `#${item.id} ${item.name}` : item.name;
+                actionLines.push(`  ${label.padEnd(26)} → ${action}`);
+            });
+        });
+        if (actionLines.length > 0) {
+            console.log('\nNext actions:');
+            actionLines.forEach(l => console.log(l));
+        }
+    }
+
     return letterIndex;
 }
 
@@ -3270,7 +3325,7 @@ function displayBoardListView(options) {
 }
 
 function displayListSection(title, typeConfig, options) {
-    const { showAll, showActive, showInbox, showBacklog, showDone } = options;
+    const { showAll, showActive, showInbox, showBacklog, showDone, showActions } = options;
     const hasFilter = showAll || showActive || showInbox || showBacklog || showDone;
 
     // Determine which folders to show
@@ -3364,6 +3419,10 @@ function displayListSection(title, typeConfig, options) {
 
             const prefix = itemId ? `#${itemId}` : '   ';
             console.log(`   ${prefix}  ${itemName}${detail}`);
+            if (showActions) {
+                const action = getBoardAction(typeConfig.prefix, folder, { id: itemId, name: itemName }, worktreeMap);
+                if (action) console.log(`          → ${action}`);
+            }
         });
     });
 
@@ -6490,6 +6549,7 @@ Branch: \`${soloBranch}\`
         const showInbox = flags.has('--inbox');
         const showBacklog = flags.has('--backlog');
         const showDone = flags.has('--done');
+        const showActions = !flags.has('--no-actions');
 
         // If neither --features nor --research, show both
         const includeFeatures = !showResearch || showFeatures;
@@ -6504,7 +6564,8 @@ Branch: \`${soloBranch}\`
                 showActive,
                 showInbox,
                 showBacklog,
-                showDone
+                showDone,
+                showActions
             });
         } else {
             // Kanban board view
@@ -6515,7 +6576,8 @@ Branch: \`${soloBranch}\`
                 showActive,
                 showInbox,
                 showBacklog,
-                showDone
+                showDone,
+                showActions
             });
         }
     },
