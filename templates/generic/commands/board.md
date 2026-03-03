@@ -4,7 +4,8 @@
 Visualize features and research topics in Kanban board or detailed list view.
 
 **IMPORTANT**:
-- After running the command, display the board output directly in your response text using a markdown code block so the user can see it immediately without expanding tool results.
+- After running the command, display the board output **directly in your response text** (not just as a tool result) so the user can see it without expanding collapsed output. Copy the full output verbatim into a code block in your response.
+- The board output includes `→ /command` action hints — make sure these are visible in your response, as they are the primary value of the board.
 - When suggesting what to work on next, reference items by their letter labels (e.g., "You could prioritize item c) create-plugin") and use **slash command format** for suggestions (e.g., `{{CMD_PREFIX}}feature-prioritise c`) not CLI format.
 
 ```bash
@@ -33,6 +34,7 @@ aigon board --list
 - `--inbox`: Only inbox (unprioritized)
 - `--backlog`: Only backlog (prioritized, waiting)
 - `--done`: Only completed items
+- `--no-actions`: Suppress `→ /command` action hints (clean view for scripting)
 
 ## Indicators (Kanban View)
 
@@ -72,6 +74,14 @@ FEATURES
 │ (2)                  │ (1)                  │ (3)                  │
 └──────────────────────┼──────────────────────┼──────────────────────┘
 
+Next actions:
+  billing-integration        → /afn billing-integration
+  email-templates            → /afn email-templates
+  #13 dark-mode              → /afse 13
+  #11 search-api             → /afd 11
+  #12 notifications          → /afd 12
+  #14 profile-redesign       → /afe 14
+
 RESEARCH
 ┌──────────────────────┼──────────────────────┼──────────────────────┐
 │ Inbox                │ Backlog              │ In Progress          │
@@ -80,6 +90,11 @@ RESEARCH
 ├──────────────────────┼──────────────────────┼──────────────────────┤
 │ (1)                  │ (1)                  │ (1)                  │
 └──────────────────────┼──────────────────────┼──────────────────────┘
+
+Next actions:
+  api-performance            → /arp api-performance
+  #01 auth-patterns          → /arse 01
+  #02 caching-strategy       → /ardn 02
 ```
 
 ## Example: List View
@@ -93,14 +108,18 @@ Output:
 FEATURES
 
 In Progress (3):
-   #11  search-api          solo-wt (cc)  ../myapp-worktrees/feature-11-cc-search-api
+   #11  search-api
+          → /afd 11
    #12  notifications       solo (branch) *
+          → /afd 12
    #14  profile-redesign    arena (cc, gg)
+          → /afe 14
 
 RESEARCH
 
 In Progress (1):
    #02  caching-strategy    solo (branch) *
+          → /ardn 02
 ```
 
 ## Usage Tips
