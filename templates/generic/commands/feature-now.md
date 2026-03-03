@@ -146,9 +146,14 @@ Implement the feature according to the spec. Commit with conventional commits (`
 
 ## Step 5: Test
 
-- Start the dev server if needed
 - Run the full test suite and verify all tests pass
-- Ask the user to verify
+
+{{MANUAL_TESTING_GUIDANCE}}
+
+**Signal that you are waiting for the user:**
+```bash
+aigon agent-status waiting
+```
 
 **STOP and WAIT for user confirmation before proceeding** — do NOT continue until the user confirms testing is complete.
 
