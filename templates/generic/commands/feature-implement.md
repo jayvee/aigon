@@ -75,6 +75,11 @@ For non-trivial features, **use plan mode** before implementation to explore the
 
 ## Step 3: Implement and break into tasks from acceptance criteria
 
+**Signal that you are starting implementation:**
+```bash
+aigon agent-status implementing
+```
+
 Before writing code, create a task for each **Acceptance Criterion** from the spec. This gives the user visibility into implementation progress via the task list.
 
 Then implement the feature according to the spec. Mark tasks as in-progress when you start working on them, and completed when satisfied. If you discover sub-tasks during implementation, add them to the list.
@@ -113,6 +118,11 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 > **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for test commands.
 
 {{MANUAL_TESTING_GUIDANCE}}
+
+**Signal that you are waiting for the user:**
+```bash
+aigon agent-status waiting
+```
 
 **STOP and WAIT for user confirmation before proceeding** - do NOT continue until the user confirms testing is complete
 
