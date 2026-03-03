@@ -504,7 +504,62 @@ aigon worktree-open 100 101 102 --agent=cc
 
 ## Visualizing Work
 
-Aigon provides two views of your backlog: **Kanban board** (visual overview) and **detailed list** (with work mode indicators and contextual next-action hints).
+Aigon provides three ways to see what's happening across your projects: a **terminal board**, a **VS Code sidebar**, and a **background daemon** that sends macOS notifications.
+
+### VS Code Sidebar (Aigon Conductor)
+
+An Aigon section in the Explorer sidebar shows live feature and agent status across all registered repos — no terminal needed.
+
+**One-time setup:**
+
+```bash
+# 1. Register your repos (repeat for each project)
+aigon conductor add                    # adds cwd
+aigon conductor add ~/src/my-web-app  # adds another repo
+
+# 2. Install the VS Code extension
+aigon conductor vscode-install
+
+# 3. Reload VS Code — the Aigon panel appears in the Explorer sidebar
+```
+
+The sidebar shows a tree of repos → features → agents, with live status icons:
+
+```
+▼ AIGON
+  ▼ 📁 aigon
+    ▼ 🔔 #32  conductor-daemon
+        solo   ●  waiting   01:33    ← click to copy /afd 32
+    ▼ ⟳  #33  conductor-vscode
+        solo   ○  implementing
+  ▼ 📁 my-web-app
+    ▼ ✅ #12  dark-mode
+        cc     ✓  submitted
+        gg     ✓  submitted
+```
+
+- **🔔 ● waiting** — click the agent row to copy the slash command to clipboard
+- **⟳ ○ implementing** — agent is actively working
+- **✅ ✓ submitted** — all agents submitted, ready for eval
+- Refresh button (↻) and stage toggle (☰) in the panel title bar
+- Updates automatically via file watching — no polling, no manual refresh
+
+**Conductor commands:**
+
+```bash
+aigon conductor add [path]       # Register a repo (default: cwd)
+aigon conductor remove [path]    # Unregister a repo
+aigon conductor list             # List registered repos
+aigon conductor vscode-install   # Install VS Code extension
+aigon conductor vscode-uninstall # Remove VS Code extension
+aigon conductor start            # Start background daemon (macOS notifications)
+aigon conductor stop             # Stop daemon
+aigon conductor status           # Show daemon state and waiting agents
+```
+
+### Kanban Board View (default)
+
+Aigon also provides two terminal views: **Kanban board** (visual overview) and **detailed list** (with work mode indicators and contextual next-action hints).
 
 ### Kanban Board View (default)
 
@@ -800,6 +855,21 @@ Example output:
   gg    implementing   11:15
   cx    submitted      10:58
 ```
+
+### Conductor commands
+
+Multi-repo status monitoring via a background daemon and VS Code sidebar extension.
+
+| Command | Usage |
+|---|---|
+| Conductor Add | `aigon conductor add [path]` (register repo, default: cwd) |
+| Conductor Remove | `aigon conductor remove [path]` |
+| Conductor List | `aigon conductor list` |
+| Conductor Start | `aigon conductor start` (background daemon, macOS notifications) |
+| Conductor Stop | `aigon conductor stop` |
+| Conductor Status | `aigon conductor status` |
+| VS Code Install | `aigon conductor vscode-install` |
+| VS Code Uninstall | `aigon conductor vscode-uninstall` |
 
 ### Dev server commands
 
