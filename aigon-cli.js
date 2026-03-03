@@ -2829,7 +2829,7 @@ const COMMAND_ARG_HINTS = {
     'feature-now': '<existing-feature-name> OR <feature-description>',
     'feature-prioritise': '<feature-name or letter>',
     'feature-setup': '<ID> [agents...]',
-    'feature-implement': '<ID> [--agent=<cc|gg|cx|cu>] [--ralph] [--max-iterations=N] [--dry-run]',
+    'feature-implement': '<ID> [--agent=<cc|gg|cx|cu>] [--ralph] [--max-iterations=N] [--auto-submit] [--no-auto-submit] [--dry-run]',
     'feature-validate': '<ID> [--dry-run] [--no-update]',
     'feature-eval': '<ID> [--allow-same-model-judge]',
     'feature-review': '<ID>',
@@ -3875,10 +3875,11 @@ function runRalphCommand(args) {
     const options = parseCliOptions(args);
     const id = options._[0];
     if (!id) {
-        console.error(`Usage: aigon feature-implement <feature-id> --ralph [--max-iterations=N] [--agent=<id>] [--dry-run]`);
+        console.error(`Usage: aigon feature-implement <feature-id> --ralph [--max-iterations=N] [--agent=<id>] [--auto-submit] [--no-auto-submit] [--dry-run]`);
         console.error(`\nExamples:`);
         console.error(`  aigon feature-implement 16 --ralph`);
         console.error(`  aigon feature-implement 16 --ralph --max-iterations=8 --agent=cx`);
+        console.error(`  aigon feature-implement 16 --ralph --auto-submit   # auto-submit on success`);
         process.exitCode = 1;
         return;
     }
@@ -3920,6 +3921,12 @@ function runRalphCommand(args) {
     const selectedAgent = selectedAgentRaw;
 
     const dryRun = Boolean(getOptionValue(options, 'dry-run'));
+
+    // --auto-submit / --no-auto-submit
+    // Arena mode defaults to auto-submit (user isn't watching); solo mode defaults to off.
+    // We'll resolve the actual default after detecting arena mode below.
+    const autoSubmitFlagExplicit = getOptionValue(options, 'auto-submit');
+    const noAutoSubmitFlagExplicit = getOptionValue(options, 'no-auto-submit');
 
     const profile = getActiveProfile();
     const projectConfig = loadProjectConfig();
@@ -4110,7 +4117,98 @@ function runRalphCommand(args) {
     }
 
     if (loopSucceeded) {
-        console.log(`\n📌 Next: review progress in ./docs/specs/features/logs/feature-${featureNum}-ralph-progress.md`);
+        // Detect arena mode: count worktrees matching this feature ID
+        let isArenaMode = false;
+        try {
+            const wtOutput = execSync('git worktree list', { encoding: 'utf8' });
+            const featureWorktrees = wtOutput.split('\n').filter(line => {
+                const wtPath = line.split(/\s+/)[0] || '';
+                return path.basename(wtPath).match(new RegExp(`^feature-${featureNum}-[a-z]{2}-`));
+            });
+            isArenaMode = featureWorktrees.length >= 1; // in a worktree = arena
+        } catch (e) { /* not in a git repo or no worktrees */ }
+
+        // Resolve auto-submit: explicit flags win; otherwise arena=on, solo=off
+        let autoSubmit;
+        if (noAutoSubmitFlagExplicit !== undefined) {
+            autoSubmit = false;
+        } else if (autoSubmitFlagExplicit !== undefined) {
+            autoSubmit = true;
+        } else {
+            autoSubmit = isArenaMode;
+        }
+
+        if (autoSubmit && !dryRun) {
+            console.log(`\n🚀 Auto-submitting (${isArenaMode ? 'arena' : 'solo'} mode)...`);
+
+            // 1. Write/update the implementation log
+            const logsDir = path.join(PATHS.features.root, 'logs');
+            const logPattern = `feature-${featureNum}-`;
+            let logFile = null;
+            if (fs.existsSync(logsDir)) {
+                const all = fs.readdirSync(logsDir)
+                    .filter(f => f.startsWith(logPattern) && f.endsWith('-log.md'));
+                // In arena/worktree, prefer agent-specific log
+                const branch = (() => { try { return execSync('git branch --show-current', { encoding: 'utf8' }).trim(); } catch (e) { return ''; } })();
+                const agentMatch = branch.match(/^feature-\d+-([a-z]{2})-/);
+                if (agentMatch) {
+                    logFile = all.find(f => f.startsWith(`feature-${featureNum}-${agentMatch[1]}-`)) || all[0];
+                } else {
+                    logFile = all.filter(f => !f.match(new RegExp(`^feature-${featureNum}-[a-z]{2}-`))).find(Boolean) || all[0];
+                }
+            }
+
+            if (logFile) {
+                const logPath = path.join(PATHS.features.root, 'logs', logFile);
+                const progressContent = fs.existsSync(progressPath) ? fs.readFileSync(progressPath, 'utf8') : '';
+                const iterations = parseRalphProgress(progressContent);
+                const successEntry = iterations.find(e => e.success);
+                const numIterations = iterations.length;
+                const logSummary = `\n## Ralph Auto-Submit\n\nCompleted in ${numIterations} iteration${numIterations !== 1 ? 's' : ''}.\n` +
+                    (successEntry ? `Passed validation on iteration ${successEntry.number}: ${successEntry.validation || 'OK'}\n` : '') +
+                    `\nProgress: \`docs/specs/features/logs/feature-${featureNum}-ralph-progress.md\`\n`;
+
+                let logContent = fs.readFileSync(logPath, 'utf8');
+                // Append Ralph summary to log
+                logContent = logContent.trimEnd() + '\n' + logSummary;
+
+                // Update status front matter to 'submitted'
+                const nowIso = new Date().toISOString();
+                const newFrontMatter = `---\nstatus: submitted\nupdated: ${nowIso}\n---\n`;
+                if (logContent.startsWith('---\n')) {
+                    logContent = logContent.replace(/^---\n[\s\S]*?\n---\n/, newFrontMatter);
+                } else {
+                    logContent = newFrontMatter + '\n' + logContent;
+                }
+                fs.writeFileSync(logPath, logContent);
+
+                // 2. Commit the log
+                try {
+                    execSync(`git add "${logPath}"`, { stdio: 'pipe' });
+                    execSync(`git commit -m "docs: auto-submit log for feature ${featureNum} (ralph)"`, { stdio: 'pipe' });
+                    console.log(`   ✅ Log committed: ${logFile}`);
+                } catch (e) {
+                    // Nothing to commit or already committed
+                    console.log(`   ℹ️  Log commit skipped (no changes or already committed)`);
+                }
+            }
+
+            console.log(`\n✅ Auto-submitted. Ready for ${isArenaMode ? 'evaluation' : 'review'}.`);
+            if (isArenaMode) {
+                console.log(`   Next: return to main repo and run: aigon feature-eval ${featureNum}`);
+            } else {
+                console.log(`   Next: run: aigon feature-done ${featureNum}`);
+            }
+        } else {
+            if (autoSubmit && dryRun) {
+                console.log(`\n[dry-run] Would auto-submit feature ${featureNum}`);
+            }
+            console.log(`\n📌 Next: review progress in ./docs/specs/features/logs/feature-${featureNum}-ralph-progress.md`);
+            if (!autoSubmit) {
+                console.log(`   Then run: aigon feature-submit (or /aigon:feature-submit) to commit and signal done`);
+                console.log(`   Tip: use --auto-submit to skip this step next time`);
+            }
+        }
     }
 }
 
