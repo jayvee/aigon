@@ -2782,6 +2782,9 @@ const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
     'feature-done',
     'feature-cleanup',
     'feature-validate',
+    'agent-status',
+    'status',
+    'conductor',
 ]);
 
 // Short aliases for commands (alias → full command name)
@@ -2844,6 +2847,9 @@ const COMMAND_ARG_HINTS = {
     'feedback-create': '<title>',
     'feedback-list': '[--inbox|--triaged|--actionable|--done|--wont-fix|--duplicate|--all] [--type <type>] [--severity <severity>] [--tag <tag>]',
     'feedback-triage': '<ID> [--type <type>] [--severity <severity|none>] [--tags <csv|none>] [--status <status>] [--duplicate-of <ID|none>] [--action <keep|mark-duplicate|promote-feature|promote-research|wont-fix>] [--apply] [--yes]',
+    'conductor': '<start|stop|status|add|remove|list> [path]',
+    'agent-status': '<implementing|waiting|submitted>',
+    'status': '[ID]',
     'help': '',
     'next': '',
 };
@@ -5479,7 +5485,8 @@ const commands = {
             const logName = `feature-${num}-${desc}-log.md`;
             const logPath = path.join(logsDir, logName);
             if (!fs.existsSync(logPath)) {
-                const template = `# Implementation Log: Feature ${num} - ${desc}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
+                const nowIso = new Date().toISOString();
+                const template = `---\nstatus: implementing\nupdated: ${nowIso}\n---\n\n# Implementation Log: Feature ${num} - ${desc}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
                 fs.writeFileSync(logPath, template);
                 console.log(`📝 Log: ./docs/specs/features/logs/${logName}`);
             }
@@ -5614,7 +5621,8 @@ const commands = {
                         }
                         const logName = `feature-${num}-${agentId}-${desc}-log.md`;
                         const logPath = path.join(worktreeLogsDir, logName);
-                        const template = `# Implementation Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
+                        const nowIso = new Date().toISOString();
+                        const template = `---\nstatus: implementing\nupdated: ${nowIso}\n---\n\n# Implementation Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
                         fs.writeFileSync(logPath, template);
                         console.log(`   📝 Log: docs/specs/features/logs/${logName}`);
                     } catch (e) {
@@ -6549,6 +6557,495 @@ Branch: \`${soloBranch}\`
         // Run post-hook (won't fail the command)
         runPostHook('feature-cleanup', hookContext);
     },
+
+    'agent-status': (args) => {
+        const status = args[0];
+        const validStatuses = ['implementing', 'waiting', 'submitted'];
+        if (!status || !validStatuses.includes(status)) {
+            return console.error(`Usage: aigon agent-status <status>\n\nValid statuses: ${validStatuses.join(', ')}\n\nExample: aigon agent-status waiting`);
+        }
+
+        // Detect branch
+        let branch;
+        try {
+            branch = require('child_process').execSync('git branch --show-current', { encoding: 'utf8' }).trim();
+        } catch (e) {
+            return console.error('❌ Could not detect current branch.');
+        }
+
+        // Parse feature ID and agent from branch name
+        // Arena/worktree: feature-<ID>-<agent>-<desc>
+        // Solo: feature-<ID>-<desc>
+        const arenaMatch = branch.match(/^feature-(\d+)-([a-z]{2})-(.+)$/);
+        const soloMatch = branch.match(/^feature-(\d+)-(.+)$/);
+
+        let featureNum, agentId;
+        if (arenaMatch) {
+            featureNum = arenaMatch[1].padStart(2, '0');
+            agentId = arenaMatch[2];
+        } else if (soloMatch) {
+            featureNum = soloMatch[1].padStart(2, '0');
+            agentId = null; // solo
+        } else {
+            return console.error(`❌ Branch "${branch}" does not match a feature branch pattern (feature-<ID>-...)`);
+        }
+
+        // Glob for the matching log file
+        const logsDir = path.join(PATHS.features.root, 'logs');
+        if (!fs.existsSync(logsDir)) {
+            return console.error(`❌ Logs directory not found: ${logsDir}`);
+        }
+
+        const logPattern = agentId
+            ? `feature-${featureNum}-${agentId}-`
+            : `feature-${featureNum}-`;
+        const logFiles = fs.readdirSync(logsDir)
+            .filter(f => f.startsWith(logPattern) && f.endsWith('-log.md') && !f.includes('/selected/') && !f.includes('/alternatives/'));
+
+        // For solo mode, exclude files with an agent suffix (2-letter code after the ID)
+        const filteredLogs = agentId
+            ? logFiles
+            : logFiles.filter(f => !f.match(new RegExp(`^feature-${featureNum}-[a-z]{2}-`)));
+
+        if (filteredLogs.length === 0) {
+            return console.error(`❌ No log file found matching feature-${featureNum}${agentId ? '-' + agentId : ''}-*-log.md in ${logsDir}`);
+        }
+
+        const logFile = filteredLogs[0];
+        const logPath = path.join(logsDir, logFile);
+        let content = fs.readFileSync(logPath, 'utf8');
+
+        const nowIso = new Date().toISOString();
+        const newFrontMatter = `---\nstatus: ${status}\nupdated: ${nowIso}\n---\n`;
+
+        // Replace existing front matter or prepend
+        if (content.startsWith('---\n')) {
+            content = content.replace(/^---\n[\s\S]*?\n---\n/, newFrontMatter);
+        } else {
+            content = newFrontMatter + '\n' + content;
+        }
+
+        fs.writeFileSync(logPath, content);
+        console.log(`✅ Status updated: ${status} (${logFile})`);
+    },
+
+    'status': (args) => {
+        const idArg = args[0] && !args[0].startsWith('--') ? args[0] : null;
+        const logsDir = path.join(PATHS.features.root, 'logs');
+        const inProgressDir = path.join(PATHS.features.root, '03-in-progress');
+
+        if (!fs.existsSync(logsDir)) {
+            return console.error('❌ No logs directory found. Run aigon feature-setup first.');
+        }
+
+        // Helper: parse front matter from log file content
+        function parseFrontMatter(content) {
+            const match = content.match(/^---\n([\s\S]*?)\n---\n/);
+            if (!match) return null;
+            const fm = {};
+            match[1].split('\n').forEach(line => {
+                const [key, ...rest] = line.split(':');
+                if (key && rest.length) fm[key.trim()] = rest.join(':').trim();
+            });
+            return fm;
+        }
+
+        // Helper: extract feature name from spec filename
+        function featureNameFromSpec(filename) {
+            // feature-31-log-status-tracking.md -> log-status-tracking
+            const m = filename.match(/^feature-\d+-(.+)\.md$/);
+            return m ? m[1] : filename;
+        }
+
+        let featureIds = [];
+        if (idArg) {
+            featureIds = [String(parseInt(idArg, 10)).padStart(2, '0')];
+        } else {
+            // Find all in-progress features
+            if (!fs.existsSync(inProgressDir)) {
+                return console.log('No features in progress.');
+            }
+            featureIds = fs.readdirSync(inProgressDir)
+                .filter(f => f.match(/^feature-\d+-.+\.md$/))
+                .map(f => {
+                    const m = f.match(/^feature-(\d+)-/);
+                    return m ? m[1].padStart(2, '0') : null;
+                })
+                .filter(Boolean);
+        }
+
+        if (featureIds.length === 0) {
+            return console.log('No features in progress.');
+        }
+
+        let anyOutput = false;
+        featureIds.forEach(featureNum => {
+            // Get feature name from spec file
+            let featureName = featureNum;
+            if (fs.existsSync(inProgressDir)) {
+                const specFile = fs.readdirSync(inProgressDir).find(f => f.startsWith(`feature-${featureNum}-`));
+                if (specFile) featureName = featureNameFromSpec(specFile);
+            }
+
+            // Find all log files for this feature (excluding selected/alternatives subdirs)
+            const allLogs = fs.readdirSync(logsDir)
+                .filter(f => f.startsWith(`feature-${featureNum}-`) && f.endsWith('-log.md'));
+
+            if (allLogs.length === 0) return;
+
+            anyOutput = true;
+            console.log(`\n#${featureNum}  ${featureName}`);
+
+            allLogs.forEach(logFile => {
+                const logPath = path.join(logsDir, logFile);
+                const content = fs.readFileSync(logPath, 'utf8');
+                const fm = parseFrontMatter(content);
+                const status = fm ? fm.status || 'unknown' : 'unknown';
+                const updated = fm ? fm.updated || '' : '';
+
+                // Determine agent label
+                // Arena: feature-31-cc-desc-log.md -> cc
+                // Solo: feature-31-desc-log.md -> solo
+                const arenaM = logFile.match(new RegExp(`^feature-${featureNum}-([a-z]{2})-`));
+                const agent = arenaM ? arenaM[1] : 'solo';
+
+                // Format time from ISO string
+                let timeStr = '';
+                if (updated) {
+                    const d = new Date(updated);
+                    if (!isNaN(d)) {
+                        timeStr = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                    }
+                }
+
+                const statusPad = status.padEnd(14);
+                const agentPad = agent.padEnd(6);
+                console.log(`  ${agentPad} ${statusPad} ${timeStr}`);
+            });
+        });
+
+        if (!anyOutput) {
+            console.log(idArg ? `No log files found for feature #${idArg}.` : 'No log files found for in-progress features.');
+        }
+    },
+
+    'conductor': (args) => {
+        const CONDUCTOR_PID_FILE = path.join(GLOBAL_CONFIG_DIR, 'conductor.pid');
+        const CONDUCTOR_LOG_FILE = path.join(GLOBAL_CONFIG_DIR, 'conductor.log');
+
+        // --- Helpers ---
+
+        function readConductorRepos() {
+            try {
+                if (!fs.existsSync(GLOBAL_CONFIG_PATH)) return [];
+                const cfg = JSON.parse(fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf8'));
+                return Array.isArray(cfg.repos) ? cfg.repos : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function writeConductorRepos(repos) {
+            let cfg = {};
+            try {
+                if (fs.existsSync(GLOBAL_CONFIG_PATH)) {
+                    cfg = JSON.parse(fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf8'));
+                }
+            } catch (e) { /* start fresh */ }
+            cfg.repos = repos;
+            if (!fs.existsSync(GLOBAL_CONFIG_DIR)) fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
+            fs.writeFileSync(GLOBAL_CONFIG_PATH, JSON.stringify(cfg, null, 2) + '\n');
+        }
+
+        function isDaemonAlive() {
+            if (!fs.existsSync(CONDUCTOR_PID_FILE)) return false;
+            try {
+                const pid = parseInt(fs.readFileSync(CONDUCTOR_PID_FILE, 'utf8').trim(), 10);
+                process.kill(pid, 0);
+                return pid;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function parseFrontMatterStatus(content) {
+            const m = content.match(/^---\n([\s\S]*?)\n---\n/);
+            if (!m) return null;
+            const sm = m[1].match(/status:\s*(\S+)/);
+            return sm ? sm[1] : null;
+        }
+
+        // --- Daemon implementation (runs as detached child) ---
+
+        function runConductorDaemon() {
+            const { execSync: exec } = require('child_process');
+
+            function log(msg) {
+                try {
+                    fs.appendFileSync(CONDUCTOR_LOG_FILE, `[${new Date().toISOString()}] ${msg}\n`);
+                } catch (e) { /* ignore */ }
+            }
+
+            // Write our own PID (complements what the parent wrote — same value)
+            fs.writeFileSync(CONDUCTOR_PID_FILE, String(process.pid));
+            log(`Conductor daemon started (PID ${process.pid})`);
+
+            // In-memory state: log file key -> last status
+            const lastStatus = {};
+            // Track which feature+repo combos have had all-submitted notification sent
+            const allSubmittedNotified = new Set();
+
+            function sendNotification(message, title) {
+                try {
+                    exec(`osascript -e 'display notification "${message}" with title "${title}"'`);
+                } catch (e) {
+                    log(`Notification failed: ${e.message}`);
+                }
+            }
+
+            function poll() {
+                let repos;
+                try {
+                    repos = readConductorRepos();
+                } catch (e) {
+                    log(`Error reading config: ${e.message}`);
+                    return;
+                }
+
+                repos.forEach(repoPath => {
+                    const logsDir = path.join(repoPath, 'docs', 'specs', 'features', 'logs');
+                    if (!fs.existsSync(logsDir)) return;
+
+                    let logFiles;
+                    try {
+                        logFiles = fs.readdirSync(logsDir)
+                            .filter(f => /^feature-\d+-.+-log\.md$/.test(f));
+                    } catch (e) {
+                        log(`Error reading logs dir ${logsDir}: ${e.message}`);
+                        return;
+                    }
+
+                    // Per-feature tracking for all-submitted notification
+                    const featureAgents = {}; // featureId -> { total, submitted, name }
+
+                    logFiles.forEach(logFile => {
+                        const logPath = path.join(logsDir, logFile);
+                        let content;
+                        try { content = fs.readFileSync(logPath, 'utf8'); } catch (e) { return; }
+
+                        const status = parseFrontMatterStatus(content) || 'unknown';
+                        const key = `${repoPath}:${logFile}`;
+                        const prev = lastStatus[key];
+                        lastStatus[key] = status;
+
+                        // Parse feature ID and agent
+                        const arenaM = logFile.match(/^feature-(\d+)-([a-z]{2})-(.+)-log\.md$/);
+                        const soloM = logFile.match(/^feature-(\d+)-(.+)-log\.md$/);
+                        const featureId = arenaM ? arenaM[1] : (soloM ? soloM[1] : null);
+                        const agent = arenaM ? arenaM[2] : 'solo';
+                        const featureName = arenaM ? arenaM[3] : (soloM ? soloM[2] : featureId);
+
+                        if (!featureId) return;
+
+                        // Track totals for all-submitted check
+                        if (!featureAgents[featureId]) featureAgents[featureId] = { total: 0, submitted: 0, name: featureName };
+                        featureAgents[featureId].total++;
+                        if (status === 'submitted') featureAgents[featureId].submitted++;
+
+                        // Notify on transition to waiting
+                        if (prev !== undefined && prev !== 'waiting' && status === 'waiting') {
+                            const repoName = path.basename(repoPath);
+                            sendNotification(
+                                `${agent} is waiting on #${featureId} ${featureName}`,
+                                `Aigon · ${repoName}`
+                            );
+                            log(`Notified: ${agent} waiting on #${featureId} in ${repoName}`);
+                        }
+                    });
+
+                    // Check all-submitted per feature
+                    Object.entries(featureAgents).forEach(([featureId, data]) => {
+                        const allKey = `${repoPath}:${featureId}`;
+                        if (data.total > 0 && data.submitted === data.total && !allSubmittedNotified.has(allKey)) {
+                            allSubmittedNotified.add(allKey);
+                            const repoName = path.basename(repoPath);
+                            sendNotification(
+                                `All agents submitted #${featureId} ${data.name} — ready for eval`,
+                                `Aigon · ${repoName}`
+                            );
+                            log(`Notified: all submitted #${featureId} in ${repoName}`);
+                        }
+                        // Reset if no longer all submitted (e.g. new agent added)
+                        if (data.submitted < data.total) {
+                            allSubmittedNotified.delete(allKey);
+                        }
+                    });
+                });
+
+                log(`Poll complete (${repos.length} repo${repos.length !== 1 ? 's' : ''})`);
+            }
+
+            // Initial poll then every 30 seconds
+            try { poll(); } catch (e) { log(`Poll error: ${e.message}`); }
+            setInterval(() => {
+                try { poll(); } catch (e) { log(`Poll error: ${e.message}`); }
+            }, 30000);
+
+            // Keep process alive
+            process.stdin.resume();
+        }
+
+        // --- Subcommand dispatch ---
+
+        const sub = args[0];
+
+        // Internal: daemon mode (called as detached child)
+        if (sub === '--daemon') {
+            return runConductorDaemon();
+        }
+
+        if (sub === 'start') {
+            const pid = isDaemonAlive();
+            if (pid) {
+                console.log(`⚠️  Conductor already running (PID ${pid})`);
+                console.log(`   Run: aigon conductor stop`);
+                return;
+            }
+            // Clear stale PID file
+            if (fs.existsSync(CONDUCTOR_PID_FILE)) fs.unlinkSync(CONDUCTOR_PID_FILE);
+
+            const { spawn } = require('child_process');
+            const child = spawn(process.execPath, [__filename, 'conductor', '--daemon'], {
+                detached: true,
+                stdio: 'ignore',
+                env: process.env
+            });
+            child.unref();
+            if (!fs.existsSync(GLOBAL_CONFIG_DIR)) fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
+            fs.writeFileSync(CONDUCTOR_PID_FILE, String(child.pid));
+            console.log(`✅ Conductor started (PID ${child.pid})`);
+            console.log(`   Polling every 30s across ${readConductorRepos().length} repo(s)`);
+            console.log(`📋 Logs: ${CONDUCTOR_LOG_FILE}`);
+            return;
+        }
+
+        if (sub === 'stop') {
+            const pid = isDaemonAlive();
+            if (!pid) {
+                console.log('⛔ Conductor is not running.');
+                if (fs.existsSync(CONDUCTOR_PID_FILE)) fs.unlinkSync(CONDUCTOR_PID_FILE);
+                return;
+            }
+            try {
+                process.kill(pid, 'SIGTERM');
+                fs.unlinkSync(CONDUCTOR_PID_FILE);
+                console.log(`✅ Conductor stopped (PID ${pid})`);
+            } catch (e) {
+                console.error(`❌ Failed to stop conductor: ${e.message}`);
+            }
+            return;
+        }
+
+        if (sub === 'status') {
+            const pid = isDaemonAlive();
+            console.log(`Conductor: ${pid ? `✅ running (PID ${pid})` : '⛔ stopped'}`);
+
+            const repos = readConductorRepos();
+            if (repos.length === 0) {
+                console.log('Repos:     (none — run: aigon conductor add)');
+            } else {
+                console.log(`Repos (${repos.length}):`);
+                repos.forEach(r => console.log(`  ${r}`));
+            }
+
+            // Last log line
+            if (fs.existsSync(CONDUCTOR_LOG_FILE)) {
+                const lines = fs.readFileSync(CONDUCTOR_LOG_FILE, 'utf8').trim().split('\n');
+                const last = lines[lines.length - 1];
+                if (last) console.log(`Last poll: ${last}`);
+            }
+
+            // Show currently waiting agents
+            const waiting = [];
+            repos.forEach(repoPath => {
+                const logsDir = path.join(repoPath, 'docs', 'specs', 'features', 'logs');
+                if (!fs.existsSync(logsDir)) return;
+                fs.readdirSync(logsDir)
+                    .filter(f => /^feature-\d+-.+-log\.md$/.test(f))
+                    .forEach(logFile => {
+                        try {
+                            const content = fs.readFileSync(path.join(logsDir, logFile), 'utf8');
+                            const status = parseFrontMatterStatus(content);
+                            if (status === 'waiting') {
+                                const arenaM = logFile.match(/^feature-(\d+)-([a-z]{2})-(.+)-log\.md$/);
+                                const soloM = logFile.match(/^feature-(\d+)-(.+)-log\.md$/);
+                                const featureId = arenaM ? arenaM[1] : soloM?.[1];
+                                const agent = arenaM ? arenaM[2] : 'solo';
+                                const name = arenaM ? arenaM[3] : soloM?.[2];
+                                waiting.push(`  ${path.basename(repoPath)}: #${featureId} ${name} (${agent})`);
+                            }
+                        } catch (e) { /* skip */ }
+                    });
+            });
+            if (waiting.length > 0) {
+                console.log(`Waiting agents (${waiting.length}):`);
+                waiting.forEach(w => console.log(w));
+            } else if (repos.length > 0) {
+                console.log('Waiting:   none');
+            }
+            return;
+        }
+
+        if (sub === 'add') {
+            const repoPath = path.resolve(args[1] || process.cwd());
+            const repos = readConductorRepos();
+            if (repos.includes(repoPath)) {
+                console.log(`⚠️  Already registered: ${repoPath}`);
+                return;
+            }
+            repos.push(repoPath);
+            writeConductorRepos(repos);
+            console.log(`✅ Registered: ${repoPath}`);
+            console.log(`   Total repos: ${repos.length}`);
+            return;
+        }
+
+        if (sub === 'remove') {
+            const repoPath = path.resolve(args[1] || process.cwd());
+            const repos = readConductorRepos();
+            const idx = repos.indexOf(repoPath);
+            if (idx === -1) {
+                console.log(`⚠️  Not registered: ${repoPath}`);
+                return;
+            }
+            repos.splice(idx, 1);
+            writeConductorRepos(repos);
+            console.log(`✅ Removed: ${repoPath}`);
+            return;
+        }
+
+        if (sub === 'list') {
+            const repos = readConductorRepos();
+            if (repos.length === 0) {
+                console.log('No repos registered. Run: aigon conductor add');
+                return;
+            }
+            console.log(`Watched repos (${repos.length}):`);
+            repos.forEach(r => console.log(`  ${r}`));
+            return;
+        }
+
+        // Default: show usage
+        console.log('Usage: aigon conductor <subcommand>\n');
+        console.log('Subcommands:');
+        console.log('  start           Start the background daemon');
+        console.log('  stop            Stop the daemon');
+        console.log('  status          Show daemon state, watched repos, waiting agents');
+        console.log('  add [path]      Register a repo (default: cwd)');
+        console.log('  remove [path]   Unregister a repo (default: cwd)');
+        console.log('  list            List registered repos');
+    },
+
     'board': (args) => {
         const flags = new Set(args.filter(a => a.startsWith('--')));
         const listMode = flags.has('--list');
