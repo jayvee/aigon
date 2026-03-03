@@ -3366,7 +3366,8 @@ function displayListSection(title, typeConfig, options) {
     const worktreeMap = getWorktreeInfo();
     const currentBranch = getCurrentBranch();
 
-    console.log(`${title}\n`);
+    const divider = '─'.repeat(56);
+    console.log(`${title}\n${divider}`);
 
     let totalCount = 0;
 
@@ -3382,7 +3383,7 @@ function displayListSection(title, typeConfig, options) {
         if (files.length === 0) return;
 
         const label = folderLabels[folder] || folder;
-        console.log(`${label} (${files.length}):`);
+        console.log(`\n${label} (${files.length})`);
 
         files.forEach(file => {
             const idMatch = file.match(new RegExp(`^${typeConfig.prefix}-(\\d+)-(.*)\.md$`));
@@ -3408,27 +3409,36 @@ function displayListSection(title, typeConfig, options) {
                         // Branch doesn't exist
                     }
                     const active = currentBranch === branchName ? ' *' : '';
-                    detail = branchExists ? `  solo (branch)${active}` : '';
+                    detail = branchExists ? `  solo${active}` : '';
                 } else if (wts.length === 1) {
-                    detail = `  solo-wt (${wts[0].agent})  ${wts[0].path}`;
+                    detail = `  solo-wt (${wts[0].agent})`;
                 } else {
                     const agents = wts.map(w => w.agent).join(', ');
                     detail = `  arena (${agents})`;
                 }
             }
 
-            const prefix = itemId ? `#${itemId}` : '   ';
-            console.log(`   ${prefix}  ${itemName}${detail}`);
+            const prefix = itemId ? `#${String(itemId).padStart(2, '0')}` : '   ';
+            const itemLine = `  ${prefix}  ${itemName}${detail}`;
+
             if (showActions) {
                 const action = getBoardAction(typeConfig.prefix, folder, { id: itemId, name: itemName }, worktreeMap);
-                if (action) console.log(`          → ${action}`);
+                if (action) {
+                    const pad = Math.max(2, 58 - itemLine.length);
+                    console.log(itemLine + ' '.repeat(pad) + action);
+                } else {
+                    console.log(itemLine);
+                }
+            } else {
+                console.log(itemLine);
             }
         });
     });
 
     if (totalCount === 0) {
-        console.log(`No ${title.toLowerCase()} found.`);
+        console.log(`\nNo ${title.toLowerCase()} found.`);
     }
+    console.log('');
 }
 
 // --- Gitignore Management ---
