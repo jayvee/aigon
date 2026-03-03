@@ -409,8 +409,8 @@ Examples for the same action:
 
 1. Create spec: `feature-create`
 2. Prioritise: `feature-prioritise`
-3. Setup: `feature-setup`
-4. Implement: `feature-implement`
+3. Setup: `feature-setup` — log file created with `status: implementing` front matter
+4. Implement: `feature-implement` — agent auto-signals `implementing` → `waiting` via `aigon agent-status`
 5. Evaluate (optional but recommended): `feature-eval`
 6. Finish and merge: `feature-done`
 7. Cleanup losing arena branches/worktrees (arena only): `feature-cleanup`
@@ -504,7 +504,7 @@ aigon worktree-open 100 101 102 --agent=cc
 
 ## Visualizing Work
 
-Aigon provides two views of your backlog: **Kanban board** (visual overview) and **detailed list** (with work mode indicators).
+Aigon provides two views of your backlog: **Kanban board** (visual overview) and **detailed list** (with work mode indicators and contextual next-action hints).
 
 ### Kanban Board View (default)
 
@@ -607,6 +607,7 @@ aigon board --research          # Show only research
 aigon board --active            # Show only in-progress items
 aigon board --list --active     # Detailed list of active items
 aigon board --all               # Include done items
+aigon board --no-actions        # Hide contextual next-action hints
 ```
 
 ---
@@ -780,6 +781,25 @@ The `--adopt` flag prints diffs from each losing agent after merging the winner,
 | Board | `aigon board` |
 | Board (List View) | `aigon board --list` |
 | Board (Filtered) | `aigon board [--features\|--research] [--active\|--all\|--inbox\|--backlog\|--done]` |
+| Board (No hints) | `aigon board --no-actions` |
+
+### Agent status commands
+
+Track live agent state via YAML front matter in implementation log files. Agents call these automatically as instructed by the `feature-implement` and `feature-submit` templates.
+
+| Command | Usage |
+|---|---|
+| Agent Status (set) | `aigon agent-status <implementing\|waiting\|submitted>` |
+| Status (view) | `aigon status` (all in-progress features) |
+| Status (view) | `aigon status <ID>` (per-agent table for one feature) |
+
+Example output:
+```
+#31  log-status-tracking
+  cc    waiting        11:23
+  gg    implementing   11:15
+  cx    submitted      10:58
+```
 
 ### Dev server commands
 
