@@ -11,14 +11,15 @@ For a quick overview and getting started, see the main [README.md](../README.md)
 1. [Detailed Research Lifecycle](#detailed-research-lifecycle)
 2. [Detailed Feature Lifecycle](#detailed-feature-lifecycle)
 3. [Detailed Feedback Lifecycle](#detailed-feedback-lifecycle)
-4. [The Big Picture: Closing the Loop](#the-big-picture-closing-the-loop)
-5. [Hooks Deep Dive](#hooks-deep-dive)
-6. [Project Profiles](#project-profiles)
-7. [Local Dev Proxy](#local-dev-proxy)
-8. [Opening Worktrees](#opening-worktrees)
-9. [Configuration](#configuration)
-10. [Multi-Agent Evaluation Examples](#multi-agent-evaluation-examples)
-11. [Contributing / Developing Aigon](#contributing--developing-aigon)
+4. [Agent Status Tracking](#agent-status-tracking)
+5. [The Big Picture: Closing the Loop](#the-big-picture-closing-the-loop)
+6. [Hooks Deep Dive](#hooks-deep-dive)
+7. [Project Profiles](#project-profiles)
+8. [Local Dev Proxy](#local-dev-proxy)
+9. [Opening Worktrees](#opening-worktrees)
+10. [Configuration](#configuration)
+11. [Multi-Agent Evaluation Examples](#multi-agent-evaluation-examples)
+12. [Contributing / Developing Aigon](#contributing--developing-aigon)
 
 ---
 
@@ -44,12 +45,13 @@ Solo mode supports two workspace styles: **branch** (work in the current repo) o
 3.  **Setup:**
     * **Branch mode:** `/aigon:feature-setup 108` (or `aigon feature-setup 108`) — creates a Git branch (`feature-108-dark-mode`) in the current repo.
     * **Worktree mode:** `/aigon:feature-setup 108 cc` (or `aigon feature-setup 108 cc`) — creates an isolated worktree at `../<repo>-worktrees/feature-108-cc-dark-mode`, ideal for working on multiple features in parallel.
-    * Both modes auto-create a blank Implementation Log template.
+    * Both modes auto-create an Implementation Log with `status: implementing` front matter (see [Agent Status Tracking](#agent-status-tracking)).
 4.  **Implement:** `aigon feature-implement 108` (launches the default `cc` agent from a plain shell) or `aigon feature-implement 108 --agent=cx` (launch Codex). Inside an active agent session, use `/aigon:feature-implement 108` (or `/aigon-feature-implement 108` for Cursor, `/prompts:aigon-feature-implement 108` for Codex) to show instructions without launching a nested agent.
     * **Shell-launch mode** (plain terminal, no active agent): Aigon detects no agent session and spawns the chosen agent directly. Default agent is `cc`; override with `--agent=<cc|gg|cx|cu>`.
     * **Instruction mode** (inside an agent session): Aigon detects the active session and shows spec location and next steps instead of launching another agent.
     * Agent reads the feature spec and creates **tasks from the acceptance criteria** for progress tracking.
-    * Agent codes the solution and *must* fill out the Implementation Log.
+    * Agent codes the solution, auto-signals status transitions (`implementing` → `waiting`), and *must* fill out the Implementation Log.
+    * Before stopping, agents provide a **Manual Testing Checklist** and (for web/API projects) start and open the dev server so you can verify immediately.
 5.  **Evaluate (Optional):** `/aigon:feature-eval 108` (or `aigon feature-eval 108`)
     * Creates code review checklist for the implementation.
 6.  **Cross-Agent Review (Optional):** Have a different agent review the code and commit fixes:
@@ -75,7 +77,7 @@ Run multiple agents in competition to find the optimal solution.
         * `../<repo>-worktrees/feature-108-cc-dark-mode` (Claude)
         * `../<repo>-worktrees/feature-108-gg-dark-mode` (Gemini)
         * `../<repo>-worktrees/feature-108-cx-dark-mode` (Codex)
-    * **Auto-creates** blank Implementation Log templates in each worktree.
+    * **Auto-creates** Implementation Log templates in each worktree with `status: implementing` front matter.
     * **STOPS** - does not implement (user must open each worktree separately).
 4.  **Implement:** Open all worktrees side-by-side with `aigon worktree-open 108 --all` (or individually with `aigon worktree-open 108 cc`), or launch an agent directly from a worktree shell with `aigon feature-implement 108`.
     * With Warp: Opens all agents side-by-side and auto-starts each with `/aigon:feature-implement 108`.
@@ -263,6 +265,65 @@ Feedback triage uses a **preview-first** approach:
 - No interactive prompts (safe for automation)
 
 This prevents accidental data corruption while allowing scripted workflows.
+
+---
+
+## Agent Status Tracking
+
+Aigon embeds live agent state directly in implementation log files using YAML front matter. This lets you (and future tooling) see what every agent is doing without watching any terminals.
+
+### How it works
+
+When `feature-setup` creates a log file, it initialises front matter:
+
+```yaml
+---
+status: implementing
+updated: 2026-03-03T11:23:00Z
+---
+
+# Implementation Log: Feature 31 - log-status-tracking
+...
+```
+
+As agents work through the `feature-implement` and `feature-submit` templates, they automatically call `aigon agent-status` at key transitions:
+
+| Lifecycle point | Status |
+|---|---|
+| Start of implementation (Step 3) | `implementing` |
+| Before STOP/WAIT at end of testing | `waiting` |
+| After final log commit in feature-submit | `submitted` |
+
+### Checking status
+
+```bash
+aigon status          # All in-progress features
+aigon status 31       # One feature, per-agent table
+```
+
+Output:
+```
+#31  log-status-tracking
+  cc    waiting        11:23
+  gg    implementing   11:15
+  cx    submitted      10:58
+```
+
+### Manually setting status
+
+Agents call this automatically, but you can set it manually too:
+
+```bash
+aigon agent-status implementing
+aigon agent-status waiting
+aigon agent-status submitted
+```
+
+The command auto-detects the feature ID and agent from the current branch name. No git commit — just a file edit.
+
+### Backwards compatibility
+
+Log files created before this feature was added (no front matter) are handled gracefully — `aigon status` shows `unknown` for them rather than erroring.
 
 ---
 
