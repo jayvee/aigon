@@ -327,6 +327,65 @@ Log files created before this feature was added (no front matter) are handled gr
 
 ---
 
+## Conductor: Live Multi-Repo Monitoring
+
+The Conductor watches all your registered repos and notifies you when agents need your attention — no more switching between terminals to check progress.
+
+### Step 1: Register your repos
+
+Tell Conductor which repos to watch:
+
+```bash
+aigon conductor add ~/src/my-project
+aigon conductor add ~/src/another-project
+aigon conductor list   # see what's registered
+```
+
+### Step 2: Install the VS Code sidebar extension
+
+The extension shows a live tree of all features and agent statuses across every registered repo, directly in the Explorer panel.
+
+```bash
+aigon conductor vscode-install
+```
+
+Then reload VS Code (`Cmd+Shift+P` → "Developer: Reload Window"). You'll see an **Aigon** section in the Explorer sidebar:
+
+```
+AIGON
+└── my-project
+    ├── 🔔 #31  log-status-tracking
+    │   └── 🔔 cc  ● waiting  11:23
+    └── ⏳ #32  conductor-daemon
+        └── ⏳ gg  ○ implementing  11:15
+```
+
+- **🔔 bell** — agent needs your input (click to copy `/afd <ID>` to clipboard)
+- **⏳ spinner** — agent is still implementing
+- **✓ green check** — all agents submitted
+
+The tree refreshes automatically as log files change. Use the toolbar buttons to manually refresh or toggle between active-only and all-stages view.
+
+### Step 3: Start the background daemon
+
+The daemon polls all registered repos every 30 seconds and fires a macOS notification when an agent reaches `waiting` or when all agents submit:
+
+```bash
+aigon conductor start    # launches in the background
+aigon conductor status   # check it's running + see any waiting agents
+aigon conductor stop     # shut it down
+```
+
+The daemon logs to `~/.aigon/conductor.log`.
+
+### Uninstalling the extension
+
+```bash
+aigon conductor vscode-uninstall
+```
+
+---
+
 ## The Big Picture: Closing the Loop
 
 Aigon manages the complete product development cycle as a continuous loop:

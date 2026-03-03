@@ -61,6 +61,11 @@ git add docs/specs/features/logs/
 git commit -m "docs: update implementation log for feature <ID>"
 ```
 
+**Signal that implementation is submitted:**
+```bash
+aigon agent-status submitted
+```
+
 ## Signal completion
 
 **First, detect the mode by counting worktrees:**
