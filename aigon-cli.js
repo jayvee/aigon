@@ -3937,31 +3937,35 @@ function runRalphCommand(args) {
     const existingProgress = fs.existsSync(progressPath) ? fs.readFileSync(progressPath, 'utf8') : '';
     const previousIterations = parseRalphProgress(existingProgress);
     const completedSuccess = previousIterations.find(entry => entry.success);
+    // skipToAutoSubmit: loop already passed; honour --auto-submit if requested
+    let skipToAutoSubmit = false;
     if (completedSuccess) {
         console.log(`✅ Ralph loop already succeeded on iteration ${completedSuccess.number}.`);
         console.log(`   Progress file: ./docs/specs/features/logs/feature-${featureNum}-ralph-progress.md`);
-        return;
+        skipToAutoSubmit = true;
     }
 
     const startIteration = previousIterations.length
         ? Math.max(...previousIterations.map(entry => entry.number)) + 1
         : 1;
 
-    if (startIteration > maxIterations) {
+    if (!skipToAutoSubmit && startIteration > maxIterations) {
         console.error(`❌ No iterations remaining. Last recorded iteration is ${startIteration - 1}, max is ${maxIterations}.`);
         console.error(`   Re-run with a higher limit: --max-iterations=<N>`);
         process.exitCode = 1;
         return;
     }
 
-    const validationDisplay = profileValidations.map(v => v.cmd).join(', ') || '(not configured)';
-    console.log(`\n🔁 Ralph Loop: Feature ${featureNum} - ${featureDesc}`);
-    console.log(`   Agent: ${selectedAgent}`);
-    console.log(`   Iterations: ${startIteration}..${maxIterations}`);
-    console.log(`   Validation: ${validationDisplay}`);
-    console.log(`   Progress: ./docs/specs/features/logs/feature-${featureNum}-ralph-progress.md`);
-    if (dryRun) {
-        console.log(`   Mode: dry-run`);
+    if (!skipToAutoSubmit) {
+        const validationDisplay = profileValidations.map(v => v.cmd).join(', ') || '(not configured)';
+        console.log(`\n🔁 Ralph Loop: Feature ${featureNum} - ${featureDesc}`);
+        console.log(`   Agent: ${selectedAgent}`);
+        console.log(`   Iterations: ${startIteration}..${maxIterations}`);
+        console.log(`   Validation: ${validationDisplay}`);
+        console.log(`   Progress: ./docs/specs/features/logs/feature-${featureNum}-ralph-progress.md`);
+        if (dryRun) {
+            console.log(`   Mode: dry-run`);
+        }
     }
 
     let interrupted = false;
@@ -3970,10 +3974,10 @@ function runRalphCommand(args) {
     };
     process.on('SIGINT', sigintHandler);
 
-    let loopSucceeded = false;
+    let loopSucceeded = skipToAutoSubmit; // already succeeded if skipping loop
     let criteriaFeedback = null;
     try {
-        for (let iteration = startIteration; iteration <= maxIterations; iteration++) {
+        for (let iteration = skipToAutoSubmit ? maxIterations + 1 : startIteration; iteration <= maxIterations; iteration++) {
             // Re-read spec each iteration to reflect any checkbox updates
             specContent = fs.readFileSync(found.fullPath, 'utf8');
             const timestamp = formatTimestamp();
