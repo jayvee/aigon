@@ -812,7 +812,7 @@ The `--adopt` flag prints diffs from each losing agent after merging the winner,
 | Feature Now | `aigon feature-now <name>` (inbox match → prioritise + setup + implement; no match → create new) |
 | Feature Prioritise | `aigon feature-prioritise <name>` |
 | Feature Setup | `aigon feature-setup <ID> [agents...]` |
-| Feature Implement | `aigon feature-implement <ID> [--ralph]` |
+| Feature Implement | `aigon feature-implement <ID> [--ralph] [--auto-submit] [--no-auto-submit]` |
 | Feature Eval | `aigon feature-eval <ID>` |
 | Feature Review | `aigon feature-review <ID>` |
 | Feature Done | `aigon feature-done <ID> [agent] [--adopt <agents...\|all>]` |
