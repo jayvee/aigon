@@ -227,6 +227,7 @@ const PROFILE_PRESETS = {
             ports: { cc: 3001, gg: 3002, cx: 3003, cu: 3004 }
         },
         testInstructions: '- **NEVER run `npm run dev` or `next dev` directly** — this bypasses port allocation and will bind to port 3000 (the main app)\n- Run `aigon dev-server start` — allocates your agent\'s unique port, starts the server, registers with the proxy, and waits for healthy\n- Use the URL printed by the command (e.g. `http://cx-121.myapp.test`) — never use `http://localhost:3000`\n- Use `aigon dev-server logs` to check startup output if anything seems wrong\n- Ask the user to verify',
+        manualTestingGuidance: '### Before stopping: set up for manual review\n\n1. Start the dev server (if not already running):\n   ```bash\n   aigon dev-server start\n   ```\n2. Open it in the browser:\n   ```bash\n   aigon dev-server open\n   ```\n3. Generate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each one (e.g. "Navigate to /settings → fill in the form → click Save → verify the success message appears"). Present the checklist in your response before stopping.',
         depCheck: '**Worktrees do not share `node_modules/` with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Check if node_modules exists\ntest -d node_modules && echo "Dependencies installed" || echo "Need to install dependencies"\n```\n\nIf missing, install them using the project\'s package manager:\n```bash\n# Detect and run the appropriate install command\nif [ -f "pnpm-lock.yaml" ]; then pnpm install\nelif [ -f "yarn.lock" ]; then yarn install\nelif [ -f "bun.lockb" ]; then bun install\nelif [ -f "package-lock.json" ]; then npm install\nelif [ -f "package.json" ]; then npm install\nfi\n```',
         setupEnvLine: '- Set up `.env.local` with agent-specific PORT (worktree modes)'
     },
@@ -236,30 +237,35 @@ const PROFILE_PRESETS = {
             ports: { cc: 8001, gg: 8002, cx: 8003, cu: 8004 }
         },
         testInstructions: '- **NEVER run your dev command directly** — this bypasses port allocation and will cause port conflicts\n- Run `aigon dev-server start` — allocates your agent\'s unique port, starts the server, registers with the proxy, and waits for healthy\n- Use the URL printed by the command — never use `http://localhost:3000` or the default port\n- Use `aigon dev-server logs` to check startup output if anything seems wrong\n- Test endpoints using `curl` or a REST client\n- Ask the user to verify',
+        manualTestingGuidance: '### Before stopping: set up for manual review\n\n1. Start the dev server (if not already running):\n   ```bash\n   aigon dev-server start\n   ```\n2. Open it in the browser:\n   ```bash\n   aigon dev-server open\n   ```\n3. Generate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each one, including example `curl` commands or REST client requests where applicable. Present the checklist in your response before stopping.',
         depCheck: '**Worktrees do not share dependencies with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Detect and install dependencies\nif [ -f "requirements.txt" ]; then pip install -r requirements.txt\nelif [ -f "Pipfile" ]; then pipenv install\nelif [ -f "go.mod" ]; then go mod download\nelif [ -f "package.json" ]; then npm install\nfi\n```',
         setupEnvLine: '- Set up `.env.local` with agent-specific PORT (worktree modes)'
     },
     ios: {
         devServer: { enabled: false, ports: {} },
         testInstructions: '- Build and test in Xcode/Simulator\n- Verify the changes work on the target device/simulator\n- Ask the user to verify',
+        manualTestingGuidance: '### Before stopping: prepare a manual testing checklist\n\nGenerate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each criterion on device/simulator. Present the checklist in your response before stopping.',
         depCheck: '',
         setupEnvLine: ''
     },
     android: {
         devServer: { enabled: false, ports: {} },
         testInstructions: '- Build and test on emulator/device\n- Verify the changes work on the target device/emulator\n- Ask the user to verify',
+        manualTestingGuidance: '### Before stopping: prepare a manual testing checklist\n\nGenerate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each criterion on emulator/device. Present the checklist in your response before stopping.',
         depCheck: '',
         setupEnvLine: ''
     },
     library: {
         devServer: { enabled: false, ports: {} },
         testInstructions: '- Run the test suite to verify changes\n- Ask the user to verify',
+        manualTestingGuidance: '### Before stopping: prepare a manual testing checklist\n\nGenerate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each criterion. Present the checklist in your response before stopping.',
         depCheck: '**Worktrees do not share dependencies with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Detect and install dependencies\nif [ -f "Cargo.toml" ]; then cargo build\nelif [ -f "go.mod" ]; then go mod download\nelif [ -f "requirements.txt" ]; then pip install -r requirements.txt\nelif [ -f "pyproject.toml" ]; then pip install -e .\nelif [ -f "package.json" ]; then npm install\nfi\n```',
         setupEnvLine: ''
     },
     generic: {
         devServer: { enabled: false, ports: {} },
         testInstructions: '- Test the changes according to the project\'s testing approach\n- Ask the user to verify',
+        manualTestingGuidance: '### Before stopping: prepare a manual testing checklist\n\nGenerate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each criterion. Present the checklist in your response before stopping.',
         depCheck: '',
         setupEnvLine: ''
     }
@@ -1092,6 +1098,7 @@ function getActiveProfile() {
         detected: !projectConfig.profile,
         devServer: { ...preset.devServer, ports: { ...preset.devServer.ports } },
         testInstructions: preset.testInstructions,
+        manualTestingGuidance: preset.manualTestingGuidance || '',
         depCheck: preset.depCheck,
         setupEnvLine: preset.setupEnvLine
     };
@@ -1128,6 +1135,7 @@ function getProfilePlaceholders() {
         WORKTREE_TEST_INSTRUCTIONS: profile.testInstructions,
         WORKTREE_DEP_CHECK: profile.depCheck,
         SETUP_ENV_LOCAL_LINE: profile.setupEnvLine,
+        MANUAL_TESTING_GUIDANCE: profile.manualTestingGuidance || '',
         STOP_DEV_SERVER_STEP: profile.devServer.enabled
             ? '## Step 2: Stop the dev server\n\nIf a dev server is running in this session, stop it now:\n```bash\naigon dev-server stop 2>/dev/null || true\n```'
             : ''
