@@ -2847,7 +2847,7 @@ const COMMAND_ARG_HINTS = {
     'feedback-create': '<title>',
     'feedback-list': '[--inbox|--triaged|--actionable|--done|--wont-fix|--duplicate|--all] [--type <type>] [--severity <severity>] [--tag <tag>]',
     'feedback-triage': '<ID> [--type <type>] [--severity <severity|none>] [--tags <csv|none>] [--status <status>] [--duplicate-of <ID|none>] [--action <keep|mark-duplicate|promote-feature|promote-research|wont-fix>] [--apply] [--yes]',
-    'conductor': '<start|stop|status|add|remove|list> [path]',
+    'conductor': '<start|stop|status|add|remove|list|vscode-install|vscode-uninstall> [path]',
     'agent-status': '<implementing|waiting|submitted>',
     'status': '[ID]',
     'help': '',
@@ -7035,15 +7035,59 @@ Branch: \`${soloBranch}\`
             return;
         }
 
+        if (sub === 'vscode-install') {
+            const vsixPath = path.join(__dirname, 'vscode-extension', 'aigon-conductor-1.0.0.vsix');
+            if (!fs.existsSync(vsixPath)) {
+                console.error(`❌ Extension bundle not found: ${vsixPath}`);
+                console.error(`   Try rebuilding: cd vscode-extension && npm run package`);
+                return;
+            }
+            // Check code CLI is available
+            try {
+                execSync('code --version', { stdio: 'ignore' });
+            } catch (e) {
+                console.error('❌ VS Code CLI not found. Make sure "code" is in your PATH.');
+                console.error('   In VS Code: Cmd+Shift+P → "Shell Command: Install \'code\' command in PATH"');
+                return;
+            }
+            console.log('📦 Installing Aigon Conductor extension...');
+            try {
+                execSync(`code --install-extension "${vsixPath}" --force`, { stdio: 'inherit' });
+                console.log('✅ Aigon Conductor installed. Reload VS Code to activate.');
+            } catch (e) {
+                console.error(`❌ Installation failed: ${e.message}`);
+            }
+            return;
+        }
+
+        if (sub === 'vscode-uninstall') {
+            try {
+                execSync('code --version', { stdio: 'ignore' });
+            } catch (e) {
+                console.error('❌ VS Code CLI not found.');
+                return;
+            }
+            console.log('🗑️  Uninstalling Aigon Conductor extension...');
+            try {
+                execSync('code --uninstall-extension aigon.aigon-conductor', { stdio: 'inherit' });
+                console.log('✅ Aigon Conductor uninstalled.');
+            } catch (e) {
+                console.error(`❌ Uninstall failed: ${e.message}`);
+            }
+            return;
+        }
+
         // Default: show usage
         console.log('Usage: aigon conductor <subcommand>\n');
         console.log('Subcommands:');
-        console.log('  start           Start the background daemon');
-        console.log('  stop            Stop the daemon');
-        console.log('  status          Show daemon state, watched repos, waiting agents');
-        console.log('  add [path]      Register a repo (default: cwd)');
-        console.log('  remove [path]   Unregister a repo (default: cwd)');
-        console.log('  list            List registered repos');
+        console.log('  start              Start the background daemon');
+        console.log('  stop               Stop the daemon');
+        console.log('  status             Show daemon state, watched repos, waiting agents');
+        console.log('  add [path]         Register a repo (default: cwd)');
+        console.log('  remove [path]      Unregister a repo (default: cwd)');
+        console.log('  list               List registered repos');
+        console.log('  vscode-install     Install the Aigon VS Code extension');
+        console.log('  vscode-uninstall   Uninstall the Aigon VS Code extension');
     },
 
     'board': (args) => {
