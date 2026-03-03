@@ -1,0 +1,60 @@
+{
+  "name": "aigon-conductor",
+  "displayName": "Aigon Conductor",
+  "description": "Live Aigon feature and agent status across all registered repos",
+  "version": "1.0.0",
+  "publisher": "aigon",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "aigonConductor",
+          "name": "Aigon",
+          "icon": "$(circuit-board)"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "aigon.refresh",
+        "title": "Aigon: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "aigon.toggleShowAll",
+        "title": "Aigon: Toggle Show All Stages",
+        "icon": "$(list-flat)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "aigon.refresh",
+          "when": "view == aigonConductor",
+          "group": "navigation@1"
+        },
+        {
+          "command": "aigon.toggleShowAll",
+          "when": "view == aigonConductor",
+          "group": "navigation@2"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "package": "vsce package --no-dependencies --allow-missing-repository"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.7.1"
+  }
+}
