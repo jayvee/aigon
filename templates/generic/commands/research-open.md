@@ -1,7 +1,7 @@
-<!-- description: Open all arena research agents side-by-side in terminal -->
+<!-- description: Open all Fleet research agents side-by-side in terminal -->
 # aigon-research-open
 
-Open all arena research agents side-by-side in Warp terminal, each pre-loaded with the research-conduct command.
+Open all Fleet research agents side-by-side in Warp terminal, each pre-loaded with the research-conduct command.
 
 ## Usage
 
@@ -9,14 +9,14 @@ Open all arena research agents side-by-side in Warp terminal, each pre-loaded wi
 {{CMD_PREFIX}}research-open <research-id>
 ```
 
-- `{{CMD_PREFIX}}research-open 05` — opens all arena agents side-by-side for research 05
+- `{{CMD_PREFIX}}research-open 05` — opens all Fleet agents side-by-side for research 05
 
 ## When to Use
 
-This command is for **arena mode research only**. It opens multiple terminal panes (one per agent) so you can run parallel research.
+This command is for **Fleet mode research only**. It opens multiple terminal panes (one per agent) so you can run parallel research.
 
 **Prerequisites:**
-- Research must be set up in arena mode: `aigon research-setup <ID> cc gg cx`
+- Research must be set up in Fleet mode: `aigon research-setup <ID> cc gg cx`
 - Findings files must exist in `docs/specs/research-topics/logs/`
 
 ## What It Does
@@ -45,7 +45,7 @@ This opens Warp with 3 panes:
 
 ## Error Cases
 
-- **Not in arena mode**: Shows error with instructions to run `research-setup` with agents
+- **Not in Fleet mode**: Shows error with instructions to run `research-setup` with agents
 - **Research not found**: Shows error if research ID doesn't exist or isn't in progress
 - **Agent not configured**: Lists which agents need to be installed
 

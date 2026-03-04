@@ -16,7 +16,7 @@ If no name is provided, or the name doesn't match an existing topic in the inbox
 
 This assigns an ID to the research topic and moves it from `01-inbox/` to `02-backlog/`.
 
-Next step: Run `{{CMD_PREFIX}}research-setup <ID>` (solo) or `{{CMD_PREFIX}}research-setup <ID> cc gg` (arena) to begin.
+Next step: Run `{{CMD_PREFIX}}research-setup <ID>` (Drive) or `{{CMD_PREFIX}}research-setup <ID> cc gg` (Fleet) to begin.
 
 ## Prompt Suggestion
 
