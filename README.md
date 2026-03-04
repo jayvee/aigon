@@ -1,6 +1,6 @@
 # Aigon
 
-**CLI-first, vendor-independent AI engineering workflows that keep your context in your repo.**
+**Agent-first, CLI-capable, vendor-independent AI engineering workflows that keep your context in your repo.**
 
 Aigon gives you a consistent spec workflow across Claude, Gemini, Codex, and Cursor without locking your team to one IDE or one model provider.
 
@@ -74,7 +74,7 @@ FEATURES
 └────────────────────────────────┼────────────────────────────────┼────────────────────────────────┘
 ```
 
-`*` = current branch, `[wt]` = solo worktree, `[2]` = arena mode (2 agents competing)
+`*` = current branch, `[F]` = Fleet mode, `[AP]` = Autopilot mode, `[S]` = Swarm mode
 
 ---
 
@@ -91,13 +91,14 @@ FEATURES
 5. [Installation, Agents, and Updates](#installation-agents-and-updates)
 6. [Project-Specific Agent Instructions](#project-specific-agent-instructions)
 7. [Slash Command Prefixes](#slash-command-prefixes)
-8. [Workflow Overview](#workflow-overview)
-9. [Workflow Examples](#workflow-examples)
-10. [Hooks](#hooks)
-11. [Local Dev Proxy](#local-dev-proxy)
-12. [Multi-Agent Evaluation](#multi-agent-evaluation)
-13. [CLI Reference](#cli-reference)
-14. [Agent Slash Commands](#agent-slash-commands)
+8. [Invocation Contexts (CLI vs In-Agent)](#invocation-contexts-cli-vs-in-agent)
+9. [Workflow Overview](#workflow-overview)
+10. [Workflow Examples](#workflow-examples)
+11. [Hooks](#hooks)
+12. [Local Dev Proxy](#local-dev-proxy)
+13. [Multi-Agent Evaluation](#multi-agent-evaluation)
+14. [CLI Reference](#cli-reference)
+15. [Agent Slash Commands](#agent-slash-commands)
 
 ---
 
@@ -138,12 +139,23 @@ This answers both "why did we build this?" (forward traceability) and "what happ
 
 ### Built for real multi-agent workflows
 
-Aigon supports:
+Aigon uses four modes across two axes:
 
-- **solo branch mode**
-- **solo worktree mode**
-- **arena mode** (multiple agents implement the same feature in parallel)
-- **research mode** (parallel findings + synthesis)
+```
+                    One Agent          Multi-Agent
+                 ┌──────────────┬──────────────────┐
+  Hands-on       │    Drive     │      Fleet       │
+                 ├──────────────┼──────────────────┤
+  Hands-off      │  Autopilot   │      Swarm       │
+                 └──────────────┴──────────────────┘
+                         Autonomous
+```
+
+- **Drive mode**: one agent, hands-on
+- **Fleet mode**: multiple agents, hands-on competition
+- **Autopilot mode**: one agent, hands-off autonomous loop
+- **Swarm mode**: multiple agents, hands-off autonomous loop
+- **Fleet research**: parallel findings plus synthesis (`research-setup` + `research-open` + `research-synthesize`)
 
 ---
 
@@ -183,12 +195,12 @@ Each pillar uses folder-based status:
 
 **Documentation:**
 - `logs/` — Implementation logs (selected winners + alternatives)
-- `evaluations/` — Arena comparison reports
+- `evaluations/` — Fleet comparison reports
 
 **Naming conventions:**
 - Drafts: `feature-description.md` (in inbox)
 - Prioritized: `feature-55-description.md` (global ID assigned)
-- Agent-specific: `feature-55-cc-description-log.md` (arena mode)
+- Agent-specific: `feature-55-cc-description-log.md` (Fleet mode)
 
 ---
 
@@ -393,6 +405,40 @@ Examples for the same action:
 
 ---
 
+## Invocation Contexts (CLI vs In-Agent)
+
+Aigon has two command surfaces:
+
+- **CLI context**: run `aigon ...` from a shell
+- **In-agent context**: run slash commands inside an active agent session
+
+Think of this as a second axis in addition to mode (Drive/Fleet/Autopilot/Swarm).
+
+### Default way to work
+
+1. **Start in an agent session** when shaping specs (create/prioritise/research) so you can iterate in conversation.
+2. **Stay in-agent** for implementation/review/research execution.
+3. **Drop to CLI when needed** for orchestration, automation, and terminal-first workflows.
+
+### Recommended surface by task
+
+| Task Type | Preferred Surface | Why |
+|---|---|---|
+| Spec authoring and refinement (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) | In-agent slash commands | Best for iterative back-and-forth on definitions and scope |
+| Execution with an active agent (`feature-implement`, `feature-review`, `research-conduct`, `research-synthesize`) | In-agent slash commands | Keeps context in the live session and avoids nested launches |
+| Orchestration and terminal ops (`init`, `install-agent`, `update`, `feature-setup`, `worktree-open`, `feature-done`, `feature-cleanup`) | CLI | Repo/worktree coordination, machine-level operations, scripting |
+| Infra/config (`config`, `profile`, `proxy-setup`, `dev-server`, `conductor`) | CLI | Machine/project configuration and background services |
+
+### Can I stay in one surface?
+
+- **Agent-first is recommended** for creating/prioritising features and research when you want conversational iteration.
+- **CLI-only is supported** and useful for automation or terminal-first habits.
+- **Hybrid is common**: define in-agent, then orchestrate from CLI.
+
+For deeper details and mode-specific nuances, see [docs/GUIDE.md](docs/GUIDE.md#command-surfaces-cli-vs-in-agent).
+
+---
+
 ## Workflow Overview
 
 ### Research lifecycle
@@ -400,9 +446,9 @@ Examples for the same action:
 1. Create topic: `research-create`
 2. Prioritise: `research-prioritise`
 3. Setup: `research-setup`
-4. Open agents (arena): `research-open`
+4. Open agents (Fleet): `research-open`
 5. Conduct: `research-conduct`
-6. Synthesize (arena): `research-synthesize`
+6. Synthesize (Fleet): `research-synthesize`
 7. Complete: `research-done`
 
 ### Feature lifecycle
@@ -413,7 +459,7 @@ Examples for the same action:
 4. Implement: `feature-implement` — agent auto-signals `implementing` → `waiting` via `aigon agent-status`
 5. Evaluate (optional but recommended): `feature-eval`
 6. Finish and merge: `feature-done`
-7. Cleanup losing arena branches/worktrees (arena only): `feature-cleanup`
+7. Cleanup losing Fleet branches/worktrees (Fleet only): `feature-cleanup`
 
 ### Feedback lifecycle
 
@@ -427,7 +473,7 @@ Examples for the same action:
 
 ## Workflow Examples
 
-### Solo development (fast-track branch mode)
+### Drive development (fast-track branch mode)
 
 Slash command first:
 
@@ -437,9 +483,9 @@ Slash command first:
 
 Use this when you want to go from idea to implementation in one session. If `dark-mode` matches a feature already in the inbox, it will prioritise → setup → implement it. Otherwise it creates a new feature from scratch.
 
-### Arena competition (parallel worktrees)
+### Fleet competition (parallel worktrees)
 
-Setup arena:
+Setup Fleet:
 
 ```text
 /aigon:feature-setup 55 cc gg cx
@@ -451,7 +497,7 @@ Open all worktrees side-by-side in Warp:
 /aigon:worktree-open 55 --all
 ```
 
-![Warp split view with arena worktrees side-by-side](docs/images/aigon-warp-arena-split.png)
+![Warp split view with Fleet worktrees side-by-side](docs/images/aigon-warp-arena-split.png)
 
 ### Multi-agent research (create -> conduct -> synthesize)
 
@@ -462,7 +508,7 @@ Open all worktrees side-by-side in Warp:
 /aigon:research-prioritise plugin-distribution
 ```
 
-2. Setup arena research:
+2. Setup Fleet research:
 
 ```text
 /aigon:research-setup 03 cc gg cx
@@ -489,7 +535,7 @@ Open all worktrees side-by-side in Warp:
 aigon research-done 03 --complete
 ```
 
-### Parallel solo worktree workflow (multiple features)
+### Parallel Drive worktree workflow (multiple features)
 
 Run independent features in parallel with one agent:
 
@@ -529,9 +575,9 @@ The sidebar shows a tree of repos → features → agents, with live status icon
 ▼ AIGON
   ▼ 📁 aigon
     ▼ 🔔 #32  conductor-daemon
-        solo   ●  waiting   01:33    ← click to copy /afd 32
+        drive  ●  waiting   01:33    ← click to copy /afd 32
     ▼ ⟳  #33  conductor-vscode
-        solo   ○  implementing
+        drive  ○  implementing
   ▼ 📁 my-web-app
     ▼ ✅ #12  dark-mode
         cc     ✓  submitted
@@ -626,8 +672,9 @@ Or fast-track a feature (matches inbox letter shortcuts too):
 
 **Indicators in Kanban view:**
 - `*` = current branch
-- `[2]` = arena mode (2 agents)
-- `[wt]` = solo worktree mode
+- `[F]` = Fleet mode
+- `[AP]` = Autopilot mode
+- `[S]` = Swarm mode
 - `a), b), c)...` = letter shortcuts for quick prioritization
 
 ### Detailed List View
@@ -647,7 +694,7 @@ Inbox (4):
         refactor-aigon-sub-commands
 
 In Progress (1):
-   #07  backlog-visualisation  solo (branch) *
+   #07  backlog-visualisation  Drive (branch) *
 
 RESEARCH
 
@@ -732,7 +779,7 @@ See the [Complete Guide](docs/GUIDE.md#local-dev-proxy) for detailed setup instr
 
 ## Multi-Agent Evaluation
 
-After arena implementations are complete:
+After Fleet implementations are complete:
 
 ```bash
 aigon feature-eval 55
@@ -740,11 +787,11 @@ aigon feature-eval 55
 
 This generates a structured comparison template so you can score implementations against spec compliance, quality, maintainability, and performance.
 
-**Meta example:** This very README was improved using arena mode! Three agents (Claude, Cursor, Codex) each created their own implementation, and the best approach was selected through evaluation.
+**Meta example:** This very README was improved using Fleet mode! Three agents (Claude, Cursor, Codex) each created their own implementation, and the best approach was selected through evaluation.
 
-### Real Arena Evaluation: Feature 06 - README Uplift
+### Real Fleet Evaluation: Feature 06 - README Uplift
 
-**Mode:** Arena (Multi-agent comparison)
+**Mode:** Fleet (Multi-agent comparison)
 
 **Implementations:**
 - **cc** (Claude): Hybrid approach - README + GUIDE split
@@ -812,13 +859,13 @@ The `--adopt` flag prints diffs from each losing agent after merging the winner,
 | Feature Now | `aigon feature-now <name>` (inbox match → prioritise + setup + implement; no match → create new) |
 | Feature Prioritise | `aigon feature-prioritise <name>` |
 | Feature Setup | `aigon feature-setup <ID> [agents...]` |
-| Feature Implement | `aigon feature-implement <ID> [--ralph] [--auto-submit] [--no-auto-submit]` |
+| Feature Implement | `aigon feature-implement <ID> [--autonomous] [--auto-submit] [--no-auto-submit]` |
 | Feature Eval | `aigon feature-eval <ID>` |
 | Feature Review | `aigon feature-review <ID>` |
 | Feature Done | `aigon feature-done <ID> [agent] [--adopt <agents...\|all>]` |
 | Feature Cleanup | `aigon feature-cleanup <ID> [--push]` |
 | Worktree Open | `aigon worktree-open <ID> [agent] [--terminal=<type>]` |
-| Worktree Open (Arena) | `aigon worktree-open <ID> --all` |
+| Worktree Open (Fleet) | `aigon worktree-open <ID> --all` |
 | Worktree Open (Parallel) | `aigon worktree-open <ID> <ID>... [--agent=<code>]` |
 
 ### Feedback commands
@@ -934,19 +981,19 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-create <name>` | Create a feature spec |
 | `/aigon:feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/aigon:feature-setup <ID> [agents...]` | Setup Drive (branch/worktree) or Fleet |
 | `/aigon:next` (alias: `/aigon:n`) | Suggest the most likely next workflow command |
 | `/aigon:board` | Show Kanban board or list view |
-| `/aigon:feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
+| `/aigon:feature-implement <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon:feature-done <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
-| `/aigon:feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
+| `/aigon:feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
 | `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/aigon:research-create <name>` | Create a research topic |
 | `/aigon:research-prioritise <name>` | Prioritise a research topic |
-| `/aigon:research-setup <ID> [agents...]` | Setup solo/arena research |
-| `/aigon:research-open <ID>` | Open arena research agents side-by-side |
+| `/aigon:research-setup <ID> [agents...]` | Setup Drive or Fleet research |
+| `/aigon:research-open <ID>` | Open Fleet research agents side-by-side |
 | `/aigon:research-conduct <ID>` | Write findings |
 | `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
 | `/aigon:research-done <ID>` | Complete research topic |
@@ -962,19 +1009,19 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-create <name>` | Create a feature spec |
 | `/aigon:feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/aigon:feature-setup <ID> [agents...]` | Setup Drive (branch/worktree) or Fleet |
 | `/aigon:next` (alias: `/aigon:n`) | Suggest the most likely next workflow command |
 | `/aigon:board` | Show Kanban board or list view |
-| `/aigon:feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
+| `/aigon:feature-implement <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon:feature-done <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
-| `/aigon:feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
+| `/aigon:feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
 | `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/aigon:research-create <name>` | Create a research topic |
 | `/aigon:research-prioritise <name>` | Prioritise a research topic |
-| `/aigon:research-setup <ID> [agents...]` | Setup solo/arena research |
-| `/aigon:research-open <ID>` | Open arena research agents side-by-side |
+| `/aigon:research-setup <ID> [agents...]` | Setup Drive or Fleet research |
+| `/aigon:research-open <ID>` | Open Fleet research agents side-by-side |
 | `/aigon:research-conduct <ID>` | Write findings |
 | `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
 | `/aigon:research-done <ID>` | Complete research topic |
@@ -990,19 +1037,19 @@ The command set is consistent across agents. Differences are only command prefix
 | `/prompts:aigon-feature-create <name>` | Create a feature spec |
 | `/prompts:aigon-feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
 | `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
-| `/prompts:aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/prompts:aigon-feature-setup <ID> [agents...]` | Setup Drive (branch/worktree) or Fleet |
 | `/prompts:aigon-next` (alias: `/prompts:aigon-n`) | Suggest the most likely next workflow command |
 | `/prompts:aigon-board` | Show Kanban board or list view |
-| `/prompts:aigon-feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
+| `/prompts:aigon-feature-implement <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
 | `/prompts:aigon-feature-eval <ID>` | Generate review/comparison template |
 | `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
 | `/prompts:aigon-feature-done <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
-| `/prompts:aigon-feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
+| `/prompts:aigon-feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
 | `/prompts:aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/prompts:aigon-research-create <name>` | Create a research topic |
 | `/prompts:aigon-research-prioritise <name>` | Prioritise a research topic |
-| `/prompts:aigon-research-setup <ID> [agents...]` | Setup solo/arena research |
-| `/prompts:aigon-research-open <ID>` | Open arena research agents side-by-side |
+| `/prompts:aigon-research-setup <ID> [agents...]` | Setup Drive or Fleet research |
+| `/prompts:aigon-research-open <ID>` | Open Fleet research agents side-by-side |
 | `/prompts:aigon-research-conduct <ID>` | Write findings |
 | `/prompts:aigon-research-synthesize <ID>` | Compare and synthesize all findings |
 | `/prompts:aigon-research-done <ID>` | Complete research topic |
@@ -1018,19 +1065,19 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon-feature-create <name>` | Create a feature spec |
 | `/aigon-feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
 | `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon-feature-setup <ID> [agents...]` | Setup branch/worktree/arena |
+| `/aigon-feature-setup <ID> [agents...]` | Setup Drive (branch/worktree) or Fleet |
 | `/aigon-next` (alias: `/aigon-n`) | Suggest the most likely next workflow command |
 | `/aigon-board` | Show Kanban board or list view |
-| `/aigon-feature-implement <ID> [--ralph]` | Implement; `--ralph` for autonomous [Ralph loop](https://ghuntley.com/ralph/) |
+| `/aigon-feature-implement <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
 | `/aigon-feature-eval <ID>` | Generate review/comparison template |
 | `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon-feature-done <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
-| `/aigon-feature-cleanup <ID> [--push]` | Cleanup arena worktrees and branches |
+| `/aigon-feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
 | `/aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/aigon-research-create <name>` | Create a research topic |
 | `/aigon-research-prioritise <name>` | Prioritise a research topic |
-| `/aigon-research-setup <ID> [agents...]` | Setup solo/arena research |
-| `/aigon-research-open <ID>` | Open arena research agents side-by-side |
+| `/aigon-research-setup <ID> [agents...]` | Setup Drive or Fleet research |
+| `/aigon-research-open <ID>` | Open Fleet research agents side-by-side |
 | `/aigon-research-conduct <ID>` | Write findings |
 | `/aigon-research-synthesize <ID>` | Compare and synthesize all findings |
 | `/aigon-research-done <ID>` | Complete research topic |
@@ -1053,7 +1100,7 @@ See [COMPARISONS.md](COMPARISONS.md) for strategic analysis including:
 - When to choose which tool
 - How to use Aigon + Cursor together
 
-**Key insight:** Aigon and tools like Cursor can complement each other—use Aigon for vendor-independent workflow orchestration and include Cursor as one agent in arena mode.
+**Key insight:** Aigon and tools like Cursor can complement each other—use Aigon for vendor-independent workflow orchestration and include Cursor as one agent in Fleet mode.
 
 ---
 

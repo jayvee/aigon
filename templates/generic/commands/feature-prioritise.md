@@ -22,23 +22,23 @@ This assigns an ID to the feature and moves it from `01-inbox/` to `02-backlog/`
 
 Choose your mode:
 
-**Solo (branch)** — work in the current repo:
+**Drive (branch)** — work in the current repo:
 ```
 {{CMD_PREFIX}}feature-setup <ID>
 ```
 
-**Solo (worktree)** — isolated worktree for parallel development:
+**Drive (worktree)** — isolated worktree for parallel development:
 ```
 {{CMD_PREFIX}}feature-setup <ID> <agent>
 ```
 
-**Arena** — multiple agents compete on the same feature:
+**Fleet** — multiple agents compete on the same feature:
 ```
 {{CMD_PREFIX}}feature-setup <ID> <agent1> <agent2> [agent3...]
 ```
 
-Example solo worktree: `{{CMD_PREFIX}}feature-setup 55 cc`
-Example arena: `{{CMD_PREFIX}}feature-setup 55 cc gg cx cu`
+Example Drive worktree: `{{CMD_PREFIX}}feature-setup 55 cc`
+Example Fleet: `{{CMD_PREFIX}}feature-setup 55 cc gg cx cu`
 
 ## Prompt Suggestion
 
