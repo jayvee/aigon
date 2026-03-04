@@ -1282,10 +1282,7 @@ function buildAgentCommand(wt, taskType = 'implement') {
     const prefix = cliConfig.command === 'claude' ? 'unset CLAUDECODE && ' : '';
 
     const model = cliConfig.models?.[taskType];
-    if (wt.agent === 'cu' && model) {
-        console.warn(`⚠️  Model config ignored for Cursor — model selection is UI-only (no --model flag)`);
-    }
-    const modelFlag = (model && wt.agent !== 'cu') ? `--model ${model}` : '';
+    const modelFlag = model ? `--model ${model}` : '';
 
     const flags = [cliConfig.implementFlag, modelFlag].filter(Boolean).join(' ');
     if (flags) {
@@ -1313,10 +1310,7 @@ function buildResearchAgentCommand(agentId, researchId) {
     const prefix = cliConfig.command === 'claude' ? 'unset CLAUDECODE && ' : '';
 
     const model = cliConfig.models?.['research'];
-    if (agentId === 'cu' && model) {
-        console.warn(`⚠️  Model config ignored for Cursor — model selection is UI-only (no --model flag)`);
-    }
-    const modelFlag = (model && agentId !== 'cu') ? `--model ${model}` : '';
+    const modelFlag = model ? `--model ${model}` : '';
 
     const flags = [cliConfig.implementFlag, modelFlag].filter(Boolean).join(' ');
     if (flags) {
@@ -2785,6 +2779,7 @@ const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
     'agent-status',
     'status',
     'conductor',
+    'deploy',
 ]);
 
 // Short aliases for commands (alias → full command name)
@@ -2812,6 +2807,7 @@ const COMMAND_ALIASES = {
     'afbl': 'feedback-list',
     'afbt': 'feedback-triage',
     'ads':  'dev-server',
+    'ad':   'deploy',
     'ah':   'help',
     'an':   'next',
 };
@@ -2850,6 +2846,7 @@ const COMMAND_ARG_HINTS = {
     'conductor': '<start|stop|status|add|remove|list|vscode-install|vscode-uninstall> [path]',
     'agent-status': '<implementing|waiting|submitted>',
     'status': '[ID]',
+    'deploy': '[--preview]',
     'help': '',
     'next': '',
 };
@@ -4589,6 +4586,71 @@ function runFeatureValidateCommand(args) {
         console.log('❌ Some criteria not satisfied. Review and address failing items.');
         process.exitCode = 1;
     }
+}
+
+// --- Deploy helpers ---
+
+/**
+ * Resolve the deploy command from config or package.json.
+ * @param {boolean} isPreview - true for --preview, false for production
+ * @returns {string|null} resolved shell command, or null if not configured
+ */
+function resolveDeployCommand(isPreview) {
+    const key = isPreview ? 'preview' : 'deploy';
+
+    // 1. Check .aigon/config.json → commands.deploy / commands.preview
+    const projectConfig = loadProjectConfig();
+    if (projectConfig?.commands?.[key]) {
+        return projectConfig.commands[key];
+    }
+
+    // 2. Fall back to package.json scripts.deploy / scripts.preview
+    const pkgPath = path.join(process.cwd(), 'package.json');
+    if (fs.existsSync(pkgPath)) {
+        try {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+            if (pkg?.scripts?.[key]) {
+                return `npm run ${key}`;
+            }
+        } catch (e) { /* ignore parse errors */ }
+    }
+
+    return null;
+}
+
+/**
+ * Run the resolved deploy command, streaming output to the terminal.
+ * @param {boolean} isPreview
+ * @returns {number} exit code
+ */
+function runDeployCommand(isPreview) {
+    const cmd = resolveDeployCommand(isPreview);
+    const label = isPreview ? 'preview' : 'deploy';
+
+    if (!cmd) {
+        console.error(`❌ No ${label} command configured.`);
+        console.error(`\nTo configure, add to .aigon/config.json:`);
+        console.error(`  {`);
+        console.error(`    "commands": {`);
+        if (isPreview) {
+            console.error(`      "preview": "vercel"`);
+        } else {
+            console.error(`      "deploy": "vercel --prod"`);
+        }
+        console.error(`    }`);
+        console.error(`  }`);
+        console.error(`\nOr add a "${label}" script to package.json.`);
+        return 1;
+    }
+
+    console.log(`🚀 Running ${label}: ${cmd}`);
+    const result = spawnSync(cmd, { stdio: 'inherit', shell: true });
+
+    if (result.error) {
+        console.error(`❌ Failed to run deploy command: ${result.error.message}`);
+        return 1;
+    }
+    return result.status ?? 0;
 }
 
 // --- Commands ---
@@ -6569,6 +6631,19 @@ Branch: \`${soloBranch}\`
 
         console.log(`\n✅ Feature ${num} complete! (${mode} mode)`);
 
+        // Auto-deploy if workflow.deployAfterDone is set
+        const deployAfterDone = loadProjectConfig()?.workflow?.deployAfterDone;
+        if (deployAfterDone) {
+            console.log(`\n🚀 Deploying (workflow.deployAfterDone)...`);
+            const deployExitCode = runDeployCommand(deployAfterDone === 'preview');
+            if (deployExitCode !== 0) {
+                console.error(`\n⚠️  Deploy failed (exit ${deployExitCode}) — merge is intact, deploy manually with: aigon deploy`);
+                process.exitCode = deployExitCode;
+            } else {
+                console.log(`✅ Deployed.`);
+            }
+        }
+
         // Run post-hook (won't fail the command)
         runPostHook('feature-done', hookContext);
     },
@@ -6829,6 +6904,12 @@ Branch: \`${soloBranch}\`
         if (!anyOutput) {
             console.log(idArg ? `No log files found for feature #${idArg}.` : 'No log files found for in-progress features.');
         }
+    },
+
+    'deploy': (args) => {
+        const isPreview = args.includes('--preview');
+        const exitCode = runDeployCommand(isPreview);
+        if (exitCode !== 0) process.exitCode = exitCode;
     },
 
     'conductor': (args) => {
@@ -9179,6 +9260,10 @@ Feedback:
   feedback-list [filters...]        List feedback items by status/type/severity/tag
   feedback-triage <ID> [options]    Preview and apply triage updates (requires --apply --yes)
 
+Deploy:
+  deploy                            Run the configured deploy command (production)
+  deploy --preview                  Run the configured preview command (staging)
+
 Visualization:
   board                             Show Kanban board view of features and research
   board --list                      Show detailed list view (features and research)
@@ -9236,6 +9321,10 @@ Examples:
   aigon research-conduct 05            # Agent conducts research
   aigon research-done 05               # Shows findings summary (arena)
   aigon research-done 05 --complete    # Complete research
+
+  # Deploy
+  aigon deploy                         # Deploy to production (uses commands.deploy or scripts.deploy)
+  aigon deploy --preview               # Deploy to staging/preview
 
   # Feedback workflow
   aigon feedback-create "Save fails"   # Create feedback in inbox
