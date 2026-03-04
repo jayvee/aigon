@@ -3,8 +3,8 @@
 
 Fast-track a feature from idea to implementation in one step. Works in two modes:
 
-- **Existing feature**: If the name matches a feature in the inbox (`01-inbox/`), runs prioritise → setup (solo) → implement
-- **New feature**: If no inbox match, creates the spec from scratch, sets up a solo branch, and starts implementation
+- **Existing feature**: If the name matches a feature in the inbox (`01-inbox/`), runs prioritise → setup (Drive) → implement
+- **New feature**: If no inbox match, creates the spec from scratch, sets up a Drive branch, and starts implementation
 
 ## Argument Resolution
 
@@ -27,7 +27,7 @@ If multiple inbox features match, present the matches and ask the user to pick o
 
 ## Path A: Fast-track existing feature
 
-The feature already has a spec in the inbox. Prioritise it, set up solo mode, and implement.
+The feature already has a spec in the inbox. Prioritise it, set up Drive mode, and implement.
 
 ### A1: Explore the codebase
 
@@ -41,7 +41,7 @@ aigon feature-prioritise <inbox-name>
 
 This assigns an ID and moves the spec from `01-inbox/` to `02-backlog/`. Note the assigned ID from the output.
 
-### A3: Setup (solo mode)
+### A3: Setup (Drive mode)
 
 ```bash
 aigon feature-setup <ID>
@@ -75,7 +75,7 @@ aigon feature-now {{ARG_SYNTAX}}
 
 This will:
 - Create a feature spec directly in `03-in-progress/` with an assigned ID
-- Create a solo branch (`feature-NN-slug`)
+- Create a Drive branch (`feature-NN-slug`)
 - Create an implementation log
 - Commit everything atomically
 

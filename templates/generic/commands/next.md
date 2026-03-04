@@ -25,7 +25,7 @@ Extract context from the branch name using the pattern `feature-<ID>-<agent>-<de
 
 - **Type**: `feature` or `research`
 - **ID**: numeric ID (e.g., `25`)
-- **Agent**: agent code (e.g., `cc`, `gg`, `cx`, `cu`) — if absent, this is a solo branch
+- **Agent**: agent code (e.g., `cc`, `gg`, `cx`, `cu`) — if absent, this is a Drive branch
 - **Description**: slug description
 
 If the branch is `main` (or `master`), skip to **Path D: Main branch**.
@@ -94,18 +94,18 @@ Check `aigon board --list --active` output for in-progress items.
 
 #### D1: In-progress features found
 
-Count the worktrees for each in-progress feature (from board output — look for `arena (cc, gg...)` vs `solo`).
+Count the worktrees for each in-progress feature (from board output — look for `Fleet (cc, gg...)` vs `Drive`).
 
-**Arena mode** (2+ agents): Suggest eval
-> Feature `#<ID> <name>` is in progress (arena mode).
+**Fleet mode** (2+ agents): Suggest eval
+> Feature `#<ID> <name>` is in progress (Fleet mode).
 >
 > **Suggested next step:**
 > `{{CMD_PREFIX}}feature-eval <ID>`
 >
 > This will compare all agent implementations and select the best one.
 
-**Solo mode** (1 agent): Suggest done
-> Feature `#<ID> <name>` is in progress (solo mode).
+**Drive mode** (1 agent): Suggest done
+> Feature `#<ID> <name>` is in progress (Drive mode).
 >
 > **Suggested next step:**
 > `{{CMD_PREFIX}}feature-done <ID>`

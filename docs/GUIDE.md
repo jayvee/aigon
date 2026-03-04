@@ -8,36 +8,81 @@ For a quick overview and getting started, see the main [README.md](../README.md)
 
 ## Table of Contents
 
-1. [Detailed Research Lifecycle](#detailed-research-lifecycle)
-2. [Detailed Feature Lifecycle](#detailed-feature-lifecycle)
-3. [Detailed Feedback Lifecycle](#detailed-feedback-lifecycle)
-4. [Agent Status Tracking](#agent-status-tracking)
-5. [The Big Picture: Closing the Loop](#the-big-picture-closing-the-loop)
-6. [Hooks Deep Dive](#hooks-deep-dive)
-7. [Project Profiles](#project-profiles)
-8. [Local Dev Proxy](#local-dev-proxy)
-9. [Opening Worktrees](#opening-worktrees)
-10. [Configuration](#configuration)
-11. [Multi-Agent Evaluation Examples](#multi-agent-evaluation-examples)
-12. [Contributing / Developing Aigon](#contributing--developing-aigon)
+1. [Command Surfaces (CLI vs In-Agent)](#command-surfaces-cli-vs-in-agent)
+2. [Detailed Research Lifecycle](#detailed-research-lifecycle)
+3. [Detailed Feature Lifecycle](#detailed-feature-lifecycle)
+4. [Detailed Feedback Lifecycle](#detailed-feedback-lifecycle)
+5. [Agent Status Tracking](#agent-status-tracking)
+6. [The Big Picture: Closing the Loop](#the-big-picture-closing-the-loop)
+7. [Hooks Deep Dive](#hooks-deep-dive)
+8. [Project Profiles](#project-profiles)
+9. [Local Dev Proxy](#local-dev-proxy)
+10. [Opening Worktrees](#opening-worktrees)
+11. [Configuration](#configuration)
+12. [Multi-Agent Evaluation Examples](#multi-agent-evaluation-examples)
+13. [Contributing / Developing Aigon](#contributing--developing-aigon)
+
+---
+
+## Command Surfaces (CLI vs In-Agent)
+
+Aigon runs on two command surfaces:
+
+- **CLI context**: `aigon ...` in a normal shell
+- **In-agent context**: slash commands inside an active agent session
+
+This is independent from workflow mode (Drive/Fleet/Autopilot/Swarm).
+
+### Start here (practical default)
+
+1. Start in an **in-agent session** when defining work (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) so you can iterate conversationally.
+2. Stay **in-agent** for execution (`feature-implement`, `feature-review`, `research-conduct`, `research-synthesize`).
+3. Use **CLI context** for orchestration and terminal operations (`feature-setup`, `worktree-open`, `feature-eval`, `feature-done`, `feature-cleanup`), especially from the main repo.
+
+### Surface recommendations
+
+| Command Group | Preferred Surface | Notes |
+|---|---|---|
+| Spec authoring/refinement (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) | In-agent | Best for back-and-forth definition and scope shaping |
+| Agent execution (`feature-implement`, `feature-review`, `research-conduct`, `research-synthesize`) | In-agent | Best when an agent session is already active |
+| Setup/orchestration (`init`, `install-agent`, `update`, `feature-setup`, `research-setup`, `worktree-open`, `feature-done`, `feature-cleanup`) | CLI | Repo/worktree operations and coordination |
+| Infra/config (`config`, `profile`, `proxy-setup`, `dev-server`, `conductor`) | CLI | Machine/project configuration and services |
+
+### Mode × surface matrix
+
+| Mode | CLI Context | In-Agent Context |
+|---|---|---|
+| Drive | Fully supported | Fully supported |
+| Fleet | Fully supported (strong for orchestration) | Fully supported (strong for per-agent execution) |
+| Autopilot | Primary entry point (`feature-implement --autonomous`) | Supported when already in-session |
+| Swarm | Primary entry point (`feature-setup ... --autonomous`) | Limited manual use after launch (agents run autonomously) |
+
+The matrix describes common usage, not hard restrictions. In general, both surfaces are available; the best choice depends on whether you're iterating with an agent or orchestrating repo/worktree state.
+
+### Common confusion clarified
+
+- **“Do I need to start inside an agent?”** Not required, but recommended for spec definition and iterative refinement.
+- **“Can I stay CLI-only?”** Yes. CLI-only is supported, especially for terminal-first workflows and automation.
+- **“Is CLI optional?”** Yes. Most day-to-day feature/research authoring and execution can happen inside agent sessions via slash commands.
+- **“Why does `feature-implement` behave differently?”** In shell context, it can launch an agent. In-agent context, it provides instruction flow in the active session.
 
 ---
 
 ## Detailed Feature Lifecycle
 
-### Fast-Track (Solo Branch)
+### Fast-Track (Drive Branch)
 
 For features where you want to go from idea to implementation immediately:
 
-* **Now:** `/aigon:feature-now dark-mode` (or `aigon feature-now dark-mode`) — if `dark-mode` matches an existing feature in the inbox, it runs prioritise → setup → implement. Otherwise it creates a new spec directly in `/in-progress`, assigns an ID, creates a solo branch, and commits atomically. Either way, you go from name to implementation in one session.
+* **Now:** `/aigon:feature-now dark-mode` (or `aigon feature-now dark-mode`) — if `dark-mode` matches an existing feature in the inbox, it runs prioritise → setup → implement. Otherwise it creates a new spec directly in `/in-progress`, assigns an ID, creates a Drive branch, and commits atomically. Either way, you go from name to implementation in one session.
 * **Implement:** `aigon feature-implement <ID>` (launches the default `cc` agent from a plain shell) or `aigon feature-implement <ID> --agent=cx` (launches Codex). Inside an agent session use `/aigon:feature-implement <ID>` (or `/aigon-feature-implement <ID>` for Cursor, `/prompts:aigon-feature-implement <ID>` for Codex).
 * **Done:** `/aigon:feature-done <ID>` (or `aigon feature-done <ID>`) merges and completes.
 
 This skips the inbox/backlog/setup steps entirely. Use the slash command for the full guided experience.
 
-### Solo Mode (Single Agent)
+### Drive Mode (Single Agent)
 
-Solo mode supports two workspace styles: **branch** (work in the current repo) or **worktree** (isolated directory for parallel development).
+Drive mode supports two workspace styles: **branch** (work in the current repo) or **worktree** (isolated directory for parallel development).
 
 1.  **Create:** `/aigon:feature-create "Dark Mode"` (or `aigon feature-create "Dark Mode"`) creates a templated spec in `/inbox`.
     * The agent **explores the codebase** before writing the spec to understand existing architecture, patterns, and constraints.
@@ -61,16 +106,16 @@ Solo mode supports two workspace styles: **branch** (work in the current repo) o
     * Review the fix commits before proceeding
 7.  **Finish:** `/aigon:feature-done 108` (or `aigon feature-done 108`)
     * Merges the branch and archives the log.
-    * For solo worktree mode, the agent is auto-detected — no need to specify it.
+    * For Drive mode (worktree), the agent is auto-detected — no need to specify it.
 
-### Arena Mode (Multi-Agent Competition)
+### Fleet Mode (Multi-Agent Competition)
 
 Run multiple agents in competition to find the optimal solution.
 
 1.  **Create:** `/aigon:feature-create "Dark Mode"` (or `aigon feature-create "Dark Mode"`) creates a templated spec in `/inbox`.
     * The agent **explores the codebase** before writing the spec.
 2.  **Prioritise:** `/aigon:feature-prioritise dark-mode` (or `aigon feature-prioritise dark-mode`) assigns an ID and moves to `/backlog`.
-3.  **Setup Arena:** `/aigon:feature-setup 108 cc gg cx` (or `aigon feature-setup 108 cc gg cx`)
+3.  **Setup Fleet:** `/aigon:feature-setup 108 cc gg cx` (or `aigon feature-setup 108 cc gg cx`)
     * Moves Spec to `/03-in-progress`.
     * Creates agent-specific **Git Branches** (`feature-108-cc-dark-mode`, `feature-108-gg-dark-mode`, `feature-108-cx-dark-mode`).
     * Creates **Git Worktrees** in a grouped folder:
@@ -83,7 +128,7 @@ Run multiple agents in competition to find the optimal solution.
     * With Warp: Opens all agents side-by-side and auto-starts each with `/aigon:feature-implement 108`.
     * Single agent: Opens one worktree with agent CLI pre-loaded.
     * With VS Code: Opens the folder; run `aigon feature-implement 108` in the integrated terminal — Aigon detects no active session and launches the agent automatically. Alternatively run `/aigon:feature-implement 108` inside an already-open agent session.
-    * **Arena mismatch protection:** If `--agent=gg` is specified inside a `feature-108-cc-*` worktree, Aigon exits with a clear error instead of launching the wrong agent.
+    * **Fleet mismatch protection:** If `--agent=gg` is specified inside a `feature-108-cc-*` worktree, Aigon exits with a clear error instead of launching the wrong agent.
     * Each agent builds the feature independently in their isolated worktree.
     * Each agent creates **tasks from the acceptance criteria** and *must* fill out their Implementation Log.
 5.  **Cross-Agent Review (Optional):** Before evaluation, have different agents review each implementation:
@@ -125,7 +170,7 @@ Run multiple agents in competition to find the optimal solution.
 
 ## Detailed Research Lifecycle
 
-### Solo Mode (Single Agent)
+### Drive Mode (Single Agent)
 
 * **Create:** `/aigon:research-create "API Design"` (or `aigon research-create "API Design"`) creates a templated topic in `/01-inbox`. The agent **explores the codebase** before writing the topic to understand relevant existing code and constraints.
 * **Prioritise:** `/aigon:research-prioritise api-design` (or `aigon research-prioritise api-design`) moves it to `/02-backlog` and assigns a global ID.
@@ -134,13 +179,13 @@ Run multiple agents in competition to find the optimal solution.
 * **Done:** `/aigon:research-done 05` (or `aigon research-done 05`) moves to `/04-done`.
 * **Output:** The research file becomes a complete record, with suggested features in the Output section.
 
-### Arena Mode (Multi-Agent Research)
+### Fleet Mode (Multi-Agent Research)
 
 Run multiple agents to get diverse perspectives on a research topic.
 
 * **Create:** `/aigon:research-create "API Design"` (or `aigon research-create "API Design"`) creates a templated topic in `/01-inbox`. The agent **explores the codebase** first.
 * **Prioritise:** `/aigon:research-prioritise api-design` (or `aigon research-prioritise api-design`) moves it to `/02-backlog` and assigns a global ID.
-* **Setup Arena:** `/aigon:research-setup 05 cc gg cx` (or `aigon research-setup 05 cc gg cx`)
+* **Setup Fleet:** `/aigon:research-setup 05 cc gg cx` (or `aigon research-setup 05 cc gg cx`)
     * Moves topic to `/03-in-progress`.
     * Creates **separate findings files** for each agent in `logs/`:
         * `research-05-cc-findings.md` (Claude)
@@ -472,10 +517,10 @@ Define hooks in `docs/aigon-hooks.md`. Aigon automatically detects and runs hook
 
 ## pre-feature-setup
 
-Creates database branches for each agent worktree (arena mode).
+Creates database branches for each agent worktree (Fleet mode).
 
 ```bash
-if [ "$AIGON_MODE" = "arena" ]; then
+if [ "$AIGON_MODE" = "fleet" ]; then
   for agent in $AIGON_AGENTS; do
     neon branches create --name "feature-${AIGON_FEATURE_ID}-${agent}"
   done
@@ -490,7 +535,7 @@ echo "Setup complete for feature $AIGON_FEATURE_ID in $AIGON_MODE mode"
 
 ## pre-feature-cleanup
 
-Clean up database branches before removing worktrees (arena mode).
+Clean up database branches before removing worktrees (Fleet mode).
 
 ```bash
 for agent in $AIGON_AGENTS; do
@@ -505,14 +550,14 @@ done
 |------|-------------|
 | `pre-feature-now` | Runs before fast-track feature creation |
 | `post-feature-now` | Runs after fast-track feature creation completes |
-| `pre-feature-setup` | Runs before creating branch (solo) or worktrees (arena) |
+| `pre-feature-setup` | Runs before creating branch (Drive) or worktrees (Fleet) |
 | `post-feature-setup` | Runs after setup completes |
 | `pre-feature-implement` | Runs before implementation begins |
 | `post-feature-implement` | Runs after implementation setup |
 | `pre-feature-done` | Runs before merging a feature |
 | `post-feature-done` | Runs after a feature is merged |
-| `pre-feature-cleanup` | Runs before cleaning up arena worktrees |
-| `post-feature-cleanup` | Runs after arena cleanup |
+| `pre-feature-cleanup` | Runs before cleaning up Fleet worktrees |
+| `post-feature-cleanup` | Runs after Fleet cleanup |
 
 ### Environment Variables
 
@@ -522,12 +567,12 @@ Hooks have access to context via environment variables:
 |----------|-------------|--------------|
 | `AIGON_COMMAND` | The command being run | All hooks |
 | `AIGON_PROJECT_ROOT` | Root directory of the project | All hooks |
-| `AIGON_MODE` | Current mode: "solo" or "arena" | Feature commands |
+| `AIGON_MODE` | Current mode: "drive" or "fleet" | Feature commands |
 | `AIGON_FEATURE_ID` | Feature ID (e.g., "01") | Feature commands |
 | `AIGON_FEATURE_NAME` | Feature name slug | Feature commands |
-| `AIGON_AGENTS` | Space-separated list of agents | feature-setup (arena), feature-cleanup |
-| `AIGON_AGENT` | Current agent name | feature-implement (arena), feature-done (arena) |
-| `AIGON_WORKTREE_PATH` | Path to current worktree | feature-implement (arena) |
+| `AIGON_AGENTS` | Space-separated list of agents | feature-setup (Fleet), feature-cleanup |
+| `AIGON_AGENT` | Current agent name | feature-implement (Fleet), feature-done (Fleet) |
+| `AIGON_WORKTREE_PATH` | Path to current worktree | feature-implement (Fleet) |
 
 ### Hook Behavior
 
@@ -545,7 +590,7 @@ aigon hooks list
 
 ## Project Profiles
 
-Aigon auto-detects your project type and adapts arena behavior accordingly. For non-web projects (iOS, Android, libraries), this means no PORT assignment, no `.env.local` creation, and appropriate test instructions in templates.
+Aigon auto-detects your project type and adapts Fleet behavior accordingly. For non-web projects (iOS, Android, libraries), this means no PORT assignment, no `.env.local` creation, and appropriate test instructions in templates.
 
 ### Auto-detection
 
@@ -583,7 +628,7 @@ The profile is stored in `.aigon/config.json` alongside the existing `.aigon/ver
 
 ### Port Configuration
 
-For `web` and `api` profiles, Aigon reads `PORT` from your `.env.local` or `.env` file and derives arena agent ports using fixed offsets:
+For `web` and `api` profiles, Aigon reads `PORT` from your `.env.local` or `.env` file and derives Fleet agent ports using fixed offsets:
 
 ```
 PORT=3400 in .env → cc=3401, gg=3402, cx=3403, cu=3404
@@ -596,7 +641,7 @@ A port summary is shown during `aigon init`, `aigon update`, `aigon install-agen
 ```
 📋 Ports (from .env.local PORT=3400):
    Main:  3400
-   Arena: cc=3401, gg=3402, cx=3403, cu=3404
+   Fleet: cc=3401, gg=3402, cx=3403, cu=3404
 ```
 
 If no PORT is found, Aigon falls back to profile defaults (3001-3004 for web, 8001-8004 for api) and suggests setting one.
@@ -905,7 +950,7 @@ After setting up a feature with worktrees, use `/aigon:worktree-open` (or `aigon
 /aigon:worktree-open 55 cc
 # or: aigon worktree-open 55 cc
 
-# Open all arena agents side-by-side (Warp split panes)
+# Open all Fleet agents side-by-side (Warp split panes)
 /aigon:worktree-open 55 --all
 # or: aigon worktree-open 55 --all
 
@@ -920,7 +965,7 @@ After setting up a feature with worktrees, use `/aigon:worktree-open` (or `aigon
 
 ### Terminal Behavior
 
-- **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with the `feature-implement` slash command. Arena (`--all`) and parallel modes open split panes. Each pane echoes its port label on launch (e.g., `🔌 Claude — Port 3401`). Panes are ordered by port offset (cc, gg, cx, cu).
+- **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with the `feature-implement` slash command. Fleet (`--all`) and parallel modes open split panes. Each pane echoes its port label on launch (e.g., `🔌 Claude — Port 3401`). Panes are ordered by port offset (cc, gg, cx, cu).
 - **VS Code / Cursor**: Opens the folder; you'll need to run the agent command manually (shown in output). Split pane modes print commands for manual setup.
 
 ---
@@ -944,7 +989,7 @@ aigon config init --global                  # Create global config
 # Set values (dot-notation for nested keys)
 aigon config set profile web                # Project: set profile
 aigon config set --global terminal warp     # Global: set terminal
-aigon config set arena.testInstructions "run npm test"
+aigon config set fleet.testInstructions "run npm test"
 
 # Get values (shows where the value comes from)
 aigon config get terminal                   # → warp (from ~/.aigon/config.json)
@@ -999,7 +1044,7 @@ Creates `.aigon/config.json` with the auto-detected profile:
 - `profile`: Project profile (`web`, `api`, `ios`, `android`, `library`, `generic`)
 - `agents.{id}.cli`: Override the CLI command for each agent
 - `agents.{id}.implementFlag`: Override CLI flags to control permission prompts
-- `arena.testInstructions`: Custom test instructions for arena mode
+- `fleet.testInstructions`: Custom test instructions for Fleet mode
 
 ### CLI Flag Overrides
 
