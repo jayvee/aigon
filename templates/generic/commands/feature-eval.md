@@ -1,7 +1,7 @@
 <!-- description: Evaluate feature <ID> - code review or comparison -->
 # aigon-feature-eval
 
-Evaluate a feature implementation. Works in both solo mode (code review) and arena mode (comparison).
+Evaluate a feature implementation. Works in both Drive mode (code review) and Fleet mode (comparison).
 
 ## Argument Resolution
 
@@ -27,7 +27,7 @@ aigon feature-eval {{ARG1_SYNTAX}} --allow-same-model-judge
 This will:
 - Move the spec to `04-in-evaluation/` (if not already there)
 - Create an evaluation template at `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`
-- Detect mode (solo or arena)
+- Detect mode (Drive or Fleet)
 - Warn if the evaluator shares a provider family with the implementer (same-family bias detection)
 - Commit the changes
 
@@ -42,7 +42,7 @@ Read the feature spec in `./docs/specs/features/04-in-evaluation/feature-{{ARG1_
 
 ## Step 3: Review the implementation(s)
 
-### Solo Mode (Code Review)
+### Drive Mode (Code Review)
 
 Review the single implementation:
 
@@ -51,7 +51,7 @@ Review the single implementation:
 3. Check if the implementation meets the spec requirements
 4. Verify code quality, testing, documentation, security
 
-### Arena Mode (Comparison)
+### Fleet Mode (Comparison)
 
 Review each agent's implementation:
 
@@ -69,7 +69,7 @@ Review each agent's implementation:
 
 Update `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`:
 
-### Solo Mode
+### Drive Mode
 
 Complete the code review checklist:
 - Spec Compliance
@@ -83,7 +83,7 @@ Add notes on:
 - Areas for Improvement
 - Approval decision (Approved / Needs Changes)
 
-### Arena Mode
+### Fleet Mode
 
 Fill in the evaluation table scoring each implementation on:
 - Code Quality
@@ -97,7 +97,7 @@ Document:
 
 ## Step 5: Present evaluation and STOP
 
-### Solo Mode
+### Drive Mode
 
 After completing the evaluation:
 
@@ -115,7 +115,7 @@ Once the user approves, tell them to run:
 {{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}}
 ```
 
-### Arena Mode
+### Fleet Mode
 
 After completing the evaluation:
 
@@ -143,5 +143,5 @@ For example: `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}} cc` if Claude's impleme
 
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
 
-- **Solo mode:** `{{CMD_PREFIX}}feature-done <ID>`
-- **Arena mode:** `{{CMD_PREFIX}}feature-done <ID> <winning-agent>`
+- **Drive mode:** `{{CMD_PREFIX}}feature-done <ID>`
+- **Fleet mode:** `{{CMD_PREFIX}}feature-done <ID> <winning-agent>`

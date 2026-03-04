@@ -1,15 +1,15 @@
-<!-- description: Setup research <ID> [agents...] - prepare for solo or arena mode -->
+<!-- description: Setup research <ID> [agents...] - prepare for Drive or Fleet mode -->
 # aigon-research-setup
 
-Prepare to conduct research in either solo or arena mode.
+Prepare to conduct research in either Drive or Fleet mode.
 
 ## Usage
 
 ```bash
-# Solo mode (single agent)
+# Drive mode (single agent)
 aigon research-setup {{ARG1_SYNTAX}}
 
-# Arena mode (multiple agents)
+# Fleet mode (multiple agents)
 aigon research-setup {{ARG1_SYNTAX}} <agent1> <agent2> [agent3...]
 ```
 
@@ -23,10 +23,10 @@ If no ID is provided, or the ID doesn't match an existing topic in the backlog:
 ## Mode Selection
 
 The mode is determined automatically based on parameters:
-- **No agents**: Solo mode - one agent researches the topic
-- **2+ agents**: Arena mode - multiple agents research in parallel
+- **No agents**: Drive mode - one agent researches the topic
+- **2+ agents**: Fleet mode - multiple agents research in parallel
 
-## Solo Mode
+## Drive Mode
 
 Sets up for a single agent to research the topic.
 
@@ -43,7 +43,7 @@ Next steps:
 {{CMD_PREFIX}}research-conduct 05     # Conduct the research
 ```
 
-## Arena Mode
+## Fleet Mode
 
 Sets up for multiple agents to research the same topic in parallel.
 
@@ -65,9 +65,9 @@ Next steps:
 
 ## Important Notes
 
-- **Solo mode**: Agent writes findings directly to the main research doc
-- **Arena mode**: Each agent writes ONLY to their own findings file
-- Arena mode requires at least 2 agents
+- **Drive mode**: Agent writes findings directly to the main research doc
+- **Fleet mode**: Each agent writes ONLY to their own findings file
+- Fleet mode requires at least 2 agents
 - Findings files are created in `docs/specs/research-topics/logs/`
 
 
@@ -75,7 +75,7 @@ Next steps:
 
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
 
-- **Solo mode**: `{{CMD_PREFIX}}research-conduct <ID>`
-- **Arena mode**: `{{CMD_PREFIX}}research-open <ID>`
+- **Drive mode**: `{{CMD_PREFIX}}research-conduct <ID>`
+- **Fleet mode**: `{{CMD_PREFIX}}research-open <ID>`
 
 ARGUMENTS: {{ARG_SYNTAX}}

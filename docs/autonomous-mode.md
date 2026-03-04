@@ -1,6 +1,6 @@
-# Ralph: Autonomous Implementation Loops
+# Autonomous Mode: Implementation Loops
 
-Ralph is Aigon's autonomous retry loop for feature implementation. Instead of writing code once and hoping it works, Ralph runs an agent in a loop — implement, validate, repeat — until your tests go green.
+Autonomous mode is Aigon's autonomous retry loop for feature implementation. Instead of writing code once and hoping it works, autonomous mode runs an agent in a loop — implement, validate, repeat — until your tests go green.
 
 Named after [the original pattern by Geoffrey Huntley](https://ghuntley.com/ralph/) and similar implementations like [chief](https://github.com/minicodemonkey/chief) that treat autonomous iteration as the primary development loop.
 
@@ -9,7 +9,7 @@ Named after [the original pattern by Geoffrey Huntley](https://ghuntley.com/ralp
 ## How it works
 
 ```
-aigon feature-implement <ID> --ralph
+aigon feature-implement <ID> --autonomous
 ```
 
 Each iteration:
@@ -20,7 +20,7 @@ Each iteration:
 5. **Loop or stop** — if everything passes, done; if not, start the next iteration with failure context baked into the prompt
 
 ```
-🔁 Ralph Loop: Feature 36 - spot-count-badge
+🔁 Autonomous Loop: Feature 36 - spot-count-badge
    Agent: cc
    Iterations: 1..4
    Validation: npm run build
@@ -45,14 +45,14 @@ Each iteration:
    [Project] npm run build   ✅
    [Feature] npx playwright test tests/feature-36.spec.ts   ✅
 
-✅ Ralph loop succeeded on iteration 2.
+✅ Autonomous loop succeeded on iteration 2.
 ```
 
 ---
 
 ## Validation stack
 
-Ralph runs two tiers of validation after each agent iteration:
+Autonomous mode runs two tiers of validation after each agent iteration:
 
 ### 1. Project-level validation
 
@@ -68,7 +68,7 @@ Configured in `.aigon/config.json`:
 
 This is your fast safety net — runs on every iteration. Use TypeScript compilation, a build step, or a broad test suite. It stops the loop early if the agent breaks something fundamental.
 
-If no `validationCommand` is set, Ralph uses profile-aware defaults:
+If no `validationCommand` is set, autonomous mode uses profile-aware defaults:
 
 | Profile | Default commands |
 |---------|-----------------|
@@ -106,22 +106,22 @@ npm run type-check || exit 2
 
 ## The TDD pattern (most loops)
 
-The most effective Ralph setup is **write a failing test first**, then let Ralph iterate until it passes. This is the same discipline as TDD, but the loop runs itself.
+The most effective autonomous mode setup is **write a failing test first**, then let autonomous mode iterate until it passes. This is the same discipline as TDD, but the loop runs itself.
 
 ```
-write spec → write failing test → run Ralph → tests go green
+write spec → write failing test → run autonomous mode → tests go green
 ```
 
 **Step 1**: Write the feature spec with clear acceptance criteria.
 
 **Step 2**: Write a test file that will **fail** before the feature is implemented. Put it in `## Validation`.
 
-**Step 3**: Run Ralph:
+**Step 3**: Run autonomous mode:
 ```bash
-aigon feature-implement 36 --ralph --max-iterations=4
+aigon feature-implement 36 --autonomous --max-iterations=4
 ```
 
-The agent reads the test, implements code to make it pass, commits, and Ralph runs the test. If it still fails, the error output becomes context for the next iteration.
+The agent reads the test, implements code to make it pass, commits, and autonomous mode runs the test. If it still fails, the error output becomes context for the next iteration.
 
 ### What drives multiple iterations
 
@@ -139,20 +139,20 @@ The agent reads the test, implements code to make it pass, commits, and Ralph ru
 - Validation is only `npm run build`
 - Feature is pure logic with no edge cases
 
-If you find Ralph always succeeds in one iteration, your validation isn't strict enough or your spec is too prescriptive.
+If you find autonomous mode always succeeds in one iteration, your validation isn't strict enough or your spec is too prescriptive.
 
 ---
 
 ## Smart Validation (Feature 17)
 
-After your validation commands pass, Ralph evaluates each acceptance criterion from your spec:
+After your validation commands pass, autonomous mode evaluates each acceptance criterion from your spec:
 
 - **Objective criteria** (mentions tests, build, lint, type-check) — automatically marked as passed when commands pass
 - **Subjective criteria** (code quality, pattern adherence, UX) — evaluated via a single LLM call against the git diff and implementation log
 
 Results are logged in the progress file and fed back to the next iteration's prompt if anything fails. Checkboxes in the spec are updated as criteria are verified.
 
-Run Smart Validation standalone (outside Ralph):
+Run Smart Validation standalone (outside autonomous mode):
 
 ```bash
 aigon feature-validate 36
@@ -165,7 +165,7 @@ aigon feature-validate 36 --no-update  # evaluate without writing checkboxes
 ## Options
 
 ```bash
-aigon feature-implement <ID> --ralph [options]
+aigon feature-implement <ID> --autonomous [options]
 
 --max-iterations=N    Max loop iterations (default: 5, or set in .aigon/config.json)
 --agent=<id>          Which agent CLI to use: cc, gg, cx, cu (default: cc)
@@ -187,13 +187,13 @@ Set project defaults in `.aigon/config.json`:
 
 ## Progress file
 
-Ralph writes a progress log after each iteration:
+Autonomous mode writes a progress log after each iteration:
 
 ```
-docs/specs/features/logs/feature-36-ralph-progress.md
+docs/specs/features/logs/feature-36-autonomous-progress.md
 ```
 
-Each entry records: iteration number, status, agent, validation result, criteria pass/fail, files changed, and commits made. If Ralph is interrupted (`Ctrl+C`), re-running the same command **resumes from where it left off** using this file.
+Each entry records: iteration number, status, agent, validation result, criteria pass/fail, files changed, and commits made. If autonomous mode is interrupted (`Ctrl+C`), re-running the same command **resumes from where it left off** using this file.
 
 ---
 
@@ -223,24 +223,24 @@ The `## Validation` section should test **this feature only** — not the whole 
 
 ### Pre-start the dev server for Playwright
 
-If your Playwright config has `webServer` with `reuseExistingServer: true`, start the dev server before running Ralph:
+If your Playwright config has `webServer` with `reuseExistingServer: true`, start the dev server before running autonomous mode:
 
 ```bash
 # Terminal 1
 npm run dev
 
 # Terminal 2
-aigon feature-implement 36 --ralph
+aigon feature-implement 36 --autonomous
 ```
 
 Each validation reuses the running server instead of cold-starting it — much faster.
 
 ### Use `--dry-run` to preview
 
-Before running Ralph for real, check what would execute:
+Before running autonomous mode for real, check what would execute:
 
 ```bash
-aigon feature-implement 36 --ralph --dry-run
+aigon feature-implement 36 --autonomous --dry-run
 ```
 
 Shows the full prompt, validation commands, and criteria list without touching the codebase.
@@ -279,7 +279,14 @@ Feature spec `## Acceptance Criteria`:
 Run:
 
 ```bash
-aigon feature-implement 36 --ralph --max-iterations=4
+aigon feature-implement 36 --autonomous --max-iterations=4
 ```
 
 Expected: 2–3 iterations. Iteration 1 typically fails on missing `data-testid` or wrong test selector. Iteration 2 fixes it. Iteration 3 (if needed) cleans up edge cases.
+
+## History
+
+Autonomous mode was originally called "Ralph mode", named after the
+[Ralph pattern by Geoffrey Huntley](https://ghuntley.com/ralph/) and
+[similar implementations](https://github.com/minicodemonkey/chief)
+that treat autonomous iteration as the primary development loop.
