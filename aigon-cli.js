@@ -5510,7 +5510,7 @@ const commands = {
         console.log(`   Fleet:            aigon feature-setup ${paddedId} <agent1> <agent2> [agent3]`);
     },
     'feature-now': (args) => {
-        const name = args[0];
+        const name = args.join(' ').trim();
         if (!name) return console.error("Usage: aigon feature-now <name>\nFast-track: create + prioritise + setup in one step (Drive mode)\nExample: aigon feature-now dark-mode");
 
         const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
