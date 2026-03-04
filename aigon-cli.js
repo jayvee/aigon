@@ -7710,7 +7710,7 @@ Branch: \`${soloBranch}\`
             console.error(`❌ Failed: ${e.message}`);
         }
     },
-    'check-version': () => {
+    'check-version': (args = []) => {
         const currentVersion = getAigonVersion();
         const installedVersion = getInstalledVersion();
 
@@ -7722,12 +7722,12 @@ Branch: \`${soloBranch}\`
         if (!installedVersion || compareVersions(currentVersion, installedVersion) !== 0) {
             const from = installedVersion || 'unknown';
             console.log(`🔄 Aigon version mismatch (project: ${from}, CLI: ${currentVersion}). Updating...`);
-            commands['update']();
+            commands['update'](args);
         } else {
             console.log(`✅ Aigon is up to date (v${currentVersion})`);
         }
     },
-    'update': () => {
+    'update': (args = []) => {
         const currentVersion = getAigonVersion();
         const installedVersion = getInstalledVersion();
 
@@ -7762,6 +7762,7 @@ Branch: \`${soloBranch}\`
         try {
             // Track changed files for summary
             const changes = { created: [], updated: [], unchanged: [] };
+            const noCommit = args.includes('--no-commit');
 
             // 1. Detect installed agents from project artifacts
             const installedAgents = [];
@@ -7878,8 +7879,9 @@ Branch: \`${soloBranch}\`
             // Summary - version changed OR file changes means we updated
             const versionChanged = installedVersion && currentVersion && installedVersion !== currentVersion;
             let hasFileChanges = false;
+            const aigonPaths = 'docs/ AGENTS.md CLAUDE.md .claude/ .cursor/ .codex/ .gemini/ .aigon/';
             try {
-                const gitStatus = execSync('git status --porcelain docs/ AGENTS.md CLAUDE.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null', { encoding: 'utf8' });
+                const gitStatus = execSync(`git status --porcelain ${aigonPaths} 2>/dev/null`, { encoding: 'utf8' });
                 hasFileChanges = gitStatus.trim().length > 0;
             } catch (e) {
                 // Not a git repo - can't determine
@@ -7889,8 +7891,19 @@ Branch: \`${soloBranch}\`
                 console.log(`\n✅ Aigon updated to v${currentVersion || 'unknown'}.`);
                 showPortSummary();
                 if (hasFileChanges) {
-                    console.log(`\n📝 To commit these changes:`);
-                    console.log(`   git add docs/ AGENTS.md CLAUDE.md .claude/ .cursor/ .codex/ .gemini/ 2>/dev/null; git commit -m "chore: update Aigon to v${currentVersion || 'latest'}"`);
+                    if (noCommit) {
+                        console.log(`\n📝 To commit these changes:`);
+                        console.log(`   git add ${aigonPaths} 2>/dev/null; git commit -m "chore: update Aigon to v${currentVersion || 'latest'}"`);
+                    } else {
+                        try {
+                            execSync(`git add ${aigonPaths} 2>/dev/null`, { encoding: 'utf8' });
+                            execSync(`git commit -m "chore: update Aigon to v${currentVersion || 'latest'}"`, { encoding: 'utf8' });
+                            console.log(`\n📦 Committed Aigon update (v${currentVersion || 'latest'}).`);
+                        } catch (e) {
+                            console.log(`\n⚠️  Could not auto-commit: ${e.message}`);
+                            console.log(`   git add ${aigonPaths} 2>/dev/null; git commit -m "chore: update Aigon to v${currentVersion || 'latest'}"`);
+                        }
+                    }
                 }
             } else {
                 console.log(`\n✅ Aigon is already up to date (v${currentVersion || 'unknown'}).`);
