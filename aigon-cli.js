@@ -123,10 +123,16 @@ function printAgentContextWarning(commandName, id) {
     console.log(`  /aigon:${commandName}${idPart}`);
     if (hasRalph) {
         console.log('');
-        console.log(`Or, let Ralph handle it autonomously:`);
-        console.log(`  aigon ${commandName}${idPart} --ralph`);
+        console.log(`Or, run in Autopilot mode:`);
+        console.log(`  aigon ${commandName}${idPart} --autonomous`);
     }
     console.log('');
+}
+
+// --- Mode Normalization (legacy alias resolution) ---
+function normalizeMode(mode) {
+    const aliases = { solo: 'drive', arena: 'fleet', 'solo-wt': 'drive-wt' };
+    return aliases[mode] || mode;
 }
 
 // --- Provider Family Map (for self-evaluation bias detection) ---
@@ -304,12 +310,27 @@ function saveGlobalConfig(config) {
 }
 
 /**
+ * Resolve config key aliases (new names → legacy internal names)
+ * @param {string} path - Config key path (e.g., "fleet.testInstructions")
+ * @returns {string} Resolved path (e.g., "arena.testInstructions")
+ */
+function resolveConfigKeyAlias(path) {
+    const aliases = { fleet: 'arena', autonomous: 'ralph' };
+    const parts = path.split('.');
+    if (aliases[parts[0]]) {
+        parts[0] = aliases[parts[0]];
+    }
+    return parts.join('.');
+}
+
+/**
  * Get a nested value from an object using dot-notation path
  * @param {Object} obj - Object to get value from
- * @param {string} path - Dot-notation path (e.g., "arena.testInstructions")
+ * @param {string} path - Dot-notation path (e.g., "fleet.testInstructions")
  * @returns {any} Value at path, or undefined if not found
  */
 function getNestedValue(obj, path) {
+    path = resolveConfigKeyAlias(path);
     const keys = path.split('.');
     let current = obj;
     for (const key of keys) {
@@ -324,10 +345,11 @@ function getNestedValue(obj, path) {
 /**
  * Set a nested value in an object using dot-notation path
  * @param {Object} obj - Object to set value in
- * @param {string} path - Dot-notation path (e.g., "arena.testInstructions")
+ * @param {string} path - Dot-notation path (e.g., "fleet.testInstructions")
  * @param {any} value - Value to set
  */
 function setNestedValue(obj, path, value) {
+    path = resolveConfigKeyAlias(path);
     const keys = path.split('.');
     let current = obj;
     for (let i = 0; i < keys.length - 1; i++) {
@@ -475,10 +497,10 @@ function showPortSummary() {
     if (result) {
         console.log(`\n📋 Ports (from ${result.source} PORT=${result.port}):`);
         console.log(`   Main:  ${result.port}`);
-        console.log(`   Arena: ${portsStr}`);
+        console.log(`   Fleet: ${portsStr}`);
     } else {
         console.log(`\n⚠️  No PORT found in .env.local or .env`);
-        console.log(`   Using defaults — Main: 3000, Arena: ${portsStr}`);
+        console.log(`   Using defaults — Main: 3000, Fleet: ${portsStr}`);
         console.log(`   💡 Add PORT=<number> to .env to avoid clashes with other projects`);
     }
 }
@@ -1103,14 +1125,15 @@ function getActiveProfile() {
         setupEnvLine: preset.setupEnvLine
     };
 
-    // Apply user overrides from .aigon/config.json
-    if (projectConfig.arena) {
-        if (projectConfig.arena.testInstructions) {
-            profile.testInstructions = projectConfig.arena.testInstructions;
+    // Apply user overrides from .aigon/config.json (fleet is the new name; arena is legacy alias)
+    const fleetConfig = projectConfig.fleet || projectConfig.arena;
+    if (fleetConfig) {
+        if (fleetConfig.testInstructions) {
+            profile.testInstructions = fleetConfig.testInstructions;
         }
     }
 
-    // Derive arena ports from .env/.env.local PORT (overrides profile defaults)
+    // Derive fleet ports from .env/.env.local PORT (overrides profile defaults)
     if (profile.devServer.enabled) {
         const result = readBasePort();
         if (result) {
@@ -1688,7 +1711,7 @@ function executeHook(hookName, context = {}) {
         AIGON_COMMAND: context.command || '',
         AIGON_FEATURE_ID: context.featureId || '',
         AIGON_FEATURE_NAME: context.featureName || '',
-        AIGON_MODE: context.mode || '',  // 'solo' or 'arena'
+        AIGON_MODE: context.mode || '',  // 'drive', 'fleet', 'autopilot', or 'swarm'
         AIGON_AGENTS: context.agents ? context.agents.join(' ') : '',
         AIGON_AGENT: context.agent || '',
         AIGON_WORKTREE_PATH: context.worktreePath || ''
@@ -2486,7 +2509,7 @@ function organizeLogFiles(featureNum, winnerAgentId) {
         if (!file.startsWith(`feature-${featureNum}-`)) return;
         const srcPath = path.join(logsRoot, file);
         // In multi-agent mode, winner has agent ID in filename
-        // In solo mode, there's no agent ID so it's always the winner
+        // In drive mode, there's no agent ID so it's always the winner
         const isWinner = !winnerAgentId || file.includes(`-${winnerAgentId}-`) || file.includes(`-${winnerAgentId}.`) || file === `feature-${featureNum}-log.md`;
         if (isWinner) {
             const destPath = path.join(selectedDir, file);
@@ -2825,7 +2848,7 @@ const COMMAND_ARG_HINTS = {
     'feature-now': '<existing-feature-name> OR <feature-description>',
     'feature-prioritise': '<feature-name or letter>',
     'feature-setup': '<ID> [agents...]',
-    'feature-implement': '<ID> [--agent=<cc|gg|cx|cu>] [--ralph] [--max-iterations=N] [--auto-submit] [--no-auto-submit] [--dry-run]',
+    'feature-implement': '<ID> [--agent=<cc|gg|cx|cu>] [--autonomous] [--max-iterations=N] [--auto-submit] [--no-auto-submit] [--dry-run]',
     'feature-validate': '<ID> [--dry-run] [--no-update]',
     'feature-eval': '<ID> [--allow-same-model-judge]',
     'feature-review': '<ID>',
@@ -3263,13 +3286,18 @@ function displayKanbanSection(title, typeConfig, options, mapping = {}, startLet
             if (folder === '03-in-progress' && item.id) {
                 const wts = worktreeMap[item.id] || [];
                 if (wts.length > 1) {
-                    // Arena mode - show agent count
-                    display += ` [${wts.length}]`;
+                    // Fleet mode - show [F] with agent count
+                    display += ` [F:${wts.length}]`;
                 } else if (wts.length === 1) {
-                    // Solo worktree
-                    display += ' [wt]';
+                    // Single worktree — check if autopilot (ralph-progress file exists)
+                    const progressFile = path.join(PATHS.features.root, 'logs', `feature-${item.id}-ralph-progress.md`);
+                    if (fs.existsSync(progressFile)) {
+                        display += ' [AP]';
+                    } else {
+                        display += ' [wt]';
+                    }
                 } else {
-                    // Solo branch - check if it's current
+                    // Drive branch - check if it's current
                     const branchName = `${typeConfig.prefix}-${item.id}-${item.name}`;
                     if (currentBranch === branchName) {
                         display += ' *';
@@ -3402,7 +3430,7 @@ function displayListSection(title, typeConfig, options) {
             if (folder === '03-in-progress' && itemId) {
                 const wts = worktreeMap[itemId] || [];
                 if (wts.length === 0) {
-                    // Solo branch mode
+                    // Drive branch mode
                     const branchName = `${typeConfig.prefix}-${itemId}-${itemName}`;
                     let branchExists = false;
                     try {
@@ -3412,12 +3440,15 @@ function displayListSection(title, typeConfig, options) {
                         // Branch doesn't exist
                     }
                     const active = currentBranch === branchName ? ' *' : '';
-                    detail = branchExists ? `  solo${active}` : '';
+                    detail = branchExists ? `  Drive${active}` : '';
                 } else if (wts.length === 1) {
-                    detail = `  solo-wt (${wts[0].agent})`;
+                    // Single worktree — check if autopilot
+                    const progressFile = path.join(PATHS.features.root, 'logs', `feature-${itemId}-ralph-progress.md`);
+                    const apLabel = fs.existsSync(progressFile) ? 'Autopilot' : 'Drive-wt';
+                    detail = `  ${apLabel} (${wts[0].agent})`;
                 } else {
                     const agents = wts.map(w => w.agent).join(', ');
-                    detail = `  arena (${agents})`;
+                    detail = `  Fleet (${agents})`;
                 }
             }
 
@@ -3556,7 +3587,7 @@ function detectNodeTestCommand() {
 }
 
 function detectValidationCommand(profileName, projectConfig = {}) {
-    const configured = projectConfig?.ralph?.validationCommand;
+    const configured = projectConfig?.autonomous?.validationCommand || projectConfig?.ralph?.validationCommand;
     if (configured && typeof configured === 'string' && configured.trim()) {
         return configured.trim();
     }
@@ -3601,7 +3632,7 @@ function buildRalphPrompt({
         ? `\nCriteria feedback from previous iteration (items that still need attention):\n${criteriaFeedback}\n`
         : '';
 
-    return `You are iteration ${iteration} of ${maxIterations} for Feature ${featureNum} (${featureDesc}) in the Ralph loop.
+    return `You are iteration ${iteration} of ${maxIterations} for Feature ${featureNum} (${featureDesc}) in the Autopilot loop.
 
 Goal:
 - Implement/fix the feature so all validation checks pass.
@@ -3621,7 +3652,7 @@ Feature spec:
 ${specContent}
 --- SPEC END ---
 
-Prior Ralph progress:
+Prior Autopilot progress:
 --- PROGRESS START ---
 ${priorProgress || '(no prior progress)'}
 --- PROGRESS END ---
@@ -3681,7 +3712,7 @@ function ensureRalphCommit(featureNum, iteration) {
         };
     }
 
-    const message = `chore: ralph iteration ${iteration} for feature ${String(featureNum).padStart(2, '0')}`;
+    const message = `chore: autopilot iteration ${iteration} for feature ${String(featureNum).padStart(2, '0')}`;
 
     const addResult = spawnSync('git', ['add', '-A'], { stdio: 'inherit' });
     if (addResult.error || addResult.status !== 0) {
@@ -3842,7 +3873,7 @@ function runRalphValidation(validationCommand, dryRun = false) {
 
 function appendRalphProgressEntry(progressPath, featureNum, featureDesc, entry) {
     if (!fs.existsSync(progressPath)) {
-        const header = `# Ralph Progress: Feature ${featureNum} - ${featureDesc}\n\n`;
+        const header = `# Autopilot Progress: Feature ${featureNum} - ${featureDesc}\n\n`;
         safeWrite(progressPath, header);
     }
 
@@ -3872,11 +3903,11 @@ function runRalphCommand(args) {
     const options = parseCliOptions(args);
     const id = options._[0];
     if (!id) {
-        console.error(`Usage: aigon feature-implement <feature-id> --ralph [--max-iterations=N] [--agent=<id>] [--auto-submit] [--no-auto-submit] [--dry-run]`);
+        console.error(`Usage: aigon feature-implement <feature-id> --autonomous [--max-iterations=N] [--agent=<id>] [--auto-submit] [--no-auto-submit] [--dry-run]`);
         console.error(`\nExamples:`);
-        console.error(`  aigon feature-implement 16 --ralph`);
-        console.error(`  aigon feature-implement 16 --ralph --max-iterations=8 --agent=cx`);
-        console.error(`  aigon feature-implement 16 --ralph --auto-submit   # auto-submit on success`);
+        console.error(`  aigon feature-implement 16 --autonomous`);
+        console.error(`  aigon feature-implement 16 --autonomous --max-iterations=8 --agent=cx`);
+        console.error(`  aigon feature-implement 16 --autonomous --auto-submit   # auto-submit on success`);
         process.exitCode = 1;
         return;
     }
@@ -3897,7 +3928,8 @@ function runRalphCommand(args) {
     const [, featureNum, featureDesc] = match;
 
     const availableAgents = getAvailableAgents();
-    const configuredDefaultMax = loadProjectConfig()?.ralph?.maxIterations;
+    const pc = loadProjectConfig();
+    const configuredDefaultMax = pc?.autonomous?.maxIterations || pc?.ralph?.maxIterations;
     const defaultMaxIterations = Number.isInteger(configuredDefaultMax) && configuredDefaultMax > 0
         ? configuredDefaultMax
         : 5;
@@ -3920,8 +3952,8 @@ function runRalphCommand(args) {
     const dryRun = Boolean(getOptionValue(options, 'dry-run'));
 
     // --auto-submit / --no-auto-submit
-    // Arena mode defaults to auto-submit (user isn't watching); solo mode defaults to off.
-    // We'll resolve the actual default after detecting arena mode below.
+    // Fleet mode defaults to auto-submit (user isn't watching); drive mode defaults to off.
+    // We'll resolve the actual default after detecting fleet mode below.
     const autoSubmitFlagExplicit = getOptionValue(options, 'auto-submit');
     const noAutoSubmitFlagExplicit = getOptionValue(options, 'no-auto-submit');
 
@@ -3937,7 +3969,7 @@ function runRalphCommand(args) {
     // skipToAutoSubmit: loop already passed; honour --auto-submit if requested
     let skipToAutoSubmit = false;
     if (completedSuccess) {
-        console.log(`✅ Ralph loop already succeeded on iteration ${completedSuccess.number}.`);
+        console.log(`✅ Autopilot loop already succeeded on iteration ${completedSuccess.number}.`);
         console.log(`   Progress file: ./docs/specs/features/logs/feature-${featureNum}-ralph-progress.md`);
         skipToAutoSubmit = true;
     }
@@ -3955,7 +3987,7 @@ function runRalphCommand(args) {
 
     if (!skipToAutoSubmit) {
         const validationDisplay = profileValidations.map(v => v.cmd).join(', ') || '(not configured)';
-        console.log(`\n🔁 Ralph Loop: Feature ${featureNum} - ${featureDesc}`);
+        console.log(`\n🔁 Autopilot: Feature ${featureNum} - ${featureDesc}`);
         console.log(`   Agent: ${selectedAgent}`);
         console.log(`   Iterations: ${startIteration}..${maxIterations}`);
         console.log(`   Validation: ${validationDisplay}`);
@@ -4098,16 +4130,16 @@ function runRalphCommand(args) {
 
             if (status === 'Success') {
                 loopSucceeded = true;
-                console.log(`✅ Ralph loop succeeded on iteration ${iteration}.`);
+                console.log(`✅ Autopilot loop succeeded on iteration ${iteration}.`);
                 break;
             }
             if (status === 'Interrupted') {
-                console.log(`⏸️  Ralph loop interrupted on iteration ${iteration}. Re-run to resume.`);
+                console.log(`⏸️  Autopilot loop interrupted on iteration ${iteration}. Re-run to resume.`);
                 process.exitCode = 130;
                 break;
             }
             if (iteration === maxIterations) {
-                console.log(`❌ Ralph loop reached max iterations (${maxIterations}) without passing validation.`);
+                console.log(`❌ Autopilot loop reached max iterations (${maxIterations}) without passing validation.`);
                 process.exitCode = 1;
                 break;
             }
@@ -4118,29 +4150,29 @@ function runRalphCommand(args) {
     }
 
     if (loopSucceeded) {
-        // Detect arena mode: count worktrees matching this feature ID
-        let isArenaMode = false;
+        // Detect fleet mode: count worktrees matching this feature ID
+        let isFleetMode = false;
         try {
             const wtOutput = execSync('git worktree list', { encoding: 'utf8' });
             const featureWorktrees = wtOutput.split('\n').filter(line => {
                 const wtPath = line.split(/\s+/)[0] || '';
                 return path.basename(wtPath).match(new RegExp(`^feature-${featureNum}-[a-z]{2}-`));
             });
-            isArenaMode = featureWorktrees.length >= 1; // in a worktree = arena
+            isFleetMode = featureWorktrees.length >= 1; // in a worktree = fleet
         } catch (e) { /* not in a git repo or no worktrees */ }
 
-        // Resolve auto-submit: explicit flags win; otherwise arena=on, solo=off
+        // Resolve auto-submit: explicit flags win; otherwise fleet=on, drive=off
         let autoSubmit;
         if (noAutoSubmitFlagExplicit !== undefined) {
             autoSubmit = false;
         } else if (autoSubmitFlagExplicit !== undefined) {
             autoSubmit = true;
         } else {
-            autoSubmit = isArenaMode;
+            autoSubmit = isFleetMode;
         }
 
         if (autoSubmit && !dryRun) {
-            console.log(`\n🚀 Auto-submitting (${isArenaMode ? 'arena' : 'solo'} mode)...`);
+            console.log(`\n🚀 Auto-submitting (${isFleetMode ? 'Fleet' : 'Drive'} mode)...`);
 
             // 1. Write/update the implementation log
             const logsDir = path.join(PATHS.features.root, 'logs');
@@ -4149,7 +4181,7 @@ function runRalphCommand(args) {
             if (fs.existsSync(logsDir)) {
                 const all = fs.readdirSync(logsDir)
                     .filter(f => f.startsWith(logPattern) && f.endsWith('-log.md'));
-                // In arena/worktree, prefer agent-specific log
+                // In fleet/worktree, prefer agent-specific log
                 const branch = (() => { try { return execSync('git branch --show-current', { encoding: 'utf8' }).trim(); } catch (e) { return ''; } })();
                 const agentMatch = branch.match(/^feature-\d+-([a-z]{2})-/);
                 if (agentMatch) {
@@ -4165,12 +4197,12 @@ function runRalphCommand(args) {
                 const iterations = parseRalphProgress(progressContent);
                 const successEntry = iterations.find(e => e.success);
                 const numIterations = iterations.length;
-                const logSummary = `\n## Ralph Auto-Submit\n\nCompleted in ${numIterations} iteration${numIterations !== 1 ? 's' : ''}.\n` +
+                const logSummary = `\n## Autopilot Auto-Submit\n\nCompleted in ${numIterations} iteration${numIterations !== 1 ? 's' : ''}.\n` +
                     (successEntry ? `Passed validation on iteration ${successEntry.number}: ${successEntry.validation || 'OK'}\n` : '') +
                     `\nProgress: \`docs/specs/features/logs/feature-${featureNum}-ralph-progress.md\`\n`;
 
                 let logContent = fs.readFileSync(logPath, 'utf8');
-                // Append Ralph summary to log
+                // Append Autopilot summary to log
                 logContent = logContent.trimEnd() + '\n' + logSummary;
 
                 // Update status front matter to 'submitted'
@@ -4186,7 +4218,7 @@ function runRalphCommand(args) {
                 // 2. Commit the log
                 try {
                     execSync(`git add "${logPath}"`, { stdio: 'pipe' });
-                    execSync(`git commit -m "docs: auto-submit log for feature ${featureNum} (ralph)"`, { stdio: 'pipe' });
+                    execSync(`git commit -m "docs: auto-submit log for feature ${featureNum} (autopilot)"`, { stdio: 'pipe' });
                     console.log(`   ✅ Log committed: ${logFile}`);
                 } catch (e) {
                     // Nothing to commit or already committed
@@ -4194,8 +4226,8 @@ function runRalphCommand(args) {
                 }
             }
 
-            console.log(`\n✅ Auto-submitted. Ready for ${isArenaMode ? 'evaluation' : 'review'}.`);
-            if (isArenaMode) {
+            console.log(`\n✅ Auto-submitted. Ready for ${isFleetMode ? 'evaluation' : 'review'}.`);
+            if (isFleetMode) {
                 console.log(`   Next: return to main repo and run: aigon feature-eval ${featureNum}`);
             } else {
                 console.log(`   Next: run: aigon feature-done ${featureNum}`);
@@ -4262,8 +4294,8 @@ function getPackageJsonScripts() {
 }
 
 function getProfileValidationCommands(profileName, projectConfig = {}) {
-    // 1. Explicit config takes priority
-    const configured = projectConfig?.ralph?.validationCommand;
+    // 1. Explicit config takes priority (autonomous is new key; ralph is legacy alias)
+    const configured = projectConfig?.autonomous?.validationCommand || projectConfig?.ralph?.validationCommand;
     if (configured && typeof configured === 'string' && configured.trim()) {
         return [{ label: 'Project', cmd: configured.trim() }];
     }
@@ -5111,10 +5143,10 @@ const commands = {
     'research-setup': (args) => {
         const id = args[0];
         const agentIds = args.slice(1);
-        const mode = agentIds.length > 0 ? 'arena' : 'solo';
+        const mode = agentIds.length > 0 ? 'fleet' : 'drive';
 
         if (!id) {
-            return console.error("Usage: aigon research-setup <ID> [agents...]\n\nExamples:\n  aigon research-setup 05              # Solo mode\n  aigon research-setup 05 cc gg        # Arena mode");
+            return console.error("Usage: aigon research-setup <ID> [agents...]\n\nExamples:\n  aigon research-setup 05              # Drive mode\n  aigon research-setup 05 cc gg        # Fleet mode");
         }
 
         // Find in backlog or in-progress (may already be started)
@@ -5133,8 +5165,8 @@ const commands = {
             console.log(`ℹ️  Research already in progress: ${found.file}`);
         }
 
-        if (mode === 'arena') {
-            // Arena mode: Create findings files for each agent
+        if (mode === 'fleet') {
+            // Fleet mode: Create findings files for each agent
             const logsDir = path.join(PATHS.research.root, 'logs');
             if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
 
@@ -5165,7 +5197,7 @@ const commands = {
                 }
             });
 
-            console.log(`\n🏟️  Arena mode started with ${agentIds.length} agents!`);
+            console.log(`\n🚛 Fleet mode started with ${agentIds.length} agents!`);
             console.log(`\n📋 Research topic: ./docs/specs/research-topics/03-in-progress/${found.file}`);
             console.log(`\n📂 Agent findings files:`);
             agentIds.forEach(agentId => {
@@ -5183,8 +5215,8 @@ const commands = {
             console.log(`     [Open each agent terminal] ${cmdPrefix}research-conduct ${researchNum}`);
             console.log(`\n   When done: aigon research-done ${researchNum}`);
         } else {
-            // Solo mode: Just move to in-progress
-            console.log(`\n🚀 Solo mode. Research moved to in-progress.`);
+            // Drive mode: Just move to in-progress
+            console.log(`\n🚗 Drive mode. Research moved to in-progress.`);
             console.log(`📋 Topic: ./docs/specs/research-topics/03-in-progress/${found.file}`);
             console.log(`\n💡 Next: Run agent with /aigon-research-conduct ${researchNum}`);
             console.log(`   When done: aigon research-done ${researchNum}`);
@@ -5193,7 +5225,7 @@ const commands = {
     'research-conduct': (args) => {
         const id = args[0];
         printAgentContextWarning('research-conduct', id);
-        if (!id) return console.error("Usage: aigon research-conduct <ID>\n\nRun this after 'aigon research-setup <ID>'\n\nExamples:\n  aigon research-conduct 05     # In solo mode\n  aigon research-conduct 05     # In arena mode (writes to your findings file)");
+        if (!id) return console.error("Usage: aigon research-conduct <ID>\n\nRun this after 'aigon research-setup <ID>'\n\nExamples:\n  aigon research-conduct 05     # In Drive mode\n  aigon research-conduct 05     # In Fleet mode (writes to your findings file)");
 
         // Find the research topic
         let found = findFile(PATHS.research, id, ['03-in-progress']);
@@ -5203,7 +5235,7 @@ const commands = {
         if (!match) return console.warn("⚠️  Could not parse filename.");
         const [_, num, desc] = match;
 
-        // Check for arena mode by looking for findings files
+        // Check for fleet mode by looking for findings files
         const logsDir = path.join(PATHS.research.root, 'logs');
         let findingsFiles = [];
         if (fs.existsSync(logsDir)) {
@@ -5213,13 +5245,13 @@ const commands = {
             );
         }
 
-        const isArenaMode = findingsFiles.length > 0;
+        const isFleetMode = findingsFiles.length > 0;
 
         console.log(`\n📋 Research ${num}: ${desc.replace(/-/g, ' ')}`);
-        console.log(`   Mode: ${isArenaMode ? '🏟️  Arena' : '🚀 Solo'}`);
+        console.log(`   Mode: ${isFleetMode ? '🚛 Fleet' : '🚗 Drive'}`);
         console.log(`\n📄 Topic: ./docs/specs/research-topics/03-in-progress/${found.file}`);
 
-        if (isArenaMode) {
+        if (isFleetMode) {
             console.log(`\n📂 Findings files:`);
             findingsFiles.forEach(file => {
                 const agentMatch = file.match(/^research-\d+-(\w+)-findings\.md$/);
@@ -5263,7 +5295,7 @@ const commands = {
         const researchNum = match ? match[1] : id;
         const researchName = match ? match[2] : 'research';
 
-        // Check for arena mode by looking for findings files
+        // Check for fleet mode by looking for findings files
         const logsDir = path.join(PATHS.research.root, 'logs');
         let findingsFiles = [];
         if (fs.existsSync(logsDir)) {
@@ -5273,11 +5305,11 @@ const commands = {
             );
         }
 
-        const isArenaMode = findingsFiles.length > 0;
+        const isFleetMode = findingsFiles.length > 0;
 
-        if (isArenaMode && !forceComplete) {
-            // Arena mode: Show summary and suggest using research-synthesize
-            console.log(`\n📋 Research ${researchNum}: ${researchName.replace(/-/g, ' ')} - Arena Mode`);
+        if (isFleetMode && !forceComplete) {
+            // Fleet mode: Show summary and suggest using research-synthesize
+            console.log(`\n📋 Research ${researchNum}: ${researchName.replace(/-/g, ' ')} - Fleet Mode`);
             console.log(`\nFound ${findingsFiles.length} agent findings:\n`);
 
             findingsFiles.forEach(file => {
@@ -5299,11 +5331,11 @@ const commands = {
         // Move to done (both modes, or arena with --complete)
         moveFile(found, '04-done');
 
-        if (isArenaMode) {
-            console.log(`\n✅ Research ${researchNum} complete! (arena mode)`);
+        if (isFleetMode) {
+            console.log(`\n✅ Research ${researchNum} complete! (Fleet mode)`);
             console.log(`📂 Findings files preserved in: ./docs/specs/research-topics/logs/`);
         } else {
-            console.log(`\n✅ Research ${researchNum} complete! (solo mode)`);
+            console.log(`\n✅ Research ${researchNum} complete! (Drive mode)`);
         }
     },
     'research-open': (args) => {
@@ -5324,7 +5356,7 @@ const commands = {
             console.error(`Usage:`);
             console.error(`  aigon research-open <ID> [--terminal=<type>]`);
             console.error(`\nExamples:`);
-            console.error(`  aigon research-open 05              # Open all arena agents side-by-side`);
+            console.error(`  aigon research-open 05              # Open all Fleet agents side-by-side`);
             console.error(`  aigon research-open 05 --terminal=code # Open in VS Code (manual setup)`);
             return;
         }
@@ -5342,7 +5374,7 @@ const commands = {
         const [_, researchNum, researchName] = match;
         const paddedId = String(researchNum).padStart(2, '0');
 
-        // Check for arena mode by looking for findings files
+        // Check for fleet mode by looking for findings files
         const logsDir = path.join(PATHS.research.root, 'logs');
         let findingsFiles = [];
         if (fs.existsSync(logsDir)) {
@@ -5353,7 +5385,7 @@ const commands = {
         }
 
         if (findingsFiles.length === 0) {
-            return console.error(`❌ Research ${paddedId} is not in arena mode.\n\nTo start arena research:\n  aigon research-setup ${paddedId} cc gg cx\n\nFor solo research, open a terminal manually and run:\n  /aigon:research-conduct ${paddedId}`);
+            return console.error(`❌ Research ${paddedId} is not in Fleet mode.\n\nTo start Fleet research:\n  aigon research-setup ${paddedId} cc gg cx\n\nFor Drive research, open a terminal manually and run:\n  /aigon:research-conduct ${paddedId}`);
         }
 
         // Extract agent IDs from findings filenames
@@ -5426,7 +5458,7 @@ const commands = {
             }
         } else {
             // Non-Warp terminals: print manual setup instructions
-            console.log(`\n📋 Arena research ${paddedId} - ${researchName.replace(/-/g, ' ')}:`);
+            console.log(`\n📋 Fleet research ${paddedId} - ${researchName.replace(/-/g, ' ')}:`);
             console.log(`   (Side-by-side launch requires Warp terminal. Use --terminal=warp)\n`);
             agentConfigs.forEach(config => {
                 console.log(`   ${config.agent} (${config.agentName}):`);
@@ -5473,13 +5505,13 @@ const commands = {
 
         console.log(`📋 Assigned ID: ${paddedId}`);
         console.log(`🚀 Next steps:`);
-        console.log(`   Solo (branch):    aigon feature-setup ${paddedId}`);
-        console.log(`   Solo (worktree):  aigon feature-setup ${paddedId} <agent>`);
-        console.log(`   Arena:            aigon feature-setup ${paddedId} <agent1> <agent2> [agent3]`);
+        console.log(`   Drive (branch):   aigon feature-setup ${paddedId}`);
+        console.log(`   Drive (worktree): aigon feature-setup ${paddedId} <agent>`);
+        console.log(`   Fleet:            aigon feature-setup ${paddedId} <agent1> <agent2> [agent3]`);
     },
     'feature-now': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: aigon feature-now <name>\nFast-track: create + prioritise + setup in one step (solo branch)\nExample: aigon feature-now dark-mode");
+        if (!name) return console.error("Usage: aigon feature-now <name>\nFast-track: create + prioritise + setup in one step (Drive mode)\nExample: aigon feature-now dark-mode");
 
         const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -5498,7 +5530,7 @@ const commands = {
         const hookContext = {
             featureId: paddedId,
             featureName: slug,
-            mode: 'solo',
+            mode: 'drive',
             agents: []
         };
         if (!runPreHook('feature-now', hookContext)) {
@@ -5556,7 +5588,7 @@ const commands = {
         // Run post-hook
         runPostHook('feature-now', hookContext);
 
-        console.log(`\n🚀 Feature ${paddedId} ready for implementation!`);
+        console.log(`\n🚗 Feature ${paddedId} ready for implementation!`);
         console.log(`   Spec: ./docs/specs/features/03-in-progress/${filename}`);
         console.log(`   Log:  ./docs/specs/features/logs/${logName}`);
         console.log(`   Branch: ${branchName}`);
@@ -5566,10 +5598,10 @@ const commands = {
     'feature-setup': (args) => {
         const name = args[0];
         const agentIds = args.slice(1);
-        const mode = agentIds.length > 0 ? 'arena' : 'solo';
+        const mode = agentIds.length > 0 ? 'fleet' : 'drive';
 
         if (!name) {
-            return console.error("Usage: aigon feature-setup <ID> [agents...]\n\nExamples:\n  aigon feature-setup 55              # Solo mode (branch)\n  aigon feature-setup 55 cc           # Solo mode (worktree, for parallel development)\n  aigon feature-setup 55 cc gg cx cu  # Arena mode (multiple agents compete)");
+            return console.error("Usage: aigon feature-setup <ID> [agents...]\n\nExamples:\n  aigon feature-setup 55              # Drive mode (branch)\n  aigon feature-setup 55 cc           # Drive mode (worktree, for parallel development)\n  aigon feature-setup 55 cc gg cx cu  # Fleet mode (multiple agents compete)");
         }
 
         // Find the feature first to get context for hooks
@@ -5614,7 +5646,7 @@ const commands = {
                 runGit(`git commit -m "chore: start feature ${num} - move spec to in-progress"`);
                 console.log(`📝 Committed spec move to in-progress`);
             } catch (e) {
-                if (mode !== 'solo') {
+                if (mode !== 'drive') {
                     console.error(`❌ Could not commit spec move: ${e.message}`);
                     console.error(`   Worktrees require the spec move to be committed before creation.`);
                     console.error(`   Fix any uncommitted changes and try again.`);
@@ -5628,8 +5660,8 @@ const commands = {
         const logsDir = path.join(PATHS.features.root, 'logs');
         if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
 
-        if (mode === 'solo') {
-            // Solo mode: Create branch
+        if (mode === 'drive') {
+            // Drive mode: Create branch
             const branchName = `feature-${num}-${desc}`;
             try {
                 runGit(`git checkout -b ${branchName}`);
@@ -5655,10 +5687,10 @@ const commands = {
                 console.log(`📝 Log: ./docs/specs/features/logs/${logName}`);
             }
 
-            console.log(`\n🚀 Solo mode. Ready to implement in current directory.`);
+            console.log(`\n🚗 Drive mode. Ready to implement in current directory.`);
             console.log(`   When done: aigon feature-done ${num}`);
         } else {
-            // Arena/worktree mode: Create worktrees
+            // Fleet/worktree mode: Create worktrees
             const wtBase = getWorktreeBase();
             if (!fs.existsSync(wtBase)) {
                 fs.mkdirSync(wtBase, { recursive: true });
@@ -5715,7 +5747,7 @@ const commands = {
                             if (fs.existsSync(envLocalPath)) {
                                 envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
                             }
-                            envContent += `# Arena config for agent ${agentId}\n`;
+                            envContent += `# Fleet config for agent ${agentId}\n`;
                             envContent += `PORT=${port}\n`;
                             envContent += `AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
                             envContent += `AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
@@ -5731,7 +5763,7 @@ const commands = {
                         } else if (fs.existsSync(envLocalPath)) {
                             // Copy base .env.local and append banner vars
                             let envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
-                            envContent += `# Arena config for agent ${agentId}\n`;
+                            envContent += `# Fleet config for agent ${agentId}\n`;
                             envContent += `AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
                             envContent += `AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
                             envContent += `AIGON_FEATURE_ID=${paddedFeatureId}\n`;
@@ -5807,7 +5839,7 @@ const commands = {
                 const portSuffix = profile.devServer.enabled
                     ? ` (PORT=${profile.devServer.ports[agentIds[0]] || AGENT_CONFIGS[agentIds[0]]?.port || 3000})`
                     : '';
-                console.log(`\n🚀 Solo worktree created for parallel development!`);
+                console.log(`\n🚗 Drive worktree created for parallel development!`);
                 console.log(`\n📂 Worktree: ${wtBase}/feature-${num}-${agentIds[0]}-${desc}${portSuffix}`);
                 console.log(`\n💡 Next: Open the worktree with the agent CLI:`);
                 console.log(`   aigon worktree-open ${num}                    # Opens in configured terminal (default: Warp)`);
@@ -5815,7 +5847,7 @@ const commands = {
                 console.log(`\n   Or manually: Open the worktree and run /aigon-feature-implement ${num}`);
                 console.log(`   When done: aigon feature-done ${num}`);
             } else {
-                console.log(`\n🏁 Arena started with ${agentIds.length} agents!`);
+                console.log(`\n🏁 Fleet started with ${agentIds.length} agents!`);
                 console.log(`\n📂 Worktrees created:`);
                 agentIds.forEach(agentId => {
                     const portSuffix = profile.devServer.enabled
@@ -5840,7 +5872,7 @@ const commands = {
     'feature-implement': (args) => {
         const options = parseCliOptions(args);
         const id = options._[0];
-        const ralphRequested = getOptionValue(options, 'ralph');
+        const ralphRequested = getOptionValue(options, 'autonomous') || getOptionValue(options, 'ralph');
         if (ralphRequested) {
             return runRalphCommand(args);
         }
@@ -5851,7 +5883,7 @@ const commands = {
             "Examples:\n" +
             "  aigon feature-implement 55             # Launch default agent (cc) from shell\n" +
             "  aigon feature-implement 55 --agent=cx  # Launch Codex from shell\n" +
-            "  aigon feature-implement 55 --ralph     # Run Ralph autonomous loop\n" +
+            "  aigon feature-implement 55 --autonomous # Run Autopilot autonomous loop\n" +
             "  /aigon:feature-implement 55            # Inside agent session: show instructions"
         );
 
@@ -5878,7 +5910,7 @@ const commands = {
                 console.warn(`⚠️  Warning: Directory feature ID (${wtNum}) doesn't match argument (${num})`);
             }
 
-            // Count worktrees for this feature to distinguish solo-wt from arena
+            // Count worktrees for this feature to distinguish drive-wt from fleet
             let featureWorktreeCount = 0;
             try {
                 const wtOutput = execSync('git worktree list', { encoding: 'utf8' });
@@ -5890,13 +5922,13 @@ const commands = {
                     }
                 });
             } catch (e) {
-                // Default to arena if we can't count
+                // Default to fleet if we can't count
                 featureWorktreeCount = 2;
             }
 
-            mode = featureWorktreeCount > 1 ? 'arena' : 'solo-wt';
+            mode = featureWorktreeCount > 1 ? 'fleet' : 'drive-wt';
         } else {
-            mode = 'solo';
+            mode = 'drive';
         }
 
         // Resolve the agent to use, taking worktree context into account
@@ -5920,7 +5952,7 @@ const commands = {
                 resolvedAgent = agentId;
             }
         } else {
-            // Solo branch mode: default to cc
+            // Drive branch mode: default to cc
             if (agentArgRaw) {
                 const normalized = agentAliasMap[agentArgRaw.toLowerCase()] || agentArgRaw.toLowerCase();
                 if (!availableAgents.includes(normalized)) {
@@ -5945,17 +5977,17 @@ const commands = {
         if (agentId) {
             const agentConfig = AGENT_CONFIGS[agentId] || {};
             const agentName = agentConfig.name || agentId;
-            if (mode === 'arena') {
-                setTerminalTitle(`🏟️ Feature #${paddedNum} - ${agentName}`);
-                console.log(`\n🏟️  Arena Mode - Agent: ${agentId}`);
+            if (mode === 'fleet') {
+                setTerminalTitle(`🚛 Feature #${paddedNum} - ${agentName}`);
+                console.log(`\n🚛 Fleet Mode - Agent: ${agentId}`);
             } else {
-                setTerminalTitle(`🚀 Feature #${paddedNum} - ${agentName}`);
-                console.log(`\n🚀 Solo Mode (worktree) - Agent: ${agentId}`);
+                setTerminalTitle(`🚗 Feature #${paddedNum} - ${agentName}`);
+                console.log(`\n🚗 Drive Mode (worktree) - Agent: ${agentId}`);
             }
             console.log(`   Feature: ${num} - ${desc}`);
             console.log(`   Worktree: ${dirName}`);
         } else {
-            setTerminalTitle(`🚀 Feature #${paddedNum}`);
+            setTerminalTitle(`🚗 Feature #${paddedNum}`);
             try {
                 const currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
                 const expectedBranch = `feature-${num}-${desc}`;
@@ -5963,7 +5995,7 @@ const commands = {
                     console.warn(`⚠️  Warning: Current branch (${currentBranch}) doesn't match expected (${expectedBranch})`);
                     console.warn(`    Run 'aigon feature-setup ${num}' first.`);
                 }
-                console.log(`\n🚀 Solo Mode`);
+                console.log(`\n🚗 Drive Mode`);
                 console.log(`   Feature: ${num} - ${desc}`);
                 console.log(`   Branch: ${currentBranch}`);
             } catch (e) {
@@ -6027,7 +6059,7 @@ const commands = {
 
         // Show log file location
         const logDir = './docs/specs/features/logs/';
-        const logPattern = (mode === 'arena' || mode === 'solo-wt') ? `feature-${num}-${agentId}-*-log.md` : `feature-${num}-*-log.md`;
+        const logPattern = (mode === 'fleet' || mode === 'drive-wt') ? `feature-${num}-${agentId}-*-log.md` : `feature-${num}-*-log.md`;
         console.log(`📝 Log: ${logDir}${logPattern}`);
 
         console.log(`\n📝 Next Steps:`);
@@ -6038,12 +6070,12 @@ const commands = {
         console.log(`   5. Update the implementation log`);
         console.log(`   6. Commit the log file`);
 
-        if (mode === 'arena') {
+        if (mode === 'fleet') {
             console.log(`\n⚠️  IMPORTANT:`);
             console.log(`   - Do NOT run 'aigon feature-done' from a worktree`);
             console.log(`   - Return to main repo when done`);
             console.log(`   - Run 'aigon feature-eval ${num}' to compare implementations`);
-        } else if (mode === 'solo-wt') {
+        } else if (mode === 'drive-wt') {
             console.log(`\n⚠️  IMPORTANT:`);
             console.log(`   - Do NOT run 'aigon feature-done' from a worktree`);
             console.log(`   - Return to main repo when done`);
@@ -6061,7 +6093,7 @@ const commands = {
         const positionalArgs = args.filter(a => a !== '--allow-same-model-judge');
         const name = positionalArgs[0];
         printAgentContextWarning('feature-eval', name);
-        if (!name) return console.error("Usage: aigon feature-eval <ID> [--allow-same-model-judge]\n\nExamples:\n  aigon feature-eval 55     # Solo mode: code review\n  aigon feature-eval 55     # Arena mode: compare implementations\n  aigon feature-eval 55 --allow-same-model-judge  # Skip bias warning");
+        if (!name) return console.error("Usage: aigon feature-eval <ID> [--allow-same-model-judge]\n\nExamples:\n  aigon feature-eval 55     # Drive mode: code review\n  aigon feature-eval 55     # Fleet mode: compare implementations\n  aigon feature-eval 55 --allow-same-model-judge  # Skip bias warning");
 
         // Find the feature (may already be in evaluation)
         let found = findFile(PATHS.features, name, ['03-in-progress']);
@@ -6101,7 +6133,7 @@ const commands = {
             console.warn("⚠️  Could not list worktrees");
         }
 
-        const mode = worktrees.length > 1 ? 'arena' : 'solo';
+        const mode = worktrees.length > 1 ? 'fleet' : 'drive';
 
         // --- Cross-provider bias detection ---
         const evalSession = detectActiveAgentSession();
@@ -6110,8 +6142,8 @@ const commands = {
         const evalModel = evalCliConfig?.models?.['evaluate'] || null;
 
         if (!allowSameModel && evalAgent) {
-            if (mode === 'arena') {
-                // Arena: warn if evaluator matches ANY implementer's family
+            if (mode === 'fleet') {
+                // Fleet: warn if evaluator matches ANY implementer's family
                 const sameFamily = worktrees.filter(w => isSameProviderFamily(evalAgent, w.agent));
                 if (sameFamily.length > 0) {
                     const evalFamily = PROVIDER_FAMILIES[evalAgent] || evalAgent;
@@ -6175,13 +6207,13 @@ const commands = {
         if (!fs.existsSync(evalFile)) {
             let evalTemplate;
 
-            if (mode === 'arena') {
-                // Arena mode: comparison template
+            if (mode === 'fleet') {
+                // Fleet mode: comparison template
                 const agentList = worktrees.map(w => `- [ ] **${w.agent}** (${w.name}): \`${w.path}\``).join('\n');
 
                 evalTemplate = `# Evaluation: Feature ${num} - ${desc}
 
-**Mode:** Arena (Multi-agent comparison)
+**Mode:** Fleet (Multi-agent comparison)
 
 ## Spec
 See: \`./docs/specs/features/04-in-evaluation/${found.file}\`
@@ -6216,14 +6248,14 @@ ${worktrees.map(w => `#### ${w.agent} (${w.name})
 
 `;
             } else {
-                // Solo mode: code review template
-                // Determine branch name: if there's a solo worktree, use its branch name
+                // Drive mode: code review template
+                // Determine branch name: if there's a drive worktree, use its branch name
                 const soloBranch = worktrees.length === 1
                     ? `feature-${num}-${worktrees[0].agent}-${desc}`
                     : `feature-${num}-${desc}`;
                 evalTemplate = `# Evaluation: Feature ${num} - ${desc}
 
-**Mode:** Solo (Code review)
+**Mode:** Drive (Code review)
 
 ## Spec
 See: \`./docs/specs/features/04-in-evaluation/${found.file}\`
@@ -6293,13 +6325,13 @@ Branch: \`${soloBranch}\`
         }
 
         console.log(`\n📋 Feature ${num} ready for evaluation`);
-        console.log(`   Mode: ${mode === 'arena' ? '🏟️  Arena (comparison)' : '🚀 Solo (code review)'}`);
+        console.log(`   Mode: ${mode === 'fleet' ? '🚛 Fleet (comparison)' : '🚗 Drive (code review)'}`);
         if (evalAgent) {
             const modelDisplay = evalModel ? evalModel : '(default)';
             console.log(`   Evaluator: ${evalAgent} (${PROVIDER_FAMILIES[evalAgent] || 'unknown'}) — model: ${modelDisplay}`);
         }
 
-        if (mode === 'arena') {
+        if (mode === 'fleet') {
             console.log(`\n📂 Worktrees to compare:`);
             worktrees.forEach(w => console.log(`   ${w.agent}: ${w.path}`));
             console.log(`\n🔍 Review each implementation, then pick a winner.`);
@@ -6341,11 +6373,11 @@ Branch: \`${soloBranch}\`
         }
         const name = positionalArgs[0];
         const agentId = positionalArgs[1]; // Optional - if provided, multi-agent mode
-        if (!name) return console.error("Usage: aigon feature-done <ID> [agent] [--adopt <agents...|all>] [--keep-branch]\n  Without agent: solo mode (merges feature-ID-desc)\n  With agent: multi-agent mode (merges feature-ID-agent-desc, cleans up worktree)\n  --adopt: print diffs from losing agents for selective adoption (arena only)\n  --keep-branch: Don't delete the local branch after merge");
+        if (!name) return console.error("Usage: aigon feature-done <ID> [agent] [--adopt <agents...|all>] [--keep-branch]\n  Without agent: Drive mode (merges feature-ID-desc)\n  With agent: Fleet mode (merges feature-ID-agent-desc, cleans up worktree)\n  --adopt: print diffs from losing agents for selective adoption (Fleet only)\n  --keep-branch: Don't delete the local branch after merge");
 
         // Validate --adopt is only used in arena (multi-agent) mode
         if (adoptAgents.length > 0 && !agentId) {
-            return console.error("❌ --adopt is only available in arena (multi-agent) mode.\n   Usage: aigon feature-done <ID> <winning-agent> --adopt <agents...|all>");
+            return console.error("❌ --adopt is only available in Fleet (multi-agent) mode.\n   Usage: aigon feature-done <ID> <winning-agent> --adopt <agents...|all>");
         }
 
         const found = findFile(PATHS.features, name, ['04-in-evaluation', '03-in-progress']);
@@ -6375,10 +6407,10 @@ Branch: \`${soloBranch}\`
             worktreePath = `${getWorktreeBase()}/feature-${num}-${agentId}-${desc}`;
             mode = 'multi-agent';
         } else {
-            // Solo mode: feature-55-dark-mode
+            // Drive mode: feature-55-dark-mode
             branchName = `feature-${num}-${desc}`;
             worktreePath = null;
-            mode = 'solo';
+            mode = 'drive';
         }
 
         // Check if branch exists before attempting merge
@@ -6394,7 +6426,7 @@ Branch: \`${soloBranch}\`
                 return;
             }
 
-            // Solo branch not found — check for solo worktree (auto-detect)
+            // Drive branch not found — check for Drive worktree (auto-detect)
             let featureWorktrees = [];
             try {
                 const wtOutput = execSync('git worktree list', { encoding: 'utf8' });
@@ -6414,12 +6446,12 @@ Branch: \`${soloBranch}\`
             }
 
             if (featureWorktrees.length === 1) {
-                // Auto-detect: single worktree = solo worktree mode
+                // Auto-detect: single worktree = Drive worktree mode
                 const detectedAgent = featureWorktrees[0].agent;
                 branchName = `feature-${num}-${detectedAgent}-${desc}`;
                 worktreePath = featureWorktrees[0].path;
                 mode = 'multi-agent';
-                console.log(`🔍 Auto-detected solo worktree (agent: ${detectedAgent})`);
+                console.log(`🔍 Auto-detected Drive worktree (agent: ${detectedAgent})`);
 
                 // Verify this branch exists
                 try {
@@ -6507,7 +6539,7 @@ Branch: \`${soloBranch}\`
             // May fail if no changes to commit, that's ok
         }
 
-        // Clean up worktree if it exists (multi-agent mode or solo-wt)
+        // Clean up worktree if it exists (multi-agent mode or drive-wt)
         let worktreeRemoved = false;
         if (worktreePath && fs.existsSync(worktreePath)) {
             try {
@@ -6779,7 +6811,7 @@ Branch: \`${soloBranch}\`
         const logFiles = fs.readdirSync(logsDir)
             .filter(f => f.startsWith(logPattern) && f.endsWith('-log.md') && !f.includes('/selected/') && !f.includes('/alternatives/'));
 
-        // For solo mode, exclude files with an agent suffix (2-letter code after the ID)
+        // For drive mode, exclude files with an agent suffix (2-letter code after the ID)
         const filteredLogs = agentId
             ? logFiles
             : logFiles.filter(f => !f.match(new RegExp(`^feature-${featureNum}-[a-z]{2}-`)));
@@ -8016,7 +8048,7 @@ Branch: \`${soloBranch}\`
                 console.log(`\n   Profile: ${detectedProfile} (auto-detected)`);
                 console.log(`\n   You can customize:`);
                 console.log(`   - profile: Project profile (web, api, ios, android, library, generic)`);
-                console.log(`   - arena.testInstructions: Custom test instructions`);
+                console.log(`   - fleet.testInstructions: Custom test instructions`);
                 console.log(`   - agents.{id}.cli: Override CLI command for each agent`);
                 console.log(`   - agents.{id}.implementFlag: Override CLI flags`);
                 console.log(`\n💡 Run 'aigon update' to regenerate templates with the new profile.`);
@@ -8031,7 +8063,7 @@ Branch: \`${soloBranch}\`
                 console.error(`\n  Examples:`);
                 console.error(`    aigon config set profile web`);
                 console.error(`    aigon config set --global terminal warp`);
-                console.error(`    aigon config set arena.testInstructions "run npm test"`);
+                console.error(`    aigon config set fleet.testInstructions "run npm test"`);
                 return;
             }
             
@@ -8078,7 +8110,7 @@ Branch: \`${soloBranch}\`
                 console.error(`\n  Examples:`);
                 console.error(`    aigon config get profile`);
                 console.error(`    aigon config get terminal`);
-                console.error(`    aigon config get arena.testInstructions`);
+                console.error(`    aigon config get fleet.testInstructions`);
                 return;
             }
             
@@ -8290,7 +8322,7 @@ Branch: \`${soloBranch}\`
             console.error(`❌ Feature ID is required.\n`);
             console.error(`Usage:`);
             console.error(`  aigon worktree-open <ID> [agent]         Open single worktree`);
-            console.error(`  aigon worktree-open <ID> --all           Open all arena worktrees side-by-side`);
+            console.error(`  aigon worktree-open <ID> --all           Open all Fleet worktrees side-by-side`);
             console.error(`  aigon worktree-open <ID> <ID>... [--agent=<code>]`);
             console.error(`                                           Open multiple features side-by-side`);
             return;
@@ -8425,7 +8457,7 @@ Branch: \`${soloBranch}\`
                 }
             } else {
                 const desc = worktreeConfigs[0].desc;
-                console.log(`\n📋 Arena worktrees for feature ${paddedId} - ${desc}:`);
+                console.log(`\n📋 Fleet worktrees for feature ${paddedId} - ${desc}:`);
                 console.log(`   (Side-by-side launch requires Warp terminal. Use --terminal=warp)\n`);
                 worktreeConfigs.forEach(wt => {
                     console.log(`   ${wt.agent}:`);
@@ -8534,7 +8566,7 @@ Branch: \`${soloBranch}\`
         }
 
         if (warpClosed) {
-            console.log('\n✅ Warp arena tab closed.');
+            console.log('\n✅ Warp Fleet tab closed.');
         } else {
             console.log('\n✅ Done. (Close the Warp tab manually if still open.)');
         }
@@ -9241,32 +9273,38 @@ Dev Server (web/api profiles):
   dev-server gc                     Remove entries for dead processes
   dev-server url                    Print URL for current context (for scripting)
 
+Modes:
+  🚗 Drive      One agent, you guide each stage
+  🚛 Fleet      Multiple agents in parallel, you observe and guide
+  ✈️  Autopilot  One agent runs autonomously end-to-end
+  🐝 Swarm      Multiple agents run autonomously in parallel
+
 Worktree:
   worktree-open <ID> [agent] [--terminal=<type>]
                                     Open worktree in terminal with agent CLI
-  worktree-open <ID> --all          Open all arena worktrees side-by-side
+  worktree-open <ID> --all          Open all Fleet worktrees side-by-side
   worktree-open <ID> <ID>... [--agent=<code>]
                                     Open multiple features side-by-side
   sessions-close <ID>               Kill all agent sessions for a feature/research ID and close Warp tab
 
-Feature Commands (unified for solo and arena modes):
+Feature Commands (Drive, Fleet, Autopilot, Swarm):
   feature-create <name>             Create feature spec in inbox
   feature-now <name>                Fast-track: inbox match → prioritise + setup + implement; or create new + implement
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
-  feature-setup <ID> [agents...]    Setup for solo (branch) or arena (worktrees)
-  feature-implement <ID> [--agent=<id>] [--ralph]  Implement feature; launches agent from shell, shows instructions inside agent session
+  feature-setup <ID> [agents...]    Setup for Drive (branch) or Fleet (worktrees)
+  feature-implement <ID> [--agent=<id>] [--autonomous]  Implement feature; launches agent from shell, shows instructions inside agent session
   feature-validate <ID>             Evaluate acceptance criteria (smart validation)
   feature-eval <ID>                 Create evaluation (code review or comparison)
   feature-done <ID> [agent]         Merge and complete feature
-  feature-cleanup <ID>              Clean up arena worktrees and branches
+  feature-cleanup <ID>              Clean up Fleet worktrees and branches
 
-Research (unified for solo and arena modes):
+Research Commands:
   research-create <name>            Create research topic in inbox
   research-prioritise <name>        Move research from inbox to backlog (assigns ID)
-  research-setup <ID> [agents...]   Setup solo (no agents) or arena (with agents) research
-  research-open <ID>                Open all arena agents side-by-side for parallel research
+  research-setup <ID> [agents...]   Setup Drive (no agents) or Fleet (with agents) research
+  research-open <ID>                Open all Fleet agents side-by-side for parallel research
   research-conduct <ID>             Conduct research (agent writes findings)
-  research-done <ID> [--complete]   Complete research (shows summary in arena mode)
+  research-done <ID> [--complete]   Complete research (shows summary in Fleet mode)
 
 Feedback:
   feedback-create <title>           Create feedback doc in inbox (assigns next ID)
@@ -9296,21 +9334,21 @@ Examples:
   aigon feature-create "dark-mode"     # Create new feature spec
   aigon feature-now dark-mode          # Fast-track: inbox match or create new + implement
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
-  aigon feature-setup 55               # Solo mode (creates branch)
-  aigon feature-setup 55 cc gg cx cu      # Arena mode (creates worktrees)
+  aigon feature-setup 55               # Drive mode (creates branch)
+  aigon feature-setup 55 cc gg cx cu      # Fleet mode (creates worktrees)
   aigon worktree-open 55 cc            # Open worktree in Warp with Claude CLI
-  aigon worktree-open 55 --all         # Open all arena agents side-by-side
+  aigon worktree-open 55 --all         # Open all Fleet agents side-by-side
   aigon worktree-open 100 101 102      # Open features side-by-side (parallel)
-  aigon sessions-close 55              # Kill all arena agents + close Warp tab
+  aigon sessions-close 55              # Kill all Fleet agents + close Warp tab
   aigon feature-implement 55             # Launch default agent (cc) from plain shell
   aigon feature-implement 55 --agent=cx  # Launch Codex from plain shell
-  aigon feature-implement 55 --ralph               # Run autonomous Ralph loop
-  aigon feature-implement 55 --ralph --max-iterations=8 --agent=cx  # Ralph with options
+  aigon feature-implement 55 --autonomous               # Run Autopilot loop
+  aigon feature-implement 55 --autonomous --max-iterations=8 --agent=cx  # Autopilot with options
   aigon feature-validate 55            # Evaluate acceptance criteria (smart validation)
   aigon feature-validate 55 --dry-run  # Show what would be checked without running
   aigon feature-eval 55                # Evaluate implementations
-  aigon feature-done 55 cc             # Merge Claude's arena implementation
-  aigon feature-cleanup 55 --push      # Clean up losing arena branches
+  aigon feature-done 55 cc             # Merge Claude's Fleet implementation
+  aigon feature-cleanup 55 --push      # Clean up losing Fleet branches
 
   # Port health check
   aigon doctor                        # Show port assignments, flag conflicts
@@ -9328,11 +9366,11 @@ Examples:
   # Research workflow
   aigon research-create "api-design"   # Create new research topic
   aigon research-prioritise api-design # Assign ID, move to backlog
-  aigon research-setup 05              # Solo mode (one agent)
-  aigon research-setup 05 cc gg        # Arena mode (multiple agents)
-  aigon research-open 05               # Open all arena agents side-by-side
+  aigon research-setup 05              # Drive mode (one agent)
+  aigon research-setup 05 cc gg        # Fleet mode (multiple agents)
+  aigon research-open 05               # Open all Fleet agents side-by-side
   aigon research-conduct 05            # Agent conducts research
-  aigon research-done 05               # Shows findings summary (arena)
+  aigon research-done 05               # Shows findings summary (Fleet)
   aigon research-done 05 --complete    # Complete research
 
   # Deploy
