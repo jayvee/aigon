@@ -79,11 +79,13 @@ This will:
 - Create an implementation log
 - Commit everything atomically
 
-Note the feature ID and file paths from the output.
+Note the feature ID and exact file paths from the output.
 
 ### B3: Read and write the spec
 
-Read the created spec file in `./docs/specs/features/03-in-progress/feature-*-{{ARG1_SYNTAX}}.md`
+Read the exact spec path printed by the CLI (`Spec: ...`).
+
+Do **not** guess the filename from the raw argument text; `aigon feature-now` slugifies names and may trim punctuation/spacing.
 
 Rewrite the spec sections with content informed by your codebase exploration and the conversation context:
 - **Summary**: Clear one-line description
