@@ -12,14 +12,14 @@ If no ID is provided, or the ID doesn't match an existing feature:
 
 ## Usage
 
-### Solo mode (branch or worktree)
+### Drive mode (branch or worktree)
 If you used `feature-setup {{ARG1_SYNTAX}}` or `feature-setup {{ARG1_SYNTAX}} <agent>`:
 ```bash
 aigon feature-done {{ARG1_SYNTAX}}
 ```
-The command auto-detects whether the feature uses a branch or a solo worktree.
+The command auto-detects whether the feature uses a branch or a Drive worktree.
 
-### Arena mode
+### Fleet mode
 If you used `feature-setup {{ARG1_SYNTAX}} cc gg cx cu`:
 ```bash
 aigon feature-done {{ARG1_SYNTAX}} <winning-agent>
@@ -27,7 +27,7 @@ aigon feature-done {{ARG1_SYNTAX}} <winning-agent>
 
 Example: `aigon feature-done {{ARG1_SYNTAX}} cc` to merge Claude's implementation
 
-### Arena mode with adoption
+### Fleet mode with adoption
 Merge the winner and print diffs from losing agents for selective adoption:
 ```bash
 aigon feature-done {{ARG1_SYNTAX}} <winning-agent> --adopt <agents...|all>
@@ -39,7 +39,7 @@ Examples:
 
 ## What happens
 
-### Solo Mode
+### Drive Mode
 
 1. Pushes the feature branch to origin (to save work remotely)
 2. Switches to main/master branch
@@ -49,7 +49,7 @@ Examples:
 6. Deletes the local feature branch
 7. Commits the spec and log moves
 
-### Arena Mode (without --adopt)
+### Fleet Mode (without --adopt)
 
 1. Pushes the winning agent's branch to origin
 2. Switches to main/master branch
@@ -63,7 +63,7 @@ Examples:
 8. Commits the changes
 9. Shows cleanup options for remaining worktrees/branches
 
-### Arena Mode with Adoption
+### Fleet Mode with Adoption
 
 **CRITICAL SEQUENCING: When `--adopt` is used, do NOT delete any worktrees or branches for the adopted-from agents until adoption is complete.** The adopted agents' worktrees must remain accessible so you can read their code and cherry-pick changes.
 
@@ -138,7 +138,7 @@ After all adoption commits are verified, clean up the adopted agents' worktrees:
 {{CMD_PREFIX}}feature-cleanup {{ARG1_SYNTAX}}
 ```
 
-### Cleanup after Arena
+### Cleanup after Fleet
 
 After merging the winner (and completing adoption if applicable), clean up remaining worktrees:
 
@@ -151,9 +151,9 @@ Use `--push` if you want to preserve the alternative implementations on the remo
 
 ## Important Notes
 
-- **Solo worktree**: The agent is auto-detected — no need to specify it
-- **Arena mode**: The agent parameter is REQUIRED (e.g., `cc`, `gg`, `cx`, `cu`)
-- **`--adopt`**: Only available in arena mode — requires a winning agent
+- **Drive worktree**: The agent is auto-detected — no need to specify it
+- **Fleet mode**: The agent parameter is REQUIRED (e.g., `cc`, `gg`, `cx`, `cu`)
+- **`--adopt`**: Only available in Fleet mode — requires a winning agent
 - **Do NOT run from a worktree**: Always run from the main repository
 - The command uses `--no-ff` merge to preserve feature history
 - Alternative implementations are preserved in `logs/alternatives/` for future reference
@@ -185,7 +185,7 @@ After the command completes, check the pipeline and suggest the most useful next
 1. If `--adopt` was used, the adoption should already be complete (Phase 2–6 above). If there are remaining non-adopted worktrees, suggest cleanup:
    `{{CMD_PREFIX}}feature-cleanup <ID>`
 
-2. If the feature used **arena mode** (without `--adopt`) and has remaining worktrees, suggest cleanup:
+2. If the feature used **Fleet mode** (without `--adopt`) and has remaining worktrees, suggest cleanup:
    `{{CMD_PREFIX}}feature-cleanup <ID>`
 
 3. Otherwise, check the pipeline:

@@ -38,7 +38,7 @@ If there are no uncommitted changes, skip this step (changes may already be comm
 ## Update the implementation log
 
 Find the log file:
-- Solo mode: `./docs/specs/features/logs/feature-<ID>-*-log.md`
+- Drive mode: `./docs/specs/features/logs/feature-<ID>-*-log.md`
 - Worktree mode: `./docs/specs/features/logs/feature-<ID>-<agent>-*-log.md`
 
 Update it with a thorough writeup:
@@ -77,7 +77,7 @@ Replace `<ID>` with the actual feature ID (padded with leading zero if needed, e
 
 **Then tell the user based on the mode:**
 
-**If 2+ worktrees exist (Arena Mode):**
+**If 2+ worktrees exist (Fleet Mode):**
 
 > Implementation submitted ✅
 >
@@ -85,7 +85,7 @@ Replace `<ID>` with the actual feature ID (padded with leading zero if needed, e
 >
 > **Next step for you:** Switch back to the main repo session and run `/aigon:feature-eval <ID>` from there to compare all implementations.
 
-**If only 1 worktree exists (Solo Worktree Mode):**
+**If only 1 worktree exists (Drive Worktree Mode):**
 
 > Implementation submitted ✅
 >

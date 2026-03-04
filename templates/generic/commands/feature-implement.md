@@ -1,7 +1,7 @@
-<!-- description: Implement feature <ID> - works in both solo and arena modes -->
+<!-- description: Implement feature <ID> - works in both Drive and Fleet modes -->
 # aigon-feature-implement
 
-Implement a feature. Works in solo mode (branch), solo worktree mode (parallel development), and arena mode (competition).
+Implement a feature. Works in Drive mode (branch), Drive mode (worktree) (parallel development), and Fleet mode (competition).
 
 **IMPORTANT:** Run `{{CMD_PREFIX}}feature-setup <ID>` first to prepare your workspace.
 
@@ -14,24 +14,24 @@ If no ID is provided, or the ID doesn't match an existing feature in progress:
 
 ## Step 1: Run the CLI command
 
-This command detects whether you're in solo or arena mode and provides guidance.
+This command detects whether you're in Drive or Fleet mode and provides guidance.
 
 ```bash
 aigon feature-implement {{ARG1_SYNTAX}}
 ```
 
-To run in **Ralph mode** — autonomous retry loop where a fresh agent session is spawned each iteration until validation passes:
+To run in **Autopilot mode** — autonomous retry loop where a fresh agent session is spawned each iteration until validation passes:
 
 ```bash
-aigon feature-implement {{ARG1_SYNTAX}} --ralph
+aigon feature-implement {{ARG1_SYNTAX}} --autonomous
 ```
 
 Optional flags: `--max-iterations=N` (default 5) · `--agent=<id>` · `--dry-run`
 
-> **What is Ralph?** The Ralph technique runs an agent in a loop: implement → validate → if fail, repeat with fresh context until success or max iterations. Named after the [original pattern by Geoffrey Huntley](https://ghuntley.com/ralph/) and [similar implementations](https://github.com/minicodemonkey/chief) that treat autonomous iteration as the primary dev loop. Add a `## Validation` section to your feature spec to define feature-specific checks alongside project-level validation.
+> **What is autonomous mode?** The autonomous technique runs an agent in a loop: implement → validate → if fail, repeat with fresh context until success or max iterations. Named after the [original pattern by Geoffrey Huntley](https://ghuntley.com/ralph/) and [similar implementations](https://github.com/minicodemonkey/chief) that treat autonomous iteration as the primary dev loop. Add a `## Validation` section to your feature spec to define feature-specific checks alongside project-level validation.
 
 The command will:
-- Detect your mode: solo (branch), solo worktree, or arena
+- Detect your mode: Drive (branch), Drive worktree, or Fleet
 - Display the spec location and log file
 - Show implementation steps
 
@@ -59,7 +59,7 @@ For non-trivial features, **use plan mode** before implementation to explore the
 - Unclear how to integrate with existing codebase
 
 **Skip plan mode for**:
-- **Worktree or arena mode** — there is no interactive user to approve plans; implement directly
+- **Worktree or Fleet mode** — there is no interactive user to approve plans; implement directly
 - Single-file changes with obvious implementation
 - Clear, detailed specifications with one straightforward approach
 - Simple bug fixes or small tweaks
@@ -85,7 +85,7 @@ Before writing code, create a task for each **Acceptance Criterion** from the sp
 Then implement the feature according to the spec. Mark tasks as in-progress when you start working on them, and completed when satisfied. If you discover sub-tasks during implementation, add them to the list.
 {{AGENT_TEAMS_FEATURE_NOTE}}
 
-**For worktree modes (solo worktree or arena):** Use relative paths throughout implementation. Maintain the worktree directory as your working directory.
+**For worktree modes (Drive worktree or Fleet):** Use relative paths throughout implementation. Maintain the worktree directory as your working directory.
 
 ## Step 3.5: Install dependencies (worktree only)
 
@@ -95,7 +95,7 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 
 ## Step 3.8: Write tests for your implementation
 
-**You MUST write tests for any new functionality you implement.** This is not optional. Test coverage is a key evaluation criterion in arena mode and a merge requirement.
+**You MUST write tests for any new functionality you implement.** This is not optional. Test coverage is a key evaluation criterion in Fleet mode and a merge requirement.
 
 - **Write unit tests** for new modules, functions, resolvers, and utilities
 - **Write integration tests** for new UI components (render tests, interaction tests)
@@ -107,12 +107,12 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 
 ## Step 4: Test your changes
 
-### Solo Mode (branch)
+### Drive Mode (branch)
 - Start the dev server if needed
 - Run the full test suite and verify all tests pass
 - Ask the user to verify
 
-### Worktree Mode (solo worktree or arena)
+### Worktree Mode (Drive worktree or Fleet)
 {{WORKTREE_TEST_INSTRUCTIONS}}
 {{AGENT_DEV_SERVER_NOTE}}
 > **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for test commands.
@@ -136,7 +136,7 @@ pwd
 ```
 
 Expected output:
-- Solo mode (branch): Main repository path
+- Drive mode (branch): Main repository path
 - Worktree mode: `.../feature-{{ARG1_SYNTAX}}-<agent>-<description>`
 
 **Now commit your changes:**
@@ -146,20 +146,20 @@ Expected output:
 ## Step 6: Update and commit the log
 
 Find your implementation log:
-- Solo mode (branch): `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md`
+- Drive mode (branch): `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md`
 - Worktree mode: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-<agent>-*-log.md`
 
 Update it with:
 - Key decisions made during implementation
 - Summary of the conversation between you and the user
 - Any issues encountered and how they were resolved
-- Your approach and rationale (for arena mode, helps evaluator compare)
+- Your approach and rationale (for Fleet mode, helps evaluator compare)
 
 **Then commit the log file.**
 
 ## Step 7: STOP - Implementation complete
 
-### Solo Mode (branch)
+### Drive Mode (branch)
 
 **CRITICAL: Do NOT proceed to feature-done automatically.**
 
@@ -172,13 +172,13 @@ After completing steps 1-6:
    - Optionally run `{{CMD_PREFIX}}feature-review {{ARG1_SYNTAX}}` with a different agent for cross-agent code review
    - Approve with `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}}`
 
-### Solo Worktree Mode
+### Drive Worktree Mode
 
 **CRITICAL: Do NOT run `aigon feature-done` from a worktree.**
 
 After completing steps 1-4, **STOP and WAIT** for the user. They will run `{{CMD_PREFIX}}feature-submit` to trigger steps 5-6 (commit + log). Do NOT commit or write the log until the user runs that command.
 
-### Arena Mode
+### Fleet Mode
 
 **CRITICAL: Do NOT run `aigon feature-done` from a worktree.**
 
@@ -190,5 +190,5 @@ After completing steps 1-4, **STOP and WAIT** for the user. They will run `{{CMD
 
 **IMPORTANT:** End your final response with the suggested next command on its own line. This tells the user what to run next and enables prompt suggestions. Use the actual feature ID:
 
-- **Solo mode:** `{{CMD_PREFIX}}feature-done <ID>`
-- **Arena / worktree:** `{{CMD_PREFIX}}feature-submit`
+- **Drive mode:** `{{CMD_PREFIX}}feature-done <ID>`
+- **Fleet / worktree:** `{{CMD_PREFIX}}feature-submit`
