@@ -39,8 +39,8 @@ aigon board --list
 ## Indicators (Kanban View)
 
 - `*` = current active branch
-- `[2]` = arena mode (2 agents)
-- `[wt]` = solo worktree mode
+- `[F]` = Fleet mode
+- `[AP]` = Autopilot mode
 - `a), b), c)...` = letter shortcuts for quick prioritization
 
 ## Quick Prioritize
@@ -67,9 +67,9 @@ FEATURES
 ┌──────────────────────┼──────────────────────┼──────────────────────┐
 │ Inbox                │ Backlog              │ In Progress          │
 ├──────────────────────┼──────────────────────┼──────────────────────┤
-│ billing-integration  │ #13 dark-mode        │ #11 search-api [wt]  │
+│ billing-integration  │ #13 dark-mode        │ #11 search-api [AP]  │
 │ email-templates      │                      │ #12 notifications *  │
-│                      │                      │ #14 profile-rede [2] │
+│                      │                      │ #14 profile-rede [F] │
 ├──────────────────────┼──────────────────────┼──────────────────────┤
 │ (2)                  │ (1)                  │ (3)                  │
 └──────────────────────┼──────────────────────┼──────────────────────┘
@@ -110,15 +110,15 @@ FEATURES
 In Progress (3):
    #11  search-api
           → /afd 11
-   #12  notifications       solo (branch) *
+   #12  notifications       Drive (branch) *
           → /afd 12
-   #14  profile-redesign    arena (cc, gg)
+   #14  profile-redesign    Fleet (cc, gg) [F]
           → /afe 14
 
 RESEARCH
 
 In Progress (1):
-   #02  caching-strategy    solo (branch) *
+   #02  caching-strategy    Drive (branch) *
           → /ardn 02
 ```
 
