@@ -1,6 +1,6 @@
 ---
-status: implementing
-updated: 2026-03-05T01:40:00Z
+status: submitted
+updated: 2026-03-04T22:24:04.248Z
 ---
 
 # Implementation Log: Feature 38 - modes-docs-sweep
