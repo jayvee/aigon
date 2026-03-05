@@ -64,26 +64,40 @@ function openInEditor(filePath) {
  * to avoid spawning nested agent sessions.
  */
 function detectActiveAgentSession() {
-    // Walk up the process tree (up to 4 levels) looking for a known agent.
-    // Env-var-only checks (like CLAUDECODE) are unreliable because the var
-    // leaks into child shells (e.g. new Warp tabs) that aren't actual agent sessions.
-    // We walk multiple levels because agents spawn commands through shells:
-    //   claude → bash → node (aigon)   — agent is the grandparent
+    // Walk up the process tree looking for a known agent process.
+    // Env-var-only checks (especially CLAUDECODE) can leak into child shells,
+    // so process ancestry remains the primary signal.
     const agentProcesses = {
         claude: { agentId: 'cc', agentName: 'Claude Code' },
         gemini: { agentId: 'gg', agentName: 'Gemini CLI' },
-        codex:  { agentId: 'cx', agentName: 'Codex CLI' },
+        codex: { agentId: 'cx', agentName: 'Codex CLI' },
     };
+    const processHints = [
+        { key: 'claude', info: agentProcesses.claude },
+        { key: 'gemini', info: agentProcesses.gemini },
+        { key: 'codex', info: agentProcesses.codex },
+    ];
+
     try {
         let pid = process.ppid;
-        for (let depth = 0; depth < 4 && pid && pid > 1; depth++) {
-            const cmd = execSync(`ps -p ${pid} -o comm=,ppid=`, { encoding: 'utf8' }).trim();
-            const parts = cmd.split(/\s+/);
-            const procName = parts[0];
-            const nextPid = parseInt(parts[1], 10);
-            if (agentProcesses[procName]) {
-                return { detected: true, ...agentProcesses[procName] };
+        for (let depth = 0; depth < 10 && pid && pid > 1; depth++) {
+            const commRaw = execSync(`ps -p ${pid} -o comm=`, { encoding: 'utf8' }).trim().toLowerCase();
+            const argsRaw = execSync(`ps -p ${pid} -o args=`, { encoding: 'utf8' }).trim().toLowerCase();
+            const ppidRaw = execSync(`ps -p ${pid} -o ppid=`, { encoding: 'utf8' }).trim();
+            const commBase = path.basename(commRaw);
+
+            if (agentProcesses[commBase]) {
+                return { detected: true, ...agentProcesses[commBase] };
             }
+
+            for (const hint of processHints) {
+                if (argsRaw.includes(hint.key)) {
+                    return { detected: true, ...hint.info };
+                }
+            }
+
+            const nextPid = parseInt(ppidRaw, 10);
+            if (!Number.isInteger(nextPid) || nextPid <= 1) break;
             pid = nextPid;
         }
     } catch (_) {
@@ -94,6 +108,18 @@ function detectActiveAgentSession() {
     // is a GUI app and won't leak the var to unrelated terminal tabs.
     if (process.env.CURSOR_TRACE_ID) {
         return { detected: true, agentId: 'cu', agentName: 'Cursor' };
+    }
+
+    // Fallback for non-interactive invocations where ancestry may be hidden
+    // (e.g. Codex --full-auto command execution). Avoid CLAUDECODE here
+    // because it is known to leak into spawned terminal tabs.
+    if (!process.stdin.isTTY) {
+        if (process.env.OPENAI_CODEX_CLI || process.env.CODEX) {
+            return { detected: true, agentId: 'cx', agentName: 'Codex CLI' };
+        }
+        if (process.env.GEMINI_CLI) {
+            return { detected: true, agentId: 'gg', agentName: 'Gemini CLI' };
+        }
     }
 
     return { detected: false, agentId: null, agentName: null };
@@ -175,7 +201,7 @@ const DEFAULT_GLOBAL_CONFIG = {
         cc: { cli: 'claude', implementFlag: '--permission-mode acceptEdits' },
         cu: { cli: 'agent', implementFlag: '--force' },
         gg: { cli: 'gemini', implementFlag: '--yolo' },
-        cx: { cli: 'codex', implementFlag: '--full-auto' }
+        cx: { cli: 'codex', implementFlag: '' }
     }
 };
 
@@ -1217,6 +1243,28 @@ function getAgentCliConfig(agentId) {
     return cli;
 }
 
+function parseCliFlagTokens(flagValue) {
+    if (!flagValue) return [];
+    return String(flagValue).trim().split(/\s+/).filter(Boolean);
+}
+
+function getAgentLaunchFlagTokens(command, flagValue, options = {}) {
+    const { autonomous = false } = options;
+    let tokens = parseCliFlagTokens(flagValue);
+
+    // Keep Codex interactive by default, even if older configs still set --full-auto.
+    if (command === 'codex' && !autonomous) {
+        tokens = tokens.filter(t => t !== '--full-auto');
+    }
+
+    // In Autopilot/Swarm loops Codex must run hands-off.
+    if (command === 'codex' && autonomous && !tokens.includes('--full-auto')) {
+        tokens.unshift('--full-auto');
+    }
+
+    return tokens;
+}
+
 /**
  * Determine where a model config value comes from (provenance).
  * Checks in priority order: env var > project config > global config > template default.
@@ -1307,7 +1355,8 @@ function buildAgentCommand(wt, taskType = 'implement') {
     const model = cliConfig.models?.[taskType];
     const modelFlag = model ? `--model ${model}` : '';
 
-    const flags = [cliConfig.implementFlag, modelFlag].filter(Boolean).join(' ');
+    const flagTokens = getAgentLaunchFlagTokens(cliConfig.command, cliConfig.implementFlag, { autonomous: false });
+    const flags = [...flagTokens, modelFlag].filter(Boolean).join(' ');
     if (flags) {
         return `${prefix}${cliConfig.command} ${flags} "${prompt}"`;
     }
@@ -1335,7 +1384,8 @@ function buildResearchAgentCommand(agentId, researchId) {
     const model = cliConfig.models?.['research'];
     const modelFlag = model ? `--model ${model}` : '';
 
-    const flags = [cliConfig.implementFlag, modelFlag].filter(Boolean).join(' ');
+    const flagTokens = getAgentLaunchFlagTokens(cliConfig.command, cliConfig.implementFlag, { autonomous: false });
+    const flags = [...flagTokens, modelFlag].filter(Boolean).join(' ');
     if (flags) {
         return `${prefix}${cliConfig.command} ${flags} "${prompt}"`;
     }
@@ -3771,9 +3821,7 @@ function runRalphAgentIteration(agentId, prompt, dryRun = false) {
         };
     }
 
-    const flagTokens = cliConfig.implementFlag
-        ? String(cliConfig.implementFlag).trim().split(/\s+/).filter(Boolean)
-        : [];
+    const flagTokens = getAgentLaunchFlagTokens(command, cliConfig.implementFlag, { autonomous: true });
     // Claude needs -p (print mode) so it exits after completing the prompt
     if (command === 'claude' && !flagTokens.includes('-p') && !flagTokens.includes('--print')) {
         flagTokens.unshift('-p');
@@ -6018,9 +6066,7 @@ const commands = {
                 console.warn(`⚠️  Model config ignored for Cursor — model selection is UI-only (no --model flag)`);
             }
             const modelTokens = (model && resolvedAgent !== 'cu') ? ['--model', model] : [];
-            const flagTokens = cliConfig.implementFlag
-                ? String(cliConfig.implementFlag).trim().split(/\s+/).filter(Boolean)
-                : [];
+            const flagTokens = getAgentLaunchFlagTokens(cliConfig.command, cliConfig.implementFlag, { autonomous: false });
             const spawnArgs = [...flagTokens, ...modelTokens, prompt];
 
             const agentDisplayName = AGENT_CONFIGS[resolvedAgent]?.name || resolvedAgent;
@@ -8029,7 +8075,7 @@ Branch: \`${soloBranch}\`
                 console.log(`   - cc: --permission-mode acceptEdits`);
                 console.log(`   - cu: --force`);
                 console.log(`   - gg: --yolo`);
-                console.log(`   - cx: --full-auto`);
+                console.log(`   - cx: (none; interactive by default, --full-auto is applied only in --autonomous mode)`);
             } else {
                 // Create project config file with detected profile
                 const detectedProfile = detectProjectProfile();
