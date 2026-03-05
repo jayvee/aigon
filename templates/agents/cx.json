@@ -5,7 +5,7 @@
 
   "cli": {
     "command": "codex",
-    "implementFlag": "--full-auto",
+    "implementFlag": "",
     "implementPrompt": "/prompts:aigon-feature-implement {featureId}",
     "models": {
       "research": "gpt-5.2",
