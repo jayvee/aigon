@@ -9,9 +9,9 @@ Aigon enforces a structured **Research → Specification → Implementation** lo
 1. **Research Topics** explore the "why" before building
 2. **Feature Specs** define the "what" to build
 
-For feature implementation, Aigon can be used in "Drive mode" or "Fleet mode".
-1. "Drive mode" - use one agent to implement the feature based on the spec to completion.
-2. "Fleet mode" - use multiple agents to implement a feature in parallel, then evaluate solutions and select a winner.
+For feature implementation, Aigon can be used in "Solo mode" or "Arena mode".
+1. "Solo mode" - use one agent to implement the feature based on the spec to completion.
+2. "Arena mode" - use multiple agents to implement a feature in parallel, then evaluate solutions and select a winner.
 
 ## Directory Structure
 
@@ -40,28 +40,28 @@ docs/specs/
 └── README.md
 ```
 
-### Feature Commands (Unified for Drive and Fleet modes)
+### Feature Commands (Unified for Solo and Arena modes)
 | Command | Description |
 |---------|-------------|
 | `aigon feature-create <name>` | Create a new feature spec |
 | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
-| `aigon feature-setup <ID> [agents...]` | Setup for Drive (no agents) or Fleet (with agents) |
-| `aigon feature-implement <ID> [--autonomous]` | Implement feature; `--autonomous` runs autonomous retry loop ([autonomous technique](https://ghuntley.com/ralph/)) |
-| `aigon feature-eval <ID>` | Create evaluation (code review for Drive, comparison for Fleet) |
-| `aigon feature-done <ID> [agent]` | Merge and complete (specify agent in Fleet mode) |
-| `aigon feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
+| `aigon feature-setup <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
+| `aigon feature-implement <ID> [--ralph]` | Implement feature; `--ralph` runs autonomous retry loop ([Ralph technique](https://ghuntley.com/ralph/)) |
+| `aigon feature-eval <ID>` | Create evaluation (code review for solo, comparison for arena) |
+| `aigon feature-done <ID> [agent]` | Merge and complete (specify agent in arena mode) |
+| `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
 ## Key Rules
 
 1. **Spec-Driven**: Never write code without a spec in `features/03-in-progress/`
-2. **Work in isolation**: Drive mode uses branches, Fleet mode uses worktrees
+2. **Work in isolation**: Solo mode uses branches, arena mode uses worktrees
 3. **Implementation Logs**: Document implementation decisions in `logs/` before completing
 4. **State-as-Location**: A task's status is determined by which folder it's in
 
-## Drive Mode Workflow
+## Solo Mode Workflow
 
 1. Run `aigon feature-setup <ID>` to create branch and move spec to in-progress
-2. Run `aigon feature-implement <ID>` to begin implementation (add `--autonomous` for autonomous retry loop)
+2. Run `aigon feature-implement <ID>` to begin implementation (add `--ralph` for autonomous retry loop)
 3. Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
 4. Implement the feature according to the spec
 5. Test your changes and wait for user confirmation
@@ -69,7 +69,7 @@ docs/specs/
 7. Update the implementation log in `./docs/specs/features/logs/`
 8. **STOP** - Wait for user to approve before running `aigon feature-done <ID>`
 
-## Fleet Mode Workflow
+## Arena Mode Workflow
 
 1. Run `aigon feature-setup <ID> cc gg cx cu` to create worktrees for each agent
 2. **STOP** - Tell the user to open each worktree in a separate session
