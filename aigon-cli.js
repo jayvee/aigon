@@ -3222,11 +3222,157 @@ function getBoardAction(typePrefix, folder, item, worktreeMap) {
     return null;
 }
 
+function collectAttentionItems() {
+    let repos = [];
+    try {
+        if (fs.existsSync(GLOBAL_CONFIG_PATH)) {
+            const cfg = JSON.parse(fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf8'));
+            repos = Array.isArray(cfg.repos) ? cfg.repos : [];
+        }
+    } catch (e) { /* skip */ }
+
+    if (repos.length === 0) return [];
+
+    const items = [];
+    repos.forEach(repoPath => {
+        const inProgressDir = path.join(repoPath, 'docs', 'specs', 'features', '03-in-progress');
+        const inEvalDir = path.join(repoPath, 'docs', 'specs', 'features', '04-in-evaluation');
+        const logsDir = path.join(repoPath, 'docs', 'specs', 'features', 'logs');
+        const evalsDir = path.join(repoPath, 'docs', 'specs', 'features', 'evaluations');
+        const repoName = path.basename(repoPath);
+
+        // Collect spec stages
+        const specStages = {};
+        const specNames = {};
+        [inProgressDir, inEvalDir].forEach(dir => {
+            if (!fs.existsSync(dir)) return;
+            const stage = dir.includes('04-in-evaluation') ? 'eval' : 'impl';
+            try {
+                fs.readdirSync(dir)
+                    .filter(f => /^feature-\d+-.+\.md$/.test(f))
+                    .forEach(f => {
+                        const m = f.match(/^feature-(\d+)-(.+)\.md$/);
+                        if (m) { specStages[m[1]] = stage; specNames[m[1]] = m[2]; }
+                    });
+            } catch (e) { /* skip */ }
+        });
+
+        // Collect log statuses
+        const logStatuses = {};
+        if (fs.existsSync(logsDir)) {
+            try {
+                fs.readdirSync(logsDir)
+                    .filter(f => /^feature-\d+-.+-log\.md$/.test(f))
+                    .forEach(logFile => {
+                        let content;
+                        try { content = fs.readFileSync(path.join(logsDir, logFile), 'utf8'); } catch (e) { return; }
+                        const fm = parseFrontMatter(content);
+                        const arenaM = logFile.match(/^feature-(\d+)-([a-z]{2})-(.+)-log\.md$/);
+                        const soloM = logFile.match(/^feature-(\d+)-(.+)-log\.md$/);
+                        const fid = arenaM ? arenaM[1] : (soloM ? soloM[1] : null);
+                        if (!fid) return;
+                        const key = arenaM ? `${fid}-${arenaM[2]}` : fid;
+                        logStatuses[key] = fm.data?.status || fm.status || null;
+                    });
+            } catch (e) { /* skip */ }
+        }
+
+        // Check worktree logs
+        const worktreeBaseDir = repoPath + '-worktrees';
+        const worktreeAgents = {};
+        if (fs.existsSync(worktreeBaseDir)) {
+            try {
+                fs.readdirSync(worktreeBaseDir).forEach(dirName => {
+                    const wtM = dirName.match(/^feature-(\d+)-([a-z]{2})-.+$/);
+                    if (!wtM) return;
+                    if (!worktreeAgents[wtM[1]]) worktreeAgents[wtM[1]] = [];
+                    worktreeAgents[wtM[1]].push(wtM[2]);
+                    const wtLogsDir = path.join(worktreeBaseDir, dirName, 'docs', 'specs', 'features', 'logs');
+                    if (!fs.existsSync(wtLogsDir)) return;
+                    try {
+                        fs.readdirSync(wtLogsDir)
+                            .filter(f => f.startsWith(`feature-${wtM[1]}-${wtM[2]}-`) && f.endsWith('-log.md'))
+                            .forEach(logFile => {
+                                let content;
+                                try { content = fs.readFileSync(path.join(wtLogsDir, logFile), 'utf8'); } catch (e) { return; }
+                                const fm = parseFrontMatter(content);
+                                const status = fm.data?.status || fm.status || null;
+                                if (status) logStatuses[`${wtM[1]}-${wtM[2]}`] = status;
+                            });
+                    } catch (e) { /* skip */ }
+                });
+            } catch (e) { /* skip */ }
+        }
+
+        // Build attention items per feature
+        Object.entries(specStages).forEach(([fid, stage]) => {
+            const name = specNames[fid] || fid;
+
+            // Collect agents
+            const agentSet = new Set();
+            Object.keys(logStatuses).filter(k => k.startsWith(`${fid}-`)).forEach(k => agentSet.add(k.split('-').slice(1).join('-')));
+            if (worktreeAgents[fid]) worktreeAgents[fid].forEach(a => agentSet.add(a));
+
+            const agents = [];
+            if (agentSet.size > 0) {
+                agentSet.forEach(agent => agents.push({ agent, status: logStatuses[`${fid}-${agent}`] || 'implementing' }));
+            } else {
+                agents.push({ agent: 'solo', status: logStatuses[fid] || 'implementing' });
+            }
+
+            const allDone = agents.every(a => a.status === 'submitted' || a.status === 'complete');
+
+            // Waiting agents
+            agents.filter(a => a.status === 'waiting').forEach(a => {
+                const agentName = (AGENT_CONFIGS[a.agent] || {}).name || a.agent;
+                items.push({ repo: repoName, fid, name, label: `🔔 ${agentName} needs input`, cmd: `/afd ${fid}` });
+            });
+
+            // Eval needed
+            if (stage === 'eval') {
+                const evalFile = path.join(evalsDir, `feature-${fid}-eval.md`);
+                let hasWinner = false;
+                if (fs.existsSync(evalFile)) {
+                    try {
+                        const content = fs.readFileSync(evalFile, 'utf8');
+                        const wm = content.match(/\*\*Winner[:\s]*\*?\*?\s*(.+)/i);
+                        if (wm) {
+                            const val = wm[1].replace(/\*+/g, '').trim();
+                            if (val && !val.includes('to be determined') && !val.includes('TBD') && val !== '()') hasWinner = true;
+                        }
+                    } catch (e) { /* skip */ }
+                }
+                items.push({
+                    repo: repoName, fid, name,
+                    label: hasWinner ? '🏆 Pick winner' : '🔍 Evaluating',
+                    cmd: `/afd ${fid}`
+                });
+            } else if (allDone) {
+                items.push({ repo: repoName, fid, name, label: '⚡ Ready for eval', cmd: `/afe ${fid}` });
+            }
+        });
+    });
+
+    return items;
+}
+
 function displayBoardKanbanView(options) {
     const { includeFeatures, includeResearch, showAll, showActive, showInbox, showBacklog, showDone } = options;
 
     const boardMapping = { features: {}, research: {}, timestamp: Date.now() };
     let letterIndex = 0;
+
+    // --- Needs Attention (cross-repo) ---
+    const attentionItems = collectAttentionItems();
+    if (attentionItems.length > 0) {
+        console.log(`🔔 NEEDS ATTENTION (${attentionItems.length})`);
+        console.log('');
+        attentionItems.forEach(item => {
+            console.log(`  ${item.label}`);
+            console.log(`    ${item.repo} · #${item.fid} ${item.name}  → ${item.cmd}`);
+        });
+        console.log('');
+    }
 
     console.log('╔═══════════════════════ Aigon Board ════════════════════════╗\n');
 
