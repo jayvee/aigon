@@ -185,6 +185,33 @@ class AigonTreeDataProvider {
             });
         });
 
+        // Determine feature-level eval status
+        const evalsDir = path.join(repoPath, 'docs', 'specs', 'features', 'evaluations');
+        function getFeatureEvalStatus(featureId, data, stage) {
+            const allDone = data.agents.length > 0 &&
+                data.agents.every(a => a.status === 'submitted' || a.status === 'complete');
+
+            if (stage === 'in-evaluation') {
+                const evalFile = path.join(evalsDir, `feature-${featureId}-eval.md`);
+                if (fs.existsSync(evalFile)) {
+                    try {
+                        const content = fs.readFileSync(evalFile, 'utf8');
+                        const winnerMatch = content.match(/\*\*Winner[:\s]*\*?\*?\s*(.+)/i);
+                        if (winnerMatch) {
+                            const val = winnerMatch[1].replace(/\*+/g, '').trim();
+                            if (val && !val.includes('to be determined') && !val.includes('TBD') && val !== '()') {
+                                return 'pick winner';
+                            }
+                        }
+                    } catch (e) { /* skip */ }
+                }
+                return 'evaluating';
+            }
+
+            if (allDone) return 'eval needed';
+            return null;
+        }
+
         const items = [];
         Object.entries(features)
             .sort(([a], [b]) => parseInt(a) - parseInt(b))
@@ -200,19 +227,28 @@ class AigonTreeDataProvider {
                 if (!this._showAll && stage !== 'in-progress' && stage !== 'in-evaluation') return;
 
                 const hasWaiting = data.agents.some(a => a.status === 'waiting');
-                const allSubmitted = data.agents.length > 0 && data.agents.every(a => a.status === 'submitted' || a.status === 'complete');
+                const evalStatus = getFeatureEvalStatus(featureId, data, stage);
 
                 const featureItem = new vscode.TreeItem(
                     `#${featureId}  ${data.name}`,
                     vscode.TreeItemCollapsibleState.Expanded
                 );
                 featureItem.contextValue = 'feature';
-                featureItem.description = stage === 'in-evaluation' ? 'eval' : '';
-                featureItem.iconPath = hasWaiting
-                    ? new vscode.ThemeIcon('bell-dot', new vscode.ThemeColor('list.warningForeground'))
-                    : allSubmitted
-                        ? new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('testing.iconPassed'))
-                        : new vscode.ThemeIcon('loading~spin');
+
+                if (evalStatus === 'pick winner') {
+                    featureItem.description = 'pick winner';
+                    featureItem.iconPath = new vscode.ThemeIcon('trophy', new vscode.ThemeColor('list.warningForeground'));
+                } else if (evalStatus === 'evaluating') {
+                    featureItem.description = 'evaluating';
+                    featureItem.iconPath = new vscode.ThemeIcon('search', new vscode.ThemeColor('list.highlightForeground'));
+                } else if (evalStatus === 'eval needed') {
+                    featureItem.description = 'eval needed';
+                    featureItem.iconPath = new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('testing.iconPassed'));
+                } else if (hasWaiting) {
+                    featureItem.iconPath = new vscode.ThemeIcon('bell-dot', new vscode.ThemeColor('list.warningForeground'));
+                } else {
+                    featureItem.iconPath = new vscode.ThemeIcon('loading~spin');
+                }
 
                 // Build per-agent tree items
                 featureItem.agentItems = data.agents.map(a => {
