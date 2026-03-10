@@ -550,7 +550,7 @@ aigon worktree-open 100 101 102 --agent=cc
 
 ## Visualizing Work
 
-Aigon provides three ways to see what's happening across your projects: a **terminal board**, a **VS Code sidebar**, and a **background daemon** that sends macOS notifications.
+Aigon provides four ways to see what's happening across your projects: a **terminal board**, a **VS Code sidebar**, a **macOS menubar icon**, and a **background daemon** that sends macOS notifications.
 
 ### VS Code Sidebar (Aigon Conductor)
 
@@ -598,9 +598,54 @@ aigon conductor remove [path]    # Unregister a repo
 aigon conductor list             # List registered repos
 aigon conductor vscode-install   # Install VS Code extension
 aigon conductor vscode-uninstall # Remove VS Code extension
+aigon conductor menubar-install  # Install macOS menubar plugin
+aigon conductor menubar-uninstall # Remove menubar plugin
 aigon conductor start            # Start background daemon (macOS notifications)
 aigon conductor stop             # Stop daemon
 aigon conductor status           # Show daemon state and waiting agents
+```
+
+### macOS Menubar (Aigon Conductor)
+
+A menubar icon that shows live agent status at a glance — click to expand a menu of all features and agents across repos, then click any agent to jump directly to its terminal.
+
+**One-time setup:**
+
+```bash
+# 1. Install SwiftBar (or xbar)
+brew install --cask swiftbar
+
+# 2. Register your repos (if not already done)
+aigon conductor add
+
+# 3. Install the menubar plugin
+aigon conductor menubar-install
+```
+
+The menubar shows a gear icon with a count: `⚙ 2 waiting` or `⚙ 3 running` or `⚙ –` when idle. Click to expand:
+
+```
+⚙ 1 waiting
+───────────────
+~/src/aigon
+#39 conductor-menubar
+  ● cc: waiting         ← click to open terminal
+  ○ gg: implementing    ← click to open terminal
+───────────────
+~/src/my-web-app
+#12 dark-mode
+  ✓ solo: submitted
+```
+
+- **Click** an agent → opens/focuses its terminal (Warp, VS Code, or Terminal.app)
+- **Option-click** (⌥) an agent → copies the slash command to clipboard
+- Refreshes every 30 seconds automatically
+
+You can also jump to any feature's terminal directly from the CLI:
+
+```bash
+aigon terminal-focus 39        # open terminal for feature #39
+aigon terminal-focus 39 cc     # open terminal for specific agent
 ```
 
 ### Kanban Board View (default)
@@ -905,7 +950,7 @@ Example output:
 
 ### Conductor commands
 
-Multi-repo status monitoring via a background daemon and VS Code sidebar extension.
+Multi-repo status monitoring via a background daemon, VS Code sidebar, and macOS menubar.
 
 | Command | Usage |
 |---|---|
@@ -917,6 +962,9 @@ Multi-repo status monitoring via a background daemon and VS Code sidebar extensi
 | Conductor Status | `aigon conductor status` |
 | VS Code Install | `aigon conductor vscode-install` |
 | VS Code Uninstall | `aigon conductor vscode-uninstall` |
+| Menubar Install | `aigon conductor menubar-install` (SwiftBar/xbar plugin) |
+| Menubar Uninstall | `aigon conductor menubar-uninstall` |
+| Terminal Focus | `aigon terminal-focus <featureId> [agent]` (open agent terminal) |
 
 ### Dev server commands
 
