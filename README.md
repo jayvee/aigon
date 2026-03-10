@@ -353,6 +353,13 @@ aigon config set --global agents.cc.implementFlag ""    # Remove auto-approval f
 
 Set `implementFlag` to `""` (empty string) for any agent to require manual approval prompts.
 
+**Terminal and tmux config:**
+
+```bash
+aigon config set --global terminal tmux          # Use tmux for persistent sessions
+aigon config set --global tmuxApp iterm2         # Use iTerm2 with native tmux -CC integration
+```
+
 **Project-level config** defaults to project scope:
 
 ```bash
@@ -491,11 +498,13 @@ Setup Fleet:
 /aigon:feature-setup 55 cc gg cx
 ```
 
-Open all worktrees side-by-side in Warp:
+Open all worktrees side-by-side:
 
 ```text
 /aigon:worktree-open 55 --all
 ```
+
+Aigon supports multiple terminal backends: **Warp** (split panes), **tmux** (persistent sessions that survive terminal closes), **VS Code**, **Cursor**, and **Terminal.app**. When using tmux, sessions are named (e.g., `aigon-f55-cc`) and can be reattached anytime. With **iTerm2**, tmux sessions use native `tmux -CC` integration for seamless tabs.
 
 ![Warp split view with Fleet worktrees side-by-side](docs/images/aigon-warp-arena-split.png)
 
@@ -850,6 +859,16 @@ After Fleet implementations are complete:
 ```bash
 aigon feature-eval 55
 ```
+
+Before starting, `feature-eval` checks each agent's submission status. If any agent hasn't submitted, you'll see a warning with the command to reconnect:
+
+```text
+⚠️  1 agent(s) not yet submitted:
+   cx (Codex) — status: implementing
+     → aigon worktree-open 55 cx
+```
+
+Use `--force` to skip the check and evaluate anyway.
 
 This generates a structured comparison template so you can score implementations against spec compliance, quality, maintainability, and performance.
 
