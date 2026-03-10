@@ -7294,23 +7294,50 @@ Branch: \`${soloBranch}\`
                 }
 
                 repos.forEach(repoPath => {
-                    const logsDir = path.join(repoPath, 'docs', 'specs', 'features', 'logs');
-                    if (!fs.existsSync(logsDir)) return;
+                    // Collect log files from main repo + worktrees
+                    const mainLogsDir = path.join(repoPath, 'docs', 'specs', 'features', 'logs');
+                    const allLogEntries = []; // { logFile, logPath }
 
-                    let logFiles;
-                    try {
-                        logFiles = fs.readdirSync(logsDir)
-                            .filter(f => /^feature-\d+-.+-log\.md$/.test(f));
-                    } catch (e) {
-                        log(`Error reading logs dir ${logsDir}: ${e.message}`);
-                        return;
+                    // Main repo logs
+                    if (fs.existsSync(mainLogsDir)) {
+                        try {
+                            fs.readdirSync(mainLogsDir)
+                                .filter(f => /^feature-\d+-.+-log\.md$/.test(f))
+                                .forEach(f => allLogEntries.push({ logFile: f, logPath: path.join(mainLogsDir, f) }));
+                        } catch (e) {
+                            log(`Error reading logs dir ${mainLogsDir}: ${e.message}`);
+                        }
                     }
+
+                    // Worktree logs
+                    const worktreeBaseDir = repoPath + '-worktrees';
+                    if (fs.existsSync(worktreeBaseDir)) {
+                        try {
+                            fs.readdirSync(worktreeBaseDir).forEach(dirName => {
+                                const wtLogsDir = path.join(worktreeBaseDir, dirName, 'docs', 'specs', 'features', 'logs');
+                                if (!fs.existsSync(wtLogsDir)) return;
+                                try {
+                                    fs.readdirSync(wtLogsDir)
+                                        .filter(f => /^feature-\d+-.+-log\.md$/.test(f))
+                                        .forEach(f => allLogEntries.push({ logFile: f, logPath: path.join(wtLogsDir, f) }));
+                                } catch (e) { /* skip */ }
+                            });
+                        } catch (e) { /* skip */ }
+                    }
+
+                    if (allLogEntries.length === 0) return;
+
+                    // Deduplicate: same logFile name may appear in main + worktree; prefer worktree (more up-to-date)
+                    const byName = {};
+                    allLogEntries.forEach(entry => {
+                        byName[entry.logFile] = entry; // last wins = worktree overwrites main
+                    });
+                    const logEntries = Object.values(byName);
 
                     // Per-feature tracking for all-submitted notification
                     const featureAgents = {}; // featureId -> { total, submitted, name }
 
-                    logFiles.forEach(logFile => {
-                        const logPath = path.join(logsDir, logFile);
+                    logEntries.forEach(({ logFile, logPath }) => {
                         let content;
                         try { content = fs.readFileSync(logPath, 'utf8'); } catch (e) { return; }
 
@@ -7576,27 +7603,45 @@ Branch: \`${soloBranch}\`
 
             repos.forEach(repoPath => {
                 const inProgressDir = path.join(repoPath, 'docs', 'specs', 'features', '03-in-progress');
+                const inEvalDir = path.join(repoPath, 'docs', 'specs', 'features', '04-in-evaluation');
                 const logsDir = path.join(repoPath, 'docs', 'specs', 'features', 'logs');
 
-                // Source of truth: specs in 03-in-progress/
+                // Source of truth: specs in 03-in-progress/ and 04-in-evaluation/
                 let specFiles = [];
-                if (fs.existsSync(inProgressDir)) {
-                    try {
-                        specFiles = fs.readdirSync(inProgressDir)
-                            .filter(f => /^feature-\d+-.+\.md$/.test(f));
-                    } catch (e) { /* skip */ }
-                }
+                [inProgressDir, inEvalDir].forEach(dir => {
+                    if (fs.existsSync(dir)) {
+                        try {
+                            fs.readdirSync(dir)
+                                .filter(f => /^feature-\d+-.+\.md$/.test(f))
+                                .forEach(f => specFiles.push(f));
+                        } catch (e) { /* skip */ }
+                    }
+                });
 
                 if (specFiles.length === 0) return;
 
                 // Build a map of log statuses for enrichment
                 const logStatuses = {}; // key: "featureId" or "featureId-agent" -> status
-                if (fs.existsSync(logsDir)) {
+
+                // Collect all log directories: main repo + worktrees
+                const allLogDirs = [];
+                if (fs.existsSync(logsDir)) allLogDirs.push(logsDir);
+                const worktreeBaseDir = repoPath + '-worktrees';
+                if (fs.existsSync(worktreeBaseDir)) {
                     try {
-                        fs.readdirSync(logsDir)
+                        fs.readdirSync(worktreeBaseDir).forEach(dirName => {
+                            const wtLogsDir = path.join(worktreeBaseDir, dirName, 'docs', 'specs', 'features', 'logs');
+                            if (fs.existsSync(wtLogsDir)) allLogDirs.push(wtLogsDir);
+                        });
+                    } catch (e) { /* skip */ }
+                }
+
+                allLogDirs.forEach(logDir => {
+                    try {
+                        fs.readdirSync(logDir)
                             .filter(f => /^feature-\d+-.+-log\.md$/.test(f))
                             .forEach(logFile => {
-                                const logPath = path.join(logsDir, logFile);
+                                const logPath = path.join(logDir, logFile);
                                 let content;
                                 try { content = fs.readFileSync(logPath, 'utf8'); } catch (e) { return; }
                                 const status = parseFrontMatterStatus(content);
@@ -7614,11 +7659,10 @@ Branch: \`${soloBranch}\`
                                 }
                             });
                     } catch (e) { /* skip */ }
-                }
+                });
 
                 // Discover worktrees for this repo to detect fleet agents
                 const worktreeAgents = {}; // featureId -> [agent, agent, ...]
-                const worktreeBaseDir = repoPath + '-worktrees';
                 if (fs.existsSync(worktreeBaseDir)) {
                     try {
                         fs.readdirSync(worktreeBaseDir).forEach(dirName => {
