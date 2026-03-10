@@ -197,6 +197,7 @@ const GLOBAL_CONFIG_PATH = path.join(GLOBAL_CONFIG_DIR, 'config.json');
 
 const DEFAULT_GLOBAL_CONFIG = {
     terminal: 'warp',
+    tmuxApp: 'terminal',  // Terminal app for tmux attach: 'terminal' (Terminal.app) or 'iterm2' (iTerm2 with tmux -CC)
     agents: {
         cc: { cli: 'claude', implementFlag: '--permission-mode acceptEdits' },
         cu: { cli: 'agent', implementFlag: '--force' },
@@ -241,6 +242,12 @@ function loadGlobalConfig() {
             merged.agents[key] = { ...merged.agents[key], ...value };
         });
     }
+    // Merge other user config keys (tmuxApp, etc.)
+    Object.keys(userConfig).forEach(key => {
+        if (key !== 'terminal' && key !== 'agents') {
+            merged[key] = userConfig[key];
+        }
+    });
 
     // Environment variable override for terminal
     if (process.env.AIGON_TERMINAL) {
@@ -1433,16 +1440,34 @@ function shellQuote(value) {
 }
 
 function openTerminalAppWithCommand(cwd, command) {
-    const fullCommand = `cd ${shellQuote(cwd)} && ${command}`;
-    const appleScript = [
-        'tell application "Terminal"',
-        'activate',
-        `do script ${JSON.stringify(fullCommand)}`,
-        'end tell'
-    ].join('\n');
-    const result = spawnSync('osascript', ['-e', appleScript], { stdio: 'ignore' });
-    if (result.error || result.status !== 0) {
-        throw new Error('Failed to open Terminal.app and run command');
+    const effectiveConfig = getEffectiveConfig();
+    const tmuxApp = effectiveConfig.tmuxApp || 'terminal';
+
+    if (tmuxApp === 'iterm2') {
+        // iTerm2: use tmux -CC (control mode) for native tab/pane integration
+        // Convert "tmux attach -t <session>" to "tmux -CC attach -t <session>"
+        // Note: skip cd — the tmux session already has its working directory set
+        const iterm2Command = command.replace(/^tmux attach/, 'tmux -CC attach');
+        const escapedCommand = iterm2Command.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const appleScript = `tell application "iTerm2"\nactivate\ncreate window with default profile command "${escapedCommand}"\nend tell`;
+        const result = spawnSync('osascript', ['-e', appleScript], { stdio: 'pipe' });
+        if (result.error || result.status !== 0) {
+            const errMsg = result.stderr ? result.stderr.toString().trim() : 'unknown error';
+            throw new Error(`Failed to open iTerm2: ${errMsg}. Is iTerm2 installed?`);
+        }
+    } else {
+        // Default: Terminal.app
+        const fullCommand = `cd ${shellQuote(cwd)} && ${command}`;
+        const appleScript = [
+            'tell application "Terminal"',
+            'activate',
+            `do script ${JSON.stringify(fullCommand)}`,
+            'end tell'
+        ].join('\n');
+        const result = spawnSync('osascript', ['-e', appleScript], { stdio: 'ignore' });
+        if (result.error || result.status !== 0) {
+            throw new Error('Failed to open Terminal.app and run command');
+        }
     }
 }
 
@@ -1619,7 +1644,8 @@ windows:
             const { sessionName, created } = ensureTmuxSessionForWorktree(wt, agentCommand);
             openTerminalAppWithCommand(wt.path, `tmux attach -t ${shellQuote(sessionName)}`);
 
-            console.log(`\n🚀 Opening worktree in tmux:`);
+            const tmuxAppName = (getEffectiveConfig().tmuxApp || 'terminal') === 'iterm2' ? 'iTerm2 (tmux -CC)' : 'Terminal.app';
+            console.log(`\n🚀 Opening worktree in tmux via ${tmuxAppName}:`);
             console.log(`   Feature: ${wt.featureId} - ${wt.desc}`);
             console.log(`   Agent: ${wt.agent}`);
             console.log(`   Path: ${wt.path}`);
@@ -8585,11 +8611,13 @@ Branch: \`${soloBranch}\`
                 console.log(`   To use stricter permissions, set implementFlag to "" (empty string) for any agent.`);
                 console.log(`\n   You can customize:`);
                 console.log(`   - terminal: Terminal to use (warp, code, cursor, terminal, tmux)`);
+                console.log(`   - tmuxApp: Terminal app for tmux sessions (terminal, iterm2)`);
                 console.log(`   - agents.{id}.cli: Override CLI command for each agent`);
                 console.log(`   - agents.{id}.implementFlag: Override CLI flags (set to "" to require manual approval)`);
                 console.log(`\n   Example (corporate/safer defaults - removes auto-approval flags):`);
                 console.log(`   {`);
                 console.log(`     "terminal": "warp",             // warp, code, cursor, terminal, tmux`);
+                console.log(`     "tmuxApp": "iterm2",            // terminal (Terminal.app) or iterm2 (native tmux -CC)`);
                 console.log(`     "agents": {`);
                 console.log(`       "cc": { "cli": "claude", "implementFlag": "" },`);
                 console.log(`       "cu": { "cli": "agent", "implementFlag": "" },`);
