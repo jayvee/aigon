@@ -7600,6 +7600,7 @@ Branch: \`${soloBranch}\`
             let waitingCount = 0;
             let implementingCount = 0;
             const sections = [];
+            const attentionItems = []; // { repoShort, fid, name, reason, action }
 
             repos.forEach(repoPath => {
                 const inProgressDir = path.join(repoPath, 'docs', 'specs', 'features', '03-in-progress');
@@ -7731,13 +7732,26 @@ Branch: \`${soloBranch}\`
                         lines.push(`-- ${icon} ${agent}: ${status} | bash="${nodeExec}" ${focusParams} terminal=false`);
                         lines.push(`-- ${icon} ${agent}: ${status} — copy cmd | alternate=true bash=/bin/bash param1=-c param2="echo '${slashCmd}' | pbcopy" terminal=false`);
                     });
+
+                    // Detect attention-worthy states
+                    const hasWaiting = data.agents.some(a => a.status === 'waiting');
+                    const allSubmitted = data.agents.length > 0 && data.agents.every(a => a.status === 'submitted');
+                    const paddedFid = String(fid).padStart(2, '0');
+                    if (allSubmitted) {
+                        attentionItems.push({ repoShort, repoPath, fid, name: data.name, reason: 'All agents submitted', action: `/afe ${paddedFid}`, actionLabel: 'Run eval' });
+                    } else if (hasWaiting) {
+                        const waitingAgents = data.agents.filter(a => a.status === 'waiting').map(a => a.agent).join(', ');
+                        attentionItems.push({ repoShort, repoPath, fid, name: data.name, reason: `${waitingAgents} waiting`, action: null, actionLabel: 'Focus agent' });
+                    }
                 });
 
                 sections.push(lines);
             });
 
             // Menubar title
-            if (waitingCount > 0) {
+            if (attentionItems.length > 0) {
+                console.log(`⚙ ${attentionItems.length} need${attentionItems.length === 1 ? 's' : ''} attention`);
+            } else if (waitingCount > 0) {
                 console.log(`⚙ ${waitingCount} waiting`);
             } else if (implementingCount > 0) {
                 console.log(`⚙ ${implementingCount} running`);
@@ -7745,6 +7759,25 @@ Branch: \`${soloBranch}\`
                 console.log('⚙ –');
             }
             console.log('---');
+
+            // Needs Attention section (pinned to top)
+            if (attentionItems.length > 0) {
+                console.log('⚠ Needs Attention | size=14');
+                attentionItems.forEach(item => {
+                    const repoName = path.basename(item.repoPath);
+                    const paddedId = String(item.fid).padStart(2, '0');
+                    const label = `#${item.fid} ${item.name}: ${item.reason}`;
+                    if (item.action) {
+                        // Clicking copies the action command
+                        console.log(`-- ${label} | bash=/bin/bash param1=-c param2="echo '${item.action}' | pbcopy" terminal=false`);
+                        console.log(`-- ${label} — copy: ${item.action} | alternate=true bash=/bin/bash param1=-c param2="echo '${item.action}' | pbcopy" terminal=false`);
+                    } else {
+                        // Focus the waiting agent
+                        console.log(`-- ${label} | bash="${nodeExec}" param1="${aigonScript}" param2=terminal-focus param3=${item.fid} param4=--repo param5="${item.repoPath}" terminal=false`);
+                    }
+                });
+                console.log('---');
+            }
 
             if (sections.length === 0) {
                 console.log('No active features');
