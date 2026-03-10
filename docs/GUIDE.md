@@ -1062,7 +1062,7 @@ Creates `.aigon/config.json` with the auto-detected profile:
 
 ### Configuration Options
 
-- `terminal`: Default terminal for `worktree-open`. Options: `warp` (auto-runs agent), `code` (VS Code), `cursor`
+- `terminal`: Default terminal for `worktree-open`. Options: `warp` (auto-runs agent), `code` (VS Code), `cursor`, `terminal` (Terminal.app), `tmux` (persistent sessions)
 - `profile`: Project profile (`web`, `api`, `ios`, `android`, `library`, `generic`)
 - `agents.{id}.cli`: Override the CLI command for each agent
 - `agents.{id}.implementFlag`: Override CLI flags to control permission prompts
