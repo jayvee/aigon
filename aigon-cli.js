@@ -1214,6 +1214,9 @@ function getAgentCliConfig(agentId) {
         if (globalConfig.agents[agentId].implementFlag !== undefined) {
             cli.implementFlag = globalConfig.agents[agentId].implementFlag;
         }
+        if (globalConfig.agents[agentId].implementPrompt) {
+            cli.implementPrompt = globalConfig.agents[agentId].implementPrompt;
+        }
         if (globalConfig.agents[agentId].models) {
             cli.models = { ...cli.models, ...globalConfig.agents[agentId].models };
         }
@@ -1226,6 +1229,9 @@ function getAgentCliConfig(agentId) {
         }
         if (projectConfig.agents[agentId].implementFlag !== undefined) {
             cli.implementFlag = projectConfig.agents[agentId].implementFlag;
+        }
+        if (projectConfig.agents[agentId].implementPrompt) {
+            cli.implementPrompt = projectConfig.agents[agentId].implementPrompt;
         }
         if (projectConfig.agents[agentId].models) {
             cli.models = { ...cli.models, ...projectConfig.agents[agentId].models };
@@ -1348,7 +1354,7 @@ function filterByFeatureId(worktrees, featureId) {
  */
 function buildAgentCommand(wt, taskType = 'implement') {
     const cliConfig = getAgentCliConfig(wt.agent);
-    const prompt = cliConfig.implementPrompt.replace('{featureId}', wt.featureId);
+    const prompt = cliConfig.implementPrompt.replaceAll('{featureId}', wt.featureId);
     // Unset CLAUDECODE to prevent "nested session" error when launched from a Claude Code terminal
     const prefix = cliConfig.command === 'claude' ? 'unset CLAUDECODE && ' : '';
 
@@ -1550,9 +1556,54 @@ windows:
         } catch (e) {
             console.error(`❌ Failed to open Terminal.app: ${e.message}`);
         }
+    } else if (terminal === 'tmux') {
+        const sessionName = `${getAppId()}-${wt.agent}-${parseInt(wt.featureId, 10)}`;
+        const sessionCheck = spawnSync('tmux', ['has-session', '-t', sessionName], { stdio: 'ignore' });
+        const sessionExists = sessionCheck.status === 0;
+
+        try {
+            if (!sessionExists) {
+                // Create new detached session at worktree path
+                const createResult = spawnSync('tmux', ['new-session', '-d', '-s', sessionName, '-c', wt.path], { stdio: 'pipe' });
+                if (createResult.status !== 0) {
+                    const errMsg = createResult.stderr ? createResult.stderr.toString().trim() : 'tmux new-session failed';
+                    throw new Error(errMsg);
+                }
+                // Auto-start agent command if it's a real command (not a placeholder)
+                if (agentCommand && !agentCommand.startsWith('echo ')) {
+                    spawnSync('tmux', ['send-keys', '-t', sessionName, agentCommand, 'Enter'], { stdio: 'pipe' });
+                }
+            }
+            // Open Terminal.app and attach to the session
+            execSync(`osascript -e 'tell application "Terminal" to do script "tmux attach -t ${sessionName}"'`);
+            execSync(`osascript -e 'tell application "Terminal" to activate'`);
+
+            if (sessionExists) {
+                console.log(`\n🔗 Attaching to existing tmux session:`);
+            } else {
+                console.log(`\n🚀 Created tmux session:`);
+            }
+            console.log(`   Session: ${sessionName}`);
+            console.log(`   Feature: ${wt.featureId}${wt.desc ? ' - ' + wt.desc : ''}`);
+            console.log(`   Agent: ${wt.agent}`);
+            if (!sessionExists) {
+                console.log(`   Path: ${wt.path}`);
+                if (agentCommand && !agentCommand.startsWith('echo ')) {
+                    console.log(`   Command: ${agentCommand}`);
+                }
+            }
+            console.log(`\n   Detach: Ctrl-b d   Re-attach: tmux attach -t ${sessionName}`);
+        } catch (e) {
+            console.error(`❌ Failed to open tmux session: ${e.message}`);
+            if (sessionExists) {
+                console.error(`   Attach manually: tmux attach -t ${sessionName}`);
+            } else {
+                console.error(`   Create manually: tmux new-session -s ${sessionName} -c "${wt.path}"`);
+            }
+        }
     } else {
         console.error(`❌ Terminal "${terminal}" not supported.`);
-        console.error(`   Supported terminals: warp, code (VS Code), cursor, terminal`);
+        console.error(`   Supported terminals: warp, code (VS Code), cursor, terminal, tmux`);
         console.error(`\n   Override with: aigon worktree-open <ID> --terminal=warp`);
         console.error(`   Or set default: Edit ~/.aigon/config.json`);
     }
@@ -3222,157 +3273,11 @@ function getBoardAction(typePrefix, folder, item, worktreeMap) {
     return null;
 }
 
-function collectAttentionItems() {
-    let repos = [];
-    try {
-        if (fs.existsSync(GLOBAL_CONFIG_PATH)) {
-            const cfg = JSON.parse(fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf8'));
-            repos = Array.isArray(cfg.repos) ? cfg.repos : [];
-        }
-    } catch (e) { /* skip */ }
-
-    if (repos.length === 0) return [];
-
-    const items = [];
-    repos.forEach(repoPath => {
-        const inProgressDir = path.join(repoPath, 'docs', 'specs', 'features', '03-in-progress');
-        const inEvalDir = path.join(repoPath, 'docs', 'specs', 'features', '04-in-evaluation');
-        const logsDir = path.join(repoPath, 'docs', 'specs', 'features', 'logs');
-        const evalsDir = path.join(repoPath, 'docs', 'specs', 'features', 'evaluations');
-        const repoName = path.basename(repoPath);
-
-        // Collect spec stages
-        const specStages = {};
-        const specNames = {};
-        [inProgressDir, inEvalDir].forEach(dir => {
-            if (!fs.existsSync(dir)) return;
-            const stage = dir.includes('04-in-evaluation') ? 'eval' : 'impl';
-            try {
-                fs.readdirSync(dir)
-                    .filter(f => /^feature-\d+-.+\.md$/.test(f))
-                    .forEach(f => {
-                        const m = f.match(/^feature-(\d+)-(.+)\.md$/);
-                        if (m) { specStages[m[1]] = stage; specNames[m[1]] = m[2]; }
-                    });
-            } catch (e) { /* skip */ }
-        });
-
-        // Collect log statuses
-        const logStatuses = {};
-        if (fs.existsSync(logsDir)) {
-            try {
-                fs.readdirSync(logsDir)
-                    .filter(f => /^feature-\d+-.+-log\.md$/.test(f))
-                    .forEach(logFile => {
-                        let content;
-                        try { content = fs.readFileSync(path.join(logsDir, logFile), 'utf8'); } catch (e) { return; }
-                        const fm = parseFrontMatter(content);
-                        const arenaM = logFile.match(/^feature-(\d+)-([a-z]{2})-(.+)-log\.md$/);
-                        const soloM = logFile.match(/^feature-(\d+)-(.+)-log\.md$/);
-                        const fid = arenaM ? arenaM[1] : (soloM ? soloM[1] : null);
-                        if (!fid) return;
-                        const key = arenaM ? `${fid}-${arenaM[2]}` : fid;
-                        logStatuses[key] = fm.data?.status || fm.status || null;
-                    });
-            } catch (e) { /* skip */ }
-        }
-
-        // Check worktree logs
-        const worktreeBaseDir = repoPath + '-worktrees';
-        const worktreeAgents = {};
-        if (fs.existsSync(worktreeBaseDir)) {
-            try {
-                fs.readdirSync(worktreeBaseDir).forEach(dirName => {
-                    const wtM = dirName.match(/^feature-(\d+)-([a-z]{2})-.+$/);
-                    if (!wtM) return;
-                    if (!worktreeAgents[wtM[1]]) worktreeAgents[wtM[1]] = [];
-                    worktreeAgents[wtM[1]].push(wtM[2]);
-                    const wtLogsDir = path.join(worktreeBaseDir, dirName, 'docs', 'specs', 'features', 'logs');
-                    if (!fs.existsSync(wtLogsDir)) return;
-                    try {
-                        fs.readdirSync(wtLogsDir)
-                            .filter(f => f.startsWith(`feature-${wtM[1]}-${wtM[2]}-`) && f.endsWith('-log.md'))
-                            .forEach(logFile => {
-                                let content;
-                                try { content = fs.readFileSync(path.join(wtLogsDir, logFile), 'utf8'); } catch (e) { return; }
-                                const fm = parseFrontMatter(content);
-                                const status = fm.data?.status || fm.status || null;
-                                if (status) logStatuses[`${wtM[1]}-${wtM[2]}`] = status;
-                            });
-                    } catch (e) { /* skip */ }
-                });
-            } catch (e) { /* skip */ }
-        }
-
-        // Build attention items per feature
-        Object.entries(specStages).forEach(([fid, stage]) => {
-            const name = specNames[fid] || fid;
-
-            // Collect agents
-            const agentSet = new Set();
-            Object.keys(logStatuses).filter(k => k.startsWith(`${fid}-`)).forEach(k => agentSet.add(k.split('-').slice(1).join('-')));
-            if (worktreeAgents[fid]) worktreeAgents[fid].forEach(a => agentSet.add(a));
-
-            const agents = [];
-            if (agentSet.size > 0) {
-                agentSet.forEach(agent => agents.push({ agent, status: logStatuses[`${fid}-${agent}`] || 'implementing' }));
-            } else {
-                agents.push({ agent: 'solo', status: logStatuses[fid] || 'implementing' });
-            }
-
-            const allDone = agents.every(a => a.status === 'submitted' || a.status === 'complete');
-
-            // Waiting agents
-            agents.filter(a => a.status === 'waiting').forEach(a => {
-                const agentName = (AGENT_CONFIGS[a.agent] || {}).name || a.agent;
-                items.push({ repo: repoName, fid, name, label: `🔔 ${agentName} needs input`, cmd: `/afd ${fid}` });
-            });
-
-            // Eval needed
-            if (stage === 'eval') {
-                const evalFile = path.join(evalsDir, `feature-${fid}-eval.md`);
-                let hasWinner = false;
-                if (fs.existsSync(evalFile)) {
-                    try {
-                        const content = fs.readFileSync(evalFile, 'utf8');
-                        const wm = content.match(/\*\*Winner[:\s]*\*?\*?\s*(.+)/i);
-                        if (wm) {
-                            const val = wm[1].replace(/\*+/g, '').trim();
-                            if (val && !val.includes('to be determined') && !val.includes('TBD') && val !== '()') hasWinner = true;
-                        }
-                    } catch (e) { /* skip */ }
-                }
-                items.push({
-                    repo: repoName, fid, name,
-                    label: hasWinner ? '🏆 Pick winner' : '🔍 Evaluating',
-                    cmd: `/afd ${fid}`
-                });
-            } else if (allDone) {
-                items.push({ repo: repoName, fid, name, label: '⚡ Ready for eval', cmd: `/afe ${fid}` });
-            }
-        });
-    });
-
-    return items;
-}
-
 function displayBoardKanbanView(options) {
     const { includeFeatures, includeResearch, showAll, showActive, showInbox, showBacklog, showDone } = options;
 
     const boardMapping = { features: {}, research: {}, timestamp: Date.now() };
     let letterIndex = 0;
-
-    // --- Needs Attention (cross-repo) ---
-    const attentionItems = collectAttentionItems();
-    if (attentionItems.length > 0) {
-        console.log(`🔔 NEEDS ATTENTION (${attentionItems.length})`);
-        console.log('');
-        attentionItems.forEach(item => {
-            console.log(`  ${item.label}`);
-            console.log(`    ${item.repo} · #${item.fid} ${item.name}  → ${item.cmd}`);
-        });
-        console.log('');
-    }
 
     console.log('╔═══════════════════════ Aigon Board ════════════════════════╗\n');
 
@@ -6042,6 +5947,28 @@ const commands = {
                 presetCodexTrust();
             }
 
+            // Create tmux sessions if terminal is configured as tmux
+            const fleetEffectiveConfig = getEffectiveConfig();
+            const fleetTerminal = fleetEffectiveConfig.terminal;
+            if (fleetTerminal === 'tmux' && createdWorktrees.length > 0) {
+                console.log(`\n🖥️  Creating tmux sessions...`);
+                createdWorktrees.forEach(({ agentId, worktreePath }) => {
+                    const wt = { featureId: num, agent: agentId, path: worktreePath, desc };
+                    const agentCmd = buildAgentCommand(wt);
+                    const sessionName = `aigon-f${parseInt(num, 10)}-${agentId}`;
+                    const createResult = spawnSync('tmux', ['new-session', '-d', '-s', sessionName, '-c', worktreePath], { stdio: 'pipe' });
+                    if (createResult.status !== 0) {
+                        const errMsg = createResult.stderr ? createResult.stderr.toString().trim() : 'unknown error';
+                        console.warn(`   ⚠️  Could not create tmux session ${sessionName}: ${errMsg}`);
+                        return;
+                    }
+                    spawnSync('tmux', ['send-keys', '-t', sessionName, agentCmd, 'Enter'], { stdio: 'pipe' });
+                    console.log(`   ✓ ${sessionName} → started`);
+                });
+                console.log(`\n   Attach: tmux attach -t aigon-f${parseInt(num, 10)}-<agent>`);
+                console.log(`   List:   tmux ls`);
+            }
+
             if (agentIds.length === 1) {
                 const portSuffix = profile.devServer.enabled
                     ? ` (PORT=${profile.devServer.ports[agentIds[0]] || AGENT_CONFIGS[agentIds[0]]?.port || 3000})`
@@ -6294,11 +6221,12 @@ const commands = {
     },
     'feature-eval': (args) => {
         const allowSameModel = args.includes('--allow-same-model-judge');
-        // Strip flag so positional arg parsing is unaffected
-        const positionalArgs = args.filter(a => a !== '--allow-same-model-judge');
+        const forceEval = args.includes('--force');
+        // Strip flags so positional arg parsing is unaffected
+        const positionalArgs = args.filter(a => a !== '--allow-same-model-judge' && a !== '--force');
         const name = positionalArgs[0];
         printAgentContextWarning('feature-eval', name);
-        if (!name) return console.error("Usage: aigon feature-eval <ID> [--allow-same-model-judge]\n\nExamples:\n  aigon feature-eval 55     # Drive mode: code review\n  aigon feature-eval 55     # Fleet mode: compare implementations\n  aigon feature-eval 55 --allow-same-model-judge  # Skip bias warning");
+        if (!name) return console.error("Usage: aigon feature-eval <ID> [--allow-same-model-judge] [--force]\n\nExamples:\n  aigon feature-eval 55     # Drive mode: code review\n  aigon feature-eval 55     # Fleet mode: compare implementations\n  aigon feature-eval 55 --allow-same-model-judge  # Skip bias warning\n  aigon feature-eval 55 --force                    # Skip agent completion check");
 
         // Find the feature (may already be in evaluation)
         let found = findFile(PATHS.features, name, ['03-in-progress']);
@@ -6339,6 +6267,42 @@ const commands = {
         }
 
         const mode = worktrees.length > 1 ? 'fleet' : 'drive';
+
+        // --- Agent completion check ---
+        if (worktrees.length > 0 && !forceEval) {
+            const incompleteAgents = [];
+            worktrees.forEach(w => {
+                // Log files live in the worktree: docs/specs/features/logs/feature-{num}-{agent}-{desc}-log.md
+                const worktreeLogsDir = path.join(w.path, 'docs/specs/features/logs');
+                if (!fs.existsSync(worktreeLogsDir)) return;
+                try {
+                    const logFiles = fs.readdirSync(worktreeLogsDir)
+                        .filter(f => f.startsWith(`feature-${num}-${w.agent}-`) && f.endsWith('-log.md'));
+                    if (logFiles.length === 0) return;
+                    const logContent = fs.readFileSync(path.join(worktreeLogsDir, logFiles[0]), 'utf8');
+                    const frontMatter = logContent.match(/^---\n([\s\S]*?)\n---\n/);
+                    if (!frontMatter) return;
+                    const statusMatch = frontMatter[1].match(/status:\s*(\S+)/);
+                    const status = statusMatch ? statusMatch[1] : null;
+                    if (status && status !== 'submitted') {
+                        incompleteAgents.push({ agent: w.agent, name: w.name, status });
+                    }
+                } catch (e) { /* skip on read error */ }
+            });
+
+            if (incompleteAgents.length > 0) {
+                console.log('');
+                console.log(`⚠️  ${incompleteAgents.length} agent(s) not yet submitted:`);
+                incompleteAgents.forEach(a => {
+                    console.log(`   ${a.agent} (${a.name}) — status: ${a.status}`);
+                    console.log(`     → aigon worktree-open ${num} ${a.agent}`);
+                });
+                console.log('');
+                console.log(`   To proceed anyway: aigon feature-eval ${num} --force`);
+                console.log('');
+                return;
+            }
+        }
 
         // --- Cross-provider bias detection ---
         const evalSession = detectActiveAgentSession();
@@ -7515,25 +7479,16 @@ Branch: \`${soloBranch}\`
 
             repos.forEach(repoPath => {
                 const inProgressDir = path.join(repoPath, 'docs', 'specs', 'features', '03-in-progress');
-                const inEvalDir = path.join(repoPath, 'docs', 'specs', 'features', '04-in-evaluation');
                 const logsDir = path.join(repoPath, 'docs', 'specs', 'features', 'logs');
 
-                // Source of truth: specs in 03-in-progress/ and 04-in-evaluation/
+                // Source of truth: specs in 03-in-progress/
                 let specFiles = [];
-                const specStages = {}; // featureId -> stage
-                [inProgressDir, inEvalDir].forEach(dir => {
-                    if (!fs.existsSync(dir)) return;
-                    const stage = dir.includes('04-in-evaluation') ? 'eval' : 'impl';
+                if (fs.existsSync(inProgressDir)) {
                     try {
-                        fs.readdirSync(dir)
-                            .filter(f => /^feature-\d+-.+\.md$/.test(f))
-                            .forEach(f => {
-                                specFiles.push(f);
-                                const m = f.match(/^feature-(\d+)-/);
-                                if (m) specStages[m[1]] = stage;
-                            });
+                        specFiles = fs.readdirSync(inProgressDir)
+                            .filter(f => /^feature-\d+-.+\.md$/.test(f));
                     } catch (e) { /* skip */ }
-                });
+                }
 
                 if (specFiles.length === 0) return;
 
@@ -7565,7 +7520,6 @@ Branch: \`${soloBranch}\`
                 }
 
                 // Discover worktrees for this repo to detect fleet agents
-                // Also read log files from worktrees (agent-status writes to worktree, not main repo)
                 const worktreeAgents = {}; // featureId -> [agent, agent, ...]
                 const worktreeBaseDir = repoPath + '-worktrees';
                 if (fs.existsSync(worktreeBaseDir)) {
@@ -7576,25 +7530,6 @@ Branch: \`${soloBranch}\`
                                 const fid = wtM[1];
                                 if (!worktreeAgents[fid]) worktreeAgents[fid] = [];
                                 worktreeAgents[fid].push(wtM[2]);
-
-                                // Check for log files in this worktree's logs dir
-                                const wtLogsDir = path.join(worktreeBaseDir, dirName, 'docs', 'specs', 'features', 'logs');
-                                if (fs.existsSync(wtLogsDir)) {
-                                    try {
-                                        fs.readdirSync(wtLogsDir)
-                                            .filter(f => f.startsWith(`feature-${fid}-${wtM[2]}-`) && f.endsWith('-log.md'))
-                                            .forEach(logFile => {
-                                                const logPath = path.join(wtLogsDir, logFile);
-                                                let content;
-                                                try { content = fs.readFileSync(logPath, 'utf8'); } catch (e) { return; }
-                                                const status = parseFrontMatterStatus(content);
-                                                if (status) {
-                                                    // Worktree log takes precedence (agent-status writes here)
-                                                    logStatuses[`${fid}-${wtM[2]}`] = status;
-                                                }
-                                            });
-                                    } catch (e) { /* skip */ }
-                                }
                             }
                         });
                     } catch (e) { /* skip */ }
@@ -7638,74 +7573,31 @@ Branch: \`${soloBranch}\`
 
                 if (Object.keys(features).length === 0) return;
 
-                // Determine feature-level eval status
-                const evalsDir = path.join(repoPath, 'docs', 'specs', 'features', 'evaluations');
-                function getFeatureEvalStatus(fid, data) {
-                    const allDone = data.agents.length > 0 &&
-                        data.agents.every(a => a.status === 'submitted' || a.status === 'complete');
-                    const stage = specStages[fid];
-
-                    if (stage === 'eval') {
-                        const evalFile = path.join(evalsDir, `feature-${fid}-eval.md`);
-                        if (fs.existsSync(evalFile)) {
-                            try {
-                                const content = fs.readFileSync(evalFile, 'utf8');
-                                const winnerMatch = content.match(/\*\*Winner[:\s]*\*?\*?\s*(.+)/i);
-                                if (winnerMatch) {
-                                    const val = winnerMatch[1].replace(/\*+/g, '').trim();
-                                    if (val && !val.includes('to be determined') && !val.includes('TBD') && val !== '()') {
-                                        return 'pick winner';
-                                    }
-                                }
-                            } catch (e) { /* skip */ }
-                        }
-                        return 'evaluating';
-                    }
-
-                    if (allDone) return 'eval needed';
-                    return null;
-                }
-
                 const repoShort = repoPath.replace(os.homedir(), '~');
+                const lines = [];
+                lines.push(repoShort + ' | size=14');
 
-                // Attach eval status to each feature
-                Object.entries(features).forEach(([fid, data]) => {
-                    data.evalStatus = getFeatureEvalStatus(fid, data);
-                });
+                Object.entries(features).sort((a, b) => a[0].localeCompare(b[0])).forEach(([fid, data]) => {
+                    lines.push(`#${fid} ${data.name} | size=13`);
+                    data.agents.forEach(({ agent, status }) => {
+                        const icon = status === 'waiting' ? '●' : status === 'submitted' ? '✓' : '○';
+                        const focusParams = agent === 'solo'
+                            ? `param1="${aigonScript}" param2=terminal-focus param3=${fid} param4=--repo param5="${repoPath}"`
+                            : `param1="${aigonScript}" param2=terminal-focus param3=${fid} param4=${agent} param5=--repo param6="${repoPath}"`;
+                        const paddedId = String(fid).padStart(2, '0');
+                        const slashCmd = `/afd ${paddedId}`;
 
-                sections.push({ repoPath, repoShort, features });
-            });
-
-            // --- Build "needs attention" items (waiting, eval needed, pick winner) ---
-            const attentionItems = [];
-            sections.forEach(({ repoPath: rp, repoShort, features: feats }) => {
-                Object.entries(feats).sort((a, b) => a[0].localeCompare(b[0])).forEach(([fid, data]) => {
-                    const evalStatus = data.evalStatus;
-                    // Feature-level attention: eval needed or pick winner
-                    if (evalStatus === 'eval needed' || evalStatus === 'pick winner') {
-                        attentionItems.push({
-                            label: `${repoShort} · #${fid} ${data.name}`,
-                            sublabel: evalStatus === 'eval needed' ? '⚡ Ready for eval' : '🏆 Pick winner',
-                            fid, agent: 'solo', repoPath: rp
-                        });
-                    }
-                    // Agent-level attention: waiting
-                    data.agents.filter(a => a.status === 'waiting').forEach(({ agent }) => {
-                        const agentMeta = AGENT_CONFIGS[agent] || {};
-                        const agentName = agentMeta.name || agent;
-                        attentionItems.push({
-                            label: `${repoShort} · #${fid} ${data.name}`,
-                            sublabel: `🔔 ${agentName} needs input`,
-                            fid, agent, repoPath: rp
-                        });
+                        lines.push(`-- ${icon} ${agent}: ${status} | bash="${nodeExec}" ${focusParams} terminal=false`);
+                        lines.push(`-- ${icon} ${agent}: ${status} — copy cmd | alternate=true bash=/bin/bash param1=-c param2="echo '${slashCmd}' | pbcopy" terminal=false`);
                     });
                 });
+
+                sections.push(lines);
             });
 
-            // --- Menubar title ---
-            const attentionCount = attentionItems.length;
-            if (attentionCount > 0) {
-                console.log(`⚙ ${attentionCount} need${attentionCount === 1 ? 's' : ''} attention`);
+            // Menubar title
+            if (waitingCount > 0) {
+                console.log(`⚙ ${waitingCount} waiting`);
             } else if (implementingCount > 0) {
                 console.log(`⚙ ${implementingCount} running`);
             } else {
@@ -7713,45 +7605,12 @@ Branch: \`${soloBranch}\`
             }
             console.log('---');
 
-            // --- Section 1: Needs Attention (top priority) ---
-            if (attentionItems.length > 0) {
-                console.log('🔔 NEEDS ATTENTION | size=12');
-                attentionItems.forEach(item => {
-                    const focusParams = item.agent === 'solo'
-                        ? `param1="${aigonScript}" param2=terminal-focus param3=${item.fid} param4=--repo param5="${item.repoPath}"`
-                        : `param1="${aigonScript}" param2=terminal-focus param3=${item.fid} param4=${item.agent} param5=--repo param6="${item.repoPath}"`;
-                    const paddedId = String(item.fid).padStart(2, '0');
-                    const slashCmd = `/afd ${paddedId}`;
-
-                    console.log(`-- ${item.sublabel} | bash="${nodeExec}" ${focusParams} terminal=false`);
-                    console.log(`-- ${item.label} | size=11 color=#888888 bash="${nodeExec}" ${focusParams} terminal=false`);
-                    console.log(`-- ${item.sublabel} — copy cmd | alternate=true bash=/bin/bash param1=-c param2="echo '${slashCmd}' | pbcopy" terminal=false`);
-                });
-                console.log('---');
-            }
-
-            // --- Section 2: All Features (full status) ---
             if (sections.length === 0) {
                 console.log('No active features');
             } else {
-                sections.forEach((section, i) => {
+                sections.forEach((lines, i) => {
                     if (i > 0) console.log('---');
-                    console.log(`${section.repoShort} | size=12`);
-                    Object.entries(section.features).sort((a, b) => a[0].localeCompare(b[0])).forEach(([fid, data]) => {
-                        const stageLabel = data.evalStatus ? ` [${data.evalStatus}]` : '';
-                        console.log(`#${fid} ${data.name}${stageLabel} | size=11`);
-                        data.agents.forEach(({ agent, status }) => {
-                            const icon = status === 'waiting' ? '●' : (status === 'submitted' || status === 'complete') ? '✓' : '○';
-                            const focusParams = agent === 'solo'
-                                ? `param1="${aigonScript}" param2=terminal-focus param3=${fid} param4=--repo param5="${section.repoPath}"`
-                                : `param1="${aigonScript}" param2=terminal-focus param3=${fid} param4=${agent} param5=--repo param6="${section.repoPath}"`;
-                            const paddedId = String(fid).padStart(2, '0');
-                            const slashCmd = `/afd ${paddedId}`;
-
-                            console.log(`-- ${icon} ${agent}: ${status} | bash="${nodeExec}" ${focusParams} terminal=false`);
-                            console.log(`-- ${icon} ${agent}: ${status} — copy cmd | alternate=true bash=/bin/bash param1=-c param2="echo '${slashCmd}' | pbcopy" terminal=false`);
-                        });
-                    });
+                    lines.forEach(l => console.log(l));
                 });
             }
 
@@ -7878,9 +7737,9 @@ Branch: \`${soloBranch}\`
         }
         const requestedAgent = filteredArgs[1] || null;
 
-        // Resolve terminal preference: global config → default
-        const globalConfig = loadGlobalConfig();
-        const terminal = globalConfig.terminal || 'warp';
+        // Resolve terminal preference: project config > global config > default
+        const effectiveConfig = getEffectiveConfig();
+        const terminal = effectiveConfig.terminal || 'warp';
 
         const repoPath = repoFlag || process.cwd();
 
@@ -8651,12 +8510,12 @@ Branch: \`${soloBranch}\`
                 console.log(`\n   The config includes default "yolo mode" flags that auto-approve commands.`);
                 console.log(`   To use stricter permissions, set implementFlag to "" (empty string) for any agent.`);
                 console.log(`\n   You can customize:`);
-                console.log(`   - terminal: Terminal to use (warp, code, cursor)`);
+                console.log(`   - terminal: Terminal to use (warp, code, cursor, terminal, tmux)`);
                 console.log(`   - agents.{id}.cli: Override CLI command for each agent`);
                 console.log(`   - agents.{id}.implementFlag: Override CLI flags (set to "" to require manual approval)`);
                 console.log(`\n   Example (corporate/safer defaults - removes auto-approval flags):`);
                 console.log(`   {`);
-                console.log(`     "terminal": "warp",`);
+                console.log(`     "terminal": "warp",             // warp, code, cursor, terminal, tmux`);
                 console.log(`     "agents": {`);
                 console.log(`       "cc": { "cli": "claude", "implementFlag": "" },`);
                 console.log(`       "cu": { "cli": "agent", "implementFlag": "" },`);
@@ -8979,9 +8838,9 @@ Branch: \`${soloBranch}\`
             return console.error(`❌ No worktrees found.\n\n   Create one with: aigon feature-setup <ID> <agent>`);
         }
 
-        // Determine terminal
-        const globalConfig = loadGlobalConfig();
-        const terminal = terminalOverride || globalConfig.terminal;
+        // Determine terminal (project config > global config > default)
+        const effectiveConfig = getEffectiveConfig();
+        const terminal = terminalOverride || effectiveConfig.terminal;
 
         // Determine mode
         if (featureIds.length > 1) {
@@ -9034,6 +8893,11 @@ Branch: \`${soloBranch}\`
                 } catch (e) {
                     console.error(`❌ Failed to open Warp: ${e.message}`);
                 }
+            } else if (terminal === 'tmux') {
+                console.log(`\n🖥️  Opening tmux sessions for features ${idsLabel}:`);
+                worktreeConfigs.forEach(wt => {
+                    openSingleWorktree(wt, wt.agentCommand, 'tmux');
+                });
             } else {
                 console.log(`\n📋 Parallel worktrees for features ${idsLabel}:`);
                 console.log(`   (Side-by-side launch requires Warp terminal. Use --terminal=warp)\n`);
@@ -9094,6 +8958,12 @@ Branch: \`${soloBranch}\`
                 } catch (e) {
                     console.error(`❌ Failed to open Warp: ${e.message}`);
                 }
+            } else if (terminal === 'tmux') {
+                const desc = worktreeConfigs[0].desc;
+                console.log(`\n🖥️  Opening tmux sessions for feature ${paddedId} - ${desc}:`);
+                worktreeConfigs.forEach(wt => {
+                    openSingleWorktree(wt, wt.agentCommand, 'tmux');
+                });
             } else {
                 const desc = worktreeConfigs[0].desc;
                 console.log(`\n📋 Fleet worktrees for feature ${paddedId} - ${desc}:`);
@@ -9148,7 +9018,7 @@ Branch: \`${soloBranch}\`
 
         if (!id) {
             console.error('Usage: aigon sessions-close <ID>');
-            console.error('\n  aigon sessions-close 05   # Kill all agents + close Warp tab for #05');
+            console.error('\n  aigon sessions-close 05   # Kill all agents, tmux sessions + close Warp tab for #05');
             return;
         }
 
@@ -9190,6 +9060,18 @@ Branch: \`${soloBranch}\`
         if (!foundAny) {
             console.log('   (no running agent processes found for this ID)');
         }
+
+        // Kill any tmux sessions for this ID (all known agent codes)
+        const tmuxAgents = ['cc', 'gg', 'cx', 'cu', 'solo'];
+        const featureNum = parseInt(paddedId, 10);
+        tmuxAgents.forEach(agent => {
+            const sessionName = `aigon-f${featureNum}-${agent}`;
+            const checkResult = spawnSync('tmux', ['has-session', '-t', sessionName], { stdio: 'ignore' });
+            if (checkResult.status === 0) {
+                spawnSync('tmux', ['kill-session', '-t', sessionName], { stdio: 'ignore' });
+                console.log(`   ✓ tmux kill-session ${sessionName}`);
+            }
+        });
 
         // Try to close the Warp arena tab/window
         const warpTitleHints = [
@@ -9920,11 +9802,11 @@ Modes:
 
 Worktree:
   worktree-open <ID> [agent] [--terminal=<type>]
-                                    Open worktree in terminal with agent CLI
+                                    Open worktree in terminal with agent CLI (warp, code, cursor, terminal, tmux)
   worktree-open <ID> --all          Open all Fleet worktrees side-by-side
   worktree-open <ID> <ID>... [--agent=<code>]
                                     Open multiple features side-by-side
-  sessions-close <ID>               Kill all agent sessions for a feature/research ID and close Warp tab
+  sessions-close <ID>               Kill all agent sessions (processes + tmux) for a feature/research ID
 
 Feature Commands (Drive, Fleet, Autopilot, Swarm):
   feature-create <name>             Create feature spec in inbox
@@ -9933,7 +9815,7 @@ Feature Commands (Drive, Fleet, Autopilot, Swarm):
   feature-setup <ID> [agents...]    Setup for Drive (branch) or Fleet (worktrees)
   feature-implement <ID> [--agent=<id>] [--autonomous]  Implement feature; launches agent from shell, shows instructions inside agent session
   feature-validate <ID>             Evaluate acceptance criteria (smart validation)
-  feature-eval <ID>                 Create evaluation (code review or comparison)
+  feature-eval <ID> [--force]       Create evaluation (code review or comparison)
   feature-done <ID> [agent]         Merge and complete feature
   feature-cleanup <ID>              Clean up Fleet worktrees and branches
 
@@ -9978,7 +9860,7 @@ Examples:
   aigon worktree-open 55 cc            # Open worktree in Warp with Claude CLI
   aigon worktree-open 55 --all         # Open all Fleet agents side-by-side
   aigon worktree-open 100 101 102      # Open features side-by-side (parallel)
-  aigon sessions-close 55              # Kill all Fleet agents + close Warp tab
+  aigon sessions-close 55              # Kill all Fleet agents + tmux sessions + close Warp tab
   aigon feature-implement 55             # Launch default agent (cc) from plain shell
   aigon feature-implement 55 --agent=cx  # Launch Codex from plain shell
   aigon feature-implement 55 --autonomous               # Run Autopilot loop
