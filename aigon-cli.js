@@ -7369,16 +7369,25 @@ Branch: \`${soloBranch}\`
 
             repos.forEach(repoPath => {
                 const inProgressDir = path.join(repoPath, 'docs', 'specs', 'features', '03-in-progress');
+                const inEvalDir = path.join(repoPath, 'docs', 'specs', 'features', '04-in-evaluation');
                 const logsDir = path.join(repoPath, 'docs', 'specs', 'features', 'logs');
 
-                // Source of truth: specs in 03-in-progress/
+                // Source of truth: specs in 03-in-progress/ and 04-in-evaluation/
                 let specFiles = [];
-                if (fs.existsSync(inProgressDir)) {
+                const specStages = {}; // featureId -> stage
+                [inProgressDir, inEvalDir].forEach(dir => {
+                    if (!fs.existsSync(dir)) return;
+                    const stage = dir.includes('04-in-evaluation') ? 'eval' : 'impl';
                     try {
-                        specFiles = fs.readdirSync(inProgressDir)
-                            .filter(f => /^feature-\d+-.+\.md$/.test(f));
+                        fs.readdirSync(dir)
+                            .filter(f => /^feature-\d+-.+\.md$/.test(f))
+                            .forEach(f => {
+                                specFiles.push(f);
+                                const m = f.match(/^feature-(\d+)-/);
+                                if (m) specStages[m[1]] = stage;
+                            });
                     } catch (e) { /* skip */ }
-                }
+                });
 
                 if (specFiles.length === 0) return;
 
@@ -7410,6 +7419,7 @@ Branch: \`${soloBranch}\`
                 }
 
                 // Discover worktrees for this repo to detect fleet agents
+                // Also read log files from worktrees (agent-status writes to worktree, not main repo)
                 const worktreeAgents = {}; // featureId -> [agent, agent, ...]
                 const worktreeBaseDir = repoPath + '-worktrees';
                 if (fs.existsSync(worktreeBaseDir)) {
@@ -7420,6 +7430,25 @@ Branch: \`${soloBranch}\`
                                 const fid = wtM[1];
                                 if (!worktreeAgents[fid]) worktreeAgents[fid] = [];
                                 worktreeAgents[fid].push(wtM[2]);
+
+                                // Check for log files in this worktree's logs dir
+                                const wtLogsDir = path.join(worktreeBaseDir, dirName, 'docs', 'specs', 'features', 'logs');
+                                if (fs.existsSync(wtLogsDir)) {
+                                    try {
+                                        fs.readdirSync(wtLogsDir)
+                                            .filter(f => f.startsWith(`feature-${fid}-${wtM[2]}-`) && f.endsWith('-log.md'))
+                                            .forEach(logFile => {
+                                                const logPath = path.join(wtLogsDir, logFile);
+                                                let content;
+                                                try { content = fs.readFileSync(logPath, 'utf8'); } catch (e) { return; }
+                                                const status = parseFrontMatterStatus(content);
+                                                if (status) {
+                                                    // Worktree log takes precedence (agent-status writes here)
+                                                    logStatuses[`${fid}-${wtM[2]}`] = status;
+                                                }
+                                            });
+                                    } catch (e) { /* skip */ }
+                                }
                             }
                         });
                     } catch (e) { /* skip */ }
@@ -7468,9 +7497,10 @@ Branch: \`${soloBranch}\`
                 lines.push(repoShort + ' | size=14');
 
                 Object.entries(features).sort((a, b) => a[0].localeCompare(b[0])).forEach(([fid, data]) => {
-                    lines.push(`#${fid} ${data.name} | size=13`);
+                    const stageLabel = specStages[fid] === 'eval' ? ' [eval]' : '';
+                    lines.push(`#${fid} ${data.name}${stageLabel} | size=13`);
                     data.agents.forEach(({ agent, status }) => {
-                        const icon = status === 'waiting' ? '●' : status === 'submitted' ? '✓' : '○';
+                        const icon = status === 'waiting' ? '●' : (status === 'submitted' || status === 'complete') ? '✓' : '○';
                         const focusParams = agent === 'solo'
                             ? `param1="${aigonScript}" param2=terminal-focus param3=${fid} param4=--repo param5="${repoPath}"`
                             : `param1="${aigonScript}" param2=terminal-focus param3=${fid} param4=${agent} param5=--repo param6="${repoPath}"`;
