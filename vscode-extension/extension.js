@@ -32,6 +32,7 @@ const STATUS_ICONS = {
     implementing: '○',
     waiting: '●',
     submitted: '✓',
+    complete: '✓',
     unknown: '–'
 };
 
@@ -131,6 +132,27 @@ class AigonTreeDataProvider {
             return [];
         }
 
+        // Also read log files from worktree directories (agent-status writes to worktree, not main repo)
+        const worktreeLogPaths = {};
+        const worktreeBaseDir = repoPath + '-worktrees';
+        if (fs.existsSync(worktreeBaseDir)) {
+            try {
+                fs.readdirSync(worktreeBaseDir).forEach(dirName => {
+                    const wtLogsDir = path.join(worktreeBaseDir, dirName, 'docs', 'specs', 'features', 'logs');
+                    if (!fs.existsSync(wtLogsDir)) return;
+                    try {
+                        fs.readdirSync(wtLogsDir)
+                            .filter(f => /^feature-\d+-.+-log\.md$/.test(f))
+                            .forEach(f => {
+                                if (!logFiles.includes(f)) logFiles.push(f);
+                                // Worktree log takes precedence (agent-status writes here)
+                                worktreeLogPaths[f] = path.join(wtLogsDir, f);
+                            });
+                    } catch (e) { /* skip */ }
+                });
+            } catch (e) { /* skip */ }
+        }
+
         // Group agents by feature ID
         const features = {};
         logFiles.forEach(logFile => {
@@ -148,7 +170,9 @@ class AigonTreeDataProvider {
 
             let fm = {};
             try {
-                const content = fs.readFileSync(path.join(logsDir, logFile), 'utf8');
+                // Prefer worktree log (agent-status writes there), fall back to main repo
+                const logPath = worktreeLogPaths[logFile] || path.join(logsDir, logFile);
+                const content = fs.readFileSync(logPath, 'utf8');
                 fm = parseFrontMatter(content);
             } catch (e) { /* skip */ }
 
@@ -176,7 +200,7 @@ class AigonTreeDataProvider {
                 if (!this._showAll && stage !== 'in-progress' && stage !== 'in-evaluation') return;
 
                 const hasWaiting = data.agents.some(a => a.status === 'waiting');
-                const allSubmitted = data.agents.length > 0 && data.agents.every(a => a.status === 'submitted');
+                const allSubmitted = data.agents.length > 0 && data.agents.every(a => a.status === 'submitted' || a.status === 'complete');
 
                 const featureItem = new vscode.TreeItem(
                     `#${featureId}  ${data.name}`,
@@ -211,9 +235,9 @@ class AigonTreeDataProvider {
                             title: 'Copy slash command',
                             arguments: [a.featureId]
                         };
-                    } else if (a.status === 'submitted') {
+                    } else if (a.status === 'submitted' || a.status === 'complete') {
                         agentItem.iconPath = new vscode.ThemeIcon('pass', new vscode.ThemeColor('testing.iconPassed'));
-                        agentItem.tooltip = `Submitted at ${a.updated}`;
+                        agentItem.tooltip = a.status === 'complete' ? `Completed at ${a.updated}` : `Submitted at ${a.updated}`;
                     } else if (a.status === 'implementing') {
                         agentItem.iconPath = new vscode.ThemeIcon('loading~spin');
                         agentItem.tooltip = `Implementing since ${a.updated}`;
