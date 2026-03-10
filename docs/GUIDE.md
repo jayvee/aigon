@@ -999,7 +999,9 @@ After setting up a feature with worktrees, use `/aigon:worktree-open` (or `aigon
 ### Terminal Behavior
 
 - **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with the `feature-implement` slash command. Fleet (`--all`) and parallel modes open split panes. Each pane echoes its port label on launch (e.g., `🔌 Claude — Port 3401`). Panes are ordered by port offset (cc, gg, cx, cu).
+- **tmux**: Creates named, persistent sessions (e.g., `aigon-f55-cc`) that survive terminal closes. Detach with `Ctrl-b d` and reattach anytime. Fleet mode creates one session per agent. Configure `tmuxApp` to choose which terminal app hosts the tmux attach (see below).
 - **VS Code / Cursor**: Opens the folder; you'll need to run the agent command manually (shown in output). Split pane modes print commands for manual setup.
+- **Terminal.app**: Opens a new Terminal.app window with the agent command.
 
 ---
 
@@ -1048,6 +1050,7 @@ Creates `~/.aigon/config.json`:
 ```json
 {
   "terminal": "warp",
+  "tmuxApp": "terminal",
   "agents": {
     "cc": { "cli": "claude", "implementFlag": "--permission-mode acceptEdits" },
     "cu": { "cli": "agent", "implementFlag": "--force" },
@@ -1074,6 +1077,7 @@ Creates `.aigon/config.json` with the auto-detected profile:
 ### Configuration Options
 
 - `terminal`: Default terminal for `worktree-open`. Options: `warp` (auto-runs agent), `code` (VS Code), `cursor`, `terminal` (Terminal.app), `tmux` (persistent sessions)
+- `tmuxApp`: Terminal app used to host tmux sessions. Options: `terminal` (Terminal.app, default), `iterm2` (iTerm2 with native `tmux -CC` integration — tmux windows become native tabs with scrollback, Cmd+F search, and trackpad scrolling). Only applies when `terminal` is set to `tmux`.
 - `profile`: Project profile (`web`, `api`, `ios`, `android`, `library`, `generic`)
 - `agents.{id}.cli`: Override the CLI command for each agent
 - `agents.{id}.implementFlag`: Override CLI flags to control permission prompts
