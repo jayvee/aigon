@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Unit tests for cross-provider eval bias detection (Feature 20).
+ * Unit tests for isolated helper logic used by the CLI.
  *
  * Runs with: node aigon-cli.test.js
  * Or: npm test
@@ -28,6 +28,19 @@ function isSameProviderFamily(agentA, agentB) {
     if (!familyA || !familyB) return false;
     if (familyA === 'varies' || familyB === 'varies') return false;
     return familyA === familyB;
+}
+
+function toUnpaddedId(id) {
+    const parsed = parseInt(String(id), 10);
+    return Number.isNaN(parsed) ? String(id) : String(parsed);
+}
+
+function buildTmuxSessionName(featureId, agentId) {
+    return `aigon-f${toUnpaddedId(featureId)}-${agentId || 'solo'}`;
+}
+
+function shellQuote(value) {
+    return `'${String(value).replace(/'/g, `'\\''`)}'`;
 }
 
 // ---------------------------------------------------------------------------
@@ -75,6 +88,13 @@ console.log('\nisSameProviderFamily — unknown agents');
 test('unknown vs cc → false',   () => assert.strictEqual(isSameProviderFamily('xx', 'cc'), false));
 test('cc vs unknown → false',   () => assert.strictEqual(isSameProviderFamily('cc', 'zz'), false));
 test('unknown vs unknown → false', () => assert.strictEqual(isSameProviderFamily('aa', 'bb'), false));
+
+console.log('\ntmux session helpers');
+test('toUnpaddedId removes leading zeros', () => assert.strictEqual(toUnpaddedId('040'), '40'));
+test('toUnpaddedId keeps non-numeric IDs unchanged', () => assert.strictEqual(toUnpaddedId('abc'), 'abc'));
+test('buildTmuxSessionName uses unpadded feature ID', () => assert.strictEqual(buildTmuxSessionName('040', 'cx'), 'aigon-f40-cx'));
+test('buildTmuxSessionName defaults agent to solo', () => assert.strictEqual(buildTmuxSessionName('40'), 'aigon-f40-solo'));
+test('shellQuote escapes apostrophes safely', () => assert.strictEqual(shellQuote("it's"), "'it'\\''s'"));
 
 console.log('');
 if (failed === 0) {

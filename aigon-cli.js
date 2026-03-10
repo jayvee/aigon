@@ -1392,6 +1392,63 @@ function buildResearchAgentCommand(agentId, researchId) {
     return `${prefix}${cliConfig.command} "${prompt}"`;
 }
 
+function toUnpaddedId(id) {
+    const parsed = parseInt(String(id), 10);
+    return Number.isNaN(parsed) ? String(id) : String(parsed);
+}
+
+function buildTmuxSessionName(featureId, agentId) {
+    return `aigon-f${toUnpaddedId(featureId)}-${agentId || 'solo'}`;
+}
+
+function assertTmuxAvailable() {
+    const result = spawnSync('tmux', ['-V'], { stdio: 'ignore' });
+    if (result.error || result.status !== 0) {
+        throw new Error('tmux is not installed or not available in PATH');
+    }
+}
+
+function tmuxSessionExists(sessionName) {
+    const result = spawnSync('tmux', ['has-session', '-t', sessionName], { stdio: 'ignore' });
+    return !result.error && result.status === 0;
+}
+
+function createDetachedTmuxSession(sessionName, cwd, command) {
+    const args = ['new-session', '-d', '-s', sessionName, '-c', cwd];
+    if (command) args.push(command);
+    const result = spawnSync('tmux', args, { stdio: 'ignore' });
+    if (result.error || result.status !== 0) {
+        throw new Error(`Failed to create tmux session "${sessionName}"`);
+    }
+}
+
+function shellQuote(value) {
+    return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+function openTerminalAppWithCommand(cwd, command) {
+    const fullCommand = `cd ${shellQuote(cwd)} && ${command}`;
+    const appleScript = [
+        'tell application "Terminal"',
+        'activate',
+        `do script ${JSON.stringify(fullCommand)}`,
+        'end tell'
+    ].join('\n');
+    const result = spawnSync('osascript', ['-e', appleScript], { stdio: 'ignore' });
+    if (result.error || result.status !== 0) {
+        throw new Error('Failed to open Terminal.app and run command');
+    }
+}
+
+function ensureTmuxSessionForWorktree(wt, agentCommand) {
+    const sessionName = buildTmuxSessionName(wt.featureId, wt.agent);
+    if (tmuxSessionExists(sessionName)) {
+        return { sessionName, created: false };
+    }
+    createDetachedTmuxSession(sessionName, wt.path, agentCommand);
+    return { sessionName, created: true };
+}
+
 /**
  * Open multiple worktrees side-by-side in Warp using split panes.
  * @param {Array<{path: string, agent: string, desc: string, featureId: string, agentCommand: string}>} worktreeConfigs
@@ -1550,9 +1607,24 @@ windows:
         } catch (e) {
             console.error(`❌ Failed to open Terminal.app: ${e.message}`);
         }
+    } else if (terminal === 'tmux') {
+        try {
+            assertTmuxAvailable();
+            const { sessionName, created } = ensureTmuxSessionForWorktree(wt, agentCommand);
+            openTerminalAppWithCommand(wt.path, `tmux attach -t ${shellQuote(sessionName)}`);
+
+            console.log(`\n🚀 Opening worktree in tmux:`);
+            console.log(`   Feature: ${wt.featureId} - ${wt.desc}`);
+            console.log(`   Agent: ${wt.agent}`);
+            console.log(`   Path: ${wt.path}`);
+            console.log(`   Session: ${sessionName}${created ? ' (created)' : ' (attached)'}`);
+        } catch (e) {
+            console.error(`❌ Failed to open tmux session: ${e.message}`);
+            console.error(`   Install tmux: brew install tmux`);
+        }
     } else {
         console.error(`❌ Terminal "${terminal}" not supported.`);
-        console.error(`   Supported terminals: warp, code (VS Code), cursor, terminal`);
+        console.error(`   Supported terminals: warp, code (VS Code), cursor, terminal, tmux`);
         console.error(`\n   Override with: aigon worktree-open <ID> --terminal=warp`);
         console.error(`   Or set default: Edit ~/.aigon/config.json`);
     }
@@ -5490,8 +5562,8 @@ const commands = {
         agentConfigs.sort((a, b) => a.agent.localeCompare(b.agent));
 
         // Determine terminal
-        const globalConfig = loadGlobalConfig();
-        const terminal = terminalOverride || globalConfig.terminal;
+        const effectiveConfig = getEffectiveConfig();
+        const terminal = terminalOverride || effectiveConfig.terminal;
 
         if (terminal === 'warp') {
             const configName = `arena-research-${paddedId}`;
@@ -5756,6 +5828,18 @@ const commands = {
             if (!fs.existsSync(wtBase)) {
                 fs.mkdirSync(wtBase, { recursive: true });
             }
+            const effectiveConfig = getEffectiveConfig();
+            const terminalPreference = effectiveConfig.terminal || 'warp';
+            const useTmux = terminalPreference === 'tmux';
+            if (useTmux) {
+                try {
+                    assertTmuxAvailable();
+                } catch (e) {
+                    console.error(`❌ ${e.message}`);
+                    console.error(`   Install tmux: brew install tmux`);
+                    return;
+                }
+            }
 
             const profile = getActiveProfile();
             if (profile.devServer.enabled && !readBasePort()) {
@@ -5778,6 +5862,20 @@ const commands = {
 
                 if (fs.existsSync(worktreePath)) {
                     console.warn(`⚠️  Worktree path ${worktreePath} already exists. Skipping.`);
+                    if (useTmux) {
+                        try {
+                            const wtConfig = {
+                                path: worktreePath,
+                                featureId: num,
+                                agent: agentId
+                            };
+                            const agentCommand = buildAgentCommand(wtConfig);
+                            const { sessionName, created } = ensureTmuxSessionForWorktree(wtConfig, agentCommand);
+                            console.log(`   🧵 tmux: ${sessionName}${created ? ' (created)' : ' (already exists)'}`);
+                        } catch (tmuxErr) {
+                            console.warn(`   ⚠️  Could not create tmux session: ${tmuxErr.message}`);
+                        }
+                    }
                 } else {
                     try {
                         runGit(`git worktree add ${worktreePath} -b ${branchName}`);
@@ -5882,6 +5980,21 @@ const commands = {
                         const template = `---\nstatus: implementing\nupdated: ${nowIso}\n---\n\n# Implementation Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
                         fs.writeFileSync(logPath, template);
                         console.log(`   📝 Log: docs/specs/features/logs/${logName}`);
+
+                        if (useTmux) {
+                            try {
+                                const wtConfig = {
+                                    path: worktreePath,
+                                    featureId: num,
+                                    agent: agentId
+                                };
+                                const agentCommand = buildAgentCommand(wtConfig);
+                                const { sessionName, created } = ensureTmuxSessionForWorktree(wtConfig, agentCommand);
+                                console.log(`   🧵 tmux: ${sessionName}${created ? ' (created)' : ' (already exists)'}`);
+                            } catch (tmuxErr) {
+                                console.warn(`   ⚠️  Could not create tmux session: ${tmuxErr.message}`);
+                            }
+                        }
                     } catch (e) {
                         console.error(`❌ Failed to create worktree for ${agentId}: ${e.message}`);
                     }
@@ -5905,6 +6018,9 @@ const commands = {
                 console.log(`\n💡 Next: Open the worktree with the agent CLI:`);
                 console.log(`   aigon worktree-open ${num}                    # Opens in configured terminal (default: Warp)`);
                 console.log(`   aigon worktree-open ${num} --terminal=code    # Opens in VS Code`);
+                if (useTmux) {
+                    console.log(`   aigon worktree-open ${num} --terminal=tmux    # Attaches to the tmux session`);
+                }
                 console.log(`\n   Or manually: Open the worktree and run /aigon-feature-implement ${num}`);
                 console.log(`   When done: aigon feature-done ${num}`);
             } else {
@@ -7628,8 +7744,8 @@ Branch: \`${soloBranch}\`
         const requestedAgent = filteredArgs[1] || null;
 
         // Resolve terminal preference: global config → default
-        const globalConfig = loadGlobalConfig();
-        const terminal = globalConfig.terminal || 'warp';
+        const effectiveConfig = getEffectiveConfig();
+        const terminal = effectiveConfig.terminal || 'warp';
 
         const repoPath = repoFlag || process.cwd();
 
@@ -7678,8 +7794,10 @@ Branch: \`${soloBranch}\`
                 target = matching.sort((a, b) => b.mtime - a.mtime)[0];
             }
 
-            // Open without auto-starting agent CLI
-            openSingleWorktree(target, 'echo "Ready — run your agent command here"', terminal);
+            const focusCommand = terminal === 'tmux'
+                ? buildAgentCommand(target)
+                : 'echo "Ready — run your agent command here"';
+            openSingleWorktree(target, focusCommand, terminal);
             return;
         }
 
@@ -7690,7 +7808,8 @@ Branch: \`${soloBranch}\`
             agent: requestedAgent || 'solo',
             desc: 'branch-mode'
         };
-        openSingleWorktree(fakeWt, 'echo "Ready — run your agent command here"', terminal);
+        const fallbackCommand = terminal === 'tmux' ? '' : 'echo "Ready — run your agent command here"';
+        openSingleWorktree(fakeWt, fallbackCommand, terminal);
     },
 
     'board': (args) => {
@@ -8400,7 +8519,7 @@ Branch: \`${soloBranch}\`
                 console.log(`\n   The config includes default "yolo mode" flags that auto-approve commands.`);
                 console.log(`   To use stricter permissions, set implementFlag to "" (empty string) for any agent.`);
                 console.log(`\n   You can customize:`);
-                console.log(`   - terminal: Terminal to use (warp, code, cursor)`);
+                console.log(`   - terminal: Terminal to use (warp, code, cursor, terminal, tmux)`);
                 console.log(`   - agents.{id}.cli: Override CLI command for each agent`);
                 console.log(`   - agents.{id}.implementFlag: Override CLI flags (set to "" to require manual approval)`);
                 console.log(`\n   Example (corporate/safer defaults - removes auto-approval flags):`);
@@ -8729,8 +8848,8 @@ Branch: \`${soloBranch}\`
         }
 
         // Determine terminal
-        const globalConfig = loadGlobalConfig();
-        const terminal = terminalOverride || globalConfig.terminal;
+        const effectiveConfig = getEffectiveConfig();
+        const terminal = terminalOverride || effectiveConfig.terminal;
 
         // Determine mode
         if (featureIds.length > 1) {
@@ -8783,6 +8902,11 @@ Branch: \`${soloBranch}\`
                 } catch (e) {
                     console.error(`❌ Failed to open Warp: ${e.message}`);
                 }
+            } else if (terminal === 'tmux') {
+                console.log(`\n🚀 Opening ${worktreeConfigs.length} features via tmux sessions:`);
+                worktreeConfigs.forEach(wt => {
+                    openSingleWorktree(wt, wt.agentCommand, terminal);
+                });
             } else {
                 console.log(`\n📋 Parallel worktrees for features ${idsLabel}:`);
                 console.log(`   (Side-by-side launch requires Warp terminal. Use --terminal=warp)\n`);
@@ -8843,6 +8967,11 @@ Branch: \`${soloBranch}\`
                 } catch (e) {
                     console.error(`❌ Failed to open Warp: ${e.message}`);
                 }
+            } else if (terminal === 'tmux') {
+                console.log(`\n🚀 Opening ${worktreeConfigs.length} Fleet worktrees via tmux sessions:`);
+                worktreeConfigs.forEach(wt => {
+                    openSingleWorktree(wt, wt.agentCommand, terminal);
+                });
             } else {
                 const desc = worktreeConfigs[0].desc;
                 console.log(`\n📋 Fleet worktrees for feature ${paddedId} - ${desc}:`);
@@ -8940,6 +9069,32 @@ Branch: \`${soloBranch}\`
             console.log('   (no running agent processes found for this ID)');
         }
 
+        // Kill tmux sessions for this feature ID
+        let closedTmuxSessions = 0;
+        try {
+            const tmuxList = spawnSync('tmux', ['list-sessions', '-F', '#S'], { encoding: 'utf8' });
+            if (!tmuxList.error && tmuxList.status === 0) {
+                const targetIds = new Set([toUnpaddedId(paddedId), toUnpaddedId(id)]);
+                const sessions = tmuxList.stdout
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(Boolean);
+                sessions.forEach(sessionName => {
+                    const match = sessionName.match(/^aigon-f(\d+)-/);
+                    if (!match) return;
+                    if (!targetIds.has(toUnpaddedId(match[1]))) return;
+
+                    const kill = spawnSync('tmux', ['kill-session', '-t', sessionName], { stdio: 'ignore' });
+                    if (!kill.error && kill.status === 0) {
+                        closedTmuxSessions++;
+                        console.log(`   ✓ tmux ${sessionName}`);
+                    }
+                });
+            }
+        } catch (e) {
+            // No tmux server running or tmux not installed.
+        }
+
         // Try to close the Warp arena tab/window
         const warpTitleHints = [
             `Arena Research: ${paddedId}`,
@@ -8956,7 +9111,8 @@ Branch: \`${soloBranch}\`
         if (warpClosed) {
             console.log('\n✅ Warp Fleet tab closed.');
         } else {
-            console.log('\n✅ Done. (Close the Warp tab manually if still open.)');
+            const tmuxSuffix = closedTmuxSessions > 0 ? ` Closed ${closedTmuxSessions} tmux session(s).` : '';
+            console.log(`\n✅ Done. (Close the Warp tab manually if still open.)${tmuxSuffix}`);
         }
     },
 
@@ -9673,7 +9829,7 @@ Worktree:
   worktree-open <ID> --all          Open all Fleet worktrees side-by-side
   worktree-open <ID> <ID>... [--agent=<code>]
                                     Open multiple features side-by-side
-  sessions-close <ID>               Kill all agent sessions for a feature/research ID and close Warp tab
+  sessions-close <ID>               Kill all agent sessions for a feature/research ID and close Warp/tmux sessions
 
 Feature Commands (Drive, Fleet, Autopilot, Swarm):
   feature-create <name>             Create feature spec in inbox
