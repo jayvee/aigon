@@ -2,7 +2,7 @@
 
 **Comprehensive reference for detailed workflows, advanced configuration, and best practices.**
 
-For a quick overview and getting started, see the main [README.md](../README.md).
+For a quick overview and getting started, see the main [README.md](README.md).
 
 ---
 
@@ -125,9 +125,11 @@ Run multiple agents in competition to find the optimal solution.
     * **Auto-creates** Implementation Log templates in each worktree with `status: implementing` front matter.
     * **STOPS** - does not implement (user must open each worktree separately).
 4.  **Implement:** Open all worktrees side-by-side with `aigon worktree-open 108 --all` (or individually with `aigon worktree-open 108 cc`), or launch an agent directly from a worktree shell with `aigon feature-implement 108`.
-    * With Warp: Opens all agents side-by-side and auto-starts each with `/aigon:feature-implement 108`.
+    * **Warp**: Opens all agents side-by-side in split panes and auto-starts each with `/aigon:feature-implement 108`.
+    * **tmux**: Creates persistent named sessions (`aigon-f108-cc`, `aigon-f108-gg`, etc.) that survive terminal closes. Detach with `Ctrl-b d`, reattach anytime. With `tmuxApp: "iterm2"`, sessions open as native iTerm2 tabs.
+    * **VS Code / Cursor**: Opens the folder; run `aigon feature-implement 108` in the integrated terminal — Aigon detects no active session and launches the agent automatically. Alternatively run `/aigon:feature-implement 108` inside an already-open agent session.
+    * **Terminal.app**: Opens a new window per agent with the command auto-started.
     * Single agent: Opens one worktree with agent CLI pre-loaded.
-    * With VS Code: Opens the folder; run `aigon feature-implement 108` in the integrated terminal — Aigon detects no active session and launches the agent automatically. Alternatively run `/aigon:feature-implement 108` inside an already-open agent session.
     * **Fleet mismatch protection:** If `--agent=gg` is specified inside a `feature-108-cc-*` worktree, Aigon exits with a clear error instead of launching the wrong agent.
     * Each agent builds the feature independently in their isolated worktree.
     * Each agent creates **tasks from the acceptance criteria** and *must* fill out their Implementation Log.
