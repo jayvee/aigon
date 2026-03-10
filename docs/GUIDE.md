@@ -423,10 +423,32 @@ aigon conductor stop     # shut it down
 
 The daemon logs to `~/.aigon/conductor.log`.
 
-### Uninstalling the extension
+### Alternative: macOS Menubar
+
+If you prefer a lightweight, IDE-independent option, install the menubar plugin instead of (or alongside) the VS Code extension. It shows a gear icon in your macOS menubar with live agent status — click any agent to jump straight to its terminal.
 
 ```bash
-aigon conductor vscode-uninstall
+# Install SwiftBar (one-time)
+brew install --cask swiftbar
+
+# Install the Aigon menubar plugin
+aigon conductor menubar-install
+```
+
+The menubar shows `⚙ 2 waiting` (or `⚙ 3 running`, `⚙ –`). Click to expand and see all features/agents. Click an agent to open its terminal; Option-click to copy the slash command.
+
+You can also jump to an agent's terminal directly:
+
+```bash
+aigon terminal-focus 39        # open terminal for feature #39
+aigon terminal-focus 39 cc     # specific agent
+```
+
+### Uninstalling
+
+```bash
+aigon conductor vscode-uninstall   # remove VS Code extension
+aigon conductor menubar-uninstall  # remove menubar plugin
 ```
 
 ---
