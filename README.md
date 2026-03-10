@@ -78,7 +78,7 @@ FEATURES
 
 ---
 
-📘 **New to Aigon?** This README covers the essentials. For detailed workflows, hooks, and advanced configuration, see the [Complete Guide](docs/GUIDE.md)
+📘 **New to Aigon?** This README covers the essentials. For detailed workflows, hooks, and advanced configuration, see the [Complete Guide](GUIDE.md)
 
 ---
 
@@ -369,7 +369,7 @@ aigon config get terminal               # Show value + where it comes from
 aigon config show                       # Show merged effective config
 ```
 
-See the [Complete Guide](docs/GUIDE.md#configuration) for all config commands and options.
+See the [Complete Guide](GUIDE.md#configuration) for all config commands and options.
 
 ---
 
@@ -442,111 +442,225 @@ Think of this as a second axis in addition to mode (Drive/Fleet/Autopilot/Swarm)
 - **CLI-only is supported** and useful for automation or terminal-first habits.
 - **Hybrid is common**: define in-agent, then orchestrate from CLI.
 
-For deeper details and mode-specific nuances, see [docs/GUIDE.md](docs/GUIDE.md#command-surfaces-cli-vs-in-agent).
+For deeper details and mode-specific nuances, see [GUIDE.md](GUIDE.md#command-surfaces-cli-vs-in-agent).
 
 ---
 
 ## Workflow Overview
 
-### Research lifecycle
+Aigon organises work into three lifecycles:
 
-1. Create topic: `research-create`
-2. Prioritise: `research-prioritise`
-3. Setup: `research-setup`
-4. Open agents (Fleet): `research-open`
-5. Conduct: `research-conduct`
-6. Synthesize (Fleet): `research-synthesize`
-7. Complete: `research-done`
+| Lifecycle | Purpose | Commands |
+|-----------|---------|----------|
+| **Features** | Build and ship code | `feature-create` → `feature-prioritise` → `feature-setup` → `feature-implement` → `feature-eval` → `feature-done` |
+| **Research** | Investigate before building | `research-create` → `research-prioritise` → `research-setup` → `research-conduct` → `research-synthesize` → `research-done` |
+| **Feedback** | Capture and triage user input | `feedback-create` → `feedback-list` → `feedback-triage` |
 
-### Feature lifecycle
+Each lifecycle can run in any of four modes:
 
-1. Create spec: `feature-create`
-2. Prioritise: `feature-prioritise`
-3. Setup: `feature-setup` — log file created with `status: implementing` front matter
-4. Implement: `feature-implement` — agent auto-signals `implementing` → `waiting` via `aigon agent-status`
-5. Evaluate (optional but recommended): `feature-eval`
-6. Finish and merge: `feature-done`
-7. Cleanup losing Fleet branches/worktrees (Fleet only): `feature-cleanup`
+| | **Hands-on** (you guide) | **Hands-off** (agent loops autonomously) |
+|---|---|---|
+| **Single agent** | **Drive** — you and one agent, step by step | **Autopilot** — agent retries until tests pass |
+| **Multiple agents** | **Fleet** — agents compete, you pick the winner | **Swarm** — agents compete autonomously, you evaluate results |
 
-### Feedback lifecycle
-
-1. Create feedback: `feedback-create "<title>"`
-2. List and filter: `feedback-list [--inbox|--triaged|--actionable]`
-3. Triage (AI-assisted): `feedback-triage <ID>`
-4. Apply changes: `feedback-triage <ID> --type <type> --severity <severity> --tags <csv> --status <status> --apply --yes`
-5. Promote to research/feature: `feedback-promote <ID>` (upcoming in feature #15)
+The examples below show each combination with realistic commands.
 
 ---
 
 ## Workflow Examples
 
-### Drive development (fast-track branch mode)
+### Feature: Drive Mode (single agent, hands-on)
 
-Slash command first:
+> You want to add JWT authentication. One agent, guided by you.
+
+```text
+/aigon:feature-create jwt-auth
+```
+
+The agent helps you write a spec, then:
+
+```text
+/aigon:feature-prioritise jwt-auth          # Assigns ID (e.g., #07)
+/aigon:feature-setup 07                     # Creates branch, moves spec to in-progress
+/aigon:feature-implement 07                 # Agent reads spec and starts building
+```
+
+The agent works through the spec — creating middleware, adding token validation, writing tests. You review as it goes. When done:
+
+```text
+/aigon:feature-eval 07                      # Code review checklist
+/aigon:feature-done 07                      # Merge to main
+```
+
+**Fast-track shortcut:** If you want to skip the ceremony, `feature-now` goes from idea to implementation in one step:
 
 ```text
 /aigon:feature-now dark-mode
 ```
 
-Use this when you want to go from idea to implementation in one session. If `dark-mode` matches a feature already in the inbox, it will prioritise → setup → implement it. Otherwise it creates a new feature from scratch.
+### Feature: Fleet Mode (multiple agents, hands-on)
 
-### Fleet competition (parallel worktrees)
-
-Setup Fleet:
+> Same JWT auth feature, but three agents compete. You pick the best implementation.
 
 ```text
-/aigon:feature-setup 55 cc gg cx
+/aigon:feature-setup 07 cc gg cx           # Creates 3 worktrees, 3 branches
+/aigon:worktree-open 07 --all              # Opens all agents side-by-side
 ```
-
-Open all worktrees side-by-side:
-
-```text
-/aigon:worktree-open 55 --all
-```
-
-Aigon supports multiple terminal backends: **Warp** (split panes), **tmux** (persistent sessions that survive terminal closes), **VS Code**, **Cursor**, and **Terminal.app**. When using tmux, sessions are named (e.g., `aigon-f55-cc`) and can be reattached anytime. With **iTerm2**, tmux sessions use native `tmux -CC` integration for seamless tabs.
 
 ![Warp split view with Fleet worktrees side-by-side](docs/images/aigon-warp-arena-split.png)
 
-### Multi-agent research (create -> conduct -> synthesize)
-
-1. Create and prioritise:
+In each agent's terminal, run:
 
 ```text
-/aigon:research-create plugin-distribution
-/aigon:research-prioritise plugin-distribution
+/aigon:feature-implement 07
 ```
 
-2. Setup Fleet research:
+Each agent reads the same spec and builds its own implementation independently. When all agents have submitted, evaluate:
+
+```text
+/aigon:feature-eval 07                     # Generates comparison scorecard
+```
+
+`feature-eval` checks each agent's status first — if someone hasn't submitted, you'll see:
+
+```text
+⚠️  1 agent(s) not yet submitted:
+   cx (Codex) — status: implementing
+     → aigon worktree-open 07 cx
+```
+
+After evaluating, merge the winner and optionally adopt improvements from the losers:
+
+```bash
+aigon feature-done 07 cc                   # Merge Claude's implementation
+aigon feature-done 07 cc --adopt all       # Merge + review diffs from gg and cx
+aigon feature-cleanup 07                   # Remove losing worktrees
+```
+
+### Feature: Autopilot Mode (single agent, hands-off)
+
+> You want the agent to keep iterating until tests pass, without hand-holding.
+
+```text
+/aigon:feature-setup 07 cc
+/aigon:feature-implement 07 --autonomous
+```
+
+The agent enters an autonomous loop:
+
+```text
+✈️  Autopilot mode
+Agent: cc · Iterations: 1..4
+
+🚀 Iteration 1/4
+   Implementing...
+   🧪 Validation: npm test ❌ (3 failures)
+
+🚀 Iteration 2/4
+   Fixing test failures...
+   🧪 Validation: npm test ✅
+
+✅ All checks passed · Ready for your review
+```
+
+Review the result and finish:
+
+```text
+/aigon:feature-eval 07
+/aigon:feature-done 07
+```
+
+See [autonomous-mode.md](docs/autonomous-mode.md) for configuration options (`--max-iterations`, validation commands, progress tracking).
+
+### Feature: Swarm Mode (multiple agents, hands-off)
+
+> Three agents compete autonomously. Each retries until passing, then you evaluate the converged results.
+
+```bash
+aigon feature-setup 07 cc gg cx
+aigon worktree-open 07 --all
+```
+
+In each agent's terminal:
+
+```text
+/aigon:feature-implement 07 --autonomous --auto-submit
+```
+
+```text
+🐝 Swarm mode
+cc: ✅ pass on iteration 1 · submitted
+gg: ❌ iteration 1 · ✅ pass on iteration 2 · submitted
+cx: ❌ iteration 1 · ✅ pass on iteration 2 · submitted
+```
+
+Once all agents submit:
+
+```text
+/aigon:feature-eval 07                     # Compare 3 passing implementations
+aigon feature-done 07 cc                   # Merge the winner
+aigon feature-cleanup 07                   # Clean up the rest
+```
+
+### Research: Drive Mode (single agent)
+
+> You want one agent to investigate auth strategies for a mobile app.
+
+```text
+/aigon:research-create auth-strategy-mobile
+/aigon:research-prioritise auth-strategy-mobile   # Assigns ID (e.g., #03)
+/aigon:research-conduct 03
+```
+
+The agent investigates the topic, writes findings to `docs/specs/research-topics/logs/`, and answers the questions defined in the topic doc.
+
+```text
+/aigon:research-done 03
+```
+
+### Research: Fleet Mode (multiple agents)
+
+> Three agents independently research the same topic, then you synthesize their perspectives.
 
 ```text
 /aigon:research-setup 03 cc gg cx
-/aigon:research-open 03
+/aigon:research-open 03                    # Opens all agents side-by-side
 ```
 
 ![Research agents side-by-side in terminal](docs/images/aigon-research-arena-split.png)
 
-3. In each agent pane:
+In each agent pane:
 
 ```text
 /aigon:research-conduct 03
 ```
 
-4. Synthesize findings:
+Each agent writes its findings independently. Then synthesize:
 
 ```text
-/aigon:research-synthesize 03
+/aigon:research-synthesize 03              # Compare findings, extract features
+/aigon:research-done 03
 ```
 
-5. Finalize from CLI:
+### Feedback Lifecycle
+
+> A user reports "search is slow on large datasets". Capture it, triage it, act on it.
+
+```text
+/aigon:feedback-create "Search is slow on large datasets"
+/aigon:feedback-list --inbox               # See all untriaged feedback
+/aigon:feedback-triage 5                   # AI-assisted severity/type/tag classification
+```
+
+The triage recommends severity, type (bug/feature/improvement), and tags. Apply the recommendation:
 
 ```bash
-aigon research-done 03 --complete
+aigon feedback-triage 5 --apply --yes      # Accept AI recommendations
 ```
 
-### Parallel Drive worktree workflow (multiple features)
+### Parallel Drive (multiple features, one agent)
 
-Run independent features in parallel with one agent:
+> You have three independent features and want to work on all of them with Claude.
 
 ```bash
 aigon feature-setup 100 cc
@@ -554,6 +668,59 @@ aigon feature-setup 101 cc
 aigon feature-setup 102 cc
 aigon worktree-open 100 101 102 --agent=cc
 ```
+
+Each feature gets its own worktree and branch. Switch between them freely.
+
+---
+
+## Terminal Setup (tmux + iTerm2)
+
+Aigon supports persistent terminal sessions via **tmux**. Agent sessions survive terminal closes — detach, close your laptop, and reattach later to find the agent exactly where you left it.
+
+### Prerequisites
+
+```bash
+brew install tmux                          # Required
+brew install --cask iterm2                 # Optional but recommended
+```
+
+### Configuration
+
+```bash
+aigon config set --global terminal tmux    # Use tmux for all sessions
+aigon config set --global tmuxApp iterm2   # Use iTerm2 with native tmux -CC integration
+```
+
+| `tmuxApp` value | Behaviour |
+|-----------------|-----------|
+| `terminal` (default) | Opens Terminal.app, runs `tmux attach` inside it |
+| `iterm2` | Opens iTerm2 with `tmux -CC` — tmux windows become native iTerm2 tabs with scrollback, Cmd+F search, and trackpad scrolling |
+
+### Session Lifecycle
+
+```bash
+aigon feature-setup 07 cc gg cx            # Creates tmux sessions: aigon-f7-cc, aigon-f7-gg, aigon-f7-cx
+aigon worktree-open 07 cc                  # Attaches to aigon-f7-cc (or creates if missing)
+aigon worktree-open 07 --all               # Opens all agents in separate windows
+
+tmux ls                                    # List all Aigon sessions
+# aigon-f7-cc: 1 windows (created ...)
+# aigon-f7-gg: 1 windows (created ...)
+
+aigon sessions-close 07                    # Kill all tmux sessions for feature 07
+```
+
+Detach from any session with `Ctrl-b d`. Reattach manually with `tmux attach -t aigon-f7-cc`.
+
+### Supported Terminal Backends
+
+| Backend | Config value | Agent auto-launch | Persistent sessions | Split panes |
+|---------|-------------|-------------------|--------------------|-|
+| **Warp** | `warp` | Yes | No | Yes (Fleet `--all`) |
+| **tmux** | `tmux` | Yes | Yes (survives terminal close) | No (separate windows) |
+| **VS Code** | `code` | No (manual) | No | No |
+| **Cursor** | `cursor` | No (manual) | No | No |
+| **Terminal.app** | `terminal` | Yes | No | No |
 
 ---
 
@@ -848,7 +1015,7 @@ If the proxy isn't set up, everything falls back to `localhost:<port>` — exist
 
 Only **web** and **api** profiles use the dev proxy. iOS, Android, library, and generic profiles are not affected.
 
-See the [Complete Guide](docs/GUIDE.md#local-dev-proxy) for detailed setup instructions, per-project configuration, and troubleshooting.
+See the [Complete Guide](GUIDE.md#local-dev-proxy) for detailed setup instructions, per-project configuration, and troubleshooting.
 
 ---
 
@@ -898,7 +1065,7 @@ This generates a structured comparison template so you can score implementations
 
 After initial evaluation, a hybrid approach was developed combining Codex's concise structure with Cursor's comprehensive content:
 - **README.md** (626 lines): Scannable quick reference
-- **docs/GUIDE.md** (465 lines): Detailed workflows and configuration
+- **GUIDE.md** (465 lines): Detailed workflows and configuration
 - **Best of both worlds**: Conciseness for first-time visitors + completeness for advanced users
 - **Clear reader journey**: Quick start → detailed documentation
 
@@ -1192,4 +1359,4 @@ See [COMPARISONS.md](COMPARISONS.md) for strategic analysis including:
 
 ---
 
-📘 **For detailed workflows, hooks, project profiles, and advanced configuration, see the [Complete Guide](docs/GUIDE.md)**
+📘 **For detailed workflows, hooks, project profiles, and advanced configuration, see the [Complete Guide](GUIDE.md)**
