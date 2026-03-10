@@ -394,20 +394,31 @@ The extension shows a live tree of all features and agent statuses across every 
 aigon conductor vscode-install
 ```
 
-Then reload VS Code (`Cmd+Shift+P` → "Developer: Reload Window"). You'll see an **Aigon** section in the Explorer sidebar:
+Then reload VS Code (`Cmd+Shift+P` → "Developer: Reload Window"). You'll see an **Aigon** section in the Explorer sidebar with a **Needs Attention** section at the top:
+
+<!-- TODO: Replace with actual screenshot -->
+<!-- ![VS Code Sidebar](docs/images/vscode-sidebar.png) -->
 
 ```
 AIGON
-└── my-project
-    ├── 🔔 #31  log-status-tracking
-    │   └── 🔔 cc  ● waiting  11:23
-    └── ⏳ #32  conductor-daemon
-        └── ⏳ gg  ○ implementing  11:15
+├── 🔔 Needs Attention (2)
+│   ├── 🔔 #31 log-status-tracking    my-project · Claude needs input
+│   └── ✅ #12 dark-mode               my-app · Ready for eval
+├── 📁 my-project
+│   ├── 🔔 #31  log-status-tracking
+│   │   └── 🔔 cc  ● waiting  11:23
+│   └── ⟳  #32  conductor-daemon
+│       └── ⟳  gg  ○ implementing  11:15
+└── 📁 my-app
+    └── ✅ #12  dark-mode
+        └── ✓  solo  ✓ submitted
 ```
 
+- **🔔 Needs Attention** — items requiring your input, surfaced across all repos
 - **🔔 bell** — agent needs your input (click to copy `/afd <ID>` to clipboard)
-- **⏳ spinner** — agent is still implementing
+- **⟳ spinner** — agent is still implementing
 - **✓ green check** — all agents submitted
+- **🏆 trophy** — evaluation complete, pick the winner
 
 The tree refreshes automatically as log files change. Use the toolbar buttons to manually refresh or toggle between active-only and all-stages view.
 
@@ -435,7 +446,7 @@ brew install --cask swiftbar
 aigon conductor menubar-install
 ```
 
-The menubar shows `⚙ 2 waiting` (or `⚙ 3 running`, `⚙ –`). Click to expand and see all features/agents. Click an agent to open its terminal; Option-click to copy the slash command.
+The menubar shows `⚙ 3 needs attention` (or `⚙ 5 running`, `⚙ –`). A **Needs Attention** section at the top surfaces waiting agents and eval-ready features. Click an agent to open its terminal; Option-click to copy the slash command.
 
 You can also jump to an agent's terminal directly:
 

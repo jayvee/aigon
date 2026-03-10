@@ -569,24 +569,36 @@ aigon conductor vscode-install
 # 3. Reload VS Code — the Aigon panel appears in the Explorer sidebar
 ```
 
-The sidebar shows a tree of repos → features → agents, with live status icons:
+The sidebar opens with a **Needs Attention** section at the top — like Gmail's "important and unread" — followed by the full repo status below:
+
+<!-- TODO: Replace with actual screenshot -->
+<!-- ![VS Code Sidebar](docs/images/vscode-sidebar.png) -->
 
 ```
 ▼ AIGON
-  ▼ 📁 aigon
-    ▼ 🔔 #32  conductor-daemon
-        drive  ●  waiting   01:33    ← click to copy /afd 32
-    ▼ ⟳  #33  conductor-vscode
-        drive  ○  implementing
-  ▼ 📁 my-web-app
-    ▼ ✅ #12  dark-mode
-        cc     ✓  submitted
-        gg     ✓  submitted
+  ▼ 🔔 Needs Attention (3)
+      🔔 #32  conductor-daemon     aigon · Claude needs input
+      ✅ #12  dark-mode             my-web-app · Ready for eval
+      🏆 #14  profile-redesign     my-web-app · Pick winner
+  ▷ 📁 aigon
+  ▷ 📁 my-web-app
 ```
 
-- **🔔 ● waiting** — click the agent row to copy the slash command to clipboard
+Click any attention item to copy its slash command. Expand a repo for the full feature/agent breakdown:
+
+```
+  ▼ 📁 aigon
+    ▼ 🔔 #32  conductor-daemon
+        🔔 cc  ●  waiting   01:33    ← click to copy /afd 32
+    ▼ ⟳  #33  conductor-vscode
+        ⟳  cx  ○  implementing
+        ✓  gg  ✓  submitted
+```
+
+- **🔔 Needs Attention** — waiting agents, features ready for eval, winners to pick
 - **⟳ ○ implementing** — agent is actively working
 - **✅ ✓ submitted** — all agents submitted, ready for eval
+- **🏆 pick winner** — evaluation complete, winner identified
 - Refresh button (↻) and stage toggle (☰) in the panel title bar
 - Updates automatically via file watching — no polling, no manual refresh
 
@@ -622,21 +634,30 @@ aigon conductor add
 aigon conductor menubar-install
 ```
 
-The menubar shows a gear icon with a count: `⚙ 2 waiting` or `⚙ 3 running` or `⚙ –` when idle. Click to expand:
+The menubar shows a gear icon with an attention count: `⚙ 3 needs attention` or `⚙ 5 running` or `⚙ –` when idle. Click to expand:
+
+<!-- TODO: Replace with actual screenshot -->
+<!-- ![Menubar](docs/images/menubar.png) -->
 
 ```
-⚙ 1 waiting
-───────────────
+⚙ 2 needs attention
+───────────────────────────
+🔔 NEEDS ATTENTION
+  🔔 Claude needs input        ← click to open terminal
+     ~/src/aigon · #32 conductor-daemon
+  ⚡ Ready for eval
+     ~/src/my-web-app · #12 dark-mode
+───────────────────────────
 ~/src/aigon
-#39 conductor-menubar
-  ● cc: waiting         ← click to open terminal
-  ○ gg: implementing    ← click to open terminal
-───────────────
+  #32 conductor-daemon
+    ● cc: waiting
+    ○ gg: implementing
 ~/src/my-web-app
-#12 dark-mode
-  ✓ solo: submitted
+  #12 dark-mode [eval needed]
+    ✓ solo: submitted
 ```
 
+- **Needs Attention** section at the top surfaces what needs you right now
 - **Click** an agent → opens/focuses its terminal (Warp, VS Code, or Terminal.app)
 - **Option-click** (⌥) an agent → copies the slash command to clipboard
 - Refreshes every 30 seconds automatically
