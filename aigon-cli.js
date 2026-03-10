@@ -1537,9 +1537,22 @@ windows:
             console.error(`❌ Failed to open Cursor: ${e.message}`);
             console.error(`   Make sure the 'cursor' CLI is installed`);
         }
+    } else if (terminal === 'terminal') {
+        try {
+            execSync(`open -a Terminal "${wt.path}"`);
+
+            console.log(`\n🚀 Opening worktree in Terminal.app:`);
+            console.log(`   Feature: ${wt.featureId} - ${wt.desc}`);
+            console.log(`   Agent: ${wt.agent}`);
+            console.log(`   Path: ${wt.path}`);
+            console.log(`\n📋 Run this command in the terminal:`);
+            console.log(`   ${agentCommand}`);
+        } catch (e) {
+            console.error(`❌ Failed to open Terminal.app: ${e.message}`);
+        }
     } else {
         console.error(`❌ Terminal "${terminal}" not supported.`);
-        console.error(`   Supported terminals: warp, code (VS Code), cursor`);
+        console.error(`   Supported terminals: warp, code (VS Code), cursor, terminal`);
         console.error(`\n   Override with: aigon worktree-open <ID> --terminal=warp`);
         console.error(`   Or set default: Edit ~/.aigon/config.json`);
     }
@@ -7338,6 +7351,243 @@ Branch: \`${soloBranch}\`
             return;
         }
 
+        if (sub === 'menubar-render') {
+            const repos = readConductorRepos();
+            if (repos.length === 0) {
+                console.log('⚙ –');
+                console.log('---');
+                console.log('No repos registered');
+                console.log('Run: aigon conductor add | href=https://github.com/jviner/aigon');
+                return;
+            }
+
+            const nodeExec = process.execPath;
+            const aigonScript = __filename;
+            let waitingCount = 0;
+            let implementingCount = 0;
+            const sections = [];
+
+            repos.forEach(repoPath => {
+                const inProgressDir = path.join(repoPath, 'docs', 'specs', 'features', '03-in-progress');
+                const logsDir = path.join(repoPath, 'docs', 'specs', 'features', 'logs');
+
+                // Source of truth: specs in 03-in-progress/
+                let specFiles = [];
+                if (fs.existsSync(inProgressDir)) {
+                    try {
+                        specFiles = fs.readdirSync(inProgressDir)
+                            .filter(f => /^feature-\d+-.+\.md$/.test(f));
+                    } catch (e) { /* skip */ }
+                }
+
+                if (specFiles.length === 0) return;
+
+                // Build a map of log statuses for enrichment
+                const logStatuses = {}; // key: "featureId" or "featureId-agent" -> status
+                if (fs.existsSync(logsDir)) {
+                    try {
+                        fs.readdirSync(logsDir)
+                            .filter(f => /^feature-\d+-.+-log\.md$/.test(f))
+                            .forEach(logFile => {
+                                const logPath = path.join(logsDir, logFile);
+                                let content;
+                                try { content = fs.readFileSync(logPath, 'utf8'); } catch (e) { return; }
+                                const status = parseFrontMatterStatus(content);
+
+                                const arenaM = logFile.match(/^feature-(\d+)-([a-z]{2})-(.+)-log\.md$/);
+                                const soloM = logFile.match(/^feature-(\d+)-(.+)-log\.md$/);
+                                const featureId = arenaM ? arenaM[1] : (soloM ? soloM[1] : null);
+                                const agent = arenaM ? arenaM[2] : null;
+
+                                if (!featureId) return;
+                                if (agent) {
+                                    logStatuses[`${featureId}-${agent}`] = status || 'implementing';
+                                } else {
+                                    logStatuses[featureId] = status || 'implementing';
+                                }
+                            });
+                    } catch (e) { /* skip */ }
+                }
+
+                // Discover worktrees for this repo to detect fleet agents
+                const worktreeAgents = {}; // featureId -> [agent, agent, ...]
+                const worktreeBaseDir = repoPath + '-worktrees';
+                if (fs.existsSync(worktreeBaseDir)) {
+                    try {
+                        fs.readdirSync(worktreeBaseDir).forEach(dirName => {
+                            const wtM = dirName.match(/^feature-(\d+)-([a-z]{2})-.+$/);
+                            if (wtM) {
+                                const fid = wtM[1];
+                                if (!worktreeAgents[fid]) worktreeAgents[fid] = [];
+                                worktreeAgents[fid].push(wtM[2]);
+                            }
+                        });
+                    } catch (e) { /* skip */ }
+                }
+
+                // Group by feature from specs, enrich with log status + worktree agents
+                const features = {};
+                specFiles.forEach(specFile => {
+                    const m = specFile.match(/^feature-(\d+)-(.+)\.md$/);
+                    if (!m) return;
+                    const featureId = m[1];
+                    const featureName = m[2];
+
+                    if (!features[featureId]) features[featureId] = { name: featureName, agents: [] };
+
+                    // Collect known agents from both log files and worktrees
+                    const agentSet = new Set();
+                    Object.keys(logStatuses)
+                        .filter(k => k.startsWith(`${featureId}-`) && k.includes('-'))
+                        .forEach(k => agentSet.add(k.split('-').slice(1).join('-')));
+                    if (worktreeAgents[featureId]) {
+                        worktreeAgents[featureId].forEach(a => agentSet.add(a));
+                    }
+
+                    if (agentSet.size > 0) {
+                        // Fleet mode: multiple agents (from logs and/or worktrees)
+                        agentSet.forEach(agent => {
+                            const status = logStatuses[`${featureId}-${agent}`] || 'implementing';
+                            features[featureId].agents.push({ agent, status });
+                            if (status === 'waiting') waitingCount++;
+                            else if (status === 'implementing') implementingCount++;
+                        });
+                    } else {
+                        // Solo mode: single log or no log
+                        const status = logStatuses[featureId] || 'implementing';
+                        features[featureId].agents.push({ agent: 'solo', status });
+                        if (status === 'waiting') waitingCount++;
+                        else if (status === 'implementing') implementingCount++;
+                    }
+                });
+
+                if (Object.keys(features).length === 0) return;
+
+                const repoShort = repoPath.replace(os.homedir(), '~');
+                const lines = [];
+                lines.push(repoShort + ' | size=14');
+
+                Object.entries(features).sort((a, b) => a[0].localeCompare(b[0])).forEach(([fid, data]) => {
+                    lines.push(`#${fid} ${data.name} | size=13`);
+                    data.agents.forEach(({ agent, status }) => {
+                        const icon = status === 'waiting' ? '●' : status === 'submitted' ? '✓' : '○';
+                        const focusParams = agent === 'solo'
+                            ? `param1="${aigonScript}" param2=terminal-focus param3=${fid} param4=--repo param5="${repoPath}"`
+                            : `param1="${aigonScript}" param2=terminal-focus param3=${fid} param4=${agent} param5=--repo param6="${repoPath}"`;
+                        const paddedId = String(fid).padStart(2, '0');
+                        const slashCmd = `/afd ${paddedId}`;
+
+                        lines.push(`-- ${icon} ${agent}: ${status} | bash="${nodeExec}" ${focusParams} terminal=false`);
+                        lines.push(`-- ${icon} ${agent}: ${status} — copy cmd | alternate=true bash=/bin/bash param1=-c param2="echo '${slashCmd}' | pbcopy" terminal=false`);
+                    });
+                });
+
+                sections.push(lines);
+            });
+
+            // Menubar title
+            if (waitingCount > 0) {
+                console.log(`⚙ ${waitingCount} waiting`);
+            } else if (implementingCount > 0) {
+                console.log(`⚙ ${implementingCount} running`);
+            } else {
+                console.log('⚙ –');
+            }
+            console.log('---');
+
+            if (sections.length === 0) {
+                console.log('No active features');
+            } else {
+                sections.forEach((lines, i) => {
+                    if (i > 0) console.log('---');
+                    lines.forEach(l => console.log(l));
+                });
+            }
+
+            console.log('---');
+            console.log('Refresh | refresh=true');
+            return;
+        }
+
+        if (sub === 'menubar-install') {
+            // Detect SwiftBar or xbar
+            const swiftBarApp = '/Applications/SwiftBar.app';
+            const xbarApp = '/Applications/xbar.app';
+            const swiftBarDir = path.join(os.homedir(), '.swiftbar');
+            const xbarDir = path.join(os.homedir(), 'Library', 'Application Support', 'xbar', 'plugins');
+
+            let pluginDir;
+            let appName;
+
+            if (fs.existsSync(swiftBarApp)) {
+                pluginDir = swiftBarDir;
+                appName = 'SwiftBar';
+            } else if (fs.existsSync(xbarApp)) {
+                pluginDir = xbarDir;
+                appName = 'xbar';
+            } else {
+                console.error('❌ Neither SwiftBar nor xbar found in /Applications/');
+                console.error('');
+                console.error('   Install SwiftBar (recommended):');
+                console.error('   brew install --cask swiftbar');
+                console.error('');
+                console.error('   Or install xbar:');
+                console.error('   brew install --cask xbar');
+                return;
+            }
+
+            if (!fs.existsSync(pluginDir)) {
+                fs.mkdirSync(pluginDir, { recursive: true });
+            }
+
+            const pluginPath = path.join(pluginDir, 'aigon.30s.sh');
+            const nodeExec = process.execPath;
+            const aigonScript = __filename;
+
+            const pluginContent = `#!/bin/bash
+# Aigon Conductor Menubar Plugin
+# Installed by: aigon conductor menubar-install
+# Refresh: every 30 seconds (.30s. in filename)
+
+"${nodeExec}" "${aigonScript}" conductor menubar-render
+`;
+
+            fs.writeFileSync(pluginPath, pluginContent);
+            fs.chmodSync(pluginPath, '755');
+
+            console.log(`✅ Menubar plugin installed for ${appName}`);
+            console.log(`   Plugin: ${pluginPath}`);
+            console.log(`   Refresh: every 30 seconds`);
+            console.log('');
+            console.log(`   Make sure ${appName} is running to see the menubar icon.`);
+            if (readConductorRepos().length === 0) {
+                console.log('');
+                console.log('   ⚠️  No repos registered. Run: aigon conductor add');
+            }
+            return;
+        }
+
+        if (sub === 'menubar-uninstall') {
+            const swiftBarPlugin = path.join(os.homedir(), '.swiftbar', 'aigon.30s.sh');
+            const xbarPlugin = path.join(os.homedir(), 'Library', 'Application Support', 'xbar', 'plugins', 'aigon.30s.sh');
+
+            let removed = false;
+            if (fs.existsSync(swiftBarPlugin)) {
+                fs.unlinkSync(swiftBarPlugin);
+                console.log(`✅ Removed SwiftBar plugin: ${swiftBarPlugin}`);
+                removed = true;
+            }
+            if (fs.existsSync(xbarPlugin)) {
+                fs.unlinkSync(xbarPlugin);
+                console.log(`✅ Removed xbar plugin: ${xbarPlugin}`);
+                removed = true;
+            }
+            if (!removed) {
+                console.log('⚠️  No menubar plugin found to remove.');
+            }
+            return;
+        }
+
         // Default: show usage
         console.log('Usage: aigon conductor <subcommand>\n');
         console.log('Subcommands:');
@@ -7349,6 +7599,98 @@ Branch: \`${soloBranch}\`
         console.log('  list               List registered repos');
         console.log('  vscode-install     Install the Aigon VS Code extension');
         console.log('  vscode-uninstall   Uninstall the Aigon VS Code extension');
+        console.log('  menubar-install    Install SwiftBar/xbar menubar plugin');
+        console.log('  menubar-uninstall  Remove the menubar plugin');
+        console.log('  menubar-render     Output menubar plugin content (used by plugin)');
+    },
+
+    'terminal-focus': (args) => {
+        // Parse --repo flag from args
+        let repoFlag = null;
+        const filteredArgs = [];
+        for (let i = 0; i < args.length; i++) {
+            if (args[i] === '--repo' && args[i + 1]) {
+                repoFlag = args[i + 1];
+                i++; // skip value
+            } else if (args[i].startsWith('--repo=')) {
+                repoFlag = args[i].slice('--repo='.length);
+            } else {
+                filteredArgs.push(args[i]);
+            }
+        }
+
+        const featureId = filteredArgs[0];
+        if (!featureId) {
+            console.error('Usage: aigon terminal-focus <featureId> [agent] [--repo <path>]');
+            console.error('  Opens or focuses the terminal for a running feature agent.');
+            return;
+        }
+        const requestedAgent = filteredArgs[1] || null;
+
+        // Resolve terminal preference: global config → default
+        const globalConfig = loadGlobalConfig();
+        const terminal = globalConfig.terminal || 'warp';
+
+        const repoPath = repoFlag || process.cwd();
+
+        // Scan worktrees directory directly (works cross-repo, no git dependency)
+        const worktreeBaseDir = repoPath + '-worktrees';
+        const worktrees = [];
+        if (fs.existsSync(worktreeBaseDir)) {
+            try {
+                fs.readdirSync(worktreeBaseDir).forEach(dirName => {
+                    const wtM = dirName.match(/^feature-(\d+)-([a-z]{2})-(.+)$/);
+                    if (wtM) {
+                        const wtPath = path.join(worktreeBaseDir, dirName);
+                        worktrees.push({
+                            path: wtPath,
+                            featureId: wtM[1],
+                            agent: wtM[2],
+                            desc: wtM[3],
+                            mtime: fs.existsSync(wtPath) ? fs.statSync(wtPath).mtime : new Date(0)
+                        });
+                    }
+                });
+            } catch (e) { /* skip */ }
+        }
+
+        // Also try git worktree list if in the right repo
+        if (worktrees.length === 0) {
+            try {
+                const found = findWorktrees();
+                worktrees.push(...found);
+            } catch (e) { /* skip */ }
+        }
+
+        const matching = filterByFeatureId(worktrees, featureId);
+
+        if (matching.length > 0) {
+            let target;
+            if (requestedAgent) {
+                target = matching.find(wt => wt.agent === requestedAgent);
+                if (!target) {
+                    console.error(`❌ No worktree found for feature #${featureId} agent ${requestedAgent}`);
+                    console.error(`   Available: ${matching.map(wt => wt.agent).join(', ')}`);
+                    return;
+                }
+            } else {
+                // Pick most recently modified
+                target = matching.sort((a, b) => b.mtime - a.mtime)[0];
+            }
+
+            // Open without auto-starting agent CLI
+            openSingleWorktree(target, 'echo "Ready — run your agent command here"', terminal);
+            return;
+        }
+
+        // No worktree — solo branch mode. Open terminal at repo root.
+        const fakeWt = {
+            path: repoPath,
+            featureId: String(featureId).padStart(2, '0'),
+            agent: requestedAgent || 'solo',
+            desc: 'branch-mode'
+        };
+        openSingleWorktree(fakeWt, 'echo "Ready — run your agent command here"', terminal);
     },
 
     'board': (args) => {
