@@ -7492,12 +7492,42 @@ Branch: \`${soloBranch}\`
 
                 if (Object.keys(features).length === 0) return;
 
+                // Determine feature-level eval status
+                const evalsDir = path.join(repoPath, 'docs', 'specs', 'features', 'evaluations');
+                function getFeatureEvalStatus(fid, data) {
+                    const allDone = data.agents.length > 0 &&
+                        data.agents.every(a => a.status === 'submitted' || a.status === 'complete');
+                    const stage = specStages[fid];
+
+                    if (stage === 'eval') {
+                        // Spec moved to 04-in-evaluation — check eval file for winner
+                        const evalFile = path.join(evalsDir, `feature-${fid}-eval.md`);
+                        if (fs.existsSync(evalFile)) {
+                            try {
+                                const content = fs.readFileSync(evalFile, 'utf8');
+                                const winnerMatch = content.match(/\*\*Winner[:\s]*\*?\*?\s*(.+)/i);
+                                if (winnerMatch) {
+                                    const val = winnerMatch[1].replace(/\*+/g, '').trim();
+                                    if (val && !val.includes('to be determined') && !val.includes('TBD') && val !== '()') {
+                                        return 'pick winner';
+                                    }
+                                }
+                            } catch (e) { /* skip */ }
+                        }
+                        return 'evaluating';
+                    }
+
+                    if (allDone) return 'eval needed';
+                    return null; // still implementing
+                }
+
                 const repoShort = repoPath.replace(os.homedir(), '~');
                 const lines = [];
                 lines.push(repoShort + ' | size=14');
 
                 Object.entries(features).sort((a, b) => a[0].localeCompare(b[0])).forEach(([fid, data]) => {
-                    const stageLabel = specStages[fid] === 'eval' ? ' [eval]' : '';
+                    const evalStatus = getFeatureEvalStatus(fid, data);
+                    const stageLabel = evalStatus ? ` [${evalStatus}]` : '';
                     lines.push(`#${fid} ${data.name}${stageLabel} | size=13`);
                     data.agents.forEach(({ agent, status }) => {
                         const icon = status === 'waiting' ? '●' : (status === 'submitted' || status === 'complete') ? '✓' : '○';
