@@ -7500,7 +7500,6 @@ Branch: \`${soloBranch}\`
                     const stage = specStages[fid];
 
                     if (stage === 'eval') {
-                        // Spec moved to 04-in-evaluation — check eval file for winner
                         const evalFile = path.join(evalsDir, `feature-${fid}-eval.md`);
                         if (fs.existsSync(evalFile)) {
                             try {
@@ -7518,36 +7517,49 @@ Branch: \`${soloBranch}\`
                     }
 
                     if (allDone) return 'eval needed';
-                    return null; // still implementing
+                    return null;
                 }
 
                 const repoShort = repoPath.replace(os.homedir(), '~');
-                const lines = [];
-                lines.push(repoShort + ' | size=14');
 
-                Object.entries(features).sort((a, b) => a[0].localeCompare(b[0])).forEach(([fid, data]) => {
-                    const evalStatus = getFeatureEvalStatus(fid, data);
-                    const stageLabel = evalStatus ? ` [${evalStatus}]` : '';
-                    lines.push(`#${fid} ${data.name}${stageLabel} | size=13`);
-                    data.agents.forEach(({ agent, status }) => {
-                        const icon = status === 'waiting' ? '●' : (status === 'submitted' || status === 'complete') ? '✓' : '○';
-                        const focusParams = agent === 'solo'
-                            ? `param1="${aigonScript}" param2=terminal-focus param3=${fid} param4=--repo param5="${repoPath}"`
-                            : `param1="${aigonScript}" param2=terminal-focus param3=${fid} param4=${agent} param5=--repo param6="${repoPath}"`;
-                        const paddedId = String(fid).padStart(2, '0');
-                        const slashCmd = `/afd ${paddedId}`;
-
-                        lines.push(`-- ${icon} ${agent}: ${status} | bash="${nodeExec}" ${focusParams} terminal=false`);
-                        lines.push(`-- ${icon} ${agent}: ${status} — copy cmd | alternate=true bash=/bin/bash param1=-c param2="echo '${slashCmd}' | pbcopy" terminal=false`);
-                    });
+                // Attach eval status to each feature
+                Object.entries(features).forEach(([fid, data]) => {
+                    data.evalStatus = getFeatureEvalStatus(fid, data);
                 });
 
-                sections.push(lines);
+                sections.push({ repoPath, repoShort, features });
             });
 
-            // Menubar title
-            if (waitingCount > 0) {
-                console.log(`⚙ ${waitingCount} waiting`);
+            // --- Build "needs attention" items (waiting, eval needed, pick winner) ---
+            const attentionItems = [];
+            sections.forEach(({ repoPath: rp, repoShort, features: feats }) => {
+                Object.entries(feats).sort((a, b) => a[0].localeCompare(b[0])).forEach(([fid, data]) => {
+                    const evalStatus = data.evalStatus;
+                    // Feature-level attention: eval needed or pick winner
+                    if (evalStatus === 'eval needed' || evalStatus === 'pick winner') {
+                        attentionItems.push({
+                            label: `${repoShort} · #${fid} ${data.name}`,
+                            sublabel: evalStatus === 'eval needed' ? '⚡ Ready for eval' : '🏆 Pick winner',
+                            fid, agent: 'solo', repoPath: rp
+                        });
+                    }
+                    // Agent-level attention: waiting
+                    data.agents.filter(a => a.status === 'waiting').forEach(({ agent }) => {
+                        const agentMeta = AGENT_CONFIGS[agent] || {};
+                        const agentName = agentMeta.name || agent;
+                        attentionItems.push({
+                            label: `${repoShort} · #${fid} ${data.name}`,
+                            sublabel: `🔔 ${agentName} needs input`,
+                            fid, agent, repoPath: rp
+                        });
+                    });
+                });
+            });
+
+            // --- Menubar title ---
+            const attentionCount = attentionItems.length;
+            if (attentionCount > 0) {
+                console.log(`⚙ ${attentionCount} need${attentionCount === 1 ? 's' : ''} attention`);
             } else if (implementingCount > 0) {
                 console.log(`⚙ ${implementingCount} running`);
             } else {
@@ -7555,12 +7567,45 @@ Branch: \`${soloBranch}\`
             }
             console.log('---');
 
+            // --- Section 1: Needs Attention (top priority) ---
+            if (attentionItems.length > 0) {
+                console.log('🔔 NEEDS ATTENTION | size=12');
+                attentionItems.forEach(item => {
+                    const focusParams = item.agent === 'solo'
+                        ? `param1="${aigonScript}" param2=terminal-focus param3=${item.fid} param4=--repo param5="${item.repoPath}"`
+                        : `param1="${aigonScript}" param2=terminal-focus param3=${item.fid} param4=${item.agent} param5=--repo param6="${item.repoPath}"`;
+                    const paddedId = String(item.fid).padStart(2, '0');
+                    const slashCmd = `/afd ${paddedId}`;
+
+                    console.log(`-- ${item.sublabel} | bash="${nodeExec}" ${focusParams} terminal=false`);
+                    console.log(`-- ${item.label} | size=11 color=#888888 bash="${nodeExec}" ${focusParams} terminal=false`);
+                    console.log(`-- ${item.sublabel} — copy cmd | alternate=true bash=/bin/bash param1=-c param2="echo '${slashCmd}' | pbcopy" terminal=false`);
+                });
+                console.log('---');
+            }
+
+            // --- Section 2: All Features (full status) ---
             if (sections.length === 0) {
                 console.log('No active features');
             } else {
-                sections.forEach((lines, i) => {
+                sections.forEach((section, i) => {
                     if (i > 0) console.log('---');
-                    lines.forEach(l => console.log(l));
+                    console.log(`${section.repoShort} | size=12`);
+                    Object.entries(section.features).sort((a, b) => a[0].localeCompare(b[0])).forEach(([fid, data]) => {
+                        const stageLabel = data.evalStatus ? ` [${data.evalStatus}]` : '';
+                        console.log(`#${fid} ${data.name}${stageLabel} | size=11`);
+                        data.agents.forEach(({ agent, status }) => {
+                            const icon = status === 'waiting' ? '●' : (status === 'submitted' || status === 'complete') ? '✓' : '○';
+                            const focusParams = agent === 'solo'
+                                ? `param1="${aigonScript}" param2=terminal-focus param3=${fid} param4=--repo param5="${section.repoPath}"`
+                                : `param1="${aigonScript}" param2=terminal-focus param3=${fid} param4=${agent} param5=--repo param6="${section.repoPath}"`;
+                            const paddedId = String(fid).padStart(2, '0');
+                            const slashCmd = `/afd ${paddedId}`;
+
+                            console.log(`-- ${icon} ${agent}: ${status} | bash="${nodeExec}" ${focusParams} terminal=false`);
+                            console.log(`-- ${icon} ${agent}: ${status} — copy cmd | alternate=true bash=/bin/bash param1=-c param2="echo '${slashCmd}' | pbcopy" terminal=false`);
+                        });
+                    });
                 });
             }
 
