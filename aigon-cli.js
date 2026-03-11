@@ -1439,7 +1439,7 @@ function shellQuote(value) {
     return `'${String(value).replace(/'/g, `'\\''`)}'`;
 }
 
-function openTerminalAppWithCommand(cwd, command) {
+function openTerminalAppWithCommand(cwd, command, title) {
     const effectiveConfig = getEffectiveConfig();
     const tmuxApp = effectiveConfig.tmuxApp || 'terminal';
 
@@ -1449,7 +1449,16 @@ function openTerminalAppWithCommand(cwd, command) {
         // Note: skip cd — the tmux session already has its working directory set
         const iterm2Command = command.replace(/^tmux attach/, 'tmux -CC attach');
         const escapedCommand = iterm2Command.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        const appleScript = `tell application "iTerm2"\nactivate\ncreate window with default profile command "${escapedCommand}"\nend tell`;
+        const titleLines = title
+            ? [`set name of current session of current window to "${title.replace(/"/g, '\\"')}"`, '']
+            : [];
+        const appleScript = [
+            'tell application "iTerm2"',
+            'activate',
+            `create window with default profile command "${escapedCommand}"`,
+            ...titleLines,
+            'end tell'
+        ].join('\n');
         const result = spawnSync('osascript', ['-e', appleScript], { stdio: 'pipe' });
         if (result.error || result.status !== 0) {
             const errMsg = result.stderr ? result.stderr.toString().trim() : 'unknown error';
@@ -1458,10 +1467,17 @@ function openTerminalAppWithCommand(cwd, command) {
     } else {
         // Default: Terminal.app
         const fullCommand = `cd ${shellQuote(cwd)} && ${command}`;
+        const titleLines = title
+            ? [
+                `set custom title of selected tab of front window to ${JSON.stringify(title)}`,
+                'set title displays custom title of selected tab of front window to true'
+            ]
+            : [];
         const appleScript = [
             'tell application "Terminal"',
             'activate',
             `do script ${JSON.stringify(fullCommand)}`,
+            ...titleLines,
             'end tell'
         ].join('\n');
         const result = spawnSync('osascript', ['-e', appleScript], { stdio: 'ignore' });
@@ -1642,7 +1658,10 @@ windows:
         try {
             assertTmuxAvailable();
             const { sessionName, created } = ensureTmuxSessionForWorktree(wt, agentCommand);
-            openTerminalAppWithCommand(wt.path, `tmux attach -t ${shellQuote(sessionName)}`);
+            const agentMeta = AGENT_CONFIGS[wt.agent] || {};
+            const paddedId = String(wt.featureId).padStart(2, '0');
+            const tmuxTitle = `Feature #${paddedId} - ${agentMeta.name || wt.agent} (${wt.agent})`;
+            openTerminalAppWithCommand(wt.path, `tmux attach -t ${shellQuote(sessionName)}`, tmuxTitle);
 
             const tmuxAppName = (getEffectiveConfig().tmuxApp || 'terminal') === 'iterm2' ? 'iTerm2 (tmux -CC)' : 'Terminal.app';
             console.log(`\n🚀 Opening worktree in tmux via ${tmuxAppName}:`);
@@ -5656,8 +5675,9 @@ const commands = {
             // Open terminal windows for each session
             agentConfigs.forEach(config => {
                 const sessionName = `aigon-r${parseInt(researchNum, 10)}-${config.agent}`;
+                const tmuxTitle = `Research #${paddedId} - ${config.agentName} (${config.agent})`;
                 try {
-                    openTerminalAppWithCommand(cwd, `tmux attach -t ${shellQuote(sessionName)}`);
+                    openTerminalAppWithCommand(cwd, `tmux attach -t ${shellQuote(sessionName)}`, tmuxTitle);
                 } catch (e) {
                     console.warn(`   ⚠️  Could not open terminal for ${sessionName}: ${e.message}`);
                 }
