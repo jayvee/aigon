@@ -1224,6 +1224,9 @@ function getAgentCliConfig(agentId) {
         if (globalConfig.agents[agentId].implementPrompt) {
             cli.implementPrompt = globalConfig.agents[agentId].implementPrompt;
         }
+        if (globalConfig.agents[agentId].evalPrompt) {
+            cli.evalPrompt = globalConfig.agents[agentId].evalPrompt;
+        }
         if (globalConfig.agents[agentId].models) {
             cli.models = { ...cli.models, ...globalConfig.agents[agentId].models };
         }
@@ -1239,6 +1242,9 @@ function getAgentCliConfig(agentId) {
         }
         if (projectConfig.agents[agentId].implementPrompt) {
             cli.implementPrompt = projectConfig.agents[agentId].implementPrompt;
+        }
+        if (projectConfig.agents[agentId].evalPrompt) {
+            cli.evalPrompt = projectConfig.agents[agentId].evalPrompt;
         }
         if (projectConfig.agents[agentId].models) {
             cli.models = { ...cli.models, ...projectConfig.agents[agentId].models };
@@ -6378,13 +6384,71 @@ const commands = {
         return runFeatureValidateCommand(args);
     },
     'feature-eval': (args) => {
+        const options = parseCliOptions(args);
         const allowSameModel = args.includes('--allow-same-model-judge');
         const forceEval = args.includes('--force');
         // Strip flags so positional arg parsing is unaffected
-        const positionalArgs = args.filter(a => a !== '--allow-same-model-judge' && a !== '--force');
+        const positionalArgs = args.filter(a => a !== '--allow-same-model-judge' && a !== '--force' && !a.startsWith('--agent'));
         const name = positionalArgs[0];
-        printAgentContextWarning('feature-eval', name);
-        if (!name) return console.error("Usage: aigon feature-eval <ID> [--allow-same-model-judge] [--force]\n\nExamples:\n  aigon feature-eval 55     # Drive mode: code review\n  aigon feature-eval 55     # Fleet mode: compare implementations\n  aigon feature-eval 55 --allow-same-model-judge  # Skip bias warning\n  aigon feature-eval 55 --force                    # Skip agent completion check");
+        if (!name) return console.error("Usage: aigon feature-eval <ID> [--agent=<agent>] [--allow-same-model-judge] [--force]\n\nExamples:\n  aigon feature-eval 55            # Auto-launches agent to evaluate\n  aigon feature-eval 55 --agent=gg # Launch specific agent\n  aigon feature-eval 55 --allow-same-model-judge  # Skip bias warning\n  aigon feature-eval 55 --force                    # Skip agent completion check");
+
+        // Detect whether we're already inside an active agent session
+        const sessionInfo = detectActiveAgentSession();
+
+        if (!sessionInfo.detected) {
+            // --- LAUNCH MODE: spawn the selected agent to perform the evaluation ---
+            const agentArgRaw = getOptionValue(options, 'agent');
+            const agentAliasMap = buildAgentAliasMap();
+            const availableAgents = getAvailableAgents();
+            let resolvedAgent = 'cc'; // default evaluator
+
+            if (agentArgRaw) {
+                const normalized = agentAliasMap[agentArgRaw.toLowerCase()] || agentArgRaw.toLowerCase();
+                if (!availableAgents.includes(normalized)) {
+                    console.error(`❌ Unknown agent '${agentArgRaw}'. Supported agents: ${availableAgents.join(', ')}`);
+                    process.exitCode = 1;
+                    return;
+                }
+                resolvedAgent = normalized;
+            }
+
+            const cliConfig = getAgentCliConfig(resolvedAgent);
+            const evalPrompt = (cliConfig.evalPrompt || '/aigon:feature-eval {featureId}').replace('{featureId}', name);
+            // Pass through flags to the eval prompt
+            const flagSuffix = [
+                allowSameModel ? ' --allow-same-model-judge' : '',
+                forceEval ? ' --force' : '',
+            ].join('');
+            const prompt = evalPrompt + flagSuffix;
+            const model = cliConfig.models?.['evaluate'];
+
+            if (resolvedAgent === 'cu' && model) {
+                console.warn(`⚠️  Model config ignored for Cursor — model selection is UI-only (no --model flag)`);
+            }
+            const modelTokens = (model && resolvedAgent !== 'cu') ? ['--model', model] : [];
+            const flagTokens = getAgentLaunchFlagTokens(cliConfig.command, cliConfig.implementFlag, { autonomous: false });
+            const spawnArgs = [...flagTokens, ...modelTokens, prompt];
+
+            const agentDisplayName = AGENT_CONFIGS[resolvedAgent]?.name || resolvedAgent;
+            console.log(`\n📊 Launching ${agentDisplayName} for evaluation...`);
+            console.log(`   Agent:   ${resolvedAgent}`);
+            console.log(`   Command: ${cliConfig.command} ${spawnArgs.join(' ')}`);
+            console.log('');
+
+            const env = { ...process.env };
+            if (cliConfig.command === 'claude') {
+                delete env.CLAUDECODE;
+            }
+
+            const result = spawnSync(cliConfig.command, spawnArgs, { stdio: 'inherit', env });
+            if (result.error) {
+                console.error(`❌ Failed to launch agent: ${result.error.message}`);
+                process.exitCode = 1;
+            } else if (result.status !== 0) {
+                process.exitCode = result.status || 1;
+            }
+            return;
+        }
 
         // Find the feature (may already be in evaluation)
         let found = findFile(PATHS.features, name, ['03-in-progress']);

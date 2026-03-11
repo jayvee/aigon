@@ -7,6 +7,7 @@
     "command": "agent",
     "implementFlag": "--force",
     "implementPrompt": "/aigon-feature-implement {featureId}",
+    "evalPrompt": "/aigon-feature-eval {featureId}",
     "models": {}
   },
 
