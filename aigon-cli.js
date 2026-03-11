@@ -4188,6 +4188,15 @@ function runRalphCommand(args) {
         }
     }
 
+    // Write auto-submit marker so the feature-implement skill template knows
+    // to skip manual verification gates and auto-invoke feature-submit.
+    if (autoSubmitFlagExplicit !== undefined && noAutoSubmitFlagExplicit === undefined) {
+        const markerDir = path.join(process.cwd(), '.aigon');
+        if (!fs.existsSync(markerDir)) fs.mkdirSync(markerDir, { recursive: true });
+        const markerPath = path.join(markerDir, 'auto-submit');
+        fs.writeFileSync(markerPath, JSON.stringify({ featureId: featureNum, agent: selectedAgent, createdAt: new Date().toISOString() }) + '\n');
+    }
+
     let interrupted = false;
     const sigintHandler = () => {
         interrupted = true;
