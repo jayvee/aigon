@@ -169,6 +169,54 @@ test('returns empty string for invalid ISO timestamp', () => {
     assert.strictEqual(formatElapsed('not-a-date', Date.now()), '');
 });
 
+console.log('\nfeature-eval: evalPrompt resolution');
+
+function resolveEvalPrompt(evalPromptTemplate, featureId, flags) {
+    const prompt = (evalPromptTemplate || '/aigon:feature-eval {featureId}').replace('{featureId}', featureId);
+    const flagSuffix = [
+        flags.allowSameModel ? ' --allow-same-model-judge' : '',
+        flags.force ? ' --force' : '',
+    ].join('');
+    return prompt + flagSuffix;
+}
+
+test('resolves evalPrompt with featureId', () => {
+    assert.strictEqual(
+        resolveEvalPrompt('/aigon:feature-eval {featureId}', '55', {}),
+        '/aigon:feature-eval 55'
+    );
+});
+test('uses default prompt when evalPrompt is undefined', () => {
+    assert.strictEqual(
+        resolveEvalPrompt(undefined, '42', {}),
+        '/aigon:feature-eval 42'
+    );
+});
+test('passes through --allow-same-model-judge flag', () => {
+    assert.strictEqual(
+        resolveEvalPrompt('/aigon:feature-eval {featureId}', '55', { allowSameModel: true }),
+        '/aigon:feature-eval 55 --allow-same-model-judge'
+    );
+});
+test('passes through --force flag', () => {
+    assert.strictEqual(
+        resolveEvalPrompt('/aigon:feature-eval {featureId}', '55', { force: true }),
+        '/aigon:feature-eval 55 --force'
+    );
+});
+test('passes through both flags', () => {
+    assert.strictEqual(
+        resolveEvalPrompt('/aigon:feature-eval {featureId}', '55', { allowSameModel: true, force: true }),
+        '/aigon:feature-eval 55 --allow-same-model-judge --force'
+    );
+});
+test('works with codex-style prompt', () => {
+    assert.strictEqual(
+        resolveEvalPrompt('/prompts:aigon-feature-eval {featureId}', '43', {}),
+        '/prompts:aigon-feature-eval 43'
+    );
+});
+
 console.log('');
 if (failed === 0) {
     console.log(`All ${passed} tests passed.\n`);
