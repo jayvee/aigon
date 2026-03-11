@@ -44,6 +44,38 @@ function shellQuote(value) {
 }
 
 // ---------------------------------------------------------------------------
+// Conductor: log front matter parsing helpers (re-implemented for testing)
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract status and updated fields from log front matter content.
+ * Returns { status, updatedIso } or null if no front matter found.
+ */
+function parseLogFrontMatter(content) {
+    const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
+    if (!fmMatch) return null;
+    const body = fmMatch[1];
+    const sm = body.match(/status:\s*(\S+)/);
+    const um = body.match(/updated:\s*(\S+)/);
+    return {
+        status: sm ? sm[1] : null,
+        updatedIso: um ? um[1] : null,
+    };
+}
+
+/**
+ * Format elapsed time from an ISO timestamp string.
+ * Returns "just now" if < 1 minute, else "<N>m ago".
+ */
+function formatElapsed(isoStr, nowMs) {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return '';
+    const diffMs = nowMs - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    return diffMin < 1 ? 'just now' : `${diffMin}m ago`;
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -95,6 +127,47 @@ test('toUnpaddedId keeps non-numeric IDs unchanged', () => assert.strictEqual(to
 test('buildTmuxSessionName uses unpadded feature ID', () => assert.strictEqual(buildTmuxSessionName('040', 'cx'), 'aigon-f40-cx'));
 test('buildTmuxSessionName defaults agent to solo', () => assert.strictEqual(buildTmuxSessionName('40'), 'aigon-f40-solo'));
 test('shellQuote escapes apostrophes safely', () => assert.strictEqual(shellQuote("it's"), "'it'\\''s'"));
+
+console.log('\nconductor: log front matter parsing');
+test('parses status from front matter', () => {
+    const content = '---\nstatus: submitted\nupdated: 2026-03-11T10:30:00.000Z\n---\n# Log\n';
+    const fm = parseLogFrontMatter(content);
+    assert.strictEqual(fm.status, 'submitted');
+});
+test('parses updated from front matter', () => {
+    const content = '---\nstatus: implementing\nupdated: 2026-03-11T10:30:00.000Z\n---\n';
+    const fm = parseLogFrontMatter(content);
+    assert.strictEqual(fm.updatedIso, '2026-03-11T10:30:00.000Z');
+});
+test('returns null when no front matter', () => {
+    const content = '# Log without front matter\n\nSome content here.';
+    assert.strictEqual(parseLogFrontMatter(content), null);
+});
+test('status is null when field missing from front matter', () => {
+    const content = '---\nupdated: 2026-03-11T10:30:00.000Z\n---\n';
+    const fm = parseLogFrontMatter(content);
+    assert.strictEqual(fm.status, null);
+});
+
+console.log('\nconductor: elapsed time formatting');
+test('formats time as "just now" when under 1 minute', () => {
+    const now = new Date('2026-03-11T10:30:30.000Z').getTime();
+    const iso = '2026-03-11T10:30:10.000Z'; // 20 seconds ago
+    assert.strictEqual(formatElapsed(iso, now), 'just now');
+});
+test('formats time as "Nm ago" for N full minutes', () => {
+    const now = new Date('2026-03-11T10:32:00.000Z').getTime();
+    const iso = '2026-03-11T10:30:00.000Z'; // 2 minutes ago
+    assert.strictEqual(formatElapsed(iso, now), '2m ago');
+});
+test('formats time as "1m ago" at exactly 1 minute', () => {
+    const now = new Date('2026-03-11T10:31:00.000Z').getTime();
+    const iso = '2026-03-11T10:30:00.000Z'; // exactly 1 minute ago
+    assert.strictEqual(formatElapsed(iso, now), '1m ago');
+});
+test('returns empty string for invalid ISO timestamp', () => {
+    assert.strictEqual(formatElapsed('not-a-date', Date.now()), '');
+});
 
 console.log('');
 if (failed === 0) {
