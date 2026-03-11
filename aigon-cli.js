@@ -1664,9 +1664,9 @@ windows:
         try {
             assertTmuxAvailable();
             const { sessionName, created } = ensureTmuxSessionForWorktree(wt, agentCommand);
-            const agentMeta = AGENT_CONFIGS[wt.agent] || {};
             const paddedId = String(wt.featureId).padStart(2, '0');
-            const tmuxTitle = `Feature #${paddedId} - ${agentMeta.name || wt.agent} (${wt.agent})`;
+            const repoName = path.basename(process.cwd());
+            const tmuxTitle = `${repoName} F${paddedId} ${wt.agent}`;
             openTerminalAppWithCommand(wt.path, `tmux attach -t ${shellQuote(sessionName)}`, tmuxTitle);
 
             const tmuxAppName = (getEffectiveConfig().tmuxApp || 'terminal') === 'iterm2' ? 'iTerm2 (tmux -CC)' : 'Terminal.app';
@@ -5681,7 +5681,8 @@ const commands = {
             // Open terminal windows for each session
             agentConfigs.forEach(config => {
                 const sessionName = `aigon-r${parseInt(researchNum, 10)}-${config.agent}`;
-                const tmuxTitle = `Research #${paddedId} - ${config.agentName} (${config.agent})`;
+                const repoName = path.basename(process.cwd());
+                const tmuxTitle = `${repoName} R${paddedId} ${config.agent}`;
                 try {
                     openTerminalAppWithCommand(cwd, `tmux attach -t ${shellQuote(sessionName)}`, tmuxTitle);
                 } catch (e) {
