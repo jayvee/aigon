@@ -7564,19 +7564,20 @@ Branch: \`${soloBranch}\`
                 }
             } catch (e) { /* proceed with spawn */ }
 
-            // Ensure tmux session exists
-            if (!tmuxSessionExists(sessionName)) {
-                try {
-                    createDetachedTmuxSession(sessionName, wt.path);
-                } catch (e) {
-                    console.error(`   ❌ ${wt.agent} — failed to create tmux session: ${e.message}`);
-                    return;
-                }
+            // Kill existing session (may have a stale agent running)
+            if (tmuxSessionExists(sessionName)) {
+                spawnSync('tmux', ['kill-session', '-t', sessionName], { stdio: 'ignore' });
+                console.log(`   ↩️ ${wt.agent} — killed stale session, respawning`);
             }
 
-            // Send the autonomous implement command to the tmux session
+            // Create fresh session with autonomous command as initial process
             const cmd = `aigon feature-implement ${featureNum} --autonomous --auto-submit --agent=${wt.agent} --max-iterations=${maxIterations}`;
-            spawnSync('tmux', ['send-keys', '-t', sessionName, cmd, 'Enter'], { stdio: 'pipe' });
+            try {
+                createDetachedTmuxSession(sessionName, wt.path, cmd);
+            } catch (e) {
+                console.error(`   ❌ ${wt.agent} — failed to create tmux session: ${e.message}`);
+                return;
+            }
             console.log(`   ✓ ${wt.agent} — spawned in ${sessionName}`);
             spawnedAgents.push({ ...wt, alreadySubmitted: false });
         });
