@@ -1,6 +1,6 @@
 ---
-status: submitted
-updated: 2026-03-11T12:00:00.000Z
+status: waiting
+updated: 2026-03-11T11:31:14.730Z
 ---
 
 # Implementation Log: Feature 43 - eval-cli-launch
