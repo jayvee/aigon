@@ -3033,6 +3033,7 @@ const COMMAND_ARG_HINTS = {
     'feedback-create': '<title>',
     'feedback-list': '[--inbox|--triaged|--actionable|--done|--wont-fix|--duplicate|--all] [--type <type>] [--severity <severity>] [--tag <tag>]',
     'feedback-triage': '<ID> [--type <type>] [--severity <severity|none>] [--tags <csv|none>] [--status <status>] [--duplicate-of <ID|none>] [--action <keep|mark-duplicate|promote-feature|promote-research|wont-fix>] [--apply] [--yes]',
+    'conduct': '<feature-id> [agents...] | status [feature-id] | stop [feature-id] | attach <feature-id> <agent>',
     'conductor': '<start|stop|status|add|remove|list|vscode-install|vscode-uninstall> [path]',
     'agent-status': '<implementing|waiting|submitted>',
     'status': '[ID]',
@@ -7250,6 +7251,352 @@ Branch: \`${soloBranch}\`
         if (exitCode !== 0) process.exitCode = exitCode;
     },
 
+    'conduct': (args) => {
+        const options = parseCliOptions(args);
+        const subcommand = options._[0];
+
+        // --- Subcommands: status, stop, attach ---
+        if (subcommand === 'status') {
+            const idArg = options._[1];
+            const worktrees = findWorktrees();
+            const featureIds = idArg
+                ? [idArg]
+                : [...new Set(worktrees.map(wt => wt.featureId))];
+
+            if (featureIds.length === 0) {
+                console.log('No active worktrees found.');
+                return;
+            }
+
+            featureIds.forEach(fid => {
+                const fWorktrees = filterByFeatureId(worktrees, fid);
+                if (fWorktrees.length === 0) return;
+
+                const desc = fWorktrees[0].desc || '';
+                console.log(`\n🎭 Conductor: Feature ${fid} — ${desc}`);
+                console.log('━'.repeat(40));
+                console.log(`${'Agent'.padEnd(7)} ${'Status'.padEnd(15)} Updated`);
+
+                fWorktrees.forEach(wt => {
+                    const logsDir = path.join(wt.path, 'docs/specs/features/logs');
+                    let status = 'unknown';
+                    let updatedStr = '';
+                    try {
+                        const logFiles = fs.readdirSync(logsDir)
+                            .filter(f => f.startsWith(`feature-${wt.featureId}-${wt.agent}-`) && f.endsWith('-log.md'));
+                        if (logFiles.length > 0) {
+                            const content = fs.readFileSync(path.join(logsDir, logFiles[0]), 'utf8');
+                            const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
+                            if (fmMatch) {
+                                const sm = fmMatch[1].match(/status:\s*(\S+)/);
+                                if (sm) status = sm[1];
+                                const um = fmMatch[1].match(/updated:\s*(\S+)/);
+                                if (um) {
+                                    const d = new Date(um[1]);
+                                    const diffMs = Date.now() - d.getTime();
+                                    const diffMin = Math.floor(diffMs / 60000);
+                                    updatedStr = diffMin < 1 ? 'just now' : `${diffMin}m ago`;
+                                }
+                            }
+                        }
+                    } catch (e) { /* skip */ }
+
+                    // Check if tmux session is alive
+                    const sessionName = buildTmuxSessionName(wt.featureId, wt.agent);
+                    const alive = tmuxSessionExists(sessionName);
+                    const statusDisplay = alive ? status : `${status} (session dead)`;
+
+                    console.log(`${wt.agent.padEnd(7)} ${statusDisplay.padEnd(15)} ${updatedStr}`);
+                });
+            });
+            return;
+        }
+
+        if (subcommand === 'stop') {
+            const id = options._[1];
+            if (!id) {
+                console.error('Usage: aigon conduct stop <feature-id>');
+                return;
+            }
+            // Reuse sessions-close logic
+            commands['sessions-close']([id]);
+            return;
+        }
+
+        if (subcommand === 'attach') {
+            const id = options._[1];
+            const agent = options._[2];
+            if (!id || !agent) {
+                console.error('Usage: aigon conduct attach <feature-id> <agent>');
+                return;
+            }
+            const sessionName = buildTmuxSessionName(id, agent);
+            if (!tmuxSessionExists(sessionName)) {
+                console.error(`❌ No tmux session found: ${sessionName}`);
+                console.error(`   Run: aigon conduct status ${id}`);
+                return;
+            }
+            try {
+                const { status } = spawnSync('tmux', ['attach', '-t', sessionName], { stdio: 'inherit' });
+                if (status !== 0) console.error(`❌ Failed to attach to ${sessionName}`);
+            } catch (e) {
+                console.error(`❌ ${e.message}`);
+            }
+            return;
+        }
+
+        // --- Main conduct command: aigon conduct <feature-id> [agents...] ---
+        const featureId = subcommand;
+        if (!featureId || featureId.startsWith('-')) {
+            console.error('Usage: aigon conduct <feature-id> [agents...]');
+            console.error('       aigon conduct status [feature-id]');
+            console.error('       aigon conduct stop <feature-id>');
+            console.error('       aigon conduct attach <feature-id> <agent>');
+            console.error('\nExamples:');
+            console.error('  aigon conduct 42 cc gg cx         # Arena: 3 agents compete');
+            console.error('  aigon conduct 42                  # Use defaultAgents from config');
+            console.error('  aigon conduct 42 --max-iterations=8');
+            console.error('  aigon conduct 42 --auto-eval      # Auto-run feature-eval on completion');
+            return;
+        }
+
+        // Resolve agents: positional args after feature-id, or config defaults
+        const positionalAgents = options._.slice(1);
+        const effectiveConfig = getEffectiveConfig();
+        const conductorConfig = effectiveConfig.conductor || {};
+        let agentIds = positionalAgents.length > 0
+            ? positionalAgents
+            : (conductorConfig.defaultAgents || ['cc', 'gg']);
+
+        // Validate agents
+        const availableAgents = getAvailableAgents();
+        const invalidAgents = agentIds.filter(a => !availableAgents.includes(a));
+        if (invalidAgents.length > 0) {
+            console.error(`❌ Unknown agent(s): ${invalidAgents.join(', ')}. Available: ${availableAgents.join(', ')}`);
+            return;
+        }
+
+        if (agentIds.length < 2) {
+            console.error('❌ Arena mode requires at least 2 agents.');
+            console.error(`   Got: ${agentIds.join(', ')}`);
+            return;
+        }
+
+        const maxIterationsRaw = getOptionValue(options, 'max-iterations');
+        const configMaxIterations = conductorConfig.maxIterations;
+        const maxIterations = maxIterationsRaw !== undefined
+            ? parseInt(maxIterationsRaw, 10)
+            : (Number.isInteger(configMaxIterations) && configMaxIterations > 0 ? configMaxIterations : 5);
+        const autoEval = getOptionValue(options, 'auto-eval') !== undefined || conductorConfig.autoEval === true;
+        const pollIntervalRaw = getOptionValue(options, 'poll-interval');
+        const pollInterval = pollIntervalRaw !== undefined
+            ? parseInt(pollIntervalRaw, 10) * 1000
+            : ((conductorConfig.pollInterval || 30) * 1000);
+
+        // --- Setup Phase ---
+        // Check if feature already has worktrees set up
+        let existingWorktrees = [];
+        try {
+            existingWorktrees = filterByFeatureId(findWorktrees(), featureId);
+        } catch (e) { /* no worktrees */ }
+
+        let found = findFile(PATHS.features, featureId, ['02-backlog', '03-in-progress']);
+        if (!found) {
+            console.error(`❌ Could not find feature "${featureId}" in backlog or in-progress.`);
+            return;
+        }
+
+        const match = found.file.match(/^feature-(\d+)-(.*)\.md$/);
+        if (!match) {
+            console.error('❌ Could not parse feature filename.');
+            return;
+        }
+        const [, featureNum, featureDesc] = match;
+
+        if (existingWorktrees.length > 0) {
+            // Feature already set up — use existing worktrees
+            agentIds = existingWorktrees.map(wt => wt.agent);
+            console.log(`\n🎭 Conductor: Feature ${featureNum} — ${featureDesc}`);
+            console.log(`   Using existing worktrees (${agentIds.length} agents: ${agentIds.join(', ')})`);
+        } else {
+            // Run feature-setup
+            console.log(`\n🎭 Conductor: Feature ${featureNum} — ${featureDesc}`);
+            console.log(`   Setting up arena with ${agentIds.length} agents: ${agentIds.join(', ')}`);
+            commands['feature-setup']([featureId, ...agentIds]);
+
+            // Verify worktrees were created
+            try {
+                existingWorktrees = filterByFeatureId(findWorktrees(), featureId);
+            } catch (e) { /* ignore */ }
+
+            if (existingWorktrees.length === 0) {
+                console.error('❌ Feature setup failed — no worktrees created.');
+                return;
+            }
+            // Update agentIds to match what was actually created
+            agentIds = existingWorktrees.map(wt => wt.agent);
+        }
+
+        // --- Spawn Phase ---
+        console.log(`\n🚀 Spawning autonomous Ralph loops...`);
+        try {
+            assertTmuxAvailable();
+        } catch (e) {
+            console.error(`❌ ${e.message}`);
+            console.error('   Conductor requires tmux. Install: brew install tmux');
+            return;
+        }
+
+        const spawnedAgents = [];
+        existingWorktrees.forEach(wt => {
+            const sessionName = buildTmuxSessionName(wt.featureId, wt.agent);
+
+            // Check if agent already submitted (don't re-spawn)
+            const logsDir = path.join(wt.path, 'docs/specs/features/logs');
+            try {
+                const logFiles = fs.readdirSync(logsDir)
+                    .filter(f => f.startsWith(`feature-${featureNum}-${wt.agent}-`) && f.endsWith('-log.md'));
+                if (logFiles.length > 0) {
+                    const content = fs.readFileSync(path.join(logsDir, logFiles[0]), 'utf8');
+                    const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
+                    if (fmMatch) {
+                        const sm = fmMatch[1].match(/status:\s*(\S+)/);
+                        if (sm && sm[1] === 'submitted') {
+                            console.log(`   ✓ ${wt.agent} — already submitted, skipping`);
+                            spawnedAgents.push({ ...wt, alreadySubmitted: true });
+                            return;
+                        }
+                    }
+                }
+            } catch (e) { /* proceed with spawn */ }
+
+            // Ensure tmux session exists
+            if (!tmuxSessionExists(sessionName)) {
+                try {
+                    createDetachedTmuxSession(sessionName, wt.path);
+                } catch (e) {
+                    console.error(`   ❌ ${wt.agent} — failed to create tmux session: ${e.message}`);
+                    return;
+                }
+            }
+
+            // Send the autonomous implement command to the tmux session
+            const cmd = `aigon feature-implement ${featureNum} --autonomous --auto-submit --agent=${wt.agent} --max-iterations=${maxIterations}`;
+            spawnSync('tmux', ['send-keys', '-t', sessionName, cmd, 'Enter'], { stdio: 'pipe' });
+            console.log(`   ✓ ${wt.agent} — spawned in ${sessionName}`);
+            spawnedAgents.push({ ...wt, alreadySubmitted: false });
+        });
+
+        if (spawnedAgents.length === 0) {
+            console.error('❌ No agents spawned.');
+            return;
+        }
+
+        // --- Monitor Phase ---
+        const allAlreadySubmitted = spawnedAgents.every(a => a.alreadySubmitted);
+        if (allAlreadySubmitted) {
+            console.log(`\n✅ All agents already submitted!`);
+        } else {
+            console.log(`\n⏱  Monitoring ${spawnedAgents.length} agents (polling every ${pollInterval / 1000}s, Ctrl+C to stop)...\n`);
+
+            let interrupted = false;
+            const sigintHandler = () => { interrupted = true; };
+            process.on('SIGINT', sigintHandler);
+
+            // Track previous statuses to detect individual agent submissions
+            const previousStatuses = {};
+            spawnedAgents.forEach(wt => {
+                previousStatuses[wt.agent] = wt.alreadySubmitted ? 'submitted' : 'unknown';
+            });
+
+            try {
+                while (!interrupted) {
+                    // Sleep for poll interval
+                    try {
+                        spawnSync('sleep', [String(pollInterval / 1000)], { stdio: 'ignore' });
+                    } catch (e) { break; }
+
+                    if (interrupted) break;
+
+                    // Read status from each agent's log file
+                    let allSubmitted = true;
+                    const statusRows = [];
+
+                    spawnedAgents.forEach(wt => {
+                        const logsDir = path.join(wt.path, 'docs/specs/features/logs');
+                        let status = 'unknown';
+                        let updatedStr = '';
+                        try {
+                            const logFiles = fs.readdirSync(logsDir)
+                                .filter(f => f.startsWith(`feature-${featureNum}-${wt.agent}-`) && f.endsWith('-log.md'));
+                            if (logFiles.length > 0) {
+                                const content = fs.readFileSync(path.join(logsDir, logFiles[0]), 'utf8');
+                                const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
+                                if (fmMatch) {
+                                    const sm = fmMatch[1].match(/status:\s*(\S+)/);
+                                    if (sm) status = sm[1];
+                                    const um = fmMatch[1].match(/updated:\s*(\S+)/);
+                                    if (um) {
+                                        const d = new Date(um[1]);
+                                        const diffMs = Date.now() - d.getTime();
+                                        const diffMin = Math.floor(diffMs / 60000);
+                                        updatedStr = diffMin < 1 ? 'just now' : `${diffMin}m ago`;
+                                    }
+                                }
+                            }
+                        } catch (e) { /* skip */ }
+
+                        // Notify when an individual agent transitions to submitted
+                        if (status === 'submitted' && previousStatuses[wt.agent] !== 'submitted') {
+                            try {
+                                execSync(`osascript -e 'display notification "Agent ${wt.agent} submitted Feature #${featureNum}" with title "Aigon Conductor"'`);
+                            } catch (e) { /* notification failed, not critical */ }
+                        }
+                        previousStatuses[wt.agent] = status;
+
+                        if (status !== 'submitted') allSubmitted = false;
+                        statusRows.push({ agent: wt.agent, status, updatedStr });
+                    });
+
+                    // Print status table
+                    const now = new Date().toLocaleTimeString();
+                    console.log(`[${now}] ${'Agent'.padEnd(7)} ${'Status'.padEnd(15)} Updated`);
+                    statusRows.forEach(row => {
+                        console.log(`         ${row.agent.padEnd(7)} ${row.status.padEnd(15)} ${row.updatedStr}`);
+                    });
+                    console.log('');
+
+                    if (allSubmitted) {
+                        console.log('✅ All agents submitted!');
+                        try {
+                            execSync(`osascript -e 'display notification "All agents submitted for Feature #${featureNum}" with title "Aigon Conductor"'`);
+                        } catch (e) { /* notification failed, not critical */ }
+                        break;
+                    }
+                }
+            } finally {
+                process.removeListener('SIGINT', sigintHandler);
+            }
+
+            if (interrupted) {
+                console.log('\n⏸  Monitoring stopped. Agents are still running in their tmux sessions.');
+                console.log(`   Resume:  aigon conduct status ${featureNum}`);
+                console.log(`   Stop:    aigon conduct stop ${featureNum}`);
+                console.log(`   Attach:  aigon conduct attach ${featureNum} <agent>`);
+                return;
+            }
+        }
+
+        // --- Eval Phase ---
+        if (autoEval) {
+            console.log(`\n📊 Auto-running evaluation...`);
+            commands['feature-eval']([featureNum, '--force']);
+        } else {
+            console.log(`\n📊 Ready for evaluation:`);
+            console.log(`   aigon feature-eval ${featureNum}`);
+        }
+    },
+
     'conductor': (args) => {
         const CONDUCTOR_PID_FILE = path.join(GLOBAL_CONFIG_DIR, 'conductor.pid');
         const CONDUCTOR_LOG_FILE = path.join(GLOBAL_CONFIG_DIR, 'conductor.log');
@@ -10033,6 +10380,12 @@ Modes:
   ✈️  Autopilot  One agent runs autonomously end-to-end
   🐝 Swarm      Multiple agents run autonomously in parallel
 
+Conductor:
+  conduct <ID> [agents...]          Start arena: setup, spawn autonomous loops, monitor, eval
+  conduct status [ID]               Show status of running conductor sessions
+  conduct stop <ID>                 Stop all agents for a feature (reuses sessions-close)
+  conduct attach <ID> <agent>       Attach to an agent's tmux session
+
 Worktree:
   worktree-open <ID> [agent] [--terminal=<type>]
                                     Open worktree in terminal with agent CLI (warp, code, cursor, terminal, tmux)
@@ -10090,6 +10443,9 @@ Examples:
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
   aigon feature-setup 55               # Drive mode (creates branch)
   aigon feature-setup 55 cc gg cx cu      # Fleet mode (creates worktrees)
+  aigon conduct 42 cc gg cx            # Arena conductor: setup + spawn + monitor + eval
+  aigon conduct status 42              # Check conductor status
+  aigon conduct stop 42                # Stop all agents
   aigon worktree-open 55 cc            # Open worktree in Warp with Claude CLI
   aigon worktree-open 55 --all         # Open all Fleet agents side-by-side
   aigon worktree-open 100 101 102      # Open features side-by-side (parallel)
