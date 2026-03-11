@@ -5621,10 +5621,50 @@ const commands = {
             } catch (e) {
                 console.error(`❌ Failed to open Warp: ${e.message}`);
             }
+        } else if (terminal === 'tmux') {
+            try {
+                assertTmuxAvailable();
+            } catch (e) {
+                console.error(`❌ ${e.message}`);
+                console.error(`   Install tmux: brew install tmux`);
+                return;
+            }
+
+            console.log(`\n🚀 Opening ${agentConfigs.length} agents via tmux for research ${paddedId}:`);
+            console.log(`   Research: ${paddedId} - ${researchName.replace(/-/g, ' ')}\n`);
+
+            const cwd = process.cwd();
+            agentConfigs.forEach(config => {
+                const sessionName = `aigon-r${parseInt(researchNum, 10)}-${config.agent}`;
+                if (tmuxSessionExists(sessionName)) {
+                    console.log(`   ✓ ${sessionName} (already exists)`);
+                } else {
+                    try {
+                        createDetachedTmuxSession(sessionName, cwd);
+                        spawnSync('tmux', ['send-keys', '-t', sessionName, config.agentCommand, 'Enter'], { stdio: 'pipe' });
+                        console.log(`   ✓ ${sessionName} → started`);
+                    } catch (e) {
+                        console.warn(`   ⚠️  Could not create tmux session ${sessionName}: ${e.message}`);
+                    }
+                }
+            });
+
+            console.log(`\n   Attach: tmux attach -t aigon-r${parseInt(researchNum, 10)}-<agent>`);
+            console.log(`   List:   tmux ls`);
+
+            // Open terminal windows for each session
+            agentConfigs.forEach(config => {
+                const sessionName = `aigon-r${parseInt(researchNum, 10)}-${config.agent}`;
+                try {
+                    openTerminalAppWithCommand(cwd, `tmux attach -t ${shellQuote(sessionName)}`);
+                } catch (e) {
+                    console.warn(`   ⚠️  Could not open terminal for ${sessionName}: ${e.message}`);
+                }
+            });
         } else {
-            // Non-Warp terminals: print manual setup instructions
+            // Non-Warp/tmux terminals: print manual setup instructions
             console.log(`\n📋 Fleet research ${paddedId} - ${researchName.replace(/-/g, ' ')}:`);
-            console.log(`   (Side-by-side launch requires Warp terminal. Use --terminal=warp)\n`);
+            console.log(`   (Side-by-side launch requires Warp or tmux. Use --terminal=warp or --terminal=tmux)\n`);
             agentConfigs.forEach(config => {
                 console.log(`   ${config.agent} (${config.agentName}):`);
                 console.log(`     cd ${process.cwd()}`);
