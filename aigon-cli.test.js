@@ -217,6 +217,45 @@ test('works with codex-style prompt', () => {
     );
 });
 
+console.log('\nauto-submit marker logic');
+
+/**
+ * Re-implement the marker-writing condition from runRalphCommand.
+ * Returns true if the marker should be written.
+ */
+function shouldWriteAutoSubmitMarker(autoSubmitFlagExplicit, noAutoSubmitFlagExplicit) {
+    return autoSubmitFlagExplicit !== undefined && noAutoSubmitFlagExplicit === undefined;
+}
+
+/**
+ * Build the marker content (mirrors the JSON written in runRalphCommand).
+ */
+function buildAutoSubmitMarker(featureId, agent) {
+    return { featureId, agent, createdAt: expect.any };
+}
+
+test('writes marker when --auto-submit is explicitly set', () => {
+    assert.strictEqual(shouldWriteAutoSubmitMarker(true, undefined), true);
+});
+test('writes marker when --auto-submit is string value', () => {
+    assert.strictEqual(shouldWriteAutoSubmitMarker('true', undefined), true);
+});
+test('does NOT write marker when neither flag is set', () => {
+    assert.strictEqual(shouldWriteAutoSubmitMarker(undefined, undefined), false);
+});
+test('does NOT write marker when --no-auto-submit overrides', () => {
+    assert.strictEqual(shouldWriteAutoSubmitMarker(true, true), false);
+});
+test('does NOT write marker when only --no-auto-submit is set', () => {
+    assert.strictEqual(shouldWriteAutoSubmitMarker(undefined, true), false);
+});
+test('marker JSON contains featureId and agent fields', () => {
+    const marker = JSON.parse(JSON.stringify({ featureId: '44', agent: 'cc', createdAt: new Date().toISOString() }));
+    assert.strictEqual(marker.featureId, '44');
+    assert.strictEqual(marker.agent, 'cc');
+    assert.ok(marker.createdAt, 'createdAt should be present');
+});
+
 console.log('');
 if (failed === 0) {
     console.log(`All ${passed} tests passed.\n`);

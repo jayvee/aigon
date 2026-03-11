@@ -119,6 +119,17 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 
 {{MANUAL_TESTING_GUIDANCE}}
 
+### Autonomous mode check
+
+Check if the file `.aigon/auto-submit` exists in the current working directory:
+```bash
+test -f .aigon/auto-submit && echo "AUTO_SUBMIT_ACTIVE" || echo "MANUAL_MODE"
+```
+
+**If `AUTO_SUBMIT_ACTIVE`:** Skip the manual verification wait — proceed directly to Step 5 (commit). The testing checklist should still be written to the implementation log for the evaluator to review later, but do NOT stop and wait.
+
+**If `MANUAL_MODE`:**
+
 **Signal that you are waiting for the user:**
 ```bash
 aigon agent-status waiting
@@ -157,9 +168,29 @@ Update it with:
 
 **Then commit the log file.**
 
-## Step 7: STOP - Implementation complete
+## Step 7: Complete implementation
 
-### Drive Mode (branch)
+### Autonomous mode check
+
+Check if the file `.aigon/auto-submit` exists:
+```bash
+test -f .aigon/auto-submit && echo "AUTO_SUBMIT_ACTIVE" || echo "MANUAL_MODE"
+```
+
+### If `AUTO_SUBMIT_ACTIVE` — auto-submit
+
+You are running autonomously. Do NOT stop and wait. Instead:
+
+1. Complete steps 5-6 (commit code + update log) immediately
+2. Run the feature-submit workflow:
+   ```bash
+   aigon agent-status submitted
+   ```
+3. This session is complete. Do not suggest follow-up commands.
+
+### If `MANUAL_MODE` — stop and wait
+
+#### Drive Mode (branch)
 
 **CRITICAL: Do NOT proceed to feature-done automatically.**
 
@@ -172,13 +203,13 @@ After completing steps 1-6:
    - Optionally run `{{CMD_PREFIX}}feature-review {{ARG1_SYNTAX}}` with a different agent for cross-agent code review
    - Approve with `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}}`
 
-### Drive Worktree Mode
+#### Drive Worktree Mode
 
 **CRITICAL: Do NOT run `aigon feature-done` from a worktree.**
 
 After completing steps 1-4, **STOP and WAIT** for the user. They will run `{{CMD_PREFIX}}feature-submit` to trigger steps 5-6 (commit + log). Do NOT commit or write the log until the user runs that command.
 
-### Fleet Mode
+#### Fleet Mode
 
 **CRITICAL: Do NOT run `aigon feature-done` from a worktree.**
 
