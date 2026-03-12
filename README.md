@@ -434,7 +434,7 @@ Think of this as a second axis in addition to mode (Drive/Fleet/Autopilot/Swarm)
 | Spec authoring and refinement (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) | In-agent slash commands | Best for iterative back-and-forth on definitions and scope |
 | Execution with an active agent (`feature-implement`, `feature-review`, `research-conduct`, `research-synthesize`) | In-agent slash commands | Keeps context in the live session and avoids nested launches |
 | Orchestration and terminal ops (`init`, `install-agent`, `update`, `feature-setup`, `worktree-open`, `feature-done`, `feature-cleanup`) | CLI | Repo/worktree coordination, machine-level operations, scripting |
-| Infra/config (`config`, `profile`, `proxy-setup`, `dev-server`, `conductor`) | CLI | Machine/project configuration and background services |
+| Infra/config (`config`, `profile`, `proxy-setup`, `dev-server`, `radar`) | CLI | Machine/project configuration and background services |
 
 ### Can I stay in one surface?
 
@@ -724,11 +724,17 @@ Detach from any session with `Ctrl-b d`. Reattach manually with `tmux attach -t 
 
 ---
 
-## Visualizing Work
+## Visualizing Work — Aigon Radar
 
-Aigon provides four ways to see what's happening across your projects: a **terminal board**, a **VS Code sidebar**, a **macOS menubar icon**, and a **background daemon** that sends macOS notifications.
+Once you start using aigon on multiple repositories with multiple features in parallel, you need a radar to work out what's happening where and to be able to intercept and take over as required.
 
-### VS Code Sidebar (Aigon Conductor)
+**Aigon Radar** is a single background service that watches all your registered repos and exposes a unified HTTP API. Every view — the web dashboard, VS Code sidebar, macOS menubar icon, and CLI status — consumes that one API rather than reading log files independently.
+
+> **Note:** Radar is the evolution of the `conductor` monitoring commands. The `aigon conduct` orchestration command is unaffected. See [Migration from Conductor](#migration-from-conductor) below.
+
+Aigon provides four ways to see what's happening across your projects: a **web dashboard**, a **VS Code sidebar**, a **macOS menubar icon**, and **macOS notifications** — all powered by a single Radar service.
+
+### VS Code Sidebar (Aigon Radar)
 
 An Aigon section in the Explorer sidebar shows live feature and agent status across all registered repos — no terminal needed.
 
@@ -736,11 +742,11 @@ An Aigon section in the Explorer sidebar shows live feature and agent status acr
 
 ```bash
 # 1. Register your repos (repeat for each project)
-aigon conductor add                    # adds cwd
-aigon conductor add ~/src/my-web-app  # adds another repo
+aigon radar add                    # adds cwd
+aigon radar add ~/src/my-web-app  # adds another repo
 
 # 2. Install the VS Code extension
-aigon conductor vscode-install
+aigon radar vscode-install
 
 # 3. Reload VS Code — the Aigon panel appears in the Explorer sidebar
 ```
@@ -778,24 +784,27 @@ Click any attention item to copy its slash command. Expand a repo for the full f
 - Refresh button (↻) and stage toggle (☰) in the panel title bar
 - Updates automatically via file watching — no polling, no manual refresh
 
-**Conductor commands:**
+**Radar commands:**
 
 ```bash
-aigon conductor add [path]       # Register a repo (default: cwd)
-aigon conductor remove [path]    # Unregister a repo
-aigon conductor list             # List registered repos
-aigon conductor vscode-install   # Install VS Code extension
-aigon conductor vscode-uninstall # Remove VS Code extension
-aigon conductor menubar-install  # Install macOS menubar plugin
-aigon conductor menubar-uninstall # Remove menubar plugin
-aigon conductor start            # Start background daemon (macOS notifications)
-aigon conductor stop             # Stop daemon
-aigon conductor status           # Show daemon state and waiting agents
+aigon radar add [path]           # Register a repo (default: cwd)
+aigon radar remove [path]        # Unregister a repo
+aigon radar list                 # List registered repos
+aigon radar start [--port N]     # Start the Radar service (daemon + dashboard + API)
+aigon radar stop                 # Stop the Radar service
+aigon radar status               # Show service state, repos, and waiting agents
+aigon radar open                 # Open the web dashboard in your browser
+aigon radar install              # Auto-start on login (launchd)
+aigon radar uninstall            # Remove auto-start
+aigon radar vscode-install       # Install VS Code extension
+aigon radar vscode-uninstall     # Remove VS Code extension
+aigon radar menubar-install      # Install macOS menubar plugin
+aigon radar menubar-uninstall    # Remove menubar plugin
 ```
 
-### macOS Menubar (Aigon Conductor)
+### macOS Menubar (Aigon Radar)
 
-A menubar icon that shows live agent status at a glance — click to expand a menu of all features and agents across repos, then click any agent to jump directly to its terminal.
+A menubar icon that shows live agent status at a glance — click to expand a menu of all features and agents across repos, then click any agent to jump directly to its terminal. The menubar plugin calls Radar's HTTP API for its data.
 
 **One-time setup:**
 
@@ -804,10 +813,10 @@ A menubar icon that shows live agent status at a glance — click to expand a me
 brew install --cask swiftbar
 
 # 2. Register your repos (if not already done)
-aigon conductor add
+aigon radar add
 
 # 3. Install the menubar plugin
-aigon conductor menubar-install
+aigon radar menubar-install
 ```
 
 The menubar shows a gear icon with an attention count: `⚙ 3 needs attention` or `⚙ 5 running` or `⚙ –` when idle. Click to expand:
@@ -844,6 +853,10 @@ You can also jump to any feature's terminal directly from the CLI:
 aigon terminal-focus 39        # open terminal for feature #39
 aigon terminal-focus 39 cc     # open terminal for specific agent
 ```
+
+### Migration from Conductor
+
+If you previously used `aigon conductor` for monitoring, the transition is straightforward — all `conductor` monitoring subcommands (`start`, `stop`, `status`, `add`, `remove`, `list`, `menubar-install`, etc.) continue to work but now delegate to their `radar` equivalents with a deprecation notice. The `aigon dashboard` command similarly delegates to `aigon radar open`. The `aigon conduct` orchestration command is completely unaffected.
 
 ### Kanban Board View (default)
 
@@ -1155,23 +1168,28 @@ Example output:
   cx    submitted      10:58
 ```
 
-### Conductor commands
+### Radar commands
 
-Multi-repo status monitoring via a background daemon, VS Code sidebar, and macOS menubar.
+Multi-repo status monitoring via a unified background service — web dashboard, VS Code sidebar, macOS menubar, and notifications all in one.
 
 | Command | Usage |
 |---|---|
-| Conductor Add | `aigon conductor add [path]` (register repo, default: cwd) |
-| Conductor Remove | `aigon conductor remove [path]` |
-| Conductor List | `aigon conductor list` |
-| Conductor Start | `aigon conductor start` (background daemon, macOS notifications) |
-| Conductor Stop | `aigon conductor stop` |
-| Conductor Status | `aigon conductor status` |
-| VS Code Install | `aigon conductor vscode-install` |
-| VS Code Uninstall | `aigon conductor vscode-uninstall` |
-| Menubar Install | `aigon conductor menubar-install` (SwiftBar/xbar plugin) |
-| Menubar Uninstall | `aigon conductor menubar-uninstall` |
+| Radar Start | `aigon radar start [--port N]` (start service: daemon + dashboard + API) |
+| Radar Stop | `aigon radar stop` |
+| Radar Status | `aigon radar status` |
+| Radar Open | `aigon radar open` (open web dashboard in browser) |
+| Radar Install | `aigon radar install` (auto-start on login via launchd) |
+| Radar Uninstall | `aigon radar uninstall` |
+| Radar Add | `aigon radar add [path]` (register repo, default: cwd) |
+| Radar Remove | `aigon radar remove [path]` |
+| Radar List | `aigon radar list` |
+| VS Code Install | `aigon radar vscode-install` |
+| VS Code Uninstall | `aigon radar vscode-uninstall` |
+| Menubar Install | `aigon radar menubar-install` (SwiftBar/xbar plugin) |
+| Menubar Uninstall | `aigon radar menubar-uninstall` |
 | Terminal Focus | `aigon terminal-focus <featureId> [agent]` (open agent terminal) |
+
+> **Migration:** The old `aigon conductor` monitoring commands still work but print deprecation notices. `aigon conduct` (orchestration) is unaffected.
 
 ### Dev server commands
 
