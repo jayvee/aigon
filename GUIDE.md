@@ -36,16 +36,16 @@ This is independent from workflow mode (Drive/Fleet/Autopilot/Swarm).
 ### Start here (practical default)
 
 1. Start in an **in-agent session** when defining work (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) so you can iterate conversationally.
-2. Stay **in-agent** for execution (`feature-implement`, `feature-review`, `research-conduct`, `research-synthesize`).
-3. Use **CLI context** for orchestration and terminal operations (`feature-setup`, `worktree-open`, `feature-eval`, `feature-done`, `feature-cleanup`), especially from the main repo.
+2. Stay **in-agent** for execution (`feature-do`, `feature-review`, `research-do`, `research-synthesize`).
+3. Use **CLI context** for orchestration and terminal operations (`feature-setup`, `worktree-open`, `feature-eval`, `feature-close`, `feature-cleanup`), especially from the main repo.
 
 ### Surface recommendations
 
 | Command Group | Preferred Surface | Notes |
 |---|---|---|
 | Spec authoring/refinement (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) | In-agent | Best for back-and-forth definition and scope shaping |
-| Agent execution (`feature-implement`, `feature-review`, `research-conduct`, `research-synthesize`) | In-agent | Best when an agent session is already active |
-| Setup/orchestration (`init`, `install-agent`, `update`, `feature-setup`, `research-setup`, `worktree-open`, `feature-done`, `feature-cleanup`) | CLI | Repo/worktree operations and coordination |
+| Agent execution (`feature-do`, `feature-review`, `research-do`, `research-synthesize`) | In-agent | Best when an agent session is already active |
+| Setup/orchestration (`init`, `install-agent`, `update`, `feature-setup`, `research-setup`, `worktree-open`, `feature-close`, `feature-cleanup`) | CLI | Repo/worktree operations and coordination |
 | Infra/config (`config`, `profile`, `proxy-setup`, `dev-server`, `radar`) | CLI | Machine/project configuration and services |
 
 ### Mode × surface matrix
@@ -54,7 +54,7 @@ This is independent from workflow mode (Drive/Fleet/Autopilot/Swarm).
 |---|---|---|
 | Drive | Fully supported | Fully supported |
 | Fleet | Fully supported (strong for orchestration) | Fully supported (strong for per-agent execution) |
-| Autopilot | Primary entry point (`feature-implement --autonomous`) | Supported when already in-session |
+| Autopilot | Primary entry point (`feature-do --autonomous`) | Supported when already in-session |
 | Swarm | Primary entry point (`feature-setup ... --autonomous`) | Limited manual use after launch (agents run autonomously) |
 
 The matrix describes common usage, not hard restrictions. In general, both surfaces are available; the best choice depends on whether you're iterating with an agent or orchestrating repo/worktree state.
@@ -64,7 +64,7 @@ The matrix describes common usage, not hard restrictions. In general, both surfa
 - **“Do I need to start inside an agent?”** Not required, but recommended for spec definition and iterative refinement.
 - **“Can I stay CLI-only?”** Yes. CLI-only is supported, especially for terminal-first workflows and automation.
 - **“Is CLI optional?”** Yes. Most day-to-day feature/research authoring and execution can happen inside agent sessions via slash commands.
-- **“Why does `feature-implement` behave differently?”** In shell context, it can launch an agent. In-agent context, it provides instruction flow in the active session.
+- **“Why does `feature-do` behave differently?”** In shell context, it can launch an agent. In-agent context, it provides instruction flow in the active session.
 
 ---
 
@@ -75,8 +75,8 @@ The matrix describes common usage, not hard restrictions. In general, both surfa
 For features where you want to go from idea to implementation immediately:
 
 * **Now:** `/aigon:feature-now dark-mode` (or `aigon feature-now dark-mode`) — if `dark-mode` matches an existing feature in the inbox, it runs prioritise → setup → implement. Otherwise it creates a new spec directly in `/in-progress`, assigns an ID, creates a Drive branch, and commits atomically. Either way, you go from name to implementation in one session.
-* **Implement:** `aigon feature-implement <ID>` (launches the default `cc` agent from a plain shell) or `aigon feature-implement <ID> --agent=cx` (launches Codex). Inside an agent session use `/aigon:feature-implement <ID>` (or `/aigon-feature-implement <ID>` for Cursor, `/prompts:aigon-feature-implement <ID>` for Codex).
-* **Done:** `/aigon:feature-done <ID>` (or `aigon feature-done <ID>`) merges and completes.
+* **Implement:** `aigon feature-do <ID>` (launches the default `cc` agent from a plain shell) or `aigon feature-do <ID> --agent=cx` (launches Codex). Inside an agent session use `/aigon:feature-do <ID>` (or `/aigon-feature-do <ID>` for Cursor, `/prompts:aigon-feature-do <ID>` for Codex).
+* **Done:** `/aigon:feature-close <ID>` (or `aigon feature-close <ID>`) merges and completes.
 
 This skips the inbox/backlog/setup steps entirely. Use the slash command for the full guided experience.
 
@@ -91,7 +91,7 @@ Drive mode supports two workspace styles: **branch** (work in the current repo) 
     * **Branch mode:** `/aigon:feature-setup 108` (or `aigon feature-setup 108`) — creates a Git branch (`feature-108-dark-mode`) in the current repo.
     * **Worktree mode:** `/aigon:feature-setup 108 cc` (or `aigon feature-setup 108 cc`) — creates an isolated worktree at `../<repo>-worktrees/feature-108-cc-dark-mode`, ideal for working on multiple features in parallel.
     * Both modes auto-create an Implementation Log with `status: implementing` front matter (see [Agent Status Tracking](#agent-status-tracking)).
-4.  **Implement:** `aigon feature-implement 108` (launches the default `cc` agent from a plain shell) or `aigon feature-implement 108 --agent=cx` (launch Codex). Inside an active agent session, use `/aigon:feature-implement 108` (or `/aigon-feature-implement 108` for Cursor, `/prompts:aigon-feature-implement 108` for Codex) to show instructions without launching a nested agent.
+4.  **Implement:** `aigon feature-do 108` (launches the default `cc` agent from a plain shell) or `aigon feature-do 108 --agent=cx` (launch Codex). Inside an active agent session, use `/aigon:feature-do 108` (or `/aigon-feature-do 108` for Cursor, `/prompts:aigon-feature-do 108` for Codex) to show instructions without launching a nested agent.
     * **Shell-launch mode** (plain terminal, no active agent): Aigon detects no agent session and spawns the chosen agent directly. Default agent is `cc`; override with `--agent=<cc|gg|cx|cu>`.
     * **Instruction mode** (inside an agent session): Aigon detects the active session and shows spec location and next steps instead of launching another agent.
     * Agent reads the feature spec and creates **tasks from the acceptance criteria** for progress tracking.
@@ -104,7 +104,7 @@ Drive mode supports two workspace styles: **branch** (work in the current repo) 
     * `/aigon:feature-review 108` (or `/aigon-feature-review 108` for Cursor, `/prompts:aigon-feature-review 108` for Codex)
     * The reviewing agent reads the spec, reviews `git diff main...HEAD`, and commits targeted fixes with `fix(review):` prefix
     * Review the fix commits before proceeding
-7.  **Finish:** `/aigon:feature-done 108` (or `aigon feature-done 108`)
+7.  **Finish:** `/aigon:feature-close 108` (or `aigon feature-close 108`)
     * Merges the branch and archives the log.
     * For Drive mode (worktree), the agent is auto-detected — no need to specify it.
 
@@ -124,10 +124,10 @@ Run multiple agents in competition to find the optimal solution.
         * `../<repo>-worktrees/feature-108-cx-dark-mode` (Codex)
     * **Auto-creates** Implementation Log templates in each worktree with `status: implementing` front matter.
     * **STOPS** - does not implement (user must open each worktree separately).
-4.  **Implement:** Open all worktrees side-by-side with `aigon worktree-open 108 --all` (or individually with `aigon worktree-open 108 cc`), or launch an agent directly from a worktree shell with `aigon feature-implement 108`.
-    * **Warp**: Opens all agents side-by-side in split panes and auto-starts each with `/aigon:feature-implement 108`.
+4.  **Implement:** Open all worktrees side-by-side with `aigon worktree-open 108 --all` (or individually with `aigon worktree-open 108 cc`), or launch an agent directly from a worktree shell with `aigon feature-do 108`.
+    * **Warp**: Opens all agents side-by-side in split panes and auto-starts each with `/aigon:feature-do 108`.
     * **tmux**: Creates persistent named sessions (`aigon-f108-cc`, `aigon-f108-gg`, etc.) that survive terminal closes. Detach with `Ctrl-b d`, reattach anytime. With `tmuxApp: "iterm2"`, sessions open as native iTerm2 tabs.
-    * **VS Code / Cursor**: Opens the folder; run `aigon feature-implement 108` in the integrated terminal — Aigon detects no active session and launches the agent automatically. Alternatively run `/aigon:feature-implement 108` inside an already-open agent session.
+    * **VS Code / Cursor**: Opens the folder; run `aigon feature-do 108` in the integrated terminal — Aigon detects no active session and launches the agent automatically. Alternatively run `/aigon:feature-do 108` inside an already-open agent session.
     * **Terminal.app**: Opens a new window per agent with the command auto-started.
     * Single agent: Opens one worktree with agent CLI pre-loaded.
     * **Fleet mismatch protection:** If `--agent=gg` is specified inside a `feature-108-cc-*` worktree, Aigon exits with a clear error instead of launching the wrong agent.
@@ -144,8 +144,8 @@ Run multiple agents in competition to find the optimal solution.
 7.  **Judge:** Review and compare solutions, fill in the evaluation.
 8.  **Merge Winner:**
     ```bash
-    /aigon:feature-done 108 cc
-    # or: aigon feature-done 108 cc
+    /aigon:feature-close 108 cc
+    # or: aigon feature-close 108 cc
     ```
     * Merges winner's branch.
     * Moves winning agent's log to `logs/selected`.
@@ -153,8 +153,8 @@ Run multiple agents in competition to find the optimal solution.
     * Cleans up winner's worktree.
 9.  **Adopt from Losers (Optional):** Cherry-pick valuable improvements from losing agents:
     ```bash
-    /aigon:feature-done 108 cc --adopt all
-    # or: aigon feature-done 108 cc --adopt gg cx
+    /aigon:feature-close 108 cc --adopt all
+    # or: aigon feature-close 108 cc --adopt gg cx
     ```
     * Merges the winner as normal, then prints diffs from each losing agent.
     * Review diffs for extra tests, error handling, docs, and edge cases.
@@ -177,8 +177,8 @@ Run multiple agents in competition to find the optimal solution.
 * **Create:** `/aigon:research-create "API Design"` (or `aigon research-create "API Design"`) creates a templated topic in `/01-inbox`. The agent **explores the codebase** before writing the topic to understand relevant existing code and constraints.
 * **Prioritise:** `/aigon:research-prioritise api-design` (or `aigon research-prioritise api-design`) moves it to `/02-backlog` and assigns a global ID.
 * **Setup:** `/aigon:research-setup 05` (or `aigon research-setup 05`) moves to `/03-in-progress`.
-* **Execute:** `/aigon:research-conduct 05` (or `/aigon-research-conduct 05` for Cursor, `/prompts:aigon-research-conduct 05` for Codex). Agent reads the topic file, writes findings and recommendations directly into the document.
-* **Done:** `/aigon:research-done 05` (or `aigon research-done 05`) moves to `/04-done`.
+* **Execute:** `/aigon:research-do 05` (or `/aigon-research-do 05` for Cursor, `/prompts:aigon-research-do 05` for Codex). Agent reads the topic file, writes findings and recommendations directly into the document.
+* **Done:** `/aigon:research-close 05` (or `aigon research-close 05`) moves to `/04-done`.
 * **Output:** The research file becomes a complete record, with suggested features in the Output section.
 
 ### Fleet Mode (Multi-Agent Research)
@@ -193,16 +193,16 @@ Run multiple agents to get diverse perspectives on a research topic.
         * `research-05-cc-findings.md` (Claude)
         * `research-05-gg-findings.md` (Gemini)
         * `research-05-cx-findings.md` (Codex)
-* **Execute:** Open all agents side-by-side with `/aigon:research-open 05` (or `aigon research-open 05`), then run `/aigon:research-conduct 05` in each agent session.
+* **Execute:** Open all agents side-by-side with `/aigon:research-open 05` (or `aigon research-open 05`), then run `/aigon:research-do 05` in each agent session.
     * Each agent writes ONLY to their own findings file.
-    * Agents must NOT run `research-done` (user handles synthesis).
+    * Agents must NOT run `research-close` (user handles synthesis).
 * **Synthesize:** `/aigon:research-synthesize 05` (or `/aigon-research-synthesize 05` for Cursor, `/prompts:aigon-research-synthesize 05` for Codex) with an agent to:
     * Read and compare ALL agents' findings
     * Present a synthesis with recommendations
     * Ask you which features to include (via chat)
     * Update the main research doc with your selections
     * **Tip:** Use a different model than those that conducted the research for unbiased synthesis
-* **Complete:** `/aigon:research-done 05 --complete` (or `aigon research-done 05 --complete`) moves to `/04-done`.
+* **Complete:** `/aigon:research-close 05 --complete` (or `aigon research-close 05 --complete`) moves to `/04-done`.
 * **Output:** The main research file contains the synthesized recommendation, with findings files preserved in `logs/`.
 
 ---
@@ -333,7 +333,7 @@ updated: 2026-03-03T11:23:00Z
 ...
 ```
 
-As agents work through the `feature-implement` and `feature-submit` templates, they automatically call `aigon agent-status` at key transitions:
+As agents work through the `feature-do` and `feature-submit` templates, they automatically call `aigon agent-status` at key transitions:
 
 | Lifecycle point | Status |
 |---|---|
@@ -597,10 +597,10 @@ done
 | `post-feature-now` | Runs after fast-track feature creation completes |
 | `pre-feature-setup` | Runs before creating branch (Drive) or worktrees (Fleet) |
 | `post-feature-setup` | Runs after setup completes |
-| `pre-feature-implement` | Runs before implementation begins |
-| `post-feature-implement` | Runs after implementation setup |
-| `pre-feature-done` | Runs before merging a feature |
-| `post-feature-done` | Runs after a feature is merged |
+| `pre-feature-do` | Runs before implementation begins |
+| `post-feature-do` | Runs after implementation setup |
+| `pre-feature-close` | Runs before merging a feature |
+| `post-feature-close` | Runs after a feature is merged |
 | `pre-feature-cleanup` | Runs before cleaning up Fleet worktrees |
 | `post-feature-cleanup` | Runs after Fleet cleanup |
 
@@ -616,8 +616,8 @@ Hooks have access to context via environment variables:
 | `AIGON_FEATURE_ID` | Feature ID (e.g., "01") | Feature commands |
 | `AIGON_FEATURE_NAME` | Feature name slug | Feature commands |
 | `AIGON_AGENTS` | Space-separated list of agents | feature-setup (Fleet), feature-cleanup |
-| `AIGON_AGENT` | Current agent name | feature-implement (Fleet), feature-done (Fleet) |
-| `AIGON_WORKTREE_PATH` | Path to current worktree | feature-implement (Fleet) |
+| `AIGON_AGENT` | Current agent name | feature-do (Fleet), feature-close (Fleet) |
+| `AIGON_WORKTREE_PATH` | Path to current worktree | feature-do (Fleet) |
 
 ### Hook Behavior
 
@@ -916,7 +916,7 @@ All agents (Claude Code, Gemini, Codex, Cursor) use the same `aigon dev-server s
 - **Logs are always available** — agents can run `aigon dev-server logs` to check startup output and diagnose errors
 - **Cleanup is reliable** — `aigon dev-server stop` kills the process by PID, no guessing
 
-The `feature-implement` template instructs agents to run `aigon dev-server start` at the testing step. Since the command handles everything (port allocation, process spawning, proxy registration, health check), all agents behave identically regardless of their runtime environment.
+The `feature-do` template instructs agents to run `aigon dev-server start` at the testing step. Since the command handles everything (port allocation, process spawning, proxy registration, health check), all agents behave identically regardless of their runtime environment.
 
 ### Fallback (No Proxy)
 
@@ -1010,7 +1010,7 @@ After setting up a feature with worktrees, use `/aigon:worktree-open` (or `aigon
 
 ### Terminal Behavior
 
-- **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with the `feature-implement` slash command. Fleet (`--all`) and parallel modes open split panes. Each pane echoes its port label on launch (e.g., `🔌 Claude — Port 3401`). Panes are ordered by port offset (cc, gg, cx, cu).
+- **Warp**: Opens a new tab, sets the working directory, and automatically runs the agent CLI with the `feature-do` slash command. Fleet (`--all`) and parallel modes open split panes. Each pane echoes its port label on launch (e.g., `🔌 Claude — Port 3401`). Panes are ordered by port offset (cc, gg, cx, cu).
 - **tmux**: Creates named, persistent sessions (e.g., `aigon-f55-cc`) that survive terminal closes. Detach with `Ctrl-b d` and reattach anytime. Fleet mode creates one session per agent. Configure `tmuxApp` to choose which terminal app hosts the tmux attach (see below).
 - **VS Code / Cursor**: Opens the folder; you'll need to run the agent command manually (shown in output). Split pane modes print commands for manual setup.
 - **Terminal.app**: Opens a new Terminal.app window with the agent command.
@@ -1229,12 +1229,12 @@ Once you've chosen a winner, merge their implementation:
 
 ```bash
 # Merge the winning implementation
-/aigon:feature-done 10 cx
-# or: aigon feature-done 10 cx
+/aigon:feature-close 10 cx
+# or: aigon feature-close 10 cx
 
 # Or merge and adopt valuable improvements from losers
-/aigon:feature-done 10 cx --adopt all
-# or: aigon feature-done 10 cx --adopt cc gg
+/aigon:feature-close 10 cx --adopt all
+# or: aigon feature-close 10 cx --adopt cc gg
 
 # Push losing branches to origin for safekeeping (optional)
 /aigon:feature-cleanup 10 --push

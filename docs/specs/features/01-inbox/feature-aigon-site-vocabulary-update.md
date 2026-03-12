@@ -8,11 +8,11 @@ Update the aigon.build website documentation to reflect the new command vocabula
 
 | Old | New |
 |-----|-----|
-| `feature-implement` | `feature-do` |
-| `feature-done` | `feature-close` |
-| `research-conduct` | `research-do` |
-| `research-done` | `research-close` |
-| `conduct` (orchestrator) | `feature-autopilot` / `research-autopilot` |
+| `feature-do` | `feature-do` |
+| `feature-close` | `feature-close` |
+| `research-do` | `research-do` |
+| `research-close` | `research-close` |
+| `feature-autopilot` (orchestrator) | `feature-autopilot` / `research-autopilot` |
 
 Full workflow table:
 
@@ -30,7 +30,7 @@ Full workflow table:
 
 ## User Stories
 
-- [ ] As a visitor to aigon.build, I see the current command names — not stale references to `implement`, `conduct`, or `done`
+- [ ] As a visitor to aigon.build, I see the current command names — not stale references to `implement`, `feature-autopilot`, or `done`
 - [ ] As a visitor, I can see the full workflow table showing Drive vs Fleet pathways with correct command names
 
 ## Acceptance Criteria

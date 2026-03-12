@@ -172,7 +172,7 @@ Commit the log file.
 
 ## Step 7: STOP — Implementation complete
 
-**CRITICAL: Do NOT proceed to feature-done automatically.**
+**CRITICAL: Do NOT proceed to feature-close automatically.**
 
 Tell the user: "Implementation complete. Ready for your review."
 
@@ -180,6 +180,6 @@ Tell the user: "Implementation complete. Ready for your review."
 - Review the code changes
 - Test the feature themselves
 - Optionally run `{{CMD_PREFIX}}feature-eval` for code review
-- Approve with `{{CMD_PREFIX}}feature-done`
+- Approve with `{{CMD_PREFIX}}feature-close`
 
 **This implementation session is complete.**

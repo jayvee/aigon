@@ -38,6 +38,6 @@ NOTE: below should be replaced by the recent standard for being explicit about a
 
   Up to you — straight merge or --adopt cx?
 
-  /aigon:feature-done 14 cc
+  /aigon:feature-close 14 cc
 
-❯ /aigon:feature-done 14 cc --adopt cx 
+❯ /aigon:feature-close 14 cc --adopt cx 

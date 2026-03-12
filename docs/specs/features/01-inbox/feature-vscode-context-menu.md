@@ -2,7 +2,7 @@
 
 ## Summary
 
-Add right-click context menu items to the Aigon VS Code extension sidebar tree, so users can trigger `aigon feature-ship`, `aigon feature-done`, and `aigon feature-implement --ralph --auto-submit` directly from the feature list without typing commands.
+Add right-click context menu items to the Aigon VS Code extension sidebar tree, so users can trigger `aigon feature-ship`, `aigon feature-close`, and `aigon feature-do --ralph --auto-submit` directly from the feature list without typing commands.
 
 ## User Stories
 
@@ -13,8 +13,8 @@ Add right-click context menu items to the Aigon VS Code extension sidebar tree, 
 
 - [ ] Right-clicking a feature with `contextValue === 'feature'` shows a context menu in the VS Code sidebar
 - [ ] Menu item "Ship (Ralph + Deploy)" appears for features in `01-inbox`, `02-backlog`, or `03-in-progress` stage — runs `aigon feature-ship <ID>` in a new VS Code integrated terminal named "Aigon: Ship"
-- [ ] Menu item "Feature Done" appears for features in `03-in-progress` stage — runs `aigon feature-done <ID>` in a new integrated terminal
-- [ ] Menu item "Implement (Ralph)" appears for features in `03-in-progress` stage — runs `aigon feature-implement <ID> --ralph --auto-submit` in a new integrated terminal
+- [ ] Menu item "Feature Done" appears for features in `03-in-progress` stage — runs `aigon feature-close <ID>` in a new integrated terminal
+- [ ] Menu item "Implement (Ralph)" appears for features in `03-in-progress` stage — runs `aigon feature-do <ID> --ralph --auto-submit` in a new integrated terminal
 - [ ] Each menu item opens the terminal in the correct working directory (the repo root for that feature, already available as `repoPath` on the tree item)
 - [ ] The extension `package.json` `contributes.menus` includes a `"view/item/context"` entry for `view == aigonConductor && viewItem == feature`
 - [ ] Running `vsce package` (or equivalent) produces a valid `.vsix` with no errors

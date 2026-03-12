@@ -1,12 +1,14 @@
 {
   "id": "cx",
   "name": "Codex",
-  "aliases": ["codex", "cx"],
-
+  "aliases": [
+    "codex",
+    "cx"
+  ],
   "cli": {
     "command": "codex",
     "implementFlag": "",
-    "implementPrompt": "/prompts:aigon-feature-implement {featureId}",
+    "implementPrompt": "/prompts:aigon-feature-do {featureId}",
     "evalPrompt": "/prompts:aigon-feature-eval {featureId}",
     "models": {
       "research": "gpt-5.2",
@@ -14,7 +16,6 @@
       "evaluate": "gpt-5.2 pro"
     }
   },
-
   "placeholders": {
     "AGENT_ID": "cx",
     "AGENT_NAME": "Codex",
@@ -25,23 +26,23 @@
     "AGENT_TEAMS_RESEARCH_NOTE": "",
     "AGENT_TEAMS_FEATURE_NOTE": "",
     "PERMISSION_SAVE_NOTE": "",
-    "AGENT_DEV_SERVER_NOTE": "\n> **CRITICAL — Codex dev server rules:**\n>\n> **NEVER run `npm run dev`, `next dev`, or any dev command directly.** Port 3000 is the main app — worktree agents must NEVER bind to it.\n>\n> Because Codex kills background processes when shell commands exit, use `--register-only` mode:\n>\n> 1. Run `aigon dev-server start --register-only` — allocates your agent's port (offset from base, e.g. cx gets +3) and writes it to `.env.local`\n> 2. Read the allocated port: `grep ^PORT= .env.local`\n> 3. Start the server in a **persistent terminal session** using `/terminal`: `PORT=<the-port> npm run dev`\n> 4. Get your app URL: `aigon dev-server url` — this prints the proxy subdomain (e.g. `http://cx-121.myapp.test`) or the localhost URL\n> 5. Use that URL for all testing — NEVER use `http://localhost:3000`\n"
+    "AGENT_DEV_SERVER_NOTE": "\n> **CRITICAL \u2014 Codex dev server rules:**\n>\n> **NEVER run `npm run dev`, `next dev`, or any dev command directly.** Port 3000 is the main app \u2014 worktree agents must NEVER bind to it.\n>\n> Because Codex kills background processes when shell commands exit, use `--register-only` mode:\n>\n> 1. Run `aigon dev-server start --register-only` \u2014 allocates your agent's port (offset from base, e.g. cx gets +3) and writes it to `.env.local`\n> 2. Read the allocated port: `grep ^PORT= .env.local`\n> 3. Start the server in a **persistent terminal session** using `/terminal`: `PORT=<the-port> npm run dev`\n> 4. Get your app URL: `aigon dev-server url` \u2014 this prints the proxy subdomain (e.g. `http://cx-121.myapp.test`) or the localhost URL\n> 5. Use that URL for all testing \u2014 NEVER use `http://localhost:3000`\n"
   },
-
   "output": {
     "format": "markdown",
     "commandDir": "~/.codex/prompts",
     "commandFilePrefix": "aigon-",
     "commandFileExtension": ".md",
-    "frontmatter": ["description", "args"],
+    "frontmatter": [
+      "description",
+      "args"
+    ],
     "global": true
   },
-
   "rootFile": null,
   "supportsAgentsMd": true,
   "agentFile": "codex.md",
   "templatePath": "generic/docs/agent.md",
-
   "extras": {
     "prompt": {
       "enabled": false,
@@ -52,18 +53,18 @@
       "path": ".codex/config.toml"
     }
   },
-
   "commands": [
     "feature-create",
     "feature-now",
     "feature-prioritise",
     "feature-setup",
-    "feature-implement",
+    "feature-do",
     "feature-submit",
     "feature-eval",
     "feature-review",
-    "feature-done",
+    "feature-close",
     "feature-cleanup",
+    "feature-autopilot",
     "board",
     "worktree-open",
     "sessions-close",
@@ -71,9 +72,11 @@
     "research-prioritise",
     "research-setup",
     "research-open",
-    "research-conduct",
+    "research-do",
+    "research-submit",
     "research-synthesize",
-    "research-done",
+    "research-close",
+    "research-autopilot",
     "feedback-create",
     "feedback-list",
     "feedback-triage",

@@ -37,7 +37,7 @@ The CLI will:
 - Create implementation log(s)
 {{SETUP_ENV_LOCAL_LINE}}
 
-**If the CLI reports any errors or warnings about committing the spec move, resolve them before proceeding.** Worktrees branch from HEAD — if the spec move isn't committed, the worktree won't have the spec in `03-in-progress` and `feature-implement` will fail.
+**If the CLI reports any errors or warnings about committing the spec move, resolve them before proceeding.** Worktrees branch from HEAD — if the spec move isn't committed, the worktree won't have the spec in `03-in-progress` and `feature-do` will fail.
 
 ## Step 2: Confirm setup and next steps
 
@@ -45,7 +45,7 @@ The CLI will:
 
 After the CLI completes:
 ```bash
-{{CMD_PREFIX}}feature-implement 55     # Start implementing
+{{CMD_PREFIX}}feature-do 55     # Start implementing
 ```
 
 ### Drive Worktree Mode (parallel development)
@@ -55,9 +55,9 @@ After the CLI completes, open the worktree using:
 {{CMD_PREFIX}}worktree-open 55
 ```
 
-This opens Warp terminal with the agent CLI running `{{CMD_PREFIX}}feature-implement` automatically.
+This opens Warp terminal with the agent CLI running `{{CMD_PREFIX}}feature-do` automatically.
 
-Remember that `{{CMD_PREFIX}}feature-done` must be run from the main repo later.
+Remember that `{{CMD_PREFIX}}feature-close` must be run from the main repo later.
 
 ### Fleet Mode (competition)
 
@@ -73,7 +73,7 @@ Or open individually:
 {{CMD_PREFIX}}worktree-open 55 cx    # Open Codex's worktree
 ```
 
-Each terminal opens with the agent CLI running `{{CMD_PREFIX}}feature-implement` automatically. After all implementations complete, return to main repo and run `{{CMD_PREFIX}}feature-eval 55` to compare.
+Each terminal opens with the agent CLI running `{{CMD_PREFIX}}feature-do` automatically. After all implementations complete, return to main repo and run `{{CMD_PREFIX}}feature-eval 55` to compare.
 
 ## Important Notes
 
@@ -86,6 +86,6 @@ Each terminal opens with the agent CLI running `{{CMD_PREFIX}}feature-implement`
 
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID and choose based on mode:
 
-- **Drive mode (branch):** `{{CMD_PREFIX}}feature-implement <ID>`
+- **Drive mode (branch):** `{{CMD_PREFIX}}feature-do <ID>`
 - **Drive worktree:** `{{CMD_PREFIX}}worktree-open <ID>`
 - **Fleet:** `{{CMD_PREFIX}}worktree-open <ID> --all`
