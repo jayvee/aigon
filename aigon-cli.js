@@ -1098,9 +1098,14 @@ function parseFeatureSpecFileName(file) {
     return { id: m[1], name: m[2] };
 }
 
-function inferDashboardNextCommand(featureId, agents) {
+function inferDashboardNextCommand(featureId, agents, stage) {
     const idPadded = String(featureId).padStart(2, '0');
     if (!agents || agents.length === 0) return null;
+
+    // Feature already in evaluation — continue eval
+    if (stage === 'in-evaluation') {
+        return { command: `/afe ${idPadded}`, reason: 'Evaluation in progress' };
+    }
 
     const allSubmitted = agents.every(agent => agent.status === 'submitted');
     const hasWaiting = agents.some(agent => agent.status === 'waiting');
@@ -1140,18 +1145,26 @@ function collectDashboardStatusData() {
     repos.forEach(repoPath => {
         const absRepoPath = path.resolve(repoPath);
         const inProgressDir = path.join(absRepoPath, 'docs', 'specs', 'features', '03-in-progress');
+        const inEvalDir = path.join(absRepoPath, 'docs', 'specs', 'features', '04-in-evaluation');
+        const evalsDir = path.join(absRepoPath, 'docs', 'specs', 'features', 'evaluations');
         const mainLogsDir = path.join(absRepoPath, 'docs', 'specs', 'features', 'logs');
         const worktreeBaseDir = absRepoPath + '-worktrees';
 
-        const specFiles = [];
-        if (fs.existsSync(inProgressDir)) {
-            try {
-                fs.readdirSync(inProgressDir)
-                    .filter(f => /^feature-\d+-.+\.md$/.test(f))
-                    .sort((a, b) => a.localeCompare(b))
-                    .forEach(f => specFiles.push(f));
-            } catch (e) { /* ignore */ }
-        }
+        const specFiles = []; // { file, stage: 'in-progress' | 'in-evaluation' }
+        const stageDirs = [
+            { dir: inProgressDir, stage: 'in-progress' },
+            { dir: inEvalDir, stage: 'in-evaluation' }
+        ];
+        stageDirs.forEach(({ dir, stage }) => {
+            if (fs.existsSync(dir)) {
+                try {
+                    fs.readdirSync(dir)
+                        .filter(f => /^feature-\d+-.+\.md$/.test(f))
+                        .sort((a, b) => a.localeCompare(b))
+                        .forEach(f => specFiles.push({ file: f, stage }));
+                } catch (e) { /* ignore */ }
+            }
+        });
 
         const allLogDirs = [];
         if (fs.existsSync(mainLogsDir)) allLogDirs.push(mainLogsDir);
@@ -1209,11 +1222,12 @@ function collectDashboardStatusData() {
         }
 
         const features = [];
-        specFiles.forEach(specFile => {
+        specFiles.forEach(({ file: specFile, stage }) => {
             const parsed = parseFeatureSpecFileName(specFile);
             if (!parsed) return;
 
-            const specPath = path.join(inProgressDir, specFile);
+            const specDir = stage === 'in-evaluation' ? inEvalDir : inProgressDir;
+            const specPath = path.join(specDir, specFile);
             let fallbackUpdatedAt = new Date().toISOString();
             try {
                 fallbackUpdatedAt = new Date(fs.statSync(specPath).mtime).toISOString();
@@ -1256,11 +1270,32 @@ function collectDashboardStatusData() {
                 response.summary[agent.status] = (response.summary[agent.status] || 0) + 1;
             });
 
+            // Compute eval status for features in evaluation
+            let evalStatus = null;
+            if (stage === 'in-evaluation') {
+                evalStatus = 'evaluating';
+                const evalFile = path.join(evalsDir, `feature-${parsed.id}-eval.md`);
+                if (fs.existsSync(evalFile)) {
+                    try {
+                        const content = fs.readFileSync(evalFile, 'utf8');
+                        const winnerMatch = content.match(/\*\*Winner[:\s]*\*?\*?\s*(.+)/i);
+                        if (winnerMatch) {
+                            const val = winnerMatch[1].replace(/\*+/g, '').trim();
+                            if (val && !val.includes('to be determined') && !val.includes('TBD') && val !== '()') {
+                                evalStatus = 'pick winner';
+                            }
+                        }
+                    } catch (e) { /* skip */ }
+                }
+            }
+
             features.push({
                 id: parsed.id,
                 name: parsed.name,
+                stage,
+                evalStatus,
                 agents,
-                nextAction: inferDashboardNextCommand(parsed.id, agents)
+                nextAction: inferDashboardNextCommand(parsed.id, agents, stage)
             });
         });
 
@@ -1317,6 +1352,9 @@ function buildDashboardHtml(initialData) {
     .card{border:1px solid var(--border-subtle);border-radius:10px;background:rgba(255,255,255,.01);transition:background .12s ease,border-color .12s ease}
     .card:hover{background:var(--bg-elevated);border-color:var(--border-default)}
     .card.waiting{border-left:2px solid var(--warning)}
+    .card.evaluating{border-left:2px solid #a78bfa}
+    .eval-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35);color:#c4b5fd;margin-left:6px;flex-shrink:0}
+    .eval-badge.pick-winner{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#86efac}
     .card-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 10px 6px}
     .card-h .feature{letter-spacing:-.02em;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .head-actions{display:flex;align-items:center;justify-content:flex-end;flex:0 0 auto}
@@ -1486,13 +1524,15 @@ function buildDashboardHtml(initialData) {
         } else {
           features.forEach(feature => {
             const hasWaiting = feature.agents.some(a => a.status === 'waiting');
+            const isEval = feature.stage === 'in-evaluation';
             const card = document.createElement('article');
-            card.className = 'card' + (hasWaiting ? ' waiting' : '');
+            card.className = 'card' + (hasWaiting ? ' waiting' : '') + (isEval ? ' evaluating' : '');
             const rows = [...feature.agents].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id));
             const nextCmd = feature.nextAction && feature.nextAction.command ? feature.nextAction.command : null;
             const nextReason = feature.nextAction && feature.nextAction.reason ? escHtml(feature.nextAction.reason) : '';
             const nextBtn = nextCmd ? '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(nextCmd) + '" title="' + nextReason + '">Copy next</button>' : '';
-            card.innerHTML = '<div class="card-h"><span class="feature">#' + escHtml(feature.id) + ' ' + escHtml(feature.name) + '</span><span class="head-actions">' + nextBtn + '</span></div><div class="rows"></div>';
+            const evalBadge = isEval ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus || 'evaluating') + '</span>' : '';
+            card.innerHTML = '<div class="card-h"><span class="feature">#' + escHtml(feature.id) + ' ' + escHtml(feature.name) + evalBadge + '</span><span class="head-actions">' + nextBtn + '</span></div><div class="rows"></div>';
             const rowsEl = card.querySelector('.rows');
             rows.forEach(agent => {
               const row = document.createElement('div');
@@ -8693,13 +8733,17 @@ Branch: \`${soloBranch}\`
                 const logsDir = path.join(repoPath, 'docs', 'specs', 'features', 'logs');
 
                 // Source of truth: specs in 03-in-progress/ and 04-in-evaluation/
-                let specFiles = [];
-                [inProgressDir, inEvalDir].forEach(dir => {
+                let specFiles = []; // { file, stage: 'in-progress' | 'in-evaluation' }
+                const stageDirs = [
+                    { dir: inProgressDir, stage: 'in-progress' },
+                    { dir: inEvalDir, stage: 'in-evaluation' }
+                ];
+                stageDirs.forEach(({ dir, stage }) => {
                     if (fs.existsSync(dir)) {
                         try {
                             fs.readdirSync(dir)
                                 .filter(f => /^feature-\d+-.+\.md$/.test(f))
-                                .forEach(f => specFiles.push(f));
+                                .forEach(f => specFiles.push({ file: f, stage }));
                         } catch (e) { /* skip */ }
                     }
                 });
@@ -8764,13 +8808,13 @@ Branch: \`${soloBranch}\`
 
                 // Group by feature from specs, enrich with log status + worktree agents
                 const features = {};
-                specFiles.forEach(specFile => {
+                specFiles.forEach(({ file: specFile, stage }) => {
                     const m = specFile.match(/^feature-(\d+)-(.+)\.md$/);
                     if (!m) return;
                     const featureId = m[1];
                     const featureName = m[2];
 
-                    if (!features[featureId]) features[featureId] = { name: featureName, agents: [] };
+                    if (!features[featureId]) features[featureId] = { name: featureName, agents: [], stage };
 
                     // Collect known agents from both log files and worktrees
                     const agentSet = new Set();
@@ -8822,7 +8866,26 @@ Branch: \`${soloBranch}\`
                     const hasWaiting = data.agents.some(a => a.status === 'waiting');
                     const allSubmitted = data.agents.length > 0 && data.agents.every(a => a.status === 'submitted');
                     const paddedFid = String(fid).padStart(2, '0');
-                    if (allSubmitted) {
+
+                    if (data.stage === 'in-evaluation') {
+                        // Check eval file for progress
+                        const evalsDir = path.join(repoPath, 'docs', 'specs', 'features', 'evaluations');
+                        const evalFile = path.join(evalsDir, `feature-${fid}-eval.md`);
+                        let evalReason = 'Evaluating';
+                        if (fs.existsSync(evalFile)) {
+                            try {
+                                const content = fs.readFileSync(evalFile, 'utf8');
+                                const winnerMatch = content.match(/\*\*Winner[:\s]*\*?\*?\s*(.+)/i);
+                                if (winnerMatch) {
+                                    const val = winnerMatch[1].replace(/\*+/g, '').trim();
+                                    if (val && !val.includes('to be determined') && !val.includes('TBD') && val !== '()') {
+                                        evalReason = 'Pick winner';
+                                    }
+                                }
+                            } catch (e) { /* skip */ }
+                        }
+                        attentionItems.push({ repoShort, repoPath, fid, name: data.name, reason: evalReason, action: `/afe ${paddedFid}`, actionLabel: 'Continue eval' });
+                    } else if (allSubmitted) {
                         attentionItems.push({ repoShort, repoPath, fid, name: data.name, reason: 'All agents submitted', action: `/afe ${paddedFid}`, actionLabel: 'Run eval' });
                     } else if (hasWaiting) {
                         const waitingAgents = data.agents.filter(a => a.status === 'waiting').map(a => a.agent).join(', ');
