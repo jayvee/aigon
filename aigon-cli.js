@@ -1790,6 +1790,9 @@ function requestRadarJson(pathname, port) {
 function renderRadarMenubarFromStatus(payload, port) {
     const data = payload || {};
     const repos = Array.isArray(data.repos) ? data.repos : [];
+    const nodeExec = process.execPath;
+    const aigonScript = __filename;
+
     if (repos.length === 0) {
         console.log('⚙ –');
         console.log('---');
@@ -1800,24 +1803,59 @@ function renderRadarMenubarFromStatus(payload, port) {
 
     let waitingCount = 0;
     let implementingCount = 0;
-    let attentionCount = 0;
+    const attentionItems = [];
+    const sections = [];
 
     repos.forEach(repo => {
-        (repo.features || []).forEach(feature => {
-            const hasWaiting = (feature.agents || []).some(agent => agent.status === 'waiting');
-            const allSubmitted = (feature.agents || []).length > 0 && (feature.agents || []).every(agent => agent.status === 'submitted');
-            if (hasWaiting) attentionCount++;
-            else if (feature.stage === 'in-evaluation' || allSubmitted) attentionCount++;
+        const repoPath = repo.path || '';
+        const repoShort = repo.displayPath || repoPath;
+        const lines = [];
+        lines.push(`${repoShort} | size=14`);
 
-            (feature.agents || []).forEach(agent => {
-                if (agent.status === 'waiting') waitingCount++;
-                if (agent.status === 'implementing') implementingCount++;
+        (repo.features || [])
+            .sort((a, b) => Number(a.id) - Number(b.id))
+            .forEach(feature => {
+                lines.push(`#${feature.id} ${feature.name} | size=13`);
+                const agents = feature.agents || [];
+
+                agents.forEach(agent => {
+                    const icon = agent.status === 'waiting' ? '●' : agent.status === 'submitted' ? '✓' : '○';
+                    const paddedId = String(feature.id).padStart(2, '0');
+                    const slashCmd = `/afd ${paddedId}`;
+
+                    // Click: focus terminal. Alt-click: copy slash command.
+                    const focusParams = agent.id === 'solo'
+                        ? `param1="${aigonScript}" param2=terminal-focus param3=${feature.id} param4=--repo param5="${repoPath}"`
+                        : `param1="${aigonScript}" param2=terminal-focus param3=${feature.id} param4=${agent.id} param5=--repo param6="${repoPath}"`;
+                    lines.push(`-- ${icon} ${agent.id}: ${agent.status} | bash="${nodeExec}" ${focusParams} terminal=false`);
+                    lines.push(`-- ${icon} ${agent.id}: ${agent.status} — copy cmd | alternate=true bash=/bin/bash param1=-c param2="echo '${slashCmd}' | pbcopy" terminal=false`);
+
+                    if (agent.status === 'waiting') waitingCount++;
+                    if (agent.status === 'implementing') implementingCount++;
+                });
+
+                // Detect attention-worthy states
+                const hasWaiting = agents.some(a => a.status === 'waiting');
+                const allSubmitted = agents.length > 0 && agents.every(a => a.status === 'submitted');
+                const paddedFid = String(feature.id).padStart(2, '0');
+
+                if (feature.stage === 'in-evaluation') {
+                    const evalReason = feature.evalStatus === 'pick winner' ? 'Pick winner' : 'Evaluating';
+                    attentionItems.push({ repoPath, fid: feature.id, name: feature.name, reason: evalReason, action: `/afe ${paddedFid}` });
+                } else if (allSubmitted) {
+                    attentionItems.push({ repoPath, fid: feature.id, name: feature.name, reason: 'All agents submitted', action: `/afe ${paddedFid}` });
+                } else if (hasWaiting) {
+                    const waitingAgents = agents.filter(a => a.status === 'waiting').map(a => a.id).join(', ');
+                    attentionItems.push({ repoPath, fid: feature.id, name: feature.name, reason: `${waitingAgents} waiting`, action: null });
+                }
             });
-        });
+
+        if (lines.length > 1) sections.push(lines);
     });
 
-    if (attentionCount > 0) {
-        console.log(`⚙ ${attentionCount} need${attentionCount === 1 ? 's' : ''} attention`);
+    // Title line
+    if (attentionItems.length > 0) {
+        console.log(`⚙ ${attentionItems.length} need${attentionItems.length === 1 ? 's' : ''} attention`);
     } else if (waitingCount > 0) {
         console.log(`⚙ ${waitingCount} waiting`);
     } else if (implementingCount > 0) {
@@ -1827,21 +1865,30 @@ function renderRadarMenubarFromStatus(payload, port) {
     }
     console.log('---');
 
-    repos.forEach((repo, idx) => {
-        if (idx > 0) console.log('---');
-        console.log(`${repo.displayPath || repo.path} | size=14`);
-        (repo.features || [])
-            .sort((a, b) => Number(a.id) - Number(b.id))
-            .forEach(feature => {
-                console.log(`#${feature.id} ${feature.name} | size=13`);
-                (feature.agents || []).forEach(agent => {
-                    const icon = agent.status === 'waiting' ? '●' : agent.status === 'submitted' ? '✓' : '○';
-                    const slashCmd = agent.slashCommand || `/afd ${String(feature.id).padStart(2, '0')}`;
-                    console.log(`-- ${icon} ${agent.id}: ${agent.status}`);
-                    console.log(`-- ${icon} ${agent.id}: ${agent.status} — copy cmd | alternate=true bash=/bin/bash param1=-c param2="echo '${slashCmd}' | pbcopy" terminal=false`);
-                });
-            });
-    });
+    // Needs Attention section (pinned to top)
+    if (attentionItems.length > 0) {
+        console.log('⚠ Needs Attention | size=14');
+        attentionItems.forEach(item => {
+            const label = `#${item.fid} ${item.name}: ${item.reason}`;
+            if (item.action) {
+                console.log(`-- ${label} | bash=/bin/bash param1=-c param2="echo '${item.action}' | pbcopy" terminal=false`);
+                console.log(`-- ${label} — copy: ${item.action} | alternate=true bash=/bin/bash param1=-c param2="echo '${item.action}' | pbcopy" terminal=false`);
+            } else {
+                console.log(`-- ${label} | bash="${nodeExec}" param1="${aigonScript}" param2=terminal-focus param3=${item.fid} param4=--repo param5="${item.repoPath}" terminal=false`);
+            }
+        });
+        console.log('---');
+    }
+
+    // Repo sections
+    if (sections.length === 0) {
+        console.log('No active features');
+    } else {
+        sections.forEach((lines, i) => {
+            if (i > 0) console.log('---');
+            lines.forEach(l => console.log(l));
+        });
+    }
 
     console.log('---');
     console.log(`Open Dashboard | href=http://127.0.0.1:${port || 4321}`);
