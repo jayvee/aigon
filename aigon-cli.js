@@ -201,7 +201,7 @@ const RADAR_META_FILE = path.join(GLOBAL_CONFIG_DIR, 'radar.json');
 
 const DEFAULT_GLOBAL_CONFIG = {
     terminal: 'warp',
-    tmuxApp: 'terminal',  // Terminal app for tmux attach: 'terminal' (Terminal.app) or 'iterm2' (iTerm2 with tmux -CC)
+    tmuxApp: 'terminal',  // Terminal app for tmux attach: 'terminal' (Terminal.app) or 'iterm2' (iTerm2)
     agents: {
         cc: { cli: 'claude', implementFlag: '--permission-mode acceptEdits' },
         cu: { cli: 'agent', implementFlag: '--force' },
@@ -2446,11 +2446,9 @@ function openTerminalAppWithCommand(cwd, command, title) {
     const tmuxApp = effectiveConfig.tmuxApp || 'terminal';
 
     if (tmuxApp === 'iterm2') {
-        // iTerm2: use tmux -CC (control mode) for native tab/pane integration
-        // Convert "tmux attach -t <session>" to "tmux -CC attach -t <session>"
+        // iTerm2: regular tmux attach (no -CC control mode — it causes raw protocol garbage)
         // Note: skip cd — the tmux session already has its working directory set
-        const iterm2Command = command.replace(/^tmux attach/, 'tmux -CC attach');
-        const escapedCommand = iterm2Command.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const escapedCommand = command.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
         const titleLines = title
             ? [`set name of current session of current window to "${title.replace(/"/g, '\\"')}"`, '']
             : [];
@@ -2665,7 +2663,7 @@ windows:
             const tmuxTitle = `${repoName} F${paddedId} ${wt.agent}`;
             openTerminalAppWithCommand(wt.path, `tmux attach -t ${shellQuote(sessionName)}`, tmuxTitle);
 
-            const tmuxAppName = (getEffectiveConfig().tmuxApp || 'terminal') === 'iterm2' ? 'iTerm2 (tmux -CC)' : 'Terminal.app';
+            const tmuxAppName = (getEffectiveConfig().tmuxApp || 'terminal') === 'iterm2' ? 'iTerm2' : 'Terminal.app';
             console.log(`\n🚀 Opening worktree in tmux via ${tmuxAppName}:`);
             console.log(`   Feature: ${wt.featureId} - ${wt.desc}`);
             console.log(`   Agent: ${wt.agent}`);
@@ -11040,7 +11038,7 @@ Branch: \`${soloBranch}\`
                 console.log(`\n   Example (corporate/safer defaults - removes auto-approval flags):`);
                 console.log(`   {`);
                 console.log(`     "terminal": "warp",             // warp, code, cursor, terminal, tmux`);
-                console.log(`     "tmuxApp": "iterm2",            // terminal (Terminal.app) or iterm2 (native tmux -CC)`);
+                console.log(`     "tmuxApp": "iterm2",            // terminal (Terminal.app) or iterm2`);
                 console.log(`     "agents": {`);
                 console.log(`       "cc": { "cli": "claude", "implementFlag": "" },`);
                 console.log(`       "cu": { "cli": "agent", "implementFlag": "" },`);
