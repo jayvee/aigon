@@ -2,8 +2,10 @@ const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const http = require('http');
 
 const GLOBAL_CONFIG_PATH = path.join(os.homedir(), '.aigon', 'config.json');
+const RADAR_META_PATH = path.join(os.homedir(), '.aigon', 'radar.json');
 
 function readRepos() {
     try {
@@ -15,17 +17,44 @@ function readRepos() {
     }
 }
 
-function parseFrontMatter(content) {
-    const m = content.match(/^---\n([\s\S]*?)\n---\n/);
-    if (!m) return {};
-    const result = {};
-    m[1].split('\n').forEach(line => {
-        const idx = line.indexOf(':');
-        if (idx > -1) {
-            result[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
-        }
+function getRadarPort() {
+    try {
+        if (!fs.existsSync(RADAR_META_PATH)) return 4321;
+        const meta = JSON.parse(fs.readFileSync(RADAR_META_PATH, 'utf8'));
+        return Number.isInteger(meta.port) ? meta.port : 4321;
+    } catch (e) {
+        return 4321;
+    }
+}
+
+function fetchRadarStatus() {
+    const port = getRadarPort();
+    return new Promise((resolve, reject) => {
+        const req = http.request({
+            host: '127.0.0.1',
+            port,
+            path: '/api/status',
+            method: 'GET',
+            timeout: 2500
+        }, (res) => {
+            let raw = '';
+            res.on('data', (chunk) => { raw += chunk.toString('utf8'); });
+            res.on('end', () => {
+                if (res.statusCode < 200 || res.statusCode >= 300) {
+                    reject(new Error(`HTTP ${res.statusCode}`));
+                    return;
+                }
+                try {
+                    resolve(JSON.parse(raw));
+                } catch (e) {
+                    reject(new Error('Invalid JSON response'));
+                }
+            });
+        });
+        req.on('error', reject);
+        req.on('timeout', () => req.destroy(new Error('request timeout')));
+        req.end();
     });
-    return result;
 }
 
 const STATUS_ICONS = {
@@ -44,7 +73,12 @@ class AigonTreeDataProvider {
         this.onDidChangeTreeData = this._onDidChangeTreeData.event;
         this._showAll = false;
         this._watchers = [];
+        this._statusData = { repos: [], summary: {} };
+        this._statusFetchedAt = 0;
+        this._offline = false;
+        this._pollTimer = null;
         this._setupWatchers();
+        this._pollTimer = setInterval(() => this.refresh(), 10000);
     }
 
     _setupWatchers() {
@@ -61,24 +95,6 @@ class AigonTreeDataProvider {
             this._watchers.push(configWatcher);
         }
 
-        // Watch log files and in-progress specs in each registered repo
-        readRepos().forEach(repoPath => {
-            if (!fs.existsSync(repoPath)) return;
-            const logWatcher = vscode.workspace.createFileSystemWatcher(
-                new vscode.RelativePattern(repoPath, 'docs/specs/features/logs/**/*-log.md')
-            );
-            logWatcher.onDidChange(() => this.refresh());
-            logWatcher.onDidCreate(() => this.refresh());
-            logWatcher.onDidDelete(() => this.refresh());
-            this._watchers.push(logWatcher);
-
-            const specWatcher = vscode.workspace.createFileSystemWatcher(
-                new vscode.RelativePattern(repoPath, 'docs/specs/features/0{3,4}-**/feature-*.md')
-            );
-            specWatcher.onDidCreate(() => this.refresh());
-            specWatcher.onDidDelete(() => this.refresh());
-            this._watchers.push(specWatcher);
-        });
     }
 
     refresh() {
@@ -94,7 +110,8 @@ class AigonTreeDataProvider {
         return element;
     }
 
-    getChildren(element) {
+    async getChildren(element) {
+        await this._loadStatus();
         if (!element) return this._getRootItems();
         if (element.contextValue === 'attention-section') return element.children || [];
         if (element.contextValue === 'repo') return this._getFeatureItems(element.repoPath);
@@ -103,151 +120,49 @@ class AigonTreeDataProvider {
     }
 
     // --- Shared data loading ---
+    async _loadStatus() {
+        const now = Date.now();
+        if (now - this._statusFetchedAt < 2000 && this._statusData) return;
+
+        try {
+            this._statusData = await fetchRadarStatus();
+            this._statusFetchedAt = now;
+            this._offline = false;
+        } catch (e) {
+            this._offline = true;
+            this._statusFetchedAt = now;
+        }
+    }
 
     _loadRepoFeatures(repoPath) {
-        const inProgressDir = path.join(repoPath, 'docs', 'specs', 'features', '03-in-progress');
-        const inEvalDir = path.join(repoPath, 'docs', 'specs', 'features', '04-in-evaluation');
-        const logsDir = path.join(repoPath, 'docs', 'specs', 'features', 'logs');
-        const evalsDir = path.join(repoPath, 'docs', 'specs', 'features', 'evaluations');
-
-        // Source of truth: specs in 03-in-progress/ and 04-in-evaluation/
-        const specStages = {}; // featureId -> stage
-        const specNames = {}; // featureId -> name
-        [inProgressDir, inEvalDir].forEach(dir => {
-            if (!fs.existsSync(dir)) return;
-            const stage = dir.includes('04-in-evaluation') ? 'in-evaluation' : 'in-progress';
-            try {
-                fs.readdirSync(dir)
-                    .filter(f => /^feature-\d+-.+\.md$/.test(f))
-                    .forEach(f => {
-                        const m = f.match(/^feature-(\d+)-(.+)\.md$/);
-                        if (m) {
-                            specStages[m[1]] = stage;
-                            specNames[m[1]] = m[2];
-                        }
-                    });
-            } catch (e) { /* skip */ }
-        });
-
-        // Build log status map
-        const logStatuses = {}; // "featureId" or "featureId-agent" -> { status, updated }
-        if (fs.existsSync(logsDir)) {
-            try {
-                fs.readdirSync(logsDir)
-                    .filter(f => /^feature-\d+-.+-log\.md$/.test(f))
-                    .forEach(logFile => {
-                        const logPath = path.join(logsDir, logFile);
-                        let fm = {};
-                        try { fm = parseFrontMatter(fs.readFileSync(logPath, 'utf8')); } catch (e) { return; }
-
-                        const arenaM = logFile.match(/^feature-(\d+)-([a-z]{2})-(.+)-log\.md$/);
-                        const soloM = logFile.match(/^feature-(\d+)-(.+)-log\.md$/);
-                        const featureId = arenaM ? arenaM[1] : (soloM ? soloM[1] : null);
-                        const agent = arenaM ? arenaM[2] : null;
-                        if (!featureId) return;
-
-                        const key = agent ? `${featureId}-${agent}` : featureId;
-                        logStatuses[key] = { status: fm.status || 'implementing', updated: fm.updated || '' };
-                    });
-            } catch (e) { /* skip */ }
-        }
-
-        // Scan worktrees for fleet agents + their log statuses
-        const worktreeAgents = {}; // featureId -> [agent, ...]
-        const worktreeBaseDir = repoPath + '-worktrees';
-        if (fs.existsSync(worktreeBaseDir)) {
-            try {
-                fs.readdirSync(worktreeBaseDir).forEach(dirName => {
-                    const wtM = dirName.match(/^feature-(\d+)-([a-z]{2})-.+$/);
-                    if (!wtM) return;
-                    const fid = wtM[1];
-                    if (!worktreeAgents[fid]) worktreeAgents[fid] = [];
-                    worktreeAgents[fid].push(wtM[2]);
-
-                    // Check worktree logs (agent-status writes here, takes precedence)
-                    const wtLogsDir = path.join(worktreeBaseDir, dirName, 'docs', 'specs', 'features', 'logs');
-                    if (!fs.existsSync(wtLogsDir)) return;
-                    try {
-                        fs.readdirSync(wtLogsDir)
-                            .filter(f => f.startsWith(`feature-${fid}-${wtM[2]}-`) && f.endsWith('-log.md'))
-                            .forEach(logFile => {
-                                let fm = {};
-                                try { fm = parseFrontMatter(fs.readFileSync(path.join(wtLogsDir, logFile), 'utf8')); } catch (e) { return; }
-                                if (fm.status) {
-                                    logStatuses[`${fid}-${wtM[2]}`] = { status: fm.status, updated: fm.updated || '' };
-                                }
-                            });
-                    } catch (e) { /* skip */ }
-                });
-            } catch (e) { /* skip */ }
-        }
-
-        // Build features from specs + log/worktree enrichment
+        const repo = (this._statusData.repos || []).find(r => r.path === repoPath);
         const features = {};
-        Object.entries(specStages).forEach(([featureId, stage]) => {
-            const featureName = specNames[featureId] || featureId;
-            features[featureId] = { name: featureName, stage, agents: [] };
+        if (!repo) return features;
 
-            // Collect agents from logs and worktrees
-            const agentSet = new Set();
-            Object.keys(logStatuses)
-                .filter(k => k.startsWith(`${featureId}-`) && k.includes('-'))
-                .forEach(k => agentSet.add(k.split('-').slice(1).join('-')));
-            if (worktreeAgents[featureId]) {
-                worktreeAgents[featureId].forEach(a => agentSet.add(a));
-            }
-
-            if (agentSet.size > 0) {
-                agentSet.forEach(agent => {
-                    const info = logStatuses[`${featureId}-${agent}`] || { status: 'implementing', updated: '' };
-                    features[featureId].agents.push({
-                        agent, status: info.status, updated: info.updated,
-                        featureId, featureName
-                    });
-                });
-            } else {
-                const info = logStatuses[featureId] || { status: 'implementing', updated: '' };
-                features[featureId].agents.push({
-                    agent: 'solo', status: info.status, updated: info.updated,
-                    featureId, featureName
-                });
-            }
-
-            // Compute eval status
-            const allDone = features[featureId].agents.length > 0 &&
-                features[featureId].agents.every(a => a.status === 'submitted' || a.status === 'complete');
-
-            if (stage === 'in-evaluation') {
-                const evalFile = path.join(evalsDir, `feature-${featureId}-eval.md`);
-                let evalStatus = 'evaluating';
-                if (fs.existsSync(evalFile)) {
-                    try {
-                        const content = fs.readFileSync(evalFile, 'utf8');
-                        const winnerMatch = content.match(/\*\*Winner[:\s]*\*?\*?\s*(.+)/i);
-                        if (winnerMatch) {
-                            const val = winnerMatch[1].replace(/\*+/g, '').trim();
-                            if (val && !val.includes('to be determined') && !val.includes('TBD') && val !== '()') {
-                                evalStatus = 'pick winner';
-                            }
-                        }
-                    } catch (e) { /* skip */ }
-                }
-                features[featureId].evalStatus = evalStatus;
-            } else if (allDone) {
-                features[featureId].evalStatus = 'eval needed';
-            }
+        (repo.features || []).forEach((feature) => {
+            features[feature.id] = {
+                name: feature.name,
+                stage: feature.stage,
+                evalStatus: feature.evalStatus,
+                agents: (feature.agents || []).map(agent => ({
+                    agent: agent.id,
+                    status: agent.status,
+                    updated: agent.updatedAt || '',
+                    featureId: feature.id,
+                    featureName: feature.name
+                }))
+            };
         });
-
         return features;
     }
 
     // --- Root items: attention section + repos ---
 
     _getRootItems() {
-        const repos = readRepos();
+        const repos = this._statusData.repos || [];
         if (repos.length === 0) {
-            const item = new vscode.TreeItem('No repos registered');
-            item.description = 'Run: aigon conductor add';
+            const item = new vscode.TreeItem(this._offline ? 'Radar offline' : 'No repos registered');
+            item.description = this._offline ? 'Run: aigon radar start' : 'Run: aigon radar add';
             item.iconPath = new vscode.ThemeIcon('info');
             return [item];
         }
@@ -257,8 +172,8 @@ class AigonTreeDataProvider {
         // Build attention items across all repos
         const attentionItems = [];
         repos.forEach(repoPath => {
-            const features = this._loadRepoFeatures(repoPath);
-            const repoName = path.basename(repoPath);
+            const features = this._loadRepoFeatures(repoPath.path);
+            const repoName = path.basename(repoPath.path);
 
             Object.entries(features)
                 .sort(([a], [b]) => parseInt(a) - parseInt(b))
@@ -320,12 +235,12 @@ class AigonTreeDataProvider {
         // Add repo items
         repos.forEach(repoPath => {
             const item = new vscode.TreeItem(
-                path.basename(repoPath),
+                path.basename(repoPath.path),
                 vscode.TreeItemCollapsibleState.Collapsed
             );
             item.contextValue = 'repo';
-            item.repoPath = repoPath;
-            item.tooltip = repoPath;
+            item.repoPath = repoPath.path;
+            item.tooltip = repoPath.path;
             item.iconPath = new vscode.ThemeIcon('folder');
             items.push(item);
         });
@@ -422,6 +337,7 @@ class AigonTreeDataProvider {
 
     dispose() {
         this._watchers.forEach(w => w.dispose());
+        if (this._pollTimer) clearInterval(this._pollTimer);
         this._onDidChangeTreeData.dispose();
     }
 }
