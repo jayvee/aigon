@@ -263,15 +263,33 @@ function loadGlobalConfig() {
 
 // --- Project Profile System ---
 
+const PROFILE_PRESET_STRING_FILES = {
+    testInstructions: 'test-instructions.md',
+    manualTestingGuidance: 'manual-testing-guidance.md',
+    depCheck: 'dep-check.md'
+};
+
+function loadProfilePresetStrings(profileName) {
+    const profileDir = path.join(TEMPLATES_ROOT, 'profiles', profileName);
+    const readField = fileName => {
+        const fieldPath = path.join(profileDir, fileName);
+        if (!fs.existsSync(fieldPath)) return '';
+        return fs.readFileSync(fieldPath, 'utf8').trimEnd();
+    };
+
+    return {
+        testInstructions: readField(PROFILE_PRESET_STRING_FILES.testInstructions),
+        manualTestingGuidance: readField(PROFILE_PRESET_STRING_FILES.manualTestingGuidance),
+        depCheck: readField(PROFILE_PRESET_STRING_FILES.depCheck)
+    };
+}
+
 const PROFILE_PRESETS = {
     web: {
         devServer: {
             enabled: true,
             ports: { cc: 3001, gg: 3002, cx: 3003, cu: 3004 }
         },
-        testInstructions: '- **NEVER run `npm run dev` or `next dev` directly** — this bypasses port allocation and will bind to port 3000 (the main app)\n- Run `aigon dev-server start` — allocates your agent\'s unique port, starts the server, registers with the proxy, and waits for healthy\n- Use the URL printed by the command (e.g. `http://cx-121.myapp.test`) — never use `http://localhost:3000`\n- Use `aigon dev-server logs` to check startup output if anything seems wrong\n- Ask the user to verify',
-        manualTestingGuidance: '### Before stopping: set up for manual review\n\n1. Start the dev server (if not already running):\n   ```bash\n   aigon dev-server start\n   ```\n2. Open it in the browser:\n   ```bash\n   aigon dev-server open\n   ```\n3. Generate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each one (e.g. "Navigate to /settings → fill in the form → click Save → verify the success message appears"). Present the checklist in your response before stopping.',
-        depCheck: '**Worktrees do not share `node_modules/` with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Check if node_modules exists\ntest -d node_modules && echo "Dependencies installed" || echo "Need to install dependencies"\n```\n\nIf missing, install them using the project\'s package manager:\n```bash\n# Detect and run the appropriate install command\nif [ -f "pnpm-lock.yaml" ]; then pnpm install\nelif [ -f "yarn.lock" ]; then yarn install\nelif [ -f "bun.lockb" ]; then bun install\nelif [ -f "package-lock.json" ]; then npm install\nelif [ -f "package.json" ]; then npm install\nfi\n```',
         setupEnvLine: '- Set up `.env.local` with agent-specific PORT (worktree modes)'
     },
     api: {
@@ -279,40 +297,29 @@ const PROFILE_PRESETS = {
             enabled: true,
             ports: { cc: 8001, gg: 8002, cx: 8003, cu: 8004 }
         },
-        testInstructions: '- **NEVER run your dev command directly** — this bypasses port allocation and will cause port conflicts\n- Run `aigon dev-server start` — allocates your agent\'s unique port, starts the server, registers with the proxy, and waits for healthy\n- Use the URL printed by the command — never use `http://localhost:3000` or the default port\n- Use `aigon dev-server logs` to check startup output if anything seems wrong\n- Test endpoints using `curl` or a REST client\n- Ask the user to verify',
-        manualTestingGuidance: '### Before stopping: set up for manual review\n\n1. Start the dev server (if not already running):\n   ```bash\n   aigon dev-server start\n   ```\n2. Open it in the browser:\n   ```bash\n   aigon dev-server open\n   ```\n3. Generate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each one, including example `curl` commands or REST client requests where applicable. Present the checklist in your response before stopping.',
-        depCheck: '**Worktrees do not share dependencies with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Detect and install dependencies\nif [ -f "requirements.txt" ]; then pip install -r requirements.txt\nelif [ -f "Pipfile" ]; then pipenv install\nelif [ -f "go.mod" ]; then go mod download\nelif [ -f "package.json" ]; then npm install\nfi\n```',
         setupEnvLine: '- Set up `.env.local` with agent-specific PORT (worktree modes)'
     },
     ios: {
         devServer: { enabled: false, ports: {} },
-        testInstructions: '- Build and test in Xcode/Simulator\n- Verify the changes work on the target device/simulator\n- Ask the user to verify',
-        manualTestingGuidance: '### Before stopping: prepare a manual testing checklist\n\nGenerate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each criterion on device/simulator. Present the checklist in your response before stopping.',
-        depCheck: '',
         setupEnvLine: ''
     },
     android: {
         devServer: { enabled: false, ports: {} },
-        testInstructions: '- Build and test on emulator/device\n- Verify the changes work on the target device/emulator\n- Ask the user to verify',
-        manualTestingGuidance: '### Before stopping: prepare a manual testing checklist\n\nGenerate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each criterion on emulator/device. Present the checklist in your response before stopping.',
-        depCheck: '',
         setupEnvLine: ''
     },
     library: {
         devServer: { enabled: false, ports: {} },
-        testInstructions: '- Run the test suite to verify changes\n- Ask the user to verify',
-        manualTestingGuidance: '### Before stopping: prepare a manual testing checklist\n\nGenerate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each criterion. Present the checklist in your response before stopping.',
-        depCheck: '**Worktrees do not share dependencies with the main repo.** Before running or testing, check if dependencies need to be installed:\n\n```bash\n# Detect and install dependencies\nif [ -f "Cargo.toml" ]; then cargo build\nelif [ -f "go.mod" ]; then go mod download\nelif [ -f "requirements.txt" ]; then pip install -r requirements.txt\nelif [ -f "pyproject.toml" ]; then pip install -e .\nelif [ -f "package.json" ]; then npm install\nfi\n```',
         setupEnvLine: ''
     },
     generic: {
         devServer: { enabled: false, ports: {} },
-        testInstructions: '- Test the changes according to the project\'s testing approach\n- Ask the user to verify',
-        manualTestingGuidance: '### Before stopping: prepare a manual testing checklist\n\nGenerate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each criterion. Present the checklist in your response before stopping.',
-        depCheck: '',
         setupEnvLine: ''
     }
 };
+
+Object.entries(PROFILE_PRESETS).forEach(([profileName, preset]) => {
+    Object.assign(preset, loadProfilePresetStrings(profileName));
+});
 
 /**
  * Load project-level Aigon config from .aigon/config.json
@@ -1325,325 +1332,8 @@ function escapeForHtmlScript(jsonValue) {
 
 function buildDashboardHtml(initialData) {
     const serializedData = escapeForHtmlScript(initialData);
-    return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Aigon Dashboard</title>
-  <style>
-    :root{color-scheme:dark;-webkit-font-smoothing:antialiased;--bg-root:#0a0a0b;--bg-surface:#111113;--bg-elevated:#1a1a1f;--bg-hover:#222228;--border-subtle:rgba(255,255,255,.06);--border-default:rgba(255,255,255,.1);--text-primary:#ededef;--text-secondary:#a0a0a8;--text-tertiary:#6b6b76;--accent:#3b82f6;--success:#22c55e;--warning:#f59e0b;--error:#ef4444;--radius:12px;--mono:"SF Mono","Cascadia Code",ui-monospace,monospace}
-    *{box-sizing:border-box}html,body{margin:0;background:var(--bg-root);color:var(--text-primary);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-    body{padding:20px 16px 28px}
-    .wrap{max-width:1280px;margin:0 auto}
-    .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:10px}
-    h1{margin:0;font-size:24px;letter-spacing:-.02em}
-    .meta{display:flex;gap:10px;color:var(--text-secondary)}
-    .health{display:flex;align-items:center;gap:6px}
-    .summary{display:flex;gap:8px;margin:12px 0 14px;flex-wrap:wrap}
-    .pill{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:999px;padding:5px 10px}
-    .pill.waiting{border-color:rgba(245,158,11,.4);color:#f8c060}
-    .pill-filter{cursor:pointer;transition:border-color .12s ease,background .12s ease,color .12s ease}
-    .pill-filter:hover{border-color:var(--border-default);background:var(--bg-elevated)}
-    .pill-filter.active{border-color:rgba(59,130,246,.7);background:rgba(59,130,246,.15);color:#dbeafe}
-    .pill-filter.waiting.active{border-color:rgba(245,158,11,.55);background:rgba(245,158,11,.15);color:#f8c060}
-    .repos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    @media (max-width: 1120px){.repos{grid-template-columns:1fr}}
-    .repo{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden}
-    .repo-h{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border-subtle);cursor:pointer}
-    .repo-h strong{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary)}
-    .repo-b{padding:10px;display:grid;gap:10px}
-    .card{border:1px solid var(--border-subtle);border-radius:10px;background:rgba(255,255,255,.01);transition:background .12s ease,border-color .12s ease}
-    .card:hover{background:var(--bg-elevated);border-color:var(--border-default)}
-    .card.waiting{border-left:2px solid var(--warning)}
-    .card.evaluating{border-left:2px solid #a78bfa}
-    .eval-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35);color:#c4b5fd;margin-left:6px;flex-shrink:0}
-    .eval-badge.pick-winner{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#86efac}
-    .card-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 10px 6px}
-    .card-h .feature{letter-spacing:-.02em;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .head-actions{display:flex;align-items:center;justify-content:flex-end;flex:0 0 auto}
-    .rows{padding:0 8px 8px;display:grid;gap:6px}
-    .row{display:grid;grid-template-columns:56px minmax(130px,1fr) 90px auto;align-items:center;gap:10px;padding:6px 4px;border-radius:8px}
-    .agent,.cmd{font-family:var(--mono)}
-    .stamp{color:var(--text-tertiary);white-space:nowrap}
-    .status{display:inline-flex;align-items:center;gap:8px}
-    .dot{width:8px;height:8px;border-radius:50%}
-    .implementing .dot{background:var(--accent);box-shadow:0 0 0 0 rgba(59,130,246,.6);animation:pulse 1.5s infinite}
-    .waiting .dot{background:var(--warning);box-shadow:0 0 8px rgba(245,158,11,.5)}
-    .submitted .dot{background:transparent;position:relative}
-    .submitted .dot::before{content:"";position:absolute;left:1px;top:0;width:6px;height:10px;border:solid var(--success);border-width:0 2px 2px 0;transform:rotate(45deg)}
-    .error .dot{background:var(--error);box-shadow:0 0 8px rgba(239,68,68,.45)}
-    .btn{background:transparent;border:1px solid var(--border-default);border-radius:8px;color:var(--text-secondary);padding:4px 10px;cursor:pointer;line-height:1;font-size:12px;white-space:nowrap}
-    .btn:hover{color:var(--text-primary);border-color:var(--accent)}
-    .btn-primary{background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.45);color:#bdd7ff}
-    .btn-primary:hover{background:rgba(59,130,246,.2);border-color:rgba(59,130,246,.7);color:#e2eeff}
-    .next-copy{font-size:11px}
-    .row-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap;min-width:0}
-    .empty{padding:18px;color:var(--text-secondary);background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius)}
-    .toast-wrap{position:fixed;right:12px;bottom:12px;display:grid;gap:8px;z-index:50}
-    .toast{background:var(--bg-surface);border:1px solid var(--border-default);padding:10px 12px;border-radius:10px;min-width:260px}
-    .toast button{margin-left:8px;background:transparent;border:1px solid var(--border-default);border-radius:6px;color:var(--text-primary)}
-    .repo.collapsed .repo-b{display:none}
-    @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(2.2);opacity:.05}}
-    @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="top">
-      <h1>Aigon Dashboard</h1>
-      <div class="meta">
-        <span class="health" aria-live="polite"><span class="dot" id="health-dot"></span><span id="health-text">Connected</span></span>
-        <span id="updated-text">Updated just now</span>
-      </div>
-    </div>
-    <div id="summary" class="summary" aria-label="Agent status summary"></div>
-    <div id="repos" class="repos"></div>
-    <div id="empty" class="empty" style="display:none"></div>
-  </div>
-  <div id="toasts" class="toast-wrap" aria-live="polite"></div>
-  <script>
-    const POLL_MS = 10000;
-    const TS_MS = 30000;
-    const INITIAL_DATA = ${serializedData};
-    const state = {
-      data: INITIAL_DATA,
-      failures: 0,
-      lastStatuses: new Map(),
-      collapsed: JSON.parse(localStorage.getItem('aigon.dashboard.collapsed') || '{}'),
-      filter: localStorage.getItem('aigon.dashboard.filter') || 'all'
-    };
-
-    function relTime(iso) {
-      const diff = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
-      if (diff < 10) return 'just now';
-      if (diff < 60) return diff + 's ago';
-      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-      return Math.floor(diff / 3600) + 'h ago';
-    }
-
-    function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    function statusRank(s){ return s === 'waiting' ? 0 : s === 'implementing' ? 1 : s === 'error' ? 2 : 3; }
-    function featureRank(feature){ return Math.min(...feature.agents.map(a => statusRank(a.status))); }
-    function showToast(text, actionLabel, actionFn){
-      const wrap = document.getElementById('toasts');
-      const n = document.createElement('div');
-      n.className = 'toast';
-      n.textContent = text;
-      if (actionLabel && actionFn) {
-        const b = document.createElement('button');
-        b.textContent = actionLabel;
-        b.onclick = actionFn;
-        n.appendChild(b);
-      }
-      wrap.prepend(n);
-      while (wrap.children.length > 3) wrap.removeChild(wrap.lastChild);
-      setTimeout(() => n.remove(), 5000);
-    }
-
-    async function copyText(text){
-      try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
-      const ta = document.createElement('textarea');
-      ta.value = text; document.body.appendChild(ta); ta.select();
-      const ok = document.execCommand('copy'); ta.remove(); return ok;
-    }
-
-    async function requestAttach(repoPath, featureId, agentId){
-      try {
-        const res = await fetch('/api/attach', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ repoPath, featureId, agentId })
-        });
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
-        showToast(payload.message || 'Attach opened in terminal');
-      } catch (e) {
-        showToast('Attach failed: ' + e.message);
-      }
-    }
-
-    function updateTitleAndFavicon(waiting){
-      document.title = waiting > 0 ? '(' + waiting + ') Aigon Dashboard' : 'Aigon Dashboard';
-      const link = document.querySelector('link[rel="icon"]') || (() => { const x = document.createElement('link'); x.rel = 'icon'; document.head.appendChild(x); return x; })();
-      if (!waiting) { link.href = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22></svg>'; return; }
-      const c = document.createElement('canvas'); c.width = 32; c.height = 32;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = '#111113'; ctx.fillRect(0,0,32,32);
-      ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(16,16,13,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(String(waiting > 99 ? '99+' : waiting), 16, 16);
-      link.href = c.toDataURL('image/png');
-    }
-
-    function setHealth() {
-      const dot = document.getElementById('health-dot');
-      const text = document.getElementById('health-text');
-      if (state.failures === 0) { dot.style.background = '#22c55e'; text.textContent = 'Connected'; return; }
-      if (state.failures < 3) { dot.style.background = '#f59e0b'; text.textContent = 'Reconnecting...'; return; }
-      dot.style.background = '#ef4444'; text.textContent = 'Disconnected';
-    }
-
-    function render() {
-      const data = state.data || { repos: [], summary: { implementing: 0, waiting: 0, submitted: 0, error: 0 } };
-      const summary = data.summary || { implementing: 0, waiting: 0, submitted: 0, error: 0 };
-      document.getElementById('summary').innerHTML =
-        '<button class="pill pill-filter' + (state.filter === 'all' ? ' active' : '') + '" data-filter="all">All</button>' +
-        '<button class="pill pill-filter' + (state.filter === 'implementing' ? ' active' : '') + '" data-filter="implementing">' + summary.implementing + ' implementing</button>' +
-        '<button class="pill pill-filter waiting' + (state.filter === 'waiting' ? ' active' : '') + '" data-filter="waiting">' + summary.waiting + ' waiting</button>' +
-        '<button class="pill pill-filter' + (state.filter === 'submitted' ? ' active' : '') + '" data-filter="submitted">' + summary.submitted + ' submitted</button>' +
-        '<button class="pill pill-filter' + (state.filter === 'error' ? ' active' : '') + '" data-filter="error">' + summary.error + ' error</button>';
-      updateTitleAndFavicon(summary.waiting || 0);
-      setHealth();
-      document.getElementById('updated-text').textContent = 'Updated ' + relTime(data.generatedAt || new Date().toISOString());
-
-      const reposRoot = document.getElementById('repos');
-      const empty = document.getElementById('empty');
-      reposRoot.innerHTML = '';
-
-      if (!data.repos || data.repos.length === 0) {
-        empty.style.display = '';
-        empty.textContent = 'No repos registered. Run: aigon conductor add';
-        return;
-      }
-
-      empty.style.display = 'none';
-      let visibleFeatureCount = 0;
-      data.repos.forEach(repo => {
-        const section = document.createElement('section');
-        section.className = 'repo' + (state.collapsed[repo.path] ? ' collapsed' : '');
-        const rawFeatures = [...(repo.features || [])].sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
-        const features = rawFeatures.filter(f => state.filter === 'all' || f.agents.some(a => a.status === state.filter));
-        visibleFeatureCount += features.length;
-        const waitingCards = features.filter(f => f.agents.some(a => a.status === 'waiting')).length;
-        section.innerHTML = '<div class="repo-h"><strong>' + escHtml(repo.displayPath) + '</strong><span>' + features.length + ' feature' + (features.length === 1 ? '' : 's') + (waitingCards ? ' • ' + waitingCards + ' waiting' : '') + ' <span aria-label="Toggle">' + (state.collapsed[repo.path] ? '[+]' : '[-]') + '</span></span></div><div class="repo-b"></div>';
-        section.querySelector('.repo-h').onclick = () => {
-          state.collapsed[repo.path] = !state.collapsed[repo.path];
-          localStorage.setItem('aigon.dashboard.collapsed', JSON.stringify(state.collapsed));
-          render();
-        };
-        const body = section.querySelector('.repo-b');
-        if (features.length === 0) {
-          body.innerHTML = '<div class="empty">No features in progress.</div>';
-        } else {
-          features.forEach(feature => {
-            const hasWaiting = feature.agents.some(a => a.status === 'waiting');
-            const isEval = feature.stage === 'in-evaluation';
-            const card = document.createElement('article');
-            card.className = 'card' + (hasWaiting ? ' waiting' : '') + (isEval ? ' evaluating' : '');
-            const rows = [...feature.agents].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id));
-            const nextCmd = feature.nextAction && feature.nextAction.command ? feature.nextAction.command : null;
-            const nextReason = feature.nextAction && feature.nextAction.reason ? escHtml(feature.nextAction.reason) : '';
-            const nextBtn = nextCmd ? '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(nextCmd) + '" title="' + nextReason + '">Copy next</button>' : '';
-            const evalBadge = isEval ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus || 'evaluating') + '</span>' : '';
-            card.innerHTML = '<div class="card-h"><span class="feature">#' + escHtml(feature.id) + ' ' + escHtml(feature.name) + evalBadge + '</span><span class="head-actions">' + nextBtn + '</span></div><div class="rows"></div>';
-            const rowsEl = card.querySelector('.rows');
-            rows.forEach(agent => {
-              const row = document.createElement('div');
-              row.className = 'row ' + agent.status;
-              const waitingCmd = agent.slashCommand
-                ? '<button class="copy btn" data-copy="' + escHtml(agent.slashCommand) + '">Copy ' + escHtml(agent.slashCommand) + '</button>'
-                : '';
-              const attachBtn = agent.tmuxRunning
-                ? '<button class="attach btn btn-primary" data-repo="' + escHtml(repo.path) + '" data-feature="' + escHtml(feature.id) + '" data-agent="' + escHtml(agent.id) + '">Attach</button>'
-                : '';
-              row.innerHTML = '<span class="agent">' + escHtml(agent.id) + '</span><span class="status ' + escHtml(agent.status) + '"><span class="dot"></span>' + escHtml(agent.status) + '</span><span class="stamp" data-updated="' + escHtml(agent.updatedAt) + '">' + relTime(agent.updatedAt) + '</span><span class="row-actions">' + waitingCmd + attachBtn + '</span>';
-              rowsEl.appendChild(row);
-            });
-            body.appendChild(card);
-          });
-        }
-        reposRoot.appendChild(section);
-      });
-
-      if (visibleFeatureCount === 0) {
-        empty.style.display = '';
-        empty.textContent = state.filter === 'all'
-          ? 'No features in progress.'
-          : 'No features match filter: ' + state.filter;
-      }
-
-      reposRoot.querySelectorAll('button.copy').forEach(btn => {
-        btn.onclick = async (e) => {
-          e.stopPropagation();
-          const text = btn.getAttribute('data-copy') || '';
-          if (!text) return;
-          const ok = await copyText(text);
-          showToast(ok ? 'Copied: ' + text : 'Copy failed');
-        };
-      });
-
-      reposRoot.querySelectorAll('button.attach').forEach(btn => {
-        btn.onclick = async (e) => {
-          e.stopPropagation();
-          const repoPath = btn.getAttribute('data-repo') || '';
-          const featureId = btn.getAttribute('data-feature') || '';
-          const agentId = btn.getAttribute('data-agent') || '';
-          if (!repoPath || !featureId || !agentId) return;
-          await requestAttach(repoPath, featureId, agentId);
-        };
-      });
-
-      document.querySelectorAll('button.pill-filter').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const next = btn.getAttribute('data-filter') || 'all';
-          state.filter = next;
-          localStorage.setItem('aigon.dashboard.filter', next);
-          render();
-        };
-      });
-    }
-
-    function refreshTimestamps() {
-      document.querySelectorAll('[data-updated]').forEach(n => { n.textContent = relTime(n.getAttribute('data-updated')); });
-      const generatedAt = (state.data && state.data.generatedAt) ? state.data.generatedAt : new Date().toISOString();
-      document.getElementById('updated-text').textContent = 'Updated ' + relTime(generatedAt);
-    }
-
-    function flattenStatuses(data) {
-      const map = new Map();
-      (data.repos || []).forEach(repo => {
-        (repo.features || []).forEach(feature => {
-          (feature.agents || []).forEach(agent => {
-            map.set(repo.path + ':' + feature.id + ':' + agent.id, { status: agent.status, cmd: agent.slashCommand });
-          });
-        });
-      });
-      return map;
-    }
-
-    async function poll() {
-      const previous = flattenStatuses(state.data || {});
-      try {
-        const res = await fetch('/api/status', { cache: 'no-store' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const next = await res.json();
-        state.failures = 0;
-        const current = flattenStatuses(next);
-        current.forEach((v, k) => {
-          const prev = previous.get(k);
-          if (!prev) return;
-          if (prev.status !== 'waiting' && v.status === 'waiting') {
-            showToast('Agent is waiting', v.cmd ? 'Copy command' : null, v.cmd ? () => copyText(v.cmd).then(() => showToast('Copied: ' + v.cmd)) : null);
-          }
-          if (prev.status !== 'error' && v.status === 'error') showToast('Agent entered error state');
-        });
-        state.data = next;
-        render();
-      } catch (e) {
-        state.failures += 1;
-        setHealth();
-      }
-    }
-
-    render();
-    setInterval(refreshTimestamps, TS_MS);
-    setInterval(poll, POLL_MS);
-    setTimeout(poll, 400);
-  </script>
-</body>
-</html>`;
+    const htmlTemplate = readTemplate('dashboard/index.html');
+    return htmlTemplate.replace('${INITIAL_DATA}', () => serializedData);
 }
 
 function escapeAppleScriptString(value) {
@@ -4362,44 +4052,15 @@ const AGENT_CONFIGS = {
 // Generate scaffold content for new root instruction files (e.g. AGENTS.md, CLAUDE.md)
 // Only used on first creation — users fill in the sections, which are preserved on update
 function getScaffoldContent() {
-    return `# Project Instructions
-
-<!--
-  Add project-specific instructions below. Agents read this file at the
-  start of every session. These sections are referenced by Aigon workflow
-  commands and will NOT be overwritten by \`aigon update\`.
--->
-
-## Testing
-<!-- How to test this project, e.g.:
-     - \`npm test\`
-     - \`docker compose up -d && npm run test:e2e\`
-     - \`xcodebuild test -scheme MyApp\` -->
-
-## Build & Run
-<!-- How to build/run this project, e.g.:
-     - \`npm run dev\`
-     - \`cargo build && cargo run\`
-     - Open in Xcode, Cmd+R -->
-
-## Dependencies
-<!-- How to install dependencies, e.g.:
-     - \`npm ci\`
-     - \`pip install -r requirements.txt\`
-     - \`pod install\` in ios/ directory -->
-
-`;
+    return readTemplate('scaffold.md');
 }
 
 function getRootFileContent(agentConfig) {
-    return `## Aigon
-
-This project uses the Aigon development workflow.
-
-- Shared project instructions: \`AGENTS.md\`
-- ${agentConfig.name}-specific notes: \`docs/agents/${agentConfig.agentFile}\`
-- Development workflow: \`docs/development_workflow.md\`
-`;
+    const template = readTemplate('root-file.md');
+    return processTemplate(template, {
+        AGENT_NAME: agentConfig.name,
+        AGENT_FILE: agentConfig.agentFile
+    });
 }
 
 function syncAgentsMdFile() {
@@ -5021,31 +4682,17 @@ function buildRalphPrompt({
         ? `\nCriteria feedback from previous iteration (items that still need attention):\n${criteriaFeedback}\n`
         : '';
 
-    return `You are iteration ${iteration} of ${maxIterations} for Feature ${featureNum} (${featureDesc}) in the Autopilot loop.
-
-Goal:
-- Implement/fix the feature so all validation checks pass.
-${criteriaSection}
-Hard requirements:
-- Work only in the current repository and branch/worktree.
-- Implement the spec faithfully.
-- Commit your code changes before you exit this iteration.
-- Use a conventional commit message (feat:, fix:, or chore:).
-- Exit when done.
-
-Validation checks that will run after you exit (all must pass):
-${validationBlock}
-
-Feature spec:
---- SPEC START ---
-${specContent}
---- SPEC END ---
-
-Prior Autopilot progress:
---- PROGRESS START ---
-${priorProgress || '(no prior progress)'}
---- PROGRESS END ---
-`;
+    const template = readTemplate('prompts/ralph-iteration.txt');
+    return processTemplate(template, {
+        ITERATION: String(iteration),
+        MAX_ITERATIONS: String(maxIterations),
+        FEATURE_NUM: String(featureNum),
+        FEATURE_DESC: String(featureDesc),
+        CRITERIA_SECTION: criteriaSection,
+        VALIDATION_BLOCK: validationBlock,
+        SPEC_CONTENT: specContent,
+        PRIOR_PROGRESS: priorProgress || '(no prior progress)'
+    });
 }
 
 function getCurrentHead() {
@@ -12283,174 +11930,8 @@ Branch: \`${soloBranch}\`
     },
 
     'help': () => {
-        console.log(`
-Aigon - Spec-Driven Development for AI Agents
-
-Usage: aigon <command> [arguments]
-
-Setup:
-  init                              Initialize ./docs/specs directory structure
-  install-agent <agents...>         Install agent configs (cc, gg, cx, cu)
-  update                            Update Aigon files to latest version
-  hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
-  config <init|show|models>         Manage config and view model configuration
-  profile [show|set|detect]         Manage project profile (web, api, ios, etc.)
-  doctor [--register]               Check port assignments and model configuration
-  proxy-setup                       One-time setup: install Caddy + dnsmasq for *.test domains
-
-Dev Server (web/api profiles):
-  dev-server start [--port N] [--open]  Start dev server, register with proxy, wait for healthy
-  dev-server start --register-only  Register port mapping only (don't start process)
-  dev-server stop [serverId]        Stop process and deregister from proxy
-  dev-server open                   Open dev server URL in default browser
-  dev-server list                   Show all active dev servers across all apps
-  dev-server logs [-f] [-n N]       Show dev server output (default: last 50 lines, -f to follow)
-  dev-server gc                     Remove entries for dead processes
-  dev-server url                    Print URL for current context (for scripting)
-
-Modes:
-  🚗 Drive      One agent, you guide each stage
-  🚛 Fleet      Multiple agents in parallel, you observe and guide
-  ✈️  Autopilot  One agent runs autonomously end-to-end
-  🐝 Swarm      Multiple agents run autonomously in parallel
-
-Conductor / Radar:
-  conduct <ID> [agents...]          Start arena: setup, spawn autonomous loops, monitor, eval
-  conduct status [ID]               Show status of running conductor sessions
-  feature-autopilot stop <ID>       Stop all agents for a feature (reuses sessions-close)
-  feature-autopilot attach <ID> <agent> Attach to an agent's tmux session
-  radar <subcommand>                Unified monitoring service + API + dashboard
-  dashboard [options]               Deprecated alias for: aigon radar open
-
-Worktree:
-  worktree-open <ID> [agent] [--terminal=<type>]
-                                    Open worktree in terminal with agent CLI (warp, code, cursor, terminal, tmux)
-  worktree-open <ID> --all          Open all Fleet worktrees side-by-side
-  worktree-open <ID> <ID>... [--agent=<code>]
-                                    Open multiple features side-by-side
-  sessions-close <ID>               Kill all agent sessions for a feature/research ID and close Warp/tmux sessions
-
-Feature Commands (Drive, Fleet, Autopilot, Swarm):
-  feature-create <name>             Create feature spec in inbox
-  feature-now <name>                Fast-track: inbox match → prioritise + setup + implement; or create new + implement
-  feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
-  feature-setup <ID> [agents...]    Setup for Drive (branch) or Fleet (worktrees)
-  feature-do <ID> [--agent=<id>] [--autonomous]  Do the work on a feature; launches agent from shell, shows instructions inside agent session
-  feature-submit                    (agent-only) Commit changes, write log, signal done
-  feature-validate <ID>             Evaluate acceptance criteria (smart validation)
-  feature-eval <ID> [--force]       Create evaluation (code review or comparison)
-  feature-review <ID>               Code review with fixes by a different agent
-  feature-close <ID> [agent]        Merge and complete feature
-  feature-cleanup <ID>              Clean up Fleet worktrees and branches
-  feature-autopilot <ID> [agents...] Fleet autopilot: setup + spawn + monitor + eval
-  feature-autopilot stop <ID>       Stop all agents for a feature (reuses sessions-close)
-  feature-autopilot attach <ID> <agent> Attach to an agent's tmux session
-
-Research Commands:
-  research-create <name>            Create research topic in inbox
-  research-prioritise <name>        Move research from inbox to backlog (assigns ID)
-  research-setup <ID> [agents...]   Setup Drive (no agents) or Fleet (with agents) research
-  research-open <ID>                Open all Fleet agents side-by-side for parallel research
-  research-do <ID>                  Do research (agent writes findings)
-  research-submit [ID] [agent]      (agent-only) Signal research findings complete
-  research-synthesize <ID>          Synthesize Fleet findings and select best
-  research-close <ID> [--complete]  Complete research (shows summary in Fleet mode)
-  research-autopilot <ID> [agents...] Fleet autopilot: setup + spawn + monitor + synthesize
-
-Feedback:
-  feedback-create <title>           Create feedback doc in inbox (assigns next ID)
-  feedback-list [filters...]        List feedback items by status/type/severity/tag
-  feedback-triage <ID> [options]    Preview and apply triage updates (requires --apply --yes)
-
-Deploy:
-  deploy                            Run the configured deploy command (production)
-  deploy --preview                  Run the configured preview command (staging)
-
-Visualization:
-  board                             Show Kanban board view of features and research
-  board --list                      Show detailed list view (features and research)
-  board --features                  Show only features
-  board --research                  Show only research
-  board --active                    Show only in-progress items
-  board --all                       Include done items
-
-Context-Aware:
-  next                              (agent-only) Detect current context and suggest next workflow action
-
-Examples:
-  aigon init                           # Setup specs directory
-  aigon install-agent cc gg            # Install Claude and Gemini configs
-
-  # Feature workflow
-  aigon feature-create "dark-mode"     # Create new feature spec
-  aigon feature-now dark-mode          # Fast-track: inbox match or create new + implement
-  aigon feature-prioritise dark-mode   # Assign ID, move to backlog
-  aigon feature-setup 55               # Drive mode (creates branch)
-  aigon feature-setup 55 cc gg cx cu      # Fleet mode (creates worktrees)
-  aigon feature-autopilot 42 cc gg cx            # Arena conductor: setup + spawn + monitor + eval
-  aigon feature-autopilot status 42              # Check conductor status
-  aigon feature-autopilot stop 42                # Stop all agents
-  aigon radar start                    # Start Radar service
-  aigon radar open                     # Open live dashboard
-  aigon radar open --screenshot        # Capture dashboard screenshot
-  aigon dashboard                      # Deprecated: use "aigon radar open"
-  aigon worktree-open 55 cc            # Open worktree in Warp with Claude CLI
-  aigon worktree-open 55 --all         # Open all Fleet agents side-by-side
-  aigon worktree-open 100 101 102      # Open features side-by-side (parallel)
-  aigon sessions-close 55              # Kill all Fleet agents + tmux sessions + close Warp tab
-  aigon feature-do 55             # Launch default agent (cc) from plain shell
-  aigon feature-do 55 --agent=cx  # Launch Codex from plain shell
-  aigon feature-do 55 --autonomous               # Run Autopilot loop
-  aigon feature-do 55 --autonomous --max-iterations=8 --agent=cx  # Autopilot with options
-  aigon feature-validate 55            # Evaluate acceptance criteria (smart validation)
-  aigon feature-validate 55 --dry-run  # Show what would be checked without running
-  aigon feature-eval 55                # Evaluate implementations
-  aigon feature-close 55 cc             # Merge Claude's Fleet implementation
-  aigon feature-cleanup 55 --push      # Clean up losing Fleet branches
-
-  # Port health check
-  aigon doctor                        # Show port assignments, flag conflicts
-  aigon doctor --register             # Register current project in global registry
-
-  # Dev proxy (web/api projects)
-  aigon proxy-setup                   # One-time: install Caddy + dnsmasq
-  aigon dev-server start              # Register dev server → http://cc-119.myapp.test
-  aigon dev-server start --open       # Start and open browser automatically
-  aigon dev-server open               # Open dev server URL in browser
-  aigon dev-server list               # Show all running dev servers
-  aigon dev-server stop               # Deregister current dev server
-  BASE_URL=$(aigon dev-server url) npx playwright test  # E2E tests
-
-  # Research workflow
-  aigon research-create "api-design"   # Create new research topic
-  aigon research-prioritise api-design # Assign ID, move to backlog
-  aigon research-setup 05              # Drive mode (one agent)
-  aigon research-setup 05 cc gg        # Fleet mode (multiple agents)
-  aigon research-open 05               # Open all Fleet agents side-by-side
-  aigon research-do 05                 # Agent conducts research
-  aigon research-submit 05 cc          # Signal cc's findings are complete
-  aigon research-autopilot 08 cc gg cx # Fleet autopilot: spawn + monitor + synthesize
-  aigon research-synthesize 05         # Synthesize findings (after Fleet)
-  aigon research-close 05              # Shows findings summary (Fleet)
-  aigon research-close 05 --complete   # Complete research
-
-  # Deploy
-  aigon deploy                         # Deploy to production (uses commands.deploy or scripts.deploy)
-  aigon deploy --preview               # Deploy to staging/preview
-
-  # Feedback workflow
-  aigon feedback-create "Save fails"   # Create feedback in inbox
-  aigon feedback-list --inbox          # List inbox feedback
-  aigon feedback-list --all --tag auth # Filter by tag
-  aigon feedback-triage 14             # Preview triage suggestions
-  aigon feedback-triage 14 --type bug --severity high --tags auth,regression --apply --yes
-
-Agents:
-  cc (claude)   - Claude Code
-  cu (cursor)   - Cursor
-  gg (gemini)   - Gemini CLI
-  cx (codex)    - OpenAI Codex
-`);
+        const helpText = readTemplate('help.txt');
+        process.stdout.write(helpText);
     },
 
     // --- Deprecated aliases (print warning, then delegate to new command) ---

@@ -1,0 +1,2 @@
+- Run the test suite to verify changes
+- Ask the user to verify

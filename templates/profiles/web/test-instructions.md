@@ -1,0 +1,5 @@
+- **NEVER run `npm run dev` or `next dev` directly** — this bypasses port allocation and will bind to port 3000 (the main app)
+- Run `aigon dev-server start` — allocates your agent's unique port, starts the server, registers with the proxy, and waits for healthy
+- Use the URL printed by the command (e.g. `http://cx-121.myapp.test`) — never use `http://localhost:3000`
+- Use `aigon dev-server logs` to check startup output if anything seems wrong
+- Ask the user to verify

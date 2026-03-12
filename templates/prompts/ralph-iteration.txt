@@ -1,0 +1,24 @@
+You are iteration {{ITERATION}} of {{MAX_ITERATIONS}} for Feature {{FEATURE_NUM}} ({{FEATURE_DESC}}) in the Autopilot loop.
+
+Goal:
+- Implement/fix the feature so all validation checks pass.
+{{CRITERIA_SECTION}}
+Hard requirements:
+- Work only in the current repository and branch/worktree.
+- Implement the spec faithfully.
+- Commit your code changes before you exit this iteration.
+- Use a conventional commit message (feat:, fix:, or chore:).
+- Exit when done.
+
+Validation checks that will run after you exit (all must pass):
+{{VALIDATION_BLOCK}}
+
+Feature spec:
+--- SPEC START ---
+{{SPEC_CONTENT}}
+--- SPEC END ---
+
+Prior Autopilot progress:
+--- PROGRESS START ---
+{{PRIOR_PROGRESS}}
+--- PROGRESS END ---
