@@ -41,13 +41,14 @@ Examples:
 
 ### Drive Mode
 
-1. Pushes the feature branch to origin (to save work remotely)
-2. Switches to main/master branch
-3. Merges the feature branch with `--no-ff`
-4. Moves spec to `05-done/`
-5. Moves implementation log to `logs/selected/`
-6. Deletes the local feature branch
-7. Commits the spec and log moves
+1. If on the feature branch with uncommitted changes, auto-commits them (`feat: implementation for feature <ID>`)
+2. Pushes the feature branch to origin (to save work remotely)
+3. Switches to main/master branch
+4. Merges the feature branch with `--no-ff`
+5. Moves spec to `05-done/`
+6. Moves implementation log to `logs/selected/`
+7. Deletes the local feature branch
+8. Commits the spec and log moves
 
 ### Fleet Mode (without --adopt)
 
@@ -157,6 +158,7 @@ Use `--push` if you want to preserve the alternative implementations on the remo
 - **Do NOT run from a worktree**: Always run from the main repository
 - The command uses `--no-ff` merge to preserve feature history
 - Alternative implementations are preserved in `logs/alternatives/` for future reference
+- **Drive mode auto-commit**: If you run `feature-close` while on the feature branch with uncommitted changes, the CLI auto-commits them before proceeding. This is the drive-mode equivalent of `feature-submit`.
 
 ## Update Documentation
 
