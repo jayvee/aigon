@@ -8,7 +8,7 @@ Wrap up implementation in the current worktree or branch: commit all changes, wr
 ## Step 1: Detect feature context
 
 ```bash
-aigon feature-implement --info 2>/dev/null || true
+aigon feature-do --info 2>/dev/null || true
 ```
 
 If that fails, detect from the current branch name:
@@ -91,10 +91,10 @@ Replace `<ID>` with the actual feature ID (padded with leading zero if needed, e
 >
 > Changes committed and log written.
 >
-> **Next step for you:** Switch back to the main repo session and run `/aigon:feature-done <ID>` to merge your implementation.
+> **Next step for you:** Switch back to the main repo session and run `/aigon:feature-close <ID>` to merge your implementation.
 
 **STOP here. Do NOT:**
-- Run `aigon feature-done` from this worktree
+- Run `aigon feature-close` from this worktree
 - Run `aigon feature-eval` from this worktree
 - Push to remote
 - Start any new work

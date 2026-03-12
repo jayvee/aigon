@@ -58,7 +58,7 @@ If the branch is `main` (or `master`), skip to **Path D: Main branch**.
 > **Suggested next steps:**
 >
 > 1. `{{CMD_PREFIX}}feature-submit` — if you have committed code ready for review
-> 2. `{{CMD_PREFIX}}feature-implement <ID>` — if you haven't started implementing yet
+> 2. `{{CMD_PREFIX}}feature-do <ID>` — if you haven't started implementing yet
 
 ---
 
@@ -72,7 +72,7 @@ If the branch is `main` (or `master`), skip to **Path D: Main branch**.
 > You are on research branch `<branch>`.
 >
 > **Suggested next step:**
-> `{{CMD_PREFIX}}research-conduct <ID>`
+> `{{CMD_PREFIX}}research-do <ID>`
 >
 > This will guide you through writing your research findings.
 
@@ -81,8 +81,8 @@ If the branch is `main` (or `master`), skip to **Path D: Main branch**.
 >
 > **Suggested next steps:**
 >
-> 1. `{{CMD_PREFIX}}research-done <ID>` — if research is complete
-> 2. `{{CMD_PREFIX}}research-conduct <ID>` — to continue or update findings
+> 1. `{{CMD_PREFIX}}research-close <ID>` — if research is complete
+> 2. `{{CMD_PREFIX}}research-do <ID>` — to continue or update findings
 
 ---
 
@@ -108,7 +108,7 @@ Count the worktrees for each in-progress feature (from board output — look for
 > Feature `#<ID> <name>` is in progress (Drive mode).
 >
 > **Suggested next step:**
-> `{{CMD_PREFIX}}feature-done <ID>`
+> `{{CMD_PREFIX}}feature-close <ID>`
 >
 > This will merge your implementation.
 
@@ -117,9 +117,9 @@ Count the worktrees for each in-progress feature (from board output — look for
 > Research `#<ID> <name>` is in progress.
 >
 > **Suggested next step:**
-> `{{CMD_PREFIX}}research-done <ID>`
+> `{{CMD_PREFIX}}research-close <ID>`
 >
-> Or to continue conducting: `{{CMD_PREFIX}}research-conduct <ID>`
+> Or to continue conducting: `{{CMD_PREFIX}}research-do <ID>`
 
 #### D3: Nothing active — backlog or inbox items available
 

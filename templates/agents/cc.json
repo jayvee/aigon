@@ -1,12 +1,14 @@
 {
   "id": "cc",
   "name": "Claude",
-  "aliases": ["claude", "cc"],
-
+  "aliases": [
+    "claude",
+    "cc"
+  ],
   "cli": {
     "command": "claude",
     "implementFlag": "--permission-mode acceptEdits",
-    "implementPrompt": "/aigon:feature-implement {featureId}",
+    "implementPrompt": "/aigon:feature-do {featureId}",
     "evalPrompt": "/aigon:feature-eval {featureId}",
     "models": {
       "research": "opus",
@@ -14,7 +16,6 @@
       "evaluate": "opus"
     }
   },
-
   "placeholders": {
     "AGENT_ID": "cc",
     "AGENT_NAME": "Claude",
@@ -22,25 +23,26 @@
     "ARG_SYNTAX": "{{args}}",
     "ARG1_SYNTAX": "{{args}}",
     "CMD_PREFIX": "/aigon:",
-    "AGENT_TEAMS_RESEARCH_NOTE": "\n### Agent Teams (optional)\n\nFor complex research topics with multiple questions, consider creating an agent team. Spawn teammates to investigate different questions in parallel with adversarial debate — have them challenge each other's findings. Use delegate mode so you coordinate without researching yourself. Reference: https://code.claude.com/docs/en/agent-teams\n",
+    "AGENT_TEAMS_RESEARCH_NOTE": "\n### Agent Teams (optional)\n\nFor complex research topics with multiple questions, consider creating an agent team. Spawn teammates to investigate different questions in parallel with adversarial debate \u2014 have them challenge each other's findings. Use delegate mode so you coordinate without researching yourself. Reference: https://code.claude.com/docs/en/agent-teams\n",
     "AGENT_TEAMS_FEATURE_NOTE": "\n### Agent Teams (optional)\n\nFor features with multiple independent acceptance criteria spanning different areas (e.g., frontend, backend, tests), consider creating an agent team. Assign each teammate a distinct slice of the implementation with clear file ownership boundaries to avoid conflicts. Use delegate mode and require plan approval before teammates begin implementing. Reference: https://code.claude.com/docs/en/agent-teams\n",
     "AGENT_DEV_SERVER_NOTE": "",
-    "PERMISSION_SAVE_NOTE": "\n## Saving Permissions\n\nWhen the user says \"save that permission\", \"remember that\", or asks you to persist a permission you were just granted:\n\n1. Read `.claude/settings.json`\n2. Add the tool pattern to the `permissions.allow` array\n3. Write the updated file\n4. Confirm what you saved\n\nUse the narrowest pattern that covers the user's intent:\n- Specific: `Bash(npm test)`, `Bash(git push:*)`\n- Broad: `Bash(npm:*)`, `Bash(node:*)`\n\nPrefer specific patterns — broad Bash allows can be chained to bypass deny rules. Ask the user if unsure whether to save narrowly or broadly.\n"
+    "PERMISSION_SAVE_NOTE": "\n## Saving Permissions\n\nWhen the user says \"save that permission\", \"remember that\", or asks you to persist a permission you were just granted:\n\n1. Read `.claude/settings.json`\n2. Add the tool pattern to the `permissions.allow` array\n3. Write the updated file\n4. Confirm what you saved\n\nUse the narrowest pattern that covers the user's intent:\n- Specific: `Bash(npm test)`, `Bash(git push:*)`\n- Broad: `Bash(npm:*)`, `Bash(node:*)`\n\nPrefer specific patterns \u2014 broad Bash allows can be chained to bypass deny rules. Ask the user if unsure whether to save narrowly or broadly.\n"
   },
-
   "output": {
     "format": "markdown",
     "commandDir": ".claude/commands/aigon",
     "commandFilePrefix": "",
     "commandFileExtension": ".md",
-    "frontmatter": ["description", "argument-hint", "disable-model-invocation"]
+    "frontmatter": [
+      "description",
+      "argument-hint",
+      "disable-model-invocation"
+    ]
   },
-
   "rootFile": "CLAUDE.md",
   "supportsAgentsMd": false,
   "agentFile": "claude.md",
   "templatePath": "generic/docs/agent.md",
-
   "extras": {
     "skill": {
       "enabled": true,
@@ -49,7 +51,9 @@
     "settings": {
       "enabled": true,
       "path": ".claude/settings.json",
-      "permissions": ["Bash(aigon:*)"],
+      "permissions": [
+        "Bash(aigon:*)"
+      ],
       "denyPermissions": [
         "Bash(rm -rf /)",
         "Bash(rm -rf ~)",
@@ -57,29 +61,33 @@
         "Bash(su:*)"
       ],
       "hooks": {
-        "SessionStart": [{
-          "matcher": "startup",
-          "hooks": [{
-            "type": "command",
-            "command": "aigon check-version",
-            "timeout": 30
-          }]
-        }]
+        "SessionStart": [
+          {
+            "matcher": "startup",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "aigon check-version",
+                "timeout": 30
+              }
+            ]
+          }
+        ]
       }
     }
   },
-
   "commands": [
     "feature-create",
     "feature-now",
     "feature-prioritise",
     "feature-setup",
-    "feature-implement",
+    "feature-do",
     "feature-submit",
     "feature-eval",
     "feature-review",
-    "feature-done",
+    "feature-close",
     "feature-cleanup",
+    "feature-autopilot",
     "board",
     "worktree-open",
     "sessions-close",
@@ -87,9 +95,11 @@
     "research-prioritise",
     "research-setup",
     "research-open",
-    "research-conduct",
+    "research-do",
+    "research-submit",
     "research-synthesize",
-    "research-done",
+    "research-close",
+    "research-autopilot",
     "feedback-create",
     "feedback-list",
     "feedback-triage",

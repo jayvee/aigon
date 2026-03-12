@@ -107,12 +107,12 @@ After completing the evaluation:
 4. **ASK the user**: "Would you like to proceed with merging this implementation?"
 5. **STOP and WAIT** for the user's decision
 
-**CRITICAL: Do NOT run `feature-done` automatically.**
+**CRITICAL: Do NOT run `feature-close` automatically.**
 
 Once the user approves, tell them to run:
 
 ```
-{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}}
+{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}}
 ```
 
 ### Fleet Mode
@@ -129,19 +129,19 @@ After completing the evaluation:
 5. **ASK the user**: "Which implementation would you like to merge?"
 6. **STOP and WAIT** for the user's decision
 
-**CRITICAL: Do NOT run `feature-done` automatically. The user must explicitly choose the winner.**
+**CRITICAL: Do NOT run `feature-close` automatically. The user must explicitly choose the winner.**
 
 Once the user has chosen, tell them to run (from the main repo, not a worktree):
 
 ```
-{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}} <winning-agent>
+{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}} <winning-agent>
 ```
 
-For example: `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}} cc` if Claude's implementation wins.
+For example: `{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}} cc` if Claude's implementation wins.
 
 ## Prompt Suggestion
 
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
 
-- **Drive mode:** `{{CMD_PREFIX}}feature-done <ID>`
-- **Fleet mode:** `{{CMD_PREFIX}}feature-done <ID> <winning-agent>`
+- **Drive mode:** `{{CMD_PREFIX}}feature-close <ID>`
+- **Fleet mode:** `{{CMD_PREFIX}}feature-close <ID> <winning-agent>`

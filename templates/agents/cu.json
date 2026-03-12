@@ -1,16 +1,17 @@
 {
   "id": "cu",
   "name": "Cursor",
-  "aliases": ["cursor", "cu"],
-
+  "aliases": [
+    "cursor",
+    "cu"
+  ],
   "cli": {
     "command": "agent",
     "implementFlag": "--force",
-    "implementPrompt": "/aigon-feature-implement {featureId}",
+    "implementPrompt": "/aigon-feature-do {featureId}",
     "evalPrompt": "/aigon-feature-eval {featureId}",
     "models": {}
   },
-
   "placeholders": {
     "AGENT_ID": "cu",
     "AGENT_NAME": "Cursor",
@@ -23,7 +24,6 @@
     "AGENT_DEV_SERVER_NOTE": "",
     "PERMISSION_SAVE_NOTE": ""
   },
-
   "output": {
     "format": "plain",
     "commandDir": ".cursor/commands",
@@ -31,43 +31,45 @@
     "commandFileExtension": ".md",
     "frontmatter": []
   },
-
   "rootFile": null,
   "supportsAgentsMd": true,
   "agentFile": "cursor.md",
   "templatePath": "generic/docs/agent.md",
-
   "extras": {
     "settings": {
       "enabled": true,
       "path": ".cursor/cli.json",
-      "permissions": ["Shell(aigon:*)"]
+      "permissions": [
+        "Shell(aigon:*)"
+      ]
     },
     "hooks": {
       "enabled": true,
       "path": ".cursor/hooks.json",
       "content": {
         "hooks": {
-          "sessionStart": [{
-            "command": "aigon check-version",
-            "timeout": 30
-          }]
+          "sessionStart": [
+            {
+              "command": "aigon check-version",
+              "timeout": 30
+            }
+          ]
         }
       }
     }
   },
-
   "commands": [
     "feature-create",
     "feature-now",
     "feature-prioritise",
     "feature-setup",
-    "feature-implement",
+    "feature-do",
     "feature-submit",
     "feature-eval",
     "feature-review",
-    "feature-done",
+    "feature-close",
     "feature-cleanup",
+    "feature-autopilot",
     "board",
     "worktree-open",
     "sessions-close",
@@ -75,9 +77,11 @@
     "research-prioritise",
     "research-setup",
     "research-open",
-    "research-conduct",
+    "research-do",
+    "research-submit",
     "research-synthesize",
-    "research-done",
+    "research-close",
+    "research-autopilot",
     "feedback-create",
     "feedback-list",
     "feedback-triage",

@@ -114,7 +114,7 @@ git commit -m "docs(review): add review notes to implementation log"
 
 ## Step 7: STOP - Review complete
 
-**CRITICAL: Do NOT run `aigon feature-done` or `aigon feature-eval`.**
+**CRITICAL: Do NOT run `aigon feature-close` or `aigon feature-eval`.**
 
 After completing the review:
 
@@ -127,7 +127,7 @@ After completing the review:
 
 The user or original implementing agent should then:
 - Review the fix commits
-- Run `{{CMD_PREFIX}}feature-done {{ARG1_SYNTAX}}` when ready to merge
+- Run `{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}}` when ready to merge
 
 ## Tips
 
@@ -139,4 +139,4 @@ The user or original implementing agent should then:
 
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
 
-`{{CMD_PREFIX}}feature-done <ID>`
+`{{CMD_PREFIX}}feature-close <ID>`

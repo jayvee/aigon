@@ -1,7 +1,7 @@
 <!-- description: Open worktree in terminal with agent CLI -->
 # worktree-open
 
-Open a worktree in Warp terminal and automatically run the AI agent with `{{CMD_PREFIX}}feature-implement`.
+Open a worktree in Warp terminal and automatically run the AI agent with `{{CMD_PREFIX}}feature-do`.
 
 ## Usage
 
@@ -45,7 +45,7 @@ This will:
 1. Find the matching worktree
 2. Create a Warp launch configuration
 3. Open Warp with the worktree directory
-4. Auto-run the agent CLI with `{{CMD_PREFIX}}feature-implement <ID>`
+4. Auto-run the agent CLI with `{{CMD_PREFIX}}feature-do <ID>`
 
 ## Step 2: Confirm to user
 

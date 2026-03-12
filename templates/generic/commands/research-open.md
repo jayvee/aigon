@@ -1,7 +1,7 @@
 <!-- description: Open all Fleet research agents side-by-side in terminal -->
 # aigon-research-open
 
-Open all Fleet research agents side-by-side in Warp terminal, each pre-loaded with the research-conduct command.
+Open all Fleet research agents side-by-side in Warp terminal, each pre-loaded with the research-do command.
 
 ## Usage
 
@@ -23,7 +23,7 @@ This command is for **Fleet mode research only**. It opens multiple terminal pan
 
 1. Detects which agents are set up by scanning findings files
 2. Opens Warp terminal with horizontal split panes (one per agent)
-3. Each pane is pre-loaded with the agent CLI and `{{CMD_PREFIX}}research-conduct <ID>` command
+3. Each pane is pre-loaded with the agent CLI and `{{CMD_PREFIX}}research-do <ID>` command
 4. All panes use the main repository directory (not separate worktrees)
 
 ## Example
@@ -39,9 +39,9 @@ aigon research-open 05
 ```
 
 This opens Warp with 3 panes:
-- **Pane 1 (cc)**: `claude --permission-mode acceptEdits "/aigon:research-conduct 05"`
-- **Pane 2 (gg)**: `gemini --yolo "/aigon:research-conduct 05"`
-- **Pane 3 (cx)**: `codex --full-auto "/prompts:aigon-research-conduct 05"`
+- **Pane 1 (cc)**: `claude --permission-mode acceptEdits "/aigon:research-do 05"`
+- **Pane 2 (gg)**: `gemini --yolo "/aigon:research-do 05"`
+- **Pane 3 (cx)**: `codex --full-auto "/prompts:aigon-research-do 05"`
 
 ## Error Cases
 
@@ -61,7 +61,7 @@ aigon research-open {{ARG_SYNTAX}}
 
 Tell the user:
 - Which agents are being opened
-- That each pane will have the research-conduct command pre-loaded
+- That each pane will have the research-do command pre-loaded
 - That they should run the command in each pane to start research
 
 ARGUMENTS: {{ARG_SYNTAX}}

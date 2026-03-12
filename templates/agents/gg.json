@@ -1,12 +1,14 @@
 {
   "id": "gg",
   "name": "Gemini",
-  "aliases": ["gemini", "gg"],
-
+  "aliases": [
+    "gemini",
+    "gg"
+  ],
   "cli": {
     "command": "gemini",
     "implementFlag": "--yolo",
-    "implementPrompt": "/aigon:feature-implement {featureId}",
+    "implementPrompt": "/aigon:feature-do {featureId}",
     "evalPrompt": "/aigon:feature-eval {featureId}",
     "models": {
       "research": "gemini-3.1-pro-preview",
@@ -14,7 +16,6 @@
       "evaluate": "gemini-3.1-pro-preview"
     }
   },
-
   "placeholders": {
     "AGENT_ID": "gg",
     "AGENT_NAME": "Gemini",
@@ -27,48 +28,51 @@
     "AGENT_DEV_SERVER_NOTE": "",
     "PERMISSION_SAVE_NOTE": "\n## Saving Permissions\n\nWhen the user says \"save that permission\" or \"remember that\":\n\n1. Read `.gemini/settings.json`\n2. Add the tool name to the `allowedTools` array\n3. Write the updated file\n\nNote: Gemini's \"always allow\" from the approval prompt does not persist across sessions. Editing the settings file is the reliable way to save permissions.\n"
   },
-
   "output": {
     "format": "toml",
     "commandDir": ".gemini/commands/aigon",
     "commandFilePrefix": "",
     "commandFileExtension": ".toml"
   },
-
   "rootFile": null,
   "supportsAgentsMd": true,
   "agentFile": "gemini.md",
   "templatePath": "generic/docs/agent.md",
-
   "extras": {
     "settings": {
       "enabled": true,
       "path": ".gemini/settings.json",
-      "allowedTools": ["aigon"],
+      "allowedTools": [
+        "aigon"
+      ],
       "hooks": {
-        "SessionStart": [{
-          "matcher": "startup",
-          "hooks": [{
-            "type": "command",
-            "command": "aigon check-version",
-            "timeout": 30
-          }]
-        }]
+        "SessionStart": [
+          {
+            "matcher": "startup",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "aigon check-version",
+                "timeout": 30
+              }
+            ]
+          }
+        ]
       }
     }
   },
-
   "commands": [
     "feature-create",
     "feature-now",
     "feature-prioritise",
     "feature-setup",
-    "feature-implement",
+    "feature-do",
     "feature-submit",
     "feature-eval",
     "feature-review",
-    "feature-done",
+    "feature-close",
     "feature-cleanup",
+    "feature-autopilot",
     "board",
     "worktree-open",
     "sessions-close",
@@ -76,9 +80,11 @@
     "research-prioritise",
     "research-setup",
     "research-open",
-    "research-conduct",
+    "research-do",
+    "research-submit",
     "research-synthesize",
-    "research-done",
+    "research-close",
+    "research-autopilot",
     "feedback-create",
     "feedback-list",
     "feedback-triage",
