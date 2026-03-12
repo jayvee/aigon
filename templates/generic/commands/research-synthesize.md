@@ -110,7 +110,7 @@ Once user confirms, update the main research document:
 
 After updating the document, run:
 ```bash
-aigon research-done {ID} --complete
+aigon research-close {ID} --complete
 ```
 
 ## Important
