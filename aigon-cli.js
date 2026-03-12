@@ -7086,13 +7086,8 @@ const commands = {
         runPostHook('feature-now', hookContext);
 
         console.log(`\n🚗 Feature ${paddedId} ready for implementation!`);
-        printSpecInfo({
-            type: 'feature',
-            id: paddedId,
-            name: slug,
-            specPath: `./docs/specs/features/03-in-progress/${filename}`,
-            logPath: `./docs/specs/features/logs/${logName}`
-        });
+        console.log(`   Spec: ./docs/specs/features/03-in-progress/${filename}`);
+        console.log(`   Log:  ./docs/specs/features/logs/${logName}`);
         console.log(`   Branch: ${branchName}`);
         console.log(`\n📝 Next: Write the spec, then implement.`);
         console.log(`   When done: aigon feature-close ${paddedId}`);
