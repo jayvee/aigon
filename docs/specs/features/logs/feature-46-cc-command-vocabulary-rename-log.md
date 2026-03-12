@@ -1,6 +1,6 @@
 ---
 status: submitted
-updated: 2026-03-12T08:00:00.000Z
+updated: 2026-03-12T07:52:47.292Z
 ---
 
 # Implementation Log: Feature 46 - command-vocabulary-rename
@@ -67,3 +67,19 @@ All acceptance criteria met:
 14. `aigon help` → shows new command names and updated alias table
 15. New template files exist in `templates/generic/commands/`
 16. `templates/agents/cc.json` commands array includes all 7 new/renamed commands
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-12
+
+### Findings
+- `templates/agents/cx.json` still launched Codex with `/prompts:aigon-feature-implement {featureId}`, so the renamed `feature-do` flow was broken for Codex users.
+- `research-autopilot` built tmux commands from nonexistent `cli.commandPrefix` and `cli.launchCommand` fields instead of the existing research command builder, so spawned research agents would not launch correctly.
+- Fleet research guidance in `aigon-cli.js` told users to run `research-close` to synthesize findings, which skips the intended `research-synthesize` step.
+
+### Fixes Applied
+- `389be21` `fix(review): repair renamed Codex prompt and research autopilot flow`
+
+### Notes
+- `node -c aigon-cli.js` passes after the review fix.
