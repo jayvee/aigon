@@ -1,0 +1,3 @@
+- Build and test on emulator/device
+- Verify the changes work on the target device/emulator
+- Ask the user to verify
