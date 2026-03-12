@@ -1,6 +1,6 @@
 ---
-status: implementing
-updated: 2026-03-12T11:43:23.493Z
+status: submitted
+updated: 2026-03-12T12:42:11.615Z
 ---
 
 # Implementation Log: Feature 48 - extract-inline-data-and-templates-from-cli-monolith
@@ -40,3 +40,23 @@ Agent: cx
 - Kept profile `devServer` and `setupEnvLine` inline as structured data; only prose/string-heavy fields were extracted.
 - Used `readTemplate()` for new runtime loads to keep file path resolution consistent with existing template infrastructure.
 - Preserved help output byte-for-byte by switching to `process.stdout.write(helpText)` (avoids an extra newline from `console.log`).
+
+## Code Review
+
+**Reviewed by**: cc (Claude Code)
+**Date**: 2026-03-12
+
+### Findings
+- `buildDashboardHtml()` used plain `.replace('${INITIAL_DATA}', serializedData)` which is vulnerable to `$` back-reference patterns in the replacement string — if dashboard data contains `$&`, `$'`, or `` $` ``, the output would be corrupted. The rest of the codebase (`processTemplate()`) uses `() => value` to prevent this.
+- All 25 template files verified correct — content matches original inline strings
+- Profile `trimEnd()` correctly strips trailing newlines from template files to match original inline strings
+- `processTemplate()` correctly used for Ralph prompt and root-file templates
+- Help text uses `process.stdout.write()` to preserve byte-for-byte output — good decision
+- 565 lines removed from aigon-cli.js, 18 new profile files + 5 other template files created
+
+### Fixes Applied
+- `ab477dc` — Use `() => serializedData` in `buildDashboardHtml()` to prevent `$` back-reference interpretation
+
+### Notes
+- Clean, mechanical extraction — exactly what the spec called for
+- Ready for Phase 3 (modularize into lib/ modules)
