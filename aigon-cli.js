@@ -1333,7 +1333,7 @@ function escapeForHtmlScript(jsonValue) {
 function buildDashboardHtml(initialData) {
     const serializedData = escapeForHtmlScript(initialData);
     const htmlTemplate = readTemplate('dashboard/index.html');
-    return htmlTemplate.replace('${INITIAL_DATA}', serializedData);
+    return htmlTemplate.replace('${INITIAL_DATA}', () => serializedData);
 }
 
 function escapeAppleScriptString(value) {
