@@ -1,0 +1,3 @@
+- Build and test in Xcode/Simulator
+- Verify the changes work on the target device/simulator
+- Ask the user to verify

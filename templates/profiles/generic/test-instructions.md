@@ -1,0 +1,2 @@
+- Test the changes according to the project's testing approach
+- Ask the user to verify
