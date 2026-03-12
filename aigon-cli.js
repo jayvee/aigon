@@ -194,6 +194,10 @@ const PROJECT_CONFIG_PATH = path.join(process.cwd(), '.aigon', 'config.json');
 // --- Global User Configuration ---
 const GLOBAL_CONFIG_DIR = path.join(os.homedir(), '.aigon');
 const GLOBAL_CONFIG_PATH = path.join(GLOBAL_CONFIG_DIR, 'config.json');
+const RADAR_DEFAULT_PORT = 4321;
+const RADAR_PID_FILE = path.join(GLOBAL_CONFIG_DIR, 'radar.pid');
+const RADAR_LOG_FILE = path.join(GLOBAL_CONFIG_DIR, 'radar.log');
+const RADAR_META_FILE = path.join(GLOBAL_CONFIG_DIR, 'radar.json');
 
 const DEFAULT_GLOBAL_CONFIG = {
     terminal: 'warp',
@@ -1699,6 +1703,309 @@ async function captureDashboardScreenshot(url, outputPath, width, height) {
         throw new Error('screencapture failed');
     }
     return { method: 'applescript' };
+}
+
+function writeRepoRegistry(repos) {
+    let cfg = {};
+    try {
+        if (fs.existsSync(GLOBAL_CONFIG_PATH)) {
+            cfg = JSON.parse(fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf8'));
+        }
+    } catch (e) { /* start fresh */ }
+    cfg.repos = repos;
+    if (!fs.existsSync(GLOBAL_CONFIG_DIR)) fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
+    fs.writeFileSync(GLOBAL_CONFIG_PATH, JSON.stringify(cfg, null, 2) + '\n');
+}
+
+function readRadarMeta() {
+    try {
+        if (!fs.existsSync(RADAR_META_FILE)) return null;
+        return JSON.parse(fs.readFileSync(RADAR_META_FILE, 'utf8'));
+    } catch (e) {
+        return null;
+    }
+}
+
+function writeRadarMeta(meta) {
+    if (!fs.existsSync(GLOBAL_CONFIG_DIR)) fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
+    fs.writeFileSync(RADAR_META_FILE, JSON.stringify(meta, null, 2) + '\n');
+}
+
+function removeRadarMeta() {
+    if (fs.existsSync(RADAR_META_FILE)) {
+        fs.unlinkSync(RADAR_META_FILE);
+    }
+}
+
+function isRadarAlive() {
+    if (!fs.existsSync(RADAR_PID_FILE)) return false;
+    try {
+        const pid = parseInt(fs.readFileSync(RADAR_PID_FILE, 'utf8').trim(), 10);
+        process.kill(pid, 0);
+        return pid;
+    } catch (e) {
+        return false;
+    }
+}
+
+function sendMacNotification(message, title = 'Aigon Radar') {
+    try {
+        execSync(`osascript -e 'display notification "${message}" with title "${title}"'`);
+    } catch (e) {
+        // Notification failures are non-fatal.
+    }
+}
+
+function requestRadarJson(pathname, port) {
+    return new Promise((resolve, reject) => {
+        const http = require('http');
+        const req = http.request({
+            host: '127.0.0.1',
+            port,
+            path: pathname,
+            method: 'GET',
+            timeout: 2500,
+            headers: { 'accept': 'application/json' }
+        }, (res) => {
+            let raw = '';
+            res.on('data', c => { raw += c.toString('utf8'); });
+            res.on('end', () => {
+                if (res.statusCode < 200 || res.statusCode >= 300) {
+                    reject(new Error(`HTTP ${res.statusCode}`));
+                    return;
+                }
+                try {
+                    resolve(JSON.parse(raw));
+                } catch (e) {
+                    reject(new Error('Invalid JSON response'));
+                }
+            });
+        });
+        req.on('error', reject);
+        req.on('timeout', () => req.destroy(new Error('request timeout')));
+        req.end();
+    });
+}
+
+function renderRadarMenubarFromStatus(payload) {
+    const data = payload || {};
+    const repos = Array.isArray(data.repos) ? data.repos : [];
+    if (repos.length === 0) {
+        console.log('⚙ –');
+        console.log('---');
+        console.log('No repos registered');
+        console.log('Run: aigon radar add | href=https://github.com/jviner/aigon');
+        return;
+    }
+
+    let waitingCount = 0;
+    let implementingCount = 0;
+    let attentionCount = 0;
+
+    repos.forEach(repo => {
+        (repo.features || []).forEach(feature => {
+            const hasWaiting = (feature.agents || []).some(agent => agent.status === 'waiting');
+            const allSubmitted = (feature.agents || []).length > 0 && (feature.agents || []).every(agent => agent.status === 'submitted');
+            if (hasWaiting) attentionCount++;
+            else if (feature.stage === 'in-evaluation' || allSubmitted) attentionCount++;
+
+            (feature.agents || []).forEach(agent => {
+                if (agent.status === 'waiting') waitingCount++;
+                if (agent.status === 'implementing') implementingCount++;
+            });
+        });
+    });
+
+    if (attentionCount > 0) {
+        console.log(`⚙ ${attentionCount} need${attentionCount === 1 ? 's' : ''} attention`);
+    } else if (waitingCount > 0) {
+        console.log(`⚙ ${waitingCount} waiting`);
+    } else if (implementingCount > 0) {
+        console.log(`⚙ ${implementingCount} running`);
+    } else {
+        console.log('⚙ –');
+    }
+    console.log('---');
+
+    repos.forEach((repo, idx) => {
+        if (idx > 0) console.log('---');
+        console.log(`${repo.displayPath || repo.path} | size=14`);
+        (repo.features || [])
+            .sort((a, b) => Number(a.id) - Number(b.id))
+            .forEach(feature => {
+                console.log(`#${feature.id} ${feature.name} | size=13`);
+                (feature.agents || []).forEach(agent => {
+                    const icon = agent.status === 'waiting' ? '●' : agent.status === 'submitted' ? '✓' : '○';
+                    const slashCmd = agent.slashCommand || `/afd ${String(feature.id).padStart(2, '0')}`;
+                    console.log(`-- ${icon} ${agent.id}: ${agent.status}`);
+                    console.log(`-- ${icon} ${agent.id}: ${agent.status} — copy cmd | alternate=true bash=/bin/bash param1=-c param2="echo '${slashCmd}' | pbcopy" terminal=false`);
+                });
+            });
+    });
+
+    console.log('---');
+    console.log('Refresh | refresh=true');
+}
+
+function writeRadarLaunchdPlist(port) {
+    const plistPath = path.join(os.homedir(), 'Library', 'LaunchAgents', 'com.aigon.radar.plist');
+    const logPath = RADAR_LOG_FILE;
+    const plist = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.aigon.radar</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>${process.execPath}</string>
+    <string>${__filename}</string>
+    <string>radar</string>
+    <string>--daemon</string>
+    <string>--port=${port}</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>${logPath}</string>
+  <key>StandardErrorPath</key>
+  <string>${logPath}</string>
+</dict>
+</plist>
+`;
+
+    fs.mkdirSync(path.dirname(plistPath), { recursive: true });
+    fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
+    fs.writeFileSync(plistPath, plist);
+    return plistPath;
+}
+
+function runRadarServiceDaemon(port) {
+    const http = require('http');
+    const host = '127.0.0.1';
+    let latestStatus = collectDashboardStatusData();
+    const lastStatusByAgent = {};
+    const allSubmittedNotified = new Set();
+
+    function log(msg) {
+        try {
+            fs.appendFileSync(RADAR_LOG_FILE, `[${new Date().toISOString()}] ${msg}\n`);
+        } catch (e) { /* ignore */ }
+    }
+
+    function pollStatus() {
+        latestStatus = collectDashboardStatusData();
+        (latestStatus.repos || []).forEach(repo => {
+            (repo.features || []).forEach(feature => {
+                (feature.agents || []).forEach(agent => {
+                    const key = `${repo.path}:${feature.id}:${agent.id}`;
+                    const prev = lastStatusByAgent[key];
+                    if (prev && prev !== 'waiting' && agent.status === 'waiting') {
+                        sendMacNotification(`${agent.id} is waiting on #${feature.id} ${feature.name}`, `Aigon · ${repo.name || path.basename(repo.path)}`);
+                    }
+                    lastStatusByAgent[key] = agent.status;
+                });
+
+                const allSubmitted = (feature.agents || []).length > 0 && (feature.agents || []).every(agent => agent.status === 'submitted');
+                const featureKey = `${repo.path}:${feature.id}`;
+                if (allSubmitted && !allSubmittedNotified.has(featureKey)) {
+                    allSubmittedNotified.add(featureKey);
+                    sendMacNotification(`All agents submitted #${feature.id} ${feature.name} — ready for eval`, `Aigon · ${repo.name || path.basename(repo.path)}`);
+                }
+                if (!allSubmitted) allSubmittedNotified.delete(featureKey);
+            });
+        });
+        log(`Poll complete (${(latestStatus.repos || []).length} repo${(latestStatus.repos || []).length === 1 ? '' : 's'})`);
+    }
+
+    const server = http.createServer((req, res) => {
+        const reqPath = (req.url || '/').split('?')[0];
+
+        if (reqPath === '/api/attach' && req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => { body += chunk.toString('utf8'); });
+            req.on('end', () => {
+                let payload = {};
+                try { payload = body ? JSON.parse(body) : {}; } catch (e) {
+                    res.writeHead(400, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+                    res.end(JSON.stringify({ error: 'Invalid JSON body' }));
+                    return;
+                }
+
+                const featureId = String(payload.featureId || '').trim();
+                const agentId = String(payload.agentId || '').trim();
+                const repoPath = String(payload.repoPath || '').trim();
+                if (!featureId || !agentId || agentId === 'solo') {
+                    res.writeHead(400, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+                    res.end(JSON.stringify({ error: 'featureId and non-solo agentId are required' }));
+                    return;
+                }
+
+                const sessionName = buildTmuxSessionName(featureId, agentId);
+                if (!tmuxSessionExists(sessionName)) {
+                    res.writeHead(409, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+                    res.end(JSON.stringify({ error: `tmux session not running: ${sessionName}` }));
+                    return;
+                }
+
+                try {
+                    const repoName = repoPath ? path.basename(repoPath) : path.basename(process.cwd());
+                    const tmuxTitle = `${repoName} F${String(featureId).padStart(2, '0')} ${agentId}`;
+                    openTerminalAppWithCommand(repoPath || process.cwd(), `tmux attach -t ${shellQuote(sessionName)}`, tmuxTitle);
+                    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+                    res.end(JSON.stringify({ ok: true, message: `Attached to ${sessionName}`, command: `tmux attach -t ${sessionName}` }));
+                } catch (e) {
+                    res.writeHead(500, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+                    res.end(JSON.stringify({ error: `Failed to open terminal: ${e.message}` }));
+                }
+            });
+            return;
+        }
+
+        if (reqPath === '/api/status') {
+            res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+            res.end(JSON.stringify(latestStatus));
+            return;
+        }
+
+        if (reqPath === '/api/repos') {
+            res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+            res.end(JSON.stringify({ repos: readConductorReposFromGlobalConfig() }));
+            return;
+        }
+
+        if (reqPath === '/favicon.ico') {
+            res.writeHead(204);
+            res.end();
+            return;
+        }
+
+        const html = buildDashboardHtml(latestStatus);
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+        res.end(html);
+    });
+
+    const shutdown = () => {
+        log(`Radar shutting down (PID ${process.pid})`);
+        server.close(() => process.exit(0));
+        if (fs.existsSync(RADAR_PID_FILE)) fs.unlinkSync(RADAR_PID_FILE);
+        removeRadarMeta();
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+
+    server.listen(port, host, () => {
+        if (!fs.existsSync(GLOBAL_CONFIG_DIR)) fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
+        fs.writeFileSync(RADAR_PID_FILE, String(process.pid));
+        writeRadarMeta({ pid: process.pid, port, startedAt: new Date().toISOString() });
+        log(`Radar service started (PID ${process.pid}, port ${port})`);
+        pollStatus();
+        setInterval(pollStatus, 30000);
+    });
 }
 
 /**
@@ -3635,6 +3942,7 @@ const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
     'agent-status',
     'status',
     'conductor',
+    'radar',
     'dashboard',
     'deploy',
 ]);
@@ -3702,6 +4010,7 @@ const COMMAND_ARG_HINTS = {
     'feedback-triage': '<ID> [--type <type>] [--severity <severity|none>] [--tags <csv|none>] [--status <status>] [--duplicate-of <ID|none>] [--action <keep|mark-duplicate|promote-feature|promote-research|wont-fix>] [--apply] [--yes]',
     'conduct': '<feature-id> [agents...] | status [feature-id] | stop [feature-id] | attach <feature-id> <agent>',
     'conductor': '<start|stop|status|add|remove|list|vscode-install|vscode-uninstall> [path]',
+    'radar': '<start|stop|status|install|uninstall|add|remove|list|open|menubar-install|menubar-uninstall|menubar-render> [path]',
     'dashboard': '[--port <N>] [--no-open] [--screenshot] [--output <path>] [--width <N>] [--height <N>]',
     'agent-status': '<implementing|waiting|submitted>',
     'status': '[ID]',
@@ -8335,6 +8644,365 @@ Branch: \`${soloBranch}\`
         }
     },
 
+    'radar': async (args) => {
+        const options = parseCliOptions(args);
+        const sub = options._[0];
+
+        if (getOptionValue(options, 'daemon') !== undefined) {
+            const daemonPortRaw = getOptionValue(options, 'port');
+            const daemonPort = daemonPortRaw !== undefined ? parseInt(String(daemonPortRaw), 10) : RADAR_DEFAULT_PORT;
+            runRadarServiceDaemon(daemonPort);
+            return;
+        }
+
+        const meta = readRadarMeta();
+        const configuredPortRaw = getOptionValue(options, 'port');
+        const port = configuredPortRaw !== undefined
+            ? parseInt(String(configuredPortRaw), 10)
+            : (meta && Number.isInteger(meta.port) ? meta.port : RADAR_DEFAULT_PORT);
+        if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+            console.error('❌ Invalid port. Use: --port <1-65535>');
+            process.exitCode = 1;
+            return;
+        }
+
+        if (sub === 'start') {
+            const pid = isRadarAlive();
+            if (pid) {
+                console.log(`⚠️  Radar already running (PID ${pid})`);
+                console.log('   Run: aigon radar stop');
+                return;
+            }
+
+            if (fs.existsSync(RADAR_PID_FILE)) fs.unlinkSync(RADAR_PID_FILE);
+            removeRadarMeta();
+            fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
+
+            const { spawn } = require('child_process');
+            const child = spawn(process.execPath, [__filename, 'radar', '--daemon', `--port=${port}`], {
+                detached: true,
+                stdio: 'ignore',
+                env: process.env
+            });
+            child.unref();
+            fs.writeFileSync(RADAR_PID_FILE, String(child.pid));
+            writeRadarMeta({ pid: child.pid, port, startedAt: new Date().toISOString() });
+            console.log(`✅ Radar started (PID ${child.pid})`);
+            console.log(`   API:       http://127.0.0.1:${port}/api/status`);
+            console.log(`   Dashboard: http://127.0.0.1:${port}`);
+            console.log(`📋 Logs: ${RADAR_LOG_FILE}`);
+            return;
+        }
+
+        if (sub === 'stop') {
+            const pid = isRadarAlive();
+            if (!pid) {
+                console.log('⛔ Radar is not running.');
+                if (fs.existsSync(RADAR_PID_FILE)) fs.unlinkSync(RADAR_PID_FILE);
+                removeRadarMeta();
+                return;
+            }
+            try {
+                process.kill(pid, 'SIGTERM');
+                if (fs.existsSync(RADAR_PID_FILE)) fs.unlinkSync(RADAR_PID_FILE);
+                removeRadarMeta();
+                console.log(`✅ Radar stopped (PID ${pid})`);
+            } catch (e) {
+                console.error(`❌ Failed to stop radar: ${e.message}`);
+                process.exitCode = 1;
+            }
+            return;
+        }
+
+        if (sub === 'status') {
+            const pid = isRadarAlive();
+            const statusPort = meta && Number.isInteger(meta.port) ? meta.port : RADAR_DEFAULT_PORT;
+            console.log(`Radar:     ${pid ? `✅ running (PID ${pid})` : '⛔ stopped'}`);
+            if (pid) {
+                console.log(`Port:      ${statusPort}`);
+                console.log(`Dashboard: http://127.0.0.1:${statusPort}`);
+            }
+
+            const repos = readConductorReposFromGlobalConfig();
+            if (repos.length === 0) {
+                console.log('Repos:     (none — run: aigon radar add)');
+            } else {
+                console.log(`Repos (${repos.length}):`);
+                repos.forEach(r => console.log(`  ${r}`));
+            }
+
+            if (pid) {
+                try {
+                    const payload = await requestRadarJson('/api/status', statusPort);
+                    const summary = payload.summary || {};
+                    console.log(`Summary:   ${summary.total || 0} total · ${summary.implementing || 0} implementing · ${summary.waiting || 0} waiting · ${summary.submitted || 0} submitted · ${summary.error || 0} error`);
+                } catch (e) {
+                    console.log(`Summary:   unavailable (${e.message})`);
+                }
+            }
+            return;
+        }
+
+        if (sub === 'add') {
+            const repoPath = path.resolve(options._[1] || process.cwd());
+            const repos = readConductorReposFromGlobalConfig();
+            if (repos.includes(repoPath)) {
+                console.log(`⚠️  Already registered: ${repoPath}`);
+                return;
+            }
+            repos.push(repoPath);
+            writeRepoRegistry(repos);
+            console.log(`✅ Registered: ${repoPath}`);
+            console.log(`   Total repos: ${repos.length}`);
+            return;
+        }
+
+        if (sub === 'remove') {
+            const repoPath = path.resolve(options._[1] || process.cwd());
+            const repos = readConductorReposFromGlobalConfig();
+            const idx = repos.indexOf(repoPath);
+            if (idx === -1) {
+                console.log(`⚠️  Not registered: ${repoPath}`);
+                return;
+            }
+            repos.splice(idx, 1);
+            writeRepoRegistry(repos);
+            console.log(`✅ Removed: ${repoPath}`);
+            return;
+        }
+
+        if (sub === 'list') {
+            const repos = readConductorReposFromGlobalConfig();
+            if (repos.length === 0) {
+                console.log('No repos registered. Run: aigon radar add');
+                return;
+            }
+            console.log(`Watched repos (${repos.length}):`);
+            repos.forEach(r => console.log(`  ${r}`));
+            return;
+        }
+
+        if (sub === 'open') {
+            const url = `http://127.0.0.1:${port}`;
+            const noOpen = getOptionValue(options, 'no-open') !== undefined;
+            const screenshot = getOptionValue(options, 'screenshot') !== undefined;
+            const output = String(getOptionValue(options, 'output') || path.join(process.cwd(), 'docs', 'assets', 'dashboard-screenshot.png'));
+            const widthRaw = getOptionValue(options, 'width');
+            const heightRaw = getOptionValue(options, 'height');
+            const width = widthRaw !== undefined ? parseInt(String(widthRaw), 10) : 1280;
+            const height = heightRaw !== undefined ? parseInt(String(heightRaw), 10) : 800;
+
+            if (screenshot) {
+                const healthy = await waitForHealthy(url, 15000, 400);
+                if (!healthy) {
+                    console.error('❌ Radar is not running or not healthy.');
+                    process.exitCode = 1;
+                    return;
+                }
+                try {
+                    const result = await captureDashboardScreenshot(url, output, width, height);
+                    console.log(`📸 Screenshot saved: ${output}`);
+                    console.log(`   Capture method: ${result.method}`);
+                } catch (e) {
+                    console.error(`❌ Screenshot failed: ${e.message}`);
+                    process.exitCode = 1;
+                }
+                return;
+            }
+
+            if (!noOpen) {
+                try { openInBrowser(url); } catch (e) { console.warn(`⚠️  Could not open browser: ${e.message}`); }
+            }
+            console.log(`🌐 Radar dashboard: ${url}`);
+            return;
+        }
+
+        if (sub === 'install') {
+            if (process.platform !== 'darwin') {
+                console.error('❌ radar install currently supports macOS launchd only.');
+                process.exitCode = 1;
+                return;
+            }
+            try {
+                const plistPath = writeRadarLaunchdPlist(port);
+                const uid = process.getuid ? process.getuid() : null;
+                if (uid !== null) {
+                    try { execSync(`launchctl bootout gui/${uid} ${shellQuote(plistPath)}`, { stdio: 'ignore' }); } catch (e) { /* ignore */ }
+                    try { execSync(`launchctl bootstrap gui/${uid} ${shellQuote(plistPath)}`, { stdio: 'ignore' }); } catch (e) {
+                        execSync(`launchctl load ${shellQuote(plistPath)}`, { stdio: 'ignore' });
+                    }
+                } else {
+                    execSync(`launchctl load ${shellQuote(plistPath)}`, { stdio: 'ignore' });
+                }
+                console.log(`✅ Installed launchd service: ${plistPath}`);
+                console.log('   Radar will start automatically on login.');
+            } catch (e) {
+                console.error(`❌ Failed to install launchd service: ${e.message}`);
+                process.exitCode = 1;
+            }
+            return;
+        }
+
+        if (sub === 'uninstall') {
+            if (process.platform !== 'darwin') {
+                console.error('❌ radar uninstall currently supports macOS launchd only.');
+                process.exitCode = 1;
+                return;
+            }
+            const plistPath = path.join(os.homedir(), 'Library', 'LaunchAgents', 'com.aigon.radar.plist');
+            try {
+                const uid = process.getuid ? process.getuid() : null;
+                if (fs.existsSync(plistPath)) {
+                    if (uid !== null) {
+                        try { execSync(`launchctl bootout gui/${uid} ${shellQuote(plistPath)}`, { stdio: 'ignore' }); } catch (e) {
+                            try { execSync(`launchctl unload ${shellQuote(plistPath)}`, { stdio: 'ignore' }); } catch (_) { /* ignore */ }
+                        }
+                    } else {
+                        try { execSync(`launchctl unload ${shellQuote(plistPath)}`, { stdio: 'ignore' }); } catch (e) { /* ignore */ }
+                    }
+                    fs.unlinkSync(plistPath);
+                    console.log(`✅ Removed launchd service: ${plistPath}`);
+                } else {
+                    console.log('⚠️  Launchd service not installed.');
+                }
+            } catch (e) {
+                console.error(`❌ Failed to uninstall launchd service: ${e.message}`);
+                process.exitCode = 1;
+            }
+            return;
+        }
+
+        if (sub === 'menubar-render') {
+            try {
+                const payload = await requestRadarJson('/api/status', port);
+                renderRadarMenubarFromStatus(payload);
+            } catch (e) {
+                console.log('⚙ offline');
+                console.log('---');
+                console.log(`Radar offline (port ${port})`);
+                console.log(`Start Radar | bash="${process.execPath}" param1="${__filename}" param2=radar param3=start terminal=false`);
+            }
+            return;
+        }
+
+        if (sub === 'menubar-install') {
+            const swiftBarApp = '/Applications/SwiftBar.app';
+            const xbarApp = '/Applications/xbar.app';
+            const swiftBarDir = path.join(os.homedir(), '.swiftbar');
+            const xbarDir = path.join(os.homedir(), 'Library', 'Application Support', 'xbar', 'plugins');
+
+            let pluginDir;
+            let appName;
+
+            if (fs.existsSync(swiftBarApp)) {
+                pluginDir = swiftBarDir;
+                appName = 'SwiftBar';
+            } else if (fs.existsSync(xbarApp)) {
+                pluginDir = xbarDir;
+                appName = 'xbar';
+            } else {
+                console.error('❌ Neither SwiftBar nor xbar found in /Applications/');
+                console.error('');
+                console.error('   Install SwiftBar (recommended):');
+                console.error('   brew install --cask swiftbar');
+                console.error('');
+                console.error('   Or install xbar:');
+                console.error('   brew install --cask xbar');
+                process.exitCode = 1;
+                return;
+            }
+
+            if (!fs.existsSync(pluginDir)) fs.mkdirSync(pluginDir, { recursive: true });
+            const pluginPath = path.join(pluginDir, 'aigon.30s.sh');
+            const pluginContent = `#!/bin/bash
+# Aigon Radar Menubar Plugin
+# Installed by: aigon radar menubar-install
+# Refresh: every 30 seconds (.30s. in filename)
+
+"${process.execPath}" "${__filename}" radar menubar-render
+`;
+            fs.writeFileSync(pluginPath, pluginContent);
+            fs.chmodSync(pluginPath, '755');
+
+            console.log(`✅ Menubar plugin installed for ${appName}`);
+            console.log(`   Plugin: ${pluginPath}`);
+            console.log('   Refresh: every 30 seconds');
+            if (readConductorReposFromGlobalConfig().length === 0) {
+                console.log('   ⚠️  No repos registered. Run: aigon radar add');
+            }
+            return;
+        }
+
+        if (sub === 'menubar-uninstall') {
+            const swiftBarPlugin = path.join(os.homedir(), '.swiftbar', 'aigon.30s.sh');
+            const xbarPlugin = path.join(os.homedir(), 'Library', 'Application Support', 'xbar', 'plugins', 'aigon.30s.sh');
+
+            let removed = false;
+            if (fs.existsSync(swiftBarPlugin)) {
+                fs.unlinkSync(swiftBarPlugin);
+                console.log(`✅ Removed SwiftBar plugin: ${swiftBarPlugin}`);
+                removed = true;
+            }
+            if (fs.existsSync(xbarPlugin)) {
+                fs.unlinkSync(xbarPlugin);
+                console.log(`✅ Removed xbar plugin: ${xbarPlugin}`);
+                removed = true;
+            }
+            if (!removed) {
+                console.log('⚠️  No menubar plugin found to remove.');
+            }
+            return;
+        }
+
+        if (sub === 'vscode-install') {
+            const vsixPath = path.join(__dirname, 'vscode-extension', 'aigon-conductor-1.0.0.vsix');
+            if (!fs.existsSync(vsixPath)) {
+                console.error(`❌ Extension bundle not found: ${vsixPath}`);
+                console.error('   Try rebuilding: cd vscode-extension && npm run package');
+                process.exitCode = 1;
+                return;
+            }
+            try {
+                execSync('code --version', { stdio: 'ignore' });
+                execSync(`code --install-extension "${vsixPath}" --force`, { stdio: 'inherit' });
+                console.log('✅ Aigon extension installed. Reload VS Code to activate.');
+            } catch (e) {
+                console.error(`❌ Installation failed: ${e.message}`);
+                process.exitCode = 1;
+            }
+            return;
+        }
+
+        if (sub === 'vscode-uninstall') {
+            try {
+                execSync('code --version', { stdio: 'ignore' });
+                execSync('code --uninstall-extension aigon.aigon-conductor', { stdio: 'inherit' });
+                console.log('✅ Aigon extension uninstalled.');
+            } catch (e) {
+                console.error(`❌ Uninstall failed: ${e.message}`);
+                process.exitCode = 1;
+            }
+            return;
+        }
+
+        console.log('Usage: aigon radar <subcommand>\n');
+        console.log('Subcommands:');
+        console.log('  start [--port <N>]      Start Radar service in the background');
+        console.log('  stop                    Stop Radar service');
+        console.log('  status                  Show Radar state, repos, and summary');
+        console.log('  add [path]              Register a repo (default: cwd)');
+        console.log('  remove [path]           Unregister a repo (default: cwd)');
+        console.log('  list                    List registered repos');
+        console.log('  open                    Open dashboard in browser');
+        console.log('  install                 Install launchd auto-start service (macOS)');
+        console.log('  uninstall               Remove launchd service (macOS)');
+        console.log('  menubar-install         Install SwiftBar/xbar plugin');
+        console.log('  menubar-uninstall       Remove SwiftBar/xbar plugin');
+        console.log('  menubar-render          Render menubar output (plugin internal)');
+        console.log('  vscode-install          Install VS Code extension');
+        console.log('  vscode-uninstall        Uninstall VS Code extension');
+    },
+
     'conductor': (args) => {
         const CONDUCTOR_PID_FILE = path.join(GLOBAL_CONFIG_DIR, 'conductor.pid');
         const CONDUCTOR_LOG_FILE = path.join(GLOBAL_CONFIG_DIR, 'conductor.log');
@@ -8531,6 +9199,26 @@ Branch: \`${soloBranch}\`
         // --- Subcommand dispatch ---
 
         const sub = args[0];
+        const deprecatedMap = {
+            start: 'start',
+            stop: 'stop',
+            status: 'status',
+            add: 'add',
+            remove: 'remove',
+            list: 'list',
+            'vscode-install': 'vscode-install',
+            'vscode-uninstall': 'vscode-uninstall',
+            'menubar-install': 'menubar-install',
+            'menubar-uninstall': 'menubar-uninstall',
+            'menubar-render': 'menubar-render',
+        };
+
+        if (deprecatedMap[sub]) {
+            if (sub !== 'menubar-render') {
+                console.log(`⚠ 'aigon conductor ${sub}' is deprecated — use 'aigon radar ${deprecatedMap[sub]}' instead.`);
+            }
+            return commands.radar([deprecatedMap[sub], ...args.slice(1)]);
+        }
 
         // Internal: daemon mode (called as detached child)
         if (sub === '--daemon') {
@@ -9037,150 +9725,8 @@ Branch: \`${soloBranch}\`
     },
 
     'dashboard': async (args) => {
-        const options = parseCliOptions(args);
-        const portRaw = getOptionValue(options, 'port');
-        const port = portRaw !== undefined ? parseInt(String(portRaw), 10) : 4321;
-        if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-            console.error('❌ Invalid port. Use: --port <1-65535>');
-            process.exitCode = 1;
-            return;
-        }
-
-        const noOpen = getOptionValue(options, 'no-open') !== undefined;
-        const screenshot = getOptionValue(options, 'screenshot') !== undefined;
-        const output = String(getOptionValue(options, 'output') || path.join(process.cwd(), 'docs', 'assets', 'dashboard-screenshot.png'));
-        const widthRaw = getOptionValue(options, 'width');
-        const heightRaw = getOptionValue(options, 'height');
-        const width = widthRaw !== undefined ? parseInt(String(widthRaw), 10) : 1280;
-        const height = heightRaw !== undefined ? parseInt(String(heightRaw), 10) : 800;
-        if (!Number.isInteger(width) || !Number.isInteger(height) || width < 320 || height < 240) {
-            console.error('❌ Invalid dimensions. Use: --width <>=320 --height <>=240');
-            process.exitCode = 1;
-            return;
-        }
-
-        const http = require('http');
-        const host = '127.0.0.1';
-        const url = `http://localhost:${port}`;
-        const server = http.createServer((req, res) => {
-            const reqPath = (req.url || '/').split('?')[0];
-            if (reqPath === '/api/attach' && req.method === 'POST') {
-                let body = '';
-                req.on('data', chunk => { body += chunk.toString('utf8'); });
-                req.on('end', () => {
-                    let payload = {};
-                    try { payload = body ? JSON.parse(body) : {}; } catch (e) {
-                        res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
-                        res.end(JSON.stringify({ error: 'Invalid JSON body' }));
-                        return;
-                    }
-
-                    const featureId = String(payload.featureId || '').trim();
-                    const agentId = String(payload.agentId || '').trim();
-                    const repoPath = String(payload.repoPath || '').trim();
-                    if (!featureId || !agentId || agentId === 'solo') {
-                        res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
-                        res.end(JSON.stringify({ error: 'featureId and non-solo agentId are required' }));
-                        return;
-                    }
-
-                    const sessionName = buildTmuxSessionName(featureId, agentId);
-                    if (!tmuxSessionExists(sessionName)) {
-                        res.writeHead(409, { 'content-type': 'application/json; charset=utf-8' });
-                        res.end(JSON.stringify({ error: `tmux session not running: ${sessionName}` }));
-                        return;
-                    }
-
-                    try {
-                        const repoName = repoPath ? path.basename(repoPath) : path.basename(process.cwd());
-                        const tmuxTitle = `${repoName} F${String(featureId).padStart(2, '0')} ${agentId}`;
-                        openTerminalAppWithCommand(repoPath || process.cwd(), `tmux attach -t ${shellQuote(sessionName)}`, tmuxTitle);
-                        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
-                        res.end(JSON.stringify({ ok: true, message: `Attached to ${sessionName}`, command: `tmux attach -t ${sessionName}` }));
-                    } catch (e) {
-                        res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
-                        res.end(JSON.stringify({ error: `Failed to open terminal: ${e.message}` }));
-                    }
-                });
-                return;
-            }
-
-            if (reqPath === '/api/status') {
-                const payload = collectDashboardStatusData();
-                res.writeHead(200, {
-                    'content-type': 'application/json; charset=utf-8',
-                    'cache-control': 'no-store'
-                });
-                res.end(JSON.stringify(payload));
-                return;
-            }
-
-            if (reqPath === '/favicon.ico') {
-                res.writeHead(204);
-                res.end();
-                return;
-            }
-
-            const html = buildDashboardHtml(collectDashboardStatusData());
-            res.writeHead(200, {
-                'content-type': 'text/html; charset=utf-8',
-                'cache-control': 'no-store'
-            });
-            res.end(html);
-        });
-
-        await new Promise((resolve, reject) => {
-            server.once('error', reject);
-            server.listen(port, host, resolve);
-        }).catch((err) => {
-            if (err && err.code === 'EADDRINUSE') {
-                console.error(`❌ Port ${port} is already in use.`);
-                console.error('   Use: aigon dashboard --port <N>');
-                process.exitCode = 1;
-                return;
-            }
-            console.error(`❌ Failed to start dashboard: ${err.message}`);
-            process.exitCode = 1;
-        });
-
-        if (!server.listening) return;
-
-        if (screenshot) {
-            const healthy = await waitForHealthy(url, 15000, 400);
-            if (!healthy) {
-                console.error('❌ Dashboard did not become ready for screenshot capture.');
-                process.exitCode = 1;
-                await new Promise(r => server.close(r));
-                return;
-            }
-            try {
-                const result = await captureDashboardScreenshot(url, output, width, height);
-                console.log(`📸 Screenshot saved: ${output}`);
-                console.log(`   Capture method: ${result.method}`);
-            } catch (e) {
-                console.error(`❌ Screenshot failed: ${e.message}`);
-                process.exitCode = 1;
-                await new Promise(r => server.close(r));
-                return;
-            }
-            await new Promise(r => server.close(r));
-            return;
-        }
-
-        console.log(`✅ Dashboard running at ${url}`);
-        if (!noOpen) {
-            try { openInBrowser(url); } catch (e) { console.warn(`⚠️  Could not open browser: ${e.message}`); }
-        }
-        console.log('Press Ctrl+C to stop.');
-
-        let shuttingDown = false;
-        const stop = () => {
-            if (shuttingDown) return;
-            shuttingDown = true;
-            server.close(() => process.exit(0));
-        };
-        process.on('SIGINT', stop);
-        process.on('SIGTERM', stop);
+        console.log(`⚠ 'aigon dashboard' is deprecated — use 'aigon radar open' instead.`);
+        return commands.radar(['open', ...args]);
     },
 
     'terminal-focus': (args) => {
@@ -11288,12 +11834,13 @@ Modes:
   ✈️  Autopilot  One agent runs autonomously end-to-end
   🐝 Swarm      Multiple agents run autonomously in parallel
 
-Conductor:
+Conductor / Radar:
   conduct <ID> [agents...]          Start arena: setup, spawn autonomous loops, monitor, eval
   conduct status [ID]               Show status of running conductor sessions
   conduct stop <ID>                 Stop all agents for a feature (reuses sessions-close)
   conduct attach <ID> <agent>       Attach to an agent's tmux session
-  dashboard [options]               Open local web dashboard (default: http://127.0.0.1:4321)
+  radar <subcommand>                Unified monitoring service + API + dashboard
+  dashboard [options]               Deprecated alias for: aigon radar open
 
 Worktree:
   worktree-open <ID> [agent] [--terminal=<type>]
@@ -11355,8 +11902,10 @@ Examples:
   aigon conduct 42 cc gg cx            # Arena conductor: setup + spawn + monitor + eval
   aigon conduct status 42              # Check conductor status
   aigon conduct stop 42                # Stop all agents
-  aigon dashboard                      # Open live dashboard
-  aigon dashboard --screenshot         # Capture dashboard screenshot and exit
+  aigon radar start                    # Start Radar service
+  aigon radar open                     # Open live dashboard
+  aigon radar open --screenshot        # Capture dashboard screenshot
+  aigon dashboard                      # Deprecated: use "aigon radar open"
   aigon worktree-open 55 cc            # Open worktree in Warp with Claude CLI
   aigon worktree-open 55 --all         # Open all Fleet agents side-by-side
   aigon worktree-open 100 101 102      # Open features side-by-side (parallel)
