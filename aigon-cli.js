@@ -8056,6 +8056,27 @@ Branch: \`${soloBranch}\`
             }
         }
 
+        // Drive mode: auto-commit uncommitted changes before close
+        // In fleet/worktree mode, feature-submit handles this.
+        // In drive mode, there is no submit step — close is the final command.
+        if (mode === 'drive') {
+            const currentBranch = getCurrentBranch();
+            if (currentBranch === branchName) {
+                const uncommitted = getGitStatusPorcelain();
+                if (uncommitted) {
+                    console.log(`\n📦 Uncommitted changes detected on ${branchName} — auto-committing before close...`);
+                    try {
+                        runGit(`git add -A`);
+                        runGit(`git commit -m "feat: implementation for feature ${num}"`);
+                        console.log(`✅ Auto-committed implementation changes`);
+                    } catch (e) {
+                        console.error(`❌ Auto-commit failed. Please commit your changes manually before closing.`);
+                        return;
+                    }
+                }
+            }
+        }
+
         // Push branch to origin before merging (to save work remotely)
         try {
             runGit(`git push -u origin ${branchName}`);
