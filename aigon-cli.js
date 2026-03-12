@@ -8718,8 +8718,10 @@ Branch: \`${soloBranch}\`
             const pid = isRadarAlive();
             const statusPort = meta && Number.isInteger(meta.port) ? meta.port : RADAR_DEFAULT_PORT;
             console.log(`Radar:     ${pid ? `✅ running (PID ${pid})` : '⛔ stopped'}`);
-            console.log(`Port:      ${statusPort}`);
-            console.log(`Dashboard: http://127.0.0.1:${statusPort}`);
+            if (pid) {
+                console.log(`Port:      ${statusPort}`);
+                console.log(`Dashboard: http://127.0.0.1:${statusPort}`);
+            }
 
             const repos = readConductorReposFromGlobalConfig();
             if (repos.length === 0) {
@@ -9725,151 +9727,6 @@ Branch: \`${soloBranch}\`
     'dashboard': async (args) => {
         console.log(`⚠ 'aigon dashboard' is deprecated — use 'aigon radar open' instead.`);
         return commands.radar(['open', ...args]);
-
-        const options = parseCliOptions(args);
-        const portRaw = getOptionValue(options, 'port');
-        const port = portRaw !== undefined ? parseInt(String(portRaw), 10) : 4321;
-        if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-            console.error('❌ Invalid port. Use: --port <1-65535>');
-            process.exitCode = 1;
-            return;
-        }
-
-        const noOpen = getOptionValue(options, 'no-open') !== undefined;
-        const screenshot = getOptionValue(options, 'screenshot') !== undefined;
-        const output = String(getOptionValue(options, 'output') || path.join(process.cwd(), 'docs', 'assets', 'dashboard-screenshot.png'));
-        const widthRaw = getOptionValue(options, 'width');
-        const heightRaw = getOptionValue(options, 'height');
-        const width = widthRaw !== undefined ? parseInt(String(widthRaw), 10) : 1280;
-        const height = heightRaw !== undefined ? parseInt(String(heightRaw), 10) : 800;
-        if (!Number.isInteger(width) || !Number.isInteger(height) || width < 320 || height < 240) {
-            console.error('❌ Invalid dimensions. Use: --width <>=320 --height <>=240');
-            process.exitCode = 1;
-            return;
-        }
-
-        const http = require('http');
-        const host = '127.0.0.1';
-        const url = `http://localhost:${port}`;
-        const server = http.createServer((req, res) => {
-            const reqPath = (req.url || '/').split('?')[0];
-            if (reqPath === '/api/attach' && req.method === 'POST') {
-                let body = '';
-                req.on('data', chunk => { body += chunk.toString('utf8'); });
-                req.on('end', () => {
-                    let payload = {};
-                    try { payload = body ? JSON.parse(body) : {}; } catch (e) {
-                        res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
-                        res.end(JSON.stringify({ error: 'Invalid JSON body' }));
-                        return;
-                    }
-
-                    const featureId = String(payload.featureId || '').trim();
-                    const agentId = String(payload.agentId || '').trim();
-                    const repoPath = String(payload.repoPath || '').trim();
-                    if (!featureId || !agentId || agentId === 'solo') {
-                        res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
-                        res.end(JSON.stringify({ error: 'featureId and non-solo agentId are required' }));
-                        return;
-                    }
-
-                    const sessionName = buildTmuxSessionName(featureId, agentId);
-                    if (!tmuxSessionExists(sessionName)) {
-                        res.writeHead(409, { 'content-type': 'application/json; charset=utf-8' });
-                        res.end(JSON.stringify({ error: `tmux session not running: ${sessionName}` }));
-                        return;
-                    }
-
-                    try {
-                        const repoName = repoPath ? path.basename(repoPath) : path.basename(process.cwd());
-                        const tmuxTitle = `${repoName} F${String(featureId).padStart(2, '0')} ${agentId}`;
-                        openTerminalAppWithCommand(repoPath || process.cwd(), `tmux attach -t ${shellQuote(sessionName)}`, tmuxTitle);
-                        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
-                        res.end(JSON.stringify({ ok: true, message: `Attached to ${sessionName}`, command: `tmux attach -t ${sessionName}` }));
-                    } catch (e) {
-                        res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
-                        res.end(JSON.stringify({ error: `Failed to open terminal: ${e.message}` }));
-                    }
-                });
-                return;
-            }
-
-            if (reqPath === '/api/status') {
-                const payload = collectDashboardStatusData();
-                res.writeHead(200, {
-                    'content-type': 'application/json; charset=utf-8',
-                    'cache-control': 'no-store'
-                });
-                res.end(JSON.stringify(payload));
-                return;
-            }
-
-            if (reqPath === '/favicon.ico') {
-                res.writeHead(204);
-                res.end();
-                return;
-            }
-
-            const html = buildDashboardHtml(collectDashboardStatusData());
-            res.writeHead(200, {
-                'content-type': 'text/html; charset=utf-8',
-                'cache-control': 'no-store'
-            });
-            res.end(html);
-        });
-
-        await new Promise((resolve, reject) => {
-            server.once('error', reject);
-            server.listen(port, host, resolve);
-        }).catch((err) => {
-            if (err && err.code === 'EADDRINUSE') {
-                console.error(`❌ Port ${port} is already in use.`);
-                console.error('   Use: aigon dashboard --port <N>');
-                process.exitCode = 1;
-                return;
-            }
-            console.error(`❌ Failed to start dashboard: ${err.message}`);
-            process.exitCode = 1;
-        });
-
-        if (!server.listening) return;
-
-        if (screenshot) {
-            const healthy = await waitForHealthy(url, 15000, 400);
-            if (!healthy) {
-                console.error('❌ Dashboard did not become ready for screenshot capture.');
-                process.exitCode = 1;
-                await new Promise(r => server.close(r));
-                return;
-            }
-            try {
-                const result = await captureDashboardScreenshot(url, output, width, height);
-                console.log(`📸 Screenshot saved: ${output}`);
-                console.log(`   Capture method: ${result.method}`);
-            } catch (e) {
-                console.error(`❌ Screenshot failed: ${e.message}`);
-                process.exitCode = 1;
-                await new Promise(r => server.close(r));
-                return;
-            }
-            await new Promise(r => server.close(r));
-            return;
-        }
-
-        console.log(`✅ Dashboard running at ${url}`);
-        if (!noOpen) {
-            try { openInBrowser(url); } catch (e) { console.warn(`⚠️  Could not open browser: ${e.message}`); }
-        }
-        console.log('Press Ctrl+C to stop.');
-
-        let shuttingDown = false;
-        const stop = () => {
-            if (shuttingDown) return;
-            shuttingDown = true;
-            server.close(() => process.exit(0));
-        };
-        process.on('SIGINT', stop);
-        process.on('SIGTERM', stop);
     },
 
     'terminal-focus': (args) => {
