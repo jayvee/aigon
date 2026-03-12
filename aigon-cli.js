@@ -1060,6 +1060,606 @@ function openInBrowser(url) {
     execSync(`${cmd} ${JSON.stringify(url)}`, { stdio: 'ignore' });
 }
 
+function readConductorReposFromGlobalConfig() {
+    try {
+        if (!fs.existsSync(GLOBAL_CONFIG_PATH)) return [];
+        const cfg = JSON.parse(fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf8'));
+        return Array.isArray(cfg.repos) ? cfg.repos : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function parseSimpleFrontMatter(content) {
+    const m = content.match(/^---\n([\s\S]*?)\n---\n/);
+    if (!m) return {};
+    const result = {};
+    m[1].split('\n').forEach(line => {
+        const idx = line.indexOf(':');
+        if (idx === -1) return;
+        const key = line.slice(0, idx).trim();
+        const value = line.slice(idx + 1).trim();
+        result[key] = value;
+    });
+    return result;
+}
+
+function normalizeDashboardStatus(raw) {
+    const status = String(raw || '').trim().toLowerCase();
+    if (status === 'implementing' || status === 'waiting' || status === 'submitted' || status === 'error') {
+        return status;
+    }
+    return 'implementing';
+}
+
+function parseFeatureSpecFileName(file) {
+    const m = file.match(/^feature-(\d+)-(.+)\.md$/);
+    if (!m) return null;
+    return { id: m[1], name: m[2] };
+}
+
+function inferDashboardNextCommand(featureId, agents) {
+    const idPadded = String(featureId).padStart(2, '0');
+    if (!agents || agents.length === 0) return null;
+
+    const allSubmitted = agents.every(agent => agent.status === 'submitted');
+    const hasWaiting = agents.some(agent => agent.status === 'waiting');
+    const isFleet = agents.some(agent => agent.id !== 'solo');
+
+    if (hasWaiting) {
+        return { command: `/afd ${idPadded}`, reason: 'Agent waiting for completion/merge' };
+    }
+    if (allSubmitted && isFleet) {
+        return { command: `/afe ${idPadded}`, reason: 'All agents submitted; evaluate winners' };
+    }
+    if (allSubmitted) {
+        return { command: `/afd ${idPadded}`, reason: 'Implementation submitted; complete feature' };
+    }
+    return null;
+}
+
+function safeTmuxSessionExists(featureId, agentId) {
+    if (!agentId || agentId === 'solo') return null;
+    try {
+        assertTmuxAvailable();
+        const sessionName = buildTmuxSessionName(featureId, agentId);
+        return { sessionName, running: tmuxSessionExists(sessionName) };
+    } catch (e) {
+        return { sessionName: buildTmuxSessionName(featureId, agentId), running: false };
+    }
+}
+
+function collectDashboardStatusData() {
+    const repos = readConductorReposFromGlobalConfig();
+    const response = {
+        generatedAt: new Date().toISOString(),
+        repos: [],
+        summary: { implementing: 0, waiting: 0, submitted: 0, error: 0, total: 0 }
+    };
+
+    repos.forEach(repoPath => {
+        const absRepoPath = path.resolve(repoPath);
+        const inProgressDir = path.join(absRepoPath, 'docs', 'specs', 'features', '03-in-progress');
+        const mainLogsDir = path.join(absRepoPath, 'docs', 'specs', 'features', 'logs');
+        const worktreeBaseDir = absRepoPath + '-worktrees';
+
+        const specFiles = [];
+        if (fs.existsSync(inProgressDir)) {
+            try {
+                fs.readdirSync(inProgressDir)
+                    .filter(f => /^feature-\d+-.+\.md$/.test(f))
+                    .sort((a, b) => a.localeCompare(b))
+                    .forEach(f => specFiles.push(f));
+            } catch (e) { /* ignore */ }
+        }
+
+        const allLogDirs = [];
+        if (fs.existsSync(mainLogsDir)) allLogDirs.push(mainLogsDir);
+        if (fs.existsSync(worktreeBaseDir)) {
+            try {
+                fs.readdirSync(worktreeBaseDir).forEach(dirName => {
+                    const wtLogsDir = path.join(worktreeBaseDir, dirName, 'docs', 'specs', 'features', 'logs');
+                    if (fs.existsSync(wtLogsDir)) allLogDirs.push(wtLogsDir);
+                });
+            } catch (e) { /* ignore */ }
+        }
+
+        const logsByFeatureAgent = {}; // key: "id:agent" => { status, updatedAt }
+        const logsByFeatureSolo = {}; // key: "id" => { status, updatedAt }
+        const knownAgentsByFeature = {}; // id => Set(agent)
+
+        allLogDirs.forEach(logDir => {
+            try {
+                fs.readdirSync(logDir)
+                    .filter(f => /^feature-\d+-.+-log\.md$/.test(f))
+                    .forEach(logFile => {
+                        const logPath = path.join(logDir, logFile);
+                        let content = '';
+                        try { content = fs.readFileSync(logPath, 'utf8'); } catch (e) { return; }
+                        const fm = parseSimpleFrontMatter(content);
+                        const status = normalizeDashboardStatus(fm.status);
+                        const updatedAt = fm.updated || new Date(fs.statSync(logPath).mtime).toISOString();
+
+                        const arena = logFile.match(/^feature-(\d+)-([a-z]{2})-(.+)-log\.md$/);
+                        const solo = logFile.match(/^feature-(\d+)-(.+)-log\.md$/);
+                        if (arena) {
+                            const featureId = arena[1];
+                            const agent = arena[2];
+                            logsByFeatureAgent[`${featureId}:${agent}`] = { status, updatedAt };
+                            if (!knownAgentsByFeature[featureId]) knownAgentsByFeature[featureId] = new Set();
+                            knownAgentsByFeature[featureId].add(agent);
+                        } else if (solo) {
+                            logsByFeatureSolo[solo[1]] = { status, updatedAt };
+                        }
+                    });
+            } catch (e) { /* ignore */ }
+        });
+
+        if (fs.existsSync(worktreeBaseDir)) {
+            try {
+                fs.readdirSync(worktreeBaseDir).forEach(dirName => {
+                    const wtM = dirName.match(/^feature-(\d+)-([a-z]{2})-.+$/);
+                    if (!wtM) return;
+                    const featureId = wtM[1];
+                    const agent = wtM[2];
+                    if (!knownAgentsByFeature[featureId]) knownAgentsByFeature[featureId] = new Set();
+                    knownAgentsByFeature[featureId].add(agent);
+                });
+            } catch (e) { /* ignore */ }
+        }
+
+        const features = [];
+        specFiles.forEach(specFile => {
+            const parsed = parseFeatureSpecFileName(specFile);
+            if (!parsed) return;
+
+            const specPath = path.join(inProgressDir, specFile);
+            let fallbackUpdatedAt = new Date().toISOString();
+            try {
+                fallbackUpdatedAt = new Date(fs.statSync(specPath).mtime).toISOString();
+            } catch (e) { /* ignore */ }
+
+            const agentSet = knownAgentsByFeature[parsed.id] || new Set();
+            const hasFleetAgents = agentSet.size > 0;
+            const agents = [];
+            const idPadded = String(parsed.id).padStart(2, '0');
+
+            if (hasFleetAgents) {
+                [...agentSet].sort((a, b) => a.localeCompare(b)).forEach(agent => {
+                    const row = logsByFeatureAgent[`${parsed.id}:${agent}`] || { status: 'implementing', updatedAt: fallbackUpdatedAt };
+                    const tmux = safeTmuxSessionExists(parsed.id, agent);
+                    agents.push({
+                        id: agent,
+                        status: normalizeDashboardStatus(row.status),
+                        updatedAt: row.updatedAt,
+                        slashCommand: row.status === 'waiting' ? `/afd ${idPadded}` : null,
+                        tmuxSession: tmux ? tmux.sessionName : null,
+                        tmuxRunning: tmux ? tmux.running : false,
+                        attachCommand: tmux ? `tmux attach -t ${tmux.sessionName}` : null
+                    });
+                });
+            } else {
+                const row = logsByFeatureSolo[parsed.id] || { status: 'implementing', updatedAt: fallbackUpdatedAt };
+                agents.push({
+                    id: 'solo',
+                    status: normalizeDashboardStatus(row.status),
+                    updatedAt: row.updatedAt,
+                    slashCommand: row.status === 'waiting' ? `/afd ${idPadded}` : null,
+                    tmuxSession: null,
+                    tmuxRunning: false,
+                    attachCommand: null
+                });
+            }
+
+            agents.forEach(agent => {
+                response.summary.total++;
+                response.summary[agent.status] = (response.summary[agent.status] || 0) + 1;
+            });
+
+            features.push({
+                id: parsed.id,
+                name: parsed.name,
+                agents,
+                nextAction: inferDashboardNextCommand(parsed.id, agents)
+            });
+        });
+
+        response.repos.push({
+            path: absRepoPath,
+            displayPath: absRepoPath.replace(os.homedir(), '~'),
+            name: path.basename(absRepoPath),
+            features
+        });
+    });
+
+    return response;
+}
+
+function escapeForHtmlScript(jsonValue) {
+    return JSON.stringify(jsonValue)
+        .replace(/</g, '\\u003c')
+        .replace(/>/g, '\\u003e')
+        .replace(/&/g, '\\u0026')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+}
+
+function buildDashboardHtml(initialData) {
+    const serializedData = escapeForHtmlScript(initialData);
+    return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aigon Dashboard</title>
+  <style>
+    :root{color-scheme:dark;-webkit-font-smoothing:antialiased;--bg-root:#0a0a0b;--bg-surface:#111113;--bg-elevated:#1a1a1f;--bg-hover:#222228;--border-subtle:rgba(255,255,255,.06);--border-default:rgba(255,255,255,.1);--text-primary:#ededef;--text-secondary:#a0a0a8;--text-tertiary:#6b6b76;--accent:#3b82f6;--success:#22c55e;--warning:#f59e0b;--error:#ef4444;--radius:12px;--mono:"SF Mono","Cascadia Code",ui-monospace,monospace}
+    *{box-sizing:border-box}html,body{margin:0;background:var(--bg-root);color:var(--text-primary);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+    body{padding:20px 16px 28px}
+    .wrap{max-width:1280px;margin:0 auto}
+    .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:10px}
+    h1{margin:0;font-size:24px;letter-spacing:-.02em}
+    .meta{display:flex;gap:10px;color:var(--text-secondary)}
+    .health{display:flex;align-items:center;gap:6px}
+    .summary{display:flex;gap:8px;margin:12px 0 14px;flex-wrap:wrap}
+    .pill{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:999px;padding:5px 10px}
+    .pill.waiting{border-color:rgba(245,158,11,.4);color:#f8c060}
+    .pill-filter{cursor:pointer;transition:border-color .12s ease,background .12s ease,color .12s ease}
+    .pill-filter:hover{border-color:var(--border-default);background:var(--bg-elevated)}
+    .pill-filter.active{border-color:rgba(59,130,246,.7);background:rgba(59,130,246,.15);color:#dbeafe}
+    .pill-filter.waiting.active{border-color:rgba(245,158,11,.55);background:rgba(245,158,11,.15);color:#f8c060}
+    .repos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    @media (max-width: 1120px){.repos{grid-template-columns:1fr}}
+    .repo{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden}
+    .repo-h{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border-subtle);cursor:pointer}
+    .repo-h strong{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary)}
+    .repo-b{padding:10px;display:grid;gap:10px}
+    .card{border:1px solid var(--border-subtle);border-radius:10px;background:rgba(255,255,255,.01);transition:background .12s ease,border-color .12s ease}
+    .card:hover{background:var(--bg-elevated);border-color:var(--border-default)}
+    .card.waiting{border-left:2px solid var(--warning)}
+    .card-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 10px 6px}
+    .card-h .feature{letter-spacing:-.02em;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .head-actions{display:flex;align-items:center;justify-content:flex-end;flex:0 0 auto}
+    .rows{padding:0 8px 8px;display:grid;gap:6px}
+    .row{display:grid;grid-template-columns:56px minmax(130px,1fr) 90px auto;align-items:center;gap:10px;padding:6px 4px;border-radius:8px}
+    .agent,.cmd{font-family:var(--mono)}
+    .stamp{color:var(--text-tertiary);white-space:nowrap}
+    .status{display:inline-flex;align-items:center;gap:8px}
+    .dot{width:8px;height:8px;border-radius:50%}
+    .implementing .dot{background:var(--accent);box-shadow:0 0 0 0 rgba(59,130,246,.6);animation:pulse 1.5s infinite}
+    .waiting .dot{background:var(--warning);box-shadow:0 0 8px rgba(245,158,11,.5)}
+    .submitted .dot{background:transparent;position:relative}
+    .submitted .dot::before{content:"";position:absolute;left:1px;top:0;width:6px;height:10px;border:solid var(--success);border-width:0 2px 2px 0;transform:rotate(45deg)}
+    .error .dot{background:var(--error);box-shadow:0 0 8px rgba(239,68,68,.45)}
+    .btn{background:transparent;border:1px solid var(--border-default);border-radius:8px;color:var(--text-secondary);padding:4px 10px;cursor:pointer;line-height:1;font-size:12px;white-space:nowrap}
+    .btn:hover{color:var(--text-primary);border-color:var(--accent)}
+    .btn-primary{background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.45);color:#bdd7ff}
+    .btn-primary:hover{background:rgba(59,130,246,.2);border-color:rgba(59,130,246,.7);color:#e2eeff}
+    .next-copy{font-size:11px}
+    .row-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap;min-width:0}
+    .empty{padding:18px;color:var(--text-secondary);background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius)}
+    .toast-wrap{position:fixed;right:12px;bottom:12px;display:grid;gap:8px;z-index:50}
+    .toast{background:var(--bg-surface);border:1px solid var(--border-default);padding:10px 12px;border-radius:10px;min-width:260px}
+    .toast button{margin-left:8px;background:transparent;border:1px solid var(--border-default);border-radius:6px;color:var(--text-primary)}
+    .repo.collapsed .repo-b{display:none}
+    @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(2.2);opacity:.05}}
+    @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1>Aigon Dashboard</h1>
+      <div class="meta">
+        <span class="health"><span class="dot" id="health-dot"></span><span id="health-text">Connected</span></span>
+        <span id="updated-text">Updated just now</span>
+      </div>
+    </div>
+    <div id="summary" class="summary"></div>
+    <div id="repos" class="repos"></div>
+    <div id="empty" class="empty" style="display:none"></div>
+  </div>
+  <div id="toasts" class="toast-wrap"></div>
+  <script>
+    const POLL_MS = 10000;
+    const TS_MS = 30000;
+    const INITIAL_DATA = ${serializedData};
+    const state = {
+      data: INITIAL_DATA,
+      failures: 0,
+      lastStatuses: new Map(),
+      collapsed: JSON.parse(localStorage.getItem('aigon.dashboard.collapsed') || '{}'),
+      filter: localStorage.getItem('aigon.dashboard.filter') || 'all'
+    };
+
+    function relTime(iso) {
+      const diff = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+      if (diff < 10) return 'just now';
+      if (diff < 60) return diff + 's ago';
+      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+      return Math.floor(diff / 3600) + 'h ago';
+    }
+
+    function statusRank(s){ return s === 'waiting' ? 0 : s === 'implementing' ? 1 : s === 'error' ? 2 : 3; }
+    function featureRank(feature){ return Math.min(...feature.agents.map(a => statusRank(a.status))); }
+    function showToast(text, actionLabel, actionFn){
+      const wrap = document.getElementById('toasts');
+      const n = document.createElement('div');
+      n.className = 'toast';
+      n.textContent = text;
+      if (actionLabel && actionFn) {
+        const b = document.createElement('button');
+        b.textContent = actionLabel;
+        b.onclick = actionFn;
+        n.appendChild(b);
+      }
+      wrap.prepend(n);
+      while (wrap.children.length > 3) wrap.removeChild(wrap.lastChild);
+      setTimeout(() => n.remove(), 5000);
+    }
+
+    async function copyText(text){
+      try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy'); ta.remove(); return ok;
+    }
+
+    async function requestAttach(repoPath, featureId, agentId){
+      try {
+        const res = await fetch('/api/attach', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ repoPath, featureId, agentId })
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+        showToast(payload.message || 'Attach opened in terminal');
+      } catch (e) {
+        showToast('Attach failed: ' + e.message);
+      }
+    }
+
+    function updateTitleAndFavicon(waiting){
+      document.title = waiting > 0 ? '(' + waiting + ') Aigon Dashboard' : 'Aigon Dashboard';
+      const link = document.querySelector('link[rel="icon"]') || (() => { const x = document.createElement('link'); x.rel = 'icon'; document.head.appendChild(x); return x; })();
+      if (!waiting) { link.href = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22></svg>'; return; }
+      const c = document.createElement('canvas'); c.width = 32; c.height = 32;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#111113'; ctx.fillRect(0,0,32,32);
+      ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(16,16,13,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(String(waiting > 99 ? '99+' : waiting), 16, 16);
+      link.href = c.toDataURL('image/png');
+    }
+
+    function setHealth() {
+      const dot = document.getElementById('health-dot');
+      const text = document.getElementById('health-text');
+      if (state.failures === 0) { dot.style.background = '#22c55e'; text.textContent = 'Connected'; return; }
+      if (state.failures < 3) { dot.style.background = '#f59e0b'; text.textContent = 'Reconnecting...'; return; }
+      dot.style.background = '#ef4444'; text.textContent = 'Disconnected';
+    }
+
+    function render() {
+      const data = state.data || { repos: [], summary: { implementing: 0, waiting: 0, submitted: 0, error: 0 } };
+      const summary = data.summary || { implementing: 0, waiting: 0, submitted: 0, error: 0 };
+      document.getElementById('summary').innerHTML =
+        '<button class="pill pill-filter' + (state.filter === 'all' ? ' active' : '') + '" data-filter="all">All</button>' +
+        '<button class="pill pill-filter' + (state.filter === 'implementing' ? ' active' : '') + '" data-filter="implementing">' + summary.implementing + ' implementing</button>' +
+        '<button class="pill pill-filter waiting' + (state.filter === 'waiting' ? ' active' : '') + '" data-filter="waiting">' + summary.waiting + ' waiting</button>' +
+        '<button class="pill pill-filter' + (state.filter === 'submitted' ? ' active' : '') + '" data-filter="submitted">' + summary.submitted + ' submitted</button>' +
+        '<button class="pill pill-filter' + (state.filter === 'error' ? ' active' : '') + '" data-filter="error">' + summary.error + ' error</button>';
+      updateTitleAndFavicon(summary.waiting || 0);
+      setHealth();
+      document.getElementById('updated-text').textContent = 'Updated ' + relTime(data.generatedAt || new Date().toISOString());
+
+      const reposRoot = document.getElementById('repos');
+      const empty = document.getElementById('empty');
+      reposRoot.innerHTML = '';
+
+      if (!data.repos || data.repos.length === 0) {
+        empty.style.display = '';
+        empty.textContent = 'No repos registered. Run: aigon conductor add';
+        return;
+      }
+
+      empty.style.display = 'none';
+      let visibleFeatureCount = 0;
+      data.repos.forEach(repo => {
+        const section = document.createElement('section');
+        section.className = 'repo' + (state.collapsed[repo.path] ? ' collapsed' : '');
+        const rawFeatures = [...(repo.features || [])].sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
+        const features = rawFeatures.filter(f => state.filter === 'all' || f.agents.some(a => a.status === state.filter));
+        visibleFeatureCount += features.length;
+        const waitingCards = features.filter(f => f.agents.some(a => a.status === 'waiting')).length;
+        section.innerHTML = '<div class="repo-h"><strong>' + repo.displayPath + '</strong><span>' + features.length + ' feature' + (features.length === 1 ? '' : 's') + (waitingCards ? ' • ' + waitingCards + ' waiting' : '') + ' <span>' + (state.collapsed[repo.path] ? '[+]' : '[-]') + '</span></span></div><div class="repo-b"></div>';
+        section.querySelector('.repo-h').onclick = () => {
+          state.collapsed[repo.path] = !state.collapsed[repo.path];
+          localStorage.setItem('aigon.dashboard.collapsed', JSON.stringify(state.collapsed));
+          render();
+        };
+        const body = section.querySelector('.repo-b');
+        if (features.length === 0) {
+          body.innerHTML = '<div class="empty">No features in progress.</div>';
+        } else {
+          features.forEach(feature => {
+            const hasWaiting = feature.agents.some(a => a.status === 'waiting');
+            const card = document.createElement('article');
+            card.className = 'card' + (hasWaiting ? ' waiting' : '');
+            const rows = [...feature.agents].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id));
+            const nextCmd = feature.nextAction && feature.nextAction.command ? feature.nextAction.command : null;
+            const nextReason = feature.nextAction && feature.nextAction.reason ? String(feature.nextAction.reason).replace(/"/g, '&quot;') : '';
+            const nextBtn = nextCmd ? '<button class="copy btn btn-primary next-copy" data-copy="' + nextCmd + '" title="' + nextReason + '">Copy next</button>' : '';
+            card.innerHTML = '<div class="card-h"><span class="feature">#' + feature.id + ' ' + feature.name + '</span><span class="head-actions">' + nextBtn + '</span></div><div class="rows"></div>';
+            const rowsEl = card.querySelector('.rows');
+            rows.forEach(agent => {
+              const row = document.createElement('div');
+              row.className = 'row ' + agent.status;
+              const waitingCmd = agent.slashCommand
+                ? '<button class="copy btn" data-copy="' + agent.slashCommand + '">Copy ' + agent.slashCommand + '</button>'
+                : '';
+              const attachBtn = agent.tmuxRunning
+                ? '<button class="attach btn btn-primary" data-repo="' + repo.path + '" data-feature="' + feature.id + '" data-agent="' + agent.id + '">Attach</button>'
+                : '';
+              row.innerHTML = '<span class="agent">' + agent.id + '</span><span class="status ' + agent.status + '"><span class="dot"></span>' + agent.status + '</span><span class="stamp" data-updated="' + agent.updatedAt + '">' + relTime(agent.updatedAt) + '</span><span class="row-actions">' + waitingCmd + attachBtn + '</span>';
+              rowsEl.appendChild(row);
+            });
+            body.appendChild(card);
+          });
+        }
+        reposRoot.appendChild(section);
+      });
+
+      if (visibleFeatureCount === 0) {
+        empty.style.display = '';
+        empty.textContent = state.filter === 'all'
+          ? 'No features in progress.'
+          : 'No features match filter: ' + state.filter;
+      }
+
+      reposRoot.querySelectorAll('button.copy').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const text = btn.getAttribute('data-copy') || '';
+          if (!text) return;
+          const ok = await copyText(text);
+          showToast(ok ? 'Copied: ' + text : 'Copy failed');
+        };
+      });
+
+      reposRoot.querySelectorAll('button.attach').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const repoPath = btn.getAttribute('data-repo') || '';
+          const featureId = btn.getAttribute('data-feature') || '';
+          const agentId = btn.getAttribute('data-agent') || '';
+          if (!repoPath || !featureId || !agentId) return;
+          await requestAttach(repoPath, featureId, agentId);
+        };
+      });
+
+      document.querySelectorAll('button.pill-filter').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const next = btn.getAttribute('data-filter') || 'all';
+          state.filter = next;
+          localStorage.setItem('aigon.dashboard.filter', next);
+          render();
+        };
+      });
+    }
+
+    function refreshTimestamps() {
+      document.querySelectorAll('[data-updated]').forEach(n => { n.textContent = relTime(n.getAttribute('data-updated')); });
+      const generatedAt = (state.data && state.data.generatedAt) ? state.data.generatedAt : new Date().toISOString();
+      document.getElementById('updated-text').textContent = 'Updated ' + relTime(generatedAt);
+    }
+
+    function flattenStatuses(data) {
+      const map = new Map();
+      (data.repos || []).forEach(repo => {
+        (repo.features || []).forEach(feature => {
+          (feature.agents || []).forEach(agent => {
+            map.set(repo.path + ':' + feature.id + ':' + agent.id, { status: agent.status, cmd: agent.slashCommand });
+          });
+        });
+      });
+      return map;
+    }
+
+    async function poll() {
+      const previous = flattenStatuses(state.data || {});
+      try {
+        const res = await fetch('/api/status', { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const next = await res.json();
+        state.failures = 0;
+        const current = flattenStatuses(next);
+        current.forEach((v, k) => {
+          const prev = previous.get(k);
+          if (!prev) return;
+          if (prev.status !== 'waiting' && v.status === 'waiting') {
+            showToast('Agent is waiting', v.cmd ? 'Copy command' : null, v.cmd ? () => copyText(v.cmd).then(() => showToast('Copied: ' + v.cmd)) : null);
+          }
+          if (prev.status !== 'error' && v.status === 'error') showToast('Agent entered error state');
+        });
+        state.data = next;
+        render();
+      } catch (e) {
+        state.failures += 1;
+        setHealth();
+      }
+    }
+
+    render();
+    setInterval(refreshTimestamps, TS_MS);
+    setInterval(poll, POLL_MS);
+    setTimeout(poll, 400);
+  </script>
+</body>
+</html>`;
+}
+
+function escapeAppleScriptString(value) {
+    return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+async function captureDashboardScreenshot(url, outputPath, width, height) {
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+
+    let puppeteer = null;
+    try {
+        puppeteer = require('puppeteer');
+    } catch (e) {
+        try { puppeteer = require('puppeteer-core'); } catch (_) { /* ignore */ }
+    }
+
+    if (puppeteer) {
+        const browser = await puppeteer.launch({ headless: true });
+        try {
+            const page = await browser.newPage();
+            await page.setViewport({ width, height });
+            await page.goto(url, { waitUntil: 'networkidle2', timeout: 15000 });
+            await page.screenshot({ path: outputPath, fullPage: true });
+            return { method: 'puppeteer' };
+        } finally {
+            await browser.close();
+        }
+    }
+
+    if (process.platform !== 'darwin') {
+        throw new Error('Screenshot fallback requires macOS when Puppeteer is unavailable');
+    }
+
+    const escapedUrl = escapeAppleScriptString(url);
+    const scriptLines = [
+        'tell application "Safari" to activate',
+        `tell application "Safari" to open location "${escapedUrl}"`,
+        'delay 2.6',
+        'tell application "System Events"',
+        'tell process "Safari"',
+        'set frontmost to true',
+        'set position of front window to {0, 0}',
+        `set size of front window to {${width}, ${height}}`,
+        'end tell',
+        'end tell',
+        'delay 1.4'
+    ];
+    const args = [];
+    scriptLines.forEach(line => args.push('-e', line));
+    const scriptRun = spawnSync('osascript', args, { stdio: 'ignore' });
+    if (scriptRun.status !== 0) {
+        throw new Error('AppleScript fallback failed to control Safari window');
+    }
+
+    const shot = spawnSync('screencapture', ['-x', '-R', `0,0,${width},${height}`, outputPath], { stdio: 'ignore' });
+    if (shot.status !== 0) {
+        throw new Error('screencapture failed');
+    }
+    return { method: 'applescript' };
+}
+
 /**
  * Auto-detect project profile from project files
  * @returns {string} Profile name (web, api, ios, android, library, generic)
@@ -2994,6 +3594,7 @@ const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
     'agent-status',
     'status',
     'conductor',
+    'dashboard',
     'deploy',
 ]);
 
@@ -3060,6 +3661,7 @@ const COMMAND_ARG_HINTS = {
     'feedback-triage': '<ID> [--type <type>] [--severity <severity|none>] [--tags <csv|none>] [--status <status>] [--duplicate-of <ID|none>] [--action <keep|mark-duplicate|promote-feature|promote-research|wont-fix>] [--apply] [--yes]',
     'conduct': '<feature-id> [agents...] | status [feature-id] | stop [feature-id] | attach <feature-id> <agent>',
     'conductor': '<start|stop|status|add|remove|list|vscode-install|vscode-uninstall> [path]',
+    'dashboard': '[--port <N>] [--no-open] [--screenshot] [--output <path>] [--width <N>] [--height <N>]',
     'agent-status': '<implementing|waiting|submitted>',
     'status': '[ID]',
     'deploy': '[--preview]',
@@ -8370,6 +8972,153 @@ Branch: \`${soloBranch}\`
         console.log('  menubar-render     Output menubar plugin content (used by plugin)');
     },
 
+    'dashboard': async (args) => {
+        const options = parseCliOptions(args);
+        const portRaw = getOptionValue(options, 'port');
+        const port = portRaw !== undefined ? parseInt(String(portRaw), 10) : 4321;
+        if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+            console.error('❌ Invalid port. Use: --port <1-65535>');
+            process.exitCode = 1;
+            return;
+        }
+
+        const noOpen = getOptionValue(options, 'no-open') !== undefined;
+        const screenshot = getOptionValue(options, 'screenshot') !== undefined;
+        const output = String(getOptionValue(options, 'output') || path.join(process.cwd(), 'docs', 'assets', 'dashboard-screenshot.png'));
+        const widthRaw = getOptionValue(options, 'width');
+        const heightRaw = getOptionValue(options, 'height');
+        const width = widthRaw !== undefined ? parseInt(String(widthRaw), 10) : 1280;
+        const height = heightRaw !== undefined ? parseInt(String(heightRaw), 10) : 800;
+        if (!Number.isInteger(width) || !Number.isInteger(height) || width < 320 || height < 240) {
+            console.error('❌ Invalid dimensions. Use: --width <>=320 --height <>=240');
+            process.exitCode = 1;
+            return;
+        }
+
+        const http = require('http');
+        const host = '127.0.0.1';
+        const url = `http://localhost:${port}`;
+        const server = http.createServer((req, res) => {
+            const reqPath = (req.url || '/').split('?')[0];
+            if (reqPath === '/api/attach' && req.method === 'POST') {
+                let body = '';
+                req.on('data', chunk => { body += chunk.toString('utf8'); });
+                req.on('end', () => {
+                    let payload = {};
+                    try { payload = body ? JSON.parse(body) : {}; } catch (e) {
+                        res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
+                        res.end(JSON.stringify({ error: 'Invalid JSON body' }));
+                        return;
+                    }
+
+                    const featureId = String(payload.featureId || '').trim();
+                    const agentId = String(payload.agentId || '').trim();
+                    const repoPath = String(payload.repoPath || '').trim();
+                    if (!featureId || !agentId || agentId === 'solo') {
+                        res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
+                        res.end(JSON.stringify({ error: 'featureId and non-solo agentId are required' }));
+                        return;
+                    }
+
+                    const sessionName = buildTmuxSessionName(featureId, agentId);
+                    if (!tmuxSessionExists(sessionName)) {
+                        res.writeHead(409, { 'content-type': 'application/json; charset=utf-8' });
+                        res.end(JSON.stringify({ error: `tmux session not running: ${sessionName}` }));
+                        return;
+                    }
+
+                    try {
+                        const repoName = repoPath ? path.basename(repoPath) : path.basename(process.cwd());
+                        const tmuxTitle = `${repoName} F${String(featureId).padStart(2, '0')} ${agentId}`;
+                        openTerminalAppWithCommand(repoPath || process.cwd(), `tmux attach -t ${shellQuote(sessionName)}`, tmuxTitle);
+                        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+                        res.end(JSON.stringify({ ok: true, message: `Attached to ${sessionName}`, command: `tmux attach -t ${sessionName}` }));
+                    } catch (e) {
+                        res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+                        res.end(JSON.stringify({ error: `Failed to open terminal: ${e.message}` }));
+                    }
+                });
+                return;
+            }
+
+            if (reqPath === '/api/status') {
+                const payload = collectDashboardStatusData();
+                res.writeHead(200, {
+                    'content-type': 'application/json; charset=utf-8',
+                    'cache-control': 'no-store'
+                });
+                res.end(JSON.stringify(payload));
+                return;
+            }
+
+            if (reqPath === '/favicon.ico') {
+                res.writeHead(204);
+                res.end();
+                return;
+            }
+
+            const html = buildDashboardHtml(collectDashboardStatusData());
+            res.writeHead(200, {
+                'content-type': 'text/html; charset=utf-8',
+                'cache-control': 'no-store'
+            });
+            res.end(html);
+        });
+
+        await new Promise((resolve, reject) => {
+            server.once('error', reject);
+            server.listen(port, host, resolve);
+        }).catch((err) => {
+            if (err && err.code === 'EADDRINUSE') {
+                console.error(`❌ Port ${port} is already in use.`);
+                console.error('   Use: aigon dashboard --port <N>');
+                process.exitCode = 1;
+                return;
+            }
+            console.error(`❌ Failed to start dashboard: ${err.message}`);
+            process.exitCode = 1;
+        });
+
+        if (!server.listening) return;
+
+        if (screenshot) {
+            const healthy = await waitForHealthy(url, 15000, 400);
+            if (!healthy) {
+                console.error('❌ Dashboard did not become ready for screenshot capture.');
+                process.exitCode = 1;
+                await new Promise(r => server.close(r));
+                return;
+            }
+            try {
+                const result = await captureDashboardScreenshot(url, output, width, height);
+                console.log(`📸 Screenshot saved: ${output}`);
+                console.log(`   Capture method: ${result.method}`);
+            } catch (e) {
+                console.error(`❌ Screenshot failed: ${e.message}`);
+                process.exitCode = 1;
+                await new Promise(r => server.close(r));
+                return;
+            }
+            await new Promise(r => server.close(r));
+            return;
+        }
+
+        console.log(`✅ Dashboard running at ${url}`);
+        if (!noOpen) {
+            try { openInBrowser(url); } catch (e) { console.warn(`⚠️  Could not open browser: ${e.message}`); }
+        }
+        console.log('Press Ctrl+C to stop.');
+
+        let shuttingDown = false;
+        const stop = () => {
+            if (shuttingDown) return;
+            shuttingDown = true;
+            server.close(() => process.exit(0));
+        };
+        process.on('SIGINT', stop);
+        process.on('SIGTERM', stop);
+    },
+
     'terminal-focus': (args) => {
         // Parse --repo flag from args
         let repoFlag = null;
@@ -10480,6 +11229,7 @@ Conductor:
   conduct status [ID]               Show status of running conductor sessions
   conduct stop <ID>                 Stop all agents for a feature (reuses sessions-close)
   conduct attach <ID> <agent>       Attach to an agent's tmux session
+  dashboard [options]               Open local web dashboard (default: http://127.0.0.1:4321)
 
 Worktree:
   worktree-open <ID> [agent] [--terminal=<type>]
@@ -10541,6 +11291,8 @@ Examples:
   aigon conduct 42 cc gg cx            # Arena conductor: setup + spawn + monitor + eval
   aigon conduct status 42              # Check conductor status
   aigon conduct stop 42                # Stop all agents
+  aigon dashboard                      # Open live dashboard
+  aigon dashboard --screenshot         # Capture dashboard screenshot and exit
   aigon worktree-open 55 cc            # Open worktree in Warp with Claude CLI
   aigon worktree-open 55 --all         # Open all Fleet agents side-by-side
   aigon worktree-open 100 101 102      # Open features side-by-side (parallel)
