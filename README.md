@@ -405,10 +405,10 @@ Aigon command naming by agent:
 
 Examples for the same action:
 
-- Claude: `/aigon:feature-implement 42`
-- Gemini: `/aigon:feature-implement 42`
-- Cursor: `/aigon-feature-implement 42`
-- Codex: `/prompts:aigon-feature-implement 42`
+- Claude: `/aigon:feature-do 42`
+- Gemini: `/aigon:feature-do 42`
+- Cursor: `/aigon-feature-do 42`
+- Codex: `/prompts:aigon-feature-do 42`
 
 ---
 
@@ -432,8 +432,8 @@ Think of this as a second axis in addition to mode (Drive/Fleet/Autopilot/Swarm)
 | Task Type | Preferred Surface | Why |
 |---|---|---|
 | Spec authoring and refinement (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) | In-agent slash commands | Best for iterative back-and-forth on definitions and scope |
-| Execution with an active agent (`feature-implement`, `feature-review`, `research-conduct`, `research-synthesize`) | In-agent slash commands | Keeps context in the live session and avoids nested launches |
-| Orchestration and terminal ops (`init`, `install-agent`, `update`, `feature-setup`, `worktree-open`, `feature-done`, `feature-cleanup`) | CLI | Repo/worktree coordination, machine-level operations, scripting |
+| Execution with an active agent (`feature-do`, `feature-review`, `research-do`, `research-synthesize`) | In-agent slash commands | Keeps context in the live session and avoids nested launches |
+| Orchestration and terminal ops (`init`, `install-agent`, `update`, `feature-setup`, `worktree-open`, `feature-close`, `feature-cleanup`) | CLI | Repo/worktree coordination, machine-level operations, scripting |
 | Infra/config (`config`, `profile`, `proxy-setup`, `dev-server`, `conductor`) | CLI | Machine/project configuration and background services |
 
 ### Can I stay in one surface?
@@ -452,8 +452,8 @@ Aigon organises work into three lifecycles:
 
 | Lifecycle | Purpose | Commands |
 |-----------|---------|----------|
-| **Features** | Build and ship code | `feature-create` → `feature-prioritise` → `feature-setup` → `feature-implement` → `feature-eval` → `feature-done` |
-| **Research** | Investigate before building | `research-create` → `research-prioritise` → `research-setup` → `research-conduct` → `research-synthesize` → `research-done` |
+| **Features** | Build and ship code | `feature-create` → `feature-prioritise` → `feature-setup` → `feature-do` → `feature-eval` → `feature-close` |
+| **Research** | Investigate before building | `research-create` → `research-prioritise` → `research-setup` → `research-do` → `research-synthesize` → `research-close` |
 | **Feedback** | Capture and triage user input | `feedback-create` → `feedback-list` → `feedback-triage` |
 
 Each lifecycle can run in any of four modes:
@@ -482,14 +482,14 @@ The agent helps you write a spec, then:
 ```text
 /aigon:feature-prioritise jwt-auth          # Assigns ID (e.g., #07)
 /aigon:feature-setup 07                     # Creates branch, moves spec to in-progress
-/aigon:feature-implement 07                 # Agent reads spec and starts building
+/aigon:feature-do 07                 # Agent reads spec and starts building
 ```
 
 The agent works through the spec — creating middleware, adding token validation, writing tests. You review as it goes. When done:
 
 ```text
 /aigon:feature-eval 07                      # Code review checklist
-/aigon:feature-done 07                      # Merge to main
+/aigon:feature-close 07                      # Merge to main
 ```
 
 **Fast-track shortcut:** If you want to skip the ceremony, `feature-now` goes from idea to implementation in one step:
@@ -512,7 +512,7 @@ The agent works through the spec — creating middleware, adding token validatio
 In each agent's terminal, run:
 
 ```text
-/aigon:feature-implement 07
+/aigon:feature-do 07
 ```
 
 Each agent reads the same spec and builds its own implementation independently. When all agents have submitted, evaluate:
@@ -532,8 +532,8 @@ Each agent reads the same spec and builds its own implementation independently. 
 After evaluating, merge the winner and optionally adopt improvements from the losers:
 
 ```bash
-aigon feature-done 07 cc                   # Merge Claude's implementation
-aigon feature-done 07 cc --adopt all       # Merge + review diffs from gg and cx
+aigon feature-close 07 cc                   # Merge Claude's implementation
+aigon feature-close 07 cc --adopt all       # Merge + review diffs from gg and cx
 aigon feature-cleanup 07                   # Remove losing worktrees
 ```
 
@@ -543,7 +543,7 @@ aigon feature-cleanup 07                   # Remove losing worktrees
 
 ```text
 /aigon:feature-setup 07 cc
-/aigon:feature-implement 07 --autonomous
+/aigon:feature-do 07 --autonomous
 ```
 
 The agent enters an autonomous loop:
@@ -567,7 +567,7 @@ Review the result and finish:
 
 ```text
 /aigon:feature-eval 07
-/aigon:feature-done 07
+/aigon:feature-close 07
 ```
 
 See [autonomous-mode.md](docs/autonomous-mode.md) for configuration options (`--max-iterations`, validation commands, progress tracking).
@@ -584,7 +584,7 @@ aigon worktree-open 07 --all
 In each agent's terminal:
 
 ```text
-/aigon:feature-implement 07 --autonomous --auto-submit
+/aigon:feature-do 07 --autonomous --auto-submit
 ```
 
 ```text
@@ -598,7 +598,7 @@ Once all agents submit:
 
 ```text
 /aigon:feature-eval 07                     # Compare 3 passing implementations
-aigon feature-done 07 cc                   # Merge the winner
+aigon feature-close 07 cc                   # Merge the winner
 aigon feature-cleanup 07                   # Clean up the rest
 ```
 
@@ -609,13 +609,13 @@ aigon feature-cleanup 07                   # Clean up the rest
 ```text
 /aigon:research-create auth-strategy-mobile
 /aigon:research-prioritise auth-strategy-mobile   # Assigns ID (e.g., #03)
-/aigon:research-conduct 03
+/aigon:research-do 03
 ```
 
 The agent investigates the topic, writes findings to `docs/specs/research-topics/logs/`, and answers the questions defined in the topic doc.
 
 ```text
-/aigon:research-done 03
+/aigon:research-close 03
 ```
 
 ### Research: Fleet Mode (multiple agents)
@@ -632,14 +632,14 @@ The agent investigates the topic, writes findings to `docs/specs/research-topics
 In each agent pane:
 
 ```text
-/aigon:research-conduct 03
+/aigon:research-do 03
 ```
 
 Each agent writes its findings independently. Then synthesize:
 
 ```text
 /aigon:research-synthesize 03              # Compare findings, extract features
-/aigon:research-done 03
+/aigon:research-close 03
 ```
 
 ### Feedback Lifecycle
@@ -1074,15 +1074,15 @@ See the complete evaluation with detailed strengths/weaknesses analysis in [`doc
 After selecting a winner:
 
 ```bash
-aigon feature-done 55 cx
+aigon feature-close 55 cx
 aigon feature-cleanup 55 --push
 ```
 
 To adopt valuable improvements from losing agents (extra tests, error handling, edge cases):
 
 ```bash
-aigon feature-done 55 cx --adopt all        # Review diffs from all losers
-aigon feature-done 55 cx --adopt gg cu      # Review diffs from specific agents
+aigon feature-close 55 cx --adopt all        # Review diffs from all losers
+aigon feature-close 55 cx --adopt gg cu      # Review diffs from specific agents
 ```
 
 The `--adopt` flag prints diffs from each losing agent after merging the winner, so you can selectively apply their best contributions.
@@ -1099,9 +1099,9 @@ The `--adopt` flag prints diffs from each losing agent after merging the winner,
 | Research Prioritise | `aigon research-prioritise <name>` |
 | Research Setup | `aigon research-setup <ID> [agents...]` |
 | Research Open | `aigon research-open <ID>` |
-| Research Conduct | `aigon research-conduct <ID>` |
+| Research Conduct | `aigon research-do <ID>` |
 | Research Synthesize | `aigon research-synthesize <ID>` |
-| Research Done | `aigon research-done <ID> [--complete]` |
+| Research Done | `aigon research-close <ID> [--complete]` |
 
 ### Feature commands
 
@@ -1111,10 +1111,10 @@ The `--adopt` flag prints diffs from each losing agent after merging the winner,
 | Feature Now | `aigon feature-now <name>` (inbox match → prioritise + setup + implement; no match → create new) |
 | Feature Prioritise | `aigon feature-prioritise <name>` |
 | Feature Setup | `aigon feature-setup <ID> [agents...]` |
-| Feature Implement | `aigon feature-implement <ID> [--autonomous] [--auto-submit] [--no-auto-submit]` |
+| Feature Implement | `aigon feature-do <ID> [--autonomous] [--auto-submit] [--no-auto-submit]` |
 | Feature Eval | `aigon feature-eval <ID>` |
 | Feature Review | `aigon feature-review <ID>` |
-| Feature Done | `aigon feature-done <ID> [agent] [--adopt <agents...\|all>]` |
+| Feature Done | `aigon feature-close <ID> [agent] [--adopt <agents...\|all>]` |
 | Feature Cleanup | `aigon feature-cleanup <ID> [--push]` |
 | Worktree Open | `aigon worktree-open <ID> [agent] [--terminal=<type>]` |
 | Worktree Open (Fleet) | `aigon worktree-open <ID> --all` |
@@ -1139,7 +1139,7 @@ The `--adopt` flag prints diffs from each losing agent after merging the winner,
 
 ### Agent status commands
 
-Track live agent state via YAML front matter in implementation log files. Agents call these automatically as instructed by the `feature-implement` and `feature-submit` templates.
+Track live agent state via YAML front matter in implementation log files. Agents call these automatically as instructed by the `feature-do` and `feature-submit` templates.
 
 | Command | Usage |
 |---|---|
@@ -1239,19 +1239,19 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-setup <ID> [agents...]` | Setup Drive (branch/worktree) or Fleet |
 | `/aigon:next` (alias: `/aigon:n`) | Suggest the most likely next workflow command |
 | `/aigon:board` | Show Kanban board or list view |
-| `/aigon:feature-implement <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
+| `/aigon:feature-do <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon:feature-done <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
+| `/aigon:feature-close <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
 | `/aigon:feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
 | `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/aigon:research-create <name>` | Create a research topic |
 | `/aigon:research-prioritise <name>` | Prioritise a research topic |
 | `/aigon:research-setup <ID> [agents...]` | Setup Drive or Fleet research |
 | `/aigon:research-open <ID>` | Open Fleet research agents side-by-side |
-| `/aigon:research-conduct <ID>` | Write findings |
+| `/aigon:research-do <ID>` | Write findings |
 | `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
-| `/aigon:research-done <ID>` | Complete research topic |
+| `/aigon:research-close <ID>` | Complete research topic |
 | `/aigon:feedback-create <title>` | Create a feedback item |
 | `/aigon:feedback-list [filters...]` | List and filter feedback items |
 | `/aigon:feedback-triage <ID>` | Triage feedback with AI assistance |
@@ -1267,19 +1267,19 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-setup <ID> [agents...]` | Setup Drive (branch/worktree) or Fleet |
 | `/aigon:next` (alias: `/aigon:n`) | Suggest the most likely next workflow command |
 | `/aigon:board` | Show Kanban board or list view |
-| `/aigon:feature-implement <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
+| `/aigon:feature-do <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
 | `/aigon:feature-eval <ID>` | Generate review/comparison template |
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon:feature-done <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
+| `/aigon:feature-close <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
 | `/aigon:feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
 | `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/aigon:research-create <name>` | Create a research topic |
 | `/aigon:research-prioritise <name>` | Prioritise a research topic |
 | `/aigon:research-setup <ID> [agents...]` | Setup Drive or Fleet research |
 | `/aigon:research-open <ID>` | Open Fleet research agents side-by-side |
-| `/aigon:research-conduct <ID>` | Write findings |
+| `/aigon:research-do <ID>` | Write findings |
 | `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
-| `/aigon:research-done <ID>` | Complete research topic |
+| `/aigon:research-close <ID>` | Complete research topic |
 | `/aigon:feedback-create <title>` | Create a feedback item |
 | `/aigon:feedback-list [filters...]` | List and filter feedback items |
 | `/aigon:feedback-triage <ID>` | Triage feedback with AI assistance |
@@ -1295,19 +1295,19 @@ The command set is consistent across agents. Differences are only command prefix
 | `/prompts:aigon-feature-setup <ID> [agents...]` | Setup Drive (branch/worktree) or Fleet |
 | `/prompts:aigon-next` (alias: `/prompts:aigon-n`) | Suggest the most likely next workflow command |
 | `/prompts:aigon-board` | Show Kanban board or list view |
-| `/prompts:aigon-feature-implement <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
+| `/prompts:aigon-feature-do <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
 | `/prompts:aigon-feature-eval <ID>` | Generate review/comparison template |
 | `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
-| `/prompts:aigon-feature-done <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
+| `/prompts:aigon-feature-close <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
 | `/prompts:aigon-feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
 | `/prompts:aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/prompts:aigon-research-create <name>` | Create a research topic |
 | `/prompts:aigon-research-prioritise <name>` | Prioritise a research topic |
 | `/prompts:aigon-research-setup <ID> [agents...]` | Setup Drive or Fleet research |
 | `/prompts:aigon-research-open <ID>` | Open Fleet research agents side-by-side |
-| `/prompts:aigon-research-conduct <ID>` | Write findings |
+| `/prompts:aigon-research-do <ID>` | Write findings |
 | `/prompts:aigon-research-synthesize <ID>` | Compare and synthesize all findings |
-| `/prompts:aigon-research-done <ID>` | Complete research topic |
+| `/prompts:aigon-research-close <ID>` | Complete research topic |
 | `/prompts:aigon-feedback-create <title>` | Create a feedback item |
 | `/prompts:aigon-feedback-list [filters...]` | List and filter feedback items |
 | `/prompts:aigon-feedback-triage <ID>` | Triage feedback with AI assistance |
@@ -1323,19 +1323,19 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon-feature-setup <ID> [agents...]` | Setup Drive (branch/worktree) or Fleet |
 | `/aigon-next` (alias: `/aigon-n`) | Suggest the most likely next workflow command |
 | `/aigon-board` | Show Kanban board or list view |
-| `/aigon-feature-implement <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
+| `/aigon-feature-do <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
 | `/aigon-feature-eval <ID>` | Generate review/comparison template |
 | `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon-feature-done <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
+| `/aigon-feature-close <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
 | `/aigon-feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
 | `/aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/aigon-research-create <name>` | Create a research topic |
 | `/aigon-research-prioritise <name>` | Prioritise a research topic |
 | `/aigon-research-setup <ID> [agents...]` | Setup Drive or Fleet research |
 | `/aigon-research-open <ID>` | Open Fleet research agents side-by-side |
-| `/aigon-research-conduct <ID>` | Write findings |
+| `/aigon-research-do <ID>` | Write findings |
 | `/aigon-research-synthesize <ID>` | Compare and synthesize all findings |
-| `/aigon-research-done <ID>` | Complete research topic |
+| `/aigon-research-close <ID>` | Complete research topic |
 | `/aigon-feedback-create <title>` | Create a feedback item |
 | `/aigon-feedback-list [filters...]` | List and filter feedback items |
 | `/aigon-feedback-triage <ID>` | Triage feedback with AI assistance |

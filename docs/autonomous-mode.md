@@ -9,7 +9,7 @@ Named after [the original pattern by Geoffrey Huntley](https://ghuntley.com/ralp
 ## How it works
 
 ```
-aigon feature-implement <ID> --autonomous
+aigon feature-do <ID> --autonomous
 ```
 
 Each iteration:
@@ -118,7 +118,7 @@ write spec → write failing test → run autonomous mode → tests go green
 
 **Step 3**: Run autonomous mode:
 ```bash
-aigon feature-implement 36 --autonomous --max-iterations=4
+aigon feature-do 36 --autonomous --max-iterations=4
 ```
 
 The agent reads the test, implements code to make it pass, commits, and autonomous mode runs the test. If it still fails, the error output becomes context for the next iteration.
@@ -165,7 +165,7 @@ aigon feature-validate 36 --no-update  # evaluate without writing checkboxes
 ## Options
 
 ```bash
-aigon feature-implement <ID> --autonomous [options]
+aigon feature-do <ID> --autonomous [options]
 
 --max-iterations=N    Max loop iterations (default: 5, or set in .aigon/config.json)
 --agent=<id>          Which agent CLI to use: cc, gg, cx, cu (default: cc)
@@ -230,7 +230,7 @@ If your Playwright config has `webServer` with `reuseExistingServer: true`, star
 npm run dev
 
 # Terminal 2
-aigon feature-implement 36 --autonomous
+aigon feature-do 36 --autonomous
 ```
 
 Each validation reuses the running server instead of cold-starting it — much faster.
@@ -240,7 +240,7 @@ Each validation reuses the running server instead of cold-starting it — much f
 Before running autonomous mode for real, check what would execute:
 
 ```bash
-aigon feature-implement 36 --autonomous --dry-run
+aigon feature-do 36 --autonomous --dry-run
 ```
 
 Shows the full prompt, validation commands, and criteria list without touching the codebase.
@@ -279,7 +279,7 @@ Feature spec `## Acceptance Criteria`:
 Run:
 
 ```bash
-aigon feature-implement 36 --autonomous --max-iterations=4
+aigon feature-do 36 --autonomous --max-iterations=4
 ```
 
 Expected: 2–3 iterations. Iteration 1 typically fails on missing `data-testid` or wrong test selector. Iteration 2 fixes it. Iteration 3 (if needed) cleans up edge cases.

@@ -47,7 +47,7 @@ Without `--push`, branches are only deleted locally.
 ## When to Use
 
 ### After Fleet Completion
-After running `aigon feature-done 55 <agent>` to merge the winning implementation, clean up the losing implementations:
+After running `aigon feature-close 55 <agent>` to merge the winning implementation, clean up the losing implementations:
 
 ```bash
 aigon feature-cleanup 55

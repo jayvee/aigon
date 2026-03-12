@@ -40,7 +40,7 @@ This will:
 
 Next steps:
 ```bash
-{{CMD_PREFIX}}research-conduct 05     # Conduct the research
+{{CMD_PREFIX}}research-do 05     # Conduct the research
 ```
 
 ## Fleet Mode
@@ -75,7 +75,7 @@ Next steps:
 
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
 
-- **Drive mode**: `{{CMD_PREFIX}}research-conduct <ID>`
+- **Drive mode**: `{{CMD_PREFIX}}research-do <ID>`
 - **Fleet mode**: `{{CMD_PREFIX}}research-open <ID>`
 
 ARGUMENTS: {{ARG_SYNTAX}}
