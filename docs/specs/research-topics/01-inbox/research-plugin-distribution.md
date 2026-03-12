@@ -247,7 +247,7 @@ aigon feature-eval 55
   -> Reads all 3 implementations
   -> Generates comparison template
 
-aigon feature-done 55 cx
+aigon feature-close 55 cx
   -> Merges winner's branch
   -> Archives logs (selected vs alternatives)
   -> Cleans up worktree
@@ -266,7 +266,7 @@ This workflow spans multiple agents, multiple git branches, multiple directories
 
 ### Risks of Plugin Migration
 
-1. **Fragmentation of maintenance**: Updating `templates/generic/commands/feature-implement.md` currently propagates to all 4 agents via `aigon update`. Per-agent plugins need separate release cycles.
+1. **Fragmentation of maintenance**: Updating `templates/generic/commands/feature-do.md` currently propagates to all 4 agents via `aigon update`. Per-agent plugins need separate release cycles.
 2. **Loss of cross-agent identity**: Aigon's arena mode only makes sense as a unified concept. Per-agent plugins obscure this.
 3. **Plugin sandbox restrictions**: Aigon creates git worktrees, spawns terminal sessions, writes to arbitrary project directories, and modifies agent settings. Plugin sandboxes may restrict these operations.
 4. **Dependency inversion**: Today Aigon controls installation. With plugins, each agent's plugin system controls installation, and Aigon loses ability to ensure consistent cross-agent setup.
@@ -313,8 +313,8 @@ These shims add no logic. They are discovery vehicles.
 | `aigon config` | Yes | No |
 | `aigon feature-create` | Yes (core logic) | Yes (thin tool) |
 | `aigon feature-setup` | Yes (core logic) | Yes (thin tool) |
-| `aigon feature-implement` | Yes (core logic) | Yes (thin tool) |
-| `aigon feature-done` | Yes (core logic) | Yes (thin tool) |
+| `aigon feature-do` | Yes (core logic) | Yes (thin tool) |
+| `aigon feature-close` | Yes (core logic) | Yes (thin tool) |
 | `aigon feature-eval` | Yes (core logic) | Yes (thin tool) |
 | `aigon feature-list` | Yes (core logic) | Yes (thin tool) |
 | `aigon worktree-open` | Yes (core logic) | Yes (thin tool) |

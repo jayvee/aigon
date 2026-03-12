@@ -60,7 +60,7 @@ function openInEditor(filePath) {
  *
  * Returns { detected: boolean, agentId: string|null, agentName: string|null }
  *
- * This shared helper is used by shell-launch commands (e.g. feature-implement)
+ * This shared helper is used by shell-launch commands (e.g. feature-do)
  * to avoid spawning nested agent sessions.
  */
 function detectActiveAgentSession() {
@@ -129,7 +129,7 @@ function detectActiveAgentSession() {
  * Print a warning when an agent-required command is run from a bare shell.
  * No-ops if running inside a recognised agent session.
  *
- * @param {string} commandName  e.g. 'feature-implement'
+ * @param {string} commandName  e.g. 'feature-do'
  * @param {string|undefined} id  The feature/research ID (for the suggested command)
  */
 function printAgentContextWarning(commandName, id) {
@@ -137,7 +137,7 @@ function printAgentContextWarning(commandName, id) {
     if (session.detected) return;
 
     const idPart = id ? ` ${id}` : '';
-    const hasRalph = commandName === 'feature-implement';
+    const hasRalph = commandName === 'feature-do';
 
     console.log('');
     console.log(`⚠️  This command is meant to run inside an AI agent session.`);
@@ -2335,16 +2335,16 @@ function buildAgentCommand(wt, taskType = 'implement') {
  * Build the agent CLI command string for research conduct.
  * @param {string} agentId - Agent ID (cc, gg, cx, cu)
  * @param {string} researchId - Research ID (padded, e.g., "05")
- * @returns {string} Command string to run the agent CLI with research-conduct
+ * @returns {string} Command string to run the agent CLI with research-do
  */
 function buildResearchAgentCommand(agentId, researchId) {
     const cliConfig = getAgentCliConfig(agentId);
     const agentConfig = loadAgentConfig(agentId);
 
     // Research commands use the agent's CMD_PREFIX placeholder
-    // e.g., "/aigon:research-conduct" for Claude/Gemini, "/aigon-research-conduct" for Cursor
+    // e.g., "/aigon:research-do" for Claude/Gemini, "/aigon-research-do" for Cursor
     const cmdPrefix = agentConfig?.placeholders?.CMD_PREFIX || '/aigon:';
-    const prompt = `${cmdPrefix}research-conduct ${researchId}`;
+    const prompt = `${cmdPrefix}research-do ${researchId}`;
 
     // Unset CLAUDECODE to prevent "nested session" error when launched from a Claude Code terminal
     const prefix = cliConfig.command === 'claude' ? 'unset CLAUDECODE && ' : '';
@@ -3937,7 +3937,7 @@ function extractDescription(content) {
 
 // Commands that should not be autonomously invoked by the agent
 const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
-    'feature-done',
+    'feature-close',
     'feature-cleanup',
     'feature-validate',
     'agent-status',
@@ -3956,19 +3956,22 @@ const COMMAND_ALIASES = {
     'afn':  'feature-now',
     'afp':  'feature-prioritise',
     'afse': 'feature-setup',
-    'afi':  'feature-implement',
+    'afd':  'feature-do',
     'afs':  'feature-submit',
     'afe':  'feature-eval',
     'afr':  'feature-review',
-    'afd':  'feature-done',
+    'afcl': 'feature-close',
+    'afap': 'feature-autopilot',
     'ab':   'board',
     'arc':  'research-create',
     'arp':  'research-prioritise',
     'arse': 'research-setup',
     'aro':  'research-open',
-    'ard':  'research-conduct',
+    'ard':  'research-do',
     'ars':  'research-synthesize',
-    'ardn': 'research-done',
+    'arcl': 'research-close',
+    'arsb': 'research-submit',
+    'arap': 'research-autopilot',
     'afbc': 'feedback-create',
     'afbl': 'feedback-list',
     'afbt': 'feedback-triage',
@@ -3991,11 +3994,11 @@ const COMMAND_ARG_HINTS = {
     'feature-now': '<existing-feature-name> OR <feature-description>',
     'feature-prioritise': '<feature-name or letter>',
     'feature-setup': '<ID> [agents...]',
-    'feature-implement': '<ID> [--agent=<cc|gg|cx|cu>] [--autonomous] [--max-iterations=N] [--auto-submit] [--no-auto-submit] [--dry-run]',
+    'feature-do': '<ID> [--agent=<cc|gg|cx|cu>] [--autonomous] [--max-iterations=N] [--auto-submit] [--no-auto-submit] [--dry-run]',
     'feature-validate': '<ID> [--dry-run] [--no-update]',
     'feature-eval': '<ID> [--allow-same-model-judge]',
     'feature-review': '<ID>',
-    'feature-done': '<ID> [agent] [--adopt <agents...|all>]',
+    'feature-close': '<ID> [agent] [--adopt <agents...|all>]',
     'feature-cleanup': '<ID> [--push]',
     'board': '[--list] [--features] [--research] [--active] [--all] [--inbox] [--backlog] [--done] [--no-actions]',
     'worktree-open': '[ID] [agent]',
@@ -4003,13 +4006,15 @@ const COMMAND_ARG_HINTS = {
     'research-create': '<topic-name>',
     'research-prioritise': '<topic-name or letter>',
     'research-setup': '<ID> [agents...]',
-    'research-conduct': '<ID>',
+    'research-do': '<ID>',
+    'research-submit': '',
     'research-synthesize': '<ID>',
-    'research-done': '<ID>',
+    'research-close': '<ID>',
+    'research-autopilot': '<research-id> [agents...] | status [research-id] | stop [research-id]',
     'feedback-create': '<title>',
     'feedback-list': '[--inbox|--triaged|--actionable|--done|--wont-fix|--duplicate|--all] [--type <type>] [--severity <severity>] [--tag <tag>]',
     'feedback-triage': '<ID> [--type <type>] [--severity <severity|none>] [--tags <csv|none>] [--status <status>] [--duplicate-of <ID|none>] [--action <keep|mark-duplicate|promote-feature|promote-research|wont-fix>] [--apply] [--yes]',
-    'conduct': '<feature-id> [agents...] | status [feature-id] | stop [feature-id] | attach <feature-id> <agent>',
+    'feature-autopilot': '<feature-id> [agents...] | status [feature-id] | stop [feature-id] | attach <feature-id> <agent>',
     'conductor': '<start|stop|status|add|remove|list|vscode-install|vscode-uninstall> [path]',
     'radar': '<start|stop|status|install|uninstall|add|remove|list|open|menubar-install|menubar-uninstall|menubar-render> [path]',
     'dashboard': '[--port <N>] [--no-open] [--screenshot] [--output <path>] [--width <N>] [--height <N>]',
@@ -5047,11 +5052,11 @@ function runRalphCommand(args) {
     const options = parseCliOptions(args);
     const id = options._[0];
     if (!id) {
-        console.error(`Usage: aigon feature-implement <feature-id> --autonomous [--max-iterations=N] [--agent=<id>] [--auto-submit] [--no-auto-submit] [--dry-run]`);
+        console.error(`Usage: aigon feature-do <feature-id> --autonomous [--max-iterations=N] [--agent=<id>] [--auto-submit] [--no-auto-submit] [--dry-run]`);
         console.error(`\nExamples:`);
-        console.error(`  aigon feature-implement 16 --autonomous`);
-        console.error(`  aigon feature-implement 16 --autonomous --max-iterations=8 --agent=cx`);
-        console.error(`  aigon feature-implement 16 --autonomous --auto-submit   # auto-submit on success`);
+        console.error(`  aigon feature-do 16 --autonomous`);
+        console.error(`  aigon feature-do 16 --autonomous --max-iterations=8 --agent=cx`);
+        console.error(`  aigon feature-do 16 --autonomous --auto-submit   # auto-submit on success`);
         process.exitCode = 1;
         return;
     }
@@ -5141,7 +5146,7 @@ function runRalphCommand(args) {
         }
     }
 
-    // Write auto-submit marker so the feature-implement skill template knows
+    // Write auto-submit marker so the feature-do skill template knows
     // to skip manual verification gates and auto-invoke feature-submit.
     if (autoSubmitFlagExplicit !== undefined && noAutoSubmitFlagExplicit === undefined) {
         const markerDir = path.join(process.cwd(), '.aigon');
@@ -5383,7 +5388,7 @@ function runRalphCommand(args) {
             if (isFleetMode) {
                 console.log(`   Next: return to main repo and run: aigon feature-eval ${featureNum}`);
             } else {
-                console.log(`   Next: run: aigon feature-done ${featureNum}`);
+                console.log(`   Next: run: aigon feature-close ${featureNum}`);
             }
         } else {
             if (autoSubmit && dryRun) {
@@ -6365,20 +6370,20 @@ const commands = {
             const firstAgent = agentIds[0];
             const firstAgentConfig = loadAgentConfig(firstAgent);
             const cmdPrefix = firstAgentConfig?.placeholders?.CMD_PREFIX || '/aigon:';
-            console.log(`     [Open each agent terminal] ${cmdPrefix}research-conduct ${researchNum}`);
-            console.log(`\n   When done: aigon research-done ${researchNum}`);
+            console.log(`     [Open each agent terminal] ${cmdPrefix}research-do ${researchNum}`);
+            console.log(`\n   When all agents finish: aigon research-synthesize ${researchNum}`);
         } else {
             // Drive mode: Just move to in-progress
             console.log(`\n🚗 Drive mode. Research moved to in-progress.`);
             console.log(`📋 Topic: ./docs/specs/research-topics/03-in-progress/${found.file}`);
-            console.log(`\n💡 Next: Run agent with /aigon-research-conduct ${researchNum}`);
-            console.log(`   When done: aigon research-done ${researchNum}`);
+            console.log(`\n💡 Next: Run agent with /aigon-research-do ${researchNum}`);
+            console.log(`   When done: aigon research-close ${researchNum}`);
         }
     },
-    'research-conduct': (args) => {
+    'research-do': (args) => {
         const id = args[0];
-        printAgentContextWarning('research-conduct', id);
-        if (!id) return console.error("Usage: aigon research-conduct <ID>\n\nRun this after 'aigon research-setup <ID>'\n\nExamples:\n  aigon research-conduct 05     # In Drive mode\n  aigon research-conduct 05     # In Fleet mode (writes to your findings file)");
+        printAgentContextWarning('research-do', id);
+        if (!id) return console.error("Usage: aigon research-do <ID>\n\nRun this after 'aigon research-setup <ID>'\n\nExamples:\n  aigon research-do 05     # In Drive mode\n  aigon research-do 05     # In Fleet mode (writes to your findings file)");
 
         // Find the research topic
         let found = findFile(PATHS.research, id, ['03-in-progress']);
@@ -6419,26 +6424,26 @@ const commands = {
             console.log(`   2. Write your findings to YOUR findings file only`);
             console.log(`   3. Do NOT modify other agents' files or the main doc`);
             console.log(`\n⚠️  IMPORTANT:`);
-            console.log(`   - Do NOT run 'aigon research-done' from an agent session`);
-            console.log(`   - The user will run 'aigon research-done ${num}' to synthesize`);
+            console.log(`   - Do NOT run 'aigon research-close' from an agent session`);
+            console.log(`   - The user will run 'aigon research-synthesize ${num}' after all findings are submitted`);
         } else {
             console.log(`\n📝 Next Steps:`);
             console.log(`   1. Read the research topic`);
             console.log(`   2. Conduct research based on questions and scope`);
             console.log(`   3. Write findings to the ## Findings section of the topic file`);
             console.log(`   4. Include sources and recommendation`);
-            console.log(`\n   When done: aigon research-done ${num}`);
+            console.log(`\n   When done: aigon research-close ${num}`);
         }
     },
     'research-synthesize': (args) => {
         const id = args[0];
         printAgentContextWarning('research-synthesize', id);
     },
-    'research-done': (args) => {
+    'research-close': (args) => {
         const id = args[0];
         const forceComplete = args.includes('--complete');
 
-        if (!id) return console.error("Usage: aigon research-done <ID> [--complete]\n\nOptions:\n  --complete  Move directly to done without showing summary");
+        if (!id) return console.error("Usage: aigon research-close <ID> [--complete]\n\nOptions:\n  --complete  Move directly to done without showing summary");
 
         const found = findFile(PATHS.research, id, ['03-in-progress']);
         if (!found) return console.error(`❌ Could not find research "${id}" in in-progress.`);
@@ -6477,7 +6482,7 @@ const commands = {
             console.log(`\n💡 To synthesize findings with an agent:`);
             console.log(`   /aigon-research-synthesize ${researchNum}`);
             console.log(`\n   Or to complete without synthesis:`);
-            console.log(`   aigon research-done ${researchNum} --complete`);
+            console.log(`   aigon research-close ${researchNum} --complete`);
             return;
         }
 
@@ -6491,6 +6496,78 @@ const commands = {
             console.log(`\n✅ Research ${researchNum} complete! (Drive mode)`);
         }
     },
+    'research-submit': (args) => {
+        const id = args[0];
+        const agentArg = args[1];
+        printAgentContextWarning('research-submit', id);
+
+        if (!id) {
+            return console.error(
+                "Usage: aigon research-submit <ID> [agent]\n\n" +
+                "Signal that research findings are complete.\n\n" +
+                "Examples:\n" +
+                "  aigon research-submit 05 cc   # Mark cc's findings as submitted\n" +
+                "  /aigon:research-submit 05     # Inside agent session: show instructions"
+            );
+        }
+
+        const found = findFile(PATHS.research, id, ['03-in-progress']);
+        if (!found) return console.error(`❌ Could not find research "${id}" in in-progress.`);
+
+        const match = found.file.match(/^research-(\d+)-(.*)\.md$/);
+        if (!match) return console.warn("⚠️  Could not parse filename.");
+        const [_, researchNum] = match;
+
+        // Determine agent: from arg or try to auto-detect from findings files
+        const logsDir = path.join(PATHS.research.root, 'logs');
+        let agentId = agentArg;
+
+        if (!agentId) {
+            // Try to detect from available findings files (single agent = auto-select)
+            if (fs.existsSync(logsDir)) {
+                const files = fs.readdirSync(logsDir);
+                const findingsFiles = files.filter(f =>
+                    f.startsWith(`research-${researchNum}-`) && f.endsWith('-findings.md')
+                );
+                if (findingsFiles.length === 1) {
+                    const agentMatch = findingsFiles[0].match(/^research-\d+-(\w+)-findings\.md$/);
+                    if (agentMatch) agentId = agentMatch[1];
+                } else if (findingsFiles.length > 1) {
+                    return console.error(
+                        `❌ Multiple agents found. Specify which agent to submit:\n` +
+                        findingsFiles.map(f => {
+                            const m = f.match(/^research-\d+-(\w+)-findings\.md$/);
+                            return `   aigon research-submit ${researchNum} ${m ? m[1] : '?'}`;
+                        }).join('\n')
+                    );
+                }
+            }
+        }
+
+        if (!agentId) {
+            return console.error(`❌ Could not detect agent. Specify: aigon research-submit ${researchNum} <agent>`);
+        }
+
+        const findingsFile = path.join(logsDir, `research-${researchNum}-${agentId}-findings.md`);
+        if (!fs.existsSync(findingsFile)) {
+            return console.error(`❌ Findings file not found: research-${researchNum}-${agentId}-findings.md\n\nRun 'aigon research-setup ${researchNum} ${agentId}' first.`);
+        }
+
+        let content = fs.readFileSync(findingsFile, 'utf8');
+        const nowIso = new Date().toISOString();
+        const newFrontMatter = `---\nstatus: submitted\nupdated: ${nowIso}\n---\n`;
+
+        if (content.startsWith('---\n')) {
+            content = content.replace(/^---\n[\s\S]*?\n---\n/, newFrontMatter);
+        } else {
+            content = newFrontMatter + '\n' + content;
+        }
+
+        fs.writeFileSync(findingsFile, content);
+        console.log(`✅ Research ${researchNum} findings submitted (${agentId})`);
+        console.log(`   File: docs/specs/research-topics/logs/research-${researchNum}-${agentId}-findings.md`);
+    },
+
     'research-open': (args) => {
         const id = args[0];
         let terminalOverride = null;
@@ -6538,7 +6615,7 @@ const commands = {
         }
 
         if (findingsFiles.length === 0) {
-            return console.error(`❌ Research ${paddedId} is not in Fleet mode.\n\nTo start Fleet research:\n  aigon research-setup ${paddedId} cc gg cx\n\nFor Drive research, open a terminal manually and run:\n  /aigon:research-conduct ${paddedId}`);
+            return console.error(`❌ Research ${paddedId} is not in Fleet mode.\n\nTo start Fleet research:\n  aigon research-setup ${paddedId} cc gg cx\n\nFor Drive research, open a terminal manually and run:\n  /aigon:research-do ${paddedId}`);
         }
 
         // Extract agent IDs from findings filenames
@@ -6788,7 +6865,7 @@ const commands = {
         console.log(`   Log:  ./docs/specs/features/logs/${logName}`);
         console.log(`   Branch: ${branchName}`);
         console.log(`\n📝 Next: Write the spec, then implement.`);
-        console.log(`   When done: aigon feature-done ${paddedId}`);
+        console.log(`   When done: aigon feature-close ${paddedId}`);
     },
     'feature-setup': (args) => {
         const name = args[0];
@@ -6883,7 +6960,7 @@ const commands = {
             }
 
             console.log(`\n🚗 Drive mode. Ready to implement in current directory.`);
-            console.log(`   When done: aigon feature-done ${num}`);
+            console.log(`   When done: aigon feature-close ${num}`);
         } else {
             // Fleet/worktree mode: Create worktrees
             const wtBase = getWorktreeBase();
@@ -7105,8 +7182,8 @@ const commands = {
                 if (useTmux) {
                     console.log(`   aigon worktree-open ${num} --terminal=tmux    # Attaches to the tmux session`);
                 }
-                console.log(`\n   Or manually: Open the worktree and run /aigon-feature-implement ${num}`);
-                console.log(`   When done: aigon feature-done ${num}`);
+                console.log(`\n   Or manually: Open the worktree and run /aigon-feature-do ${num}`);
+                console.log(`   When done: aigon feature-close ${num}`);
             } else {
                 console.log(`\n🏁 Fleet started with ${agentIds.length} agents!`);
                 console.log(`\n📂 Worktrees created:`);
@@ -7122,7 +7199,7 @@ const commands = {
                 agentIds.forEach(agentId => {
                     console.log(`   aigon worktree-open ${num} ${agentId}`);
                 });
-                console.log(`\n   Or manually: Open each worktree and run /aigon-feature-implement ${num}`);
+                console.log(`\n   Or manually: Open each worktree and run /aigon-feature-do ${num}`);
                 console.log(`   When done: aigon feature-eval ${num}`);
             }
         }
@@ -7130,22 +7207,22 @@ const commands = {
         // Run post-hook (won't fail the command)
         runPostHook('feature-setup', hookContext);
     },
-    'feature-implement': (args) => {
+    'feature-do': (args) => {
         const options = parseCliOptions(args);
         const id = options._[0];
         const ralphRequested = getOptionValue(options, 'autonomous') || getOptionValue(options, 'ralph');
         if (ralphRequested) {
             return runRalphCommand(args);
         }
-        printAgentContextWarning('feature-implement', id);
+        printAgentContextWarning('feature-do', id);
         if (!id) return console.error(
-            "Usage: aigon feature-implement <ID> [--agent=<cc|gg|cx|cu>]\n\n" +
+            "Usage: aigon feature-do <ID> [--agent=<cc|gg|cx|cu>]\n\n" +
             "Run this after 'aigon feature-setup <ID>'\n\n" +
             "Examples:\n" +
-            "  aigon feature-implement 55             # Launch default agent (cc) from shell\n" +
-            "  aigon feature-implement 55 --agent=cx  # Launch Codex from shell\n" +
-            "  aigon feature-implement 55 --autonomous # Run Autopilot autonomous loop\n" +
-            "  /aigon:feature-implement 55            # Inside agent session: show instructions"
+            "  aigon feature-do 55             # Launch default agent (cc) from shell\n" +
+            "  aigon feature-do 55 --agent=cx  # Launch Codex from shell\n" +
+            "  aigon feature-do 55 --autonomous # Run Autopilot autonomous loop\n" +
+            "  /aigon:feature-do 55            # Inside agent session: show instructions"
         );
 
         // Find the feature spec
@@ -7331,16 +7408,16 @@ const commands = {
 
         if (mode === 'fleet') {
             console.log(`\n⚠️  IMPORTANT:`);
-            console.log(`   - Do NOT run 'aigon feature-done' from a worktree`);
+            console.log(`   - Do NOT run 'aigon feature-close' from a worktree`);
             console.log(`   - Return to main repo when done`);
             console.log(`   - Run 'aigon feature-eval ${num}' to compare implementations`);
         } else if (mode === 'drive-wt') {
             console.log(`\n⚠️  IMPORTANT:`);
-            console.log(`   - Do NOT run 'aigon feature-done' from a worktree`);
+            console.log(`   - Do NOT run 'aigon feature-close' from a worktree`);
             console.log(`   - Return to main repo when done`);
-            console.log(`   - Run 'aigon feature-done ${num}' from the main repo`);
+            console.log(`   - Run 'aigon feature-close ${num}' from the main repo`);
         } else {
-            console.log(`\n   When done: aigon feature-done ${num}`);
+            console.log(`\n   When done: aigon feature-close ${num}`);
         }
     },
     'feature-validate': (args) => {
@@ -7691,19 +7768,19 @@ Branch: \`${soloBranch}\`
             console.log(`\n🔍 Review each implementation, then pick a winner.`);
             console.log(`\n⚠️  TO MERGE THE WINNER INTO MAIN, run:`);
             worktrees.forEach(w => {
-                console.log(`   aigon feature-done ${num} ${w.agent}    # merge ${w.name}'s implementation`);
+                console.log(`   aigon feature-close ${num} ${w.agent}    # merge ${w.name}'s implementation`);
             });
         } else {
             console.log(`\n🔍 Review the implementation and complete the evaluation checklist.`);
             console.log(`\n⚠️  TO MERGE INTO MAIN, run:`);
-            console.log(`   aigon feature-done ${num}`);
+            console.log(`   aigon feature-close ${num}`);
         }
     },
     'feature-review': (args) => {
         const id = args[0];
         printAgentContextWarning('feature-review', id);
     },
-    'feature-done': (args) => {
+    'feature-close': (args) => {
         const keepBranch = args.includes('--keep-branch');
 
         // Parse --adopt flag and its trailing values (e.g. --adopt cc cu, --adopt all)
@@ -7715,7 +7792,7 @@ Branch: \`${soloBranch}\`
                 adoptAgents.push(args[i].toLowerCase());
             }
             if (adoptAgents.length === 0) {
-                return console.error("Usage: --adopt requires at least one agent code or 'all'\n  Example: aigon feature-done 12 cx --adopt cc cu");
+                return console.error("Usage: --adopt requires at least one agent code or 'all'\n  Example: aigon feature-close 12 cx --adopt cc cu");
             }
         }
 
@@ -7727,11 +7804,11 @@ Branch: \`${soloBranch}\`
         }
         const name = positionalArgs[0];
         const agentId = positionalArgs[1]; // Optional - if provided, multi-agent mode
-        if (!name) return console.error("Usage: aigon feature-done <ID> [agent] [--adopt <agents...|all>] [--keep-branch]\n  Without agent: Drive mode (merges feature-ID-desc)\n  With agent: Fleet mode (merges feature-ID-agent-desc, cleans up worktree)\n  --adopt: print diffs from losing agents for selective adoption (Fleet only)\n  --keep-branch: Don't delete the local branch after merge");
+        if (!name) return console.error("Usage: aigon feature-close <ID> [agent] [--adopt <agents...|all>] [--keep-branch]\n  Without agent: Drive mode (merges feature-ID-desc)\n  With agent: Fleet mode (merges feature-ID-agent-desc, cleans up worktree)\n  --adopt: print diffs from losing agents for selective adoption (Fleet only)\n  --keep-branch: Don't delete the local branch after merge");
 
         // Validate --adopt is only used in arena (multi-agent) mode
         if (adoptAgents.length > 0 && !agentId) {
-            return console.error("❌ --adopt is only available in Fleet (multi-agent) mode.\n   Usage: aigon feature-done <ID> <winning-agent> --adopt <agents...|all>");
+            return console.error("❌ --adopt is only available in Fleet (multi-agent) mode.\n   Usage: aigon feature-close <ID> <winning-agent> --adopt <agents...|all>");
         }
 
         const found = findFile(PATHS.features, name, ['04-in-evaluation', '03-in-progress']);
@@ -7749,7 +7826,7 @@ Branch: \`${soloBranch}\`
         };
 
         // Run pre-hook (can abort the command)
-        if (!runPreHook('feature-done', hookContext)) {
+        if (!runPreHook('feature-close', hookContext)) {
             return;
         }
 
@@ -7775,7 +7852,7 @@ Branch: \`${soloBranch}\`
                 // Explicit agent specified but branch not found
                 const altBranch = `feature-${num}-${desc}`;
                 console.error(`❌ Branch not found: ${branchName}`);
-                console.error(`   Did you mean: aigon feature-done ${num}?`);
+                console.error(`   Did you mean: aigon feature-close ${num}?`);
                 console.error(`   Looking for: ${altBranch}`);
                 return;
             }
@@ -7818,7 +7895,7 @@ Branch: \`${soloBranch}\`
                 console.error(`❌ Branch not found: ${branchName}`);
                 console.error(`   Multiple worktrees found for feature ${num}. Specify the agent:`);
                 featureWorktrees.forEach(wt => {
-                    console.error(`   aigon feature-done ${num} ${wt.agent}`);
+                    console.error(`   aigon feature-close ${num} ${wt.agent}`);
                 });
                 return;
             } else {
@@ -8031,7 +8108,7 @@ Branch: \`${soloBranch}\`
         }
 
         // Run post-hook (won't fail the command)
-        runPostHook('feature-done', hookContext);
+        runPostHook('feature-close', hookContext);
     },
     'feature-cleanup': (args) => {
         const id = args[0];
@@ -8298,7 +8375,7 @@ Branch: \`${soloBranch}\`
         if (exitCode !== 0) process.exitCode = exitCode;
     },
 
-    'conduct': (args) => {
+    'feature-autopilot': (args) => {
         const options = parseCliOptions(args);
         const subcommand = options._[0];
 
@@ -8362,7 +8439,7 @@ Branch: \`${soloBranch}\`
         if (subcommand === 'stop') {
             const id = options._[1];
             if (!id) {
-                console.error('Usage: aigon conduct stop <feature-id>');
+                console.error('Usage: aigon feature-autopilot stop <feature-id>');
                 return;
             }
             // Reuse sessions-close logic
@@ -8374,13 +8451,13 @@ Branch: \`${soloBranch}\`
             const id = options._[1];
             const agent = options._[2];
             if (!id || !agent) {
-                console.error('Usage: aigon conduct attach <feature-id> <agent>');
+                console.error('Usage: aigon feature-autopilot attach <feature-id> <agent>');
                 return;
             }
             const sessionName = buildTmuxSessionName(id, agent);
             if (!tmuxSessionExists(sessionName)) {
                 console.error(`❌ No tmux session found: ${sessionName}`);
-                console.error(`   Run: aigon conduct status ${id}`);
+                console.error(`   Run: aigon feature-autopilot status ${id}`);
                 return;
             }
             try {
@@ -8392,18 +8469,18 @@ Branch: \`${soloBranch}\`
             return;
         }
 
-        // --- Main conduct command: aigon conduct <feature-id> [agents...] ---
+        // --- Main feature-autopilot command: aigon feature-autopilot <feature-id> [agents...] ---
         const featureId = subcommand;
         if (!featureId || featureId.startsWith('-')) {
-            console.error('Usage: aigon conduct <feature-id> [agents...]');
-            console.error('       aigon conduct status [feature-id]');
-            console.error('       aigon conduct stop <feature-id>');
-            console.error('       aigon conduct attach <feature-id> <agent>');
+            console.error('Usage: aigon feature-autopilot <feature-id> [agents...]');
+            console.error('       aigon feature-autopilot status [feature-id]');
+            console.error('       aigon feature-autopilot stop <feature-id>');
+            console.error('       aigon feature-autopilot attach <feature-id> <agent>');
             console.error('\nExamples:');
-            console.error('  aigon conduct 42 cc gg cx         # Arena: 3 agents compete');
-            console.error('  aigon conduct 42                  # Use defaultAgents from config');
-            console.error('  aigon conduct 42 --max-iterations=8');
-            console.error('  aigon conduct 42 --auto-eval      # Auto-run feature-eval on completion');
+            console.error('  aigon feature-autopilot 42 cc gg cx         # Arena: 3 agents compete');
+            console.error('  aigon feature-autopilot 42                  # Use defaultAgents from config');
+            console.error('  aigon feature-autopilot 42 --max-iterations=8');
+            console.error('  aigon feature-autopilot 42 --auto-eval      # Auto-run feature-eval on completion');
             return;
         }
 
@@ -8524,7 +8601,7 @@ Branch: \`${soloBranch}\`
             }
 
             // Create fresh session with autonomous command as initial process
-            const cmd = `aigon feature-implement ${featureNum} --autonomous --auto-submit --agent=${wt.agent} --max-iterations=${maxIterations}`;
+            const cmd = `aigon feature-do ${featureNum} --autonomous --auto-submit --agent=${wt.agent} --max-iterations=${maxIterations}`;
             try {
                 createDetachedTmuxSession(sessionName, wt.path, cmd);
             } catch (e) {
@@ -8628,9 +8705,9 @@ Branch: \`${soloBranch}\`
 
             if (interrupted) {
                 console.log('\n⏸  Monitoring stopped. Agents are still running in their tmux sessions.');
-                console.log(`   Resume:  aigon conduct status ${featureNum}`);
-                console.log(`   Stop:    aigon conduct stop ${featureNum}`);
-                console.log(`   Attach:  aigon conduct attach ${featureNum} <agent>`);
+                console.log(`   Resume:  aigon feature-autopilot status ${featureNum}`);
+                console.log(`   Stop:    aigon feature-autopilot stop ${featureNum}`);
+                console.log(`   Attach:  aigon feature-autopilot attach ${featureNum} <agent>`);
                 return;
             }
         }
@@ -8642,6 +8719,280 @@ Branch: \`${soloBranch}\`
         } else {
             console.log(`\n📊 Ready for evaluation:`);
             console.log(`   aigon feature-eval ${featureNum}`);
+        }
+    },
+
+    'research-autopilot': (args) => {
+        const options = parseCliOptions(args);
+        const subcommand = options._[0];
+
+        // --- Subcommands: status, stop ---
+        if (subcommand === 'status') {
+            const idArg = options._[1];
+            const logsDir = path.join(PATHS.research.root, 'logs');
+
+            if (!idArg) {
+                return console.error('Usage: aigon research-autopilot status <research-id>');
+            }
+
+            const found = findFile(PATHS.research, idArg, ['03-in-progress']);
+            if (!found) return console.error(`❌ Could not find research "${idArg}" in in-progress.`);
+            const match = found.file.match(/^research-(\d+)-(.*)\.md$/);
+            const researchNum = match ? match[1] : idArg;
+
+            if (!fs.existsSync(logsDir)) return console.log('No findings files found.');
+
+            const findingsFiles = fs.readdirSync(logsDir)
+                .filter(f => f.startsWith(`research-${researchNum}-`) && f.endsWith('-findings.md'));
+
+            if (findingsFiles.length === 0) return console.log('No Fleet research agents found.');
+
+            console.log(`\n🔬 Research Autopilot: Research ${researchNum}`);
+            console.log('━'.repeat(40));
+            console.log(`${'Agent'.padEnd(7)} ${'Status'.padEnd(15)} Updated`);
+
+            findingsFiles.forEach(file => {
+                const agentMatch = file.match(/^research-\d+-(\w+)-findings\.md$/);
+                const agentId = agentMatch ? agentMatch[1] : 'unknown';
+                let status = 'unknown';
+                let updatedStr = '';
+                try {
+                    const content = fs.readFileSync(path.join(logsDir, file), 'utf8');
+                    const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
+                    if (fmMatch) {
+                        const sm = fmMatch[1].match(/status:\s*(\S+)/);
+                        if (sm) status = sm[1];
+                        const um = fmMatch[1].match(/updated:\s*(\S+)/);
+                        if (um) {
+                            const d = new Date(um[1]);
+                            const diffMs = Date.now() - d.getTime();
+                            const diffMin = Math.floor(diffMs / 60000);
+                            updatedStr = diffMin < 1 ? 'just now' : `${diffMin}m ago`;
+                        }
+                    }
+                } catch (e) { /* skip */ }
+                console.log(`${agentId.padEnd(7)} ${status.padEnd(15)} ${updatedStr}`);
+            });
+            return;
+        }
+
+        if (subcommand === 'stop') {
+            const id = options._[1];
+            if (!id) {
+                console.error('Usage: aigon research-autopilot stop <research-id>');
+                return;
+            }
+            commands['sessions-close']([id]);
+            return;
+        }
+
+        // --- Main research-autopilot command ---
+        const researchId = subcommand;
+        if (!researchId || researchId.startsWith('-')) {
+            console.error('Usage: aigon research-autopilot <research-id> [agents...]');
+            console.error('       aigon research-autopilot status <research-id>');
+            console.error('       aigon research-autopilot stop <research-id>');
+            console.error('\nExamples:');
+            console.error('  aigon research-autopilot 08 cc gg cx     # Fleet: 3 agents research in parallel');
+            console.error('  aigon research-autopilot 08               # Use defaultAgents from config');
+            return;
+        }
+
+        const positionalAgents = options._.slice(1);
+        const effectiveConfig = getEffectiveConfig();
+        const conductorConfig = effectiveConfig.conductor || {};
+        let agentIds = positionalAgents.length > 0
+            ? positionalAgents
+            : (conductorConfig.defaultAgents || ['cc', 'gg']);
+
+        const availableAgents = getAvailableAgents();
+        const invalidAgents = agentIds.filter(a => !availableAgents.includes(a));
+        if (invalidAgents.length > 0) {
+            console.error(`❌ Unknown agent(s): ${invalidAgents.join(', ')}. Available: ${availableAgents.join(', ')}`);
+            return;
+        }
+
+        if (agentIds.length < 2) {
+            console.error('❌ Research autopilot requires at least 2 agents.');
+            return;
+        }
+
+        const pollIntervalRaw = getOptionValue(options, 'poll-interval');
+        const pollInterval = pollIntervalRaw !== undefined
+            ? parseInt(pollIntervalRaw, 10) * 1000
+            : ((conductorConfig.pollInterval || 30) * 1000);
+        const autoSynthesize = getOptionValue(options, 'auto-synthesize') !== undefined;
+
+        let found = findFile(PATHS.research, researchId, ['02-backlog', '03-in-progress']);
+        if (!found) {
+            console.error(`❌ Could not find research "${researchId}" in backlog or in-progress.`);
+            return;
+        }
+
+        const match = found.file.match(/^research-(\d+)-(.*)\.md$/);
+        if (!match) {
+            console.error('❌ Could not parse research filename.');
+            return;
+        }
+        const [, researchNum, researchDesc] = match;
+
+        // Setup Fleet research if not already set up
+        const logsDir = path.join(PATHS.research.root, 'logs');
+        const existingFindings = fs.existsSync(logsDir)
+            ? fs.readdirSync(logsDir).filter(f => f.startsWith(`research-${researchNum}-`) && f.endsWith('-findings.md'))
+            : [];
+
+        if (existingFindings.length === 0) {
+            console.log(`\n🔬 Research Autopilot: Research ${researchNum} — ${researchDesc}`);
+            console.log(`   Setting up Fleet research with ${agentIds.length} agents: ${agentIds.join(', ')}`);
+            commands['research-setup']([researchId, ...agentIds]);
+        } else {
+            agentIds = existingFindings.map(f => {
+                const m = f.match(/^research-\d+-(\w+)-findings\.md$/);
+                return m ? m[1] : null;
+            }).filter(Boolean);
+            console.log(`\n🔬 Research Autopilot: Research ${researchNum} — ${researchDesc}`);
+            console.log(`   Using existing Fleet setup (${agentIds.length} agents: ${agentIds.join(', ')})`);
+        }
+
+        // Spawn tmux sessions for each agent
+        console.log(`\n🚀 Spawning research agents...`);
+        try {
+            assertTmuxAvailable();
+        } catch (e) {
+            console.error(`❌ ${e.message}`);
+            console.error('   Research autopilot requires tmux. Install: brew install tmux');
+            return;
+        }
+
+        const spawnedAgents = [];
+        agentIds.forEach(agentId => {
+            const sessionName = buildTmuxSessionName(researchNum, agentId);
+            const findingsFile = path.join(logsDir, `research-${researchNum}-${agentId}-findings.md`);
+
+            // Check if already submitted
+            if (fs.existsSync(findingsFile)) {
+                try {
+                    const fileContent = fs.readFileSync(findingsFile, 'utf8');
+                    const fmMatch = fileContent.match(/^---\n([\s\S]*?)\n---\n/);
+                    if (fmMatch) {
+                        const sm = fmMatch[1].match(/status:\s*(\S+)/);
+                        if (sm && sm[1] === 'submitted') {
+                            console.log(`   ✓ ${agentId} — already submitted, skipping`);
+                            spawnedAgents.push({ agent: agentId, alreadySubmitted: true });
+                            return;
+                        }
+                    }
+                } catch (e) { /* proceed */ }
+            }
+
+            if (tmuxSessionExists(sessionName)) {
+                spawnSync('tmux', ['kill-session', '-t', sessionName], { stdio: 'ignore' });
+            }
+
+            const cmd = buildResearchAgentCommand(agentId, researchNum);
+
+            try {
+                createDetachedTmuxSession(sessionName, process.cwd(), cmd);
+            } catch (e) {
+                console.error(`   ❌ ${agentId} — failed to create tmux session: ${e.message}`);
+                return;
+            }
+            console.log(`   ✓ ${agentId} — spawned in ${sessionName}`);
+            spawnedAgents.push({ agent: agentId, alreadySubmitted: false });
+        });
+
+        if (spawnedAgents.length === 0) {
+            console.error('❌ No agents spawned.');
+            return;
+        }
+
+        // Monitor Phase
+        const allAlreadySubmitted = spawnedAgents.every(a => a.alreadySubmitted);
+        if (allAlreadySubmitted) {
+            console.log(`\n✅ All agents already submitted!`);
+        } else {
+            console.log(`\n⏱  Monitoring ${spawnedAgents.length} agents (polling every ${pollInterval / 1000}s, Ctrl+C to stop)...\n`);
+
+            let interrupted = false;
+            const sigintHandler = () => { interrupted = true; };
+            process.on('SIGINT', sigintHandler);
+
+            const previousStatuses = {};
+            spawnedAgents.forEach(a => { previousStatuses[a.agent] = a.alreadySubmitted ? 'submitted' : 'unknown'; });
+
+            try {
+                while (!interrupted) {
+                    try { spawnSync('sleep', [String(pollInterval / 1000)], { stdio: 'ignore' }); } catch (e) { break; }
+                    if (interrupted) break;
+
+                    let allSubmitted = true;
+                    const statusRows = [];
+
+                    spawnedAgents.forEach(({ agent }) => {
+                        const findingsFile = path.join(logsDir, `research-${researchNum}-${agent}-findings.md`);
+                        let status = 'unknown';
+                        let updatedStr = '';
+                        try {
+                            const fileContent = fs.readFileSync(findingsFile, 'utf8');
+                            const fmMatch = fileContent.match(/^---\n([\s\S]*?)\n---\n/);
+                            if (fmMatch) {
+                                const sm = fmMatch[1].match(/status:\s*(\S+)/);
+                                if (sm) status = sm[1];
+                                const um = fmMatch[1].match(/updated:\s*(\S+)/);
+                                if (um) {
+                                    const d = new Date(um[1]);
+                                    const diffMs = Date.now() - d.getTime();
+                                    const diffMin = Math.floor(diffMs / 60000);
+                                    updatedStr = diffMin < 1 ? 'just now' : `${diffMin}m ago`;
+                                }
+                            }
+                        } catch (e) { /* skip */ }
+
+                        if (status === 'submitted' && previousStatuses[agent] !== 'submitted') {
+                            try {
+                                execSync(`osascript -e 'display notification "Agent ${agent} submitted Research #${researchNum}" with title "Aigon Research Autopilot"'`);
+                            } catch (e) { /* notification failed */ }
+                        }
+                        previousStatuses[agent] = status;
+                        if (status !== 'submitted') allSubmitted = false;
+                        statusRows.push({ agent, status, updatedStr });
+                    });
+
+                    const now = new Date().toLocaleTimeString();
+                    console.log(`[${now}] ${'Agent'.padEnd(7)} ${'Status'.padEnd(15)} Updated`);
+                    statusRows.forEach(row => {
+                        console.log(`         ${row.agent.padEnd(7)} ${row.status.padEnd(15)} ${row.updatedStr}`);
+                    });
+                    console.log('');
+
+                    if (allSubmitted) {
+                        console.log('✅ All agents submitted!');
+                        try {
+                            execSync(`osascript -e 'display notification "All agents submitted for Research #${researchNum}" with title "Aigon Research Autopilot"'`);
+                        } catch (e) { /* notification failed */ }
+                        break;
+                    }
+                }
+            } finally {
+                process.removeListener('SIGINT', sigintHandler);
+            }
+
+            if (interrupted) {
+                console.log('\n⏸  Monitoring stopped. Agents are still running in their tmux sessions.');
+                console.log(`   Resume:  aigon research-autopilot status ${researchNum}`);
+                console.log(`   Stop:    aigon research-autopilot stop ${researchNum}`);
+                return;
+            }
+        }
+
+        // Synthesize Phase
+        if (autoSynthesize) {
+            console.log(`\n📊 Auto-running synthesis...`);
+            commands['research-synthesize']([researchNum]);
+        } else {
+            console.log(`\n📊 Ready for synthesis:`);
+            console.log(`   aigon research-synthesize ${researchNum}`);
         }
     },
 
@@ -11046,9 +11397,9 @@ Branch: \`${soloBranch}\`
 
         // Kill agent processes for this ID across all agent types and command types
         const killPatterns = [
-            `aigon:feature-implement ${paddedId}`,
+            `aigon:feature-do ${paddedId}`,
             `aigon:feature-review ${paddedId}`,
-            `aigon:research-conduct ${paddedId}`,
+            `aigon:research-do ${paddedId}`,
         ];
 
         console.log(`\nClosing all agent sessions for #${paddedId}...\n`);
@@ -11838,8 +12189,8 @@ Modes:
 Conductor / Radar:
   conduct <ID> [agents...]          Start arena: setup, spawn autonomous loops, monitor, eval
   conduct status [ID]               Show status of running conductor sessions
-  conduct stop <ID>                 Stop all agents for a feature (reuses sessions-close)
-  conduct attach <ID> <agent>       Attach to an agent's tmux session
+  feature-autopilot stop <ID>       Stop all agents for a feature (reuses sessions-close)
+  feature-autopilot attach <ID> <agent> Attach to an agent's tmux session
   radar <subcommand>                Unified monitoring service + API + dashboard
   dashboard [options]               Deprecated alias for: aigon radar open
 
@@ -11856,19 +12207,27 @@ Feature Commands (Drive, Fleet, Autopilot, Swarm):
   feature-now <name>                Fast-track: inbox match → prioritise + setup + implement; or create new + implement
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
   feature-setup <ID> [agents...]    Setup for Drive (branch) or Fleet (worktrees)
-  feature-implement <ID> [--agent=<id>] [--autonomous]  Implement feature; launches agent from shell, shows instructions inside agent session
+  feature-do <ID> [--agent=<id>] [--autonomous]  Do the work on a feature; launches agent from shell, shows instructions inside agent session
+  feature-submit                    (agent-only) Commit changes, write log, signal done
   feature-validate <ID>             Evaluate acceptance criteria (smart validation)
   feature-eval <ID> [--force]       Create evaluation (code review or comparison)
-  feature-done <ID> [agent]         Merge and complete feature
+  feature-review <ID>               Code review with fixes by a different agent
+  feature-close <ID> [agent]        Merge and complete feature
   feature-cleanup <ID>              Clean up Fleet worktrees and branches
+  feature-autopilot <ID> [agents...] Fleet autopilot: setup + spawn + monitor + eval
+  feature-autopilot stop <ID>       Stop all agents for a feature (reuses sessions-close)
+  feature-autopilot attach <ID> <agent> Attach to an agent's tmux session
 
 Research Commands:
   research-create <name>            Create research topic in inbox
   research-prioritise <name>        Move research from inbox to backlog (assigns ID)
   research-setup <ID> [agents...]   Setup Drive (no agents) or Fleet (with agents) research
   research-open <ID>                Open all Fleet agents side-by-side for parallel research
-  research-conduct <ID>             Conduct research (agent writes findings)
-  research-done <ID> [--complete]   Complete research (shows summary in Fleet mode)
+  research-do <ID>                  Do research (agent writes findings)
+  research-submit [ID] [agent]      (agent-only) Signal research findings complete
+  research-synthesize <ID>          Synthesize Fleet findings and select best
+  research-close <ID> [--complete]  Complete research (shows summary in Fleet mode)
+  research-autopilot <ID> [agents...] Fleet autopilot: setup + spawn + monitor + synthesize
 
 Feedback:
   feedback-create <title>           Create feedback doc in inbox (assigns next ID)
@@ -11900,9 +12259,9 @@ Examples:
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
   aigon feature-setup 55               # Drive mode (creates branch)
   aigon feature-setup 55 cc gg cx cu      # Fleet mode (creates worktrees)
-  aigon conduct 42 cc gg cx            # Arena conductor: setup + spawn + monitor + eval
-  aigon conduct status 42              # Check conductor status
-  aigon conduct stop 42                # Stop all agents
+  aigon feature-autopilot 42 cc gg cx            # Arena conductor: setup + spawn + monitor + eval
+  aigon feature-autopilot status 42              # Check conductor status
+  aigon feature-autopilot stop 42                # Stop all agents
   aigon radar start                    # Start Radar service
   aigon radar open                     # Open live dashboard
   aigon radar open --screenshot        # Capture dashboard screenshot
@@ -11911,14 +12270,14 @@ Examples:
   aigon worktree-open 55 --all         # Open all Fleet agents side-by-side
   aigon worktree-open 100 101 102      # Open features side-by-side (parallel)
   aigon sessions-close 55              # Kill all Fleet agents + tmux sessions + close Warp tab
-  aigon feature-implement 55             # Launch default agent (cc) from plain shell
-  aigon feature-implement 55 --agent=cx  # Launch Codex from plain shell
-  aigon feature-implement 55 --autonomous               # Run Autopilot loop
-  aigon feature-implement 55 --autonomous --max-iterations=8 --agent=cx  # Autopilot with options
+  aigon feature-do 55             # Launch default agent (cc) from plain shell
+  aigon feature-do 55 --agent=cx  # Launch Codex from plain shell
+  aigon feature-do 55 --autonomous               # Run Autopilot loop
+  aigon feature-do 55 --autonomous --max-iterations=8 --agent=cx  # Autopilot with options
   aigon feature-validate 55            # Evaluate acceptance criteria (smart validation)
   aigon feature-validate 55 --dry-run  # Show what would be checked without running
   aigon feature-eval 55                # Evaluate implementations
-  aigon feature-done 55 cc             # Merge Claude's Fleet implementation
+  aigon feature-close 55 cc             # Merge Claude's Fleet implementation
   aigon feature-cleanup 55 --push      # Clean up losing Fleet branches
 
   # Port health check
@@ -11940,9 +12299,12 @@ Examples:
   aigon research-setup 05              # Drive mode (one agent)
   aigon research-setup 05 cc gg        # Fleet mode (multiple agents)
   aigon research-open 05               # Open all Fleet agents side-by-side
-  aigon research-conduct 05            # Agent conducts research
-  aigon research-done 05               # Shows findings summary (Fleet)
-  aigon research-done 05 --complete    # Complete research
+  aigon research-do 05                 # Agent conducts research
+  aigon research-submit 05 cc          # Signal cc's findings are complete
+  aigon research-autopilot 08 cc gg cx # Fleet autopilot: spawn + monitor + synthesize
+  aigon research-synthesize 05         # Synthesize findings (after Fleet)
+  aigon research-close 05              # Shows findings summary (Fleet)
+  aigon research-close 05 --complete   # Complete research
 
   # Deploy
   aigon deploy                         # Deploy to production (uses commands.deploy or scripts.deploy)
@@ -11962,6 +12324,28 @@ Agents:
   cx (codex)    - OpenAI Codex
 `);
     },
+
+    // --- Deprecated aliases (print warning, then delegate to new command) ---
+    'feature-implement': (args) => {
+        console.warn('⚠️  Deprecated: "feature-implement" has been renamed to "feature-do". Please update your workflow.');
+        commands['feature-do'](args);
+    },
+    'feature-done': (args) => {
+        console.warn('⚠️  Deprecated: "feature-done" has been renamed to "feature-close". Please update your workflow.');
+        commands['feature-close'](args);
+    },
+    'research-conduct': (args) => {
+        console.warn('⚠️  Deprecated: "research-conduct" has been renamed to "research-do". Please update your workflow.');
+        commands['research-do'](args);
+    },
+    'research-done': (args) => {
+        console.warn('⚠️  Deprecated: "research-done" has been renamed to "research-close". Please update your workflow.');
+        commands['research-close'](args);
+    },
+    'conduct': (args) => {
+        console.warn('⚠️  Deprecated: "conduct" has been renamed to "feature-autopilot". Please update your workflow.');
+        commands['feature-autopilot'](args);
+    },
 };
 
 // --- Main Execution ---
@@ -11970,10 +12354,13 @@ const commandName = args[0];
 const commandArgs = args.slice(1);
 const cleanCommand = commandName ? commandName.replace(/^aigon-/, '') : null;
 
-if (!cleanCommand || cleanCommand === 'help' || cleanCommand === '--help' || cleanCommand === '-h') {
+// Resolve short alias to full command name if applicable
+const resolvedCommand = cleanCommand ? (COMMAND_ALIASES[cleanCommand] || cleanCommand) : cleanCommand;
+
+if (!resolvedCommand || resolvedCommand === 'help' || resolvedCommand === '--help' || resolvedCommand === '-h') {
     commands['help']();
-} else if (commands[cleanCommand]) {
-    const result = commands[cleanCommand](commandArgs);
+} else if (commands[resolvedCommand]) {
+    const result = commands[resolvedCommand](commandArgs);
     // Handle async commands (proxy-setup, dev-server)
     if (result && typeof result.catch === 'function') {
         result.catch(e => { console.error(`❌ ${e.message}`); process.exit(1); });

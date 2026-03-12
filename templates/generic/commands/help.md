@@ -9,12 +9,13 @@
 | `{{CMD_PREFIX}}feature-now <name>` | Fast-track: inbox → prioritise → setup → implement, or create new + implement |
 | `{{CMD_PREFIX}}feature-prioritise <name>` | Assign ID and move to backlog |
 | `{{CMD_PREFIX}}feature-setup <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
-| `{{CMD_PREFIX}}feature-implement <ID> [--autonomous]` | Implement feature; `--autonomous` enables the autonomous retry loop |
+| `{{CMD_PREFIX}}feature-do <ID> [--autonomous]` | Do feature work; `--autonomous` enables the autonomous retry loop |
 | `{{CMD_PREFIX}}feature-submit` | Commit changes, write log, signal done for evaluation |
 | `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `{{CMD_PREFIX}}feature-review <ID>` | Code review with fixes by a different agent |
-| `{{CMD_PREFIX}}feature-done <ID> [agent]` | Merge and complete feature |
+| `{{CMD_PREFIX}}feature-close <ID> [agent]` | Merge and complete feature |
 | `{{CMD_PREFIX}}feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
+| `{{CMD_PREFIX}}feature-autopilot <ID> [agents...]` | Fleet autopilot: setup + spawn agents + monitor + eval |
 | `{{CMD_PREFIX}}worktree-open [ID] [agent]` | Open worktree in Warp with agent CLI |
 
 ## Research (unified for Drive and Fleet modes)
@@ -25,8 +26,10 @@
 | `{{CMD_PREFIX}}research-prioritise <name>` | Prioritise a research topic |
 | `{{CMD_PREFIX}}research-setup <ID> [agents...]` | Setup for Drive or Fleet research |
 | `{{CMD_PREFIX}}research-open <ID>` | Open all Fleet agents side-by-side for parallel research |
-| `{{CMD_PREFIX}}research-conduct <ID>` | Conduct research (write findings) |
-| `{{CMD_PREFIX}}research-done <ID>` | Complete a research topic |
+| `{{CMD_PREFIX}}research-do <ID>` | Conduct research (write findings) |
+| `{{CMD_PREFIX}}research-submit [ID]` | Signal research findings complete (Fleet mode) |
+| `{{CMD_PREFIX}}research-synthesize <ID>` | Synthesize Fleet findings and select features |
+| `{{CMD_PREFIX}}research-close <ID>` | Complete a research topic |
 
 ## Feedback
 
@@ -71,13 +74,14 @@ All commands have top-level short aliases prefixed with `a` (for aigon):
 | `/afn` | feature-now | `/arp` | research-prioritise |
 | `/afp` | feature-prioritise | `/arse` | research-setup |
 | `/afse` | feature-setup | `/aro` | research-open |
-| `/afi` | feature-implement | `/ard` | research-conduct |
-| `/afs` | feature-submit | `/ars` | research-synthesize |
-| `/afe` | feature-eval | `/ardn` | research-done |
-| `/afr` | feature-review | `/afbc` | feedback-create |
-| `/afd` | feature-done | `/afbl` | feedback-list |
-| `/ab` | board | `/afbt` | feedback-triage |
-| `/ads` | dev-server | `/ah` | help |
-| `/an` | next | | |
+| `/afd` | feature-do | `/ard` | research-do |
+| `/afs` | feature-submit | `/arsb` | research-submit |
+| `/afe` | feature-eval | `/ars` | research-synthesize |
+| `/afr` | feature-review | `/arcl` | research-close |
+| `/afcl` | feature-close | `/arap` | research-autopilot |
+| `/afap` | feature-autopilot | `/afbc` | feedback-create |
+| `/ab` | board | `/afbl` | feedback-list |
+| `/ads` | dev-server | `/afbt` | feedback-triage |
+| `/an` | next | `/ah` | help |
 
 Run `aigon help` in terminal for full CLI reference.
