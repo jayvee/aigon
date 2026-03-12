@@ -1,6 +1,6 @@
 ---
-status: implementing
-updated: 2026-03-12T08:52:48.382Z
+status: submitted
+updated: 2026-03-12T11:34:06.783Z
 ---
 
 # Implementation Log: Feature 47 - dry-refactoring-of-cli-helpers-and-command-patterns
@@ -61,3 +61,24 @@ Agent: cx
 - Used an incremental registry approach: centralized command metadata first (`COMMAND_REGISTRY`) and derived legacy structures from it, avoiding risky command dispatcher rewrites in this phase.
 - Applied helpers where duplication was concrete and high-volume in current code paths (especially creation commands, worktree setup, tmux setup, and dev URL resolution).
 - Left unrelated local `.env.local` modifications untouched and out of the implementation commit.
+
+## Code Review
+
+**Reviewed by**: cc (Claude Code)
+**Date**: 2026-03-12
+
+### Findings
+- `printSpecInfo` in `feature-now` added an extra `📋 feature XX - slug` header line that wasn't in the original output, violating the "identical output" constraint
+- All 8 helper functions are well-designed with clean interfaces
+- `COMMAND_REGISTRY` correctly derives all 4 legacy metadata structures
+- `slugify()` usage in `feature-create`/`research-create` produces identical results to the inline regex it replaced
+- `createDetachedTmuxSession` in `ensureAgentSessions` slightly changes error messages (generic vs actual tmux stderr) — acceptable trade-off for consistency
+- All 36 commands in registry, all aliases and disable flags verified correct
+- Syntax check and 42 tests pass
+
+### Fixes Applied
+- `394c732` — Reverted `feature-now` to use direct `console.log` for Spec/Log/Branch lines instead of `printSpecInfo`, preserving original output format
+
+### Notes
+- Solid, behavior-preserving refactoring — only one cosmetic output change needed fixing
+- The helpers are well-suited for Phase 3 modularization (extracting to `lib/` modules)
