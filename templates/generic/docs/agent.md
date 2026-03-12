@@ -56,6 +56,7 @@
 3. **Conventional commits**: Use `feat:`, `fix:`, `chore:` prefixes
 4. **Complete properly**: Use `{{CMD_PREFIX}}feature-done <ID>` for solo, `{{CMD_PREFIX}}feature-done <ID> {{AGENT_ID}}` for arena
 5. **Follow project instructions**: Check `AGENTS.md` for shared project build, test, and dependency commands
+6. **Orient to the codebase first**: Read `docs/architecture.md` before making structural CLI changes
 
 ## Solo Mode Workflow
 
