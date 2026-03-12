@@ -8,7 +8,7 @@
   "cli": {
     "command": "codex",
     "implementFlag": "",
-    "implementPrompt": "/prompts:aigon-feature-implement {featureId}",
+    "implementPrompt": "/prompts:aigon-feature-do {featureId}",
     "evalPrompt": "/prompts:aigon-feature-eval {featureId}",
     "models": {
       "research": "gpt-5.2",

@@ -6370,7 +6370,7 @@ const commands = {
             const firstAgentConfig = loadAgentConfig(firstAgent);
             const cmdPrefix = firstAgentConfig?.placeholders?.CMD_PREFIX || '/aigon:';
             console.log(`     [Open each agent terminal] ${cmdPrefix}research-do ${researchNum}`);
-            console.log(`\n   When done: aigon research-close ${researchNum}`);
+            console.log(`\n   When all agents finish: aigon research-synthesize ${researchNum}`);
         } else {
             // Drive mode: Just move to in-progress
             console.log(`\n🚗 Drive mode. Research moved to in-progress.`);
@@ -6424,7 +6424,7 @@ const commands = {
             console.log(`   3. Do NOT modify other agents' files or the main doc`);
             console.log(`\n⚠️  IMPORTANT:`);
             console.log(`   - Do NOT run 'aigon research-close' from an agent session`);
-            console.log(`   - The user will run 'aigon research-close ${num}' to synthesize`);
+            console.log(`   - The user will run 'aigon research-synthesize ${num}' after all findings are submitted`);
         } else {
             console.log(`\n📝 Next Steps:`);
             console.log(`   1. Read the research topic`);
@@ -8889,9 +8889,7 @@ Branch: \`${soloBranch}\`
                 spawnSync('tmux', ['kill-session', '-t', sessionName], { stdio: 'ignore' });
             }
 
-            const agentConfig = loadAgentConfig(agentId);
-            const cmdPrefix = agentConfig ? agentConfig.cli.commandPrefix : '/aigon:';
-            const cmd = `${agentConfig && agentConfig.cli ? agentConfig.cli.launchCommand : 'claude'} --print "${cmdPrefix}research-do ${researchNum}"`;
+            const cmd = buildResearchAgentCommand(agentId, researchNum);
 
             try {
                 createDetachedTmuxSession(sessionName, process.cwd(), cmd);
