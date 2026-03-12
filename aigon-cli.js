@@ -1351,15 +1351,15 @@ function buildDashboardHtml(initialData) {
     <div class="top">
       <h1>Aigon Dashboard</h1>
       <div class="meta">
-        <span class="health"><span class="dot" id="health-dot"></span><span id="health-text">Connected</span></span>
+        <span class="health" aria-live="polite"><span class="dot" id="health-dot"></span><span id="health-text">Connected</span></span>
         <span id="updated-text">Updated just now</span>
       </div>
     </div>
-    <div id="summary" class="summary"></div>
+    <div id="summary" class="summary" aria-label="Agent status summary"></div>
     <div id="repos" class="repos"></div>
     <div id="empty" class="empty" style="display:none"></div>
   </div>
-  <div id="toasts" class="toast-wrap"></div>
+  <div id="toasts" class="toast-wrap" aria-live="polite"></div>
   <script>
     const POLL_MS = 10000;
     const TS_MS = 30000;
@@ -1380,6 +1380,7 @@ function buildDashboardHtml(initialData) {
       return Math.floor(diff / 3600) + 'h ago';
     }
 
+    function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function statusRank(s){ return s === 'waiting' ? 0 : s === 'implementing' ? 1 : s === 'error' ? 2 : 3; }
     function featureRank(feature){ return Math.min(...feature.agents.map(a => statusRank(a.status))); }
     function showToast(text, actionLabel, actionFn){
@@ -1473,7 +1474,7 @@ function buildDashboardHtml(initialData) {
         const features = rawFeatures.filter(f => state.filter === 'all' || f.agents.some(a => a.status === state.filter));
         visibleFeatureCount += features.length;
         const waitingCards = features.filter(f => f.agents.some(a => a.status === 'waiting')).length;
-        section.innerHTML = '<div class="repo-h"><strong>' + repo.displayPath + '</strong><span>' + features.length + ' feature' + (features.length === 1 ? '' : 's') + (waitingCards ? ' • ' + waitingCards + ' waiting' : '') + ' <span>' + (state.collapsed[repo.path] ? '[+]' : '[-]') + '</span></span></div><div class="repo-b"></div>';
+        section.innerHTML = '<div class="repo-h"><strong>' + escHtml(repo.displayPath) + '</strong><span>' + features.length + ' feature' + (features.length === 1 ? '' : 's') + (waitingCards ? ' • ' + waitingCards + ' waiting' : '') + ' <span aria-label="Toggle">' + (state.collapsed[repo.path] ? '[+]' : '[-]') + '</span></span></div><div class="repo-b"></div>';
         section.querySelector('.repo-h').onclick = () => {
           state.collapsed[repo.path] = !state.collapsed[repo.path];
           localStorage.setItem('aigon.dashboard.collapsed', JSON.stringify(state.collapsed));
@@ -1489,20 +1490,20 @@ function buildDashboardHtml(initialData) {
             card.className = 'card' + (hasWaiting ? ' waiting' : '');
             const rows = [...feature.agents].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id));
             const nextCmd = feature.nextAction && feature.nextAction.command ? feature.nextAction.command : null;
-            const nextReason = feature.nextAction && feature.nextAction.reason ? String(feature.nextAction.reason).replace(/"/g, '&quot;') : '';
-            const nextBtn = nextCmd ? '<button class="copy btn btn-primary next-copy" data-copy="' + nextCmd + '" title="' + nextReason + '">Copy next</button>' : '';
-            card.innerHTML = '<div class="card-h"><span class="feature">#' + feature.id + ' ' + feature.name + '</span><span class="head-actions">' + nextBtn + '</span></div><div class="rows"></div>';
+            const nextReason = feature.nextAction && feature.nextAction.reason ? escHtml(feature.nextAction.reason) : '';
+            const nextBtn = nextCmd ? '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(nextCmd) + '" title="' + nextReason + '">Copy next</button>' : '';
+            card.innerHTML = '<div class="card-h"><span class="feature">#' + escHtml(feature.id) + ' ' + escHtml(feature.name) + '</span><span class="head-actions">' + nextBtn + '</span></div><div class="rows"></div>';
             const rowsEl = card.querySelector('.rows');
             rows.forEach(agent => {
               const row = document.createElement('div');
               row.className = 'row ' + agent.status;
               const waitingCmd = agent.slashCommand
-                ? '<button class="copy btn" data-copy="' + agent.slashCommand + '">Copy ' + agent.slashCommand + '</button>'
+                ? '<button class="copy btn" data-copy="' + escHtml(agent.slashCommand) + '">Copy ' + escHtml(agent.slashCommand) + '</button>'
                 : '';
               const attachBtn = agent.tmuxRunning
-                ? '<button class="attach btn btn-primary" data-repo="' + repo.path + '" data-feature="' + feature.id + '" data-agent="' + agent.id + '">Attach</button>'
+                ? '<button class="attach btn btn-primary" data-repo="' + escHtml(repo.path) + '" data-feature="' + escHtml(feature.id) + '" data-agent="' + escHtml(agent.id) + '">Attach</button>'
                 : '';
-              row.innerHTML = '<span class="agent">' + agent.id + '</span><span class="status ' + agent.status + '"><span class="dot"></span>' + agent.status + '</span><span class="stamp" data-updated="' + agent.updatedAt + '">' + relTime(agent.updatedAt) + '</span><span class="row-actions">' + waitingCmd + attachBtn + '</span>';
+              row.innerHTML = '<span class="agent">' + escHtml(agent.id) + '</span><span class="status ' + escHtml(agent.status) + '"><span class="dot"></span>' + escHtml(agent.status) + '</span><span class="stamp" data-updated="' + escHtml(agent.updatedAt) + '">' + relTime(agent.updatedAt) + '</span><span class="row-actions">' + waitingCmd + attachBtn + '</span>';
               rowsEl.appendChild(row);
             });
             body.appendChild(card);
