@@ -1787,7 +1787,7 @@ function requestRadarJson(pathname, port) {
     });
 }
 
-function renderRadarMenubarFromStatus(payload) {
+function renderRadarMenubarFromStatus(payload, port) {
     const data = payload || {};
     const repos = Array.isArray(data.repos) ? data.repos : [];
     if (repos.length === 0) {
@@ -1844,6 +1844,7 @@ function renderRadarMenubarFromStatus(payload) {
     });
 
     console.log('---');
+    console.log(`Open Dashboard | href=http://127.0.0.1:${port || 4321}`);
     console.log('Refresh | refresh=true');
 }
 
@@ -8875,7 +8876,7 @@ Branch: \`${soloBranch}\`
         if (sub === 'menubar-render') {
             try {
                 const payload = await requestRadarJson('/api/status', port);
-                renderRadarMenubarFromStatus(payload);
+                renderRadarMenubarFromStatus(payload, port);
             } catch (e) {
                 console.log('⚙ offline');
                 console.log('---');
