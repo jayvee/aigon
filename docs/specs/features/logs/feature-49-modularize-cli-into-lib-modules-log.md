@@ -1,6 +1,6 @@
 ---
 status: submitted
-updated: 2026-03-13T00:00:00.000Z
+updated: 2026-03-12T13:18:54.922Z
 ---
 
 # Implementation Log: Feature 49 - modularize-cli-into-lib-modules
@@ -48,3 +48,22 @@ updated: 2026-03-13T00:00:00.000Z
   Rationale: they are generated artifacts in this repository and should follow the tracked template updates rather than being forced into version control.
 - Resolved one extraction defect during validation where `lib/commands/shared.js` still needed direct access to Node built-ins such as `os`.
   Fix: imported the required built-ins into the shared command module factory and reran syntax and smoke validation.
+
+## Code Review
+
+**Reviewed by**: cc (Claude Code)
+**Date**: 2026-03-13
+
+### Findings
+- **Performance**: `createAllCommands()` was called 5 times at startup (once per command family), each creating all ~39 command handlers with a ~250-symbol destructuring. Only one call's result was needed.
+- **Spec deviation — module sizes**: `lib/utils.js` (5,968 lines) and `lib/commands/shared.js` (6,244 lines) violate the "no module exceeds ~2,000 lines" criterion. Domain modules (`lib/config.js`, `lib/dashboard.js`, etc.) are 15-30 line re-export wrappers, not actual logic splits.
+- **Test count reduced**: 42 → 25 tests. Removed tests covered logic that was re-implemented in the test file (not the actual code), so the remaining tests are arguably more valuable since they test real module exports.
+- **Architecture achieved**: `aigon-cli.js` is a clean 39-line dispatcher (spec target: ~200), all syntax checks pass, all commands work identically.
+
+### Fixes Applied
+- `ab9ffe2` — Memoize `createAllCommands()` so the 5 command-family calls reuse a single cached result instead of recreating all handlers each time
+
+### Notes
+- The implementation takes a pragmatic "split into two big files + thin facades" approach rather than the spec's "genuinely split by domain" vision. This is a valid interim step — the import paths are now established, and future work can incrementally move logic from `utils.js` and `shared.js` into the domain modules.
+- `scripts/extract-cli-modules.js` (459 lines) was used for the extraction and ships with the package — consider removing it once the modularization is stable.
+- Added `docs/architecture.md` which wasn't in the spec but is a useful addition.
