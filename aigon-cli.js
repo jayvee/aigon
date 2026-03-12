@@ -3683,6 +3683,227 @@ function moveFile(fileObj, targetFolder, newFilename = null) {
     return { ...fileObj, folder: targetFolder, file: destName, fullPath: destPath };
 }
 
+function modifySpecFile(filePath, modifierFn) {
+    const content = fs.readFileSync(filePath, 'utf8');
+    const parsed = parseFrontMatter(content);
+    const modified = modifierFn({
+        content,
+        data: parsed.data,
+        body: parsed.body,
+        hasFrontMatter: parsed.hasFrontMatter
+    });
+
+    const nextContent = typeof modified === 'string'
+        ? modified
+        : (modified && typeof modified.content === 'string' ? modified.content : content);
+
+    if (nextContent !== content) {
+        fs.writeFileSync(filePath, nextContent);
+    }
+
+    return {
+        changed: nextContent !== content,
+        content: nextContent,
+        data: parsed.data,
+        body: parsed.body,
+        hasFrontMatter: parsed.hasFrontMatter
+    };
+}
+
+function printNextSteps(items) {
+    if (!Array.isArray(items) || items.length === 0) return;
+    console.log('🚀 Next steps:');
+    items.forEach(line => console.log(`   ${line}`));
+}
+
+function printSpecInfo({ type, id, name, specPath, logPath }) {
+    const icon = type === 'research' ? '🔬' : type === 'feedback' ? '💬' : '📋';
+    const idLabel = id !== undefined && id !== null ? String(id).padStart(2, '0') : null;
+    const header = idLabel ? `${type} ${idLabel}` : type;
+    const title = name ? ` - ${name}` : '';
+
+    console.log(`\n${icon} ${header}${title}`);
+    if (specPath) console.log(`   Spec: ${specPath}`);
+    if (logPath) console.log(`   Log:  ${logPath}`);
+}
+
+function printError(type, id, details = '') {
+    const idPart = id !== undefined && id !== null ? ` "${id}"` : '';
+    const suffix = details ? `\n\n${details}` : '';
+    console.error(`❌ Could not find ${type}${idPart}.${suffix}`);
+}
+
+function createSpecFile({
+    input,
+    usage,
+    example,
+    inboxDir,
+    existsLabel,
+    build
+}) {
+    if (!input) {
+        const exampleText = example ? `\nExample: ${example}` : '';
+        console.error(`Usage: ${usage}${exampleText}`);
+        return null;
+    }
+
+    if (!fs.existsSync(inboxDir)) {
+        fs.mkdirSync(inboxDir, { recursive: true });
+    }
+
+    const built = build(input);
+    if (fs.existsSync(built.filePath)) {
+        console.error(`❌ ${existsLabel} already exists: ${built.filename}`);
+        return null;
+    }
+
+    fs.writeFileSync(built.filePath, built.content);
+    console.log(`✅ Created: ./${path.relative(process.cwd(), built.filePath)}`);
+    openInEditor(built.filePath);
+    if (built.nextMessage) {
+        console.log(built.nextMessage);
+    }
+    return built;
+}
+
+function setupWorktreeEnvironment(worktreePath, options) {
+    const {
+        featureId,
+        agentId,
+        desc,
+        profile,
+        logsDirPath
+    } = options;
+
+    const envLocalPath = path.join(process.cwd(), '.env.local');
+    const agentMeta = AGENT_CONFIGS[agentId] || {};
+    const paddedFeatureId = String(featureId).padStart(2, '0');
+
+    if (profile.devServer.enabled) {
+        const port = profile.devServer.ports[agentId] || agentMeta.port || 3000;
+        const appId = getAppId();
+        const serverId = `${agentId}-${featureId}`;
+        const devUrl = getDevProxyUrl(appId, serverId);
+        let envContent = '';
+        if (fs.existsSync(envLocalPath)) {
+            envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
+        }
+        envContent += `# Fleet config for agent ${agentId}\n`;
+        envContent += `PORT=${port}\n`;
+        envContent += `AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
+        envContent += `AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
+        envContent += `AIGON_FEATURE_ID=${paddedFeatureId}\n`;
+        envContent += `AIGON_DEV_URL=${devUrl}\n`;
+        envContent += `NEXT_PUBLIC_AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
+        envContent += `NEXT_PUBLIC_AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
+        envContent += `NEXT_PUBLIC_AIGON_FEATURE_ID=${paddedFeatureId}\n`;
+        envContent += `NEXT_PUBLIC_AIGON_DEV_URL=${devUrl}\n`;
+        fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
+        console.log(`   📋 .env.local created with PORT=${port}, banner vars, dev URL`);
+    } else if (fs.existsSync(envLocalPath)) {
+        let envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
+        envContent += `# Fleet config for agent ${agentId}\n`;
+        envContent += `AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
+        envContent += `AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
+        envContent += `AIGON_FEATURE_ID=${paddedFeatureId}\n`;
+        envContent += `NEXT_PUBLIC_AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
+        envContent += `NEXT_PUBLIC_AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
+        envContent += `NEXT_PUBLIC_AIGON_FEATURE_ID=${paddedFeatureId}\n`;
+        fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
+        console.log(`   📋 .env.local created with banner vars (no PORT — dev server not used)`);
+    }
+
+    try {
+        execSync(`aigon install-agent ${agentId}`, { cwd: worktreePath, stdio: 'pipe' });
+        console.log(`   🔧 Installed ${agentId} commands in worktree`);
+    } catch (installErr) {
+        console.warn(`   ⚠️  Failed to install ${agentId} commands in worktree: ${installErr.message}`);
+    }
+
+    if (agentId === 'cc') {
+        try {
+            const localSettingsPath = path.join(worktreePath, '.claude', 'settings.local.json');
+            let localSettings = {};
+            if (fs.existsSync(localSettingsPath)) {
+                localSettings = JSON.parse(fs.readFileSync(localSettingsPath, 'utf8'));
+            }
+            const agentLabel = AGENT_CONFIGS[agentId]?.name || agentId;
+            const title = `Feature #${paddedFeatureId} - ${agentLabel}`;
+            localSettings.hooks = {
+                ...(localSettings.hooks || {}),
+                Notification: [{
+                    matcher: '',
+                    hooks: [{
+                        type: 'command',
+                        command: `osascript -e 'display notification "Agent needs your attention" with title "${title}"'`
+                    }]
+                }]
+            };
+            fs.writeFileSync(localSettingsPath, JSON.stringify(localSettings, null, 2));
+            console.log(`   🔔 Notification hook added for ${agentLabel}`);
+        } catch (hookErr) {
+            console.warn(`   ⚠️  Could not add notification hook: ${hookErr.message}`);
+        }
+    }
+
+    if (!fs.existsSync(logsDirPath)) {
+        fs.mkdirSync(logsDirPath, { recursive: true });
+    }
+    const logName = `feature-${featureId}-${agentId}-${desc}-log.md`;
+    const logPath = path.join(logsDirPath, logName);
+    const nowIso = new Date().toISOString();
+    const template = `---\nstatus: implementing\nupdated: ${nowIso}\n---\n\n# Implementation Log: Feature ${featureId} - ${desc}\nAgent: ${agentId}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
+    fs.writeFileSync(logPath, template);
+    console.log(`   📝 Log: docs/specs/features/logs/${logName}`);
+}
+
+function ensureAgentSessions(entityId, agents, options) {
+    const {
+        sessionNameBuilder,
+        cwdBuilder,
+        commandBuilder
+    } = options;
+
+    return agents.map(agent => {
+        const sessionName = sessionNameBuilder(entityId, agent);
+        if (tmuxSessionExists(sessionName)) {
+            return { agent, sessionName, created: false, error: null };
+        }
+        try {
+            createDetachedTmuxSession(sessionName, cwdBuilder(entityId, agent));
+            const command = commandBuilder ? commandBuilder(entityId, agent) : null;
+            if (command) {
+                spawnSync('tmux', ['send-keys', '-t', sessionName, command, 'Enter'], { stdio: 'pipe' });
+            }
+            return { agent, sessionName, created: true, error: null };
+        } catch (error) {
+            return { agent, sessionName, created: false, error };
+        }
+    });
+}
+
+function resolveDevServerUrl(context = detectDevServerContext(), proxyAvailable = isProxyAvailable()) {
+    if (proxyAvailable) {
+        return getDevProxyUrl(context.appId, context.serverId);
+    }
+
+    const envLocalPath = path.join(process.cwd(), '.env.local');
+    if (fs.existsSync(envLocalPath)) {
+        const content = fs.readFileSync(envLocalPath, 'utf8');
+        const match = content.match(/^PORT=(\d+)/m);
+        if (match) {
+            return `http://localhost:${match[1]}`;
+        }
+    }
+
+    const projectConfig = loadProjectConfig();
+    const devProxy = projectConfig.devProxy || {};
+    const basePort = devProxy.basePort || 3000;
+    const agentOffsets = { cc: 1, gg: 2, cx: 3, cu: 4 };
+    const offset = context.agentId ? (agentOffsets[context.agentId] || 0) : 0;
+    return `http://localhost:${basePort + offset}`;
+}
+
 function organizeLogFiles(featureNum, winnerAgentId) {
     const logsRoot = path.join(PATHS.features.root, 'logs');
     const selectedDir = path.join(logsRoot, 'selected');
@@ -3982,95 +4203,67 @@ function extractDescription(content) {
     return match ? match[1].trim() : '';
 }
 
-// Commands that should not be autonomously invoked by the agent
-const COMMANDS_DISABLE_MODEL_INVOCATION = new Set([
-    'feature-close',
-    'feature-cleanup',
-    'feature-validate',
-    'agent-status',
-    'status',
-    'conductor',
-    'radar',
-    'dashboard',
-    'deploy',
-]);
-
-// Short aliases for commands (alias → full command name)
-// These generate top-level command files so users can type e.g. /afs instead of /aigon:feature-submit
-// All aliases start with 'a' (for aigon) to avoid namespace clashes with other tools
-const COMMAND_ALIASES = {
-    'afc':  'feature-create',
-    'afn':  'feature-now',
-    'afp':  'feature-prioritise',
-    'afse': 'feature-setup',
-    'afd':  'feature-do',
-    'afs':  'feature-submit',
-    'afe':  'feature-eval',
-    'afr':  'feature-review',
-    'afcl': 'feature-close',
-    'afap': 'feature-autopilot',
-    'ab':   'board',
-    'arc':  'research-create',
-    'arp':  'research-prioritise',
-    'arse': 'research-setup',
-    'aro':  'research-open',
-    'ard':  'research-do',
-    'ars':  'research-synthesize',
-    'arcl': 'research-close',
-    'arsb': 'research-submit',
-    'arap': 'research-autopilot',
-    'afbc': 'feedback-create',
-    'afbl': 'feedback-list',
-    'afbt': 'feedback-triage',
-    'ads':  'dev-server',
-    'ad':   'deploy',
-    'ah':   'help',
-    'an':   'next',
+const COMMAND_REGISTRY = {
+    'feature-create': { aliases: ['afc'], argHints: '<feature-name>' },
+    'feature-now': { aliases: ['afn'], argHints: '<existing-feature-name> OR <feature-description>' },
+    'feature-prioritise': { aliases: ['afp'], argHints: '<feature-name or letter>' },
+    'feature-setup': { aliases: ['afse'], argHints: '<ID> [agents...]' },
+    'feature-do': { aliases: ['afd'], argHints: '<ID> [--agent=<cc|gg|cx|cu>] [--autonomous] [--max-iterations=N] [--auto-submit] [--no-auto-submit] [--dry-run]' },
+    'feature-submit': { aliases: ['afs'] },
+    'feature-validate': { argHints: '<ID> [--dry-run] [--no-update]', disableModelInvocation: true },
+    'feature-eval': { aliases: ['afe'], argHints: '<ID> [--allow-same-model-judge]' },
+    'feature-review': { aliases: ['afr'], argHints: '<ID>' },
+    'feature-close': { aliases: ['afcl'], argHints: '<ID> [agent] [--adopt <agents...|all>]', disableModelInvocation: true },
+    'feature-cleanup': { argHints: '<ID> [--push]', disableModelInvocation: true },
+    'feature-autopilot': { aliases: ['afap'], argHints: '<feature-id> [agents...] | status [feature-id] | stop [feature-id] | attach <feature-id> <agent>' },
+    'board': { aliases: ['ab'], argHints: '[--list] [--features] [--research] [--active] [--all] [--inbox] [--backlog] [--done] [--no-actions]' },
+    'worktree-open': { argHints: '[ID] [agent]' },
+    'sessions-close': { argHints: '<ID>' },
+    'research-create': { aliases: ['arc'], argHints: '<topic-name>' },
+    'research-prioritise': { aliases: ['arp'], argHints: '<topic-name or letter>' },
+    'research-setup': { aliases: ['arse'], argHints: '<ID> [agents...]' },
+    'research-open': { aliases: ['aro'] },
+    'research-do': { aliases: ['ard'], argHints: '<ID>' },
+    'research-submit': { aliases: ['arsb'], argHints: '' },
+    'research-synthesize': { aliases: ['ars'], argHints: '<ID>' },
+    'research-close': { aliases: ['arcl'], argHints: '<ID>' },
+    'research-autopilot': { aliases: ['arap'], argHints: '<research-id> [agents...] | status [research-id] | stop [research-id]' },
+    'feedback-create': { aliases: ['afbc'], argHints: '<title>' },
+    'feedback-list': { aliases: ['afbl'], argHints: '[--inbox|--triaged|--actionable|--done|--wont-fix|--duplicate|--all] [--type <type>] [--severity <severity>] [--tag <tag>]' },
+    'feedback-triage': { aliases: ['afbt'], argHints: '<ID> [--type <type>] [--severity <severity|none>] [--tags <csv|none>] [--status <status>] [--duplicate-of <ID|none>] [--action <keep|mark-duplicate|promote-feature|promote-research|wont-fix>] [--apply] [--yes]' },
+    'dev-server': { aliases: ['ads'] },
+    'conductor': { argHints: '<start|stop|status|add|remove|list|vscode-install|vscode-uninstall> [path]', disableModelInvocation: true },
+    'radar': { argHints: '<start|stop|status|install|uninstall|add|remove|list|open|menubar-install|menubar-uninstall|menubar-render> [path]', disableModelInvocation: true },
+    'dashboard': { argHints: '[--port <N>] [--no-open] [--screenshot] [--output <path>] [--width <N>] [--height <N>]', disableModelInvocation: true },
+    'agent-status': { argHints: '<implementing|waiting|submitted>', disableModelInvocation: true },
+    'status': { argHints: '[ID]', disableModelInvocation: true },
+    'deploy': { aliases: ['ad'], argHints: '[--preview]', disableModelInvocation: true },
+    'help': { aliases: ['ah'], argHints: '' },
+    'next': { aliases: ['an'], argHints: '' },
 };
 
-// Reverse map: full command name → list of aliases
-const COMMAND_ALIAS_REVERSE = Object.entries(COMMAND_ALIASES).reduce((acc, [alias, cmd]) => {
-    if (!acc[cmd]) acc[cmd] = [];
-    acc[cmd].push(alias);
-    return acc;
-}, {});
+const COMMAND_ALIASES = {};
+const COMMAND_ALIAS_REVERSE = {};
+const COMMAND_ARG_HINTS = {};
+const COMMANDS_DISABLE_MODEL_INVOCATION = new Set();
 
-// Per-command argument hints for frontmatter
-const COMMAND_ARG_HINTS = {
-    'feature-create': '<feature-name>',
-    'feature-now': '<existing-feature-name> OR <feature-description>',
-    'feature-prioritise': '<feature-name or letter>',
-    'feature-setup': '<ID> [agents...]',
-    'feature-do': '<ID> [--agent=<cc|gg|cx|cu>] [--autonomous] [--max-iterations=N] [--auto-submit] [--no-auto-submit] [--dry-run]',
-    'feature-validate': '<ID> [--dry-run] [--no-update]',
-    'feature-eval': '<ID> [--allow-same-model-judge]',
-    'feature-review': '<ID>',
-    'feature-close': '<ID> [agent] [--adopt <agents...|all>]',
-    'feature-cleanup': '<ID> [--push]',
-    'board': '[--list] [--features] [--research] [--active] [--all] [--inbox] [--backlog] [--done] [--no-actions]',
-    'worktree-open': '[ID] [agent]',
-    'sessions-close': '<ID>',
-    'research-create': '<topic-name>',
-    'research-prioritise': '<topic-name or letter>',
-    'research-setup': '<ID> [agents...]',
-    'research-do': '<ID>',
-    'research-submit': '',
-    'research-synthesize': '<ID>',
-    'research-close': '<ID>',
-    'research-autopilot': '<research-id> [agents...] | status [research-id] | stop [research-id]',
-    'feedback-create': '<title>',
-    'feedback-list': '[--inbox|--triaged|--actionable|--done|--wont-fix|--duplicate|--all] [--type <type>] [--severity <severity>] [--tag <tag>]',
-    'feedback-triage': '<ID> [--type <type>] [--severity <severity|none>] [--tags <csv|none>] [--status <status>] [--duplicate-of <ID|none>] [--action <keep|mark-duplicate|promote-feature|promote-research|wont-fix>] [--apply] [--yes]',
-    'feature-autopilot': '<feature-id> [agents...] | status [feature-id] | stop [feature-id] | attach <feature-id> <agent>',
-    'conductor': '<start|stop|status|add|remove|list|vscode-install|vscode-uninstall> [path]',
-    'radar': '<start|stop|status|install|uninstall|add|remove|list|open|menubar-install|menubar-uninstall|menubar-render> [path]',
-    'dashboard': '[--port <N>] [--no-open] [--screenshot] [--output <path>] [--width <N>] [--height <N>]',
-    'agent-status': '<implementing|waiting|submitted>',
-    'status': '[ID]',
-    'deploy': '[--preview]',
-    'help': '',
-    'next': '',
-};
+Object.entries(COMMAND_REGISTRY).forEach(([commandName, definition]) => {
+    const aliases = Array.isArray(definition.aliases) ? definition.aliases : [];
+    aliases.forEach(alias => {
+        COMMAND_ALIASES[alias] = commandName;
+    });
+    if (definition.argHints !== undefined) {
+        COMMAND_ARG_HINTS[commandName] = definition.argHints;
+    }
+    if (definition.disableModelInvocation) {
+        COMMANDS_DISABLE_MODEL_INVOCATION.add(commandName);
+    }
+});
+
+Object.entries(COMMAND_ALIASES).forEach(([alias, commandName]) => {
+    if (!COMMAND_ALIAS_REVERSE[commandName]) COMMAND_ALIAS_REVERSE[commandName] = [];
+    COMMAND_ALIAS_REVERSE[commandName].push(alias);
+});
 
 // Format command output based on agent's output format
 function formatCommandOutput(content, description, commandName, agentConfig) {
@@ -5941,102 +6134,88 @@ const commands = {
     },
     'feature-create': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: aigon feature-create <name>\nExample: aigon feature-create dark-mode");
-
-        // Ensure inbox exists
-        const inboxDir = path.join(PATHS.features.root, '01-inbox');
-        if (!fs.existsSync(inboxDir)) {
-            fs.mkdirSync(inboxDir, { recursive: true });
-        }
-
-        // Create filename: feature-dark-mode.md
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const filename = `feature-${slug}.md`;
-        const filePath = path.join(inboxDir, filename);
-
-        if (fs.existsSync(filePath)) {
-            return console.error(`❌ Feature already exists: ${filename}`);
-        }
-
-        // Read template and replace placeholder
-        const template = readTemplate('specs/feature-template.md');
-        const content = template.replace(/\{\{NAME\}\}/g, name);
-
-        fs.writeFileSync(filePath, content);
-        console.log(`✅ Created: ./docs/specs/features/01-inbox/${filename}`);
-        openInEditor(filePath);
-        console.log(`📝 Edit the spec, then prioritise it using command: feature-prioritise ${slug}`);
+        createSpecFile({
+            input: name,
+            usage: 'aigon feature-create <name>',
+            example: 'aigon feature-create dark-mode',
+            inboxDir: path.join(PATHS.features.root, '01-inbox'),
+            existsLabel: 'Feature',
+            build: (value) => {
+                const slug = slugify(value);
+                const filename = `feature-${slug}.md`;
+                const filePath = path.join(PATHS.features.root, '01-inbox', filename);
+                const template = readTemplate('specs/feature-template.md');
+                return {
+                    filename,
+                    filePath,
+                    content: template.replace(/\{\{NAME\}\}/g, value),
+                    nextMessage: `📝 Edit the spec, then prioritise it using command: feature-prioritise ${slug}`
+                };
+            }
+        });
     },
     'research-create': (args) => {
         const name = args[0];
-        if (!name) return console.error("Usage: aigon research-create <name>\nExample: aigon research-create api-design");
-
-        // Ensure inbox exists
-        const inboxDir = path.join(PATHS.research.root, '01-inbox');
-        if (!fs.existsSync(inboxDir)) {
-            fs.mkdirSync(inboxDir, { recursive: true });
-        }
-
-        // Create filename: research-api-design.md
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const filename = `research-${slug}.md`;
-        const filePath = path.join(inboxDir, filename);
-
-        if (fs.existsSync(filePath)) {
-            return console.error(`❌ Research topic already exists: ${filename}`);
-        }
-
-        // Read template and replace placeholder
-        const template = readTemplate('specs/research-template.md');
-        const content = template.replace(/\{\{NAME\}\}/g, name);
-
-        fs.writeFileSync(filePath, content);
-        console.log(`✅ Created: ./docs/specs/research-topics/01-inbox/${filename}`);
-        openInEditor(filePath);
-        console.log(`📝 Edit the topic, then prioritise it using command: research-prioritise ${slug}`);
+        createSpecFile({
+            input: name,
+            usage: 'aigon research-create <name>',
+            example: 'aigon research-create api-design',
+            inboxDir: path.join(PATHS.research.root, '01-inbox'),
+            existsLabel: 'Research topic',
+            build: (value) => {
+                const slug = slugify(value);
+                const filename = `research-${slug}.md`;
+                const filePath = path.join(PATHS.research.root, '01-inbox', filename);
+                const template = readTemplate('specs/research-template.md');
+                return {
+                    filename,
+                    filePath,
+                    content: template.replace(/\{\{NAME\}\}/g, value),
+                    nextMessage: `📝 Edit the topic, then prioritise it using command: research-prioritise ${slug}`
+                };
+            }
+        });
     },
     'feedback-create': (args) => {
         const title = args[0];
-        if (!title) return console.error("Usage: aigon feedback-create <title>\nExample: aigon feedback-create \"Login fails on Safari\"");
+        const created = createSpecFile({
+            input: title,
+            usage: 'aigon feedback-create <title>',
+            example: 'aigon feedback-create "Login fails on Safari"',
+            inboxDir: path.join(PATHS.feedback.root, FEEDBACK_STATUS_TO_FOLDER['inbox']),
+            existsLabel: 'Feedback',
+            build: (value) => {
+                const nextId = getNextId(PATHS.feedback);
+                const slug = slugify(value);
+                const filename = `feedback-${nextId}-${slug}.md`;
+                const filePath = path.join(PATHS.feedback.root, FEEDBACK_STATUS_TO_FOLDER['inbox'], filename);
+                const projectTemplatePath = path.join(SPECS_ROOT, 'templates', 'feedback-template.md');
+                const template = fs.existsSync(projectTemplatePath)
+                    ? fs.readFileSync(projectTemplatePath, 'utf8')
+                    : readTemplate('specs/feedback-template.md');
+                const parsedTemplate = parseFrontMatter(template);
 
-        const inboxDir = path.join(PATHS.feedback.root, FEEDBACK_STATUS_TO_FOLDER['inbox']);
-        if (!fs.existsSync(inboxDir)) {
-            fs.mkdirSync(inboxDir, { recursive: true });
-        }
+                const metadata = normalizeFeedbackMetadata(parsedTemplate.data, {
+                    id: nextId,
+                    title: value,
+                    status: 'inbox',
+                    type: 'bug',
+                    reporter: { name: '', identifier: '' },
+                    source: { channel: '', reference: '' }
+                });
+                metadata.id = nextId;
+                metadata.title = value;
+                metadata.status = 'inbox';
 
-        const nextId = getNextId(PATHS.feedback);
-        const slug = slugify(title);
-        const filename = `feedback-${nextId}-${slug}.md`;
-        const filePath = path.join(inboxDir, filename);
-
-        if (fs.existsSync(filePath)) {
-            return console.error(`❌ Feedback already exists: ${filename}`);
-        }
-
-        const projectTemplatePath = path.join(SPECS_ROOT, 'templates', 'feedback-template.md');
-        const template = fs.existsSync(projectTemplatePath)
-            ? fs.readFileSync(projectTemplatePath, 'utf8')
-            : readTemplate('specs/feedback-template.md');
-        const parsedTemplate = parseFrontMatter(template);
-
-        const metadata = normalizeFeedbackMetadata(parsedTemplate.data, {
-            id: nextId,
-            title,
-            status: 'inbox',
-            type: 'bug',
-            reporter: { name: '', identifier: '' },
-            source: { channel: '', reference: '' }
+                return {
+                    filename,
+                    filePath,
+                    content: buildFeedbackDocumentContent(metadata, parsedTemplate.body),
+                    nextMessage: `📝 Next: fill in summary/evidence, then triage with: aigon feedback-triage ${nextId}`
+                };
+            }
         });
-        metadata.id = nextId;
-        metadata.title = title;
-        metadata.status = 'inbox';
-
-        const content = buildFeedbackDocumentContent(metadata, parsedTemplate.body);
-        fs.writeFileSync(filePath, content);
-
-        console.log(`✅ Created: ./docs/specs/feedback/01-inbox/${filename}`);
-        openInEditor(filePath);
-        console.log(`📝 Next: fill in summary/evidence, then triage with: aigon feedback-triage ${nextId}`);
+        if (!created) return;
     },
     'feedback-list': (args) => {
         const options = parseCliOptions(args);
@@ -6306,8 +6485,7 @@ const commands = {
             return;
         }
 
-        const updatedContent = buildFeedbackDocumentContent(proposed, item.body);
-        fs.writeFileSync(found.fullPath, updatedContent);
+        modifySpecFile(found.fullPath, ({ body }) => buildFeedbackDocumentContent(proposed, body));
 
         if (targetFolder !== found.folder) {
             moveFile(found, targetFolder);
@@ -6334,7 +6512,7 @@ const commands = {
         }
 
         const found = findUnprioritizedFile(PATHS.research, name);
-        if (!found) return console.error(`❌ Could not find unprioritized research "${name}" in inbox.`);
+        if (!found) return printError('unprioritized research', name, 'Run `aigon research-create <name>` first.');
         const nextId = getNextId(PATHS.research);
         const paddedId = String(nextId).padStart(2, '0');
         // Transform: research-topic-name.md -> research-55-topic-name.md
@@ -6434,7 +6612,7 @@ const commands = {
 
         // Find the research topic
         let found = findFile(PATHS.research, id, ['03-in-progress']);
-        if (!found) return console.error(`❌ Could not find research "${id}" in in-progress.\n\nRun 'aigon research-setup ${id}' first.`);
+        if (!found) return printError('research', id, `Run 'aigon research-setup ${id}' first.`);
 
         const match = found.file.match(/^research-(\d+)-(.*)\.md$/);
         if (!match) return console.warn("⚠️  Could not parse filename.");
@@ -6746,18 +6924,17 @@ const commands = {
             console.log(`   Research: ${paddedId} - ${researchName.replace(/-/g, ' ')}\n`);
 
             const cwd = process.cwd();
-            agentConfigs.forEach(config => {
-                const sessionName = `aigon-r${parseInt(researchNum, 10)}-${config.agent}`;
-                if (tmuxSessionExists(sessionName)) {
-                    console.log(`   ✓ ${sessionName} (already exists)`);
+            const commandByAgent = new Map(agentConfigs.map(config => [config.agent, config.agentCommand]));
+            const sessionResults = ensureAgentSessions(researchNum, agentConfigs.map(config => config.agent), {
+                sessionNameBuilder: (id, agent) => `aigon-r${parseInt(id, 10)}-${agent}`,
+                cwdBuilder: () => cwd,
+                commandBuilder: (_, agent) => commandByAgent.get(agent)
+            });
+            sessionResults.forEach(result => {
+                if (result.error) {
+                    console.warn(`   ⚠️  Could not create tmux session ${result.sessionName}: ${result.error.message}`);
                 } else {
-                    try {
-                        createDetachedTmuxSession(sessionName, cwd);
-                        spawnSync('tmux', ['send-keys', '-t', sessionName, config.agentCommand, 'Enter'], { stdio: 'pipe' });
-                        console.log(`   ✓ ${sessionName} → started`);
-                    } catch (e) {
-                        console.warn(`   ⚠️  Could not create tmux session ${sessionName}: ${e.message}`);
-                    }
+                    console.log(`   ✓ ${result.sessionName}${result.created ? ' → started' : ' (already exists)'}`);
                 }
             });
 
@@ -6803,7 +6980,7 @@ const commands = {
         }
 
         const found = findUnprioritizedFile(PATHS.features, name);
-        if (!found) return console.error(`❌ Could not find unprioritized feature "${name}" in inbox.`);
+        if (!found) return printError('unprioritized feature', name, 'Run `aigon feature-create <name>` first.');
         const nextId = getNextId(PATHS.features);
         const paddedId = String(nextId).padStart(2, '0');
         // Transform: feature-dark-mode.md -> feature-55-dark-mode.md
@@ -6823,10 +7000,11 @@ const commands = {
         }
 
         console.log(`📋 Assigned ID: ${paddedId}`);
-        console.log(`🚀 Next steps:`);
-        console.log(`   Drive (branch):   aigon feature-setup ${paddedId}`);
-        console.log(`   Drive (worktree): aigon feature-setup ${paddedId} <agent>`);
-        console.log(`   Fleet:            aigon feature-setup ${paddedId} <agent1> <agent2> [agent3]`);
+        printNextSteps([
+            `Drive (branch):   aigon feature-setup ${paddedId}`,
+            `Drive (worktree): aigon feature-setup ${paddedId} <agent>`,
+            `Fleet:            aigon feature-setup ${paddedId} <agent1> <agent2> [agent3]`
+        ]);
     },
     'feature-now': (args) => {
         const name = args.join(' ').trim();
@@ -7079,93 +7257,13 @@ const commands = {
                             console.warn(`   git commit -m "chore: sync spec to worktree branch"`);
                         }
 
-                        // Create .env.local (with PORT and banner env vars)
-                        const envLocalPath = path.join(process.cwd(), '.env.local');
-                        const agentMeta = AGENT_CONFIGS[agentId] || {};
-                        const paddedFeatureId = String(num).padStart(2, '0');
-                        if (profile.devServer.enabled) {
-                            const port = profile.devServer.ports[agentId] || agentMeta.port || 3000;
-                            const appId = getAppId();
-                            const serverId = `${agentId}-${num}`;
-                            const devUrl = getDevProxyUrl(appId, serverId);
-                            let envContent = '';
-                            if (fs.existsSync(envLocalPath)) {
-                                envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
-                            }
-                            envContent += `# Fleet config for agent ${agentId}\n`;
-                            envContent += `PORT=${port}\n`;
-                            envContent += `AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
-                            envContent += `AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
-                            envContent += `AIGON_FEATURE_ID=${paddedFeatureId}\n`;
-                            envContent += `AIGON_DEV_URL=${devUrl}\n`;
-                            // NEXT_PUBLIC_ prefixed vars for browser access (Next.js, Vite, etc.)
-                            envContent += `NEXT_PUBLIC_AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
-                            envContent += `NEXT_PUBLIC_AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
-                            envContent += `NEXT_PUBLIC_AIGON_FEATURE_ID=${paddedFeatureId}\n`;
-                            envContent += `NEXT_PUBLIC_AIGON_DEV_URL=${devUrl}\n`;
-                            fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
-                            console.log(`   📋 .env.local created with PORT=${port}, banner vars, dev URL`);
-                        } else if (fs.existsSync(envLocalPath)) {
-                            // Copy base .env.local and append banner vars
-                            let envContent = fs.readFileSync(envLocalPath, 'utf8').trimEnd() + '\n\n';
-                            envContent += `# Fleet config for agent ${agentId}\n`;
-                            envContent += `AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
-                            envContent += `AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
-                            envContent += `AIGON_FEATURE_ID=${paddedFeatureId}\n`;
-                            envContent += `NEXT_PUBLIC_AIGON_AGENT_NAME=${agentMeta.name || agentId}\n`;
-                            envContent += `NEXT_PUBLIC_AIGON_BANNER_COLOR=${agentMeta.bannerColor || '#888888'}\n`;
-                            envContent += `NEXT_PUBLIC_AIGON_FEATURE_ID=${paddedFeatureId}\n`;
-                            fs.writeFileSync(path.join(worktreePath, '.env.local'), envContent);
-                            console.log(`   📋 .env.local created with banner vars (no PORT — dev server not used)`);
-                        }
-
-                        // Install agent commands in worktree (gitignored files don't exist in new worktrees)
-                        try {
-                            execSync(`aigon install-agent ${agentId}`, { cwd: worktreePath, stdio: 'pipe' });
-                            console.log(`   🔧 Installed ${agentId} commands in worktree`);
-                        } catch (installErr) {
-                            console.warn(`   ⚠️  Failed to install ${agentId} commands in worktree: ${installErr.message}`);
-                        }
-
-                        // Add CC notification hooks so the user gets a macOS alert
-                        // when the agent needs attention (permission prompt, question, etc.)
-                        if (agentId === 'cc') {
-                            try {
-                                const localSettingsPath = path.join(worktreePath, '.claude', 'settings.local.json');
-                                let localSettings = {};
-                                if (fs.existsSync(localSettingsPath)) {
-                                    localSettings = JSON.parse(fs.readFileSync(localSettingsPath, 'utf8'));
-                                }
-                                const agentLabel = AGENT_CONFIGS[agentId]?.name || agentId;
-                                const title = `Feature #${paddedFeatureId} - ${agentLabel}`;
-                                localSettings.hooks = {
-                                    ...(localSettings.hooks || {}),
-                                    Notification: [{
-                                        matcher: '',
-                                        hooks: [{
-                                            type: 'command',
-                                            command: `osascript -e 'display notification "Agent needs your attention" with title "${title}"'`
-                                        }]
-                                    }]
-                                };
-                                fs.writeFileSync(localSettingsPath, JSON.stringify(localSettings, null, 2));
-                                console.log(`   🔔 Notification hook added for ${agentLabel}`);
-                            } catch (hookErr) {
-                                console.warn(`   ⚠️  Could not add notification hook: ${hookErr.message}`);
-                            }
-                        }
-
-                        // Create log for this agent in the worktree
-                        const worktreeLogsDir = path.join(worktreePath, 'docs/specs/features/logs');
-                        if (!fs.existsSync(worktreeLogsDir)) {
-                            fs.mkdirSync(worktreeLogsDir, { recursive: true });
-                        }
-                        const logName = `feature-${num}-${agentId}-${desc}-log.md`;
-                        const logPath = path.join(worktreeLogsDir, logName);
-                        const nowIso = new Date().toISOString();
-                        const template = `---\nstatus: implementing\nupdated: ${nowIso}\n---\n\n# Implementation Log: Feature ${num} - ${desc}\nAgent: ${agentId}\n\n## Plan\n\n## Progress\n\n## Decisions\n`;
-                        fs.writeFileSync(logPath, template);
-                        console.log(`   📝 Log: docs/specs/features/logs/${logName}`);
+                        setupWorktreeEnvironment(worktreePath, {
+                            featureId: num,
+                            agentId,
+                            desc,
+                            profile,
+                            logsDirPath: path.join(worktreePath, 'docs/specs/features/logs')
+                        });
 
                         if (useTmux) {
                             try {
@@ -7200,18 +7298,26 @@ const commands = {
             const fleetTerminal = fleetEffectiveConfig.terminal;
             if (fleetTerminal === 'tmux' && createdWorktrees.length > 0) {
                 console.log(`\n🖥️  Creating tmux sessions...`);
-                createdWorktrees.forEach(({ agentId, worktreePath }) => {
-                    const wt = { featureId: num, agent: agentId, path: worktreePath, desc };
-                    const agentCmd = buildAgentCommand(wt);
-                    const sessionName = `aigon-f${parseInt(num, 10)}-${agentId}`;
-                    const createResult = spawnSync('tmux', ['new-session', '-d', '-s', sessionName, '-c', worktreePath], { stdio: 'pipe' });
-                    if (createResult.status !== 0) {
-                        const errMsg = createResult.stderr ? createResult.stderr.toString().trim() : 'unknown error';
-                        console.warn(`   ⚠️  Could not create tmux session ${sessionName}: ${errMsg}`);
-                        return;
+                const worktreeByAgent = new Map(createdWorktrees.map(wt => [wt.agentId, wt.worktreePath]));
+                const sessionResults = ensureAgentSessions(num, createdWorktrees.map(wt => wt.agentId), {
+                    sessionNameBuilder: (featureId, agent) => `aigon-f${parseInt(featureId, 10)}-${agent}`,
+                    cwdBuilder: (_, agent) => worktreeByAgent.get(agent),
+                    commandBuilder: (featureId, agent) => {
+                        const wt = {
+                            featureId,
+                            agent,
+                            path: worktreeByAgent.get(agent),
+                            desc
+                        };
+                        return buildAgentCommand(wt);
                     }
-                    spawnSync('tmux', ['send-keys', '-t', sessionName, agentCmd, 'Enter'], { stdio: 'pipe' });
-                    console.log(`   ✓ ${sessionName} → started`);
+                });
+                sessionResults.forEach(result => {
+                    if (result.error) {
+                        console.warn(`   ⚠️  Could not create tmux session ${result.sessionName}: ${result.error.message}`);
+                    } else {
+                        console.log(`   ✓ ${result.sessionName}${result.created ? ' → started' : ' (already exists)'}`);
+                    }
                 });
                 console.log(`\n   Attach: tmux attach -t aigon-f${parseInt(num, 10)}-<agent>`);
                 console.log(`   List:   tmux ls`);
@@ -7274,7 +7380,7 @@ const commands = {
 
         // Find the feature spec
         let found = findFile(PATHS.features, id, ['03-in-progress']);
-        if (!found) return console.error(`❌ Could not find feature "${id}" in in-progress.\n\nRun 'aigon feature-setup ${id}' first.`);
+        if (!found) return printError('feature', id, `Run 'aigon feature-setup ${id}' first.`);
 
         const match = found.file.match(/^feature-(\d+)-(.*)\.md$/);
         if (!match) return console.warn("⚠️  Could not parse filename.");
@@ -12130,56 +12236,12 @@ Branch: \`${soloBranch}\`
         } else if (subcommand === 'url') {
             const context = detectDevServerContext();
             const proxyAvailable = isProxyAvailable();
-
-            if (proxyAvailable) {
-                const url = getDevProxyUrl(context.appId, context.serverId);
-                // Output just the URL for scripting
-                console.log(url);
-            } else {
-                // Fallback: try to read port from .env.local
-                const envLocalPath = path.join(process.cwd(), '.env.local');
-                if (fs.existsSync(envLocalPath)) {
-                    const content = fs.readFileSync(envLocalPath, 'utf8');
-                    const match = content.match(/^PORT=(\d+)/m);
-                    if (match) {
-                        console.log(`http://localhost:${match[1]}`);
-                        return;
-                    }
-                }
-                // Use basePort + agent offset instead of hardcoded 3000
-                const projectConfig = loadProjectConfig();
-                const devProxy = projectConfig.devProxy || {};
-                const basePort = devProxy.basePort || 3000;
-                const agentOffsets = { cc: 1, gg: 2, cx: 3, cu: 4 };
-                const offset = context.agentId ? (agentOffsets[context.agentId] || 0) : 0;
-                console.log(`http://localhost:${basePort + offset}`);
-            }
+            console.log(resolveDevServerUrl(context, proxyAvailable));
 
         } else if (subcommand === 'open') {
             const context = detectDevServerContext();
             const proxyAvailable = isProxyAvailable();
-
-            let url;
-            if (proxyAvailable) {
-                url = getDevProxyUrl(context.appId, context.serverId);
-            } else {
-                const envLocalPath = path.join(process.cwd(), '.env.local');
-                if (fs.existsSync(envLocalPath)) {
-                    const content = fs.readFileSync(envLocalPath, 'utf8');
-                    const match = content.match(/^PORT=(\d+)/m);
-                    if (match) {
-                        url = `http://localhost:${match[1]}`;
-                    }
-                }
-                if (!url) {
-                    const projectConfig = loadProjectConfig();
-                    const devProxy = projectConfig.devProxy || {};
-                    const basePort = devProxy.basePort || 3000;
-                    const agentOffsets = { cc: 1, gg: 2, cx: 3, cu: 4 };
-                    const offset = context.agentId ? (agentOffsets[context.agentId] || 0) : 0;
-                    url = `http://localhost:${basePort + offset}`;
-                }
-            }
+            const url = resolveDevServerUrl(context, proxyAvailable);
 
             console.log(`🌐 Opening ${url}`);
             openInBrowser(url);
