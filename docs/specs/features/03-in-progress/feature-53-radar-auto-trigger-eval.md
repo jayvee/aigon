@@ -6,17 +6,17 @@ When the radar daemon detects that all Fleet agents have submitted for a feature
 
 ## User Stories
 
-- [ ] As a developer, I want radar to automatically start evaluation when all agents submit, so I don't have to watch for notifications and manually trigger eval
-- [ ] As a developer, I want to see in the menubar that an auto-triggered eval is running
+- [x] As a developer, I want radar to automatically start evaluation when all agents submit, so I don't have to watch for notifications and manually trigger eval
+- [x] As a developer, I want to see in the menubar that an auto-triggered eval is running
 
 ## Acceptance Criteria
 
-- [ ] When radar polls and detects all agents submitted for a feature, it spawns `aigon feature-eval <ID>` in a detached tmux session
-- [ ] Auto-eval only triggers once per feature (not on every poll cycle)
-- [ ] The menubar shows the feature has moved to "in-evaluation" stage
-- [ ] A macOS notification is sent when auto-eval is triggered
-- [ ] Auto-eval can be disabled via config (`autoEval: false` in global config)
-- [ ] If the eval tmux session already exists, radar does not spawn a duplicate
+- [x] When radar polls and detects all agents submitted for a feature, it spawns `aigon feature-eval <ID>` in a detached tmux session
+- [x] Auto-eval only triggers once per feature (not on every poll cycle)
+- [x] The menubar shows the feature has moved to "in-evaluation" stage
+- [x] A macOS notification is sent when auto-eval is triggered
+- [x] Auto-eval can be disabled via config (`autoEval: false` in global config)
+- [x] If the eval tmux session already exists, radar does not spawn a duplicate
 
 ## Technical Approach
 
