@@ -1,42 +1,46 @@
 # Feature: control-surface-radar-interactive-api
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Add a mutation API to Radar so control surfaces (dashboard, VS Code extension, future native clients) can trigger core workflow actions through HTTP instead of copy/pasting CLI commands. This keeps Radar as the control plane while preserving existing CLI behavior.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As an operator using a Radar client, I can trigger core feature workflow actions via an API call.
+- [ ] As a maintainer, I can trust that Radar mutation endpoints are constrained to safe allowlisted actions and registered repos.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] Radar exposes a `POST /api/action` endpoint that accepts `{ action, args, repoPath }`.
+- [ ] The endpoint only permits an allowlisted set of actions and rejects unknown actions with a clear 400 response.
+- [ ] The endpoint requires `repoPath` to be registered when multiple repos exist, and rejects unregistered repos.
+- [ ] Successful action calls run Aigon CLI in the target repo and return structured result payload including stdout/stderr and exit code.
+- [ ] Unit tests cover action parsing/validation and command argument construction.
 
 ## Validation
-<!-- Optional: commands Ralph runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+npm test
 ```
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+- Add reusable Radar action helpers in `lib/utils.js`:
+  - Allowlist of supported mutation actions.
+  - Repo resolution/validation against Radar's registered repos.
+  - Request parsing and normalized argument handling.
+  - Safe command invocation via `spawnSync(process.execPath, [aigon-cli.js, ...])` (no shell interpolation).
+- Wire `POST /api/action` into `runRadarServiceDaemon`.
+- Re-export helpers via `lib/dashboard.js` for targeted unit testing.
+- Add tests in `aigon-cli.test.js` for parser/validation behavior and CLI arg building.
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites -->
--
+- Feature 45 (Radar service/API foundation).
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- Dashboard UI wiring for mutation buttons.
+- WebSocket/session stream transport.
+- Authentication/authorization hardening beyond local allowlist + repo guardrails.
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Should Radar mutation endpoints require an explicit local auth token before enabling non-read actions?
+- Should action APIs evolve from generic `action + args` to typed endpoints per workflow step?
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
 - Research:
+  - `docs/specs/research-topics/logs/research-09-cx-findings.md` (`radar-control-actions` recommendation)
