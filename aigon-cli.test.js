@@ -89,7 +89,15 @@ test('toUnpaddedId keeps non-numeric IDs unchanged', () => assert.strictEqual(to
 test('buildTmuxSessionName includes repo and unpadded ID', () => assert.strictEqual(buildTmuxSessionName('040', 'cx'), 'aigon-f40-cx'));
 test('buildTmuxSessionName defaults agent to solo', () => assert.strictEqual(buildTmuxSessionName('40'), 'aigon-f40-solo'));
 test('buildTmuxSessionName includes desc when provided', () => assert.strictEqual(buildTmuxSessionName('7', 'cc', { repo: 'myrepo', desc: 'dark-mode' }), 'myrepo-f7-cc-dark-mode'));
+test('buildTmuxSessionName derives repo from worktree path', () => assert.strictEqual(
+    buildTmuxSessionName('7', 'cc', { desc: 'dark-mode', worktreePath: '/tmp/myrepo-worktrees/feature-07-cc-dark-mode' }),
+    'myrepo-f7-cc-dark-mode'
+));
 test('buildResearchTmuxSessionName uses repo prefix', () => assert.strictEqual(buildResearchTmuxSessionName('5', 'gg', { repo: 'myrepo' }), 'myrepo-r5-gg'));
+test('buildResearchTmuxSessionName derives repo from worktree base path', () => assert.strictEqual(
+    buildResearchTmuxSessionName('5', 'gg', { worktreePath: '/tmp/myrepo-worktrees/research-05-gg' }),
+    'myrepo-r5-gg'
+));
 test('matchTmuxSessionByEntityId matches new-style names', () => {
     const m = matchTmuxSessionByEntityId('myrepo-f7-cc-dark-mode', '7');
     assert.deepStrictEqual(m, { type: 'f', id: '7', agent: 'cc' });
