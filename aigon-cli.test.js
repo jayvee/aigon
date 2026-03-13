@@ -19,7 +19,13 @@ const { createResearchCommands } = require('./lib/commands/research');
 const { createFeedbackCommands } = require('./lib/commands/feedback');
 const { createSetupCommands } = require('./lib/commands/setup');
 const { createMiscCommands } = require('./lib/commands/misc');
-const { createAllCommands, collectIncompleteFeatureEvalAgents, parseFrontMatterStatus } = require('./lib/commands/shared');
+const {
+    buildIncompleteSubmissionReconnectCommand,
+    createAllCommands,
+    collectIncompleteFeatureEvalAgents,
+    collectIncompleteResearchSynthesisAgents,
+    parseFrontMatterStatus
+} = require('./lib/commands/shared');
 const { parseSimpleFrontMatter } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
 const { isSameProviderFamily } = require('./lib/utils');
@@ -139,6 +145,32 @@ test('collectIncompleteFeatureEvalAgents skips missing logs for backwards compat
 
     assert.deepStrictEqual(incomplete, []);
 }));
+test('collectIncompleteResearchSynthesisAgents returns unfinished research agents', () => withTempDir(tempDir => {
+    const logsDir = path.join(tempDir, 'docs/specs/research-topics/logs');
+    fs.mkdirSync(logsDir, { recursive: true });
+    fs.writeFileSync(
+        path.join(logsDir, 'research-52-cc-findings.md'),
+        '---\nstatus: waiting\n---\n# Findings\n'
+    );
+    fs.writeFileSync(
+        path.join(logsDir, 'research-52-gg-findings.md'),
+        '---\nstatus: submitted\n---\n# Findings\n'
+    );
+
+    const incomplete = collectIncompleteResearchSynthesisAgents({
+        researchNum: '52',
+        logsDir,
+        loadAgentConfig: (agent) => ({ name: agent === 'cc' ? 'Claude' : agent })
+    });
+
+    assert.deepStrictEqual(incomplete, [{ agent: 'cc', name: 'Claude', status: 'waiting' }]);
+}));
+test('feature reconnect command uses terminal-focus', () => {
+    assert.strictEqual(
+        buildIncompleteSubmissionReconnectCommand({ mode: 'feature', id: '51', agent: 'cc' }),
+        'aigon terminal-focus 51 cc'
+    );
+});
 test('feature-eval --force bypasses the completion warning and creates the evaluation file', () => withTempDir(tempDir => {
     const featuresRoot = path.join(tempDir, 'docs/specs/features');
     const inProgressDir = path.join(featuresRoot, '03-in-progress');
@@ -183,6 +215,98 @@ test('feature-eval --force bypasses the completion warning and creates the evalu
 
     assert.strictEqual(fs.existsSync(path.join(evaluationsDir, 'feature-51-eval.md')), true);
     assert.strictEqual(output.some(line => line.includes('not yet submitted')), false);
+}));
+test('research reconnect command uses terminal-focus with --research', () => {
+    assert.strictEqual(
+        buildIncompleteSubmissionReconnectCommand({ mode: 'research', id: '52', agent: 'cc' }),
+        'aigon terminal-focus 52 cc --research'
+    );
+});
+test('research-synthesize warns about unfinished findings and suggests terminal-focus', () => withTempDir(tempDir => {
+    const researchRoot = path.join(tempDir, 'docs/specs/research-topics');
+    const inProgressDir = path.join(researchRoot, '03-in-progress');
+    const logsDir = path.join(researchRoot, 'logs');
+
+    fs.mkdirSync(inProgressDir, { recursive: true });
+    fs.mkdirSync(logsDir, { recursive: true });
+
+    fs.writeFileSync(
+        path.join(inProgressDir, 'research-52-eval-agent-completion-check.md'),
+        '# Research 52\n'
+    );
+    fs.writeFileSync(
+        path.join(logsDir, 'research-52-cc-findings.md'),
+        '---\nstatus: implementing\n---\n# Findings\n'
+    );
+
+    const commands = createAllCommands({
+        PATHS: {
+            features: {
+                root: path.join(tempDir, 'docs/specs/features'),
+                prefix: 'feature',
+                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused']
+            },
+            research: {
+                root: researchRoot,
+                prefix: 'research',
+                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-done']
+            }
+        },
+        loadAgentConfig: (agentId) => ({ name: agentId === 'cc' ? 'Claude' : agentId }),
+        printAgentContextWarning: () => {
+            throw new Error('printAgentContextWarning should not run when findings are incomplete');
+        }
+    });
+
+    const { output } = withCapturedConsole(() => {
+        commands['research-synthesize'](['52']);
+    });
+
+    assert.strictEqual(output.some(line => line.includes('aigon terminal-focus 52 cc --research')), true);
+    assert.strictEqual(output.some(line => line.includes('aigon research-synthesize 52 --force')), true);
+}));
+test('research-synthesize --force bypasses unfinished findings check', () => withTempDir(tempDir => {
+    const researchRoot = path.join(tempDir, 'docs/specs/research-topics');
+    const inProgressDir = path.join(researchRoot, '03-in-progress');
+    const logsDir = path.join(researchRoot, 'logs');
+
+    fs.mkdirSync(inProgressDir, { recursive: true });
+    fs.mkdirSync(logsDir, { recursive: true });
+
+    fs.writeFileSync(
+        path.join(inProgressDir, 'research-52-eval-agent-completion-check.md'),
+        '# Research 52\n'
+    );
+    fs.writeFileSync(
+        path.join(logsDir, 'research-52-cc-findings.md'),
+        '---\nstatus: implementing\n---\n# Findings\n'
+    );
+
+    let contextWarningCalled = false;
+    const commands = createAllCommands({
+        PATHS: {
+            features: {
+                root: path.join(tempDir, 'docs/specs/features'),
+                prefix: 'feature',
+                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused']
+            },
+            research: {
+                root: researchRoot,
+                prefix: 'research',
+                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-done']
+            }
+        },
+        loadAgentConfig: (agentId) => ({ name: agentId === 'cc' ? 'Claude' : agentId }),
+        printAgentContextWarning: () => {
+            contextWarningCalled = true;
+        }
+    });
+
+    withCapturedConsole(() => {
+        commands['research-synthesize'](['52', '--force']);
+    });
+
+    assert.strictEqual(contextWarningCalled, true);
 }));
 
 console.log('\nCommand Aliases');
