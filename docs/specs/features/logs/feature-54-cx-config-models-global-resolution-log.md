@@ -44,3 +44,12 @@ Agent: cx
 - Failing tests are pre-existing and unrelated to this feature:
   - `Worktree Helpers > buildTmuxSessionName includes repo and unpadded ID`
   - `Worktree Helpers > buildTmuxSessionName defaults agent to solo`
+
+## Submission Notes
+- Feature implementation commits are already present on this branch:
+  - `65795b3` `fix: resolve config models from global task-level model keys`
+  - `b6050c5` `fix: apply canonical model overrides to runtime agent command resolution`
+  - `316502c` `docs: update implementation log for feature 54`
+  - `4f3d7fe` `docs: mark feature 54 submission status`
+- Current working tree contains only local `.env.local` edits, which were intentionally not included in feature commits.
+- Implementation is ready for cross-agent evaluation.
