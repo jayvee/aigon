@@ -180,6 +180,8 @@ const WRAPPER_EXPORTS = {
         'buildResearchAgentCommand',
         'toUnpaddedId',
         'buildTmuxSessionName',
+        'buildResearchTmuxSessionName',
+        'matchTmuxSessionByEntityId',
         'assertTmuxAvailable',
         'tmuxSessionExists',
         'createDetachedTmuxSession',
