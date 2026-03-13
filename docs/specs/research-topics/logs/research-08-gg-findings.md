@@ -1,3 +1,8 @@
+---
+status: submitted
+updated: 2026-03-13T04:09:26.807Z
+---
+
 # Research Findings: aigon demo video style
 
 **Agent:** Gemini (gg)
