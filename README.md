@@ -367,7 +367,11 @@ aigon config init                       # Create project config (auto-detects pr
 aigon config set profile web            # Set project profile
 aigon config get terminal               # Show value + where it comes from
 aigon config show                       # Show merged effective config
+aigon config models                     # Show resolved task models + source for each agent
 ```
+
+`aigon config models` resolves task-level model overrides with this precedence:
+`AIGON_<AGENT>_<TASK>_MODEL` env var > project config > global config (`~/.aigon/config.json`) > template default.
 
 See the [Complete Guide](GUIDE.md#configuration) for all config commands and options.
 
