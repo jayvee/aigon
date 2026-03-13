@@ -18,14 +18,14 @@
 
 ## User Stories
 
-- [ ] As a user, I want to set a model override in my global config and have it apply across all repos without needing env vars
+- [x] As a user, I want to set a model override in my global config and have it apply across all repos without needing env vars
 
 ## Acceptance Criteria
 
-- [ ] `aigon config models` resolves models from global config (`~/.aigon/config.json`) at `agents.<agent>.<task>.model`
-- [ ] Precedence is correct: env var > project config > global config > template default
-- [ ] The SOURCE column in `config models` output shows `global` for global config overrides
-- [ ] Project-level config overrides global config
+- [x] `aigon config models` resolves models from global config (`~/.aigon/config.json`) at `agents.<agent>.<task>.model`
+- [x] Precedence is correct: env var > project config > global config > template default
+- [x] The SOURCE column in `config models` output shows `global` for global config overrides
+- [x] Project-level config overrides global config
 
 ## Technical Approach
 
@@ -42,4 +42,4 @@ The model resolution logic in `config models` likely only checks env vars and te
 
 ## Open Questions
 
-- Should project-level config use the same `agents.<agent>.<task>.model` key path?
+- Resolved: yes. Project-level config uses the same `agents.<agent>.<task>.model` key path, with backward-compatible support for legacy `agents.<agent>.models.<task>`.
