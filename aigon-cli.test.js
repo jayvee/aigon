@@ -12,6 +12,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { spawnSync } = require('child_process');
 
 const { COMMAND_ALIASES, PROVIDER_FAMILIES } = require('./lib/constants');
 const { createFeatureCommands } = require('./lib/commands/feature');
@@ -183,6 +184,102 @@ test('feature-eval --force bypasses the completion warning and creates the evalu
 
     assert.strictEqual(fs.existsSync(path.join(evaluationsDir, 'feature-51-eval.md')), true);
     assert.strictEqual(output.some(line => line.includes('not yet submitted')), false);
+}));
+
+console.log('\nConfig Models Resolution');
+function runCliInDir(cwd, args, env = {}) {
+    const cliPath = path.join(__dirname, 'aigon-cli.js');
+    const result = spawnSync(process.execPath, [cliPath, ...args], {
+        cwd,
+        env: { ...process.env, ...env },
+        encoding: 'utf8'
+    });
+    return {
+        status: result.status,
+        stdout: result.stdout || '',
+        stderr: result.stderr || ''
+    };
+}
+test('config models reads global config from agents.<agent>.<task>.model', () => withTempDir(tempDir => {
+    const homeDir = path.join(tempDir, 'home');
+    fs.mkdirSync(path.join(homeDir, '.aigon'), { recursive: true });
+    fs.writeFileSync(
+        path.join(homeDir, '.aigon', 'config.json'),
+        JSON.stringify({
+            agents: {
+                cx: {
+                    research: { model: 'gpt-5.3' }
+                }
+            }
+        }, null, 2)
+    );
+
+    const { status, stdout, stderr } = runCliInDir(tempDir, ['config', 'models'], { HOME: homeDir });
+    assert.strictEqual(status, 0, stderr || `expected success, got ${status}`);
+    assert.match(stdout, /^\s*cx\s+research\s+gpt-5\.3\s+global$/m);
+}));
+test('config models uses project config over global config', () => withTempDir(tempDir => {
+    const homeDir = path.join(tempDir, 'home');
+    fs.mkdirSync(path.join(homeDir, '.aigon'), { recursive: true });
+    fs.writeFileSync(
+        path.join(homeDir, '.aigon', 'config.json'),
+        JSON.stringify({
+            agents: {
+                cx: {
+                    research: { model: 'gpt-5.2' }
+                }
+            }
+        }, null, 2)
+    );
+
+    fs.mkdirSync(path.join(tempDir, '.aigon'), { recursive: true });
+    fs.writeFileSync(
+        path.join(tempDir, '.aigon', 'config.json'),
+        JSON.stringify({
+            agents: {
+                cx: {
+                    research: { model: 'gpt-5.3' }
+                }
+            }
+        }, null, 2)
+    );
+
+    const { status, stdout, stderr } = runCliInDir(tempDir, ['config', 'models'], { HOME: homeDir });
+    assert.strictEqual(status, 0, stderr || `expected success, got ${status}`);
+    assert.match(stdout, /^\s*cx\s+research\s+gpt-5\.3\s+project$/m);
+}));
+test('config models uses env var over project config', () => withTempDir(tempDir => {
+    const homeDir = path.join(tempDir, 'home');
+    fs.mkdirSync(path.join(homeDir, '.aigon'), { recursive: true });
+    fs.writeFileSync(
+        path.join(homeDir, '.aigon', 'config.json'),
+        JSON.stringify({
+            agents: {
+                cx: {
+                    research: { model: 'gpt-5.2' }
+                }
+            }
+        }, null, 2)
+    );
+
+    fs.mkdirSync(path.join(tempDir, '.aigon'), { recursive: true });
+    fs.writeFileSync(
+        path.join(tempDir, '.aigon', 'config.json'),
+        JSON.stringify({
+            agents: {
+                cx: {
+                    research: { model: 'gpt-5.3' }
+                }
+            }
+        }, null, 2)
+    );
+
+    const { status, stdout, stderr } = runCliInDir(tempDir, ['config', 'models'], {
+        HOME: homeDir,
+        AIGON_CX_RESEARCH_MODEL: 'gpt-5.4'
+    });
+    assert.strictEqual(status, 0, stderr || `expected success, got ${status}`);
+    assert.match(stdout, /^\s*cx\s+research\s+gpt-5\.4\s+env$/m);
 }));
 
 console.log('\nCommand Aliases');
