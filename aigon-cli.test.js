@@ -26,7 +26,12 @@ const {
     collectIncompleteResearchSynthesisAgents,
     parseFrontMatterStatus
 } = require('./lib/commands/shared');
-const { parseSimpleFrontMatter } = require('./lib/dashboard');
+const {
+    parseSimpleFrontMatter,
+    isRadarAutoEvalEnabled,
+    buildRadarFeatureEvalSessionName,
+    shouldRadarAutoEvalFeature
+} = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
 const { isSameProviderFamily } = require('./lib/utils');
 
@@ -86,8 +91,12 @@ test('returns false for unknown agents', () => assert.strictEqual(isSameProvider
 console.log('\nWorktree Helpers');
 test('toUnpaddedId removes leading zeros', () => assert.strictEqual(toUnpaddedId('040'), '40'));
 test('toUnpaddedId keeps non-numeric IDs unchanged', () => assert.strictEqual(toUnpaddedId('abc'), 'abc'));
-test('buildTmuxSessionName includes repo and unpadded ID', () => assert.strictEqual(buildTmuxSessionName('040', 'cx'), 'aigon-f40-cx'));
-test('buildTmuxSessionName defaults agent to solo', () => assert.strictEqual(buildTmuxSessionName('40'), 'aigon-f40-solo'));
+test('buildTmuxSessionName includes repo and unpadded ID', () => {
+    assert.strictEqual(buildTmuxSessionName('040', 'cx', { repo: 'aigon' }), 'aigon-f40-cx');
+});
+test('buildTmuxSessionName defaults agent to solo', () => {
+    assert.strictEqual(buildTmuxSessionName('40', undefined, { repo: 'aigon' }), 'aigon-f40-solo');
+});
 test('buildTmuxSessionName includes desc when provided', () => assert.strictEqual(buildTmuxSessionName('7', 'cc', { repo: 'myrepo', desc: 'dark-mode' }), 'myrepo-f7-cc-dark-mode'));
 test('buildTmuxSessionName derives repo from worktree path', () => assert.strictEqual(
     buildTmuxSessionName('7', 'cc', { desc: 'dark-mode', worktreePath: '/tmp/myrepo-worktrees/feature-07-cc-dark-mode' }),
@@ -111,6 +120,24 @@ test('matchTmuxSessionByEntityId returns null for non-match', () => {
 });
 test('shellQuote escapes apostrophes safely', () => assert.strictEqual(shellQuote("it's"), "'it'\\''s'"));
 
+console.log('\nRadar Auto-Eval');
+test('isRadarAutoEvalEnabled defaults to true when unset', () => {
+    assert.strictEqual(isRadarAutoEvalEnabled({}), true);
+    assert.strictEqual(isRadarAutoEvalEnabled({ conductor: {} }), true);
+});
+test('isRadarAutoEvalEnabled can be disabled via top-level autoEval=false', () => {
+    assert.strictEqual(isRadarAutoEvalEnabled({ autoEval: false }), false);
+});
+test('isRadarAutoEvalEnabled can be disabled via conductor.autoEval=false', () => {
+    assert.strictEqual(isRadarAutoEvalEnabled({ conductor: { autoEval: false } }), false);
+});
+test('buildRadarFeatureEvalSessionName uses repo basename and eval suffix', () => {
+    assert.strictEqual(
+        buildRadarFeatureEvalSessionName('/tmp/my-repo', '053'),
+        'my-repo-f53-ev-eval'
+    );
+});
+
 console.log('\nDashboard Parsing');
 test('parseSimpleFrontMatter extracts front matter keys', () => {
     const content = '---\nstatus: submitted\nupdated: 2026-03-11T10:30:00.000Z\n---\n# Log\n';
@@ -126,6 +153,36 @@ test('parseFrontMatterStatus extracts status from YAML front matter', () => {
 });
 test('parseFrontMatterStatus returns null when front matter is absent', () => {
     assert.strictEqual(parseFrontMatterStatus('# Log\n'), null);
+});
+test('shouldRadarAutoEvalFeature triggers only for submitted Fleet in-progress features', () => {
+    const should = shouldRadarAutoEvalFeature({
+        id: '53',
+        stage: 'in-progress',
+        agents: [
+            { id: 'cc', status: 'submitted' },
+            { id: 'gg', status: 'submitted' }
+        ]
+    });
+    assert.strictEqual(should, true);
+});
+test('shouldRadarAutoEvalFeature does not trigger for solo features', () => {
+    const should = shouldRadarAutoEvalFeature({
+        id: '53',
+        stage: 'in-progress',
+        agents: [{ id: 'solo', status: 'submitted' }]
+    });
+    assert.strictEqual(should, false);
+});
+test('shouldRadarAutoEvalFeature does not trigger in evaluation stage', () => {
+    const should = shouldRadarAutoEvalFeature({
+        id: '53',
+        stage: 'in-evaluation',
+        agents: [
+            { id: 'cc', status: 'submitted' },
+            { id: 'gg', status: 'submitted' }
+        ]
+    });
+    assert.strictEqual(should, false);
 });
 
 console.log('\nFeature Eval Completion Check');
