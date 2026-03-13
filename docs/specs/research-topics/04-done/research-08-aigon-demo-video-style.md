@@ -44,3 +44,34 @@ This research should evaluate tooling options across the spectrum — from simpl
 - The user has previously used Farline for screen recording
 - Code-driven animation (3Blue1Brown's Manim) adapted for product demos
 - AI-generated presenters (Synthesia-style) as a possible alternative
+
+## Recommendation
+
+Use a **hybrid approach** combining hand-drawn Excalidraw assets with a code-driven animation pipeline and AI voiceover:
+
+1. **Concept segment (~60s):** Create sketched diagrams in Excalidraw (Drive/Fleet/Swarm modes), export SVG, animate in Remotion with rough.js for hand-drawn aesthetics
+2. **Product demo segment (~60s):** Screen Studio recording of Aigon in action with auto-zoom and cursor effects
+3. **Narration:** ElevenLabs (free tier) for natural AI voiceover
+4. **Pipeline:** Remotion project version-controlled alongside Aigon — change script/assets, re-render
+
+All three agents agreed: code-driven animation offers the best repeatability, ElevenLabs is the top voice pick, and AI video generators (Synthesia etc.) are not suitable for whiteboard/sketch style.
+
+**Start pragmatic:** Keynote + Screen Studio gets a first video shipped in 3-5 hours. Invest in the Remotion pipeline when update frequency justifies it.
+
+## Output
+
+### Selected Features
+
+| Feature Name | Description | Priority | Create Command |
+|--------------|-------------|----------|----------------|
+| demo-video-excalidraw-assets | Reusable Excalidraw library (Drive/Fleet/Swarm icons, arrows, callouts) for sketched diagrams | medium | `aigon feature-create "demo-video-excalidraw-assets"` |
+| demo-video-voiceover | Generate natural AI narration using ElevenLabs or OpenAI TTS | medium | `aigon feature-create "demo-video-voiceover"` |
+| demo-video-remotion-pipeline | Remotion + rough.js "video as code" pipeline for fully repeatable rendering | medium | `aigon feature-create "demo-video-remotion-pipeline"` |
+
+### Not Selected
+- demo-video-style-guide: Unique to cx — useful but can be folded into the Remotion pipeline feature
+- demo-video-storyboard-template: Unique to cx — lightweight enough to handle as part of actual production
+- demo-video-keynote: Unique to cc — good quick-win but not consensus; can be done ad-hoc without a feature
+- demo-video-screen-recording: Unique to cc — straightforward Screen Studio usage, no feature needed
+- demo-video-stitch: Unique to cc — folded into Remotion pipeline
+- demo-video-hybrid-capture-guide: Unique to cx — low priority, can be documented alongside production
