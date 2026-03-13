@@ -11,6 +11,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const { COMMAND_ALIASES, PROVIDER_FAMILIES } = require('./lib/constants');
 const { createFeatureCommands } = require('./lib/commands/feature');
@@ -18,6 +19,7 @@ const { createResearchCommands } = require('./lib/commands/research');
 const { createFeedbackCommands } = require('./lib/commands/feedback');
 const { createSetupCommands } = require('./lib/commands/setup');
 const { createMiscCommands } = require('./lib/commands/misc');
+const { createAllCommands, collectIncompleteFeatureEvalAgents, parseFrontMatterStatus } = require('./lib/commands/shared');
 const { parseSimpleFrontMatter } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
 const { isSameProviderFamily } = require('./lib/utils');
@@ -34,6 +36,32 @@ function test(description, fn) {
         console.error(`  ✗ ${description}`);
         console.error(`    ${err.message}`);
         failed++;
+    }
+}
+
+function withTempDir(fn) {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-test-'));
+    try {
+        fn(tempDir);
+    } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+}
+
+function withCapturedConsole(fn) {
+    const originalLog = console.log;
+    const originalWarn = console.warn;
+    const originalError = console.error;
+    const output = [];
+    console.log = (...args) => output.push(args.join(' '));
+    console.warn = (...args) => output.push(args.join(' '));
+    console.error = (...args) => output.push(args.join(' '));
+    try {
+        return { result: fn(output), output };
+    } finally {
+        console.log = originalLog;
+        console.warn = originalWarn;
+        console.error = originalError;
     }
 }
 
@@ -79,6 +107,83 @@ test('parseSimpleFrontMatter extracts front matter keys', () => {
 test('parseSimpleFrontMatter returns empty object when absent', () => {
     assert.deepStrictEqual(parseSimpleFrontMatter('# No front matter\n'), {});
 });
+test('parseFrontMatterStatus extracts status from YAML front matter', () => {
+    assert.strictEqual(parseFrontMatterStatus('---\nstatus: waiting\nupdated: 2026-03-11T10:30:00.000Z\n---\n# Log\n'), 'waiting');
+});
+test('parseFrontMatterStatus returns null when front matter is absent', () => {
+    assert.strictEqual(parseFrontMatterStatus('# Log\n'), null);
+});
+
+console.log('\nFeature Eval Completion Check');
+test('collectIncompleteFeatureEvalAgents returns incomplete fleet agents from worktree logs', () => withTempDir(tempDir => {
+    const worktreePath = path.join(tempDir, 'feature-51-cc-demo');
+    const logsDir = path.join(worktreePath, 'docs/specs/features/logs');
+    fs.mkdirSync(logsDir, { recursive: true });
+    fs.writeFileSync(
+        path.join(logsDir, 'feature-51-cc-demo-log.md'),
+        '---\nstatus: implementing\n---\n# Log\n'
+    );
+
+    const incomplete = collectIncompleteFeatureEvalAgents({
+        featureNum: '51',
+        worktrees: [{ path: worktreePath, agent: 'cc', name: 'Claude' }]
+    });
+
+    assert.deepStrictEqual(incomplete, [{ agent: 'cc', name: 'Claude', status: 'implementing' }]);
+}));
+test('collectIncompleteFeatureEvalAgents skips missing logs for backwards compatibility', () => withTempDir(tempDir => {
+    const incomplete = collectIncompleteFeatureEvalAgents({
+        featureNum: '51',
+        worktrees: [{ path: path.join(tempDir, 'feature-51-cc-demo'), agent: 'cc', name: 'Claude' }]
+    });
+
+    assert.deepStrictEqual(incomplete, []);
+}));
+test('feature-eval --force bypasses the completion warning and creates the evaluation file', () => withTempDir(tempDir => {
+    const featuresRoot = path.join(tempDir, 'docs/specs/features');
+    const inProgressDir = path.join(featuresRoot, '03-in-progress');
+    const evaluationsDir = path.join(featuresRoot, 'evaluations');
+    const worktreePath = path.join(tempDir, 'feature-51-cc-demo');
+    const worktreeLogsDir = path.join(worktreePath, 'docs/specs/features/logs');
+
+    fs.mkdirSync(inProgressDir, { recursive: true });
+    fs.mkdirSync(evaluationsDir, { recursive: true });
+    fs.mkdirSync(worktreeLogsDir, { recursive: true });
+
+    fs.writeFileSync(
+        path.join(inProgressDir, 'feature-51-eval-agent-completion-check.md'),
+        '# Feature 51\n'
+    );
+    fs.writeFileSync(
+        path.join(worktreeLogsDir, 'feature-51-cc-eval-agent-completion-check-log.md'),
+        '---\nstatus: implementing\n---\n# Log\n'
+    );
+
+    const commands = createAllCommands({
+        PATHS: {
+            features: {
+                root: featuresRoot,
+                prefix: 'feature',
+                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused']
+            }
+        },
+        detectActiveAgentSession: () => ({ detected: true, agentId: 'gg' }),
+        execSync: (cmd) => {
+            if (cmd === 'git worktree list') return `${worktreePath} abc123 [feature-51-cc-demo]\n`;
+            throw new Error(`Unexpected execSync call: ${cmd}`);
+        },
+        loadAgentConfig: (agentId) => ({ name: agentId === 'cc' ? 'Claude' : agentId }),
+        getAgentCliConfig: () => ({ models: { evaluate: null } }),
+        runGit: () => {}
+    });
+
+    const { output } = withCapturedConsole(() => {
+        commands['feature-eval'](['51', '--force']);
+    });
+
+    assert.strictEqual(fs.existsSync(path.join(evaluationsDir, 'feature-51-eval.md')), true);
+    assert.strictEqual(output.some(line => line.includes('not yet submitted')), false);
+}));
 
 console.log('\nCommand Aliases');
 test('short alias afd resolves to feature-do', () => assert.strictEqual(COMMAND_ALIASES.afd, 'feature-do'));
