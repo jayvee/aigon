@@ -71,6 +71,29 @@ Core rule: use the CLI to move specs between states. Do not rename or move spec 
 - Change workflow file conventions:
   update the owning command module and any affected templates/docs together.
 
+## Naming Conventions
+
+Aigon uses consistent naming across worktrees, branches, and tmux sessions:
+
+| Layer          | Pattern                              | Example                                    |
+|----------------|--------------------------------------|--------------------------------------------|
+| Branch         | `feature-{num}-{agent}-{desc}`       | `feature-07-cc-restore-on-scan`            |
+| Worktree dir   | `feature-{num}-{agent}-{desc}`       | `feature-07-cc-restore-on-scan`            |
+| Tmux session   | `{repo}-f{num}-{agent}-{desc}`       | `whos-buy-is-it-f07-cc-restore-on-scan`   |
+| Window title   | (same as tmux session)               | `whos-buy-is-it-f07-cc-restore-on-scan`   |
+
+Research follows the same pattern with `r` instead of `f`:
+
+| Layer          | Pattern                              | Example                                    |
+|----------------|--------------------------------------|--------------------------------------------|
+| Tmux session   | `{repo}-r{num}-{agent}`              | `aigon-r05-cc`                             |
+
+Components:
+- `{repo}` — repository directory name (e.g., `aigon`, `farline-ai`, `whos-buy-is-it`)
+- `{num}` — zero-padded feature/research ID (e.g., `07`, `140`)
+- `{agent}` — agent short code (`cc`, `gg`, `cx`, `cu`)
+- `{desc}` — kebab-case feature description from the spec filename
+
 ## Design Rules
 
 - Keep `aigon-cli.js` free of business logic.

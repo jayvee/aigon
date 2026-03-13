@@ -19,7 +19,7 @@ const { createFeedbackCommands } = require('./lib/commands/feedback');
 const { createSetupCommands } = require('./lib/commands/setup');
 const { createMiscCommands } = require('./lib/commands/misc');
 const { parseSimpleFrontMatter } = require('./lib/dashboard');
-const { buildTmuxSessionName, shellQuote, toUnpaddedId } = require('./lib/worktree');
+const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
 const { isSameProviderFamily } = require('./lib/utils');
 
 let passed = 0;
@@ -52,8 +52,21 @@ test('returns false for unknown agents', () => assert.strictEqual(isSameProvider
 console.log('\nWorktree Helpers');
 test('toUnpaddedId removes leading zeros', () => assert.strictEqual(toUnpaddedId('040'), '40'));
 test('toUnpaddedId keeps non-numeric IDs unchanged', () => assert.strictEqual(toUnpaddedId('abc'), 'abc'));
-test('buildTmuxSessionName uses unpadded feature ID', () => assert.strictEqual(buildTmuxSessionName('040', 'cx'), 'aigon-f40-cx'));
+test('buildTmuxSessionName includes repo and unpadded ID', () => assert.strictEqual(buildTmuxSessionName('040', 'cx'), 'aigon-f40-cx'));
 test('buildTmuxSessionName defaults agent to solo', () => assert.strictEqual(buildTmuxSessionName('40'), 'aigon-f40-solo'));
+test('buildTmuxSessionName includes desc when provided', () => assert.strictEqual(buildTmuxSessionName('7', 'cc', { repo: 'myrepo', desc: 'dark-mode' }), 'myrepo-f7-cc-dark-mode'));
+test('buildResearchTmuxSessionName uses repo prefix', () => assert.strictEqual(buildResearchTmuxSessionName('5', 'gg', { repo: 'myrepo' }), 'myrepo-r5-gg'));
+test('matchTmuxSessionByEntityId matches new-style names', () => {
+    const m = matchTmuxSessionByEntityId('myrepo-f7-cc-dark-mode', '7');
+    assert.deepStrictEqual(m, { type: 'f', id: '7', agent: 'cc' });
+});
+test('matchTmuxSessionByEntityId matches old-style names', () => {
+    const m = matchTmuxSessionByEntityId('aigon-f40-cx', '40');
+    assert.deepStrictEqual(m, { type: 'f', id: '40', agent: 'cx' });
+});
+test('matchTmuxSessionByEntityId returns null for non-match', () => {
+    assert.strictEqual(matchTmuxSessionByEntityId('aigon-f40-cx', '41'), null);
+});
 test('shellQuote escapes apostrophes safely', () => assert.strictEqual(shellQuote("it's"), "'it'\\''s'"));
 
 console.log('\nDashboard Parsing');
