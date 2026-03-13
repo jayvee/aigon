@@ -5,6 +5,8 @@ Wrap up implementation in the current worktree or branch: commit all changes, wr
 
 **Use this after testing is complete** — replaces manually asking "commit your changes and write up your log".
 
+**Options:** `--no-exit` — keep the agent session open after submitting (default: auto-exit in Fleet mode).
+
 ## Step 1: Detect feature context
 
 ```bash
@@ -99,4 +101,17 @@ Replace `<ID>` with the actual feature ID (padded with leading zero if needed, e
 - Push to remote
 - Start any new work
 
-**This session is complete. Do not suggest any follow-up commands.**
+## Exit session
+
+**Unless the user passed `--no-exit`**, close this agent session by killing the tmux pane. This is safe because all work has been committed.
+
+```bash
+# Brief delay so the completion message is visible, then exit the tmux session
+(sleep 3 && tmux kill-session) &>/dev/null &
+```
+
+Run this command immediately after outputting the completion message above. Do not wait for user input.
+
+**If `--no-exit` was passed**, skip the exit command and instead display:
+
+> **This session is complete. Do not suggest any follow-up commands.**
