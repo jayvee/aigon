@@ -1,6 +1,6 @@
 ---
-status: implementing
-updated: 2026-03-13T06:34:50.000Z
+status: submitted
+updated: 2026-03-13T05:58:48.661Z
 ---
 
 # Implementation Log: Feature 53 - radar-auto-trigger-eval
