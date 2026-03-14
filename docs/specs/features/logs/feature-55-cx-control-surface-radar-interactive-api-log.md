@@ -1,6 +1,5 @@
----
-status: waiting
-updated: 2026-03-13T22:07:36.869Z
+status: submitted
+updated: 2026-03-14T02:49:00.000Z
 ---
 
 # Implementation Log: Feature 55 - control-surface-radar-interactive-api
@@ -37,11 +36,19 @@ Agent: cx
 - Updated docs:
   - Filled feature 55 spec with concrete summary, user stories, acceptance criteria, validation, and approach.
   - Added Radar API endpoint docs in `README.md` including `POST /api/action` payload example.
+- Hardened Radar attach behavior to avoid opening duplicate/wrong tmux session windows:
+  - Added tmux binary resolution fallback for daemon contexts with limited PATH.
+  - Updated attach flow so dashboard sends explicit `tmuxSession` and server validates it against `featureId` + `agentId`.
+  - Updated tmux session resolution to prefer attached sessions and then the most specific session name when multiple matches exist.
+  - Added iTerm2 guard to avoid creating a new window when target session is already attached.
 - Validation run:
-  - `npm test` ✅ (`Passed: 61`)
+  - `npm test` ✅ (`Passed: 61`) after initial API implementation.
+  - `npm test` ✅ (`Passed: 61`) after attach-session targeting fixes.
 
 ## Decisions
 - Used a single generic mutation endpoint (`POST /api/action`) with a strict allowlist rather than many per-action endpoints for faster delivery and easier client integration.
 - Kept execution shell-safe by invoking Node directly with argv (`spawnSync(process.execPath, [aigon-cli.js, ...])`) instead of shell string interpolation.
 - Required repo safety checks against Radar-registered repos to prevent arbitrary command execution outside watched projects.
 - Returned full command execution details (`stdout`, `stderr`, `exitCode`) to support operator-surface UX and debugging without needing terminal access.
+- Chose explicit tmux session targeting (`tmuxSession`) over implicit `featureId`/`agentId` matching to prevent ambiguous session selection when both short and long session names are present.
+- Prioritized already-attached sessions in resolver logic to align attach behavior with operator expectation (focus existing live session first).
