@@ -36,7 +36,8 @@ const {
     RADAR_INTERACTIVE_ACTIONS,
     resolveRadarActionRepoPath,
     parseRadarActionRequest,
-    buildRadarActionCommandArgs
+    buildRadarActionCommandArgs,
+    collectDashboardStatusData
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
 const { isSameProviderFamily } = require('./lib/utils');
@@ -227,6 +228,108 @@ test('buildRadarActionCommandArgs builds CLI invocation args', () => {
         [path.join(__dirname, 'aigon-cli.js'), 'feature-eval', '55', '--agent=cx']
     );
 });
+test('RADAR_INTERACTIVE_ACTIONS includes worktree-open', () => {
+    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('worktree-open'), true);
+});
+test('parseRadarActionRequest accepts worktree-open action', () => {
+    const parsed = parseRadarActionRequest(
+        { action: 'worktree-open', args: ['57', 'cc'], repoPath: '/tmp/repo-a' },
+        { registeredRepos: ['/tmp/repo-a'], defaultRepoPath: '/tmp/repo-a' }
+    );
+    assert.strictEqual(parsed.ok, true);
+    assert.strictEqual(parsed.action, 'worktree-open');
+    assert.deepStrictEqual(parsed.args, ['57', 'cc']);
+});
+
+console.log('\nPipeline Stage Data Collection');
+
+// Helper: temporarily register a temp repo in ~/.aigon/config.json, run fn, then restore
+function withTempRepo(fn) {
+    return withTempDir(tempDir => {
+        const globalConfigPath = path.join(os.homedir(), '.aigon', 'config.json');
+        let origContent = null;
+        try { origContent = fs.readFileSync(globalConfigPath, 'utf8'); } catch (e) { /* no existing config */ }
+        const origCfg = origContent ? JSON.parse(origContent) : {};
+        const origRepos = Array.isArray(origCfg.repos) ? origCfg.repos : [];
+        const testCfg = { ...origCfg, repos: [...origRepos, tempDir] };
+        try {
+            fs.mkdirSync(path.dirname(globalConfigPath), { recursive: true });
+            fs.writeFileSync(globalConfigPath, JSON.stringify(testCfg));
+            fn(tempDir);
+        } finally {
+            if (origContent !== null) {
+                fs.writeFileSync(globalConfigPath, origContent);
+            } else {
+                try { fs.unlinkSync(globalConfigPath); } catch (e) { /* ignore */ }
+            }
+        }
+    });
+}
+
+test('collectDashboardStatusData includes inbox specs with stage=inbox', () => withTempRepo(tempDir => {
+    const inboxDir = path.join(tempDir, 'docs', 'specs', 'features', '01-inbox');
+    fs.mkdirSync(inboxDir, { recursive: true });
+    fs.writeFileSync(path.join(inboxDir, 'feature-10-my-inbox-feature.md'), '# Feature\n');
+
+    const result = collectDashboardStatusData();
+    const repo = (result.repos || []).find(r => r.path === path.resolve(tempDir));
+    assert.ok(repo, 'repo found in result');
+    const inboxFeature = (repo.features || []).find(f => f.id === '10' && f.stage === 'inbox');
+    assert.ok(inboxFeature, 'inbox feature found with stage=inbox');
+    assert.strictEqual(inboxFeature.name, 'my-inbox-feature');
+    assert.deepStrictEqual(inboxFeature.agents, []);
+}));
+test('collectDashboardStatusData includes backlog specs with stage=backlog', () => withTempRepo(tempDir => {
+    const backlogDir = path.join(tempDir, 'docs', 'specs', 'features', '02-backlog');
+    fs.mkdirSync(backlogDir, { recursive: true });
+    fs.writeFileSync(path.join(backlogDir, 'feature-20-my-backlog-feature.md'), '# Feature\n');
+
+    const result = collectDashboardStatusData();
+    const repo = (result.repos || []).find(r => r.path === path.resolve(tempDir));
+    assert.ok(repo, 'repo found in result');
+    const backlogFeature = (repo.features || []).find(f => f.id === '20' && f.stage === 'backlog');
+    assert.ok(backlogFeature, 'backlog feature found with stage=backlog');
+    assert.deepStrictEqual(backlogFeature.agents, []);
+}));
+test('collectDashboardStatusData limits done features to 10 most recent', () => withTempRepo(tempDir => {
+    const doneDir = path.join(tempDir, 'docs', 'specs', 'features', '05-done');
+    fs.mkdirSync(doneDir, { recursive: true });
+    // Write 12 done features with different mtimes
+    for (let i = 1; i <= 12; i++) {
+        const fpath = path.join(doneDir, `feature-${String(i).padStart(2, '0')}-done-feature-${i}.md`);
+        fs.writeFileSync(fpath, '# Feature\n');
+        const mtime = new Date(2024, 0, i);
+        fs.utimesSync(fpath, mtime, mtime);
+    }
+
+    const result = collectDashboardStatusData();
+    const repo = (result.repos || []).find(r => r.path === path.resolve(tempDir));
+    assert.ok(repo, 'repo found in result');
+    const doneFeatures = (repo.features || []).filter(f => f.stage === 'done');
+    assert.strictEqual(doneFeatures.length, 10, 'exactly 10 done features returned');
+    // Most recent (features 3–12) should be included, not features 1 or 2
+    const ids = doneFeatures.map(f => Number(f.id)).sort((a, b) => a - b);
+    assert.ok(ids.every(id => id >= 3), 'only the 10 most recent features included');
+}));
+test('collectDashboardStatusData: in-progress features still include agent data', () => withTempRepo(tempDir => {
+    const inProgressDir = path.join(tempDir, 'docs', 'specs', 'features', '03-in-progress');
+    const logsDir = path.join(tempDir, 'docs', 'specs', 'features', 'logs');
+    fs.mkdirSync(inProgressDir, { recursive: true });
+    fs.mkdirSync(logsDir, { recursive: true });
+    fs.writeFileSync(path.join(inProgressDir, 'feature-30-active-feature.md'), '# Feature\n');
+    fs.writeFileSync(
+        path.join(logsDir, 'feature-30-cc-active-feature-log.md'),
+        '---\nstatus: waiting\nupdated: 2024-01-01T00:00:00.000Z\n---\n# Log\n'
+    );
+
+    const result = collectDashboardStatusData();
+    const repo = (result.repos || []).find(r => r.path === path.resolve(tempDir));
+    assert.ok(repo, 'repo found in result');
+    const feature = (repo.features || []).find(f => f.id === '30' && f.stage === 'in-progress');
+    assert.ok(feature, 'in-progress feature found');
+    assert.ok(feature.agents.length > 0, 'in-progress feature has agents');
+    assert.strictEqual(feature.agents[0].status, 'waiting');
+}));
 
 console.log('\nFeature Eval Completion Check');
 test('collectIncompleteFeatureEvalAgents returns incomplete fleet agents from worktree logs', () => withTempDir(tempDir => {
