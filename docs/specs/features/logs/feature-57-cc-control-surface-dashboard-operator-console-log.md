@@ -1,6 +1,6 @@
 ---
 status: submitted
-updated: 2026-03-14T06:30:00.000Z
+updated: 2026-03-15T10:40:00.000Z
 ---
 
 # Implementation Log: Feature 57 - control-surface-dashboard-operator-console
@@ -13,11 +13,11 @@ Explored the existing codebase before implementing:
 - `templates/dashboard/index.html` contains the full dashboard (CSS + JS inline)
 - Much of the backend had already been pre-implemented: inbox/backlog/done stage scanning, `/api/worktree-open` endpoint, `worktree-open` in the actions allowlist, and tests
 
-Focused implementation effort on: the two-view frontend architecture in the dashboard HTML template.
+Focused implementation effort on: the two-view frontend architecture in the dashboard HTML template, plus three post-testing bug fixes discovered during user testing.
 
 ## Progress
 
-All acceptance criteria implemented:
+All acceptance criteria implemented and verified:
 
 **Backend (lib/utils.js) — pre-implemented:**
 - `collectDashboardStatusData()` scans all 5 stages: inbox, backlog, in-progress, in-evaluation, done (last 10 by mtime for done)
@@ -37,6 +37,14 @@ All acceptance criteria implemented:
 - 4 new tests for `collectDashboardStatusData` covering inbox, backlog, done limiting, and in-progress agent data preservation
 - All 67 tests pass
 
+**Post-testing bug fixes (discovered during user testing):**
+
+1. **Silent CLI stderr failures surfaced as HTTP 422** (`lib/utils.js`): CLI commands like `feature-prioritise` exit code 0 but print `❌ ...` to stderr when they fail. The dashboard showed a false "Done" toast. Fixed by detecting `❌`-prefixed stderr output and returning HTTP 422 with the error message. Also added `log()` calls so every action result appears in `~/.aigon/radar.log`.
+
+2. **Inbox features without ID not shown in Kanban** (`lib/utils.js`): `collectDashboardStatusData` used regex `/^feature-\d+-.+\.md$/` to scan all stages including inbox. Un-prioritized inbox files (`feature-name.md`, no ID) were silently dropped. Fixed by using a relaxed pattern (`/^feature-.+\.md$/`) for the inbox stage only.
+
+3. **`parseFeatureSpecFileName` rejected ID-less filenames** (`lib/utils.js`): Even after passing the inbox scan filter, files without an ID were dropped by `parseFeatureSpecFileName` (required `\d+`). Fixed by adding a fallback match that returns `{ id: null, name }` for ID-less files.
+
 ## Decisions
 
 - Kept Monitor and Pipeline views sharing the same `#repos` div (cleared and re-rendered per view) and `#empty` div — simpler than adding new DOM elements
@@ -45,3 +53,5 @@ All acceptance criteria implemented:
 - Agent picker returns a Promise via resolve pattern, allowing async/await flow in drag-drop handlers
 - `feature-prioritise` receives the feature name slug (not ID) — consistent with how the CLI resolves inbox features by name
 - In-progress "Open" buttons call `/api/worktree-open` which handles both existing-session attach and new-session creation
+- Stderr `❌` detection chosen over exit-code checking because the Aigon CLI uses exit 0 broadly; the emoji prefix is the reliable failure signal
+- Inbox pattern relaxed per-stage rather than globally to avoid matching stale/partial files in backlog/done columns where IDs are always present
