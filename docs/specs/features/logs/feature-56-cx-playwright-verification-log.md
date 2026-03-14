@@ -34,6 +34,10 @@ Agent: cx
 - `npm test` passed (59 tests).
 - `node aigon-cli.js install-agent cc` completed successfully.
 
+## Submission
+- Worktree implementation is complete and ready for evaluation.
+- Code changes are committed in `9509e34`.
+
 ## Code Review
 
 **Reviewed by**: cc (Claude Code)
