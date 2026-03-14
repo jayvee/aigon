@@ -35,7 +35,7 @@ const {
     shouldRadarAutoEvalFeature
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
-const { isSameProviderFamily } = require('./lib/utils');
+const { isSameProviderFamily, getProfilePlaceholders } = require('./lib/utils');
 
 let passed = 0;
 let failed = 0;
@@ -58,6 +58,26 @@ function withTempDir(fn) {
         fn(tempDir);
     } finally {
         fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+}
+
+function withProjectConfig(config, fn) {
+    const configDir = path.join(process.cwd(), '.aigon');
+    const configPath = path.join(configDir, 'config.json');
+    const hadConfig = fs.existsSync(configPath);
+    const originalConfig = hadConfig ? fs.readFileSync(configPath, 'utf8') : null;
+
+    fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+
+    try {
+        return fn();
+    } finally {
+        if (hadConfig) {
+            fs.writeFileSync(configPath, originalConfig);
+        } else if (fs.existsSync(configPath)) {
+            fs.unlinkSync(configPath);
+        }
     }
 }
 
@@ -89,6 +109,36 @@ test('returns true for same provider family', () => assert.strictEqual(isSamePro
 test('returns false for different providers', () => assert.strictEqual(isSameProviderFamily('cc', 'gg'), false));
 test('returns false when either agent varies', () => assert.strictEqual(isSameProviderFamily('cu', 'cc'), false));
 test('returns false for unknown agents', () => assert.strictEqual(isSameProviderFamily('xx', 'cc'), false));
+
+console.log('\nProfile Placeholders');
+test('includes playwright verification placeholder for web profile when enabled', () => withProjectConfig({
+        profile: 'web',
+        verification: { playwright: { enabled: true } }
+    }, () => {
+        const placeholders = getProfilePlaceholders();
+        assert.ok(placeholders.PLAYWRIGHT_VERIFICATION.includes('### Step 4.2: Automated browser verification'));
+    }));
+test('includes playwright verification placeholder for api profile when enabled', () => withProjectConfig({
+        profile: 'api',
+        verification: { playwright: { enabled: true } }
+    }, () => {
+        const placeholders = getProfilePlaceholders();
+        assert.ok(placeholders.PLAYWRIGHT_VERIFICATION.includes('### Step 4.2: Automated browser verification'));
+    }));
+test('omits playwright verification placeholder when disabled', () => withProjectConfig({
+        profile: 'web',
+        verification: { playwright: { enabled: false } }
+    }, () => {
+        const placeholders = getProfilePlaceholders();
+        assert.strictEqual(placeholders.PLAYWRIGHT_VERIFICATION, '');
+    }));
+test('omits playwright verification placeholder for non-web profiles', () => withProjectConfig({
+        profile: 'library',
+        verification: { playwright: { enabled: true } }
+    }, () => {
+        const placeholders = getProfilePlaceholders();
+        assert.strictEqual(placeholders.PLAYWRIGHT_VERIFICATION, '');
+    }));
 
 console.log('\nWorktree Helpers');
 test('toUnpaddedId removes leading zeros', () => assert.strictEqual(toUnpaddedId('040'), '40'));
