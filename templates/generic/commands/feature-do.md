@@ -117,6 +117,8 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 {{AGENT_DEV_SERVER_NOTE}}
 > **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for test commands.
 
+{{PLAYWRIGHT_VERIFICATION}}
+
 {{MANUAL_TESTING_GUIDANCE}}
 
 ### Autonomous mode check
