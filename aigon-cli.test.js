@@ -32,7 +32,11 @@ const {
     parseSimpleFrontMatter,
     isRadarAutoEvalEnabled,
     buildRadarFeatureEvalSessionName,
-    shouldRadarAutoEvalFeature
+    shouldRadarAutoEvalFeature,
+    RADAR_INTERACTIVE_ACTIONS,
+    resolveRadarActionRepoPath,
+    parseRadarActionRequest,
+    buildRadarActionCommandArgs
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
 const { isSameProviderFamily } = require('./lib/utils');
@@ -185,6 +189,43 @@ test('shouldRadarAutoEvalFeature does not trigger in evaluation stage', () => {
         ]
     });
     assert.strictEqual(should, false);
+});
+test('RADAR_INTERACTIVE_ACTIONS includes core feature workflow actions', () => {
+    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-create'), true);
+    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-prioritise'), true);
+    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-do'), true);
+    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-eval'), true);
+    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-submit'), true);
+});
+test('resolveRadarActionRepoPath accepts registered repo paths', () => {
+    const resolved = resolveRadarActionRepoPath('/tmp/repo-a', ['/tmp/repo-a', '/tmp/repo-b'], '/tmp/repo-a');
+    assert.deepStrictEqual(resolved, { ok: true, repoPath: '/tmp/repo-a' });
+});
+test('resolveRadarActionRepoPath requires explicit repo when multiple repos are registered', () => {
+    const resolved = resolveRadarActionRepoPath('', ['/tmp/repo-a', '/tmp/repo-b'], '/tmp/not-registered');
+    assert.strictEqual(resolved.ok, false);
+    assert.strictEqual(resolved.status, 400);
+});
+test('parseRadarActionRequest rejects unsupported actions', () => {
+    const parsed = parseRadarActionRequest({ action: 'rm -rf', args: [] }, { registeredRepos: ['/tmp/repo-a'], defaultRepoPath: '/tmp/repo-a' });
+    assert.strictEqual(parsed.ok, false);
+    assert.strictEqual(parsed.status, 400);
+});
+test('parseRadarActionRequest normalizes args and repo', () => {
+    const parsed = parseRadarActionRequest(
+        { action: 'feature-eval', args: ['55', '--agent=cx', true], repoPath: '/tmp/repo-a' },
+        { registeredRepos: ['/tmp/repo-a'], defaultRepoPath: '/tmp/repo-a' }
+    );
+    assert.strictEqual(parsed.ok, true);
+    assert.strictEqual(parsed.action, 'feature-eval');
+    assert.deepStrictEqual(parsed.args, ['55', '--agent=cx', 'true']);
+    assert.strictEqual(parsed.repoPath, '/tmp/repo-a');
+});
+test('buildRadarActionCommandArgs builds CLI invocation args', () => {
+    assert.deepStrictEqual(
+        buildRadarActionCommandArgs('feature-eval', ['55', '--agent=cx']),
+        [path.join(__dirname, 'aigon-cli.js'), 'feature-eval', '55', '--agent=cx']
+    );
 });
 
 console.log('\nFeature Eval Completion Check');
