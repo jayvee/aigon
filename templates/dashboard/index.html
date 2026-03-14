@@ -30,6 +30,9 @@
     .card:hover{background:var(--bg-elevated);border-color:var(--border-default)}
     .card.waiting{border-left:2px solid var(--warning)}
     .card.evaluating{border-left:2px solid #a78bfa}
+    .card.research{border-left:2px solid #06b6d4}
+    .research-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.35);color:#67e8f9;margin-left:6px;flex-shrink:0}
+    .research-badge.all-submitted{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#86efac}
     .eval-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35);color:#c4b5fd;margin-left:6px;flex-shrink:0}
     .eval-badge.pick-winner{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#86efac}
     .card-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 10px 6px}
@@ -201,23 +204,30 @@
       }
 
       empty.style.display = 'none';
-      let visibleFeatureCount = 0;
+      let visibleItemCount = 0;
       data.repos.forEach(repo => {
         const section = document.createElement('section');
         section.className = 'repo' + (state.collapsed[repo.path] ? ' collapsed' : '');
         const rawFeatures = [...(repo.features || [])].sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
         const features = rawFeatures.filter(f => state.filter === 'all' || f.agents.some(a => a.status === state.filter));
-        visibleFeatureCount += features.length;
-        const waitingCards = features.filter(f => f.agents.some(a => a.status === 'waiting')).length;
-        section.innerHTML = '<div class="repo-h"><strong>' + escHtml(repo.displayPath) + '</strong><span>' + features.length + ' feature' + (features.length === 1 ? '' : 's') + (waitingCards ? ' • ' + waitingCards + ' waiting' : '') + ' <span aria-label="Toggle">' + (state.collapsed[repo.path] ? '[+]' : '[-]') + '</span></span></div><div class="repo-b"></div>';
+        const rawResearch = [...(repo.research || [])].sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
+        const research = rawResearch.filter(r => state.filter === 'all' || r.agents.some(a => a.status === state.filter));
+        const totalItems = features.length + research.length;
+        visibleItemCount += totalItems;
+        const waitingCards = features.filter(f => f.agents.some(a => a.status === 'waiting')).length + research.filter(r => r.agents.some(a => a.status === 'waiting')).length;
+        const headerParts = [];
+        if (features.length > 0) headerParts.push(features.length + ' feature' + (features.length === 1 ? '' : 's'));
+        if (research.length > 0) headerParts.push(research.length + ' research');
+        const headerText = headerParts.join(', ') || '0 items';
+        section.innerHTML = '<div class="repo-h"><strong>' + escHtml(repo.displayPath) + '</strong><span>' + headerText + (waitingCards ? ' • ' + waitingCards + ' waiting' : '') + ' <span aria-label="Toggle">' + (state.collapsed[repo.path] ? '[+]' : '[-]') + '</span></span></div><div class="repo-b"></div>';
         section.querySelector('.repo-h').onclick = () => {
           state.collapsed[repo.path] = !state.collapsed[repo.path];
           localStorage.setItem('aigon.dashboard.collapsed', JSON.stringify(state.collapsed));
           render();
         };
         const body = section.querySelector('.repo-b');
-        if (features.length === 0) {
-          body.innerHTML = '<div class="empty">No features in progress.</div>';
+        if (totalItems === 0) {
+          body.innerHTML = '<div class="empty">No features or research in progress.</div>';
         } else {
           features.forEach(feature => {
             const hasWaiting = feature.agents.some(a => a.status === 'waiting');
@@ -235,10 +245,35 @@
               const row = document.createElement('div');
               row.className = 'row ' + agent.status;
               const waitingCmd = agent.slashCommand
-                ? '<button class="copy btn" data-copy="' + escHtml(agent.slashCommand) + '">Copy ' + escHtml(agent.slashCommand) + '</button>'
+                ? '<button class="copy btn" data-copy="' + escHtml(agent.slashCommand) + '">Copy cmd</button>'
                 : '';
               const attachBtn = agent.tmuxRunning
                 ? '<button class="attach btn btn-primary" data-repo="' + escHtml(repo.path) + '" data-feature="' + escHtml(feature.id) + '" data-agent="' + escHtml(agent.id) + '" data-session="' + escHtml(agent.tmuxSession || '') + '">Attach</button>'
+                : '';
+              row.innerHTML = '<span class="agent">' + escHtml(agent.id) + '</span><span class="status ' + escHtml(agent.status) + '"><span class="dot"></span>' + escHtml(agent.status) + '</span><span class="stamp" data-updated="' + escHtml(agent.updatedAt) + '">' + relTime(agent.updatedAt) + '</span><span class="row-actions">' + waitingCmd + attachBtn + '</span>';
+              rowsEl.appendChild(row);
+            });
+            body.appendChild(card);
+          });
+          research.forEach(item => {
+            const hasWaiting = item.agents.some(a => a.status === 'waiting');
+            const allSubmitted = item.agents.length > 0 && item.agents.every(a => a.status === 'submitted');
+            const card = document.createElement('article');
+            card.className = 'card research' + (hasWaiting ? ' waiting' : '');
+            const rows = [...item.agents].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id));
+            const synthBadge = allSubmitted ? '<span class="research-badge all-submitted">ready to synthesize</span>' : '<span class="research-badge">research</span>';
+            const synthCmd = allSubmitted ? '/ars ' + String(item.id).padStart(2, '0') : null;
+            const synthBtn = synthCmd ? '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(synthCmd) + '" title="All agents submitted — synthesize findings">Copy next</button>' : '';
+            card.innerHTML = '<div class="card-h"><span class="feature">R#' + escHtml(item.id) + ' ' + escHtml(item.name) + synthBadge + '</span><span class="head-actions">' + synthBtn + '</span></div><div class="rows"></div>';
+            const rowsEl = card.querySelector('.rows');
+            rows.forEach(agent => {
+              const row = document.createElement('div');
+              row.className = 'row ' + agent.status;
+              const waitingCmd = agent.slashCommand
+                ? '<button class="copy btn" data-copy="' + escHtml(agent.slashCommand) + '">Copy cmd</button>'
+                : '';
+              const attachBtn = agent.tmuxRunning
+                ? '<button class="attach btn btn-primary" data-repo="' + escHtml(repo.path) + '" data-feature="' + escHtml(item.id) + '" data-agent="' + escHtml(agent.id) + '">Attach</button>'
                 : '';
               row.innerHTML = '<span class="agent">' + escHtml(agent.id) + '</span><span class="status ' + escHtml(agent.status) + '"><span class="dot"></span>' + escHtml(agent.status) + '</span><span class="stamp" data-updated="' + escHtml(agent.updatedAt) + '">' + relTime(agent.updatedAt) + '</span><span class="row-actions">' + waitingCmd + attachBtn + '</span>';
               rowsEl.appendChild(row);
@@ -249,11 +284,11 @@
         reposRoot.appendChild(section);
       });
 
-      if (visibleFeatureCount === 0) {
+      if (visibleItemCount === 0) {
         empty.style.display = '';
         empty.textContent = state.filter === 'all'
-          ? 'No features in progress.'
-          : 'No features match filter: ' + state.filter;
+          ? 'No features or research in progress.'
+          : 'No items match filter: ' + state.filter;
       }
 
       reposRoot.querySelectorAll('button.copy').forEach(btn => {
