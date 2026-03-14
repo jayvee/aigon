@@ -68,6 +68,7 @@
       <div class="meta">
         <span class="health" aria-live="polite"><span class="dot" id="health-dot"></span><span id="health-text">Connected</span></span>
         <span id="updated-text">Updated just now</span>
+        <button class="btn" id="refresh-btn" title="Force refresh status">Refresh</button>
       </div>
     </div>
     <div id="summary" class="summary" aria-label="Agent status summary"></div>
@@ -133,6 +134,25 @@
         showToast(payload.message || 'Attach opened in terminal');
       } catch (e) {
         showToast('Attach failed: ' + e.message);
+      }
+    }
+
+    async function requestRefresh() {
+      const btn = document.getElementById('refresh-btn');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch('/api/refresh', { method: 'POST', cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const next = await res.json();
+        state.failures = 0;
+        state.data = next;
+        render();
+      } catch (e) {
+        state.failures += 1;
+        setHealth();
+        showToast('Refresh failed: ' + e.message);
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
 
@@ -312,6 +332,7 @@
     }
 
     render();
+    document.getElementById('refresh-btn').onclick = requestRefresh;
     setInterval(refreshTimestamps, TS_MS);
     setInterval(poll, POLL_MS);
     setTimeout(poll, 400);
