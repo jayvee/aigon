@@ -121,12 +121,12 @@
       const ok = document.execCommand('copy'); ta.remove(); return ok;
     }
 
-    async function requestAttach(repoPath, featureId, agentId){
+    async function requestAttach(repoPath, featureId, agentId, tmuxSession){
       try {
         const res = await fetch('/api/attach', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ repoPath, featureId, agentId })
+          body: JSON.stringify({ repoPath, featureId, agentId, tmuxSession })
         });
         const payload = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
@@ -218,7 +218,7 @@
                 ? '<button class="copy btn" data-copy="' + escHtml(agent.slashCommand) + '">Copy ' + escHtml(agent.slashCommand) + '</button>'
                 : '';
               const attachBtn = agent.tmuxRunning
-                ? '<button class="attach btn btn-primary" data-repo="' + escHtml(repo.path) + '" data-feature="' + escHtml(feature.id) + '" data-agent="' + escHtml(agent.id) + '">Attach</button>'
+                ? '<button class="attach btn btn-primary" data-repo="' + escHtml(repo.path) + '" data-feature="' + escHtml(feature.id) + '" data-agent="' + escHtml(agent.id) + '" data-session="' + escHtml(agent.tmuxSession || '') + '">Attach</button>'
                 : '';
               row.innerHTML = '<span class="agent">' + escHtml(agent.id) + '</span><span class="status ' + escHtml(agent.status) + '"><span class="dot"></span>' + escHtml(agent.status) + '</span><span class="stamp" data-updated="' + escHtml(agent.updatedAt) + '">' + relTime(agent.updatedAt) + '</span><span class="row-actions">' + waitingCmd + attachBtn + '</span>';
               rowsEl.appendChild(row);
@@ -252,8 +252,9 @@
           const repoPath = btn.getAttribute('data-repo') || '';
           const featureId = btn.getAttribute('data-feature') || '';
           const agentId = btn.getAttribute('data-agent') || '';
+          const tmuxSession = btn.getAttribute('data-session') || '';
           if (!repoPath || !featureId || !agentId) return;
-          await requestAttach(repoPath, featureId, agentId);
+          await requestAttach(repoPath, featureId, agentId, tmuxSession);
         };
       });
 
