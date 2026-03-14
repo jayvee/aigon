@@ -1022,12 +1022,28 @@ When running multiple agents on the same web app, managing port numbers is painf
 | Claude on feature 120 of whenswell | `http://cc-120.whenswell.test` |
 | Main branch / general dev | `http://whenswell.test` |
 
+The proxy also routes the **Aigon Radar dashboard**:
+
+| Scenario | URL |
+|---|---|
+| Main dashboard (operator console) | `http://aigon.test` |
+| Worktree dashboard (cc, feature 119) | `http://cc-119.aigon.test` |
+| Worktree dashboard (gg, feature 119) | `http://gg-119.aigon.test` |
+
+### Prerequisites
+
+The dev proxy requires **Caddy** and **dnsmasq** — both installed automatically by the setup command. Without them, everything falls back to `localhost:<port>` and works as before.
+
+```bash
+# One-time machine setup (installs Caddy + dnsmasq, configures *.test DNS)
+aigon proxy-setup
+```
+
+This installs Caddy (reverse proxy) and dnsmasq (DNS), configures `*.test` to resolve to `127.0.0.1`, and creates `/etc/resolver/test` (requires sudo). It's idempotent — safe to run again.
+
 ### Quick setup
 
 ```bash
-# One-time machine setup (installs Caddy + dnsmasq)
-aigon proxy-setup
-
 # In your project — start dev server and get its URL
 aigon dev-server start
 #   ⏳ Starting dev server: npm run dev
@@ -1045,9 +1061,17 @@ aigon dev-server gc        # Clean up dead entries
 aigon dev-server url       # Print URL for scripting
 ```
 
+The Radar dashboard registers automatically when you start it:
+
+```bash
+aigon radar start          # Main dashboard → http://aigon.test
+# From a worktree:
+aigon radar start          # Worktree dashboard → http://cc-119.aigon.test
+```
+
 If the proxy isn't set up, everything falls back to `localhost:<port>` — existing workflows are unaffected.
 
-Only **web** and **api** profiles use the dev proxy. iOS, Android, library, and generic profiles are not affected.
+Only **web** and **api** profiles use the dev proxy for project dev servers. The Radar dashboard uses the proxy regardless of profile. iOS, Android, library, and generic profiles are not affected for dev server routing.
 
 See the [Complete Guide](GUIDE.md#local-dev-proxy) for detailed setup instructions, per-project configuration, and troubleshooting.
 
