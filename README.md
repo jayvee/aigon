@@ -806,6 +806,23 @@ aigon radar menubar-install      # Install macOS menubar plugin
 aigon radar menubar-uninstall    # Remove menubar plugin
 ```
 
+**Radar HTTP API (local service):**
+
+- `GET /api/status` — aggregated multi-repo status payload
+- `GET /api/repos` — registered repo list
+- `POST /api/attach` — open terminal and attach to an agent tmux session
+- `POST /api/action` — run allowlisted workflow actions in a target repo
+
+`POST /api/action` request body:
+
+```json
+{
+  "repoPath": "/abs/path/to/repo",
+  "action": "feature-eval",
+  "args": ["55", "--agent=cx"]
+}
+```
+
 ### macOS Menubar (Aigon Radar)
 
 A menubar icon that shows live agent status at a glance — click to expand a menu of all features and agents across repos, then click any agent to jump directly to its terminal. The menubar plugin calls Radar's HTTP API for its data.
