@@ -132,7 +132,7 @@
     .kcard-actions .btn{font-size:11px;padding:3px 8px}
     .col-empty{padding:12px 8px;color:var(--text-tertiary);font-size:12px;text-align:center}
     /* Agent picker modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:flex;align-items:center;justify-content:center}
     .modal-box{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius);padding:20px 24px;min-width:280px;max-width:400px;width:100%}
     .modal-box h3{margin:0 0 14px;font-size:15px;letter-spacing:-.01em}
     .modal-desc{color:var(--text-secondary);font-size:12px;margin:0 0 14px}
@@ -202,6 +202,56 @@
       .detail-area{padding-left:0}
       .spec-drawer{width:100vw}
     }
+    /* Run next split button */
+    .run-next-group{position:relative;display:inline-flex;flex-shrink:0}
+    .run-next-primary{font-size:11px;border-radius:8px 0 0 8px;border-right:none!important}
+    .run-next-chevron{font-size:10px;padding:4px 6px;border-radius:0 8px 8px 0;min-width:unset}
+    .run-next-primary:only-child{border-radius:8px}
+    .run-next-group .btn{white-space:nowrap}
+    .run-next-spinner{display:inline-block;width:10px;height:10px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:4px;vertical-align:middle}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .run-next-dropdown{position:absolute;top:calc(100% + 4px);right:0;z-index:300;min-width:260px;background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:10px;padding:4px;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    .run-next-dropdown.open{display:block}
+    .dropdown-item{display:flex;flex-direction:column;gap:2px;width:100%;padding:8px 10px;background:none;border:none;border-radius:7px;cursor:pointer;text-align:left;transition:background .1s ease}
+    .dropdown-item:hover{background:var(--bg-hover)}
+    .item-label{font-size:12px;font-weight:600;color:var(--text-primary)}
+    .item-command{font-family:var(--mono);font-size:11px;color:var(--accent);word-break:break-all}
+    .item-reason{font-size:11px;color:var(--text-tertiary)}
+    /* Terminal panel (reuses spec-drawer positioning) */
+    .terminal-panel{position:fixed;top:0;right:0;bottom:0;width:min(55vw,800px);background:#0a0a0b;z-index:201;transform:translateX(100%);transition:transform .25s ease,width .25s ease,right .25s ease;display:flex;flex-direction:column;border-left:1px solid var(--border-subtle)}
+    .terminal-panel.open{transform:translateX(0)}
+    .terminal-panel.fullscreen{width:100vw;border-left:none;right:0}
+    /* Split-view: terminal left, spec drawer right — both headers accessible */
+    body.split-view .terminal-panel.open{transform:none;width:calc(100vw - min(55vw,720px));right:min(55vw,720px);border-left:none;border-right:1px solid var(--border-subtle)}
+    body.split-view #terminal-panel-overlay{display:none!important}
+    body.split-view #panel-back{display:block!important}
+    body:not(.split-view) #panel-back{display:none!important}
+    /* Stale file indicator on the spec drawer refresh button */
+    #drawer-refresh.stale{color:#f59e0b;border-color:rgba(245,158,11,.5);animation:stale-pulse 1.5s ease-in-out infinite}
+    @keyframes stale-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+    .panel-status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--text-tertiary);margin-right:4px;flex-shrink:0}
+    .panel-status-dot.running{background:var(--success);box-shadow:0 0 6px rgba(34,197,94,.4);animation:pulse 1.5s infinite}
+    .panel-status-dot.error{background:var(--error)}
+    #terminal-container{flex:1;overflow:hidden;background:#0a0a0b;position:relative}
+    .panel-footer{display:flex;align-items:center;justify-content:space-between;padding:6px 16px;border-top:1px solid var(--border-subtle);flex-shrink:0;background:#0a0a0b}
+    /* AI session picker (single-agent selection) */
+    .ai-agent-options{display:grid;gap:6px;margin-bottom:16px}
+    .ai-agent-btn{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;background:none;border:1px solid var(--border-subtle);border-radius:8px;cursor:pointer;transition:background .1s ease,border-color .1s ease;color:var(--text-primary);font:inherit}
+    .ai-agent-btn:hover{background:var(--bg-elevated);border-color:var(--border-default)}
+    .ai-agent-btn.selected{border-color:rgba(59,130,246,.7);background:rgba(59,130,246,.1)}
+    .ai-agent-id{font-family:var(--mono);font-size:13px;font-weight:600;min-width:28px}
+    .ai-agent-name{font-size:12px;color:var(--text-secondary);flex:1;text-align:left}
+    @media(max-width:768px){.terminal-panel{width:100vw;border-left:none}}
+    /* Sessions view */
+    .sessions-toolbar{display:flex;align-items:center;gap:10px;margin:12px 0}
+    .sessions-group{margin-bottom:20px}
+    .sessions-group-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary);padding:0 0 6px;border-bottom:1px solid var(--border-subtle);margin-bottom:8px}
+    .session-row{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;margin-bottom:5px}
+    .session-row:hover{border-color:var(--border-default)}
+    .session-row.attached{border-left:2px solid var(--success)}
+    .session-name{font-family:var(--mono);font-size:12px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .session-meta{font-size:11px;color:var(--text-tertiary);white-space:nowrap}
+    .session-attached-badge{font-size:10px;padding:1px 6px;border-radius:999px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#86efac;white-space:nowrap}
   </style>
 </head>
 <body>
@@ -217,6 +267,7 @@
     <nav class="view-tabs" aria-label="Dashboard views">
       <button class="view-tab" id="tab-monitor" data-view="monitor">Monitor</button>
       <button class="view-tab" id="tab-pipeline" data-view="pipeline">Pipeline</button>
+      <button class="view-tab" id="tab-sessions" data-view="sessions">Sessions</button>
       <button class="view-tab" id="tab-settings" data-view="settings">Settings</button>
     </nav>
     <select id="repo-select-mobile" class="repo-select-mobile" aria-label="Select repository"></select>
@@ -227,6 +278,7 @@
         <div id="monitor-summary" class="summary" aria-label="Agent status summary"></div>
         <div id="repos" class="repos"></div>
         <div id="empty" class="empty" style="display:none"></div>
+        <div id="sessions-view" style="display:none;padding:0 0 28px"></div>
       </div>
     </div>
   </div>
@@ -260,7 +312,49 @@
       <input type="text" id="create-modal-name" class="create-input" placeholder="e.g. dark mode toggle" autofocus />
       <div class="modal-actions" style="margin-top:16px">
         <button class="btn" id="create-modal-cancel">Cancel</button>
+        <button class="btn" id="create-modal-use-ai">Use AI</button>
         <button class="btn btn-primary" id="create-modal-submit">Create</button>
+      </div>
+    </div>
+  </div>
+  <!-- Terminal panel -->
+  <div id="terminal-panel-overlay" class="drawer-overlay"></div>
+  <aside id="terminal-panel" class="terminal-panel" role="dialog" aria-modal="true" aria-label="Terminal">
+    <div class="drawer-header">
+      <span class="panel-status-dot" id="panel-status-dot"></span>
+      <span class="drawer-title" id="panel-title">Terminal</span>
+      <div class="drawer-actions" id="panel-actions-normal">
+        <button class="btn" id="panel-back" style="display:none" title="Close both panels and return to dashboard">← Dashboard</button>
+        <button class="btn" id="panel-view-spec" style="display:none" title="View the spec file alongside the terminal">View Spec</button>
+        <button class="btn" id="panel-fullscreen" title="Toggle fullscreen (Cmd+Shift+F)">⤢</button>
+        <button class="btn btn-warn" id="panel-stop">Stop</button>
+        <button class="btn" id="panel-close" aria-label="Detach (keep session running)" title="Detach — hides this panel but keeps the tmux session running">Detach</button>
+      </div>
+      <div class="drawer-actions" id="panel-actions-confirm" style="display:none">
+        <span style="font-size:12px;color:var(--text-secondary)" id="panel-kill-label">Kill session?</span>
+        <button class="btn" id="panel-stop-cancel">Cancel</button>
+        <button class="btn btn-warn" id="panel-stop-kill">Kill</button>
+      </div>
+    </div>
+    <div id="terminal-container"></div>
+    <div class="panel-footer">
+      <span id="panel-session-name" style="font-family:var(--mono);font-size:11px;color:var(--text-tertiary)"></span>
+      <span id="panel-elapsed" style="font-size:11px;color:var(--text-tertiary)">0s</span>
+    </div>
+  </aside>
+  <!-- AI session picker modal -->
+  <div id="ai-session-picker" class="modal-backdrop" style="display:none" role="dialog" aria-modal="true" aria-labelledby="ai-picker-title">
+    <div class="modal-box">
+      <h3 id="ai-picker-title">Choose AI Agent</h3>
+      <p class="modal-desc" id="ai-picker-desc">Select an agent to help with this spec</p>
+      <div class="ai-agent-options" id="ai-agent-options">
+        <button class="ai-agent-btn" data-agent="cc"><span class="ai-agent-id">cc</span><span class="ai-agent-name">Claude Code</span></button>
+        <button class="ai-agent-btn" data-agent="gg"><span class="ai-agent-id">gg</span><span class="ai-agent-name">Gemini</span></button>
+        <button class="ai-agent-btn" data-agent="cx"><span class="ai-agent-id">cx</span><span class="ai-agent-name">Codex</span></button>
+        <button class="ai-agent-btn" data-agent="cu"><span class="ai-agent-id">cu</span><span class="ai-agent-name">Cursor</span></button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="ai-picker-cancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -275,6 +369,8 @@
           <button class="drawer-mode-btn active" data-mode="read">Read</button>
           <button class="drawer-mode-btn" data-mode="edit">Edit</button>
         </div>
+        <button class="btn btn-primary" id="drawer-use-ai" title="Launch AI agent to help write this spec">Use AI</button>
+        <button class="btn" id="drawer-refresh" title="Reload file from disk">↺ Refresh</button>
         <button class="btn" id="drawer-open-editor" title="Open in default editor">Open in Editor</button>
         <button class="btn" id="drawer-fullscreen" title="Toggle fullscreen (Cmd+Shift+F)">⤢</button>
         <button class="btn" id="drawer-close" aria-label="Close">&times;</button>
@@ -298,6 +394,10 @@
       </div>
     </div>
   </aside>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/css/xterm.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-attach@0/lib/addon-attach.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0/lib/addon-fit.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
     const POLL_MS = 10000;
@@ -442,6 +542,342 @@
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = btn._origText || 'Open'; }
       }
+    }
+
+    // ── Session execution ─────────────────────────────────────────────────────
+
+    async function executeNextAction(command, mode, repoPath, btn) {
+      if (!command) return;
+      const origText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origText);
+      }
+      try {
+        if (mode === 'fire-and-forget') {
+          const res = await fetch('/api/session/run', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ command, cwd: repoPath || '' })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || data.exitCode !== 0) {
+            showToast('Failed: ' + command.split(' ').slice(0, 3).join(' '));
+            if (data.stdout || data.stderr) {
+              openTerminalPanel(command.split(' ').slice(0, 3).join(' '), command, null, (data.stdout || '') + (data.stderr ? '\r\n\x1b[31m' + data.stderr + '\x1b[0m' : ''));
+            }
+          } else {
+            showToast('Done: ' + command.split(' ').slice(0, 3).join(' '));
+            await requestRefresh();
+          }
+        } else {
+          // terminal or agent mode — start tmux session and open terminal panel
+          const label = mode === 'agent' ? 'agent' : 'cmd';
+          const res = await fetch('/api/session/start', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ command, cwd: repoPath || '', mode, label })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            showToast('Failed to start session: ' + (data.error || 'Unknown error'));
+          } else {
+            openTerminalPanel(command.split(' ').slice(0, 4).join(' '), command, data.sessionName);
+          }
+        }
+      } catch (e) {
+        showToast('Error: ' + e.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = origText; }
+      }
+    }
+
+    // ── Terminal panel ────────────────────────────────────────────────────────
+
+    const termState = {
+      sessionName: null, startedAt: null, term: null, ws: null,
+      elapsedTimer: null, fitAddon: null, resizeObserver: null,
+      specPath: null, specTitle: null, specStage: null,
+      specPoller: null, specContentHash: null
+    };
+
+    function openTerminalPanel(label, command, sessionName, staticContent, specContext) {
+      const panelOverlay = document.getElementById('terminal-panel-overlay');
+      const panel = document.getElementById('terminal-panel');
+      const container = document.getElementById('terminal-container');
+
+      document.getElementById('panel-title').textContent = label || 'Terminal';
+      document.getElementById('panel-session-name').textContent = sessionName || '';
+      const dot = document.getElementById('panel-status-dot');
+      dot.className = 'panel-status-dot ' + (sessionName ? 'running' : '');
+
+      // Tear down any previous terminal
+      if (termState.resizeObserver) { try { termState.resizeObserver.disconnect(); } catch (e) {} termState.resizeObserver = null; }
+      if (termState.ws) { try { termState.ws.close(); } catch (e) {} termState.ws = null; }
+      if (termState.term) { try { termState.term.dispose(); } catch (e) {} termState.term = null; }
+      clearInterval(termState.elapsedTimer);
+
+      termState.sessionName = sessionName || null;
+      termState.startedAt = Date.now();
+      termState.specPath = specContext ? specContext.path : null;
+      termState.specTitle = specContext ? specContext.title : null;
+      termState.specStage = specContext ? specContext.stage : null;
+      container.innerHTML = '';
+
+      // Show "View Spec" button only when launched with a spec context
+      const viewSpecBtn = document.getElementById('panel-view-spec');
+      if (viewSpecBtn) viewSpecBtn.style.display = termState.specPath ? '' : 'none';
+
+      // Stop any previous spec poller
+      if (termState.specPoller) { clearInterval(termState.specPoller); termState.specPoller = null; }
+      termState.specContentHash = null;
+
+      // Show panel
+      panelOverlay.style.display = '';
+      panelOverlay.classList.add('open');
+      panel.classList.add('open');
+      document.body.style.overflow = 'hidden';
+
+      // Split-view: if spec drawer is already open alongside, position panels side by side
+      if (document.getElementById('spec-drawer').classList.contains('open')) {
+        document.body.classList.add('split-view');
+        setTimeout(() => { if (termState.fitAddon) try { termState.fitAddon.fit(); } catch (e) {} }, 300);
+      }
+
+      // Start stale poller: detect when AI edits the spec so user knows to refresh
+      if (termState.specPath) {
+        termState.specPoller = setInterval(async () => {
+          if (!document.getElementById('spec-drawer').classList.contains('open')) return;
+          if (drawerState.path !== termState.specPath) return;
+          try {
+            const r = await fetch('/api/spec?path=' + encodeURIComponent(termState.specPath));
+            const data = await r.json();
+            if (data.error) return;
+            const hash = data.content.length + '|' + data.content.slice(-200);
+            if (termState.specContentHash === null) { termState.specContentHash = hash; return; }
+            if (hash !== termState.specContentHash) {
+              termState.specContentHash = hash;
+              const refreshBtn = document.getElementById('drawer-refresh');
+              if (refreshBtn && !refreshBtn.classList.contains('stale')) refreshBtn.classList.add('stale');
+            }
+          } catch (e) {}
+        }, 3000);
+      }
+
+      // Init xterm.js if available
+      if (typeof Terminal !== 'undefined') {
+        const term = new Terminal({
+          theme: { background: '#0a0a0b', foreground: '#ededef', cursor: '#3b82f6' },
+          fontFamily: '"SF Mono","Cascadia Code",ui-monospace,monospace',
+          fontSize: 13, convertEol: false
+        });
+        termState.term = term;
+
+        const fitAddon = typeof FitAddon !== 'undefined' ? new FitAddon.FitAddon() : null;
+        termState.fitAddon = fitAddon;
+        if (fitAddon) term.loadAddon(fitAddon);
+
+        term.open(container);
+        if (fitAddon) {
+          setTimeout(() => { try { fitAddon.fit(); } catch (e) {} }, 50);
+          const ro = new ResizeObserver(() => { try { fitAddon.fit(); } catch (e) {} });
+          ro.observe(container);
+          termState.resizeObserver = ro;
+        }
+
+        if (staticContent) {
+          term.write(staticContent);
+        } else if (sessionName) {
+          const wsUrl = 'ws://' + location.host + '/ws/terminal?session=' + encodeURIComponent(sessionName);
+          // Small delay to let the tmux session start
+          setTimeout(() => {
+            const ws = new WebSocket(wsUrl);
+            termState.ws = ws;
+            ws.binaryType = 'arraybuffer';
+
+            // Manual WebSocket handling (instead of AttachAddon) so we can send resize events
+            ws.onmessage = (e) => {
+              const data = e.data instanceof ArrayBuffer ? new TextDecoder().decode(e.data) : e.data;
+              term.write(data);
+            };
+            term.onData((data) => { if (ws.readyState === WebSocket.OPEN) ws.send(data); });
+            // Send terminal size to server so tmux pane matches xterm dimensions
+            term.onResize(({ cols, rows }) => {
+              if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+            });
+
+            ws.onopen = () => {
+              dot.className = 'panel-status-dot running';
+              // Send current size immediately on connect
+              if (termState.fitAddon) { try { termState.fitAddon.fit(); } catch (e) {} }
+            };
+            ws.onclose = () => { dot.className = 'panel-status-dot'; };
+            ws.onerror = () => { dot.className = 'panel-status-dot error'; term.write('\r\n\x1b[31m[WebSocket error]\x1b[0m\r\n'); };
+          }, 300);
+        }
+      } else {
+        // Fallback: plain text display
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'color:#ededef;padding:12px;font-family:var(--mono);font-size:12px;margin:0;overflow:auto;height:100%;background:#0a0a0b';
+        pre.textContent = staticContent || (sessionName ? 'Session: ' + sessionName : 'Terminal unavailable');
+        container.appendChild(pre);
+      }
+
+      // Elapsed timer
+      termState.elapsedTimer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - termState.startedAt) / 1000);
+        const el = document.getElementById('panel-elapsed');
+        if (el) el.textContent = elapsed < 60 ? elapsed + 's' : Math.floor(elapsed / 60) + 'm ' + (elapsed % 60) + 's';
+      }, 1000);
+    }
+
+    function closeTerminalPanel() {
+      const panelOverlay = document.getElementById('terminal-panel-overlay');
+      const panel = document.getElementById('terminal-panel');
+      panelOverlay.classList.remove('open');
+      panel.classList.remove('open');
+      document.body.classList.remove('split-view');
+      hideStopConfirm();
+      // Restore overflow only if spec drawer is also closed
+      if (!document.getElementById('spec-drawer').classList.contains('open')) {
+        document.body.style.overflow = '';
+      }
+      if (termState.ws) { try { termState.ws.close(); } catch (e) {} termState.ws = null; }
+      if (termState.resizeObserver) { try { termState.resizeObserver.disconnect(); } catch (e) {} termState.resizeObserver = null; }
+      if (termState.specPoller) { clearInterval(termState.specPoller); termState.specPoller = null; }
+      clearInterval(termState.elapsedTimer);
+    }
+
+    function showStopConfirm() {
+      const sessionName = termState.sessionName;
+      if (!sessionName) { closeTerminalPanel(); return; }
+      const shortName = sessionName.length > 32 ? '…' + sessionName.slice(-29) : sessionName;
+      document.getElementById('panel-kill-label').textContent = 'Kill ' + shortName + '?';
+      document.getElementById('panel-actions-normal').style.display = 'none';
+      document.getElementById('panel-actions-confirm').style.display = '';
+    }
+    function hideStopConfirm() {
+      document.getElementById('panel-actions-normal').style.display = '';
+      document.getElementById('panel-actions-confirm').style.display = 'none';
+    }
+
+    async function stopTerminalSession() {
+      const sessionName = termState.sessionName;
+      if (!sessionName) { closeTerminalPanel(); return; }
+      hideStopConfirm();
+      try {
+        await fetch('/api/session/stop', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ sessionName })
+        });
+        showToast('Session killed: ' + sessionName);
+      } catch (e) {
+        showToast('Stop failed: ' + e.message);
+      }
+      closeTerminalPanel();
+    }
+
+    function toggleTerminalFullscreen() {
+      const panel = document.getElementById('terminal-panel');
+      panel.classList.toggle('fullscreen');
+      const btn = document.getElementById('panel-fullscreen');
+      if (btn) btn.textContent = panel.classList.contains('fullscreen') ? '⤡' : '⤢';
+      if (termState.fitAddon) setTimeout(() => { try { termState.fitAddon.fit(); } catch (e) {} }, 50);
+    }
+
+    document.getElementById('panel-close').onclick = () => { hideStopConfirm(); closeTerminalPanel(); };
+    document.getElementById('panel-back').onclick = () => { hideStopConfirm(); closeDrawer(); closeTerminalPanel(); };
+    document.getElementById('panel-stop').onclick = () => showStopConfirm();
+    document.getElementById('panel-stop-cancel').onclick = () => hideStopConfirm();
+    document.getElementById('panel-stop-kill').onclick = () => stopTerminalSession();
+    document.getElementById('panel-fullscreen').onclick = () => toggleTerminalFullscreen();
+    document.getElementById('panel-view-spec').onclick = () => {
+      if (termState.specPath) {
+        openDrawer(termState.specPath, termState.specTitle || 'Spec', termState.specStage || 'inbox');
+      }
+    };
+    document.getElementById('terminal-panel-overlay').onclick = () => closeTerminalPanel();
+
+    // Keyboard shortcut: Escape closes panels
+    document.addEventListener('keydown', (e) => {
+      const panel = document.getElementById('terminal-panel');
+      if (!panel.classList.contains('open')) return;
+      if (e.key === 'Escape') {
+        if (document.body.classList.contains('split-view')) {
+          // In split-view: ESC closes both panels at once → back to dashboard
+          closeDrawer(); closeTerminalPanel();
+        } else if (!document.getElementById('spec-drawer').classList.contains('open')) {
+          closeTerminalPanel();
+        }
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'f') {
+        e.preventDefault();
+        toggleTerminalFullscreen();
+      }
+    }, true);
+
+    // ── AI session picker ──────────────────────────────────────────────────────
+
+    let aiPickerResolve = null;
+
+    const AI_AGENTS = [
+      { id: 'cc', name: 'Claude Code', cmd: 'claude' },
+      { id: 'gg', name: 'Gemini', cmd: 'gemini' },
+      { id: 'cx', name: 'Codex', cmd: 'codex' },
+      { id: 'cu', name: 'Cursor', cmd: 'cursor' }
+    ];
+
+    function showAiSessionPicker(desc) {
+      return new Promise((resolve) => {
+        aiPickerResolve = resolve;
+        document.getElementById('ai-picker-desc').textContent = desc || '';
+        const lastAgent = localStorage.getItem('aigon.dashboard.lastAgent') || 'cc';
+        document.querySelectorAll('.ai-agent-btn').forEach(btn => {
+          btn.classList.toggle('selected', btn.getAttribute('data-agent') === lastAgent);
+        });
+        document.getElementById('ai-session-picker').style.display = 'flex';
+      });
+    }
+
+    function hideAiSessionPicker(result) {
+      document.getElementById('ai-session-picker').style.display = 'none';
+      if (aiPickerResolve) { aiPickerResolve(result); aiPickerResolve = null; }
+    }
+
+    document.getElementById('ai-picker-cancel').onclick = () => hideAiSessionPicker(null);
+    document.getElementById('ai-session-picker').onclick = (e) => { if (e.target === e.currentTarget) hideAiSessionPicker(null); };
+    document.querySelectorAll('.ai-agent-btn').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const agentId = btn.getAttribute('data-agent');
+        localStorage.setItem('aigon.dashboard.lastAgent', agentId);
+        hideAiSessionPicker(agentId);
+      };
+    });
+
+    async function launchAiSession(specPath, desc, repoPath, specCtx) {
+      const agentId = await showAiSessionPicker(desc);
+      if (!agentId) return;
+      const agentMap = { cc: 'claude', gg: 'gemini', cx: 'codex', cu: 'agent' };
+      const agentBin = agentMap[agentId] || agentId;
+      const prompt = 'Help me write the spec at ' + specPath + '. Read the file first, then ask me what I want this feature to do.';
+      const command = 'cd ' + JSON.stringify(repoPath || process.cwd()) + ' && ' + agentBin + ' ' + JSON.stringify(prompt);
+      const res = await fetch('/api/session/start', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ command, cwd: repoPath || '', mode: 'agent', label: 'agent' })
+      }).catch(() => null);
+      if (!res || !res.ok) {
+        const data = res ? await res.json().catch(() => ({})) : {};
+        showToast('Failed to start AI session: ' + (data.error || 'Unknown'));
+        return;
+      }
+      const data = await res.json();
+      openTerminalPanel(agentId + ' – AI session', command, data.sessionName, null,
+        specCtx || { path: specPath, title: desc, stage: 'inbox' });
+      const panel = document.getElementById('terminal-panel');
+      if (!panel.classList.contains('fullscreen')) toggleTerminalFullscreen();
     }
 
     // ── Agent picker ──────────────────────────────────────────────────────────
@@ -704,6 +1140,11 @@
       drawerOverlay.classList.add('open');
       drawerEl.classList.add('open');
       document.body.style.overflow = 'hidden';
+      // If terminal panel is also open, enter split-view so both headers are accessible
+      if (document.getElementById('terminal-panel').classList.contains('open')) {
+        document.body.classList.add('split-view');
+        setTimeout(() => { if (termState.fitAddon) try { termState.fitAddon.fit(); } catch (e) {} }, 300);
+      }
 
       fetch('/api/spec?path=' + encodeURIComponent(specPath))
         .then(r => r.json())
@@ -721,9 +1162,14 @@
       if (drawerState.dirty && !confirm('You have unsaved changes. Discard?')) return;
       drawerOverlay.classList.remove('open');
       drawerEl.classList.remove('open');
-      document.body.style.overflow = '';
+      document.body.classList.remove('split-view');
+      if (!document.getElementById('terminal-panel').classList.contains('open')) {
+        document.body.style.overflow = '';
+      }
       drawerState.path = null;
       drawerState.dirty = false;
+      // Refit terminal after spec drawer closes (terminal panel goes back to right side)
+      setTimeout(() => { if (termState.fitAddon) try { termState.fitAddon.fit(); } catch (e) {} }, 300);
     }
 
     function setDrawerMode(mode) {
@@ -831,6 +1277,43 @@
     document.getElementById('drawer-font-up').onclick = () => {
       drawerState.fontSize = Math.min(24, drawerState.fontSize + 1);
       applyDrawerFontSize();
+    };
+
+    document.getElementById('drawer-refresh').onclick = async () => {
+      if (!drawerState.path) return;
+      if (drawerState.dirty && !confirm('You have unsaved changes. Reload and discard them?')) return;
+      const btn = document.getElementById('drawer-refresh');
+      btn.classList.remove('stale');
+      termState.specContentHash = null; // reset so next poll re-baselines
+      btn.textContent = '↺…';
+      btn.disabled = true;
+      const scrollTop = document.getElementById('drawer-body').scrollTop;
+      try {
+        const res = await fetch('/api/spec?path=' + encodeURIComponent(drawerState.path));
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        drawerState.content = data.content;
+        drawerState.savedContent = data.content;
+        drawerState.dirty = false;
+        drawerEditor.value = data.content;
+        renderMarkdownPreview(data.content);
+        updateDrawerButtons();
+        drawerSaveStatus.textContent = 'Refreshed';
+        setTimeout(() => { if (drawerSaveStatus.textContent === 'Refreshed') drawerSaveStatus.textContent = ''; }, 2000);
+        requestAnimationFrame(() => { document.getElementById('drawer-body').scrollTop = scrollTop; });
+      } catch (e) {
+        showToast('Refresh failed: ' + e.message);
+      } finally {
+        btn.textContent = '↺ Refresh';
+        btn.disabled = false;
+      }
+    };
+
+    document.getElementById('drawer-use-ai').onclick = async () => {
+      if (!drawerState.path) return;
+      const repoPath = drawerState.path.split('/docs/')[0];
+      const specCtx = { path: drawerState.path, title: drawerState.title, stage: drawerState.stage };
+      await launchAiSession(drawerState.path, drawerState.title || 'spec', repoPath, specCtx);
     };
 
     document.getElementById('drawer-open-editor').onclick = async () => {
@@ -1036,9 +1519,26 @@
             const card = document.createElement('article');
             card.className = 'card' + (hasWaiting ? ' waiting' : '') + (isEval ? ' evaluating' : '');
             const rows = [...feature.agents].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id));
-            const nextCmd = feature.nextAction && feature.nextAction.command ? feature.nextAction.command : null;
-            const nextReason = feature.nextAction && feature.nextAction.reason ? escHtml(feature.nextAction.reason) : '';
-            const nextBtn = nextCmd ? '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(nextCmd) + '" title="' + nextReason + '">Copy next</button>' : '';
+            const nextActions = feature.nextActions && feature.nextActions.length > 0
+              ? feature.nextActions
+              : (feature.nextAction && feature.nextAction.command ? [{ command: feature.nextAction.command, label: 'Run', reason: feature.nextAction.reason || '', mode: 'fire-and-forget' }] : []);
+            let nextBtn = '';
+            if (nextActions.length > 0) {
+              const primary = nextActions[0];
+              const extras = nextActions.slice(1);
+              const dropdownHtml = extras.length > 0
+                ? '<button class="btn btn-primary run-next-chevron" aria-haspopup="true" title="More actions">▾</button>' +
+                  '<div class="run-next-dropdown" role="menu">' +
+                  extras.map(a => '<button class="dropdown-item" data-command="' + escHtml(a.command) + '" data-mode="' + escHtml(a.mode) + '">' +
+                    '<span class="item-label">' + escHtml(a.label) + '</span>' +
+                    '<code class="item-command">' + escHtml(a.command) + '</code>' +
+                    '<span class="item-reason">' + escHtml(a.reason) + '</span>' +
+                    '</button>').join('') + '</div>'
+                : '';
+              nextBtn = '<span class="run-next-group">' +
+                '<button class="btn btn-primary run-next-primary" data-command="' + escHtml(primary.command) + '" data-mode="' + escHtml(primary.mode) + '" data-repo="' + escHtml(repo.path) + '" title="' + escHtml(primary.command) + ' — ' + escHtml(primary.reason) + '">' + escHtml(primary.label) + '</button>' +
+                dropdownHtml + '</span>';
+            }
             const evalBadge = isEval ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus || 'evaluating') + '</span>' : '';
             card.innerHTML = '<div class="card-h"><span class="feature">' + (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + evalBadge + '</span><span class="head-actions">' + nextBtn + '</span></div><div class="rows"></div>';
             const rowsEl = card.querySelector('.rows');
@@ -1139,6 +1639,7 @@
           : 'No items match filter: ' + state.filter;
       }
 
+      // Keep copy handler for remaining "Copy cmd" buttons on agent rows
       reposRoot.querySelectorAll('button.copy').forEach(btn => {
         btn.onclick = async (e) => {
           e.stopPropagation();
@@ -1146,6 +1647,54 @@
           if (!text) return;
           const ok = await copyText(text);
           showToast(ok ? 'Copied: ' + text : 'Copy failed');
+        };
+      });
+
+      // Run next: primary button
+      reposRoot.querySelectorAll('.run-next-primary').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const command = btn.getAttribute('data-command') || '';
+          const mode = btn.getAttribute('data-mode') || 'fire-and-forget';
+          const repoPath = btn.getAttribute('data-repo') || '';
+          await executeNextAction(command, mode, repoPath, btn);
+        };
+      });
+
+      // Run next: chevron opens dropdown
+      reposRoot.querySelectorAll('.run-next-chevron').forEach(chevron => {
+        chevron.onclick = (e) => {
+          e.stopPropagation();
+          const group = chevron.closest('.run-next-group');
+          const dropdown = group && group.querySelector('.run-next-dropdown');
+          if (!dropdown) return;
+          const isOpen = dropdown.classList.contains('open');
+          // Close all open dropdowns first
+          document.querySelectorAll('.run-next-dropdown.open').forEach(d => d.classList.remove('open'));
+          if (!isOpen) {
+            dropdown.classList.add('open');
+            const close = (ev) => {
+              if (!group.contains(ev.target)) {
+                dropdown.classList.remove('open');
+                document.removeEventListener('click', close);
+              }
+            };
+            setTimeout(() => document.addEventListener('click', close), 0);
+          }
+        };
+      });
+
+      // Run next: dropdown item click
+      reposRoot.querySelectorAll('.dropdown-item').forEach(item => {
+        item.onclick = async (e) => {
+          e.stopPropagation();
+          const command = item.getAttribute('data-command') || '';
+          const mode = item.getAttribute('data-mode') || 'fire-and-forget';
+          const group = item.closest('.run-next-group');
+          const primaryBtn = group && group.querySelector('.run-next-primary');
+          const repoPath = primaryBtn ? primaryBtn.getAttribute('data-repo') || '' : '';
+          item.closest('.run-next-dropdown').classList.remove('open');
+          await executeNextAction(command, mode, repoPath, primaryBtn || item);
         };
       });
 
@@ -1421,9 +1970,43 @@
 
       function cancel() { modal.style.display = 'none'; }
 
+      async function useAi() {
+        const name = nameInput.value.trim();
+        if (!name) { nameInput.focus(); return; }
+        let repoPath;
+        if (state.selectedRepo !== 'all') {
+          repoPath = state.selectedRepo;
+        } else if (repos.length === 1) {
+          repoPath = repos[0].path;
+        } else {
+          repoPath = repoSelect.value;
+        }
+        // Create the spec first, then launch AI
+        const useAiBtn = document.getElementById('create-modal-use-ai');
+        if (useAiBtn) { useAiBtn.disabled = true; useAiBtn.textContent = 'Creating…'; }
+        try {
+          const res = await fetch('/api/spec/create', {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ repoPath, type: pType, name })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed');
+          modal.style.display = 'none';
+          showToast('Created: ' + name);
+          requestRefresh();
+          await launchAiSession(data.path, name, repoPath);
+        } catch (e) {
+          showToast('Create failed: ' + e.message);
+        } finally {
+          if (useAiBtn) { useAiBtn.disabled = false; useAiBtn.textContent = 'Use AI'; }
+        }
+      }
+
       // Wire up (replace listeners to avoid stacking)
       submitBtn.onclick = submit;
       document.getElementById('create-modal-cancel').onclick = cancel;
+      const useAiBtn = document.getElementById('create-modal-use-ai');
+      if (useAiBtn) useAiBtn.onclick = useAi;
       nameInput.onkeydown = (e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') cancel(); };
     }
 
@@ -1693,6 +2276,82 @@
 
     // ── Main render dispatch ───────────────────────────────────────────────────
 
+    async function renderSessions() {
+      const container = document.getElementById('sessions-view');
+      container.innerHTML = '<div style="padding:12px 0;color:var(--text-tertiary);font-size:12px">Loading sessions…</div>';
+
+      let sessions = [];
+      try {
+        const res = await fetch('/api/sessions');
+        const data = await res.json();
+        sessions = data.sessions || [];
+      } catch (e) {
+        container.innerHTML = '<div class="empty">Failed to load sessions: ' + escHtml(e.message) + '</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+
+      // Toolbar
+      const toolbar = document.createElement('div');
+      toolbar.className = 'sessions-toolbar';
+      toolbar.innerHTML = '<strong style="font-size:15px;font-weight:600;letter-spacing:-.01em">Tmux Sessions</strong>' +
+        '<span style="font-size:12px;color:var(--text-tertiary)">' + sessions.length + ' session' + (sessions.length === 1 ? '' : 's') + '</span>' +
+        '<button class="btn" id="sessions-refresh-btn" style="margin-left:auto">↺ Refresh</button>';
+      container.appendChild(toolbar);
+      document.getElementById('sessions-refresh-btn').onclick = () => renderSessions();
+
+      if (sessions.length === 0) {
+        container.innerHTML += '<div class="empty">No tmux sessions running.</div>';
+        return;
+      }
+
+      // Group: dashboard sessions first, then by repo prefix
+      const dashSessions = sessions.filter(s => s.name.startsWith('aigon-dash-'));
+      const otherSessions = sessions.filter(s => !s.name.startsWith('aigon-dash-'));
+
+      function renderGroup(title, items) {
+        if (items.length === 0) return;
+        const group = document.createElement('div');
+        group.className = 'sessions-group';
+        group.innerHTML = '<div class="sessions-group-title">' + escHtml(title) + ' (' + items.length + ')</div>';
+        items.forEach(s => {
+          const row = document.createElement('div');
+          row.className = 'session-row' + (s.attached ? ' attached' : '');
+          const age = relTime(s.createdAt);
+          const attachedBadge = s.attached ? '<span class="session-attached-badge">attached</span>' : '';
+          row.innerHTML =
+            '<span class="session-name" title="' + escHtml(s.name) + '">' + escHtml(s.name) + '</span>' +
+            '<span class="session-meta">' + age + '</span>' +
+            attachedBadge +
+            '<span style="display:flex;gap:5px">' +
+              '<button class="btn btn-primary" style="font-size:11px;padding:3px 8px" data-session="' + escHtml(s.name) + '">Attach</button>' +
+              '<button class="btn btn-warn" style="font-size:11px;padding:3px 8px" data-kill="' + escHtml(s.name) + '">Kill</button>' +
+            '</span>';
+
+          row.querySelector('[data-session]').onclick = async (e) => {
+            e.stopPropagation();
+            openTerminalPanel(s.name, '', s.name);
+          };
+          row.querySelector('[data-kill]').onclick = async (e) => {
+            e.stopPropagation();
+            if (!confirm('Kill session "' + s.name + '"?')) return;
+            await fetch('/api/session/stop', {
+              method: 'POST', headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ sessionName: s.name })
+            });
+            showToast('Killed: ' + s.name);
+            renderSessions();
+          };
+          group.appendChild(row);
+        });
+        container.appendChild(group);
+      }
+
+      renderGroup('Dashboard Sessions', dashSessions);
+      renderGroup('Agent Sessions', otherSessions);
+    }
+
     function render() {
       updateViewTabs();
       // Clean up view-specific toolbars when switching views
@@ -1710,10 +2369,23 @@
       if (state.view === 'settings') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
+        document.getElementById('sessions-view').style.display = 'none';
+        document.getElementById('repos').style.display = '';
         renderSettings();
+      } else if (state.view === 'sessions') {
+        sidebar.style.display = 'none';
+        mobileSelect.style.display = 'none';
+        document.getElementById('repos').style.display = 'none';
+        document.getElementById('empty').style.display = 'none';
+        document.getElementById('monitor-summary').style.display = 'none';
+        document.getElementById('repo-header').style.display = 'none';
+        document.getElementById('sessions-view').style.display = '';
+        renderSessions();
       } else {
         sidebar.style.display = '';
         mobileSelect.style.display = '';
+        document.getElementById('repos').style.display = '';
+        document.getElementById('sessions-view').style.display = 'none';
         if (state.view === 'pipeline') {
           renderPipeline();
         } else {
