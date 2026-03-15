@@ -72,6 +72,7 @@
     .toast button{margin-left:8px;background:transparent;border:1px solid var(--border-default);border-radius:6px;color:var(--text-primary)}
     .repo.collapsed .repo-b{display:none}
     @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(2.2);opacity:.05}}
+    @media (max-width:1200px){.kanban{grid-template-columns:1fr}}
     @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
     /* Pipeline / Kanban */
     .kanban{display:grid;grid-template-columns:repeat(5,minmax(200px,1fr));gap:10px;align-items:start;overflow-x:auto;padding-bottom:8px}
