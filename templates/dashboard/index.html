@@ -1778,7 +1778,10 @@
         const evalStatusHtml = feature.evalStatus
           ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
           : '';
-        actionsHtml = evalStatusHtml + '<button class="btn btn-warn kcard-btn-close">Close</button>';
+        const soloAgents = (feature.agents || []).filter(a => a.id !== 'solo');
+        const isSoloEval = soloAgents.length <= 1;
+        const reviewBtn = isSoloEval ? '<button class="btn btn-primary kcard-btn-review">Review</button>' : '';
+        actionsHtml = evalStatusHtml + reviewBtn + '<button class="btn btn-warn kcard-btn-close">Close</button>';
       }
 
       card.innerHTML =
@@ -1853,6 +1856,15 @@
         evalBtn.onclick = async (e) => {
           e.stopPropagation();
           await requestAction(pipelineCommand(pipelineType, 'eval'), [feature.id], repoPath, evalBtn);
+        };
+      }
+
+      const reviewBtn = card.querySelector('.kcard-btn-review');
+      if (reviewBtn) {
+        reviewBtn._origText = 'Review';
+        reviewBtn.onclick = async (e) => {
+          e.stopPropagation();
+          await requestAction(pipelineCommand(pipelineType, 'review'), [feature.id], repoPath, reviewBtn);
         };
       }
 
