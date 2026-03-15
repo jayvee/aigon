@@ -4,13 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Aigon Dashboard</title>
+  <link rel="icon" type="image/x-icon" href="assets/icon/favicon.ico"/>
+  <link rel="icon" type="image/svg+xml" href="assets/icon/aigon-icon.svg"/>
   <style>
     :root{color-scheme:dark;-webkit-font-smoothing:antialiased;--bg-root:#0a0a0b;--bg-surface:#111113;--bg-elevated:#1a1a1f;--bg-hover:#222228;--border-subtle:rgba(255,255,255,.06);--border-default:rgba(255,255,255,.1);--text-primary:#ededef;--text-secondary:#a0a0a8;--text-tertiary:#6b6b76;--accent:#3b82f6;--success:#22c55e;--warning:#f59e0b;--error:#ef4444;--radius:12px;--mono:"SF Mono","Cascadia Code",ui-monospace,monospace}
     *{box-sizing:border-box}html,body{margin:0;background:var(--bg-root);color:var(--text-primary);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
     body{padding:0;overflow:hidden;height:100vh}
     .wrap{display:flex;flex-direction:column;height:100vh;max-width:1400px;margin:0 auto;padding:0 16px}
     .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:16px 0 8px;flex-shrink:0}
-    h1{margin:0;font-size:24px;letter-spacing:-.02em}
+    h1{margin:0;font-size:24px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+    h1 img{width:28px;height:28px;flex-shrink:0}
     .meta{display:flex;gap:10px;color:var(--text-secondary)}
     .health{display:flex;align-items:center;gap:6px}
     /* View tabs */
@@ -257,7 +260,7 @@
 <body>
   <div class="wrap">
     <div class="top">
-      <h1>Aigon Dashboard</h1>
+      <h1><img src="assets/icon/aigon-icon.svg" alt="Aigon" width="28" height="28"/>Aigon Dashboard</h1>
       <div class="meta">
         <span class="health" aria-live="polite"><span class="dot" id="health-dot"></span><span id="health-text">Connected</span></span>
         <span id="updated-text">Updated just now</span>

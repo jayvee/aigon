@@ -1,5 +1,7 @@
 # Aigon
 
+<img src="assets/icon/aigon-icon.svg" width="64" height="64" alt="Aigon"/>
+
 **Agent-first, CLI-capable, vendor-independent AI engineering workflows that keep your context in your repo.**
 
 Aigon gives you a consistent spec workflow across Claude, Gemini, Codex, and Cursor without locking your team to one IDE or one model provider.
