@@ -1757,13 +1757,31 @@
       return 'btn';
     }
 
-    // Builds button HTML from server-provided validActions
-    function buildValidActionsHtml(validActions, evalStatus) {
+    // Builds button HTML from server-provided validActions.
+    // Transitions are used for drag-drop only (not rendered as buttons) —
+    // except specific transitions that should appear as buttons (prioritise, setup, close).
+    function buildValidActionsHtml(validActions, evalStatus, stage) {
       if (!validActions || validActions.length === 0) return '';
       const evalBadge = evalStatus
         ? '<span class="eval-badge' + (evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(evalStatus) + '</span>'
         : '';
-      const btnHtml = validActions.map(va => {
+      // Filter: show in-state actions as buttons, plus specific transitions that need buttons
+      const transitionsAsButtons = ['feature-prioritise', 'research-prioritise', 'feature-close', 'research-close', 'feedback-triage'];
+      const buttonsToRender = validActions.filter(va => {
+        if (va.type === 'action') return true;
+        // Only render transition as button if it's in the explicit list
+        return va.type === 'transition' && transitionsAsButtons.includes(va.action);
+      });
+      // Deduplicate: if a transition and an action have the same action name, keep only the action
+      const seen = new Set();
+      const deduped = [];
+      // Actions first (preferred), then transitions
+      const sorted = [...buttonsToRender.filter(v => v.type === 'action'), ...buttonsToRender.filter(v => v.type === 'transition')];
+      for (const va of sorted) {
+        const key = va.action + (va.agentId || '');
+        if (!seen.has(key)) { seen.add(key); deduped.push(va); }
+      }
+      const btnHtml = deduped.map(va => {
         const cls = validActionBtnClass(va.action, va.priority);
         const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
         return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '"' + agentAttr + '>' + escHtml(va.label) + '</button>';
@@ -1821,7 +1839,7 @@
       // Falls back to hardcoded stage checks for older API responses without validActions.
       let actionsHtml = '';
       if (feature.validActions && feature.validActions.length > 0) {
-        actionsHtml = buildValidActionsHtml(feature.validActions, feature.evalStatus);
+        actionsHtml = buildValidActionsHtml(feature.validActions, feature.evalStatus, stage);
       } else {
         // Legacy fallback — used when server has not yet computed validActions
         if (stage === 'inbox') {
@@ -1833,8 +1851,13 @@
             '<button class="btn kcard-btn-worktree" data-agent="' + escHtml(a.id) + '">Open ' + escHtml(a.id) + '</button>'
           ).join('');
           const allSubmitted = feature.agents && feature.agents.length > 0 && feature.agents.every(a => a.status === 'submitted');
-          const evalBtn = allSubmitted ? '<button class="btn btn-success kcard-btn-eval">Evaluate</button>' : '';
-          actionsHtml = worktreeBtns + evalBtn;
+          const isSolo = feature.agents && feature.agents.length === 1 && feature.agents[0].id === 'solo';
+          const submitBtn = allSubmitted
+            ? (isSolo
+              ? '<button class="btn btn-success kcard-btn-close">Close</button>'
+              : '<button class="btn btn-success kcard-btn-eval">Evaluate</button>')
+            : '';
+          actionsHtml = worktreeBtns + submitBtn;
         } else if (stage === 'in-evaluation') {
           const evalStatusHtml = feature.evalStatus
             ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
