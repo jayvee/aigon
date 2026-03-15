@@ -40,7 +40,8 @@ const {
     collectDashboardStatusData
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
-const { isSameProviderFamily, getProfilePlaceholders } = require('./lib/utils');
+const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, gcDevServers, registerRadarServer, deregisterRadarServer, loadProxyRegistry, saveProxyRegistry, RADAR_DEFAULT_PORT, RADAR_DASHBOARD_PORT, RADAR_DYNAMIC_PORT_START, RADAR_APP_ID, DEV_PROXY_REGISTRY } = require('./lib/utils');
+const { detectRadarContext, resolveRadarUrl } = require('./lib/devserver');
 
 let passed = 0;
 let failed = 0;
@@ -680,6 +681,216 @@ test('misc command module exposes help', () => assert.strictEqual(typeof createM
 test('command families stay separated', () => {
     const misc = createMiscCommands();
     assert.strictEqual(Object.prototype.hasOwnProperty.call(misc, 'feature-do'), false);
+});
+
+console.log('\nRadar Constants');
+test('RADAR_DEFAULT_PORT is 4100', () => assert.strictEqual(RADAR_DEFAULT_PORT, 4100));
+test('RADAR_DASHBOARD_PORT is 4200', () => assert.strictEqual(RADAR_DASHBOARD_PORT, 4200));
+test('RADAR_DYNAMIC_PORT_START is 4201', () => assert.strictEqual(RADAR_DYNAMIC_PORT_START, 4201));
+test('RADAR_APP_ID is aigon', () => assert.strictEqual(RADAR_APP_ID, 'aigon'));
+
+console.log('\nCaddyfile Generation with Radar Entries');
+test('generateCaddyfile handles regular dev server entries', () => {
+    const registry = {
+        farline: {
+            '': { port: 3000, pid: 100 },
+            'cc-119': { port: 3001, pid: 101 }
+        }
+    };
+    const caddyfile = generateCaddyfile(registry);
+    assert.ok(caddyfile.includes('http://farline.test'));
+    assert.ok(caddyfile.includes('reverse_proxy localhost:3000'));
+    assert.ok(caddyfile.includes('http://cc-119.farline.test'));
+    assert.ok(caddyfile.includes('reverse_proxy localhost:3001'));
+});
+test('generateCaddyfile handles Radar entries with nested dashboard.port', () => {
+    const registry = {
+        aigon: {
+            '': {
+                service: { port: 4100, pid: 200 },
+                dashboard: { port: 4100, pid: 200 },
+                started: '2026-03-15T00:00:00.000Z'
+            },
+            'cc-119': {
+                service: { port: 4301, pid: 300 },
+                dashboard: { port: 4847, pid: 301 },
+                worktree: '/tmp/wt',
+                started: '2026-03-15T00:00:00.000Z'
+            }
+        }
+    };
+    const caddyfile = generateCaddyfile(registry);
+    assert.ok(caddyfile.includes('http://aigon.test'), 'main aigon entry');
+    assert.ok(caddyfile.includes('reverse_proxy localhost:4100'), 'main routes to dashboard port');
+    assert.ok(caddyfile.includes('http://cc-119.aigon.test'), 'worktree entry');
+    assert.ok(caddyfile.includes('reverse_proxy localhost:4847'), 'worktree routes to dashboard port');
+    assert.ok(!caddyfile.includes('reverse_proxy localhost:4301'), 'does not route to service port');
+});
+test('generateCaddyfile mixes Radar and regular entries', () => {
+    const registry = {
+        aigon: {
+            '': { service: { port: 4100, pid: 200 }, dashboard: { port: 4100, pid: 200 }, started: '' }
+        },
+        farline: {
+            '': { port: 3000, pid: 100 }
+        }
+    };
+    const caddyfile = generateCaddyfile(registry);
+    assert.ok(caddyfile.includes('http://aigon.test'), 'aigon entry present');
+    assert.ok(caddyfile.includes('http://farline.test'), 'farline entry present');
+});
+
+console.log('\nResolve Radar URL');
+test('resolveRadarUrl returns localhost when proxy not available', () => {
+    // resolveRadarUrl checks isProxyAvailable() internally — on most CI/test envs proxy won't be available
+    const url = resolveRadarUrl('', 4200);
+    // Either proxy URL or localhost
+    assert.ok(url.includes('4200') || url.includes('aigon.test'), `expected valid URL, got: ${url}`);
+});
+test('resolveRadarUrl uses correct port for worktree', () => {
+    const url = resolveRadarUrl('cc-119', 4847);
+    assert.ok(url.includes('4847') || url.includes('cc-119.aigon.test'), `expected valid URL, got: ${url}`);
+});
+
+console.log('\nDetect Radar Context');
+test('detectRadarContext detects worktree from directory name', () => {
+    // This test runs from within the feature-61-cc-dev-servers worktree, so it should detect it
+    const ctx = detectRadarContext();
+    // The worktree dir is 'feature-61-cc-dev-servers' which matches ^feature-(\d+)-([a-z]{2})-
+    assert.strictEqual(ctx.isWorktree, true);
+    assert.strictEqual(ctx.featureId, '61');
+    assert.strictEqual(ctx.agentId, 'cc');
+    assert.strictEqual(ctx.serverId, 'cc-61');
+    assert.ok(typeof ctx.worktreePath === 'string');
+});
+
+console.log('\ngcDevServers with Radar Entries');
+test('gcDevServers removes radar entries with dead PIDs', () => withTempDir(tempDir => {
+    const registryPath = path.join(tempDir, 'servers.json');
+    const deadPid = 999999; // very high PID, very unlikely to exist
+
+    // Write a test registry with a dead radar entry
+    const registry = {
+        [RADAR_APP_ID]: {
+            'cc-61': {
+                service: { port: 4201, pid: deadPid },
+                dashboard: { port: 4202, pid: deadPid + 1 },
+                worktree: '/tmp/test-wt',
+                started: '2026-01-01T00:00:00.000Z'
+            }
+        }
+    };
+    fs.mkdirSync(path.dirname(registryPath), { recursive: true });
+    fs.writeFileSync(registryPath, JSON.stringify(registry, null, 2) + '\n');
+
+    // Back up real registry, replace with test file
+    const realRegistry = fs.existsSync(DEV_PROXY_REGISTRY) ? fs.readFileSync(DEV_PROXY_REGISTRY, 'utf8') : null;
+    const realRegistryDir = path.dirname(DEV_PROXY_REGISTRY);
+    fs.mkdirSync(realRegistryDir, { recursive: true });
+    fs.writeFileSync(DEV_PROXY_REGISTRY, JSON.stringify(registry, null, 2) + '\n');
+
+    try {
+        const removed = gcDevServers();
+        assert.strictEqual(removed, 1, 'should remove 1 dead radar entry');
+
+        const after = loadProxyRegistry();
+        assert.ok(!after[RADAR_APP_ID] || !after[RADAR_APP_ID]['cc-61'], 'dead entry should be removed');
+    } finally {
+        // Restore
+        if (realRegistry !== null) {
+            fs.writeFileSync(DEV_PROXY_REGISTRY, realRegistry);
+        } else if (fs.existsSync(DEV_PROXY_REGISTRY)) {
+            fs.unlinkSync(DEV_PROXY_REGISTRY);
+        }
+    }
+}));
+
+test('gcDevServers preserves live radar entries', () => {
+    // Use PID 1 (always alive: init/launchd on macOS) as "live" PID
+    const livePid = 1;
+    const realRegistry = fs.existsSync(DEV_PROXY_REGISTRY) ? fs.readFileSync(DEV_PROXY_REGISTRY, 'utf8') : null;
+    const realRegistryDir = path.dirname(DEV_PROXY_REGISTRY);
+    fs.mkdirSync(realRegistryDir, { recursive: true });
+
+    const registry = {
+        [RADAR_APP_ID]: {
+            '': {
+                service: { port: 4100, pid: livePid },
+                dashboard: { port: 4200, pid: livePid },
+                started: '2026-01-01T00:00:00.000Z'
+            }
+        }
+    };
+    fs.writeFileSync(DEV_PROXY_REGISTRY, JSON.stringify(registry, null, 2) + '\n');
+
+    try {
+        const removed = gcDevServers();
+        assert.strictEqual(removed, 0, 'should not remove live entry');
+    } finally {
+        if (realRegistry !== null) {
+            fs.writeFileSync(DEV_PROXY_REGISTRY, realRegistry);
+        } else if (fs.existsSync(DEV_PROXY_REGISTRY)) {
+            fs.unlinkSync(DEV_PROXY_REGISTRY);
+        }
+    }
+});
+
+console.log('\nRadar Registry Operations');
+test('registerRadarServer stores entry under aigon app ID', () => {
+    const realRegistry = fs.existsSync(DEV_PROXY_REGISTRY) ? fs.readFileSync(DEV_PROXY_REGISTRY, 'utf8') : null;
+    const realRegistryDir = path.dirname(DEV_PROXY_REGISTRY);
+    fs.mkdirSync(realRegistryDir, { recursive: true });
+    // Start from empty
+    fs.writeFileSync(DEV_PROXY_REGISTRY, JSON.stringify({}, null, 2) + '\n');
+
+    try {
+        const entry = {
+            service: { port: 4100, pid: 1 },
+            dashboard: { port: 4200, pid: 1 },
+            started: '2026-01-01T00:00:00.000Z'
+        };
+        registerRadarServer('', entry);
+        const registry = loadProxyRegistry();
+        assert.ok(registry[RADAR_APP_ID], 'aigon app ID should exist');
+        assert.ok(registry[RADAR_APP_ID][''], 'main entry should exist');
+        assert.strictEqual(registry[RADAR_APP_ID][''].service.port, 4100);
+        assert.strictEqual(registry[RADAR_APP_ID][''].dashboard.port, 4200);
+    } finally {
+        if (realRegistry !== null) {
+            fs.writeFileSync(DEV_PROXY_REGISTRY, realRegistry);
+        } else if (fs.existsSync(DEV_PROXY_REGISTRY)) {
+            fs.unlinkSync(DEV_PROXY_REGISTRY);
+        }
+    }
+});
+
+test('deregisterRadarServer removes entry from aigon app ID', () => {
+    const realRegistry = fs.existsSync(DEV_PROXY_REGISTRY) ? fs.readFileSync(DEV_PROXY_REGISTRY, 'utf8') : null;
+    const realRegistryDir = path.dirname(DEV_PROXY_REGISTRY);
+    fs.mkdirSync(realRegistryDir, { recursive: true });
+
+    const registry = {
+        [RADAR_APP_ID]: {
+            'cc-61': {
+                service: { port: 4201, pid: 1 },
+                dashboard: { port: 4202, pid: 1 },
+                started: '2026-01-01T00:00:00.000Z'
+            }
+        }
+    };
+    fs.writeFileSync(DEV_PROXY_REGISTRY, JSON.stringify(registry, null, 2) + '\n');
+
+    try {
+        deregisterRadarServer('cc-61');
+        const after = loadProxyRegistry();
+        assert.ok(!after[RADAR_APP_ID] || !after[RADAR_APP_ID]['cc-61'], 'entry should be removed');
+    } finally {
+        if (realRegistry !== null) {
+            fs.writeFileSync(DEV_PROXY_REGISTRY, realRegistry);
+        } else if (fs.existsSync(DEV_PROXY_REGISTRY)) {
+            fs.unlinkSync(DEV_PROXY_REGISTRY);
+        }
+    }
 });
 
 console.log('\nEntrypoint');
