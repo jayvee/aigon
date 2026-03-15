@@ -875,6 +875,49 @@ aigon terminal-focus 39        # open terminal for feature #39
 aigon terminal-focus 39 cc     # open terminal for specific agent
 ```
 
+### Dashboard Statistics — Measuring Your Throughput
+
+As an AI developer you are not just building software — you are running an optimisation loop. The Dashboard Statistics tab closes that loop by turning your spec and log history into quantitative insight: how many features are you shipping per week, how long does each one take, and where are the bottlenecks?
+
+![Aigon Dashboard Statistics tab showing volume charts, cycle time, and agent leaderboard](docs/images/aigon-dashboard-statistics.png)
+
+Open the Statistics tab at `aigon radar open` then click **Statistics**.
+
+#### What the dashboard shows
+
+**Volume** — Features completed over the selected period with a week-over-week trend. Switch between Daily, Weekly, and Monthly granularity; scroll back through history with the ← → navigation. The 30-day trend card shows percentage change so you can tell at a glance whether your pace is accelerating.
+
+**Cycle Time** — Average hours from `feature-setup` to `feature-close` across the same window, plotted over time. Knowing your typical cycle time lets you spot when a class of features is taking 3× longer than normal and investigate before it becomes a pattern.
+
+**Features Completed Over Time** — A bar chart showing throughput by time bucket (daily/weekly/monthly) across all repos or filtered to one project. Scroll backwards to compare this month against three months ago.
+
+**Avg Cycle Time Over Time** — The same time-bucketed view but for duration. Pairs with the volume chart to distinguish "we shipped more because we went faster" from "we shipped more because we added capacity".
+
+**Agent Leaderboard** — Per-agent breakdown of features completed, eval wins, fleet win %, and average cycle time. Tells you which agent tends to produce the fastest, highest-quality implementations for a given class of problem.
+
+**Autonomy Score** _(coming soon)_ — The proportion of commits made outside active working hours, used as a proxy for how much of your pipeline is running unattended. As autonomous workflows mature and the signal becomes reliable, this will become the headline metric: the dashboard will show you not just how fast you shipped, but how much of that speed required your attention at all.
+
+#### Why this matters
+
+When you run multiple AI agents in parallel, output rises fast — but so does noise. Without measurement you cannot distinguish a genuinely fast week from a week where most features were trivial. The Statistics tab gives you:
+
+- **A baseline** — what is your normal weekly feature velocity across repos?
+- **A signal** — is cycle time trending up because features are getting harder, or because agent quality has dropped?
+- **A comparison axis** — which agent is consistently faster for implementation-only tasks vs. research-heavy ones?
+
+The goal is not to maximise raw feature count. It is to increase meaningful throughput — features that pass eval on first submission — while reducing the cycle time of each one. The dashboard makes that optimisation loop visible.
+
+#### Backfilling historical data
+
+If you adopted Aigon mid-project your early logs may lack `startedAt` and `completedAt` timestamps. Run the backfill command to reconstruct them from git history:
+
+```bash
+aigon feature-backfill-timestamps --dry-run   # preview changes
+aigon feature-backfill-timestamps             # apply
+```
+
+After backfilling, click **Refresh** in the Statistics tab to reload analytics.
+
 ### Migration from Conductor
 
 If you previously used `aigon conductor` for monitoring, the transition is straightforward — all `conductor` monitoring subcommands (`start`, `stop`, `status`, `add`, `remove`, `list`, `menubar-install`, etc.) continue to work but now delegate to their `radar` equivalents with a deprecation notice. The `aigon dashboard` command similarly delegates to `aigon radar open`. The `aigon conduct` orchestration command is completely unaffected.
