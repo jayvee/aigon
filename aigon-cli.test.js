@@ -37,7 +37,9 @@ const {
     resolveRadarActionRepoPath,
     parseRadarActionRequest,
     buildRadarActionCommandArgs,
-    collectDashboardStatusData
+    collectDashboardStatusData,
+    inferDashboardNextCommand,
+    inferDashboardNextActions
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
 const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, gcDevServers, registerRadarServer, deregisterRadarServer, loadProxyRegistry, saveProxyRegistry, RADAR_DEFAULT_PORT, RADAR_DASHBOARD_PORT, RADAR_DYNAMIC_PORT_START, RADAR_APP_ID, DEV_PROXY_REGISTRY } = require('./lib/utils');
@@ -282,6 +284,9 @@ test('buildRadarActionCommandArgs builds CLI invocation args', () => {
 test('RADAR_INTERACTIVE_ACTIONS includes worktree-open', () => {
     assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('worktree-open'), true);
 });
+test('RADAR_INTERACTIVE_ACTIONS includes feature-open', () => {
+    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-open'), true);
+});
 test('parseRadarActionRequest accepts worktree-open action', () => {
     const parsed = parseRadarActionRequest(
         { action: 'worktree-open', args: ['57', 'cc'], repoPath: '/tmp/repo-a' },
@@ -290,6 +295,60 @@ test('parseRadarActionRequest accepts worktree-open action', () => {
     assert.strictEqual(parsed.ok, true);
     assert.strictEqual(parsed.action, 'worktree-open');
     assert.deepStrictEqual(parsed.args, ['57', 'cc']);
+});
+test('parseRadarActionRequest accepts feature-stop (state machine fire-and-forget action)', () => {
+    const parsed = parseRadarActionRequest(
+        { action: 'feature-stop', args: ['62'], repoPath: '/tmp/repo-a' },
+        { registeredRepos: ['/tmp/repo-a'], defaultRepoPath: '/tmp/repo-a' }
+    );
+    assert.strictEqual(parsed.ok, true);
+    assert.strictEqual(parsed.action, 'feature-stop');
+});
+test('parseRadarActionRequest rejects truly unsupported actions', () => {
+    const parsed = parseRadarActionRequest(
+        { action: 'not-a-real-command', args: [] },
+        { registeredRepos: ['/tmp/repo-a'], defaultRepoPath: '/tmp/repo-a' }
+    );
+    assert.strictEqual(parsed.ok, false);
+    assert.strictEqual(parsed.status, 400);
+});
+
+// inferDashboardNextActions — state machine integration
+console.log('\n--- inferDashboardNextActions (state machine) ---');
+test('inferDashboardNextActions returns feature-open for not-started fleet agents', () => {
+    const agents = [
+        { id: 'cc', status: 'implementing', tmuxRunning: false, tmuxSession: null },
+        { id: 'gg', status: 'implementing', tmuxRunning: false, tmuxSession: null }
+    ];
+    const actions = inferDashboardNextActions('62', agents, 'in-progress');
+    assert.ok(Array.isArray(actions), 'should return an array');
+    const hasOpen = actions.some(a => a.command && a.command.includes('feature-open'));
+    assert.ok(hasOpen, 'should include feature-open command for not-started agents');
+});
+test('inferDashboardNextActions returns focus for waiting agent', () => {
+    const agents = [{ id: 'cc', status: 'waiting', tmuxRunning: true, tmuxSession: 'aigon-62-cc' }];
+    const actions = inferDashboardNextActions('62', agents, 'in-progress');
+    const hasFocus = actions.some(a => a.command && a.command.includes('terminal-focus'));
+    assert.ok(hasFocus, 'should include terminal-focus for waiting agent');
+});
+test('inferDashboardNextActions returns eval for fleet all submitted', () => {
+    const agents = [
+        { id: 'cc', status: 'submitted', tmuxRunning: false, tmuxSession: null },
+        { id: 'gg', status: 'submitted', tmuxRunning: false, tmuxSession: null }
+    ];
+    const actions = inferDashboardNextActions('62', agents, 'in-progress');
+    const hasEval = actions.some(a => a.command && a.command.includes('afe') || a.command && a.command.includes('feature-eval'));
+    assert.ok(hasEval, 'should include eval command when fleet all submitted');
+});
+test('inferDashboardNextCommand returns first recommended action', () => {
+    const agents = [{ id: 'cc', status: 'waiting', tmuxRunning: true, tmuxSession: 'aigon-62-cc' }];
+    const result = inferDashboardNextCommand('62', agents, 'in-progress');
+    assert.ok(result && result.command, 'should return a command object');
+    assert.ok(typeof result.reason === 'string', 'should include a reason');
+});
+test('inferDashboardNextActions returns empty for empty agents', () => {
+    const actions = inferDashboardNextActions('62', [], 'in-progress');
+    assert.deepStrictEqual(actions, []);
 });
 
 console.log('\nPipeline Stage Data Collection');
@@ -968,6 +1027,326 @@ test('buildResearchAgentCommand allows env var override over project/global', ()
 
     assert.ok(output.includes('--model gpt-5.5'), `expected env override model, got: ${output}`);
 }));
+
+// ---------------------------------------------------------------------------
+// State machine tests
+// ---------------------------------------------------------------------------
+
+const {
+    FEATURE_STAGES,
+    RESEARCH_STAGES,
+    FEEDBACK_STAGES,
+    getValidTransitions,
+    getAvailableActions,
+    getSessionAction,
+    getRecommendedActions,
+    isActionValid,
+    allAgentsSubmitted,
+    isFleet
+} = require('./lib/state-machine');
+
+console.log('\n--- state machine ---');
+
+// Stage definitions
+test('FEATURE_STAGES has correct ordered stages', () => {
+    assert.deepStrictEqual(FEATURE_STAGES, ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done']);
+});
+
+test('RESEARCH_STAGES has correct ordered stages', () => {
+    assert.deepStrictEqual(RESEARCH_STAGES, ['inbox', 'backlog', 'in-progress', 'paused', 'done']);
+});
+
+test('FEEDBACK_STAGES has correct ordered stages', () => {
+    assert.deepStrictEqual(FEEDBACK_STAGES, ['inbox', 'triaged', 'actionable', 'done', 'wont-fix', 'duplicate']);
+});
+
+// allAgentsSubmitted helper
+test('allAgentsSubmitted returns false when statuses is empty', () => {
+    assert.strictEqual(allAgentsSubmitted({ agentStatuses: {} }), false);
+});
+
+test('allAgentsSubmitted returns true when all submitted', () => {
+    assert.strictEqual(allAgentsSubmitted({ agentStatuses: { cc: 'submitted', gg: 'submitted' } }), true);
+});
+
+test('allAgentsSubmitted returns false when one is implementing', () => {
+    assert.strictEqual(allAgentsSubmitted({ agentStatuses: { cc: 'submitted', gg: 'implementing' } }), false);
+});
+
+// isFleet helper
+test('isFleet returns false for solo context', () => {
+    assert.strictEqual(isFleet({ agents: ['solo'] }), false);
+});
+
+test('isFleet returns false for single agent', () => {
+    assert.strictEqual(isFleet({ agents: ['cc'] }), false);
+});
+
+test('isFleet returns true for two real agents', () => {
+    assert.strictEqual(isFleet({ agents: ['cc', 'gg'] }), true);
+});
+
+// getValidTransitions — features
+test('feature inbox → backlog transition always available', () => {
+    const transitions = getValidTransitions('feature', 'inbox', {});
+    assert.ok(transitions.some(t => t.action === 'feature-prioritise' && t.to === 'backlog'));
+});
+
+test('feature backlog → in-progress transition always available', () => {
+    const transitions = getValidTransitions('feature', 'backlog', {});
+    assert.ok(transitions.some(t => t.action === 'feature-setup' && t.to === 'in-progress'));
+});
+
+test('feature in-progress → in-evaluation blocked when not all submitted', () => {
+    const transitions = getValidTransitions('feature', 'in-progress', {
+        agentStatuses: { cc: 'implementing' }
+    });
+    assert.ok(!transitions.some(t => t.action === 'feature-eval'));
+});
+
+test('feature in-progress → in-evaluation allowed when all submitted', () => {
+    const transitions = getValidTransitions('feature', 'in-progress', {
+        agentStatuses: { cc: 'submitted' }
+    });
+    assert.ok(transitions.some(t => t.action === 'feature-eval' && t.to === 'in-evaluation'));
+});
+
+test('feature in-evaluation → done transition always available', () => {
+    const transitions = getValidTransitions('feature', 'in-evaluation', {});
+    assert.ok(transitions.some(t => t.action === 'feature-close' && t.to === 'done'));
+});
+
+test('feature in done stage has no transitions', () => {
+    const transitions = getValidTransitions('feature', 'done', {});
+    assert.strictEqual(transitions.length, 0);
+});
+
+// getValidTransitions — research
+test('research inbox → backlog transition available', () => {
+    const transitions = getValidTransitions('research', 'inbox', {});
+    assert.ok(transitions.some(t => t.action === 'research-prioritise'));
+});
+
+test('research in-progress → done blocked when not all submitted', () => {
+    const transitions = getValidTransitions('research', 'in-progress', {
+        agentStatuses: { cc: 'implementing' }
+    });
+    assert.ok(!transitions.some(t => t.action === 'research-close'));
+});
+
+test('research in-progress → done available when all submitted', () => {
+    const transitions = getValidTransitions('research', 'in-progress', {
+        agentStatuses: { cc: 'submitted' }
+    });
+    assert.ok(transitions.some(t => t.action === 'research-close'));
+});
+
+// getValidTransitions — feedback
+test('feedback inbox → triaged transition available', () => {
+    const transitions = getValidTransitions('feedback', 'inbox', {});
+    assert.ok(transitions.some(t => t.action === 'feedback-triage'));
+});
+
+test('feedback triaged → wont-fix transition available', () => {
+    const transitions = getValidTransitions('feedback', 'triaged', {});
+    assert.ok(transitions.some(t => t.to === 'wont-fix'));
+});
+
+test('feedback triaged → duplicate transition available', () => {
+    const transitions = getValidTransitions('feedback', 'triaged', {});
+    assert.ok(transitions.some(t => t.to === 'duplicate'));
+});
+
+// getAvailableActions — in-progress per-agent actions
+test('getAvailableActions returns feature-open for idle agent in in-progress', () => {
+    const actions = getAvailableActions('feature', 'in-progress', {
+        agents: ['cc'],
+        agentStatuses: { cc: 'idle' },
+        tmuxSessionStates: { cc: 'none' }
+    });
+    assert.ok(actions.some(a => a.action === 'feature-open' && a.agentId === 'cc'));
+});
+
+test('getAvailableActions returns Restart label for error agent', () => {
+    const actions = getAvailableActions('feature', 'in-progress', {
+        agents: ['cc'],
+        agentStatuses: { cc: 'error' },
+        tmuxSessionStates: { cc: 'none' }
+    });
+    const openAction = actions.find(a => a.action === 'feature-open' && a.agentId === 'cc');
+    assert.ok(openAction, 'should have feature-open action');
+    assert.strictEqual(openAction.label, 'Restart cc');
+});
+
+test('getAvailableActions returns feature-attach for implementing agent with running session', () => {
+    const actions = getAvailableActions('feature', 'in-progress', {
+        agents: ['cc'],
+        agentStatuses: { cc: 'implementing' },
+        tmuxSessionStates: { cc: 'running' }
+    });
+    assert.ok(actions.some(a => a.action === 'feature-attach' && a.agentId === 'cc'));
+});
+
+test('getAvailableActions returns feature-focus (high priority) for waiting agent', () => {
+    const actions = getAvailableActions('feature', 'in-progress', {
+        agents: ['cc'],
+        agentStatuses: { cc: 'waiting' },
+        tmuxSessionStates: { cc: 'running' }
+    });
+    const focusAction = actions.find(a => a.action === 'feature-focus' && a.agentId === 'cc');
+    assert.ok(focusAction, 'should have feature-focus');
+    assert.strictEqual(focusAction.priority, 'high');
+});
+
+test('getAvailableActions returns feature-stop for implementing agent', () => {
+    const actions = getAvailableActions('feature', 'in-progress', {
+        agents: ['cc'],
+        agentStatuses: { cc: 'implementing' },
+        tmuxSessionStates: {}
+    });
+    assert.ok(actions.some(a => a.action === 'feature-stop' && a.agentId === 'cc'));
+});
+
+test('getAvailableActions returns feature-close and feature-review for solo submitted', () => {
+    const actions = getAvailableActions('feature', 'in-progress', {
+        agents: ['cc'],
+        agentStatuses: { cc: 'submitted' },
+        tmuxSessionStates: {}
+    });
+    assert.ok(actions.some(a => a.action === 'feature-close' && !a.agentId));
+    assert.ok(actions.some(a => a.action === 'feature-review' && !a.agentId));
+});
+
+test('getAvailableActions returns feature-eval for fleet all submitted', () => {
+    const actions = getAvailableActions('feature', 'in-progress', {
+        agents: ['cc', 'gg'],
+        agentStatuses: { cc: 'submitted', gg: 'submitted' },
+        tmuxSessionStates: {}
+    });
+    assert.ok(actions.some(a => a.action === 'feature-eval' && !a.agentId));
+});
+
+test('getAvailableActions in-evaluation solo returns feature-review', () => {
+    const actions = getAvailableActions('feature', 'in-evaluation', {
+        agents: ['cc'],
+        agentStatuses: { cc: 'submitted' }
+    });
+    assert.ok(actions.some(a => a.action === 'feature-review'));
+    assert.ok(!actions.some(a => a.action === 'feature-eval' && a.type === 'action'));
+});
+
+test('getAvailableActions in-evaluation fleet returns feature-eval action', () => {
+    const actions = getAvailableActions('feature', 'in-evaluation', {
+        agents: ['cc', 'gg'],
+        agentStatuses: { cc: 'submitted', gg: 'submitted' }
+    });
+    assert.ok(actions.some(a => a.action === 'feature-eval' && a.type === 'action'));
+});
+
+// getSessionAction
+test('getSessionAction returns create-and-start when no session', () => {
+    const result = getSessionAction('cc', { tmuxSessionStates: { cc: 'none' }, agentStatuses: { cc: 'idle' } });
+    assert.strictEqual(result.action, 'create-and-start');
+    assert.strictEqual(result.needsAgentCommand, true);
+});
+
+test('getSessionAction returns create-and-start when session exited', () => {
+    const result = getSessionAction('cc', { tmuxSessionStates: { cc: 'exited' }, agentStatuses: { cc: 'submitted' } });
+    assert.strictEqual(result.action, 'create-and-start');
+});
+
+test('getSessionAction returns attach when session running and agent implementing', () => {
+    const result = getSessionAction('cc', { tmuxSessionStates: { cc: 'running' }, agentStatuses: { cc: 'implementing' } });
+    assert.strictEqual(result.action, 'attach');
+});
+
+test('getSessionAction returns attach when session running and agent waiting', () => {
+    const result = getSessionAction('cc', { tmuxSessionStates: { cc: 'running' }, agentStatuses: { cc: 'waiting' } });
+    assert.strictEqual(result.action, 'attach');
+});
+
+test('getSessionAction returns send-keys when session running but agent submitted', () => {
+    const result = getSessionAction('cc', { tmuxSessionStates: { cc: 'running' }, agentStatuses: { cc: 'submitted' } });
+    assert.strictEqual(result.action, 'send-keys');
+    assert.strictEqual(result.needsAgentCommand, true);
+});
+
+test('getSessionAction returns send-keys when session running but agent errored', () => {
+    const result = getSessionAction('cc', { tmuxSessionStates: { cc: 'running' }, agentStatuses: { cc: 'error' } });
+    assert.strictEqual(result.action, 'send-keys');
+});
+
+// getRecommendedActions — high priority first
+test('getRecommendedActions puts high-priority actions first', () => {
+    const actions = getRecommendedActions('feature', 'in-progress', {
+        agents: ['cc'],
+        agentStatuses: { cc: 'waiting' },
+        tmuxSessionStates: { cc: 'running' }
+    });
+    assert.ok(actions.length > 0, 'should have actions');
+    // feature-focus is high priority
+    assert.strictEqual(actions[0].action, 'feature-focus');
+    assert.strictEqual(actions[0].priority, 'high');
+});
+
+test('getRecommendedActions returns fleet-eval as high priority when all submitted', () => {
+    const actions = getRecommendedActions('feature', 'in-progress', {
+        agents: ['cc', 'gg'],
+        agentStatuses: { cc: 'submitted', gg: 'submitted' },
+        tmuxSessionStates: {}
+    });
+    const first = actions[0];
+    assert.ok(first, 'should have at least one action');
+    assert.strictEqual(first.action, 'feature-eval');
+});
+
+// isActionValid
+test('isActionValid returns true for valid transition', () => {
+    assert.strictEqual(isActionValid('feature-prioritise', 'feature', 'inbox', {}), true);
+});
+
+test('isActionValid returns false for invalid transition from stage', () => {
+    assert.strictEqual(isActionValid('feature-close', 'feature', 'inbox', {}), false);
+});
+
+test('isActionValid returns true for in-state action matching context', () => {
+    assert.strictEqual(isActionValid('feature-open', 'feature', 'in-progress', {
+        agents: ['cc'],
+        agentStatuses: { cc: 'idle' }
+    }), true);
+});
+
+test('isActionValid returns false when context blocks action', () => {
+    // feature-eval in-progress requires all agents submitted
+    assert.strictEqual(isActionValid('feature-eval', 'feature', 'in-progress', {
+        agents: ['cc'],
+        agentStatuses: { cc: 'implementing' }
+    }), false);
+});
+
+test('isActionValid returns false for unknown entity type', () => {
+    assert.strictEqual(isActionValid('foo-bar', 'unknown', 'inbox', {}), false);
+});
+
+// Transition labels
+test('feature transitions have string labels', () => {
+    const transitions = getValidTransitions('feature', 'inbox', {});
+    transitions.forEach(t => {
+        assert.strictEqual(typeof t.label, 'string', `label should be string, got ${typeof t.label}`);
+    });
+});
+
+// Per-agent expansion for fleet
+test('getAvailableActions expands per-agent actions for each agent in fleet', () => {
+    const actions = getAvailableActions('feature', 'in-progress', {
+        agents: ['cc', 'gg'],
+        agentStatuses: { cc: 'idle', gg: 'idle' },
+        tmuxSessionStates: {}
+    });
+    const openActions = actions.filter(a => a.action === 'feature-open');
+    assert.ok(openActions.some(a => a.agentId === 'cc'), 'should have open for cc');
+    assert.ok(openActions.some(a => a.agentId === 'gg'), 'should have open for gg');
+});
 
 console.log('');
 if (failed === 0) {
