@@ -529,7 +529,7 @@
         const body = { featureId, agentId };
         if (repoPath) body.repoPath = repoPath;
         if (pType) body.pipelineType = pType;
-        const res = await fetch('/api/worktree-open', {
+        const res = await fetch('/api/feature-open', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(body)
@@ -1730,12 +1730,9 @@
       research: ['inbox', 'backlog', 'in-progress', 'paused', 'done'],
       feedback: ['inbox', 'triaged', 'actionable', 'done', 'wont-fix']
     };
-    const ALLOWED_TRANSITIONS = {
-      'inbox': 'backlog',
-      'backlog': 'in-progress',
-      'in-progress': 'in-evaluation',
-      'in-evaluation': 'done'
-    };
+    // ALLOWED_TRANSITIONS removed — transitions are now validated server-side via
+    // validActions in the /api/status response. Drag-drop uses validTargetStages
+    // computed from validActions on the card's dragstart event.
 
     let dragState = null;
 
@@ -1749,6 +1746,64 @@
       return agents.map(a => '<span class="agent-badge ' + escHtml(a.status || '') + '">' + escHtml(a.id) + '</span>').join('');
     }
 
+    // Maps validActions action names to button CSS classes
+    function validActionBtnClass(action, priority) {
+      if (action === 'feature-prioritise' || action === 'research-prioritise') return 'btn btn-primary';
+      if (action === 'feature-setup' || action === 'research-setup') return 'btn btn-primary';
+      if (action === 'feature-review') return 'btn btn-primary';
+      if (action === 'feature-close' || action === 'research-close' || action === 'feedback-close') return 'btn btn-warn';
+      if (action === 'feature-eval' || action === 'research-synthesize') return 'btn btn-success';
+      if (action === 'feature-stop') return 'btn btn-danger';
+      return 'btn';
+    }
+
+    // Builds button HTML from server-provided validActions
+    function buildValidActionsHtml(validActions, evalStatus) {
+      if (!validActions || validActions.length === 0) return '';
+      const evalBadge = evalStatus
+        ? '<span class="eval-badge' + (evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(evalStatus) + '</span>'
+        : '';
+      const btnHtml = validActions.map(va => {
+        const cls = validActionBtnClass(va.action, va.priority);
+        const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
+        return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '"' + agentAttr + '>' + escHtml(va.label) + '</button>';
+      }).join('');
+      return evalBadge + btnHtml;
+    }
+
+    // Dispatches a validAction click to the appropriate API endpoint
+    async function handleValidAction(va, feature, repoPath, btn, pipelineType) {
+      const id = feature.id;
+      const agentId = va.agentId || null;
+      switch (va.action) {
+        case 'feature-open':
+        case 'feature-attach':
+        case 'research-open':
+        case 'research-attach':
+          await requestWorktreeOpen(id, agentId, repoPath, btn, pipelineType);
+          break;
+        case 'feature-setup':
+        case 'research-setup': {
+          const agents = await showAgentPicker(id, feature.name);
+          if (!agents) return;
+          await requestAction(pipelineCommand(pipelineType, 'setup'), [id, ...agents], repoPath, btn);
+          break;
+        }
+        case 'feature-prioritise':
+        case 'research-prioritise':
+          await requestAction(pipelineCommand(pipelineType, 'prioritise'), [feature.name], repoPath, btn);
+          break;
+        case 'feature-focus':
+          await requestAction('terminal-focus', [id, ...(agentId ? [agentId] : [])], repoPath, btn);
+          break;
+        case 'feature-stop':
+          await requestAction('feature-stop', [id, ...(agentId ? [agentId] : [])], repoPath, btn);
+          break;
+        default:
+          await requestAction(va.action, [id, ...(agentId ? [agentId] : [])], repoPath, btn);
+      }
+    }
+
     function buildKanbanCard(feature, repoPath, pipelineType) {
       const card = document.createElement('div');
       card.className = 'kcard';
@@ -1760,28 +1815,35 @@
 
       const agentBadgesHtml = buildAgentBadgesHtml(feature.agents);
 
-      let actionsHtml = '';
       const stage = feature.stage;
 
-      if (stage === 'inbox') {
-        actionsHtml = '<button class="btn btn-primary kcard-btn-prioritise">Prioritise</button>';
-      } else if (stage === 'backlog') {
-        actionsHtml = '<button class="btn btn-primary kcard-btn-setup">Setup</button>';
-      } else if (stage === 'in-progress') {
-        const worktreeBtns = (feature.agents || []).filter(a => a.id !== 'solo').map(a =>
-          '<button class="btn kcard-btn-worktree" data-agent="' + escHtml(a.id) + '">Open ' + escHtml(a.id) + '</button>'
-        ).join('');
-        const allSubmitted = feature.agents && feature.agents.length > 0 && feature.agents.every(a => a.status === 'submitted');
-        const evalBtn = allSubmitted ? '<button class="btn btn-success kcard-btn-eval">Evaluate</button>' : '';
-        actionsHtml = worktreeBtns + evalBtn;
-      } else if (stage === 'in-evaluation') {
-        const evalStatusHtml = feature.evalStatus
-          ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
-          : '';
-        const soloAgents = (feature.agents || []).filter(a => a.id !== 'solo');
-        const isSoloEval = soloAgents.length <= 1;
-        const reviewBtn = isSoloEval ? '<button class="btn btn-primary kcard-btn-review">Review</button>' : '';
-        actionsHtml = evalStatusHtml + reviewBtn + '<button class="btn btn-warn kcard-btn-close">Close</button>';
+      // Render buttons from server-provided validActions (state machine output).
+      // Falls back to hardcoded stage checks for older API responses without validActions.
+      let actionsHtml = '';
+      if (feature.validActions && feature.validActions.length > 0) {
+        actionsHtml = buildValidActionsHtml(feature.validActions, feature.evalStatus);
+      } else {
+        // Legacy fallback — used when server has not yet computed validActions
+        if (stage === 'inbox') {
+          actionsHtml = '<button class="btn btn-primary kcard-btn-prioritise">Prioritise</button>';
+        } else if (stage === 'backlog') {
+          actionsHtml = '<button class="btn btn-primary kcard-btn-setup">Setup</button>';
+        } else if (stage === 'in-progress') {
+          const worktreeBtns = (feature.agents || []).filter(a => a.id !== 'solo').map(a =>
+            '<button class="btn kcard-btn-worktree" data-agent="' + escHtml(a.id) + '">Open ' + escHtml(a.id) + '</button>'
+          ).join('');
+          const allSubmitted = feature.agents && feature.agents.length > 0 && feature.agents.every(a => a.status === 'submitted');
+          const evalBtn = allSubmitted ? '<button class="btn btn-success kcard-btn-eval">Evaluate</button>' : '';
+          actionsHtml = worktreeBtns + evalBtn;
+        } else if (stage === 'in-evaluation') {
+          const evalStatusHtml = feature.evalStatus
+            ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
+            : '';
+          const soloAgents = (feature.agents || []).filter(a => a.id !== 'solo');
+          const isSoloEval = soloAgents.length <= 1;
+          const reviewBtn = isSoloEval ? '<button class="btn btn-primary kcard-btn-review">Review</button>' : '';
+          actionsHtml = evalStatusHtml + reviewBtn + '<button class="btn btn-warn kcard-btn-close">Close</button>';
+        }
       }
 
       card.innerHTML =
@@ -1794,7 +1856,11 @@
       card.addEventListener('dragstart', (e) => {
         wasDragged = true;
         card.classList.add('dragging');
-        dragState = { featureId: feature.id, featureName: feature.name, fromStage: feature.stage, repoPath, pipelineType };
+        // Valid target stages come from state machine validActions (transitions only)
+        const validTargetStages = (feature.validActions || [])
+          .filter(a => a.type === 'transition')
+          .map(a => a.to);
+        dragState = { featureId: feature.id, featureName: feature.name, fromStage: feature.stage, repoPath, pipelineType, validTargetStages };
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', feature.id);
         // Create tilted drag image
@@ -1821,6 +1887,20 @@
         }
       });
 
+      // Wire validActions buttons (state machine-driven)
+      card.querySelectorAll('.kcard-va-btn').forEach(btn => {
+        const vaAction = btn.getAttribute('data-va-action');
+        const vaAgentId = btn.getAttribute('data-agent') || null;
+        const va = (feature.validActions || []).find(a => a.action === vaAction && (a.agentId || null) === vaAgentId);
+        if (!va) return;
+        btn._origText = btn.textContent;
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          await handleValidAction(va, feature, repoPath, btn, pipelineType);
+        };
+      });
+
+      // Legacy fallback button handlers (for older API responses without validActions)
       const prioritiseBtn = card.querySelector('.kcard-btn-prioritise');
       if (prioritiseBtn) {
         prioritiseBtn._origText = 'Prioritise';
@@ -2131,7 +2211,9 @@
 
           col.addEventListener('dragover', (e) => {
             if (!dragState) return;
-            const allowed = ALLOWED_TRANSITIONS[dragState.fromStage] === stage;
+            const allowed = dragState.validTargetStages
+              ? dragState.validTargetStages.includes(stage)
+              : false;
             e.preventDefault();
             e.dataTransfer.dropEffect = allowed ? 'move' : 'none';
             document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over', 'drag-blocked'));
@@ -2148,9 +2230,10 @@
             e.preventDefault();
             col.classList.remove('drag-over', 'drag-blocked');
             if (!dragState) return;
-            const { featureId, featureName, fromStage, repoPath, pipelineType: dragPType } = dragState;
+            const { featureId, featureName, fromStage, repoPath, pipelineType: dragPType, validTargetStages: dropTargets } = dragState;
             dragState = null;
-            if (ALLOWED_TRANSITIONS[fromStage] !== stage) return;
+            const dropAllowed = dropTargets ? dropTargets.includes(stage) : false;
+            if (!dropAllowed) return;
 
             if (fromStage === 'inbox' && stage === 'backlog') {
               await requestAction(pipelineCommand(dragPType, 'prioritise'), [featureName], repoPath);
