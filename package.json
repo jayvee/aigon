@@ -7,5 +7,8 @@
   },
   "scripts": {
     "test": "node aigon-cli.test.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
   }
 }
