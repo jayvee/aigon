@@ -252,6 +252,53 @@
     .session-name{font-family:var(--mono);font-size:12px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .session-meta{font-size:11px;color:var(--text-tertiary);white-space:nowrap}
     .session-attached-badge{font-size:10px;padding:1px 6px;border-radius:999px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#86efac;white-space:nowrap}
+    /* Statistics view */
+    .stats-view{padding:0 0 28px}
+    .stats-toolbar{display:flex;align-items:center;gap:12px;margin:8px 0 16px;flex-wrap:wrap}
+    .stats-select{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);padding:5px 10px;font:inherit;font-size:12px;cursor:pointer;outline:none}
+    .stats-select:focus{border-color:var(--accent)}
+    .stats-section-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);margin:0 0 10px}
+    .stats-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px}
+    @media(max-width:900px){.stats-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:560px){.stats-cards{grid-template-columns:1fr}}
+    .stat-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+    .stat-card-label{font-size:11px;color:var(--text-secondary);letter-spacing:.02em}
+    .stat-card-value{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1}
+    .stat-card-trend{font-size:11px;display:flex;align-items:center;gap:4px}
+    .trend-up{color:#22c55e}.trend-down-good{color:#22c55e}.trend-down{color:#ef4444}.trend-neutral{color:var(--text-tertiary)}
+    .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+    @media(max-width:760px){.stats-row{grid-template-columns:1fr}}
+    .stats-block{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:16px}
+    .stats-block-title{font-size:13px;font-weight:600;margin:0 0 14px;display:flex;justify-content:space-between;align-items:center}
+    .stats-block-score{font-size:20px;font-weight:700;color:var(--accent)}
+    .autonomy-bar-wrap{background:var(--bg-elevated);border-radius:4px;height:10px;overflow:hidden;margin:10px 0 14px}
+    .autonomy-bar{height:100%;background:var(--accent);border-radius:4px;transition:width .4s ease}
+    .stats-kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+    .stats-kv{display:flex;flex-direction:column;gap:2px}
+    .stats-kv-label{font-size:11px;color:var(--text-secondary)}
+    .stats-kv-val{font-size:14px;font-weight:600;color:var(--text-primary)}
+    .sparkline-wrap{height:52px;overflow:hidden;margin-top:12px;position:relative}
+    .sparkline-svg{width:100%;height:52px;display:block}
+    .sparkline-label{position:absolute;right:0;bottom:0;font-size:10px;color:var(--text-tertiary)}
+    .stats-leaderboard{width:100%;border-collapse:collapse;font-size:12px}
+    .stats-leaderboard th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary);padding:0 8px 8px 0;border-bottom:1px solid var(--border-subtle)}
+    .stats-leaderboard th:not(:first-child){text-align:right}
+    .stats-leaderboard td{padding:7px 8px 7px 0;border-bottom:1px solid var(--border-subtle);color:var(--text-primary)}
+    .stats-leaderboard td:not(:first-child){text-align:right;color:var(--text-secondary)}
+    .stats-leaderboard tr:last-child td{border-bottom:none}
+    .stats-leaderboard .agent-mono{font-family:var(--mono);font-weight:600;color:var(--text-primary)}
+    .stats-leaderboard .win-rate{font-weight:600;color:var(--accent)}
+    .stats-empty-msg{color:var(--text-tertiary);font-size:12px;padding:20px;text-align:center;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius)}
+    .volume-chart-wrap{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+    .volume-chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .volume-chart-title{font-size:13px;font-weight:600;color:var(--text-primary)}
+    .volume-granularity-btns{display:flex;gap:4px}
+    .vol-gran-btn{font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-secondary);cursor:pointer;transition:background .15s,color .15s}
+    .vol-gran-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .vol-nav-btn{font-size:13px;padding:2px 8px;border-radius:4px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-secondary);cursor:pointer;line-height:1.4}
+    .vol-nav-btn:hover:not(:disabled){color:var(--text-primary);border-color:var(--accent)}
+    .vol-nav-btn:disabled{opacity:0.3;cursor:default}
+    .volume-chart-empty{color:var(--text-tertiary);font-size:12px;text-align:center;padding:60px 0}
   </style>
 </head>
 <body>
@@ -268,6 +315,7 @@
       <button class="view-tab" id="tab-monitor" data-view="monitor">Monitor</button>
       <button class="view-tab" id="tab-pipeline" data-view="pipeline">Pipeline</button>
       <button class="view-tab" id="tab-sessions" data-view="sessions">Sessions</button>
+      <button class="view-tab" id="tab-statistics" data-view="statistics">Statistics</button>
       <button class="view-tab" id="tab-settings" data-view="settings">Settings</button>
     </nav>
     <select id="repo-select-mobile" class="repo-select-mobile" aria-label="Select repository"></select>
@@ -279,6 +327,7 @@
         <div id="repos" class="repos"></div>
         <div id="empty" class="empty" style="display:none"></div>
         <div id="sessions-view" style="display:none;padding:0 0 28px"></div>
+        <div id="statistics-view" style="display:none"></div>
       </div>
     </div>
   </div>
@@ -399,6 +448,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-attach@0/lib/addon-attach.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0/lib/addon-fit.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script>
     const POLL_MS = 10000;
     const TS_MS = 30000;
@@ -2392,6 +2442,751 @@
       return (state.data && state.data.repos) ? state.data.repos.map(r => r.path) : [];
     }
 
+    // ── Statistics view ────────────────────────────────────────────────────────
+
+    const VOLUME_WINDOW = { daily: 30, weekly: 12, monthly: 6 };
+    const LS_KEYS = { period: 'aigon.stats.period', repo: 'aigon.stats.repo', gran: 'aigon.stats.gran' };
+
+    function saveStatsPrefs() {
+      try {
+        localStorage.setItem(LS_KEYS.period, statsState.period);
+        localStorage.setItem(LS_KEYS.repo, statsState.repoFilter);
+        localStorage.setItem(LS_KEYS.gran, statsState.volumeGranularity);
+      } catch (_) {}
+    }
+
+    function loadStatsPrefs() {
+      try {
+        return {
+          period: localStorage.getItem(LS_KEYS.period) || '30d',
+          repoFilter: localStorage.getItem(LS_KEYS.repo) || 'all',
+          volumeGranularity: localStorage.getItem(LS_KEYS.gran) || 'weekly'
+        };
+      } catch (_) {
+        return { period: '30d', repoFilter: 'all', volumeGranularity: 'weekly' };
+      }
+    }
+
+    const _savedPrefs = loadStatsPrefs();
+    const statsState = {
+      period: _savedPrefs.period,
+      repoFilter: _savedPrefs.repoFilter,
+      volumeGranularity: _savedPrefs.volumeGranularity,
+      volumeWindowEnd: null,
+      cycleTimeWindowEnd: null,
+      data: null,
+      loading: false,
+      error: null,
+      volumeChart: null,
+      volumeSeries: [],
+      cycleTimeChart: null,
+      cycleTimeSeries: []
+    };
+
+    async function loadAnalytics() {
+      if (statsState.loading) return;
+      statsState.loading = true;
+      try {
+        const res = await fetch('/api/analytics', { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        statsState.data = await res.json();
+        statsState.error = null;
+      } catch (e) {
+        statsState.error = e.message;
+      } finally {
+        statsState.loading = false;
+      }
+    }
+
+    function fmtNum(v, decimals) {
+      if (v === null || v === undefined) return '—';
+      return decimals !== undefined ? v.toFixed(decimals) : String(v);
+    }
+    function fmtPct(v) {
+      if (v === null || v === undefined) return '—';
+      return Math.round(v * 100) + '%';
+    }
+    function fmtHours(v) {
+      if (v === null || v === undefined) return '—';
+      if (v < 1) return Math.round(v * 60) + 'm';
+      return v.toFixed(1) + 'h';
+    }
+
+    function trendIcon(pct, lowerIsBetter) {
+      if (pct === null || pct === undefined) return '';
+      const positive = lowerIsBetter ? pct < 0 : pct > 0;
+      const arrow = pct > 0 ? '↑' : '↓';
+      const cls = positive ? 'trend-up' : 'trend-down';
+      return `<span class="${cls}">${arrow} ${Math.abs(pct)}%</span>`;
+    }
+
+    function buildSparklineSvg(points, color) {
+      if (!points || points.length < 2) return '';
+      const vals = points.map(p => (p.count !== undefined ? p.count : p.score) || 0);
+      const maxVal = Math.max(...vals, 1);
+      const w = 400, h = 40, pad = 2;
+      const xs = vals.map((_, i) => pad + (i / (vals.length - 1)) * (w - pad * 2));
+      const ys = vals.map(v => h - pad - ((v / maxVal) * (h - pad * 2)));
+      const pts = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
+      const fillPts = `${xs[0]},${h} ${pts} ${xs[xs.length - 1]},${h}`;
+      return `<svg class="sparkline-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+        <polygon points="${fillPts}" fill="${color}" opacity="0.15"/>
+        <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2"/>
+      </svg>`;
+    }
+
+    function buildStatCard(label, value, trendHtml, extra) {
+      return `<div class="stat-card">
+        <div class="stat-card-label">${escHtml(label)}</div>
+        <div class="stat-card-value">${value}</div>
+        ${trendHtml ? `<div class="stat-card-trend">${trendHtml}</div>` : ''}
+        ${extra ? `<div class="stat-card-trend" style="color:var(--text-tertiary)">${extra}</div>` : ''}
+      </div>`;
+    }
+
+    function buildVolumeSeries(features, granularity) {
+      const buckets = {};
+      let minTs = Infinity, maxTs = -Infinity;
+
+      features.forEach(f => {
+        const ts = f.completedAt ? new Date(f.completedAt) : null;
+        if (!ts || isNaN(ts)) return;
+        const t = ts.getTime();
+        if (t < minTs) minTs = t;
+        if (t > maxTs) maxTs = t;
+        let key;
+        if (granularity === 'daily') {
+          key = ts.toISOString().slice(0, 10);
+        } else if (granularity === 'weekly') {
+          const d = new Date(ts);
+          const dow = d.getUTCDay() || 7;
+          d.setUTCDate(d.getUTCDate() - dow + 1);
+          key = d.toISOString().slice(0, 10);
+        } else {
+          key = ts.toISOString().slice(0, 7) + '-01';
+        }
+        buckets[key] = (buckets[key] || 0) + 1;
+      });
+
+      if (minTs === Infinity) return [];
+
+      // Fill in zero-count buckets for a continuous timeline
+      const filled = [];
+      const cur = new Date(minTs);
+      const end = new Date(maxTs);
+
+      if (granularity === 'daily') {
+        cur.setUTCHours(0, 0, 0, 0);
+        end.setUTCHours(0, 0, 0, 0);
+        while (cur <= end) {
+          const key = cur.toISOString().slice(0, 10);
+          filled.push({ date: key, count: buckets[key] || 0 });
+          cur.setUTCDate(cur.getUTCDate() + 1);
+        }
+      } else if (granularity === 'weekly') {
+        // Align to Monday
+        const dow = cur.getUTCDay() || 7;
+        cur.setUTCDate(cur.getUTCDate() - dow + 1);
+        cur.setUTCHours(0, 0, 0, 0);
+        while (cur <= end) {
+          const key = cur.toISOString().slice(0, 10);
+          filled.push({ date: key, count: buckets[key] || 0 });
+          cur.setUTCDate(cur.getUTCDate() + 7);
+        }
+      } else {
+        cur.setUTCDate(1); cur.setUTCHours(0, 0, 0, 0);
+        end.setUTCDate(1); end.setUTCHours(0, 0, 0, 0);
+        while (cur <= end) {
+          const key = cur.toISOString().slice(0, 10);
+          filled.push({ date: key, count: buckets[key] || 0 });
+          cur.setUTCMonth(cur.getUTCMonth() + 1);
+        }
+      }
+      return filled;
+    }
+
+    function renderVolumeChart(fullSeries, granularity) {
+      statsState.volumeSeries = fullSeries || [];
+      statsState.volumeWindowEnd = null; // reset to latest on full re-render
+
+      if (statsState.volumeChart) {
+        statsState.volumeChart.destroy();
+        statsState.volumeChart = null;
+      }
+
+      const canvas = document.getElementById('volume-chart-canvas');
+      if (!canvas || !fullSeries || fullSeries.length === 0) return;
+
+      // Build full-series chart first (window applied after)
+      statsState.volumeChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [{
+            data: [],
+            backgroundColor: 'rgba(59,130,246,0.7)',
+            hoverBackgroundColor: 'rgba(59,130,246,1)',
+            borderRadius: 3,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: ctx => {
+                  const label = ctx[0].label;
+                  if (granularity === 'weekly') return 'Week of ' + label;
+                  return label;
+                },
+                label: ctx => ` ${ctx.parsed.y} feature${ctx.parsed.y !== 1 ? 's' : ''} completed`
+              },
+              backgroundColor: '#1a1a1f',
+              titleColor: '#ededef',
+              bodyColor: '#a0a0a8',
+              borderColor: 'rgba(255,255,255,0.1)',
+              borderWidth: 1,
+              padding: 10
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#6b6b76', font: { size: 11 } },
+              border: { color: 'rgba(255,255,255,0.06)' }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#6b6b76', font: { size: 11 }, precision: 0 },
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              border: { display: false }
+            }
+          }
+        }
+      });
+      applyVolumeWindow();
+    }
+
+    function buildCycleTimeSeries(features, granularity) {
+      const MIN_DURATION_MS = 5 * 60 * 1000; // ignore < 5 min (likely backfill artifacts)
+      const buckets = {};
+      features.forEach(f => {
+        if (!f.durationMs || f.durationMs < MIN_DURATION_MS) return;
+        const ts = f.completedAt ? new Date(f.completedAt) : null;
+        if (!ts || isNaN(ts)) return;
+        let key;
+        if (granularity === 'daily') {
+          key = ts.toISOString().slice(0, 10);
+        } else if (granularity === 'weekly') {
+          const d = new Date(ts);
+          const dow = d.getUTCDay() || 7;
+          d.setUTCDate(d.getUTCDate() - dow + 1);
+          key = d.toISOString().slice(0, 10);
+        } else {
+          key = ts.toISOString().slice(0, 7) + '-01';
+        }
+        if (!buckets[key]) buckets[key] = [];
+        buckets[key].push(f.durationMs / 3600000); // convert to hours
+      });
+      return Object.keys(buckets).sort().map(k => {
+        const vals = buckets[k];
+        const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
+        return { date: k, avgHours: Math.round(avg * 10) / 10, count: vals.length };
+      });
+    }
+
+    function renderCycleTimeChart(fullSeries, granularity) {
+      statsState.cycleTimeSeries = fullSeries || [];
+      statsState.cycleTimeWindowEnd = null;
+
+      if (statsState.cycleTimeChart) {
+        statsState.cycleTimeChart.destroy();
+        statsState.cycleTimeChart = null;
+      }
+      const canvas = document.getElementById('cycle-time-chart-canvas');
+      if (!canvas || !fullSeries || fullSeries.length === 0) return;
+
+      statsState.cycleTimeChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [{
+            data: [],
+            backgroundColor: 'rgba(34,197,94,0.7)',
+            hoverBackgroundColor: 'rgba(34,197,94,1)',
+            borderRadius: 3,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: ctx => {
+                  const label = ctx[0].label;
+                  if (granularity === 'weekly') return 'Week of ' + label;
+                  return label;
+                },
+                label: ctx => ` Avg cycle time: ${ctx.parsed.y}h`
+              },
+              backgroundColor: '#1a1a1f',
+              titleColor: '#ededef',
+              bodyColor: '#a0a0a8',
+              borderColor: 'rgba(255,255,255,0.1)',
+              borderWidth: 1,
+              padding: 10
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#6b6b76', font: { size: 11 } },
+              border: { color: 'rgba(255,255,255,0.06)' }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#6b6b76', font: { size: 11 },
+                callback: v => v + 'h'
+              },
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              border: { display: false }
+            }
+          }
+        }
+      });
+      applyCycleTimeWindow();
+    }
+
+    function applyCycleTimeWindow() {
+      const series = statsState.cycleTimeSeries;
+      const gran = statsState.volumeGranularity;
+      const windowSize = VOLUME_WINDOW[gran] || 8;
+      if (!series || !series.length) return;
+
+      const needsNav = series.length > windowSize;
+
+      const navEl = document.getElementById('ct-nav-controls');
+      if (navEl) navEl.style.visibility = needsNav ? 'visible' : 'hidden';
+
+      let startIdx, endIdx, slice;
+      if (!needsNav) {
+        startIdx = 0;
+        endIdx = series.length - 1;
+        slice = series.slice();
+        statsState.cycleTimeWindowEnd = endIdx;
+      } else {
+        if (statsState.cycleTimeWindowEnd === null) statsState.cycleTimeWindowEnd = series.length - 1;
+        statsState.cycleTimeWindowEnd = Math.min(statsState.cycleTimeWindowEnd, series.length - 1);
+        endIdx = statsState.cycleTimeWindowEnd;
+        startIdx = Math.max(0, endIdx - windowSize + 1);
+        slice = series.slice(startIdx, endIdx + 1);
+      }
+
+      const chart = statsState.cycleTimeChart;
+      if (chart) {
+        chart.data.labels = slice.map(d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(5, 10));
+        chart.data.datasets[0].data = slice.map(d => d.avgHours);
+        chart.update('none');
+      }
+
+      if (needsNav) {
+        const fmt = d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(0, 10);
+        const rangeEl = document.getElementById('ct-nav-range');
+        if (rangeEl && slice.length) rangeEl.textContent = `${fmt(slice[0])} – ${fmt(slice[slice.length - 1])}`;
+        const btnPrev = document.getElementById('ct-nav-prev');
+        const btnNext = document.getElementById('ct-nav-next');
+        if (btnPrev) btnPrev.disabled = startIdx === 0;
+        if (btnNext) btnNext.disabled = endIdx >= series.length - 1;
+      }
+    }
+
+    function panCycleTimeChart(direction) {
+      const series = statsState.cycleTimeSeries || [];
+      const windowSize = VOLUME_WINDOW[statsState.volumeGranularity] || 8;
+      if (!series.length) return;
+      const step = Math.max(1, Math.floor(windowSize / 2));
+      const current = statsState.cycleTimeWindowEnd !== null ? statsState.cycleTimeWindowEnd : series.length - 1;
+      if (direction === 'prev') {
+        statsState.cycleTimeWindowEnd = Math.max(windowSize - 1, current - step);
+      } else {
+        statsState.cycleTimeWindowEnd = Math.min(series.length - 1, current + step);
+      }
+      applyCycleTimeWindow();
+    }
+
+    function applyVolumeWindow() {
+      const series = statsState.volumeSeries;
+      const gran = statsState.volumeGranularity;
+      const windowSize = VOLUME_WINDOW[gran] || 8;
+      if (!series.length) return;
+
+      const needsNav = series.length > windowSize;
+
+      // Show nav controls only when data exceeds window
+      const navEl = document.getElementById('vol-nav-controls');
+      if (navEl) navEl.style.visibility = needsNav ? 'visible' : 'hidden';
+
+      let startIdx, endIdx, slice;
+      if (!needsNav) {
+        // All data fits — show everything
+        startIdx = 0;
+        endIdx = series.length - 1;
+        slice = series.slice();
+        statsState.volumeWindowEnd = endIdx;
+      } else {
+        if (statsState.volumeWindowEnd === null) statsState.volumeWindowEnd = series.length - 1;
+        statsState.volumeWindowEnd = Math.min(statsState.volumeWindowEnd, series.length - 1);
+        endIdx = statsState.volumeWindowEnd;
+        startIdx = Math.max(0, endIdx - windowSize + 1);
+        slice = series.slice(startIdx, endIdx + 1);
+      }
+
+      const chart = statsState.volumeChart;
+      if (chart) {
+        chart.data.labels = slice.map(d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(5, 10));
+        chart.data.datasets[0].data = slice.map(d => d.count);
+        chart.update('none');
+      }
+
+      if (needsNav) {
+        const fmt = d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(0, 10);
+        const rangeEl = document.getElementById('vol-nav-range');
+        if (rangeEl && slice.length) rangeEl.textContent = `${fmt(slice[0])} – ${fmt(slice[slice.length - 1])}`;
+        const btnPrev = document.getElementById('vol-nav-prev');
+        const btnNext = document.getElementById('vol-nav-next');
+        if (btnPrev) btnPrev.disabled = startIdx === 0;
+        if (btnNext) btnNext.disabled = endIdx >= series.length - 1;
+      }
+    }
+
+    function panVolumeChart(direction) {
+      const series = statsState.volumeSeries;
+      const windowSize = VOLUME_WINDOW[statsState.volumeGranularity] || 8;
+      if (!series.length) return;
+      const step = Math.max(1, Math.floor(windowSize / 2));
+      const current = statsState.volumeWindowEnd !== null ? statsState.volumeWindowEnd : series.length - 1;
+      if (direction === 'prev') {
+        statsState.volumeWindowEnd = Math.max(windowSize - 1, current - step);
+      } else {
+        statsState.volumeWindowEnd = Math.min(series.length - 1, current + step);
+      }
+      applyVolumeWindow();
+    }
+
+    function filterFeaturesByPeriodAndRepo(features, period, repoFilter) {
+      const now = Date.now();
+      const ms = { '7d': 7, '30d': 30, '90d': 90, 'all': null };
+      const days = ms[period];
+      const since = days ? now - days * 86400000 : 0;
+      return features.filter(f => {
+        if (f.completedAt && new Date(f.completedAt).getTime() < since) return false;
+        if (repoFilter !== 'all' && f.repoPath !== repoFilter) return false;
+        return true;
+      });
+    }
+
+    async function renderStatistics() {
+      const container = document.getElementById('statistics-view');
+      document.getElementById('monitor-summary').style.display = 'none';
+      document.getElementById('repo-header').style.display = 'none';
+      document.getElementById('repos').style.display = 'none';
+      document.getElementById('empty').style.display = 'none';
+
+      if (!statsState.data) {
+        container.innerHTML = '<div class="stats-empty-msg">Loading statistics…</div>';
+        await loadAnalytics();
+      }
+
+      const analytics = statsState.data;
+
+      if (!analytics || statsState.error) {
+        container.innerHTML = `<div class="stats-empty-msg">${escHtml(statsState.error || 'Could not load analytics')}</div>`;
+        return;
+      }
+
+      // Build repo list for filter
+      const repoSet = new Set((analytics.features || []).map(f => f.repoPath).filter(Boolean));
+      const repos = [...repoSet];
+
+      const html = [];
+      html.push('<div class="stats-view">');
+
+      // Toolbar
+      html.push('<div class="stats-toolbar">');
+      html.push('<label style="font-size:12px;color:var(--text-secondary)">Repo:</label>');
+      html.push('<select class="stats-select" id="stats-repo-filter">');
+      html.push(`<option value="all"${statsState.repoFilter === 'all' ? ' selected' : ''}>All repos</option>`);
+      repos.forEach(r => {
+        const display = r.replace(/^\/Users\/[^/]+\//, '~/');
+        const sel = statsState.repoFilter === r ? ' selected' : '';
+        html.push(`<option value="${escHtml(r)}"${sel}>${escHtml(display)}</option>`);
+      });
+      html.push('</select>');
+      html.push('<label style="font-size:12px;color:var(--text-secondary)">Period:</label>');
+      html.push('<select class="stats-select" id="stats-period-filter">');
+      [['7d','Last 7 days'],['30d','Last 30 days'],['90d','Last 90 days'],['all','All time']].forEach(([v,l]) => {
+        html.push(`<option value="${v}"${statsState.period === v ? ' selected' : ''}>${l}</option>`);
+      });
+      html.push('</select>');
+      html.push('<button class="btn" id="stats-refresh-btn" style="margin-left:auto">Refresh</button>');
+      html.push('</div>');
+
+      // Filter features for the selected period + repo
+      const filteredFeatures = filterFeaturesByPeriodAndRepo(analytics.features || [], statsState.period, statsState.repoFilter);
+      const totalCompleted = filteredFeatures.length;
+      const featWithDur = filteredFeatures.filter(f => f.durationMs && f.durationMs > 0);
+      const avgCycle = featWithDur.length > 0
+        ? featWithDur.reduce((s, f) => s + f.durationMs, 0) / featWithDur.length / (1000 * 3600) : null;
+      const featWithAutonomy = filteredFeatures.filter(f => f.autonomyRatio !== null);
+      const avgAutonomy = featWithAutonomy.length > 0
+        ? featWithAutonomy.reduce((s, f) => s + f.autonomyRatio, 0) / featWithAutonomy.length : null;
+      const firstPassFeats = filteredFeatures.filter(f => f.firstPassSuccess !== null);
+      const firstPassRate = firstPassFeats.length > 0
+        ? firstPassFeats.filter(f => f.firstPassSuccess).length / firstPassFeats.length : null;
+
+      // Volume cards
+      html.push('<div class="stats-section-title">Volume</div>');
+      html.push('<div class="stats-cards">');
+      const trend30 = analytics.volume && analytics.volume.trend30d;
+      html.push(buildStatCard('Features Completed', String(totalCompleted),
+        statsState.period === '30d' && trend30 !== null ? trendIcon(trend30) : null));
+      html.push(buildStatCard('Avg Cycle Time', fmtHours(avgCycle), null, avgCycle !== null ? 'start to close' : null));
+      html.push(buildStatCard('Autonomy Score', avgAutonomy !== null ? fmtPct(avgAutonomy) : '—', null));
+      html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null));
+      html.push('</div>');
+
+      // Volume trend line chart
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Features Completed Over Time</div>');
+      html.push('<div style="display:flex;align-items:center;gap:8px">');
+      html.push('<span id="vol-nav-controls" style="display:flex;align-items:center;gap:4px">');
+      html.push('<button id="vol-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
+      html.push('<span id="vol-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
+      html.push('<button id="vol-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
+      html.push('</span>');
+      html.push('<div class="volume-granularity-btns" style="margin-left:8px">');
+      [['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].forEach(([g,l]) => {
+        const active = statsState.volumeGranularity === g ? ' active' : '';
+        html.push(`<button class="vol-gran-btn${active}" data-gran="${g}">${l}</button>`);
+      });
+      html.push('</div>');
+      html.push('</div>');
+      html.push('</div>');
+      html.push('<div style="height:220px;position:relative"><canvas id="volume-chart-canvas"></canvas></div>');
+      html.push('</div>');
+
+      // Autonomy section
+      const autonomy = analytics.autonomy || {};
+      const displayAutonomy = avgAutonomy !== null ? avgAutonomy : (autonomy.score || null);
+      html.push('<div class="stats-row">');
+
+      // Autonomy block
+      html.push('<div class="stats-block">');
+      html.push(`<div class="stats-block-title">Autonomy <span class="stats-block-score">${displayAutonomy !== null ? fmtPct(displayAutonomy) : '—'}</span></div>`);
+      if (displayAutonomy !== null) {
+        const pct = Math.round(displayAutonomy * 100);
+        html.push(`<div class="autonomy-bar-wrap"><div class="autonomy-bar" style="width:${pct}%"></div></div>`);
+      }
+      html.push('<div class="stats-kv-grid">');
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">Waits/feature</div><div class="stats-kv-val">${fmtNum(autonomy.avgWaitEventsPerFeature, 1)}</div></div>`);
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">First-pass rate</div><div class="stats-kv-val">${fmtPct(firstPassRate !== null ? firstPassRate : autonomy.firstPassSuccessRate)}</div></div>`);
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">Autonomous mode</div><div class="stats-kv-val">${fmtPct(autonomy.autonomousModeAdoption)}</div></div>`);
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">Touch time ratio</div><div class="stats-kv-val">${fmtPct(autonomy.avgTouchTimeRatio)}</div></div>`);
+      html.push('</div>');
+
+      // Autonomy trend sparkline
+      if (autonomy.trend && autonomy.trend.length > 1) {
+        const trendPoints = autonomy.trend.map(t => ({ score: t.score }));
+        html.push('<div class="sparkline-wrap">');
+        html.push(buildSparklineSvg(trendPoints, 'var(--accent)'));
+        const lastTrend = autonomy.trend[autonomy.trend.length - 1];
+        const firstTrend = autonomy.trend[0];
+        const improving = lastTrend.score > firstTrend.score;
+        html.push(`<span class="sparkline-label">${improving ? '↑ improving' : '→ stable'}</span>`);
+        html.push('</div>');
+      }
+      html.push('</div>');
+
+      // Quality block
+      const quality = analytics.quality || {};
+      const dur = quality.durationHours || {};
+      html.push('<div class="stats-block">');
+      html.push('<div class="stats-block-title">Quality &amp; Speed</div>');
+      html.push('<div class="stats-kv-grid">');
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">Avg cycle time</div><div class="stats-kv-val">${fmtHours(avgCycle !== null ? avgCycle : dur.average)}</div></div>`);
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">Median cycle time</div><div class="stats-kv-val">${fmtHours(dur.median)}</div></div>`);
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">Max cycle time</div><div class="stats-kv-val">${fmtHours(dur.max)}</div></div>`);
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">Avg iterations</div><div class="stats-kv-val">${fmtNum(quality.avgIterationsPerFeature, 1)}</div></div>`);
+      html.push('</div>');
+      html.push('</div>');
+      html.push('</div>'); // end stats-row
+
+      // Cycle time over time chart
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Avg Cycle Time Over Time</div>');
+      html.push('<div style="display:flex;align-items:center;gap:8px">');
+      html.push('<span id="ct-nav-controls" style="display:flex;align-items:center;gap:4px">');
+      html.push('<button id="ct-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
+      html.push('<span id="ct-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
+      html.push('<button id="ct-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
+      html.push('</span>');
+      html.push('<div class="volume-granularity-btns" style="margin-left:8px">');
+      [['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].forEach(([g,l]) => {
+        const active = statsState.volumeGranularity === g ? ' active' : '';
+        html.push(`<button class="vol-gran-btn${active}" data-gran="${g}">${l}</button>`);
+      });
+      html.push('</div>');
+      html.push('</div>');
+      html.push('</div>');
+      html.push('<div style="height:220px;position:relative"><canvas id="cycle-time-chart-canvas"></canvas></div>');
+      html.push('</div>');
+
+      // Agent leaderboard — computed from filteredFeatures so repo+period filters apply
+      const round1 = v => Math.round(v * 10) / 10;
+      const leaderAgentMap = {};
+      filteredFeatures.forEach(f => {
+        const ag = f.winnerAgent || 'solo';
+        if (!leaderAgentMap[ag]) leaderAgentMap[ag] = { completed: 0, durMs: [], autonomyRatios: [], firstPassArr: [] };
+        leaderAgentMap[ag].completed++;
+        if (f.durationMs && f.durationMs > 0) leaderAgentMap[ag].durMs.push(f.durationMs);
+        if (f.autonomyRatio !== null) leaderAgentMap[ag].autonomyRatios.push(f.autonomyRatio);
+        if (f.firstPassSuccess !== null) leaderAgentMap[ag].firstPassArr.push(f.firstPassSuccess);
+      });
+
+      // Filter eval wins by repo
+      const evalWinsByRepo = analytics.evalWinsByRepo || [];
+      const filteredEvalWins = statsState.repoFilter === 'all'
+        ? analytics.evalWins || []
+        : (() => {
+            const repoEntries = evalWinsByRepo.filter(e => e.repoPath === statsState.repoFilter);
+            const agg = {};
+            repoEntries.forEach(e => {
+              if (!agg[e.agent]) agg[e.agent] = { agent: e.agent, wins: 0, evals: 0 };
+              agg[e.agent].wins += e.wins;
+              agg[e.agent].evals += e.evals;
+            });
+            return Object.values(agg).map(e => ({
+              ...e, winRate: e.evals > 0 ? Math.round(e.wins / e.evals * 100) / 100 : 0
+            }));
+          })();
+
+      const evalMap = {};
+      filteredEvalWins.forEach(e => { evalMap[e.agent] = e; });
+      const totalEvalWins = filteredEvalWins.reduce((s, e) => s + e.wins, 0);
+
+      const allAgentIds = [...new Set([...Object.keys(leaderAgentMap), ...filteredEvalWins.map(e => e.agent)])];
+
+      if (allAgentIds.length > 0) {
+        html.push('<div class="stats-section-title" style="margin-top:4px">Agent Leaderboard</div>');
+        html.push('<div class="stats-block" style="overflow-x:auto">');
+        html.push('<table class="stats-leaderboard">');
+        html.push('<thead><tr><th>Agent</th><th>Features</th><th>Eval wins</th><th>Fleet win %</th><th>Autonomy</th><th>Cycle time</th><th>First-pass</th></tr></thead>');
+        html.push('<tbody>');
+
+        allAgentIds
+          .sort((a, b) => (leaderAgentMap[b] || { completed: 0 }).completed - (leaderAgentMap[a] || { completed: 0 }).completed)
+          .forEach(agentId => {
+            const d = leaderAgentMap[agentId] || { completed: 0, durMs: [], autonomyRatios: [], firstPassArr: [] };
+            const ev = evalMap[agentId];
+            const avgCycle = d.durMs.length > 0 ? round1(d.durMs.reduce((s, v) => s + v, 0) / d.durMs.length / 3600000) : null;
+            const autoScore = d.autonomyRatios.length > 0 ? d.autonomyRatios.reduce((s, v) => s + v, 0) / d.autonomyRatios.length : null;
+            const fpRate = d.firstPassArr.length > 0 ? d.firstPassArr.filter(Boolean).length / d.firstPassArr.length : null;
+            // Share of total eval wins (sums to 100% across agents)
+            const winShare = ev && totalEvalWins > 0 ? ev.wins / totalEvalWins : null;
+            html.push('<tr>');
+            html.push(`<td><span class="agent-mono">${escHtml(agentId)}</span></td>`);
+            html.push(`<td>${d.completed}</td>`);
+            html.push(`<td>${ev ? ev.wins : '—'}</td>`);
+            html.push(`<td>${winShare !== null ? `<span class="win-rate">${fmtPct(winShare)}</span>` : '—'}</td>`);
+            html.push(`<td>${fmtPct(autoScore)}</td>`);
+            html.push(`<td>${fmtHours(avgCycle)}</td>`);
+            html.push(`<td>${fmtPct(fpRate)}</td>`);
+            html.push('</tr>');
+          });
+        html.push('</tbody></table>');
+        html.push('</div>');
+      }
+
+      if (totalCompleted === 0 && allAgentIds.length === 0) {
+        html.push('<div class="stats-empty-msg">No completed features found. Statistics will appear here once features are closed.</div>');
+      }
+
+      html.push('</div>'); // end stats-view
+      container.innerHTML = html.join('');
+
+      // Render Chart.js charts into canvases now that they're in the DOM
+      const volSeries = buildVolumeSeries(filteredFeatures, statsState.volumeGranularity);
+      renderVolumeChart(volSeries, statsState.volumeGranularity);
+
+      const ctSeries = buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity);
+      renderCycleTimeChart(ctSeries, statsState.volumeGranularity);
+
+      // Wire up controls
+      const repoSel = document.getElementById('stats-repo-filter');
+      if (repoSel) repoSel.onchange = () => {
+        statsState.repoFilter = repoSel.value;
+        statsState.volumeWindowEnd = null;
+        statsState.cycleTimeWindowEnd = null;
+        saveStatsPrefs();
+        renderStatistics();
+      };
+
+      const periodSel = document.getElementById('stats-period-filter');
+      if (periodSel) periodSel.onchange = () => {
+        statsState.period = periodSel.value;
+        statsState.volumeWindowEnd = null;
+        statsState.cycleTimeWindowEnd = null;
+        saveStatsPrefs();
+        renderStatistics();
+      };
+
+      const refreshBtn = document.getElementById('stats-refresh-btn');
+      if (refreshBtn) refreshBtn.onclick = async () => {
+        statsState.data = null;
+        container.innerHTML = '<div class="stats-empty-msg">Loading…</div>';
+        // force=1 busts the server-side analytics cache (picks up backfill changes)
+        try {
+          const res = await fetch('/api/analytics?force=1', { cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          statsState.data = await res.json();
+          statsState.error = null;
+        } catch (e) {
+          statsState.error = e.message;
+        }
+        statsState.loading = false;
+        renderStatistics();
+      };
+
+      // Volume granularity buttons — reset both windows on change
+      document.querySelectorAll('.vol-gran-btn').forEach(btn => {
+        btn.onclick = () => {
+          statsState.volumeGranularity = btn.dataset.gran;
+          statsState.volumeWindowEnd = null;
+          statsState.cycleTimeWindowEnd = null;
+          saveStatsPrefs();
+          renderStatistics();
+        };
+      });
+
+      // Volume nav buttons
+      document.getElementById('vol-nav-prev')?.addEventListener('click', () => panVolumeChart('prev'));
+      document.getElementById('vol-nav-next')?.addEventListener('click', () => panVolumeChart('next'));
+
+      // Cycle time nav buttons
+      document.getElementById('ct-nav-prev')?.addEventListener('click', () => panCycleTimeChart('prev'));
+      document.getElementById('ct-nav-next')?.addEventListener('click', () => panCycleTimeChart('next'));
+    }
+
     // ── Main render dispatch ───────────────────────────────────────────────────
 
     async function renderSessions() {
@@ -2488,6 +3283,7 @@
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
+        document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('repos').style.display = '';
         renderSettings();
       } else if (state.view === 'sessions') {
@@ -2498,12 +3294,24 @@
         document.getElementById('monitor-summary').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         document.getElementById('sessions-view').style.display = '';
+        document.getElementById('statistics-view').style.display = 'none';
         renderSessions();
+      } else if (state.view === 'statistics') {
+        sidebar.style.display = 'none';
+        mobileSelect.style.display = 'none';
+        document.getElementById('repos').style.display = 'none';
+        document.getElementById('empty').style.display = 'none';
+        document.getElementById('monitor-summary').style.display = 'none';
+        document.getElementById('repo-header').style.display = 'none';
+        document.getElementById('sessions-view').style.display = 'none';
+        document.getElementById('statistics-view').style.display = '';
+        renderStatistics();
       } else {
         sidebar.style.display = '';
         mobileSelect.style.display = '';
         document.getElementById('repos').style.display = '';
         document.getElementById('sessions-view').style.display = 'none';
+        document.getElementById('statistics-view').style.display = 'none';
         if (state.view === 'pipeline') {
           renderPipeline();
         } else {
