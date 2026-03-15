@@ -812,15 +812,12 @@ test('resolveRadarUrl uses correct port for worktree', () => {
 });
 
 console.log('\nDetect Radar Context');
-test('detectRadarContext detects worktree from directory name', () => {
-    // This test runs from within the feature-61-cc-dev-servers worktree, so it should detect it
+test('detectRadarContext returns non-worktree from main repo', () => {
     const ctx = detectRadarContext();
-    // The worktree dir is 'feature-61-cc-dev-servers' which matches ^feature-(\d+)-([a-z]{2})-
-    assert.strictEqual(ctx.isWorktree, true);
-    assert.strictEqual(ctx.featureId, '61');
-    assert.strictEqual(ctx.agentId, 'cc');
-    assert.strictEqual(ctx.serverId, 'cc-61');
-    assert.ok(typeof ctx.worktreePath === 'string');
+    assert.strictEqual(ctx.isWorktree, false);
+    assert.strictEqual(ctx.agentId, null);
+    assert.strictEqual(ctx.featureId, null);
+    assert.strictEqual(ctx.serverId, '');
 });
 
 console.log('\ngcDevServers with Radar Entries');
