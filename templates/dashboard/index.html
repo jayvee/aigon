@@ -8,12 +8,18 @@
     :root{color-scheme:dark;-webkit-font-smoothing:antialiased;--bg-root:#0a0a0b;--bg-surface:#111113;--bg-elevated:#1a1a1f;--bg-hover:#222228;--border-subtle:rgba(255,255,255,.06);--border-default:rgba(255,255,255,.1);--text-primary:#ededef;--text-secondary:#a0a0a8;--text-tertiary:#6b6b76;--accent:#3b82f6;--success:#22c55e;--warning:#f59e0b;--error:#ef4444;--radius:12px;--mono:"SF Mono","Cascadia Code",ui-monospace,monospace}
     *{box-sizing:border-box}html,body{margin:0;background:var(--bg-root);color:var(--text-primary);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
     body{padding:20px 16px 28px}
-    .wrap{max-width:1280px;margin:0 auto}
+    .wrap{max-width:1400px;margin:0 auto}
     .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:10px}
     h1{margin:0;font-size:24px;letter-spacing:-.02em}
     .meta{display:flex;gap:10px;color:var(--text-secondary)}
     .health{display:flex;align-items:center;gap:6px}
-    .summary{display:flex;gap:8px;margin:12px 0 14px;flex-wrap:wrap}
+    /* View tabs */
+    .view-tabs{display:flex;gap:4px;margin:10px 0 14px;border-bottom:1px solid var(--border-subtle);padding-bottom:0}
+    .view-tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);padding:8px 16px;cursor:pointer;font-size:13px;margin-bottom:-1px;transition:color .12s ease,border-color .12s ease}
+    .view-tab:hover{color:var(--text-primary)}
+    .view-tab.active{color:var(--text-primary);border-bottom-color:var(--accent)}
+    /* Monitor view */
+    .summary{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
     .pill{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:999px;padding:5px 10px}
     .pill.waiting{border-color:rgba(245,158,11,.4);color:#f8c060}
     .pill-filter{cursor:pointer;transition:border-color .12s ease,background .12s ease,color .12s ease}
@@ -51,8 +57,13 @@
     .error .dot{background:var(--error);box-shadow:0 0 8px rgba(239,68,68,.45)}
     .btn{background:transparent;border:1px solid var(--border-default);border-radius:8px;color:var(--text-secondary);padding:4px 10px;cursor:pointer;line-height:1;font-size:12px;white-space:nowrap}
     .btn:hover{color:var(--text-primary);border-color:var(--accent)}
+    .btn:disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
     .btn-primary{background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.45);color:#bdd7ff}
     .btn-primary:hover{background:rgba(59,130,246,.2);border-color:rgba(59,130,246,.7);color:#e2eeff}
+    .btn-success{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:#86efac}
+    .btn-success:hover{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.65);color:#bbf7d0}
+    .btn-warn{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:#fcd34d}
+    .btn-warn:hover{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.65);color:#fde68a}
     .next-copy{font-size:11px}
     .row-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap;min-width:0}
     .empty{padding:18px;color:var(--text-secondary);background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius)}
@@ -62,6 +73,42 @@
     .repo.collapsed .repo-b{display:none}
     @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(2.2);opacity:.05}}
     @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+    /* Pipeline / Kanban */
+    .kanban{display:grid;grid-template-columns:repeat(5,minmax(200px,1fr));gap:10px;align-items:start;overflow-x:auto;padding-bottom:8px}
+    .kanban-col{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden;min-height:120px}
+    .kanban-col.drag-over{border-color:rgba(59,130,246,.6);background:rgba(59,130,246,.06)}
+    .kanban-col.drag-blocked{border-color:rgba(239,68,68,.4)}
+    .col-h{padding:9px 12px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center}
+    .col-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary)}
+    .col-count{font-size:11px;color:var(--text-tertiary)}
+    .col-body{padding:8px;display:grid;gap:6px;min-height:60px}
+    .kcard{border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,.01);padding:8px 10px;cursor:grab;transition:background .12s ease,border-color .12s ease,box-shadow .12s ease}
+    .kcard:hover{background:var(--bg-elevated);border-color:var(--border-default)}
+    .kcard.dragging{opacity:.4;cursor:grabbing}
+    .kcard-id{font-size:11px;color:var(--text-tertiary);font-family:var(--mono)}
+    .kcard-name{font-size:12px;font-weight:500;margin:2px 0 6px;line-height:1.3;color:var(--text-primary);word-break:break-word}
+    .kcard-agents{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+    .agent-badge{font-size:10px;font-family:var(--mono);padding:1px 6px;border-radius:999px;background:var(--bg-elevated);border:1px solid var(--border-subtle);color:var(--text-secondary)}
+    .agent-badge.implementing{border-color:rgba(59,130,246,.4);color:#93c5fd}
+    .agent-badge.waiting{border-color:rgba(245,158,11,.4);color:#fcd34d}
+    .agent-badge.submitted{border-color:rgba(34,197,94,.4);color:#86efac}
+    .agent-badge.error{border-color:rgba(239,68,68,.4);color:#fca5a5}
+    .kcard-actions{display:flex;gap:5px;flex-wrap:wrap}
+    .kcard-actions .btn{font-size:11px;padding:3px 8px}
+    .col-empty{padding:12px 8px;color:var(--text-tertiary);font-size:12px;text-align:center}
+    /* Agent picker modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center}
+    .modal-box{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius);padding:20px 24px;min-width:280px;max-width:400px;width:100%}
+    .modal-box h3{margin:0 0 14px;font-size:15px;letter-spacing:-.01em}
+    .modal-desc{color:var(--text-secondary);font-size:12px;margin:0 0 14px}
+    .agent-checks{display:grid;gap:8px;margin-bottom:18px}
+    .agent-check-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--border-subtle);border-radius:8px;cursor:pointer;transition:background .1s ease,border-color .1s ease}
+    .agent-check-row:hover{background:var(--bg-elevated);border-color:var(--border-default)}
+    .agent-check-row input{cursor:pointer;accent-color:var(--accent)}
+    .agent-check-label{font-family:var(--mono);font-size:13px;flex:1}
+    .agent-check-hint{font-size:11px;color:var(--text-tertiary)}
+    .modal-actions{display:flex;gap:8px;justify-content:flex-end}
+    .modal-actions .btn{padding:6px 16px}
   </style>
 </head>
 <body>
@@ -74,11 +121,32 @@
         <button class="btn" id="refresh-btn" title="Force refresh status">Refresh</button>
       </div>
     </div>
-    <div id="summary" class="summary" aria-label="Agent status summary"></div>
+    <nav class="view-tabs" aria-label="Dashboard views">
+      <button class="view-tab" id="tab-monitor" data-view="monitor">Monitor</button>
+      <button class="view-tab" id="tab-pipeline" data-view="pipeline">Pipeline</button>
+    </nav>
+    <div id="monitor-summary" class="summary" aria-label="Agent status summary"></div>
     <div id="repos" class="repos"></div>
     <div id="empty" class="empty" style="display:none"></div>
   </div>
   <div id="toasts" class="toast-wrap" aria-live="polite"></div>
+  <!-- Agent picker modal -->
+  <div id="agent-picker" class="modal-backdrop" style="display:none" role="dialog" aria-modal="true" aria-labelledby="agent-picker-title">
+    <div class="modal-box">
+      <h3 id="agent-picker-title">Select Agents</h3>
+      <p class="modal-desc" id="agent-picker-desc"></p>
+      <div class="agent-checks">
+        <label class="agent-check-row"><input type="checkbox" value="cc"><span class="agent-check-label">cc</span><span class="agent-check-hint">Claude Code</span></label>
+        <label class="agent-check-row"><input type="checkbox" value="cx"><span class="agent-check-label">cx</span><span class="agent-check-hint">Cursor</span></label>
+        <label class="agent-check-row"><input type="checkbox" value="gg"><span class="agent-check-label">gg</span><span class="agent-check-hint">Gemini</span></label>
+        <label class="agent-check-row"><input type="checkbox" value="cu"><span class="agent-check-label">cu</span><span class="agent-check-hint">Cursor (IDE)</span></label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="agent-picker-cancel">Cancel</button>
+        <button class="btn btn-primary" id="agent-picker-submit">Setup</button>
+      </div>
+    </div>
+  </div>
   <script>
     const POLL_MS = 10000;
     const TS_MS = 30000;
@@ -88,8 +156,12 @@
       failures: 0,
       lastStatuses: new Map(),
       collapsed: JSON.parse(localStorage.getItem('aigon.dashboard.collapsed') || '{}'),
-      filter: localStorage.getItem('aigon.dashboard.filter') || 'all'
+      filter: localStorage.getItem('aigon.dashboard.filter') || 'all',
+      view: localStorage.getItem('aigon.dashboard.view') || 'monitor',
+      pendingActions: new Set()
     };
+
+    // ── Utilities ─────────────────────────────────────────────────────────────
 
     function relTime(iso) {
       const diff = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
@@ -101,7 +173,8 @@
 
     function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function statusRank(s){ return s === 'waiting' ? 0 : s === 'implementing' ? 1 : s === 'error' ? 2 : 3; }
-    function featureRank(feature){ return Math.min(...feature.agents.map(a => statusRank(a.status))); }
+    function featureRank(feature){ return feature.agents && feature.agents.length > 0 ? Math.min(...feature.agents.map(a => statusRank(a.status))) : 99; }
+
     function showToast(text, actionLabel, actionFn){
       const wrap = document.getElementById('toasts');
       const n = document.createElement('div');
@@ -124,6 +197,8 @@
       ta.value = text; document.body.appendChild(ta); ta.select();
       const ok = document.execCommand('copy'); ta.remove(); return ok;
     }
+
+    // ── API helpers ───────────────────────────────────────────────────────────
 
     async function requestAttach(repoPath, featureId, agentId, tmuxSession){
       try {
@@ -159,6 +234,80 @@
       }
     }
 
+    async function requestAction(action, args, repoPath, btn) {
+      const key = action + ':' + (args || []).join(':');
+      if (state.pendingActions.has(key)) return;
+      state.pendingActions.add(key);
+      if (btn) { btn.disabled = true; btn.textContent = '...'; }
+      try {
+        const body = { action, args: args || [] };
+        if (repoPath) body.repoPath = repoPath;
+        const res = await fetch('/api/action', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+        showToast('Done: ' + (payload.command || action));
+        await requestRefresh();
+      } catch (e) {
+        showToast('Action failed: ' + e.message);
+        if (btn) { btn.disabled = false; btn.textContent = btn._origText || action; }
+      } finally {
+        state.pendingActions.delete(key);
+      }
+    }
+
+    async function requestWorktreeOpen(featureId, agentId, repoPath, btn) {
+      if (btn) { btn.disabled = true; btn.textContent = '...'; }
+      try {
+        const body = { featureId, agentId };
+        if (repoPath) body.repoPath = repoPath;
+        const res = await fetch('/api/worktree-open', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+        showToast(payload.message || 'Worktree opened');
+      } catch (e) {
+        showToast('Open worktree failed: ' + e.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = btn._origText || 'Open'; }
+      }
+    }
+
+    // ── Agent picker ──────────────────────────────────────────────────────────
+
+    let pickerResolve = null;
+
+    function showAgentPicker(featureId, featureName) {
+      return new Promise((resolve) => {
+        pickerResolve = resolve;
+        document.getElementById('agent-picker-desc').textContent = '#' + featureId + ' ' + featureName;
+        document.querySelectorAll('#agent-picker input[type=checkbox]').forEach(cb => { cb.checked = false; });
+        document.getElementById('agent-picker').style.display = 'flex';
+        document.getElementById('agent-picker-submit').focus();
+      });
+    }
+
+    function hideAgentPicker(result) {
+      document.getElementById('agent-picker').style.display = 'none';
+      if (pickerResolve) { pickerResolve(result); pickerResolve = null; }
+    }
+
+    document.getElementById('agent-picker-cancel').onclick = () => hideAgentPicker(null);
+    document.getElementById('agent-picker').onclick = (e) => { if (e.target === e.currentTarget) hideAgentPicker(null); };
+    document.getElementById('agent-picker-submit').onclick = () => {
+      const selected = [...document.querySelectorAll('#agent-picker input[type=checkbox]:checked')].map(cb => cb.value);
+      if (selected.length === 0) { showToast('Select at least one agent'); return; }
+      hideAgentPicker(selected);
+    };
+
+    // ── Shared render helpers ─────────────────────────────────────────────────
+
     function updateTitleAndFavicon(waiting){
       document.title = waiting > 0 ? '(' + waiting + ') Aigon Dashboard' : 'Aigon Dashboard';
       const link = document.querySelector('link[rel="icon"]') || (() => { const x = document.createElement('link'); x.rel = 'icon'; document.head.appendChild(x); return x; })();
@@ -180,10 +329,19 @@
       dot.style.background = '#ef4444'; text.textContent = 'Disconnected';
     }
 
-    function render() {
+    function updateViewTabs() {
+      document.querySelectorAll('.view-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.getAttribute('data-view') === state.view);
+      });
+    }
+
+    // ── Monitor view ──────────────────────────────────────────────────────────
+
+    function renderMonitor() {
+      document.getElementById('monitor-summary').style.display = '';
       const data = state.data || { repos: [], summary: { implementing: 0, waiting: 0, submitted: 0, error: 0 } };
       const summary = data.summary || { implementing: 0, waiting: 0, submitted: 0, error: 0 };
-      document.getElementById('summary').innerHTML =
+      document.getElementById('monitor-summary').innerHTML =
         '<button class="pill pill-filter' + (state.filter === 'all' ? ' active' : '') + '" data-filter="all">All</button>' +
         '<button class="pill pill-filter' + (state.filter === 'implementing' ? ' active' : '') + '" data-filter="implementing">' + summary.implementing + ' implementing</button>' +
         '<button class="pill pill-filter waiting' + (state.filter === 'waiting' ? ' active' : '') + '" data-filter="waiting">' + summary.waiting + ' waiting</button>' +
@@ -195,6 +353,7 @@
 
       const reposRoot = document.getElementById('repos');
       const empty = document.getElementById('empty');
+      reposRoot.className = 'repos';
       reposRoot.innerHTML = '';
 
       if (!data.repos || data.repos.length === 0) {
@@ -208,7 +367,8 @@
       data.repos.forEach(repo => {
         const section = document.createElement('section');
         section.className = 'repo' + (state.collapsed[repo.path] ? ' collapsed' : '');
-        const rawFeatures = [...(repo.features || [])].sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
+        // Only show in-progress/in-evaluation features in monitor
+        const rawFeatures = [...(repo.features || [])].filter(f => f.stage === 'in-progress' || f.stage === 'in-evaluation').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
         const features = rawFeatures.filter(f => state.filter === 'all' || f.agents.some(a => a.status === state.filter));
         const rawResearch = [...(repo.research || [])].sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
         const research = rawResearch.filter(r => state.filter === 'all' || r.agents.some(a => a.status === state.filter));
@@ -324,6 +484,243 @@
       });
     }
 
+    // ── Pipeline / Kanban view ─────────────────────────────────────────────────
+
+    const STAGE_ORDER = ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'];
+    const STAGE_LABELS = { inbox: 'Inbox', backlog: 'Backlog', 'in-progress': 'In-Progress', 'in-evaluation': 'Evaluation', done: 'Done' };
+    const ALLOWED_TRANSITIONS = {
+      'inbox': 'backlog',
+      'backlog': 'in-progress',
+      'in-progress': 'in-evaluation',
+      'in-evaluation': 'done'
+    };
+
+    let dragState = null; // { featureId, featureName, fromStage, repoPath }
+
+    function buildAgentBadgesHtml(agents) {
+      if (!agents || agents.length === 0) return '';
+      return agents.map(a => '<span class="agent-badge ' + escHtml(a.status || '') + '">' + escHtml(a.id) + '</span>').join('');
+    }
+
+    function buildKanbanCard(feature, repoPath) {
+      const card = document.createElement('div');
+      card.className = 'kcard';
+      card.draggable = true;
+      card.dataset.featureId = feature.id;
+      card.dataset.featureName = feature.name;
+      card.dataset.stage = feature.stage;
+      card.dataset.repoPath = repoPath || '';
+
+      const agentBadgesHtml = buildAgentBadgesHtml(feature.agents);
+
+      // Build stage-specific action buttons
+      let actionsHtml = '';
+      const stage = feature.stage;
+
+      if (stage === 'inbox') {
+        actionsHtml = '<button class="btn btn-primary kcard-btn-prioritise">Prioritise</button>';
+      } else if (stage === 'backlog') {
+        actionsHtml = '<button class="btn btn-primary kcard-btn-setup">Setup</button>';
+      } else if (stage === 'in-progress') {
+        const worktreeBtns = (feature.agents || []).filter(a => a.id !== 'solo').map(a =>
+          '<button class="btn kcard-btn-worktree" data-agent="' + escHtml(a.id) + '">Open ' + escHtml(a.id) + '</button>'
+        ).join('');
+        const allSubmitted = feature.agents && feature.agents.length > 0 && feature.agents.every(a => a.status === 'submitted');
+        const evalBtn = allSubmitted ? '<button class="btn btn-success kcard-btn-eval">Evaluate</button>' : '';
+        actionsHtml = worktreeBtns + evalBtn;
+      } else if (stage === 'in-evaluation') {
+        const evalStatusHtml = feature.evalStatus
+          ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
+          : '';
+        actionsHtml = evalStatusHtml + '<button class="btn btn-warn kcard-btn-close">Close</button>';
+      }
+
+      card.innerHTML =
+        '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' +
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>' +
+        (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
+        (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
+
+      // Drag events
+      card.addEventListener('dragstart', (e) => {
+        card.classList.add('dragging');
+        dragState = { featureId: feature.id, featureName: feature.name, fromStage: feature.stage, repoPath };
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', feature.id);
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        dragState = null;
+        document.querySelectorAll('.kanban-col').forEach(col => col.classList.remove('drag-over', 'drag-blocked'));
+      });
+
+      // Action button handlers
+      const prioritiseBtn = card.querySelector('.kcard-btn-prioritise');
+      if (prioritiseBtn) {
+        prioritiseBtn._origText = 'Prioritise';
+        prioritiseBtn.onclick = async (e) => {
+          e.stopPropagation();
+          await requestAction('feature-prioritise', [feature.name], repoPath, prioritiseBtn);
+        };
+      }
+
+      const setupBtn = card.querySelector('.kcard-btn-setup');
+      if (setupBtn) {
+        setupBtn._origText = 'Setup';
+        setupBtn.onclick = async (e) => {
+          e.stopPropagation();
+          const agents = await showAgentPicker(feature.id, feature.name);
+          if (!agents) return;
+          await requestAction('feature-setup', [feature.id, ...agents], repoPath, setupBtn);
+        };
+      }
+
+      card.querySelectorAll('.kcard-btn-worktree').forEach(btn => {
+        const agentId = btn.getAttribute('data-agent');
+        btn._origText = 'Open ' + agentId;
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          await requestWorktreeOpen(feature.id, agentId, repoPath, btn);
+        };
+      });
+
+      const evalBtn = card.querySelector('.kcard-btn-eval');
+      if (evalBtn) {
+        evalBtn._origText = 'Evaluate';
+        evalBtn.onclick = async (e) => {
+          e.stopPropagation();
+          await requestAction('feature-eval', [feature.id], repoPath, evalBtn);
+        };
+      }
+
+      const closeBtn = card.querySelector('.kcard-btn-close');
+      if (closeBtn) {
+        closeBtn._origText = 'Close';
+        closeBtn.onclick = async (e) => {
+          e.stopPropagation();
+          await requestAction('feature-close', [feature.id], repoPath, closeBtn);
+        };
+      }
+
+      return card;
+    }
+
+    function renderPipeline() {
+      document.getElementById('monitor-summary').style.display = 'none';
+      const data = state.data || { repos: [] };
+      setHealth();
+      document.getElementById('updated-text').textContent = 'Updated ' + relTime(data.generatedAt || new Date().toISOString());
+      const empty = document.getElementById('empty');
+      const reposRoot = document.getElementById('repos');
+      reposRoot.className = '';
+      reposRoot.innerHTML = '';
+
+      if (!data.repos || data.repos.length === 0) {
+        empty.style.display = '';
+        empty.textContent = 'No repos registered. Run: aigon conductor add';
+        return;
+      }
+      empty.style.display = 'none';
+
+      data.repos.forEach(repo => {
+        // Group features by stage
+        const byStage = {};
+        STAGE_ORDER.forEach(s => { byStage[s] = []; });
+        (repo.features || []).forEach(f => {
+          if (byStage[f.stage]) byStage[f.stage].push(f);
+        });
+
+        const repoSection = document.createElement('div');
+        reposRoot.appendChild(repoSection);
+
+        if (data.repos.length > 1) {
+          const repoLabel = document.createElement('div');
+          repoLabel.style.cssText = 'font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin:10px 0 6px;font-weight:600';
+          repoLabel.textContent = repo.displayPath || repo.name;
+          repoSection.appendChild(repoLabel);
+        }
+
+        const kanban = document.createElement('div');
+        kanban.className = 'kanban';
+        repoSection.appendChild(kanban);
+
+        STAGE_ORDER.forEach(stage => {
+          const cards = byStage[stage] || [];
+          const col = document.createElement('div');
+          col.className = 'kanban-col';
+          col.dataset.stage = stage;
+          col.dataset.repoPath = repo.path || '';
+
+          col.innerHTML =
+            '<div class="col-h"><span class="col-title">' + escHtml(STAGE_LABELS[stage]) + '</span><span class="col-count">' + cards.length + '</span></div>' +
+            '<div class="col-body"></div>';
+
+          const colBody = col.querySelector('.col-body');
+
+          if (cards.length === 0) {
+            const emp = document.createElement('div');
+            emp.className = 'col-empty';
+            emp.textContent = 'Empty';
+            colBody.appendChild(emp);
+          } else {
+            cards.forEach(feature => {
+              colBody.appendChild(buildKanbanCard(feature, repo.path));
+            });
+          }
+
+          // Drop target handlers
+          col.addEventListener('dragover', (e) => {
+            if (!dragState) return;
+            const allowed = ALLOWED_TRANSITIONS[dragState.fromStage] === stage;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = allowed ? 'move' : 'none';
+            document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over', 'drag-blocked'));
+            col.classList.add(allowed ? 'drag-over' : 'drag-blocked');
+          });
+
+          col.addEventListener('dragleave', (e) => {
+            if (!col.contains(e.relatedTarget)) {
+              col.classList.remove('drag-over', 'drag-blocked');
+            }
+          });
+
+          col.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            col.classList.remove('drag-over', 'drag-blocked');
+            if (!dragState) return;
+            const { featureId, featureName, fromStage, repoPath } = dragState;
+            dragState = null;
+            if (ALLOWED_TRANSITIONS[fromStage] !== stage) return;
+
+            if (fromStage === 'inbox' && stage === 'backlog') {
+              await requestAction('feature-prioritise', [featureName], repoPath);
+            } else if (fromStage === 'backlog' && stage === 'in-progress') {
+              const agents = await showAgentPicker(featureId, featureName);
+              if (!agents) return;
+              await requestAction('feature-setup', [featureId, ...agents], repoPath);
+            } else if (fromStage === 'in-progress' && stage === 'in-evaluation') {
+              await requestAction('feature-eval', [featureId], repoPath);
+            } else if (fromStage === 'in-evaluation' && stage === 'done') {
+              await requestAction('feature-close', [featureId], repoPath);
+            }
+          });
+
+          kanban.appendChild(col);
+        });
+      });
+    }
+
+    // ── Main render dispatch ───────────────────────────────────────────────────
+
+    function render() {
+      updateViewTabs();
+      if (state.view === 'pipeline') {
+        renderPipeline();
+      } else {
+        renderMonitor();
+      }
+    }
+
     function refreshTimestamps() {
       document.querySelectorAll('[data-updated]').forEach(n => { n.textContent = relTime(n.getAttribute('data-updated')); });
       const generatedAt = (state.data && state.data.generatedAt) ? state.data.generatedAt : new Date().toISOString();
@@ -366,11 +763,21 @@
       }
     }
 
+    // ── Init ──────────────────────────────────────────────────────────────────
+
     render();
     document.getElementById('refresh-btn').onclick = requestRefresh;
     setInterval(refreshTimestamps, TS_MS);
     setInterval(poll, POLL_MS);
     setTimeout(poll, 400);
+
+    document.querySelectorAll('.view-tab').forEach(tab => {
+      tab.onclick = () => {
+        state.view = tab.getAttribute('data-view');
+        localStorage.setItem('aigon.dashboard.view', state.view);
+        render();
+      };
+    });
   </script>
 </body>
 </html>`;
