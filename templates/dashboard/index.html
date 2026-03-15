@@ -90,9 +90,13 @@
     .next-copy{font-size:11px}
     .row-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap;min-width:0}
     .empty{padding:18px;color:var(--text-secondary);background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius)}
-    .toast-wrap{position:fixed;right:12px;bottom:12px;display:grid;gap:8px;z-index:50}
-    .toast{background:var(--bg-surface);border:1px solid var(--border-default);padding:10px 12px;border-radius:10px;min-width:260px}
-    .toast button{margin-left:8px;background:transparent;border:1px solid var(--border-default);border-radius:6px;color:var(--text-primary)}
+    .toast-wrap{position:fixed;left:50%;top:12px;transform:translateX(-50%);display:grid;gap:8px;z-index:50}
+    .toast{background:var(--bg-surface);border:1px solid var(--border-default);padding:10px 12px;border-radius:10px;min-width:300px;display:flex;align-items:center;justify-content:space-between;gap:8px;animation:toast-in .3s ease-out}
+    .toast.toast-error{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)}
+    .toast .toast-dismiss{margin-left:auto;background:transparent;border:none;color:var(--text-secondary);cursor:pointer;font-size:16px;padding:0 4px;line-height:1;flex-shrink:0}
+    .toast .toast-dismiss:hover{color:var(--text-primary)}
+    .toast button:not(.toast-dismiss){margin-left:8px;background:transparent;border:1px solid var(--border-default);border-radius:6px;color:var(--text-primary)}
+    @keyframes toast-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
     .repo.collapsed .repo-b{display:none}
     @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(2.2);opacity:.05}}
     @media (max-width:1200px){.kanban{grid-template-columns:1fr}}
@@ -326,20 +330,29 @@
     function statusRank(s){ return s === 'waiting' ? 0 : s === 'implementing' ? 1 : s === 'error' ? 2 : 3; }
     function featureRank(feature){ return feature.agents && feature.agents.length > 0 ? Math.min(...feature.agents.map(a => statusRank(a.status))) : 99; }
 
-    function showToast(text, actionLabel, actionFn){
+    function showToast(text, actionLabel, actionFn, opts){
       const wrap = document.getElementById('toasts');
       const n = document.createElement('div');
-      n.className = 'toast';
-      n.textContent = text;
+      const isError = opts && opts.error;
+      n.className = 'toast' + (isError ? ' toast-error' : '');
+      const span = document.createElement('span');
+      span.textContent = text;
+      n.appendChild(span);
       if (actionLabel && actionFn) {
         const b = document.createElement('button');
         b.textContent = actionLabel;
         b.onclick = actionFn;
         n.appendChild(b);
       }
+      const dismiss = document.createElement('button');
+      dismiss.className = 'toast-dismiss';
+      dismiss.innerHTML = '&times;';
+      dismiss.onclick = () => n.remove();
+      n.appendChild(dismiss);
       wrap.prepend(n);
-      while (wrap.children.length > 3) wrap.removeChild(wrap.lastChild);
-      setTimeout(() => n.remove(), 5000);
+      while (wrap.children.length > 5) wrap.removeChild(wrap.lastChild);
+      const timeout = isError ? 20000 : 10000;
+      setTimeout(() => n.remove(), timeout);
     }
 
     async function copyText(text){
@@ -362,7 +375,7 @@
         if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
         showToast(payload.message || 'Attach opened in terminal');
       } catch (e) {
-        showToast('Attach failed: ' + e.message);
+        showToast('Attach failed: ' + e.message, null, null, {error:true});
       }
     }
 
@@ -379,7 +392,7 @@
       } catch (e) {
         state.failures += 1;
         setHealth();
-        showToast('Refresh failed: ' + e.message);
+        showToast('Refresh failed: ' + e.message, null, null, {error:true});
       } finally {
         if (btn) btn.disabled = false;
       }
@@ -403,18 +416,19 @@
         showToast('Done: ' + (payload.command || action));
         await requestRefresh();
       } catch (e) {
-        showToast('Action failed: ' + e.message);
+        showToast('Action failed: ' + e.message, null, null, {error:true});
         if (btn) { btn.disabled = false; btn.textContent = btn._origText || action; }
       } finally {
         state.pendingActions.delete(key);
       }
     }
 
-    async function requestWorktreeOpen(featureId, agentId, repoPath, btn) {
+    async function requestWorktreeOpen(featureId, agentId, repoPath, btn, pType) {
       if (btn) { btn.disabled = true; btn.textContent = '...'; }
       try {
         const body = { featureId, agentId };
         if (repoPath) body.repoPath = repoPath;
+        if (pType) body.pipelineType = pType;
         const res = await fetch('/api/worktree-open', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -424,7 +438,7 @@
         if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
         showToast(payload.message || 'Worktree opened');
       } catch (e) {
-        showToast('Open worktree failed: ' + e.message);
+        showToast('Open worktree failed: ' + e.message, null, null, {error:true});
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = btn._origText || 'Open'; }
       }
@@ -827,7 +841,7 @@
           body: JSON.stringify({ path: drawerState.path })
         });
       } catch (e) {
-        showToast('Could not open editor: ' + e.message);
+        showToast('Could not open editor: ' + e.message, null, null, {error:true});
       }
     };
 
@@ -1176,12 +1190,17 @@
 
     let dragState = null;
 
+    function pipelineCommand(pipelineType, action) {
+      const prefix = pipelineType === 'research' ? 'research' : pipelineType === 'feedback' ? 'feedback' : 'feature';
+      return prefix + '-' + action;
+    }
+
     function buildAgentBadgesHtml(agents) {
       if (!agents || agents.length === 0) return '';
       return agents.map(a => '<span class="agent-badge ' + escHtml(a.status || '') + '">' + escHtml(a.id) + '</span>').join('');
     }
 
-    function buildKanbanCard(feature, repoPath) {
+    function buildKanbanCard(feature, repoPath, pipelineType) {
       const card = document.createElement('div');
       card.className = 'kcard';
       card.draggable = true;
@@ -1223,7 +1242,7 @@
       card.addEventListener('dragstart', (e) => {
         wasDragged = true;
         card.classList.add('dragging');
-        dragState = { featureId: feature.id, featureName: feature.name, fromStage: feature.stage, repoPath };
+        dragState = { featureId: feature.id, featureName: feature.name, fromStage: feature.stage, repoPath, pipelineType };
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', feature.id);
         // Create tilted drag image
@@ -1255,7 +1274,7 @@
         prioritiseBtn._origText = 'Prioritise';
         prioritiseBtn.onclick = async (e) => {
           e.stopPropagation();
-          await requestAction('feature-prioritise', [feature.name], repoPath, prioritiseBtn);
+          await requestAction(pipelineCommand(pipelineType, 'prioritise'), [feature.name], repoPath, prioritiseBtn);
         };
       }
 
@@ -1266,7 +1285,7 @@
           e.stopPropagation();
           const agents = await showAgentPicker(feature.id, feature.name);
           if (!agents) return;
-          await requestAction('feature-setup', [feature.id, ...agents], repoPath, setupBtn);
+          await requestAction(pipelineCommand(pipelineType, 'setup'), [feature.id, ...agents], repoPath, setupBtn);
         };
       }
 
@@ -1275,7 +1294,7 @@
         btn._origText = 'Open ' + agentId;
         btn.onclick = async (e) => {
           e.stopPropagation();
-          await requestWorktreeOpen(feature.id, agentId, repoPath, btn);
+          await requestWorktreeOpen(feature.id, agentId, repoPath, btn, pipelineType);
         };
       });
 
@@ -1284,7 +1303,7 @@
         evalBtn._origText = 'Evaluate';
         evalBtn.onclick = async (e) => {
           e.stopPropagation();
-          await requestAction('feature-eval', [feature.id], repoPath, evalBtn);
+          await requestAction(pipelineCommand(pipelineType, 'eval'), [feature.id], repoPath, evalBtn);
         };
       }
 
@@ -1293,7 +1312,7 @@
         closeBtn._origText = 'Close';
         closeBtn.onclick = async (e) => {
           e.stopPropagation();
-          await requestAction('feature-close', [feature.id], repoPath, closeBtn);
+          await requestAction(pipelineCommand(pipelineType, 'close'), [feature.id], repoPath, closeBtn);
         };
       }
 
@@ -1393,7 +1412,7 @@
           setTimeout(() => setDrawerMode('edit'), 300);
           requestRefresh();
         } catch (e) {
-          showToast('Create failed: ' + e.message);
+          showToast('Create failed: ' + e.message, null, null, {error:true});
         } finally {
           submitBtn.disabled = false;
           submitBtn.textContent = 'Create';
@@ -1491,7 +1510,7 @@
             const DONE_CAP = 6;
             const displayCards = (stage === 'done' && cards.length > DONE_CAP) ? cards.slice(0, DONE_CAP) : cards;
             displayCards.forEach(feature => {
-              colBody.appendChild(buildKanbanCard(feature, repo.path));
+              colBody.appendChild(buildKanbanCard(feature, repo.path, pType));
             });
             if (stage === 'done' && cards.length > DONE_CAP) {
               const totalDone = repo.doneTotal || cards.length;
@@ -1508,7 +1527,7 @@
                     body: JSON.stringify({ path: donePath })
                   });
                 } catch (e) {
-                  showToast('Could not open folder: ' + e.message);
+                  showToast('Could not open folder: ' + e.message, null, null, {error:true});
                 }
               };
               colBody.appendChild(moreBtn);
@@ -1534,20 +1553,20 @@
             e.preventDefault();
             col.classList.remove('drag-over', 'drag-blocked');
             if (!dragState) return;
-            const { featureId, featureName, fromStage, repoPath } = dragState;
+            const { featureId, featureName, fromStage, repoPath, pipelineType: dragPType } = dragState;
             dragState = null;
             if (ALLOWED_TRANSITIONS[fromStage] !== stage) return;
 
             if (fromStage === 'inbox' && stage === 'backlog') {
-              await requestAction('feature-prioritise', [featureName], repoPath);
+              await requestAction(pipelineCommand(dragPType, 'prioritise'), [featureName], repoPath);
             } else if (fromStage === 'backlog' && stage === 'in-progress') {
               const agents = await showAgentPicker(featureId, featureName);
               if (!agents) return;
-              await requestAction('feature-setup', [featureId, ...agents], repoPath);
+              await requestAction(pipelineCommand(dragPType, 'setup'), [featureId, ...agents], repoPath);
             } else if (fromStage === 'in-progress' && stage === 'in-evaluation') {
-              await requestAction('feature-eval', [featureId], repoPath);
+              await requestAction(pipelineCommand(dragPType, 'eval'), [featureId], repoPath);
             } else if (fromStage === 'in-evaluation' && stage === 'done') {
-              await requestAction('feature-close', [featureId], repoPath);
+              await requestAction(pipelineCommand(dragPType, 'close'), [featureId], repoPath);
             }
           });
 
@@ -1611,7 +1630,7 @@
               showToast('Removed: ' + displayPath);
               await requestRefresh();
             } catch (e) {
-              showToast('Remove failed: ' + e.message);
+              showToast('Remove failed: ' + e.message, null, null, {error:true});
               removeBtn.disabled = false;
             }
           };
@@ -1650,7 +1669,7 @@
           showToast('Added: ' + val);
           await requestRefresh();
         } catch (e) {
-          showToast('Add failed: ' + e.message);
+          showToast('Add failed: ' + e.message, null, null, {error:true});
         } finally {
           addBtn.disabled = false;
           input.disabled = false;
@@ -1735,7 +1754,7 @@
           if (prev.status !== 'waiting' && v.status === 'waiting') {
             showToast('Agent is waiting', v.cmd ? 'Copy command' : null, v.cmd ? () => copyText(v.cmd).then(() => showToast('Copied: ' + v.cmd)) : null);
           }
-          if (prev.status !== 'error' && v.status === 'error') showToast('Agent entered error state');
+          if (prev.status !== 'error' && v.status === 'error') showToast('Agent entered error state', null, null, {error:true});
         });
         state.data = next;
         render();
