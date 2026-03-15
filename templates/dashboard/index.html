@@ -308,6 +308,7 @@
       view: localStorage.getItem('aigon.dashboard.view') || 'monitor',
       selectedRepo: localStorage.getItem('aigon.dashboard.selectedRepo') || 'all',
       pipelineType: localStorage.getItem('aigon.dashboard.pipelineType') || 'features',
+      monitorType: localStorage.getItem('aigon.dashboard.monitorType') || 'all',
       pendingActions: new Set()
     };
 
@@ -898,12 +899,42 @@
 
     // ── Monitor view ──────────────────────────────────────────────────────────
 
+    function renderMonitorTypeToggle(container) {
+      const existing = container.querySelector('.monitor-toolbar');
+      if (existing) existing.remove();
+
+      const toolbar = document.createElement('div');
+      toolbar.className = 'monitor-toolbar pipeline-toolbar';
+
+      const toggle = document.createElement('div');
+      toggle.className = 'pipeline-type-toggle';
+      const monitorType = state.monitorType || 'all';
+      [{ key: 'all', label: 'All' }, { key: 'features', label: 'Features' }, { key: 'research', label: 'Research' }, { key: 'feedback', label: 'Feedback' }].forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'toggle-btn' + (monitorType === opt.key ? ' active' : '');
+        btn.textContent = opt.label;
+        btn.onclick = () => {
+          state.monitorType = opt.key;
+          localStorage.setItem('aigon.dashboard.monitorType', opt.key);
+          render();
+        };
+        toggle.appendChild(btn);
+      });
+      toolbar.appendChild(toggle);
+      container.prepend(toolbar);
+    }
+
     function renderMonitor() {
       const summaryEl = document.getElementById('monitor-summary');
       summaryEl.style.display = '';
       const data = state.data || { repos: [], summary: { implementing: 0, waiting: 0, submitted: 0, error: 0 } };
       const allRepos = data.repos || [];
       const visibleRepos = getVisibleRepos(data);
+      const monitorType = state.monitorType || 'all';
+
+      // Render type toggle
+      const detailArea = document.querySelector('.detail-area') || document.getElementById('detail-area');
+      renderMonitorTypeToggle(detailArea);
 
       // Compute summary for visible repos only
       let summary;
@@ -911,10 +942,13 @@
         summary = data.summary || { implementing: 0, waiting: 0, submitted: 0, error: 0 };
       } else {
         summary = { implementing: 0, waiting: 0, submitted: 0, error: 0 };
+        const itemTypes = monitorType === 'all' ? ['features', 'research', 'feedback'] : [monitorType];
         visibleRepos.forEach(repo => {
-          [...(repo.features || []), ...(repo.research || [])].forEach(item => {
-            (item.agents || []).forEach(a => {
-              if (summary[a.status] !== undefined) summary[a.status]++;
+          itemTypes.forEach(t => {
+            (repo[t] || []).forEach(item => {
+              (item.agents || []).forEach(a => {
+                if (summary[a.status] !== undefined) summary[a.status]++;
+              });
             });
           });
         });
@@ -955,16 +989,22 @@
       visibleRepos.forEach(repo => {
         const section = document.createElement('section');
         section.className = 'repo' + (state.collapsed[repo.path] ? ' collapsed' : '');
-        const rawFeatures = [...(repo.features || [])].filter(f => f.stage === 'in-progress' || f.stage === 'in-evaluation').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
+        const showFeatures = monitorType === 'all' || monitorType === 'features';
+        const showResearch = monitorType === 'all' || monitorType === 'research';
+        const showFeedback = monitorType === 'all' || monitorType === 'feedback';
+        const rawFeatures = showFeatures ? [...(repo.features || [])].filter(f => f.stage === 'in-progress' || f.stage === 'in-evaluation').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id)) : [];
         const features = rawFeatures.filter(f => state.filter === 'all' || f.agents.some(a => a.status === state.filter));
-        const rawResearch = [...(repo.research || [])].filter(r => r.stage === 'in-progress').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
+        const rawResearch = showResearch ? [...(repo.research || [])].filter(r => r.stage === 'in-progress').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id)) : [];
         const research = rawResearch.filter(r => state.filter === 'all' || r.agents.some(a => a.status === state.filter));
-        const totalItems = features.length + research.length;
+        const rawFeedback = showFeedback ? [...(repo.feedback || [])].filter(f => f.stage === 'in-progress').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id)) : [];
+        const feedback = rawFeedback.filter(f => state.filter === 'all' || (f.agents || []).some(a => a.status === state.filter));
+        const totalItems = features.length + research.length + feedback.length;
         visibleItemCount += totalItems;
-        const waitingCards = features.filter(f => f.agents.some(a => a.status === 'waiting')).length + research.filter(r => r.agents.some(a => a.status === 'waiting')).length;
+        const waitingCards = features.filter(f => f.agents.some(a => a.status === 'waiting')).length + research.filter(r => r.agents.some(a => a.status === 'waiting')).length + feedback.filter(f => (f.agents || []).some(a => a.status === 'waiting')).length;
         const headerParts = [];
         if (features.length > 0) headerParts.push(features.length + ' feature' + (features.length === 1 ? '' : 's'));
         if (research.length > 0) headerParts.push(research.length + ' research');
+        if (feedback.length > 0) headerParts.push(feedback.length + ' feedback');
         const headerText = headerParts.join(', ') || '0 items';
         section.innerHTML = '<div class="repo-h"><strong>' + escHtml(repo.displayPath) + '</strong><span>' + headerText + (waitingCards ? ' • ' + waitingCards + ' waiting' : '') + ' <span aria-label="Toggle">' + (state.collapsed[repo.path] ? '[+]' : '[-]') + '</span></span></div><div class="repo-b"></div>';
         section.querySelector('.repo-h').onclick = () => {
@@ -974,7 +1014,7 @@
         };
         const body = section.querySelector('.repo-b');
         if (totalItems === 0) {
-          body.innerHTML = '<div class="empty">No features or research in progress.</div>';
+          body.innerHTML = '<div class="empty">No items in progress.</div>';
         } else {
           features.forEach(feature => {
             const hasWaiting = feature.agents.some(a => a.status === 'waiting');
@@ -1045,6 +1085,35 @@
             }
             body.appendChild(card);
           });
+          feedback.forEach(item => {
+            const hasWaiting = (item.agents || []).some(a => a.status === 'waiting');
+            const card = document.createElement('article');
+            card.className = 'card feedback' + (hasWaiting ? ' waiting' : '');
+            const rows = [...(item.agents || [])].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id));
+            card.innerHTML = '<div class="card-h"><span class="feature">' + (item.id ? 'FB#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + '<span class="research-badge">feedback</span></span></div><div class="rows"></div>';
+            const rowsEl = card.querySelector('.rows');
+            rows.forEach(agent => {
+              const row = document.createElement('div');
+              row.className = 'row ' + agent.status;
+              const waitingCmd = agent.slashCommand
+                ? '<button class="copy btn" data-copy="' + escHtml(agent.slashCommand) + '">Copy cmd</button>'
+                : '';
+              const attachBtn = agent.tmuxRunning
+                ? '<button class="attach btn btn-primary" data-repo="' + escHtml(repo.path) + '" data-feature="' + escHtml(item.id) + '" data-agent="' + escHtml(agent.id) + '">Attach</button>'
+                : '';
+              row.innerHTML = '<span class="agent">' + escHtml(agent.id) + '</span><span class="status ' + escHtml(agent.status) + '"><span class="dot"></span>' + escHtml(agent.status) + '</span><span class="stamp" data-updated="' + escHtml(agent.updatedAt) + '">' + relTime(agent.updatedAt) + '</span><span class="row-actions">' + waitingCmd + attachBtn + '</span>';
+              rowsEl.appendChild(row);
+            });
+            if (item.specPath) {
+              card.style.cursor = 'pointer';
+              card.addEventListener('click', (e) => {
+                if (e.target.closest('button') || e.target.closest('.btn')) return;
+                const name = (item.id ? 'FB#' + item.id + ' ' : '') + item.name;
+                openDrawer(item.specPath, name, 'in-progress');
+              });
+            }
+            body.appendChild(card);
+          });
         }
         reposRoot.appendChild(section);
       });
@@ -1052,7 +1121,7 @@
       if (visibleItemCount === 0) {
         empty.style.display = '';
         empty.textContent = state.filter === 'all'
-          ? 'No features or research in progress.'
+          ? 'No items in progress.'
           : 'No items match filter: ' + state.filter;
       }
 
@@ -1607,6 +1676,15 @@
 
     function render() {
       updateViewTabs();
+      // Clean up view-specific toolbars when switching views
+      if (state.view !== 'pipeline') {
+        const stalePipeline = document.querySelector('.pipeline-toolbar:not(.monitor-toolbar)');
+        if (stalePipeline) stalePipeline.remove();
+      }
+      if (state.view !== 'monitor') {
+        const staleMonitor = document.querySelector('.monitor-toolbar');
+        if (staleMonitor) staleMonitor.remove();
+      }
       // Show/hide sidebar based on view
       const sidebar = document.getElementById('repo-sidebar');
       const mobileSelect = document.getElementById('repo-select-mobile');
