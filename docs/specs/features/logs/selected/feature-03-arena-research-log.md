@@ -3,6 +3,7 @@ updated: 2026-03-15T22:41:35.307Z
 startedAt: 2025-12-18T11:56:36+11:00
 completedAt: 2026-01-27T23:47:15+11:00
 autonomyRatio: 0.67
+cycleTimeExclude: true
 ---
 
 # Implementation Log: Feature 03 - arena-research
