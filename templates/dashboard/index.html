@@ -302,6 +302,17 @@
     .stats-leaderboard td:not(:first-child){text-align:right;color:var(--text-secondary)}
     .stats-leaderboard tr:last-child td{border-bottom:none}
     .stats-leaderboard .agent-mono{font-family:var(--mono);font-weight:600;color:var(--text-primary)}
+    .feat-list-table{width:100%;border-collapse:collapse;font-size:12px}
+    .feat-list-table th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary);padding:0 8px 8px 0;border-bottom:1px solid var(--border-subtle)}
+    .feat-list-table th:nth-child(n+5){text-align:right}
+    .feat-list-table td{padding:6px 8px 6px 0;border-bottom:1px solid var(--border-subtle);color:var(--text-secondary);vertical-align:middle}
+    .feat-list-table tr:last-child td{border-bottom:none}
+    .feat-list-table .fl-desc{color:var(--text-primary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .feat-list-table .fl-num{font-family:var(--mono);color:var(--text-tertiary)}
+    .feat-list-table td:nth-child(n+5){text-align:right}
+    .feat-list-table .fl-ct-high{color:#f87171}
+    .feat-exclude-badge{display:inline-block;font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:3px;background:rgba(251,191,36,0.15);color:#fbbf24;margin-left:4px}
+    .feat-list-pagination{display:flex;align-items:center;gap:8px;padding:10px 0 2px;font-size:12px;color:var(--text-tertiary)}
     .stats-leaderboard .win-rate{font-weight:600;color:var(--accent)}
     .stats-empty-msg{color:var(--text-tertiary);font-size:12px;padding:20px;text-align:center;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius)}
     .volume-chart-wrap{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:16px;margin-bottom:16px}
@@ -2455,7 +2466,9 @@
       volumeChart: null,
       volumeSeries: [],
       cycleTimeChart: null,
-      cycleTimeSeries: []
+      cycleTimeSeries: [],
+      filteredFeatures: [],
+      featureListPage: 0
     };
 
     async function loadAnalytics() {
@@ -2648,9 +2661,19 @@
 
     function buildCycleTimeSeries(features, granularity) {
       const MIN_DURATION_MS = 5 * 60 * 1000; // ignore < 5 min (likely backfill artifacts)
+
+      // Compute outlier cap: P95 or 48h, whichever is larger
+      const allHours = features
+        .filter(f => f.durationMs && f.durationMs >= MIN_DURATION_MS && !f.cycleTimeExclude)
+        .map(f => f.durationMs / 3600000)
+        .sort((a, b) => a - b);
+      const p95 = allHours.length > 0 ? allHours[Math.floor(allHours.length * 0.95)] : 48;
+      const outlierCap = Math.max(p95, 48);
+
       const buckets = {};
       features.forEach(f => {
         if (!f.durationMs || f.durationMs < MIN_DURATION_MS) return;
+        if (f.cycleTimeExclude) return;
         const ts = f.completedAt ? new Date(f.completedAt) : null;
         if (!ts || isNaN(ts)) return;
         let key;
@@ -2664,13 +2687,23 @@
         } else {
           key = ts.toISOString().slice(0, 7) + '-01';
         }
-        if (!buckets[key]) buckets[key] = [];
-        buckets[key].push(f.durationMs / 3600000); // convert to hours
+        const hours = f.durationMs / 3600000;
+        if (!buckets[key]) buckets[key] = { included: [], outliers: 0 };
+        if (hours > outlierCap) {
+          buckets[key].outliers++;
+        } else {
+          buckets[key].included.push(hours);
+        }
       });
       return Object.keys(buckets).sort().map(k => {
-        const vals = buckets[k];
-        const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
-        return { date: k, avgHours: Math.round(avg * 10) / 10, count: vals.length };
+        const { included, outliers } = buckets[k];
+        let medianHours = null;
+        if (included.length > 0) {
+          const sorted = included.slice().sort((a, b) => a - b);
+          const mid = Math.floor(sorted.length / 2);
+          medianHours = Math.round((sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2) * 10) / 10;
+        }
+        return { date: k, medianHours, count: included.length, outliersExcluded: outliers };
       });
     }
 
@@ -2710,7 +2743,7 @@
                   if (granularity === 'weekly') return 'Week of ' + label;
                   return label;
                 },
-                label: ctx => ` Avg cycle time: ${ctx.parsed.y}h`
+                label: ctx => ` Median cycle time: ${ctx.parsed.y}h`
               },
               backgroundColor: '#1a1a1f',
               titleColor: '#ededef',
@@ -2768,7 +2801,12 @@
       const chart = statsState.cycleTimeChart;
       if (chart) {
         chart.data.labels = slice.map(d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(5, 10));
-        chart.data.datasets[0].data = slice.map(d => d.avgHours);
+        chart.data.datasets[0].data = slice.map(d => d.medianHours);
+        chart.options.plugins.tooltip.callbacks.label = ctx => {
+          const d = slice[ctx.dataIndex];
+          const line = ` Median cycle time: ${ctx.parsed.y}h`;
+          return d && d.outliersExcluded > 0 ? [line, ` (${d.outliersExcluded} outlier${d.outliersExcluded > 1 ? 's' : ''} excluded)`] : line;
+        };
         chart.update('none');
       }
 
@@ -3032,6 +3070,65 @@
       if (nextBtn) nextBtn.onclick = () => { logsState.page++; renderLogsView(); };
     }
 
+    const FEAT_LIST_PAGE_SIZE = 20;
+
+    function renderFeatureList() {
+      const el = document.getElementById('stats-feature-list');
+      if (!el) return;
+      const features = statsState.filteredFeatures || [];
+      const total = features.length;
+      const page = statsState.featureListPage;
+      const totalPages = Math.max(1, Math.ceil(total / FEAT_LIST_PAGE_SIZE));
+      const start = page * FEAT_LIST_PAGE_SIZE;
+      const slice = features.slice(start, start + FEAT_LIST_PAGE_SIZE);
+
+      if (total === 0) {
+        el.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px;padding:12px 0">No features in this period.</div>';
+        return;
+      }
+
+      const rows = slice.map(f => {
+        const repo = f.repoPath ? f.repoPath.split('/').pop() : '—';
+        const date = f.completedAt ? f.completedAt.slice(0, 10) : '—';
+        const ctHours = f.durationMs ? Math.round(f.durationMs / 3600000 * 10) / 10 : null;
+        const ctClass = ctHours !== null && ctHours > 48 ? ' class="fl-ct-high"' : '';
+        const ctStr = ctHours !== null ? ctHours + 'h' : '—';
+        const excludeBadge = f.cycleTimeExclude ? '<span class="feat-exclude-badge">excluded</span>' : '';
+        const desc = escHtml(f.desc || '');
+        return `<tr>
+          <td>${escHtml(date)}</td>
+          <td>${escHtml(repo)}</td>
+          <td class="fl-num">${escHtml(String(f.featureNum || ''))}</td>
+          <td class="fl-desc" title="${desc}">${desc}${excludeBadge}</td>
+          <td>${escHtml(f.winnerAgent || '—')}</td>
+          <td${ctClass}>${ctStr}</td>
+        </tr>`;
+      }).join('');
+
+      const pagination = totalPages > 1 ? `
+        <div class="feat-list-pagination">
+          <button class="vol-nav-btn" id="fl-prev" ${page === 0 ? 'disabled' : ''}>&#8592;</button>
+          <span>Page ${page + 1} of ${totalPages} &nbsp;·&nbsp; ${total} features</span>
+          <button class="vol-nav-btn" id="fl-next" ${page >= totalPages - 1 ? 'disabled' : ''}>&#8594;</button>
+        </div>` : `<div class="feat-list-pagination">${total} features</div>`;
+
+      el.innerHTML = `
+        <table class="feat-list-table">
+          <thead><tr><th>Date</th><th>Repo</th><th>#</th><th>Feature</th><th>Agent</th><th>Cycle Time</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        ${pagination}`;
+
+      document.getElementById('fl-prev')?.addEventListener('click', () => {
+        statsState.featureListPage = Math.max(0, page - 1);
+        renderFeatureList();
+      });
+      document.getElementById('fl-next')?.addEventListener('click', () => {
+        statsState.featureListPage = Math.min(totalPages - 1, page + 1);
+        renderFeatureList();
+      });
+    }
+
     async function renderStatistics() {
       const container = document.getElementById('statistics-view');
       document.getElementById('monitor-summary').style.display = 'none';
@@ -3081,7 +3178,12 @@
       // Filter features for the selected period + repo
       const filteredFeatures = filterFeaturesByPeriodAndRepo(analytics.features || [], statsState.period, statsState.repoFilter);
       const totalCompleted = filteredFeatures.length;
-      const featWithDur = filteredFeatures.filter(f => f.durationMs && f.durationMs > 0);
+      const featWithDur = filteredFeatures.filter(f => f.durationMs && f.durationMs > 0 && !f.cycleTimeExclude);
+      const durHoursSorted = featWithDur.map(f => f.durationMs / 3600000).sort((a, b) => a - b);
+      const ctMid = Math.floor(durHoursSorted.length / 2);
+      const medianCycle = durHoursSorted.length > 0
+        ? (durHoursSorted.length % 2 ? durHoursSorted[ctMid] : (durHoursSorted[ctMid - 1] + durHoursSorted[ctMid]) / 2)
+        : null;
       const avgCycle = featWithDur.length > 0
         ? featWithDur.reduce((s, f) => s + f.durationMs, 0) / featWithDur.length / (1000 * 3600) : null;
       const firstPassFeats = filteredFeatures.filter(f => f.firstPassSuccess !== null);
@@ -3094,7 +3196,8 @@
       const trend30 = analytics.volume && analytics.volume.trend30d;
       html.push(buildStatCard('Features Completed', String(totalCompleted),
         statsState.period === '30d' && trend30 !== null ? trendIcon(trend30) : null));
-      html.push(buildStatCard('Avg Cycle Time', fmtHours(avgCycle), null, avgCycle !== null ? 'start to close' : null));
+      html.push(buildStatCard('Cycle Time', fmtHours(medianCycle), null, medianCycle !== null ? 'median, start to close' : null));
+      html.push(buildStatCard('Autonomy Score', avgAutonomy !== null ? fmtPct(avgAutonomy) : '—', null));
       html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null));
       html.push('</div>');
 
@@ -3126,8 +3229,8 @@
       html.push('<div class="stats-block">');
       html.push('<div class="stats-block-title">Quality &amp; Speed</div>');
       html.push('<div class="stats-kv-grid">');
-      html.push(`<div class="stats-kv"><div class="stats-kv-label">Avg cycle time</div><div class="stats-kv-val">${fmtHours(avgCycle !== null ? avgCycle : dur.average)}</div></div>`);
-      html.push(`<div class="stats-kv"><div class="stats-kv-label">Median cycle time</div><div class="stats-kv-val">${fmtHours(dur.median)}</div></div>`);
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">Cycle time (median)</div><div class="stats-kv-val">${fmtHours(medianCycle !== null ? medianCycle : dur.median)}</div></div>`);
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">Cycle time (mean)</div><div class="stats-kv-val">${fmtHours(avgCycle !== null ? avgCycle : dur.average)}</div></div>`);
       html.push(`<div class="stats-kv"><div class="stats-kv-label">Max cycle time</div><div class="stats-kv-val">${fmtHours(dur.max)}</div></div>`);
       html.push(`<div class="stats-kv"><div class="stats-kv-label">Avg iterations</div><div class="stats-kv-val">${fmtNum(quality.avgIterationsPerFeature, 1)}</div></div>`);
       html.push('</div>');
@@ -3137,7 +3240,7 @@
       // Cycle time over time chart
       html.push('<div class="volume-chart-wrap">');
       html.push('<div class="volume-chart-header">');
-      html.push('<div class="volume-chart-title">Avg Cycle Time Over Time</div>');
+      html.push('<div class="volume-chart-title">Median Cycle Time Over Time</div>');
       html.push('<div style="display:flex;align-items:center;gap:8px">');
       html.push('<span id="ct-nav-controls" style="display:flex;align-items:center;gap:4px">');
       html.push('<button id="ct-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
@@ -3162,7 +3265,7 @@
         const ag = f.winnerAgent || 'solo';
         if (!leaderAgentMap[ag]) leaderAgentMap[ag] = { completed: 0, durMs: [], autonomyRatios: [], firstPassArr: [] };
         leaderAgentMap[ag].completed++;
-        if (f.durationMs && f.durationMs > 0) leaderAgentMap[ag].durMs.push(f.durationMs);
+        if (f.durationMs && f.durationMs > 0 && !f.cycleTimeExclude) leaderAgentMap[ag].durMs.push(f.durationMs);
         if (f.autonomyRatio !== null) leaderAgentMap[ag].autonomyRatios.push(f.autonomyRatio);
         if (f.firstPassSuccess !== null) leaderAgentMap[ag].firstPassArr.push(f.firstPassSuccess);
       });
@@ -3202,7 +3305,11 @@
           .forEach(agentId => {
             const d = leaderAgentMap[agentId] || { completed: 0, durMs: [], autonomyRatios: [], firstPassArr: [] };
             const ev = evalMap[agentId];
-            const avgCycle = d.durMs.length > 0 ? round1(d.durMs.reduce((s, v) => s + v, 0) / d.durMs.length / 3600000) : null;
+            const sortedDur = d.durMs.slice().sort((a, b) => a - b);
+            const ldrMid = Math.floor(sortedDur.length / 2);
+            const avgCycle = sortedDur.length > 0
+              ? round1(sortedDur.length % 2 ? sortedDur[ldrMid] / 3600000 : (sortedDur[ldrMid - 1] + sortedDur[ldrMid]) / 2 / 3600000)
+              : null;
             const autoScore = d.autonomyRatios.length > 0 ? d.autonomyRatios.reduce((s, v) => s + v, 0) / d.autonomyRatios.length : null;
             const fpRate = d.firstPassArr.length > 0 ? d.firstPassArr.filter(Boolean).length / d.firstPassArr.length : null;
             // Share of total eval wins (sums to 100% across agents)
@@ -3225,7 +3332,19 @@
         html.push('<div class="stats-empty-msg">No completed features found. Statistics will appear here once features are closed.</div>');
       }
 
+      // Feature list section (populated after render via renderFeatureList)
+      html.push('<div class="stats-section-title" style="margin-top:4px">Features</div>');
+      html.push('<div class="stats-block" style="overflow-x:auto"><div id="stats-feature-list"></div></div>');
+
       html.push('</div>'); // end stats-view
+
+      // Store filtered features for pagination (avoids re-rendering charts on page change)
+      statsState.filteredFeatures = filteredFeatures.slice().sort((a, b) => {
+        const ta = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+        const tb = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+        return tb - ta;
+      });
+
       container.innerHTML = html.join('');
 
       // Render Chart.js charts into canvases now that they're in the DOM
@@ -3241,6 +3360,7 @@
         statsState.repoFilter = repoSel.value;
         statsState.volumeWindowEnd = null;
         statsState.cycleTimeWindowEnd = null;
+        statsState.featureListPage = 0;
         saveStatsPrefs();
         renderStatistics();
       };
@@ -3250,6 +3370,7 @@
         statsState.period = periodSel.value;
         statsState.volumeWindowEnd = null;
         statsState.cycleTimeWindowEnd = null;
+        statsState.featureListPage = 0;
         saveStatsPrefs();
         renderStatistics();
       };
@@ -3289,6 +3410,9 @@
       // Cycle time nav buttons
       document.getElementById('ct-nav-prev')?.addEventListener('click', () => panCycleTimeChart('prev'));
       document.getElementById('ct-nav-next')?.addEventListener('click', () => panCycleTimeChart('next'));
+
+      // Feature list
+      renderFeatureList();
     }
 
     // ── Main render dispatch ───────────────────────────────────────────────────

@@ -1511,6 +1511,43 @@ test('collectAnalyticsData returns features from done specs with selected logs',
     });
 });
 
+test('collectAnalyticsData respects cycleTimeExclude flag', () => {
+    withTempDir(tmpDir => {
+        const doneDir = path.join(tmpDir, 'docs', 'specs', 'features', '05-done');
+        const selectedDir = path.join(tmpDir, 'docs', 'specs', 'features', 'logs', 'selected');
+        fs.mkdirSync(doneDir, { recursive: true });
+        fs.mkdirSync(selectedDir, { recursive: true });
+
+        const startedAt = '2026-01-01T00:00:00Z';
+        const normalCompletedAt = '2026-01-01T02:00:00Z'; // 2h
+        const excludedCompletedAt = '2026-01-01T48:00:00Z'; // 48h (should be excluded)
+
+        // Normal feature (2h cycle time)
+        fs.writeFileSync(path.join(doneDir, 'feature-01-normal-feature.md'), '# Feature 01\n');
+        fs.writeFileSync(path.join(selectedDir, 'feature-01-cc-normal-feature-log.md'),
+            `---\nstatus: submitted\nupdated: ${normalCompletedAt}\nstartedAt: ${startedAt}\ncompletedAt: ${normalCompletedAt}\n---\n\nLog body.`
+        );
+
+        // Excluded feature (long cycle time, flagged)
+        fs.writeFileSync(path.join(doneDir, 'feature-02-parked-feature.md'), '# Feature 02\n');
+        fs.writeFileSync(path.join(selectedDir, 'feature-02-cc-parked-feature-log.md'),
+            `---\nstatus: submitted\nupdated: ${excludedCompletedAt}\nstartedAt: ${startedAt}\ncompletedAt: ${excludedCompletedAt}\ncycleTimeExclude: true\n---\n\nLog body.`
+        );
+
+        const analytics = collectAnalyticsData({ repos: [tmpDir], analytics: {} });
+        assert.strictEqual(analytics.features.length, 2, 'both features present');
+
+        // cycleTimeExclude flag should be in payload
+        const excluded = analytics.features.find(f => f.featureNum === '02');
+        assert.ok(excluded, 'excluded feature present');
+        assert.strictEqual(excluded.cycleTimeExclude, true, 'cycleTimeExclude=true for parked feature');
+
+        const normal = analytics.features.find(f => f.featureNum === '01');
+        assert.ok(normal, 'normal feature present');
+        assert.strictEqual(normal.cycleTimeExclude, false, 'cycleTimeExclude=false for normal feature');
+    });
+});
+
 test('collectAnalyticsData parses eval wins from evaluation files', () => {
     withTempDir(tmpDir => {
         const doneDir = path.join(tmpDir, 'docs', 'specs', 'features', '05-done');
