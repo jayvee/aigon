@@ -6,7 +6,8 @@
     "aigon": "./aigon-cli.js"
   },
   "scripts": {
-    "test": "node aigon-cli.test.js"
+    "test": "node aigon-cli.test.js && npx playwright test --config tests/dashboard/playwright.config.js --reporter=list",
+    "test:dashboard": "npx playwright test --config tests/dashboard/playwright.config.js --reporter=list"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2"

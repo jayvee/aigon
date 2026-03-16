@@ -6,7 +6,9 @@
   <title>Aigon Dashboard</title>
   <link rel="icon" type="image/x-icon" href="assets/icon/favicon.ico"/>
   <link rel="icon" type="image/svg+xml" href="assets/icon/aigon-icon.svg"/>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
   <style>
+    [x-cloak] { display: none !important; }
     :root{color-scheme:dark;-webkit-font-smoothing:antialiased;--bg-root:#0a0a0b;--bg-surface:#111113;--bg-elevated:#1a1a1f;--bg-hover:#222228;--border-subtle:rgba(255,255,255,.06);--border-default:rgba(255,255,255,.1);--text-primary:#ededef;--text-secondary:#a0a0a8;--text-tertiary:#6b6b76;--accent:#3b82f6;--success:#22c55e;--warning:#f59e0b;--error:#ef4444;--radius:12px;--mono:"SF Mono","Cascadia Code",ui-monospace,monospace}
     *{box-sizing:border-box}html,body{margin:0;background:var(--bg-root);color:var(--text-primary);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
     body{padding:0;overflow:hidden;height:100vh}
@@ -376,19 +378,166 @@
     <div class="dashboard-body">
       <nav id="repo-sidebar" class="repo-sidebar" role="listbox" aria-label="Repository selector"></nav>
       <div class="detail-area" id="detail-area">
-        <div id="repo-header" class="repo-header-bar" style="display:none"></div>
-        <div id="monitor-summary" class="summary" aria-label="Agent status summary"></div>
-        <div id="repos" class="repos"></div>
-        <div id="empty" class="empty" style="display:none"></div>
-        <div id="sessions-view" style="display:none;padding:0 0 28px"></div>
-        <div id="statistics-view" style="display:none"></div>
-        <div id="logs-view" style="display:none;padding:0 0 28px"></div>
+        <div id="repo-header" class="repo-header-bar" x-ignore style="display:none"></div>
+
+        <!-- ── Monitor view — Alpine component ──────────────────────────────── -->
+        <div id="monitor-view" x-data="monitorView()" x-cloak x-show="$store.dashboard.view === 'monitor'" x-on:click.passive="handleMonitorClick($event)">
+          <!-- Monitor type toggle -->
+          <div class="pipeline-toolbar monitor-toolbar">
+            <div class="pipeline-type-toggle">
+              <template x-for="opt in monitorTypeOpts" :key="opt.key">
+                <button class="toggle-btn" :class="{ active: $store.dashboard.monitorType === opt.key }" x-on:click="setMonitorType(opt.key)" x-text="opt.label"></button>
+              </template>
+            </div>
+          </div>
+          <!-- Filter summary pills -->
+          <div id="monitor-summary" class="summary" aria-label="Agent status summary">
+            <button class="pill pill-filter" :class="{ active: $store.dashboard.filter === 'all' }" x-on:click.stop="setFilter('all')">All</button>
+            <button class="pill pill-filter" :class="{ active: $store.dashboard.filter === 'implementing' }" x-on:click.stop="setFilter('implementing')" x-text="computedSummary.implementing + ' implementing'"></button>
+            <button class="pill pill-filter waiting" :class="{ active: $store.dashboard.filter === 'waiting' }" x-on:click.stop="setFilter('waiting')" x-text="computedSummary.waiting + ' waiting'"></button>
+            <button class="pill pill-filter" :class="{ active: $store.dashboard.filter === 'submitted' }" x-on:click.stop="setFilter('submitted')" x-text="computedSummary.submitted + ' submitted'"></button>
+            <button class="pill pill-filter" :class="{ active: $store.dashboard.filter === 'error' }" x-on:click.stop="setFilter('error')" x-text="computedSummary.error + ' error'"></button>
+          </div>
+          <!-- Repos grid -->
+          <div :class="'repos' + ($store.dashboard.selectedRepo !== 'all' ? ' single-repo' : '')">
+            <div class="empty" x-show="!!emptyMessage" x-text="emptyMessage"></div>
+            <template x-for="repo in visibleRepos" :key="repo.path">
+              <section :class="'repo' + (isCollapsed(repo.path) ? ' collapsed' : '')">
+                <div class="repo-h" x-on:click.stop="toggleCollapse(repo.path)">
+                  <strong x-text="repo.displayPath"></strong>
+                  <span x-html="repoSummaryText(repo)"></span>
+                </div>
+                <div class="repo-b" x-show="!isCollapsed(repo.path)">
+                  <div class="empty" x-show="getTotalItems(repo) === 0">No items in progress.</div>
+                  <!-- Feature cards -->
+                  <template x-for="feature in getFeatures(repo)" :key="'f-' + feature.id + '-' + feature.name">
+                    <article class="card feature-card"
+                             :class="{ 'waiting': feature.agents.some(a => a.status === 'waiting'), 'evaluating': feature.stage === 'in-evaluation' }"
+                             :style="feature.specPath ? 'cursor:pointer' : ''"
+                             x-on:click="openFeatureSpec($event, feature)">
+                      <div class="card-h">
+                        <span class="feature" x-html="featureTitle(feature)"></span>
+                        <span class="head-actions" x-html="buildNextActionHtml(feature, repo.path)"></span>
+                      </div>
+                      <div class="rows">
+                        <template x-for="agent in sortedAgents(feature.agents)" :key="agent.id">
+                          <div class="row" :class="agent.status">
+                            <span class="agent" x-text="agent.id"></span>
+                            <span class="status" :class="agent.status"><span class="dot"></span><span x-text="agent.status"></span></span>
+                            <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
+                            <span class="row-actions">
+                              <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
+                              <button x-show="!!agent.tmuxRunning" class="btn btn-primary" x-on:click.stop="attachAgent(repo.path, feature.id, agent.id, agent.tmuxSession || '')">Attach</button>
+                            </span>
+                          </div>
+                        </template>
+                      </div>
+                    </article>
+                  </template>
+                  <!-- Research cards -->
+                  <template x-for="item in getResearch(repo)" :key="'r-' + item.id + '-' + item.name">
+                    <article class="card research"
+                             :class="{ 'waiting': item.agents.some(a => a.status === 'waiting') }"
+                             :style="item.specPath ? 'cursor:pointer' : ''"
+                             x-on:click="openSpecItem($event, item, 'R#')">
+                      <div class="card-h">
+                        <span class="feature" x-html="researchTitle(item)"></span>
+                        <span class="head-actions" x-html="researchSynthBtn(item)"></span>
+                      </div>
+                      <div class="rows">
+                        <template x-for="agent in sortedAgents(item.agents)" :key="agent.id">
+                          <div class="row" :class="agent.status">
+                            <span class="agent" x-text="agent.id"></span>
+                            <span class="status" :class="agent.status"><span class="dot"></span><span x-text="agent.status"></span></span>
+                            <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
+                            <span class="row-actions">
+                              <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
+                              <button x-show="!!agent.tmuxRunning" class="btn btn-primary" x-on:click.stop="attachAgent(repo.path, item.id, agent.id, agent.tmuxSession || '')">Attach</button>
+                            </span>
+                          </div>
+                        </template>
+                      </div>
+                    </article>
+                  </template>
+                  <!-- Feedback cards -->
+                  <template x-for="item in getFeedback(repo)" :key="'fb-' + item.id + '-' + item.name">
+                    <article class="card"
+                             :class="{ 'waiting': (item.agents || []).some(a => a.status === 'waiting') }"
+                             :style="item.specPath ? 'cursor:pointer' : ''"
+                             x-on:click="openSpecItem($event, item, 'FB#')">
+                      <div class="card-h">
+                        <span class="feature" x-html="feedbackTitle(item)"></span>
+                      </div>
+                      <div class="rows">
+                        <template x-for="agent in sortedAgents(item.agents || [])" :key="agent.id">
+                          <div class="row" :class="agent.status">
+                            <span class="agent" x-text="agent.id"></span>
+                            <span class="status" :class="agent.status"><span class="dot"></span><span x-text="agent.status"></span></span>
+                            <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
+                            <span class="row-actions">
+                              <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
+                              <button x-show="!!agent.tmuxRunning" class="btn btn-primary" x-on:click.stop="attachAgent(repo.path, item.id, agent.id, agent.tmuxSession || '')">Attach</button>
+                            </span>
+                          </div>
+                        </template>
+                      </div>
+                    </article>
+                  </template>
+                </div>
+              </section>
+            </template>
+          </div>
+        </div>
+
+        <!-- ── Pipeline view — Alpine component ─────────────────────────────── -->
+        <div id="pipeline-view" x-data="pipelineView()" x-cloak x-show="$store.dashboard.view === 'pipeline'">
+          <!-- Pipeline type toggle + Create button -->
+          <div class="pipeline-toolbar">
+            <div class="pipeline-type-toggle">
+              <template x-for="opt in pipelineTypeOpts" :key="opt.key">
+                <button class="toggle-btn" :class="{ active: $store.dashboard.pipelineType === opt.key }" x-on:click="setPipelineType(opt.key)" x-text="opt.label"></button>
+              </template>
+            </div>
+            <button class="btn btn-primary" style="font-size:12px;padding:5px 12px" x-on:click="createNewSpec()">+ Create</button>
+          </div>
+          <!-- Empty state -->
+          <div class="empty" x-show="visibleRepos.length === 0" x-text="emptyMessage"></div>
+          <!-- Kanban boards per repo -->
+          <template x-for="repo in visibleRepos" :key="repo.path">
+            <div>
+              <div x-show="$store.dashboard.selectedRepo === 'all' && visibleRepos.length > 1"
+                   style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin:10px 0 6px;font-weight:600"
+                   x-text="repo.displayPath || repo.name"></div>
+              <div class="kanban">
+                <template x-for="stage in currentStages" :key="stage">
+                  <div class="kanban-col" :data-stage="stage" :data-repo-path="repo.path"
+                       x-on:dragover.prevent="onDragOver($event, stage)"
+                       x-on:dragleave="onDragLeave($event)"
+                       x-on:drop.prevent="onDrop($event, stage, repo.path)">
+                    <div class="col-h">
+                      <span class="col-title" x-text="STAGE_LABELS[stage]"></span>
+                      <span class="col-count" x-text="getStageDisplayCount(repo, stage)"></span>
+                    </div>
+                    <div class="col-body" x-effect="renderKanbanColCards($el, repo, stage)"></div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Settings view — vanilla JS writes here -->
+        <div id="repos" class="repos" x-ignore style="display:none"></div>
+        <div id="empty" class="empty" x-ignore style="display:none"></div>
+        <div id="sessions-view" x-ignore style="display:none;padding:0 0 28px"></div>
+        <div id="statistics-view" x-ignore style="display:none"></div>
+        <div id="logs-view" x-ignore style="display:none;padding:0 0 28px"></div>
       </div>
     </div>
   </div>
   <div id="toasts" class="toast-wrap" aria-live="polite"></div>
   <!-- Agent picker modal -->
-  <div id="agent-picker" class="modal-backdrop" style="display:none" role="dialog" aria-modal="true" aria-labelledby="agent-picker-title">
+  <div id="agent-picker" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="agent-picker-title">
     <div class="modal-box">
       <h3 id="agent-picker-title">Select Agents</h3>
       <p class="modal-desc" id="agent-picker-desc"></p>
@@ -405,7 +554,7 @@
     </div>
   </div>
   <!-- Create spec modal -->
-  <div id="create-modal" class="modal-backdrop" style="display:none">
+  <div id="create-modal" class="modal-backdrop" x-ignore style="display:none">
     <div class="modal-box">
       <h3 id="create-modal-title">New Feature</h3>
       <div id="create-modal-repo-picker" style="display:none;margin-bottom:14px">
@@ -422,8 +571,8 @@
     </div>
   </div>
   <!-- Terminal panel -->
-  <div id="terminal-panel-overlay" class="drawer-overlay"></div>
-  <aside id="terminal-panel" class="terminal-panel" role="dialog" aria-modal="true" aria-label="Terminal">
+  <div id="terminal-panel-overlay" class="drawer-overlay" x-ignore></div>
+  <aside id="terminal-panel" class="terminal-panel" x-ignore role="dialog" aria-modal="true" aria-label="Terminal">
     <div class="drawer-header">
       <span class="panel-status-dot" id="panel-status-dot"></span>
       <span class="drawer-title" id="panel-title">Terminal</span>
@@ -447,7 +596,7 @@
     </div>
   </aside>
   <!-- AI session picker modal -->
-  <div id="ai-session-picker" class="modal-backdrop" style="display:none" role="dialog" aria-modal="true" aria-labelledby="ai-picker-title">
+  <div id="ai-session-picker" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="ai-picker-title">
     <div class="modal-box">
       <h3 id="ai-picker-title">Choose AI Agent</h3>
       <p class="modal-desc" id="ai-picker-desc">Select an agent to help with this spec</p>
@@ -463,8 +612,8 @@
     </div>
   </div>
   <!-- Spec drawer -->
-  <div id="drawer-overlay" class="drawer-overlay"></div>
-  <aside id="spec-drawer" class="spec-drawer" role="dialog" aria-modal="true">
+  <div id="drawer-overlay" class="drawer-overlay" x-ignore></div>
+  <aside id="spec-drawer" class="spec-drawer" x-ignore role="dialog" aria-modal="true">
     <div class="drawer-header">
       <span class="drawer-title" id="drawer-title"></span>
       <span class="drawer-stage" id="drawer-stage"></span>
@@ -525,7 +674,8 @@
     const INITIAL_DATA = ${INITIAL_DATA};
     const INSTANCE_NAME = ${INSTANCE_NAME};
     function lsKey(k) { return 'aigon-' + INSTANCE_NAME + '-' + k; }
-    const state = {
+    // _rawState is the plain JS object; state becomes the Alpine proxy after init
+    const _rawState = {
       data: INITIAL_DATA,
       failures: 0,
       lastStatuses: new Map(),
@@ -537,6 +687,13 @@
       monitorType: localStorage.getItem(lsKey('monitorType')) || 'all',
       pendingActions: new Set()
     };
+    let state = _rawState;
+
+    // ── Alpine store — initialised from state so mutations trigger re-renders ─
+    document.addEventListener('alpine:init', () => {
+      Alpine.store('dashboard', _rawState);
+      state = Alpine.store('dashboard'); // all future writes go through the proxy
+    });
 
     // ── Utilities ─────────────────────────────────────────────────────────────
 
@@ -1484,332 +1641,172 @@
       return data.repos.filter(r => r.path === state.selectedRepo);
     }
 
-    // ── Monitor view ──────────────────────────────────────────────────────────
+    // ── Monitor view — Alpine component ──────────────────────────────────────
 
-    function renderMonitorTypeToggle(container) {
-      const existing = container.querySelector('.monitor-toolbar');
-      if (existing) existing.remove();
-
-      const toolbar = document.createElement('div');
-      toolbar.className = 'monitor-toolbar pipeline-toolbar';
-
-      const toggle = document.createElement('div');
-      toggle.className = 'pipeline-type-toggle';
-      const monitorType = state.monitorType || 'all';
-      [{ key: 'all', label: 'All' }, { key: 'features', label: 'Features' }, { key: 'research', label: 'Research' }, { key: 'feedback', label: 'Feedback' }].forEach(opt => {
-        const btn = document.createElement('button');
-        btn.className = 'toggle-btn' + (monitorType === opt.key ? ' active' : '');
-        btn.textContent = opt.label;
-        btn.onclick = () => {
-          state.monitorType = opt.key;
-          localStorage.setItem(lsKey('monitorType'), opt.key);
-          render();
-        };
-        toggle.appendChild(btn);
-      });
-      toolbar.appendChild(toggle);
-      container.prepend(toolbar);
+    // Helper: builds the "run next" button group HTML for a feature card (used via x-html)
+    function buildNextActionHtml(feature, repoPath) {
+      const nextActions = feature.nextActions && feature.nextActions.length > 0
+        ? feature.nextActions
+        : (feature.nextAction && feature.nextAction.command ? [{ command: feature.nextAction.command, label: 'Run', reason: feature.nextAction.reason || '', mode: 'fire-and-forget' }] : []);
+      if (nextActions.length === 0) return '';
+      const primary = nextActions[0];
+      const extras = nextActions.slice(1);
+      const dropdownHtml = extras.length > 0
+        ? '<button class="btn btn-primary run-next-chevron" aria-haspopup="true" title="More actions">▾</button>' +
+          '<div class="run-next-dropdown" role="menu">' +
+          extras.map(a => '<button class="dropdown-item" data-command="' + escHtml(a.command) + '" data-mode="' + escHtml(a.mode) + '">' +
+            '<span class="item-label">' + escHtml(a.label) + '</span>' +
+            '<code class="item-command">' + escHtml(a.command) + '</code>' +
+            '<span class="item-reason">' + escHtml(a.reason) + '</span>' +
+            '</button>').join('') + '</div>'
+        : '';
+      return '<span class="run-next-group">' +
+        '<button class="btn btn-primary run-next-primary" data-command="' + escHtml(primary.command) + '" data-mode="' + escHtml(primary.mode) + '" data-repo="' + escHtml(repoPath) + '" title="' + escHtml(primary.command) + ' — ' + escHtml(primary.reason) + '">' + escHtml(primary.label) + '</button>' +
+        dropdownHtml + '</span>';
     }
 
-    function renderMonitor() {
-      const summaryEl = document.getElementById('monitor-summary');
-      summaryEl.style.display = '';
-      const data = state.data || { repos: [], summary: { implementing: 0, waiting: 0, submitted: 0, error: 0 } };
-      const allRepos = data.repos || [];
-      const visibleRepos = getVisibleRepos(data);
-      const monitorType = state.monitorType || 'all';
-
-      // Render type toggle
-      const detailArea = document.querySelector('.detail-area') || document.getElementById('detail-area');
-      renderMonitorTypeToggle(detailArea);
-
-      // Compute summary for visible repos only
-      let summary;
-      if (state.selectedRepo === 'all') {
-        summary = data.summary || { implementing: 0, waiting: 0, submitted: 0, error: 0 };
-      } else {
-        summary = { implementing: 0, waiting: 0, submitted: 0, error: 0 };
-        const itemTypes = monitorType === 'all' ? ['features', 'research', 'feedback'] : [monitorType];
-        visibleRepos.forEach(repo => {
-          itemTypes.forEach(t => {
-            (repo[t] || []).forEach(item => {
-              (item.agents || []).forEach(a => {
-                if (summary[a.status] !== undefined) summary[a.status]++;
-              });
-            });
+    function monitorView() {
+      return {
+        monitorTypeOpts: [
+          { key: 'all', label: 'All' },
+          { key: 'features', label: 'Features' },
+          { key: 'research', label: 'Research' },
+          { key: 'feedback', label: 'Feedback' }
+        ],
+        get visibleRepos() { return getVisibleRepos(Alpine.store('dashboard').data || { repos: [] }); },
+        get computedSummary() {
+          const s = Alpine.store('dashboard');
+          const data = s.data || { repos: [], summary: { implementing: 0, waiting: 0, submitted: 0, error: 0 } };
+          if (s.selectedRepo === 'all') return data.summary || { implementing: 0, waiting: 0, submitted: 0, error: 0 };
+          const summary = { implementing: 0, waiting: 0, submitted: 0, error: 0 };
+          const monitorType = s.monitorType || 'all';
+          const itemTypes = monitorType === 'all' ? ['features', 'research', 'feedback'] : [monitorType];
+          this.visibleRepos.forEach(repo => {
+            itemTypes.forEach(t => { (repo[t] || []).forEach(item => { (item.agents || []).forEach(a => { if (summary[a.status] !== undefined) summary[a.status]++; }); }); });
           });
-        });
-      }
-
-      summaryEl.innerHTML =
-        '<button class="pill pill-filter' + (state.filter === 'all' ? ' active' : '') + '" data-filter="all">All</button>' +
-        '<button class="pill pill-filter' + (state.filter === 'implementing' ? ' active' : '') + '" data-filter="implementing">' + summary.implementing + ' implementing</button>' +
-        '<button class="pill pill-filter waiting' + (state.filter === 'waiting' ? ' active' : '') + '" data-filter="waiting">' + summary.waiting + ' waiting</button>' +
-        '<button class="pill pill-filter' + (state.filter === 'submitted' ? ' active' : '') + '" data-filter="submitted">' + summary.submitted + ' submitted</button>' +
-        '<button class="pill pill-filter' + (state.filter === 'error' ? ' active' : '') + '" data-filter="error">' + summary.error + ' error</button>';
-      updateTitleAndFavicon((data.summary || {}).waiting || 0);
-      setHealth();
-      document.getElementById('updated-text').textContent = 'Updated ' + relTime(data.generatedAt || new Date().toISOString());
-
-      // Render sidebar from all repos (always show full list)
-      renderSidebar(allRepos);
-
-      // Render header bar for selected repo
-      const selectedRepoData = state.selectedRepo !== 'all' ? allRepos.find(r => r.path === state.selectedRepo) : null;
-      renderRepoHeader(selectedRepoData);
-
-      const reposRoot = document.getElementById('repos');
-      const empty = document.getElementById('empty');
-      reposRoot.className = 'repos' + (state.selectedRepo !== 'all' ? ' single-repo' : '');
-      reposRoot.innerHTML = '';
-
-      if (visibleRepos.length === 0) {
-        empty.style.display = '';
-        empty.textContent = state.selectedRepo === 'all'
-          ? 'No repos registered. Run: aigon conductor add'
-          : 'No data for selected repo.';
-        return;
-      }
-
-      empty.style.display = 'none';
-      let visibleItemCount = 0;
-      visibleRepos.forEach(repo => {
-        const section = document.createElement('section');
-        section.className = 'repo' + (state.collapsed[repo.path] ? ' collapsed' : '');
-        const showFeatures = monitorType === 'all' || monitorType === 'features';
-        const showResearch = monitorType === 'all' || monitorType === 'research';
-        const showFeedback = monitorType === 'all' || monitorType === 'feedback';
-        const rawFeatures = showFeatures ? [...(repo.features || [])].filter(f => f.stage === 'in-progress' || f.stage === 'in-evaluation').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id)) : [];
-        const features = rawFeatures.filter(f => state.filter === 'all' || f.agents.some(a => a.status === state.filter));
-        const rawResearch = showResearch ? [...(repo.research || [])].filter(r => r.stage === 'in-progress').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id)) : [];
-        const research = rawResearch.filter(r => state.filter === 'all' || r.agents.some(a => a.status === state.filter));
-        const rawFeedback = showFeedback ? [...(repo.feedback || [])].filter(f => f.stage === 'in-progress').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id)) : [];
-        const feedback = rawFeedback.filter(f => state.filter === 'all' || (f.agents || []).some(a => a.status === state.filter));
-        const totalItems = features.length + research.length + feedback.length;
-        visibleItemCount += totalItems;
-        const waitingCards = features.filter(f => f.agents.some(a => a.status === 'waiting')).length + research.filter(r => r.agents.some(a => a.status === 'waiting')).length + feedback.filter(f => (f.agents || []).some(a => a.status === 'waiting')).length;
-        const headerParts = [];
-        if (features.length > 0) headerParts.push(features.length + ' feature' + (features.length === 1 ? '' : 's'));
-        if (research.length > 0) headerParts.push(research.length + ' research');
-        if (feedback.length > 0) headerParts.push(feedback.length + ' feedback');
-        const headerText = headerParts.join(', ') || '0 items';
-        section.innerHTML = '<div class="repo-h"><strong>' + escHtml(repo.displayPath) + '</strong><span>' + headerText + (waitingCards ? ' • ' + waitingCards + ' waiting' : '') + ' <span aria-label="Toggle">' + (state.collapsed[repo.path] ? '[+]' : '[-]') + '</span></span></div><div class="repo-b"></div>';
-        section.querySelector('.repo-h').onclick = () => {
-          state.collapsed[repo.path] = !state.collapsed[repo.path];
-          localStorage.setItem(lsKey('collapsed'), JSON.stringify(state.collapsed));
-          render();
-        };
-        const body = section.querySelector('.repo-b');
-        if (totalItems === 0) {
-          body.innerHTML = '<div class="empty">No items in progress.</div>';
-        } else {
-          features.forEach(feature => {
-            const hasWaiting = feature.agents.some(a => a.status === 'waiting');
-            const isEval = feature.stage === 'in-evaluation';
-            const card = document.createElement('article');
-            card.className = 'card' + (hasWaiting ? ' waiting' : '') + (isEval ? ' evaluating' : '');
-            const rows = [...feature.agents].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id));
-            const nextActions = feature.nextActions && feature.nextActions.length > 0
-              ? feature.nextActions
-              : (feature.nextAction && feature.nextAction.command ? [{ command: feature.nextAction.command, label: 'Run', reason: feature.nextAction.reason || '', mode: 'fire-and-forget' }] : []);
-            let nextBtn = '';
-            if (nextActions.length > 0) {
-              const primary = nextActions[0];
-              const extras = nextActions.slice(1);
-              const dropdownHtml = extras.length > 0
-                ? '<button class="btn btn-primary run-next-chevron" aria-haspopup="true" title="More actions">▾</button>' +
-                  '<div class="run-next-dropdown" role="menu">' +
-                  extras.map(a => '<button class="dropdown-item" data-command="' + escHtml(a.command) + '" data-mode="' + escHtml(a.mode) + '">' +
-                    '<span class="item-label">' + escHtml(a.label) + '</span>' +
-                    '<code class="item-command">' + escHtml(a.command) + '</code>' +
-                    '<span class="item-reason">' + escHtml(a.reason) + '</span>' +
-                    '</button>').join('') + '</div>'
-                : '';
-              nextBtn = '<span class="run-next-group">' +
-                '<button class="btn btn-primary run-next-primary" data-command="' + escHtml(primary.command) + '" data-mode="' + escHtml(primary.mode) + '" data-repo="' + escHtml(repo.path) + '" title="' + escHtml(primary.command) + ' — ' + escHtml(primary.reason) + '">' + escHtml(primary.label) + '</button>' +
-                dropdownHtml + '</span>';
-            }
-            const evalBadge = isEval ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus || 'evaluating') + '</span>' : '';
-            card.innerHTML = '<div class="card-h"><span class="feature">' + (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + evalBadge + '</span><span class="head-actions">' + nextBtn + '</span></div><div class="rows"></div>';
-            const rowsEl = card.querySelector('.rows');
-            rows.forEach(agent => {
-              const row = document.createElement('div');
-              row.className = 'row ' + agent.status;
-              const waitingCmd = agent.slashCommand
-                ? '<button class="copy btn" data-copy="' + escHtml(agent.slashCommand) + '">Copy cmd</button>'
-                : '';
-              const attachBtn = agent.tmuxRunning
-                ? '<button class="attach btn btn-primary" data-repo="' + escHtml(repo.path) + '" data-feature="' + escHtml(feature.id) + '" data-agent="' + escHtml(agent.id) + '" data-session="' + escHtml(agent.tmuxSession || '') + '">Attach</button>'
-                : '';
-              row.innerHTML = '<span class="agent">' + escHtml(agent.id) + '</span><span class="status ' + escHtml(agent.status) + '"><span class="dot"></span>' + escHtml(agent.status) + '</span><span class="stamp" data-updated="' + escHtml(agent.updatedAt) + '">' + relTime(agent.updatedAt) + '</span><span class="row-actions">' + waitingCmd + attachBtn + '</span>';
-              rowsEl.appendChild(row);
-            });
-            // Click card to open spec drawer
-            if (feature.specPath) {
-              card.style.cursor = 'pointer';
-              card.addEventListener('click', (e) => {
-                if (e.target.closest('button') || e.target.closest('.btn')) return;
-                const name = (feature.id ? '#' + feature.id + ' ' : '') + feature.name;
-                openDrawer(feature.specPath, name, feature.stage);
-              });
-            }
-            body.appendChild(card);
-          });
-          research.forEach(item => {
-            const hasWaiting = item.agents.some(a => a.status === 'waiting');
-            const allSubmitted = item.agents.length > 0 && item.agents.every(a => a.status === 'submitted');
-            const card = document.createElement('article');
-            card.className = 'card research' + (hasWaiting ? ' waiting' : '');
-            const rows = [...item.agents].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id));
-            const synthBadge = allSubmitted ? '<span class="research-badge all-submitted">ready to synthesize</span>' : '<span class="research-badge">research</span>';
-            const synthCmd = allSubmitted ? '/ars ' + String(item.id).padStart(2, '0') : null;
-            const synthBtn = synthCmd ? '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(synthCmd) + '" title="All agents submitted — synthesize findings">Copy next</button>' : '';
-            card.innerHTML = '<div class="card-h"><span class="feature">' + (item.id ? 'R#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + synthBadge + '</span><span class="head-actions">' + synthBtn + '</span></div><div class="rows"></div>';
-            const rowsEl = card.querySelector('.rows');
-            rows.forEach(agent => {
-              const row = document.createElement('div');
-              row.className = 'row ' + agent.status;
-              const waitingCmd = agent.slashCommand
-                ? '<button class="copy btn" data-copy="' + escHtml(agent.slashCommand) + '">Copy cmd</button>'
-                : '';
-              const attachBtn = agent.tmuxRunning
-                ? '<button class="attach btn btn-primary" data-repo="' + escHtml(repo.path) + '" data-feature="' + escHtml(item.id) + '" data-agent="' + escHtml(agent.id) + '">Attach</button>'
-                : '';
-              row.innerHTML = '<span class="agent">' + escHtml(agent.id) + '</span><span class="status ' + escHtml(agent.status) + '"><span class="dot"></span>' + escHtml(agent.status) + '</span><span class="stamp" data-updated="' + escHtml(agent.updatedAt) + '">' + relTime(agent.updatedAt) + '</span><span class="row-actions">' + waitingCmd + attachBtn + '</span>';
-              rowsEl.appendChild(row);
-            });
-            // Click card to open spec drawer
-            if (item.specPath) {
-              card.style.cursor = 'pointer';
-              card.addEventListener('click', (e) => {
-                if (e.target.closest('button') || e.target.closest('.btn')) return;
-                const name = (item.id ? 'R#' + item.id + ' ' : '') + item.name;
-                openDrawer(item.specPath, name, 'in-progress');
-              });
-            }
-            body.appendChild(card);
-          });
-          feedback.forEach(item => {
-            const hasWaiting = (item.agents || []).some(a => a.status === 'waiting');
-            const card = document.createElement('article');
-            card.className = 'card feedback' + (hasWaiting ? ' waiting' : '');
-            const rows = [...(item.agents || [])].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id));
-            card.innerHTML = '<div class="card-h"><span class="feature">' + (item.id ? 'FB#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + '<span class="research-badge">feedback</span></span></div><div class="rows"></div>';
-            const rowsEl = card.querySelector('.rows');
-            rows.forEach(agent => {
-              const row = document.createElement('div');
-              row.className = 'row ' + agent.status;
-              const waitingCmd = agent.slashCommand
-                ? '<button class="copy btn" data-copy="' + escHtml(agent.slashCommand) + '">Copy cmd</button>'
-                : '';
-              const attachBtn = agent.tmuxRunning
-                ? '<button class="attach btn btn-primary" data-repo="' + escHtml(repo.path) + '" data-feature="' + escHtml(item.id) + '" data-agent="' + escHtml(agent.id) + '">Attach</button>'
-                : '';
-              row.innerHTML = '<span class="agent">' + escHtml(agent.id) + '</span><span class="status ' + escHtml(agent.status) + '"><span class="dot"></span>' + escHtml(agent.status) + '</span><span class="stamp" data-updated="' + escHtml(agent.updatedAt) + '">' + relTime(agent.updatedAt) + '</span><span class="row-actions">' + waitingCmd + attachBtn + '</span>';
-              rowsEl.appendChild(row);
-            });
-            if (item.specPath) {
-              card.style.cursor = 'pointer';
-              card.addEventListener('click', (e) => {
-                if (e.target.closest('button') || e.target.closest('.btn')) return;
-                const name = (item.id ? 'FB#' + item.id + ' ' : '') + item.name;
-                openDrawer(item.specPath, name, 'in-progress');
-              });
-            }
-            body.appendChild(card);
-          });
-        }
-        reposRoot.appendChild(section);
-      });
-
-      if (visibleItemCount === 0) {
-        empty.style.display = '';
-        empty.textContent = state.filter === 'all'
-          ? 'No items in progress.'
-          : 'No items match filter: ' + state.filter;
-      }
-
-      // Keep copy handler for remaining "Copy cmd" buttons on agent rows
-      reposRoot.querySelectorAll('button.copy').forEach(btn => {
-        btn.onclick = async (e) => {
-          e.stopPropagation();
-          const text = btn.getAttribute('data-copy') || '';
-          if (!text) return;
-          const ok = await copyText(text);
-          showToast(ok ? 'Copied: ' + text : 'Copy failed');
-        };
-      });
-
-      // Run next: primary button
-      reposRoot.querySelectorAll('.run-next-primary').forEach(btn => {
-        btn.onclick = async (e) => {
-          e.stopPropagation();
-          const command = btn.getAttribute('data-command') || '';
-          const mode = btn.getAttribute('data-mode') || 'fire-and-forget';
-          const repoPath = btn.getAttribute('data-repo') || '';
-          await executeNextAction(command, mode, repoPath, btn);
-        };
-      });
-
-      // Run next: chevron opens dropdown
-      reposRoot.querySelectorAll('.run-next-chevron').forEach(chevron => {
-        chevron.onclick = (e) => {
-          e.stopPropagation();
-          const group = chevron.closest('.run-next-group');
-          const dropdown = group && group.querySelector('.run-next-dropdown');
-          if (!dropdown) return;
-          const isOpen = dropdown.classList.contains('open');
-          // Close all open dropdowns first
-          document.querySelectorAll('.run-next-dropdown.open').forEach(d => d.classList.remove('open'));
-          if (!isOpen) {
-            dropdown.classList.add('open');
-            const close = (ev) => {
-              if (!group.contains(ev.target)) {
-                dropdown.classList.remove('open');
-                document.removeEventListener('click', close);
-              }
-            };
-            setTimeout(() => document.addEventListener('click', close), 0);
+          return summary;
+        },
+        get emptyMessage() {
+          const s = Alpine.store('dashboard');
+          if (this.visibleRepos.length === 0) return s.selectedRepo === 'all' ? 'No repos registered. Run: aigon conductor add' : 'No data for selected repo.';
+          const hasItems = this.visibleRepos.some(r => this.getFeatures(r).length > 0 || this.getResearch(r).length > 0 || this.getFeedback(r).length > 0);
+          if (hasItems) return '';
+          return s.filter === 'all' ? 'No items in progress.' : 'No items match filter: ' + s.filter;
+        },
+        isCollapsed(path) { return !!(Alpine.store('dashboard').collapsed || {})[path]; },
+        toggleCollapse(path) {
+          const s = Alpine.store('dashboard');
+          s.collapsed[path] = !s.collapsed[path];
+          localStorage.setItem(lsKey('collapsed'), JSON.stringify(s.collapsed));
+        },
+        setFilter(f) { Alpine.store('dashboard').filter = f; localStorage.setItem(lsKey('filter'), f); },
+        setMonitorType(t) { Alpine.store('dashboard').monitorType = t; localStorage.setItem(lsKey('monitorType'), t); },
+        getFeatures(repo) {
+          const s = Alpine.store('dashboard');
+          const mt = s.monitorType || 'all';
+          if (mt !== 'all' && mt !== 'features') return [];
+          const raw = [...(repo.features || [])].filter(f => f.stage === 'in-progress' || f.stage === 'in-evaluation').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
+          return s.filter === 'all' ? raw : raw.filter(f => f.agents.some(a => a.status === s.filter));
+        },
+        getResearch(repo) {
+          const s = Alpine.store('dashboard');
+          const mt = s.monitorType || 'all';
+          if (mt !== 'all' && mt !== 'research') return [];
+          const raw = [...(repo.research || [])].filter(r => r.stage === 'in-progress').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
+          return s.filter === 'all' ? raw : raw.filter(r => r.agents.some(a => a.status === s.filter));
+        },
+        getFeedback(repo) {
+          const s = Alpine.store('dashboard');
+          const mt = s.monitorType || 'all';
+          if (mt !== 'all' && mt !== 'feedback') return [];
+          const raw = [...(repo.feedback || [])].filter(f => f.stage === 'in-progress').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
+          return s.filter === 'all' ? raw : raw.filter(f => (f.agents || []).some(a => a.status === s.filter));
+        },
+        getTotalItems(repo) { return this.getFeatures(repo).length + this.getResearch(repo).length + this.getFeedback(repo).length; },
+        sortedAgents(agents) { return [...(agents || [])].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id)); },
+        relTimeProxy(iso) { return relTime(iso); },
+        featureTitle(feature) {
+          const evalBadge = feature.stage === 'in-evaluation' ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus || 'evaluating') + '</span>' : '';
+          return (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + evalBadge;
+        },
+        researchTitle(item) {
+          const allSubmitted = item.agents.length > 0 && item.agents.every(a => a.status === 'submitted');
+          const badge = allSubmitted ? '<span class="research-badge all-submitted">ready to synthesize</span>' : '<span class="research-badge">research</span>';
+          return (item.id ? 'R#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + badge;
+        },
+        feedbackTitle(item) { return (item.id ? 'FB#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + '<span class="research-badge">feedback</span>'; },
+        researchSynthBtn(item) {
+          if (!(item.agents.length > 0 && item.agents.every(a => a.status === 'submitted'))) return '';
+          const synthCmd = '/ars ' + String(item.id).padStart(2, '0');
+          return '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(synthCmd) + '" title="All agents submitted — synthesize findings">Copy next</button>';
+        },
+        buildNextActionHtml(feature, repoPath) { return buildNextActionHtml(feature, repoPath); },
+        repoSummaryText(repo) {
+          const features = this.getFeatures(repo), research = this.getResearch(repo), feedback = this.getFeedback(repo);
+          const parts = [];
+          if (features.length > 0) parts.push(features.length + ' feature' + (features.length === 1 ? '' : 's'));
+          if (research.length > 0) parts.push(research.length + ' research');
+          if (feedback.length > 0) parts.push(feedback.length + ' feedback');
+          const waitingCards = features.filter(f => f.agents.some(a => a.status === 'waiting')).length
+            + research.filter(r => r.agents.some(a => a.status === 'waiting')).length
+            + feedback.filter(f => (f.agents || []).some(a => a.status === 'waiting')).length;
+          const collapsed = this.isCollapsed(repo.path);
+          return (parts.join(', ') || '0 items') + (waitingCards ? ' • ' + waitingCards + ' waiting' : '') + ' <span aria-label="Toggle">' + (collapsed ? '[+]' : '[-]') + '</span>';
+        },
+        openFeatureSpec(e, feature) {
+          if (e.target.closest('button') || e.target.closest('.btn')) return;
+          if (!feature.specPath) return;
+          openDrawer(feature.specPath, (feature.id ? '#' + feature.id + ' ' : '') + feature.name, feature.stage);
+        },
+        openSpecItem(e, item, prefix) {
+          if (e.target.closest('button') || e.target.closest('.btn')) return;
+          if (!item.specPath) return;
+          openDrawer(item.specPath, (item.id ? prefix + item.id + ' ' : '') + item.name, 'in-progress');
+        },
+        copyCmd(text) { copyText(text).then(ok => showToast(ok ? 'Copied: ' + text : 'Copy failed')); },
+        attachAgent(repoPath, featureId, agentId, tmuxSession) { requestAttach(repoPath, featureId, agentId, tmuxSession); },
+        // Event delegation for x-html injected buttons (run-next group, synth copy btn)
+        handleMonitorClick(e) {
+          const btn = e.target.closest('button');
+          if (!btn) return;
+          if (btn.classList.contains('copy') || btn.classList.contains('next-copy')) {
+            const text = btn.getAttribute('data-copy') || '';
+            if (text) copyText(text).then(ok => showToast(ok ? 'Copied: ' + text : 'Copy failed'));
+            return;
           }
-        };
-      });
-
-      // Run next: dropdown item click
-      reposRoot.querySelectorAll('.dropdown-item').forEach(item => {
-        item.onclick = async (e) => {
-          e.stopPropagation();
-          const command = item.getAttribute('data-command') || '';
-          const mode = item.getAttribute('data-mode') || 'fire-and-forget';
-          const group = item.closest('.run-next-group');
-          const primaryBtn = group && group.querySelector('.run-next-primary');
-          const repoPath = primaryBtn ? primaryBtn.getAttribute('data-repo') || '' : '';
-          item.closest('.run-next-dropdown').classList.remove('open');
-          await executeNextAction(command, mode, repoPath, primaryBtn || item);
-        };
-      });
-
-      reposRoot.querySelectorAll('button.attach').forEach(btn => {
-        btn.onclick = async (e) => {
-          e.stopPropagation();
-          const repoPath = btn.getAttribute('data-repo') || '';
-          const featureId = btn.getAttribute('data-feature') || '';
-          const agentId = btn.getAttribute('data-agent') || '';
-          const tmuxSession = btn.getAttribute('data-session') || '';
-          if (!repoPath || !featureId || !agentId) return;
-          await requestAttach(repoPath, featureId, agentId, tmuxSession);
-        };
-      });
-
-      document.querySelectorAll('button.pill-filter').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const next = btn.getAttribute('data-filter') || 'all';
-          state.filter = next;
-          localStorage.setItem(lsKey('filter'), next);
-          render();
-        };
-      });
+          if (btn.classList.contains('run-next-primary')) {
+            e.stopPropagation();
+            executeNextAction(btn.getAttribute('data-command') || '', btn.getAttribute('data-mode') || 'fire-and-forget', btn.getAttribute('data-repo') || '', btn);
+            return;
+          }
+          if (btn.classList.contains('run-next-chevron')) {
+            e.stopPropagation();
+            const group = btn.closest('.run-next-group');
+            const dropdown = group && group.querySelector('.run-next-dropdown');
+            if (!dropdown) return;
+            const isOpen = dropdown.classList.contains('open');
+            document.querySelectorAll('.run-next-dropdown.open').forEach(d => d.classList.remove('open'));
+            if (!isOpen) {
+              dropdown.classList.add('open');
+              setTimeout(() => document.addEventListener('click', function close(ev) {
+                if (!group.contains(ev.target)) { dropdown.classList.remove('open'); document.removeEventListener('click', close); }
+              }), 0);
+            }
+            return;
+          }
+          if (btn.classList.contains('dropdown-item')) {
+            e.stopPropagation();
+            const group = btn.closest('.run-next-group');
+            const primaryBtn = group && group.querySelector('.run-next-primary');
+            const repoPath = primaryBtn ? primaryBtn.getAttribute('data-repo') || '' : '';
+            const dropdown = btn.closest('.run-next-dropdown');
+            if (dropdown) dropdown.classList.remove('open');
+            executeNextAction(btn.getAttribute('data-command') || '', btn.getAttribute('data-mode') || 'fire-and-forget', repoPath, primaryBtn || btn);
+          }
+        }
+      };
     }
+
 
     // ── Pipeline / Kanban view ─────────────────────────────────────────────────
 
@@ -1991,298 +1988,134 @@
       return card;
     }
 
-    function renderPipelineTypeToggle(container) {
-      const existing = container.querySelector('.pipeline-toolbar');
-      if (existing) existing.remove();
+    // ── Pipeline view — Alpine component ─────────────────────────────────────
 
-      const toolbar = document.createElement('div');
-      toolbar.className = 'pipeline-toolbar';
+    // Renders kanban cards into a col-body element (called via x-effect for reactivity)
+    function renderKanbanColCards(colBody, repo, stage) {
+      const s = Alpine.store('dashboard');
+      const pType = s.pipelineType || 'features';
+      const items = repo[pType] || [];
+      const byStage = {};
+      items.forEach(f => { if (!byStage[f.stage]) byStage[f.stage] = []; byStage[f.stage].push(f); });
+      const cards = byStage[stage] || [];
 
-      const toggle = document.createElement('div');
-      toggle.className = 'pipeline-type-toggle';
-      ['features', 'research', 'feedback'].forEach(type => {
-        const btn = document.createElement('button');
-        btn.className = 'toggle-btn' + (state.pipelineType === type ? ' active' : '');
-        btn.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-        btn.onclick = () => {
-          state.pipelineType = type;
-          localStorage.setItem(lsKey('pipelineType'), type);
-          render();
-        };
-        toggle.appendChild(btn);
-      });
-      toolbar.appendChild(toggle);
-
-      const createBtn = document.createElement('button');
-      createBtn.className = 'btn btn-primary';
-      createBtn.style.cssText = 'font-size:12px;padding:5px 12px';
-      createBtn.textContent = '+ Create';
-      createBtn.onclick = () => createNewSpec();
-      toolbar.appendChild(createBtn);
-
-      container.prepend(toolbar);
-    }
-
-    function createNewSpec() {
-      const pType = state.pipelineType || 'features';
-      const typeLabel = pType === 'features' ? 'Feature' : pType === 'research' ? 'Research Topic' : 'Feedback Item';
-      const modal = document.getElementById('create-modal');
-      const titleEl = document.getElementById('create-modal-title');
-      const nameInput = document.getElementById('create-modal-name');
-      const repoSelect = document.getElementById('create-modal-repo');
-      const repoPicker = document.getElementById('create-modal-repo-picker');
-      const submitBtn = document.getElementById('create-modal-submit');
-
-      titleEl.textContent = 'New ' + typeLabel;
-      nameInput.value = '';
-      nameInput.placeholder = pType === 'features' ? 'e.g. dark mode toggle' : pType === 'research' ? 'e.g. auth provider comparison' : 'e.g. sidebar not scrolling on mobile';
-
-      // Repo picker: show if "All" selected and multiple repos
-      const repos = (state.data || {}).repos || [];
-      if (state.selectedRepo === 'all' && repos.length > 1) {
-        repoPicker.style.display = '';
-        repoSelect.innerHTML = '';
-        repos.forEach(r => {
-          const opt = document.createElement('option');
-          opt.value = r.path;
-          opt.textContent = r.displayPath;
-          repoSelect.appendChild(opt);
-        });
-      } else {
-        repoPicker.style.display = 'none';
-      }
-
-      modal.style.display = '';
-      nameInput.focus();
-
-      async function submit() {
-        const name = nameInput.value.trim();
-        if (!name) { nameInput.focus(); return; }
-
-        let repoPath;
-        if (state.selectedRepo !== 'all') {
-          repoPath = state.selectedRepo;
-        } else if (repos.length === 1) {
-          repoPath = repos[0].path;
-        } else {
-          repoPath = repoSelect.value;
-        }
-
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Creating…';
-        try {
-          const res = await fetch('/api/spec/create', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ repoPath, type: pType, name })
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Failed');
-          modal.style.display = 'none';
-          showToast('Created: ' + name);
-          openDrawer(data.path, name, 'inbox');
-          setTimeout(() => setDrawerMode('edit'), 300);
-          requestRefresh();
-        } catch (e) {
-          showToast('Create failed: ' + e.message, null, null, {error:true});
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Create';
-        }
-      }
-
-      function cancel() { modal.style.display = 'none'; }
-
-      async function useAi() {
-        const name = nameInput.value.trim();
-        if (!name) { nameInput.focus(); return; }
-        let repoPath;
-        if (state.selectedRepo !== 'all') {
-          repoPath = state.selectedRepo;
-        } else if (repos.length === 1) {
-          repoPath = repos[0].path;
-        } else {
-          repoPath = repoSelect.value;
-        }
-        // Create the spec first, then launch AI
-        const useAiBtn = document.getElementById('create-modal-use-ai');
-        if (useAiBtn) { useAiBtn.disabled = true; useAiBtn.textContent = 'Creating…'; }
-        try {
-          const res = await fetch('/api/spec/create', {
-            method: 'POST', headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ repoPath, type: pType, name })
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Failed');
-          modal.style.display = 'none';
-          showToast('Created: ' + name);
-          requestRefresh();
-          await launchAiSession(data.path, name, repoPath);
-        } catch (e) {
-          showToast('Create failed: ' + e.message);
-        } finally {
-          if (useAiBtn) { useAiBtn.disabled = false; useAiBtn.textContent = 'Use AI'; }
-        }
-      }
-
-      // Wire up (replace listeners to avoid stacking)
-      submitBtn.onclick = submit;
-      document.getElementById('create-modal-cancel').onclick = cancel;
-      const useAiBtn = document.getElementById('create-modal-use-ai');
-      if (useAiBtn) useAiBtn.onclick = useAi;
-      nameInput.onkeydown = (e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') cancel(); };
-    }
-
-    function renderPipeline() {
-      document.getElementById('monitor-summary').style.display = 'none';
-      const data = state.data || { repos: [] };
-      const allRepos = data.repos || [];
-      const visibleRepos = getVisibleRepos(data);
-      setHealth();
-      document.getElementById('updated-text').textContent = 'Updated ' + relTime(data.generatedAt || new Date().toISOString());
-
-      // Render sidebar from all repos
-      renderSidebar(allRepos);
-
-      // Render header bar for selected repo
-      const selectedRepoData = state.selectedRepo !== 'all' ? allRepos.find(r => r.path === state.selectedRepo) : null;
-      renderRepoHeader(selectedRepoData);
-
-      const empty = document.getElementById('empty');
-      const reposRoot = document.getElementById('repos');
-      reposRoot.className = '';
-      reposRoot.innerHTML = '';
-
-      // Type toggle (features/research/feedback)
-      const detailArea = document.querySelector('.detail-area') || reposRoot.parentElement;
-      renderPipelineTypeToggle(detailArea);
-
-      const pType = state.pipelineType || 'features';
-      const stages = PIPELINE_STAGES[pType] || STAGE_ORDER;
-
-      if (visibleRepos.length === 0) {
-        empty.style.display = '';
-        empty.textContent = state.selectedRepo === 'all'
-          ? 'No repos registered. Run: aigon conductor add'
-          : 'No data for selected repo.';
+      colBody.innerHTML = '';
+      if (cards.length === 0) {
+        const emp = document.createElement('div');
+        emp.className = 'col-empty';
+        emp.textContent = 'Empty';
+        colBody.appendChild(emp);
         return;
       }
-      empty.style.display = 'none';
-
-      visibleRepos.forEach(repo => {
-        const byStage = {};
-        stages.forEach(s => { byStage[s] = []; });
-        const items = repo[pType] || [];
-        items.forEach(f => {
-          if (byStage[f.stage]) byStage[f.stage].push(f);
-        });
-
-        const repoSection = document.createElement('div');
-        reposRoot.appendChild(repoSection);
-
-        if (state.selectedRepo === 'all' && visibleRepos.length > 1) {
-          const repoLabel = document.createElement('div');
-          repoLabel.style.cssText = 'font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin:10px 0 6px;font-weight:600';
-          repoLabel.textContent = repo.displayPath || repo.name;
-          repoSection.appendChild(repoLabel);
-        }
-
-        const kanban = document.createElement('div');
-        kanban.className = 'kanban';
-        repoSection.appendChild(kanban);
-
+      const DONE_CAP = 6;
+      const displayCards = (stage === 'done' && cards.length > DONE_CAP) ? cards.slice(0, DONE_CAP) : cards;
+      displayCards.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType)));
+      if (stage === 'done' && cards.length > DONE_CAP) {
         const doneTotalKey = pType === 'research' ? 'researchDoneTotal' : pType === 'feedback' ? 'feedbackDoneTotal' : 'doneTotal';
-
-        stages.forEach(stage => {
-          const cards = byStage[stage] || [];
-          const displayCount = (stage === 'done' && repo[doneTotalKey]) ? repo[doneTotalKey] : cards.length;
-          const col = document.createElement('div');
-          col.className = 'kanban-col';
-          col.dataset.stage = stage;
-          col.dataset.repoPath = repo.path || '';
-
-          col.innerHTML =
-            '<div class="col-h"><span class="col-title">' + escHtml(STAGE_LABELS[stage]) + '</span><span class="col-count">' + displayCount + '</span></div>' +
-            '<div class="col-body"></div>';
-
-          const colBody = col.querySelector('.col-body');
-
-          if (cards.length === 0) {
-            const emp = document.createElement('div');
-            emp.className = 'col-empty';
-            emp.textContent = 'Empty';
-            colBody.appendChild(emp);
-          } else {
-            const DONE_CAP = 6;
-            const displayCards = (stage === 'done' && cards.length > DONE_CAP) ? cards.slice(0, DONE_CAP) : cards;
-            displayCards.forEach(feature => {
-              colBody.appendChild(buildKanbanCard(feature, repo.path, pType));
-            });
-            if (stage === 'done' && cards.length > DONE_CAP) {
-              const totalDone = repo.doneTotal || cards.length;
-              const moreBtn = document.createElement('button');
-              moreBtn.className = 'btn';
-              moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
-              moreBtn.textContent = (totalDone - DONE_CAP) + ' more — open in Finder';
-              moreBtn.onclick = async () => {
-                const donePath = (repo.path || '') + '/docs/specs/features/05-done';
-                try {
-                  await fetch('/api/open-folder', {
-                    method: 'POST',
-                    headers: { 'content-type': 'application/json' },
-                    body: JSON.stringify({ path: donePath })
-                  });
-                } catch (e) {
-                  showToast('Could not open folder: ' + e.message, null, null, {error:true});
-                }
-              };
-              colBody.appendChild(moreBtn);
-            }
+        const totalDone = repo[doneTotalKey] || cards.length;
+        const moreBtn = document.createElement('button');
+        moreBtn.className = 'btn';
+        moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
+        moreBtn.textContent = (totalDone - DONE_CAP) + ' more — open in Finder';
+        moreBtn.onclick = async () => {
+          const donePath = (repo.path || '') + '/docs/specs/features/05-done';
+          try {
+            const res = await fetch('/api/open-path', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: donePath }) });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+          } catch (e) { showToast('Could not open Finder: ' + e.message, null, null, { error: true }); }
+        };
+        colBody.appendChild(moreBtn);
+      }
+      // Wire up valid-action button clicks on newly rendered cards
+      colBody.querySelectorAll('.kcard-va-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const action = btn.getAttribute('data-va-action') || '';
+          const agentId = btn.getAttribute('data-agent') || null;
+          const card = btn.closest('.kcard');
+          const featureId = card ? card.dataset.featureId : '';
+          const featureName = card ? card.dataset.featureName : '';
+          const feature = (repo[pType] || []).find(f => String(f.id) === String(featureId)) || { id: featureId, name: featureName, stage: card ? card.dataset.stage : '' };
+          handleValidAction({ action, agentId, label: btn.textContent }, feature, repo.path, btn, pType);
+        };
+      });
+      // Wire up card spec-drawer clicks
+      colBody.querySelectorAll('.kcard').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('button') || e.target.closest('.btn')) return;
+          const fId = card.dataset.featureId;
+          const feature = (repo[pType] || []).find(f => String(f.id) === String(fId));
+          if (feature && feature.specPath) {
+            const name = (feature.id ? '#' + feature.id + ' ' : '') + feature.name;
+            openDrawer(feature.specPath, name, feature.stage);
           }
-
-          col.addEventListener('dragover', (e) => {
-            if (!dragState) return;
-            const allowed = dragState.validTargetStages
-              ? dragState.validTargetStages.includes(stage)
-              : false;
-            e.preventDefault();
-            e.dataTransfer.dropEffect = allowed ? 'move' : 'none';
-            document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over', 'drag-blocked'));
-            col.classList.add(allowed ? 'drag-over' : 'drag-blocked');
-          });
-
-          col.addEventListener('dragleave', (e) => {
-            if (!col.contains(e.relatedTarget)) {
-              col.classList.remove('drag-over', 'drag-blocked');
-            }
-          });
-
-          col.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            col.classList.remove('drag-over', 'drag-blocked');
-            if (!dragState) return;
-            const { featureId, featureName, fromStage, repoPath, pipelineType: dragPType, validTargetStages: dropTargets } = dragState;
-            dragState = null;
-            const dropAllowed = dropTargets ? dropTargets.includes(stage) : false;
-            if (!dropAllowed) return;
-
-            if (fromStage === 'inbox' && stage === 'backlog') {
-              await requestAction(pipelineCommand(dragPType, 'prioritise'), [featureName], repoPath);
-            } else if (fromStage === 'backlog' && stage === 'in-progress') {
-              const agents = await showAgentPicker(featureId, featureName);
-              if (!agents) return;
-              await requestAction(pipelineCommand(dragPType, 'setup'), [featureId, ...agents], repoPath);
-            } else if (fromStage === 'in-progress' && stage === 'in-evaluation') {
-              await requestAction(pipelineCommand(dragPType, 'eval'), [featureId], repoPath);
-            } else if (fromStage === 'in-evaluation' && stage === 'done') {
-              await requestAction(pipelineCommand(dragPType, 'close'), [featureId], repoPath);
-            }
-          });
-
-          kanban.appendChild(col);
         });
       });
     }
+
+    function pipelineView() {
+      return {
+        pipelineTypeOpts: [
+          { key: 'features', label: 'Features' },
+          { key: 'research', label: 'Research' },
+          { key: 'feedback', label: 'Feedback' }
+        ],
+        get currentStages() { return PIPELINE_STAGES[Alpine.store('dashboard').pipelineType || 'features'] || STAGE_ORDER; },
+        get visibleRepos() { return getVisibleRepos(Alpine.store('dashboard').data || { repos: [] }); },
+        get emptyMessage() {
+          return (Alpine.store('dashboard').selectedRepo === 'all')
+            ? 'No repos registered. Run: aigon conductor add'
+            : 'No data for selected repo.';
+        },
+        setPipelineType(t) { Alpine.store('dashboard').pipelineType = t; localStorage.setItem(lsKey('pipelineType'), t); },
+        getStageDisplayCount(repo, stage) {
+          const s = Alpine.store('dashboard');
+          const pType = s.pipelineType || 'features';
+          const items = repo[pType] || [];
+          const stageItems = items.filter(f => f.stage === stage);
+          if (stage === 'done') {
+            const doneTotalKey = pType === 'research' ? 'researchDoneTotal' : pType === 'feedback' ? 'feedbackDoneTotal' : 'doneTotal';
+            return repo[doneTotalKey] || stageItems.length;
+          }
+          return stageItems.length;
+        },
+        renderKanbanColCards(colBody, repo, stage) { renderKanbanColCards(colBody, repo, stage); },
+        createNewSpec() { createNewSpec(); },
+        onDragOver(e, stage) {
+          if (!dragState) return;
+          const allowed = dragState.validTargetStages ? dragState.validTargetStages.includes(stage) : false;
+          e.dataTransfer.dropEffect = allowed ? 'move' : 'none';
+          const col = e.currentTarget;
+          document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over', 'drag-blocked'));
+          col.classList.add(allowed ? 'drag-over' : 'drag-blocked');
+        },
+        onDragLeave(e) {
+          const col = e.currentTarget;
+          if (!col.contains(e.relatedTarget)) col.classList.remove('drag-over', 'drag-blocked');
+        },
+        async onDrop(e, stage, repoPath) {
+          const col = e.currentTarget;
+          col.classList.remove('drag-over', 'drag-blocked');
+          if (!dragState) return;
+          const { featureId, featureName, fromStage, repoPath: dragRepo, pipelineType: dragPType, validTargetStages } = dragState;
+          dragState = null;
+          if (!(validTargetStages && validTargetStages.includes(stage))) return;
+          const effectiveRepo = dragRepo || repoPath;
+          if (fromStage === 'inbox' && stage === 'backlog') {
+            await requestAction(pipelineCommand(dragPType, 'prioritise'), [featureName], effectiveRepo);
+          } else if (fromStage === 'backlog' && stage === 'in-progress') {
+            const agents = await showAgentPicker(featureId, featureName);
+            if (!agents) return;
+            await requestAction(pipelineCommand(dragPType, 'setup'), [featureId, ...agents], effectiveRepo);
+          } else if (fromStage === 'in-progress' && stage === 'in-evaluation') {
+            await requestAction(pipelineCommand(dragPType, 'eval'), [featureId], effectiveRepo);
+          } else if (fromStage === 'in-evaluation' && stage === 'done') {
+            await requestAction(pipelineCommand(dragPType, 'close'), [featureId], effectiveRepo);
+          }
+        }
+      };
+    }
+
 
     // ── Settings view ──────────────────────────────────────────────────────────
 
@@ -3511,16 +3344,6 @@
 
     function render() {
       updateViewTabs();
-      // Clean up view-specific toolbars when switching views
-      if (state.view !== 'pipeline') {
-        const stalePipeline = document.querySelector('.pipeline-toolbar:not(.monitor-toolbar)');
-        if (stalePipeline) stalePipeline.remove();
-      }
-      if (state.view !== 'monitor') {
-        const staleMonitor = document.querySelector('.monitor-toolbar');
-        if (staleMonitor) staleMonitor.remove();
-      }
-      // Show/hide sidebar based on view
       const sidebar = document.getElementById('repo-sidebar');
       const mobileSelect = document.getElementById('repo-select-mobile');
       if (state.view === 'settings') {
@@ -3530,52 +3353,56 @@
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
         document.getElementById('repos').style.display = '';
+        document.getElementById('repo-header').style.display = 'none';
         renderSettings();
       } else if (state.view === 'sessions') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('repos').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
-        document.getElementById('monitor-summary').style.display = 'none';
-        document.getElementById('repo-header').style.display = 'none';
         document.getElementById('sessions-view').style.display = '';
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
+        document.getElementById('repo-header').style.display = 'none';
         renderSessions();
       } else if (state.view === 'statistics') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('repos').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
-        document.getElementById('monitor-summary').style.display = 'none';
-        document.getElementById('repo-header').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = '';
         document.getElementById('logs-view').style.display = 'none';
+        document.getElementById('repo-header').style.display = 'none';
         renderStatistics();
       } else if (state.view === 'logs') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('repos').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
-        document.getElementById('monitor-summary').style.display = 'none';
-        document.getElementById('repo-header').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('logs-view').style.display = '';
+        document.getElementById('repo-header').style.display = 'none';
         renderLogsView();
       } else {
+        // monitor or pipeline — Alpine components handle the view content
         sidebar.style.display = '';
         mobileSelect.style.display = '';
-        document.getElementById('repos').style.display = '';
+        document.getElementById('repos').style.display = 'none'; // settings only
+        document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
-        if (state.view === 'pipeline') {
-          renderPipeline();
-        } else {
-          renderMonitor();
-        }
+        // Sidebar + header are shared between monitor and pipeline
+        const allRepos = ((state.data || {}).repos || []);
+        renderSidebar(allRepos);
+        const selectedRepoData = state.selectedRepo !== 'all' ? allRepos.find(r => r.path === state.selectedRepo) : null;
+        renderRepoHeader(selectedRepoData);
+        setHealth();
+        updateTitleAndFavicon(((state.data || {}).summary || {}).waiting || 0);
+        document.getElementById('updated-text').textContent = 'Updated ' + relTime((state.data || {}).generatedAt || new Date().toISOString());
+        // Alpine reactively renders #monitor-view and #pipeline-view based on state.view
       }
     }
 
