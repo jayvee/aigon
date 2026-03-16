@@ -62,39 +62,14 @@ docs/specs/
 
 ## Solo Mode Workflow
 
-Solo mode creates a single worktree with one agent. **There is no evaluation step** — evaluation is Fleet-only (comparing multiple implementations).
-
-### Drive Worktree (recommended)
-
-```
-aigon feature-setup <ID>        # Creates worktree + branch, moves spec to in-progress
-(implement in worktree)         # Read spec, write code, test
-/afs                            # feature-submit: commits, writes log, signals submitted
-aigon feature-close <ID>        # From main repo: merges branch, moves spec to done, cleans up worktree
-```
-
-### Drive Branch (no worktree)
-
-```
-aigon feature-setup <ID>        # Creates branch, moves spec to in-progress
-(implement on branch)           # Read spec, write code, test
-aigon feature-close <ID>        # Auto-commits, merges, moves spec to done
-```
-
-### Key differences
-
-| | Drive Branch | Drive Worktree |
-|---|---|---|
-| Branch name | `feature-55-desc` | `feature-55-cc-desc` |
-| Auto-commits on close | Yes | No — requires `/afs` (feature-submit) first |
-| Eval step | No | No |
-| Worktree cleanup | N/A | Automatic on feature-close |
-
-### Important
-
-- **Do NOT run `feature-eval`** on solo features — it is blocked by the state machine
-- **Do NOT run `feature-close` from inside the worktree** — run it from the main repo
-- Solo features go directly from `in-progress` → `done`, never through `in-evaluation`
+1. Run `aigon feature-setup <ID>` to create branch and move spec to in-progress
+2. Run `aigon feature-implement <ID>` to begin implementation (add `--ralph` for autonomous retry loop)
+3. Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
+4. Implement the feature according to the spec
+5. Test your changes and wait for user confirmation
+6. Commit using conventional commits (`feat:`, `fix:`, `chore:`)
+7. Update the implementation log in `./docs/specs/features/logs/`
+8. **STOP** - Wait for user to approve before running `aigon feature-done <ID>`
 
 ## Arena Mode Workflow
 
