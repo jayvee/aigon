@@ -4,6 +4,10 @@ node_modules/
 # OS
 .DS_Store
 
+# Playwright
+playwright-report/
+test-results/
+
 # Generated agent files (source is in templates/)
 .claude/
 .codex/
