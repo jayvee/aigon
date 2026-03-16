@@ -255,12 +255,18 @@
     .sessions-toolbar{display:flex;align-items:center;gap:10px;margin:12px 0}
     .sessions-group{margin-bottom:20px}
     .sessions-group-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary);padding:0 0 6px;border-bottom:1px solid var(--border-subtle);margin-bottom:8px}
-    .session-row{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;margin-bottom:5px}
+    .session-row{display:grid;grid-template-columns:1fr auto auto auto auto;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;margin-bottom:5px}
     .session-row:hover{border-color:var(--border-default)}
     .session-row.attached{border-left:2px solid var(--success)}
+    .session-row.orphan{border-left:2px solid var(--warning, #f59e0b)}
     .session-name{font-family:var(--mono);font-size:12px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .session-meta{font-size:11px;color:var(--text-tertiary);white-space:nowrap}
+    .session-meta{font-size:11px;color:var(--text-tertiary);white-space:nowrap;text-align:right}
     .session-attached-badge{font-size:10px;padding:1px 6px;border-radius:999px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#86efac;white-space:nowrap}
+    .session-entity-badge{font-size:10px;padding:1px 6px;border-radius:999px;white-space:nowrap;font-family:var(--mono);font-weight:600}
+    .session-entity-badge.feature{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35);color:#93bbfd}
+    .session-entity-badge.research{background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.35);color:#c4b5fd}
+    .session-orphan-badge{font-size:10px;padding:1px 6px;border-radius:999px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:#fcd34d;white-space:nowrap}
+    .sessions-group-title.orphan-title{color:#f59e0b}
     /* Statistics view */
     .stats-view{padding:0 0 28px}
     .stats-toolbar{display:flex;align-items:center;gap:12px;margin:8px 0 16px;flex-wrap:wrap}
@@ -3121,10 +3127,12 @@
       container.innerHTML = '<div style="padding:12px 0;color:var(--text-tertiary);font-size:12px">Loading sessions…</div>';
 
       let sessions = [];
+      let orphanCount = 0;
       try {
         const res = await fetch('/api/sessions');
         const data = await res.json();
         sessions = data.sessions || [];
+        orphanCount = data.orphanCount || 0;
       } catch (e) {
         container.innerHTML = '<div class="empty">Failed to load sessions: ' + escHtml(e.message) + '</div>';
         return;
@@ -3137,33 +3145,71 @@
       toolbar.className = 'sessions-toolbar';
       toolbar.innerHTML = '<strong style="font-size:15px;font-weight:600;letter-spacing:-.01em">Tmux Sessions</strong>' +
         '<span style="font-size:12px;color:var(--text-tertiary)">' + sessions.length + ' session' + (sessions.length === 1 ? '' : 's') + '</span>' +
+        (orphanCount > 0 ? '<button class="btn btn-warn" id="sessions-kill-orphans-btn" style="font-size:11px;padding:4px 10px">Kill ' + orphanCount + ' Orphan' + (orphanCount === 1 ? '' : 's') + '</button>' : '') +
         '<button class="btn" id="sessions-refresh-btn" style="margin-left:auto">↺ Refresh</button>';
       container.appendChild(toolbar);
       document.getElementById('sessions-refresh-btn').onclick = () => renderSessions();
+      const killOrphansBtn = document.getElementById('sessions-kill-orphans-btn');
+      if (killOrphansBtn) {
+        killOrphansBtn.onclick = async () => {
+          if (!confirm('Kill all ' + orphanCount + ' orphaned session' + (orphanCount === 1 ? '' : 's') + '?')) return;
+          try {
+            const r = await fetch('/api/sessions/cleanup', { method: 'POST' });
+            const d = await r.json();
+            showToast('Killed ' + (d.count || 0) + ' orphan' + (d.count === 1 ? '' : 's'));
+          } catch (e) { showToast('Cleanup failed: ' + e.message); }
+          renderSessions();
+        };
+      }
 
       if (sessions.length === 0) {
         container.innerHTML += '<div class="empty">No tmux sessions running.</div>';
         return;
       }
 
-      // Group: dashboard sessions first, then by repo prefix
+      // Group: dashboard, orphaned, agent
       const dashSessions = sessions.filter(s => s.name.startsWith('aigon-dash-'));
-      const otherSessions = sessions.filter(s => !s.name.startsWith('aigon-dash-'));
+      const orphanSessions = sessions.filter(s => !s.name.startsWith('aigon-dash-') && s.orphan);
+      const agentSessions = sessions.filter(s => !s.name.startsWith('aigon-dash-') && !s.orphan);
 
-      function renderGroup(title, items) {
+      function entityBadge(s) {
+        if (!s.entityType) return '';
+        const label = s.entityType + s.entityId;
+        const cls = s.entityType === 'f' ? 'feature' : 'research';
+        return '<span class="session-entity-badge ' + cls + '">' + escHtml(label) + '</span>';
+      }
+
+      function statusBadge(s) {
+        if (s.orphan) {
+          const reasonLabels = { done: 'feature done', paused: 'feature paused', 'spec-missing': 'spec deleted' };
+          const label = reasonLabels[s.orphan.reason] || 'orphan';
+          const entity = s.entityType && s.entityId ? ' — ' + s.entityType.toUpperCase() + s.entityId : '';
+          const tip = s.orphan.reason === 'done' ? 'This session\'s feature has been completed'
+            : s.orphan.reason === 'paused' ? 'This session\'s feature is paused'
+            : s.orphan.reason === 'spec-missing' ? 'No spec file found for this session\'s feature'
+            : 'Session has no active feature';
+          return '<span class="session-orphan-badge" title="' + escHtml(tip + entity) + '">' + label + entity + '</span>';
+        }
+        if (s.attached) return '<span class="session-attached-badge">attached</span>';
+        return '';
+      }
+
+      function renderGroup(title, items, opts) {
         if (items.length === 0) return;
         const group = document.createElement('div');
         group.className = 'sessions-group';
-        group.innerHTML = '<div class="sessions-group-title">' + escHtml(title) + ' (' + items.length + ')</div>';
+        const titleCls = 'sessions-group-title' + (opts && opts.orphan ? ' orphan-title' : '');
+        group.innerHTML = '<div class="' + titleCls + '">' + escHtml(title) + ' (' + items.length + ')</div>';
         items.forEach(s => {
           const row = document.createElement('div');
-          row.className = 'session-row' + (s.attached ? ' attached' : '');
+          const rowCls = 'session-row' + (s.attached ? ' attached' : '') + (s.orphan ? ' orphan' : '');
+          row.className = rowCls;
           const age = relTime(s.createdAt);
-          const attachedBadge = s.attached ? '<span class="session-attached-badge">attached</span>' : '';
           row.innerHTML =
             '<span class="session-name" title="' + escHtml(s.name) + '">' + escHtml(s.name) + '</span>' +
+            entityBadge(s) +
+            statusBadge(s) +
             '<span class="session-meta">' + age + '</span>' +
-            attachedBadge +
             '<span style="display:flex;gap:5px">' +
               '<button class="btn btn-primary" style="font-size:11px;padding:3px 8px" data-session="' + escHtml(s.name) + '">Attach</button>' +
               '<button class="btn btn-warn" style="font-size:11px;padding:3px 8px" data-kill="' + escHtml(s.name) + '">Kill</button>' +
@@ -3189,7 +3235,8 @@
       }
 
       renderGroup('Dashboard Sessions', dashSessions);
-      renderGroup('Agent Sessions', otherSessions);
+      renderGroup('Orphaned Sessions', orphanSessions, { orphan: true });
+      renderGroup('Agent Sessions', agentSessions);
     }
 
     function render() {
