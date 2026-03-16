@@ -68,6 +68,17 @@ git commit -m "docs: update implementation log for feature <ID>"
 aigon agent-status submitted
 ```
 
+**Then do a final check for any trailing uncommitted changes** (e.g., if `aigon agent-status` or any post-commit step touched a file):
+```bash
+git status --short
+```
+
+If anything is still modified or untracked, stage and commit it now:
+```bash
+git add -A
+git commit -m "docs: finalize log for feature <ID>"
+```
+
 ## Signal completion
 
 **First, detect the mode by counting worktrees:**
