@@ -34,30 +34,30 @@ Current command families:
 
 Current shared modules:
 
-> **Note (as of feature 69):** All `lib/*.js` domain modules below are currently thin re-export facades — they re-export functions from `lib/utils.js` where the actual logic lives. Feature 68 (complete-cli-modularization) will move logic from `lib/utils.js` into these modules. Until then, if you need to find or edit the real implementation, look in `lib/utils.js` at the line ranges noted below.
+**Fully implemented modules** (logic lives in the module itself):
+
+- `lib/board.js` (~502 lines): board rendering and board action helpers
+  `collectBoardItems`, `displayBoardKanbanView`, `displayBoardListView`, `saveBoardMapping`, `getBoardAction`
+- `lib/feedback.js` (~374 lines): feedback parsing, normalization, similarity, triage helpers
+  `normalizeFeedbackMetadata`, `collectFeedbackItems`, `findDuplicateFeedbackCandidates`, `buildFeedbackTriageRecommendation`
+- `lib/validation.js` (~1,131 lines): Ralph/autonomous loop and smart validation helpers
+  `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`, `runFeatureValidateCommand`
+
+**Thin re-export facades** (re-export from `lib/utils.js`; logic lives there):
 
 - `lib/constants.js`: registries, path constants, command metadata, agent metadata
-  _(logic in `lib/utils.js` ~223–575 config/registry constants)_
 - `lib/config.js`: global and project config, profiles, model/config resolution
-  _(logic in `lib/utils.js` ~223–575 `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`)_
-- `lib/devserver.js`: port allocation, proxy registration, dev-server helpers
-  _(logic in `lib/utils.js` ~576–1111 `allocatePort`, `registerDevServer`, `spawnDevServer`, `waitForHealthy`)_
-- `lib/dashboard.js`: dashboard status aggregation, HTML generation, radar helpers
-  _(logic in `lib/utils.js` ~1187–2230 `collectDashboardStatusData`, `buildDashboardHtml`, radar daemon helpers)_
+  `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`
+- `lib/devserver.js`: port allocation, dev-server helpers
+  `allocatePort`, `registerDevServer`, `spawnDevServer`, `waitForHealthy`
+- `lib/dashboard.js`: dashboard status aggregation, HTML generation, instance discovery
+  `collectDashboardStatusData`, `buildDashboardHtml`, `writeDashboardInstance`, `runDashboardServer`
 - `lib/worktree.js`: worktree discovery, terminal launching, tmux helpers
-  _(logic in `lib/utils.js` ~5359–5474 `setupWorktreeEnvironment`, `ensureAgentSessions`)_
+  `setupWorktreeEnvironment`, `ensureAgentSessions`
 - `lib/hooks.js`: hook parsing and execution
-  _(logic in `lib/utils.js` — hook helpers used in command pre/post hook calls)_
 - `lib/templates.js`: template loading, placeholder expansion, agent-install helpers
-  _(logic in `lib/utils.js` ~6272–6530 `readTemplate`, `processTemplate`, `readGenericTemplate`, `formatCommandOutput`)_
-- `lib/board.js`: board rendering and board action helpers
-  _(logic in `lib/utils.js` ~6531–7016 `collectBoardItems`, `displayBoardKanbanView`, `displayBoardListView`)_
-- `lib/validation.js`: Ralph/autonomous validation helpers
-  _(logic in `lib/utils.js` ~7017–8205 `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`)_
-- `lib/feedback.js`: feedback parsing, normalization, similarity, triage helpers
-  _(logic in `lib/utils.js` ~4673–5202 `parseFrontMatter`, `normalizeFeedbackMetadata`, `findDuplicateFeedbackCandidates`, `buildFeedbackTriageRecommendation`)_
-- `lib/utils.js`: the actual shared implementation surface — contains all domain logic until feature 68 lands
-  _(~8530 lines; see NAVIGATION index at top of file)_
+  `readTemplate`, `processTemplate`, `readGenericTemplate`, `formatCommandOutput`
+- `lib/utils.js` (~6,173 lines): shared implementation surface for all facade modules; see NAVIGATION index at top of file
 
 ## Workflow State
 
