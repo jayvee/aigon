@@ -325,6 +325,7 @@
     .logs-table th .sort-arrow{display:inline-block;margin-left:3px;opacity:.7}
     .logs-table td{padding:7px 12px 7px 0;border-bottom:1px solid var(--border-subtle);color:var(--text-primary);vertical-align:middle}
     .logs-table tr:last-child td{border-bottom:none}
+    .logs-row:hover td{background:var(--bg-surface)}
     .logs-table td.col-id{font-family:var(--mono);font-size:11px;color:var(--text-secondary);white-space:nowrap}
     .logs-table td.col-name{color:var(--text-primary);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .logs-table td.col-repo{color:var(--text-secondary);font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2863,6 +2864,10 @@
       pageSize: 50
     };
 
+    function slugToTitle(slug) {
+      return (slug || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+
     function renderLogsView() {
       const container = document.getElementById('logs-view');
       document.getElementById('monitor-summary').style.display = 'none';
@@ -2885,17 +2890,20 @@
 
       // Search filter
       const q = logsState.search.trim().toLowerCase();
-      if (q) rows = rows.filter(r => (r.name || '').toLowerCase().includes(q) || String(r.id).includes(q));
+      if (q) rows = rows.filter(r => {
+        const title = slugToTitle(r.name).toLowerCase();
+        return title.includes(q) || (r.name || '').toLowerCase().includes(q) || String(r.id || '').includes(q);
+      });
 
       // Sort
       const { col, dir } = logsState.sort;
       rows = rows.slice().sort((a, b) => {
-        let av = a[col], bv = b[col];
-        if (col === 'id') { av = Number(a.id || 0); bv = Number(b.id || 0); }
-        else if (col === 'name') { av = (a.name || '').toLowerCase(); bv = (b.name || '').toLowerCase(); }
+        let av, bv;
+        if (col === 'id') { av = Number(a.id ?? Infinity); bv = Number(b.id ?? Infinity); }
+        else if (col === 'name') { av = slugToTitle(a.name).toLowerCase(); bv = slugToTitle(b.name).toLowerCase(); }
         else if (col === 'stage') { av = a.stage || ''; bv = b.stage || ''; }
         else if (col === 'repo') { av = a.repoName || ''; bv = b.repoName || ''; }
-        else { av = av || ''; bv = bv || ''; } // dates as strings — ISO sorts lexically
+        else { av = a[col] || ''; bv = b[col] || ''; } // ISO dates sort lexically
         if (av < bv) return dir === 'asc' ? -1 : 1;
         if (av > bv) return dir === 'asc' ? 1 : -1;
         return 0;
@@ -2908,8 +2916,8 @@
 
       function thHtml(key, label) {
         const active = col === key;
-        const arrow = active ? (dir === 'asc' ? '↑' : '↓') : '';
-        return `<th class="${active ? 'sort-active' : ''}" data-sort="${key}">${label}${arrow ? `<span class="sort-arrow">${arrow}</span>` : ''}</th>`;
+        const arrow = active ? (dir === 'asc' ? ' ↑' : ' ↓') : '';
+        return `<th class="${active ? 'sort-active' : ''}" data-sort="${key}">${label}${arrow}</th>`;
       }
 
       function stageHtml(stage) {
@@ -2918,9 +2926,8 @@
       }
 
       const html = [];
-      html.push('<div class="logs-view">');
       html.push('<div class="logs-toolbar">');
-      html.push(`<input class="logs-search" id="logs-search-input" type="search" placeholder="Search by name…" value="${escHtml(logsState.search)}">`);
+      html.push(`<input class="logs-search" id="logs-search-input" type="search" placeholder="Search features…" value="${escHtml(logsState.search)}">`);
       html.push(`<span style="margin-left:auto;font-size:11px;color:var(--text-tertiary)">${total} feature${total !== 1 ? 's' : ''}</span>`);
       html.push('</div>');
 
@@ -2935,10 +2942,12 @@
       html.push(thHtml('updatedAt', 'Last Changed'));
       html.push('</tr></thead>');
       html.push('<tbody>');
-      pageRows.forEach(r => {
-        html.push('<tr>');
-        html.push(`<td class="col-id">#${String(r.id).padStart(2, '0')}</td>`);
-        html.push(`<td class="col-name" title="${escHtml(r.name || '')}">${escHtml(r.name || '—')}</td>`);
+      pageRows.forEach((r, i) => {
+        const title = slugToTitle(r.name);
+        const idStr = r.id != null ? `#${String(r.id).padStart(2, '0')}` : '—';
+        html.push(`<tr class="logs-row" data-idx="${i}" style="cursor:pointer" title="Click to open spec">`);
+        html.push(`<td class="col-id">${idStr}</td>`);
+        html.push(`<td class="col-name">${escHtml(title)}</td>`);
         html.push(`<td>${stageHtml(r.stage)}</td>`);
         html.push(`<td class="col-repo" title="${escHtml(r.repoDisplay || '')}">${escHtml(r.repoName || '—')}</td>`);
         html.push(`<td class="col-date" data-updated="${escHtml(r.createdAt || '')}">${r.createdAt ? relTime(r.createdAt) : '—'}</td>`);
@@ -2955,7 +2964,6 @@
       html.push(`<button class="logs-page-btn" id="logs-prev"${logsState.page === 0 ? ' disabled' : ''}>← Prev</button>`);
       html.push(`<span class="logs-page-info">${logsState.page + 1} / ${totalPages}</span>`);
       html.push(`<button class="logs-page-btn" id="logs-next"${logsState.page >= totalPages - 1 ? ' disabled' : ''}>Next →</button>`);
-      html.push('</div>');
       html.push('</div>');
 
       container.innerHTML = html.join('');
@@ -2975,11 +2983,20 @@
         };
       });
 
+      // Wire up row clicks → open spec drawer
+      container.querySelectorAll('.logs-row').forEach((row, i) => {
+        row.onmouseenter = () => row.style.background = 'var(--bg-surface)';
+        row.onmouseleave = () => row.style.background = '';
+        row.onclick = () => {
+          const r = pageRows[i];
+          if (r && r.specPath) openDrawer(r.specPath, slugToTitle(r.name), r.stage);
+        };
+      });
+
       // Wire up search
       const searchInput = document.getElementById('logs-search-input');
       if (searchInput) {
         searchInput.oninput = () => { logsState.search = searchInput.value; logsState.page = 0; renderLogsView(); };
-        searchInput.focus();
       }
 
       // Wire up pagination
