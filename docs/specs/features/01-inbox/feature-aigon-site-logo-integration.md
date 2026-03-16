@@ -1,42 +1,36 @@
 # Feature: aigon-site-logo-integration
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Replace the placeholder inline SVG lettermark favicon on aigon-site with the official aigon diamond icon. Deliver size-optimized SVG variants (16, 32, 64px) and wire them up as the browser favicon and any other logo placements on the marketing site.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As a visitor, I see the aigon diamond icon in my browser tab, not a generic "A" lettermark
+- [ ] As a developer sharing the aigon.build URL, the correct icon appears in link previews and bookmarks
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] `<link rel="icon">` in `index.html` references `img/aigon-icon-32.svg` (real file, not inline data URI)
+- [ ] SVG icon files exist at `img/aigon-icon-16.svg`, `img/aigon-icon-32.svg`, `img/aigon-icon-64.svg`
+- [ ] Each SVG has size-appropriate corner radius and stroke weight (not just a scaled-down copy)
+- [ ] Icon is visually identifiable in a 16×16 browser tab context
 
 ## Validation
-<!-- Optional: commands Ralph runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+grep 'rel="icon"' index.html | grep -v 'data:image'
+test -f img/aigon-icon-32.svg
 ```
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+- Source SVGs live in `aigon` repo at `assets/icon/` — copy to `aigon-site/img/` when updated
+- Use `aigon-icon-32.svg` as the primary favicon; browsers that support SVG favicons will use it at any size
+- No raster fallback required for modern browsers; `favicon.ico` can be added later for legacy support
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites -->
--
+- `aigon` repo: `assets/icon/aigon-icon-{16,32,64}.svg`
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
-
-## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Apple touch icon / PWA manifest icons
+- OG image / social card logo
+- Logo placement in site nav or hero (separate feature)
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
 - Research:
