@@ -2606,9 +2606,19 @@
 
     function buildCycleTimeSeries(features, granularity) {
       const MIN_DURATION_MS = 5 * 60 * 1000; // ignore < 5 min (likely backfill artifacts)
+
+      // Compute outlier cap: P95 or 48h, whichever is larger
+      const allHours = features
+        .filter(f => f.durationMs && f.durationMs >= MIN_DURATION_MS && !f.cycleTimeExclude)
+        .map(f => f.durationMs / 3600000)
+        .sort((a, b) => a - b);
+      const p95 = allHours.length > 0 ? allHours[Math.floor(allHours.length * 0.95)] : 48;
+      const outlierCap = Math.max(p95, 48);
+
       const buckets = {};
       features.forEach(f => {
         if (!f.durationMs || f.durationMs < MIN_DURATION_MS) return;
+        if (f.cycleTimeExclude) return;
         const ts = f.completedAt ? new Date(f.completedAt) : null;
         if (!ts || isNaN(ts)) return;
         let key;
@@ -2622,13 +2632,23 @@
         } else {
           key = ts.toISOString().slice(0, 7) + '-01';
         }
-        if (!buckets[key]) buckets[key] = [];
-        buckets[key].push(f.durationMs / 3600000); // convert to hours
+        const hours = f.durationMs / 3600000;
+        if (!buckets[key]) buckets[key] = { included: [], outliers: 0 };
+        if (hours > outlierCap) {
+          buckets[key].outliers++;
+        } else {
+          buckets[key].included.push(hours);
+        }
       });
       return Object.keys(buckets).sort().map(k => {
-        const vals = buckets[k];
-        const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
-        return { date: k, avgHours: Math.round(avg * 10) / 10, count: vals.length };
+        const { included, outliers } = buckets[k];
+        let medianHours = null;
+        if (included.length > 0) {
+          const sorted = included.slice().sort((a, b) => a - b);
+          const mid = Math.floor(sorted.length / 2);
+          medianHours = Math.round((sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2) * 10) / 10;
+        }
+        return { date: k, medianHours, count: included.length, outliersExcluded: outliers };
       });
     }
 
@@ -2668,7 +2688,7 @@
                   if (granularity === 'weekly') return 'Week of ' + label;
                   return label;
                 },
-                label: ctx => ` Avg cycle time: ${ctx.parsed.y}h`
+                label: ctx => ` Median cycle time: ${ctx.parsed.y}h`
               },
               backgroundColor: '#1a1a1f',
               titleColor: '#ededef',
@@ -2726,7 +2746,12 @@
       const chart = statsState.cycleTimeChart;
       if (chart) {
         chart.data.labels = slice.map(d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(5, 10));
-        chart.data.datasets[0].data = slice.map(d => d.avgHours);
+        chart.data.datasets[0].data = slice.map(d => d.medianHours);
+        chart.options.plugins.tooltip.callbacks.label = ctx => {
+          const d = slice[ctx.dataIndex];
+          const line = ` Median cycle time: ${ctx.parsed.y}h`;
+          return d && d.outliersExcluded > 0 ? [line, ` (${d.outliersExcluded} outlier${d.outliersExcluded > 1 ? 's' : ''} excluded)`] : line;
+        };
         chart.update('none');
       }
 
@@ -2875,7 +2900,12 @@
       // Filter features for the selected period + repo
       const filteredFeatures = filterFeaturesByPeriodAndRepo(analytics.features || [], statsState.period, statsState.repoFilter);
       const totalCompleted = filteredFeatures.length;
-      const featWithDur = filteredFeatures.filter(f => f.durationMs && f.durationMs > 0);
+      const featWithDur = filteredFeatures.filter(f => f.durationMs && f.durationMs > 0 && !f.cycleTimeExclude);
+      const durHoursSorted = featWithDur.map(f => f.durationMs / 3600000).sort((a, b) => a - b);
+      const ctMid = Math.floor(durHoursSorted.length / 2);
+      const medianCycle = durHoursSorted.length > 0
+        ? (durHoursSorted.length % 2 ? durHoursSorted[ctMid] : (durHoursSorted[ctMid - 1] + durHoursSorted[ctMid]) / 2)
+        : null;
       const avgCycle = featWithDur.length > 0
         ? featWithDur.reduce((s, f) => s + f.durationMs, 0) / featWithDur.length / (1000 * 3600) : null;
       const featWithAutonomy = filteredFeatures.filter(f => f.autonomyRatio !== null);
@@ -2891,7 +2921,7 @@
       const trend30 = analytics.volume && analytics.volume.trend30d;
       html.push(buildStatCard('Features Completed', String(totalCompleted),
         statsState.period === '30d' && trend30 !== null ? trendIcon(trend30) : null));
-      html.push(buildStatCard('Avg Cycle Time', fmtHours(avgCycle), null, avgCycle !== null ? 'start to close' : null));
+      html.push(buildStatCard('Cycle Time', fmtHours(medianCycle), null, medianCycle !== null ? 'median, start to close' : null));
       html.push(buildStatCard('Autonomy Score', avgAutonomy !== null ? fmtPct(avgAutonomy) : '—', null));
       html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null));
       html.push('</div>');
@@ -2955,8 +2985,8 @@
       html.push('<div class="stats-block">');
       html.push('<div class="stats-block-title">Quality &amp; Speed</div>');
       html.push('<div class="stats-kv-grid">');
-      html.push(`<div class="stats-kv"><div class="stats-kv-label">Avg cycle time</div><div class="stats-kv-val">${fmtHours(avgCycle !== null ? avgCycle : dur.average)}</div></div>`);
-      html.push(`<div class="stats-kv"><div class="stats-kv-label">Median cycle time</div><div class="stats-kv-val">${fmtHours(dur.median)}</div></div>`);
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">Cycle time (median)</div><div class="stats-kv-val">${fmtHours(medianCycle !== null ? medianCycle : dur.median)}</div></div>`);
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">Cycle time (mean)</div><div class="stats-kv-val">${fmtHours(avgCycle !== null ? avgCycle : dur.average)}</div></div>`);
       html.push(`<div class="stats-kv"><div class="stats-kv-label">Max cycle time</div><div class="stats-kv-val">${fmtHours(dur.max)}</div></div>`);
       html.push(`<div class="stats-kv"><div class="stats-kv-label">Avg iterations</div><div class="stats-kv-val">${fmtNum(quality.avgIterationsPerFeature, 1)}</div></div>`);
       html.push('</div>');
@@ -2966,7 +2996,7 @@
       // Cycle time over time chart
       html.push('<div class="volume-chart-wrap">');
       html.push('<div class="volume-chart-header">');
-      html.push('<div class="volume-chart-title">Avg Cycle Time Over Time</div>');
+      html.push('<div class="volume-chart-title">Median Cycle Time Over Time</div>');
       html.push('<div style="display:flex;align-items:center;gap:8px">');
       html.push('<span id="ct-nav-controls" style="display:flex;align-items:center;gap:4px">');
       html.push('<button id="ct-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
@@ -2991,7 +3021,7 @@
         const ag = f.winnerAgent || 'solo';
         if (!leaderAgentMap[ag]) leaderAgentMap[ag] = { completed: 0, durMs: [], autonomyRatios: [], firstPassArr: [] };
         leaderAgentMap[ag].completed++;
-        if (f.durationMs && f.durationMs > 0) leaderAgentMap[ag].durMs.push(f.durationMs);
+        if (f.durationMs && f.durationMs > 0 && !f.cycleTimeExclude) leaderAgentMap[ag].durMs.push(f.durationMs);
         if (f.autonomyRatio !== null) leaderAgentMap[ag].autonomyRatios.push(f.autonomyRatio);
         if (f.firstPassSuccess !== null) leaderAgentMap[ag].firstPassArr.push(f.firstPassSuccess);
       });
@@ -3031,7 +3061,11 @@
           .forEach(agentId => {
             const d = leaderAgentMap[agentId] || { completed: 0, durMs: [], autonomyRatios: [], firstPassArr: [] };
             const ev = evalMap[agentId];
-            const avgCycle = d.durMs.length > 0 ? round1(d.durMs.reduce((s, v) => s + v, 0) / d.durMs.length / 3600000) : null;
+            const sortedDur = d.durMs.slice().sort((a, b) => a - b);
+            const ldrMid = Math.floor(sortedDur.length / 2);
+            const avgCycle = sortedDur.length > 0
+              ? round1(sortedDur.length % 2 ? sortedDur[ldrMid] / 3600000 : (sortedDur[ldrMid - 1] + sortedDur[ldrMid]) / 2 / 3600000)
+              : null;
             const autoScore = d.autonomyRatios.length > 0 ? d.autonomyRatios.reduce((s, v) => s + v, 0) / d.autonomyRatios.length : null;
             const fpRate = d.firstPassArr.length > 0 ? d.firstPassArr.filter(Boolean).length / d.firstPassArr.length : null;
             // Share of total eval wins (sums to 100% across agents)
