@@ -1,11 +1,12 @@
 ---
-status: waiting
-updated: 2026-03-16T13:19:15.319Z
+status: submitted
+updated: 2026-03-16T13:40:00.921Z
 startedAt: 2026-03-16T12:39:17.586Z
 events:
   - { ts: "2026-03-16T12:39:17.586Z", status: implementing }
   - { ts: "2026-03-16T12:51:24.128Z", status: implementing }
   - { ts: "2026-03-16T13:19:15.319Z", status: waiting }
+  - { ts: "2026-03-16T13:40:00.921Z", status: submitted }
 ---
 
 # Implementation Log: Feature 71 - dashboard-modernise
