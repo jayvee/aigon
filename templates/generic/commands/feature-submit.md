@@ -57,26 +57,15 @@ Update it with a thorough writeup:
 - Any trade-offs or alternatives considered
 - Issues encountered and how they were resolved
 
-**Then commit the log file:**
-```bash
-git add docs/specs/features/logs/
-git commit -m "docs: update implementation log for feature <ID>"
-```
-
-**Signal that implementation is submitted:**
+**Signal that implementation is submitted (updates the log file frontmatter):**
 ```bash
 aigon agent-status submitted
 ```
 
-**Then do a final check for any trailing uncommitted changes** (e.g., if `aigon agent-status` or any post-commit step touched a file):
+**Then commit the log file (includes both the writeup and the status update above):**
 ```bash
-git status --short
-```
-
-If anything is still modified or untracked, stage and commit it now:
-```bash
-git add -A
-git commit -m "docs: finalize log for feature <ID>"
+git add docs/specs/features/logs/
+git commit -m "docs: update implementation log for feature <ID>"
 ```
 
 ## Signal completion
