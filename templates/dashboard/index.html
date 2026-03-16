@@ -505,6 +505,25 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script>
+    // ── JS SECTIONS ──────────────────────────────────────────────────────────
+    // State & constants                           ~508
+    // Utilities (relTime, escHtml, showToast)     ~524
+    // API helpers (requestRefresh, requestAction) ~583
+    // Session execution (executeNextAction)       ~665
+    // Terminal panel                              ~713
+    // AI session picker                           ~938
+    // Agent picker                                ~1001
+    // Repo sidebar                                ~1028
+    // Spec drawer                                 ~1186
+    // Shared render helpers                       ~1480
+    // Monitor view                                ~1515
+    // Pipeline / Kanban view                      ~1842
+    // Settings view                               ~2315
+    // Statistics view                             ~2431
+    // Logs view                                   ~2909
+    // Main render dispatch                        ~3418
+    // Init (polling, WebSocket, event listeners)  ~3649
+    // ─────────────────────────────────────────────────────────────────────────
     const POLL_MS = 10000;
     const TS_MS = 30000;
     const INITIAL_DATA = ${INITIAL_DATA};
