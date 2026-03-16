@@ -1,6 +1,7 @@
 ---
 status: submitted
-updated: 2026-03-16T04:49:46.325Z
+updated: 2026-03-16T04:50:26.960Z
+completedAt: 2026-03-16T04:50:26.960Z
 events:
   - { ts: "2026-03-16T04:25:56.799Z", status: waiting }
   - { ts: "2026-03-16T04:49:46.325Z", status: submitted }
