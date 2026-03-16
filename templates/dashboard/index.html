@@ -62,7 +62,7 @@
     .card.research{border-left:2px solid #06b6d4}
     .research-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.35);color:#67e8f9;margin-left:6px;flex-shrink:0}
     .research-badge.all-submitted{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#86efac}
-    .eval-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35);color:#c4b5fd;margin-left:6px;flex-shrink:0}
+    .eval-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35);color:#c4b5fd;flex-shrink:0;pointer-events:none;cursor:default;user-select:none}
     .eval-badge.pick-winner{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#86efac}
     .card-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 10px 6px}
     .card-h .feature{letter-spacing:-.02em;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -87,6 +87,10 @@
     .btn-success:hover{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.65);color:#bbf7d0}
     .btn-warn{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:#fcd34d}
     .btn-warn:hover{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.65);color:#fde68a}
+    .btn-secondary{background:transparent;border:1px solid var(--border-subtle);color:var(--text-tertiary)}
+    .btn-secondary:hover{border-color:var(--border-default);color:var(--text-secondary)}
+    .btn-danger{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.35);color:#fca5a5}
+    .btn-danger:hover{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.6);color:#fca5a5}
     .next-copy{font-size:11px}
     .row-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap;min-width:0}
     .empty{padding:18px;color:var(--text-secondary);background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius)}
@@ -128,8 +132,10 @@
     .agent-badge.waiting{border-color:rgba(245,158,11,.4);color:#fcd34d}
     .agent-badge.submitted{border-color:rgba(34,197,94,.4);color:#86efac}
     .agent-badge.error{border-color:rgba(239,68,68,.4);color:#fca5a5}
-    .kcard-actions{display:flex;gap:5px;flex-wrap:wrap}
+    .kcard-status{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+    .kcard-actions{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
     .kcard-actions .btn{font-size:11px;padding:3px 8px}
+    .kcard-actions .btn-secondary{font-size:10px;padding:2px 7px}
     .col-empty{padding:12px 8px;color:var(--text-tertiary);font-size:12px;text-align:center}
     /* Agent picker modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:flex;align-items:center;justify-content:center}
@@ -1796,25 +1802,22 @@
       return agents.map(a => '<span class="agent-badge ' + escHtml(a.status || '') + '">' + escHtml(a.id) + '</span>').join('');
     }
 
-    // Maps validActions action names to button CSS classes
+    // Maps validActions to button CSS classes using priority as the primary signal.
+    // priority:'high' → primary (prominent, recommended next step)
+    // feature-stop → danger (destructive)
+    // everything else → secondary (subdued, available but not competing)
     function validActionBtnClass(action, priority) {
-      if (action === 'feature-prioritise' || action === 'research-prioritise') return 'btn btn-primary';
-      if (action === 'feature-setup' || action === 'research-setup') return 'btn btn-primary';
-      if (action === 'feature-review') return 'btn btn-primary';
-      if (action === 'feature-close' || action === 'research-close' || action === 'feedback-close') return 'btn btn-warn';
-      if (action === 'feature-eval' || action === 'research-synthesize') return 'btn btn-success';
+      if (priority === 'high') return 'btn btn-primary';
       if (action === 'feature-stop') return 'btn btn-danger';
-      return 'btn';
+      return 'btn btn-secondary';
     }
 
     // Builds button HTML from server-provided validActions.
+    // Returns only action buttons — status badges are handled separately in buildKanbanCard.
     // Transitions are used for drag-drop only (not rendered as buttons) —
-    // except specific transitions that should appear as buttons (prioritise, setup, close).
-    function buildValidActionsHtml(validActions, evalStatus, stage) {
+    // except specific transitions that should appear as buttons (prioritise, close, triage).
+    function buildValidActionsHtml(validActions) {
       if (!validActions || validActions.length === 0) return '';
-      const evalBadge = evalStatus
-        ? '<span class="eval-badge' + (evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(evalStatus) + '</span>'
-        : '';
       // Filter: show in-state actions as buttons, plus specific transitions that need buttons
       const transitionsAsButtons = ['feature-prioritise', 'research-prioritise', 'feature-close', 'research-close', 'feedback-triage'];
       const buttonsToRender = validActions.filter(va => {
@@ -1831,12 +1834,16 @@
         const key = va.action + (va.agentId || '');
         if (!seen.has(key)) { seen.add(key); deduped.push(va); }
       }
-      const btnHtml = deduped.map(va => {
+      // Sort: high-priority (primary) first, then normal, then stop/danger last
+      deduped.sort((a, b) => {
+        const rank = v => v.priority === 'high' ? 0 : v.action === 'feature-stop' ? 2 : 1;
+        return rank(a) - rank(b);
+      });
+      return deduped.map(va => {
         const cls = validActionBtnClass(va.action, va.priority);
         const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
         return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '"' + agentAttr + '>' + escHtml(va.label) + '</button>';
       }).join('');
-      return evalBadge + btnHtml;
     }
 
     // Dispatches a validAction click to the appropriate API endpoint
@@ -1885,44 +1892,18 @@
 
       const stage = feature.stage;
 
-      // Render buttons from server-provided validActions (state machine output).
-      // Falls back to hardcoded stage checks for older API responses without validActions.
-      let actionsHtml = '';
-      if (feature.validActions && feature.validActions.length > 0) {
-        actionsHtml = buildValidActionsHtml(feature.validActions, feature.evalStatus, stage);
-      } else {
-        // Legacy fallback — used when server has not yet computed validActions
-        if (stage === 'inbox') {
-          actionsHtml = '<button class="btn btn-primary kcard-btn-prioritise">Prioritise</button>';
-        } else if (stage === 'backlog') {
-          actionsHtml = '<button class="btn btn-primary kcard-btn-setup">Setup</button>';
-        } else if (stage === 'in-progress') {
-          const worktreeBtns = (feature.agents || []).filter(a => a.id !== 'solo').map(a =>
-            '<button class="btn kcard-btn-worktree" data-agent="' + escHtml(a.id) + '">Open ' + escHtml(a.id) + '</button>'
-          ).join('');
-          const allSubmitted = feature.agents && feature.agents.length > 0 && feature.agents.every(a => a.status === 'submitted');
-          const isSolo = feature.agents && feature.agents.length === 1 && feature.agents[0].id === 'solo';
-          const submitBtn = allSubmitted
-            ? (isSolo
-              ? '<button class="btn btn-success kcard-btn-close">Close</button>'
-              : '<button class="btn btn-success kcard-btn-eval">Evaluate</button>')
-            : '';
-          actionsHtml = worktreeBtns + submitBtn;
-        } else if (stage === 'in-evaluation') {
-          const evalStatusHtml = feature.evalStatus
-            ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
-            : '';
-          const soloAgents = (feature.agents || []).filter(a => a.id !== 'solo');
-          const isSoloEval = soloAgents.length <= 1;
-          const reviewBtn = isSoloEval ? '<button class="btn btn-primary kcard-btn-review">Review</button>' : '';
-          actionsHtml = evalStatusHtml + reviewBtn + '<button class="btn btn-warn kcard-btn-close">Close</button>';
-        }
-      }
+      // Render buttons from server-provided validActions (state machine is the only source of truth).
+      const actionsHtml = buildValidActionsHtml(feature.validActions || []);
+      // Eval status badge is a non-interactive status indicator, rendered separately from buttons.
+      const evalStatusHtml = feature.evalStatus
+        ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
+        : '';
 
       card.innerHTML =
         (feature.id ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
         '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>' +
         (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
+        (evalStatusHtml ? '<div class="kcard-status">' + evalStatusHtml + '</div>' : '') +
         (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
 
       let wasDragged = false;
@@ -1972,63 +1953,6 @@
           await handleValidAction(va, feature, repoPath, btn, pipelineType);
         };
       });
-
-      // Legacy fallback button handlers (for older API responses without validActions)
-      const prioritiseBtn = card.querySelector('.kcard-btn-prioritise');
-      if (prioritiseBtn) {
-        prioritiseBtn._origText = 'Prioritise';
-        prioritiseBtn.onclick = async (e) => {
-          e.stopPropagation();
-          await requestAction(pipelineCommand(pipelineType, 'prioritise'), [feature.name], repoPath, prioritiseBtn);
-        };
-      }
-
-      const setupBtn = card.querySelector('.kcard-btn-setup');
-      if (setupBtn) {
-        setupBtn._origText = 'Setup';
-        setupBtn.onclick = async (e) => {
-          e.stopPropagation();
-          const agents = await showAgentPicker(feature.id, feature.name);
-          if (!agents) return;
-          await requestAction(pipelineCommand(pipelineType, 'setup'), [feature.id, ...agents], repoPath, setupBtn);
-        };
-      }
-
-      card.querySelectorAll('.kcard-btn-worktree').forEach(btn => {
-        const agentId = btn.getAttribute('data-agent');
-        btn._origText = 'Open ' + agentId;
-        btn.onclick = async (e) => {
-          e.stopPropagation();
-          await requestWorktreeOpen(feature.id, agentId, repoPath, btn, pipelineType);
-        };
-      });
-
-      const evalBtn = card.querySelector('.kcard-btn-eval');
-      if (evalBtn) {
-        evalBtn._origText = 'Evaluate';
-        evalBtn.onclick = async (e) => {
-          e.stopPropagation();
-          await requestAction(pipelineCommand(pipelineType, 'eval'), [feature.id], repoPath, evalBtn);
-        };
-      }
-
-      const reviewBtn = card.querySelector('.kcard-btn-review');
-      if (reviewBtn) {
-        reviewBtn._origText = 'Review';
-        reviewBtn.onclick = async (e) => {
-          e.stopPropagation();
-          await requestAction(pipelineCommand(pipelineType, 'review'), [feature.id], repoPath, reviewBtn);
-        };
-      }
-
-      const closeBtn = card.querySelector('.kcard-btn-close');
-      if (closeBtn) {
-        closeBtn._origText = 'Close';
-        closeBtn.onclick = async (e) => {
-          e.stopPropagation();
-          await requestAction(pipelineCommand(pipelineType, 'close'), [feature.id], repoPath, closeBtn);
-        };
-      }
 
       return card;
     }
