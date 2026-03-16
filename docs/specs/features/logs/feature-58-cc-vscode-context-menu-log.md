@@ -1,7 +1,10 @@
 ---
+status: submitted
+updated: 2026-03-16T00:33:03.601Z
 feature: 58
 agent: cc
-status: submitted
+events:
+  - { ts: "2026-03-16T00:33:03.601Z", status: submitted }
 ---
 
 # Feature 58: vscode-context-menu — Implementation Log
