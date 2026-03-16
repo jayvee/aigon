@@ -67,8 +67,14 @@
     .card.research{border-left:2px solid #06b6d4}
     .research-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.35);color:#67e8f9;margin-left:6px;flex-shrink:0}
     .research-badge.all-submitted{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#86efac}
-    .eval-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35);color:#c4b5fd;flex-shrink:0;pointer-events:none;cursor:default;user-select:none}
-    .eval-badge.pick-winner{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#86efac}
+    .eval-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#c4b5fd;flex-shrink:0;pointer-events:none;cursor:default;user-select:none}
+    .eval-badge::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#a78bfa;flex-shrink:0}
+    .eval-badge.pick-winner{color:#86efac}
+    .eval-badge.pick-winner::before{background:#22c55e}
+    /* eval-badge inside a card title (monitor view) keeps pill styling for inline use */
+    .card-h .eval-badge{padding:2px 8px;border-radius:999px;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35)}
+    .card-h .eval-badge::before{display:none}
+    .card-h .eval-badge.pick-winner{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35)}
     .card-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 10px 6px}
     .card-h .feature{letter-spacing:-.02em;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .head-actions{display:flex;align-items:center;justify-content:flex-end;flex:0 0 auto}
@@ -137,8 +143,9 @@
     .agent-badge.waiting{border-color:rgba(245,158,11,.4);color:#fcd34d}
     .agent-badge.submitted{border-color:rgba(34,197,94,.4);color:#86efac}
     .agent-badge.error{border-color:rgba(239,68,68,.4);color:#fca5a5}
-    .kcard-status{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
-    .kcard-actions{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+    .kcard-status{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+    .kcard-status-label{font-size:10px;color:var(--text-tertiary);font-weight:500;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+    .kcard-actions{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding-top:6px;border-top:1px solid var(--border-subtle)}
     .kcard-actions .btn{font-size:11px;padding:3px 8px}
     .kcard-actions .btn-secondary{font-size:10px;padding:2px 7px}
     .col-empty{padding:12px 8px;color:var(--text-tertiary);font-size:12px;text-align:center}
@@ -246,10 +253,14 @@
     #terminal-container{flex:1;overflow:hidden;background:#0a0a0b;position:relative}
     .panel-footer{display:flex;align-items:center;justify-content:space-between;padding:6px 16px;border-top:1px solid var(--border-subtle);flex-shrink:0;background:#0a0a0b}
     /* AI session picker (single-agent selection) */
-    .ai-agent-options{display:grid;gap:6px;margin-bottom:16px}
-    .ai-agent-btn{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;background:none;border:1px solid var(--border-subtle);border-radius:8px;cursor:pointer;transition:background .1s ease,border-color .1s ease;color:var(--text-primary);font:inherit}
-    .ai-agent-btn:hover{background:var(--bg-elevated);border-color:var(--border-default)}
-    .ai-agent-btn.selected{border-color:rgba(59,130,246,.7);background:rgba(59,130,246,.1)}
+    .ask-agent-group{position:relative;display:inline-flex;flex-shrink:0;margin-left:8px}
+    .ask-agent-primary{font-size:11px;border-radius:8px 0 0 8px;border-right:none!important;padding:3px 8px}
+    .ask-agent-chevron{font-size:10px;padding:3px 5px;border-radius:0 8px 8px 0;min-width:unset}
+    .ask-agent-primary:only-child{border-radius:8px}
+    .ask-agent-dropdown{position:absolute;top:calc(100% + 4px);left:0;z-index:300;min-width:160px;background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:10px;padding:4px;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    .ask-agent-dropdown.open{display:block}
+    .ask-agent-option{display:block;width:100%;padding:7px 12px;background:none;border:none;color:var(--text-primary);font:inherit;font-size:12px;text-align:left;cursor:pointer;border-radius:6px;transition:background .1s ease}
+    .ask-agent-option:hover{background:var(--bg-surface)}
     .ai-agent-id{font-family:var(--mono);font-size:13px;font-weight:600;min-width:28px}
     .ai-agent-name{font-size:12px;color:var(--text-secondary);flex:1;text-align:left}
     @media(max-width:768px){.terminal-panel{width:100vw;border-left:none}}
@@ -406,6 +417,7 @@
                 <div class="repo-h" x-on:click.stop="toggleCollapse(repo.path)">
                   <strong x-text="repo.displayPath"></strong>
                   <span x-html="repoSummaryText(repo)"></span>
+                  <span x-html="buildAskAgentHtml(repo.path)" x-on:click.stop="handleAskClick($event)"></span>
                 </div>
                 <div class="repo-b" x-show="!isCollapsed(repo.path)">
                   <div class="empty" x-show="getTotalItems(repo) === 0">No items in progress.</div>
@@ -506,8 +518,10 @@
           <template x-for="repo in visibleRepos" :key="repo.path">
             <div>
               <div x-show="$store.dashboard.selectedRepo === 'all' && visibleRepos.length > 1"
-                   style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin:10px 0 6px;font-weight:600"
-                   x-text="repo.displayPath || repo.name"></div>
+                   style="display:flex;align-items:center;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin:10px 0 6px;font-weight:600">
+                <span x-text="repo.displayPath || repo.name"></span>
+                <span x-html="buildAskAgentHtml(repo.path)" style="text-transform:none;letter-spacing:0;font-weight:400"></span>
+              </div>
               <div class="kanban">
                 <template x-for="stage in currentStages" :key="stage">
                   <div class="kanban-col" :data-stage="stage" :data-repo-path="repo.path"
@@ -565,7 +579,6 @@
       <input type="text" id="create-modal-name" class="create-input" placeholder="e.g. dark mode toggle" autofocus />
       <div class="modal-actions" style="margin-top:16px">
         <button class="btn" id="create-modal-cancel">Cancel</button>
-        <button class="btn" id="create-modal-use-ai">Use AI</button>
         <button class="btn btn-primary" id="create-modal-submit">Create</button>
       </div>
     </div>
@@ -596,21 +609,6 @@
     </div>
   </aside>
   <!-- AI session picker modal -->
-  <div id="ai-session-picker" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="ai-picker-title">
-    <div class="modal-box">
-      <h3 id="ai-picker-title">Choose AI Agent</h3>
-      <p class="modal-desc" id="ai-picker-desc">Select an agent to help with this spec</p>
-      <div class="ai-agent-options" id="ai-agent-options">
-        <button class="ai-agent-btn" data-agent="cc"><span class="ai-agent-id">cc</span><span class="ai-agent-name">Claude Code</span></button>
-        <button class="ai-agent-btn" data-agent="gg"><span class="ai-agent-id">gg</span><span class="ai-agent-name">Gemini</span></button>
-        <button class="ai-agent-btn" data-agent="cx"><span class="ai-agent-id">cx</span><span class="ai-agent-name">Codex</span></button>
-        <button class="ai-agent-btn" data-agent="cu"><span class="ai-agent-id">cu</span><span class="ai-agent-name">Cursor</span></button>
-      </div>
-      <div class="modal-actions">
-        <button class="btn" id="ai-picker-cancel">Cancel</button>
-      </div>
-    </div>
-  </div>
   <!-- Spec drawer -->
   <div id="drawer-overlay" class="drawer-overlay" x-ignore></div>
   <aside id="spec-drawer" class="spec-drawer" x-ignore role="dialog" aria-modal="true">
@@ -622,7 +620,6 @@
           <button class="drawer-mode-btn active" data-mode="read">Read</button>
           <button class="drawer-mode-btn" data-mode="edit">Edit</button>
         </div>
-        <button class="btn btn-primary" id="drawer-use-ai" title="Launch AI agent to help write this spec">Use AI</button>
         <button class="btn" id="drawer-refresh" title="Reload file from disk">↺ Refresh</button>
         <button class="btn" id="drawer-open-editor" title="Open in default editor">Open in Editor</button>
         <button class="btn" id="drawer-fullscreen" title="Toggle fullscreen (Cmd+Shift+F)">⤢</button>
@@ -1066,67 +1063,71 @@
 
     // ── AI session picker ──────────────────────────────────────────────────────
 
-    let aiPickerResolve = null;
+    // ── Ask-agent helpers ─────────────────────────────────────────────────────
 
-    const AI_AGENTS = [
-      { id: 'cc', name: 'Claude Code', cmd: 'claude' },
-      { id: 'gg', name: 'Gemini', cmd: 'gemini' },
-      { id: 'cx', name: 'Codex', cmd: 'codex' },
-      { id: 'cu', name: 'Cursor', cmd: 'cursor' }
+    const ASK_AGENTS = [
+      { id: 'cc', name: 'Claude Code' },
+      { id: 'gg', name: 'Gemini' },
+      { id: 'cx', name: 'Codex' },
+      { id: 'cu', name: 'Cursor' }
     ];
 
-    function showAiSessionPicker(desc) {
-      return new Promise((resolve) => {
-        aiPickerResolve = resolve;
-        document.getElementById('ai-picker-desc').textContent = desc || '';
-        const lastAgent = localStorage.getItem(lsKey('lastAgent')) || 'cc';
-        document.querySelectorAll('.ai-agent-btn').forEach(btn => {
-          btn.classList.toggle('selected', btn.getAttribute('data-agent') === lastAgent);
-        });
-        document.getElementById('ai-session-picker').style.display = 'flex';
-      });
+    function getAskAgent() { return localStorage.getItem(lsKey('askAgent')) || 'cc'; }
+    function setAskAgent(id) { localStorage.setItem(lsKey('askAgent'), id); }
+
+    function buildAskAgentHtml(repoPath) {
+      const agentId = getAskAgent();
+      const others = ASK_AGENTS.filter(a => a.id !== agentId);
+      const escapedRepo = escHtml(repoPath);
+      const otherItems = others.map(a =>
+        '<button class="ask-agent-option" data-ask-agent="' + a.id + '" data-ask-repo="' + escapedRepo + '">' +
+        escHtml(a.id) + ' · ' + escHtml(a.name) + '</button>'
+      ).join('');
+      return '<span class="ask-agent-group">' +
+        '<button class="btn ask-agent-primary" data-ask-run="' + escHtml(agentId) + '" data-ask-repo="' + escapedRepo + '">Ask ' + escHtml(agentId) + '</button>' +
+        '<button class="btn ask-agent-chevron" data-ask-toggle data-ask-repo="' + escapedRepo + '">▾</button>' +
+        '<div class="ask-agent-dropdown">' + otherItems + '</div>' +
+        '</span>';
     }
 
-    function hideAiSessionPicker(result) {
-      document.getElementById('ai-session-picker').style.display = 'none';
-      if (aiPickerResolve) { aiPickerResolve(result); aiPickerResolve = null; }
-    }
-
-    document.getElementById('ai-picker-cancel').onclick = () => hideAiSessionPicker(null);
-    document.getElementById('ai-session-picker').onclick = (e) => { if (e.target === e.currentTarget) hideAiSessionPicker(null); };
-    document.querySelectorAll('.ai-agent-btn').forEach(btn => {
-      btn.onclick = (e) => {
-        e.stopPropagation();
-        const agentId = btn.getAttribute('data-agent');
-        localStorage.setItem(lsKey('lastAgent'), agentId);
-        hideAiSessionPicker(agentId);
-      };
-    });
-
-    async function launchAiSession(specPath, desc, repoPath, specCtx) {
-      const agentId = await showAiSessionPicker(desc);
-      if (!agentId) return;
-      const agentMap = { cc: 'claude', gg: 'gemini', cx: 'codex', cu: 'agent' };
-      const agentBin = agentMap[agentId] || agentId;
-      const prompt = 'Help me write the spec at ' + specPath + '. Read the file first, then ask me what I want this feature to do.';
-      const command = 'cd ' + JSON.stringify(repoPath || process.cwd()) + ' && ' + agentBin + ' ' + JSON.stringify(prompt);
-      const res = await fetch('/api/session/run', {
+    async function runAskAgent(repoPath, agentId) {
+      const res = await fetch('/api/session/ask', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ command, cwd: repoPath || '' })
+        body: JSON.stringify({ repoPath, agentId })
       }).catch(() => null);
       if (!res || !res.ok) {
         const data = res ? await res.json().catch(() => ({})) : {};
-        showToast('Failed to start AI session: ' + (data.error || 'Unknown'));
+        showToast('Failed to start session: ' + (data.error || 'Unknown'), null, null, { error: true });
+      }
+    }
+
+    // Event delegation for ask-agent buttons (rendered via innerHTML)
+    document.addEventListener('click', (e) => {
+      // Close open dropdowns when clicking outside
+      const group = e.target.closest('.ask-agent-group');
+      if (!group) {
+        document.querySelectorAll('.ask-agent-dropdown.open').forEach(d => d.classList.remove('open'));
         return;
       }
-      const data = await res.json();
-      const output = (data.stdout || '') + (data.stderr ? '\n' + data.stderr : '');
-      openTerminalPanel(agentId + ' – AI session', command, null, output || 'Session launched.',
-        specCtx || { path: specPath, title: desc, stage: 'inbox' });
-      const panel = document.getElementById('terminal-panel');
-      if (!panel.classList.contains('fullscreen')) toggleTerminalFullscreen();
-    }
+      if (e.target.closest('[data-ask-run]')) {
+        const btn = e.target.closest('[data-ask-run]');
+        runAskAgent(btn.dataset.askRepo, btn.dataset.askRun);
+        return;
+      }
+      if (e.target.closest('[data-ask-toggle]')) {
+        const dropdown = group.querySelector('.ask-agent-dropdown');
+        document.querySelectorAll('.ask-agent-dropdown.open').forEach(d => { if (d !== dropdown) d.classList.remove('open'); });
+        dropdown && dropdown.classList.toggle('open');
+        return;
+      }
+      if (e.target.closest('[data-ask-agent]')) {
+        const btn = e.target.closest('[data-ask-agent]');
+        setAskAgent(btn.dataset.askAgent);
+        runAskAgent(btn.dataset.askRepo, btn.dataset.askAgent);
+        document.querySelectorAll('.ask-agent-dropdown.open').forEach(d => d.classList.remove('open'));
+      }
+    });
 
     // ── Agent picker ──────────────────────────────────────────────────────────
 
@@ -1274,7 +1275,8 @@
 
       header.style.display = '';
       header.innerHTML = '<h2 class="repo-header-name">' + escHtml(repo.displayPath) + '</h2>' +
-        '<span class="repo-header-meta">' + escHtml(metaText) + '</span>';
+        '<span class="repo-header-meta">' + escHtml(metaText) + '</span>' +
+        buildAskAgentHtml(repo.path);
     }
 
     // Keyboard navigation for sidebar
@@ -1556,13 +1558,6 @@
       }
     };
 
-    document.getElementById('drawer-use-ai').onclick = async () => {
-      if (!drawerState.path) return;
-      const repoPath = drawerState.path.split('/docs/')[0];
-      const specCtx = { path: drawerState.path, title: drawerState.title, stage: drawerState.stage };
-      await launchAiSession(drawerState.path, drawerState.title || 'spec', repoPath, specCtx);
-    };
-
     document.getElementById('drawer-open-editor').onclick = async () => {
       try {
         await fetch('/api/open-in-editor', {
@@ -1741,6 +1736,25 @@
           return '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(synthCmd) + '" title="All agents submitted — synthesize findings">Copy next</button>';
         },
         buildNextActionHtml(feature, repoPath) { return buildNextActionHtml(feature, repoPath); },
+        buildAskAgentHtml(repoPath) { return buildAskAgentHtml(repoPath); },
+        handleAskClick(e) {
+          const btn = e.target.closest('[data-ask-run]');
+          if (btn) { runAskAgent(btn.dataset.askRepo, btn.dataset.askRun); return; }
+          const tog = e.target.closest('[data-ask-toggle]');
+          if (tog) {
+            const group = tog.closest('.ask-agent-group');
+            const dd = group && group.querySelector('.ask-agent-dropdown');
+            document.querySelectorAll('.ask-agent-dropdown.open').forEach(d => { if (d !== dd) d.classList.remove('open'); });
+            dd && dd.classList.toggle('open');
+            return;
+          }
+          const opt = e.target.closest('[data-ask-agent]');
+          if (opt) {
+            setAskAgent(opt.dataset.askAgent);
+            runAskAgent(opt.dataset.askRepo, opt.dataset.askAgent);
+            document.querySelectorAll('.ask-agent-dropdown.open').forEach(d => d.classList.remove('open'));
+          }
+        },
         repoSummaryText(repo) {
           const features = this.getFeatures(repo), research = this.getResearch(repo), feedback = this.getFeedback(repo);
           const parts = [];
@@ -1927,7 +1941,7 @@
       const actionsHtml = buildValidActionsHtml(feature.validActions || []);
       // Eval status badge is a non-interactive status indicator, rendered separately from buttons.
       const evalStatusHtml = feature.evalStatus
-        ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
+        ? '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
         : '';
 
       card.innerHTML =
@@ -2038,18 +2052,6 @@
           const feature = (repo[pType] || []).find(f => String(f.id) === String(featureId)) || { id: featureId, name: featureName, stage: card ? card.dataset.stage : '' };
           handleValidAction({ action, agentId, label: btn.textContent }, feature, repo.path, btn, pType);
         };
-      });
-      // Wire up card spec-drawer clicks
-      colBody.querySelectorAll('.kcard').forEach(card => {
-        card.addEventListener('click', (e) => {
-          if (e.target.closest('button') || e.target.closest('.btn')) return;
-          const fId = card.dataset.featureId;
-          const feature = (repo[pType] || []).find(f => String(f.id) === String(fId));
-          if (feature && feature.specPath) {
-            const name = (feature.id ? '#' + feature.id + ' ' : '') + feature.name;
-            openDrawer(feature.specPath, name, feature.stage);
-          }
-        });
       });
     }
 
