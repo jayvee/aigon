@@ -115,7 +115,7 @@ class AigonTreeDataProvider {
         if (!element) return this._getRootItems();
         if (element.contextValue === 'attention-section') return element.children || [];
         if (element.contextValue === 'repo') return this._getFeatureItems(element.repoPath);
-        if (element.contextValue === 'feature') return element.agentItems || [];
+        if (element.contextValue === 'feature' || element.contextValue === 'feature-in-progress') return element.agentItems || [];
         return [];
     }
 
@@ -270,7 +270,9 @@ class AigonTreeDataProvider {
                     `#${featureId}  ${data.name}`,
                     vscode.TreeItemCollapsibleState.Expanded
                 );
-                featureItem.contextValue = 'feature';
+                featureItem.contextValue = (data.stage === 'in-progress' || data.stage === 'in-evaluation') ? 'feature-in-progress' : 'feature';
+                featureItem.featureId = featureId;
+                featureItem.repoPath = repoPath;
 
                 if (data.evalStatus === 'pick winner') {
                     featureItem.description = 'pick winner';
@@ -364,7 +366,25 @@ function activate(context) {
         provider.toggleShowAll();
     });
 
-    context.subscriptions.push(treeView, copyCmd, refreshCmd, toggleCmd, provider);
+    const shipFeatureCmd = vscode.commands.registerCommand('aigon.shipFeature', (item) => {
+        const terminal = vscode.window.createTerminal({ name: 'Aigon: Ship', cwd: item.repoPath });
+        terminal.show();
+        terminal.sendText(`aigon feature-ship ${item.featureId}`);
+    });
+
+    const featureDoneCmd = vscode.commands.registerCommand('aigon.featureDone', (item) => {
+        const terminal = vscode.window.createTerminal({ name: 'Aigon: Feature Done', cwd: item.repoPath });
+        terminal.show();
+        terminal.sendText(`aigon feature-close ${item.featureId}`);
+    });
+
+    const implementRalphCmd = vscode.commands.registerCommand('aigon.implementRalph', (item) => {
+        const terminal = vscode.window.createTerminal({ name: 'Aigon: Implement', cwd: item.repoPath });
+        terminal.show();
+        terminal.sendText(`aigon feature-do ${item.featureId} --ralph --auto-submit`);
+    });
+
+    context.subscriptions.push(treeView, copyCmd, refreshCmd, toggleCmd, shipFeatureCmd, featureDoneCmd, implementRalphCmd, provider);
 }
 
 function deactivate() {}

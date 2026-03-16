@@ -34,6 +34,18 @@
         "command": "aigon.toggleShowAll",
         "title": "Aigon: Toggle Show All Stages",
         "icon": "$(list-flat)"
+      },
+      {
+        "command": "aigon.shipFeature",
+        "title": "Ship (Ralph + Deploy)"
+      },
+      {
+        "command": "aigon.featureDone",
+        "title": "Feature Done"
+      },
+      {
+        "command": "aigon.implementRalph",
+        "title": "Implement (Ralph)"
       }
     ],
     "menus": {
@@ -47,6 +59,23 @@
           "command": "aigon.toggleShowAll",
           "when": "view == aigonConductor",
           "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "aigon.shipFeature",
+          "when": "view == aigonConductor && (viewItem == feature || viewItem == feature-in-progress)",
+          "group": "aigon@1"
+        },
+        {
+          "command": "aigon.featureDone",
+          "when": "view == aigonConductor && viewItem == feature-in-progress",
+          "group": "aigon@2"
+        },
+        {
+          "command": "aigon.implementRalph",
+          "when": "view == aigonConductor && viewItem == feature-in-progress",
+          "group": "aigon@3"
         }
       ]
     }
