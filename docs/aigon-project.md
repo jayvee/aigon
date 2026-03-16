@@ -18,7 +18,11 @@ The dashboard is a foreground HTTP server (no daemon). Start it with:
 After editing `lib/utils.js` or any backend JS, restart the server (Ctrl+C + rerun).
 `templates/dashboard/index.html` is read fresh per request — no restart for frontend changes.
 
-Each worktree gets its own port (hash of branch → 4101–4199). Use `node aigon-cli.js dashboard list` to see all instances.
+Each worktree gets its own port and, when Caddy is configured, a named URL:
+- Main repo: `http://aigon.test`
+- Worktree `feature-73-cc-...`: `http://cc-73.aigon.test`
+
+Use `node aigon-cli.js dashboard list` to see all running instances. Falls back to `localhost:PORT` if Caddy is not set up.
 
 ## Testing
 
