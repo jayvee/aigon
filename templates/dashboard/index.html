@@ -498,10 +498,6 @@
       </div>
     </div>
   </aside>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/css/xterm.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/lib/xterm.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-attach@0/lib/addon-attach.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0/lib/addon-fit.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script>
@@ -522,21 +518,23 @@
     // Statistics view                             ~2431
     // Logs view                                   ~2909
     // Main render dispatch                        ~3418
-    // Init (polling, WebSocket, event listeners)  ~3649
+    // Init (polling, event listeners)             ~3649
     // ─────────────────────────────────────────────────────────────────────────
     const POLL_MS = 10000;
     const TS_MS = 30000;
     const INITIAL_DATA = ${INITIAL_DATA};
+    const INSTANCE_NAME = ${INSTANCE_NAME};
+    function lsKey(k) { return 'aigon-' + INSTANCE_NAME + '-' + k; }
     const state = {
       data: INITIAL_DATA,
       failures: 0,
       lastStatuses: new Map(),
-      collapsed: JSON.parse(localStorage.getItem('aigon.dashboard.collapsed') || '{}'),
-      filter: localStorage.getItem('aigon.dashboard.filter') || 'all',
-      view: localStorage.getItem('aigon.dashboard.view') || 'monitor',
-      selectedRepo: localStorage.getItem('aigon.dashboard.selectedRepo') || 'all',
-      pipelineType: localStorage.getItem('aigon.dashboard.pipelineType') || 'features',
-      monitorType: localStorage.getItem('aigon.dashboard.monitorType') || 'all',
+      collapsed: JSON.parse(localStorage.getItem(lsKey('collapsed')) || '{}'),
+      filter: localStorage.getItem(lsKey('filter')) || 'all',
+      view: localStorage.getItem(lsKey('view')) || 'monitor',
+      selectedRepo: localStorage.getItem(lsKey('selectedRepo')) || 'all',
+      pipelineType: localStorage.getItem(lsKey('pipelineType')) || 'features',
+      monitorType: localStorage.getItem(lsKey('monitorType')) || 'all',
       pendingActions: new Set()
     };
 
@@ -707,20 +705,30 @@
             showToast('Done: ' + command.split(' ').slice(0, 3).join(' '));
             await requestRefresh();
           }
-        } else {
-          // terminal or agent mode — start tmux session and open terminal panel
-          const label = mode === 'agent' ? 'agent' : 'cmd';
-          const res = await fetch('/api/session/start', {
+        } else if (mode === 'terminal') {
+          // terminal mode — open a native terminal window via server-side openTerminalAppWithCommand
+          const res = await fetch('/api/open-terminal', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ command, cwd: repoPath || '', mode, label })
+            body: JSON.stringify({ command, cwd: repoPath || '' })
           });
           const data = await res.json().catch(() => ({}));
           if (!res.ok) {
-            showToast('Failed to start session: ' + (data.error || 'Unknown error'));
+            showToast('Failed to open terminal: ' + (data.error || 'Unknown error'));
           } else {
-            openTerminalPanel(command.split(' ').slice(0, 4).join(' '), command, data.sessionName);
+            openTerminalPanel(command.split(' ').slice(0, 4).join(' '), command, null, null);
           }
+        } else {
+          // agent mode — run synchronously and show output in panel
+          const res = await fetch('/api/session/run', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ command, cwd: repoPath || '' })
+          });
+          const data = await res.json().catch(() => ({}));
+          const output = (data.stdout || '') + (data.stderr ? '\n' + data.stderr : '');
+          openTerminalPanel(command.split(' ').slice(0, 4).join(' '), command, null, output || 'Done.');
+          if (res.ok) await requestRefresh();
         }
       } catch (e) {
         showToast('Error: ' + e.message);
@@ -732,8 +740,8 @@
     // ── Terminal panel ────────────────────────────────────────────────────────
 
     const termState = {
-      sessionName: null, startedAt: null, term: null, ws: null,
-      elapsedTimer: null, fitAddon: null, resizeObserver: null,
+      sessionName: null, startedAt: null,
+      elapsedTimer: null,
       specPath: null, specTitle: null, specStage: null,
       specPoller: null, specContentHash: null
     };
@@ -748,10 +756,6 @@
       const dot = document.getElementById('panel-status-dot');
       dot.className = 'panel-status-dot ' + (sessionName ? 'running' : '');
 
-      // Tear down any previous terminal
-      if (termState.resizeObserver) { try { termState.resizeObserver.disconnect(); } catch (e) {} termState.resizeObserver = null; }
-      if (termState.ws) { try { termState.ws.close(); } catch (e) {} termState.ws = null; }
-      if (termState.term) { try { termState.term.dispose(); } catch (e) {} termState.term = null; }
       clearInterval(termState.elapsedTimer);
 
       termState.sessionName = sessionName || null;
@@ -778,7 +782,6 @@
       // Split-view: if spec drawer is already open alongside, position panels side by side
       if (document.getElementById('spec-drawer').classList.contains('open')) {
         document.body.classList.add('split-view');
-        setTimeout(() => { if (termState.fitAddon) try { termState.fitAddon.fit(); } catch (e) {} }, 300);
       }
 
       // Start stale poller: detect when AI edits the spec so user knows to refresh
@@ -801,63 +804,16 @@
         }, 3000);
       }
 
-      // Init xterm.js if available
-      if (typeof Terminal !== 'undefined') {
-        const term = new Terminal({
-          theme: { background: '#0a0a0b', foreground: '#ededef', cursor: '#3b82f6' },
-          fontFamily: '"SF Mono","Cascadia Code",ui-monospace,monospace',
-          fontSize: 13, convertEol: false
-        });
-        termState.term = term;
-
-        const fitAddon = typeof FitAddon !== 'undefined' ? new FitAddon.FitAddon() : null;
-        termState.fitAddon = fitAddon;
-        if (fitAddon) term.loadAddon(fitAddon);
-
-        term.open(container);
-        if (fitAddon) {
-          setTimeout(() => { try { fitAddon.fit(); } catch (e) {} }, 50);
-          const ro = new ResizeObserver(() => { try { fitAddon.fit(); } catch (e) {} });
-          ro.observe(container);
-          termState.resizeObserver = ro;
-        }
-
-        if (staticContent) {
-          term.write(staticContent);
-        } else if (sessionName) {
-          const wsUrl = 'ws://' + location.host + '/ws/terminal?session=' + encodeURIComponent(sessionName);
-          // Small delay to let the tmux session start
-          setTimeout(() => {
-            const ws = new WebSocket(wsUrl);
-            termState.ws = ws;
-            ws.binaryType = 'arraybuffer';
-
-            // Manual WebSocket handling (instead of AttachAddon) so we can send resize events
-            ws.onmessage = (e) => {
-              const data = e.data instanceof ArrayBuffer ? new TextDecoder().decode(e.data) : e.data;
-              term.write(data);
-            };
-            term.onData((data) => { if (ws.readyState === WebSocket.OPEN) ws.send(data); });
-            // Send terminal size to server so tmux pane matches xterm dimensions
-            term.onResize(({ cols, rows }) => {
-              if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'resize', cols, rows }));
-            });
-
-            ws.onopen = () => {
-              dot.className = 'panel-status-dot running';
-              // Send current size immediately on connect
-              if (termState.fitAddon) { try { termState.fitAddon.fit(); } catch (e) {} }
-            };
-            ws.onclose = () => { dot.className = 'panel-status-dot'; };
-            ws.onerror = () => { dot.className = 'panel-status-dot error'; term.write('\r\n\x1b[31m[WebSocket error]\x1b[0m\r\n'); };
-          }, 300);
-        }
-      } else {
-        // Fallback: plain text display
+      if (staticContent) {
+        // Show command output as preformatted text
         const pre = document.createElement('pre');
         pre.style.cssText = 'color:#ededef;padding:12px;font-family:var(--mono);font-size:12px;margin:0;overflow:auto;height:100%;background:#0a0a0b';
-        pre.textContent = staticContent || (sessionName ? 'Session: ' + sessionName : 'Terminal unavailable');
+        pre.textContent = staticContent;
         container.appendChild(pre);
+      } else {
+        // Session opened in terminal app
+        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:13px;font-family:var(--mono)">Session opened in your terminal</div>';
+        dot.className = 'panel-status-dot';
       }
 
       // Elapsed timer
@@ -879,8 +835,6 @@
       if (!document.getElementById('spec-drawer').classList.contains('open')) {
         document.body.style.overflow = '';
       }
-      if (termState.ws) { try { termState.ws.close(); } catch (e) {} termState.ws = null; }
-      if (termState.resizeObserver) { try { termState.resizeObserver.disconnect(); } catch (e) {} termState.resizeObserver = null; }
       if (termState.specPoller) { clearInterval(termState.specPoller); termState.specPoller = null; }
       clearInterval(termState.elapsedTimer);
     }
@@ -919,7 +873,6 @@
       panel.classList.toggle('fullscreen');
       const btn = document.getElementById('panel-fullscreen');
       if (btn) btn.textContent = panel.classList.contains('fullscreen') ? '⤡' : '⤢';
-      if (termState.fitAddon) setTimeout(() => { try { termState.fitAddon.fit(); } catch (e) {} }, 50);
     }
 
     document.getElementById('panel-close').onclick = () => { hideStopConfirm(); closeTerminalPanel(); };
@@ -969,7 +922,7 @@
       return new Promise((resolve) => {
         aiPickerResolve = resolve;
         document.getElementById('ai-picker-desc').textContent = desc || '';
-        const lastAgent = localStorage.getItem('aigon.dashboard.lastAgent') || 'cc';
+        const lastAgent = localStorage.getItem(lsKey('lastAgent')) || 'cc';
         document.querySelectorAll('.ai-agent-btn').forEach(btn => {
           btn.classList.toggle('selected', btn.getAttribute('data-agent') === lastAgent);
         });
@@ -988,7 +941,7 @@
       btn.onclick = (e) => {
         e.stopPropagation();
         const agentId = btn.getAttribute('data-agent');
-        localStorage.setItem('aigon.dashboard.lastAgent', agentId);
+        localStorage.setItem(lsKey('lastAgent'), agentId);
         hideAiSessionPicker(agentId);
       };
     });
@@ -1000,10 +953,10 @@
       const agentBin = agentMap[agentId] || agentId;
       const prompt = 'Help me write the spec at ' + specPath + '. Read the file first, then ask me what I want this feature to do.';
       const command = 'cd ' + JSON.stringify(repoPath || process.cwd()) + ' && ' + agentBin + ' ' + JSON.stringify(prompt);
-      const res = await fetch('/api/session/start', {
+      const res = await fetch('/api/session/run', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ command, cwd: repoPath || '', mode: 'agent', label: 'agent' })
+        body: JSON.stringify({ command, cwd: repoPath || '' })
       }).catch(() => null);
       if (!res || !res.ok) {
         const data = res ? await res.json().catch(() => ({})) : {};
@@ -1011,7 +964,8 @@
         return;
       }
       const data = await res.json();
-      openTerminalPanel(agentId + ' – AI session', command, data.sessionName, null,
+      const output = (data.stdout || '') + (data.stderr ? '\n' + data.stderr : '');
+      openTerminalPanel(agentId + ' – AI session', command, null, output || 'Session launched.',
         specCtx || { path: specPath, title: desc, stage: 'inbox' });
       const panel = document.getElementById('terminal-panel');
       if (!panel.classList.contains('fullscreen')) toggleTerminalFullscreen();
@@ -1048,7 +1002,7 @@
 
     function selectRepo(repoPath) {
       state.selectedRepo = repoPath;
-      localStorage.setItem('aigon.dashboard.selectedRepo', repoPath);
+      localStorage.setItem(lsKey('selectedRepo'), repoPath);
       // Sync mobile dropdown
       const mobile = document.getElementById('repo-select-mobile');
       if (mobile) mobile.value = repoPath;
@@ -1207,7 +1161,7 @@
     const drawerState = {
       path: null, content: '', savedContent: '', mode: 'read', dirty: false,
       title: '', stage: '',
-      fontSize: Number(localStorage.getItem('aigon.dashboard.drawerFontSize') || '13'),
+      fontSize: Number(localStorage.getItem(lsKey('drawerFontSize')) || '13'),
       undoStack: [], redoStack: []
     };
     const drawerOverlay = document.getElementById('drawer-overlay');
@@ -1227,7 +1181,7 @@
       drawerPreview.style.fontSize = sz;
       drawerEditor.style.fontSize = sz;
       drawerFontSizeLabel.textContent = drawerState.fontSize;
-      localStorage.setItem('aigon.dashboard.drawerFontSize', String(drawerState.fontSize));
+      localStorage.setItem(lsKey('drawerFontSize'), String(drawerState.fontSize));
     }
 
     function renderMarkdownPreview(md) {
@@ -1280,7 +1234,6 @@
       // If terminal panel is also open, enter split-view so both headers are accessible
       if (document.getElementById('terminal-panel').classList.contains('open')) {
         document.body.classList.add('split-view');
-        setTimeout(() => { if (termState.fitAddon) try { termState.fitAddon.fit(); } catch (e) {} }, 300);
       }
 
       fetch('/api/spec?path=' + encodeURIComponent(specPath))
@@ -1549,7 +1502,7 @@
         btn.textContent = opt.label;
         btn.onclick = () => {
           state.monitorType = opt.key;
-          localStorage.setItem('aigon.dashboard.monitorType', opt.key);
+          localStorage.setItem(lsKey('monitorType'), opt.key);
           render();
         };
         toggle.appendChild(btn);
@@ -1643,7 +1596,7 @@
         section.innerHTML = '<div class="repo-h"><strong>' + escHtml(repo.displayPath) + '</strong><span>' + headerText + (waitingCards ? ' • ' + waitingCards + ' waiting' : '') + ' <span aria-label="Toggle">' + (state.collapsed[repo.path] ? '[+]' : '[-]') + '</span></span></div><div class="repo-b"></div>';
         section.querySelector('.repo-h').onclick = () => {
           state.collapsed[repo.path] = !state.collapsed[repo.path];
-          localStorage.setItem('aigon.dashboard.collapsed', JSON.stringify(state.collapsed));
+          localStorage.setItem(lsKey('collapsed'), JSON.stringify(state.collapsed));
           render();
         };
         const body = section.querySelector('.repo-b');
@@ -1852,7 +1805,7 @@
           e.stopPropagation();
           const next = btn.getAttribute('data-filter') || 'all';
           state.filter = next;
-          localStorage.setItem('aigon.dashboard.filter', next);
+          localStorage.setItem(lsKey('filter'), next);
           render();
         };
       });
@@ -2053,7 +2006,7 @@
         btn.textContent = type.charAt(0).toUpperCase() + type.slice(1);
         btn.onclick = () => {
           state.pipelineType = type;
-          localStorage.setItem('aigon.dashboard.pipelineType', type);
+          localStorage.setItem(lsKey('pipelineType'), type);
           render();
         };
         toggle.appendChild(btn);
@@ -3208,6 +3161,9 @@
       const firstPassFeats = filteredFeatures.filter(f => f.firstPassSuccess !== null);
       const firstPassRate = firstPassFeats.length > 0
         ? firstPassFeats.filter(f => f.firstPassSuccess).length / firstPassFeats.length : null;
+      const autonomyFeats = filteredFeatures.filter(f => f.autonomyRatio !== null && f.autonomyRatio !== undefined);
+      const avgAutonomy = autonomyFeats.length > 0
+        ? autonomyFeats.reduce((s, f) => s + f.autonomyRatio, 0) / autonomyFeats.length : null;
 
       // Volume cards
       html.push('<div class="stats-section-title">Volume</div>');
@@ -3676,7 +3632,7 @@
     document.querySelectorAll('.view-tab').forEach(tab => {
       tab.onclick = () => {
         state.view = tab.getAttribute('data-view');
-        localStorage.setItem('aigon.dashboard.view', state.view);
+        localStorage.setItem(lsKey('view'), state.view);
         render();
       };
     });
