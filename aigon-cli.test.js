@@ -42,7 +42,7 @@ const {
     inferDashboardNextActions
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
-const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, gcDevServers, registerRadarServer, deregisterRadarServer, loadProxyRegistry, saveProxyRegistry, RADAR_DEFAULT_PORT, RADAR_DASHBOARD_PORT, RADAR_DYNAMIC_PORT_START, RADAR_APP_ID, DEV_PROXY_REGISTRY } = require('./lib/utils');
+const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, gcDevServers, registerRadarServer, deregisterRadarServer, loadProxyRegistry, saveProxyRegistry, RADAR_DEFAULT_PORT, RADAR_DASHBOARD_PORT, RADAR_DYNAMIC_PORT_START, RADAR_APP_ID, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, serializeLogFrontmatter, updateLogFrontmatterInPlace, collectAnalyticsData } = require('./lib/utils');
 const { detectRadarContext, resolveRadarUrl } = require('./lib/devserver');
 
 let passed = 0;
@@ -1343,6 +1343,194 @@ test('getAvailableActions expands per-agent actions for each agent in fleet', ()
     const openActions = actions.filter(a => a.action === 'feature-open');
     assert.ok(openActions.some(a => a.agentId === 'cc'), 'should have open for cc');
     assert.ok(openActions.some(a => a.agentId === 'gg'), 'should have open for gg');
+});
+
+// ── Analytics / Statistics tests ──────────────────────────────────────────────
+
+console.log('\nparseLogFrontmatterFull');
+
+test('parseLogFrontmatterFull parses simple frontmatter', () => {
+    const content = '---\nstatus: implementing\nupdated: 2026-01-01T00:00:00Z\nstartedAt: 2026-01-01T00:00:00Z\n---\n\nBody text.';
+    const { fields, events } = parseLogFrontmatterFull(content);
+    assert.strictEqual(fields.status, 'implementing');
+    assert.strictEqual(fields.startedAt, '2026-01-01T00:00:00Z');
+    assert.deepStrictEqual(events, []);
+});
+
+test('parseLogFrontmatterFull parses events array', () => {
+    const content = `---
+status: submitted
+updated: 2026-01-01T02:00:00Z
+startedAt: 2026-01-01T00:00:00Z
+events:
+  - { ts: "2026-01-01T00:00:00Z", status: implementing }
+  - { ts: "2026-01-01T01:00:00Z", status: waiting }
+  - { ts: "2026-01-01T02:00:00Z", status: submitted }
+---
+
+Body.`;
+    const { fields, events } = parseLogFrontmatterFull(content);
+    assert.strictEqual(fields.status, 'submitted');
+    assert.strictEqual(events.length, 3);
+    assert.strictEqual(events[0].status, 'implementing');
+    assert.strictEqual(events[1].status, 'waiting');
+    assert.strictEqual(events[2].status, 'submitted');
+});
+
+test('parseLogFrontmatterFull returns empty for no frontmatter', () => {
+    const { fields, events } = parseLogFrontmatterFull('No frontmatter here');
+    assert.deepStrictEqual(fields, {});
+    assert.deepStrictEqual(events, []);
+});
+
+console.log('\nserializeLogFrontmatter');
+
+test('serializeLogFrontmatter writes fields in order', () => {
+    const fields = { status: 'waiting', updated: '2026-01-01T00:00:00Z', startedAt: '2026-01-01T00:00:00Z' };
+    const out = serializeLogFrontmatter(fields, []);
+    assert.ok(out.startsWith('---\nstatus: waiting\n'));
+    assert.ok(out.includes('startedAt:'));
+    assert.ok(out.endsWith('---\n'));
+});
+
+test('serializeLogFrontmatter writes events array', () => {
+    const fields = { status: 'submitted', updated: '2026-01-01T01:00:00Z' };
+    const events = [
+        { ts: '2026-01-01T00:00:00Z', status: 'implementing' },
+        { ts: '2026-01-01T01:00:00Z', status: 'submitted' }
+    ];
+    const out = serializeLogFrontmatter(fields, events);
+    assert.ok(out.includes('events:'));
+    assert.ok(out.includes('  - { ts: "2026-01-01T00:00:00Z", status: implementing }'));
+    assert.ok(out.includes('  - { ts: "2026-01-01T01:00:00Z", status: submitted }'));
+});
+
+console.log('\nupdateLogFrontmatterInPlace');
+
+test('updateLogFrontmatterInPlace updates status and appends event', () => {
+    withTempDir(tmpDir => {
+        const logPath = path.join(tmpDir, 'test-log.md');
+        const now = new Date().toISOString();
+        fs.writeFileSync(logPath, `---\nstatus: implementing\nupdated: ${now}\nstartedAt: ${now}\nevents:\n  - { ts: "${now}", status: implementing }\n---\n\nBody.`);
+
+        updateLogFrontmatterInPlace(logPath, { status: 'waiting', appendEvent: 'waiting' });
+
+        const result = parseLogFrontmatterFull(fs.readFileSync(logPath, 'utf8'));
+        assert.strictEqual(result.fields.status, 'waiting');
+        assert.strictEqual(result.events.length, 2);
+        assert.strictEqual(result.events[1].status, 'waiting');
+        assert.ok(result.fields.startedAt, 'startedAt preserved');
+    });
+});
+
+test('updateLogFrontmatterInPlace sets startedAt on first implementing', () => {
+    withTempDir(tmpDir => {
+        const logPath = path.join(tmpDir, 'test-log.md');
+        fs.writeFileSync(logPath, `---\nstatus: implementing\nupdated: 2026-01-01T00:00:00Z\n---\n\nBody.`);
+        updateLogFrontmatterInPlace(logPath, { status: 'implementing', appendEvent: 'implementing', setStartedAt: true });
+        const result = parseLogFrontmatterFull(fs.readFileSync(logPath, 'utf8'));
+        assert.ok(result.fields.startedAt, 'startedAt should be set');
+    });
+});
+
+test('updateLogFrontmatterInPlace does not overwrite existing startedAt', () => {
+    withTempDir(tmpDir => {
+        const logPath = path.join(tmpDir, 'test-log.md');
+        const origStarted = '2026-01-01T00:00:00Z';
+        fs.writeFileSync(logPath, `---\nstatus: implementing\nupdated: 2026-01-01T00:00:00Z\nstartedAt: ${origStarted}\n---\n\nBody.`);
+        updateLogFrontmatterInPlace(logPath, { status: 'waiting', appendEvent: 'waiting', setStartedAt: true });
+        const result = parseLogFrontmatterFull(fs.readFileSync(logPath, 'utf8'));
+        assert.strictEqual(result.fields.startedAt, origStarted);
+    });
+});
+
+test('updateLogFrontmatterInPlace sets completedAt', () => {
+    withTempDir(tmpDir => {
+        const logPath = path.join(tmpDir, 'test-log.md');
+        fs.writeFileSync(logPath, `---\nstatus: submitted\nupdated: 2026-01-01T01:00:00Z\nstartedAt: 2026-01-01T00:00:00Z\n---\n\nBody.`);
+        updateLogFrontmatterInPlace(logPath, { setCompletedAt: '2026-01-01T02:00:00Z' });
+        const result = parseLogFrontmatterFull(fs.readFileSync(logPath, 'utf8'));
+        assert.strictEqual(result.fields.completedAt, '2026-01-01T02:00:00Z');
+    });
+});
+
+console.log('\ncollectAnalyticsData');
+
+test('collectAnalyticsData returns valid structure for empty repos', () => {
+    withTempDir(tmpDir => {
+        // Create a minimal repo structure with no completed features
+        const doneDir = path.join(tmpDir, 'docs', 'specs', 'features', '05-done');
+        fs.mkdirSync(doneDir, { recursive: true });
+
+        // Point global config to our temp repo (requires mocking readConductorReposFromGlobalConfig)
+        // Instead, test with an empty global config that points to our temp dir
+        const globalCfgDir = path.join(tmpDir, '.aigon-global');
+        fs.mkdirSync(globalCfgDir, { recursive: true });
+        const globalCfgPath = path.join(globalCfgDir, 'config.json');
+        fs.writeFileSync(globalCfgPath, JSON.stringify({ repos: [tmpDir] }, null, 2));
+
+        // We call collectAnalyticsData with the global config directly (not via path)
+        const analytics = collectAnalyticsData({ repos: [tmpDir], analytics: {} });
+        assert.ok(analytics.generatedAt, 'has generatedAt');
+        assert.ok(Array.isArray(analytics.features), 'has features array');
+        assert.strictEqual(analytics.features.length, 0, 'no features');
+        assert.ok(analytics.volume, 'has volume');
+        assert.ok(analytics.autonomy, 'has autonomy');
+        assert.ok(analytics.quality, 'has quality');
+        assert.ok(Array.isArray(analytics.agents), 'has agents');
+        assert.ok(Array.isArray(analytics.evalWins), 'has evalWins');
+    });
+});
+
+test('collectAnalyticsData returns features from done specs with selected logs', () => {
+    withTempDir(tmpDir => {
+        const doneDir = path.join(tmpDir, 'docs', 'specs', 'features', '05-done');
+        const selectedDir = path.join(tmpDir, 'docs', 'specs', 'features', 'logs', 'selected');
+        fs.mkdirSync(doneDir, { recursive: true });
+        fs.mkdirSync(selectedDir, { recursive: true });
+
+        // Create a done spec
+        fs.writeFileSync(path.join(doneDir, 'feature-01-test-feature.md'), '# Feature 01\n');
+
+        // Create a selected log with full lifecycle metadata
+        const startedAt = '2026-01-01T00:00:00Z';
+        const completedAt = '2026-01-01T08:00:00Z';
+        fs.writeFileSync(path.join(selectedDir, 'feature-01-cc-test-feature-log.md'),
+            `---\nstatus: submitted\nupdated: ${completedAt}\nstartedAt: ${startedAt}\ncompletedAt: ${completedAt}\nevents:\n  - { ts: "${startedAt}", status: implementing }\n  - { ts: "${completedAt}", status: submitted }\n---\n\nLog body.`
+        );
+
+        const analytics = collectAnalyticsData({ repos: [tmpDir], analytics: {} });
+        assert.strictEqual(analytics.features.length, 1);
+        const f = analytics.features[0];
+        assert.strictEqual(f.featureNum, '01');
+        assert.strictEqual(f.winnerAgent, 'cc');
+        assert.strictEqual(f.startedAt, startedAt);
+        assert.strictEqual(f.completedAt, completedAt);
+        assert.ok(f.durationMs > 0, 'duration should be positive');
+        assert.strictEqual(f.firstPassSuccess, true, 'no wait events = first pass success');
+    });
+});
+
+test('collectAnalyticsData parses eval wins from evaluation files', () => {
+    withTempDir(tmpDir => {
+        const doneDir = path.join(tmpDir, 'docs', 'specs', 'features', '05-done');
+        const evalsDir = path.join(tmpDir, 'docs', 'specs', 'features', 'evaluations');
+        fs.mkdirSync(doneDir, { recursive: true });
+        fs.mkdirSync(evalsDir, { recursive: true });
+
+        const evalContent = `# Eval\n\n## Implementations\n\n- [x] **cc** (Claude): path\n- [x] **cx** (Codex): path\n\n## Verdict\n\n**Winner:** **cc** (Claude)`;
+        fs.writeFileSync(path.join(evalsDir, 'feature-01-eval.md'), evalContent);
+
+        const analytics = collectAnalyticsData({ repos: [tmpDir], analytics: {} });
+        const ccEval = analytics.evalWins.find(e => e.agent === 'cc');
+        const cxEval = analytics.evalWins.find(e => e.agent === 'cx');
+        assert.ok(ccEval, 'cc should have eval data');
+        assert.strictEqual(ccEval.wins, 1);
+        assert.strictEqual(ccEval.evals, 1);
+        assert.ok(cxEval, 'cx should have eval data');
+        assert.strictEqual(cxEval.wins, 0);
+        assert.strictEqual(cxEval.evals, 1);
+    });
 });
 
 console.log('');
