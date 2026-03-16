@@ -302,6 +302,17 @@
     .stats-leaderboard td:not(:first-child){text-align:right;color:var(--text-secondary)}
     .stats-leaderboard tr:last-child td{border-bottom:none}
     .stats-leaderboard .agent-mono{font-family:var(--mono);font-weight:600;color:var(--text-primary)}
+    .feat-list-table{width:100%;border-collapse:collapse;font-size:12px}
+    .feat-list-table th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary);padding:0 8px 8px 0;border-bottom:1px solid var(--border-subtle)}
+    .feat-list-table th:nth-child(n+5){text-align:right}
+    .feat-list-table td{padding:6px 8px 6px 0;border-bottom:1px solid var(--border-subtle);color:var(--text-secondary);vertical-align:middle}
+    .feat-list-table tr:last-child td{border-bottom:none}
+    .feat-list-table .fl-desc{color:var(--text-primary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .feat-list-table .fl-num{font-family:var(--mono);color:var(--text-tertiary)}
+    .feat-list-table td:nth-child(n+5){text-align:right}
+    .feat-list-table .fl-ct-high{color:#f87171}
+    .feat-exclude-badge{display:inline-block;font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:3px;background:rgba(251,191,36,0.15);color:#fbbf24;margin-left:4px}
+    .feat-list-pagination{display:flex;align-items:center;gap:8px;padding:10px 0 2px;font-size:12px;color:var(--text-tertiary)}
     .stats-leaderboard .win-rate{font-weight:600;color:var(--accent)}
     .stats-empty-msg{color:var(--text-tertiary);font-size:12px;padding:20px;text-align:center;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius)}
     .volume-chart-wrap{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:16px;margin-bottom:16px}
@@ -2413,7 +2424,9 @@
       volumeChart: null,
       volumeSeries: [],
       cycleTimeChart: null,
-      cycleTimeSeries: []
+      cycleTimeSeries: [],
+      filteredFeatures: [],
+      featureListPage: 0
     };
 
     async function loadAnalytics() {
@@ -2851,6 +2864,65 @@
       });
     }
 
+    const FEAT_LIST_PAGE_SIZE = 20;
+
+    function renderFeatureList() {
+      const el = document.getElementById('stats-feature-list');
+      if (!el) return;
+      const features = statsState.filteredFeatures || [];
+      const total = features.length;
+      const page = statsState.featureListPage;
+      const totalPages = Math.max(1, Math.ceil(total / FEAT_LIST_PAGE_SIZE));
+      const start = page * FEAT_LIST_PAGE_SIZE;
+      const slice = features.slice(start, start + FEAT_LIST_PAGE_SIZE);
+
+      if (total === 0) {
+        el.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px;padding:12px 0">No features in this period.</div>';
+        return;
+      }
+
+      const rows = slice.map(f => {
+        const repo = f.repoPath ? f.repoPath.split('/').pop() : '—';
+        const date = f.completedAt ? f.completedAt.slice(0, 10) : '—';
+        const ctHours = f.durationMs ? Math.round(f.durationMs / 3600000 * 10) / 10 : null;
+        const ctClass = ctHours !== null && ctHours > 48 ? ' class="fl-ct-high"' : '';
+        const ctStr = ctHours !== null ? ctHours + 'h' : '—';
+        const excludeBadge = f.cycleTimeExclude ? '<span class="feat-exclude-badge">excluded</span>' : '';
+        const desc = escHtml(f.desc || '');
+        return `<tr>
+          <td>${escHtml(date)}</td>
+          <td>${escHtml(repo)}</td>
+          <td class="fl-num">${escHtml(String(f.featureNum || ''))}</td>
+          <td class="fl-desc" title="${desc}">${desc}${excludeBadge}</td>
+          <td>${escHtml(f.winnerAgent || '—')}</td>
+          <td${ctClass}>${ctStr}</td>
+        </tr>`;
+      }).join('');
+
+      const pagination = totalPages > 1 ? `
+        <div class="feat-list-pagination">
+          <button class="vol-nav-btn" id="fl-prev" ${page === 0 ? 'disabled' : ''}>&#8592;</button>
+          <span>Page ${page + 1} of ${totalPages} &nbsp;·&nbsp; ${total} features</span>
+          <button class="vol-nav-btn" id="fl-next" ${page >= totalPages - 1 ? 'disabled' : ''}>&#8594;</button>
+        </div>` : `<div class="feat-list-pagination">${total} features</div>`;
+
+      el.innerHTML = `
+        <table class="feat-list-table">
+          <thead><tr><th>Date</th><th>Repo</th><th>#</th><th>Feature</th><th>Agent</th><th>Cycle Time</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        ${pagination}`;
+
+      document.getElementById('fl-prev')?.addEventListener('click', () => {
+        statsState.featureListPage = Math.max(0, page - 1);
+        renderFeatureList();
+      });
+      document.getElementById('fl-next')?.addEventListener('click', () => {
+        statsState.featureListPage = Math.min(totalPages - 1, page + 1);
+        renderFeatureList();
+      });
+    }
+
     async function renderStatistics() {
       const container = document.getElementById('statistics-view');
       document.getElementById('monitor-summary').style.display = 'none';
@@ -3088,7 +3160,19 @@
         html.push('<div class="stats-empty-msg">No completed features found. Statistics will appear here once features are closed.</div>');
       }
 
+      // Feature list section (populated after render via renderFeatureList)
+      html.push('<div class="stats-section-title" style="margin-top:4px">Features</div>');
+      html.push('<div class="stats-block" style="overflow-x:auto"><div id="stats-feature-list"></div></div>');
+
       html.push('</div>'); // end stats-view
+
+      // Store filtered features for pagination (avoids re-rendering charts on page change)
+      statsState.filteredFeatures = filteredFeatures.slice().sort((a, b) => {
+        const ta = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+        const tb = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+        return tb - ta;
+      });
+
       container.innerHTML = html.join('');
 
       // Render Chart.js charts into canvases now that they're in the DOM
@@ -3104,6 +3188,7 @@
         statsState.repoFilter = repoSel.value;
         statsState.volumeWindowEnd = null;
         statsState.cycleTimeWindowEnd = null;
+        statsState.featureListPage = 0;
         saveStatsPrefs();
         renderStatistics();
       };
@@ -3113,6 +3198,7 @@
         statsState.period = periodSel.value;
         statsState.volumeWindowEnd = null;
         statsState.cycleTimeWindowEnd = null;
+        statsState.featureListPage = 0;
         saveStatsPrefs();
         renderStatistics();
       };
@@ -3152,6 +3238,9 @@
       // Cycle time nav buttons
       document.getElementById('ct-nav-prev')?.addEventListener('click', () => panCycleTimeChart('prev'));
       document.getElementById('ct-nav-next')?.addEventListener('click', () => panCycleTimeChart('next'));
+
+      // Feature list
+      renderFeatureList();
     }
 
     // ── Main render dispatch ───────────────────────────────────────────────────
