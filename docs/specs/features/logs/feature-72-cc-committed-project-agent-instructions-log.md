@@ -1,11 +1,12 @@
 ---
-status: waiting
-updated: 2026-03-16T13:09:29.689Z
+status: submitted
+updated: 2026-03-16T13:23:26.164Z
 startedAt: 2026-03-16T13:05:13.203Z
 events:
   - { ts: "2026-03-16T13:05:13.203Z", status: implementing }
   - { ts: "2026-03-16T13:06:33.458Z", status: implementing }
   - { ts: "2026-03-16T13:09:29.689Z", status: waiting }
+  - { ts: "2026-03-16T13:23:26.164Z", status: submitted }
 ---
 
 # Implementation Log: Feature 72 - committed-project-agent-instructions
