@@ -57,15 +57,21 @@ Update it with a thorough writeup:
 - Any trade-offs or alternatives considered
 - Issues encountered and how they were resolved
 
+**Commit the log writeup:**
+```bash
+git add docs/specs/features/logs/
+git commit -m "docs: update implementation log for feature <ID>"
+```
+
 **Signal that implementation is submitted (updates the log file frontmatter):**
 ```bash
 aigon agent-status submitted
 ```
 
-**Then commit the log file (includes both the writeup and the status update above):**
+**Commit the status update immediately:**
 ```bash
 git add docs/specs/features/logs/
-git commit -m "docs: update implementation log for feature <ID>"
+git commit -m "docs: mark feature <ID> submitted"
 ```
 
 ## Signal completion
