@@ -88,6 +88,12 @@
     .waiting .dot{background:var(--warning);box-shadow:0 0 8px rgba(245,158,11,.5)}
     .submitted .dot{background:transparent;position:relative}
     .submitted .dot::before{content:"";position:absolute;left:1px;top:0;width:6px;height:10px;border:solid var(--success);border-width:0 2px 2px 0;transform:rotate(45deg)}
+    /* Per-agent colored left border on monitor rows */
+    .row.agent-cc{border-left:2px solid #6B9EFF;padding-left:6px}
+    .row.agent-gg{border-left:2px solid #A78BFA;padding-left:6px}
+    .row.agent-cx{border-left:2px solid #4ADE80;padding-left:6px}
+    .row.agent-cu{border-left:2px solid #FB923C;padding-left:6px}
+    .row.agent-solo{border-left:2px solid #94A3B8;padding-left:6px}
     .error .dot{background:var(--error);box-shadow:0 0 8px rgba(239,68,68,.45)}
     .btn{background:transparent;border:1px solid var(--border-default);border-radius:8px;color:var(--text-secondary);padding:4px 10px;cursor:pointer;line-height:1;font-size:12px;white-space:nowrap}
     .btn:hover{color:var(--text-primary);border-color:var(--accent)}
@@ -148,6 +154,30 @@
     .kcard-actions{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding-top:6px;border-top:1px solid var(--border-subtle)}
     .kcard-actions .btn{font-size:11px;padding:3px 8px}
     .kcard-actions .btn-secondary{font-size:10px;padding:2px 7px}
+    /* Agent sections within in-progress/in-evaluation cards */
+    .kcard-agent{border-left:3px solid var(--border-subtle);border-radius:4px;padding:5px 8px;margin-top:5px;background:rgba(255,255,255,.015)}
+    .agent-cc{border-left-color:#6B9EFF}
+    .agent-gg{border-left-color:#A78BFA}
+    .agent-cx{border-left-color:#4ADE80}
+    .agent-cu{border-left-color:#FB923C}
+    .agent-solo{border-left-color:#94A3B8}
+    .kcard-agent-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px}
+    .kcard-agent-name{font-size:10px;font-weight:600;font-family:var(--mono);color:var(--text-secondary);flex-shrink:0}
+    .kcard-agent-status{font-size:10px;color:var(--text-tertiary);text-align:right}
+    .kcard-agent-status.status-running{color:#4ADE80}
+    .kcard-agent-status.status-waiting{color:#FCD34D}
+    .kcard-agent-status.status-submitted{color:#86EFAC}
+    .kcard-agent-status.status-ended,.kcard-agent-status.status-idle{color:var(--text-tertiary)}
+    .kcard-agent-actions{display:flex;gap:4px;align-items:center;margin-top:3px}
+    .kcard-agent-actions .btn{font-size:11px;padding:3px 8px}
+    .btn-overflow{padding:2px 8px!important;font-size:14px;line-height:1;color:var(--text-tertiary);letter-spacing:.05em}
+    .kcard-overflow{position:relative;display:inline-flex}
+    .kcard-overflow-menu{display:none;position:absolute;right:0;top:calc(100% + 3px);z-index:200;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:6px;padding:3px;min-width:110px;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+    .kcard-overflow-menu.open{display:block}
+    .kcard-overflow-item{display:block;width:100%;text-align:left;padding:5px 10px;font-size:11px;background:transparent;border:none;color:#F87171;border-radius:4px;cursor:pointer;white-space:nowrap}
+    .kcard-overflow-item:hover{background:var(--bg-elevated)}
+    .kcard-transitions{margin-top:6px;padding-top:6px;border-top:1px solid var(--border-subtle);display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+    .kcard-transitions .btn{font-size:11px;padding:3px 8px}
     .col-empty{padding:12px 8px;color:var(--text-tertiary);font-size:12px;text-align:center}
     /* Agent picker modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:flex;align-items:center;justify-content:center}
@@ -433,13 +463,12 @@
                       </div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(feature.agents)" :key="agent.id">
-                          <div class="row" :class="agent.status">
-                            <span class="agent" x-text="agent.id"></span>
-                            <span class="status" :class="agent.status"><span class="dot"></span><span x-text="agent.status"></span></span>
+                          <div class="row" :class="[agent.status, 'agent-' + agent.id]">
+                            <span class="agent" x-text="AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
+                            <span x-html="buildAgentStatusHtml(agent)"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
-                              <button x-show="!!agent.tmuxRunning" class="btn btn-primary" x-on:click.stop="attachAgent(repo.path, feature.id, agent.id, agent.tmuxSession || '')">Attach</button>
                             </span>
                           </div>
                         </template>
@@ -458,13 +487,12 @@
                       </div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents)" :key="agent.id">
-                          <div class="row" :class="agent.status">
-                            <span class="agent" x-text="agent.id"></span>
-                            <span class="status" :class="agent.status"><span class="dot"></span><span x-text="agent.status"></span></span>
+                          <div class="row" :class="[agent.status, 'agent-' + agent.id]">
+                            <span class="agent" x-text="AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
+                            <span x-html="buildAgentStatusHtml(agent)"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
-                              <button x-show="!!agent.tmuxRunning" class="btn btn-primary" x-on:click.stop="attachAgent(repo.path, item.id, agent.id, agent.tmuxSession || '')">Attach</button>
                             </span>
                           </div>
                         </template>
@@ -482,13 +510,12 @@
                       </div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents || [])" :key="agent.id">
-                          <div class="row" :class="agent.status">
-                            <span class="agent" x-text="agent.id"></span>
-                            <span class="status" :class="agent.status"><span class="dot"></span><span x-text="agent.status"></span></span>
+                          <div class="row" :class="[agent.status, 'agent-' + agent.id]">
+                            <span class="agent" x-text="AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
+                            <span x-html="buildAgentStatusHtml(agent)"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
-                              <button x-show="!!agent.tmuxRunning" class="btn btn-primary" x-on:click.stop="attachAgent(repo.path, item.id, agent.id, agent.tmuxSession || '')">Attach</button>
                             </span>
                           </div>
                         </template>
@@ -1662,8 +1689,13 @@
             '<span class="item-reason">' + escHtml(a.reason) + '</span>' +
             '</button>').join('') + '</div>'
         : '';
+      // Remap raw state-machine labels ("Focus cc", "View cc") to clean button text.
+      // Works from the first word so it doesn't depend on action metadata from the server.
+      const NEXT_ACTION_FIRST_WORD_MAP = { Focus: 'View', Attach: 'View' };
+      const firstWord = primary.label.split(' ')[0];
+      const primaryLabel = NEXT_ACTION_FIRST_WORD_MAP[firstWord] || firstWord;
       return '<span class="run-next-group">' +
-        '<button class="btn btn-primary run-next-primary" data-command="' + escHtml(primary.command) + '" data-mode="' + escHtml(primary.mode) + '" data-repo="' + escHtml(repoPath) + '" title="' + escHtml(primary.command) + ' — ' + escHtml(primary.reason) + '">' + escHtml(primary.label) + '</button>' +
+        '<button class="btn btn-primary run-next-primary" data-command="' + escHtml(primary.command) + '" data-mode="' + escHtml(primary.mode) + '" data-repo="' + escHtml(repoPath) + '" title="' + escHtml(primary.command) + ' — ' + escHtml(primary.reason) + '">' + escHtml(primaryLabel) + '</button>' +
         dropdownHtml + '</span>';
     }
 
@@ -1854,6 +1886,60 @@
       return agents.map(a => '<span class="agent-badge ' + escHtml(a.status || '') + '">' + escHtml(a.id) + '</span>').join('');
     }
 
+    const AGENT_DISPLAY_NAMES = { cc: 'Claude Code', gg: 'Gemini', cx: 'Codex', cu: 'Cursor', solo: 'Agent' };
+
+    function buildAgentStatusHtml(agent) {
+      const status = agent.status || 'idle';
+      const tmuxRunning = agent.tmuxRunning || false;
+      let icon, label, cls;
+      if (status === 'implementing' && tmuxRunning) {
+        icon = '●'; label = 'Running'; cls = 'status-running';
+      } else if (status === 'implementing' && !tmuxRunning) {
+        icon = '○'; label = 'Session ended'; cls = 'status-ended';
+      } else if (status === 'waiting') {
+        icon = '⏳'; label = 'Needs input'; cls = 'status-waiting';
+      } else if (status === 'submitted') {
+        icon = '✓'; label = 'Submitted'; cls = 'status-submitted';
+      } else {
+        icon = '○'; label = 'Not started'; cls = 'status-idle';
+      }
+      return '<span class="kcard-agent-status ' + cls + '">' + icon + ' ' + label + '</span>';
+    }
+
+    // Remap state machine action labels to clean, agent-ID-free button text.
+    const AGENT_ACTION_LABELS = {
+      'feature-attach':  'View',
+      'feature-focus':   'View',
+      'feature-open':    (va, agent) => (agent.status === 'implementing') ? 'Restart' : 'Start',
+      'research-attach': 'View',
+      'research-open':   'Start'
+    };
+
+    function buildAgentSectionHtml(agent, agentValidActions) {
+      const displayName = AGENT_DISPLAY_NAMES[agent.id] || agent.id;
+      const statusHtml = buildAgentStatusHtml(agent);
+      const primaryActions = agentValidActions.filter(va => va.action !== 'feature-stop' && va.action !== 'research-stop');
+      const overflowActions = agentValidActions.filter(va => va.action === 'feature-stop' || va.action === 'research-stop');
+      let actionsHtml = '';
+      if (primaryActions.length > 0) {
+        const va = primaryActions[0];
+        const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
+        const labelOverride = AGENT_ACTION_LABELS[va.action];
+        const label = typeof labelOverride === 'function' ? labelOverride(va, agent) : (labelOverride || va.label);
+        actionsHtml += '<button class="' + btnCls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">' + escHtml(label) + '</button>';
+      }
+      if (overflowActions.length > 0) {
+        const items = overflowActions.map(va =>
+          '<button class="kcard-overflow-item kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">End Session</button>'
+        ).join('');
+        actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
+      }
+      return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
+        '<div class="kcard-agent-header"><span class="kcard-agent-name">' + escHtml(displayName) + '</span>' + statusHtml + '</div>' +
+        (actionsHtml ? '<div class="kcard-agent-actions">' + actionsHtml + '</div>' : '') +
+        '</div>';
+    }
+
     // Maps validActions to button CSS classes using priority as the primary signal.
     // priority:'high' → primary (prominent, recommended next step)
     // feature-stop → danger (destructive)
@@ -1905,6 +1991,7 @@
       switch (va.action) {
         case 'feature-open':
         case 'feature-attach':
+        case 'feature-focus':
         case 'research-open':
         case 'research-attach':
           await requestFeatureOpen(id, agentId, repoPath, btn, pipelineType);
@@ -1923,9 +2010,6 @@
         case 'research-prioritise':
           await requestAction(pipelineCommand(pipelineType, 'prioritise'), [feature.name], repoPath, btn);
           break;
-        case 'feature-focus':
-          await requestAction('terminal-focus', [id, ...(agentId ? [agentId] : [])], repoPath, btn);
-          break;
         case 'feature-stop':
           await requestAction('feature-stop', [id, ...(agentId ? [agentId] : [])], repoPath, btn);
           break;
@@ -1943,23 +2027,59 @@
       card.dataset.stage = feature.stage;
       card.dataset.repoPath = repoPath || '';
 
-      const agentBadgesHtml = buildAgentBadgesHtml(feature.agents);
+      const agents = feature.agents || [];
+      const validActions = feature.validActions || [];
+      const hasAgentSections = agents.length > 0;
 
-      const stage = feature.stage;
-
-      // Render buttons from server-provided validActions (state machine is the only source of truth).
-      const actionsHtml = buildValidActionsHtml(feature.validActions || []);
-      // Eval status badge is a non-interactive status indicator, rendered separately from buttons.
-      const evalStatusHtml = feature.evalStatus
-        ? '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
-        : '';
-
-      card.innerHTML =
+      let innerHtml =
         (feature.id ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>' +
-        (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
-        (evalStatusHtml ? '<div class="kcard-status">' + evalStatusHtml + '</div>' : '') +
-        (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>';
+
+      if (hasAgentSections) {
+        // New agent section layout: one visual block per agent
+        // Eval status badge (for in-evaluation cards)
+        if (feature.evalStatus) {
+          innerHtml += '<div class="kcard-status"><span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span></div>';
+        }
+        // Agent sections
+        agents.forEach(agent => {
+          const agentActions = validActions.filter(va => va.agentId === agent.id);
+          innerHtml += buildAgentSectionHtml(agent, agentActions);
+        });
+        // Card-level actions (non-per-agent: close, eval, review, etc.)
+        const cardLevelActions = validActions.filter(va => !va.agentId);
+        if (cardLevelActions.length > 0) {
+          const cardActionsHtml = cardLevelActions.map(va => {
+            const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
+            return '<button class="' + btnCls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '">' + escHtml(va.label) + '</button>';
+          }).join('');
+          innerHtml += '<div class="kcard-transitions">' + cardActionsHtml + '</div>';
+        }
+      } else {
+        // Legacy layout for cards without active agents (inbox, backlog, done, research, feedback)
+        const agentBadgesHtml = buildAgentBadgesHtml(agents);
+        const actionsHtml = buildValidActionsHtml(validActions);
+        const evalStatusHtml = feature.evalStatus
+          ? '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
+          : '';
+        innerHtml +=
+          (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
+          (evalStatusHtml ? '<div class="kcard-status">' + evalStatusHtml + '</div>' : '') +
+          (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
+      }
+
+      card.innerHTML = innerHtml;
+
+      // Wire overflow menu toggles
+      card.querySelectorAll('.kcard-overflow-toggle').forEach(toggle => {
+        toggle.onclick = (e) => {
+          e.stopPropagation();
+          const menu = toggle.parentElement.querySelector('.kcard-overflow-menu');
+          const isOpen = menu && menu.classList.contains('open');
+          card.querySelectorAll('.kcard-overflow-menu').forEach(m => m.classList.remove('open'));
+          if (!isOpen && menu) menu.classList.add('open');
+        };
+      });
 
       let wasDragged = false;
       card.addEventListener('dragstart', (e) => {
@@ -1989,6 +2109,10 @@
       card.style.cursor = 'pointer';
       card.addEventListener('click', (e) => {
         if (wasDragged) { wasDragged = false; return; }
+        // Close overflow menus when clicking outside them
+        if (!e.target.closest('.kcard-overflow-toggle') && !e.target.closest('.kcard-overflow-menu')) {
+          card.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
+        }
         if (e.target.closest('button') || e.target.closest('.btn')) return;
         if (feature.specPath) {
           const displayName = (feature.id ? '#' + feature.id + ' ' : '') + feature.name.replace(/-/g, ' ');
