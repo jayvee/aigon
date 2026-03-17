@@ -219,7 +219,13 @@ The CLI is split into focused domain modules under `lib/`:
 | `lib/utils.js` | Shared utilities: hooks, YAML parsers, spec CRUD, analytics, version |
 | `lib/git.js` | Git operations — single source of truth for all git calls |
 | `lib/state-machine.js` | Action modes and valid state transitions |
-| `lib/commands/` | Command implementations (feature, research, feedback, setup, misc) |
+| `lib/commands/shared.js` | Thin factory (~150 lines) — builds `ctx` and composes all domain command files |
+| `lib/commands/feature.js` | All `feature-*` command handlers and `sessions-close` |
+| `lib/commands/research.js` | All `research-*` command handlers |
+| `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
+| `lib/commands/infra.js` | `conductor`, `dashboard`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile` |
+| `lib/commands/setup.js` | `init`, `install-agent`, `check-version`, `update`, `doctor` |
+| `lib/commands/misc.js` | `agent-status`, `status`, `deploy`, `next`, `help` |
 
 ---
 

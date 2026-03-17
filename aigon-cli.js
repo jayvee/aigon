@@ -7,6 +7,7 @@ const { createFeatureCommands } = require('./lib/commands/feature');
 const { createResearchCommands } = require('./lib/commands/research');
 const { createFeedbackCommands } = require('./lib/commands/feedback');
 const { createSetupCommands } = require('./lib/commands/setup');
+const { createInfraCommands } = require('./lib/commands/infra');
 const { createMiscCommands } = require('./lib/commands/misc');
 
 const commands = {
@@ -14,6 +15,7 @@ const commands = {
     ...createResearchCommands(),
     ...createFeedbackCommands(),
     ...createSetupCommands(),
+    ...createInfraCommands(),
     ...createMiscCommands(),
 };
 
