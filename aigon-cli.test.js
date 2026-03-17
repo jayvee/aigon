@@ -39,7 +39,7 @@ const {
     inferDashboardNextActions
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
-const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, gcDevServers, loadProxyRegistry, saveProxyRegistry, RADAR_DEFAULT_PORT, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, serializeLogFrontmatter, updateLogFrontmatterInPlace, collectAnalyticsData } = require('./lib/utils');
+const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, getCaddyRouteId, gcDevServers, loadProxyRegistry, saveProxyRegistry, RADAR_DEFAULT_PORT, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, serializeLogFrontmatter, updateLogFrontmatterInPlace, collectAnalyticsData } = require('./lib/utils');
 const { detectDashboardContext } = require('./lib/devserver');
 
 let passed = 0;
@@ -737,6 +737,26 @@ test('generateCaddyfile mixes Radar and regular entries', () => {
     const caddyfile = generateCaddyfile(registry);
     assert.ok(caddyfile.includes('http://aigon.test'), 'aigon entry present');
     assert.ok(caddyfile.includes('http://farline.test'), 'farline entry present');
+});
+
+console.log('\nCaddy Admin API Route IDs');
+test('getCaddyRouteId returns aigon-{appId}-{serverId} for non-empty serverId', () => {
+    assert.strictEqual(getCaddyRouteId('aigon', 'cc-74'), 'aigon-aigon-cc-74');
+    assert.strictEqual(getCaddyRouteId('farline', 'cc-119'), 'aigon-farline-cc-119');
+});
+test('getCaddyRouteId returns aigon-{appId} for empty serverId', () => {
+    assert.strictEqual(getCaddyRouteId('aigon', ''), 'aigon-aigon');
+    assert.strictEqual(getCaddyRouteId('farline', ''), 'aigon-farline');
+});
+test('getCaddyRouteId route IDs are unique across appId/serverId pairs', () => {
+    const ids = new Set([
+        getCaddyRouteId('aigon', ''),
+        getCaddyRouteId('aigon', 'cc-74'),
+        getCaddyRouteId('aigon', 'cc-75'),
+        getCaddyRouteId('farline', ''),
+        getCaddyRouteId('farline', 'cc-1'),
+    ]);
+    assert.strictEqual(ids.size, 5, 'all route IDs should be unique');
 });
 
 console.log('\nDetect Dashboard Context');
