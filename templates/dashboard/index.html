@@ -3759,9 +3759,8 @@
         item.className = 'notif-item' + (ev.read ? '' : ' unread');
         item.style.cursor = 'pointer';
         const typeLabel = NOTIF_TYPE_LABELS_DISPLAY[ev.type] || ev.type;
-        const repoName = ev.meta && ev.meta.repoPath ? escHtml(ev.meta.repoPath.replace(/.*\//, '')) : '';
         item.innerHTML =
-          '<div class="notif-item-type ' + ev.type + '">' + escHtml(typeLabel) + (repoName ? ' · ' + repoName : '') + '</div>' +
+          '<div class="notif-item-type ' + ev.type + '">' + escHtml(typeLabel) + '</div>' +
           '<div class="notif-item-msg">' + escHtml(ev.message) + '</div>' +
           '<div class="notif-item-time">' + relTimeShort(ev.timestamp) + '</div>';
         item.onclick = () => {
