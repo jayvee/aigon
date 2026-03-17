@@ -440,7 +440,7 @@ Think of this as a second axis in addition to mode (Drive/Fleet/Autopilot/Swarm)
 | Spec authoring and refinement (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) | In-agent slash commands | Best for iterative back-and-forth on definitions and scope |
 | Execution with an active agent (`feature-do`, `feature-review`, `research-do`, `research-synthesize`) | In-agent slash commands | Keeps context in the live session and avoids nested launches |
 | Orchestration and terminal ops (`init`, `install-agent`, `update`, `feature-setup`, `feature-open`, `feature-close`, `feature-cleanup`) | CLI | Repo/worktree coordination, machine-level operations, scripting |
-| Infra/config (`config`, `profile`, `proxy-setup`, `dev-server`, `radar`) | CLI | Machine/project configuration and background services |
+| Infra/config (`config`, `profile`, `proxy-setup`, `dev-server`, `dashboard`) | CLI | Machine/project configuration and background services |
 
 ### Can I stay in one surface?
 
@@ -730,17 +730,15 @@ Detach from any session with `Ctrl-b d`. Reattach manually with `tmux attach -t 
 
 ---
 
-## Visualizing Work — Aigon Radar
+## Visualizing Work — Aigon Dashboard
 
-Once you start using aigon on multiple repositories with multiple features in parallel, you need a radar to work out what's happening where and to be able to intercept and take over as required.
+Once you start using aigon on multiple repositories with multiple features in parallel, you need a dashboard to work out what's happening where and to be able to intercept and take over as required.
 
-**Aigon Radar** is a single background service that watches all your registered repos and exposes a unified HTTP API. Every view — the web dashboard, VS Code sidebar, macOS menubar icon, and CLI status — consumes that one API rather than reading log files independently.
+**Aigon Dashboard** is a foreground HTTP server that watches all your registered repos and exposes a unified HTTP API. Every view — the web dashboard, VS Code sidebar, macOS menubar icon, and CLI status — consumes that one API rather than reading log files independently.
 
-> **Note:** Radar is the evolution of the `conductor` monitoring commands. The `aigon conduct` orchestration command is unaffected. See [Migration from Conductor](#migration-from-conductor) below.
+Aigon provides four ways to see what's happening across your projects: a **web dashboard**, a **VS Code sidebar**, a **macOS menubar icon**, and **macOS notifications** — all powered by the dashboard server.
 
-Aigon provides four ways to see what's happening across your projects: a **web dashboard**, a **VS Code sidebar**, a **macOS menubar icon**, and **macOS notifications** — all powered by a single Radar service.
-
-### VS Code Sidebar (Aigon Radar)
+### VS Code Sidebar (Aigon Dashboard)
 
 An Aigon section in the Explorer sidebar shows live feature and agent status across all registered repos — no terminal needed.
 
@@ -748,11 +746,11 @@ An Aigon section in the Explorer sidebar shows live feature and agent status acr
 
 ```bash
 # 1. Register your repos (repeat for each project)
-aigon radar add                    # adds cwd
-aigon radar add ~/src/my-web-app  # adds another repo
+aigon dashboard add                    # adds cwd
+aigon dashboard add ~/src/my-web-app  # adds another repo
 
 # 2. Install the VS Code extension
-aigon radar vscode-install
+aigon dashboard vscode-install
 
 # 3. Reload VS Code — the Aigon panel appears in the Explorer sidebar
 ```
@@ -790,25 +788,25 @@ Click any attention item to copy its slash command. Expand a repo for the full f
 - Refresh button (↻) and stage toggle (☰) in the panel title bar
 - Updates automatically via file watching — no polling, no manual refresh
 
-**Radar commands:**
+**Dashboard commands:**
 
 ```bash
-aigon radar add [path]           # Register a repo (default: cwd)
-aigon radar remove [path]        # Unregister a repo
-aigon radar list                 # List registered repos
-aigon radar start [--port N]     # Start the Radar service (daemon + dashboard + API)
-aigon radar stop                 # Stop the Radar service
-aigon radar status               # Show service state, repos, and waiting agents
-aigon radar open                 # Open the web dashboard in your browser
-aigon radar install              # Auto-start on login (launchd)
-aigon radar uninstall            # Remove auto-start
-aigon radar vscode-install       # Install VS Code extension
-aigon radar vscode-uninstall     # Remove VS Code extension
-aigon radar menubar-install      # Install macOS menubar plugin
-aigon radar menubar-uninstall    # Remove menubar plugin
+aigon dashboard add [path]           # Register a repo (default: cwd)
+aigon dashboard remove [path]        # Unregister a repo
+aigon dashboard list                 # List registered repos
+aigon dashboard start [--port N]     # Start the dashboard service (daemon + dashboard + API)
+aigon dashboard stop                 # Stop the dashboard service
+aigon dashboard status               # Show service state, repos, and waiting agents
+aigon dashboard open                 # Open the web dashboard in your browser
+aigon dashboard install              # Auto-start on login (launchd)
+aigon dashboard uninstall            # Remove auto-start
+aigon dashboard vscode-install       # Install VS Code extension
+aigon dashboard vscode-uninstall     # Remove VS Code extension
+aigon dashboard menubar-install      # Install macOS menubar plugin
+aigon dashboard menubar-uninstall    # Remove menubar plugin
 ```
 
-**Radar HTTP API (local service):**
+**Dashboard HTTP API (local service):**
 
 - `GET /api/status` — aggregated multi-repo status payload
 - `GET /api/repos` — registered repo list
@@ -825,9 +823,9 @@ aigon radar menubar-uninstall    # Remove menubar plugin
 }
 ```
 
-### macOS Menubar (Aigon Radar)
+### macOS Menubar (Aigon Dashboard)
 
-A menubar icon that shows live agent status at a glance — click to expand a menu of all features and agents across repos, then click any agent to jump directly to its terminal. The menubar plugin calls Radar's HTTP API for its data.
+A menubar icon that shows live agent status at a glance — click to expand a menu of all features and agents across repos, then click any agent to jump directly to its terminal. The menubar plugin calls the dashboard's HTTP API for its data.
 
 **One-time setup:**
 
@@ -836,10 +834,10 @@ A menubar icon that shows live agent status at a glance — click to expand a me
 brew install --cask swiftbar
 
 # 2. Register your repos (if not already done)
-aigon radar add
+aigon dashboard add
 
 # 3. Install the menubar plugin
-aigon radar menubar-install
+aigon dashboard menubar-install
 ```
 
 The menubar shows a gear icon with an attention count: `⚙ 3 needs attention` or `⚙ 5 running` or `⚙ –` when idle. Click to expand:
@@ -883,7 +881,7 @@ As an AI developer you are not just building software — you are running an opt
 
 ![Aigon Dashboard Statistics tab showing volume charts, cycle time, and agent leaderboard](docs/images/aigon-dashboard-statistics.png)
 
-Open the Statistics tab at `aigon radar open` then click **Statistics**.
+Open the Statistics tab at `aigon dashboard open` then click **Statistics**.
 
 #### What the dashboard shows
 
@@ -922,7 +920,7 @@ After backfilling, click **Refresh** in the Statistics tab to reload analytics.
 
 ### Migration from Conductor
 
-If you previously used `aigon conductor` for monitoring, the transition is straightforward — all `conductor` monitoring subcommands (`start`, `stop`, `status`, `add`, `remove`, `list`, `menubar-install`, etc.) continue to work but now delegate to their `radar` equivalents with a deprecation notice. The `aigon dashboard` command similarly delegates to `aigon radar open`. The `aigon conduct` orchestration command is completely unaffected.
+The `aigon conduct` orchestration command runs the Fleet autopilot — it sets up worktrees, spawns autonomous agent loops, monitors progress, and triggers evaluation when all agents submit.
 
 ### Kanban Board View (default)
 
@@ -1067,7 +1065,7 @@ When running multiple agents on the same web app, managing port numbers is painf
 | Claude on feature 120 of whenswell | `http://cc-120.whenswell.test` |
 | Main branch / general dev | `http://whenswell.test` |
 
-The proxy also routes the **Aigon Radar dashboard**:
+The proxy also routes the **Aigon dashboard**:
 
 | Scenario | URL |
 |---|---|
@@ -1106,17 +1104,17 @@ aigon dev-server gc        # Clean up dead entries
 aigon dev-server url       # Print URL for scripting
 ```
 
-The Radar dashboard registers automatically when you start it:
+The dashboard registers automatically when you start it:
 
 ```bash
-aigon radar start          # Main dashboard → http://aigon.test
+aigon dashboard start          # Main dashboard → http://aigon.test
 # From a worktree:
-aigon radar start          # Worktree dashboard → http://cc-119.aigon.test
+aigon dashboard start          # Worktree dashboard → http://cc-119.aigon.test
 ```
 
 If the proxy isn't set up, everything falls back to `localhost:<port>` — existing workflows are unaffected.
 
-Only **web** and **api** profiles use the dev proxy for project dev servers. The Radar dashboard uses the proxy regardless of profile. iOS, Android, library, and generic profiles are not affected for dev server routing.
+Only **web** and **api** profiles use the dev proxy for project dev servers. The dashboard uses the proxy regardless of profile. iOS, Android, library, and generic profiles are not affected for dev server routing.
 
 See the [Complete Guide](GUIDE.md#local-dev-proxy) for detailed setup instructions, per-project configuration, and troubleshooting.
 
@@ -1258,25 +1256,25 @@ Example output:
   cx    submitted      10:58
 ```
 
-### Radar commands
+### Dashboard commands
 
 Multi-repo status monitoring via a unified background service — web dashboard, VS Code sidebar, macOS menubar, and notifications all in one.
 
 | Command | Usage |
 |---|---|
-| Radar Start | `aigon radar start [--port N]` (start service: daemon + dashboard + API) |
-| Radar Stop | `aigon radar stop` |
-| Radar Status | `aigon radar status` |
-| Radar Open | `aigon radar open` (open web dashboard in browser) |
-| Radar Install | `aigon radar install` (auto-start on login via launchd) |
-| Radar Uninstall | `aigon radar uninstall` |
-| Radar Add | `aigon radar add [path]` (register repo, default: cwd) |
-| Radar Remove | `aigon radar remove [path]` |
-| Radar List | `aigon radar list` |
-| VS Code Install | `aigon radar vscode-install` |
-| VS Code Uninstall | `aigon radar vscode-uninstall` |
-| Menubar Install | `aigon radar menubar-install` (SwiftBar/xbar plugin) |
-| Menubar Uninstall | `aigon radar menubar-uninstall` |
+| DashboardStart | `aigon dashboard start [--port N]` (start service: daemon + dashboard + API) |
+| DashboardStop | `aigon dashboard stop` |
+| DashboardStatus | `aigon dashboard status` |
+| DashboardOpen | `aigon dashboard open` (open web dashboard in browser) |
+| DashboardInstall | `aigon dashboard install` (auto-start on login via launchd) |
+| DashboardUninstall | `aigon dashboard uninstall` |
+| DashboardAdd | `aigon dashboard add [path]` (register repo, default: cwd) |
+| DashboardRemove | `aigon dashboard remove [path]` |
+| DashboardList | `aigon dashboard list` |
+| VS Code Install | `aigon dashboard vscode-install` |
+| VS Code Uninstall | `aigon dashboard vscode-uninstall` |
+| Menubar Install | `aigon dashboard menubar-install` (SwiftBar/xbar plugin) |
+| Menubar Uninstall | `aigon dashboard menubar-uninstall` |
 | Terminal Focus | `aigon terminal-focus <featureId> [agent]` (open agent terminal) |
 
 > **Migration:** The old `aigon conductor` monitoring commands still work but print deprecation notices. `aigon conduct` (orchestration) is unaffected.
