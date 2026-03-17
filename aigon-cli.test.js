@@ -30,16 +30,16 @@ const {
 } = require('./lib/commands/shared');
 const {
     parseSimpleFrontMatter,
-    RADAR_INTERACTIVE_ACTIONS,
-    resolveRadarActionRepoPath,
-    parseRadarActionRequest,
-    buildRadarActionCommandArgs,
+    DASHBOARD_INTERACTIVE_ACTIONS,
+    resolveDashboardActionRepoPath,
+    parseDashboardActionRequest,
+    buildDashboardActionCommandArgs,
     collectDashboardStatusData,
     inferDashboardNextCommand,
     inferDashboardNextActions
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
-const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, getCaddyRouteId, gcDevServers, loadProxyRegistry, saveProxyRegistry, getCaddyLiveRoutes, registryHasRoute, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, RADAR_DEFAULT_PORT, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, serializeLogFrontmatter, updateLogFrontmatterInPlace, collectAnalyticsData } = require('./lib/utils');
+const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, getCaddyRouteId, gcDevServers, loadProxyRegistry, saveProxyRegistry, getCaddyLiveRoutes, registryHasRoute, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, serializeLogFrontmatter, updateLogFrontmatterInPlace, collectAnalyticsData } = require('./lib/utils');
 const { detectDashboardContext } = require('./lib/devserver');
 
 let passed = 0;
@@ -193,29 +193,29 @@ test('parseFrontMatterStatus extracts status from YAML front matter', () => {
 test('parseFrontMatterStatus returns null when front matter is absent', () => {
     assert.strictEqual(parseFrontMatterStatus('# Log\n'), null);
 });
-test('RADAR_INTERACTIVE_ACTIONS includes core feature workflow actions', () => {
-    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-create'), true);
-    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-prioritise'), true);
-    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-do'), true);
-    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-eval'), true);
-    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-submit'), true);
+test('DASHBOARD_INTERACTIVE_ACTIONS includes core feature workflow actions', () => {
+    assert.strictEqual(DASHBOARD_INTERACTIVE_ACTIONS.has('feature-create'), true);
+    assert.strictEqual(DASHBOARD_INTERACTIVE_ACTIONS.has('feature-prioritise'), true);
+    assert.strictEqual(DASHBOARD_INTERACTIVE_ACTIONS.has('feature-do'), true);
+    assert.strictEqual(DASHBOARD_INTERACTIVE_ACTIONS.has('feature-eval'), true);
+    assert.strictEqual(DASHBOARD_INTERACTIVE_ACTIONS.has('feature-submit'), true);
 });
-test('resolveRadarActionRepoPath accepts registered repo paths', () => {
-    const resolved = resolveRadarActionRepoPath('/tmp/repo-a', ['/tmp/repo-a', '/tmp/repo-b'], '/tmp/repo-a');
+test('resolveDashboardActionRepoPath accepts registered repo paths', () => {
+    const resolved = resolveDashboardActionRepoPath('/tmp/repo-a', ['/tmp/repo-a', '/tmp/repo-b'], '/tmp/repo-a');
     assert.deepStrictEqual(resolved, { ok: true, repoPath: '/tmp/repo-a' });
 });
-test('resolveRadarActionRepoPath requires explicit repo when multiple repos are registered', () => {
-    const resolved = resolveRadarActionRepoPath('', ['/tmp/repo-a', '/tmp/repo-b'], '/tmp/not-registered');
+test('resolveDashboardActionRepoPath requires explicit repo when multiple repos are registered', () => {
+    const resolved = resolveDashboardActionRepoPath('', ['/tmp/repo-a', '/tmp/repo-b'], '/tmp/not-registered');
     assert.strictEqual(resolved.ok, false);
     assert.strictEqual(resolved.status, 400);
 });
-test('parseRadarActionRequest rejects unsupported actions', () => {
-    const parsed = parseRadarActionRequest({ action: 'rm -rf', args: [] }, { registeredRepos: ['/tmp/repo-a'], defaultRepoPath: '/tmp/repo-a' });
+test('parseDashboardActionRequest rejects unsupported actions', () => {
+    const parsed = parseDashboardActionRequest({ action: 'rm -rf', args: [] }, { registeredRepos: ['/tmp/repo-a'], defaultRepoPath: '/tmp/repo-a' });
     assert.strictEqual(parsed.ok, false);
     assert.strictEqual(parsed.status, 400);
 });
-test('parseRadarActionRequest normalizes args and repo', () => {
-    const parsed = parseRadarActionRequest(
+test('parseDashboardActionRequest normalizes args and repo', () => {
+    const parsed = parseDashboardActionRequest(
         { action: 'feature-eval', args: ['55', '--agent=cx', true], repoPath: '/tmp/repo-a' },
         { registeredRepos: ['/tmp/repo-a'], defaultRepoPath: '/tmp/repo-a' }
     );
@@ -224,28 +224,28 @@ test('parseRadarActionRequest normalizes args and repo', () => {
     assert.deepStrictEqual(parsed.args, ['55', '--agent=cx', 'true']);
     assert.strictEqual(parsed.repoPath, '/tmp/repo-a');
 });
-test('buildRadarActionCommandArgs builds CLI invocation args', () => {
+test('buildDashboardActionCommandArgs builds CLI invocation args', () => {
     assert.deepStrictEqual(
-        buildRadarActionCommandArgs('feature-eval', ['55', '--agent=cx']),
+        buildDashboardActionCommandArgs('feature-eval', ['55', '--agent=cx']),
         [path.join(__dirname, 'aigon-cli.js'), 'feature-eval', '55', '--agent=cx']
     );
 });
-test('RADAR_INTERACTIVE_ACTIONS does not include worktree-open (removed, use feature-open)', () => {
-    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('worktree-open'), false);
+test('DASHBOARD_INTERACTIVE_ACTIONS does not include worktree-open (removed, use feature-open)', () => {
+    assert.strictEqual(DASHBOARD_INTERACTIVE_ACTIONS.has('worktree-open'), false);
 });
-test('RADAR_INTERACTIVE_ACTIONS includes feature-open', () => {
-    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-open'), true);
+test('DASHBOARD_INTERACTIVE_ACTIONS includes feature-open', () => {
+    assert.strictEqual(DASHBOARD_INTERACTIVE_ACTIONS.has('feature-open'), true);
 });
-test('parseRadarActionRequest accepts feature-stop (state machine fire-and-forget action)', () => {
-    const parsed = parseRadarActionRequest(
+test('parseDashboardActionRequest accepts feature-stop (state machine fire-and-forget action)', () => {
+    const parsed = parseDashboardActionRequest(
         { action: 'feature-stop', args: ['62'], repoPath: '/tmp/repo-a' },
         { registeredRepos: ['/tmp/repo-a'], defaultRepoPath: '/tmp/repo-a' }
     );
     assert.strictEqual(parsed.ok, true);
     assert.strictEqual(parsed.action, 'feature-stop');
 });
-test('parseRadarActionRequest rejects truly unsupported actions', () => {
-    const parsed = parseRadarActionRequest(
+test('parseDashboardActionRequest rejects truly unsupported actions', () => {
+    const parsed = parseDashboardActionRequest(
         { action: 'not-a-real-command', args: [] },
         { registeredRepos: ['/tmp/repo-a'], defaultRepoPath: '/tmp/repo-a' }
     );
@@ -690,12 +690,11 @@ test('command families stay separated', () => {
 });
 
 console.log('\nDashboard Constants');
-test('RADAR_DEFAULT_PORT is 4100', () => assert.strictEqual(RADAR_DEFAULT_PORT, 4100));
 test('DASHBOARD_DEFAULT_PORT is 4100', () => assert.strictEqual(DASHBOARD_DEFAULT_PORT, 4100));
 test('DASHBOARD_DYNAMIC_PORT_START is 4101', () => assert.strictEqual(DASHBOARD_DYNAMIC_PORT_START, 4101));
 test('DASHBOARD_DYNAMIC_PORT_END is 4199', () => assert.strictEqual(DASHBOARD_DYNAMIC_PORT_END, 4199));
 
-console.log('\nCaddyfile Generation with Radar Entries');
+console.log('\nCaddyfile Generation with Legacy Nested Entries');
 test('generateCaddyfile handles regular dev server entries', () => {
     const registry = {
         farline: {
@@ -709,7 +708,7 @@ test('generateCaddyfile handles regular dev server entries', () => {
     assert.ok(caddyfile.includes('http://cc-119.farline.test'));
     assert.ok(caddyfile.includes('reverse_proxy localhost:3001'));
 });
-test('generateCaddyfile handles Radar entries with nested dashboard.port', () => {
+test('generateCaddyfile handles Legacy entries with nested dashboard.port', () => {
     const registry = {
         aigon: {
             '': {
@@ -732,7 +731,7 @@ test('generateCaddyfile handles Radar entries with nested dashboard.port', () =>
     assert.ok(caddyfile.includes('reverse_proxy localhost:4847'), 'worktree routes to dashboard port');
     assert.ok(!caddyfile.includes('reverse_proxy localhost:4301'), 'does not route to service port');
 });
-test('generateCaddyfile mixes Radar and regular entries', () => {
+test('generateCaddyfile mixes legacy nested and regular entries', () => {
     const registry = {
         aigon: {
             '': { service: { port: 4100, pid: 200 }, dashboard: { port: 4100, pid: 200 }, started: '' }
@@ -773,12 +772,12 @@ test('detectDashboardContext returns expected shape', () => {
     assert.ok(typeof ctx.instanceName === 'string' && ctx.instanceName.length > 0, 'instanceName should be a non-empty string');
 });
 
-console.log('\ngcDevServers with Radar Entries');
-test('gcDevServers removes radar entries with dead PIDs', () => withTempDir(tempDir => {
+console.log('\ngcDevServers with Legacy Nested Entries');
+test('gcDevServers removes legacy entries with dead PIDs', () => withTempDir(tempDir => {
     const registryPath = path.join(tempDir, 'servers.json');
     const deadPid = 999999; // very high PID, very unlikely to exist
 
-    // Write a test registry with a dead radar entry
+    // Write a test registry with a dead legacy entry
     const registry = {
         ['aigon']: {
             'cc-61': {
@@ -800,7 +799,7 @@ test('gcDevServers removes radar entries with dead PIDs', () => withTempDir(temp
 
     try {
         const removed = gcDevServers();
-        assert.strictEqual(removed, 1, 'should remove 1 dead radar entry');
+        assert.strictEqual(removed, 1, 'should remove 1 dead legacy entry');
 
         const after = loadProxyRegistry();
         assert.ok(!after['aigon'] || !after['aigon']['cc-61'], 'dead entry should be removed');
@@ -814,7 +813,7 @@ test('gcDevServers removes radar entries with dead PIDs', () => withTempDir(temp
     }
 }));
 
-test('gcDevServers preserves live radar entries', () => {
+test('gcDevServers preserves live legacy entries', () => {
     // Use PID 1 (always alive: init/launchd on macOS) as "live" PID
     const livePid = 1;
     const realRegistry = fs.existsSync(DEV_PROXY_REGISTRY) ? fs.readFileSync(DEV_PROXY_REGISTRY, 'utf8') : null;

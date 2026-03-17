@@ -29,13 +29,12 @@ Modes:
   ✈️  Autopilot  One agent runs autonomously end-to-end
   🐝 Swarm      Multiple agents run autonomously in parallel
 
-Conductor / Radar:
+Conductor:
   conduct <ID> [agents...]          Start arena: setup, spawn autonomous loops, monitor, eval
   conduct status [ID]               Show status of running conductor sessions
   feature-autopilot stop <ID>       Stop all agents for a feature (reuses sessions-close)
   feature-autopilot attach <ID> <agent> Attach to an agent's tmux session
-  radar <subcommand>                Unified monitoring service + API + dashboard
-  dashboard [options]               Deprecated alias for: aigon radar open
+  dashboard                         Start the live dashboard (foreground HTTP server)
 
 Feature Open:
   feature-open <ID> [agent] [--terminal=<type>]
@@ -105,10 +104,7 @@ Examples:
   aigon feature-autopilot 42 cc gg cx            # Arena conductor: setup + spawn + monitor + eval
   aigon feature-autopilot status 42              # Check conductor status
   aigon feature-autopilot stop 42                # Stop all agents
-  aigon radar start                    # Start Radar service
-  aigon radar open                     # Open live dashboard
-  aigon radar open --screenshot        # Capture dashboard screenshot
-  aigon dashboard                      # Deprecated: use "aigon radar open"
+  aigon dashboard                      # Start live dashboard
   aigon feature-open 55 cc             # Open feature worktree and start Claude
   aigon feature-open 55 --all          # Open all Fleet agents side-by-side
   aigon feature-open 100 101 102       # Open features side-by-side (parallel)
