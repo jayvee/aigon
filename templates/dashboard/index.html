@@ -395,6 +395,43 @@
     .logs-page-btn:hover:not(:disabled){color:var(--text-primary);border-color:var(--accent)}
     .logs-page-btn:disabled{opacity:.35;cursor:default}
     .logs-page-info{min-width:80px;text-align:center}
+    /* Notification bell */
+    .notif-btn{position:relative;background:none;border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-secondary);cursor:pointer;padding:5px 8px;display:flex;align-items:center;gap:4px;transition:color .12s ease,border-color .12s ease}
+    .notif-btn:hover{color:var(--text-primary);border-color:var(--border-default)}
+    .notif-btn svg{width:15px;height:15px;flex-shrink:0}
+    .notif-badge{background:var(--accent);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;line-height:1}
+    .notif-badge[data-hidden]{display:none}
+    /* Notification dropdown */
+    .notif-dropdown{position:fixed;top:0;right:0;bottom:0;width:340px;background:var(--bg-surface);border-left:1px solid var(--border-subtle);z-index:210;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease}
+    .notif-dropdown.open{transform:translateX(0)}
+    .notif-dropdown-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border-subtle);flex-shrink:0}
+    .notif-dropdown-title{font-size:14px;font-weight:600}
+    .notif-close-btn{background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:18px;padding:2px 6px;border-radius:4px;line-height:1}
+    .notif-close-btn:hover{color:var(--text-primary)}
+    .notif-list{flex:1;overflow-y:auto;padding:8px 0}
+    .notif-empty{color:var(--text-tertiary);font-size:12px;text-align:center;padding:24px 16px}
+    .notif-item{padding:10px 16px;border-bottom:1px solid var(--border-subtle);transition:background .12s ease}
+    .notif-item:last-child{border-bottom:none}
+    .notif-item.unread{background:rgba(59,130,246,.06)}
+    .notif-item-type{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-tertiary);margin-bottom:3px}
+    .notif-item-type.agent-waiting{color:var(--warning)}
+    .notif-item-type.all-submitted,.notif-item-type.all-research-submitted{color:var(--success)}
+    .notif-item-type.error{color:var(--error)}
+    .notif-item-msg{font-size:12px;color:var(--text-primary);margin-bottom:3px}
+    .notif-item-time{font-size:11px;color:var(--text-tertiary)}
+    .notif-overlay{position:fixed;inset:0;z-index:209;display:none}
+    .notif-overlay.open{display:block}
+    /* Settings toggles */
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;margin-bottom:6px}
+    .toggle-row-label{font-size:13px;color:var(--text-primary)}
+    .toggle-row-sub{font-size:11px;color:var(--text-tertiary)}
+    .toggle-switch{position:relative;width:36px;height:20px;flex-shrink:0}
+    .toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+    .toggle-track{position:absolute;inset:0;border-radius:999px;background:var(--border-default);transition:background .15s ease;cursor:pointer}
+    .toggle-track::after{content:'';position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s ease}
+    .toggle-switch input:checked + .toggle-track{background:var(--accent)}
+    .toggle-switch input:checked + .toggle-track::after{transform:translateX(16px)}
+    .toggle-switch input:disabled + .toggle-track{opacity:.4;cursor:default}
   </style>
 </head>
 <body>
@@ -404,6 +441,10 @@
       <div class="meta">
         <span class="health" aria-live="polite"><span class="dot" id="health-dot"></span><span id="health-text">Connected</span></span>
         <span id="updated-text">Updated just now</span>
+        <button class="notif-btn" id="notif-bell-btn" title="Notifications" aria-label="Notifications">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5v1.75L2 9.5h12l-1.5-1.75V6A4.5 4.5 0 0 0 8 1.5z"/><path d="M6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg>
+          <span class="notif-badge" id="notif-badge" data-hidden>0</span>
+        </button>
         <button class="btn" id="refresh-btn" title="Force refresh status">Refresh</button>
       </div>
     </div>
@@ -610,6 +651,17 @@
       </div>
     </div>
   </div>
+  <!-- Notification dropdown -->
+  <div id="notif-overlay" class="notif-overlay" x-ignore></div>
+  <aside id="notif-dropdown" class="notif-dropdown" x-ignore role="dialog" aria-modal="true" aria-label="Notifications">
+    <div class="notif-dropdown-header">
+      <span class="notif-dropdown-title">Notifications</span>
+      <button class="notif-close-btn" id="notif-close-btn" aria-label="Close notifications">&times;</button>
+    </div>
+    <div class="notif-list" id="notif-list">
+      <div class="notif-empty">No notifications yet</div>
+    </div>
+  </aside>
   <!-- Terminal panel -->
   <div id="terminal-panel-overlay" class="drawer-overlay" x-ignore></div>
   <aside id="terminal-panel" class="terminal-panel" x-ignore role="dialog" aria-modal="true" aria-label="Terminal">
@@ -2365,6 +2417,74 @@
       section.appendChild(form);
 
       area.appendChild(section);
+
+      // ── Notifications section ─────────────────────────────────────────────
+      const NOTIF_TYPE_LABELS = {
+        'agent-waiting': 'Agent waiting',
+        'agent-submitted': 'Agent submitted',
+        'all-submitted': 'All agents submitted (features)',
+        'all-research-submitted': 'All agents submitted (research)',
+        'error': 'Errors'
+      };
+      const notifSection = document.createElement('div');
+      notifSection.className = 'settings-section';
+      notifSection.innerHTML = '<h3>Notifications</h3><p>macOS notifications are delivered only while the dashboard is running.</p>';
+
+      async function loadAndRenderNotifToggles() {
+        let cfg = { enabled: true, types: {} };
+        try {
+          const r = await fetch('/api/settings/notifications');
+          cfg = await r.json();
+        } catch (_) {}
+
+        notifSection.querySelectorAll('.toggle-row').forEach(r => r.remove());
+
+        function makeToggleRow(label, checked, disabled, onChange) {
+          const row = document.createElement('div');
+          row.className = 'toggle-row';
+          const labelDiv = document.createElement('div');
+          labelDiv.className = 'toggle-row-label';
+          labelDiv.textContent = label;
+          const sw = document.createElement('label');
+          sw.className = 'toggle-switch';
+          const inp = document.createElement('input');
+          inp.type = 'checkbox';
+          inp.checked = checked;
+          if (disabled) inp.disabled = true;
+          inp.onchange = () => onChange(inp.checked);
+          const track = document.createElement('span');
+          track.className = 'toggle-track';
+          sw.appendChild(inp);
+          sw.appendChild(track);
+          row.appendChild(labelDiv);
+          row.appendChild(sw);
+          return { row, inp };
+        }
+
+        // Master toggle
+        const { row: masterRow, inp: masterInp } = makeToggleRow('Enable macOS notifications', cfg.enabled, false, async (val) => {
+          try {
+            await fetch('/api/settings/notifications', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ enabled: val }) });
+          } catch (_) {}
+          loadAndRenderNotifToggles();
+        });
+        notifSection.appendChild(masterRow);
+
+        // Per-type toggles
+        Object.entries(NOTIF_TYPE_LABELS).forEach(([type, label]) => {
+          const { row, inp } = makeToggleRow(label, cfg.types[type] !== false, !cfg.enabled, async (val) => {
+            try {
+              await fetch('/api/settings/notifications', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ types: { [type]: val } }) });
+            } catch (_) {}
+          });
+          row.style.paddingLeft = '24px';
+          notifSection.appendChild(row);
+        });
+      }
+
+      loadAndRenderNotifToggles();
+      area.appendChild(notifSection);
+
       reposRoot.appendChild(area);
     }
 
@@ -3602,6 +3722,99 @@
         render();
       };
     });
+
+    // ── Notification bell & dropdown ─────────────────────────────────────────
+
+    const notifBellBtn = document.getElementById('notif-bell-btn');
+    const notifBadge = document.getElementById('notif-badge');
+    const notifDropdown = document.getElementById('notif-dropdown');
+    const notifOverlay = document.getElementById('notif-overlay');
+    const notifList = document.getElementById('notif-list');
+    const notifCloseBtn = document.getElementById('notif-close-btn');
+
+    const NOTIF_TYPE_LABELS_DISPLAY = {
+      'agent-waiting': 'Waiting',
+      'agent-submitted': 'Submitted',
+      'all-submitted': 'All Submitted',
+      'all-research-submitted': 'Research Done',
+      'error': 'Error'
+    };
+
+    function relTimeShort(iso) {
+      const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+      if (diff < 60) return 'just now';
+      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+      return Math.floor(diff / 86400) + 'd ago';
+    }
+
+    function renderNotifList(events) {
+      if (!events || events.length === 0) {
+        notifList.innerHTML = '<div class="notif-empty">No notifications yet</div>';
+        return;
+      }
+      notifList.innerHTML = '';
+      [...events].reverse().forEach(ev => {
+        const item = document.createElement('div');
+        item.className = 'notif-item' + (ev.read ? '' : ' unread');
+        const typeLabel = NOTIF_TYPE_LABELS_DISPLAY[ev.type] || ev.type;
+        item.innerHTML =
+          '<div class="notif-item-type ' + ev.type + '">' + escHtml(typeLabel) + '</div>' +
+          '<div class="notif-item-msg">' + escHtml(ev.message) + '</div>' +
+          '<div class="notif-item-time">' + relTimeShort(ev.timestamp) + '</div>';
+        notifList.appendChild(item);
+      });
+    }
+
+    function updateBadge(count) {
+      if (count > 0) {
+        notifBadge.textContent = count > 99 ? '99+' : String(count);
+        notifBadge.removeAttribute('data-hidden');
+      } else {
+        notifBadge.setAttribute('data-hidden', '');
+      }
+    }
+
+    async function loadNotifications() {
+      try {
+        const r = await fetch('/api/notifications');
+        if (!r.ok) return;
+        const data = await r.json();
+        updateBadge(data.unreadCount || 0);
+        return data.events || [];
+      } catch (_) { return []; }
+    }
+
+    async function openNotifDropdown() {
+      const events = await loadNotifications();
+      renderNotifList(events);
+      notifDropdown.classList.add('open');
+      notifOverlay.classList.add('open');
+      // Mark all as read
+      try { await fetch('/api/notifications/read', { method: 'POST' }); } catch (_) {}
+      updateBadge(0);
+    }
+
+    function closeNotifDropdown() {
+      notifDropdown.classList.remove('open');
+      notifOverlay.classList.remove('open');
+    }
+
+    notifBellBtn.onclick = () => {
+      if (notifDropdown.classList.contains('open')) closeNotifDropdown();
+      else openNotifDropdown();
+    };
+    notifCloseBtn.onclick = closeNotifDropdown;
+    notifOverlay.onclick = closeNotifDropdown;
+
+    // Poll badge count every 30s without opening the dropdown
+    setInterval(async () => {
+      if (!notifDropdown.classList.contains('open')) {
+        await loadNotifications();
+      }
+    }, 30000);
+    // Initial badge check
+    loadNotifications();
   </script>
 </body>
 </html>`;
