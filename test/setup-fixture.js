@@ -25,7 +25,7 @@ const os = require('os');
 const path = require('path');
 const { spawnSync, execFileSync } = require('child_process');
 
-const FIXTURES_DIR = path.join(os.homedir(), 'src');
+const FIXTURES_DIR = path.join(__dirname, 'fixtures');
 const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -147,8 +147,29 @@ function createBrewboard(repoDir) {
     write(path.join(repoDir, 'README.md'), '# BrewBoard\n\nTrack and share your craft beer collection. Rate beers, follow breweries, and discover what\'s on tap near you.\n');
     write(path.join(repoDir, '.gitignore'), 'node_modules/\n.next/\n.env*.local\n');
 
+    write(path.join(repoDir, 'tsconfig.json'), JSON.stringify({
+        compilerOptions: {
+            target: 'ES2017',
+            lib: ['dom', 'dom.iterable', 'esnext'],
+            allowJs: true,
+            skipLibCheck: true,
+            strict: false,
+            noEmit: true,
+            esModuleInterop: true,
+            module: 'commonjs',
+            resolveJsonModule: true,
+            jsx: 'preserve',
+        },
+        include: ['src'],
+    }, null, 2));
+
+    write(path.join(repoDir, 'next.config.js'), `module.exports = {};\n`);
+
+    // Minimal JSX type declarations so `tsc --noEmit` works without @types/react
+    write(path.join(repoDir, 'src', 'global.d.ts'), `declare namespace JSX {\n  interface Element {}\n  interface IntrinsicElements {\n    [elemName: string]: any;\n  }\n}\n`);
+
     write(path.join(repoDir, 'src', 'app', 'page.tsx'), `export default function Home() {\n  return <main><h1>BrewBoard</h1></main>;\n}\n`);
-    write(path.join(repoDir, 'src', 'app', 'layout.tsx'), `export default function RootLayout({ children }: { children: React.ReactNode }) {\n  return <html><body>{children}</body></html>;\n}\n`);
+    write(path.join(repoDir, 'src', 'app', 'layout.tsx'), `export default function RootLayout({ children }: { children: unknown }) {\n  return <html><body>{children}</body></html>;\n}\n`);
     write(path.join(repoDir, 'src', 'components', 'BeerCard.tsx'), `export function BeerCard({ name, style, rating }: { name: string; style: string; rating: number }) {\n  return <div className="beer-card"><h2>{name}</h2><p>{style}</p><span>{rating}/5</span></div>;\n}\n`);
     write(path.join(repoDir, 'src', 'lib', 'api.ts'), `export async function fetchBeers() {\n  const res = await fetch('/api/beers');\n  return res.json();\n}\n`);
 
@@ -304,7 +325,7 @@ function createBrewboardApi(repoDir) {
     write(path.join(repoDir, 'README.md'), '# BrewBoard API\n\nREST API backend for the BrewBoard craft beer tracking platform.\n\nEndpoints: `/beers`, `/breweries`, `/users`, `/ratings`\n');
     write(path.join(repoDir, '.gitignore'), 'node_modules/\n.env\n.env.local\n');
 
-    write(path.join(repoDir, 'src', 'index.js'), `const express = require('express');\nconst app = express();\napp.use(express.json());\napp.get('/health', (req, res) => res.json({ status: 'ok' }));\napp.listen(3001, () => console.log('BrewBoard API running on :3001'));\n`);
+    write(path.join(repoDir, 'src', 'index.js'), `const express = require('express');\nconst app = express();\napp.use(express.json());\napp.get('/health', (req, res) => res.json({ status: 'ok' }));\napp.use('/api/beers', require('./routes/beers'));\nconst server = app.listen(3001, () => console.log('BrewBoard API running on :3001'));\nprocess.on('SIGTERM', () => server.close());\nprocess.on('SIGINT', () => server.close());\n`);
     write(path.join(repoDir, 'src', 'routes', 'beers.js'), `const express = require('express');\nconst router = express.Router();\nrouter.get('/', async (req, res) => { res.json([]); });\nrouter.get('/:id', async (req, res) => { res.json(null); });\nmodule.exports = router;\n`);
     write(path.join(repoDir, 'src', 'db', 'schema.sql'), `CREATE TABLE beers (\n  id SERIAL PRIMARY KEY,\n  name TEXT NOT NULL,\n  style TEXT,\n  abv NUMERIC(4,2),\n  brewery_id INT REFERENCES breweries(id)\n);\n`);
 
@@ -445,7 +466,7 @@ import PackageDescription
 
 let package = Package(
     name: "Trailhead",
-    platforms: [.iOS(.v17)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     targets: [
         .target(name: "Trailhead", path: "Sources/Trailhead"),
         .testTarget(name: "TrailheadTests", dependencies: ["Trailhead"], path: "Tests/TrailheadTests"),
@@ -466,7 +487,6 @@ struct TrailheadApp: App {
 `);
 
     write(path.join(repoDir, 'Sources', 'Trailhead', 'ContentView.swift'), `import SwiftUI
-import MapKit
 
 struct ContentView: View {
     var body: some View {
@@ -479,7 +499,6 @@ struct ContentView: View {
 `);
 
     write(path.join(repoDir, 'Sources', 'Trailhead', 'Models', 'Hike.swift'), `import Foundation
-import CoreLocation
 
 struct Hike: Identifiable, Codable {
     let id: UUID
@@ -493,13 +512,13 @@ struct Hike: Identifiable, Codable {
 `);
 
     write(path.join(repoDir, 'Sources', 'Trailhead', 'Models', 'TrailPin.swift'), `import Foundation
-import CoreLocation
 
 struct TrailPin: Identifiable, Codable {
     let id: UUID
     var title: String
     var body: String
-    var coordinate: CLLocationCoordinate2D
+    var latitude: Double
+    var longitude: Double
     var hikeId: UUID
 }
 `);
