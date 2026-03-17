@@ -39,7 +39,8 @@ const {
     inferDashboardNextActions
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
-const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, getCaddyRouteId, gcDevServers, loadProxyRegistry, saveProxyRegistry, getCaddyLiveRoutes, registryHasRoute, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, serializeLogFrontmatter, updateLogFrontmatterInPlace, collectAnalyticsData } = require('./lib/utils');
+const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, getCaddyRouteId, gcDevServers, validateRegistry, loadProxyRegistry, saveProxyRegistry, getCaddyLiveRoutes, registryHasRoute, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, serializeLogFrontmatter, updateLogFrontmatterInPlace, collectAnalyticsData } = require('./lib/utils');
+const { tryOrDefault, classifyError } = require('./lib/errors');
 const { detectDashboardContext } = require('./lib/devserver');
 
 let passed = 0;
@@ -1613,6 +1614,164 @@ test('proxyDiagnostics caddy.running equals caddy.adminApi', () => {
     const diag = proxyDiagnostics();
     assert.strictEqual(diag.caddy.running, diag.caddy.adminApi, 'running and adminApi should be the same value');
 });
+
+// ── tryOrDefault ──────────────────────────────────────────────────────────────
+
+test('tryOrDefault returns fn result when no error', () => {
+    assert.strictEqual(tryOrDefault(() => 42, 0), 42);
+});
+
+test('tryOrDefault returns default when fn throws', () => {
+    assert.strictEqual(tryOrDefault(() => { throw new Error('boom'); }, 99), 99);
+});
+
+test('tryOrDefault returns default object when fn throws', () => {
+    const result = tryOrDefault(() => { throw new SyntaxError('bad json'); }, {});
+    assert.deepStrictEqual(result, {});
+});
+
+test('tryOrDefault warn writes to stderr when warn=true', () => {
+    const orig = process.stderr.write.bind(process.stderr);
+    let written = '';
+    process.stderr.write = (s) => { written += s; return true; };
+    tryOrDefault(() => { throw new Error('test error'); }, null, { warn: true, context: 'test-ctx' });
+    process.stderr.write = orig;
+    assert.ok(written.includes('[test-ctx]'), 'should include context label');
+    assert.ok(written.includes('test error'), 'should include error message');
+});
+
+test('tryOrDefault does not warn when warn=false (default)', () => {
+    const orig = process.stderr.write.bind(process.stderr);
+    let written = '';
+    process.stderr.write = (s) => { written += s; return true; };
+    tryOrDefault(() => { throw new Error('silent error'); }, null);
+    process.stderr.write = orig;
+    assert.strictEqual(written, '', 'should not write to stderr');
+});
+
+// ── classifyError ─────────────────────────────────────────────────────────────
+
+test('classifyError returns missing for ENOENT', () => {
+    const e = Object.assign(new Error('not found'), { code: 'ENOENT' });
+    assert.strictEqual(classifyError(e), 'missing');
+});
+
+test('classifyError returns permission for EACCES', () => {
+    const e = Object.assign(new Error('permission denied'), { code: 'EACCES' });
+    assert.strictEqual(classifyError(e), 'permission');
+});
+
+test('classifyError returns parse for SyntaxError', () => {
+    const e = new SyntaxError('unexpected token');
+    assert.strictEqual(classifyError(e), 'parse');
+});
+
+test('classifyError returns unknown for generic errors', () => {
+    const e = new Error('something else');
+    assert.strictEqual(classifyError(e), 'unknown');
+});
+
+// ── validateRegistry ──────────────────────────────────────────────────────────
+
+test('validateRegistry removes dead PID entries', () => withTempDir(tempDir => {
+    const registryPath = path.join(tempDir, 'servers.json');
+    const deadPid = 999999999; // extremely unlikely to be alive
+    const registry = {
+        'test-app': {
+            '': { port: 39999, pid: deadPid, worktree: '/tmp/test', started: new Date().toISOString() }
+        }
+    };
+    fs.mkdirSync(path.dirname(DEV_PROXY_REGISTRY), { recursive: true });
+
+    const realRegistry = fs.existsSync(DEV_PROXY_REGISTRY) ? fs.readFileSync(DEV_PROXY_REGISTRY, 'utf8') : null;
+    fs.writeFileSync(DEV_PROXY_REGISTRY, JSON.stringify(registry, null, 2) + '\n');
+
+    try {
+        const result = validateRegistry();
+        assert.strictEqual(result.staleRemoved, 1, 'should remove 1 dead entry');
+        assert.strictEqual(result.live, 0, 'should have 0 live entries');
+        const after = loadProxyRegistry();
+        assert.ok(!after['test-app'] || !after['test-app'][''], 'dead entry should be removed from registry');
+    } finally {
+        if (realRegistry !== null) {
+            fs.writeFileSync(DEV_PROXY_REGISTRY, realRegistry);
+        } else if (fs.existsSync(DEV_PROXY_REGISTRY)) {
+            fs.unlinkSync(DEV_PROXY_REGISTRY);
+        }
+    }
+}));
+
+test('validateRegistry preserves live PID entries', () => withTempDir(tempDir => {
+    const livePid = 1; // init/launchd — always alive
+    const realRegistry = fs.existsSync(DEV_PROXY_REGISTRY) ? fs.readFileSync(DEV_PROXY_REGISTRY, 'utf8') : null;
+    fs.mkdirSync(path.dirname(DEV_PROXY_REGISTRY), { recursive: true });
+
+    const registry = {
+        'live-app': {
+            '': { port: 39998, pid: livePid, worktree: '/tmp/live', started: new Date().toISOString() }
+        }
+    };
+    fs.writeFileSync(DEV_PROXY_REGISTRY, JSON.stringify(registry, null, 2) + '\n');
+
+    try {
+        const result = validateRegistry();
+        assert.strictEqual(result.live, 1, 'should have 1 live entry');
+        assert.strictEqual(result.staleRemoved, 0, 'should remove 0 entries');
+    } finally {
+        if (realRegistry !== null) {
+            fs.writeFileSync(DEV_PROXY_REGISTRY, realRegistry);
+        } else if (fs.existsSync(DEV_PROXY_REGISTRY)) {
+            fs.unlinkSync(DEV_PROXY_REGISTRY);
+        }
+    }
+}));
+
+test('validateRegistry skips _portRegistry key', () => withTempDir(tempDir => {
+    const realRegistry = fs.existsSync(DEV_PROXY_REGISTRY) ? fs.readFileSync(DEV_PROXY_REGISTRY, 'utf8') : null;
+    fs.mkdirSync(path.dirname(DEV_PROXY_REGISTRY), { recursive: true });
+
+    const registry = {
+        _portRegistry: { 'my-project': { basePort: 3000, path: '/tmp/my-project' } }
+    };
+    fs.writeFileSync(DEV_PROXY_REGISTRY, JSON.stringify(registry, null, 2) + '\n');
+
+    try {
+        const result = validateRegistry();
+        assert.strictEqual(result.staleRemoved, 0, 'should not remove _portRegistry entries');
+        const after = loadProxyRegistry();
+        assert.ok(after._portRegistry, '_portRegistry should still exist');
+    } finally {
+        if (realRegistry !== null) {
+            fs.writeFileSync(DEV_PROXY_REGISTRY, realRegistry);
+        } else if (fs.existsSync(DEV_PROXY_REGISTRY)) {
+            fs.unlinkSync(DEV_PROXY_REGISTRY);
+        }
+    }
+}));
+
+// ── loadPortRegistry / savePortRegistry merged into servers.json ──────────────
+
+test('savePortRegistry stores in servers.json _portRegistry', () => withTempDir(tempDir => {
+    const realRegistry = fs.existsSync(DEV_PROXY_REGISTRY) ? fs.readFileSync(DEV_PROXY_REGISTRY, 'utf8') : null;
+    fs.mkdirSync(path.dirname(DEV_PROXY_REGISTRY), { recursive: true });
+    if (fs.existsSync(DEV_PROXY_REGISTRY)) fs.unlinkSync(DEV_PROXY_REGISTRY);
+
+    const { savePortRegistry, loadPortRegistry } = require('./lib/utils');
+    savePortRegistry({ 'my-app': { basePort: 3000, path: '/tmp/my-app' } });
+
+    const servers = loadProxyRegistry();
+    assert.ok(servers._portRegistry, '_portRegistry key should exist in servers.json');
+    assert.strictEqual(servers._portRegistry['my-app'].basePort, 3000);
+
+    const loaded = loadPortRegistry();
+    assert.strictEqual(loaded['my-app'].basePort, 3000, 'loadPortRegistry should return stored values');
+
+    if (realRegistry !== null) {
+        fs.writeFileSync(DEV_PROXY_REGISTRY, realRegistry);
+    } else if (fs.existsSync(DEV_PROXY_REGISTRY)) {
+        fs.unlinkSync(DEV_PROXY_REGISTRY);
+    }
+}));
 
 console.log('');
 if (failed === 0) {
