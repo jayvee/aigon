@@ -153,7 +153,7 @@ Both Monitor and Pipeline have a type toggle to filter by: All, Features, Resear
 ### Agent IDs
 
 - Fleet agents: `cc` (Claude Code), `gg` (Gemini), `cu` (Cursor), `cx` (Codex)
-- Solo agent: `solo` — a virtual ID meaning "single-agent, no fleet". Solo agents are filtered out of UI elements that don't apply (e.g. worktree-open buttons).
+- Solo agent: `solo` — a virtual ID meaning "single-agent, no fleet". Solo agents are filtered out of UI elements that don't apply (e.g. feature-open buttons).
 
 ### Status Collection
 
@@ -178,7 +178,7 @@ Both Monitor and Pipeline have a type toggle to filter by: All, Features, Resear
 | GET | `/api/sessions` | List tmux sessions |
 | GET | `/api/session/status` | Get session status |
 | POST | `/api/attach` | Attach to an existing tmux session |
-| POST | `/api/worktree-open` | Open or create a worktree tmux session |
+| POST | `/api/feature-open` | Open or create a worktree tmux session |
 | POST | `/api/feature-open` | Open a feature worktree in terminal |
 | GET | `/api/repos` | List registered repos |
 | POST | `/api/repos/add` | Register a repo |

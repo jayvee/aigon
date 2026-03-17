@@ -76,7 +76,6 @@ const COMMAND_GROUPS = {
         'dashboard',
         'terminal-focus',
         'board',
-        'worktree-open',
         'sessions-close',
         'next',
         'help'
