@@ -4,7 +4,7 @@ Quick reference for agents working on the Aigon dashboard.
 
 ## Overview
 
-The dashboard is a single-page web app served by a foreground HTTP server. It's a Node.js HTTP server (`runDashboardServer()` in `lib/utils.js`) that polls workflow state every 10 seconds, serves the dashboard HTML, exposes a JSON API, and sends macOS notifications when agent status changes.
+The dashboard is a single-page web app served by a foreground HTTP server. It's a Node.js HTTP server (`runDashboardServer()` in `lib/dashboard-server.js`) that polls workflow state every 10 seconds, serves the dashboard HTML, exposes a JSON API, and sends macOS notifications when agent status changes.
 
 ## Starting & Stopping
 
@@ -97,12 +97,15 @@ tail -50 ~/.aigon/dashboard.log
 
 | File | Role |
 |------|------|
-| `lib/utils.js` | Server, API handlers, status collection, Caddyfile generation, proxy registration |
-| `lib/dashboard.js` | Re-exports from `utils.js` (thin wrapper) |
+| `lib/dashboard-server.js` | HTTP server, polling, WebSocket relay, notifications, action dispatch, dashboard HTML builder |
+| `lib/proxy.js` | Caddy management, port allocation, registry, route reconciliation, Caddyfile generation |
+| `lib/config.js` | Global/project config, profiles, agent CLI config |
+| `lib/worktree.js` | Worktree management, tmux sessions, terminal launching |
+| `lib/dashboard.js` | Thin re-exporter for backward compatibility |
 | `templates/dashboard/index.html` | Entire SPA — HTML, CSS, and JS in one file |
 | `lib/state-machine.js` | Defines action modes (`terminal`, `fire-and-forget`, `agent`) that control dashboard behavior |
 
-### Key functions in `lib/utils.js`
+### Key functions in `lib/dashboard-server.js`
 
 | Function | Purpose |
 |----------|---------|
