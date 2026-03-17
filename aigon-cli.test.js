@@ -39,7 +39,7 @@ const {
     inferDashboardNextActions
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
-const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, getCaddyRouteId, gcDevServers, loadProxyRegistry, saveProxyRegistry, getCaddyLiveRoutes, registryHasRoute, reconcileProxyRoutes, RADAR_DEFAULT_PORT, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, serializeLogFrontmatter, updateLogFrontmatterInPlace, collectAnalyticsData } = require('./lib/utils');
+const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, getCaddyRouteId, gcDevServers, loadProxyRegistry, saveProxyRegistry, getCaddyLiveRoutes, registryHasRoute, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, RADAR_DEFAULT_PORT, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, serializeLogFrontmatter, updateLogFrontmatterInPlace, collectAnalyticsData } = require('./lib/utils');
 const { detectDashboardContext } = require('./lib/devserver');
 
 let passed = 0;
@@ -1541,6 +1541,70 @@ test('collectAnalyticsData parses eval wins from evaluation files', () => {
         assert.strictEqual(cxEval.wins, 0);
         assert.strictEqual(cxEval.evals, 1);
     });
+});
+
+console.log('\nProxy Health Check — isProxyAvailable');
+test('isProxyAvailable returns a boolean (uses admin API check)', () => {
+    // In test environment Caddy may or may not be running; just verify type
+    const result = isProxyAvailable();
+    assert.strictEqual(typeof result, 'boolean', 'isProxyAvailable should return boolean');
+});
+
+console.log('\nProxy Health Check — proxyDiagnostics');
+test('proxyDiagnostics returns object with correct shape', () => {
+    const diag = proxyDiagnostics();
+    // Top-level fields
+    assert.strictEqual(typeof diag.healthy, 'boolean', 'healthy should be boolean');
+    assert.ok(diag.fix === null || typeof diag.fix === 'string', 'fix should be string or null');
+    // caddy section
+    assert.strictEqual(typeof diag.caddy, 'object', 'caddy should be object');
+    assert.strictEqual(typeof diag.caddy.installed, 'boolean', 'caddy.installed should be boolean');
+    assert.strictEqual(typeof diag.caddy.running, 'boolean', 'caddy.running should be boolean');
+    assert.strictEqual(typeof diag.caddy.adminApi, 'boolean', 'caddy.adminApi should be boolean');
+    // dnsmasq section
+    assert.strictEqual(typeof diag.dnsmasq, 'object', 'dnsmasq should be object');
+    assert.strictEqual(typeof diag.dnsmasq.installed, 'boolean', 'dnsmasq.installed should be boolean');
+    assert.strictEqual(typeof diag.dnsmasq.running, 'boolean', 'dnsmasq.running should be boolean');
+    // routes section
+    assert.strictEqual(typeof diag.routes, 'object', 'routes should be object');
+    assert.strictEqual(typeof diag.routes.total, 'number', 'routes.total should be number');
+    assert.strictEqual(typeof diag.routes.live, 'number', 'routes.live should be number');
+    assert.strictEqual(typeof diag.routes.stale, 'number', 'routes.stale should be number');
+});
+
+test('proxyDiagnostics healthy is false when Caddy admin API is unavailable', () => {
+    // In test environment Caddy is likely not running — admin API is unavailable
+    // So healthy should be false. If Caddy IS running locally, this test is a no-op.
+    const diag = proxyDiagnostics();
+    if (!diag.caddy.adminApi) {
+        assert.strictEqual(diag.healthy, false, 'healthy must be false when adminApi is false');
+    }
+});
+
+test('proxyDiagnostics fix is null when healthy', () => {
+    const diag = proxyDiagnostics();
+    if (diag.healthy) {
+        assert.strictEqual(diag.fix, null, 'fix should be null when healthy');
+    }
+});
+
+test('proxyDiagnostics fix is non-null when Caddy not installed', () => {
+    const diag = proxyDiagnostics();
+    if (!diag.caddy.installed) {
+        assert.ok(typeof diag.fix === 'string' && diag.fix.length > 0, 'fix should be set when caddy not installed');
+    }
+});
+
+test('proxyDiagnostics routes.stale is 0 when admin API unavailable', () => {
+    const diag = proxyDiagnostics();
+    if (!diag.caddy.adminApi) {
+        assert.strictEqual(diag.routes.stale, 0, 'stale should be 0 when live routes cannot be fetched');
+    }
+});
+
+test('proxyDiagnostics caddy.running equals caddy.adminApi', () => {
+    const diag = proxyDiagnostics();
+    assert.strictEqual(diag.caddy.running, diag.caddy.adminApi, 'running and adminApi should be the same value');
 });
 
 console.log('');
