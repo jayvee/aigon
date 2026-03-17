@@ -16,7 +16,7 @@
 | `{{CMD_PREFIX}}feature-close <ID> [agent]` | Merge and complete feature |
 | `{{CMD_PREFIX}}feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
 | `{{CMD_PREFIX}}feature-autopilot <ID> [agents...]` | Fleet autopilot: setup + spawn agents + monitor + eval |
-| `{{CMD_PREFIX}}worktree-open [ID] [agent]` | Open worktree in Warp with agent CLI |
+| `{{CMD_PREFIX}}feature-open [ID] [agent]` | Open feature worktree in terminal and start agent |
 
 ## Research (unified for Drive and Fleet modes)
 
@@ -45,7 +45,7 @@
 |---------|-------------|
 | `aigon config init` | Create global config at `~/.aigon/config.json` |
 
-### Agent CLI Mappings (used by worktree-open)
+### Agent CLI Mappings (used by feature-open)
 
 | Code | Agent | Command | Mode |
 |------|-------|---------|------|

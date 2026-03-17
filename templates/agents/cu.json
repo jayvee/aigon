@@ -71,7 +71,7 @@
     "feature-cleanup",
     "feature-autopilot",
     "board",
-    "worktree-open",
+    "feature-open",
     "sessions-close",
     "research-create",
     "research-prioritise",

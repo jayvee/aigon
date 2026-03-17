@@ -230,20 +230,11 @@ test('buildRadarActionCommandArgs builds CLI invocation args', () => {
         [path.join(__dirname, 'aigon-cli.js'), 'feature-eval', '55', '--agent=cx']
     );
 });
-test('RADAR_INTERACTIVE_ACTIONS includes worktree-open', () => {
-    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('worktree-open'), true);
+test('RADAR_INTERACTIVE_ACTIONS does not include worktree-open (removed, use feature-open)', () => {
+    assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('worktree-open'), false);
 });
 test('RADAR_INTERACTIVE_ACTIONS includes feature-open', () => {
     assert.strictEqual(RADAR_INTERACTIVE_ACTIONS.has('feature-open'), true);
-});
-test('parseRadarActionRequest accepts worktree-open action', () => {
-    const parsed = parseRadarActionRequest(
-        { action: 'worktree-open', args: ['57', 'cc'], repoPath: '/tmp/repo-a' },
-        { registeredRepos: ['/tmp/repo-a'], defaultRepoPath: '/tmp/repo-a' }
-    );
-    assert.strictEqual(parsed.ok, true);
-    assert.strictEqual(parsed.action, 'worktree-open');
-    assert.deepStrictEqual(parsed.args, ['57', 'cc']);
 });
 test('parseRadarActionRequest accepts feature-stop (state machine fire-and-forget action)', () => {
     const parsed = parseRadarActionRequest(
