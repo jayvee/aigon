@@ -204,6 +204,23 @@ Each pillar uses folder-based status:
 - Prioritized: `feature-55-description.md` (global ID assigned)
 - Agent-specific: `feature-55-cc-description-log.md` (Fleet mode)
 
+## Code Module Map
+
+The CLI is split into focused domain modules under `lib/`:
+
+| Module | Responsibility |
+|--------|---------------|
+| `aigon-cli.js` | Entry point — argument parsing, command dispatch |
+| `lib/proxy.js` | Caddy management, port allocation, registry, dev-server routes |
+| `lib/dashboard-server.js` | HTTP server, polling, WebSocket relay, notifications, action dispatch |
+| `lib/worktree.js` | Worktree creation, permissions, trust, tmux sessions, terminal launching |
+| `lib/config.js` | Global/project config, profiles, agent CLI config, editor detection |
+| `lib/templates.js` | Template reading, processing, scaffolding, command registry |
+| `lib/utils.js` | Shared utilities: hooks, YAML parsers, spec CRUD, analytics, version |
+| `lib/git.js` | Git operations — single source of truth for all git calls |
+| `lib/state-machine.js` | Action modes and valid state transitions |
+| `lib/commands/` | Command implementations (feature, research, feedback, setup, misc) |
+
 ---
 
 ## Quick Start
