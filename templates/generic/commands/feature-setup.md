@@ -14,18 +14,20 @@ If no ID is provided, or the ID doesn't match an existing feature in the backlog
 
 ## Step 1: Run the CLI command
 
+**CRITICAL: Run EXACTLY the arguments the user provided. Do NOT add agents that weren't specified.** The mode is determined by what the user passes — if they only pass a feature ID, that means Drive mode (branch). Do not assume worktree mode based on prior conversation context.
+
 ```bash
-# Drive mode (creates branch in current repo)
+# Drive mode (creates branch in current repo) — user passes only an ID
 aigon feature-setup {{ARG1_SYNTAX}}
 
-# Drive worktree mode (creates worktree for parallel development)
+# Drive worktree mode (creates worktree for parallel development) — user passes ID + agent
 aigon feature-setup {{ARG1_SYNTAX}} <agent>
 
-# Fleet mode (multiple agents compete in separate worktrees)
+# Fleet mode (multiple agents compete in separate worktrees) — user passes ID + 2+ agents
 aigon feature-setup {{ARG1_SYNTAX}} <agent1> <agent2> [agent3...]
 ```
 
-The mode is determined automatically based on parameters:
+The mode is determined automatically based on what the user provides:
 - **No agents**: Drive mode - creates a git branch in the current repo
 - **1 agent**: Drive worktree mode - creates a worktree for parallel development
 - **2+ agents**: Fleet mode - creates worktrees for each agent to compete
