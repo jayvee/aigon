@@ -438,10 +438,13 @@ test('feature-eval --force bypasses the completion warning and creates the evalu
     const evaluationsDir = path.join(featuresRoot, 'evaluations');
     const worktreePath = path.join(tempDir, 'feature-51-cc-demo');
     const worktreeLogsDir = path.join(worktreePath, 'docs/specs/features/logs');
+    const worktreePath2 = path.join(tempDir, 'feature-51-gg-demo');
+    const worktreeLogsDir2 = path.join(worktreePath2, 'docs/specs/features/logs');
 
     fs.mkdirSync(inProgressDir, { recursive: true });
     fs.mkdirSync(evaluationsDir, { recursive: true });
     fs.mkdirSync(worktreeLogsDir, { recursive: true });
+    fs.mkdirSync(worktreeLogsDir2, { recursive: true });
 
     fs.writeFileSync(
         path.join(inProgressDir, 'feature-51-eval-agent-completion-check.md'),
@@ -449,6 +452,10 @@ test('feature-eval --force bypasses the completion warning and creates the evalu
     );
     fs.writeFileSync(
         path.join(worktreeLogsDir, 'feature-51-cc-eval-agent-completion-check-log.md'),
+        '---\nstatus: implementing\n---\n# Log\n'
+    );
+    fs.writeFileSync(
+        path.join(worktreeLogsDir2, 'feature-51-gg-eval-agent-completion-check-log.md'),
         '---\nstatus: implementing\n---\n# Log\n'
     );
 
@@ -461,10 +468,10 @@ test('feature-eval --force bypasses the completion warning and creates the evalu
             }
         },
         detectActiveAgentSession: () => ({ detected: true, agentId: 'gg' }),
-        execSync: (cmd) => {
-            if (cmd === 'git worktree list') return `${worktreePath} abc123 [feature-51-cc-demo]\n`;
-            throw new Error(`Unexpected execSync call: ${cmd}`);
-        },
+        findWorktrees: () => [
+            { path: worktreePath, featureId: '51', agent: 'cc', desc: 'demo' },
+            { path: worktreePath2, featureId: '51', agent: 'gg', desc: 'demo' }
+        ],
         loadAgentConfig: (agentId) => ({ name: agentId === 'cc' ? 'Claude' : agentId }),
         getAgentCliConfig: () => ({ models: { evaluate: null } }),
         runGit: () => {}
@@ -1074,9 +1081,10 @@ test('feature in-progress → in-evaluation blocked when not all submitted', () 
     assert.ok(!transitions.some(t => t.action === 'feature-eval'));
 });
 
-test('feature in-progress → in-evaluation allowed when all submitted', () => {
+test('feature in-progress → in-evaluation allowed when all submitted (fleet)', () => {
     const transitions = getValidTransitions('feature', 'in-progress', {
-        agentStatuses: { cc: 'submitted' }
+        agents: ['cc', 'gg'],
+        agentStatuses: { cc: 'submitted', gg: 'submitted' }
     });
     assert.ok(transitions.some(t => t.action === 'feature-eval' && t.to === 'in-evaluation'));
 });
