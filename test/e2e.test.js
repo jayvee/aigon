@@ -226,6 +226,9 @@ function readFrontmatter(cwd, relativePath) {
     return fm;
 }
 
+// Ensure fixtures exist before any tests run
+ensureFixtures();
+
 // ─── smoke tests ─────────────────────────────────────────────────────────────
 
 group('smoke', () => {
@@ -919,6 +922,70 @@ group('fixture quality', () => {
             // Should contain beer/brewing themed feature names
             const hasThematic = files.some(f => f.includes('dark-mode') || f.includes('brewery') || f.includes('beer'));
             if (!hasThematic) throw new Error(`Expected thematic feature names, got: ${files.join(', ')}`);
+        });
+    });
+});
+
+// ─── fixture buildability ─────────────────────────────────────────────────────
+
+group('fixture buildability', () => {
+    test('brewboard has tsconfig.json and next.config.js', () => {
+        withFixture('brewboard', (cwd) => {
+            assertFileExists(cwd, 'tsconfig.json');
+            assertFileExists(cwd, 'next.config.js');
+            // Validate tsconfig.json is parseable JSON
+            JSON.parse(fs.readFileSync(path.join(cwd, 'tsconfig.json'), 'utf8'));
+        });
+    });
+
+    test('brewboard TypeScript files pass tsc --noEmit', () => {
+        withFixture('brewboard', (cwd) => {
+            // Try tsc from PATH; skip if not installed (downloading via npx would be too slow)
+            const tscCheck = spawnSync('which', ['tsc'], { encoding: 'utf8', stdio: 'pipe' });
+            if (tscCheck.status !== 0) {
+                console.log('      (skipped — tsc not in PATH)');
+                return;
+            }
+            const result = spawnSync('tsc', ['--noEmit'], { cwd, encoding: 'utf8', stdio: 'pipe' });
+            if (result.status !== 0) {
+                throw new Error(`tsc --noEmit failed:\n${(result.stderr || result.stdout || '').slice(0, 500)}`);
+            }
+        });
+    });
+
+    test('brewboard-api src/index.js is syntactically valid', () => {
+        withFixture('brewboard-api', (cwd) => {
+            const result = spawnSync(process.execPath, ['--check', 'src/index.js'], { cwd, encoding: 'utf8', stdio: 'pipe' });
+            if (result.status !== 0) {
+                throw new Error(`node --check src/index.js failed: ${result.stderr || result.stdout}`);
+            }
+        });
+    });
+
+    test('brewboard-api src/routes/beers.js is syntactically valid', () => {
+        withFixture('brewboard-api', (cwd) => {
+            const result = spawnSync(process.execPath, ['--check', 'src/routes/beers.js'], { cwd, encoding: 'utf8', stdio: 'pipe' });
+            if (result.status !== 0) {
+                throw new Error(`node --check src/routes/beers.js failed: ${result.stderr || result.stdout}`);
+            }
+        });
+    });
+
+    test('trailhead swift build exits 0 (macOS only)', () => {
+        if (process.platform !== 'darwin') {
+            console.log('      (skipped — not macOS)');
+            return;
+        }
+        const swiftCheck = spawnSync('which', ['swift'], { encoding: 'utf8', stdio: 'pipe' });
+        if (swiftCheck.status !== 0) {
+            console.log('      (skipped — swift not in PATH)');
+            return;
+        }
+        withFixture('trailhead', (cwd) => {
+            const result = spawnSync('swift', ['build'], { cwd, encoding: 'utf8', stdio: 'pipe', timeout: 120000 });
+            if (result.status !== 0) {
+                throw new Error(`swift build failed:\n${(result.stderr || result.stdout || '').slice(0, 800)}`);
+            }
         });
     });
 });
