@@ -1284,6 +1284,24 @@ When you run `aigon install-agent`, it creates:
 
 **Important:** You must commit the generated configuration files to Git. This ensures that when `aigon` creates a new git worktree, the agent configurations are available in that isolated environment.
 
+### Code Module Structure
+
+The CLI is split into focused domain modules. When modifying behaviour, look in the relevant module:
+
+| Module | What lives there |
+|--------|-----------------|
+| `lib/proxy.js` | Caddy management, port allocation, dev-proxy registry, route reconciliation |
+| `lib/dashboard-server.js` | HTTP server, status polling, WebSocket relay, macOS notifications, action dispatch |
+| `lib/worktree.js` | Worktree creation, permissions, tmux sessions, terminal launching (iTerm2, Warp) |
+| `lib/config.js` | Global/project config load/save, profile detection, agent CLI config, editor detection |
+| `lib/templates.js` | Template reading, command registry, scaffolding, content generation |
+| `lib/utils.js` | Shared utilities: hooks system, YAML parsers, spec CRUD, analytics, version, deploy |
+| `lib/git.js` | All git operations — single source of truth |
+| `lib/state-machine.js` | Action modes and valid state transitions for dashboard |
+| `lib/commands/` | Per-domain command implementations |
+
+Each module `require()`s only what it needs. `lib/utils.js` re-exports all sub-modules for backward compatibility with `lib/commands/shared.js` scope spreading.
+
 ---
 
 📘 **For quick reference and getting started, return to the main [README.md](../README.md)**
