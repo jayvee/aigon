@@ -439,7 +439,7 @@ Think of this as a second axis in addition to mode (Drive/Fleet/Autopilot/Swarm)
 |---|---|---|
 | Spec authoring and refinement (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) | In-agent slash commands | Best for iterative back-and-forth on definitions and scope |
 | Execution with an active agent (`feature-do`, `feature-review`, `research-do`, `research-synthesize`) | In-agent slash commands | Keeps context in the live session and avoids nested launches |
-| Orchestration and terminal ops (`init`, `install-agent`, `update`, `feature-setup`, `worktree-open`, `feature-close`, `feature-cleanup`) | CLI | Repo/worktree coordination, machine-level operations, scripting |
+| Orchestration and terminal ops (`init`, `install-agent`, `update`, `feature-setup`, `feature-open`, `feature-close`, `feature-cleanup`) | CLI | Repo/worktree coordination, machine-level operations, scripting |
 | Infra/config (`config`, `profile`, `proxy-setup`, `dev-server`, `radar`) | CLI | Machine/project configuration and background services |
 
 ### Can I stay in one surface?
@@ -510,7 +510,7 @@ The agent works through the spec — creating middleware, adding token validatio
 
 ```text
 /aigon:feature-setup 07 cc gg cx           # Creates 3 worktrees, 3 branches
-/aigon:worktree-open 07 --all              # Opens all agents side-by-side
+/aigon:feature-open 07 --all              # Opens all agents side-by-side
 ```
 
 ![Warp split view with Fleet worktrees side-by-side](docs/images/aigon-warp-arena-split.png)
@@ -532,7 +532,7 @@ Each agent reads the same spec and builds its own implementation independently. 
 ```text
 ⚠️  1 agent(s) not yet submitted:
    cx (Codex) — status: implementing
-     → aigon worktree-open 07 cx
+     → aigon feature-open 07 cx
 ```
 
 After evaluating, merge the winner and optionally adopt improvements from the losers:
@@ -584,7 +584,7 @@ See [autonomous-mode.md](docs/autonomous-mode.md) for configuration options (`--
 
 ```bash
 aigon feature-setup 07 cc gg cx
-aigon worktree-open 07 --all
+aigon feature-open 07 --all
 ```
 
 In each agent's terminal:
@@ -672,7 +672,7 @@ aigon feedback-triage 5 --apply --yes      # Accept AI recommendations
 aigon feature-setup 100 cc
 aigon feature-setup 101 cc
 aigon feature-setup 102 cc
-aigon worktree-open 100 101 102 --agent=cc
+aigon feature-open 100 101 102 --agent=cc
 ```
 
 Each feature gets its own worktree and branch. Switch between them freely.
@@ -706,8 +706,8 @@ aigon config set --global tmuxApp iterm2   # Use iTerm2 with native tmux -CC int
 
 ```bash
 aigon feature-setup 07 cc gg cx            # Creates tmux sessions: aigon-f7-cc, aigon-f7-gg, aigon-f7-cx
-aigon worktree-open 07 cc                  # Attaches to aigon-f7-cc (or creates if missing)
-aigon worktree-open 07 --all               # Opens all agents in separate windows
+aigon feature-open 07 cc                  # Attaches to aigon-f7-cc (or creates if missing)
+aigon feature-open 07 --all               # Opens all agents in separate windows
 
 tmux ls                                    # List all Aigon sessions
 # aigon-f7-cc: 1 windows (created ...)
@@ -951,7 +951,7 @@ FEATURES
 │ g) subdomain-configuration-for │                                │ change-worktree-location       │
 │ h) update-docs-prompt-to-done  │                                │ install-agent-cleanup-old-comm │
 │                                │                                │ open-worktrees-in-side-by-side │
-│                                │                                │ worktree-open-terminal         │
+│                                │                                │ feature-open-terminal         │
 ├────────────────────────────────┼────────────────────────────────┼────────────────────────────────┤
 │ (8)                            │ (1)                            │ (10)                           │
 └────────────────────────────────┼────────────────────────────────┼────────────────────────────────┘
@@ -1135,7 +1135,7 @@ Before starting, `feature-eval` checks each agent's submission status. If any ag
 ```text
 ⚠️  1 agent(s) not yet submitted:
    cx (Codex) — status: implementing
-     → aigon worktree-open 55 cx
+     → aigon feature-open 55 cx
 ```
 
 Use `--force` to skip the check and evaluate anyway.
@@ -1219,9 +1219,9 @@ The `--adopt` flag prints diffs from each losing agent after merging the winner,
 | Feature Review | `aigon feature-review <ID>` |
 | Feature Done | `aigon feature-close <ID> [agent] [--adopt <agents...\|all>]` |
 | Feature Cleanup | `aigon feature-cleanup <ID> [--push]` |
-| Worktree Open | `aigon worktree-open <ID> [agent] [--terminal=<type>]` |
-| Worktree Open (Fleet) | `aigon worktree-open <ID> --all` |
-| Worktree Open (Parallel) | `aigon worktree-open <ID> <ID>... [--agent=<code>]` |
+| Worktree Open | `aigon feature-open <ID> [agent] [--terminal=<type>]` |
+| Worktree Open (Fleet) | `aigon feature-open <ID> --all` |
+| Worktree Open (Parallel) | `aigon feature-open <ID> <ID>... [--agent=<code>]` |
 
 ### Feedback commands
 
@@ -1328,7 +1328,7 @@ Done (9):
    #06  readme-uplift
         change-worktree-location
         install-agent-cleanup-old-commands
-        worktree-open-terminal
+        feature-open-terminal
 ```
 
 ---
@@ -1352,7 +1352,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon:feature-close <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
 | `/aigon:feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
-| `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
+| `/aigon:feature-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/aigon:research-create <name>` | Create a research topic |
 | `/aigon:research-prioritise <name>` | Prioritise a research topic |
 | `/aigon:research-setup <ID> [agents...]` | Setup Drive or Fleet research |
@@ -1380,7 +1380,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon:feature-close <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
 | `/aigon:feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
-| `/aigon:worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
+| `/aigon:feature-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/aigon:research-create <name>` | Create a research topic |
 | `/aigon:research-prioritise <name>` | Prioritise a research topic |
 | `/aigon:research-setup <ID> [agents...]` | Setup Drive or Fleet research |
@@ -1408,7 +1408,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
 | `/prompts:aigon-feature-close <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
 | `/prompts:aigon-feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
-| `/prompts:aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
+| `/prompts:aigon-feature-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/prompts:aigon-research-create <name>` | Create a research topic |
 | `/prompts:aigon-research-prioritise <name>` | Prioritise a research topic |
 | `/prompts:aigon-research-setup <ID> [agents...]` | Setup Drive or Fleet research |
@@ -1436,7 +1436,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
 | `/aigon-feature-close <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
 | `/aigon-feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
-| `/aigon-worktree-open [ID] [agent]` | Open worktree(s) with agent CLI |
+| `/aigon-feature-open [ID] [agent]` | Open worktree(s) with agent CLI |
 | `/aigon-research-create <name>` | Create a research topic |
 | `/aigon-research-prioritise <name>` | Prioritise a research topic |
 | `/aigon-research-setup <ID> [agents...]` | Setup Drive or Fleet research |

@@ -1,17 +1,17 @@
-<!-- description: Open worktree in terminal with agent CLI -->
-# worktree-open
+<!-- description: Open feature worktree in terminal and start agent -->
+# feature-open
 
-Open a worktree in Warp terminal and automatically run the AI agent with `{{CMD_PREFIX}}feature-do`.
+Open a feature worktree in terminal and automatically start the AI agent with `{{CMD_PREFIX}}feature-do`.
 
 ## Usage
 
 ```
-{{CMD_PREFIX}}worktree-open [feature-id] [agent-code]
+{{CMD_PREFIX}}feature-open [feature-id] [agent-code]
 ```
 
-- `{{CMD_PREFIX}}worktree-open` — open the most recently created worktree
-- `{{CMD_PREFIX}}worktree-open 77` — open any worktree for feature 77
-- `{{CMD_PREFIX}}worktree-open 77 cx` — open specifically the cx (Codex) worktree for feature 77
+- `{{CMD_PREFIX}}feature-open` — open the most recently created worktree
+- `{{CMD_PREFIX}}feature-open 77` — open any worktree for feature 77
+- `{{CMD_PREFIX}}feature-open 77 cx` — open specifically the cx (Codex) worktree for feature 77
 
 ## Agent Mappings
 
@@ -38,7 +38,7 @@ When an agent asks for permission, here's how to quickly allow:
 ## Step 1: Run the CLI command
 
 ```bash
-aigon worktree-open {{ARG_SYNTAX}}
+aigon feature-open {{ARG_SYNTAX}}
 ```
 
 This will:
