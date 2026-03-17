@@ -88,6 +88,12 @@
     .waiting .dot{background:var(--warning);box-shadow:0 0 8px rgba(245,158,11,.5)}
     .submitted .dot{background:transparent;position:relative}
     .submitted .dot::before{content:"";position:absolute;left:1px;top:0;width:6px;height:10px;border:solid var(--success);border-width:0 2px 2px 0;transform:rotate(45deg)}
+    /* Per-agent colored left border on monitor rows */
+    .row.agent-cc{border-left:2px solid #6B9EFF;padding-left:6px}
+    .row.agent-gg{border-left:2px solid #A78BFA;padding-left:6px}
+    .row.agent-cx{border-left:2px solid #4ADE80;padding-left:6px}
+    .row.agent-cu{border-left:2px solid #FB923C;padding-left:6px}
+    .row.agent-solo{border-left:2px solid #94A3B8;padding-left:6px}
     .error .dot{background:var(--error);box-shadow:0 0 8px rgba(239,68,68,.45)}
     .btn{background:transparent;border:1px solid var(--border-default);border-radius:8px;color:var(--text-secondary);padding:4px 10px;cursor:pointer;line-height:1;font-size:12px;white-space:nowrap}
     .btn:hover{color:var(--text-primary);border-color:var(--accent)}
@@ -457,13 +463,12 @@
                       </div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(feature.agents)" :key="agent.id">
-                          <div class="row" :class="agent.status">
-                            <span class="agent" x-text="agent.id"></span>
-                            <span class="status" :class="agent.status"><span class="dot"></span><span x-text="agent.status"></span></span>
+                          <div class="row" :class="[agent.status, 'agent-' + agent.id]">
+                            <span class="agent" x-text="AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
+                            <span x-html="buildAgentStatusHtml(agent)"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
-                              <button x-show="!!agent.tmuxRunning" class="btn btn-primary" x-on:click.stop="attachAgent(repo.path, feature.id, agent.id, agent.tmuxSession || '')">Attach</button>
                             </span>
                           </div>
                         </template>
@@ -482,13 +487,12 @@
                       </div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents)" :key="agent.id">
-                          <div class="row" :class="agent.status">
-                            <span class="agent" x-text="agent.id"></span>
-                            <span class="status" :class="agent.status"><span class="dot"></span><span x-text="agent.status"></span></span>
+                          <div class="row" :class="[agent.status, 'agent-' + agent.id]">
+                            <span class="agent" x-text="AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
+                            <span x-html="buildAgentStatusHtml(agent)"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
-                              <button x-show="!!agent.tmuxRunning" class="btn btn-primary" x-on:click.stop="attachAgent(repo.path, item.id, agent.id, agent.tmuxSession || '')">Attach</button>
                             </span>
                           </div>
                         </template>
@@ -506,13 +510,12 @@
                       </div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents || [])" :key="agent.id">
-                          <div class="row" :class="agent.status">
-                            <span class="agent" x-text="agent.id"></span>
-                            <span class="status" :class="agent.status"><span class="dot"></span><span x-text="agent.status"></span></span>
+                          <div class="row" :class="[agent.status, 'agent-' + agent.id]">
+                            <span class="agent" x-text="AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
+                            <span x-html="buildAgentStatusHtml(agent)"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
-                              <button x-show="!!agent.tmuxRunning" class="btn btn-primary" x-on:click.stop="attachAgent(repo.path, item.id, agent.id, agent.tmuxSession || '')">Attach</button>
                             </span>
                           </div>
                         </template>
@@ -1686,8 +1689,13 @@
             '<span class="item-reason">' + escHtml(a.reason) + '</span>' +
             '</button>').join('') + '</div>'
         : '';
+      // Remap raw state-machine labels ("Focus cc", "View cc") to clean button text.
+      // Works from the first word so it doesn't depend on action metadata from the server.
+      const NEXT_ACTION_FIRST_WORD_MAP = { Focus: 'View', Attach: 'View' };
+      const firstWord = primary.label.split(' ')[0];
+      const primaryLabel = NEXT_ACTION_FIRST_WORD_MAP[firstWord] || firstWord;
       return '<span class="run-next-group">' +
-        '<button class="btn btn-primary run-next-primary" data-command="' + escHtml(primary.command) + '" data-mode="' + escHtml(primary.mode) + '" data-repo="' + escHtml(repoPath) + '" title="' + escHtml(primary.command) + ' — ' + escHtml(primary.reason) + '">' + escHtml(primary.label) + '</button>' +
+        '<button class="btn btn-primary run-next-primary" data-command="' + escHtml(primary.command) + '" data-mode="' + escHtml(primary.mode) + '" data-repo="' + escHtml(repoPath) + '" title="' + escHtml(primary.command) + ' — ' + escHtml(primary.reason) + '">' + escHtml(primaryLabel) + '</button>' +
         dropdownHtml + '</span>';
     }
 
@@ -1898,6 +1906,15 @@
       return '<span class="kcard-agent-status ' + cls + '">' + icon + ' ' + label + '</span>';
     }
 
+    // Remap state machine action labels to clean, agent-ID-free button text.
+    const AGENT_ACTION_LABELS = {
+      'feature-attach':  'View',
+      'feature-focus':   'View',
+      'feature-open':    (va, agent) => (agent.status === 'implementing') ? 'Restart' : 'Start',
+      'research-attach': 'View',
+      'research-open':   'Start'
+    };
+
     function buildAgentSectionHtml(agent, agentValidActions) {
       const displayName = AGENT_DISPLAY_NAMES[agent.id] || agent.id;
       const statusHtml = buildAgentStatusHtml(agent);
@@ -1907,7 +1924,9 @@
       if (primaryActions.length > 0) {
         const va = primaryActions[0];
         const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
-        actionsHtml += '<button class="' + btnCls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">' + escHtml(va.label) + '</button>';
+        const labelOverride = AGENT_ACTION_LABELS[va.action];
+        const label = typeof labelOverride === 'function' ? labelOverride(va, agent) : (labelOverride || va.label);
+        actionsHtml += '<button class="' + btnCls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">' + escHtml(label) + '</button>';
       }
       if (overflowActions.length > 0) {
         const items = overflowActions.map(va =>
@@ -1972,6 +1991,7 @@
       switch (va.action) {
         case 'feature-open':
         case 'feature-attach':
+        case 'feature-focus':
         case 'research-open':
         case 'research-attach':
           await requestFeatureOpen(id, agentId, repoPath, btn, pipelineType);
@@ -1989,9 +2009,6 @@
         case 'feature-prioritise':
         case 'research-prioritise':
           await requestAction(pipelineCommand(pipelineType, 'prioritise'), [feature.name], repoPath, btn);
-          break;
-        case 'feature-focus':
-          await requestAction('terminal-focus', [id, ...(agentId ? [agentId] : [])], repoPath, btn);
           break;
         case 'feature-stop':
           await requestAction('feature-stop', [id, ...(agentId ? [agentId] : [])], repoPath, btn);
