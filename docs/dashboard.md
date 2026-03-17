@@ -63,6 +63,35 @@ This installs Caddy + dnsmasq, creates the resolver file, generates the Caddyfil
 | `aigon.test` returns empty/404 | Dashboard not registered in dev-proxy | Restart dashboard |
 | Dead worktree instances in status | Old worktree dashboard instances not cleaned up | `aigon dev-server gc` |
 | `aigon.test` not resolving | dnsmasq or resolver not set up | Run `aigon proxy-setup` |
+| Dashboard shows wrong data | Config parse error or stale registry | Check `~/.aigon/dashboard.log` for `[*] Warning:` lines |
+
+### Startup validation
+
+On every startup, `runDashboardServer()` calls `validateRegistry()` which:
+1. Reads `~/.aigon/dev-proxy/servers.json`
+2. For each entry, verifies the registered PID is alive (or port is in use if no PID)
+3. Removes stale entries (dead processes, crashed dev servers)
+4. Logs a summary: `Registry: N live, M stale removed`
+
+The summary is always written to `~/.aigon/dashboard.log`. If stale entries were removed, it is also printed to the console.
+
+### Error logging
+
+All warnings from config reads, JSON parse failures, and file permission errors are written to `~/.aigon/dashboard.log`. To investigate unexpected behavior:
+
+```bash
+tail -50 ~/.aigon/dashboard.log
+# Look for [context] Warning: lines
+```
+
+### State files
+
+| File | Purpose |
+|------|---------|
+| `~/.aigon/dev-proxy/servers.json` | Registry of all live servers + embedded port allocations (`_portRegistry` key) |
+| `~/.aigon/dashboard.log` | Dashboard log (warnings, startup messages, notifications) |
+
+> **Note:** Port allocation data was previously stored in `~/.aigon/ports.json`. As of v2.50, it is merged into `servers.json` under the `_portRegistry` key. The legacy file is migrated and removed automatically on first access.
 
 ## Key Files (Source Code)
 
@@ -77,12 +106,15 @@ This installs Caddy + dnsmasq, creates the resolver file, generates the Caddyfil
 
 | Function | Purpose |
 |----------|---------|
-| `runDashboardServer(port)` | Main HTTP server |
+| `runDashboardServer(port)` | Main HTTP server — validates registry on startup |
+| `validateRegistry()` | Checks PIDs alive and ports in use; removes stale entries on startup |
 | `generateCaddyfile(registry)` | Builds Caddyfile from dev-proxy registry |
 | `reloadCaddy(registry)` | Writes Caddyfile and reloads Caddy |
 | `registerDevServer(appId, serverId, ...)` | Adds to registry + reloads Caddy |
 | `collectDashboardStatusData()` | Scans specs, logs, worktrees, tmux for status |
 | `runDashboardInteractiveAction()` | Executes actions triggered from dashboard UI |
+| `tryOrDefault(fn, default, opts)` | Error helper — run fn, return default on error; optionally warn |
+| `classifyError(e)` | Returns `'missing'`, `'permission'`, `'parse'`, or `'unknown'` |
 
 ## How It Works
 
