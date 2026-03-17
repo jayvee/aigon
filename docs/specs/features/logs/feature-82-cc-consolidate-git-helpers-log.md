@@ -1,10 +1,11 @@
 ---
-status: implementing
-updated: 2026-03-17T14:19:50.568Z
+status: submitted
+updated: 2026-03-17T14:34:45.779Z
 startedAt: 2026-03-17T14:15:35.490Z
 events:
   - { ts: "2026-03-17T14:15:35.490Z", status: implementing }
   - { ts: "2026-03-17T14:19:50.568Z", status: implementing }
+  - { ts: "2026-03-17T14:34:45.779Z", status: submitted }
 ---
 
 # Implementation Log: Feature 82 - consolidate-git-helpers
