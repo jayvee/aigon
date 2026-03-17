@@ -148,6 +148,30 @@
     .kcard-actions{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding-top:6px;border-top:1px solid var(--border-subtle)}
     .kcard-actions .btn{font-size:11px;padding:3px 8px}
     .kcard-actions .btn-secondary{font-size:10px;padding:2px 7px}
+    /* Agent sections within in-progress/in-evaluation cards */
+    .kcard-agent{border-left:3px solid var(--border-subtle);border-radius:4px;padding:5px 8px;margin-top:5px;background:rgba(255,255,255,.015)}
+    .agent-cc{border-left-color:#6B9EFF}
+    .agent-gg{border-left-color:#A78BFA}
+    .agent-cx{border-left-color:#4ADE80}
+    .agent-cu{border-left-color:#FB923C}
+    .agent-solo{border-left-color:#94A3B8}
+    .kcard-agent-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px}
+    .kcard-agent-name{font-size:10px;font-weight:600;font-family:var(--mono);color:var(--text-secondary);flex-shrink:0}
+    .kcard-agent-status{font-size:10px;color:var(--text-tertiary);text-align:right}
+    .kcard-agent-status.status-running{color:#4ADE80}
+    .kcard-agent-status.status-waiting{color:#FCD34D}
+    .kcard-agent-status.status-submitted{color:#86EFAC}
+    .kcard-agent-status.status-ended,.kcard-agent-status.status-idle{color:var(--text-tertiary)}
+    .kcard-agent-actions{display:flex;gap:4px;align-items:center;margin-top:3px}
+    .kcard-agent-actions .btn{font-size:11px;padding:3px 8px}
+    .btn-overflow{padding:2px 8px!important;font-size:14px;line-height:1;color:var(--text-tertiary);letter-spacing:.05em}
+    .kcard-overflow{position:relative;display:inline-flex}
+    .kcard-overflow-menu{display:none;position:absolute;right:0;top:calc(100% + 3px);z-index:200;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:6px;padding:3px;min-width:110px;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+    .kcard-overflow-menu.open{display:block}
+    .kcard-overflow-item{display:block;width:100%;text-align:left;padding:5px 10px;font-size:11px;background:transparent;border:none;color:#F87171;border-radius:4px;cursor:pointer;white-space:nowrap}
+    .kcard-overflow-item:hover{background:var(--bg-elevated)}
+    .kcard-transitions{margin-top:6px;padding-top:6px;border-top:1px solid var(--border-subtle);display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+    .kcard-transitions .btn{font-size:11px;padding:3px 8px}
     .col-empty{padding:12px 8px;color:var(--text-tertiary);font-size:12px;text-align:center}
     /* Agent picker modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:flex;align-items:center;justify-content:center}
@@ -1854,6 +1878,49 @@
       return agents.map(a => '<span class="agent-badge ' + escHtml(a.status || '') + '">' + escHtml(a.id) + '</span>').join('');
     }
 
+    const AGENT_DISPLAY_NAMES = { cc: 'Claude Code', gg: 'Gemini', cx: 'Codex', cu: 'Cursor', solo: 'Agent' };
+
+    function buildAgentStatusHtml(agent) {
+      const status = agent.status || 'idle';
+      const tmuxRunning = agent.tmuxRunning || false;
+      let icon, label, cls;
+      if (status === 'implementing' && tmuxRunning) {
+        icon = '●'; label = 'Running'; cls = 'status-running';
+      } else if (status === 'implementing' && !tmuxRunning) {
+        icon = '○'; label = 'Session ended'; cls = 'status-ended';
+      } else if (status === 'waiting') {
+        icon = '⏳'; label = 'Needs input'; cls = 'status-waiting';
+      } else if (status === 'submitted') {
+        icon = '✓'; label = 'Submitted'; cls = 'status-submitted';
+      } else {
+        icon = '○'; label = 'Not started'; cls = 'status-idle';
+      }
+      return '<span class="kcard-agent-status ' + cls + '">' + icon + ' ' + label + '</span>';
+    }
+
+    function buildAgentSectionHtml(agent, agentValidActions) {
+      const displayName = AGENT_DISPLAY_NAMES[agent.id] || agent.id;
+      const statusHtml = buildAgentStatusHtml(agent);
+      const primaryActions = agentValidActions.filter(va => va.action !== 'feature-stop' && va.action !== 'research-stop');
+      const overflowActions = agentValidActions.filter(va => va.action === 'feature-stop' || va.action === 'research-stop');
+      let actionsHtml = '';
+      if (primaryActions.length > 0) {
+        const va = primaryActions[0];
+        const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
+        actionsHtml += '<button class="' + btnCls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">' + escHtml(va.label) + '</button>';
+      }
+      if (overflowActions.length > 0) {
+        const items = overflowActions.map(va =>
+          '<button class="kcard-overflow-item kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">End Session</button>'
+        ).join('');
+        actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
+      }
+      return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
+        '<div class="kcard-agent-header"><span class="kcard-agent-name">' + escHtml(displayName) + '</span>' + statusHtml + '</div>' +
+        (actionsHtml ? '<div class="kcard-agent-actions">' + actionsHtml + '</div>' : '') +
+        '</div>';
+    }
+
     // Maps validActions to button CSS classes using priority as the primary signal.
     // priority:'high' → primary (prominent, recommended next step)
     // feature-stop → danger (destructive)
@@ -1943,23 +2010,59 @@
       card.dataset.stage = feature.stage;
       card.dataset.repoPath = repoPath || '';
 
-      const agentBadgesHtml = buildAgentBadgesHtml(feature.agents);
+      const agents = feature.agents || [];
+      const validActions = feature.validActions || [];
+      const hasAgentSections = agents.length > 0;
 
-      const stage = feature.stage;
-
-      // Render buttons from server-provided validActions (state machine is the only source of truth).
-      const actionsHtml = buildValidActionsHtml(feature.validActions || []);
-      // Eval status badge is a non-interactive status indicator, rendered separately from buttons.
-      const evalStatusHtml = feature.evalStatus
-        ? '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
-        : '';
-
-      card.innerHTML =
+      let innerHtml =
         (feature.id ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>' +
-        (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
-        (evalStatusHtml ? '<div class="kcard-status">' + evalStatusHtml + '</div>' : '') +
-        (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>';
+
+      if (hasAgentSections) {
+        // New agent section layout: one visual block per agent
+        // Eval status badge (for in-evaluation cards)
+        if (feature.evalStatus) {
+          innerHtml += '<div class="kcard-status"><span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span></div>';
+        }
+        // Agent sections
+        agents.forEach(agent => {
+          const agentActions = validActions.filter(va => va.agentId === agent.id);
+          innerHtml += buildAgentSectionHtml(agent, agentActions);
+        });
+        // Card-level actions (non-per-agent: close, eval, review, etc.)
+        const cardLevelActions = validActions.filter(va => !va.agentId);
+        if (cardLevelActions.length > 0) {
+          const cardActionsHtml = cardLevelActions.map(va => {
+            const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
+            return '<button class="' + btnCls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '">' + escHtml(va.label) + '</button>';
+          }).join('');
+          innerHtml += '<div class="kcard-transitions">' + cardActionsHtml + '</div>';
+        }
+      } else {
+        // Legacy layout for cards without active agents (inbox, backlog, done, research, feedback)
+        const agentBadgesHtml = buildAgentBadgesHtml(agents);
+        const actionsHtml = buildValidActionsHtml(validActions);
+        const evalStatusHtml = feature.evalStatus
+          ? '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
+          : '';
+        innerHtml +=
+          (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
+          (evalStatusHtml ? '<div class="kcard-status">' + evalStatusHtml + '</div>' : '') +
+          (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
+      }
+
+      card.innerHTML = innerHtml;
+
+      // Wire overflow menu toggles
+      card.querySelectorAll('.kcard-overflow-toggle').forEach(toggle => {
+        toggle.onclick = (e) => {
+          e.stopPropagation();
+          const menu = toggle.parentElement.querySelector('.kcard-overflow-menu');
+          const isOpen = menu && menu.classList.contains('open');
+          card.querySelectorAll('.kcard-overflow-menu').forEach(m => m.classList.remove('open'));
+          if (!isOpen && menu) menu.classList.add('open');
+        };
+      });
 
       let wasDragged = false;
       card.addEventListener('dragstart', (e) => {
@@ -1989,6 +2092,10 @@
       card.style.cursor = 'pointer';
       card.addEventListener('click', (e) => {
         if (wasDragged) { wasDragged = false; return; }
+        // Close overflow menus when clicking outside them
+        if (!e.target.closest('.kcard-overflow-toggle') && !e.target.closest('.kcard-overflow-menu')) {
+          card.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
+        }
         if (e.target.closest('button') || e.target.closest('.btn')) return;
         if (feature.specPath) {
           const displayName = (feature.id ? '#' + feature.id + ' ' : '') + feature.name.replace(/-/g, ' ');
