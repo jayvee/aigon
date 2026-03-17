@@ -319,11 +319,177 @@ function createBrewboardApi(repoDir) {
     console.log('  ✓ brewboard-api/ created');
 }
 
+// ─── trailhead fixture ────────────────────────────────────────────────────────
+
+function createTrailhead(repoDir) {
+    console.log('  Creating trailhead/ ...');
+    fs.mkdirSync(repoDir, { recursive: true });
+    initGitRepo(repoDir);
+
+    // Swift/iOS project files
+    write(path.join(repoDir, 'README.md'), '# Trailhead\n\nPersonal iOS app for logging hikes, tracking elevation, and pinning trail notes. Built with SwiftUI + MapKit.\n');
+    write(path.join(repoDir, '.gitignore'), '.DS_Store\n*.xcuserstate\nDerivedData/\n.build/\n*.resolved\n');
+
+    write(path.join(repoDir, 'Package.swift'), `// swift-tools-version:5.9
+import PackageDescription
+
+let package = Package(
+    name: "Trailhead",
+    platforms: [.iOS(.v17)],
+    targets: [
+        .target(name: "Trailhead", path: "Sources/Trailhead"),
+        .testTarget(name: "TrailheadTests", dependencies: ["Trailhead"], path: "Tests/TrailheadTests"),
+    ]
+)
+`);
+
+    write(path.join(repoDir, 'Sources', 'Trailhead', 'TrailheadApp.swift'), `import SwiftUI
+
+@main
+struct TrailheadApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+`);
+
+    write(path.join(repoDir, 'Sources', 'Trailhead', 'ContentView.swift'), `import SwiftUI
+import MapKit
+
+struct ContentView: View {
+    var body: some View {
+        NavigationStack {
+            Text("Trailhead")
+                .navigationTitle("My Hikes")
+        }
+    }
+}
+`);
+
+    write(path.join(repoDir, 'Sources', 'Trailhead', 'Models', 'Hike.swift'), `import Foundation
+import CoreLocation
+
+struct Hike: Identifiable, Codable {
+    let id: UUID
+    var name: String
+    var date: Date
+    var distance: Double   // km
+    var elevationGain: Int // metres
+    var notes: String
+    var gpxURL: URL?
+}
+`);
+
+    write(path.join(repoDir, 'Sources', 'Trailhead', 'Models', 'TrailPin.swift'), `import Foundation
+import CoreLocation
+
+struct TrailPin: Identifiable, Codable {
+    let id: UUID
+    var title: String
+    var body: String
+    var coordinate: CLLocationCoordinate2D
+    var hikeId: UUID
+}
+`);
+
+    write(path.join(repoDir, 'Tests', 'TrailheadTests', 'HikeTests.swift'), `import XCTest
+@testable import Trailhead
+
+final class HikeTests: XCTestCase {
+    func testHikeCreation() {
+        let hike = Hike(id: UUID(), name: "Ben Nevis", date: Date(), distance: 17.4, elevationGain: 1345, notes: "Clear summit day")
+        XCTAssertEqual(hike.name, "Ben Nevis")
+        XCTAssertEqual(hike.elevationGain, 1345)
+    }
+}
+`);
+
+    commit(repoDir, 'feat: initial Trailhead iOS app skeleton');
+
+    // Initialize aigon
+    runAigon(['init'], repoDir);
+    commit(repoDir, 'chore: initialize aigon spec structure');
+
+    // ── features/01-inbox ────────────────────────────────────────────────────
+    const inboxDir = path.join(repoDir, 'docs', 'specs', 'features', '01-inbox');
+
+    write(path.join(inboxDir, 'feature-gpx-export.md'),
+        featureInboxContent('GPX Export', 'Export any logged hike as a GPX file so it can be imported into Garmin Connect, Strava, or AllTrails for analysis and sharing.'));
+
+    write(path.join(inboxDir, 'feature-apple-watch-companion.md'),
+        featureInboxContent('Apple Watch Companion', 'A minimal watchOS companion app that shows current pace, elapsed time, and elevation during an active hike. Syncs data back to the iPhone app on completion.'));
+
+    // ── features/02-backlog ──────────────────────────────────────────────────
+    const backlogDir = path.join(repoDir, 'docs', 'specs', 'features', '02-backlog');
+
+    write(path.join(backlogDir, 'feature-01-elevation-chart.md'),
+        featureBacklogContent('01', 'Elevation Profile Chart', 'Show a scrollable elevation chart on the hike detail screen using Swift Charts. Highlight the steepest section and mark the summit.'));
+
+    write(path.join(backlogDir, 'feature-02-photo-pinning.md'),
+        featureBacklogContent('02', 'Photo Pinning on Map', 'Let users drop a photo pin at their current GPS location during a hike. Photos are stored in the app\'s local library and shown as map annotations.'));
+
+    // ── features/03-in-progress ──────────────────────────────────────────────
+    const inProgressDir = path.join(repoDir, 'docs', 'specs', 'features', '03-in-progress');
+
+    write(path.join(inProgressDir, 'feature-03-offline-maps.md'),
+        featureInProgressContent('03', 'Offline Map Tiles', 'Download map tiles for a selected region so hikes can be tracked without cell service. Uses MapKit\'s local tile overlay API. Max download: 500 MB.'));
+
+    write(path.join(inProgressDir, 'feature-04-hike-stats-widget.md'),
+        featureInProgressContent('04', 'Home Screen Widget', 'WidgetKit widget showing this week\'s hike count, total distance, and elevation gain at a glance. Small and medium size classes.'));
+
+    // ── features/05-done ─────────────────────────────────────────────────────
+    const doneDir = path.join(repoDir, 'docs', 'specs', 'features', '05-done');
+
+    write(path.join(doneDir, 'feature-05-hike-logging.md'),
+        featureDoneContent('05', 'Hike Logging', 'Core feature: start a hike session, record GPS track via CoreLocation, auto-save on end. Distance and elevation calculated from raw GPS points.'));
+
+    write(path.join(doneDir, 'feature-06-icloud-sync.md'),
+        featureDoneContent('06', 'iCloud Sync', 'Sync hike records across the user\'s devices using CloudKit. Conflicts resolved by last-write-wins on the name/notes fields; GPS tracks are immutable.'));
+
+    // ── feature logs ─────────────────────────────────────────────────────────
+    const logsDir = path.join(repoDir, 'docs', 'specs', 'features', 'logs');
+    write(path.join(logsDir, 'feature-03-offline-maps-log.md'), logContent('03', 'offline-maps'));
+    write(path.join(logsDir, 'feature-04-hike-stats-widget-log.md'), logContent('04', 'hike-stats-widget'));
+
+    // ── research-topics ──────────────────────────────────────────────────────
+    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '01-inbox', 'research-live-activities.md'),
+        researchContent('Live Activities for Active Hikes', 'Can we use ActivityKit Live Activities to show real-time hike stats on the Dynamic Island and Lock Screen during an active session?'));
+
+    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-01-route-planning.md'),
+        researchContent('Route Planning APIs', 'Evaluate MapKit routing vs OpenRouteService vs Komoot API for suggesting hiking routes based on difficulty, length, and starting point.'));
+
+    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '03-in-progress', 'research-02-battery-usage.md'),
+        researchContent('GPS Battery Optimisation', 'Background GPS tracking drains the battery fast. Research CLLocationManager accuracy modes, significant-change API, and deferred location updates as power-saving strategies.'));
+
+    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '04-done', 'research-03-map-sdk-choice.md'),
+        researchContent('MapKit vs Google Maps vs Mapbox', 'Compared three mapping SDKs for offline tile support and SwiftUI integration. Decision: MapKit — native APIs, no extra SDK weight, offline tile overlay available.'));
+
+    // ── feedback ─────────────────────────────────────────────────────────────
+    write(path.join(repoDir, 'docs', 'specs', 'feedback', '01-inbox', 'feedback-01-battery-drain.md'),
+        feedbackContent(1, 'App drains battery during long hikes', 'On a 6-hour hike the app used 34% battery — more than Maps.app. Background GPS tracking with full accuracy seems to be the culprit.', 'inbox', 'performance'));
+
+    write(path.join(repoDir, 'docs', 'specs', 'feedback', '01-inbox', 'feedback-02-map-stuck-on-north.md'),
+        feedbackContent(2, 'Map rotation does not follow heading', 'The map should rotate to follow the user\'s walking direction but it stays locked north-up. Setting mapView.userTrackingMode = .followWithHeading fixes it.', 'inbox', 'bug'));
+
+    write(path.join(repoDir, 'docs', 'specs', 'feedback', '02-triaged', 'feedback-03-no-dark-mode-map.md'),
+        feedbackContent(3, 'Map tiles don\'t switch to dark mode', 'The MapKit tile overlay stays in light mode even when the device is in dark mode. Need to set the map scheme to .hybrid or listen to UITraitCollection changes.', 'triaged', 'bug'));
+
+    write(path.join(repoDir, 'docs', 'specs', 'feedback', '03-actionable', 'feedback-04-siri-shortcuts.md'),
+        feedbackContent(4, 'Siri Shortcuts for starting a hike', 'Would love to say "Hey Siri, start a hike" and have the app begin recording. Multiple requests from users who hike with their phone in a chest mount.', 'actionable', 'feature-request'));
+
+    // ── final commit ─────────────────────────────────────────────────────────
+    commit(repoDir, 'chore: seed aigon specs with initial feature/research/feedback items');
+    console.log('  ✓ trailhead/ created');
+}
+
 // ─── main ─────────────────────────────────────────────────────────────────────
 
 function main() {
     const brewboardDir = path.join(FIXTURES_DIR, 'brewboard');
     const apiDir = path.join(FIXTURES_DIR, 'brewboard-api');
+    const trailheadDir = path.join(FIXTURES_DIR, 'trailhead');
 
     if (fs.existsSync(FIXTURES_DIR)) {
         console.log('Fixtures already exist. Delete test/fixtures/ and re-run to regenerate.');
@@ -340,9 +506,11 @@ function main() {
     try {
         createBrewboard(brewboardDir);
         createBrewboardApi(apiDir);
+        createTrailhead(trailheadDir);
         console.log('\nFixtures ready in test/fixtures/');
         console.log('  brewboard/     — web SaaS (features, research, feedback seeded)');
         console.log('  brewboard-api/ — REST API backend (features, research, feedback seeded)');
+        console.log('  trailhead/     — personal iOS hiking app in Swift (features, research, feedback seeded)');
     } catch (err) {
         console.error('Fixture generation failed:', err.message);
         console.error(err.stack);
