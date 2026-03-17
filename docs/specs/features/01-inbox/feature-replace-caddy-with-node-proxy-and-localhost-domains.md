@@ -46,30 +46,55 @@ grep -r "\.test[\"'/)]" lib/ templates/ --include="*.js" --include="*.html" | gr
 
 ## Technical Approach
 
-### Architecture
+### Architecture — Separate proxy daemon from dashboard
+
+**Critical design decision:** The proxy MUST be separate from the dashboard. The dashboard is a feature-rich app that polls, renders, sends notifications — it can crash or restart. The proxy must be a tiny, stable daemon that never dies.
+
 ```
-Browser ──► http://aigon.localhost ──► Dashboard Node.js (port 80 or 4100)
-                                          │ (http-proxy)
-            http://cc-85.aigon.localhost ──┘──► localhost:4121 (worktree dashboard)
-            http://cc-119.myapp.localhost ──┘──► localhost:3001 (dev server)
+                     ┌──────────────────────────────┐
+                     │  aigon-proxy (daemon, ~50 LOC)│
+Browser ─────────────┤  port 80 (or 4100 fallback)  │
+  aigon.localhost    │  reads servers.json           │
+  cc-85.aigon.localhost  routes by Host header       │
+  cc-119.myapp.localhost                             │
+                     └──────┬───────────────────────┘
+                            │ proxies to
+              ┌─────────────┼──────────────┐
+              ▼             ▼              ▼
+         localhost:4100  localhost:4121  localhost:3001
+         (dashboard)    (worktree dash) (dev server)
 ```
+
+### The proxy daemon (`lib/aigon-proxy.js`, ~50 lines)
+- Reads `~/.aigon/dev-proxy/servers.json` on each request (or watches file for changes)
+- Maps Host header → port: `aigon.localhost` → 4100, `cc-85.aigon.localhost` → 4121
+- Handles WebSocket upgrades
+- Zero polling, zero status collection, zero features
+- Runs via launchd (macOS) — starts on boot, survives sleep/wake
+- If it crashes (unlikely — 50 lines of code), launchd restarts it
+
+### The dashboard
+- Registers itself in `servers.json` on startup (as it does today)
+- Can restart, crash, or be stopped without breaking proxy routing
+- Other dev servers also just register in `servers.json`
 
 ### Why .localhost works without DNS
 RFC 6761 reserves `.localhost` — all modern OSes resolve `*.localhost` to `127.0.0.1` automatically. No dnsmasq, no `/etc/resolver`, no configuration.
 
 ### Implementation phases
 
-**Phase 1: Add Node proxy to dashboard**
-- Add `http-proxy` dependency
-- In `runDashboardServer()`, intercept requests where Host doesn't match the dashboard's own hostname
-- Route to the target port from `servers.json` registry
-- Handle WebSocket upgrades for terminal relay
+**Phase 1: Create `lib/aigon-proxy.js`**
+- ~50 line Node script using `http-proxy`
+- Reads `servers.json`, routes by Host header
+- Handles WebSocket upgrades
+- `aigon proxy start` starts as daemon, `aigon proxy stop` stops it
+- `aigon proxy install` creates launchd plist for auto-start on boot
 
 **Phase 2: Remove Caddy code**
 - Delete all Caddy admin API functions
 - Delete `generateCaddyfile()`, `reloadCaddy()`
-- Simplify `reconcileProxyRoutes()` to only clean dead PIDs (no Caddy route sync)
 - Remove `proxy-setup` Caddy/dnsmasq installation steps
+- `registerDevServer()` just writes to `servers.json` (proxy reads it live)
 
 **Phase 3: Switch to .localhost**
 - Replace all `.test` domain strings with `.localhost`
@@ -77,9 +102,9 @@ RFC 6761 reserves `.localhost` — all modern OSes resolve `*.localhost` to `127
 - Update display strings in dashboard, help, docs
 
 **Phase 4: Port 80 binding**
-- Dashboard tries port 80 first (direct browser access without port in URL)
-- Falls back to 4100 if port 80 is unavailable (no sudo)
-- User can run `sudo aigon dashboard` once to bind port 80, or use port 4100 with `http://aigon.localhost:4100`
+- Proxy tries port 80 first (clean URLs without port number)
+- Falls back to 4100 if port 80 unavailable (no sudo)
+- `aigon proxy install` can optionally configure launchd to bind port 80
 
 ### Fallback
 If `.localhost` wildcard resolution doesn't work on a specific OS version, fall back to `127.0.0.1:PORT` with a clear message. The proxy still works — just with explicit ports instead of named domains.
