@@ -2,30 +2,31 @@
 
 ## Summary
 
-On startup (any `aigon` command that touches the proxy), reconcile `servers.json` with Caddy's live config. If routes exist in servers.json but not in Caddy (e.g., after a crash or reboot), re-add them. If routes exist in Caddy but not in servers.json (orphans), remove them. This ensures the proxy always reflects the actual state of running dev servers.
+On dashboard startup, reconcile `servers.json` with Caddy's live config — clean up stale entries from dead processes, remove orphan Caddy routes, and re-add routes for any processes that are still alive but missing from Caddy. The primary use case is after a Mac reboot: running `aigon dashboard` (or `aigon dashboard start`) cleans up stale state before serving. Also adds `aigon dashboard start` as an alias for the bare `aigon dashboard` command for discoverability.
+
+**Key insight:** After a reboot, the dashboard and dev servers are all dead — there's nothing to "restore". The real value is **cleaning up stale entries** from `servers.json` so the dashboard starts clean, and re-adding routes for any processes that happen to still be alive (e.g., after a Caddy-only restart mid-session).
 
 ## User Stories
 
-- [ ] As a developer, after rebooting my Mac, running any aigon command automatically restores my proxy routes without manual intervention
-- [ ] As a developer, if Caddy crashes and restarts, my existing dev servers become reachable again automatically
+- [ ] As a developer, after rebooting my Mac, running `aigon dashboard start` cleans up stale state and starts fresh
+- [ ] As a developer, if Caddy crashes and restarts mid-session, my still-running dev servers become reachable again automatically
 - [ ] As a developer, orphan routes from deleted worktrees are cleaned up automatically
+- [ ] As a developer, I can type `aigon dashboard start` instead of bare `aigon dashboard` — it's more discoverable
 
 ## Acceptance Criteria
 
 - [ ] New `reconcileProxyRoutes()` function in lib/utils.js that:
   - Reads `servers.json` for expected routes
-  - GETs Caddy's live routes via admin API
-  - Adds missing routes (in servers.json but not in Caddy)
-  - Removes orphan routes (in Caddy with `aigon-` prefix but not in servers.json)
-  - Returns a summary: `{ added: N, removed: N, unchanged: N }`
-- [ ] `reconcileProxyRoutes()` validates each servers.json entry's process is still alive (check PID) before re-adding
-- [ ] Dead entries (PID not running) are cleaned from servers.json and NOT re-added to Caddy
-- [ ] Reconciliation runs automatically on:
-  - `aigon dashboard` startup
-  - `aigon proxy-setup`
-  - `aigon doctor`
+  - GETs Caddy's live routes via admin API (graceful no-op if admin API is unreachable)
+  - For each servers.json entry: checks if PID is alive
+  - Dead entries: removed from servers.json AND from Caddy (if route exists)
+  - Alive entries missing from Caddy: re-added via `addCaddyRoute()`
+  - Orphan Caddy routes (aigon-* prefix, not in servers.json): removed
+  - Returns a summary: `{ added: N, removed: N, cleaned: N, unchanged: N }`
+- [ ] Reconciliation runs on `aigon dashboard` / `aigon dashboard start` startup, before the HTTP server starts
 - [ ] Reconciliation is idempotent — running it twice produces the same state
-- [ ] Console output shows what was reconciled: `"Proxy reconciled: 2 routes added, 1 orphan removed, 5 unchanged"`
+- [ ] Console output shows what was reconciled (only when something changed): `"Proxy reconciled: 3 stale entries cleaned, 1 orphan route removed"`
+- [ ] `aigon dashboard start` works as an alias for bare `aigon dashboard`
 - [ ] `node -c lib/utils.js` exits 0; all tests pass
 
 ## Validation
@@ -39,42 +40,45 @@ node -c lib/utils.js && node -c aigon-cli.js && npm test
 ### New Function: `reconcileProxyRoutes()`
 
 ```javascript
-async function reconcileProxyRoutes() {
+function reconcileProxyRoutes() {
   const registry = loadProxyRegistry();
-  const liveRoutes = await getCaddyLiveRoutes();  // GET localhost:2019/config/apps/http/servers/srv0/routes
-  const results = { added: 0, removed: 0, unchanged: 0, cleaned: 0 };
+  const caddyAvailable = isCaddyAdminAvailable();
+  const liveRoutes = caddyAvailable ? getCaddyLiveRoutes() : new Map();
+  const results = { added: 0, removed: 0, cleaned: 0, unchanged: 0 };
 
   // 1. Check each servers.json entry
   for (const [appId, servers] of Object.entries(registry)) {
     for (const [serverId, info] of Object.entries(servers)) {
       const routeId = getCaddyRouteId(appId, serverId);
       const isLive = liveRoutes.has(routeId);
-      const isProcessAlive = info.pid > 0 && isRunning(info.pid);
+      const pid = info.dashboard ? info.dashboard.pid : info.pid;
+      const isProcessAlive = pid > 0 && isRunning(pid);
 
       if (!isProcessAlive) {
         // Dead process — clean from registry, remove from Caddy
         delete servers[serverId];
-        if (isLive) await removeCaddyRoute(routeId);
+        if (isLive && caddyAvailable) removeCaddyRoute(routeId);
         results.cleaned++;
-      } else if (!isLive) {
+      } else if (!isLive && caddyAvailable) {
         // Process alive but route missing — re-add
         const hostname = serverId ? `${serverId}.${appId}.test` : `${appId}.test`;
         const port = info.dashboard ? info.dashboard.port : info.port;
-        await addCaddyRoute(hostname, port, routeId);
+        addCaddyRoute(hostname, port, routeId);
         results.added++;
       } else {
         results.unchanged++;
       }
     }
-    // Clean empty app entries
     if (Object.keys(servers).length === 0) delete registry[appId];
   }
 
   // 2. Remove orphan Caddy routes (aigon-* prefix but not in registry)
-  for (const routeId of liveRoutes.keys()) {
-    if (routeId.startsWith('aigon-') && !registryHasRoute(registry, routeId)) {
-      await removeCaddyRoute(routeId);
-      results.removed++;
+  if (caddyAvailable) {
+    for (const routeId of liveRoutes.keys()) {
+      if (routeId.startsWith('aigon-') && !registryHasRoute(registry, routeId)) {
+        removeCaddyRoute(routeId);
+        results.removed++;
+      }
     }
   }
 
@@ -99,39 +103,41 @@ function isRunning(pid) {
 ### Helper: `getCaddyLiveRoutes()`
 
 ```javascript
-async function getCaddyLiveRoutes() {
+function getCaddyLiveRoutes() {
   // GET localhost:2019/config/apps/http/servers/srv0/routes
   // Returns Map<routeId, routeConfig>
   // Filters to only routes with @id starting with "aigon-"
+  // Synchronous (uses execSync + curl) to match existing patterns
 }
 ```
 
+### `aigon dashboard start` alias
+
+In the dashboard command handler, treat `start` subcommand the same as no subcommand — both start the foreground server. Update the help text to show `start` as an option.
+
 ### Integration Points
 
-- Called at the top of `dashboard` command startup (before rendering status)
-- Called during `proxy-setup` (after ensuring Caddy is running)
-- Called during `doctor` (as part of proxy diagnostics)
-- Optionally exposed as `aigon proxy-reconcile` standalone command
+- Called at the top of `dashboard` / `dashboard start` before the HTTP server starts
+- Optionally called during `aigon doctor` for diagnostics
 
 ## Dependencies
 
-- Feature 75: proxy-caddy-api-routes (`addCaddyRoute()`, `removeCaddyRoute()`, `getCaddyRouteId()`)
-- Feature 76: proxy-health-check (`proxyDiagnostics()` for stale route detection)
+- Feature 75: proxy-caddy-api-routes (`addCaddyRoute()`, `removeCaddyRoute()`, `getCaddyRouteId()`, `isCaddyAdminAvailable()`) — DONE
 
 ## Out of Scope
 
-- Auto-restarting dead dev servers (reconciliation only fixes the proxy layer, not the servers themselves)
-- Watching for Caddy crashes in real-time (reconciliation is on-demand, not a daemon)
-- Handling dnsmasq state (dnsmasq is stateless for wildcard domains — no reconciliation needed)
+- Auto-restarting dead dev servers (reconciliation only cleans up the proxy layer)
+- Daemonising the dashboard (LaunchAgent etc.) — user starts it manually in a terminal
+- Watching for Caddy crashes in real-time (reconciliation is on-demand at dashboard startup)
+- Handling dnsmasq state (dnsmasq is stateless for wildcard domains)
+- Feature 76 (proxy-health-check) — not required for this feature, can be done independently later
 
 ## Open Questions
 
-- Should reconciliation run on every `aigon` command or only on proxy-related commands? (Every command adds latency; proxy-only is safer)
-- Should we log reconciliation events to a file for debugging? (e.g., `~/.aigon/dev-proxy/reconcile.log`)
-- Timeout for admin API calls during reconciliation? (Suggest 2s to avoid blocking CLI startup)
+- Should `aigon doctor` also run reconciliation, or just report stale entries without fixing them?
 
 ## Related
 
 - Research: research-12-local-dev-proxy-reliability
-- Depends on: feature-75-proxy-caddy-api-routes
-- Depends on: feature-76-proxy-health-check
+- Depends on: feature-75-proxy-caddy-api-routes (done)
+- Independent of: feature-76-proxy-health-check (nice-to-have, not a dependency)
