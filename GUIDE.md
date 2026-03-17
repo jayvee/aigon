@@ -37,7 +37,7 @@ This is independent from workflow mode (Drive/Fleet/Autopilot/Swarm).
 
 1. Start in an **in-agent session** when defining work (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) so you can iterate conversationally.
 2. Stay **in-agent** for execution (`feature-do`, `feature-review`, `research-do`, `research-synthesize`).
-3. Use **CLI context** for orchestration and terminal operations (`feature-setup`, `worktree-open`, `feature-eval`, `feature-close`, `feature-cleanup`), especially from the main repo.
+3. Use **CLI context** for orchestration and terminal operations (`feature-setup`, `feature-open`, `feature-eval`, `feature-close`, `feature-cleanup`), especially from the main repo.
 
 ### Surface recommendations
 
@@ -45,7 +45,7 @@ This is independent from workflow mode (Drive/Fleet/Autopilot/Swarm).
 |---|---|---|
 | Spec authoring/refinement (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) | In-agent | Best for back-and-forth definition and scope shaping |
 | Agent execution (`feature-do`, `feature-review`, `research-do`, `research-synthesize`) | In-agent | Best when an agent session is already active |
-| Setup/orchestration (`init`, `install-agent`, `update`, `feature-setup`, `research-setup`, `worktree-open`, `feature-close`, `feature-cleanup`) | CLI | Repo/worktree operations and coordination |
+| Setup/orchestration (`init`, `install-agent`, `update`, `feature-setup`, `research-setup`, `feature-open`, `feature-close`, `feature-cleanup`) | CLI | Repo/worktree operations and coordination |
 | Infra/config (`config`, `profile`, `proxy-setup`, `dev-server`, `radar`) | CLI | Machine/project configuration and services |
 
 ### Mode × surface matrix
@@ -124,7 +124,7 @@ Run multiple agents in competition to find the optimal solution.
         * `../<repo>-worktrees/feature-108-cx-dark-mode` (Codex)
     * **Auto-creates** Implementation Log templates in each worktree with `status: implementing` front matter.
     * **STOPS** - does not implement (user must open each worktree separately).
-4.  **Implement:** Open all worktrees side-by-side with `aigon worktree-open 108 --all` (or individually with `aigon worktree-open 108 cc`), or launch an agent directly from a worktree shell with `aigon feature-do 108`.
+4.  **Implement:** Open all worktrees side-by-side with `aigon feature-open 108 --all` (or individually with `aigon feature-open 108 cc`), or launch an agent directly from a worktree shell with `aigon feature-do 108`.
     * **Warp**: Opens all agents side-by-side in split panes and auto-starts each with `/aigon:feature-do 108`.
     * **tmux**: Creates persistent named sessions (`aigon-f108-cc`, `aigon-f108-gg`, etc.) that survive terminal closes. Detach with `Ctrl-b d`, reattach anytime. With `tmuxApp: "iterm2"`, sessions open as native iTerm2 tabs.
     * **VS Code / Cursor**: Opens the folder; run `aigon feature-do 108` in the integrated terminal — Aigon detects no active session and launches the agent automatically. Alternatively run `/aigon:feature-do 108` inside an already-open agent session.
@@ -984,28 +984,28 @@ These are ephemeral — not checked into any repo. The `servers.json` registry i
 
 ## Opening Worktrees
 
-After setting up a feature with worktrees, use `/aigon:worktree-open` (or `aigon worktree-open`) to quickly open them in your configured terminal:
+After setting up a feature with worktrees, use `/aigon:feature-open` (or `aigon feature-open`) to quickly open them in your configured terminal:
 
 ```bash
 # Open specific feature's worktree (picks most recent if multiple)
-/aigon:worktree-open 55
-# or: aigon worktree-open 55
+/aigon:feature-open 55
+# or: aigon feature-open 55
 
 # Open specific agent's worktree for a feature
-/aigon:worktree-open 55 cc
-# or: aigon worktree-open 55 cc
+/aigon:feature-open 55 cc
+# or: aigon feature-open 55 cc
 
 # Open all Fleet agents side-by-side (Warp split panes)
-/aigon:worktree-open 55 --all
-# or: aigon worktree-open 55 --all
+/aigon:feature-open 55 --all
+# or: aigon feature-open 55 --all
 
 # Open multiple features side-by-side (parallel mode)
-/aigon:worktree-open 100 101 102 --agent=cc
-# or: aigon worktree-open 100 101 102 --agent=cc
+/aigon:feature-open 100 101 102 --agent=cc
+# or: aigon feature-open 100 101 102 --agent=cc
 
 # Override terminal for this invocation
-/aigon:worktree-open 55 cc --terminal=code
-# or: aigon worktree-open 55 cc --terminal=code
+/aigon:feature-open 55 cc --terminal=code
+# or: aigon feature-open 55 cc --terminal=code
 ```
 
 ### Terminal Behavior
@@ -1088,7 +1088,7 @@ Creates `.aigon/config.json` with the auto-detected profile:
 
 ### Configuration Options
 
-- `terminal`: Default terminal for `worktree-open`. Options: `warp` (auto-runs agent), `code` (VS Code), `cursor`, `terminal` (Terminal.app), `tmux` (persistent sessions)
+- `terminal`: Default terminal for `feature-open`. Options: `warp` (auto-runs agent), `code` (VS Code), `cursor`, `terminal` (Terminal.app), `tmux` (persistent sessions)
 - `tmuxApp`: Terminal app used to host tmux sessions. Options: `terminal` (Terminal.app, default), `iterm2` (iTerm2 with native `tmux -CC` integration — tmux windows become native tabs with scrollback, Cmd+F search, and trackpad scrolling). Only applies when `terminal` is set to `tmux`.
 - `profile`: Project profile (`web`, `api`, `ios`, `android`, `library`, `generic`)
 - `agents.{id}.cli`: Override the CLI command for each agent
