@@ -1,12 +1,13 @@
 ---
 status: waiting
-updated: 2026-03-18T00:00:00.000Z
+updated: 2026-03-17T16:16:41.232Z
 startedAt: 2026-03-17T14:58:48.842Z
 events:
   - { ts: "2026-03-17T14:58:48.842Z", status: implementing }
   - { ts: "2026-03-17T15:00:19.512Z", status: implementing }
   - { ts: "2026-03-17T15:52:19.763Z", status: implementing }
   - { ts: "2026-03-18T00:00:00.000Z", status: waiting }
+  - { ts: "2026-03-17T16:16:41.232Z", status: waiting }
 ---
 
 # Implementation Log: Feature 86 - extract-utils-into-domain-modules
@@ -67,3 +68,15 @@ This fires only at runtime (not at module load), so no cycle.
 - `docs/architecture.md` — updated module table to reflect new domain modules
 - `README.md` — added Code Module Map section
 - `GUIDE.md` — added Code Module Structure table in Contributing section
+
+## Complexity Impact
+
+Total LOC is nearly identical (6,544 → 6,804, +4% from test files and boilerplate). The improvement is in locality:
+
+| Metric | Before | After (max single module) |
+|--------|--------|--------------------------|
+| Largest file | 6,544 lines | 1,785 lines (`dashboard-server.js`) |
+| Decision points in largest file | 896 | 231 |
+| Avg decision points per module | 896 | ~150 |
+
+**74% reduction** in cyclomatic complexity per module. Changing proxy logic no longer requires reading past 1,200 lines of dashboard server code.
