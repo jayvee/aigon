@@ -1,11 +1,12 @@
 ---
-status: waiting
-updated: 2026-03-17T03:30:56.521Z
+status: submitted
+updated: 2026-03-17T03:35:42.305Z
 startedAt: 2026-03-17T03:20:32.779Z
 events:
   - { ts: "2026-03-17T03:20:32.779Z", status: implementing }
   - { ts: "2026-03-17T03:26:23.654Z", status: implementing }
   - { ts: "2026-03-17T03:30:56.521Z", status: waiting }
+  - { ts: "2026-03-17T03:35:42.305Z", status: submitted }
 ---
 
 # Implementation Log: Feature 77 - proxy-crash-recovery
