@@ -81,8 +81,8 @@
     .card-h .feature{letter-spacing:-.02em;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .head-actions{display:flex;align-items:center;justify-content:flex-end;flex:0 0 auto}
     .rows{padding:0 8px 8px;display:grid;gap:6px}
-    .row{display:grid;grid-template-columns:56px minmax(130px,1fr) 90px auto;align-items:center;gap:10px;padding:6px 4px;border-radius:8px}
-    .agent,.cmd{font-family:var(--mono)}
+    .row{display:grid;grid-template-columns:72px minmax(130px,1fr) 90px auto;align-items:center;gap:10px;padding:6px 4px;border-radius:8px}
+    .agent,.cmd{font-family:var(--mono);font-size:11px}
     .stamp{color:var(--text-tertiary);white-space:nowrap}
     .status{display:inline-flex;align-items:center;gap:8px}
     .dot{width:8px;height:8px;border-radius:50%}
@@ -510,14 +510,13 @@
           <div :class="'repos' + ($store.dashboard.selectedRepo !== 'all' ? ' single-repo' : '')">
             <div class="empty" x-show="!!emptyMessage" x-text="emptyMessage"></div>
             <template x-for="repo in visibleRepos" :key="repo.path">
-              <section :class="'repo' + (isCollapsed(repo.path) ? ' collapsed' : '')">
+              <section :class="'repo' + (isCollapsed(repo.path) ? ' collapsed' : '')" x-show="getTotalItems(repo) > 0">
                 <div class="repo-h" x-on:click.stop="toggleCollapse(repo.path)">
                   <strong x-text="repo.displayPath"></strong>
                   <span x-html="repoSummaryText(repo)"></span>
                   <span x-html="buildAskAgentHtml(repo.path)" x-on:click.stop="handleAskClick($event)"></span>
                 </div>
                 <div class="repo-b" x-show="!isCollapsed(repo.path)">
-                  <div class="empty" x-show="getTotalItems(repo) === 0">No items in progress.</div>
                   <!-- Feature cards -->
                   <template x-for="feature in getFeatures(repo)" :key="'f-' + feature.id + '-' + feature.name">
                     <article class="card feature-card"
@@ -531,7 +530,7 @@
                       <div class="rows">
                         <template x-for="agent in sortedAgents(feature.agents)" :key="agent.id">
                           <div class="row" :class="[agent.status, 'agent-' + agent.id]">
-                            <span class="agent" x-text="AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
+                            <span class="agent" x-text="agentDisplayName(agent)"></span>
                             <span x-html="buildAgentStatusHtml(agent)"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
@@ -1972,12 +1971,19 @@
 
     const AGENT_DISPLAY_NAMES = { cc: 'Claude Code', gg: 'Gemini', cx: 'Codex', cu: 'Cursor', solo: 'Agent' };
 
-    function buildAgentStatusHtml(agent, { isDrive = false } = {}) {
+    function isSoloDrive(agent) { return agent.id === 'solo' && !agent.tmuxSession; }
+
+    function agentDisplayName(agent) {
+      return isSoloDrive(agent) ? 'Drive' : (AGENT_DISPLAY_NAMES[agent.id] || agent.id);
+    }
+
+    function buildAgentStatusHtml(agent) {
       const status = agent.status || 'idle';
       const tmuxRunning = agent.tmuxRunning || false;
+      const drive = isSoloDrive(agent);
       let icon, label, cls;
-      if (status === 'implementing' && (tmuxRunning || isDrive)) {
-        icon = '●'; label = isDrive ? 'Implementing' : 'Running'; cls = 'status-running';
+      if (status === 'implementing' && (tmuxRunning || drive)) {
+        icon = '●'; label = drive ? 'Implementing' : 'Running'; cls = 'status-running';
       } else if (status === 'implementing' && !tmuxRunning) {
         icon = '○'; label = 'Session ended'; cls = 'status-ended';
       } else if (status === 'waiting') {
@@ -2144,7 +2150,7 @@
       } else if (isSoloDriveBranch) {
         // Drive mode (branch): same visual structure as agent sections but labeled "Drive"
         const soloAgent = agents[0];
-        const statusHtml = buildAgentStatusHtml(soloAgent, { isDrive: true });
+        const statusHtml = buildAgentStatusHtml(soloAgent);
         innerHtml += '<div class="kcard-agent agent-solo">' +
           '<div class="kcard-agent-header"><span class="kcard-agent-name">Drive</span>' + statusHtml + '</div>' +
           '</div>';
