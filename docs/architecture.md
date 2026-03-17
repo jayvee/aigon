@@ -29,11 +29,45 @@ The CLI is intentionally split into layers:
 
 Current command families:
 
-- `lib/commands/feature.js`
-- `lib/commands/research.js`
-- `lib/commands/feedback.js`
-- `lib/commands/setup.js`
-- `lib/commands/misc.js`
+| File | Commands |
+|------|----------|
+| `lib/commands/feature.js` | All `feature-*` handlers, `sessions-close` |
+| `lib/commands/research.js` | All `research-*` handlers |
+| `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
+| `lib/commands/infra.js` | `conductor`, `dashboard`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile` |
+| `lib/commands/setup.js` | `init`, `install-agent`, `check-version`, `update`, `doctor` |
+| `lib/commands/misc.js` | `agent-status`, `status`, `deploy`, `next`, `help` |
+
+### The ctx pattern
+
+Commands receive dependencies via a `ctx` object rather than flat destructuring:
+
+```js
+// lib/commands/shared.js builds ctx and composes all domains
+function buildCtx(overrides = {}) {
+    return {
+        utils:      { ...utils, ...overrides },
+        git:        { ...git, ...overrides },
+        board:      { ...board, ...overrides },
+        feedback:   { ...feedbackLib, ...overrides },
+        validation: { ...validation, ...overrides },
+        stateMachine,
+    };
+}
+
+// each domain file
+module.exports = function featureCommands(ctx) {
+    return {
+        'feature-create': (args) => {
+            const branch = ctx.git.getCurrentBranch();
+            const { PATHS } = ctx.utils;
+            // ...
+        },
+    };
+};
+```
+
+Test overrides work by merging into ctx: `createAllCommands({ getCurrentBranch: () => 'mock' })`.
 
 Current shared modules:
 
