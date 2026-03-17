@@ -20,3 +20,4 @@ docs/agents/
 
 # Aigon version tracking (per-project)
 .aigon/
+test/fixtures/
