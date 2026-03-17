@@ -978,6 +978,16 @@ These are ephemeral — not checked into any repo. The `servers.json` registry i
 
 **Port already in use:** `aigon dev-server start` auto-allocates an available port. If you see errors, run `aigon dev-server gc` to clean up stale entries from crashed processes, then try again.
 
+**Dashboard shows wrong data or behaves unexpectedly:** Check the dashboard log for errors and warnings:
+
+```bash
+tail -50 ~/.aigon/dashboard.log
+```
+
+The log records every warning emitted during startup and operation, including config parse failures, stale registry entries removed, and file permission errors. Parse warnings look like `[global config] Warning: Unexpected token ...` and indicate a corrupted config file.
+
+**Stale registry entries:** The dashboard automatically validates the server registry on each startup. If processes died without deregistering, you'll see `Registry: N live, M stale removed` printed to the console and logged. To manually trigger a cleanup: `aigon dev-server gc`.
+
 ---
 
 ## Opening Worktrees
