@@ -189,15 +189,54 @@ right for Aigon (not all projects are containerized), but the native app insight
 ---
 
 ## Findings
-<!-- To be filled in by research agent -->
+
+### Consensus (CC + GG)
+- **Traefik is not viable** — its API is read-only (no dynamic route creation). Worse than Caddy for this use case.
+- **The Caddyfile desync is the core reliability bug** — the "write file + reload" pattern causes silent failures when the admin API socket isn't ready or the reload doesn't apply.
+- **A Node.js embedded proxy is technically viable** — both agents confirmed a ~60-line `node:http` proxy could replace Caddy, reading `servers.json` directly.
+- **macOS `pfctl` can handle port 80 binding** — redirecting port 80 → unprivileged port avoids running the proxy as root.
+- **dnsmasq works reliably once configured** — no zero-sudo DNS wildcard alternative exists; `/etc/resolver/` always needs sudo once. All prior art (Valet, Herd, DDEV, Orbstack) uses the same approach.
+
+### Divergent Views
+- **CC recommended** fixing Caddy by switching to its JSON admin API with `@id` tags — lower risk, keeps proven tool, eliminates the desync class.
+- **GG recommended** replacing both Caddy and dnsmasq entirely — switch to `.localhost` TLD (browser-native resolution) + built-in Node.js proxy on port 8080. Bolder but bigger rewrite, and `.localhost:8080` URLs are uglier.
+
+### Decision
+Keep Caddy + dnsmasq. Two brew dependencies are normal for a tool of this complexity (Valet requires 3, DDEV requires Docker). The real problem was never the dependencies — it was silent failures after setup. Fix the integration layer, not the architecture.
 
 ---
 
 ## Recommendation
-<!-- To be filled in by research agent -->
+
+**Harden Caddy integration with API-driven route management and self-healing diagnostics.**
+
+1. **Switch to Caddy's JSON admin API** — replace Caddyfile generation with per-route `POST /config/...` with `@id` tags. Routes are added/removed individually via HTTP with immediate confirmation. Eliminates the entire "wrote file but reload didn't apply" failure class.
+
+2. **Replace `pgrep caddy` health checks** with admin API calls (`GET localhost:2019/config/`). Add `proxyDiagnostics()` that returns actionable fix suggestions instead of a boolean.
+
+3. **Self-heal on startup** — reconcile `servers.json` with Caddy's live config. Re-register missing routes, remove stale ones. Users should never need to manually fix desync.
 
 ---
 
 ## Output
-- [ ] Feature: implement chosen proxy approach (replaces current Caddy/dnsmasq stack or hardens it)
-- [ ] Feature: improve `aigon proxy-setup` / `aigon setup` first-run experience
+
+### Selected Features
+
+| Feature Name | Description | Priority | Create Command |
+|--------------|-------------|----------|----------------|
+| proxy-caddy-api-routes | Switch from Caddyfile generation to Caddy JSON admin API with @id tags for per-route add/delete | high | `aigon feature-create "proxy-caddy-api-routes"` |
+| proxy-health-check | Replace `pgrep caddy` with admin API health check; add `proxyDiagnostics()` with actionable fix suggestions | high | `aigon feature-create "proxy-health-check"` |
+| proxy-crash-recovery | On startup, reconcile servers.json with Caddy's live config; re-register missing routes, remove stale ones | medium | `aigon feature-create "proxy-crash-recovery"` |
+
+### Feature Dependencies
+- proxy-health-check depends on proxy-caddy-api-routes (needs admin API to be the primary interface)
+- proxy-crash-recovery depends on proxy-caddy-api-routes (reconciliation uses GET /config/ endpoint)
+
+### Not Selected
+- `switch-to-localhost` (GG): `.localhost:8080` URLs are uglier; `.test` with dnsmasq is well-understood and all prior art uses it
+- `proxy-node-embedded` (CC+GG): Not needed if Caddy API fixes the reliability issues; revisit if Caddy proves fundamentally unreliable on macOS
+- `proxy-setup-wizard`: Good idea but not the priority — the current setup works, failures happen at runtime not setup time
+- `proxy-pfctl-setup`: Only needed for the Node.js proxy path, which was not selected
+- `proxy-port-fallback`: Already works as-is; low priority
+- `proxy-local-https`: Nice-to-have, not blocking anything
+- `puma-dev-spike` (GG): External Ruby dependency, not worth investigating
