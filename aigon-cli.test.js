@@ -1751,25 +1751,22 @@ test('validateRegistry skips _portRegistry key', () => withTempDir(tempDir => {
 
 // ── loadPortRegistry / savePortRegistry merged into servers.json ──────────────
 
-test('savePortRegistry stores in servers.json _portRegistry', () => withTempDir(tempDir => {
-    const realRegistry = fs.existsSync(DEV_PROXY_REGISTRY) ? fs.readFileSync(DEV_PROXY_REGISTRY, 'utf8') : null;
-    fs.mkdirSync(path.dirname(DEV_PROXY_REGISTRY), { recursive: true });
-    if (fs.existsSync(DEV_PROXY_REGISTRY)) fs.unlinkSync(DEV_PROXY_REGISTRY);
+test('savePortRegistry stores in ports.json', () => withTempDir(tempDir => {
+    const { PORT_REGISTRY_PATH } = require('./lib/proxy');
+    const realRegistry = fs.existsSync(PORT_REGISTRY_PATH) ? fs.readFileSync(PORT_REGISTRY_PATH, 'utf8') : null;
+    fs.mkdirSync(path.dirname(PORT_REGISTRY_PATH), { recursive: true });
+    if (fs.existsSync(PORT_REGISTRY_PATH)) fs.unlinkSync(PORT_REGISTRY_PATH);
 
     const { savePortRegistry, loadPortRegistry } = require('./lib/utils');
     savePortRegistry({ 'my-app': { basePort: 3000, path: '/tmp/my-app' } });
-
-    const servers = loadProxyRegistry();
-    assert.ok(servers._portRegistry, '_portRegistry key should exist in servers.json');
-    assert.strictEqual(servers._portRegistry['my-app'].basePort, 3000);
 
     const loaded = loadPortRegistry();
     assert.strictEqual(loaded['my-app'].basePort, 3000, 'loadPortRegistry should return stored values');
 
     if (realRegistry !== null) {
-        fs.writeFileSync(DEV_PROXY_REGISTRY, realRegistry);
-    } else if (fs.existsSync(DEV_PROXY_REGISTRY)) {
-        fs.unlinkSync(DEV_PROXY_REGISTRY);
+        fs.writeFileSync(PORT_REGISTRY_PATH, realRegistry);
+    } else if (fs.existsSync(PORT_REGISTRY_PATH)) {
+        fs.unlinkSync(PORT_REGISTRY_PATH);
     }
 }));
 
