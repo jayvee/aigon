@@ -1298,9 +1298,30 @@ The CLI is split into focused domain modules. When modifying behaviour, look in 
 | `lib/utils.js` | Shared utilities: hooks system, YAML parsers, spec CRUD, analytics, version, deploy |
 | `lib/git.js` | All git operations — single source of truth |
 | `lib/state-machine.js` | Action modes and valid state transitions for dashboard |
-| `lib/commands/` | Per-domain command implementations |
+| `lib/commands/shared.js` | Thin factory (~150 lines) — builds `ctx`, composes domain files, hosts deprecated aliases |
+| `lib/commands/feature.js` | All `feature-*` handlers and `sessions-close` |
+| `lib/commands/research.js` | All `research-*` handlers |
+| `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
+| `lib/commands/infra.js` | `conductor`, `dashboard`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile` |
+| `lib/commands/setup.js` | `init`, `install-agent`, `check-version`, `update`, `doctor` |
+| `lib/commands/misc.js` | `agent-status`, `status`, `deploy`, `next`, `help` |
 
-Each module `require()`s only what it needs. `lib/utils.js` re-exports all sub-modules for backward compatibility with `lib/commands/shared.js` scope spreading.
+Each module `require()`s only what it needs. All command domain files receive dependencies via a `ctx` object rather than flat destructuring.
+
+### Adding a new command
+
+1. Identify which domain the command belongs to (feature, research, infra, setup, misc, or feedback).
+2. Open `lib/commands/<domain>.js` and add a new key to the returned commands object:
+   ```js
+   'my-command': (args) => {
+       const { PATHS } = ctx.utils;
+       const branch = ctx.git.getCurrentBranch();
+       // ...
+   },
+   ```
+3. Add it to the `names` array in that file's `create<Domain>Commands` backward-compat wrapper.
+4. Register it in `lib/templates.js` if it needs a slash-command template (add to the registry map).
+5. Run `npm test` to confirm nothing broke.
 
 ---
 
