@@ -91,6 +91,19 @@ Fill in the evaluation table scoring each implementation on:
 - Performance
 - Maintainability
 
+Use this exact table format with Unicode box-drawing characters throughout (no plain `|` pipes):
+
+```
+  ┌────────┬───────┬───────┬──────────┬───────┐
+  │ Agent  │ Lines │ Tests │ Coverage │ Score │
+  ├────────┼───────┼───────┼──────────┼───────┤
+  │ cc     │   94  │  8/8  │   91%    │ 36/40 │
+  │ cx     │   71  │  8/8  │   88%    │ 34/40 │
+  └────────┴───────┴───────┴──────────┴───────┘
+```
+
+Use `│` for all column separators, `─` for horizontal lines, and the correct corner/junction characters. Align values within columns.
+
 Document:
 - Strengths & Weaknesses for each agent
 - Your recommendation for the winner
