@@ -1,13 +1,24 @@
 ---
-status: implementing
-updated: 2026-03-17T14:26:01.242Z
+status: submitted
+updated: 2026-03-17T14:40:54.973Z
 startedAt: 2026-03-17T14:25:25.516Z
 events:
   - { ts: "2026-03-17T14:25:25.516Z", status: implementing }
   - { ts: "2026-03-17T14:26:01.242Z", status: implementing }
+  - { ts: "2026-03-17T14:39:57.196Z", status: waiting }
+  - { ts: "2026-03-17T14:40:54.973Z", status: submitted }
 ---
 
 # Implementation Log: Feature 83 - remove-radar-dead-code
+
+## Plan
+
+1. Audit all radar references across lib/, templates/, tests, and docs
+2. Classify each reference as dead code (remove) or live-but-misnamed (rename)
+3. Remove dead functions, constants, command, and re-exports
+4. Rename live functions from Radar→Dashboard
+5. Update all tests
+6. Rewrite stale docs (README, GUIDE, dashboard.md, help.txt)
 
 ## Summary
 
