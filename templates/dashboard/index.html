@@ -26,7 +26,9 @@
     /* Dashboard body: sidebar + detail */
     .dashboard-body{display:flex;flex:1;min-height:0;margin-top:8px}
     /* Repo sidebar */
-    .repo-sidebar{width:200px;flex-shrink:0;overflow-y:auto;border-right:1px solid var(--border-subtle);padding:6px 0;display:flex;flex-direction:column;gap:1px}
+    .repo-sidebar{width:var(--sidebar-width,240px);min-width:140px;max-width:400px;flex-shrink:0;overflow-y:auto;border-right:1px solid var(--border-subtle);padding:6px 0;display:flex;flex-direction:column;gap:1px;position:relative}
+    .sidebar-resize{position:absolute;top:0;right:-3px;width:6px;height:100%;cursor:col-resize;z-index:10}
+    .sidebar-resize:hover,.sidebar-resize.active{background:var(--accent);opacity:.4}
     .sidebar-item{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;background:none;border:none;border-left:3px solid transparent;color:var(--text-secondary);cursor:pointer;font:inherit;font-size:13px;text-align:left;transition:background .12s ease,color .12s ease}
     .sidebar-item:hover{background:var(--bg-hover);color:var(--text-primary)}
     .sidebar-item.active{border-left-color:var(--accent);background:var(--bg-elevated);color:var(--text-primary)}
@@ -417,7 +419,7 @@
     </nav>
     <select id="repo-select-mobile" class="repo-select-mobile" aria-label="Select repository"></select>
     <div class="dashboard-body">
-      <nav id="repo-sidebar" class="repo-sidebar" role="listbox" aria-label="Repository selector"></nav>
+      <nav id="repo-sidebar" class="repo-sidebar" role="listbox" aria-label="Repository selector"><div class="sidebar-resize" id="sidebar-resize"></div></nav>
       <div class="detail-area" id="detail-area">
         <div id="repo-header" class="repo-header-bar" x-ignore style="display:none"></div>
 
@@ -1268,7 +1270,7 @@
         else if (stats.hasWaiting) indicatorsHtml += '<span class="sidebar-dot waiting"></span>';
         if (stats.totalItems > 0) indicatorsHtml += '<span class="sidebar-badge">' + stats.totalItems + '</span>';
 
-        btn.innerHTML = '<span class="sidebar-name">' + escHtml(repo.displayPath) + '</span>' +
+        btn.innerHTML = '<span class="sidebar-name">' + escHtml(repo.name) + '</span>' +
           (indicatorsHtml ? '<span class="sidebar-indicators">' + indicatorsHtml + '</span>' : '');
         btn.onclick = () => selectRepo(repo.path);
         sidebar.appendChild(btn);
@@ -2156,8 +2158,40 @@
         return;
       }
       const DONE_CAP = 6;
-      const displayCards = (stage === 'done' && cards.length > DONE_CAP) ? cards.slice(0, DONE_CAP) : cards;
+      const OVERFLOW_CAP = 8;
+      const shouldCapOverflow = (stage === 'backlog' || stage === 'inbox') && cards.length > OVERFLOW_CAP;
+      const displayCards = (stage === 'done' && cards.length > DONE_CAP) ? cards.slice(0, DONE_CAP)
+        : shouldCapOverflow ? cards.slice(0, OVERFLOW_CAP) : cards;
       displayCards.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType)));
+      if (shouldCapOverflow) {
+        const hiddenCards = cards.slice(OVERFLOW_CAP);
+        const hiddenContainer = document.createElement('div');
+        hiddenContainer.style.display = 'none';
+        hiddenCards.forEach(feature => hiddenContainer.appendChild(buildKanbanCard(feature, repo.path, pType)));
+        colBody.appendChild(hiddenContainer);
+        const moreBtn = document.createElement('button');
+        moreBtn.className = 'btn';
+        moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
+        moreBtn.textContent = (cards.length - OVERFLOW_CAP) + ' more …';
+        moreBtn.onclick = () => {
+          hiddenContainer.style.display = '';
+          moreBtn.remove();
+          // Wire up valid-action buttons on revealed cards
+          hiddenContainer.querySelectorAll('.kcard-va-btn').forEach(btn => {
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              const action = btn.getAttribute('data-va-action') || '';
+              const agentId = btn.getAttribute('data-agent') || null;
+              const card = btn.closest('.kcard');
+              const featureId = card ? card.dataset.featureId : '';
+              const featureName = card ? card.dataset.featureName : '';
+              const feature = (repo[pType] || []).find(f => String(f.id) === String(featureId)) || { id: featureId, name: featureName, stage: card ? card.dataset.stage : '' };
+              handleValidAction({ action, agentId, label: btn.textContent }, feature, repo.path, btn, pType);
+            };
+          });
+        };
+        colBody.appendChild(moreBtn);
+      }
       if (stage === 'done' && cards.length > DONE_CAP) {
         const doneTotalKey = pType === 'research' ? 'researchDoneTotal' : pType === 'feedback' ? 'feedbackDoneTotal' : 'doneTotal';
         const totalDone = repo[doneTotalKey] || cards.length;
@@ -3602,6 +3636,33 @@
         render();
       };
     });
+
+    // Sidebar resize
+    (() => {
+      const sidebar = document.getElementById('repo-sidebar');
+      const handle = document.getElementById('sidebar-resize');
+      const saved = localStorage.getItem('aigon-sidebar-width');
+      if (saved) sidebar.style.setProperty('--sidebar-width', saved + 'px');
+      let startX, startW;
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        startX = e.clientX;
+        startW = sidebar.offsetWidth;
+        handle.classList.add('active');
+        const onMove = (e) => {
+          const w = Math.min(400, Math.max(140, startW + e.clientX - startX));
+          sidebar.style.setProperty('--sidebar-width', w + 'px');
+        };
+        const onUp = () => {
+          handle.classList.remove('active');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          localStorage.setItem('aigon-sidebar-width', sidebar.offsetWidth);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    })();
   </script>
 </body>
 </html>`;
