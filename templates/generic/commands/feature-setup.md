@@ -52,7 +52,7 @@ After the CLI completes:
 
 After the CLI completes, open the worktree using:
 ```
-{{CMD_PREFIX}}worktree-open 55
+{{CMD_PREFIX}}feature-open 55
 ```
 
 This opens Warp terminal with the agent CLI running `{{CMD_PREFIX}}feature-do` automatically.
@@ -63,14 +63,14 @@ Remember that `{{CMD_PREFIX}}feature-close` must be run from the main repo later
 
 After the CLI completes, open all worktrees side-by-side:
 ```bash
-{{CMD_PREFIX}}worktree-open 55 --all         # Opens all Fleet agents side-by-side in Warp
+{{CMD_PREFIX}}feature-open 55 --all         # Opens all Fleet agents side-by-side in Warp
 ```
 
 Or open individually:
 ```
-{{CMD_PREFIX}}worktree-open 55 cc    # Open Claude's worktree
-{{CMD_PREFIX}}worktree-open 55 gg    # Open Gemini's worktree
-{{CMD_PREFIX}}worktree-open 55 cx    # Open Codex's worktree
+{{CMD_PREFIX}}feature-open 55 cc    # Open Claude's worktree
+{{CMD_PREFIX}}feature-open 55 gg    # Open Gemini's worktree
+{{CMD_PREFIX}}feature-open 55 cx    # Open Codex's worktree
 ```
 
 Each terminal opens with the agent CLI running `{{CMD_PREFIX}}feature-do` automatically. After all implementations complete, return to main repo and run `{{CMD_PREFIX}}feature-eval 55` to compare.
@@ -87,5 +87,5 @@ Each terminal opens with the agent CLI running `{{CMD_PREFIX}}feature-do` automa
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID and choose based on mode:
 
 - **Drive mode (branch):** `{{CMD_PREFIX}}feature-do <ID>`
-- **Drive worktree:** `{{CMD_PREFIX}}worktree-open <ID>`
-- **Fleet:** `{{CMD_PREFIX}}worktree-open <ID> --all`
+- **Drive worktree:** `{{CMD_PREFIX}}feature-open <ID>`
+- **Fleet:** `{{CMD_PREFIX}}feature-open <ID> --all`
