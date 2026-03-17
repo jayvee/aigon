@@ -1,11 +1,12 @@
 ---
-status: waiting
-updated: 2026-03-17T14:39:57.196Z
+status: submitted
+updated: 2026-03-17T14:40:54.973Z
 startedAt: 2026-03-17T14:25:25.516Z
 events:
   - { ts: "2026-03-17T14:25:25.516Z", status: implementing }
   - { ts: "2026-03-17T14:26:01.242Z", status: implementing }
   - { ts: "2026-03-17T14:39:57.196Z", status: waiting }
+  - { ts: "2026-03-17T14:40:54.973Z", status: submitted }
 ---
 
 # Implementation Log: Feature 83 - remove-radar-dead-code
