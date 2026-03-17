@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+# Mock tmux shim for Aigon e2e tests.
+# - Records every invocation to $AIGON_MOCK_LOG (if set)
+# - Exits with $AIGON_MOCK_EXIT (if set), else exits 0
+
+if [ -n "$AIGON_MOCK_LOG" ]; then
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) tmux $@ [cwd=$(pwd)]" >> "$AIGON_MOCK_LOG"
+fi
+
+exit "${AIGON_MOCK_EXIT:-0}"
