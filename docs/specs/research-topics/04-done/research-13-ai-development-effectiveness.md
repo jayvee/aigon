@@ -1,6 +1,6 @@
 # Research: AI Development Effectiveness
 
-**Status:** inbox
+**Status:** done
 **Created:** 2026-03-17
 
 ## Context
@@ -102,3 +102,65 @@ If we introduce a dashboard section or score for this, how do we frame it?
 - **DORA metrics** — deployment frequency, lead time, change failure rate, MTTR
 - **SPACE framework** (Microsoft Research) — Satisfaction, Performance, Activity, Communication, Efficiency
 - **DevEx** — Developer Experience metrics, published by DX + GitHub
+
+## Synthesis
+
+### Naming Decision
+
+**AADE (Aigon AI Development Effectiveness)** confirmed as the official name. "AIDE" was considered but rejected — three conflicts: Aide by CodeStory (YC-backed AI IDE at aide.dev), AIDE (Advanced Intrusion Detection Environment, well-known Linux tool), and name proximity to Aider (aider.chat). AADE has zero conflicts. User-facing dashboard label: **"Amplification"**.
+
+### Consensus (Both Agents Agreed)
+
+1. Tokens per feature is meaningful but needs normalisation — trend over time matters more than any single number
+2. Git signals (commit churn, fix cascades, reverts) reliably detect rework and thrashing
+3. Competitive landscape is entirely team/org-focused — no tool serves the individual solo developer (genuine whitespace)
+4. Token/cost capture is the highest-priority missing data
+5. "Amplification" framing resonates — motivating, non-judgmental
+
+### Divergent Views
+
+- **Token capture mechanism:** Claude recommended SessionEnd hook parsing transcript JSONL (verified working); Gemini recommended OpenTelemetry integration — both are valid adapter approaches
+- **Interaction overhead:** Claude favoured wait-event count (already tracked); Gemini favoured turn/message count (new tracking needed)
+- **Composite score:** Gemini wanted a "Leverage Score" composite; Claude recommended against it initially. Decision: no composite score — individual indicators are more actionable for a solo developer
+- **Cursor data:** Claude says no per-session tokens available; Gemini claims a private Dashboard API exists. Resolved by the adapter model — each agent adapter captures what it can
+
+### Key Architectural Decision: Agent Adapter Model
+
+Aigon is multi-agent. Each agent (cc, gg, cu, etc.) exposes different telemetry. Rather than a single capture mechanism, AADE uses an **adapter model**: when you add an agent to Aigon, part of the agent definition includes how to gather telemetry for that agent. The adapter normalises data into a common schema stored in log frontmatter.
+
+### Storage Decision: Frontmatter
+
+All AADE telemetry stored as flat scalar fields in existing feature log frontmatter. Adds ~15 fields per feature (~200 bytes). Scales well to hundreds of features — already parsed by `parseLogFrontmatterFull()`, git-friendly diffs, no new files or databases needed. Per-turn granularity is explicitly not stored — only aggregated totals.
+
+### Commercial Gating
+
+AADE is the foundation of Aigon's commercial product offering:
+- **Free tier (Aigon OSS):** Core workflow — feature lifecycle, Kanban board, agent orchestration, basic dashboard with throughput and cycle time
+- **Commercial tier (AADE/Amplification):** Token/cost tracking, git signal analysis, rework detection, amplification dashboard, AI-powered insights and coaching
+
+The AI insights layer has per-call API costs that justify a subscription. Every competitor charges for analytics. The individual-developer positioning is differentiated.
+
+## Recommendation
+
+Start with what's cheap and high-value. Aigon already has the strongest interaction/autonomy metrics in the space. The four features below fill the gaps with minimal code, leverage existing data, and build toward the commercial Amplification tier.
+
+## Output
+
+### Selected Features
+
+| Feature Name | Description | Priority | Create Command |
+|--------------|-------------|----------|----------------|
+| aade-telemetry-adapters | Agent adapter model for telemetry capture — each agent gets an adapter that extracts tokens, cost, turns, and autonomy labels into a common schema. Claude Code adapter parses transcript JSONL via SessionEnd hook. Includes token normalisation (tokens-per-line-changed). Adapter interface so future agents plug in cleanly. | high | `aigon feature-create "aade-telemetry-adapters"` |
+| aade-git-signals | At feature-close, compute git metrics per branch: commit count, lines changed, files touched, fix-commit ratio. Flag rework patterns (thrashing: 5+ commits same file, fix cascades: 3+ fix commits, scope creep: files >> spec). Store in log frontmatter. | high | `aigon feature-create "aade-git-signals"` |
+| aade-amplification-dashboard | New "Amplification" dashboard section with cost-per-feature cards, rolling trend sparklines, autonomy spectrum labels (Full Autonomy / Light Touch / Guided / Collaborative / Thrashing), first-pass rate, and rework indicators. | medium | `aigon feature-create "aade-amplification-dashboard"` |
+| aade-insights | Three-phase insights engine: (1) rule-based CLI `aigon insights` with 5-10 trend/outlier checks, zero LLM cost; (2) LLM-narrated coaching via Claude API with developer workflow coach prompt; (3) dashboard "Insights" tab with cached results and refresh. Commercial gate candidate — free tier gets rule-based, paid tier gets AI coaching. | medium | `aigon feature-create "aade-insights"` |
+
+### Feature Dependencies
+
+- aade-amplification-dashboard depends on aade-telemetry-adapters and aade-git-signals
+- aade-insights depends on aade-amplification-dashboard (needs data to analyse)
+
+### Not Selected
+
+- **Composite "Leverage Score":** Individual indicators are more actionable for a solo developer than a single number. Can revisit once indicators are established and users want a rollup.
+- **Per-turn message tracking:** Wait-event model already captures interaction overhead better than raw message counts. Marginal gain for significant complexity.
