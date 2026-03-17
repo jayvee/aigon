@@ -46,21 +46,26 @@ Current shared modules:
 - `lib/validation.js` (~1,131 lines): Ralph/autonomous loop and smart validation helpers
   `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`, `runFeatureValidateCommand`
 
-**Thin re-export facades** (re-export from `lib/utils.js`; logic lives there):
+**Domain modules** (logic lives in the module itself):
 
-- `lib/constants.js`: registries, path constants, command metadata, agent metadata
-- `lib/config.js`: global and project config, profiles, model/config resolution
-  `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`
-- `lib/devserver.js`: port allocation, dev-server helpers
-  `allocatePort`, `registerDevServer`, `spawnDevServer`, `waitForHealthy`
-- `lib/dashboard.js`: dashboard status aggregation, HTML generation, foreground server
-  `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardServer`, `detectDashboardContext`
-- `lib/worktree.js`: worktree discovery, terminal launching, tmux helpers
-  `setupWorktreeEnvironment`, `ensureAgentSessions`
-- `lib/hooks.js`: hook parsing and execution
-- `lib/templates.js`: template loading, placeholder expansion, agent-install helpers
-  `readTemplate`, `processTemplate`, `readGenericTemplate`, `formatCommandOutput`
-- `lib/utils.js` (~6,205 lines): shared implementation surface for all facade modules; see NAVIGATION index at top of file
+- `lib/proxy.js` (~950 lines): Caddy management, port allocation, dev-proxy registry, route reconciliation
+  `generateCaddyfile`, `reloadCaddy`, `registerDevServer`, `deregisterDevServer`, `reconcileProxyRoutes`, `allocatePort`
+- `lib/dashboard-server.js` (~1,100 lines): HTTP server, polling, WebSocket relay, notifications, action dispatch
+  `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
+- `lib/worktree.js` (~1,100 lines): worktree creation, permissions, tmux sessions, terminal launching
+  `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
+- `lib/config.js` (~950 lines): global/project config, profiles, agent CLI config, editor detection
+  `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`, `getAgentCliConfig`
+- `lib/templates.js` (~550 lines): template loading, command registry, scaffolding, content generation
+  `readTemplate`, `processTemplate`, `readGenericTemplate`, `formatCommandOutput`, `COMMAND_REGISTRY`
+- `lib/utils.js` (~1,500 lines): shared utilities — hooks, YAML parsers, spec CRUD, analytics, version, deploy
+  `parseHooksFile`, `parseFrontMatter`, `findFile`, `collectAnalyticsData`, `safeWrite`
+
+**Thin re-export facades:**
+
+- `lib/constants.js`: re-exports command metadata and path constants (used by `aigon-cli.js`)
+- `lib/dashboard.js`: re-exports from `lib/dashboard-server.js` (backward compat)
+- `lib/devserver.js`: re-exports from `lib/proxy.js` (backward compat)
 
 ## Workflow State
 
