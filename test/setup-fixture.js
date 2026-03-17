@@ -21,10 +21,11 @@
 'use strict';
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawnSync, execFileSync } = require('child_process');
 
-const FIXTURES_DIR = path.join(__dirname, 'fixtures');
+const FIXTURES_DIR = path.join(os.homedir(), 'src');
 const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -71,16 +72,18 @@ function commit(cwd, message) {
 
 // ─── feature spec helpers ─────────────────────────────────────────────────────
 
-function featureInboxContent(title, summary) {
-    return `# Feature: ${title}\n\n## Summary\n\n${summary}\n\n## User Stories\n\n- [ ] As a user, I want to ${title.toLowerCase()} so that I can improve my workflow\n\n## Acceptance Criteria\n\n- [ ] Feature is implemented and working\n- [ ] Tests pass\n\n## Technical Approach\n\nTBD\n`;
+function featureInboxContent(title, summary, ac, approach) {
+    const acLines = (ac || ['Feature is implemented and working']).map(a => `- [ ] ${a}`).join('\n');
+    const techApproach = approach || 'Implement as described in the acceptance criteria. Keep changes minimal.';
+    return `# Feature: ${title}\n\n## Summary\n\n${summary}\n\n## Acceptance Criteria\n\n${acLines}\n\n## Technical Approach\n\n${techApproach}\n\n## Out of Scope\n\n- Do NOT write tests\n- Do NOT add documentation\n- Do NOT refactor existing code\n- Only create/edit the files listed in the acceptance criteria\n\n## Validation\n\n\`\`\`bash\necho "Feature ${title} validated"\n\`\`\`\n`;
 }
 
-function featureBacklogContent(id, title, summary) {
-    return featureInboxContent(title, summary);
+function featureBacklogContent(id, title, summary, ac, approach) {
+    return featureInboxContent(title, summary, ac, approach);
 }
 
-function featureInProgressContent(id, title, summary) {
-    return featureInboxContent(title, summary);
+function featureInProgressContent(id, title, summary, ac, approach) {
+    return featureInboxContent(title, summary, ac, approach);
 }
 
 function featureDoneContent(id, title, summary) {
@@ -92,12 +95,27 @@ function logContent(num, desc, status = 'implementing') {
     return `---\nstatus: ${status}\nupdated: ${now}\nstartedAt: ${now}\nevents:\n  - { ts: "${now}", status: ${status} }\n---\n\n# Implementation Log: Feature ${num} - ${desc}\n\n## Plan\n\nImplemented the feature as specified.\n\n## Progress\n\nCompleted all acceptance criteria.\n\n## Decisions\n\nUsed standard patterns consistent with existing codebase.\n`;
 }
 
+function writeFixtureConfig(repoDir) {
+    // Use haiku for all agents in fixture repos to save tokens
+    const config = {
+        agents: {
+            cc: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } },
+            gg: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } },
+            cx: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } },
+            cu: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } }
+        }
+    };
+    const aigonDir = path.join(repoDir, '.aigon');
+    fs.mkdirSync(aigonDir, { recursive: true });
+    write(path.join(aigonDir, 'config.json'), JSON.stringify(config, null, 2) + '\n');
+}
+
 function researchContent(title, summary) {
     return `# Research: ${title}\n\n## Summary\n\n${summary}\n\n## Questions\n\n- [ ] What are the main trade-offs?\n- [ ] What do competitors do?\n\n## Findings\n\nTBD\n`;
 }
 
-function feedbackContent(id, title, summary, status, type = 'bug') {
-    return `---\nid: ${id}\ntitle: ${title}\nstatus: ${status}\ntype: ${type}\nseverity: medium\n---\n\n# Feedback: ${title}\n\n## Summary\n\n${summary}\n\n## Evidence\n\nSteps to reproduce or supporting screenshots.\n\n## Impact\n\nMedium impact on user experience.\n`;
+function feedbackContent(id, title, summary, status, type = 'bug', severity = 'medium', evidence = '', impact = '') {
+    return `---\nid: ${id}\ntitle: ${title}\nstatus: ${status}\ntype: ${type}\nseverity: ${severity}\n---\n\n# Feedback: ${title}\n\n## Summary\n\n${summary}\n\n## Evidence\n\n${evidence || 'Awaiting reproduction steps.'}\n\n## Impact\n\n${impact || 'Assessing user impact.'}\n`;
 }
 
 // ─── brewboard fixture ────────────────────────────────────────────────────────
@@ -138,34 +156,64 @@ function createBrewboard(repoDir) {
 
     // Initialize aigon
     runAigon(['init'], repoDir);
+    writeFixtureConfig(repoDir);
     commit(repoDir, 'chore: initialize aigon spec structure');
 
     // ── features/01-inbox (2 items, no ID) ──────────────────────────────────
     const inboxDir = path.join(repoDir, 'docs', 'specs', 'features', '01-inbox');
 
     write(path.join(inboxDir, 'feature-beer-style-filters.md'),
-        featureInboxContent('Beer Style Filters', 'Allow users to filter their collection by beer style (IPA, Stout, Lager, etc.) with multi-select chips on the collection page.'));
+        featureInboxContent('Beer Style Filters',
+            'Add a utility function that filters an array of beers by style.',
+            ['Create `src/lib/filter-by-style.ts` exporting `function filterByStyle(beers: Beer[], styles: string[]): Beer[]`',
+             'Return beers where `beer.style` matches any of the given styles (case-insensitive)'],
+            'Array.filter with includes check. One file, one function.'));
 
     write(path.join(inboxDir, 'feature-social-sharing.md'),
-        featureInboxContent('Social Sharing', 'Let users share individual beer reviews or their top-10 list to Twitter/X and Instagram Stories with a generated image card.'));
+        featureInboxContent('Social Sharing',
+            'Add a function that generates a share URL for a beer review.',
+            ['Create `src/lib/share-url.ts` exporting `function buildShareUrl(beerName: string, rating: number, platform: "twitter" | "facebook"): string`',
+             'Twitter: return `https://twitter.com/intent/tweet?text=...` with beer name and rating',
+             'Facebook: return `https://www.facebook.com/sharer/sharer.php?u=...`'],
+            'String template building. One file, one function.'));
 
     // ── features/02-backlog (2 items, with IDs) ──────────────────────────────
     const backlogDir = path.join(repoDir, 'docs', 'specs', 'features', '02-backlog');
 
     write(path.join(backlogDir, 'feature-01-dark-mode.md'),
-        featureBacklogContent('01', 'Dark Mode', 'Add a dark mode toggle to the app. Default to the OS preference, persist the choice in localStorage, and apply via a CSS class on <html>.'));
+        featureBacklogContent('01', 'Dark Mode',
+            'Add a dark mode toggle. Read OS preference, persist choice in localStorage, apply via CSS class on <html>.',
+            ['Add a `dark` class toggle to `src/app/layout.tsx` that reads `prefers-color-scheme`',
+             'Add a `ThemeToggle` button component in `src/components/theme-toggle.tsx`',
+             'Persist theme choice to localStorage under key `brewboard-theme`'],
+            'Add a small client component for the toggle. Use `useEffect` to read localStorage on mount. Apply `className="dark"` to `<html>`.'));
 
     write(path.join(backlogDir, 'feature-02-brewery-import.md'),
-        featureBacklogContent('02', 'Brewery Import', 'Bulk-import beers from Untappd via CSV export. Parse the file, deduplicate by name+brewery, and add to the user\'s collection.'));
+        featureBacklogContent('02', 'Brewery Import',
+            'Parse a CSV file of beer names and add them to a JSON collection file.',
+            ['Create `src/lib/import-csv.ts` that reads a CSV string and returns `Array<{name: string, brewery: string}>`',
+             'Handle comma-in-quotes edge case',
+             'Deduplicate by name+brewery (case-insensitive)'],
+            'Simple string parsing — split by newline, then by comma. No external dependencies.'));
 
     // ── features/03-in-progress (2 items, with IDs) ──────────────────────────
     const inProgressDir = path.join(repoDir, 'docs', 'specs', 'features', '03-in-progress');
 
     write(path.join(inProgressDir, 'feature-03-user-profiles.md'),
-        featureInProgressContent('03', 'User Profiles', 'Public profile pages showing a user\'s collection stats, recent activity, and top-rated beers. Accessible at /u/username.'));
+        featureInProgressContent('03', 'User Profiles',
+            'Add a static profile page component that displays a username and collection count.',
+            ['Create `src/components/profile-card.tsx` with props `{ username: string, beerCount: number }`',
+             'Render username as an h2 and beer count as a paragraph',
+             'Export the component as default'],
+            'Simple presentational React component. No data fetching — just props in, JSX out.'));
 
     write(path.join(inProgressDir, 'feature-04-rating-system.md'),
-        featureInProgressContent('04', 'Rating System', 'Five-star rating system with half-star precision. Ratings are stored per user per beer and shown as an average on the beer detail page.'));
+        featureInProgressContent('04', 'Rating System',
+            'Add a star rating display component that renders 1-5 stars with half-star support.',
+            ['Create `src/components/star-rating.tsx` with props `{ rating: number }` (0.0 to 5.0)',
+             'Render filled, half-filled, and empty star characters (★ ½ ☆)',
+             'Round to nearest 0.5'],
+            'Pure function component. Use Math.round(rating * 2) / 2 for rounding. Map 5 positions to star characters.'));
 
     // ── features/05-done (2 items) ───────────────────────────────────────────
     const doneDir = path.join(repoDir, 'docs', 'specs', 'features', '05-done');
@@ -174,7 +222,7 @@ function createBrewboard(repoDir) {
         featureDoneContent('05', 'Onboarding Flow', 'Three-step onboarding wizard for new users: choose favourite styles, follow 3 breweries, add first beer.'));
 
     write(path.join(doneDir, 'feature-06-search.md'),
-        featureDoneContent('06', 'Search', 'Full-text search across beers, breweries, and styles using a Postgres tsvector index. Results ranked by relevance with highlighted matches.'));
+        featureDoneContent('06', 'Search', 'Full-text search across beers, breweries, and styles. Results ranked by relevance with highlighted matches.'));
 
     // ── feature logs (for in-progress features) ───────────────────────────────
     const logsDir = path.join(repoDir, 'docs', 'specs', 'features', 'logs');
@@ -194,18 +242,34 @@ function createBrewboard(repoDir) {
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '04-done', 'research-03-auth-providers.md'),
         researchContent('Auth Providers', 'Compared Clerk, Auth0, and NextAuth. Decision: Clerk for its DX and Vercel integration.'));
 
-    // ── feedback ─────────────────────────────────────────────────────────────
+    // ── feedback (realistic customer reports) ──────────────────────────────
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '01-inbox', 'feedback-01-slow-search.md'),
-        feedbackContent(1, 'Search results take 5+ seconds on mobile', 'On Safari iOS 17 with a slow 4G connection, the search results page takes 5-8 seconds to load after typing. Desktop Chrome is fast.', 'inbox', 'performance'));
+        feedbackContent(1, 'Search is unusable on mobile — 5+ seconds per keystroke',
+            'Customer report from @hophead_jenny (Pro plan, 340 beers in collection):\n\n"Every time I type in the search bar on my iPhone, the whole page freezes for 5-8 seconds. I\'m on 4G and it\'s been like this since last week\'s update. Desktop is fine. I literally can\'t find anything in my collection anymore."',
+            'inbox', 'performance', 'high',
+            '- Device: iPhone 14, Safari, iOS 17.4\n- Network: 4G (verified with throttling in DevTools — reproduces on Slow 3G)\n- Collection size: 340 beers\n- First noticed after v0.8.2 deploy (March 12)\n- Desktop Chrome: search responds in <200ms with same account',
+            '3 other Pro users reported the same issue in Discord this week. All have collections >200 beers. Free-tier users (max 50 beers) are unaffected. Likely an N+1 query or missing index on the search endpoint.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '01-inbox', 'feedback-02-broken-rating.md'),
-        feedbackContent(2, 'Half-star ratings not saving correctly', 'When I tap 3.5 stars on the rating widget, the saved value shows as 3.0 when I refresh. Only affects half-star values.', 'inbox', 'bug'));
+        feedbackContent(2, 'Half-star ratings round down silently',
+            'Reported by @craft_mike via support email:\n\n"I rated Pliny the Elder 4.5 stars. When I go back to the beer page, it shows 4 stars. Happened three times now with different beers — only when I pick a half star. Whole stars save fine."',
+            'inbox', 'bug', 'medium',
+            '- Reproduced locally: POST /api/ratings sends `4.5`, DB stores `4.5`, but GET /api/beers/:id returns `4`\n- Root cause likely in `Math.floor()` in the rating serializer (src/lib/ratings.ts:47)\n- Only affects the read path, not the write path — data is correct in DB',
+            '12 ratings in the last week have been silently rounded down. Users lose trust in the rating system when their input isn\'t preserved.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '02-triaged', 'feedback-03-dark-mode-flicker.md'),
-        feedbackContent(3, 'Dark mode flickers on page load', 'There\'s a brief white flash before the dark theme loads. Affects all pages. A common flash-of-unstyled-content issue.', 'triaged', 'bug'));
+        feedbackContent(3, 'White flash on every page navigation in dark mode',
+            'Multiple users in Discord #bugs channel:\n\n@beersnob_dave: "Every time I click a link, there\'s a white flash before the dark theme kicks in. It\'s like a flashbang at 2am."\n@ales_and_errors: "Same here, been happening since I signed up. I thought it was my browser."',
+            'triaged', 'bug', 'low',
+            '- Classic FOUC (Flash of Unstyled Content) — the `<html>` class is set by a client-side script that runs after first paint\n- Fix: inject a blocking `<script>` in `<head>` that reads the theme preference from localStorage before any rendering\n- Affects 100% of dark mode users on every navigation\n- Safari is worst (longer white flash), Chrome recovers faster',
+            'Cosmetic but affects perceived quality. Dark mode is used by 67% of users (analytics). Low severity but high visibility — every user sees it every time.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '03-actionable', 'feedback-04-export-to-csv.md'),
-        feedbackContent(4, 'Export collection to CSV', 'Users want to export their beer collection as a CSV file for spreadsheet analysis. Multiple requests from power users.', 'actionable', 'feature-request'));
+        feedbackContent(4, 'Please let me export my collection to CSV',
+            'Requested by 8 users in the last month via support and Discord:\n\n@cellar_tracker_pro: "I keep a parallel spreadsheet of my collection because I can\'t export from Brewboard. If you added CSV export I could ditch the spreadsheet entirely."\n\n@homebrew_data_nerd: "I want to analyze my tasting notes in R. A simple CSV with beer name, brewery, style, rating, date added would be perfect."',
+            'actionable', 'feature-request', 'medium',
+            '- 8 independent requests in 30 days (support tickets #142, #156, #167, #171, #178, #183, #191, #199)\n- Untappd and Vivino both offer CSV export\n- Estimated effort: 1-2 days (query + streaming CSV response + download button on /collection page)',
+            'Power users (50+ beers) are most likely to churn without this. 3 of the 8 requesters are on Pro plan. This is a retention feature, not a growth feature.'));
 
     // ── final commit ─────────────────────────────────────────────────────────
     commit(repoDir, 'chore: seed aigon specs with initial feature/research/feedback items');
@@ -248,34 +312,64 @@ function createBrewboardApi(repoDir) {
 
     // Initialize aigon
     runAigon(['init'], repoDir);
+    writeFixtureConfig(repoDir);
     commit(repoDir, 'chore: initialize aigon spec structure');
 
     // ── features/01-inbox ────────────────────────────────────────────────────
     const inboxDir = path.join(repoDir, 'docs', 'specs', 'features', '01-inbox');
 
     write(path.join(inboxDir, 'feature-rate-limiting.md'),
-        featureInboxContent('Rate Limiting', 'Add per-IP and per-user rate limiting to all API endpoints using a sliding window algorithm backed by Redis.'));
+        featureInboxContent('Rate Limiting',
+            'Add a simple in-memory rate limiter middleware.',
+            ['Create `src/middleware/rate-limit.js` exporting an Express middleware',
+             'Track requests per IP in a Map with timestamps',
+             'Return 429 if more than 100 requests per minute from same IP'],
+            'In-memory Map keyed by IP. One file, one middleware function.'));
 
     write(path.join(inboxDir, 'feature-api-versioning.md'),
-        featureInboxContent('API Versioning', 'Introduce /v1/ prefix to all routes and set up an automatic deprecation warning header for older versions.'));
+        featureInboxContent('API Versioning',
+            'Add a version prefix helper for routes.',
+            ['Create `src/lib/versioned-router.js` exporting `function versionedRouter(version, router)` that prefixes all routes with `/v{version}`',
+             'Add a `Deprecation` header to responses when version < latest'],
+            'Wrapper around Express router. One file.'));
 
     // ── features/02-backlog ──────────────────────────────────────────────────
     const backlogDir = path.join(repoDir, 'docs', 'specs', 'features', '02-backlog');
 
     write(path.join(backlogDir, 'feature-01-webhook-events.md'),
-        featureBacklogContent('01', 'Webhook Events', 'Emit webhook events for key actions (beer added, rating submitted, user followed) to allow third-party integrations.'));
+        featureBacklogContent('01', 'Webhook Events',
+            'Add a webhook emitter utility.',
+            ['Create `src/lib/webhook-emitter.js` exporting `async function emitWebhook(event, payload, webhookUrl)`',
+             'POST JSON payload to the URL with `Content-Type: application/json`',
+             'Return `{ success: boolean, statusCode: number }`'],
+            'Single fetch() call wrapped in try/catch. One file.'));
 
     write(path.join(backlogDir, 'feature-02-graphql-endpoint.md'),
-        featureBacklogContent('02', 'GraphQL Endpoint', 'Add a /graphql endpoint alongside REST for the mobile app to use. Schema mirrors the REST resources.'));
+        featureBacklogContent('02', 'GraphQL Endpoint',
+            'Add a minimal GraphQL schema for beers.',
+            ['Create `src/graphql/schema.js` with a simple type definition: `type Beer { id: ID!, name: String!, style: String, abv: Float }`',
+             'Add a `Query { beers: [Beer], beer(id: ID!): Beer }` root query',
+             'Export the schema as a string constant'],
+            'Just the schema string. No resolver implementation needed — schema only.'));
 
     // ── features/03-in-progress ──────────────────────────────────────────────
     const inProgressDir = path.join(repoDir, 'docs', 'specs', 'features', '03-in-progress');
 
     write(path.join(inProgressDir, 'feature-03-full-text-search.md'),
-        featureInProgressContent('03', 'Full-Text Search', 'PostgreSQL tsvector index on beers and breweries. Endpoint: GET /search?q=ipa&type=beer,brewery. Returns ranked results.'));
+        featureInProgressContent('03', 'Full-Text Search',
+            'Add a search query builder function.',
+            ['Create `src/lib/search-query.js` exporting `function buildSearchQuery(term, types)` that returns a SQL string',
+             'Use `to_tsquery` for the term and filter by types array',
+             'Return empty results SQL if term is empty (not an error)'],
+            'String template to build a SQL query. One file, one function.'));
 
     write(path.join(inProgressDir, 'feature-04-image-uploads.md'),
-        featureInProgressContent('04', 'Image Uploads', 'Allow users to attach photos to beer check-ins. Store in S3-compatible object storage, serve via CDN URLs.'));
+        featureInProgressContent('04', 'Image Uploads',
+            'Add a file validation utility for image uploads.',
+            ['Create `src/lib/validate-image.js` exporting `function validateImage(file)` that checks file type and size',
+             'Accept only jpeg, png, webp with max size 5MB',
+             'Return `{ valid: boolean, error?: string }`'],
+            'Check mimetype against allowlist and size against max. One file, one function.'));
 
     // ── features/05-done ─────────────────────────────────────────────────────
     const doneDir = path.join(repoDir, 'docs', 'specs', 'features', '05-done');
@@ -301,18 +395,34 @@ function createBrewboardApi(repoDir) {
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '03-in-progress', 'research-02-observability-stack.md'),
         researchContent('Observability Stack', 'Compare OpenTelemetry + Grafana vs Datadog vs Honeycomb for distributed tracing across API, workers, and DB.'));
 
-    // ── feedback ─────────────────────────────────────────────────────────────
+    // ── feedback (realistic API consumer reports) ──────────────────────────
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '01-inbox', 'feedback-01-missing-cors.md'),
-        feedbackContent(1, 'CORS headers missing on /ratings endpoint', 'The mobile app can\'t call GET /ratings from the web app origin. All other endpoints return CORS headers but /ratings does not.', 'inbox', 'bug'));
+        feedbackContent(1, 'CORS headers missing on /ratings endpoint',
+            'Reported by the Brewboard web frontend team:\n\n"The mobile-web app can\'t call GET /api/v1/ratings from brewboard.app. Every other endpoint returns Access-Control-Allow-Origin but /ratings returns a naked response. We\'re getting CORS errors in production for all rating-related features."',
+            'inbox', 'bug', 'high',
+            '- `curl -I https://api.brewboard.app/api/v1/ratings` — no CORS headers in response\n- `curl -I https://api.brewboard.app/api/v1/beers` — has `Access-Control-Allow-Origin: *`\n- The ratings router was added in PR #87 and the CORS middleware wasn\'t applied to the new route group\n- Affects: all web clients calling the ratings API',
+            'Blocking the web team from shipping the new rating UI. Currently working around it with a proxy, but that adds latency and another failure point.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '01-inbox', 'feedback-02-slow-joins.md'),
-        feedbackContent(2, 'Beer detail endpoint slow with large collections', 'GET /beers/:id takes 800ms when a user has 500+ ratings. The JOIN on ratings is not indexed.', 'inbox', 'performance'));
+        feedbackContent(2, 'GET /beers/:id takes 800ms for power users',
+            'Flagged by ops monitoring (PagerDuty alert #4421):\n\np99 latency on the beer detail endpoint spiked to 800ms after user @cellar_tracker_pro hit 500 ratings. The JOIN on the ratings table is doing a sequential scan.',
+            'inbox', 'performance', 'high',
+            '- `EXPLAIN ANALYZE` shows seq scan on ratings table (no index on beer_id)\n- Users with <50 ratings: 12ms avg\n- Users with 500+ ratings: 780ms avg\n- Fix: `CREATE INDEX idx_ratings_beer_id ON ratings(beer_id)`\n- 6 users currently have 500+ ratings, growing by ~2/week',
+            'Directly affects API SLA. Our target is p99 < 200ms. Three Pro users have complained about slow beer pages in the last week.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '02-triaged', 'feedback-03-500-on-empty-search.md'),
-        feedbackContent(3, 'Search returns 500 when query is empty string', 'GET /search?q= crashes with a Postgres syntax error. Should return 400 Bad Request or empty results.', 'triaged', 'bug'));
+        feedbackContent(3, 'Search returns 500 when query param is empty',
+            'From Sentry alert (issue #BREW-342):\n\n`GET /api/v1/search?q=` crashes with `error: syntax error at or near ")"`. The SQL query builder doesn\'t handle empty string — it generates `WHERE name ILIKE \'%%\'` which somehow breaks on our Postgres 15 with the full-text search extension.',
+            'triaged', 'bug', 'medium',
+            '- Sentry: 47 occurrences in last 7 days\n- Stack trace points to `src/routes/search.ts:34`\n- Repro: `curl https://api.brewboard.app/api/v1/search?q=`\n- Expected: 400 Bad Request or empty `{ results: [] }`\n- The search bar on mobile sends an empty query on focus (before user types)',
+            '47 errors/week in Sentry. Users see a generic "Something went wrong" page. Mobile web is the main trigger — the search bar fires on focus.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '03-actionable', 'feedback-04-openapi-docs.md'),
-        feedbackContent(4, 'Publish OpenAPI spec', 'Multiple integration partners have asked for an OpenAPI / Swagger spec at /docs. Makes it easier to auto-generate client SDKs.', 'actionable', 'feature-request'));
+        feedbackContent(4, 'Please publish an OpenAPI spec',
+            'Requested by 3 integration partners and our own mobile team:\n\n@taproom_integrations: "We\'re building a POS integration with Brewboard. Without an OpenAPI spec, our devs are reverse-engineering your API from the web app\'s network tab. An auto-generated TypeScript client would save us weeks."\n\nOur iOS developer: "I\'m hand-writing Codable structs by reading the API source code. A spec would let me use swagger-codegen."',
+            'actionable', 'feature-request', 'medium',
+            '- 3 partner requests in Q1 (TapRoom POS, BeerMenus, CellarHQ)\n- Our own mobile team wants it for code generation\n- Could use `@asteasolutions/zod-to-openapi` since routes already use Zod schemas\n- Estimated: 2-3 days to add decorators + serve at /api/docs',
+            'Partner integrations are a growth channel. Each delayed integration is potential revenue lost. Also unblocks our own mobile development.'));
 
     // ── final commit ─────────────────────────────────────────────────────────
     commit(repoDir, 'chore: seed aigon specs with initial feature/research/feedback items');
@@ -410,34 +520,65 @@ final class HikeTests: XCTestCase {
 
     // Initialize aigon
     runAigon(['init'], repoDir);
+    writeFixtureConfig(repoDir);
     commit(repoDir, 'chore: initialize aigon spec structure');
 
     // ── features/01-inbox ────────────────────────────────────────────────────
     const inboxDir = path.join(repoDir, 'docs', 'specs', 'features', '01-inbox');
 
     write(path.join(inboxDir, 'feature-gpx-export.md'),
-        featureInboxContent('GPX Export', 'Export any logged hike as a GPX file so it can be imported into Garmin Connect, Strava, or AllTrails for analysis and sharing.'));
+        featureInboxContent('GPX Export',
+            'Add a function that converts a hike\'s GPS coordinates to GPX XML format.',
+            ['Create `Sources/Trailhead/GPXExporter.swift` with a `func toGPX(coordinates: [(lat: Double, lon: Double, elevation: Double)]) -> String`',
+             'Output valid GPX 1.1 XML with `<trkpt>` elements',
+             'Include elevation in each trackpoint'],
+            'String interpolation to build XML. No external dependencies.'));
 
     write(path.join(inboxDir, 'feature-apple-watch-companion.md'),
-        featureInboxContent('Apple Watch Companion', 'A minimal watchOS companion app that shows current pace, elapsed time, and elevation during an active hike. Syncs data back to the iPhone app on completion.'));
+        featureInboxContent('Apple Watch Companion',
+            'Add a simple SwiftUI view that displays elapsed time and distance for a hike.',
+            ['Create `Sources/Trailhead/WatchView.swift` with a SwiftUI view',
+             'Display `elapsedTime: TimeInterval` formatted as HH:MM:SS',
+             'Display `distance: Double` formatted as km with 1 decimal'],
+            'Pure SwiftUI view with formatted text. No WatchKit connectivity yet — just the view.'));
 
     // ── features/02-backlog ──────────────────────────────────────────────────
     const backlogDir = path.join(repoDir, 'docs', 'specs', 'features', '02-backlog');
 
     write(path.join(backlogDir, 'feature-01-elevation-chart.md'),
-        featureBacklogContent('01', 'Elevation Profile Chart', 'Show a scrollable elevation chart on the hike detail screen using Swift Charts. Highlight the steepest section and mark the summit.'));
+        featureBacklogContent('01', 'Elevation Profile Chart',
+            'Add a function that computes elevation statistics from an array of altitude samples.',
+            ['Create `Sources/Trailhead/ElevationStats.swift` with a struct `ElevationStats { min, max, totalGain, totalLoss: Double }`',
+             'Add `func computeElevationStats(altitudes: [Double]) -> ElevationStats`',
+             'Gain = sum of positive deltas between consecutive samples, loss = sum of negative deltas'],
+            'Iterate the array once, tracking running gain/loss and min/max. Pure function, no UI.'));
 
     write(path.join(backlogDir, 'feature-02-photo-pinning.md'),
-        featureBacklogContent('02', 'Photo Pinning on Map', 'Let users drop a photo pin at their current GPS location during a hike. Photos are stored in the app\'s local library and shown as map annotations.'));
+        featureBacklogContent('02', 'Photo Pinning',
+            'Add a data model for geotagged photos on a hike.',
+            ['Create `Sources/Trailhead/PhotoPin.swift` with a struct `PhotoPin { id: UUID, latitude: Double, longitude: Double, caption: String, timestamp: Date }`',
+             'Add `Codable` conformance',
+             'Add `func distanceTo(lat: Double, lon: Double) -> Double` using the Haversine formula'],
+            'Simple struct with Codable. Haversine formula for distance calculation.'));
 
     // ── features/03-in-progress ──────────────────────────────────────────────
     const inProgressDir = path.join(repoDir, 'docs', 'specs', 'features', '03-in-progress');
 
     write(path.join(inProgressDir, 'feature-03-offline-maps.md'),
-        featureInProgressContent('03', 'Offline Map Tiles', 'Download map tiles for a selected region so hikes can be tracked without cell service. Uses MapKit\'s local tile overlay API. Max download: 500 MB.'));
+        featureInProgressContent('03', 'Offline Maps',
+            'Add a helper that calculates tile coordinates for a given bounding box.',
+            ['Create `Sources/Trailhead/TileCalculator.swift` with `func tilesForRegion(minLat: Double, maxLat: Double, minLon: Double, maxLon: Double, zoom: Int) -> [(x: Int, y: Int)]`',
+             'Use the standard Slippy Map tile numbering formula',
+             'Return all tile (x, y) pairs within the bounding box at the given zoom level'],
+            'Standard OSM tile math: x = floor((lon + 180) / 360 * 2^zoom), y from lat using Mercator projection.'));
 
     write(path.join(inProgressDir, 'feature-04-hike-stats-widget.md'),
-        featureInProgressContent('04', 'Home Screen Widget', 'WidgetKit widget showing this week\'s hike count, total distance, and elevation gain at a glance. Small and medium size classes.'));
+        featureInProgressContent('04', 'Hike Stats Widget',
+            'Add a function that summarises weekly hike statistics from an array of hikes.',
+            ['Create `Sources/Trailhead/WeeklyStats.swift` with `func weeklyStats(hikes: [Hike], referenceDate: Date) -> WeeklyStats`',
+             'WeeklyStats struct: `{ hikeCount: Int, totalDistanceKm: Double, totalElevationGainM: Double }`',
+             'Filter hikes to only those within the last 7 days from referenceDate'],
+            'Filter by date, then reduce to sum distance and elevation. Pure function.'));
 
     // ── features/05-done ─────────────────────────────────────────────────────
     const doneDir = path.join(repoDir, 'docs', 'specs', 'features', '05-done');
@@ -466,18 +607,34 @@ final class HikeTests: XCTestCase {
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '04-done', 'research-03-map-sdk-choice.md'),
         researchContent('MapKit vs Google Maps vs Mapbox', 'Compared three mapping SDKs for offline tile support and SwiftUI integration. Decision: MapKit — native APIs, no extra SDK weight, offline tile overlay available.'));
 
-    // ── feedback ─────────────────────────────────────────────────────────────
+    // ── feedback (realistic hiker reports) ──────────────────────────────────
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '01-inbox', 'feedback-01-battery-drain.md'),
-        feedbackContent(1, 'App drains battery during long hikes', 'On a 6-hour hike the app used 34% battery — more than Maps.app. Background GPS tracking with full accuracy seems to be the culprit.', 'inbox', 'performance'));
+        feedbackContent(1, 'App killed my battery on a full-day hike',
+            'App Store review (1 star) from TrailRunner_Sarah:\n\n"Did a 6-hour hike on the PCT and Trailhead used 34% of my battery. Apple Maps running in the background only used 8%. By hour 4 I had to close the app to save battery for emergencies. What\'s the point of a hiking app that can\'t last a full hike?"',
+            'inbox', 'performance', 'critical',
+            '- Battery usage report (Settings > Battery): Trailhead 34%, Maps 8%, over same 6hr period\n- Device: iPhone 15 Pro, iOS 17.3\n- `CLLocationManager` is using `kCLLocationAccuracyBest` continuously\n- Should switch to `kCLLocationAccuracyHundredMeters` when app is backgrounded\n- Significant-change API could reduce wakeups from every 1s to every ~500m\n- Similar complaint from 4 other users on TestFlight',
+            'This is the #1 complaint in App Store reviews (mentioned in 6 of 14 reviews). Hikers need the app to last 8+ hours. Currently limits us to ~4 hours of tracking. Existential issue for a hiking app.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '01-inbox', 'feedback-02-map-stuck-on-north.md'),
-        feedbackContent(2, 'Map rotation does not follow heading', 'The map should rotate to follow the user\'s walking direction but it stays locked north-up. Setting mapView.userTrackingMode = .followWithHeading fixes it.', 'inbox', 'bug'));
+        feedbackContent(2, 'Map doesn\'t rotate to match walking direction',
+            'TestFlight feedback from @mountain_mike:\n\n"When I\'m hiking, the map stays locked north-up. Every other hiking app rotates the map to match the direction I\'m walking. I have to keep mentally rotating the map in my head to figure out which trail fork to take. Almost took a wrong turn on a ridge trail because of this."',
+            'inbox', 'bug', 'medium',
+            '- `mapView.userTrackingMode` is set to `.follow` instead of `.followWithHeading`\n- Fix is one line: `mapView.userTrackingMode = .followWithHeading`\n- Needs compass calibration prompt (standard iOS dialog)\n- AllTrails, Gaia GPS, and Komoot all default to heading-follow mode',
+            'Navigation accuracy is a safety concern on trail forks. 3 TestFlight users mentioned this independently. Easy fix with high UX impact.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '02-triaged', 'feedback-03-no-dark-mode-map.md'),
-        feedbackContent(3, 'Map tiles don\'t switch to dark mode', 'The MapKit tile overlay stays in light mode even when the device is in dark mode. Need to set the map scheme to .hybrid or listen to UITraitCollection changes.', 'triaged', 'bug'));
+        feedbackContent(3, 'Map is blinding white when using dark mode at night',
+            'From Discord #beta-feedback:\n\n@nighthiker_jules: "I use dark mode because I hike early morning before sunrise. The entire app is dark except the map, which is a giant white rectangle that destroys my night vision. Please make the map respect dark mode."',
+            'triaged', 'bug', 'medium',
+            '- MapKit doesn\'t automatically switch tile styles with system appearance\n- Fix: listen to `traitCollectionDidChange` and toggle `mapType` between `.standard` and `.mutedStandard` (or use `.hybrid` for satellite)\n- Could also apply a dark overlay as a quick fix\n- Apple Maps app handles this correctly — we just need to match their behavior',
+            'Affects early morning and night hikers. Dark mode is used by 45% of TestFlight users. The map is the primary screen, so this is very visible.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '03-actionable', 'feedback-04-siri-shortcuts.md'),
-        feedbackContent(4, 'Siri Shortcuts for starting a hike', 'Would love to say "Hey Siri, start a hike" and have the app begin recording. Multiple requests from users who hike with their phone in a chest mount.', 'actionable', 'feature-request'));
+        feedbackContent(4, '"Hey Siri, start my hike" — hands-free recording',
+            'Requested by 5 TestFlight users, all with the same use case:\n\n@chestmount_chris: "I keep my phone in a chest harness while hiking. I can\'t easily tap the screen with gloves on. If I could say \'Hey Siri, start a hike on Trailhead\' that would be perfect."\n\n@trail_accessibility: "I have limited hand mobility and voice control would make the app much more accessible for me."',
+            'actionable', 'feature-request', 'medium',
+            '- Requires implementing `INStartWorkoutIntent` (SiriKit) or `AppIntents` framework (iOS 16+)\n- AppIntents is the modern approach — simpler, works with Shortcuts app too\n- Needs: `StartHikeIntent`, `StopHikeIntent`, `GetHikeStatusIntent`\n- Estimated: 3-4 days for basic start/stop, 1 week with Shortcuts app integration\n- Competitor support: AllTrails has Siri (basic), Strava has full Shortcuts integration',
+            'Accessibility feature that also benefits the core power-user segment (serious hikers with gear mounts). Good App Store differentiator — most indie hiking apps lack Siri support.'));
 
     // ── final commit ─────────────────────────────────────────────────────────
     commit(repoDir, 'chore: seed aigon specs with initial feature/research/feedback items');
@@ -491,23 +648,24 @@ function main() {
     const apiDir = path.join(FIXTURES_DIR, 'brewboard-api');
     const trailheadDir = path.join(FIXTURES_DIR, 'trailhead');
 
-    if (fs.existsSync(FIXTURES_DIR)) {
-        console.log('Fixtures already exist. Delete test/fixtures/ and re-run to regenerate.');
-        console.log('  rm -rf test/fixtures && node test/setup-fixture.js');
+    if (fs.existsSync(brewboardDir) || fs.existsSync(apiDir) || fs.existsSync(trailheadDir)) {
+        console.log('Fixtures already exist. Delete them and re-run to regenerate:');
+        console.log(`  rm -rf ${brewboardDir} ${apiDir} ${trailheadDir}`);
+        console.log('  node test/setup-fixture.js');
         process.exit(0);
     }
 
     console.log('Generating fixtures...');
 
     // Isolated HOME so aigon global config doesn't bleed in
-    const homeDir = path.join(FIXTURES_DIR, '.home');
+    const homeDir = path.join(os.tmpdir(), 'aigon-fixture-home');
     fs.mkdirSync(homeDir, { recursive: true });
 
     try {
         createBrewboard(brewboardDir);
         createBrewboardApi(apiDir);
         createTrailhead(trailheadDir);
-        console.log('\nFixtures ready in test/fixtures/');
+        console.log(`\nFixtures ready in ${FIXTURES_DIR}/`);
         console.log('  brewboard/     — web SaaS (features, research, feedback seeded)');
         console.log('  brewboard-api/ — REST API backend (features, research, feedback seeded)');
         console.log('  trailhead/     — personal iOS hiking app in Swift (features, research, feedback seeded)');
