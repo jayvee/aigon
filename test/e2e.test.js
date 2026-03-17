@@ -670,8 +670,8 @@ group('tmux mock shim', () => {
 // ─── multi-repo (dashboard add) ───────────────────────────────────────────────
 
 group('multi-repo', () => {
-    test('both fixture repos have aigon specs structure', () => {
-        ['brewboard', 'brewboard-api'].forEach(name => {
+    test('all three fixture repos have aigon specs structure', () => {
+        ['brewboard', 'brewboard-api', 'trailhead'].forEach(name => {
             withFixture(name, (cwd) => {
                 assertFileExists(cwd, 'docs/specs/features/01-inbox');
                 assertFileExists(cwd, 'docs/specs/research-topics/01-inbox');
@@ -686,6 +686,78 @@ group('multi-repo', () => {
             assertExitCode(r, 0);
             assertStdoutContains(r, '01');
             assertStdoutContains(r, '02');
+        });
+    });
+
+    test('trailhead board shows iOS-themed features', () => {
+        withFixture('trailhead', (cwd, home) => {
+            const r = runAigon(['board'], { cwd, home });
+            assertExitCode(r, 0);
+            // Should show backlog items (feature-01, feature-02)
+            assertStdoutContains(r, '01');
+            assertStdoutContains(r, '02');
+        });
+    });
+});
+
+// ─── trailhead (personal iOS app) ────────────────────────────────────────────
+
+group('trailhead', () => {
+    test('has Swift project files (Package.swift, .swift sources)', () => {
+        withFixture('trailhead', (cwd) => {
+            assertFileExists(cwd, 'Package.swift');
+            assertFileExists(cwd, 'Sources/Trailhead/TrailheadApp.swift');
+            assertFileExists(cwd, 'Sources/Trailhead/Models/Hike.swift');
+            assertFileExists(cwd, 'Tests/TrailheadTests/HikeTests.swift');
+        });
+    });
+
+    test('feature-create works in a Swift/iOS repo', () => {
+        withFixture('trailhead', (cwd, home) => {
+            const r = runAigon(['feature-create', 'siri-shortcuts'], { cwd, home });
+            assertExitCode(r, 0);
+            assertDirContainsFile(cwd, 'docs/specs/features/01-inbox', f => f.includes('siri'));
+        });
+    });
+
+    test('feedback-list shows iOS-relevant feedback items', () => {
+        withFixture('trailhead', (cwd, home) => {
+            const r = runAigon(['feedback-list'], { cwd, home });
+            assertExitCode(r, 0);
+            // Should include battery drain and map rotation feedback
+            assertStdoutContains(r, '#1');
+            assertStdoutContains(r, '#2');
+        });
+    });
+
+    test('research topics cover iOS-specific concerns', () => {
+        withFixture('trailhead', (cwd) => {
+            // Battery optimisation research should be in in-progress
+            assertDirContainsFile(cwd, 'docs/specs/research-topics/03-in-progress', f => f.includes('battery'));
+            // Route planning in backlog
+            assertDirContainsFile(cwd, 'docs/specs/research-topics/02-backlog', f => f.includes('route'));
+            // Map SDK decision is done
+            assertDirContainsFile(cwd, 'docs/specs/research-topics/04-done', f => f.includes('map'));
+        });
+    });
+
+    test('aigon profile set ios works on the trailhead repo', () => {
+        withFixture('trailhead', (cwd, home) => {
+            const r = runAigon(['profile', 'set', 'ios'], { cwd, home });
+            assertExitCode(r, 0);
+            const config = JSON.parse(fs.readFileSync(path.join(cwd, '.aigon/config.json'), 'utf8'));
+            if (config.profile !== 'ios') {
+                throw new Error(`Expected profile=ios in trailhead repo, got ${JSON.stringify(config.profile)}`);
+            }
+        });
+    });
+
+    test('feature lifecycle works in a non-web repo', () => {
+        withFixture('trailhead', (cwd, home) => {
+            runAigon(['feature-create', 'haptic-feedback'], { cwd, home });
+            const r = runAigon(['feature-prioritise', 'haptic-feedback'], { cwd, home });
+            assertExitCode(r, 0);
+            assertDirContainsFile(cwd, 'docs/specs/features/02-backlog', f => f.includes('haptic') && /feature-\d+-/.test(f));
         });
     });
 });
