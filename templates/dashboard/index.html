@@ -795,13 +795,20 @@
       try {
         const body = { action, args: args || [] };
         if (repoPath) body.repoPath = repoPath;
-        const res = await fetch('/api/action', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+        let res;
+        try {
+          res = await fetch('/api/action', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+        } catch (netErr) {
+          throw new Error('Cannot reach dashboard server — is it still running? (' + netErr.message + ')');
+        }
+        let payload = {};
+        const rawText = await res.text();
+        try { payload = JSON.parse(rawText); } catch (_) { payload = { error: rawText }; }
+        if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status + (rawText ? ': ' + rawText.slice(0, 120) : '')));
         showToast('Done: ' + (payload.command || action));
         await requestRefresh();
       } catch (e) {
@@ -812,7 +819,7 @@
       }
     }
 
-    async function requestWorktreeOpen(featureId, agentId, repoPath, btn, pType) {
+    async function requestFeatureOpen(featureId, agentId, repoPath, btn, pType) {
       if (btn) { btn.disabled = true; btn.textContent = '...'; }
       try {
         const body = { featureId, agentId };
@@ -825,11 +832,11 @@
         });
         const payload = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
-        showToast(payload.message || 'Worktree opened');
+        showToast(payload.message || 'Agent started');
       } catch (e) {
-        showToast('Open worktree failed: ' + e.message, null, null, {error:true});
+        showToast('Start agent failed: ' + e.message, null, null, {error:true});
       } finally {
-        if (btn) { btn.disabled = false; btn.textContent = btn._origText || 'Open'; }
+        if (btn) { btn.disabled = false; btn.textContent = btn._origText || 'Start'; }
       }
     }
 
@@ -1900,13 +1907,16 @@
         case 'feature-attach':
         case 'research-open':
         case 'research-attach':
-          await requestWorktreeOpen(id, agentId, repoPath, btn, pipelineType);
+          await requestFeatureOpen(id, agentId, repoPath, btn, pipelineType);
           break;
         case 'feature-setup':
         case 'research-setup': {
           const agents = await showAgentPicker(id, feature.name);
           if (!agents) return;
           await requestAction(pipelineCommand(pipelineType, 'setup'), [id, ...agents], repoPath, btn);
+          for (const agent of agents) {
+            await requestFeatureOpen(id, agent, repoPath, null, pipelineType);
+          }
           break;
         }
         case 'feature-prioritise':
@@ -2109,6 +2119,9 @@
             const agents = await showAgentPicker(featureId, featureName);
             if (!agents) return;
             await requestAction(pipelineCommand(dragPType, 'setup'), [featureId, ...agents], effectiveRepo);
+            for (const agent of agents) {
+              await requestFeatureOpen(featureId, agent, effectiveRepo, null, dragPType);
+            }
           } else if (fromStage === 'in-progress' && stage === 'in-evaluation') {
             await requestAction(pipelineCommand(dragPType, 'eval'), [featureId], effectiveRepo);
           } else if (fromStage === 'in-evaluation' && stage === 'done') {

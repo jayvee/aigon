@@ -37,11 +37,11 @@ Conductor / Radar:
   radar <subcommand>                Unified monitoring service + API + dashboard
   dashboard [options]               Deprecated alias for: aigon radar open
 
-Worktree:
-  worktree-open <ID> [agent] [--terminal=<type>]
-                                    Open worktree in terminal with agent CLI (warp, code, cursor, terminal, tmux)
-  worktree-open <ID> --all          Open all Fleet worktrees side-by-side
-  worktree-open <ID> <ID>... [--agent=<code>]
+Feature Open:
+  feature-open <ID> [agent] [--terminal=<type>]
+                                    Open feature worktree in terminal and start agent (warp, code, cursor, terminal, tmux)
+  feature-open <ID> --all           Open all Fleet worktrees side-by-side
+  feature-open <ID> <ID>... [--agent=<code>]
                                     Open multiple features side-by-side
   sessions-close <ID>               Kill all agent sessions for a feature/research ID and close Warp/tmux sessions
 
@@ -109,9 +109,9 @@ Examples:
   aigon radar open                     # Open live dashboard
   aigon radar open --screenshot        # Capture dashboard screenshot
   aigon dashboard                      # Deprecated: use "aigon radar open"
-  aigon worktree-open 55 cc            # Open worktree in Warp with Claude CLI
-  aigon worktree-open 55 --all         # Open all Fleet agents side-by-side
-  aigon worktree-open 100 101 102      # Open features side-by-side (parallel)
+  aigon feature-open 55 cc             # Open feature worktree and start Claude
+  aigon feature-open 55 --all          # Open all Fleet agents side-by-side
+  aigon feature-open 100 101 102       # Open features side-by-side (parallel)
   aigon sessions-close 55              # Kill all Fleet agents + tmux sessions + close Warp tab
   aigon feature-do 55             # Launch default agent (cc) from plain shell
   aigon feature-do 55 --agent=cx  # Launch Codex from plain shell
