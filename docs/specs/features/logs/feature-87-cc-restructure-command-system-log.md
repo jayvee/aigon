@@ -1,10 +1,11 @@
 ---
-status: implementing
-updated: 2026-03-17T22:57:50.005Z
+status: submitted
+updated: 2026-03-17T23:37:12.269Z
 startedAt: 2026-03-17T22:53:19.133Z
 events:
   - { ts: "2026-03-17T22:53:19.133Z", status: implementing }
   - { ts: "2026-03-17T22:57:50.005Z", status: implementing }
+  - { ts: "2026-03-17T23:37:12.269Z", status: submitted }
 ---
 
 # Implementation Log: Feature 87 - restructure-command-system
