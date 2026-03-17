@@ -1972,12 +1972,12 @@
 
     const AGENT_DISPLAY_NAMES = { cc: 'Claude Code', gg: 'Gemini', cx: 'Codex', cu: 'Cursor', solo: 'Agent' };
 
-    function buildAgentStatusHtml(agent) {
+    function buildAgentStatusHtml(agent, { isDrive = false } = {}) {
       const status = agent.status || 'idle';
       const tmuxRunning = agent.tmuxRunning || false;
       let icon, label, cls;
-      if (status === 'implementing' && tmuxRunning) {
-        icon = '●'; label = 'Running'; cls = 'status-running';
+      if (status === 'implementing' && (tmuxRunning || isDrive)) {
+        icon = '●'; label = isDrive ? 'Implementing' : 'Running'; cls = 'status-running';
       } else if (status === 'implementing' && !tmuxRunning) {
         icon = '○'; label = 'Session ended'; cls = 'status-ended';
       } else if (status === 'waiting') {
@@ -2113,7 +2113,9 @@
 
       const agents = feature.agents || [];
       const validActions = feature.validActions || [];
-      const hasAgentSections = agents.length > 0;
+      // Drive mode (branch): solo agent with no tmux session — skip agent sections
+      const isSoloDriveBranch = agents.length === 1 && agents[0].id === 'solo' && !agents[0].tmuxSession;
+      const hasAgentSections = agents.length > 0 && !isSoloDriveBranch;
 
       let innerHtml =
         (feature.id ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
@@ -2134,6 +2136,23 @@
         const cardLevelActions = validActions.filter(va => !va.agentId);
         if (cardLevelActions.length > 0) {
           const cardActionsHtml = cardLevelActions.map(va => {
+            const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
+            return '<button class="' + btnCls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '">' + escHtml(va.label) + '</button>';
+          }).join('');
+          innerHtml += '<div class="kcard-transitions">' + cardActionsHtml + '</div>';
+        }
+      } else if (isSoloDriveBranch) {
+        // Drive mode (branch): same visual structure as agent sections but labeled "Drive"
+        const soloAgent = agents[0];
+        const statusHtml = buildAgentStatusHtml(soloAgent, { isDrive: true });
+        innerHtml += '<div class="kcard-agent agent-solo">' +
+          '<div class="kcard-agent-header"><span class="kcard-agent-name">Drive</span>' + statusHtml + '</div>' +
+          '</div>';
+        // Card-level actions (close, review — no session controls)
+        const cardLevelActions = validActions.filter(va => !va.agentId || va.agentId === 'solo');
+        const nonSessionActions = cardLevelActions.filter(va => va.action !== 'feature-open' && va.action !== 'feature-attach' && va.action !== 'feature-stop');
+        if (nonSessionActions.length > 0) {
+          const cardActionsHtml = nonSessionActions.map(va => {
             const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
             return '<button class="' + btnCls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '">' + escHtml(va.label) + '</button>';
           }).join('');
