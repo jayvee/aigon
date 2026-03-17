@@ -21,7 +21,7 @@ const os = require('os');
 const { spawnSync, execFileSync } = require('child_process');
 
 const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
-const FIXTURES_DIR = path.join(__dirname, 'fixtures');
+const FIXTURES_DIR = path.join(os.homedir(), 'src');
 const MOCK_BIN_DIR = path.join(__dirname, 'mock-bin');
 
 // ─── runner ───────────────────────────────────────────────────────────────────

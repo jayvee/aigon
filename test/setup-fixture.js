@@ -2,9 +2,10 @@
 /**
  * Fixture generator for Aigon e2e tests.
  *
- * Creates two realistic project repos in test/fixtures/:
+ * Creates realistic project repos in ~/src/:
  *   - brewboard/     — a SaaS app for tracking craft beer collections
  *   - brewboard-api/ — the REST API backend
+ *   - trailhead/     — a personal iOS hiking app
  *
  * Each repo is a real git repo with:
  *   - Realistic project files (package.json, src/, etc.)
@@ -15,7 +16,7 @@
  * Usage:
  *   node test/setup-fixture.js
  *
- * Reset: rm -rf test/fixtures && node test/setup-fixture.js
+ * Existing fixture repos in ~/src/ are deleted and recreated.
  */
 
 'use strict';
@@ -25,7 +26,7 @@ const os = require('os');
 const path = require('path');
 const { spawnSync, execFileSync } = require('child_process');
 
-const FIXTURES_DIR = path.join(__dirname, 'fixtures');
+const FIXTURES_DIR = path.join(os.homedir(), 'src');
 const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -667,11 +668,12 @@ function main() {
     const apiDir = path.join(FIXTURES_DIR, 'brewboard-api');
     const trailheadDir = path.join(FIXTURES_DIR, 'trailhead');
 
-    if (fs.existsSync(brewboardDir) || fs.existsSync(apiDir) || fs.existsSync(trailheadDir)) {
-        console.log('Fixtures already exist. Delete them and re-run to regenerate:');
-        console.log(`  rm -rf ${brewboardDir} ${apiDir} ${trailheadDir}`);
-        console.log('  node test/setup-fixture.js');
-        process.exit(0);
+    // Clean existing fixture repos before regenerating
+    for (const dir of [brewboardDir, apiDir, trailheadDir]) {
+        if (fs.existsSync(dir)) {
+            console.log(`  Removing existing ${path.basename(dir)}/...`);
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
     }
 
     console.log('Generating fixtures...');
