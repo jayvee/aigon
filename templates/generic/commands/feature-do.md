@@ -132,7 +132,7 @@ test -f .aigon/auto-submit && echo "AUTO_SUBMIT_ACTIVE" || echo "MANUAL_MODE"
 
 **If `MANUAL_MODE`:**
 
-**Signal that you are waiting for the user:**
+**CRITICAL: You MUST run this command BEFORE stopping to wait. This updates the dashboard so the user knows you need their attention:**
 ```bash
 aigon agent-status waiting
 ```
@@ -209,15 +209,27 @@ After completing steps 1-6:
 
 **CRITICAL: Do NOT run `aigon feature-close` from a worktree.**
 
-After completing steps 1-4, **STOP and WAIT** for the user. They will run `{{CMD_PREFIX}}feature-submit` to trigger steps 5-6 (commit + log). Do NOT commit or write the log until the user runs that command.
+After completing steps 1-6 (implement, commit, update log):
+
+1. Signal that you are done:
+```bash
+aigon agent-status submitted
+```
+2. Tell the user: "Implementation complete and submitted. Run `{{CMD_PREFIX}}feature-close` from the main repository to merge."
+3. **STOP.** Do not run feature-close — that must be done from the main repo.
 
 #### Fleet Mode
 
 **CRITICAL: Do NOT run `aigon feature-close` from a worktree.**
 
-After completing steps 1-4, **STOP and WAIT** for the user. They will run `{{CMD_PREFIX}}feature-submit` to trigger steps 5-6 (commit + log). Do NOT commit or write the log until the user runs that command.
+After completing steps 1-6 (implement, commit, update log):
 
-**This implementation session is complete after the user runs `{{CMD_PREFIX}}feature-submit`.**
+1. Signal that you are done:
+```bash
+aigon agent-status submitted
+```
+2. Tell the user: "Implementation complete and submitted."
+3. **STOP.** Do not run feature-close — that must be done from the main repo after evaluation.
 
 ## Prompt Suggestion
 
