@@ -109,15 +109,20 @@ tail -50 ~/.aigon/dashboard.log
 
 | Function | Purpose |
 |----------|---------|
-| `runDashboardServer(port)` | Main HTTP server — validates registry on startup |
-| `validateRegistry()` | Checks PIDs alive and ports in use; removes stale entries on startup |
+| `runDashboardServer(port)` | Main HTTP server |
+| `collectDashboardStatusData()` | Scans specs, logs, worktrees, tmux for status |
+| `runDashboardInteractiveAction()` | Executes actions triggered from dashboard UI |
+| `buildDashboardHtml(initialData, instanceName)` | Renders the SPA HTML |
+| `sendMacNotification(message, title)` | Sends macOS desktop notifications |
+
+### Key functions in `lib/proxy.js`
+
+| Function | Purpose |
+|----------|---------|
 | `generateCaddyfile(registry)` | Builds Caddyfile from dev-proxy registry |
 | `reloadCaddy(registry)` | Writes Caddyfile and reloads Caddy |
 | `registerDevServer(appId, serverId, ...)` | Adds to registry + reloads Caddy |
-| `collectDashboardStatusData()` | Scans specs, logs, worktrees, tmux for status |
-| `runDashboardInteractiveAction()` | Executes actions triggered from dashboard UI |
-| `tryOrDefault(fn, default, opts)` | Error helper — run fn, return default on error; optionally warn |
-| `classifyError(e)` | Returns `'missing'`, `'permission'`, `'parse'`, or `'unknown'` |
+| `reconcileProxyRoutes()` | Syncs live Caddy routes with registry |
 
 ## How It Works
 
