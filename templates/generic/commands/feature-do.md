@@ -121,24 +121,6 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 
 {{MANUAL_TESTING_GUIDANCE}}
 
-### Autonomous mode check
-
-Check if the file `.aigon/auto-submit` exists in the current working directory:
-```bash
-test -f .aigon/auto-submit && echo "AUTO_SUBMIT_ACTIVE" || echo "MANUAL_MODE"
-```
-
-**If `AUTO_SUBMIT_ACTIVE`:** Skip the manual verification wait — proceed directly to Step 5 (commit). The testing checklist should still be written to the implementation log for the evaluator to review later, but do NOT stop and wait.
-
-**If `MANUAL_MODE`:**
-
-**CRITICAL: You MUST run this command BEFORE stopping to wait. This updates the dashboard so the user knows you need their attention:**
-```bash
-aigon agent-status waiting
-```
-
-**STOP and WAIT for user confirmation before proceeding** - do NOT continue until the user confirms testing is complete
-
 ## Step 5: Commit your implementation
 
 **IMPORTANT: You MUST commit before proceeding.**
@@ -170,66 +152,55 @@ Update it with:
 
 **Then commit the log file.**
 
-## Step 7: Complete implementation
+## Step 7: Signal completion
 
-### Autonomous mode check
+**THIS IS THE FINAL STEP. YOU MUST COMPLETE IT.**
 
-Check if the file `.aigon/auto-submit` exists:
+After committing your code (Step 5) and log (Step 6), you MUST signal your status. Run this command now:
+
 ```bash
-test -f .aigon/auto-submit && echo "AUTO_SUBMIT_ACTIVE" || echo "MANUAL_MODE"
+test -f .aigon/auto-submit && echo "AUTO_SUBMIT" || echo "MANUAL"
 ```
 
-### If `AUTO_SUBMIT_ACTIVE` — auto-submit
+Then follow the matching section below.
 
-You are running autonomously. Do NOT stop and wait. Instead:
+---
 
-1. Complete steps 5-6 (commit code + update log) immediately
-2. Run the feature-submit workflow:
-   ```bash
-   aigon agent-status submitted
-   ```
-3. This session is complete. Do not suggest follow-up commands.
+### AUTO_SUBMIT → run `aigon agent-status submitted` and exit
 
-### If `MANUAL_MODE` — stop and wait
-
-#### Drive Mode (branch)
-
-**CRITICAL: Do NOT proceed to feature-close automatically.**
-
-After completing steps 1-6:
-1. Tell the user: "Implementation complete. Ready for your review."
-2. **STOP and WAIT** for the user to:
-   - Review the code changes
-   - Test the feature themselves
-   - Optionally run `{{CMD_PREFIX}}feature-eval {{ARG1_SYNTAX}}` for evaluation
-   - Optionally run `{{CMD_PREFIX}}feature-review {{ARG1_SYNTAX}}` with a different agent for cross-agent code review
-   - Approve with `{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}}`
-
-#### Drive Worktree Mode
-
-**CRITICAL: Do NOT run `aigon feature-close` from a worktree.**
-
-After completing steps 1-6 (implement, commit, update log):
-
-1. Signal that you are done:
+You are running autonomously. Run this command immediately:
 ```bash
 aigon agent-status submitted
 ```
-2. Tell the user: "Implementation complete and submitted. Run `{{CMD_PREFIX}}feature-close` from the main repository to merge."
-3. **STOP.** Do not run feature-close — that must be done from the main repo.
+This session is complete. Do not suggest follow-up commands.
 
-#### Fleet Mode
+---
 
-**CRITICAL: Do NOT run `aigon feature-close` from a worktree.**
+### MANUAL + Drive Mode (branch) → run `aigon agent-status waiting` and stop
 
-After completing steps 1-6 (implement, commit, update log):
+You are on a branch in the main repo. Run this command immediately:
+```bash
+aigon agent-status waiting
+```
+Then tell the user: "Implementation complete. Ready for your review."
 
-1. Signal that you are done:
+**STOP and WAIT.** Do not proceed until the user responds. Do NOT run feature-close.
+
+---
+
+### MANUAL + Worktree (Drive worktree or Fleet) → run `aigon agent-status submitted` and stop
+
+You are in a worktree. Run this command immediately:
 ```bash
 aigon agent-status submitted
 ```
-2. Tell the user: "Implementation complete and submitted."
-3. **STOP.** Do not run feature-close — that must be done from the main repo after evaluation.
+Then tell the user: "Implementation complete and submitted."
+
+**STOP.** Do NOT run feature-close — that must be done from the main repo.
+
+---
+
+**If you are unsure which section applies, run `aigon agent-status waiting` — it is always safe.**
 
 ## Prompt Suggestion
 
