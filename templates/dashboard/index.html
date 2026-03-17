@@ -59,8 +59,8 @@
     .repos.single-repo{grid-template-columns:1fr}
     @media (max-width: 1120px){.repos{grid-template-columns:1fr}}
     .repo{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden}
-    .repo-h{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border-subtle);cursor:pointer}
-    .repo-h strong{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary)}
+    .repo-h{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border-subtle);cursor:pointer}
+    .repo-h strong{font-size:13px;font-weight:600;letter-spacing:-.01em;color:var(--text-primary)}
     .repo-b{padding:10px;display:grid;gap:10px}
     .card{border:1px solid var(--border-subtle);border-radius:10px;background:rgba(255,255,255,.01);transition:background .12s ease,border-color .12s ease}
     .card:hover{background:var(--bg-elevated);border-color:var(--border-default)}
@@ -512,7 +512,7 @@
             <template x-for="repo in visibleRepos" :key="repo.path">
               <section :class="'repo' + (isCollapsed(repo.path) ? ' collapsed' : '')" x-show="getTotalItems(repo) > 0">
                 <div class="repo-h" x-on:click.stop="toggleCollapse(repo.path)">
-                  <strong x-text="repo.displayPath"></strong>
+                  <strong x-text="repo.name || repo.displayPath"></strong>
                   <span x-html="repoSummaryText(repo)"></span>
                   <span x-html="buildAskAgentHtml(repo.path)" x-on:click.stop="handleAskClick($event)"></span>
                 </div>
@@ -1879,15 +1879,12 @@
         },
         repoSummaryText(repo) {
           const features = this.getFeatures(repo), research = this.getResearch(repo), feedback = this.getFeedback(repo);
-          const parts = [];
-          if (features.length > 0) parts.push(features.length + ' feature' + (features.length === 1 ? '' : 's'));
-          if (research.length > 0) parts.push(research.length + ' research');
-          if (feedback.length > 0) parts.push(feedback.length + ' feedback');
+          const total = features.length + research.length + feedback.length;
           const waitingCards = features.filter(f => f.agents.some(a => a.status === 'waiting')).length
             + research.filter(r => r.agents.some(a => a.status === 'waiting')).length
             + feedback.filter(f => (f.agents || []).some(a => a.status === 'waiting')).length;
           const collapsed = this.isCollapsed(repo.path);
-          return (parts.join(', ') || '0 items') + (waitingCards ? ' • ' + waitingCards + ' waiting' : '') + ' <span aria-label="Toggle">' + (collapsed ? '[+]' : '[-]') + '</span>';
+          return (waitingCards ? '<span class="pill-filter waiting" style="font-size:10px;padding:1px 6px">' + waitingCards + ' waiting</span>' : '') + ' <span style="color:var(--text-tertiary);font-size:11px" aria-label="Toggle">' + (collapsed ? '▸' : '▾') + '</span>';
         },
         openFeatureSpec(e, feature) {
           if (e.target.closest('button') || e.target.closest('.btn')) return;
