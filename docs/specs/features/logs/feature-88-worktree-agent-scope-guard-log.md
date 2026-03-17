@@ -1,10 +1,11 @@
 ---
-status: implementing
-updated: 2026-03-17T15:09:11.742Z
+status: submitted
+updated: 2026-03-17T15:26:15.375Z
 startedAt: 2026-03-17T15:08:41.615Z
 events:
   - { ts: "2026-03-17T15:08:41.615Z", status: implementing }
   - { ts: "2026-03-17T15:09:11.742Z", status: implementing }
+  - { ts: "2026-03-17T15:26:15.375Z", status: submitted }
 ---
 
 # Implementation Log: Feature 88 - worktree-agent-scope-guard
