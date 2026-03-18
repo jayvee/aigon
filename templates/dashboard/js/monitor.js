@@ -128,13 +128,13 @@
           return (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + evalBadge;
         },
         researchTitle(item) {
-          const allSubmitted = item.agents.length > 0 && item.agents.every(a => a.status === 'submitted');
-          const badge = allSubmitted ? '<span class="research-badge all-submitted">ready to synthesize</span>' : '<span class="research-badge">research</span>';
+          const readyToSynthesize = (item.validActions || []).some(a => a.action === 'research-synthesize');
+          const badge = readyToSynthesize ? '<span class="research-badge all-submitted">ready to synthesize</span>' : '<span class="research-badge">research</span>';
           return (item.id ? 'R#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + badge;
         },
         feedbackTitle(item) { return (item.id ? 'FB#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + '<span class="research-badge">feedback</span>'; },
         researchSynthBtn(item) {
-          if (!(item.agents.length > 0 && item.agents.every(a => a.status === 'submitted'))) return '';
+          if (!(item.validActions || []).some(a => a.action === 'research-synthesize')) return '';
           const synthCmd = '/ars ' + String(item.id).padStart(2, '0');
           return '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(synthCmd) + '" title="All agents submitted — synthesize findings">Copy next</button>';
         },
