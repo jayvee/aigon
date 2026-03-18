@@ -9,10 +9,11 @@
 
     // Strip ANSI escape sequences for clean display
     function stripAnsi(str) {
-      return str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
-                .replace(/\x1b\][^\x07]*\x07/g, '')    // OSC sequences
-                .replace(/\x1b[()][A-Z0-9]/g, '')       // charset sequences
-                .replace(/\x1b[\x20-\x2f]*[\x40-\x7e]/g, ''); // other escapes
+      return str.replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')  // CSI sequences (including DEC private ?2026h)
+                .replace(/\x1b\][^\x07]*\x07/g, '')       // OSC sequences
+                .replace(/\x1b[()][A-Z0-9]/g, '')          // charset sequences
+                .replace(/\x1b[\x20-\x2f]*[\x40-\x7e]/g, '') // other escapes
+                .replace(/[\x00-\x08\x0b\x0e-\x1f\x7f]/g, ''); // control chars (keep \t \n \r)
     }
 
     function openPeekPanel(sessionName) {
