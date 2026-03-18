@@ -73,26 +73,30 @@ Current shared modules:
 
 **Fully implemented modules** (logic lives in the module itself):
 
-- `lib/board.js` (~502 lines): board rendering and board action helpers
+- `lib/board.js` (~501 lines): board rendering and board action helpers
   `collectBoardItems`, `displayBoardKanbanView`, `displayBoardListView`, `saveBoardMapping`, `getBoardAction`
-- `lib/feedback.js` (~374 lines): feedback parsing, normalization, similarity, triage helpers
+- `lib/feedback.js` (~373 lines): feedback parsing, normalization, similarity, triage helpers
   `normalizeFeedbackMetadata`, `collectFeedbackItems`, `findDuplicateFeedbackCandidates`, `buildFeedbackTriageRecommendation`
-- `lib/validation.js` (~1,131 lines): Ralph/autonomous loop and smart validation helpers
+- `lib/git.js` (~383 lines): git helpers — branch, worktree, status, commit
+  `getCurrentBranch`, `getWorktrees`, `getUncommittedChanges`, `commitFiles`
+- `lib/state-machine.js` (~602 lines): spec state transitions and workflow state management
+  `transition`, `getValidTransitions`, `getStateDir`, `buildStateMachine`
+- `lib/validation.js` (~1,045 lines): Ralph/autonomous loop and smart validation helpers
   `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`, `runFeatureValidateCommand`
 
 **Domain modules** (logic lives in the module itself):
 
-- `lib/proxy.js` (~950 lines): Caddy management, port allocation, dev-proxy registry, route reconciliation
+- `lib/proxy.js` (~711 lines): Caddy management, port allocation, dev-proxy registry, route reconciliation
   `generateCaddyfile`, `reloadCaddy`, `registerDevServer`, `deregisterDevServer`, `reconcileProxyRoutes`, `allocatePort`
-- `lib/dashboard-server.js` (~1,100 lines): HTTP server, polling, WebSocket relay, notifications, action dispatch
+- `lib/dashboard-server.js` (~1,785 lines): HTTP server, polling, WebSocket relay, notifications, action dispatch
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
-- `lib/worktree.js` (~1,100 lines): worktree creation, permissions, tmux sessions, terminal launching
+- `lib/worktree.js` (~1,111 lines): worktree creation, permissions, tmux sessions, terminal launching
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
-- `lib/config.js` (~950 lines): global/project config, profiles, agent CLI config, editor detection
+- `lib/config.js` (~951 lines): global/project config, profiles, agent CLI config, editor detection
   `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`, `getAgentCliConfig`
 - `lib/templates.js` (~550 lines): template loading, command registry, scaffolding, content generation
   `readTemplate`, `processTemplate`, `readGenericTemplate`, `formatCommandOutput`, `COMMAND_REGISTRY`
-- `lib/utils.js` (~1,500 lines): shared utilities — hooks, YAML parsers, spec CRUD, analytics, version, deploy
+- `lib/utils.js` (~1,464 lines): shared utilities — hooks, YAML parsers, spec CRUD, analytics, version, deploy
   `parseHooksFile`, `parseFrontMatter`, `findFile`, `collectAnalyticsData`, `safeWrite`
 
 **Thin re-export facades:**
