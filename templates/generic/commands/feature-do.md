@@ -156,19 +156,18 @@ Update it with:
 
 **THIS IS THE FINAL STEP. YOU MUST COMPLETE IT.**
 
-After committing your code (Step 5) and log (Step 6), you MUST signal your status. Run this command now:
+After committing your code (Step 5) and log (Step 6), run this command to detect your mode and signal the correct status:
 
 ```bash
-test -f .aigon/auto-submit && echo "AUTO_SUBMIT" || echo "MANUAL"
+if test -f .aigon/auto-submit; then echo "AUTO_SUBMIT"; elif test -f .aigon/worktree.json; then echo "WORKTREE"; else echo "BRANCH"; fi
 ```
 
-Then follow the matching section below.
+Then follow the **one** matching section below:
 
 ---
 
-### AUTO_SUBMIT → run `aigon agent-status submitted` and exit
+### AUTO_SUBMIT → submit and exit
 
-You are running autonomously. Run this command immediately:
 ```bash
 aigon agent-status submitted
 ```
@@ -176,31 +175,27 @@ This session is complete. Do not suggest follow-up commands.
 
 ---
 
-### MANUAL + Drive Mode (branch) → run `aigon agent-status waiting` and stop
+### WORKTREE → submit and stop
 
-You are on a branch in the main repo. Run this command immediately:
-```bash
-aigon agent-status waiting
-```
-Then tell the user: "Implementation complete. Ready for your review."
-
-**STOP and WAIT.** Do not proceed until the user responds. Do NOT run feature-close.
-
----
-
-### MANUAL + Worktree (Drive worktree or Fleet) → run `aigon agent-status submitted` and stop
-
-You are in a worktree. Run this command immediately:
+You are in a worktree (Drive worktree or Fleet). Run:
 ```bash
 aigon agent-status submitted
 ```
 Then tell the user: "Implementation complete and submitted."
 
-**STOP.** Do NOT run feature-close — that must be done from the main repo.
+**STOP.** Do NOT run feature-close or suggest it — that must be done from the main repo by the user.
 
 ---
 
-**If you are unsure which section applies, run `aigon agent-status waiting` — it is always safe.**
+### BRANCH → submit and stop
+
+You are on a branch in the main repo (Drive branch mode). Run:
+```bash
+aigon agent-status submitted
+```
+Then tell the user: "Implementation complete and submitted. Run `/aigon:feature-close <ID>` when ready."
+
+**STOP and WAIT.** Do not run feature-close yourself.
 
 ## Prompt Suggestion
 
