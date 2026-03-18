@@ -57,15 +57,16 @@
 
         if (!res.ok) {
           if (data.alive === false) {
-            appendPeekOutput('\n[session ended]');
+            setPeekOutput(document.getElementById('peek-output').textContent + '\n[session ended]');
             stopPeekPoller();
             document.getElementById('peek-status-dot').className = 'panel-status-dot';
           }
           return;
         }
 
-        if (data.output) {
-          appendPeekOutput(stripAnsi(data.output));
+        if (data.output !== undefined) {
+          // capture-pane returns full screen snapshot — replace, don't append
+          setPeekOutput(stripAnsi(data.output));
         }
         if (data.offset !== undefined) {
           peekState.offset = data.offset;
@@ -76,14 +77,9 @@
       }
     }
 
-    function appendPeekOutput(text) {
+    function setPeekOutput(text) {
       const output = document.getElementById('peek-output');
-      output.textContent += text;
-
-      // Trim if output gets too large (keep last 200KB)
-      if (output.textContent.length > 204800) {
-        output.textContent = output.textContent.slice(-153600);
-      }
+      output.textContent = text;
 
       // Auto-scroll to bottom unless user scrolled up
       if (!peekState.userScrolled) {
@@ -104,14 +100,7 @@
     function closePeekPanel() {
       stopPeekPoller();
 
-      // Tell server to stop pipe-pane
-      if (peekState.sessionName) {
-        fetch('/api/session-peek/stop', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ sessionName: peekState.sessionName })
-        }).catch(() => {});
-      }
+      // No cleanup needed — capture-pane is stateless (no pipe-pane to stop)
 
       peekState.sessionName = null;
       peekState.offset = 0;
