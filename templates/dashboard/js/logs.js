@@ -113,7 +113,19 @@
       html.push('</div>'); // .console-log
       html.push('</div>'); // .console-view
 
+      // Preserve expanded state before DOM rebuild
+      const expandedBefore = new Set();
+      container.querySelectorAll('.console-entry.open').forEach(el => {
+        expandedBefore.add(el.dataset.idx);
+      });
+
       container.innerHTML = html.join('');
+
+      // Restore expanded state
+      expandedBefore.forEach(idx => {
+        const el = container.querySelector(`.console-entry[data-idx="${idx}"]`);
+        if (el) el.classList.add('open');
+      });
 
       // Expand on header row click, close on X button
       container.querySelectorAll('.console-entry-row').forEach(row => {
