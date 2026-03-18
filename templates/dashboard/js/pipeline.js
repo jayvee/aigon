@@ -279,7 +279,7 @@
         if (e.target.closest('button') || e.target.closest('.btn')) return;
         if (feature.specPath) {
           const displayName = (feature.id ? '#' + feature.id + ' ' : '') + feature.name.replace(/-/g, ' ');
-          openDrawer(feature.specPath, displayName, feature.stage);
+          openDrawer(feature.specPath, displayName, feature.stage, repoPath);
         }
       });
 
