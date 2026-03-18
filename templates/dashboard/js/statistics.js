@@ -93,13 +93,19 @@
       </svg>`;
     }
 
-    function buildStatCard(label, value, trendHtml, extra) {
+    function buildStatCard(label, value, trendHtml, extra, tooltip) {
+      const infoHtml = tooltip ? ` <span class="stat-info" data-stat-tooltip="${escHtml(tooltip)}">?</span>` : '';
       return `<div class="stat-card">
-        <div class="stat-card-label">${escHtml(label)}</div>
+        <div class="stat-card-label">${escHtml(label)}${infoHtml}</div>
         <div class="stat-card-value">${value}</div>
         ${trendHtml ? `<div class="stat-card-trend">${trendHtml}</div>` : ''}
         ${extra ? `<div class="stat-card-trend" style="color:var(--text-tertiary)">${extra}</div>` : ''}
       </div>`;
+    }
+
+    function buildKvLabel(label, tooltip) {
+      if (!tooltip) return escHtml(label);
+      return `${escHtml(label)} <span class="stat-info" data-stat-tooltip="${escHtml(tooltip)}">?</span>`;
     }
 
     function buildVolumeSeries(features, granularity) {
