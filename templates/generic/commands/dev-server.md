@@ -73,7 +73,7 @@ Prints the proxy subdomain URL (or localhost fallback) for use in testing and br
 - The dev server command is read from `devProxy.command` in `.aigon/config.json` (default: `npm run dev`)
 - Port is allocated automatically — agents get offsets from the base port (cc=+1, gg=+2, cx=+3, cu=+4)
 - Port 3000 is the main app. Worktree agents NEVER use port 3000.
-- If the local proxy is set up (`aigon proxy-setup`), the server gets a subdomain URL like `http://cx-121.myapp.test`
+- If the proxy is running (`aigon proxy install`), the server gets a named URL like `http://cx-121.myapp.localhost`
 - Without the proxy, it falls back to `http://localhost:<port>`
 - Use `aigon dev-server logs` to diagnose startup issues — all stdout/stderr is captured
 - To check what's running: `aigon dev-server list` shows all active servers with their ports and URLs

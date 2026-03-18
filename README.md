@@ -464,7 +464,7 @@ Think of this as a second axis in addition to mode (Drive/Fleet/Autopilot/Swarm)
 | Spec authoring and refinement (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) | In-agent slash commands | Best for iterative back-and-forth on definitions and scope |
 | Execution with an active agent (`feature-do`, `feature-review`, `research-do`, `research-synthesize`) | In-agent slash commands | Keeps context in the live session and avoids nested launches |
 | Orchestration and terminal ops (`init`, `install-agent`, `update`, `feature-setup`, `feature-open`, `feature-close`, `feature-cleanup`) | CLI | Repo/worktree coordination, machine-level operations, scripting |
-| Infra/config (`config`, `profile`, `proxy-setup`, `dev-server`, `dashboard`) | CLI | Machine/project configuration and background services |
+| Infra/config (`config`, `profile`, `proxy`, `dev-server`, `dashboard`) | CLI | Machine/project configuration and background services |
 
 ### Can I stay in one surface?
 
@@ -1102,10 +1102,7 @@ The proxy also routes the **Aigon dashboard**:
 `.localhost` domains resolve to `127.0.0.1` automatically per RFC 6761 — **no DNS configuration needed**. Just start the proxy:
 
 ```bash
-# Start the built-in proxy daemon (no Caddy, no dnsmasq, no sudo)
-aigon proxy start
-
-# Optional: install launchd plist for auto-start on boot (macOS)
+# One-time setup: install as system daemon on port 80 (asks for sudo once)
 aigon proxy install
 ```
 
@@ -1310,7 +1307,7 @@ Multi-repo status monitoring via a unified background service — web dashboard,
 
 | Command | Usage |
 |---|---|
-| Proxy Setup | `aigon proxy-setup` (one-time machine setup) |
+| Proxy Install | `aigon proxy install` (one-time: system daemon on port 80, auto-starts on boot) |
 | Dev Server Start | `aigon dev-server start [--port N]` (starts process, registers with proxy) |
 | Dev Server Start (register only) | `aigon dev-server start --register-only` |
 | Dev Server Stop | `aigon dev-server stop [serverId]` (kills process + deregisters) |
