@@ -128,20 +128,24 @@ test.describe('Fleet mode lifecycle', () => {
         await expect(inProgressCol).toContainText('e2e fleet feature', { timeout: 8000 });
 
         const inProgressCard = inProgressCol.locator('.kcard').filter({ hasText: 'e2e fleet feature' }).first();
-        // Both agent badges should appear
-        const badges = inProgressCard.locator('.agent-badge');
-        await expect(badges).toHaveCount(2);
-        await expect(badges.first()).toBeVisible();
+        // Both agent sections should appear (in-progress cards use .kcard-agent layout)
+        const agentSections = inProgressCard.locator('.kcard-agent');
+        await expect(agentSections).toHaveCount(2, { timeout: 5000 });
+        await expect(agentSections.first()).toBeVisible();
 
         // ── Step 5: Run two MockAgents with staggered delays ──────────────────
 
         const desc = 'e2e-fleet-feature';
         const ccWorktreePath = path.join(ctx.worktreeBase, `feature-${paddedId}-cc-${desc}`);
         const ggWorktreePath = path.join(ctx.worktreeBase, `feature-${paddedId}-gg-${desc}`);
+        // Wait for the log files specifically — the worktree dir is created early by `git worktree add`
+        // but the log file is written later (after install-agent). MockAgent needs the log file.
+        const ccLogPath = path.join(ccWorktreePath, 'docs', 'specs', 'features', 'logs', `feature-${paddedId}-cc-${desc}-log.md`);
+        const ggLogPath = path.join(ggWorktreePath, 'docs', 'specs', 'features', 'logs', `feature-${paddedId}-gg-${desc}-log.md`);
 
         await Promise.all([
-            waitForPath(ccWorktreePath, 15000),
-            waitForPath(ggWorktreePath, 15000),
+            waitForPath(ccLogPath, 30000),
+            waitForPath(ggLogPath, 30000),
         ]);
 
         const agentCC = new MockAgent({
@@ -169,12 +173,11 @@ test.describe('Fleet mode lifecycle', () => {
         await forceRefresh(page);
         await page.waitForTimeout(500);
 
-        const ccBadge = inProgressCard.locator('.agent-badge.submitted');
-        await expect(ccBadge).toBeVisible({ timeout: 5000 });
-        await expect(ccBadge).toContainText('cc');
+        const ccSubmitted = inProgressCard.locator('.kcard-agent.agent-cc .kcard-agent-status.status-submitted');
+        await expect(ccSubmitted).toBeVisible({ timeout: 5000 });
 
-        const ggBadge = inProgressCard.locator('.agent-badge.implementing');
-        await expect(ggBadge).toContainText('gg');
+        const ggStillRunning = inProgressCard.locator('.kcard-agent.agent-gg .kcard-agent-status.status-running');
+        await expect(ggStillRunning).toBeVisible({ timeout: 5000 });
 
         await ggRunning;
 
@@ -183,8 +186,8 @@ test.describe('Fleet mode lifecycle', () => {
         await forceRefresh(page);
         await page.waitForTimeout(500);
 
-        const allSubmittedBadges = inProgressCard.locator('.agent-badge.submitted');
-        await expect(allSubmittedBadges).toHaveCount(2, { timeout: 8000 });
+        const allSubmittedStatuses = inProgressCard.locator('.kcard-agent .kcard-agent-status.status-submitted');
+        await expect(allSubmittedStatuses).toHaveCount(2, { timeout: 8000 });
 
         // Fleet mode: feature-eval button should appear (not feature-close)
         const evalBtn = inProgressCard.locator('.kcard-va-btn[data-va-action="feature-eval"]');
