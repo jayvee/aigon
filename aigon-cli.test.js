@@ -40,7 +40,7 @@ const {
     inferDashboardNextActions
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
-const { isSameProviderFamily, getProfilePlaceholders, gcDevServers, validateRegistry, loadProxyRegistry, saveProxyRegistry, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, getDevProxyUrl, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, serializeLogFrontmatter, updateLogFrontmatterInPlace, collectAnalyticsData } = require('./lib/utils');
+const { isSameProviderFamily, getProfilePlaceholders, gcDevServers, validateRegistry, loadProxyRegistry, saveProxyRegistry, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, getDevProxyUrl, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, collectAnalyticsData } = require('./lib/utils');
 const { tryOrDefault, classifyError } = require('./lib/errors');
 const { detectDashboardContext } = require('./lib/devserver');
 
@@ -1483,76 +1483,9 @@ test('parseLogFrontmatterFull returns empty for no frontmatter', () => {
     assert.deepStrictEqual(events, []);
 });
 
-console.log('\nserializeLogFrontmatter');
-
-test('serializeLogFrontmatter writes fields in order', () => {
-    const fields = { status: 'waiting', updated: '2026-01-01T00:00:00Z', startedAt: '2026-01-01T00:00:00Z' };
-    const out = serializeLogFrontmatter(fields, []);
-    assert.ok(out.startsWith('---\nstatus: waiting\n'));
-    assert.ok(out.includes('startedAt:'));
-    assert.ok(out.endsWith('---\n'));
-});
-
-test('serializeLogFrontmatter writes events array', () => {
-    const fields = { status: 'submitted', updated: '2026-01-01T01:00:00Z' };
-    const events = [
-        { ts: '2026-01-01T00:00:00Z', status: 'implementing' },
-        { ts: '2026-01-01T01:00:00Z', status: 'submitted' }
-    ];
-    const out = serializeLogFrontmatter(fields, events);
-    assert.ok(out.includes('events:'));
-    assert.ok(out.includes('  - { ts: "2026-01-01T00:00:00Z", status: implementing }'));
-    assert.ok(out.includes('  - { ts: "2026-01-01T01:00:00Z", status: submitted }'));
-});
-
-console.log('\nupdateLogFrontmatterInPlace');
-
-test('updateLogFrontmatterInPlace updates status and appends event', () => {
-    withTempDir(tmpDir => {
-        const logPath = path.join(tmpDir, 'test-log.md');
-        const now = new Date().toISOString();
-        fs.writeFileSync(logPath, `---\nstatus: implementing\nupdated: ${now}\nstartedAt: ${now}\nevents:\n  - { ts: "${now}", status: implementing }\n---\n\nBody.`);
-
-        updateLogFrontmatterInPlace(logPath, { status: 'waiting', appendEvent: 'waiting' });
-
-        const result = parseLogFrontmatterFull(fs.readFileSync(logPath, 'utf8'));
-        assert.strictEqual(result.fields.status, 'waiting');
-        assert.strictEqual(result.events.length, 2);
-        assert.strictEqual(result.events[1].status, 'waiting');
-        assert.ok(result.fields.startedAt, 'startedAt preserved');
-    });
-});
-
-test('updateLogFrontmatterInPlace sets startedAt on first implementing', () => {
-    withTempDir(tmpDir => {
-        const logPath = path.join(tmpDir, 'test-log.md');
-        fs.writeFileSync(logPath, `---\nstatus: implementing\nupdated: 2026-01-01T00:00:00Z\n---\n\nBody.`);
-        updateLogFrontmatterInPlace(logPath, { status: 'implementing', appendEvent: 'implementing', setStartedAt: true });
-        const result = parseLogFrontmatterFull(fs.readFileSync(logPath, 'utf8'));
-        assert.ok(result.fields.startedAt, 'startedAt should be set');
-    });
-});
-
-test('updateLogFrontmatterInPlace does not overwrite existing startedAt', () => {
-    withTempDir(tmpDir => {
-        const logPath = path.join(tmpDir, 'test-log.md');
-        const origStarted = '2026-01-01T00:00:00Z';
-        fs.writeFileSync(logPath, `---\nstatus: implementing\nupdated: 2026-01-01T00:00:00Z\nstartedAt: ${origStarted}\n---\n\nBody.`);
-        updateLogFrontmatterInPlace(logPath, { status: 'waiting', appendEvent: 'waiting', setStartedAt: true });
-        const result = parseLogFrontmatterFull(fs.readFileSync(logPath, 'utf8'));
-        assert.strictEqual(result.fields.startedAt, origStarted);
-    });
-});
-
-test('updateLogFrontmatterInPlace sets completedAt', () => {
-    withTempDir(tmpDir => {
-        const logPath = path.join(tmpDir, 'test-log.md');
-        fs.writeFileSync(logPath, `---\nstatus: submitted\nupdated: 2026-01-01T01:00:00Z\nstartedAt: 2026-01-01T00:00:00Z\n---\n\nBody.`);
-        updateLogFrontmatterInPlace(logPath, { setCompletedAt: '2026-01-01T02:00:00Z' });
-        const result = parseLogFrontmatterFull(fs.readFileSync(logPath, 'utf8'));
-        assert.strictEqual(result.fields.completedAt, '2026-01-01T02:00:00Z');
-    });
-});
+// serializeLogFrontmatter and updateLogFrontmatterInPlace tests removed —
+// these functions were deleted in the unified state refactor (features 101-105).
+// Agent status now lives in .aigon/state/ JSON manifests via lib/manifest.js.
 
 console.log('\ncollectAnalyticsData');
 
