@@ -291,11 +291,10 @@
       card.addEventListener('dragstart', (e) => {
         wasDragged = true;
         card.classList.add('dragging');
-        // Valid target stages come from state machine validActions (transitions only)
-        const validTargetStages = (feature.validActions || [])
-          .filter(a => a.type === 'transition')
-          .map(a => a.to);
-        dragState = { featureId: feature.id, featureName: feature.name, fromStage: feature.stage, repoPath, pipelineType, validTargetStages, winnerAgent: feature.winnerAgent || null };
+        // Valid transitions come from state machine validActions — no hardcoded stage pairs
+        const validTransitions = (feature.validActions || []).filter(a => a.type === 'transition');
+        const validTargetStages = validTransitions.map(a => a.to);
+        dragState = { featureId: feature.id, featureName: feature.name, fromStage: feature.stage, repoPath, pipelineType, validTargetStages, validTransitions, winnerAgent: feature.winnerAgent || null };
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', feature.id);
         // Create tilted drag image
@@ -471,29 +470,44 @@
           const col = e.currentTarget;
           col.classList.remove('drag-over', 'drag-blocked');
           if (!dragState) return;
-          const { featureId, featureName, fromStage, repoPath: dragRepo, pipelineType: dragPType, validTargetStages, winnerAgent: dragWinnerAgent } = dragState;
+          const { featureId, featureName, repoPath: dragRepo, pipelineType: dragPType, validTargetStages, validTransitions, winnerAgent: dragWinnerAgent } = dragState;
           dragState = null;
           if (!(validTargetStages && validTargetStages.includes(stage))) return;
           const effectiveRepo = dragRepo || repoPath;
-          if (fromStage === 'inbox' && stage === 'backlog') {
-            await requestAction(pipelineCommand(dragPType, 'prioritise'), [featureName], effectiveRepo);
-          } else if (fromStage === 'backlog' && stage === 'in-progress') {
-            const agents = await showAgentPicker(featureId, featureName);
-            if (!agents) return;
-            await requestAction(pipelineCommand(dragPType, 'setup'), [featureId, ...agents], effectiveRepo);
-            for (const agent of agents) {
-              await requestFeatureOpen(featureId, agent, effectiveRepo, null, dragPType);
+          // Dispatch based on the state machine transition action — no hardcoded stage pairs
+          const transition = (validTransitions || []).find(t => t.to === stage);
+          if (!transition) return;
+          switch (transition.action) {
+            case 'feature-prioritise':
+            case 'research-prioritise':
+              await requestAction(pipelineCommand(dragPType, 'prioritise'), [featureName], effectiveRepo);
+              break;
+            case 'feature-setup':
+            case 'research-setup': {
+              const agents = await showAgentPicker(featureId, featureName);
+              if (!agents) return;
+              await requestAction(pipelineCommand(dragPType, 'setup'), [featureId, ...agents], effectiveRepo);
+              for (const agent of agents) {
+                await requestFeatureOpen(featureId, agent, effectiveRepo, null, dragPType);
+              }
+              break;
             }
-          } else if (fromStage === 'in-progress' && stage === 'in-evaluation') {
-            const agents = await showAgentPicker(featureId, featureName, { single: true, title: 'Select evaluator agent', submitLabel: 'Evaluate' });
-            if (!agents || agents.length === 0) return;
-            const evalAgent = agents[0];
-            await requestAction(pipelineCommand(dragPType, 'eval'), [featureId], effectiveRepo);
-            await requestFeatureOpen(featureId, evalAgent, effectiveRepo, null, dragPType);
-          } else if (fromStage === 'in-evaluation' && stage === 'done') {
-            const picked = await showAgentPicker(featureId, featureName, { single: true, title: 'Pick winner to merge', submitLabel: 'Close & Merge', preselect: dragWinnerAgent });
-            if (!picked || picked.length === 0) return;
-            await requestAction(pipelineCommand(dragPType, 'close'), [featureId, picked[0]], effectiveRepo);
+            case 'feature-eval': {
+              const agents = await showAgentPicker(featureId, featureName, { single: true, title: 'Select evaluator agent', submitLabel: 'Evaluate' });
+              if (!agents || agents.length === 0) return;
+              const evalAgent = agents[0];
+              await requestAction(pipelineCommand(dragPType, 'eval'), [featureId], effectiveRepo);
+              await requestFeatureOpen(featureId, evalAgent, effectiveRepo, null, dragPType);
+              break;
+            }
+            case 'feature-close': {
+              const picked = await showAgentPicker(featureId, featureName, { single: true, title: 'Pick winner to merge', submitLabel: 'Close & Merge', preselect: dragWinnerAgent });
+              if (!picked || picked.length === 0) return;
+              await requestAction(pipelineCommand(dragPType, 'close'), [featureId, picked[0]], effectiveRepo);
+              break;
+            }
+            default:
+              await requestAction(transition.action, [featureId], effectiveRepo);
           }
         }
       };
