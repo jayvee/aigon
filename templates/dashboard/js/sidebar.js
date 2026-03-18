@@ -1,0 +1,254 @@
+    // ── AI session picker ──────────────────────────────────────────────────────
+
+    // ── Ask-agent helpers ─────────────────────────────────────────────────────
+
+    const ASK_AGENTS = [
+      { id: 'cc', name: 'Claude Code' },
+      { id: 'gg', name: 'Gemini' },
+      { id: 'cx', name: 'Codex' },
+      { id: 'cu', name: 'Cursor' }
+    ];
+
+    function getAskAgent() { return localStorage.getItem(lsKey('askAgent')) || 'cc'; }
+    function setAskAgent(id) { localStorage.setItem(lsKey('askAgent'), id); }
+
+    function buildAskAgentHtml(repoPath) {
+      const agentId = getAskAgent();
+      const others = ASK_AGENTS.filter(a => a.id !== agentId);
+      const escapedRepo = escHtml(repoPath);
+      const otherItems = others.map(a =>
+        '<button class="ask-agent-option" data-ask-agent="' + a.id + '" data-ask-repo="' + escapedRepo + '">' +
+        escHtml(a.id) + ' · ' + escHtml(a.name) + '</button>'
+      ).join('');
+      return '<span class="ask-agent-group">' +
+        '<button class="btn ask-agent-primary" data-ask-run="' + escHtml(agentId) + '" data-ask-repo="' + escapedRepo + '">Ask ' + escHtml(agentId) + '</button>' +
+        '<button class="btn ask-agent-chevron" data-ask-toggle data-ask-repo="' + escapedRepo + '">▾</button>' +
+        '<div class="ask-agent-dropdown">' + otherItems + '</div>' +
+        '</span>';
+    }
+
+    async function runAskAgent(repoPath, agentId) {
+      const res = await fetch('/api/session/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ repoPath, agentId })
+      }).catch(() => null);
+      if (!res || !res.ok) {
+        const data = res ? await res.json().catch(() => ({})) : {};
+        showToast('Failed to start session: ' + (data.error || 'Unknown'), null, null, { error: true });
+      }
+    }
+
+    // Event delegation for ask-agent buttons (rendered via innerHTML)
+    document.addEventListener('click', (e) => {
+      // Close open dropdowns when clicking outside
+      const group = e.target.closest('.ask-agent-group');
+      if (!group) {
+        document.querySelectorAll('.ask-agent-dropdown.open').forEach(d => d.classList.remove('open'));
+        return;
+      }
+      if (e.target.closest('[data-ask-run]')) {
+        const btn = e.target.closest('[data-ask-run]');
+        runAskAgent(btn.dataset.askRepo, btn.dataset.askRun);
+        return;
+      }
+      if (e.target.closest('[data-ask-toggle]')) {
+        const dropdown = group.querySelector('.ask-agent-dropdown');
+        document.querySelectorAll('.ask-agent-dropdown.open').forEach(d => { if (d !== dropdown) d.classList.remove('open'); });
+        dropdown && dropdown.classList.toggle('open');
+        return;
+      }
+      if (e.target.closest('[data-ask-agent]')) {
+        const btn = e.target.closest('[data-ask-agent]');
+        setAskAgent(btn.dataset.askAgent);
+        runAskAgent(btn.dataset.askRepo, btn.dataset.askAgent);
+        document.querySelectorAll('.ask-agent-dropdown.open').forEach(d => d.classList.remove('open'));
+      }
+    });
+
+    // ── Agent picker ──────────────────────────────────────────────────────────
+
+    let pickerResolve = null;
+
+    function showAgentPicker(featureId, featureName) {
+      return new Promise((resolve) => {
+        pickerResolve = resolve;
+        document.getElementById('agent-picker-desc').textContent = '#' + featureId + ' ' + featureName;
+        document.querySelectorAll('#agent-picker input[type=checkbox]').forEach(cb => { cb.checked = false; });
+        document.getElementById('agent-picker').style.display = 'flex';
+        document.getElementById('agent-picker-submit').focus();
+      });
+    }
+
+    function hideAgentPicker(result) {
+      document.getElementById('agent-picker').style.display = 'none';
+      if (pickerResolve) { pickerResolve(result); pickerResolve = null; }
+    }
+
+    document.getElementById('agent-picker-cancel').onclick = () => hideAgentPicker(null);
+    document.getElementById('agent-picker').onclick = (e) => { if (e.target === e.currentTarget) hideAgentPicker(null); };
+    document.getElementById('agent-picker-submit').onclick = () => {
+      const selected = [...document.querySelectorAll('#agent-picker input[type=checkbox]:checked')].map(cb => cb.value);
+      if (selected.length === 0) { showToast('Select at least one agent'); return; }
+      hideAgentPicker(selected);
+    };
+
+    // ── Repo sidebar ──────────────────────────────────────────────────────────
+
+    function selectRepo(repoPath) {
+      state.selectedRepo = repoPath;
+      localStorage.setItem(lsKey('selectedRepo'), repoPath);
+      // Sync mobile dropdown
+      const mobile = document.getElementById('repo-select-mobile');
+      if (mobile) mobile.value = repoPath;
+      render();
+    }
+
+    function getRepoStats(repo) {
+      const allItems = [...(repo.features || []), ...(repo.research || []), ...(repo.feedback || [])];
+      const activeItems = allItems.filter(f => f.stage !== 'done');
+      const totalItems = activeItems.length;
+      const hasWaiting = allItems.some(f => (f.agents || []).some(a => a.status === 'waiting'));
+      const hasError = allItems.some(f => (f.agents || []).some(a => a.status === 'error'));
+      const featureCount = (repo.features || []).filter(f => f.stage !== 'done').length;
+      const researchCount = (repo.research || []).filter(f => f.stage !== 'done').length;
+      const feedbackCount = (repo.feedback || []).filter(f => f.stage !== 'done').length;
+      const waitingCount = allItems.filter(f => (f.agents || []).some(a => a.status === 'waiting')).length;
+      const errorCount = allItems.filter(f => (f.agents || []).some(a => a.status === 'error')).length;
+      return { totalItems, featureCount, researchCount, feedbackCount, hasWaiting, hasError, waitingCount, errorCount };
+    }
+
+    function renderSidebar(repos) {
+      const sidebar = document.getElementById('repo-sidebar');
+      const mobile = document.getElementById('repo-select-mobile');
+      const hadFocus = sidebar.contains(document.activeElement);
+      sidebar.innerHTML = '';
+      mobile.innerHTML = '';
+
+      // Sort repos: active agents first, then by most recent activity
+      const sorted = [...(repos || [])].sort((a, b) => {
+        const aItems = [...(a.features || []), ...(a.research || [])];
+        const bItems = [...(b.features || []), ...(b.research || [])];
+        const aRunning = aItems.some(f => (f.agents || []).some(ag => ag.status === 'implementing'));
+        const bRunning = bItems.some(f => (f.agents || []).some(ag => ag.status === 'implementing'));
+        if (aRunning !== bRunning) return aRunning ? -1 : 1;
+        const aActive = aItems.filter(f => f.stage === 'in-progress' || f.stage === 'in-evaluation').length;
+        const bActive = bItems.filter(f => f.stage === 'in-progress' || f.stage === 'in-evaluation').length;
+        if (aActive !== bActive) return bActive - aActive;
+        const latestTime = items => Math.max(0, ...items.flatMap(f => (f.agents || []).map(ag => new Date(ag.updatedAt || 0).getTime())));
+        return latestTime(bItems) - latestTime(aItems);
+      });
+
+      // "All" option
+      const allBtn = document.createElement('button');
+      allBtn.className = 'sidebar-item' + (state.selectedRepo === 'all' ? ' active' : '');
+      allBtn.setAttribute('role', 'option');
+      allBtn.setAttribute('aria-selected', state.selectedRepo === 'all' ? 'true' : 'false');
+      allBtn.setAttribute('tabindex', state.selectedRepo === 'all' ? '0' : '-1');
+      allBtn.innerHTML = '<span class="sidebar-name">All Repos</span>';
+      allBtn.onclick = () => selectRepo('all');
+      sidebar.appendChild(allBtn);
+
+      const allOpt = document.createElement('option');
+      allOpt.value = 'all';
+      allOpt.textContent = 'All Repos';
+      mobile.appendChild(allOpt);
+
+      // Per-repo items
+      sorted.forEach(repo => {
+        const stats = getRepoStats(repo);
+        const isActive = state.selectedRepo === repo.path;
+
+        const btn = document.createElement('button');
+        btn.className = 'sidebar-item' + (isActive ? ' active' : '');
+        btn.setAttribute('role', 'option');
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        btn.setAttribute('tabindex', isActive ? '0' : '-1');
+        btn.title = repo.displayPath;
+
+        let indicatorsHtml = '';
+        if (stats.hasError) indicatorsHtml += '<span class="sidebar-dot error"></span>';
+        else if (stats.hasWaiting) indicatorsHtml += '<span class="sidebar-dot waiting"></span>';
+        if (stats.totalItems > 0) indicatorsHtml += '<span class="sidebar-badge">' + stats.totalItems + '</span>';
+
+        btn.innerHTML = '<span class="sidebar-name">' + escHtml(repo.name) + '</span>' +
+          (indicatorsHtml ? '<span class="sidebar-indicators">' + indicatorsHtml + '</span>' : '');
+        btn.onclick = () => selectRepo(repo.path);
+        sidebar.appendChild(btn);
+
+        const opt = document.createElement('option');
+        opt.value = repo.path;
+        opt.textContent = repo.displayPath + (stats.totalItems ? ' (' + stats.totalItems + ')' : '');
+        mobile.appendChild(opt);
+      });
+
+      mobile.value = state.selectedRepo;
+
+      // Validate: if selectedRepo no longer exists, reset to 'all'
+      if (state.selectedRepo !== 'all' && !(repos || []).some(r => r.path === state.selectedRepo)) {
+        selectRepo('all');
+      }
+
+      // Restore focus if sidebar had focus before re-render
+      if (hadFocus) {
+        const activeBtn = sidebar.querySelector('.sidebar-item[tabindex="0"]');
+        if (activeBtn) activeBtn.focus();
+      }
+    }
+
+    function renderRepoHeader(repo) {
+      const header = document.getElementById('repo-header');
+      if (!repo || state.selectedRepo === 'all') {
+        header.style.display = 'none';
+        return;
+      }
+      const stats = getRepoStats(repo);
+      const parts = [];
+      if (stats.featureCount > 0) parts.push(stats.featureCount + ' feature' + (stats.featureCount === 1 ? '' : 's'));
+      if (stats.researchCount > 0) parts.push(stats.researchCount + ' research');
+      let metaText = parts.join(', ') || 'No items';
+      if (stats.waitingCount > 0) metaText += ' · ' + stats.waitingCount + ' waiting';
+      if (stats.errorCount > 0) metaText += ' · ' + stats.errorCount + ' error';
+
+      header.style.display = '';
+      header.innerHTML = '<h2 class="repo-header-name">' + escHtml(repo.displayPath) + '</h2>' +
+        '<span class="repo-header-meta">' + escHtml(metaText) + '</span>' +
+        buildAskAgentHtml(repo.path);
+    }
+
+    // Keyboard navigation for sidebar
+    document.getElementById('repo-sidebar').addEventListener('keydown', (e) => {
+      const items = [...document.querySelectorAll('.sidebar-item')];
+      const focusedIdx = items.indexOf(document.activeElement);
+      if (focusedIdx === -1) return;
+
+      let nextIdx = -1;
+      if (e.key === 'ArrowDown') {
+        nextIdx = Math.min(focusedIdx + 1, items.length - 1);
+      } else if (e.key === 'ArrowUp') {
+        nextIdx = Math.max(focusedIdx - 1, 0);
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        items[focusedIdx].click();
+        return;
+      } else if (e.key === 'Home') {
+        nextIdx = 0;
+      } else if (e.key === 'End') {
+        nextIdx = items.length - 1;
+      } else {
+        return;
+      }
+
+      e.preventDefault();
+      if (nextIdx >= 0 && nextIdx < items.length) {
+        items.forEach(it => it.setAttribute('tabindex', '-1'));
+        items[nextIdx].setAttribute('tabindex', '0');
+        items[nextIdx].focus();
+      }
+    });
+
+    // Mobile dropdown handler
+    document.getElementById('repo-select-mobile').addEventListener('change', (e) => {
+      selectRepo(e.target.value);
+    });
+
