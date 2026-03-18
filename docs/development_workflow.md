@@ -34,7 +34,9 @@ docs/specs/
 │   ├── 04-in-evaluation/# Features awaiting review
 │   ├── 05-done/         # Completed features
 │   ├── 06-paused/       # On hold
-│   ├── logs/            # Implementation logs (flat — winner recorded in manifest)
+│   ├── logs/            # Implementation logs
+│   │   ├── selected/    # Winning agent logs
+│   │   └── alternatives/# Other agent attempts
 │   └── evaluations/     # LLM Judge reports
 ├── templates/           # Spec templates
 └── README.md
