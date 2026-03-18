@@ -20,7 +20,7 @@ The dashboard runs as a **foreground process** — Ctrl+C or `aigon dev-server s
 The dashboard is accessed via `http://aigon.localhost`, not `localhost:PORT`. This uses the aigon-proxy daemon, a tiny Node.js reverse proxy:
 
 ```
-Browser ──► http://aigon.localhost ──► aigon-proxy (port 80 or 4100) ──► localhost:4100 (Dashboard)
+Browser ──► http://aigon.localhost ──► aigon-proxy (port 80 or 4080) ──► localhost:4100 (Dashboard)
                                             │
        http://cc-63.aigon.localhost ────────┘──► localhost:4202 (worktree instance)
 ```
@@ -55,7 +55,7 @@ aigon proxy install  # Optional: install launchd plist for auto-start on boot
 |---------|-------|-----|
 | `aigon.localhost` returns 404 | Dashboard not registered or proxy not running | `aigon proxy start`, then restart dashboard |
 | Dead worktree instances in status | Old worktree dashboard instances not cleaned up | `aigon dev-server gc` |
-| `aigon.localhost` not resolving | Rare: OS doesn't handle `.localhost` wildcard | Use `http://localhost:4100` directly |
+| `aigon.localhost` not resolving | Rare: OS doesn't handle `.localhost` wildcard | Use `http://localhost:4080` directly |
 | Dashboard shows wrong data | Config parse error or stale registry | Check `~/.aigon/dashboard.log` for `[*] Warning:` lines |
 
 ### Startup validation
