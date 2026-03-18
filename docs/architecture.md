@@ -77,12 +77,12 @@ Current shared modules:
   `collectBoardItems`, `displayBoardKanbanView`, `displayBoardListView`, `saveBoardMapping`, `getBoardAction`
 - `lib/feedback.js` (~373 lines): feedback parsing, normalization, similarity, triage helpers
   `normalizeFeedbackMetadata`, `collectFeedbackItems`, `findDuplicateFeedbackCandidates`, `buildFeedbackTriageRecommendation`
-- `lib/git.js` (~383 lines): git helpers — branch, worktree, status, commit
+- `lib/git.js` (~386 lines): git helpers — branch, worktree, status, commit
   `getCurrentBranch`, `getWorktrees`, `getUncommittedChanges`, `commitFiles`
-- `lib/manifest.js` (~391 lines): per-feature JSON manifests in `.aigon/state/` — coordinator + per-agent status files, advisory locking, lazy bootstrap, event audit trail
+- `lib/manifest.js` (~413 lines): **state source of truth** — per-feature JSON manifests in `.aigon/state/`, per-agent status files, advisory locking, lazy bootstrap from folder position, event audit trail
   `readManifest`, `writeManifest`, `readAgentStatus`, `writeAgentStatus`, `acquireLock`, `releaseLock`
-- `lib/state-machine.js` (~602 lines): spec state transitions and workflow state management
-  `transition`, `getValidTransitions`, `getStateDir`, `buildStateMachine`
+- `lib/state-machine.js` (~764 lines): spec state transitions, mandatory `requestTransition()` gatekeeper, outbox pattern for crash-safe side effects
+  `transition`, `getValidTransitions`, `requestTransition`, `buildStateMachine`
 - `lib/validation.js` (~1,045 lines): Ralph/autonomous loop and smart validation helpers
   `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`, `runFeatureValidateCommand`
 
@@ -90,15 +90,15 @@ Current shared modules:
 
 - `lib/proxy.js` (~711 lines): Caddy management, port allocation, dev-proxy registry, route reconciliation
   `generateCaddyfile`, `reloadCaddy`, `registerDevServer`, `deregisterDevServer`, `reconcileProxyRoutes`, `allocatePort`
-- `lib/dashboard-server.js` (~1,785 lines): HTTP server, polling, WebSocket relay, notifications, action dispatch
+- `lib/dashboard-server.js` (~1,913 lines): HTTP server, polling, WebSocket relay, notifications, action dispatch — reads state from manifests
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
-- `lib/worktree.js` (~1,111 lines): worktree creation, permissions, tmux sessions, terminal launching
+- `lib/worktree.js` (~1,122 lines): worktree creation, permissions, tmux sessions, terminal launching
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
 - `lib/config.js` (~951 lines): global/project config, profiles, agent CLI config, editor detection
   `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`, `getAgentCliConfig`
 - `lib/templates.js` (~550 lines): template loading, command registry, scaffolding, content generation
   `readTemplate`, `processTemplate`, `readGenericTemplate`, `formatCommandOutput`, `COMMAND_REGISTRY`
-- `lib/utils.js` (~1,464 lines): shared utilities — hooks, YAML parsers, spec CRUD, analytics, version, deploy
+- `lib/utils.js` (~1,474 lines): shared utilities — hooks, spec CRUD, analytics, version, deploy
   `parseHooksFile`, `parseFrontMatter`, `findFile`, `collectAnalyticsData`, `safeWrite`
 
 **Thin re-export facades:**
@@ -165,6 +165,15 @@ Components:
 - Project-specific agent instructions belong in `docs/aigon-project.md` (committed), not in `CLAUDE.md` (gitignored).
 - The dashboard is a foreground HTTP server. It registers with the proxy registry (`~/.aigon/dev-proxy/servers.json`) on start and deregisters on shutdown, giving it named URLs (`aigon.localhost`, `cc-71.aigon.localhost`) via the aigon-proxy daemon.
 - The proxy (`lib/aigon-proxy.js`) is a ~100-line Node.js reverse proxy that reads `servers.json` and routes by Host header. Installed as a system daemon on port 80 via `aigon proxy install`.
+
+## Remote Access
+
+The dashboard binds to `0.0.0.0` by default, making it accessible from any device on the local network.
+
+- **Same WiFi (phone/tablet):** open `http://<mac-ip>:4100` in a browser. Find your Mac's IP with `ipconfig getifaddr en0`.
+- **Outside the LAN (cellular, travel):** install [Tailscale](https://tailscale.com/) (free) on both devices, then use `http://<tailscale-ip>:4100`.
+- **What works remotely:** monitoring, board management, and state transitions — anything that doesn't require spawning a local terminal session.
+- **Session peek (feature 106):** will add streaming tmux output viewable from any browser, closing the gap for remote implementation monitoring.
 
 ## Reading Order For New Agents
 

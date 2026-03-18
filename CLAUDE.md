@@ -44,20 +44,31 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 
 | Module | ~Lines | Owns |
 |--------|--------|------|
-| `lib/commands/feature.js` | 2403 | All `feature-*` handlers, `sessions-close` |
-| `lib/commands/infra.js` | 1893 | dashboard, board, config, proxy-setup, dev-server |
-| `lib/dashboard-server.js` | 1785 | HTTP server, WebSocket relay, polling, action dispatch |
-| `lib/utils.js` | 1464 | YAML parsers, spec CRUD, hooks, version, analytics |
-| `lib/worktree.js` | 1111 | Worktree creation, tmux sessions, terminal launch |
-| `lib/commands/setup.js` | 959 | init, install-agent, check-version, update, doctor |
-| `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
+| `lib/commands/feature.js` | 2490 | All `feature-*` handlers, `sessions-close` |
+| `lib/dashboard-server.js` | 1913 | HTTP server, WebSocket relay, polling, reads manifests for state |
+| `lib/commands/infra.js` | 1858 | dashboard, board, config, proxy-setup, dev-server |
+| `lib/utils.js` | 1474 | Spec CRUD, hooks, version, analytics |
+| `lib/commands/setup.js` | 1212 | init, install-agent, check-version, update, doctor + state reconciliation |
+| `lib/worktree.js` | 1122 | Worktree creation, tmux sessions, terminal launch |
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
-| `lib/state-machine.js` | 602 | Spec state transitions (inbox → done) |
-| `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
-| `lib/git.js` | 383 | Branch, worktree, status, commit helpers |
+| `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
+| `lib/state-machine.js` | 764 | Spec state transitions, `requestTransition()` gatekeeper, outbox |
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
+| `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
+| `lib/manifest.js` | 413 | **State source of truth**: per-feature JSON manifests, agent status, locking, lazy bootstrap |
+| `lib/git.js` | 386 | Branch, worktree, status, commit helpers |
 
 Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/devserver.js`.
+
+## State Architecture
+Feature/research state lives in **two layers**:
+1. **Folders** (`docs/specs/features/0N-*/`) — shared ground truth, committed to git
+2. **Manifests** (`.aigon/state/feature-{id}.json`) — local reliability layer, gitignored, crash-safe
+
+- Agents write status to `.aigon/state/feature-{id}-{agent}.json` in main repo, not inside worktrees
+- Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
+- All transitions go through `requestTransition()` — no bypassing the state machine
+- Run `aigon doctor --fix` to detect and repair desyncs
 
 ## Where To Add Code
 - **New command** → edit `lib/commands/{domain}.js` (pick the matching domain)
