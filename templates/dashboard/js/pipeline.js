@@ -161,6 +161,17 @@
         case 'research-prioritise':
           await requestAction(pipelineCommand(pipelineType, 'prioritise'), [feature.name], repoPath, btn);
           break;
+        case 'feature-close': {
+          // For fleet eval cards, show winner picker before closing
+          if (feature.stage === 'in-evaluation') {
+            const picked = await showAgentPicker(id, feature.name, { single: true, title: 'Pick winner to merge', submitLabel: 'Close & Merge', preselect: feature.winnerAgent });
+            if (!picked || picked.length === 0) return;
+            await requestAction('feature-close', [id, picked[0]], repoPath, btn);
+          } else {
+            await requestAction('feature-close', [id, ...(agentId ? [agentId] : [])], repoPath, btn);
+          }
+          break;
+        }
         case 'feature-stop':
           await requestAction('feature-stop', [id, ...(agentId ? [agentId] : [])], repoPath, btn);
           break;
@@ -192,7 +203,14 @@
         // New agent section layout: one visual block per agent
         // Eval status badge (for in-evaluation cards)
         if (feature.evalStatus) {
-          innerHtml += '<div class="kcard-status"><span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span></div>';
+          let evalStatusRow = '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>';
+          if (feature.evalStatus === 'pick winner' && feature.winnerAgent) {
+            evalStatusRow += '<span class="kcard-winner">Winner: ' + escHtml(feature.winnerAgent) + '</span>';
+          }
+          innerHtml += '<div class="kcard-status">' + evalStatusRow + '</div>';
+          if (feature.evalPath) {
+            innerHtml += '<button class="btn btn-secondary kcard-eval-btn" data-view-eval>View Eval</button>';
+          }
         }
         // Agent sections
         agents.forEach(agent => {
@@ -229,12 +247,20 @@
         // Legacy layout for cards without active agents (inbox, backlog, done, research, feedback)
         const agentBadgesHtml = buildAgentBadgesHtml(agents);
         const actionsHtml = buildValidActionsHtml(validActions);
-        const evalStatusHtml = feature.evalStatus
-          ? '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>'
-          : '';
+        let evalStatusHtml = '';
+        if (feature.evalStatus) {
+          let evalStatusRow = '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>';
+          if (feature.evalStatus === 'pick winner' && feature.winnerAgent) {
+            evalStatusRow += '<span class="kcard-winner">Winner: ' + escHtml(feature.winnerAgent) + '</span>';
+          }
+          evalStatusHtml = '<div class="kcard-status">' + evalStatusRow + '</div>';
+          if (feature.evalPath) {
+            evalStatusHtml += '<button class="btn btn-secondary kcard-eval-btn" data-view-eval>View Eval</button>';
+          }
+        }
         innerHtml +=
           (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
-          (evalStatusHtml ? '<div class="kcard-status">' + evalStatusHtml + '</div>' : '') +
+          evalStatusHtml +
           (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
       }
 
@@ -251,6 +277,16 @@
         };
       });
 
+      // Wire "View Eval" button
+      const evalBtn = card.querySelector('[data-view-eval]');
+      if (evalBtn && feature.evalPath) {
+        evalBtn.onclick = (e) => {
+          e.stopPropagation();
+          const displayName = (feature.id ? '#' + feature.id + ' ' : '') + feature.name.replace(/-/g, ' ');
+          openDrawer(feature.evalPath, displayName + ' — Eval', feature.stage, repoPath);
+        };
+      }
+
       let wasDragged = false;
       card.addEventListener('dragstart', (e) => {
         wasDragged = true;
@@ -259,7 +295,7 @@
         const validTargetStages = (feature.validActions || [])
           .filter(a => a.type === 'transition')
           .map(a => a.to);
-        dragState = { featureId: feature.id, featureName: feature.name, fromStage: feature.stage, repoPath, pipelineType, validTargetStages };
+        dragState = { featureId: feature.id, featureName: feature.name, fromStage: feature.stage, repoPath, pipelineType, validTargetStages, winnerAgent: feature.winnerAgent || null };
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', feature.id);
         // Create tilted drag image
@@ -435,7 +471,7 @@
           const col = e.currentTarget;
           col.classList.remove('drag-over', 'drag-blocked');
           if (!dragState) return;
-          const { featureId, featureName, fromStage, repoPath: dragRepo, pipelineType: dragPType, validTargetStages } = dragState;
+          const { featureId, featureName, fromStage, repoPath: dragRepo, pipelineType: dragPType, validTargetStages, winnerAgent: dragWinnerAgent } = dragState;
           dragState = null;
           if (!(validTargetStages && validTargetStages.includes(stage))) return;
           const effectiveRepo = dragRepo || repoPath;
@@ -455,7 +491,9 @@
             await requestAction(pipelineCommand(dragPType, 'eval'), [featureId], effectiveRepo);
             await requestFeatureOpen(featureId, evalAgent, effectiveRepo, null, dragPType);
           } else if (fromStage === 'in-evaluation' && stage === 'done') {
-            await requestAction(pipelineCommand(dragPType, 'close'), [featureId], effectiveRepo);
+            const picked = await showAgentPicker(featureId, featureName, { single: true, title: 'Pick winner to merge', submitLabel: 'Close & Merge', preselect: dragWinnerAgent });
+            if (!picked || picked.length === 0) return;
+            await requestAction(pipelineCommand(dragPType, 'close'), [featureId, picked[0]], effectiveRepo);
           }
         }
       };
