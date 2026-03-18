@@ -693,7 +693,7 @@ If no PORT is found, Aigon falls back to profile defaults (3001-3004 for web, 80
 
 ## Local Dev Proxy
 
-The dev proxy gives every dev server instance a meaningful subdomain URL instead of a port number. Agents run `aigon dev-server start`, get a URL like `http://cc-119.whenswell.test`, and everything just works — no port juggling, no collisions, no confusion.
+The dev proxy gives every dev server instance a meaningful subdomain URL instead of a port number. Agents run `aigon dev-server start`, get a URL like `http://cc-119.whenswell.localhost`, and everything just works — no port juggling, no collisions, no confusion.
 
 ### Why use the proxy?
 
@@ -709,70 +709,44 @@ With the proxy, every dev server gets a unique, memorable URL based on agent, fe
 
 ### URL Scheme
 
-**Format:** `http://{agent}-{featureId}.{appId}.test`
+**Format:** `http://{agent}-{featureId}.{appId}.localhost`
 
 | Scenario | URL |
 |---|---|
-| Claude on feature 119 of whenswell | `http://cc-119.whenswell.test` |
-| Gemini on feature 119 of whenswell | `http://gg-119.whenswell.test` |
-| Claude on feature 120 of whenswell | `http://cc-120.whenswell.test` |
-| Claude on feature 5 of shopkeeper | `http://cc-5.shopkeeper.test` |
-| Main branch / general dev | `http://whenswell.test` |
+| Claude on feature 119 of whenswell | `http://cc-119.whenswell.localhost` |
+| Gemini on feature 119 of whenswell | `http://gg-119.whenswell.localhost` |
+| Claude on feature 120 of whenswell | `http://cc-120.whenswell.localhost` |
+| Claude on feature 5 of shopkeeper | `http://cc-5.shopkeeper.localhost` |
+| Main branch / general dev | `http://whenswell.localhost` |
 
-The `.test` TLD is IETF-reserved (RFC 6761) for testing. It won't conflict with real domains and works system-wide on macOS (Safari, curl, Node fetch, everything).
+`.localhost` domains resolve to `127.0.0.1` automatically per RFC 6761 — **no DNS configuration needed**. Works on all modern OSes (macOS, Linux, Windows) without any setup.
 
 ### Architecture
 
 ```
-Browser: http://cc-119.whenswell.test
+Browser: http://cc-119.whenswell.localhost
     ↓
-dnsmasq: *.test → 127.0.0.1
+OS: *.localhost → 127.0.0.1 (RFC 6761, zero config)
     ↓
-Caddy (:80): reverse_proxy → localhost:{dynamic-port}
+aigon-proxy (port 80 or 4100): routes by Host header → localhost:{dynamic-port}
     ↓
 Dev server (port allocated dynamically)
 ```
 
-### One-Time Machine Setup
-
-Run this once on your machine:
+### Setup
 
 ```bash
-aigon proxy-setup
+aigon proxy start    # Start the aigon-proxy daemon
+aigon proxy install  # Optional: install launchd plist for auto-start on boot (macOS)
 ```
 
-This will:
-
-1. **Install Caddy and dnsmasq** via Homebrew (if not already installed)
-2. **Configure dnsmasq** to resolve all `*.test` domains to `127.0.0.1`
-3. **Create `/etc/resolver/test`** so macOS uses dnsmasq for `.test` lookups (requires sudo — you'll be prompted)
-4. **Start both services** via `brew services` (Caddy needs sudo for port 80)
-5. **Verify** the setup works
-
-The command is idempotent — safe to run multiple times. If anything is already installed, it skips those steps.
-
-**Prerequisites:** Homebrew must be installed. macOS only for now.
-
-#### What gets installed
-
-| Component | Purpose | Managed by |
-|---|---|---|
-| dnsmasq | Resolves `*.test` → 127.0.0.1 | `brew services` |
-| Caddy | Reverse proxy on port 80, routes subdomains to backend ports | `sudo brew services` |
-| `/etc/resolver/test` | Tells macOS to use dnsmasq for `.test` domains | File (created by proxy-setup) |
+No Homebrew, no sudo, no DNS configuration. The proxy reads `~/.aigon/dev-proxy/servers.json` on each request — zero state to sync.
 
 #### Verifying the setup
 
 ```bash
-# Check DNS resolution
-dig anything.test @127.0.0.1
-
-# Check services
-brew services list | grep -E 'caddy|dnsmasq'
-
-# Check resolver
-cat /etc/resolver/test
-# Should show: nameserver 127.0.0.1
+aigon proxy status   # Check if proxy is running
+aigon proxy-setup    # Check port 80 availability
 ```
 
 ### Per-Project Configuration
@@ -793,7 +767,7 @@ Add a `devProxy` section to your project's `.aigon/config.json`:
 
 | Field | Purpose | Default |
 |---|---|---|
-| `appId` | The app domain (`whenswell.test`) | `package.json` name or directory name |
+| `appId` | The app domain (`whenswell.localhost`) | `package.json` name or directory name |
 | `devProxy.command` | How to start the dev server | `npm run dev` |
 | `devProxy.healthCheck` | Path to verify the server is up | `/` |
 | `devProxy.basePort` | Preferred starting port for allocation | `3000` |
@@ -838,10 +812,10 @@ The command:
 3. **Writes `PORT=<allocated>` to `.env.local`**
 4. **Spawns the dev server** in the background using the `devProxy.command` from config (default: `npm run dev`), with `PORT` set in the environment
 5. **Redirects output** to a log file at `~/.aigon/dev-proxy/logs/{appId}-{serverId}.log`
-6. **Registers with the proxy** and reloads Caddy
+6. **Registers with the proxy** by writing to `servers.json` (aigon-proxy reads it live)
 7. **Waits for healthy** — polls the health check URL (default `/`) until the server responds (30s timeout)
 
-On the main branch with no feature, it registers as the bare app domain (e.g., `http://whenswell.test`).
+On the main branch with no feature, it registers as the bare app domain (e.g., `http://whenswell.localhost`).
 
 **Flags:**
 
@@ -857,7 +831,7 @@ aigon dev-server stop           # Auto-detects from context
 aigon dev-server stop cc-119    # Specify server ID explicitly
 ```
 
-This kills the process (using the PID from the registry) and removes the Caddy routing entry.
+This kills the process (using the PID from the registry) and removes the entry from `servers.json`.
 
 #### `aigon dev-server logs`
 
@@ -881,9 +855,9 @@ $ aigon dev-server list
 
    APP            SERVER      PORT   URL                              PID
    ───────────────────────────────────────────────────────────────────────────
-   whenswell         cc-119      3847   http://cc-119.whenswell.test       73524
-   whenswell         gg-119      4201   http://gg-119.whenswell.test       73801
-   shopkeeper      cc-5        5832   http://cc-5.shopkeeper.test      75000
+   whenswell         cc-119      3847   http://cc-119.whenswell.localhost   73524
+   whenswell         gg-119      4201   http://gg-119.whenswell.localhost   73801
+   shopkeeper      cc-5        5832   http://cc-5.shopkeeper.localhost 75000
 ```
 
 Dead processes are marked with `(dead)`.
