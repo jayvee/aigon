@@ -1,7 +1,8 @@
 ---
 status: submitted
-updated: 2026-03-18T12:00:00.000Z
+updated: 2026-03-18T03:22:33.362Z
 startedAt: 2026-03-18T11:45:00.000Z
+completedAt: 2026-03-18T03:22:33.362Z
 events:
   - { ts: "2026-03-18T11:45:00.000Z", status: implementing }
   - { ts: "2026-03-18T12:00:00.000Z", status: submitted }
