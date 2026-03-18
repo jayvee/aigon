@@ -1,10 +1,11 @@
 ---
-status: implementing
-updated: 2026-03-18T01:16:12.687Z
+status: submitted
+updated: 2026-03-18T01:18:48.783Z
 startedAt: 2026-03-18T01:12:49.765Z
 events:
   - { ts: "2026-03-18T01:12:49.765Z", status: implementing }
   - { ts: "2026-03-18T01:16:12.687Z", status: implementing }
+  - { ts: "2026-03-18T01:18:48.783Z", status: submitted }
 ---
 
 # Implementation Log: Feature 91 - fix-feature-87-ctx-regressions
