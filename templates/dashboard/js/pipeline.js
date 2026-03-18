@@ -442,7 +442,11 @@
               await requestFeatureOpen(featureId, agent, effectiveRepo, null, dragPType);
             }
           } else if (fromStage === 'in-progress' && stage === 'in-evaluation') {
+            const agents = await showAgentPicker(featureId, featureName, { single: true, title: 'Select evaluator agent', submitLabel: 'Evaluate' });
+            if (!agents || agents.length === 0) return;
+            const evalAgent = agents[0];
             await requestAction(pipelineCommand(dragPType, 'eval'), [featureId], effectiveRepo);
+            await requestFeatureOpen(featureId, evalAgent, effectiveRepo, null, dragPType);
           } else if (fromStage === 'in-evaluation' && stage === 'done') {
             await requestAction(pipelineCommand(dragPType, 'close'), [featureId], effectiveRepo);
           }
