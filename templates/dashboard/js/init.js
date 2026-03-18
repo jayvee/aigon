@@ -89,13 +89,28 @@
             statusBadge(s) +
             '<span class="session-meta">' + age + '</span>' +
             '<span style="display:flex;gap:5px">' +
-              '<button class="btn btn-primary" style="font-size:11px;padding:3px 8px" data-session="' + escHtml(s.name) + '">Attach</button>' +
+              '<button class="btn btn-primary" style="font-size:11px;padding:3px 8px" data-session="' + escHtml(s.name) + '">View</button>' +
+              '<button class="btn" style="font-size:11px;padding:3px 8px" data-peek="' + escHtml(s.name) + '">Peek</button>' +
               '<button class="btn btn-warn" style="font-size:11px;padding:3px 8px" data-kill="' + escHtml(s.name) + '">Kill</button>' +
             '</span>';
 
           row.querySelector('[data-session]').onclick = async (e) => {
             e.stopPropagation();
-            openTerminalPanel(s.name, '', s.name);
+            try {
+              const res = await fetch('/api/session/view', {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ sessionName: s.name })
+              });
+              const payload = await res.json().catch(() => ({}));
+              if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+              showToast(payload.message || 'Session focused in terminal');
+            } catch (err) {
+              showToast('View failed: ' + err.message, null, null, {error:true});
+            }
+          };
+          row.querySelector('[data-peek]').onclick = (e) => {
+            e.stopPropagation();
+            openPeekPanel(s.name);
           };
           row.querySelector('[data-kill]').onclick = async (e) => {
             e.stopPropagation();
