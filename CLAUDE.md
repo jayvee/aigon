@@ -66,13 +66,12 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 - **Agent prompts or install content** → `templates/`; run `aigon install-agent cc` after
 - **Workflow state changes** → update command module AND affected templates together
 
-## Six Rules Before Editing
+## Five Rules Before Editing
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit
 4. **Restart after backend edits** — after changing any `lib/*.js`, restart `node aigon-cli.js dashboard`
 5. **Don't move spec files manually** — always use `aigon` CLI commands to transition state
-6. **Run the right tests** — read `docs/architecture.md § Testing` before running tests. Use `npm test` for core + dashboard UI. Use `npm run test:e2e:mock-solo` or `mock-fleet` after lifecycle changes. Use `npm run test:dashboard` after dashboard HTML/JS edits. Never skip tests before submitting.
 
 ## Common Agent Mistakes
 - **Inventing args**: adding `cc` or `--autonomous` to a plain command → causes wrong mode (Drive vs Fleet)
