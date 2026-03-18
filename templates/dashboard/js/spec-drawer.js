@@ -2,7 +2,7 @@
 
     const drawerState = {
       path: null, content: '', savedContent: '', mode: 'read', dirty: false,
-      title: '', stage: '',
+      title: '', stage: '', type: 'feature', repoPath: null,
       fontSize: Number(localStorage.getItem(lsKey('drawerFontSize')) || '13'),
       undoStack: [], redoStack: []
     };
@@ -51,11 +51,20 @@
       updateDrawerButtons();
     }
 
-    function openDrawer(specPath, title, stage) {
+    function specTypeFromPath(specPath) {
+      if (!specPath) return 'feature';
+      if (specPath.includes('/research/')) return 'research';
+      if (specPath.includes('/feedback/')) return 'feedback';
+      return 'feature';
+    }
+
+    function openDrawer(specPath, title, stage, repoPath) {
       if (!specPath) return;
       drawerState.path = specPath;
       drawerState.title = title;
       drawerState.stage = stage;
+      drawerState.type = specTypeFromPath(specPath);
+      drawerState.repoPath = repoPath || null;
       drawerState.mode = 'read';
       drawerState.dirty = false;
       drawerState.undoStack = [];
@@ -152,9 +161,33 @@
       }
     }
 
+    async function launchAiSession() {
+      if (!drawerState.path) { showToast('No spec loaded'); return; }
+      if (!drawerState.repoPath) { showToast('Repo path unknown — open spec from a kanban card', null, null, { error: true }); return; }
+      const agentId = getAskAgent();
+      const specPrompts = {
+        feature: `Read the feature spec at ${drawerState.path} and let's discuss and refine it together. Help me improve the summary, acceptance criteria, and technical approach. Don't implement anything.`,
+        research: `Read the research topic at ${drawerState.path} and let's discuss and refine it together. Help me sharpen the research questions and scope. Don't write any code.`,
+        feedback: `Read the feedback item at ${drawerState.path} and let's discuss it together. Help me clarify the problem, assess severity, and decide on next steps.`,
+      };
+      const prompt = specPrompts[drawerState.type] || specPrompts.feature;
+      const res = await fetch('/api/session/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ repoPath: drawerState.repoPath, agentId, prompt })
+      }).catch(() => null);
+      if (!res || !res.ok) {
+        const data = res ? await res.json().catch(() => ({})) : {};
+        showToast('Failed to open terminal: ' + (data.error || 'Unknown'), null, null, { error: true });
+        return;
+      }
+      openTerminalPanel('Use AI · ' + agentId, null, null, null, { path: drawerState.path, title: drawerState.title, stage: drawerState.stage });
+    }
+
     // Event listeners
     drawerOverlay.onclick = closeDrawer;
     document.getElementById('drawer-close').onclick = closeDrawer;
+    document.getElementById('drawer-use-ai').onclick = launchAiSession;
     drawerEl.querySelectorAll('.drawer-mode-btn').forEach(btn => {
       btn.onclick = () => setDrawerMode(btn.dataset.mode);
     });
