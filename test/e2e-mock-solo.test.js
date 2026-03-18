@@ -1,19 +1,13 @@
 #!/usr/bin/env node
 /**
- * E2E test — Solo worktree (Drive) lifecycle.
+ * E2E test: Full solo worktree (Drive) lifecycle with mock agent.
  *
- * Exercises the full flow:
- *   feature-create → feature-prioritise → feature-setup (cc) →
- *   MockAgent run → feature-close
+ * Exercises: feature-create → prioritise → setup (cc) → mock-do → close
  *
- * Runs with:  node test/e2e-mock-solo.test.js
- *             npm run test:e2e:mock-solo
+ * Run: node test/e2e-mock-solo.test.js
+ * Or:  npm run test:e2e:mock-solo
  *
- * Set MOCK_DELAY=fast to use 500ms delays instead of 15s/10s defaults (for CI).
- *
- * Test time:
- *   Default: ~60-90 seconds (dominated by MockAgent delays)
- *   Fast:    ~5-10 seconds
+ * Separate from main e2e suite due to timing (~30s dominated by mock agent pauses).
  */
 
 'use strict';
@@ -22,21 +16,20 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { spawnSync } = require('child_process');
-
-const MockAgent = require('./mock-agent');
+const { MockAgent } = require('./mock-agent');
 
 const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
 const FIXTURES_DIR = path.join(os.homedir(), 'src');
 const MOCK_BIN_DIR = path.join(__dirname, 'mock-bin');
 
-// ─── async test runner ────────────────────────────────────────────────────────
+// ─── simple async test runner ──────────────────────────────────────────────────
 
 let passed = 0;
 let failed = 0;
 
-async function test(description, fn) {
+function check(description, fn) {
     try {
-        await fn();
+        fn();
         console.log(`    ✓ ${description}`);
         passed++;
     } catch (err) {
@@ -46,29 +39,15 @@ async function test(description, fn) {
     }
 }
 
-// ─── fixture helpers (mirrors test/e2e.test.js) ────────────────────────────
-
-function ensureFixtures() {
-    if (!fs.existsSync(path.join(FIXTURES_DIR, 'brewboard'))) {
-        console.log('  Fixtures missing — generating...');
-        const result = spawnSync(process.execPath, [path.join(__dirname, 'setup-fixture.js')], {
-            encoding: 'utf8',
-            stdio: 'inherit',
-        });
-        if (result.status !== 0) throw new Error('Fixture generation failed');
-    }
-}
+// ─── helpers ──────────────────────────────────────────────────────────────────
 
 function copyDir(src, dest) {
     fs.mkdirSync(dest, { recursive: true });
     for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
         const srcPath = path.join(src, entry.name);
         const destPath = path.join(dest, entry.name);
-        if (entry.isDirectory()) {
-            copyDir(srcPath, destPath);
-        } else {
-            fs.copyFileSync(srcPath, destPath);
-        }
+        if (entry.isDirectory()) copyDir(srcPath, destPath);
+        else fs.copyFileSync(srcPath, destPath);
     }
 }
 
@@ -81,22 +60,18 @@ function copyFixtureToTemp(fixtureName) {
     return tmpDir;
 }
 
-function runAigon(args, { cwd, home, env = {} } = {}) {
+function runAigon(args, { cwd, env = {} } = {}) {
     const result = spawnSync(process.execPath, [CLI_PATH, ...args], {
         cwd: cwd || process.cwd(),
         env: {
             ...process.env,
-            HOME: home || os.tmpdir(),
+            HOME: os.tmpdir(),
             PATH: MOCK_BIN_DIR + path.delimiter + process.env.PATH,
             ...env,
         },
         encoding: 'utf8',
     });
-    return {
-        stdout: result.stdout || '',
-        stderr: result.stderr || '',
-        exitCode: result.status,
-    };
+    return { stdout: result.stdout || '', stderr: result.stderr || '', exitCode: result.status };
 }
 
 function runGit(args, cwd) {
@@ -104,188 +79,184 @@ function runGit(args, cwd) {
     return result.stdout ? result.stdout.trim() : '';
 }
 
-// ─── assertion helpers ────────────────────────────────────────────────────────
-
-function assertExitCode(result, expected) {
-    if (result.exitCode !== expected) {
-        throw new Error(
-            `Expected exit code ${expected}, got ${result.exitCode}\n` +
-            `  stdout: ${result.stdout.slice(0, 300)}\n` +
-            `  stderr: ${result.stderr.slice(0, 300)}`
-        );
-    }
-}
-
-function assertDirContainsFile(cwd, dir, predicate) {
-    const absDir = path.join(cwd, dir);
-    if (!fs.existsSync(absDir)) {
-        throw new Error(`Expected directory to exist: ${dir}`);
-    }
-    const files = fs.readdirSync(absDir);
-    const match = files.find(f => predicate(f));
-    if (!match) {
-        throw new Error(`No file matching predicate found in ${dir}. Files: ${files.join(', ')}`);
-    }
-    return match;
-}
-
-function readFrontmatter(filePath) {
+function readFrontmatterStatus(filePath) {
+    if (!fs.existsSync(filePath)) return null;
     const content = fs.readFileSync(filePath, 'utf8');
-    const match = content.match(/^---\n([\s\S]*?)\n---/);
-    if (!match) return {};
-    const fm = {};
-    for (const line of match[1].split('\n')) {
-        const [k, ...v] = line.split(':');
-        if (k && v.length) fm[k.trim()] = v.join(':').trim();
-    }
-    return fm;
+    const m = content.match(/^---\n[\s\S]*?status:\s*(\S+)/);
+    return m ? m[1] : null;
 }
 
-// ─── main test ────────────────────────────────────────────────────────────────
+function findFileIn(dir, predicate) {
+    if (!fs.existsSync(dir)) return null;
+    return fs.readdirSync(dir).find(predicate) || null;
+}
+
+function extractAssignedId(output) {
+    const m = (output || '').match(/Assigned ID:\s*(\d+)/);
+    return m ? m[1] : null;
+}
+
+function ensureFixtures() {
+    if (!fs.existsSync(path.join(FIXTURES_DIR, 'brewboard'))) {
+        console.log('  Fixtures missing — generating...');
+        const result = spawnSync(process.execPath, [path.join(__dirname, 'setup-fixture.js')], {
+            encoding: 'utf8',
+            stdio: 'inherit',
+        });
+        if (result.status !== 0) throw new Error('Fixture generation failed');
+    }
+}
+
+// ─── main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-    console.log('\n  e2e — mock solo worktree lifecycle');
-
     ensureFixtures();
 
     const tmpDir = copyFixtureToTemp('brewboard');
-    const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-e2e-home-'));
-    const worktreesDir = `${tmpDir}-worktrees`;
+    const repoName = path.basename(tmpDir);
+    const worktreeBase = path.join(path.dirname(tmpDir), `${repoName}-worktrees`);
+
+    console.log('\n  e2e-mock-solo: Full solo worktree lifecycle');
+    console.log(`  Fixture: ${tmpDir}`);
 
     try {
-        // ── 1. feature-create ──────────────────────────────────────────────────
-        const createResult = runAigon(['feature-create', 'mock-test-feature'], { cwd: tmpDir, home: tmpHome });
-        await test('feature-create exits 0', () => assertExitCode(createResult, 0));
+        // ── Phase 1: Setup ─────────────────────────────────────────────────────
+        console.log('\n  Setup Phase');
 
-        // ── 2. feature-prioritise ──────────────────────────────────────────────
-        const prioResult = runAigon(['feature-prioritise', 'mock-test-feature'], { cwd: tmpDir, home: tmpHome });
-        await test('feature-prioritise exits 0', () => assertExitCode(prioResult, 0));
+        const createResult = runAigon(['feature-create', 'mock-test-feature'], { cwd: tmpDir });
+        check('feature-create exits 0', () => {
+            if (createResult.exitCode !== 0)
+                throw new Error(`exit ${createResult.exitCode}: ${createResult.stderr.slice(0, 200)}`);
+        });
 
-        // Parse assigned ID from output (e.g. "📋 Assigned ID: 05")
-        const idMatch = (prioResult.stdout + prioResult.stderr).match(/Assigned ID:\s*(\d+)/);
-        const featureId = idMatch ? idMatch[1] : '05';
+        const prioritiseResult = runAigon(['feature-prioritise', 'mock-test-feature'], { cwd: tmpDir });
+        check('feature-prioritise exits 0', () => {
+            if (prioritiseResult.exitCode !== 0)
+                throw new Error(`exit ${prioritiseResult.exitCode}: ${prioritiseResult.stderr.slice(0, 200)}`);
+        });
+
+        const featureId = extractAssignedId(prioritiseResult.stdout + prioritiseResult.stderr);
+        check('feature-prioritise assigns an ID', () => {
+            if (!featureId) throw new Error('Could not parse "Assigned ID" from output');
+        });
+        if (!featureId) {
+            console.error('  Cannot continue without feature ID');
+            process.exitCode = 1;
+            return;
+        }
+
+        const paddedId = String(featureId).padStart(2, '0');
         const desc = 'mock-test-feature';
 
-        await test(`feature assigned ID ${featureId}`, () => {
-            if (!featureId.match(/^\d+$/)) throw new Error(`Could not parse feature ID from: ${prioResult.stdout}`);
-        });
-
-        // ── 3. feature-setup (solo worktree) ───────────────────────────────────
-        const setupResult = runAigon(['feature-setup', featureId, 'cc'], { cwd: tmpDir, home: tmpHome });
-        await test('feature-setup exits 0', () => {
-            if (setupResult.exitCode !== 0) {
-                throw new Error(`feature-setup failed: ${setupResult.stderr.slice(0, 300)}\nstdout: ${setupResult.stdout.slice(0, 300)}`);
-            }
-        });
-
-        // ── 4. Verify spec moved to 03-in-progress ─────────────────────────────
-        await test('spec moved to 03-in-progress', () => {
-            assertDirContainsFile(tmpDir, 'docs/specs/features/03-in-progress', f =>
-                f.startsWith(`feature-${featureId}-`) && f.endsWith('.md')
+        check('spec in 02-backlog after prioritise', () => {
+            const f = findFileIn(
+                path.join(tmpDir, 'docs/specs/features/02-backlog'),
+                f => f.includes(paddedId) && f.includes(desc)
             );
+            if (!f) throw new Error(`No spec with ID ${paddedId} found in 02-backlog`);
         });
 
-        // ── 5. Verify worktree created ─────────────────────────────────────────
-        const worktreePath = path.join(worktreesDir, `feature-${featureId}-cc-${desc}`);
-        await test('worktree directory created', () => {
-            if (!fs.existsSync(worktreePath)) {
-                throw new Error(`Expected worktree at: ${worktreePath}\nsetup stdout: ${setupResult.stdout.slice(0, 300)}`);
-            }
+        const setupResult = runAigon(['feature-setup', featureId, 'cc'], { cwd: tmpDir });
+        check('feature-setup exits 0', () => {
+            if (setupResult.exitCode !== 0)
+                throw new Error(`exit ${setupResult.exitCode}: ${setupResult.stderr.slice(0, 200)}`);
         });
 
-        // ── 6. Verify log created with status: implementing ────────────────────
+        check('spec moved to 03-in-progress', () => {
+            const f = findFileIn(
+                path.join(tmpDir, 'docs/specs/features/03-in-progress'),
+                f => f.includes(paddedId)
+            );
+            if (!f) throw new Error(`Spec for feature ${paddedId} not found in 03-in-progress`);
+        });
+
+        const worktreePath = path.join(worktreeBase, `feature-${paddedId}-cc-${desc}`);
+        check('worktree created at expected path', () => {
+            if (!fs.existsSync(worktreePath)) throw new Error(`Worktree not found: ${worktreePath}`);
+        });
+
         const logPath = path.join(
             worktreePath, 'docs', 'specs', 'features', 'logs',
-            `feature-${featureId}-cc-${desc}-log.md`
+            `feature-${paddedId}-cc-${desc}-log.md`
         );
-        await test('log file exists with status: implementing', () => {
-            if (!fs.existsSync(logPath)) {
-                throw new Error(`Expected log at: ${logPath}`);
-            }
-            const fm = readFrontmatter(logPath);
-            if (fm.status !== 'implementing') {
-                throw new Error(`Expected status: implementing, got: ${fm.status}`);
-            }
+        check('log file created with status: implementing', () => {
+            const status = readFrontmatterStatus(logPath);
+            if (status !== 'implementing') throw new Error(`Expected implementing, got: ${status}`);
         });
 
-        // ── 7. Run MockAgent ───────────────────────────────────────────────────
-        const delayNote = process.env.MOCK_DELAY === 'fast' ? '~1s' : '~25s';
-        console.log(`\n    Running mock agent (${delayNote})...`);
+        // ── Phase 2: Mock Agent ────────────────────────────────────────────────
+        console.log('\n  Agent Phase (~15s)');
 
-        const agent = new MockAgent({ featureId, agentId: 'cc', desc, repoPath: tmpDir });
+        const agent = new MockAgent({
+            featureId: paddedId,
+            agentId: 'cc',
+            desc,
+            repoPath: tmpDir,
+            delays: { implementing: 10000, submitted: 3000 }, // ~13s total
+        });
+
         await agent.run();
 
-        // ── 8. Verify log updated to submitted ────────────────────────────────
-        await test('log shows status: submitted', () => {
-            const fm = readFrontmatter(logPath);
-            if (fm.status !== 'submitted') {
-                throw new Error(`Expected status: submitted, got: ${fm.status}`);
-            }
+        check('log shows status: submitted after agent run', () => {
+            const status = readFrontmatterStatus(logPath);
+            if (status !== 'submitted') throw new Error(`Expected submitted, got: ${status}`);
         });
 
-        // ── 9. feature-close ──────────────────────────────────────────────────
-        const closeResult = runAigon(['feature-close', featureId], { cwd: tmpDir, home: tmpHome });
-        await test('feature-close exits 0 (or fails only on push)', () => {
-            const output = closeResult.stdout + closeResult.stderr;
-            if (closeResult.exitCode !== 0 && !output.includes('push')) {
-                throw new Error(
-                    `feature-close failed: ${closeResult.stderr.slice(0, 300)}\n` +
-                    `stdout: ${closeResult.stdout.slice(0, 300)}`
-                );
-            }
+        // ── Phase 3: Close ─────────────────────────────────────────────────────
+        console.log('\n  Close Phase');
+
+        // feature-close <ID> (no agent arg) — auto-detects the single Drive worktree
+        const closeResult = runAigon(['feature-close', featureId], { cwd: tmpDir });
+        check('feature-close exits 0', () => {
+            if (closeResult.exitCode !== 0)
+                throw new Error(`exit ${closeResult.exitCode}: ${closeResult.stdout.slice(0, 300)}\n${closeResult.stderr.slice(0, 300)}`);
         });
 
-        // ── 10. Verify spec moved to 05-done ──────────────────────────────────
-        await test('spec moved to 05-done', () => {
-            assertDirContainsFile(tmpDir, 'docs/specs/features/05-done', f =>
-                f.startsWith(`feature-${featureId}-`) && f.endsWith('.md')
+        check('spec moved to 05-done', () => {
+            const f = findFileIn(
+                path.join(tmpDir, 'docs/specs/features/05-done'),
+                f => f.includes(paddedId)
             );
+            if (!f) throw new Error(`Spec for feature ${paddedId} not found in 05-done`);
         });
 
-        // ── 11. Verify log moved to logs/selected ─────────────────────────────
-        await test('log moved to logs/selected', () => {
-            assertDirContainsFile(tmpDir, 'docs/specs/features/logs/selected', f =>
-                f.startsWith(`feature-${featureId}-`) && f.endsWith('-log.md')
+        check('log moved to logs/selected', () => {
+            const f = findFileIn(
+                path.join(tmpDir, 'docs/specs/features/logs/selected'),
+                f => f.includes(paddedId)
             );
+            if (!f) throw new Error(`Log for feature ${paddedId} not found in logs/selected`);
         });
 
-        // ── 12. Verify worktree removed ───────────────────────────────────────
-        await test('worktree removed after close', () => {
-            if (fs.existsSync(worktreePath)) {
-                throw new Error(`Expected worktree to be removed: ${worktreePath}`);
-            }
+        check('worktree removed after close', () => {
+            if (fs.existsSync(worktreePath)) throw new Error(`Worktree still exists: ${worktreePath}`);
         });
 
-        // ── 13. Verify feature branch deleted ────────────────────────────────
-        await test('feature branch deleted', () => {
-            const branchName = `feature-${featureId}-cc-${desc}`;
-            const branches = runGit(['branch', '--list', branchName], tmpDir);
-            if (branches.includes(branchName)) {
-                throw new Error(`Expected branch to be deleted: ${branchName}`);
-            }
+        check('feature branch deleted', () => {
+            const branches = runGit(['branch', '--list', `feature-${paddedId}-cc-${desc}`], tmpDir);
+            if (branches.includes(`feature-${paddedId}-cc-${desc}`)) throw new Error('Branch still exists after close');
         });
 
-        // ── 14. Verify merge commit exists ────────────────────────────────────
-        await test('merge commit exists on main', () => {
+        check('merge commit on main', () => {
             const log = runGit(['log', '--oneline', '-10'], tmpDir);
-            if (!log.toLowerCase().includes('merge')) {
-                throw new Error(`Expected a merge commit in recent log:\n${log}`);
-            }
+            if (!log.toLowerCase().includes('merge')) throw new Error('No merge commit found in recent git log');
+        });
+
+        check('agent dummy code present on main after merge', () => {
+            if (!fs.existsSync(path.join(tmpDir, 'mock-cc-implementation.js')))
+                throw new Error('mock-cc-implementation.js not in main repo after merge');
         });
 
     } finally {
-        fs.rmSync(tmpDir, { recursive: true, force: true });
-        fs.rmSync(tmpHome, { recursive: true, force: true });
-        if (fs.existsSync(worktreesDir)) {
-            fs.rmSync(worktreesDir, { recursive: true, force: true });
-        }
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (_) {}
+        try { fs.rmSync(worktreeBase, { recursive: true, force: true }); } catch (_) {}
     }
 
-    console.log(`\n  ${passed} passed${failed > 0 ? `, ${failed} failed` : ''}\n`);
-    process.exit(failed > 0 ? 1 : 0);
+    console.log(`\n  Results: ${passed} passed, ${failed} failed\n`);
+    if (failed > 0) process.exitCode = 1;
 }
 
 main().catch(err => {
     console.error('\nFatal error:', err.message);
-    process.exit(1);
+    process.exitCode = 1;
 });

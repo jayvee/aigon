@@ -1,24 +1,27 @@
 #!/usr/bin/env node
-'use strict';
-
 /**
  * MockAgent — simulates an agent working in a worktree.
  *
- * Used by e2e tests to exercise the full lifecycle without burning real AI tokens.
- * Mirrors the real agent behavior: writes code, commits, updates log frontmatter.
+ * Used by e2e-mock-solo.test.js and e2e-mock-fleet.test.js to exercise
+ * the full worktree lifecycle without burning real AI tokens.
+ *
+ * Each MockAgent instance:
+ *   1. Sleeps for `delays.implementing` ms (simulates coding)
+ *   2. Writes agent-specific dummy code and commits (distinct filenames to avoid merge conflicts)
+ *   3. Sleeps for `delays.submitted` ms (simulates final review)
+ *   4. Updates log frontmatter to `submitted` and commits
  *
  * Usage:
- *   const MockAgent = require('./mock-agent');
- *   const agent = new MockAgent({ featureId: '05', agentId: 'cc', desc: 'my-feature', repoPath: '/tmp/repo' });
+ *   const { MockAgent } = require('./mock-agent');
+ *   const agent = new MockAgent({ featureId: '07', agentId: 'cc', desc: 'dark-mode', repoPath: '/tmp/...' });
  *   await agent.run();
- *
- * Set MOCK_DELAY=fast (env) to use 500ms delays instead of defaults (for CI/tests).
  */
+
+'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-
 const { updateLogFrontmatterInPlace } = require('../lib/utils');
 
 function sleep(ms) {
@@ -27,80 +30,72 @@ function sleep(ms) {
 
 class MockAgent {
     /**
-     * @param {object} config
-     * @param {string} config.featureId   - padded feature ID, e.g. '05'
-     * @param {string} config.agentId     - agent code, e.g. 'cc'
-     * @param {string} config.desc        - feature slug, e.g. 'mock-test-feature'
-     * @param {string} config.repoPath    - absolute path to the main repo
-     * @param {object} [config.delays]    - override delays in ms
-     * @param {number} [config.delays.implementing] - ms to wait before committing code (default 15000)
-     * @param {number} [config.delays.submitted]    - ms to wait before submitting (default 10000)
+     * @param {object} opts
+     * @param {string} opts.featureId    - Padded feature ID, e.g. '07'
+     * @param {string} opts.agentId     - Agent code, e.g. 'cc', 'gg'
+     * @param {string} opts.desc        - Feature slug/desc, e.g. 'mock-test-feature'
+     * @param {string} opts.repoPath    - Absolute path to the main repo (temp fixture dir)
+     * @param {object} [opts.delays]    - Override default delays (ms)
+     * @param {number} [opts.delays.implementing=15000] - Time spent implementing
+     * @param {number} [opts.delays.submitted=10000]    - Time before marking submitted
      */
     constructor({ featureId, agentId, desc, repoPath, delays = {} }) {
         this.featureId = featureId;
         this.agentId = agentId;
         this.desc = desc;
         this.repoPath = repoPath;
+        this.delays = { implementing: 15000, submitted: 10000, ...delays };
+        this._abort = false;
 
-        const fastMode = process.env.MOCK_DELAY === 'fast';
-        this.delays = {
-            implementing: delays.implementing !== undefined ? delays.implementing : (fastMode ? 500 : 15000),
-            submitted: delays.submitted !== undefined ? delays.submitted : (fastMode ? 500 : 10000),
-        };
-
-        // Worktree path mirrors getWorktreeBase() in lib/worktree.js:
-        //   ../${repoName}-worktrees/feature-${featureId}-${agentId}-${desc}
+        // Worktree lives at <repoParent>/<repoName>-worktrees/feature-<id>-<agent>-<desc>
         const repoName = path.basename(repoPath);
-        this.worktreePath = path.join(
-            repoPath, '..', `${repoName}-worktrees`,
-            `feature-${featureId}-${agentId}-${desc}`
-        );
+        const worktreeBase = path.join(path.dirname(repoPath), `${repoName}-worktrees`);
+        this.worktreePath = path.join(worktreeBase, `feature-${featureId}-${agentId}-${desc}`);
 
-        // Log path mirrors setupWorktreeEnvironment() in lib/worktree.js
+        // Log file path within the worktree (created by feature-setup via setupWorktreeEnvironment)
         this.logPath = path.join(
             this.worktreePath,
             'docs', 'specs', 'features', 'logs',
             `feature-${featureId}-${agentId}-${desc}-log.md`
         );
-
-        this._aborted = false;
     }
 
-    /** Cancel a running mock agent (no-op if already completed). */
+    /** Cancel mid-run (best-effort). */
     abort() {
-        this._aborted = true;
+        this._abort = true;
     }
 
     /**
-     * Simulate agent work:
-     *   1. Sleep (implementing delay) — simulates agent thinking/coding
-     *   2. Write a dummy file and commit
-     *   3. Sleep (submitted delay) — simulates final review
-     *   4. Update log to submitted and commit
-     *
-     * @returns {Promise<void>}
+     * Run the mock agent: implement → commit → submit.
+     * @returns {Promise<void>} Resolves when the agent has submitted.
      */
     async run() {
-        // 1. Simulate working
+        // Phase 1: Simulate agent working on implementation
         await sleep(this.delays.implementing);
-        if (this._aborted) return;
+        if (this._abort) return;
 
-        // 2. Write a dummy code change and commit (simulates real implementation)
-        const mockFile = path.join(this.worktreePath, 'mock-implementation.js');
-        fs.writeFileSync(mockFile, '// mock implementation\n');
+        // Write agent-specific dummy code. Different filenames per agent prevents merge conflicts
+        // when cc and gg both commit to their own worktrees.
+        const dummyFile = path.join(this.worktreePath, `mock-${this.agentId}-implementation.js`);
+        fs.writeFileSync(
+            dummyFile,
+            `// Mock implementation by agent ${this.agentId}\nmodule.exports = { agent: '${this.agentId}' };\n`
+        );
+
         execSync('git add . && git commit -m "feat: mock implementation"', {
             cwd: this.worktreePath,
             stdio: 'pipe',
         });
 
-        // 3. Simulate final wrap-up before submission
+        // Phase 2: Simulate final review / polish before submitting
         await sleep(this.delays.submitted);
-        if (this._aborted) return;
+        if (this._abort) return;
 
-        // 4. Update log frontmatter to submitted (matches real agent-status submitted behavior)
+        // Update log frontmatter to submitted — matches real agent-status behavior
         updateLogFrontmatterInPlace(this.logPath, {
             status: 'submitted',
             appendEvent: 'submitted',
+            setCompletedAt: true,
         });
 
         execSync('git add . && git commit -m "chore: submit"', {
@@ -110,4 +105,4 @@ class MockAgent {
     }
 }
 
-module.exports = MockAgent;
+module.exports = { MockAgent, sleep };
