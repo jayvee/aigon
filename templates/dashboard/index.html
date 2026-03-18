@@ -412,10 +412,13 @@
     .console-entry-row{display:flex;align-items:center;gap:8px;padding:6px 12px;white-space:nowrap;overflow:hidden}
     .console-ts{color:var(--text-tertiary);flex-shrink:0;font-size:10px}
     .console-status{flex-shrink:0;font-size:12px;width:14px;text-align:center}
+    .console-repo{color:var(--text-tertiary);background:var(--bg-tertiary);padding:1px 5px;border-radius:3px;font-size:10px;flex-shrink:0;margin-right:4px}
     .console-cmd{color:var(--text-primary);flex:1;overflow:hidden;text-overflow:ellipsis;font-size:11px}
     .console-dur{color:var(--text-tertiary);flex-shrink:0;font-size:10px;min-width:40px;text-align:right}
-    .console-detail{padding:0 12px 8px 12px;display:none}
+    .console-detail{padding:0 12px 8px 12px;display:none;position:relative}
     .console-entry.open .console-detail{display:block}
+    .console-close-btn{position:absolute;top:4px;right:4px;background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:14px;line-height:1;padding:2px 5px;border-radius:3px}
+    .console-close-btn:hover{color:var(--text-primary);background:var(--bg-tertiary)}
     .console-detail-section{margin-top:6px}
     .console-detail-label{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:3px}
     .console-detail-content{white-space:pre-wrap;word-break:break-all;font-size:11px;color:var(--text-secondary);background:var(--bg-base);border-radius:4px;padding:6px 8px;max-height:200px;overflow-y:auto}
@@ -3080,17 +3083,21 @@
       if (events.length === 0) {
         html.push('<div class="console-empty">No events yet — run an action to see output here</div>');
       } else {
-        events.forEach((evt, idx) => {
+        // Show newest entries first
+        const sorted = [...events].reverse();
+        sorted.forEach((evt, idx) => {
           const ts = evt.timestamp ? new Date(evt.timestamp).toLocaleTimeString('en-US', { hour12: false }) : '';
           const ok = evt.ok !== false;
           const statusIcon = ok ? '✓' : '✗';
           const dur = evt.duration != null ? (evt.duration / 1000).toFixed(1) + 's' : '';
           const cmd = escHtml(evt.command || evt.action || evt.type || '');
+          const repo = evt.repoPath ? escHtml(evt.repoPath.split('/').pop()) : '';
           const errorClass = ok ? '' : ' error';
           html.push(`<div class="console-entry${errorClass}" data-idx="${idx}">`);
           html.push('<div class="console-entry-row">');
           html.push(`<span class="console-ts">[${escHtml(ts)}]</span>`);
           html.push(`<span class="console-status" style="color:${ok ? 'var(--success)' : 'var(--error)'}">${statusIcon}</span>`);
+          if (repo) html.push(`<span class="console-repo">${repo}</span>`);
           html.push(`<span class="console-cmd">${cmd}</span>`);
           html.push(`<span class="console-dur">${escHtml(dur)}</span>`);
           html.push('</div>');
@@ -3099,6 +3106,7 @@
           const hasStderr = evt.stderr && evt.stderr.trim();
           if (hasStdout || hasStderr) {
             html.push('<div class="console-detail">');
+            html.push('<button class="console-close-btn" title="Close">✕</button>');
             if (hasStdout) {
               html.push('<div class="console-detail-section">');
               html.push('<div class="console-detail-label">stdout</div>');
@@ -3121,11 +3129,23 @@
 
       container.innerHTML = html.join('');
 
-      // Expand/collapse on entry click
-      container.querySelectorAll('.console-entry').forEach(entry => {
-        entry.addEventListener('click', () => {
-          entry.classList.toggle('open');
+      // Expand on header row click, close on X button
+      container.querySelectorAll('.console-entry-row').forEach(row => {
+        row.addEventListener('click', () => {
+          row.parentElement.classList.toggle('open');
         });
+        row.style.cursor = 'pointer';
+      });
+      // Close button
+      container.querySelectorAll('.console-close-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          btn.closest('.console-entry').classList.remove('open');
+        });
+      });
+      // Prevent clicks inside detail from toggling
+      container.querySelectorAll('.console-detail').forEach(detail => {
+        detail.addEventListener('click', (e) => e.stopPropagation());
       });
 
       // Clear button
@@ -3137,17 +3157,17 @@
         };
       }
 
-      // Auto-scroll: only scroll to bottom if user hasn't scrolled up
+      // Newest entries are at top — scroll to top by default
       const logEl = container.querySelector('#console-log');
       if (logEl && !consoleState.scrollLocked) {
-        logEl.scrollTop = logEl.scrollHeight;
+        logEl.scrollTop = 0;
       }
 
       // Track scroll lock
       if (logEl) {
         logEl.onscroll = () => {
-          const atBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 40;
-          consoleState.scrollLocked = !atBottom;
+          const atTop = logEl.scrollTop < 40;
+          consoleState.scrollLocked = !atTop;
         };
       }
     }
