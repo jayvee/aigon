@@ -26,7 +26,7 @@
     "AGENT_TEAMS_RESEARCH_NOTE": "",
     "AGENT_TEAMS_FEATURE_NOTE": "",
     "AGENT_DEV_SERVER_NOTE": "",
-    "PERMISSION_SAVE_NOTE": "\n## Saving Permissions\n\nWhen the user says \"save that permission\" or \"remember that\":\n\n1. Read `.gemini/settings.json`\n2. Add the tool name to the `allowedTools` array\n3. Write the updated file\n\nNote: Gemini's \"always allow\" from the approval prompt does not persist across sessions. Editing the settings file is the reliable way to save permissions.\n"
+    "PERMISSION_SAVE_NOTE": "\n## Saving Permissions\n\nWhen the user says \"save that permission\" or \"remember that\":\n\n1. Read or create a TOML file in `.gemini/policies/` (e.g., `.gemini/policies/custom.toml`)\n2. Add a `[[rule]]` block with the tool name, decision, and priority\n3. Example:\n   ```toml\n   [[rule]]\n   toolName = \"run_shell_command\"\n   commandPrefix = \"npm\"\n   decision = \"allow\"\n   priority = 100\n   ```\n\nNote: The old `allowedTools` array in settings.json is deprecated. Use Policy Engine TOML files instead.\n"
   },
   "output": {
     "format": "toml",
@@ -42,8 +42,20 @@
     "settings": {
       "enabled": true,
       "path": ".gemini/settings.json",
-      "allowedTools": [
-        "aigon"
+      "policies": [
+        {
+          "toolName": "run_shell_command",
+          "commandPrefix": "aigon",
+          "decision": "allow",
+          "priority": 100
+        },
+        {
+          "toolName": "run_shell_command",
+          "commandPrefix": "node",
+          "argsPattern": "aigon-cli\\.js",
+          "decision": "allow",
+          "priority": 100
+        }
       ],
       "hooks": {
         "SessionStart": [
