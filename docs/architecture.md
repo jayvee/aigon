@@ -157,7 +157,8 @@ Components:
 - Avoid circular dependencies between `lib/*.js` modules.
 - Treat `templates/` as source-of-truth for generated agent docs and prompts.
 - Project-specific agent instructions belong in `docs/aigon-project.md` (committed), not in `CLAUDE.md` (gitignored).
-- The dashboard is a foreground HTTP server — no daemon, no PID files. It registers with the dev-server proxy registry on start and deregisters on shutdown, giving it named URLs (`aigon.test`, `cc-71.aigon.test`) when Caddy is configured.
+- The dashboard is a foreground HTTP server. It registers with the proxy registry (`~/.aigon/dev-proxy/servers.json`) on start and deregisters on shutdown, giving it named URLs (`aigon.localhost`, `cc-71.aigon.localhost`) via the aigon-proxy daemon.
+- The proxy (`lib/aigon-proxy.js`) is a ~100-line Node.js reverse proxy that reads `servers.json` and routes by Host header. Installed as a system daemon on port 80 via `aigon proxy install`.
 
 ## Reading Order For New Agents
 

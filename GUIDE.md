@@ -46,7 +46,7 @@ This is independent from workflow mode (Drive/Fleet/Autopilot/Swarm).
 | Spec authoring/refinement (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) | In-agent | Best for back-and-forth definition and scope shaping |
 | Agent execution (`feature-do`, `feature-review`, `research-do`, `research-synthesize`) | In-agent | Best when an agent session is already active |
 | Setup/orchestration (`init`, `install-agent`, `update`, `feature-setup`, `research-setup`, `feature-open`, `feature-close`, `feature-cleanup`) | CLI | Repo/worktree operations and coordination |
-| Infra/config (`config`, `profile`, `proxy-setup`, `dev-server`, `dashboard`) | CLI | Machine/project configuration and services |
+| Infra/config (`config`, `profile`, `proxy`, `dev-server`, `dashboard`) | CLI | Machine/project configuration and services |
 
 ### Mode × surface matrix
 
@@ -746,7 +746,7 @@ No Homebrew, no sudo, no DNS configuration. The proxy reads `~/.aigon/dev-proxy/
 
 ```bash
 aigon proxy status   # Check if proxy is running
-aigon proxy-setup    # Check port 80 availability
+aigon proxy install  # One-time: install as system daemon on port 80
 ```
 
 ### Per-Project Configuration
@@ -797,12 +797,12 @@ $ aigon dev-server start
    Waiting for server on port 3847... ready!
 
 🌐 Dev server running
-   URL:  http://cc-119.whenswell.test
+   URL:  http://cc-119.whenswell.localhost
    Port: 3847  PID: 73524
    ID:   cc-119 (whenswell)
    Logs: aigon dev-server logs
 
-   Open: http://cc-119.whenswell.test
+   Open: http://cc-119.whenswell.localhost
 ```
 
 The command:
@@ -892,30 +892,14 @@ The `feature-do` template instructs agents to run `aigon dev-server start` at th
 
 ### Fallback (No Proxy)
 
-If Caddy isn't installed or running, `aigon dev-server start` still works — it spawns the process, allocates a port, and uses `localhost:<port>` URLs:
-
-```
-⏳ Starting dev server: npm run dev
-   Waiting for server on port 3001... ready!
-
-📡 Dev server running
-   URL:  http://localhost:3001
-   Port: 3001  PID: 73524
-
-   💡 Run `aigon proxy-setup` for subdomain routing (e.g., http://cc-119.whenswell.test)
-   Logs: aigon dev-server logs
-
-   Open: http://localhost:3001
-```
-
-All existing functionality continues to work unchanged.
+If the proxy isn't running, `aigon dev-server start` still works — it spawns the process, allocates a port, and uses `localhost:<port>` URLs. Run `aigon proxy install` to enable named URLs.
 
 ### Multiple Apps on One Machine
 
 Each app sets its own `appId`, so URLs are unique across projects:
 
-- `http://cc-119.whenswell.test` (whenswell project)
-- `http://cc-5.shopkeeper.test` (shopkeeper project)
+- `http://cc-119.whenswell.localhost` (whenswell project)
+- `http://cc-5.shopkeeper.localhost` (shopkeeper project)
 
 Ports are allocated dynamically and can't collide — if one app takes port 3000, the next app automatically gets the next available port. You can optionally set different `devProxy.basePort` values per app for predictable port ranges:
 
@@ -934,21 +918,18 @@ The proxy's runtime state lives in `~/.aigon/dev-proxy/`:
 | File | Purpose |
 |---|---|
 | `servers.json` | Registry of currently running dev servers (app, port, PID, worktree path) |
-| `Caddyfile` | Auto-generated Caddy config — regenerated on every start/stop |
+| `proxy.pid` | PID of the running aigon-proxy daemon |
+| `proxy.log` | Proxy daemon log output |
 
-These are ephemeral — not checked into any repo. The `servers.json` registry is the source of truth for what's currently running, and the Caddyfile is regenerated from it each time.
+These are ephemeral — not checked into any repo. The `servers.json` registry is the source of truth for what's currently running. The proxy reads it live on each request.
 
 ### Troubleshooting
 
-**`aigon proxy-setup` hangs:** It may be waiting for your sudo password. Check the terminal for a password prompt.
+**Proxy not running:** Run `aigon proxy install` (one-time, asks for sudo). This installs a system daemon on port 80 that starts on boot and auto-restarts on crash.
 
-**Caddy can't bind port 80:** Caddy needs root privileges for port 80. The proxy-setup uses `sudo brew services start caddy`. If Caddy is running as your user, stop it first: `brew services stop caddy`, then `sudo brew services start caddy`.
+**`aigon proxy status` shows not running after install:** Check `~/.aigon/dev-proxy/proxy.log` for errors. Most common: `http-proxy` not installed — run `npm install` in the aigon directory.
 
-**DNS not resolving `.test` domains:** Verify `/etc/resolver/test` exists and contains `nameserver 127.0.0.1`. Then verify dnsmasq is running: `brew services list | grep dnsmasq`.
-
-**`curl` works but browser doesn't:** Some browsers cache DNS. Try a hard refresh or clear the browser DNS cache. Safari works reliably with `.test` domains.
-
-**Dev server starts but proxy returns 502:** The dev server may not be ready yet. Caddy is proxying to the registered port, but the dev server hasn't finished starting. Wait a moment and retry.
+**Dev server starts but proxy returns 502:** The dev server may not be ready yet. Wait a moment and retry.
 
 **Port already in use:** `aigon dev-server start` auto-allocates an available port. If you see errors, run `aigon dev-server gc` to clean up stale entries from crashed processes, then try again.
 
