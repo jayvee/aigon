@@ -421,10 +421,6 @@
       const firstPassFeats = filteredFeatures.filter(f => f.firstPassSuccess !== null);
       const firstPassRate = firstPassFeats.length > 0
         ? firstPassFeats.filter(f => f.firstPassSuccess).length / firstPassFeats.length : null;
-      const autonomyFeats = filteredFeatures.filter(f => f.autonomyRatio !== null && f.autonomyRatio !== undefined);
-      const avgAutonomy = autonomyFeats.length > 0
-        ? autonomyFeats.reduce((s, f) => s + f.autonomyRatio, 0) / autonomyFeats.length : null;
-
       // Volume cards
       html.push('<div class="stats-section-title">Volume</div>');
       html.push('<div class="stats-cards">');
@@ -432,7 +428,6 @@
       html.push(buildStatCard('Features Completed', String(totalCompleted),
         statsState.period === '30d' && trend30 !== null ? trendIcon(trend30) : null));
       html.push(buildStatCard('Cycle Time', fmtHours(medianCycle), null, medianCycle !== null ? 'median, start to close' : null));
-      html.push(buildStatCard('Autonomy Score', avgAutonomy !== null ? fmtPct(avgAutonomy) : '—', null));
       html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null));
       html.push('</div>');
 
@@ -498,10 +493,9 @@
       const leaderAgentMap = {};
       filteredFeatures.forEach(f => {
         const ag = f.winnerAgent || 'solo';
-        if (!leaderAgentMap[ag]) leaderAgentMap[ag] = { completed: 0, durMs: [], autonomyRatios: [], firstPassArr: [] };
+        if (!leaderAgentMap[ag]) leaderAgentMap[ag] = { completed: 0, durMs: [], firstPassArr: [] };
         leaderAgentMap[ag].completed++;
         if (f.durationMs && f.durationMs > 0 && !f.cycleTimeExclude) leaderAgentMap[ag].durMs.push(f.durationMs);
-        if (f.autonomyRatio !== null) leaderAgentMap[ag].autonomyRatios.push(f.autonomyRatio);
         if (f.firstPassSuccess !== null) leaderAgentMap[ag].firstPassArr.push(f.firstPassSuccess);
       });
 
@@ -532,20 +526,19 @@
         html.push('<div class="stats-section-title" style="margin-top:4px">Agent Leaderboard</div>');
         html.push('<div class="stats-block" style="overflow-x:auto">');
         html.push('<table class="stats-leaderboard">');
-        html.push('<thead><tr><th>Agent</th><th>Features</th><th>Eval wins</th><th>Fleet win %</th><th>Autonomy</th><th>Cycle time</th><th>First-pass</th></tr></thead>');
+        html.push('<thead><tr><th>Agent</th><th>Features</th><th>Eval wins</th><th>Fleet win %</th><th>Cycle time</th><th>First-pass</th></tr></thead>');
         html.push('<tbody>');
 
         allAgentIds
           .sort((a, b) => (leaderAgentMap[b] || { completed: 0 }).completed - (leaderAgentMap[a] || { completed: 0 }).completed)
           .forEach(agentId => {
-            const d = leaderAgentMap[agentId] || { completed: 0, durMs: [], autonomyRatios: [], firstPassArr: [] };
+            const d = leaderAgentMap[agentId] || { completed: 0, durMs: [], firstPassArr: [] };
             const ev = evalMap[agentId];
             const sortedDur = d.durMs.slice().sort((a, b) => a - b);
             const ldrMid = Math.floor(sortedDur.length / 2);
             const avgCycle = sortedDur.length > 0
               ? round1(sortedDur.length % 2 ? sortedDur[ldrMid] / 3600000 : (sortedDur[ldrMid - 1] + sortedDur[ldrMid]) / 2 / 3600000)
               : null;
-            const autoScore = d.autonomyRatios.length > 0 ? d.autonomyRatios.reduce((s, v) => s + v, 0) / d.autonomyRatios.length : null;
             const fpRate = d.firstPassArr.length > 0 ? d.firstPassArr.filter(Boolean).length / d.firstPassArr.length : null;
             // Share of total eval wins (sums to 100% across agents)
             const winShare = ev && totalEvalWins > 0 ? ev.wins / totalEvalWins : null;
@@ -554,7 +547,6 @@
             html.push(`<td>${d.completed}</td>`);
             html.push(`<td>${ev ? ev.wins : '—'}</td>`);
             html.push(`<td>${winShare !== null ? `<span class="win-rate">${fmtPct(winShare)}</span>` : '—'}</td>`);
-            html.push(`<td>${fmtPct(autoScore)}</td>`);
             html.push(`<td>${fmtHours(avgCycle)}</td>`);
             html.push(`<td>${fmtPct(fpRate)}</td>`);
             html.push('</tr>');
