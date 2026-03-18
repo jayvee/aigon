@@ -79,6 +79,8 @@ Current shared modules:
   `normalizeFeedbackMetadata`, `collectFeedbackItems`, `findDuplicateFeedbackCandidates`, `buildFeedbackTriageRecommendation`
 - `lib/git.js` (~383 lines): git helpers — branch, worktree, status, commit
   `getCurrentBranch`, `getWorktrees`, `getUncommittedChanges`, `commitFiles`
+- `lib/manifest.js` (~391 lines): per-feature JSON manifests in `.aigon/state/` — coordinator + per-agent status files, advisory locking, lazy bootstrap, event audit trail
+  `readManifest`, `writeManifest`, `readAgentStatus`, `writeAgentStatus`, `acquireLock`, `releaseLock`
 - `lib/state-machine.js` (~602 lines): spec state transitions and workflow state management
   `transition`, `getValidTransitions`, `getStateDir`, `buildStateMachine`
 - `lib/validation.js` (~1,045 lines): Ralph/autonomous loop and smart validation helpers

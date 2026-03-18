@@ -52,6 +52,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/commands/setup.js` | 959 | init, install-agent, check-version, update, doctor |
 | `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
+| `lib/manifest.js` | 391 | Per-feature JSON manifests, agent status files, locking, lazy bootstrap |
 | `lib/state-machine.js` | 602 | Spec state transitions (inbox → done) |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | 383 | Branch, worktree, status, commit helpers |
