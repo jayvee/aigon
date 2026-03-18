@@ -9,9 +9,9 @@
         });
         const payload = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
-        showToast(payload.message || 'Attach opened in terminal');
+        showToast(payload.message || 'Session opened in terminal');
       } catch (e) {
-        showToast('Attach failed: ' + e.message, null, null, {error:true});
+        showToast('View failed: ' + e.message, null, null, {error:true});
       }
     }
 
