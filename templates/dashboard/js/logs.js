@@ -427,8 +427,10 @@
       const trend30 = analytics.volume && analytics.volume.trend30d;
       html.push(buildStatCard('Features Completed', String(totalCompleted),
         statsState.period === '30d' && trend30 !== null ? trendIcon(trend30) : null));
-      html.push(buildStatCard('Cycle Time', fmtHours(medianCycle), null, medianCycle !== null ? 'median, start to close' : null));
-      html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null));
+      html.push(buildStatCard('Cycle Time', fmtHours(medianCycle), null, medianCycle !== null ? 'median, start to close' : null,
+        'Median wall-clock time from feature-setup to feature-close. Lower is better.'));
+      html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null, null,
+        'Percentage of features that passed evaluation on the first attempt without needing rework.'));
       html.push('</div>');
 
       // Volume trend line chart
@@ -462,7 +464,7 @@
       html.push(`<div class="stats-kv"><div class="stats-kv-label">Cycle time (median)</div><div class="stats-kv-val">${fmtHours(medianCycle !== null ? medianCycle : dur.median)}</div></div>`);
       html.push(`<div class="stats-kv"><div class="stats-kv-label">Cycle time (mean)</div><div class="stats-kv-val">${fmtHours(avgCycle !== null ? avgCycle : dur.average)}</div></div>`);
       html.push(`<div class="stats-kv"><div class="stats-kv-label">Max cycle time</div><div class="stats-kv-val">${fmtHours(dur.max)}</div></div>`);
-      html.push(`<div class="stats-kv"><div class="stats-kv-label">Avg iterations</div><div class="stats-kv-val">${fmtNum(quality.avgIterationsPerFeature, 1)}</div></div>`);
+      html.push(`<div class="stats-kv"><div class="stats-kv-label">${buildKvLabel('Avg iterations', 'Average number of implement-evaluate cycles per feature before it passes review. 1.0 means every feature passes on the first try.')}</div><div class="stats-kv-val">${fmtNum(quality.avgIterationsPerFeature, 1)}</div></div>`);
       html.push('</div>');
       html.push('</div>');
       html.push('</div>'); // end stats-row
