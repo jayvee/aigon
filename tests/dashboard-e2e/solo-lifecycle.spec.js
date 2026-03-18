@@ -131,11 +131,10 @@ test.describe('Solo worktree lifecycle', () => {
         const inProgressCol = page.locator('.kanban-col[data-stage="in-progress"]').first();
         await expect(inProgressCol).toContainText('e2e solo feature', { timeout: 8000 });
 
-        // Agent badge for cc should be visible
+        // Agent section for cc should be visible (in-progress cards use .kcard-agent layout)
         const inProgressCard = inProgressCol.locator('.kcard').filter({ hasText: 'e2e solo feature' }).first();
         await expect(inProgressCard).toBeVisible();
-        const agentBadge = inProgressCard.locator('.agent-badge').first();
-        await expect(agentBadge).toContainText('cc');
+        await expect(inProgressCard.locator('.kcard-agent.agent-cc')).toBeVisible({ timeout: 5000 });
 
         // ── Step 6: MockAgent runs in background ──────────────────────────────
 
@@ -161,11 +160,10 @@ test.describe('Solo worktree lifecycle', () => {
         // Give Alpine a moment to re-render
         await page.waitForTimeout(500);
 
-        // The agent badge should now show 'submitted' class
+        // The agent section for cc should now show status-submitted
         const refreshedCard = inProgressCol.locator('.kcard').filter({ hasText: 'e2e solo feature' }).first();
-        const submittedBadge = refreshedCard.locator('.agent-badge.submitted');
+        const submittedBadge = refreshedCard.locator('.kcard-agent.agent-cc .kcard-agent-status.status-submitted');
         await expect(submittedBadge).toBeVisible({ timeout: 8000 });
-        await expect(submittedBadge).toContainText('cc');
 
         // ── Step 8: Verify NO eval notification (solo mode) ──────────────────
 
