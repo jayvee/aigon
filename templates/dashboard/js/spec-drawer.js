@@ -159,6 +159,12 @@
       setTimeout(() => { if (termState.fitAddon) try { termState.fitAddon.fit(); } catch (e) {} }, 300);
     }
 
+    document.getElementById('drawer-copy-name').onclick = () => {
+      if (!drawerState.path) return;
+      const basename = drawerState.path.split('/').pop().replace(/\.md$/, '');
+      copyText(basename).then(() => showToast('Copied: ' + basename));
+    };
+
     function setDrawerMode(mode) {
       drawerState.mode = mode;
       updateDrawerModeButtons();
