@@ -394,6 +394,9 @@
     .logs-action-btn:hover{color:var(--text-primary);border-color:var(--text-secondary);background:var(--bg-surface)}
     .logs-action-btn svg{display:block}
     .logs-btn-hidden{visibility:hidden;pointer-events:none}
+    .stat-info{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--border-subtle);color:var(--text-tertiary);font-size:10px;font-weight:600;cursor:help;position:relative;vertical-align:middle;margin-left:4px;line-height:1}
+    .stat-info[data-stat-tooltip]::after{content:attr(data-stat-tooltip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--bg-primary);color:var(--text-primary);font-size:11px;font-weight:400;padding:6px 10px;border-radius:6px;white-space:normal;width:220px;pointer-events:none;opacity:0;transition:opacity .15s;border:1px solid var(--border-subtle);z-index:20;line-height:1.4;text-align:left}
+    .stat-info[data-stat-tooltip]:hover::after{opacity:1}
     .logs-action-btn[data-tooltip]{position:relative}
     .logs-action-btn[data-tooltip]::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 6px);right:0;background:var(--bg-primary);color:var(--text-primary);font-size:11px;padding:3px 8px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;border:1px solid var(--border-subtle);z-index:10}
     .logs-action-btn[data-tooltip]:hover::after{opacity:1}
