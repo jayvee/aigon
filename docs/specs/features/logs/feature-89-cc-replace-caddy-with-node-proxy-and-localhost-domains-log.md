@@ -1,11 +1,12 @@
 ---
-status: implementing
-updated: 2026-03-18T00:00:00.000Z
+status: submitted
+updated: 2026-03-18T00:04:47.614Z
 startedAt: 2026-03-17T23:48:56.395Z
 events:
   - { ts: "2026-03-17T23:48:56.395Z", status: implementing }
   - { ts: "2026-03-17T23:52:28.216Z", status: implementing }
   - { ts: "2026-03-18T00:00:00.000Z", status: implementing }
+  - { ts: "2026-03-18T00:04:47.614Z", status: submitted }
 ---
 
 # Implementation Log: Feature 89 - replace-caddy-with-node-proxy-and-localhost-domains
@@ -56,7 +57,7 @@ Previously returned `{ added:0, removed:0, unchanged:0, cleaned:0 }` when Caddy 
 It was only used for Caddy route ID lookup in `reconcileProxyRoutes`. The new reconcile doesn't use route IDs at all, so the function was removed entirely. Tests updated to use `getDevProxyUrl` instead.
 
 **Port 80 default for proxy daemon**
-The `aigon-proxy.js` tries port 80 by default (set via `AIGON_PROXY_PORT` env). The `aigon proxy start` command checks if port 80 is available and falls back to 4100. This matches the spec's intent without requiring sudo by default.
+The `aigon-proxy.js` tries port 80 by default (set via `AIGON_PROXY_PORT` env). The `aigon proxy start` command checks if running as root — if so, uses port 80; otherwise falls back to **port 4080** (not 4100). Using 4100 as fallback caused a conflict with the dashboard, which also defaults to 4100. Port 4080 is a dedicated proxy port that avoids this collision. The launchd plist also uses 4080. During live testing, the proxy started successfully and `http://cc-89.aigon.localhost:4080` routed correctly to the running dashboard.
 
 **`DEV_PROXY_PID_FILE` exported**
 Added to exports so tests and other code can reference the PID file path directly.
