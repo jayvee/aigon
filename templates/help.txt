@@ -11,8 +11,8 @@ Setup:
   config <init|show|models>         Manage config and view model configuration
   profile [show|set|detect]         Manage project profile (web, api, ios, etc.)
   doctor [--register]               Check port assignments and model configuration
-  proxy-setup                       Check port 80 availability and proxy status
-  proxy <start|stop|install|status> Manage the aigon-proxy daemon
+  proxy install                     One-time: install proxy as system daemon on port 80
+  proxy <start|stop|status|uninstall> Manage the aigon-proxy daemon
 
 Dev Server (web/api profiles):
   dev-server start [--port N] [--open]  Start dev server, register with proxy, wait for healthy
@@ -125,9 +125,8 @@ Examples:
   aigon doctor --register             # Register current project in global registry
 
   # Dev proxy (web/api projects) — uses .localhost domains, zero DNS config
-  aigon proxy start                   # Start the aigon-proxy daemon
-  aigon proxy install                 # Install launchd plist (auto-start on boot)
-  aigon proxy-setup                   # Check port 80 and proxy status
+  aigon proxy install                 # One-time: system daemon on port 80, auto-starts on boot
+  aigon proxy status                  # Check proxy status
   aigon dev-server start              # Register dev server → http://cc-119.myapp.localhost
   aigon dev-server start --open       # Start and open browser automatically
   aigon dev-server open               # Open dev server URL in browser
