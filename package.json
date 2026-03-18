@@ -9,6 +9,7 @@
     "test": "node aigon-cli.test.js && npx playwright test --config tests/dashboard/playwright.config.js --reporter=list",
     "test:dashboard": "npx playwright test --config tests/dashboard/playwright.config.js --reporter=list",
     "test:e2e": "node test/e2e.test.js",
+    "test:e2e:mock-solo": "node test/e2e-mock-solo.test.js",
     "test:all": "node aigon-cli.test.js && node test/e2e.test.js"
   },
   "devDependencies": {
