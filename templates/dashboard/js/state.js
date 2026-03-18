@@ -9,6 +9,7 @@
       failures: 0,
       lastStatuses: new Map(),
       collapsed: JSON.parse(localStorage.getItem(lsKey('collapsed')) || '{}'),
+      hiddenRepos: JSON.parse(localStorage.getItem(lsKey('hiddenRepos')) || '[]'),
       filter: localStorage.getItem(lsKey('filter')) || 'all',
       view: localStorage.getItem(lsKey('view')) || 'monitor',
       selectedRepo: localStorage.getItem(lsKey('selectedRepo')) || 'all',
@@ -16,6 +17,22 @@
       monitorType: localStorage.getItem(lsKey('monitorType')) || 'all',
       pendingActions: new Set()
     };
+
+    function isRepoHidden(repoPath) {
+      return (state.hiddenRepos || []).includes(repoPath);
+    }
+
+    function toggleRepoVisibility(repoPath) {
+      const hidden = state.hiddenRepos || [];
+      const idx = hidden.indexOf(repoPath);
+      if (idx >= 0) {
+        hidden.splice(idx, 1);
+      } else {
+        hidden.push(repoPath);
+      }
+      state.hiddenRepos = [...hidden];
+      localStorage.setItem(lsKey('hiddenRepos'), JSON.stringify(state.hiddenRepos));
+    }
     let state = _rawState;
 
     // ── Alpine store — initialised from state so mutations trigger re-renders ─

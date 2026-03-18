@@ -156,6 +156,8 @@
 
       // Per-repo items
       sorted.forEach(repo => {
+        const hidden = isRepoHidden(repo.path);
+        if (hidden) return; // skip hidden repos from sidebar
         const stats = getRepoStats(repo);
         const isActive = state.selectedRepo === repo.path;
 
@@ -181,6 +183,11 @@
         opt.textContent = repo.displayPath + (stats.totalItems ? ' (' + stats.totalItems + ')' : '');
         mobile.appendChild(opt);
       });
+
+      // If selected repo was hidden, reset to 'all'
+      if (state.selectedRepo !== 'all' && isRepoHidden(state.selectedRepo)) {
+        selectRepo('all');
+      }
 
       mobile.value = state.selectedRepo;
 
