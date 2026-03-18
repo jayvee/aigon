@@ -931,6 +931,7 @@ const {
     getSessionAction,
     getRecommendedActions,
     isActionValid,
+    shouldNotify,
     allAgentsSubmitted,
     isFleet
 } = require('./lib/state-machine');
@@ -974,6 +975,43 @@ test('isFleet returns false for single agent', () => {
 
 test('isFleet returns true for two real agents', () => {
     assert.strictEqual(isFleet({ agents: ['cc', 'gg'] }), true);
+});
+
+// shouldNotify
+test('shouldNotify returns false for solo feature all-submitted', () => {
+    const ctx = { agents: ['solo'], agentStatuses: { solo: 'submitted' }, tmuxSessionStates: {} };
+    assert.strictEqual(shouldNotify('feature', 'in-progress', ctx, 'all-submitted'), false);
+});
+
+test('shouldNotify returns true for fleet feature all-submitted in in-progress', () => {
+    const ctx = { agents: ['cc', 'gg'], agentStatuses: { cc: 'submitted', gg: 'submitted' }, tmuxSessionStates: {} };
+    assert.strictEqual(shouldNotify('feature', 'in-progress', ctx, 'all-submitted'), true);
+});
+
+test('shouldNotify returns false for fleet feature not all submitted', () => {
+    const ctx = { agents: ['cc', 'gg'], agentStatuses: { cc: 'implementing', gg: 'submitted' }, tmuxSessionStates: {} };
+    assert.strictEqual(shouldNotify('feature', 'in-progress', ctx, 'all-submitted'), false);
+});
+
+test('shouldNotify returns false for fleet feature already in-evaluation', () => {
+    const ctx = { agents: ['cc', 'gg'], agentStatuses: { cc: 'submitted', gg: 'submitted' }, tmuxSessionStates: {} };
+    // feature-eval action is only in in-progress stage, not in-evaluation
+    assert.strictEqual(shouldNotify('feature', 'in-evaluation', ctx, 'all-submitted'), false);
+});
+
+test('shouldNotify returns true for research all-submitted', () => {
+    const ctx = { agents: ['cc', 'gg'], agentStatuses: { cc: 'submitted', gg: 'submitted' }, tmuxSessionStates: {} };
+    assert.strictEqual(shouldNotify('research', 'in-progress', ctx, 'all-submitted'), true);
+});
+
+test('shouldNotify returns false for research not all submitted', () => {
+    const ctx = { agents: ['cc', 'gg'], agentStatuses: { cc: 'implementing', gg: 'submitted' }, tmuxSessionStates: {} };
+    assert.strictEqual(shouldNotify('research', 'in-progress', ctx, 'all-submitted'), false);
+});
+
+test('shouldNotify returns false for unknown notification type', () => {
+    const ctx = { agents: ['cc', 'gg'], agentStatuses: { cc: 'submitted', gg: 'submitted' }, tmuxSessionStates: {} };
+    assert.strictEqual(shouldNotify('feature', 'in-progress', ctx, 'unknown-type'), false);
 });
 
 // getValidTransitions — features
