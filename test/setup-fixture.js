@@ -97,13 +97,12 @@ function logContent(num, desc, status = 'implementing') {
 }
 
 function writeFixtureConfig(repoDir) {
-    // Use haiku for all agents in fixture repos to save tokens
+    // Use cheap models for fixture repos to save tokens. Each agent gets its own provider's cheapest.
     const config = {
         agents: {
             cc: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } },
-            gg: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } },
-            cx: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } },
-            cu: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } }
+            gg: { models: { research: 'gemini-2.0-flash', implement: 'gemini-2.0-flash', evaluate: 'gemini-2.0-flash' } },
+            cx: { models: { research: 'gpt-4.1-mini', implement: 'gpt-4.1-mini', evaluate: 'gpt-4.1-mini' } },
         }
     };
     const aigonDir = path.join(repoDir, '.aigon');
