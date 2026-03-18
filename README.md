@@ -211,7 +211,8 @@ The CLI is split into focused domain modules under `lib/`:
 | Module | Responsibility |
 |--------|---------------|
 | `aigon-cli.js` | Entry point — argument parsing, command dispatch |
-| `lib/proxy.js` | Caddy management, port allocation, registry, dev-server routes |
+| `lib/proxy.js` | Port allocation, registry, dev-server registration, proxy integration |
+| `lib/aigon-proxy.js` | Standalone reverse proxy daemon — routes by Host header, WebSocket support |
 | `lib/dashboard-server.js` | HTTP server, polling, WebSocket relay, notifications, action dispatch |
 | `lib/worktree.js` | Worktree creation, permissions, trust, tmux sessions, terminal launching |
 | `lib/config.js` | Global/project config, profiles, agent CLI config, editor detection |
@@ -1077,35 +1078,38 @@ Run `aigon hooks list` to inspect discovered hooks.
 
 ## Local Dev Proxy
 
-When running multiple agents on the same web app, managing port numbers is painful. Aigon's dev proxy replaces ports with meaningful subdomain URLs using Caddy and dnsmasq.
+When running multiple agents on the same web app, managing port numbers is painful. Aigon's dev proxy replaces ports with meaningful subdomain URLs using a built-in Node.js proxy and `.localhost` domains.
 
-**URL scheme:** `{agent}-{featureId}.{appId}.test`
+**URL scheme:** `{agent}-{featureId}.{appId}.localhost`
 
 | Scenario | URL |
 |---|---|
-| Claude on feature 119 of whenswell | `http://cc-119.whenswell.test` |
-| Gemini on feature 119 of whenswell | `http://gg-119.whenswell.test` |
-| Claude on feature 120 of whenswell | `http://cc-120.whenswell.test` |
-| Main branch / general dev | `http://whenswell.test` |
+| Claude on feature 119 of whenswell | `http://cc-119.whenswell.localhost` |
+| Gemini on feature 119 of whenswell | `http://gg-119.whenswell.localhost` |
+| Claude on feature 120 of whenswell | `http://cc-120.whenswell.localhost` |
+| Main branch / general dev | `http://whenswell.localhost` |
 
 The proxy also routes the **Aigon dashboard**:
 
 | Scenario | URL |
 |---|---|
-| Main dashboard (operator console) | `http://aigon.test` |
-| Worktree dashboard (cc, feature 119) | `http://cc-119.aigon.test` |
-| Worktree dashboard (gg, feature 119) | `http://gg-119.aigon.test` |
+| Main dashboard (operator console) | `http://aigon.localhost` |
+| Worktree dashboard (cc, feature 119) | `http://cc-119.aigon.localhost` |
+| Worktree dashboard (gg, feature 119) | `http://gg-119.aigon.localhost` |
 
 ### Prerequisites
 
-The dev proxy requires **Caddy** and **dnsmasq** — both installed automatically by the setup command. Without them, everything falls back to `localhost:<port>` and works as before.
+`.localhost` domains resolve to `127.0.0.1` automatically per RFC 6761 — **no DNS configuration needed**. Just start the proxy:
 
 ```bash
-# One-time machine setup (installs Caddy + dnsmasq, configures *.test DNS)
-aigon proxy-setup
+# Start the built-in proxy daemon (no Caddy, no dnsmasq, no sudo)
+aigon proxy start
+
+# Optional: install launchd plist for auto-start on boot (macOS)
+aigon proxy install
 ```
 
-This installs Caddy (reverse proxy) and dnsmasq (DNS), configures `*.test` to resolve to `127.0.0.1`, and creates `/etc/resolver/test` (requires sudo). It's idempotent — safe to run again.
+Without the proxy running, everything falls back to `localhost:<port>` and works as before.
 
 ### Quick setup
 
@@ -1115,7 +1119,7 @@ aigon dev-server start
 #   ⏳ Starting dev server: npm run dev
 #      Waiting for server on port 3847... ready!
 #   🌐 Dev server running
-#      URL:  http://cc-119.whenswell.test
+#      URL:  http://cc-119.whenswell.localhost
 #      Port: 3847  PID: 73524
 
 # Manage servers
@@ -1130,9 +1134,9 @@ aigon dev-server url       # Print URL for scripting
 The dashboard registers automatically when you start it:
 
 ```bash
-aigon dashboard start          # Main dashboard → http://aigon.test
+aigon dashboard start          # Main dashboard → http://aigon.localhost
 # From a worktree:
-aigon dashboard start          # Worktree dashboard → http://cc-119.aigon.test
+aigon dashboard start          # Worktree dashboard → http://cc-119.aigon.localhost
 ```
 
 If the proxy isn't set up, everything falls back to `localhost:<port>` — existing workflows are unaffected.
