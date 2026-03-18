@@ -150,6 +150,13 @@
           }
           break;
         }
+        case 'feature-autopilot': {
+          const agents = await showAgentPicker(id, feature.name, { title: 'Select Autopilot Agents', submitLabel: 'Autopilot' });
+          if (!agents) return;
+          if (agents.length < 2) { showToast('Select at least 2 agents for autopilot'); return; }
+          await requestAction('feature-autopilot', [id, ...agents], repoPath, btn);
+          break;
+        }
         case 'feature-prioritise':
         case 'research-prioritise':
           await requestAction(pipelineCommand(pipelineType, 'prioritise'), [feature.name], repoPath, btn);
