@@ -324,9 +324,6 @@
           '<div class="notif-item-time">' + relTimeShort(ev.timestamp) + '</div>';
         item.onclick = () => {
           closeNotifDropdown();
-          state.view = 'monitor';
-          localStorage.setItem(lsKey('view'), 'monitor');
-          render();
         };
         notifList.appendChild(item);
       });

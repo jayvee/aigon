@@ -13,20 +13,48 @@
     }
 
     // ── Console view ─────────────────────────────────────────────────────────
-    const consoleState = { events: [], scrollLocked: false };
+    const CONSOLE_LS_KEY = lsKey('consoleEvents');
+    const CONSOLE_LS_MAX = 200;
+
+    function loadConsoleFromStorage() {
+      try { return JSON.parse(localStorage.getItem(CONSOLE_LS_KEY)) || []; } catch (_) { return []; }
+    }
+    function saveConsoleToStorage(events) {
+      try { localStorage.setItem(CONSOLE_LS_KEY, JSON.stringify(events.slice(-CONSOLE_LS_MAX))); } catch (_) {}
+    }
+    function mergeConsoleEvents(stored, server) {
+      // Deduplicate by timestamp+command, prefer server version
+      const seen = new Set();
+      const merged = [];
+      for (const ev of server) {
+        const key = (ev.timestamp || '') + '|' + (ev.command || ev.action || '');
+        seen.add(key);
+        merged.push(ev);
+      }
+      for (const ev of stored) {
+        const key = (ev.timestamp || '') + '|' + (ev.command || ev.action || '');
+        if (!seen.has(key)) merged.push(ev);
+      }
+      merged.sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
+      return merged.slice(-CONSOLE_LS_MAX);
+    }
+
+    const consoleState = { events: loadConsoleFromStorage(), scrollLocked: false };
 
     async function renderConsole() {
       const container = document.getElementById('console-view');
       if (!container) return;
 
-      // Fetch events from server
+      // Fetch events from server, merge with localStorage
       let events = consoleState.events;
       try {
         const res = await fetch('/api/console', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
-          consoleState.events = data.events || [];
-          events = consoleState.events;
+          const serverEvents = data.events || [];
+          events = mergeConsoleEvents(consoleState.events, serverEvents);
+          consoleState.events = events;
+          saveConsoleToStorage(events);
         }
       } catch (_) {}
 
@@ -111,6 +139,7 @@
       if (clearBtn) {
         clearBtn.onclick = () => {
           consoleState.events = [];
+          saveConsoleToStorage([]);
           renderConsole();
         };
       }
