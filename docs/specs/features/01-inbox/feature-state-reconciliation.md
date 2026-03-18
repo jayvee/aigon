@@ -1,42 +1,46 @@
 # Feature: state-reconciliation
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Add desync detection and repair to `aigon doctor`, and flatten the log directory structure by eliminating `logs/selected/` and `logs/alternatives/` folders. The reconciler compares manifests against actual system state (folders, worktrees, processes) and either auto-repairs or flags issues. Absorbs drop-selected-alternatives.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As a user, `aigon doctor` tells me when a feature's manifest disagrees with its folder position and offers to fix it
+- [ ] As a user, `aigon doctor` detects orphaned worktrees, dead tmux sessions, and stuck pending operations
+- [ ] As a user, log files are all in a flat `logs/` directory — no `selected/`/`alternatives/` subfolders
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] `aigon doctor` checks: manifest stage vs folder position, manifest agents vs worktree existence, pending ops that are stale (>1hr old), agent status files for features that are already closed
+- [ ] Each desync has a named check (e.g., `stage-mismatch`, `orphaned-worktree`, `stale-pending`, `dead-agent`)
+- [ ] Auto-repair for safe cases: correct manifest stage to match folder, clean up stale locks, remove agent status files for closed features
+- [ ] Warning (no auto-repair) for unsafe cases: pending ops with uncommitted changes, folder/manifest disagree and both have been modified
+- [ ] `organizeLogFiles()` removed — log files stay flat in `logs/`
+- [ ] Winner recorded in coordinator manifest `winner` field, not by folder structure
+- [ ] `npm test` passes
 
 ## Validation
-<!-- Optional: commands Ralph runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+node -c lib/commands/setup.js
+npm test
 ```
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+- Add reconciliation checks to existing `doctor` command in `lib/commands/setup.js`
+- Each check: read manifest, probe reality (folder, worktree, tmux), compare, report or fix
+- Remove `organizeLogFiles()` from `feature-close` — logs stay in `logs/`, winner set in manifest
+- Migration: if `logs/selected/` or `logs/alternatives/` exist, move files back to `logs/` during doctor
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites -->
--
+- state-manifest-core (needs manifest read API)
+- idempotent-outbox-transitions (reconciler needs idempotent ops to safely repair state)
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- Automatic scheduled reconciliation (manual `aigon doctor` for now)
+- Dashboard UI for desync warnings
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Should `aigon doctor --fix` auto-repair all safe cases, or require per-check confirmation?
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research:
+- Research: `docs/specs/research-topics/04-done/research-14-unified-feature-state.md`
+- Findings: `docs/specs/research-topics/logs/research-14-cc-findings.md` (Part 2: desync scenarios, Part 6: directory structure)
+- Depends on: state-manifest-core, idempotent-outbox-transitions
