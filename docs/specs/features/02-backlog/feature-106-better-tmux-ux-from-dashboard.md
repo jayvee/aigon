@@ -17,11 +17,15 @@ Improve tmux session interaction from the dashboard. Currently clicking Attach j
 - [ ] Bug fix: `openTerminalAppWithCommand()` in `lib/worktree.js:390-392` — the early return for already-attached sessions skips the window-focus AppleScript; it should run the focus logic (lines 398-421) before returning
 - [ ] Consider unifying the two API paths: Sessions uses `/api/attach`, Pipeline uses `/api/feature-open` — ideally both should use the same endpoint or at least share the same focus logic
 
-### (b) Peek mode — recent scrollback in dashboard
-- [ ] Sessions panel shows a "Peek" button (or auto-shows on hover/click) that displays the last ~20 lines of tmux scrollback
-- [ ] Uses `tmux capture-pane -t <session> -p -S -20` to grab recent output
-- [ ] Updates on a reasonable interval (e.g., every 3-5 seconds while the peek panel is open)
-- [ ] Rendered in a monospace pre-formatted block in the right panel
+### (b) Peek mode — streaming session output with simple input
+- [ ] Sessions panel shows a "Peek" button that opens a streaming output view for that session
+- [ ] Server uses `tmux pipe-pane -t <session>` to stream output to a file/pipe, tailed by the dashboard server
+- [ ] Output relayed to frontend via polling (`GET /api/session-peek?name=<session>&since=<offset>`) — incremental reads, not full capture each time
+- [ ] Fallback: `tmux capture-pane -t <session> -p -S -50` if pipe-pane setup fails
+- [ ] Rendered in a monospace scrolling container with ANSI stripping (or basic ANSI-to-HTML)
+- [ ] Simple text input box below the output — sends commands via `tmux send-keys -t <session> "<input>" Enter`
+- [ ] Auto-scrolls to bottom on new output; manual scroll-up pauses auto-scroll
+- [ ] Works from any browser including phone (remote monitoring via LAN IP or Tailscale)
 
 ### ~~(c) Embedded terminal viewer~~ — DESCOPED
 Historically caused complexity issues. (a) + (b) cover the use case without introducing xterm.js, PTY management, or WebSocket terminal streaming.
@@ -38,10 +42,14 @@ npm test
 ### (a) Attach fix
 Minimal change in `openTerminalAppWithCommand()`: when `isTmuxSessionAttached(title)` is true, run the window-focus AppleScript (lines 398-421) instead of just `activate`. Fall through to `activate` only if the focus script returns "not found".
 
-### (b) Peek mode
-- New dashboard API endpoint: `GET /api/session-peek?name=<session>` that runs `tmux capture-pane -t <session> -p -S -20` and returns the output
-- Dashboard frontend polls this endpoint while peek panel is visible
-- Render output in `<pre>` block with ANSI color stripping (or basic ANSI-to-HTML conversion)
+### (b) Peek mode — streaming + input
+- New API endpoint: `GET /api/session-peek?name=<session>&since=<byte-offset>` — returns incremental output
+- Server-side: on first peek request, run `tmux pipe-pane -t <session> -o 'cat >> /tmp/aigon-peek-<session>.log'` to start streaming. Tail the log file from `since` offset.
+- Cleanup: `tmux pipe-pane -t <session>` (no args) to stop piping when peek closes, or on session kill
+- New API endpoint: `POST /api/session-input` with `{name, text}` — runs `tmux send-keys -t <session> "<text>" Enter`
+- Frontend: poll `/api/session-peek` every 1-2s while peek panel is open; append new output to scrolling `<pre>` container
+- Input box: POST to `/api/session-input` on Enter key
+- Key design principle: tmux owns session lifecycle, dashboard is just a viewer with an input box — NOT a terminal emulator
 
 ### ~~(c) Embedded terminal~~ — DESCOPED
 Too complex, historically caused issues. Not worth the xterm.js/PTY/WebSocket overhead when peek covers the read-only use case.
@@ -55,7 +63,9 @@ Too complex, historically caused issues. Not worth the xterm.js/PTY/WebSocket ov
 - Multi-user terminal sharing
 
 ## Open Questions
-- Should peek auto-update or require manual refresh? (Leaning auto-update every 3-5s while panel is open)
+- Should peek auto-update or require manual refresh? (Leaning auto-update every 1-2s while panel is open)
+- Should `pipe-pane` log files be cleaned up on dashboard shutdown or left for debugging?
+- Input security: should `send-keys` input be sanitized to prevent tmux escape sequences?
 
 ## Related
 - Bug: `lib/worktree.js:390-392` — early return skips window focus for attached sessions
