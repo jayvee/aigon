@@ -229,6 +229,14 @@
     .drawer-preview pre code{background:none;padding:0}
     .drawer-preview blockquote{border-left:3px solid var(--accent);margin:0 0 10px;padding:4px 12px;color:var(--text-secondary)}
     .drawer-preview input[type="checkbox"]{margin-right:6px}
+    .fm-details{margin:0 0 16px;border:1px solid var(--border-subtle);border-radius:6px;overflow:hidden}
+    .fm-summary{cursor:pointer;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary);padding:6px 10px;background:var(--bg-elevated);user-select:none}
+    .fm-summary:hover{color:var(--text-secondary)}
+    .fm-table{width:100%;border-collapse:collapse;font-size:12px}
+    .fm-table tr{border-top:1px solid var(--border-subtle)}
+    .fm-key{padding:4px 10px;color:var(--text-tertiary);white-space:nowrap;font-family:var(--mono);font-size:11px;vertical-align:top;width:1%}
+    .fm-val{padding:4px 10px;color:var(--text-secondary);font-family:var(--mono);font-size:11px;word-break:break-all}
+    .fm-status{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:1px 6px;border-radius:3px;background:rgba(120,120,120,.15);color:var(--text-tertiary)}
     .drawer-editor{width:100%;height:100%;background:var(--bg-root);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:8px;padding:12px;font:12px/1.5 var(--mono);resize:none;outline:none}
     .drawer-editor:focus{border-color:var(--accent)}
     .drawer-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border-subtle);flex-shrink:0}
@@ -376,6 +384,14 @@
     .logs-table td.col-name{color:var(--text-primary);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .logs-table td.col-repo{color:var(--text-secondary);font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .logs-table td.col-date{color:var(--text-secondary);white-space:nowrap;font-size:11px}
+    .logs-table td.col-actions{white-space:nowrap;text-align:right;padding-right:4px;overflow:visible}
+    .logs-action-btn{background:none;border:1px solid var(--border-subtle);border-radius:4px;color:var(--text-tertiary);cursor:pointer;font-size:12px;padding:2px 6px;margin-left:4px;line-height:1;transition:color .15s,border-color .15s,background .15s}
+    .logs-action-btn:hover{color:var(--text-primary);border-color:var(--text-secondary);background:var(--bg-surface)}
+    .logs-action-btn svg{display:block}
+    .logs-btn-hidden{visibility:hidden;pointer-events:none}
+    .logs-action-btn[data-tooltip]{position:relative}
+    .logs-action-btn[data-tooltip]::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 6px);right:0;background:var(--bg-primary);color:var(--text-primary);font-size:11px;padding:3px 8px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;border:1px solid var(--border-subtle);z-index:10}
+    .logs-action-btn[data-tooltip]:hover::after{opacity:1}
     .logs-stage{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:4px}
     .logs-stage.stage-inbox{background:rgba(120,120,120,.15);color:var(--text-tertiary)}
     .logs-stage.stage-backlog{background:rgba(100,140,255,.12);color:#7b9bff}

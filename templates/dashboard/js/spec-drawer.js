@@ -26,12 +26,58 @@
       localStorage.setItem(lsKey('drawerFontSize'), String(drawerState.fontSize));
     }
 
+    function parseFrontMatter(md) {
+      const m = md.match(/^---\n([\s\S]*?)\n---\n?/);
+      if (!m) return { fm: null, body: md };
+      return { fm: m[1].trim(), body: md.slice(m[0].length) };
+    }
+
+    function fmFormatValue(val) {
+      // ISO date: 2026-03-18T01:28:39.610Z or with quotes
+      const stripped = val.replace(/^["']|["']$/g, '');
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(stripped)) {
+        const d = new Date(stripped);
+        if (!isNaN(d)) {
+          return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+            + ' ' + d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+      }
+      return escHtml(val);
+    }
+
+    function renderFrontMatterBlock(fmText) {
+      if (!fmText) return '';
+      // Parse YAML-like events array into structured rows
+      const lines = fmText.split('\n');
+      const rows = [];
+      let inEvents = false;
+      for (const line of lines) {
+        if (/^events\s*:/.test(line)) { inEvents = true; continue; }
+        if (inEvents) {
+          const evMatch = line.match(/^\s*-\s*\{\s*ts\s*:\s*(.+?),\s*status\s*:\s*(.+?)\s*\}$/);
+          if (evMatch) {
+            rows.push(`<tr><td class="fm-key">${fmFormatValue(evMatch[1])}</td><td class="fm-val"><span class="fm-status">${escHtml(evMatch[2].trim())}</span></td></tr>`);
+            continue;
+          }
+          if (/^\S/.test(line)) inEvents = false; else continue;
+        }
+        const sep = line.indexOf(':');
+        if (sep === -1) { rows.push(`<tr><td colspan="2" class="fm-val">${escHtml(line)}</td></tr>`); continue; }
+        const key = line.slice(0, sep).trim();
+        const val = line.slice(sep + 1).trim();
+        rows.push(`<tr><td class="fm-key">${escHtml(key)}</td><td class="fm-val">${fmFormatValue(val)}</td></tr>`);
+      }
+      return `<details class="fm-details"><summary class="fm-summary">Metadata</summary><table class="fm-table">${rows.join('')}</table></details>`;
+    }
+
     function renderMarkdownPreview(md) {
+      const { fm, body } = parseFrontMatter(md);
+      const fmHtml = renderFrontMatterBlock(fm);
       if (typeof marked !== 'undefined') {
-        drawerPreview.innerHTML = marked.parse(md);
+        drawerPreview.innerHTML = fmHtml + marked.parse(body);
         drawerPreview.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.disabled = true; });
       } else {
-        drawerPreview.textContent = md;
+        drawerPreview.textContent = body;
       }
     }
 
