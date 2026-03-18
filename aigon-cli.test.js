@@ -16,6 +16,7 @@ const { execFileSync } = require('child_process');
 const { spawnSync } = require('child_process');
 
 const { COMMAND_ALIASES, PROVIDER_FAMILIES } = require('./lib/constants');
+const manifestModule = require('./lib/manifest');
 const { createFeatureCommands } = require('./lib/commands/feature');
 const { createResearchCommands } = require('./lib/commands/research');
 const { createFeedbackCommands } = require('./lib/commands/feedback');
@@ -478,12 +479,17 @@ test('feature-eval --force bypasses the completion warning and creates the evalu
         runGit: () => {}
     });
 
-    const { output } = withCapturedConsole(() => {
-        commands['feature-eval'](['51', '--force']);
-    });
+    // Set up manifest for feature 51 as in-progress so requestTransition succeeds.
+    withCleanManifest('51', () => {
+        manifestModule.writeManifest('51', { id: '51', type: 'feature', name: 'eval-agent-completion-check', stage: 'in-progress', agents: [], pending: [] });
 
-    assert.strictEqual(fs.existsSync(path.join(evaluationsDir, 'feature-51-eval.md')), true);
-    assert.strictEqual(output.some(line => line.includes('not yet submitted')), false);
+        const { output } = withCapturedConsole(() => {
+            commands['feature-eval'](['51', '--force']);
+        });
+
+        assert.strictEqual(fs.existsSync(path.join(evaluationsDir, 'feature-51-eval.md')), true);
+        assert.strictEqual(output.some(line => line.includes('not yet submitted')), false);
+    });
 }));
 test('research reconnect command uses terminal-focus with --research', () => {
     assert.strictEqual(
@@ -933,7 +939,10 @@ const {
     isActionValid,
     shouldNotify,
     allAgentsSubmitted,
-    isFleet
+    isFleet,
+    TRANSITION_DEFS,
+    requestTransition,
+    completePendingOp,
 } = require('./lib/state-machine');
 
 console.log('\n--- state machine ---');
@@ -1255,6 +1264,165 @@ test('isActionValid returns false when context blocks action', () => {
 
 test('isActionValid returns false for unknown entity type', () => {
     assert.strictEqual(isActionValid('foo-bar', 'unknown', 'inbox', {}), false);
+});
+
+// ── requestTransition / completePendingOp (outbox pattern) ───────────────────
+
+console.log('\n--- requestTransition / completePendingOp ---');
+
+// Helper: save/restore manifest state around tests to avoid polluting real state
+function withCleanManifest(featureId, fn) {
+    const filePath = manifestModule.coordinatorPath(featureId);
+    const lockPath = manifestModule.lockPath(featureId);
+    const hadFile = fs.existsSync(filePath);
+    const original = hadFile ? fs.readFileSync(filePath, 'utf8') : null;
+    // Ensure clean start for this test ID
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    if (fs.existsSync(lockPath)) fs.unlinkSync(lockPath);
+    try {
+        fn();
+    } finally {
+        if (original !== null) {
+            fs.writeFileSync(filePath, original);
+        } else if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        if (fs.existsSync(lockPath)) fs.unlinkSync(lockPath);
+    }
+}
+
+// TRANSITION_DEFS structure
+test('TRANSITION_DEFS has entries for all core feature actions', () => {
+    assert.ok(TRANSITION_DEFS['feature-prioritise'], 'has feature-prioritise');
+    assert.ok(TRANSITION_DEFS['feature-setup'], 'has feature-setup');
+    assert.ok(TRANSITION_DEFS['feature-eval'], 'has feature-eval');
+    assert.ok(TRANSITION_DEFS['feature-close'], 'has feature-close');
+});
+
+test('TRANSITION_DEFS feature-setup sideEffects returns move-spec for drive mode', () => {
+    const effects = TRANSITION_DEFS['feature-setup'].sideEffects({ agents: [] });
+    assert.ok(effects.includes('move-spec'), 'includes move-spec');
+    assert.ok(effects.includes('init-log'), 'includes init-log for drive mode');
+});
+
+test('TRANSITION_DEFS feature-setup sideEffects returns worktree ops for fleet mode', () => {
+    const effects = TRANSITION_DEFS['feature-setup'].sideEffects({ agents: ['cc', 'gg'] });
+    assert.ok(effects.includes('move-spec'), 'includes move-spec');
+    assert.ok(effects.includes('create-worktree-cc'), 'includes create-worktree-cc');
+    assert.ok(effects.includes('init-log-cc'), 'includes init-log-cc');
+    assert.ok(effects.includes('create-worktree-gg'), 'includes create-worktree-gg');
+    assert.ok(effects.includes('init-log-gg'), 'includes init-log-gg');
+});
+
+test('TRANSITION_DEFS feature-close accepts in-evaluation and in-progress as sources', () => {
+    assert.ok(TRANSITION_DEFS['feature-close'].from.includes('in-evaluation'), 'from in-evaluation');
+    assert.ok(TRANSITION_DEFS['feature-close'].from.includes('in-progress'), 'from in-progress');
+    assert.strictEqual(TRANSITION_DEFS['feature-close'].to, 'done');
+});
+
+// requestTransition — valid transitions
+test('requestTransition advances stage from backlog to in-progress for feature-setup', () => {
+    withCleanManifest('9999', () => {
+        // Bootstrap a manifest with stage 'backlog'
+        manifestModule.writeManifest('9999', { id: '9999', type: 'feature', name: 'test-feature', stage: 'backlog', agents: [], pending: [] });
+        const pending = requestTransition('9999', 'feature-setup', { agents: ['cc'] });
+        assert.ok(Array.isArray(pending), 'returns array');
+        assert.ok(pending.includes('move-spec'), 'pending includes move-spec');
+        assert.ok(pending.includes('create-worktree-cc'), 'pending includes create-worktree-cc');
+        const m = manifestModule.readManifest('9999');
+        assert.strictEqual(m.stage, 'in-progress', 'stage advanced to in-progress');
+        assert.deepStrictEqual(m.pending, pending, 'manifest.pending matches returned list');
+    });
+});
+
+test('requestTransition advances stage from in-progress to in-evaluation for feature-eval', () => {
+    withCleanManifest('9998', () => {
+        manifestModule.writeManifest('9998', { id: '9998', type: 'feature', name: 'test-feature', stage: 'in-progress', agents: [], pending: [] });
+        const pending = requestTransition('9998', 'feature-eval', {});
+        assert.deepStrictEqual(pending, ['move-spec']);
+        const m = manifestModule.readManifest('9998');
+        assert.strictEqual(m.stage, 'in-evaluation');
+    });
+});
+
+test('requestTransition advances stage from in-evaluation to done for feature-close', () => {
+    withCleanManifest('9997', () => {
+        manifestModule.writeManifest('9997', { id: '9997', type: 'feature', name: 'test-feature', stage: 'in-evaluation', agents: [], pending: [] });
+        const pending = requestTransition('9997', 'feature-close', {});
+        assert.deepStrictEqual(pending, ['move-spec']);
+        const m = manifestModule.readManifest('9997');
+        assert.strictEqual(m.stage, 'done');
+    });
+});
+
+test('requestTransition advances stage from in-progress to done for feature-close (solo)', () => {
+    withCleanManifest('9996', () => {
+        manifestModule.writeManifest('9996', { id: '9996', type: 'feature', name: 'test-feature', stage: 'in-progress', agents: [], pending: [] });
+        const pending = requestTransition('9996', 'feature-close', {});
+        assert.deepStrictEqual(pending, ['move-spec']);
+        const m = manifestModule.readManifest('9996');
+        assert.strictEqual(m.stage, 'done');
+    });
+});
+
+// requestTransition — invalid transitions
+test('requestTransition throws for invalid transition (wrong source stage)', () => {
+    withCleanManifest('9995', () => {
+        manifestModule.writeManifest('9995', { id: '9995', type: 'feature', name: 'test-feature', stage: 'inbox', agents: [], pending: [] });
+        assert.throws(
+            () => requestTransition('9995', 'feature-close', {}),
+            (err) => err.message.includes('Invalid transition') && err.message.includes('inbox'),
+            'throws with clear message mentioning invalid stage'
+        );
+    });
+});
+
+test('requestTransition throws for unknown action', () => {
+    withCleanManifest('9994', () => {
+        manifestModule.writeManifest('9994', { id: '9994', type: 'feature', name: 'test-feature', stage: 'backlog', agents: [], pending: [] });
+        assert.throws(
+            () => requestTransition('9994', 'feature-unknown', {}),
+            (err) => err.message.includes('Unknown action'),
+            'throws for unknown action'
+        );
+    });
+});
+
+// completePendingOp
+test('completePendingOp removes first occurrence of op from pending', () => {
+    withCleanManifest('9993', () => {
+        manifestModule.writeManifest('9993', { id: '9993', type: 'feature', name: 'test', stage: 'in-progress', agents: [], pending: ['move-spec', 'create-worktree-cc', 'init-log-cc'] });
+        completePendingOp('9993', 'move-spec');
+        const m = manifestModule.readManifest('9993');
+        assert.deepStrictEqual(m.pending, ['create-worktree-cc', 'init-log-cc']);
+    });
+});
+
+test('completePendingOp is a no-op when op is not in pending', () => {
+    withCleanManifest('9992', () => {
+        manifestModule.writeManifest('9992', { id: '9992', type: 'feature', name: 'test', stage: 'in-progress', agents: [], pending: ['create-worktree-cc'] });
+        completePendingOp('9992', 'move-spec'); // not in list
+        const m = manifestModule.readManifest('9992');
+        assert.deepStrictEqual(m.pending, ['create-worktree-cc'], 'pending unchanged');
+    });
+});
+
+test('completePendingOp removes only first occurrence when op appears twice', () => {
+    withCleanManifest('9991', () => {
+        manifestModule.writeManifest('9991', { id: '9991', type: 'feature', name: 'test', stage: 'in-progress', agents: [], pending: ['move-spec', 'move-spec'] });
+        completePendingOp('9991', 'move-spec');
+        const m = manifestModule.readManifest('9991');
+        assert.deepStrictEqual(m.pending, ['move-spec'], 'only first occurrence removed');
+    });
+});
+
+test('pending is empty after completing all ops', () => {
+    withCleanManifest('9990', () => {
+        manifestModule.writeManifest('9990', { id: '9990', type: 'feature', name: 'test', stage: 'in-progress', agents: [], pending: ['move-spec'] });
+        completePendingOp('9990', 'move-spec');
+        const m = manifestModule.readManifest('9990');
+        assert.deepStrictEqual(m.pending, []);
+    });
 });
 
 // Transition labels
