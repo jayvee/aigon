@@ -13,56 +13,49 @@ The dashboard is a single-page web app served by a foreground HTTP server. It's 
 | `aigon dashboard` | Starts the dashboard (foreground, port 4100) |
 | `node aigon-cli.js dashboard` | Same, explicit invocation |
 
-The dashboard runs as a **foreground process** — Ctrl+C or `aigon dev-server stop` to stop it. Each worktree gets its own port and, when Caddy is configured, a named URL (e.g. `http://cc-73.aigon.test`).
+The dashboard runs as a **foreground process** — Ctrl+C or `aigon dev-server stop` to stop it. Each worktree gets its own port and, when aigon-proxy is running, a named URL (e.g. `http://cc-73.aigon.localhost`).
 
 ## Dev Proxy Stack
 
-The dashboard is accessed via `http://aigon.test`, not `localhost:PORT`. This requires a local reverse proxy stack:
+The dashboard is accessed via `http://aigon.localhost`, not `localhost:PORT`. This uses the aigon-proxy daemon, a tiny Node.js reverse proxy:
 
 ```
-Browser ──► http://aigon.test ──► Caddy (port 80) ──► localhost:4100 (Dashboard)
-                                      │
-            http://cc-63.aigon.test ──┘──► localhost:4202 (worktree instance)
+Browser ──► http://aigon.localhost ──► aigon-proxy (port 80 or 4100) ──► localhost:4100 (Dashboard)
+                                            │
+       http://cc-63.aigon.localhost ────────┘──► localhost:4202 (worktree instance)
 ```
 
-### Components
+`.localhost` domains resolve to `127.0.0.1` automatically per RFC 6761 — **no DNS configuration needed**.
 
-| Component | Role | Install |
-|-----------|------|---------|
-| **Caddy** | Reverse proxy on port 80 | `brew install caddy`, runs as root via `brew services` |
-| **dnsmasq** | Resolves `*.test` → `127.0.0.1` | `brew install dnsmasq` |
-| **macOS resolver** | `/etc/resolver/test` points to dnsmasq | Created by `aigon proxy-setup` |
-
-### One-time setup
+### Setup
 
 ```bash
-aigon proxy-setup
+aigon proxy start    # Start the proxy daemon
+aigon proxy install  # Optional: install launchd plist for auto-start on boot
 ```
-
-This installs Caddy + dnsmasq, creates the resolver file, generates the Caddyfile, and starts services.
 
 ### Key files
 
 | File | Purpose |
 |------|---------|
-| `~/.aigon/dev-proxy/Caddyfile` | Auto-generated Caddy config (symlinked from `/opt/homebrew/etc/Caddyfile`) |
 | `~/.aigon/dev-proxy/servers.json` | Registry of all servers (dashboard + dev-servers) |
+| `~/.aigon/dev-proxy/proxy.pid` | PID of the running aigon-proxy daemon |
 | `~/.aigon/dashboard.log` | Dashboard log |
 
 ### Ports
 
 | Service | Port | URL |
 |---------|------|-----|
-| Main dashboard | 4100 (default) | `http://aigon.test` |
-| Worktree instances | 4101–4199 (dynamic) | `http://{agent}-{id}.aigon.test` |
+| Main dashboard | 4100 (default) | `http://aigon.localhost` |
+| Worktree instances | 4101–4199 (dynamic) | `http://{agent}-{id}.aigon.localhost` |
 
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `aigon.test` returns empty/404 | Dashboard not registered in dev-proxy | Restart dashboard |
+| `aigon.localhost` returns 404 | Dashboard not registered or proxy not running | `aigon proxy start`, then restart dashboard |
 | Dead worktree instances in status | Old worktree dashboard instances not cleaned up | `aigon dev-server gc` |
-| `aigon.test` not resolving | dnsmasq or resolver not set up | Run `aigon proxy-setup` |
+| `aigon.localhost` not resolving | Rare: OS doesn't handle `.localhost` wildcard | Use `http://localhost:4100` directly |
 | Dashboard shows wrong data | Config parse error or stale registry | Check `~/.aigon/dashboard.log` for `[*] Warning:` lines |
 
 ### Startup validation
@@ -98,7 +91,8 @@ tail -50 ~/.aigon/dashboard.log
 | File | Role |
 |------|------|
 | `lib/dashboard-server.js` | HTTP server, polling, WebSocket relay, notifications, action dispatch, dashboard HTML builder |
-| `lib/proxy.js` | Caddy management, port allocation, registry, route reconciliation, Caddyfile generation |
+| `lib/proxy.js` | Port allocation, registry management, dev server registration, aigon-proxy integration |
+| `lib/aigon-proxy.js` | Standalone proxy daemon — routes by Host header, handles WebSocket upgrades |
 | `lib/config.js` | Global/project config, profiles, agent CLI config |
 | `lib/worktree.js` | Worktree management, tmux sessions, terminal launching |
 | `lib/dashboard.js` | Thin re-exporter for backward compatibility |
@@ -119,10 +113,11 @@ tail -50 ~/.aigon/dashboard.log
 
 | Function | Purpose |
 |----------|---------|
-| `generateCaddyfile(registry)` | Builds Caddyfile from dev-proxy registry |
-| `reloadCaddy(registry)` | Writes Caddyfile and reloads Caddy |
-| `registerDevServer(appId, serverId, ...)` | Adds to registry + reloads Caddy |
-| `reconcileProxyRoutes()` | Syncs live Caddy routes with registry |
+| `registerDevServer(appId, serverId, ...)` | Adds to servers.json (proxy reads it live) |
+| `deregisterDevServer(appId, serverId)` | Removes from servers.json |
+| `reconcileProxyRoutes()` | Cleans dead entries from servers.json |
+| `getDevProxyUrl(appId, serverId)` | Returns `http://{serverId}.{appId}.localhost` |
+| `isProxyAvailable()` | Checks if aigon-proxy daemon is running |
 
 ## How It Works
 
