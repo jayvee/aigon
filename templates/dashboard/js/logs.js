@@ -210,22 +210,28 @@
       html.push(thHtml('repo', 'Repo'));
       html.push(thHtml('createdAt', 'Created'));
       html.push(thHtml('updatedAt', 'Last Changed'));
+      html.push('<th style="width:70px"></th>');
       html.push('</tr></thead>');
       html.push('<tbody>');
       pageRows.forEach((r, i) => {
         const title = slugToTitle(r.name);
         const idStr = r.id != null ? `#${String(r.id).padStart(2, '0')}` : '—';
-        html.push(`<tr class="logs-row" data-idx="${i}" style="cursor:pointer" title="Click to open spec">`);
+        const hasLog = r.logPaths && r.logPaths.length > 0;
+        html.push(`<tr class="logs-row" data-idx="${i}">`);
         html.push(`<td class="col-id">${idStr}</td>`);
         html.push(`<td class="col-name">${escHtml(title)}</td>`);
         html.push(`<td>${stageHtml(r.stage)}</td>`);
         html.push(`<td class="col-repo" title="${escHtml(r.repoDisplay || '')}">${escHtml(r.repoName || '—')}</td>`);
         html.push(`<td class="col-date">${logsDateFmt(r.createdAt)}</td>`);
         html.push(`<td class="col-date">${logsDateFmt(r.updatedAt)}</td>`);
+        html.push('<td class="col-actions">');
+        html.push(`<button class="logs-action-btn logs-btn-spec" data-idx="${i}" data-tooltip="Open spec"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1h6l4 4v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/><path d="M10 1v4h4"/><path d="M6 9h4M6 12h2"/></svg></button>`);
+        html.push(`<button class="logs-action-btn logs-btn-log${hasLog ? '' : ' logs-btn-hidden'}" data-idx="${i}" data-tooltip="Open log"${hasLog ? '' : ' disabled'}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v12H2z"/><path d="M5 5h6M5 8h6M5 11h3"/></svg></button>`);
+        html.push('</td>');
         html.push('</tr>');
       });
       if (pageRows.length === 0) {
-        html.push(`<tr><td colspan="6" style="text-align:center;color:var(--text-tertiary);padding:20px 0">${q ? 'No features match your search.' : 'No features found.'}</td></tr>`);
+        html.push(`<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:20px 0">${q ? 'No features match your search.' : 'No features found.'}</td></tr>`);
       }
       html.push('</tbody></table></div>');
 
@@ -253,13 +259,29 @@
         };
       });
 
-      // Wire up row clicks → open spec drawer
-      container.querySelectorAll('.logs-row').forEach((row, i) => {
+      // Wire up row hover
+      container.querySelectorAll('.logs-row').forEach(row => {
         row.onmouseenter = () => row.style.background = 'var(--bg-surface)';
         row.onmouseleave = () => row.style.background = '';
-        row.onclick = () => {
-          const r = pageRows[i];
+      });
+
+      // Wire up spec buttons
+      container.querySelectorAll('.logs-btn-spec').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const r = pageRows[Number(btn.dataset.idx)];
           if (r && r.specPath) openDrawer(r.specPath, slugToTitle(r.name), r.stage);
+        };
+      });
+
+      // Wire up log buttons
+      container.querySelectorAll('.logs-btn-log').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const r = pageRows[Number(btn.dataset.idx)];
+          if (r && r.logPaths && r.logPaths.length > 0) {
+            openDrawer(r.logPaths[0], slugToTitle(r.name) + ' — Log', r.stage);
+          }
         };
       });
 
