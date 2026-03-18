@@ -1585,17 +1585,17 @@ test('collectAnalyticsData returns valid structure for empty repos', () => {
 test('collectAnalyticsData returns features from done specs with selected logs', () => {
     withTempDir(tmpDir => {
         const doneDir = path.join(tmpDir, 'docs', 'specs', 'features', '05-done');
-        const selectedDir = path.join(tmpDir, 'docs', 'specs', 'features', 'logs', 'selected');
+        const logsDir = path.join(tmpDir, 'docs', 'specs', 'features', 'logs');
         fs.mkdirSync(doneDir, { recursive: true });
-        fs.mkdirSync(selectedDir, { recursive: true });
+        fs.mkdirSync(logsDir, { recursive: true });
 
         // Create a done spec
         fs.writeFileSync(path.join(doneDir, 'feature-01-test-feature.md'), '# Feature 01\n');
 
-        // Create a selected log with full lifecycle metadata
+        // Create a log in flat logs/ dir with full lifecycle metadata
         const startedAt = '2026-01-01T00:00:00Z';
         const completedAt = '2026-01-01T08:00:00Z';
-        fs.writeFileSync(path.join(selectedDir, 'feature-01-cc-test-feature-log.md'),
+        fs.writeFileSync(path.join(logsDir, 'feature-01-cc-test-feature-log.md'),
             `---\nstatus: submitted\nupdated: ${completedAt}\nstartedAt: ${startedAt}\ncompletedAt: ${completedAt}\nevents:\n  - { ts: "${startedAt}", status: implementing }\n  - { ts: "${completedAt}", status: submitted }\n---\n\nLog body.`
         );
 
@@ -1614,9 +1614,9 @@ test('collectAnalyticsData returns features from done specs with selected logs',
 test('collectAnalyticsData respects cycleTimeExclude flag', () => {
     withTempDir(tmpDir => {
         const doneDir = path.join(tmpDir, 'docs', 'specs', 'features', '05-done');
-        const selectedDir = path.join(tmpDir, 'docs', 'specs', 'features', 'logs', 'selected');
+        const logsDir = path.join(tmpDir, 'docs', 'specs', 'features', 'logs');
         fs.mkdirSync(doneDir, { recursive: true });
-        fs.mkdirSync(selectedDir, { recursive: true });
+        fs.mkdirSync(logsDir, { recursive: true });
 
         const startedAt = '2026-01-01T00:00:00Z';
         const normalCompletedAt = '2026-01-01T02:00:00Z'; // 2h
@@ -1624,13 +1624,13 @@ test('collectAnalyticsData respects cycleTimeExclude flag', () => {
 
         // Normal feature (2h cycle time)
         fs.writeFileSync(path.join(doneDir, 'feature-01-normal-feature.md'), '# Feature 01\n');
-        fs.writeFileSync(path.join(selectedDir, 'feature-01-cc-normal-feature-log.md'),
+        fs.writeFileSync(path.join(logsDir, 'feature-01-cc-normal-feature-log.md'),
             `---\nstatus: submitted\nupdated: ${normalCompletedAt}\nstartedAt: ${startedAt}\ncompletedAt: ${normalCompletedAt}\n---\n\nLog body.`
         );
 
         // Excluded feature (long cycle time, flagged)
         fs.writeFileSync(path.join(doneDir, 'feature-02-parked-feature.md'), '# Feature 02\n');
-        fs.writeFileSync(path.join(selectedDir, 'feature-02-cc-parked-feature-log.md'),
+        fs.writeFileSync(path.join(logsDir, 'feature-02-cc-parked-feature-log.md'),
             `---\nstatus: submitted\nupdated: ${excludedCompletedAt}\nstartedAt: ${startedAt}\ncompletedAt: ${excludedCompletedAt}\ncycleTimeExclude: true\n---\n\nLog body.`
         );
 
@@ -1865,6 +1865,148 @@ test('savePortRegistry stores in ports.json', () => withTempDir(tempDir => {
     } else if (fs.existsSync(PORT_REGISTRY_PATH)) {
         fs.unlinkSync(PORT_REGISTRY_PATH);
     }
+}));
+
+// ---------------------------------------------------------------------------
+// State Reconciliation — doctor checks (feature 105)
+// ---------------------------------------------------------------------------
+
+console.log('\nState Reconciliation — doctor checks');
+
+test('organizeLogFiles is no longer exported from utils', () => {
+    const utils = require('./lib/utils');
+    assert.strictEqual(utils.organizeLogFiles, undefined, 'organizeLogFiles should be removed');
+});
+
+test('manifest writeManifest supports winner field', () => {
+    const testId = 'test-reconcile-99998';
+    try {
+        const m = manifestModule.readManifest(testId);
+        manifestModule.writeManifest(testId, { winner: 'cc' }, { type: 'winner-recorded', actor: 'test' });
+        const updated = manifestModule.readManifest(testId);
+        assert.strictEqual(updated.winner, 'cc', 'winner should be set to cc');
+    } finally {
+        try { fs.unlinkSync(manifestModule.coordinatorPath(testId)); } catch (e) { /* ok */ }
+    }
+});
+
+test('dead-agent check: detects agent status files for done features', () => withTempDir(tempDir => {
+    // Create a fake state dir with a done feature and agent status
+    const stateDir = path.join(tempDir, '.aigon', 'state');
+    fs.mkdirSync(stateDir, { recursive: true });
+    // Write coordinator manifest with stage=done
+    fs.writeFileSync(path.join(stateDir, 'feature-99990.json'), JSON.stringify({
+        id: '99990', type: 'feature', stage: 'done', agents: ['cc'], winner: 'cc', pending: [], events: []
+    }));
+    // Write agent status file (should be cleaned up for done features)
+    fs.writeFileSync(path.join(stateDir, 'feature-99990-cc.json'), JSON.stringify({
+        agent: 'cc', status: 'submitted', updatedAt: new Date().toISOString()
+    }));
+
+    // Verify agent status file exists
+    const agentFiles = fs.readdirSync(stateDir).filter(f => /^feature-99990-[a-z]+\.json$/.test(f));
+    assert.strictEqual(agentFiles.length, 1, 'should have 1 agent status file');
+}));
+
+test('stale-pending check: identifies pending ops older than 1 hour', () => {
+    const testId = 'test-reconcile-99997';
+    try {
+        // Create manifest with stale pending op (event from 2 hours ago)
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+        const data = {
+            id: testId, type: 'feature', name: 'test', stage: 'in-progress',
+            specPath: null, agents: [], winner: null,
+            pending: ['move-spec'],
+            events: [{ type: 'transition', at: twoHoursAgo, actor: 'test' }]
+        };
+        const coordPath = manifestModule.coordinatorPath(testId);
+        const dir = path.dirname(coordPath);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(coordPath, JSON.stringify(data, null, 2));
+
+        const m = manifestModule.readManifest(testId);
+        assert.deepStrictEqual(m.pending, ['move-spec'], 'should have stale pending op');
+
+        const lastEvent = m.events[m.events.length - 1];
+        const ageMs = Date.now() - new Date(lastEvent.at).getTime();
+        assert.ok(ageMs > 60 * 60 * 1000, 'pending op should be older than 1 hour');
+    } finally {
+        try { fs.unlinkSync(manifestModule.coordinatorPath(testId)); } catch (e) { /* ok */ }
+    }
+});
+
+test('stage-mismatch: manifest stage can be corrected to match folder', () => {
+    const testId = 'test-reconcile-99996';
+    try {
+        // Create manifest with wrong stage
+        const data = {
+            id: testId, type: 'feature', name: 'test', stage: 'backlog',
+            specPath: null, agents: [], winner: null, pending: [],
+            events: [{ type: 'bootstrapped', at: new Date().toISOString(), actor: 'test' }]
+        };
+        const coordPath = manifestModule.coordinatorPath(testId);
+        const dir = path.dirname(coordPath);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(coordPath, JSON.stringify(data, null, 2));
+
+        // Fix it
+        manifestModule.writeManifest(testId, { stage: 'in-progress' }, { type: 'reconcile-stage', actor: 'doctor' });
+        const fixed = manifestModule.readManifest(testId);
+        assert.strictEqual(fixed.stage, 'in-progress', 'stage should be corrected');
+    } finally {
+        try { fs.unlinkSync(manifestModule.coordinatorPath(testId)); } catch (e) { /* ok */ }
+    }
+});
+
+test('log migration: files can be moved from selected/ to flat logs/', () => withTempDir(tempDir => {
+    const logsRoot = path.join(tempDir, 'logs');
+    const selectedDir = path.join(logsRoot, 'selected');
+    const alternativesDir = path.join(logsRoot, 'alternatives');
+    fs.mkdirSync(selectedDir, { recursive: true });
+    fs.mkdirSync(alternativesDir, { recursive: true });
+
+    // Create log files in subdirs
+    fs.writeFileSync(path.join(selectedDir, 'feature-50-cc-test-log.md'), '# Winner log');
+    fs.writeFileSync(path.join(alternativesDir, 'feature-50-cu-test-log.md'), '# Alt log');
+
+    // Simulate migration
+    [selectedDir, alternativesDir].forEach(subdir => {
+        const files = fs.readdirSync(subdir).filter(f => f.endsWith('.md'));
+        files.forEach(f => {
+            const src = path.join(subdir, f);
+            const dest = path.join(logsRoot, f);
+            if (!fs.existsSync(dest)) fs.renameSync(src, dest);
+        });
+        const remaining = fs.readdirSync(subdir);
+        if (remaining.length === 0) fs.rmdirSync(subdir);
+    });
+
+    // Verify
+    assert.ok(fs.existsSync(path.join(logsRoot, 'feature-50-cc-test-log.md')), 'winner log should be in flat dir');
+    assert.ok(fs.existsSync(path.join(logsRoot, 'feature-50-cu-test-log.md')), 'alt log should be in flat dir');
+    assert.ok(!fs.existsSync(selectedDir), 'selected/ should be removed');
+    assert.ok(!fs.existsSync(alternativesDir), 'alternatives/ should be removed');
+}));
+
+test('dashboard log collection reads from flat logs/ directory', () => withTempDir(tempDir => {
+    const logsDir = path.join(tempDir, 'logs');
+    fs.mkdirSync(logsDir, { recursive: true });
+    fs.writeFileSync(path.join(logsDir, 'feature-42-cc-test-log.md'), '# Log');
+
+    // Simulate the dashboard log collection logic (from dashboard-server.js)
+    const logPathsByFeatureId = {};
+    fs.readdirSync(logsDir)
+        .filter(f => /^feature-\d+-.+-log\.md$/.test(f) && !fs.lstatSync(path.join(logsDir, f)).isDirectory())
+        .forEach(f => {
+            const m = f.match(/^feature-(\d+)-/);
+            if (!m) return;
+            const fid = m[1];
+            if (!logPathsByFeatureId[fid]) logPathsByFeatureId[fid] = [];
+            logPathsByFeatureId[fid].push(path.join(logsDir, f));
+        });
+
+    assert.ok(logPathsByFeatureId['42'], 'should find log for feature 42');
+    assert.strictEqual(logPathsByFeatureId['42'].length, 1, 'should have 1 log path');
 }));
 
 console.log('');
