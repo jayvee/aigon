@@ -221,7 +221,7 @@ test.describe('Fleet mode lifecycle', () => {
         const existingEval = fs.readFileSync(evalFile, 'utf8');
         fs.writeFileSync(evalFile, existingEval + '\n**Winner: cc**\n');
 
-        // Also bring gg's log into the main repo for organizeLogFiles() to handle
+        // Also bring gg's log into the main repo (flat logs/ directory)
         const mainLogsDir = path.join(ctx.tmpDir, 'docs', 'specs', 'features', 'logs');
         const ggLogSrc = path.join(ggWorktreePath, 'docs', 'specs', 'features', 'logs',
             `feature-${paddedId}-gg-${desc}-log.md`);
