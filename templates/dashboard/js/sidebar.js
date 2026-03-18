@@ -83,6 +83,7 @@
           cb.checked = false;
           cb.type = pickerSingleMode ? 'radio' : 'checkbox';
           cb.name = pickerSingleMode ? 'agent-pick' : '';
+          if (opts.preselect && cb.value === opts.preselect) cb.checked = true;
         });
         document.getElementById('agent-picker-submit').textContent = opts.submitLabel || 'Setup';
         document.getElementById('agent-picker').style.display = 'flex';
