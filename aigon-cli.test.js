@@ -39,7 +39,7 @@ const {
     inferDashboardNextActions
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
-const { isSameProviderFamily, getProfilePlaceholders, generateCaddyfile, getCaddyRouteId, gcDevServers, validateRegistry, loadProxyRegistry, saveProxyRegistry, getCaddyLiveRoutes, registryHasRoute, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, serializeLogFrontmatter, updateLogFrontmatterInPlace, collectAnalyticsData } = require('./lib/utils');
+const { isSameProviderFamily, getProfilePlaceholders, gcDevServers, validateRegistry, loadProxyRegistry, saveProxyRegistry, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, getDevProxyUrl, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, serializeLogFrontmatter, updateLogFrontmatterInPlace, collectAnalyticsData } = require('./lib/utils');
 const { tryOrDefault, classifyError } = require('./lib/errors');
 const { detectDashboardContext } = require('./lib/devserver');
 
@@ -695,75 +695,24 @@ test('DASHBOARD_DEFAULT_PORT is 4100', () => assert.strictEqual(DASHBOARD_DEFAUL
 test('DASHBOARD_DYNAMIC_PORT_START is 4101', () => assert.strictEqual(DASHBOARD_DYNAMIC_PORT_START, 4101));
 test('DASHBOARD_DYNAMIC_PORT_END is 4199', () => assert.strictEqual(DASHBOARD_DYNAMIC_PORT_END, 4199));
 
-console.log('\nCaddyfile Generation with Legacy Nested Entries');
-test('generateCaddyfile handles regular dev server entries', () => {
-    const registry = {
-        farline: {
-            '': { port: 3000, pid: 100 },
-            'cc-119': { port: 3001, pid: 101 }
-        }
-    };
-    const caddyfile = generateCaddyfile(registry);
-    assert.ok(caddyfile.includes('http://farline.test'));
-    assert.ok(caddyfile.includes('reverse_proxy localhost:3000'));
-    assert.ok(caddyfile.includes('http://cc-119.farline.test'));
-    assert.ok(caddyfile.includes('reverse_proxy localhost:3001'));
+console.log('\n.localhost URL Generation');
+test('getDevProxyUrl returns .localhost URL with serverId', () => {
+    assert.strictEqual(getDevProxyUrl('farline', 'cc-119'), 'http://cc-119.farline.localhost');
+    assert.strictEqual(getDevProxyUrl('aigon', 'cc-74'), 'http://cc-74.aigon.localhost');
 });
-test('generateCaddyfile handles Legacy entries with nested dashboard.port', () => {
-    const registry = {
-        aigon: {
-            '': {
-                service: { port: 4100, pid: 200 },
-                dashboard: { port: 4100, pid: 200 },
-                started: '2026-03-15T00:00:00.000Z'
-            },
-            'cc-119': {
-                service: { port: 4301, pid: 300 },
-                dashboard: { port: 4847, pid: 301 },
-                worktree: '/tmp/wt',
-                started: '2026-03-15T00:00:00.000Z'
-            }
-        }
-    };
-    const caddyfile = generateCaddyfile(registry);
-    assert.ok(caddyfile.includes('http://aigon.test'), 'main aigon entry');
-    assert.ok(caddyfile.includes('reverse_proxy localhost:4100'), 'main routes to dashboard port');
-    assert.ok(caddyfile.includes('http://cc-119.aigon.test'), 'worktree entry');
-    assert.ok(caddyfile.includes('reverse_proxy localhost:4847'), 'worktree routes to dashboard port');
-    assert.ok(!caddyfile.includes('reverse_proxy localhost:4301'), 'does not route to service port');
+test('getDevProxyUrl returns .localhost URL without serverId', () => {
+    assert.strictEqual(getDevProxyUrl('aigon', ''), 'http://aigon.localhost');
+    assert.strictEqual(getDevProxyUrl('farline', ''), 'http://farline.localhost');
 });
-test('generateCaddyfile mixes legacy nested and regular entries', () => {
-    const registry = {
-        aigon: {
-            '': { service: { port: 4100, pid: 200 }, dashboard: { port: 4100, pid: 200 }, started: '' }
-        },
-        farline: {
-            '': { port: 3000, pid: 100 }
-        }
-    };
-    const caddyfile = generateCaddyfile(registry);
-    assert.ok(caddyfile.includes('http://aigon.test'), 'aigon entry present');
-    assert.ok(caddyfile.includes('http://farline.test'), 'farline entry present');
-});
-
-console.log('\nCaddy Admin API Route IDs');
-test('getCaddyRouteId returns aigon-{appId}-{serverId} for non-empty serverId', () => {
-    assert.strictEqual(getCaddyRouteId('aigon', 'cc-74'), 'aigon-aigon-cc-74');
-    assert.strictEqual(getCaddyRouteId('farline', 'cc-119'), 'aigon-farline-cc-119');
-});
-test('getCaddyRouteId returns aigon-{appId} for empty serverId', () => {
-    assert.strictEqual(getCaddyRouteId('aigon', ''), 'aigon-aigon');
-    assert.strictEqual(getCaddyRouteId('farline', ''), 'aigon-farline');
-});
-test('getCaddyRouteId route IDs are unique across appId/serverId pairs', () => {
-    const ids = new Set([
-        getCaddyRouteId('aigon', ''),
-        getCaddyRouteId('aigon', 'cc-74'),
-        getCaddyRouteId('aigon', 'cc-75'),
-        getCaddyRouteId('farline', ''),
-        getCaddyRouteId('farline', 'cc-1'),
+test('getDevProxyUrl URLs are unique across appId/serverId pairs', () => {
+    const urls = new Set([
+        getDevProxyUrl('aigon', ''),
+        getDevProxyUrl('aigon', 'cc-74'),
+        getDevProxyUrl('aigon', 'cc-75'),
+        getDevProxyUrl('farline', ''),
+        getDevProxyUrl('farline', 'cc-1'),
     ]);
-    assert.strictEqual(ids.size, 5, 'all route IDs should be unique');
+    assert.strictEqual(urls.size, 5, 'all URLs should be unique');
 });
 
 console.log('\nDetect Dashboard Context');
@@ -845,47 +794,17 @@ test('gcDevServers preserves live legacy entries', () => {
 });
 
 
-console.log('\nProxy Crash Recovery — getCaddyLiveRoutes');
-test('getCaddyLiveRoutes returns empty Map when Caddy admin API is unavailable', () => {
-    // In CI / test environment Caddy is not running — expect empty Map
-    const routes = getCaddyLiveRoutes();
-    assert.ok(routes instanceof Map, 'should return a Map');
-    // May have entries if Caddy happens to be running locally; just check type
-    assert.ok(typeof routes.size === 'number', 'Map.size should be a number');
-});
-
-console.log('\nProxy Crash Recovery — registryHasRoute');
-test('registryHasRoute returns true when route exists in registry', () => {
-    const registry = {
-        'aigon': { 'cc-74': { port: 3001, pid: 1 } },
-        'farline': { '': { port: 3000, pid: 1 } }
-    };
-    assert.ok(registryHasRoute(registry, getCaddyRouteId('aigon', 'cc-74')), 'should find aigon-aigon-cc-74');
-    assert.ok(registryHasRoute(registry, getCaddyRouteId('farline', '')), 'should find aigon-farline');
-});
-
-test('registryHasRoute returns false when route not in registry', () => {
-    const registry = {
-        'aigon': { 'cc-74': { port: 3001, pid: 1 } }
-    };
-    assert.ok(!registryHasRoute(registry, getCaddyRouteId('farline', '')), 'should not find aigon-farline');
-    assert.ok(!registryHasRoute(registry, getCaddyRouteId('aigon', 'cc-99')), 'should not find aigon-aigon-cc-99');
-});
-
-test('registryHasRoute returns false on empty registry', () => {
-    assert.ok(!registryHasRoute({}, getCaddyRouteId('aigon', '')), 'empty registry returns false');
-});
-
 console.log('\nProxy Crash Recovery — reconcileProxyRoutes');
-test('reconcileProxyRoutes returns all-zero summary when proxy unavailable', () => {
-    // proxy is unavailable in test environment (no Caddy running)
+test('reconcileProxyRoutes returns correct shape', () => {
     const result = reconcileProxyRoutes();
-    // If proxy is available this test would actually reconcile, so we just check shape
     assert.ok(typeof result === 'object', 'should return an object');
     assert.ok(typeof result.added === 'number', 'added should be a number');
     assert.ok(typeof result.removed === 'number', 'removed should be a number');
     assert.ok(typeof result.unchanged === 'number', 'unchanged should be a number');
     assert.ok(typeof result.cleaned === 'number', 'cleaned should be a number');
+    // Node-proxy has no Caddy to sync; added and removed are always 0
+    assert.strictEqual(result.added, 0, 'added should always be 0 (no Caddy sync)');
+    assert.strictEqual(result.removed, 0, 'removed should always be 0 (no Caddy sync)');
 });
 
 test('reconcileProxyRoutes cleans dead registry entries and returns correct cleaned count', () => withTempDir(tempDir => {
@@ -901,17 +820,11 @@ test('reconcileProxyRoutes cleans dead registry entries and returns correct clea
     fs.writeFileSync(DEV_PROXY_REGISTRY, JSON.stringify(registry, null, 2) + '\n');
 
     try {
-        // When proxy is unavailable, reconcile returns early (no cleaning)
-        // When proxy is available, dead entries are cleaned
         const result = reconcileProxyRoutes();
-        assert.ok(typeof result.cleaned === 'number', 'cleaned should be a number');
+        assert.strictEqual(result.cleaned, 1, 'should clean 1 dead entry');
 
         const after = loadProxyRegistry();
-        // If proxy was available: dead entry should be cleaned
-        // If proxy was unavailable: registry unchanged
-        if (result.cleaned > 0) {
-            assert.ok(!after['aigon'] || !after['aigon']['cc-77'], 'dead entry should be removed when proxy available');
-        }
+        assert.ok(!after['aigon'] || !after['aigon']['cc-77'], 'dead entry should be removed');
     } finally {
         if (realRegistry !== null) {
             fs.writeFileSync(DEV_PROXY_REGISTRY, realRegistry);
@@ -1552,8 +1465,8 @@ test('collectAnalyticsData parses eval wins from evaluation files', () => {
 });
 
 console.log('\nProxy Health Check — isProxyAvailable');
-test('isProxyAvailable returns a boolean (uses admin API check)', () => {
-    // In test environment Caddy may or may not be running; just verify type
+test('isProxyAvailable returns a boolean (checks proxy.pid)', () => {
+    // In test environment aigon-proxy is not running; just verify type
     const result = isProxyAvailable();
     assert.strictEqual(typeof result, 'boolean', 'isProxyAvailable should return boolean');
 });
@@ -1564,28 +1477,18 @@ test('proxyDiagnostics returns object with correct shape', () => {
     // Top-level fields
     assert.strictEqual(typeof diag.healthy, 'boolean', 'healthy should be boolean');
     assert.ok(diag.fix === null || typeof diag.fix === 'string', 'fix should be string or null');
-    // caddy section
-    assert.strictEqual(typeof diag.caddy, 'object', 'caddy should be object');
-    assert.strictEqual(typeof diag.caddy.installed, 'boolean', 'caddy.installed should be boolean');
-    assert.strictEqual(typeof diag.caddy.running, 'boolean', 'caddy.running should be boolean');
-    assert.strictEqual(typeof diag.caddy.adminApi, 'boolean', 'caddy.adminApi should be boolean');
-    // dnsmasq section
-    assert.strictEqual(typeof diag.dnsmasq, 'object', 'dnsmasq should be object');
-    assert.strictEqual(typeof diag.dnsmasq.installed, 'boolean', 'dnsmasq.installed should be boolean');
-    assert.strictEqual(typeof diag.dnsmasq.running, 'boolean', 'dnsmasq.running should be boolean');
+    // proxy section
+    assert.strictEqual(typeof diag.proxy, 'object', 'proxy should be object');
+    assert.strictEqual(typeof diag.proxy.running, 'boolean', 'proxy.running should be boolean');
     // routes section
     assert.strictEqual(typeof diag.routes, 'object', 'routes should be object');
     assert.strictEqual(typeof diag.routes.total, 'number', 'routes.total should be number');
-    assert.strictEqual(typeof diag.routes.live, 'number', 'routes.live should be number');
-    assert.strictEqual(typeof diag.routes.stale, 'number', 'routes.stale should be number');
 });
 
-test('proxyDiagnostics healthy is false when Caddy admin API is unavailable', () => {
-    // In test environment Caddy is likely not running — admin API is unavailable
-    // So healthy should be false. If Caddy IS running locally, this test is a no-op.
+test('proxyDiagnostics healthy is false when proxy not running', () => {
     const diag = proxyDiagnostics();
-    if (!diag.caddy.adminApi) {
-        assert.strictEqual(diag.healthy, false, 'healthy must be false when adminApi is false');
+    if (!diag.proxy.running) {
+        assert.strictEqual(diag.healthy, false, 'healthy must be false when proxy not running');
     }
 });
 
@@ -1596,23 +1499,11 @@ test('proxyDiagnostics fix is null when healthy', () => {
     }
 });
 
-test('proxyDiagnostics fix is non-null when Caddy not installed', () => {
+test('proxyDiagnostics fix is "aigon proxy start" when proxy not running', () => {
     const diag = proxyDiagnostics();
-    if (!diag.caddy.installed) {
-        assert.ok(typeof diag.fix === 'string' && diag.fix.length > 0, 'fix should be set when caddy not installed');
+    if (!diag.proxy.running) {
+        assert.strictEqual(diag.fix, 'aigon proxy start', 'fix should be "aigon proxy start" when not running');
     }
-});
-
-test('proxyDiagnostics routes.stale is 0 when admin API unavailable', () => {
-    const diag = proxyDiagnostics();
-    if (!diag.caddy.adminApi) {
-        assert.strictEqual(diag.routes.stale, 0, 'stale should be 0 when live routes cannot be fetched');
-    }
-});
-
-test('proxyDiagnostics caddy.running equals caddy.adminApi', () => {
-    const diag = proxyDiagnostics();
-    assert.strictEqual(diag.caddy.running, diag.caddy.adminApi, 'running and adminApi should be the same value');
 });
 
 // ── tryOrDefault ──────────────────────────────────────────────────────────────
