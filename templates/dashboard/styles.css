@@ -218,6 +218,8 @@
     .spec-drawer.fullscreen{width:100vw;border-left:none}
     .drawer-header{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border-subtle);flex-shrink:0}
     .drawer-title{flex:1;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .drawer-copy-name{background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:2px 4px;margin-left:2px;border-radius:3px;flex-shrink:0;display:inline-flex;align-items:center;opacity:0.5}
+    .drawer-copy-name:hover{opacity:1;background:var(--bg-elevated)}
     .drawer-stage{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--bg-elevated);color:var(--text-secondary);white-space:nowrap}
     .drawer-actions{display:flex;gap:6px;align-items:center}
     .drawer-mode-toggle{display:flex;border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden}
