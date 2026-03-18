@@ -1,10 +1,11 @@
 ---
-status: implementing
-updated: 2026-03-18T13:05:49.182Z
+status: submitted
+updated: 2026-03-18T13:15:54.831Z
 startedAt: 2026-03-18T12:54:02.980Z
 events:
   - { ts: "2026-03-18T12:54:02.980Z", status: implementing }
   - { ts: "2026-03-18T13:05:49.182Z", status: implementing }
+  - { ts: "2026-03-18T13:15:54.831Z", status: submitted }
 ---
 
 # Implementation Log: Feature 100 - dashboard-playwright-e2e
@@ -56,3 +57,19 @@ default — same test logic, much shorter wall time in CI.
 
 **Pre-existing test failures**: `tests/dashboard/` has 2 pre-existing failures
 (agent badge + monitor dots) that are unrelated to this feature.
+
+## Bugs found and fixed during testing
+
+**Wrong selector for in-progress agent cards**: The tests initially used
+`.agent-badge` to find agent status indicators. However, in-progress cards use
+`buildAgentSectionHtml` which renders `.kcard-agent.agent-cc` divs with
+`.kcard-agent-status.status-submitted` spans — not `.agent-badge`. The
+`.agent-badge` selector only applies to the legacy layout used for inbox/backlog/done
+cards. Fixed by switching to `.kcard-agent.agent-cc` and `.kcard-agent-status.status-*`.
+
+**Race condition: waitForPath on directory not log file**: `waitForPath(worktreePath)`
+resolved as soon as `git worktree add` created the directory — but `setupWorktreeEnvironment`
+writes the log file *after* `install-agent` runs (later in the sequence). MockAgent's
+`updateLogFrontmatterInPlace` silently returns `false` if the log file doesn't exist,
+leaving status at `implementing`. Fixed by waiting for the log file path specifically
+(`waitForPath(ccLogPath)`) rather than the worktree directory.
