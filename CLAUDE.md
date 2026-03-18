@@ -70,7 +70,7 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit
-4. **Restart after backend edits** — after changing any `lib/*.js`, you MUST restart the dashboard yourself: `lsof -ti :4100 | xargs kill -9 2>/dev/null; sleep 1 && node aigon-cli.js dashboard &`. Do NOT leave stale code running — the dashboard has no hot-reload.
+4. **Restart after backend edits** — after changing any `lib/*.js`, restart `node aigon-cli.js dashboard`
 5. **Don't move spec files manually** — always use `aigon` CLI commands to transition state
 
 ## Common Agent Mistakes
@@ -79,7 +79,6 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 - **Complexity for simplicity**: responding to "simplify" with smarter/more code instead of removing code
 - **`.env.local` blocking flow**: treating it as uncommitted changes → blocks `feature-close`
 - **Editing working copies**: changing `.claude/commands/` instead of `templates/` → lost on next sync
-- **Bypassing the state machine**: writing inline logic like `agents.every(a => a.status === 'submitted')` or `stage === 'in-evaluation'` instead of calling `stateMachine.getValidTransitions()`, `stateMachine.getAvailableActions()`, or exported guards. The state machine in `lib/state-machine.js` is the SINGLE SOURCE OF TRUTH for stages, transitions, guards, solo vs fleet, and valid actions. Never reimplement its logic elsewhere.
 
 ## Reading Order
 1. `AGENTS.md` (this file) — quick orientation
