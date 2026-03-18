@@ -69,12 +69,22 @@
     // ── Agent picker ──────────────────────────────────────────────────────────
 
     let pickerResolve = null;
+    let pickerSingleMode = false;
 
-    function showAgentPicker(featureId, featureName) {
+    function showAgentPicker(featureId, featureName, options) {
+      const opts = options || {};
+      pickerSingleMode = !!opts.single;
       return new Promise((resolve) => {
         pickerResolve = resolve;
+        document.getElementById('agent-picker-title').textContent = opts.title || 'Select Agents';
         document.getElementById('agent-picker-desc').textContent = '#' + featureId + ' ' + featureName;
-        document.querySelectorAll('#agent-picker input[type=checkbox]').forEach(cb => { cb.checked = false; });
+        const checkboxes = document.querySelectorAll('#agent-picker input[type=checkbox]');
+        checkboxes.forEach(cb => {
+          cb.checked = false;
+          cb.type = pickerSingleMode ? 'radio' : 'checkbox';
+          cb.name = pickerSingleMode ? 'agent-pick' : '';
+        });
+        document.getElementById('agent-picker-submit').textContent = opts.submitLabel || 'Setup';
         document.getElementById('agent-picker').style.display = 'flex';
         document.getElementById('agent-picker-submit').focus();
       });
@@ -88,7 +98,8 @@
     document.getElementById('agent-picker-cancel').onclick = () => hideAgentPicker(null);
     document.getElementById('agent-picker').onclick = (e) => { if (e.target === e.currentTarget) hideAgentPicker(null); };
     document.getElementById('agent-picker-submit').onclick = () => {
-      const selected = [...document.querySelectorAll('#agent-picker input[type=checkbox]:checked')].map(cb => cb.value);
+      const inputType = pickerSingleMode ? 'radio' : 'checkbox';
+      const selected = [...document.querySelectorAll('#agent-picker input[type=' + inputType + ']:checked')].map(cb => cb.value);
       if (selected.length === 0) { showToast('Select at least one agent'); return; }
       hideAgentPicker(selected);
     };
