@@ -20,3 +20,7 @@ docs/agents/
 
 # Aigon version tracking (per-project)
 .aigon/
+
+# Aigon manifest state and locks (runtime-only, never committed)
+.aigon/state/
+.aigon/locks/
