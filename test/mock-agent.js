@@ -22,7 +22,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const { updateLogFrontmatterInPlace } = require('../lib/utils');
+const manifest = require('../lib/manifest');
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -91,11 +91,10 @@ class MockAgent {
         await sleep(this.delays.submitted);
         if (this._abort) return;
 
-        // Update log frontmatter to submitted — matches real agent-status behavior
-        updateLogFrontmatterInPlace(this.logPath, {
+        // Write agent status to manifest — matches real agent-status behavior
+        manifest.writeAgentStatus(this.featureId, this.agentId, {
             status: 'submitted',
-            appendEvent: 'submitted',
-            setCompletedAt: true,
+            worktreePath: this.worktreePath,
         });
 
         execSync('git add . && git commit -m "chore: submit"', {
