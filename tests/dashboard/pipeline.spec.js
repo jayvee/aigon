@@ -57,12 +57,12 @@ test.describe('Pipeline view', () => {
     await expect(inboxCol).toContainText('feature one');
   });
 
-  test('in-progress column shows agent badge', async ({ page }) => {
+  test('in-progress column shows agent name', async ({ page }) => {
     await loadPipeline(page);
     const inProgressCol = page.locator('.kanban-col[data-stage="in-progress"]').first();
     await expect(inProgressCol).toBeVisible();
-    const badge = inProgressCol.locator('.agent-badge');
-    await expect(badge.first()).toBeVisible();
+    const agentName = inProgressCol.locator('.kcard-agent-name');
+    await expect(agentName.first()).toBeVisible();
   });
 
   test('column counts show correct numbers', async ({ page }) => {

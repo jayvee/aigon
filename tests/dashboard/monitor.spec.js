@@ -46,11 +46,11 @@ test.describe('Monitor view', () => {
     await expect(card).toContainText('feature-one');
   });
 
-  test('shows agent status dots', async ({ page }) => {
+  test('shows agent status rows', async ({ page }) => {
     await loadMonitor(page);
-    // Each feature card has at least one agent row with a dot
-    const dots = page.locator('.feature-card .dot');
-    const count = await dots.count();
+    // Each feature card has at least one agent row with a status class
+    const rows = page.locator('.feature-card .row');
+    const count = await rows.count();
     expect(count).toBeGreaterThan(0);
   });
 

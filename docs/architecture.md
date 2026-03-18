@@ -175,3 +175,64 @@ When orienting to the repo, read in this order:
 3. `docs/development_workflow.md`
 4. the active spec under `docs/specs/...`
 5. the relevant command module under `lib/commands/`
+
+## Testing
+
+### Test Layers
+
+Aigon has five test layers, each serving a different purpose:
+
+| Layer | Command | Framework | What it tests |
+|-------|---------|-----------|---------------|
+| **Unit tests** | `node aigon-cli.test.js` | Custom `test()` | Core logic: parsing, state machine, dashboard data, command routing, analytics |
+| **Module tests** | `node lib/<name>.test.js` | Custom `test()` | Individual modules: manifest, config, proxy, worktree, templates, dashboard-server |
+| **Dashboard UI** | `npm run test:dashboard` | Playwright | Dashboard HTML rendering with mocked API data (monitor, pipeline, actions, analytics) |
+| **Mock E2E** | `npm run test:e2e:mock-solo` / `mock-fleet` | Custom runner | Full feature lifecycle with mock agents — no AI tokens burned |
+| **CLI E2E** | `npm run test:e2e` | Custom runner | Real git operations on fixture repos in `~/src/` |
+
+There is also a **Dashboard E2E** layer (`npm run test:dashboard:e2e`) that runs full lifecycle tests through the dashboard browser UI with mock agents.
+
+### What `npm test` runs
+
+```
+node aigon-cli.test.js        # Unit tests (~170 tests)
+node lib/manifest.test.js     # Manifest module tests (~26 tests)
+npx playwright test ...       # Dashboard UI tests (~30 tests)
+```
+
+All three must pass for `npm test` to succeed.
+
+### When tests run
+
+- **`npm test`** — run manually or by agents during feature implementation (via `## Validation` section in feature specs)
+- **Mock E2E** — run manually; exercises full feature lifecycle without AI tokens
+- **CLI E2E** — run manually; creates real fixture repos and tests real git operations
+- **No CI pipeline** — there are no GitHub Actions or pre-commit hooks; tests are run locally
+- **Ralph validation** — during `feature-do --autonomous`, the agent runs commands from the spec's `## Validation` section after each iteration; all must exit 0
+
+### Writing tests
+
+- **Unit tests** go in `aigon-cli.test.js` (core logic) or the relevant `lib/<name>.test.js` (module-specific)
+- **Dashboard UI tests** go in `tests/dashboard/<view>.spec.js` — they mock API responses via `page.route()` and test HTML rendering
+- **Dashboard E2E tests** go in `tests/dashboard-e2e/` — they use `setup.js` to create real fixtures and `mock-agent.js` to simulate agents
+- **Mock E2E tests** go in `test/e2e-mock-*.test.js` — they exercise the CLI with `test/mock-agent.js`
+- **Feature-specific validation** goes in the spec's `## Validation` section as bash commands
+
+### Test utilities
+
+- `test/setup-fixture.js` — generates realistic fixture repos (brewboard, brewboard-api, trailhead) with known feature/research/feedback IDs
+- `test/mock-agent.js` — `MockAgent` class that simulates agent work in a worktree (writes code, commits, updates status) with configurable delays
+- `tests/dashboard/server.js` — minimal HTTP server that serves the dashboard HTML at `:4109` for Playwright tests
+
+### Quick reference
+
+```bash
+npm test                        # Unit + manifest + dashboard UI (the default suite)
+npm run test:e2e:mock-solo      # Solo Drive lifecycle with mock agent
+npm run test:e2e:mock-fleet     # Fleet lifecycle with mock agents
+npm run test:e2e                # Full CLI E2E with real git repos
+npm run test:dashboard          # Dashboard Playwright tests only
+npm run test:dashboard:e2e      # Dashboard E2E lifecycle tests
+node -c aigon-cli.js            # Quick syntax check (no tests)
+node -c lib/<module>.js         # Quick syntax check for a module
+```
