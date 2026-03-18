@@ -29,7 +29,8 @@
 
     function getVisibleRepos(data) {
       if (!data || !data.repos) return [];
-      if (state.selectedRepo === 'all') return data.repos;
+      const hidden = state.hiddenRepos || [];
+      if (state.selectedRepo === 'all') return data.repos.filter(r => !hidden.includes(r.path));
       return data.repos.filter(r => r.path === state.selectedRepo);
     }
 

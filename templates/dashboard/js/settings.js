@@ -21,7 +21,7 @@
       // Repos section
       const section = document.createElement('div');
       section.className = 'settings-section';
-      section.innerHTML = '<h3>Registered Repositories</h3><p>Repos monitored by the Aigon dashboard. Add any repo that uses the Aigon workflow.</p>';
+      section.innerHTML = '<h3>Registered Repositories</h3><p>Repos monitored by the Aigon dashboard. Toggle visibility to focus on specific repos.</p>';
 
       const repos = readConductorReposFromGlobalConfig_client();
       const list = document.createElement('div');
@@ -31,9 +31,23 @@
         list.innerHTML = '<div class="settings-empty">No repos registered.</div>';
       } else {
         repos.forEach(repoPath => {
+          const hidden = isRepoHidden(repoPath);
           const item = document.createElement('div');
-          item.className = 'repo-list-item';
+          item.className = 'repo-list-item' + (hidden ? ' repo-hidden' : '');
           const displayPath = repoPath.replace(/^\/Users\/[^/]+\//, '~/');
+
+          // Visibility toggle
+          const visBtn = document.createElement('button');
+          visBtn.className = 'repo-list-vis' + (hidden ? ' hidden-state' : '');
+          visBtn.title = hidden ? 'Show in dashboard' : 'Hide from dashboard';
+          visBtn.textContent = hidden ? '\u{1F441}\u{FE0F}\u200D\u{1F5E8}\u{FE0F}' : '\u{1F441}\u{FE0F}';
+          visBtn.textContent = hidden ? '○' : '●';
+          visBtn.onclick = () => {
+            toggleRepoVisibility(repoPath);
+            renderSettings();
+            render();
+          };
+
           item.innerHTML = '<span class="repo-list-path" title="' + escHtml(repoPath) + '">' + escHtml(displayPath) + '</span>';
           const removeBtn = document.createElement('button');
           removeBtn.className = 'repo-list-remove';
@@ -57,6 +71,7 @@
               removeBtn.disabled = false;
             }
           };
+          item.insertBefore(visBtn, item.firstChild);
           item.appendChild(removeBtn);
           list.appendChild(item);
         });
