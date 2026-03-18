@@ -15,7 +15,7 @@
  *     the subprocess as being inside a Gemini agent session, bypassing the "launch agent"
  *     path and running the eval setup directly.
  *   - gg's log is copied from the worktree to the main repo before feature-close so
- *     organizeLogFiles() can move it to logs/alternatives/.
+ *     both logs are present in the flat logs/ directory.
  */
 
 'use strict';
@@ -286,7 +286,7 @@ async function main() {
         const existingEval = fs.readFileSync(evalFile, 'utf8');
         fs.writeFileSync(evalFile, existingEval + '\n**Winner: cc**\n');
 
-        // Bring gg's log into the main repo so organizeLogFiles() can move it to alternatives/
+        // Bring gg's log into the main repo (flat logs/ directory).
         // (In a real workflow, the eval agent would consolidate logs; here we do it directly.)
         const mainLogsDir = path.join(tmpDir, 'docs/specs/features/logs');
         const ggLogDest = path.join(mainLogsDir, `feature-${paddedId}-gg-${desc}-log.md`);
@@ -317,20 +317,27 @@ async function main() {
             if (!f) throw new Error(`Spec for feature ${paddedId} not found in 05-done`);
         });
 
-        check("cc's log moved to logs/selected", () => {
+        check("cc's log stays in flat logs/", () => {
             const f = findFileIn(
-                path.join(tmpDir, 'docs/specs/features/logs/selected'),
-                f => f.includes(paddedId) && f.includes('-cc-')
+                path.join(tmpDir, 'docs/specs/features/logs'),
+                f => f.includes(paddedId) && f.includes('-cc-') && !fs.lstatSync(path.join(tmpDir, 'docs/specs/features/logs', f)).isDirectory()
             );
-            if (!f) throw new Error(`cc log not found in logs/selected`);
+            if (!f) throw new Error(`cc log not found in logs/`);
         });
 
-        check("gg's log moved to logs/alternatives", () => {
+        check("gg's log stays in flat logs/", () => {
             const f = findFileIn(
-                path.join(tmpDir, 'docs/specs/features/logs/alternatives'),
-                f => f.includes(paddedId) && f.includes('-gg-')
+                path.join(tmpDir, 'docs/specs/features/logs'),
+                f => f.includes(paddedId) && f.includes('-gg-') && !fs.lstatSync(path.join(tmpDir, 'docs/specs/features/logs', f)).isDirectory()
             );
-            if (!f) throw new Error(`gg log not found in logs/alternatives`);
+            if (!f) throw new Error(`gg log not found in logs/`);
+        });
+
+        check("winner recorded in manifest", () => {
+            const manifestPath = path.join(tmpDir, '.aigon/state', `feature-${paddedId}.json`);
+            if (!fs.existsSync(manifestPath)) throw new Error('Manifest not found');
+            const m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+            if (m.winner !== 'cc') throw new Error(`Expected winner=cc, got ${m.winner}`);
         });
 
         check('cc branch merged to main (no-ff merge commit)', () => {
