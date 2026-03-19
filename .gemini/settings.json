@@ -1,0 +1,32 @@
+{
+  "tools": {
+    "allowed": [
+      "aigon"
+    ]
+  },
+  "_aigon": {
+    "note": "Tools added by Aigon",
+    "tools": [
+      "aigon"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/opt/homebrew/bin/aigon check-version",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "/opt/homebrew/bin/aigon project-context",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

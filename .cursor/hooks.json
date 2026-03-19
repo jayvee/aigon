@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "session_start": [
+      {
+        "command": "aigon check-version",
+        "timeout": 30
+      }
+    ],
+    "sessionStart": [
+      {
+        "command": "aigon check-version",
+        "timeout": 30
+      }
+    ]
+  }
+}

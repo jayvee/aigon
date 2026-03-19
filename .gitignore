@@ -8,21 +8,12 @@ node_modules/
 playwright-report/
 test-results/
 
-# Generated agent files (source is in templates/)
-.claude/
-.codex/
-.gemini/
-CLAUDE.md
-AGENTS.md
-GEMINI.md
-docs/agents/
-.cursor/
-
-# Aigon version tracking (per-project)
-.aigon/
-
-# Aigon manifest state and locks (runtime-only, never committed)
+# Aigon runtime files (never committed)
 .aigon/state/
 .aigon/locks/
-next-env.d.ts
 .aigon/worktree.json
+.aigon/.board-map.json
+next-env.d.ts
+
+# Temp
+temp/

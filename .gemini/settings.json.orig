@@ -1,0 +1,11 @@
+{
+  "allowedTools": [
+    "aigon"
+  ],
+  "_aigon": {
+    "note": "Tools added by Aigon",
+    "tools": [
+      "aigon"
+    ]
+  }
+}
