@@ -18,6 +18,182 @@
       return prefix + '-' + action;
     }
 
+    function slugifyFeatureName(value) {
+      const text = String(value || '').trim().toLowerCase();
+      const slug = text.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      return slug || 'untitled';
+    }
+
+    function getCreateModalElements() {
+      return {
+        modal: document.getElementById('create-modal'),
+        repoPicker: document.getElementById('create-modal-repo-picker'),
+        repoSelect: document.getElementById('create-modal-repo'),
+        nameInput: document.getElementById('create-modal-name'),
+        descriptionInput: document.getElementById('create-modal-description'),
+        error: document.getElementById('create-modal-error'),
+        submit: document.getElementById('create-modal-submit'),
+        cancel: document.getElementById('create-modal-cancel')
+      };
+    }
+
+    function setCreateModalError(message) {
+      const els = getCreateModalElements();
+      if (!els.error) return;
+      const msg = String(message || '').trim();
+      els.error.textContent = msg;
+      els.error.style.display = msg ? '' : 'none';
+    }
+
+    function setCreateModalBusy(busy) {
+      const els = getCreateModalElements();
+      if (els.submit) {
+        els.submit.disabled = !!busy;
+        els.submit.textContent = busy ? 'Creating...' : 'Create';
+      }
+      if (els.cancel) els.cancel.disabled = !!busy;
+    }
+
+    function hideCreateModal() {
+      const els = getCreateModalElements();
+      if (!els.modal) return;
+      els.modal.style.display = 'none';
+      setCreateModalError('');
+      setCreateModalBusy(false);
+      if (els.nameInput) els.nameInput.value = '';
+      if (els.descriptionInput) els.descriptionInput.value = '';
+    }
+
+    async function submitCreateModal() {
+      const els = getCreateModalElements();
+      if (!els.modal || !els.nameInput || !els.descriptionInput || !els.submit) return;
+      const name = els.nameInput.value.trim();
+      const description = els.descriptionInput.value.trim();
+      const pickedRepo = els.repoPicker && els.repoPicker.style.display !== 'none'
+        ? (els.repoSelect ? String(els.repoSelect.value || '').trim() : '')
+        : String(els.modal.getAttribute('data-repo-path') || '').trim();
+
+      if (!name) {
+        setCreateModalError('Feature name is required.');
+        els.nameInput.focus();
+        return;
+      }
+      if (name.length > 80) {
+        setCreateModalError('Feature name must be 80 characters or fewer.');
+        els.nameInput.focus();
+        return;
+      }
+      if (!pickedRepo) {
+        setCreateModalError('Select a repository first.');
+        return;
+      }
+
+      setCreateModalError('');
+      setCreateModalBusy(true);
+
+      try {
+        const actionRes = await fetch('/api/action', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            action: 'feature-create',
+            args: [name],
+            repoPath: pickedRepo
+          })
+        });
+        const actionPayload = await actionRes.json().catch(() => ({}));
+        if (!actionRes.ok) {
+          const details = actionPayload && actionPayload.details ? actionPayload.details : {};
+          const detailedError = String(details.stderr || details.error || '').trim();
+          const topLevelError = String(actionPayload.error || '').trim();
+          throw new Error(detailedError || topLevelError || ('HTTP ' + actionRes.status));
+        }
+
+        await requestRefresh();
+        hideCreateModal();
+        showToast('Created feature: ' + name);
+
+        const agentId = (typeof getAskAgent === 'function' && getAskAgent()) || 'cc';
+        const slug = slugifyFeatureName(name);
+        const specPath = `docs/specs/features/01-inbox/feature-${slug}.md`;
+        const prompt = [
+          `Flesh out the feature spec at ${specPath}.`,
+          '',
+          `Feature name: "${name}"`,
+          `User description: "${description || 'No rough description provided.'}"`,
+          '',
+          'Read the spec template, then fill in acceptance criteria, technical approach, dependencies, and out-of-scope based on this context.'
+        ].join('\n');
+
+        const askRes = await fetch('/api/session/ask', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ repoPath: pickedRepo, agentId, message: prompt })
+        }).catch(() => null);
+        if (!askRes || !askRes.ok) {
+          const askPayload = askRes ? await askRes.json().catch(() => ({})) : {};
+          showToast('Feature created, but failed to open agent session: ' + (askPayload.error || 'Unknown error'), null, null, { error: true });
+        }
+      } catch (e) {
+        setCreateModalError(e.message || 'Failed to create feature.');
+      } finally {
+        setCreateModalBusy(false);
+      }
+    }
+
+    function createNewSpec(preselectedRepoPath) {
+      const els = getCreateModalElements();
+      if (!els.modal || !els.nameInput || !els.repoPicker || !els.repoSelect) return;
+
+      const s = Alpine.store('dashboard');
+      const visibleRepos = getVisibleRepos(s.data || { repos: [] });
+      const explicitRepo = String(preselectedRepoPath || '').trim();
+      const selectedRepo = s.selectedRepo && s.selectedRepo !== 'all' ? s.selectedRepo : '';
+      const defaultRepo = explicitRepo || selectedRepo || (visibleRepos.length === 1 ? visibleRepos[0].path : '');
+
+      els.repoSelect.innerHTML = '';
+      if (visibleRepos.length > 1 && !defaultRepo) {
+        els.repoPicker.style.display = '';
+        visibleRepos.forEach(repo => {
+          const option = document.createElement('option');
+          option.value = repo.path;
+          option.textContent = repo.displayPath || repo.name || repo.path;
+          els.repoSelect.appendChild(option);
+        });
+        els.modal.setAttribute('data-repo-path', '');
+      } else {
+        els.repoPicker.style.display = 'none';
+        if (defaultRepo) {
+          els.modal.setAttribute('data-repo-path', defaultRepo);
+        } else if (visibleRepos[0] && visibleRepos[0].path) {
+          els.modal.setAttribute('data-repo-path', visibleRepos[0].path);
+        } else {
+          els.modal.setAttribute('data-repo-path', '');
+        }
+      }
+
+      setCreateModalError('');
+      setCreateModalBusy(false);
+      els.nameInput.value = '';
+      if (els.descriptionInput) els.descriptionInput.value = '';
+      els.modal.style.display = 'flex';
+      els.nameInput.focus();
+    }
+
+    (function wireCreateModal() {
+      const els = getCreateModalElements();
+      if (!els.modal || !els.submit || !els.cancel || !els.nameInput) return;
+      els.cancel.onclick = () => hideCreateModal();
+      els.modal.onclick = (e) => { if (e.target === e.currentTarget) hideCreateModal(); };
+      els.submit.onclick = () => submitCreateModal();
+      els.nameInput.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          submitCreateModal();
+        }
+      };
+    })();
+
     function buildAgentBadgesHtml(agents) {
       if (!agents || agents.length === 0) return '';
       return agents.map(a => '<span class="agent-badge ' + escHtml(a.status || '') + '">' + escHtml(a.id) + '</span>').join('');
@@ -356,7 +532,7 @@
           return stageItems.length;
         },
         renderKanbanColCards(colBody, repo, stage) { renderKanbanColCards(colBody, repo, stage); },
-        createNewSpec() { createNewSpec(); },
+        createNewSpec(repoPath) { createNewSpec(repoPath); },
         onDragOver(e, stage) {
           if (!dragState) return;
           const allowed = dragState.validTargetStages ? dragState.validTargetStages.includes(stage) : false;

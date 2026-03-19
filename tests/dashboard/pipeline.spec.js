@@ -115,9 +115,94 @@ test.describe('Pipeline view', () => {
     await expect(actionableCol).toBeVisible();
   });
 
-  test('Create button is visible in pipeline toolbar', async ({ page }) => {
+  test('Inbox column shows + New Feature button in Features mode', async ({ page }) => {
     await loadPipeline(page);
-    const createBtn = page.locator('#pipeline-view button:has-text("+ Create")');
+    const createBtn = page.locator('.kanban-col[data-stage="inbox"] .col-new-feature-btn').first();
+    await expect(createBtn).toContainText('+ New Feature');
     await expect(createBtn).toBeVisible();
+  });
+
+  test('New Feature modal opens with name and description fields', async ({ page }) => {
+    await loadPipeline(page);
+    await page.locator('.kanban-col[data-stage="inbox"] .col-new-feature-btn').first().click();
+    await expect(page.locator('#create-modal')).toBeVisible();
+    await expect(page.locator('#create-modal-name')).toBeVisible();
+    await expect(page.locator('#create-modal-description')).toBeVisible();
+  });
+
+  test('New Feature modal validates required name', async ({ page }) => {
+    await loadPipeline(page);
+    await page.locator('.kanban-col[data-stage="inbox"] .col-new-feature-btn').first().click();
+    await page.locator('#create-modal-submit').click();
+    await expect(page.locator('#create-modal-error')).toContainText('Feature name is required.');
+  });
+
+  test('creating a feature posts feature-create and seeds ask session with description', async ({ page }) => {
+    let actionPayload = null;
+    let askPayload = null;
+    const featureName = 'new feature from dashboard';
+    const featureSlug = 'new-feature-from-dashboard';
+    let currentStatus = mockStatus;
+
+    await page.route('**/api/**', route => route.fulfill({ json: {} }));
+    await page.route('**/api/status', route => route.fulfill({ json: currentStatus }));
+    await page.route('**/api/refresh', route => route.fulfill({ json: currentStatus }));
+    await page.route('**/api/action', async route => {
+      actionPayload = await route.request().postDataJSON();
+      currentStatus = {
+        ...mockStatus,
+        repos: [{
+          ...mockStatus.repos[0],
+          features: [{ id: null, name: featureSlug, stage: 'inbox', agents: [], validActions: [] }, ...mockStatus.repos[0].features]
+        }],
+        generatedAt: new Date().toISOString(),
+      };
+      route.fulfill({ status: 200, json: { ok: true, command: 'aigon feature-create', exitCode: 0 } });
+    });
+    await page.route('**/api/session/ask', async route => {
+      askPayload = await route.request().postDataJSON();
+      route.fulfill({ status: 200, json: { ok: true, sessionName: 'ask-repo-cc' } });
+    });
+
+    await page.goto('/');
+    await page.click('#tab-pipeline');
+    await page.waitForSelector('.kanban', { timeout: 10000 });
+    await page.locator('.kanban-col[data-stage="inbox"] .col-new-feature-btn').first().click();
+    await page.fill('#create-modal-name', featureName);
+    await page.fill('#create-modal-description', 'Add creation flow without leaving pipeline.');
+    await page.locator('#create-modal-submit').click();
+
+    await expect.poll(() => actionPayload).not.toBeNull();
+    expect(actionPayload.action).toBe('feature-create');
+    expect(actionPayload.args).toEqual([featureName]);
+    expect(typeof actionPayload.repoPath).toBe('string');
+    expect(actionPayload.repoPath.length).toBeGreaterThan(0);
+
+    await expect.poll(() => askPayload).not.toBeNull();
+    expect(askPayload.repoPath).toBe(actionPayload.repoPath);
+    expect(askPayload.message).toContain(`docs/specs/features/01-inbox/feature-${featureSlug}.md`);
+    expect(askPayload.message).toContain('Add creation flow without leaving pipeline.');
+
+    await expect(page.locator('#create-modal')).not.toBeVisible();
+    await expect(page.locator('.kanban-col[data-stage="inbox"]')).toContainText('new feature from dashboard');
+  });
+
+  test('feature-create error remains in modal and shows API error message', async ({ page }) => {
+    await page.route('**/api/**', route => route.fulfill({ json: {} }));
+    await page.route('**/api/status', route => route.fulfill({ json: mockStatus }));
+    await page.route('**/api/action', route => route.fulfill({
+      status: 422,
+      json: { error: 'Feature already exists', details: { stderr: 'Feature already exists in inbox' } }
+    }));
+
+    await page.goto('/');
+    await page.click('#tab-pipeline');
+    await page.waitForSelector('.kanban', { timeout: 10000 });
+    await page.locator('.kanban-col[data-stage="inbox"] .col-new-feature-btn').first().click();
+    await page.fill('#create-modal-name', 'feature one');
+    await page.locator('#create-modal-submit').click();
+
+    await expect(page.locator('#create-modal')).toBeVisible();
+    await expect(page.locator('#create-modal-error')).toContainText('Feature already exists');
   });
 });
