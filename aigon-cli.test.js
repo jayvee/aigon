@@ -27,10 +27,8 @@ const {
     createAllCommands,
     collectIncompleteFeatureEvalAgents,
     collectIncompleteResearchSynthesisAgents,
-    parseFrontMatterStatus
 } = require('./lib/commands/shared');
 const {
-    parseSimpleFrontMatter,
     DASHBOARD_INTERACTIVE_ACTIONS,
     resolveDashboardActionRepoPath,
     parseDashboardActionRequest,
@@ -40,7 +38,7 @@ const {
     inferDashboardNextActions
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
-const { isSameProviderFamily, getProfilePlaceholders, gcDevServers, validateRegistry, loadProxyRegistry, saveProxyRegistry, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, getDevProxyUrl, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, parseLogFrontmatterFull, collectAnalyticsData } = require('./lib/utils');
+const { isSameProviderFamily, getProfilePlaceholders, gcDevServers, validateRegistry, loadProxyRegistry, saveProxyRegistry, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, getDevProxyUrl, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, collectAnalyticsData } = require('./lib/utils');
 const { tryOrDefault, classifyError } = require('./lib/errors');
 const { detectDashboardContext } = require('./lib/devserver');
 
@@ -180,21 +178,6 @@ test('matchTmuxSessionByEntityId returns null for non-match', () => {
 test('shellQuote escapes apostrophes safely', () => assert.strictEqual(shellQuote("it's"), "'it'\\''s'"));
 
 console.log('\nDashboard Parsing');
-test('parseSimpleFrontMatter extracts front matter keys', () => {
-    const content = '---\nstatus: submitted\nupdated: 2026-03-11T10:30:00.000Z\n---\n# Log\n';
-    const parsed = parseSimpleFrontMatter(content);
-    assert.strictEqual(parsed.status, 'submitted');
-    assert.strictEqual(parsed.updated, '2026-03-11T10:30:00.000Z');
-});
-test('parseSimpleFrontMatter returns empty object when absent', () => {
-    assert.deepStrictEqual(parseSimpleFrontMatter('# No front matter\n'), {});
-});
-test('parseFrontMatterStatus extracts status from YAML front matter', () => {
-    assert.strictEqual(parseFrontMatterStatus('---\nstatus: waiting\nupdated: 2026-03-11T10:30:00.000Z\n---\n# Log\n'), 'waiting');
-});
-test('parseFrontMatterStatus returns null when front matter is absent', () => {
-    assert.strictEqual(parseFrontMatterStatus('# Log\n'), null);
-});
 test('DASHBOARD_INTERACTIVE_ACTIONS includes core feature workflow actions', () => {
     assert.strictEqual(DASHBOARD_INTERACTIVE_ACTIONS.has('feature-create'), true);
     assert.strictEqual(DASHBOARD_INTERACTIVE_ACTIONS.has('feature-prioritise'), true);
@@ -384,49 +367,56 @@ test('collectDashboardStatusData: in-progress features still include agent data'
 }));
 
 console.log('\nFeature Eval Completion Check');
-test('collectIncompleteFeatureEvalAgents returns incomplete fleet agents from worktree logs', () => withTempDir(tempDir => {
-    const worktreePath = path.join(tempDir, 'feature-51-cc-demo');
-    const logsDir = path.join(worktreePath, 'docs/specs/features/logs');
-    fs.mkdirSync(logsDir, { recursive: true });
-    fs.writeFileSync(
-        path.join(logsDir, 'feature-51-cc-demo-log.md'),
-        '---\nstatus: implementing\n---\n# Log\n'
-    );
+test('collectIncompleteFeatureEvalAgents returns incomplete fleet agents from manifest', () => {
+    const { writeAgentStatus, agentStatusPath } = require('./lib/manifest');
+    // Write manifest state for testing
+    writeAgentStatus('51', 'cc', { status: 'implementing' });
+    try {
+        const incomplete = collectIncompleteFeatureEvalAgents({
+            featureNum: '51',
+            worktrees: [{ path: '/tmp/feature-51-cc-demo', agent: 'cc', name: 'Claude' }]
+        });
+        assert.deepStrictEqual(incomplete, [{ agent: 'cc', name: 'Claude', status: 'implementing' }]);
+    } finally {
+        // Clean up
+        try { fs.unlinkSync(agentStatusPath('51', 'cc')); } catch (e) {}
+    }
+});
+test('collectIncompleteFeatureEvalAgents returns unknown when no manifest state exists', () => {
+    const { agentStatusPath } = require('./lib/manifest');
+    // Ensure no state file exists
+    try { fs.unlinkSync(agentStatusPath('51', 'cc')); } catch (e) {}
 
     const incomplete = collectIncompleteFeatureEvalAgents({
         featureNum: '51',
-        worktrees: [{ path: worktreePath, agent: 'cc', name: 'Claude' }]
+        worktrees: [{ path: '/tmp/feature-51-cc-demo', agent: 'cc', name: 'Claude' }]
     });
-
-    assert.deepStrictEqual(incomplete, [{ agent: 'cc', name: 'Claude', status: 'implementing' }]);
-}));
-test('collectIncompleteFeatureEvalAgents skips missing logs for backwards compatibility', () => withTempDir(tempDir => {
-    const incomplete = collectIncompleteFeatureEvalAgents({
-        featureNum: '51',
-        worktrees: [{ path: path.join(tempDir, 'feature-51-cc-demo'), agent: 'cc', name: 'Claude' }]
-    });
-
-    assert.deepStrictEqual(incomplete, []);
-}));
-test('collectIncompleteResearchSynthesisAgents returns unfinished research agents', () => withTempDir(tempDir => {
+    // With no manifest state, status is 'unknown' (not submitted), so agent is returned
+    assert.deepStrictEqual(incomplete, [{ agent: 'cc', name: 'Claude', status: 'unknown' }]);
+});
+test('collectIncompleteResearchSynthesisAgents returns unfinished research agents from manifest', () => withTempDir(tempDir => {
+    const { writeAgentStatus, agentStatusPath } = require('./lib/manifest');
     const logsDir = path.join(tempDir, 'docs/specs/research-topics/logs');
     fs.mkdirSync(logsDir, { recursive: true });
-    fs.writeFileSync(
-        path.join(logsDir, 'research-52-cc-findings.md'),
-        '---\nstatus: waiting\n---\n# Findings\n'
-    );
-    fs.writeFileSync(
-        path.join(logsDir, 'research-52-gg-findings.md'),
-        '---\nstatus: submitted\n---\n# Findings\n'
-    );
+    // Still need findings files for agent discovery
+    fs.writeFileSync(path.join(logsDir, 'research-52-cc-findings.md'), '# Findings\n');
+    fs.writeFileSync(path.join(logsDir, 'research-52-gg-findings.md'), '# Findings\n');
 
-    const incomplete = collectIncompleteResearchSynthesisAgents({
-        researchNum: '52',
-        logsDir,
-        loadAgentConfig: (agent) => ({ name: agent === 'cc' ? 'Claude' : agent })
-    });
-
-    assert.deepStrictEqual(incomplete, [{ agent: 'cc', name: 'Claude', status: 'waiting' }]);
+    // Write manifest state
+    writeAgentStatus('52', 'cc', { status: 'waiting' });
+    writeAgentStatus('52', 'gg', { status: 'submitted' });
+    try {
+        const incomplete = collectIncompleteResearchSynthesisAgents({
+            researchNum: '52',
+            logsDir,
+            loadAgentConfig: (agent) => ({ name: agent === 'cc' ? 'Claude' : agent })
+        });
+        assert.deepStrictEqual(incomplete, [{ agent: 'cc', name: 'Claude', status: 'waiting' }]);
+    } finally {
+        // Clean up
+        try { fs.unlinkSync(agentStatusPath('52', 'cc')); } catch (e) {}
+        try { fs.unlinkSync(agentStatusPath('52', 'gg')); } catch (e) {}
+    }
 }));
 test('feature reconnect command uses terminal-focus', () => {
     assert.strictEqual(
@@ -1447,45 +1437,9 @@ test('getAvailableActions expands per-agent actions for each agent in fleet', ()
 
 // ── Analytics / Statistics tests ──────────────────────────────────────────────
 
-console.log('\nparseLogFrontmatterFull');
-
-test('parseLogFrontmatterFull parses simple frontmatter', () => {
-    const content = '---\nstatus: implementing\nupdated: 2026-01-01T00:00:00Z\nstartedAt: 2026-01-01T00:00:00Z\n---\n\nBody text.';
-    const { fields, events } = parseLogFrontmatterFull(content);
-    assert.strictEqual(fields.status, 'implementing');
-    assert.strictEqual(fields.startedAt, '2026-01-01T00:00:00Z');
-    assert.deepStrictEqual(events, []);
-});
-
-test('parseLogFrontmatterFull parses events array', () => {
-    const content = `---
-status: submitted
-updated: 2026-01-01T02:00:00Z
-startedAt: 2026-01-01T00:00:00Z
-events:
-  - { ts: "2026-01-01T00:00:00Z", status: implementing }
-  - { ts: "2026-01-01T01:00:00Z", status: waiting }
-  - { ts: "2026-01-01T02:00:00Z", status: submitted }
----
-
-Body.`;
-    const { fields, events } = parseLogFrontmatterFull(content);
-    assert.strictEqual(fields.status, 'submitted');
-    assert.strictEqual(events.length, 3);
-    assert.strictEqual(events[0].status, 'implementing');
-    assert.strictEqual(events[1].status, 'waiting');
-    assert.strictEqual(events[2].status, 'submitted');
-});
-
-test('parseLogFrontmatterFull returns empty for no frontmatter', () => {
-    const { fields, events } = parseLogFrontmatterFull('No frontmatter here');
-    assert.deepStrictEqual(fields, {});
-    assert.deepStrictEqual(events, []);
-});
-
-// serializeLogFrontmatter and updateLogFrontmatterInPlace tests removed —
-// these functions were deleted in the unified state refactor (features 101-105).
-// Agent status now lives in .aigon/state/ JSON manifests via lib/manifest.js.
+// parseLogFrontmatterFull tests removed — function is now internal to utils.js
+// (used only by collectAnalyticsData for legacy frontmatter fallback).
+// Agent status reads/writes now use lib/manifest.js exclusively.
 
 console.log('\ncollectAnalyticsData');
 

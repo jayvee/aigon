@@ -39,7 +39,7 @@
       "disable-model-invocation"
     ]
   },
-  "rootFile": "CLAUDE.md",
+  "rootFile": null,
   "supportsAgentsMd": false,
   "agentFile": "claude.md",
   "templatePath": "generic/docs/agent.md",
@@ -69,6 +69,11 @@
                 "type": "command",
                 "command": "aigon check-version",
                 "timeout": 30
+              },
+              {
+                "type": "command",
+                "command": "aigon project-context",
+                "timeout": 10
               }
             ]
           }
