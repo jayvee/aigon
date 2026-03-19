@@ -9,6 +9,7 @@
 - **Dashboard**: foreground server — `node aigon-cli.js dashboard`; restart after any `lib/*.js` edit
 - **Tests**: `npm test` · syntax: `node -c aigon-cli.js` · `node -c lib/utils.js`
 - **Version bumps**: after every commit — `npm version patch|minor|major && git push --tags`
+- **Seed reset**: `aigon seed-reset ~/src/<repo> --force` — resets seed repos (brewboard, trailhead) to initial state. Use `--dry-run` to preview. Handles tmux, worktrees, branches, state, git history.
 
 ## The ctx Pattern
 Commands receive dependencies via a `ctx` object — enables test overrides without mocking globals:
