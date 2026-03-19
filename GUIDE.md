@@ -1219,7 +1219,7 @@ If you're working on Aigon itself, be aware of the template system:
 - **Source of truth**: `templates/generic/commands/` and `templates/generic/docs/`
 - **Working copies**: `.claude/commands/`, `.cursor/commands/`, `.gemini/commands/` (gitignored, generated)
 
-The agent directories (`.claude/`, `.cursor/`, etc.) and root files (`AGENTS.md`, `CLAUDE.md`) are gitignored because they're generated from templates during `aigon install-agent`.
+The command directories (`.claude/commands/`, `.cursor/commands/`, `.gemini/commands/`) are gitignored because they're generated from templates during `aigon install-agent`. Settings files (`.claude/settings.json`, `.cursor/cli.json`, etc.) should be committed so worktrees inherit them.
 
 ### Development Workflow
 
@@ -1228,16 +1228,35 @@ The agent directories (`.claude/`, `.cursor/`, etc.) and root files (`AGENTS.md`
 3. Test the commands in your agent session
 4. Commit only the template changes (the working copies stay local)
 
-### Generated Files
+### What `install-agent` Writes (and What It Doesn't)
 
-When you run `aigon install-agent`, it creates:
+`aigon install-agent` writes **only aigon-owned files**. It never touches user-owned root files like `CLAUDE.md`.
 
-- Root files like `AGENTS.md`, plus `CLAUDE.md` for Claude compatibility
-- `docs/agents/*.md`
-- Command files under `.claude/`, `.gemini/`, `.cursor/`, and `~/.codex/prompts/`
-- Agent-specific config files (`.cursor/cli.json`, etc.)
+**Per-agent files:**
 
-**Important:** You must commit the generated configuration files to Git. This ensures that when `aigon` creates a new git worktree, the agent configurations are available in that isolated environment.
+| Agent | Slash commands | Settings/permissions | Context delivery | Hooks |
+|-------|---------------|---------------------|-----------------|-------|
+| **cc** (Claude) | `.claude/commands/aigon/*.md` | `.claude/settings.json` | `.claude/skills/aigon/SKILL.md` + SessionStart hook (`aigon project-context`) | `check-version`, `project-context` |
+| **gg** (Gemini) | `.gemini/commands/aigon/*.toml` | `.gemini/settings.json`, `.gemini/policies/aigon.toml` | SessionStart hook (`aigon project-context`) | `check-version`, `project-context` |
+| **cx** (Codex) | `~/.codex/prompts/aigon-*.md` (global) | `.codex/config.toml` | `.codex/prompt.md` (marker blocks, aigon-owned) | — |
+| **cu** (Cursor) | `.cursor/commands/aigon-*.md` | `.cursor/cli.json`, `.cursor/hooks.json` | `.cursor/rules/aigon.mdc` (full overwrite, aigon-owned) | `check-version` |
+
+**Shared files (all agents):**
+
+| File | Ownership | First install | Subsequent installs |
+|------|-----------|--------------|-------------------|
+| `AGENTS.md` | **User-owned** | Scaffolded (created if missing) | Never touched |
+| `CLAUDE.md` | **User-owned** | Not created | Never touched |
+| `docs/agents/{agent}.md` | Aigon-owned (markers) | Created | Marker block updated |
+| `docs/development_workflow.md` | Aigon-owned | Created | Full overwrite |
+
+**How context reaches each agent (without touching root files):**
+
+- **Claude Code / Gemini CLI**: SessionStart hook runs `aigon project-context` which prints doc pointers to stdout. The agent ingests this as conversation context.
+- **Cursor**: Native rules file `.cursor/rules/aigon.mdc` with `alwaysApply: true`.
+- **Codex**: Native prompt file `.codex/prompt.md` with marker blocks.
+
+**Important:** Commit settings and config files to Git (`.claude/settings.json`, `.cursor/cli.json`, `.gemini/settings.json`, etc.). This ensures worktrees inherit agent configurations. Command files are gitignored — they're regenerated from templates.
 
 ### Code Module Structure
 
@@ -1258,7 +1277,7 @@ The CLI is split into focused domain modules. When modifying behaviour, look in 
 | `lib/commands/research.js` | All `research-*` handlers |
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
 | `lib/commands/infra.js` | `conductor`, `dashboard`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile` |
-| `lib/commands/setup.js` | `init`, `install-agent`, `check-version`, `update`, `doctor` |
+| `lib/commands/setup.js` | `init`, `install-agent`, `check-version`, `update`, `project-context`, `doctor` |
 | `lib/commands/misc.js` | `agent-status`, `status`, `deploy`, `next`, `help` |
 
 Each module `require()`s only what it needs. All command domain files receive dependencies via a `ctx` object rather than flat destructuring.
