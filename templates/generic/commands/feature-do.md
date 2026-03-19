@@ -161,7 +161,7 @@ Update it with:
 
 **THIS IS THE FINAL STEP. YOU MUST COMPLETE IT.**
 
-**IMPORTANT:** You MUST use `aigon agent-status` CLI commands below — do NOT write `.aigon/state/` JSON files directly. The CLI resolves the correct target directory (main repo, not worktree).
+**IMPORTANT:** You MUST use `aigon agent-status` CLI commands below — do NOT write `.aigon/state/` JSON files directly. The CLI writes state to the **main repo**, not the worktree. Do NOT try to `git add .aigon/state/` — those files are not in your worktree and do not need committing.
 
 After committing your code (Step 5) and log (Step 6), run this command to detect your mode and signal the correct status:
 

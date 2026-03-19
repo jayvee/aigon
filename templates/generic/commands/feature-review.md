@@ -14,6 +14,8 @@ If no ID is provided, or the ID doesn't match an existing feature:
 
 ## Step 1: Locate the feature branch/worktree
 
+**CRITICAL: You must work on the feature branch, NEVER on main.** Committing to main will cause merge conflicts when the feature is closed.
+
 Find the implementation to review:
 
 ```bash
@@ -24,8 +26,13 @@ git worktree list | grep "feature-{{ARG1_SYNTAX}}"
 git branch --list "feature-{{ARG1_SYNTAX}}-*"
 ```
 
-- **Worktree found**: `cd` into the worktree directory
-- **Branch only**: Ensure you're on the feature branch (`git checkout feature-{{ARG1_SYNTAX}}-*`)
+- **Worktree found**: `cd` into the worktree directory and work there
+- **Branch only**: Switch to the feature branch (`git checkout feature-{{ARG1_SYNTAX}}-*`)
+
+**Verify you are NOT on main before making any changes:**
+```bash
+git branch --show-current    # Must NOT be 'main' or 'master'
+```
 
 ## Step 2: Read the spec
 
