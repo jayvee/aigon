@@ -148,6 +148,13 @@ function resetRepo(repoName) {
         console.log(`  📝 Committed reset`);
     }
 
+    // 10. Push to remote if configured
+    const hasRemote = run(`git -C "${repoPath}" remote get-url origin`, { ignoreError: true });
+    if (hasRemote) {
+        run(`git -C "${repoPath}" push --force origin main`, { ignoreError: true });
+        console.log(`  ☁️  Pushed to remote`);
+    }
+
     console.log(`  ✅ ${repoName} reset — all features in backlog`);
 }
 

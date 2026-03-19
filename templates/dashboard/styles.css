@@ -191,6 +191,7 @@
     .agent-check-row input{cursor:pointer;accent-color:var(--accent)}
     .agent-check-label{font-family:var(--mono);font-size:13px;flex:1}
     .agent-check-hint{font-size:11px;color:var(--text-tertiary)}
+    .agent-check-badge{font-size:9px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;margin-left:6px;letter-spacing:.02em;opacity:.8}
     .modal-actions{display:flex;gap:8px;justify-content:flex-end}
     .create-modal-box{max-width:520px}
     .create-input{width:100%;padding:10px 12px;background:var(--bg-root);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:8px;font:13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;outline:none;transition:border-color .12s ease}
@@ -253,6 +254,10 @@
     .drawer-preview pre code{background:none;padding:0}
     .drawer-preview blockquote{border-left:3px solid var(--accent);margin:0 0 10px;padding:4px 12px;color:var(--text-secondary)}
     .drawer-preview input[type="checkbox"]{margin-right:6px}
+    .drawer-preview table{width:100%;border-collapse:collapse;margin:0 0 12px;font-size:12px}
+    .drawer-preview th,.drawer-preview td{padding:6px 10px;border:1px solid var(--border-subtle);text-align:left}
+    .drawer-preview th{font-weight:600;background:var(--bg-elevated);font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--text-secondary)}
+    .drawer-preview tr:nth-child(even){background:var(--bg-elevated)}
     .fm-details{margin:0 0 16px;border:1px solid var(--border-subtle);border-radius:6px;overflow:hidden}
     .fm-summary{cursor:pointer;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary);padding:6px 10px;background:var(--bg-elevated);user-select:none}
     .fm-summary:hover{color:var(--text-secondary)}
