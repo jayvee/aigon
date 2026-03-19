@@ -179,7 +179,8 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       break;
     }
     case 'feature-eval': {
-      const evalAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose evaluation agent', submitLabel: 'Run Evaluation' });
+      const implAgents = (feature.agents || []).map(a => a.id);
+      const evalAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose evaluation agent', submitLabel: 'Run Evaluation', implementingAgents: implAgents });
       if (!evalAgent || evalAgent.length === 0) return;
       if (feature.stage !== 'in-evaluation') {
         await requestAction('feature-eval', [id, '--setup-only'], repoPath, btn);
@@ -188,7 +189,8 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       break;
     }
     case 'feature-review': {
-      const reviewAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose review agent', submitLabel: 'Run Review' });
+      const implAgentsR = (feature.agents || []).map(a => a.id);
+      const reviewAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose review agent', submitLabel: 'Run Review', implementingAgents: implAgentsR });
       if (!reviewAgent || reviewAgent.length === 0) return;
       await requestFeatureOpen(id, reviewAgent[0], repoPath, null, pipelineType, 'review');
       break;
