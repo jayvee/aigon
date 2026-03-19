@@ -1,315 +1,377 @@
-# Comparing Aigon to Integrated AI Development Tools
+# Comparing Aigon to AI Development Tools
 
-**Last Updated:** February 2026
+**Last Updated:** March 2026
 
 ---
 
 ## Overview
 
-This document compares Aigon's CLI-first, vendor-independent workflow approach with integrated AI development tools. Aigon's philosophy centers on Git-based context, structured spec lifecycles, and freedom from vendor lock-in. Integrated tools often prioritize IDE-embedded experiences and visual workflows.
+This document compares Aigon with 12 commercial and open-source AI development tools. Aigon is a CLI-first, vendor-independent workflow orchestrator — it manages specs, agents, and evaluations while letting you choose which AI models do the actual coding.
 
-**Aigon's Core Value Proposition:**
-- **Vendor Independence:** Works across Claude, Gemini, Codex, Cursor
-- **Context in Repository:** Specs, logs, evaluations committed to Git
-- **CLI-First:** Terminal-native, scriptable, CI-friendly
-- **Zero Licensing Cost:** Free tool, pay only for agent APIs
-- **Unlimited Multi-Agent:** No hard limits on parallel implementations
+**What makes Aigon different:**
+- Orchestrates Claude Code, Gemini CLI, Codex CLI, and Cursor together — the only tool that does this
+- Full spec lifecycle with Kanban (inbox → backlog → in-progress → done)
+- Parallel research workflows with synthesis — no other tool has this
+- Feedback triage loop that closes the gap from user input back to features
+- Fleet mode: unlimited competing agents with structured evaluation
+
+**Where Aigon falls short:**
+- CLI-only — no native IDE experience
+- No embedded browser testing or visual diffs
+- Smaller community than established tools
+- More setup steps than one-click IDE solutions
 
 ---
 
-## Table of Contents
+## Master Feature Matrix
 
-1. [Cursor IDE vs Aigon](#cursor-ide-vs-aigon)
-2. [Coming Soon: Additional Comparisons](#coming-soon-additional-comparisons)
+| Dimension | Aigon | Cursor | Copilot WS | Kiro | AmpCode | Augment | Tessl | Cline | LangGraph | GSD | BMad | OpenSpec | Aider | OpenCode |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Multi-agent** | ● | ◐ | ○ | ◐ | ◐ | ● | ○ | ○ | ● | ● | ◐ | ○ | ○ | ○ |
+| **Vendor independence** | ● | ○ | ○ | ○ | ◐ | ◐ | ● | ● | ● | ◐ | ◐ | ● | ● | ● |
+| **Spec lifecycle** | ● | ○ | ◐ | ● | ○ | ◐ | ○ | ○ | ○ | ● | ● | ● | ○ | ○ |
+| **Research workflows** | ● | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ◐ | ◐ | ○ | ○ | ○ |
+| **Feedback loop** | ● | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
+| **IDE integration** | ○ | ● | ● | ● | ○ | ● | ○ | ● | ○ | ○ | ○ | ○ | ◐ | ◐ |
+| **Visual UI** | ◐ | ● | ● | ● | ○ | ● | ○ | ◐ | ○ | ○ | ○ | ○ | ○ | ◐ |
+| **Autonomous mode** | ● | ● | ◐ | ● | ● | ● | ○ | ● | ● | ● | ◐ | ○ | ● | ◐ |
+| **Context persistence** | ● | ◐ | ◐ | ◐ | ◐ | ◐ | ● | ○ | ◐ | ● | ◐ | ● | ● | ◐ |
+| **Structured evaluation** | ● | ○ | ○ | ○ | ◐ | ○ | ● | ○ | ○ | ◐ | ◐ | ○ | ○ | ○ |
+| **Community size** | ○ | ● | ● | ◐ | ◐ | ◐ | ○ | ● | ● | ◐ | ◐ | ○ | ● | ◐ |
+| **Setup simplicity** | ○ | ● | ● | ● | ◐ | ● | ◐ | ● | ○ | ◐ | ○ | ◐ | ● | ● |
+
+**Legend:** ● full support · ◐ partial · ○ none or N/A
+
+### How to Read This
+
+- **Multi-agent**: Can run multiple AI agents in parallel on the same task
+- **Vendor independence**: Works across multiple LLM providers without lock-in
+- **Spec lifecycle**: Formal spec creation → prioritisation → implementation → evaluation pipeline
+- **Research workflows**: Structured investigation phase before building (parallel research, synthesis)
+- **Feedback loop**: Captures user input, triages it, and promotes findings to features
+- **IDE integration**: Native experience inside VS Code, JetBrains, or similar
+- **Visual UI**: Browser dashboard, visual diffs, embedded preview
+- **Autonomous mode**: Agent loops until tests pass without human intervention
+- **Context persistence**: Where project context/history lives (Git-committed vs cloud vs ephemeral)
+- **Structured evaluation**: Formal rubrics or scoring for comparing implementations
+- **Community size**: Active users, GitHub stars, ecosystem maturity
+- **Setup simplicity**: Steps from install to first productive use
 
 ---
 
-## Cursor IDE vs Aigon
+## Commercial Tools
 
-### Quick Comparison
+### Cursor IDE
 
-| Dimension | Cursor IDE | Aigon |
-|-----------|-----------|-------|
-| **Philosophy** | IDE-embedded, all-in-one | CLI-first, vendor-independent |
-| **Lock-in** | VS Code fork, proprietary cloud | Plain files, Git, any agent |
-| **Multi-Agent** | Up to 8 parallel agents | Unlimited (worktree-based) |
-| **Comparison** | Aggregated diff view (visual) | Structured evaluation templates |
-| **Cost** | $20-200/month + overages | Free CLI + API costs |
-| **Target User** | IDE-first developers | CLI-comfortable teams |
+**What it is:** A VS Code fork with built-in AI agents, visual multi-agent orchestration (Mission Control), aggregated diff views, and embedded browser testing. The most polished IDE-embedded AI coding experience available.
 
-### When to Choose Each
+**Philosophy:** All-in-one IDE — accept lock-in for maximum convenience and visual polish.
 
-**Choose Cursor IDE:**
-- VS Code-native team wanting all-in-one solution
-- Need visual side-by-side comparison and embedded browser testing
-- Budget allows $20-200/user/month subscriptions
-- Prefer polished UI over CLI workflows
+**Pricing:** Free (limited) · Pro $20/mo · Ultra $200/mo · Teams $40/user/mo. Reports of $10–20/day overages for heavy users.
 
-**Choose Aigon:**
-- Need vendor independence across multiple AI agents
-- Want project context and conversation history in Git (not proprietary cloud)
-- CLI-comfortable team that values terminal workflows
-- Zero licensing cost matters (pay only for agent APIs)
-- Building non-web projects (iOS, Android, libraries) with profile-aware workflows
+**When to choose over Aigon:** You want a polished visual IDE, your team lives in VS Code, you need embedded browser testing, and vendor lock-in is acceptable.
 
-**Use Both:**
-- Aigon manages specs and evaluation (source of truth in Git)
-- Cursor used as one implementation agent in arena mode
-- Get best of both: vendor independence + visual polish
+**When to choose Aigon:** You need vendor independence, want context committed to Git, work across multiple agents (Claude, Gemini, Codex), or need structured spec workflows and evaluation rubrics.
 
-### Philosophy & Architecture
+---
 
-**Cursor IDE: IDE-Embedded Orchestration**
+### GitHub Copilot Workspace
 
-Core approach:
-- Built on VS Code (proprietary fork)
-- Multi-agent orchestration within single IDE
-- Mission Control grid view for managing up to 8 parallel agents
-- Aggregated diff view for visual comparison
-- Embedded browser for UI testing with screenshots
-- Cloud-based conversation persistence
-- Composer AI model (4x faster, purpose-built for agent loops)
+**What it is:** A task-oriented development environment that generated specs, plans, and multi-file changes from GitHub issues. Used GPT-4o with a steerable multi-stage workflow. The technical preview ended May 2025; its spec-driven ideas influenced GitHub Copilot Coding Agent.
 
-**Aigon: CLI-First, Git-Based Orchestration**
+**Philosophy:** Spec-driven planning integrated into GitHub's pull request workflow.
 
-Core approach:
-- Git and filesystem as source of truth
-- Plain Markdown specs in `docs/specs/`
-- Git worktrees for isolated agent workspaces
-- State-as-folders (inbox → backlog → in-progress → done)
-- Slash commands unified across all agents (Claude, Gemini, Codex, Cursor)
-- Hooks for custom infrastructure integration
-- Profile-aware (web, iOS, Android, API, library, generic)
+**Pricing:** Required a paid GitHub Copilot subscription ($10–39/user/mo).
 
-### Feature Comparison
+**When to choose over Aigon:** You're fully invested in the GitHub ecosystem and want spec-to-PR automation without leaving the browser.
 
-**Multi-Agent Workflows:**
+**When to choose Aigon:** You want an active, maintained tool with vendor-independent agents, a full Kanban lifecycle, and Git-committed context that survives tool migrations.
 
-| Feature | Cursor IDE | Aigon |
-|---------|-----------|-------|
-| **Max Agents** | 8 | Unlimited |
-| **Agent Selection** | Cursor models + API models | Claude, Gemini, Codex, Cursor CLI |
-| **Visual Comparison** | ✅ Aggregated diff view | ⚠️ Terminal side-by-side |
-| **Browser Testing** | ✅ Embedded + screenshots | ❌ External browser |
-| **Evaluation** | Ad-hoc | ✅ Structured rubrics (spec compliance, quality, maintainability) |
-| **Documentation** | Cloud conversations | ✅ Implementation logs in Git |
+---
 
-**Workflow Features:**
+### AWS Kiro
 
-| Feature | Cursor IDE | Aigon |
-|---------|-----------|-------|
-| **Spec Management** | ❌ No formal system | ✅ Full lifecycle (inbox → done) |
-| **Research Workflows** | ❌ Not formalized | ✅ Parallel research + synthesis |
-| **Implementation Logs** | ⚠️ Conversation history | ✅ Required Markdown logs |
-| **Hooks System** | ❌ Not built-in | ✅ Pre/post command hooks |
-| **Cross-Agent Review** | ⚠️ Manual | ✅ `feature-review` command |
-| **Vendor Independence** | ❌ Cursor-specific | ✅ Works across all agents |
+**What it is:** An agentic IDE and CLI from AWS that emphasises "spec-driven development." Transforms natural language into structured requirements using EARS notation, generates architectural designs, then creates discrete implementation tasks. Supports autopilot mode and agent hooks that trigger on file events.
 
-### Context & Memory
+**Philosophy:** Bridge the gap between prototype and production with structured specifications before code generation.
 
-**Cursor IDE:**
-- Conversations stored in proprietary Cursor cloud
-- Indexed codebase (local, up to 500K LOC performant)
-- `.cursorrules` files for project instructions
-- ❌ Not exportable, tied to Cursor IDE
-- ❌ Migration loses accumulated context
+**Pricing:** Free to download and use (macOS and Linux). Uses Claude Sonnet 4.5 under the hood.
 
-**Aigon:**
-- Specs, logs, evaluations in `docs/specs/` (Git)
-- Implementation logs committed with code
-- ✅ Plain Markdown files (portable, future-proof)
-- ✅ Searchable with `grep`, `git log`, GitHub search
-- ✅ Survives tool migrations
+**When to choose over Aigon:** You want spec-driven development inside an IDE with visual editing, or you prefer AWS-backed tooling with a polished out-of-box experience.
 
-### Multi-Agent Arena Example
+**When to choose Aigon:** You need multi-vendor agents (not just Claude), parallel research workflows, Fleet mode competition between agents, or feedback triage. Kiro doesn't support running multiple competing implementations.
 
-**Cursor Workflow:**
-```
-1. Launch up to 8 agents from Mission Control
-2. Each agent works in isolated worktree/VM
-3. Mission Control shows grid view of all agents
-4. Aggregated diff view compares implementations visually
-5. Select/merge preferred implementation
-```
+---
 
-**Aigon Workflow:**
-```bash
-1. aigon feature-create dark-mode
-2. aigon feature-prioritise dark-mode  # → assigns ID 42
-3. aigon feature-setup 42 cc gg cx     # Claude, Gemini, Codex
-4. aigon worktree-open 42 --all        # Open side-by-side
-5. (In each pane) /aigon:feature-implement 42
-6. aigon feature-eval 42                # Structured evaluation
-7. aigon feature-done 42 cc            # Merge winner
-8. aigon feature-cleanup 42            # Cleanup
-```
+### AmpCode
 
-### Strengths & Weaknesses
+**What it is:** A CLI-based coding agent that uses specialised sub-agents (Oracle for reasoning, Librarian for repo understanding) with composable Skills and Checks. Emphasises moving with the "frontier" of AI capabilities rather than optimising for today's patterns.
 
-**Cursor IDE Strengths:**
-- ✅ Polished IDE experience with visual UI
-- ✅ Aggregated diff view (killer feature for comparison)
-- ✅ Embedded browser testing with screenshots
-- ✅ Composer AI (4x faster than frontier models)
-- ✅ Large community and extensive documentation
+**Philosophy:** Travel light at the frontier — evolve with models rather than lock in approaches.
 
-**Cursor IDE Weaknesses:**
-- ❌ Vendor lock-in (VS Code fork, proprietary conversations)
-- ❌ Performance issues with 50K+ files or 500K+ LOC repos
-- ❌ $20-200/month + overages (reports of $10-20/day for heavy users)
-- ❌ No formal spec lifecycle or evaluation rubrics
-- ❌ VS Code only (no JetBrains, Vim, Emacs support)
-- ❌ Limited to 8 parallel agents
+**Pricing:** Pay-as-you-go with no markup. Previously offered $10/day free tier.
 
-**Aigon Strengths:**
-- ✅ Vendor independence (Claude, Gemini, Codex, Cursor)
-- ✅ Context in repository (Git-based, portable)
-- ✅ Unlimited multi-agent (worktree-based)
-- ✅ Structured workflows (specs, logs, evaluations required)
-- ✅ Zero licensing cost (free CLI, pay only for APIs)
-- ✅ Profile-aware (adapts to web, iOS, Android, etc.)
-- ✅ CLI-first (terminal-native, scriptable, CI-friendly)
+**When to choose over Aigon:** You want a CLI-first agent with strong code review built in, or you prefer pay-per-use without managing multiple provider API keys.
 
-**Aigon Weaknesses:**
-- ❌ No visual comparison UI (terminal-based)
-- ❌ Manual evaluation (fill in templates)
-- ❌ Requires CLI comfort and Git knowledge
-- ❌ No embedded browser testing
-- ❌ Smaller community than Cursor
-- ❌ More setup steps than Cursor's one-click
+**When to choose Aigon:** You need structured spec lifecycle, multi-agent Fleet competition, research workflows, or feedback triage. AmpCode is a single-agent tool focused on implementation, not workflow orchestration.
 
-### Cost Analysis
+---
 
-**Cursor IDE:**
-- **Hobby:** Free (limited usage)
-- **Pro:** $20/month (unlimited Tab, $20 credit pool)
-- **Ultra:** $200/month (~20× Pro usage)
-- **Teams:** $40/user/month (+ SSO, admin)
-- **Real-world:** Reports of $10-20/day overages for heavy users
+### Augment Code
 
-**Aigon:**
-- **CLI:** Free and open-source (MIT license)
-- **Agent APIs:** Pay providers directly (no markup)
-  - Claude Code: Anthropic API rates
-  - Gemini CLI: Google API rates
-  - Codex: OpenAI API rates
-  - Cursor: Included if using Cursor subscription
+**What it is:** An AI platform built around a "Context Engine" that maintains a live understanding of your entire codebase, dependencies, architecture, and history. Available as VS Code/JetBrains extensions, CLI, GitHub review bot, and Slack integration. Its "Intent" feature coordinates multiple agents with persistent specs and isolated environments.
 
-**Example (5-person team, 1 year):**
-- Cursor Teams: $2,400 base + variable overages
-- Aigon: $0 + $3,000 estimated API costs = **$3,000 total**
-- Similar cost, but Aigon gives vendor independence and no lock-in
+**Philosophy:** Context depth over model choice — the same model performs better with deeper codebase understanding.
 
-### Strategic Gaps Aigon Needs to Fill
+**Pricing:** Enterprise pricing (contact sales). Not publicly listed.
 
-**High Priority:**
+**When to choose over Aigon:** You have a large enterprise codebase (millions of LOC), need deep context-aware code review, and want IDE-native integration across VS Code and JetBrains.
 
-1. **Visual Comparison Tool** - `aigon feature-compare <ID>` generates HTML report with side-by-side diffs
-   - Impact: High. Cursor's aggregated view is their killer feature
-   - Opens in browser, exports as PDF
-   - Lowers barrier to entry
+**When to choose Aigon:** You want transparent, Git-committed context instead of a proprietary context engine. You need vendor independence, research workflows, feedback triage, or don't want enterprise sales cycles.
 
-2. **Enhanced Documentation** - Video tutorials, more examples, case studies
-   - Impact: High. Lowers learning curve
-   - Cursor has extensive video content and polished docs
+---
 
-3. **Optional IDE Extension** - VS Code/Cursor extension as convenience layer
-   - Impact: High. Expands addressable market
-   - Keep CLI as primary (extension is optional)
+### Tessl
 
-**Medium Priority:**
+**What it is:** A package manager and enablement platform for AI coding agents. Provides a skills registry where developers discover, install, version, and evaluate reusable agent skills — structured context that teaches AI agents how to work with specific frameworks and APIs.
 
-4. **Native Task Tracking** - `aigon feature-tasks <ID>` extracts acceptance criteria as trackable tasks
-5. **Auto-Screenshot** - Integrate Playwright for UI comparison
-6. **Performance Metrics** - Lines changed, test coverage, build time analysis
-7. **CI/CD Integration** - Examples for running Aigon in continuous integration
+**Philosophy:** Context engineering over prompt engineering — versioned, evaluated skills that make any agent more effective.
 
-**Lower Priority:**
+**Pricing:** Not publicly listed; focused on enterprise skill distribution.
 
-8. **Strengthen Cross-Agent Review** - Promote existing `feature-review` command
-9. **Expand Agent Ecosystem** - Add Windsurf, Cline, Aider support
-10. **Optional Hosted Service** - "Aigon Cloud" for teams wanting managed infrastructure
+**When to choose over Aigon:** You want to measure and improve agent effectiveness across your organisation with evaluated, versioned skills. Tessl is complementary — it makes agents smarter, not a development workflow itself.
 
-### Complementary Usage
+**When to choose Aigon:** You need a complete development workflow (specs, agents, evaluation, feedback), not just agent skill management. Aigon and Tessl solve different problems and could be used together.
 
-**Aigon + Cursor Together:**
+---
+
+## Open Source Tools
+
+### Cline
+
+**What it is:** An open-source autonomous coding agent for VS Code (5M+ installs, 59K+ GitHub stars). Features Plan/Act modes, terminal and file integration, browser testing, and MCP extensibility. Also available as CLI and JetBrains plugin.
+
+**Philosophy:** Transparent, community-driven AI coding with full developer control over execution.
+
+**Pricing:** Free and open source. Bring your own API keys.
+
+**When to choose over Aigon:** You want an IDE-embedded experience in VS Code with visual plan review, browser testing, and a large community. Single-agent workflows are sufficient.
+
+**When to choose Aigon:** You need multi-agent Fleet competition, structured spec lifecycle, research workflows, or feedback triage. Cline is a single-agent tool — powerful for implementation, but without workflow orchestration.
+
+---
+
+### LangGraph
+
+**What it is:** An open-source framework (MIT) for building reliable AI agents with low-level orchestration control. Supports single-agent, multi-agent, and hierarchical architectures with human-in-the-loop controls and memory persistence. Not a coding assistant — it's a framework for building agents.
+
+**Philosophy:** Expressive, customisable agent workflows over black-box architectures.
+
+**Pricing:** Free and open source. Optional paid LangSmith for observability.
+
+**When to choose over Aigon:** You're building custom AI agents or pipelines, not just coding. LangGraph is infrastructure for agent construction, not a development workflow tool.
+
+**When to choose Aigon:** You want a ready-to-use development workflow — specs, multi-agent implementation, evaluation — without building agent infrastructure from scratch. Different category: Aigon orchestrates coding agents; LangGraph helps you build agents.
+
+---
+
+### GSD (Get Shit Done)
+
+**What it is:** A spec-driven development system for Claude Code and other AI runtimes. Spawns specialised agents (researcher, planner, executor, verifier) and executes tasks in dependency-ordered waves. Prevents "context rot" by keeping individual tasks small enough for a single context window.
+
+**Philosophy:** Pragmatic automation without enterprise ceremony — clearly state what you want, the system builds it.
+
+**Pricing:** Free to install via npm. Uses your own API keys.
+
+**When to choose over Aigon:** You want wave-based parallel execution with automatic dependency ordering, or you need a lighter-weight spec system focused on a single milestone at a time.
+
+**When to choose Aigon:** You need a full Kanban lifecycle across many features, multi-vendor Fleet competition (GSD is primarily Claude Code), structured research workflows, feedback triage, or formal evaluation rubrics. GSD is milestone-focused; Aigon manages the entire product development loop.
+
+---
+
+### BMad Method
+
+**What it is:** An AI-driven development framework with specialised agents, guided workflows, and intelligent planning that adapts to project complexity. Provides phase-based development from ideation through implementation with adversarial review.
+
+**Philosophy:** Structured AI development with guided phases — from bug fixes to enterprise platforms.
+
+**Pricing:** Free and open source.
+
+**When to choose over Aigon:** You want a guided, phase-based development methodology with adversarial review built in, and your team benefits from more prescriptive workflow structure.
+
+**When to choose Aigon:** You need vendor-independent multi-agent Fleet competition, a Kanban spec lifecycle, research workflows with synthesis, or feedback triage. Aigon is less prescriptive about phases but more powerful for parallel agent orchestration.
+
+---
+
+### OpenSpec
+
+**What it is:** A lightweight spec-driven development framework with slash commands (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`). Organises features into folders with proposals, specs, designs, and task checklists. Compatible with 20+ AI assistants.
+
+**Philosophy:** Fluid, iterative specifications — easy and brownfield-ready, not rigid waterfall.
+
+**Pricing:** Free and open source (MIT). Node.js 20.19+.
+
+**When to choose over Aigon:** You want a minimal, tool-agnostic spec layer that works with any AI assistant without imposing workflow structure.
+
+**When to choose Aigon:** You need multi-agent orchestration, automated evaluation, research workflows, feedback triage, or Kanban tracking. OpenSpec handles specs; Aigon handles the entire development lifecycle around specs.
+
+---
+
+### Aider
+
+**What it is:** An open-source terminal AI pair programmer with broad model support (OpenAI, Anthropic, Gemini, DeepSeek, Ollama, and more). Features architect/code/ask modes, git-aware editing, voice input, and repository mapping for smart context.
+
+**Philosophy:** AI pair programming in your terminal — deep git integration, model-agnostic, conversation-first.
+
+**Pricing:** Free and open source. Bring your own API keys.
+
+**When to choose over Aigon:** You want interactive pair programming with fluid conversation, broad model support including local models (Ollama), and a mature community. Best for exploratory coding where you and the AI iterate together.
+
+**When to choose Aigon:** You need structured spec lifecycle, multi-agent Fleet competition, research workflows, feedback triage, or formal evaluation. Aider is a single-agent conversational tool — excellent for pair programming, but without workflow orchestration or multi-agent competition.
+
+---
+
+### OpenCode
+
+**What it is:** An open-source AI coding agent available as terminal, desktop app, and IDE extension. Features plan/build modes, undo/redo for safe experimentation, and conversation sharing for team collaboration.
+
+**Philosophy:** Developer control through planning phases and explicit approval — between manual coding and full autonomy.
+
+**Pricing:** Free and open source. Bring your own API keys, or use "OpenCode Zen" for curated model selection.
+
+**When to choose over Aigon:** You want a multi-interface tool (terminal + desktop + IDE) with plan/build modes and team conversation sharing. Good for developers transitioning from IDE-based to terminal-based AI coding.
+
+**When to choose Aigon:** You need multi-agent Fleet competition, spec lifecycle, research workflows, feedback triage, or formal evaluation. OpenCode is a single-agent tool focused on implementation.
+
+---
+
+## Aigon's Standout Features
+
+These capabilities are unique to Aigon — no other tool in this comparison offers them:
+
+### 1. Vendor-Independent Fleet Mode
+
+Run unlimited competing agents across different AI providers on the same feature. Claude Code, Gemini CLI, Codex CLI, and Cursor each implement independently in isolated Git worktrees. No other tool orchestrates agents from different vendors in parallel competition.
 
 ```bash
-# Use Aigon for workflow orchestration
+aigon feature-setup 42 cc gg cx cu   # Claude, Gemini, Codex, Cursor
+aigon feature-open 42                # Launch all agents
+aigon feature-eval 42                # Compare implementations with rubrics
+```
+
+### 2. Full Spec Lifecycle with Kanban
+
+Features move through a structured pipeline: inbox → backlog → in-progress → done. Specs are Git-committed Markdown with acceptance criteria, not ephemeral chat conversations. The state machine enforces transitions — no skipping steps.
+
+### 3. Parallel Research Workflows
+
+Before building, run structured research with multiple agents investigating in parallel. Synthesise findings, compare perspectives, and extract features. No other tool formalises the research phase of development.
+
+```bash
+aigon research-create "auth library comparison"
+aigon research-autopilot 5 cc gg     # Parallel investigation
+aigon research-synthesize 5          # Compare and extract insights
+```
+
+### 4. Feedback Triage Loop
+
+Capture user feedback, triage it with AI-assisted recommendations, and promote findings directly to feature specs. Closes the loop from user experience back to the development pipeline.
+
+```bash
+aigon feedback-create "login is slow on mobile"
+aigon feedback-triage 1              # AI-assisted categorisation
+# → promotes to feature spec if warranted
+```
+
+---
+
+## Where Aigon Honestly Falls Short
+
+### IDE Integration
+Aigon is CLI-only. There's no VS Code extension, no inline code suggestions, no visual diff viewer. If your team lives in an IDE and rarely opens a terminal, tools like Cursor, Augment, or Cline offer a more natural experience.
+
+### Visual UI
+The dashboard exists for monitoring Fleet status, but there's no embedded browser testing, no visual diff comparison, and no screenshot-based verification. Cursor's aggregated diff view and embedded browser are genuinely better for visual comparison.
+
+### Community Size
+Aigon is new and small. Cursor has millions of users, Cline has 5M+ installs, Aider has a thriving open-source community. Smaller community means fewer tutorials, fewer Stack Overflow answers, and less battle-testing.
+
+### Setup Friction
+Getting started requires installing the CLI, understanding the spec lifecycle, learning slash commands, and configuring agent hooks. One-click IDE tools like Cursor or Cline are productive in minutes. Aigon's power comes at the cost of a steeper learning curve.
+
+---
+
+## Complementary Usage
+
+Aigon works best alongside other tools, not as a replacement. Its strength is orchestration and workflow — use specialised tools for implementation.
+
+### Aigon + Cursor
+
+```bash
+# Aigon manages the workflow, Cursor is one implementation agent
 aigon feature-create dark-mode
-aigon feature-prioritise dark-mode  # → ID 42
-
-# Include Cursor as one arena agent
-aigon feature-setup 42 cc gg cu  # Claude, Gemini, Cursor
-
-# Open Cursor worktree for visual implementation
-aigon worktree-open 42 cu
-
-# (In Cursor IDE: use embedded browser, visual tools)
-
-# Evaluate all implementations with Aigon
-aigon feature-eval 42  # Compare Cursor vs Claude vs Gemini
-
-# Merge winner (could be Cursor's implementation)
-aigon feature-done 42 cu
+aigon feature-setup 42 cc gg cu      # Claude, Gemini, and Cursor
+aigon feature-open 42                # Cursor gets its own worktree
+aigon feature-eval 42                # Compare all three implementations
 ```
 
-**Benefits:**
-- **Aigon:** Manages specs, lifecycle, evaluation, documentation
-- **Cursor:** Visual implementation, embedded testing, IDE convenience
-- **Best of both worlds:** Vendor independence + visual polish
+**Aigon provides:** Spec lifecycle, evaluation rubrics, Git-committed context
+**Cursor provides:** Visual implementation, embedded browser testing, IDE polish
 
----
+### Aigon + Cline
 
-## Coming Soon: Additional Comparisons
+Use Cline for interactive single-agent implementation within VS Code while Aigon manages the broader feature lifecycle, research, and evaluation.
 
-Future comparisons planned:
-- **Windsurf (Codeium)** - Agentic IDE with cascade mode
-- **Amp Editor** - Y Combinator-backed AI editor
-- **GitHub Copilot Workspace** - GitHub's multi-file editing
-- **Cline (VS Code)** - Open-source autonomous coding agent
-- **Aider** - Terminal-based AI pair programming
+### Aigon + Aider
 
-Each comparison will follow the same structure: philosophy, features, strengths/weaknesses, when to choose, and how to complement with Aigon.
+Aider excels at exploratory pair programming. Use it for quick prototyping and conversation-driven development, then bring the results into Aigon's spec lifecycle for structured evaluation and Fleet competition.
+
+### Aigon + Tessl
+
+Tessl's versioned skills make all agents smarter. Install relevant skills to improve the quality of every Fleet agent's implementation, then let Aigon evaluate the results.
+
+### Aigon + GSD
+
+GSD's wave-based execution is excellent for single-milestone implementation. Use Aigon for cross-feature lifecycle management and research, and GSD for execution within individual features.
 
 ---
 
 ## Key Takeaway
 
-**Cursor IDE** and **Aigon** represent different philosophies:
+AI development tools fall into three categories:
 
-- **Cursor:** IDE-embedded, visual, all-in-one (accept lock-in for convenience)
-- **Aigon:** CLI-first, vendor-independent, Git-based (context in repo, portability)
+1. **IDE-embedded agents** (Cursor, Augment, Cline) — polish, visual UI, single-agent convenience
+2. **CLI agents** (AmpCode, Aider, OpenCode) — terminal-first, model-flexible implementation
+3. **Workflow orchestrators** (Aigon, Kiro, GSD, BMad, OpenSpec) — structured specs, lifecycle management
 
-**For Aigon Users:**
-- If you value **vendor independence** and **context-in-repo**, Aigon is the clear choice
-- If you need **visual comparison**, consider **building `aigon feature-compare`** or **using Cursor as one agent**
-- Aigon can offer **best of both worlds** by adding visual comparison while preserving CLI-first philosophy
+Aigon is the only tool that sits at the intersection of workflow orchestration and multi-vendor agent competition. If you need to run Claude, Gemini, and Codex side-by-side with formal evaluation, a feedback triage loop, and research synthesis — nothing else does this.
 
-**Strategic Priority:**
-1. Build visual comparison tool (HTML report generation)
-2. Expand documentation (videos, tutorials, examples)
-3. Create optional IDE extension (convenience layer, not requirement)
-4. Integrate CI/CD workflows
-5. Add more agents (Windsurf, Cline, Aider)
-
-By addressing the visual comparison gap, Aigon can compete with Cursor's polish while maintaining its core advantages: **vendor independence**, **Git-based context**, and **structured workflows**.
+If you need a polished IDE experience or a quick single-agent coding session, Aigon isn't the right tool. Use Cursor, Cline, or Aider — and consider using them as agents within Aigon's Fleet for the best of both worlds.
 
 ---
 
 ## Sources
 
-### Cursor IDE
-- [Cursor 2.0 Multi-Agent Workflows - DevOps.com](https://devops.com/cursor-2-0-brings-faster-ai-coding-and-multi-agent-workflows/)
-- [Cursor 2.0 Real Use Cases - Skywork AI](https://skywork.ai/blog/vibecoding/cursor-2-0-multi-agent-suite/)
-- [Mastering Parallel Agent Mode](https://blog.meetneura.ai/parallel-agent-mode/)
-- [Cursor 2.0 Review - Inkeep](https://inkeep.com/blog/cursor-2-review)
-- [Cursor Pricing Guide - Vantage](https://www.vantage.sh/blog/cursor-pricing-explained)
-- [Cursor Limitations - NxCode](https://www.nxcode.io/resources/news/cursor-review-2026)
-- [Cursor vs Claude Code - Pragmatic Coders](https://www.pragmaticcoders.com/blog/claude-code-vs-cursor)
+### Commercial Tools
+- [Cursor 2.0 Multi-Agent Workflows — DevOps.com](https://devops.com/cursor-2-0-brings-faster-ai-coding-and-multi-agent-workflows/)
+- [Cursor 2.0 Review — Inkeep](https://inkeep.com/blog/cursor-2-review)
+- [Cursor Pricing — Vantage](https://www.vantage.sh/blog/cursor-pricing-explained)
+- [GitHub Copilot Workspace — GitHub Next](https://githubnext.com/projects/copilot-workspace)
+- [AWS Kiro — kiro.dev](https://kiro.dev/)
+- [AmpCode — ampcode.com](https://ampcode.com/)
+- [Augment Code — augmentcode.com](https://www.augmentcode.com/)
+- [Tessl — tessl.io](https://tessl.io/)
 
-### AI Development Tools Landscape
-- [2026 AI Coding CLI Tools Comparison - Tembo](https://www.tembo.io/blog/coding-cli-tools-comparison)
-- [Agentic IDE Comparison - Codecademy](https://www.codecademy.com/article/agentic-ide-comparison-cursor-vs-windsurf-vs-antigravity)
-- [Cursor Alternatives 2026 - Builder.io](https://www.builder.io/blog/cursor-alternatives-2026)
-- [Enterprise AI IDE Selection - SoftwareSeni](https://www.softwareseni.com/enterprise-ai-ide-selection-comparing-cursor-github-copilot-windsurf-claude-code-and-more/)
+### Open Source Tools
+- [Cline — cline.bot](https://cline.bot/)
+- [LangGraph — langchain.com/langgraph](https://www.langchain.com/langgraph)
+- [GSD — github.com/gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done)
+- [BMad Method — docs.bmad-method.org](https://docs.bmad-method.org/)
+- [OpenSpec — github.com/Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec/)
+- [Aider — aider.chat](https://aider.chat/docs/)
+- [OpenCode — opencode.ai](https://opencode.ai/docs)
+
+### Landscape
+- [2026 AI Coding CLI Tools — Tembo](https://www.tembo.io/blog/coding-cli-tools-comparison)
+- [Agentic IDE Comparison — Codecademy](https://www.codecademy.com/article/agentic-ide-comparison-cursor-vs-windsurf-vs-antigravity)
+- [Cursor Alternatives 2026 — Builder.io](https://www.builder.io/blog/cursor-alternatives-2026)
