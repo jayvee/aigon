@@ -36,31 +36,14 @@
 
     // ── Monitor view — Alpine component ──────────────────────────────────────
 
-    // Helper: builds the "run next" button group HTML for a feature card (used via x-html)
-    function buildNextActionHtml(feature, repoPath) {
-      const nextActions = feature.nextActions && feature.nextActions.length > 0
-        ? feature.nextActions
-        : (feature.nextAction && feature.nextAction.command ? [{ command: feature.nextAction.command, label: 'Run', reason: feature.nextAction.reason || '', mode: 'fire-and-forget' }] : []);
-      if (nextActions.length === 0) return '';
-      const primary = nextActions[0];
-      const extras = nextActions.slice(1);
-      const dropdownHtml = extras.length > 0
-        ? '<button class="btn btn-primary run-next-chevron" aria-haspopup="true" title="More actions">▾</button>' +
-          '<div class="run-next-dropdown" role="menu">' +
-          extras.map(a => '<button class="dropdown-item" data-command="' + escHtml(a.command) + '" data-mode="' + escHtml(a.mode) + '">' +
-            '<span class="item-label">' + escHtml(a.label) + '</span>' +
-            '<code class="item-command">' + escHtml(a.command) + '</code>' +
-            '<span class="item-reason">' + escHtml(a.reason) + '</span>' +
-            '</button>').join('') + '</div>'
-        : '';
-      // Remap raw state-machine labels ("Focus cc", "View cc") to clean button text.
-      // Works from the first word so it doesn't depend on action metadata from the server.
-      const NEXT_ACTION_FIRST_WORD_MAP = { Focus: 'View', Attach: 'View' };
-      const firstWord = primary.label.split(' ')[0];
-      const primaryLabel = NEXT_ACTION_FIRST_WORD_MAP[firstWord] || firstWord;
-      return '<span class="run-next-group">' +
-        '<button class="btn btn-primary run-next-primary" data-command="' + escHtml(primary.command) + '" data-mode="' + escHtml(primary.mode) + '" data-repo="' + escHtml(repoPath) + '" title="' + escHtml(primary.command) + ' — ' + escHtml(primary.reason) + '">' + escHtml(primaryLabel) + '</button>' +
-        dropdownHtml + '</span>';
+    // Helper: builds unified action buttons for a feature card (used via x-html).
+    // Delegates to the shared buildFeatureActions() from actions.js, wrapping in
+    // a container with data-repo for event delegation.
+    function buildMonitorActionHtml(feature, repoPath) {
+      const pipelineType = feature.stage ? 'features' : 'features';
+      const html = buildFeatureActions(feature, repoPath, pipelineType);
+      if (!html) return '';
+      return '<span class="monitor-actions" data-repo="' + escHtml(repoPath) + '" data-feature-id="' + escHtml(feature.id) + '">' + html + '</span>';
     }
 
     function monitorView() {
@@ -138,7 +121,7 @@
           const synthCmd = '/ars ' + String(item.id).padStart(2, '0');
           return '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(synthCmd) + '" title="All agents submitted — synthesize findings">Copy next</button>';
         },
-        buildNextActionHtml(feature, repoPath) { return buildNextActionHtml(feature, repoPath); },
+        buildNextActionHtml(feature, repoPath) { return buildMonitorActionHtml(feature, repoPath); },
         buildAskAgentHtml(repoPath) { return buildAskAgentHtml(repoPath); },
         handleAskClick(e) {
           const btn = e.target.closest('[data-ask-run]');
@@ -179,7 +162,7 @@
         },
         copyCmd(text) { copyText(text).then(ok => showToast(ok ? 'Copied: ' + text : 'Copy failed')); },
         attachAgent(repoPath, featureId, agentId, tmuxSession) { requestAttach(repoPath, featureId, agentId, tmuxSession); },
-        // Event delegation for x-html injected buttons (run-next group, synth copy btn)
+        // Event delegation for x-html injected buttons (unified actions, synth copy btn)
         handleMonitorClick(e) {
           const btn = e.target.closest('button');
           if (!btn) return;
@@ -188,34 +171,42 @@
             if (text) copyText(text).then(ok => showToast(ok ? 'Copied: ' + text : 'Copy failed'));
             return;
           }
-          if (btn.classList.contains('run-next-primary')) {
+          // Unified validAction buttons (from buildFeatureActions)
+          if (btn.classList.contains('kcard-va-btn')) {
             e.stopPropagation();
-            executeNextAction(btn.getAttribute('data-command') || '', btn.getAttribute('data-mode') || 'fire-and-forget', btn.getAttribute('data-repo') || '', btn);
+            const container = btn.closest('.monitor-actions');
+            const repoPath = container ? container.getAttribute('data-repo') || '' : '';
+            const featureId = container ? container.getAttribute('data-feature-id') || '' : '';
+            const vaAction = btn.getAttribute('data-va-action') || '';
+            const vaAgentId = btn.getAttribute('data-agent') || null;
+            // Find the feature object from Alpine store
+            const s = Alpine.store('dashboard');
+            const data = s.data || { repos: [] };
+            let feature = null;
+            for (const repo of (data.repos || [])) {
+              const allItems = [...(repo.features || []), ...(repo.research || []), ...(repo.feedback || [])];
+              feature = allItems.find(f => String(f.id) === String(featureId));
+              if (feature) break;
+            }
+            if (!feature) return;
+            const va = (feature.validActions || []).find(a => a.action === vaAction && (a.agentId || null) === vaAgentId) || { action: vaAction, agentId: vaAgentId, label: btn.textContent };
+            btn._origText = btn.textContent;
+            handleFeatureAction(va, feature, repoPath, btn, 'features');
             return;
           }
-          if (btn.classList.contains('run-next-chevron')) {
+          // Overflow toggle
+          if (btn.classList.contains('kcard-overflow-toggle')) {
             e.stopPropagation();
-            const group = btn.closest('.run-next-group');
-            const dropdown = group && group.querySelector('.run-next-dropdown');
-            if (!dropdown) return;
-            const isOpen = dropdown.classList.contains('open');
-            document.querySelectorAll('.run-next-dropdown.open').forEach(d => d.classList.remove('open'));
-            if (!isOpen) {
-              dropdown.classList.add('open');
+            const menu = btn.parentElement.querySelector('.kcard-overflow-menu');
+            const isOpen = menu && menu.classList.contains('open');
+            document.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
+            if (!isOpen && menu) {
+              menu.classList.add('open');
               setTimeout(() => document.addEventListener('click', function close(ev) {
-                if (!group.contains(ev.target)) { dropdown.classList.remove('open'); document.removeEventListener('click', close); }
+                if (!btn.parentElement.contains(ev.target)) { menu.classList.remove('open'); document.removeEventListener('click', close); }
               }), 0);
             }
             return;
-          }
-          if (btn.classList.contains('dropdown-item')) {
-            e.stopPropagation();
-            const group = btn.closest('.run-next-group');
-            const primaryBtn = group && group.querySelector('.run-next-primary');
-            const repoPath = primaryBtn ? primaryBtn.getAttribute('data-repo') || '' : '';
-            const dropdown = btn.closest('.run-next-dropdown');
-            if (dropdown) dropdown.classList.remove('open');
-            executeNextAction(btn.getAttribute('data-command') || '', btn.getAttribute('data-mode') || 'fire-and-forget', repoPath, primaryBtn || btn);
           }
         }
       };
