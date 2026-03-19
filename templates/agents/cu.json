@@ -56,6 +56,10 @@
           ]
         }
       }
+    },
+    "rules": {
+      "enabled": true,
+      "path": ".cursor/rules/aigon.mdc"
     }
   },
   "commands": [

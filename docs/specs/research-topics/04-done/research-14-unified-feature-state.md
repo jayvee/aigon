@@ -69,11 +69,81 @@ This research should redesign Aigon's state architecture from the ground up arou
 - Multi-repo coordination (each repo manages its own features)
 
 ## Findings
-<!-- Document discoveries, options evaluated, pros/cons -->
+
+### Consensus (both agents)
+1. The five unsynchronized state signals are **accidental complexity**, not inherent to the problem.
+2. A **per-feature JSON manifest** should be the authoritative state record.
+3. **Log files should stop carrying machine state** — pure narrative only.
+4. All transitions must be **idempotent** (safe to re-run, converges to correct state).
+5. A **reconciliation mechanism** is needed to detect/repair desyncs.
+6. The **state machine must be mandatory**, not advisory — all transitions through a gatekeeper.
+7. Agents should **report status to a coordinator**, not own system state directly.
+
+### Key Architectural Decision: Folder vs Manifest Authority
+- **CC:** Folders remain shared ground truth (committed, visible to collaborators). Manifests are a **local reliability layer**, gitignored. If they disagree, folder wins.
+- **GG:** Manifest is the single source of truth. Folders are organizational sugar. If they disagree, JSON wins.
+
+**Decision:** CC's approach adopted — manifests are gitignored (contain machine-local paths like worktree locations), folders are the collaboration signal. This avoids merge conflicts and preserves the "your project board is just folders" UX.
+
+### Key Design Decision: Agent Write Model
+- **CC:** Per-agent status files (`feature-55-cc.json`) — agents write directly to `.aigon/state/` in main repo. No write contention.
+- **GG:** Agent-state-proxy — agents use a CLI proxy command and never write state files directly.
+
+**Decision:** CC's per-agent files adopted — simpler, no proxy process needed, zero contention by design.
+
+### Key Design Decision: Crash Recovery
+- **CC:** Outbox pattern — pending operations list in manifest, replayed on next command.
+- **GG:** Intent-based control loop (Kubernetes-style) — `target_status` vs `current_status`, reconciler converges.
+
+**Decision:** CC's outbox pattern adopted — explicit pending array is simpler to implement and debug.
+
+### Detailed Analysis
+See agent findings for full details:
+- `logs/research-14-cc-findings.md` — deep codebase analysis (line-number refs, 11 failure scenarios, 10 distributed patterns evaluated)
+- `logs/research-14-gg-findings.md` — higher-level architectural analysis with Kubernetes-style intent patterns
 
 ## Recommendation
-<!-- Summary of recommended approach based on findings -->
+
+**Architecture: "State Manifest + Outbox + Idempotent Steps"**
+
+Hybrid of three patterns: per-entity state manifests, the outbox pattern for reliable side effects, and idempotent/compensatable steps.
+
+1. **Split state files** in gitignored `.aigon/state/`: coordinator manifest (`feature-55.json`) + per-agent status files (`feature-55-cc.json`). No write contention.
+2. **Folders remain shared ground truth** — committed to git, visible to all. Manifests are local reliability layer.
+3. **State machine becomes mandatory gatekeeper** — all transitions through `requestTransition()`.
+4. **Outbox for crash-safe side effects** — pending ops list in manifest, replayed on next command.
+5. **All side effects idempotent** — interrupted commands resume cleanly.
+6. **Lazy bootstrap** — manifests created on first access from existing folder+log state.
+7. **Logs lose frontmatter** — pure markdown narrative, machine state in manifests.
+8. **Flat log structure** — drop `selected/`/`alternatives/` folders, winner recorded in manifest.
 
 ## Output
-<!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Link the newly created files below. -->
-- [ ] Feature:
+
+### Consolidated Features (5)
+
+| # | Feature Name | Absorbs | Priority |
+|---|-------------|---------|----------|
+| 1 | **state-manifest-core** | + feature-locking, + manifest-lazy-bootstrap, + event-audit-trail | high |
+| 2 | **idempotent-outbox-transitions** | + outbox-side-effects, + idempotent-transitions, + state-machine-gatekeeper | high |
+| 3 | **agent-status-out-of-worktree** | + log-narrative-only | high |
+| 4 | **dashboard-manifest-reader** | (standalone) | medium |
+| 5 | **state-reconciliation** | + drop-selected-alternatives | medium |
+
+### Implementation Phases
+
+```
+Phase 1 (sequential — foundation):
+  [1] state-manifest-core
+
+Phase 2 (parallel — all depend only on #1):
+  [2] idempotent-outbox-transitions
+  [3] agent-status-out-of-worktree
+  [4] dashboard-manifest-reader
+
+Phase 3 (after #2 lands):
+  [5] state-reconciliation
+```
+
+### Not Selected
+- **agent-state-proxy** (GG): CLI proxy for agent state transitions — per-agent files are simpler, no proxy process needed
+- **state-migration-tool** (GG): Explicit migration command — lazy bootstrap on first access makes this unnecessary

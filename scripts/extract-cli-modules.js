@@ -150,7 +150,6 @@ const WRAPPER_EXPORTS = {
     ],
     dashboard: [
         'readConductorReposFromGlobalConfig',
-        'parseSimpleFrontMatter',
         'normalizeDashboardStatus',
         'parseFeatureSpecFileName',
         'inferDashboardNextCommand',

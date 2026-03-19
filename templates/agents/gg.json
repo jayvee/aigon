@@ -66,6 +66,11 @@
                 "type": "command",
                 "command": "aigon check-version",
                 "timeout": 30
+              },
+              {
+                "type": "command",
+                "command": "aigon project-context",
+                "timeout": 10
               }
             ]
           }
