@@ -101,7 +101,7 @@ function writeFixtureConfig(repoDir) {
     const config = {
         agents: {
             cc: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } },
-            gg: { models: { research: 'gemini-2.0-flash', implement: 'gemini-2.0-flash', evaluate: 'gemini-2.0-flash' } },
+            gg: { models: { research: 'gemini-2.5-flash', implement: 'gemini-2.5-flash', evaluate: 'gemini-2.5-flash' } },
             cx: { models: { research: 'gpt-4.1-mini', implement: 'gpt-4.1-mini', evaluate: 'gpt-4.1-mini' } },
         }
     };
