@@ -106,6 +106,7 @@
 
     function openDrawer(specPath, title, stage, repoPath) {
       if (!specPath) return;
+      console.trace('openDrawer called:', title, specPath);
       drawerState.path = specPath;
       drawerState.title = title;
       drawerState.stage = stage;
