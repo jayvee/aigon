@@ -56,27 +56,11 @@ docs/specs/
     └── feedback-template.md
 ```
 
-`aigon board` visualizes your pipeline as a Kanban board:
+The **Aigon Dashboard** gives you a visual pipeline across all your repos — features, agents, and status at a glance:
 
-```
-╔═══════════════════════ Aigon Board ════════════════════════╗
+![Aigon Dashboard — Fleet agents implementing in parallel](docs/images/aigon-dashboard-01-fleet-start.gif)
 
-FEATURES
-┌────────────────────────────────┼────────────────────────────────┼────────────────────────────────┐
-│ Inbox                          │ In Progress                    │ Done                           │
-├────────────────────────────────┼────────────────────────────────┼────────────────────────────────┤
-│ a) base-port-config            │ #07 backlog-visualisation *    │ #01 support-hooks              │
-│ b) change-banner-in-bakeoff    │                                │ #02 unify-workflow             │
-│ c) create-plugin               │                                │ #03 arena-research             │
-│ d) parallel-features           │                                │ #04 add-sample-chat-for-workfl │
-│ e) refactor-aigon-sub-commands │                                │ #05 command-metadata-improveme │
-│ f) research-open-arena         │                                │ #06 readme-uplift              │
-├────────────────────────────────┼────────────────────────────────┼────────────────────────────────┤
-│ (6)                            │ (1)                            │ (6)                            │
-└────────────────────────────────┼────────────────────────────────┼────────────────────────────────┘
-```
-
-`*` = current branch, `[F]` = Fleet mode, `[AP]` = Autopilot mode, `[S]` = Swarm mode
+A terminal board view is also available via `aigon board`. See [Dashboard in Action](#dashboard-in-action) for the full Fleet workflow.
 
 ---
 
@@ -88,18 +72,14 @@ FEATURES
 
 1. [Why Aigon](#why-aigon)
 2. [Core Philosophy](#core-philosophy)
-3. [The Specs Architecture](#the-specs-architecture)
-4. [Quick Start](#quick-start)
+3. [Quick Start](#quick-start)
+4. [Aigon Dashboard](#aigon-dashboard)
 5. [Installation, Agents, and Updates](#installation-agents-and-updates)
-6. [Project-Specific Agent Instructions](#project-specific-agent-instructions)
-7. [Slash Command Prefixes](#slash-command-prefixes)
-8. [Invocation Contexts (CLI vs In-Agent)](#invocation-contexts-cli-vs-in-agent)
-9. [Workflow Overview](#workflow-overview)
-10. [Workflow Examples](#workflow-examples)
-11. [Hooks](#hooks)
-12. [Local Dev Proxy](#local-dev-proxy)
-13. [Multi-Agent Evaluation](#multi-agent-evaluation)
-14. [CLI Reference](GUIDE.md#cli-reference) (in Complete Guide)
+6. [Workflow Overview & Examples](#workflow-overview)
+7. [Terminal Setup](#terminal-setup-tmux--iterm2)
+8. [Local Dev Proxy](#local-dev-proxy)
+9. [Multi-Agent Evaluation](#multi-agent-evaluation)
+10. [CLI Reference](GUIDE.md#cli-reference) (in Complete Guide)
 
 ---
 
@@ -205,32 +185,6 @@ Each pillar uses folder-based status:
 - Prioritized: `feature-55-description.md` (global ID assigned)
 - Agent-specific: `feature-55-cc-description-log.md` (Fleet mode)
 
-## Code Module Map
-
-The CLI is split into focused domain modules under `lib/`:
-
-| Module | Responsibility |
-|--------|---------------|
-| `aigon-cli.js` | Entry point — argument parsing, command dispatch |
-| `lib/proxy.js` | Port allocation, registry, dev-server registration, proxy integration |
-| `lib/aigon-proxy.js` | Standalone reverse proxy daemon — routes by Host header, WebSocket support |
-| `lib/dashboard-server.js` | HTTP server, polling, WebSocket relay, notifications, action dispatch |
-| `lib/worktree.js` | Worktree creation, permissions, trust, tmux sessions, terminal launching |
-| `lib/config.js` | Global/project config, profiles, agent CLI config, editor detection |
-| `lib/templates.js` | Template reading, processing, scaffolding, command registry |
-| `lib/utils.js` | Shared utilities: hooks, YAML parsers, spec CRUD, analytics, version |
-| `lib/git.js` | Git operations — single source of truth for all git calls |
-| `lib/state-machine.js` | Action modes and valid state transitions |
-| `lib/commands/shared.js` | Thin factory (~150 lines) — builds `ctx` and composes all domain command files |
-| `lib/commands/feature.js` | All `feature-*` command handlers and `sessions-close` |
-| `lib/commands/research.js` | All `research-*` command handlers |
-| `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
-| `lib/commands/infra.js` | `conductor`, `dashboard`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile` |
-| `lib/commands/setup.js` | `init`, `install-agent`, `check-version`, `update`, `doctor` |
-| `lib/commands/misc.js` | `agent-status`, `status`, `deploy`, `next`, `help` |
-
----
-
 ## Quick Start
 
 ### 1. Install Aigon CLI
@@ -299,15 +253,75 @@ aigon install-agent cc
 aigon install-agent cc gg cx cu
 ```
 
-### 4. Use slash commands in your agent
+### 4. Start using Aigon
 
-Primary day-to-day usage is via slash commands.
+There are three ways to interact with Aigon — use whichever fits the moment:
+
+| | Slash Commands | CLI | Dashboard |
+|---|---|---|---|
+| **Where** | Inside an agent session | Terminal / shell | Browser UI |
+| **Best for** | Writing specs, implementing features, research — anything conversational | Orchestration, setup, scripting, automation | Visual overview, monitoring Fleet runs, launching actions across repos |
+| **Example** | `/aigon:feature-do 07` | `aigon feature-setup 07 cc gg` | Click "Start feature" on a kanban card |
+
+**Slash commands**  — you stay in your agent and use Aigon commands naturally in conversation:
 
 - Claude / Gemini: `/aigon:feature-create dark-mode`
 - Codex: `/prompts:aigon-feature-create dark-mode`
 - Cursor: `/aigon-feature-create dark-mode`
 
-![Slash command menu showing Aigon commands](docs/images/aigon-slash-commands-menu.png)
+**CLI commands** handle orchestration that spans agents and repos — setting up Fleet worktrees, opening terminals, closing features:
+
+```bash
+aigon feature-setup 07 cc gg cx    # Create 3 worktrees for Fleet
+aigon feature-open 07 --all        # Open all agents side-by-side
+aigon feature-close 07 cc          # Merge the winner
+```
+
+**The Dashboard** gives you a visual pipeline across all repos. Start features, monitor agent progress, run evaluations, and merge winners — all from the browser. See [Dashboard in Action](#dashboard-in-action).
+
+All three surfaces drive the same underlying workflow. Mix them freely: create a feature in an agent session, set up Fleet from the CLI, monitor progress on the dashboard, evaluate from another agent session.
+
+---
+
+## Aigon Dashboard
+
+The dashboard is a browser-based control centre for all your Aigon repos. Monitor agent progress, launch features, run evaluations, and merge winners — all from one place.
+
+### Dashboard in Action
+
+A Fleet run on the BrewBoard seed project — Codex (cx) and Gemini (gg) compete to implement dark mode, then Claude Code (cc) evaluates and the winner is merged:
+
+**1. Fleet started — Codex and Gemini implementing in parallel**
+
+![Fleet started — Codex and Gemini implementing in parallel](docs/images/aigon-dashboard-01-fleet-start.gif)
+
+**2. Both agents submitted — Claude Code evaluating the implementations**
+
+![Claude Code evaluating the implementations](docs/images/aigon-dashboard-02-fleet-evaluation.gif)
+
+**3. Evaluation complete — winner selected and merged**
+
+![Evaluation complete — winner selected and merged](docs/images/aigon-dashboard-03-fleet-submitted.gif)
+
+### Statistics
+
+Track your throughput, cycle time, and agent performance across all repos.
+
+![Aigon Dashboard Statistics](docs/images/aigon-dashboard-statistics.png)
+
+- **Volume** — features completed per period with trend
+- **Cycle Time** — average hours from setup to close
+- **Agent Leaderboard** — wins, speed, and fleet win % per agent
+
+### Getting started
+
+```bash
+aigon dashboard add                    # Register current repo
+aigon dashboard start                  # Start the dashboard
+aigon dashboard open                   # Open in browser (http://aigon.localhost)
+```
+
+A terminal board view is also available via `aigon board`. For dashboard commands, VS Code sidebar, menubar integration, and the HTTP API, see the [Complete Guide](GUIDE.md#dashboard).
 
 ---
 
@@ -418,57 +432,6 @@ Aigon delivers its own context (doc pointers to workflow files) via SessionStart
 
 ---
 
-## Slash Command Prefixes
-
-Aigon command naming by agent:
-
-- Claude / Gemini: `/aigon:<command>`
-- Cursor: `/aigon-<command>`
-- Codex: `/prompts:aigon-<command>`
-
-Examples for the same action:
-
-- Claude: `/aigon:feature-do 42`
-- Gemini: `/aigon:feature-do 42`
-- Cursor: `/aigon-feature-do 42`
-- Codex: `/prompts:aigon-feature-do 42`
-
----
-
-## Invocation Contexts (CLI vs In-Agent)
-
-Aigon has two command surfaces:
-
-- **CLI context**: run `aigon ...` from a shell
-- **In-agent context**: run slash commands inside an active agent session
-
-Think of this as a second axis in addition to mode (Drive/Fleet/Autopilot/Swarm).
-
-### Default way to work
-
-1. **Start in an agent session** when shaping specs (create/prioritise/research) so you can iterate in conversation.
-2. **Stay in-agent** for implementation/review/research execution.
-3. **Drop to CLI when needed** for orchestration, automation, and terminal-first workflows.
-
-### Recommended surface by task
-
-| Task Type | Preferred Surface | Why |
-|---|---|---|
-| Spec authoring and refinement (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) | In-agent slash commands | Best for iterative back-and-forth on definitions and scope |
-| Execution with an active agent (`feature-do`, `feature-review`, `research-do`, `research-synthesize`) | In-agent slash commands | Keeps context in the live session and avoids nested launches |
-| Orchestration and terminal ops (`init`, `install-agent`, `update`, `feature-setup`, `feature-open`, `feature-close`, `feature-cleanup`) | CLI | Repo/worktree coordination, machine-level operations, scripting |
-| Infra/config (`config`, `profile`, `proxy`, `dev-server`, `dashboard`) | CLI | Machine/project configuration and background services |
-
-### Can I stay in one surface?
-
-- **Agent-first is recommended** for creating/prioritising features and research when you want conversational iteration.
-- **CLI-only is supported** and useful for automation or terminal-first habits.
-- **Hybrid is common**: define in-agent, then orchestrate from CLI.
-
-For deeper details and mode-specific nuances, see [GUIDE.md](GUIDE.md#command-surfaces-cli-vs-in-agent).
-
----
-
 ## Workflow Overview
 
 Aigon organises work into three lifecycles:
@@ -492,207 +455,43 @@ The examples below show each combination with realistic commands.
 
 ## Workflow Examples
 
-### Feature: Drive Mode (single agent, hands-on)
-
-> You want to add JWT authentication. One agent, guided by you.
+### Drive Mode — one agent, guided by you
 
 ```text
 /aigon:feature-create jwt-auth
-```
-
-The agent helps you write a spec, then:
-
-```text
 /aigon:feature-prioritise jwt-auth          # Assigns ID (e.g., #07)
-/aigon:feature-setup 07                     # Creates branch, moves spec to in-progress
-/aigon:feature-do 07                 # Agent reads spec and starts building
+/aigon:feature-setup 07                     # Creates branch
+/aigon:feature-do 07                        # Agent implements the spec
+/aigon:feature-eval 07                      # Code review
+/aigon:feature-close 07                     # Merge to main
 ```
 
-The agent works through the spec — creating middleware, adding token validation, writing tests. You review as it goes. When done:
+**Fast-track:** `/aigon:feature-now dark-mode` does create + setup + implement in one step.
+
+### Fleet Mode — multiple agents compete
 
 ```text
-/aigon:feature-eval 07                      # Code review checklist
-/aigon:feature-close 07                      # Merge to main
+/aigon:feature-setup 07 cc gg cx           # 3 worktrees, 3 branches
+/aigon:feature-open 07 --all               # Opens all agents side-by-side
 ```
 
-**Fast-track shortcut:** If you want to skip the ceremony, `feature-now` goes from idea to implementation in one step:
+Each agent runs `/aigon:feature-do 07` independently. When all submit:
 
 ```text
-/aigon:feature-now dark-mode
-```
-
-### Feature: Fleet Mode (multiple agents, hands-on)
-
-> Same JWT auth feature, but three agents compete. You pick the best implementation.
-
-```text
-/aigon:feature-setup 07 cc gg cx           # Creates 3 worktrees, 3 branches
-/aigon:feature-open 07 --all              # Opens all agents side-by-side
-```
-
-![Warp split view with Fleet worktrees side-by-side](docs/images/aigon-warp-arena-split.png)
-
-In each agent's terminal, run:
-
-```text
-/aigon:feature-do 07
-```
-
-Each agent reads the same spec and builds its own implementation independently. When all agents have submitted, evaluate:
-
-```text
-/aigon:feature-eval 07                     # Generates comparison scorecard
-```
-
-`feature-eval` checks each agent's status first — if someone hasn't submitted, you'll see:
-
-```text
-⚠️  1 agent(s) not yet submitted:
-   cx (Codex) — status: implementing
-     → aigon feature-open 07 cx
-```
-
-After evaluating, merge the winner and optionally adopt improvements from the losers:
-
-```bash
-aigon feature-close 07 cc                   # Merge Claude's implementation
-aigon feature-close 07 cc --adopt all       # Merge + review diffs from gg and cx
-aigon feature-cleanup 07                   # Remove losing worktrees
-```
-
-### Feature: Autopilot Mode (single agent, hands-off)
-
-> You want the agent to keep iterating until tests pass, without hand-holding.
-
-```text
-/aigon:feature-setup 07 cc
-/aigon:feature-do 07 --autonomous
-```
-
-The agent enters an autonomous loop:
-
-```text
-✈️  Autopilot mode
-Agent: cc · Iterations: 1..4
-
-🚀 Iteration 1/4
-   Implementing...
-   🧪 Validation: npm test ❌ (3 failures)
-
-🚀 Iteration 2/4
-   Fixing test failures...
-   🧪 Validation: npm test ✅
-
-✅ All checks passed · Ready for your review
-```
-
-Review the result and finish:
-
-```text
-/aigon:feature-eval 07
-/aigon:feature-close 07
-```
-
-See [autonomous-mode.md](docs/autonomous-mode.md) for configuration options (`--max-iterations`, validation commands, progress tracking).
-
-### Feature: Swarm Mode (multiple agents, hands-off)
-
-> Three agents compete autonomously. Each retries until passing, then you evaluate the converged results.
-
-```bash
-aigon feature-setup 07 cc gg cx
-aigon feature-open 07 --all
-```
-
-In each agent's terminal:
-
-```text
-/aigon:feature-do 07 --autonomous --auto-submit
-```
-
-```text
-🐝 Swarm mode
-cc: ✅ pass on iteration 1 · submitted
-gg: ❌ iteration 1 · ✅ pass on iteration 2 · submitted
-cx: ❌ iteration 1 · ✅ pass on iteration 2 · submitted
-```
-
-Once all agents submit:
-
-```text
-/aigon:feature-eval 07                     # Compare 3 passing implementations
+/aigon:feature-eval 07                     # Compare implementations
 aigon feature-close 07 cc                   # Merge the winner
-aigon feature-cleanup 07                   # Clean up the rest
 ```
 
-### Research: Drive Mode (single agent)
+### More modes
 
-> You want one agent to investigate auth strategies for a mobile app.
+| Mode | Command | Description |
+|------|---------|-------------|
+| **Autopilot** | `/aigon:feature-do 07 --autonomous` | Agent retries until tests pass |
+| **Swarm** | Fleet + `--autonomous --auto-submit` | Multiple agents, fully hands-off |
+| **Research** | `/aigon:research-create` → `research-do` → `research-synthesize` | Investigate before building |
+| **Feedback** | `/aigon:feedback-create` → `feedback-triage` | Capture and classify user input |
 
-```text
-/aigon:research-create auth-strategy-mobile
-/aigon:research-prioritise auth-strategy-mobile   # Assigns ID (e.g., #03)
-/aigon:research-do 03
-```
-
-The agent investigates the topic, writes findings to `docs/specs/research-topics/logs/`, and answers the questions defined in the topic doc.
-
-```text
-/aigon:research-close 03
-```
-
-### Research: Fleet Mode (multiple agents)
-
-> Three agents independently research the same topic, then you synthesize their perspectives.
-
-```text
-/aigon:research-setup 03 cc gg cx
-/aigon:research-open 03                    # Opens all agents side-by-side
-```
-
-![Research agents side-by-side in terminal](docs/images/aigon-research-arena-split.png)
-
-In each agent pane:
-
-```text
-/aigon:research-do 03
-```
-
-Each agent writes its findings independently. Then synthesize:
-
-```text
-/aigon:research-synthesize 03              # Compare findings, extract features
-/aigon:research-close 03
-```
-
-### Feedback Lifecycle
-
-> A user reports "search is slow on large datasets". Capture it, triage it, act on it.
-
-```text
-/aigon:feedback-create "Search is slow on large datasets"
-/aigon:feedback-list --inbox               # See all untriaged feedback
-/aigon:feedback-triage 5                   # AI-assisted severity/type/tag classification
-```
-
-The triage recommends severity, type (bug/feature/improvement), and tags. Apply the recommendation:
-
-```bash
-aigon feedback-triage 5 --apply --yes      # Accept AI recommendations
-```
-
-### Parallel Drive (multiple features, one agent)
-
-> You have three independent features and want to work on all of them with Claude.
-
-```bash
-aigon feature-setup 100 cc
-aigon feature-setup 101 cc
-aigon feature-setup 102 cc
-aigon feature-open 100 101 102 --agent=cc
-```
-
-Each feature gets its own worktree and branch. Switch between them freely.
+For detailed examples of each mode, see the [Complete Guide — Workflow Examples](GUIDE.md#detailed-feature-lifecycle).
 
 ---
 
@@ -747,321 +546,6 @@ Detach from any session with `Ctrl-b d`. Reattach manually with `tmux attach -t 
 
 ---
 
-## Visualizing Work — Aigon Dashboard
-
-### Dashboard in Action
-
-A Fleet run on the BrewBoard seed project — Codex (cx) and Gemini (gg) compete to implement dark mode, then Claude Code (cc) evaluates and the winner is merged:
-
-**1. Fleet started — Codex and Gemini implementing in parallel**
-
-![Fleet started — Codex and Gemini implementing in parallel](docs/images/aigon-dashboard-01-fleet-start.gif)
-
-**2. Both agents submitted — Claude Code evaluating the implementations**
-
-![Claude Code evaluating the implementations](docs/images/aigon-dashboard-02-fleet-evaluation.gif)
-
-**3. Evaluation complete — winner selected and merged**
-
-![Evaluation complete — winner selected and merged](docs/images/aigon-dashboard-03-fleet-submitted.gif)
-
----
-
-Once you start using aigon on multiple repositories with multiple features in parallel, you need a dashboard to work out what's happening where and to be able to intercept and take over as required.
-
-**Aigon Dashboard** is a foreground HTTP server that watches all your registered repos and exposes a unified HTTP API. Every view — the web dashboard, VS Code sidebar, macOS menubar icon, and CLI status — consumes that one API rather than reading log files independently.
-
-Aigon provides four ways to see what's happening across your projects: a **web dashboard**, a **VS Code sidebar**, a **macOS menubar icon**, and **macOS notifications** — all powered by the dashboard server.
-
-### VS Code Sidebar (Aigon Dashboard)
-
-An Aigon section in the Explorer sidebar shows live feature and agent status across all registered repos — no terminal needed.
-
-**One-time setup:**
-
-```bash
-# 1. Register your repos (repeat for each project)
-aigon dashboard add                    # adds cwd
-aigon dashboard add ~/src/my-web-app  # adds another repo
-
-# 2. Install the VS Code extension
-aigon dashboard vscode-install
-
-# 3. Reload VS Code — the Aigon panel appears in the Explorer sidebar
-```
-
-The sidebar opens with a **Needs Attention** section at the top — like Gmail's "important and unread" — followed by the full repo status below:
-
-<!-- TODO: Replace with actual screenshot -->
-<!-- ![VS Code Sidebar](docs/images/vscode-sidebar.png) -->
-
-```
-▼ AIGON
-  ▼ 🔔 Needs Attention (3)
-      🔔 #32  conductor-daemon     aigon · Claude needs input
-      ✅ #12  dark-mode             my-web-app · Ready for eval
-      🏆 #14  profile-redesign     my-web-app · Pick winner
-  ▷ 📁 aigon
-  ▷ 📁 my-web-app
-```
-
-Click any attention item to copy its slash command. Expand a repo for the full feature/agent breakdown:
-
-```
-  ▼ 📁 aigon
-    ▼ 🔔 #32  conductor-daemon
-        🔔 cc  ●  waiting   01:33    ← click to copy /afd 32
-    ▼ ⟳  #33  conductor-vscode
-        ⟳  cx  ○  implementing
-        ✓  gg  ✓  submitted
-```
-
-- **🔔 Needs Attention** — waiting agents, features ready for eval, winners to pick
-- **⟳ ○ implementing** — agent is actively working
-- **✅ ✓ submitted** — all agents submitted, ready for eval
-- **🏆 pick winner** — evaluation complete, winner identified
-- Refresh button (↻) and stage toggle (☰) in the panel title bar
-- Updates automatically via file watching — no polling, no manual refresh
-
-**Dashboard commands:**
-
-```bash
-aigon dashboard add [path]           # Register a repo (default: cwd)
-aigon dashboard remove [path]        # Unregister a repo
-aigon dashboard list                 # List registered repos
-aigon dashboard start [--port N]     # Start the dashboard service (daemon + dashboard + API)
-aigon dashboard stop                 # Stop the dashboard service
-aigon dashboard status               # Show service state, repos, and waiting agents
-aigon dashboard open                 # Open the web dashboard in your browser
-aigon dashboard install              # Auto-start on login (launchd)
-aigon dashboard uninstall            # Remove auto-start
-aigon dashboard vscode-install       # Install VS Code extension
-aigon dashboard vscode-uninstall     # Remove VS Code extension
-aigon dashboard menubar-install      # Install macOS menubar plugin
-aigon dashboard menubar-uninstall    # Remove menubar plugin
-```
-
-**Dashboard HTTP API (local service):**
-
-- `GET /api/status` — aggregated multi-repo status payload
-- `GET /api/repos` — registered repo list
-- `POST /api/attach` — open terminal and attach to an agent tmux session
-- `POST /api/action` — run allowlisted workflow actions in a target repo
-
-`POST /api/action` request body:
-
-```json
-{
-  "repoPath": "/abs/path/to/repo",
-  "action": "feature-eval",
-  "args": ["55", "--agent=cx"]
-}
-```
-
-### macOS Menubar (Aigon Dashboard)
-
-A menubar icon that shows live agent status at a glance — click to expand a menu of all features and agents across repos, then click any agent to jump directly to its terminal. The menubar plugin calls the dashboard's HTTP API for its data.
-
-**One-time setup:**
-
-```bash
-# 1. Install SwiftBar (or xbar)
-brew install --cask swiftbar
-
-# 2. Register your repos (if not already done)
-aigon dashboard add
-
-# 3. Install the menubar plugin
-aigon dashboard menubar-install
-```
-
-The menubar shows a gear icon with an attention count: `⚙ 3 needs attention` or `⚙ 5 running` or `⚙ –` when idle. Click to expand:
-
-<!-- TODO: Replace with actual screenshot -->
-<!-- ![Menubar](docs/images/menubar.png) -->
-
-```
-⚙ 2 needs attention
-───────────────────────────
-🔔 NEEDS ATTENTION
-  🔔 Claude needs input        ← click to open terminal
-     ~/src/aigon · #32 conductor-daemon
-  ⚡ Ready for eval
-     ~/src/my-web-app · #12 dark-mode
-───────────────────────────
-~/src/aigon
-  #32 conductor-daemon
-    ● cc: waiting
-    ○ gg: implementing
-~/src/my-web-app
-  #12 dark-mode [eval needed]
-    ✓ solo: submitted
-```
-
-- **Needs Attention** section at the top surfaces what needs you right now
-- **Click** an agent → opens/focuses its terminal (Warp, VS Code, or Terminal.app)
-- **Option-click** (⌥) an agent → copies the slash command to clipboard
-- Refreshes every 30 seconds automatically
-
-You can also jump to any feature's terminal directly from the CLI:
-
-```bash
-aigon terminal-focus 39        # open terminal for feature #39
-aigon terminal-focus 39 cc     # open terminal for specific agent
-```
-
-### Dashboard Statistics — Measuring Your Throughput
-
-As an AI developer you are not just building software — you are running an optimisation loop. The Dashboard Statistics tab closes that loop by turning your spec and log history into quantitative insight: how many features are you shipping per week, how long does each one take, and where are the bottlenecks?
-
-![Aigon Dashboard Statistics tab showing volume charts, cycle time, and agent leaderboard](docs/images/aigon-dashboard-statistics.png)
-
-Open the Statistics tab at `aigon dashboard open` then click **Statistics**.
-
-#### What the dashboard shows
-
-**Volume** — Features completed over the selected period with a week-over-week trend. Switch between Daily, Weekly, and Monthly granularity; scroll back through history with the ← → navigation. The 30-day trend card shows percentage change so you can tell at a glance whether your pace is accelerating.
-
-**Cycle Time** — Average hours from `feature-setup` to `feature-close` across the same window, plotted over time. Knowing your typical cycle time lets you spot when a class of features is taking 3× longer than normal and investigate before it becomes a pattern.
-
-**Features Completed Over Time** — A bar chart showing throughput by time bucket (daily/weekly/monthly) across all repos or filtered to one project. Scroll backwards to compare this month against three months ago.
-
-**Avg Cycle Time Over Time** — The same time-bucketed view but for duration. Pairs with the volume chart to distinguish "we shipped more because we went faster" from "we shipped more because we added capacity".
-
-**Agent Leaderboard** — Per-agent breakdown of features completed, eval wins, fleet win %, and average cycle time. Tells you which agent tends to produce the fastest, highest-quality implementations for a given class of problem.
-
-**Autonomy Score** _(coming soon)_ — The proportion of commits made outside active working hours, used as a proxy for how much of your pipeline is running unattended. As autonomous workflows mature and the signal becomes reliable, this will become the headline metric: the dashboard will show you not just how fast you shipped, but how much of that speed required your attention at all.
-
-#### Why this matters
-
-When you run multiple AI agents in parallel, output rises fast — but so does noise. Without measurement you cannot distinguish a genuinely fast week from a week where most features were trivial. The Statistics tab gives you:
-
-- **A baseline** — what is your normal weekly feature velocity across repos?
-- **A signal** — is cycle time trending up because features are getting harder, or because agent quality has dropped?
-- **A comparison axis** — which agent is consistently faster for implementation-only tasks vs. research-heavy ones?
-
-The goal is not to maximise raw feature count. It is to increase meaningful throughput — features that pass eval on first submission — while reducing the cycle time of each one. The dashboard makes that optimisation loop visible.
-
-#### Backfilling historical data
-
-If you adopted Aigon mid-project your early logs may lack `startedAt` and `completedAt` timestamps. Run the backfill command to reconstruct them from git history:
-
-```bash
-aigon feature-backfill-timestamps --dry-run   # preview changes
-aigon feature-backfill-timestamps             # apply
-```
-
-After backfilling, click **Refresh** in the Statistics tab to reload analytics.
-
-### Kanban Board View (terminal)
-
-Aigon also provides two terminal views: **Kanban board** (visual overview) and **detailed list** (with work mode indicators and contextual next-action hints).
-
-```bash
-aigon board --all    # Show all including done items
-```
-
-Output:
-```
-╔═══════════════════════ Aigon Board ════════════════════════╗
-
-FEATURES
-┌────────────────────────────────┼────────────────────────────────┼────────────────────────────────┐
-│ Inbox                          │ In Progress                    │ Done                           │
-├────────────────────────────────┼────────────────────────────────┼────────────────────────────────┤
-│ a) base-port-config            │ #07 backlog-visualisation *    │ #01 support-hooks              │
-│ b) change-banner-in-bakeoff    │                                │ #02 unify-workflow             │
-│ c) create-plugin               │                                │ #03 arena-research             │
-│ d) parallel-features           │                                │ #04 add-sample-chat-for-workfl │
-│ e) refactor-aigon-sub-commands │                                │ #05 command-metadata-improveme │
-│ f) research-open-arena         │                                │ #06 readme-uplift              │
-│ g) subdomain-configuration-for │                                │ change-worktree-location       │
-│ h) update-docs-prompt-to-done  │                                │ install-agent-cleanup-old-comm │
-│                                │                                │ open-worktrees-in-side-by-side │
-│                                │                                │ feature-open-terminal         │
-├────────────────────────────────┼────────────────────────────────┼────────────────────────────────┤
-│ (8)                            │ (1)                            │ (10)                           │
-└────────────────────────────────┼────────────────────────────────┼────────────────────────────────┘
-
-RESEARCH
-┌────────────────────────────────┼────────────────────────────────┐
-│ Inbox                          │ Done                           │
-├────────────────────────────────┼────────────────────────────────┤
-│ i) plugin-distribution         │ #01 subdomains-for-multi-agent │
-│                                │ #02 claude-agent-teams-integra │
-│                                │ #03 simplify-command-parameter │
-├────────────────────────────────┼────────────────────────────────┤
-│ (1)                            │ (3)                            │
-└────────────────────────────────┼────────────────────────────────┘
-```
-
-**Current Status:**
-- **8 features** in inbox (unprioritized) with letter shortcuts (a-h)
-- **1 feature in progress**: #07 backlog-visualisation (current branch ★)
-- **10 features** completed
-- **1 research topic** in inbox with letter shortcut (i)
-- **3 research topics** completed
-
-**Quick Actions:**
-
-Pick an inbox item to prioritize:
-```bash
-/aigon:feature-prioritise a    # base-port-config
-/aigon:feature-prioritise c    # create-plugin
-/aigon:feature-prioritise d    # parallel-features
-/aigon:research-prioritise i   # plugin-distribution
-```
-
-Or fast-track a feature (matches inbox letter shortcuts too):
-```bash
-/aigon:feature-now c           # matches create-plugin in inbox → prioritise + setup + implement
-/aigon:feature-now dark-mode   # no inbox match → creates new feature + implement
-```
-
-**Indicators in Kanban view:**
-- `*` = current branch
-- `[F]` = Fleet mode
-- `[AP]` = Autopilot mode
-- `[S]` = Swarm mode
-- `a), b), c)...` = letter shortcuts for quick prioritization
-
-### Detailed List View
-
-```bash
-aigon board --list
-```
-
-Output:
-```
-FEATURES
-
-Inbox (4):
-        base-port-config
-        create-plugin
-        parallel-features
-        refactor-aigon-sub-commands
-
-In Progress (1):
-   #07  backlog-visualisation  Drive (branch) *
-
-RESEARCH
-
-Inbox (1):
-        plugin-distribution
-```
-
-**Filtering options:**
-```bash
-aigon board --features          # Show only features
-aigon board --research          # Show only research
-aigon board --active            # Show only in-progress items
-aigon board --list --active     # Detailed list of active items
-aigon board --all               # Include done items
-aigon board --no-actions        # Hide contextual next-action hints
-```
-
----
-
 ## Hooks
 
 Hooks let you run custom scripts before and after Aigon commands.
@@ -1083,130 +567,30 @@ Run `aigon hooks list` to inspect discovered hooks.
 
 ## Local Dev Proxy
 
-When running multiple agents on the same web app, managing port numbers is painful. Aigon's dev proxy replaces ports with meaningful subdomain URLs using a built-in Node.js proxy and `.localhost` domains.
-
-**URL scheme:** `{agent}-{featureId}.{appId}.localhost`
-
-| Scenario | URL |
-|---|---|
-| Claude on feature 119 of whenswell | `http://cc-119.whenswell.localhost` |
-| Gemini on feature 119 of whenswell | `http://gg-119.whenswell.localhost` |
-| Claude on feature 120 of whenswell | `http://cc-120.whenswell.localhost` |
-| Main branch / general dev | `http://whenswell.localhost` |
-
-The proxy also routes the **Aigon dashboard**:
-
-| Scenario | URL |
-|---|---|
-| Main dashboard (operator console) | `http://aigon.localhost` |
-| Worktree dashboard (cc, feature 119) | `http://cc-119.aigon.localhost` |
-| Worktree dashboard (gg, feature 119) | `http://gg-119.aigon.localhost` |
-
-### Prerequisites
-
-`.localhost` domains resolve to `127.0.0.1` automatically per RFC 6761 — **no DNS configuration needed**. Just start the proxy:
+Aigon's dev proxy replaces port numbers with meaningful subdomain URLs: `http://cc-119.whenswell.localhost` instead of `http://localhost:3847`.
 
 ```bash
-# One-time setup: install as system daemon on port 80 (asks for sudo once)
-aigon proxy install
+aigon proxy install              # One-time: system daemon on port 80
+aigon dev-server start           # Start dev server with proxy URL
 ```
 
-Without the proxy running, everything falls back to `localhost:<port>` and works as before.
+No DNS configuration needed — `.localhost` resolves automatically. Without the proxy, everything falls back to `localhost:<port>`.
 
-### Quick setup
-
-```bash
-# In your project — start dev server and get its URL
-aigon dev-server start
-#   ⏳ Starting dev server: npm run dev
-#      Waiting for server on port 3847... ready!
-#   🌐 Dev server running
-#      URL:  http://cc-119.whenswell.localhost
-#      Port: 3847  PID: 73524
-
-# Manage servers
-aigon dev-server logs      # View dev server output
-aigon dev-server logs -f   # Follow logs in real time
-aigon dev-server list      # Show all active servers
-aigon dev-server stop      # Stop process and deregister
-aigon dev-server gc        # Clean up dead entries
-aigon dev-server url       # Print URL for scripting
-```
-
-The dashboard registers automatically when you start it:
-
-```bash
-aigon dashboard start          # Main dashboard → http://aigon.localhost
-# From a worktree:
-aigon dashboard start          # Worktree dashboard → http://cc-119.aigon.localhost
-```
-
-If the proxy isn't set up, everything falls back to `localhost:<port>` — existing workflows are unaffected.
-
-Only **web** and **api** profiles use the dev proxy for project dev servers. The dashboard uses the proxy regardless of profile. iOS, Android, library, and generic profiles are not affected for dev server routing.
-
-See the [Complete Guide](GUIDE.md#local-dev-proxy) for detailed setup instructions, per-project configuration, and troubleshooting.
+See the [Complete Guide](GUIDE.md#local-dev-proxy) for URL scheme, per-project configuration, and troubleshooting.
 
 ---
 
 ## Multi-Agent Evaluation
 
-After Fleet implementations are complete:
+After Fleet implementations are complete, `feature-eval` generates a structured comparison so you can score implementations against spec compliance, quality, and performance:
 
 ```bash
-aigon feature-eval 55
+aigon feature-eval 55                      # Compare implementations
+aigon feature-close 55 cc                  # Merge the winner
+aigon feature-close 55 cc --adopt all      # Merge + review diffs from losers
 ```
 
-Before starting, `feature-eval` checks each agent's submission status. If any agent hasn't submitted, you'll see a warning with the command to reconnect:
-
-```text
-⚠️  1 agent(s) not yet submitted:
-   cx (Codex) — status: implementing
-     → aigon feature-open 55 cx
-```
-
-Use `--force` to skip the check and evaluate anyway.
-
-This generates a structured comparison template so you can score implementations against spec compliance, quality, maintainability, and performance.
-
-**Meta example:** This very README was improved using Fleet mode! Three agents (Claude, Cursor, Codex) each created their own implementation, and the best approach was selected through evaluation.
-
-### Real Fleet Evaluation: Feature 06 - README Uplift
-
-**Mode:** Fleet (Multi-agent comparison)
-
-**Implementations:**
-- **cc** (Claude): Hybrid approach - README + GUIDE split
-- **cu** (Cursor): Comprehensive single-file (1091 lines)
-- **cx** (Codex): Ultra-concise single-file (530 lines)
-
-**Evaluation Criteria:**
-
-| Criteria | cc | cu | cx |
-|----------|----|----|-----|
-| Spec Compliance | 8/10 | 10/10 | 9/10 |
-| Code Quality | 7/10 | 9/10 | 8/10 |
-| Documentation | 3/10 | 10/10 | 7/10 |
-| Completeness | 7/10 | 10/10 | 8/10 |
-| Maintainability | 9/10 | 9/10 | 6/10 |
-| **TOTAL** | **34/50** | **48/50** | **38/50** |
-
-**Winner: cc (Claude) - Hybrid Approach** ⭐
-
-After initial evaluation, a hybrid approach was developed combining Codex's concise structure with Cursor's comprehensive content:
-- **README.md** (626 lines): Scannable quick reference
-- **GUIDE.md** (465 lines): Detailed workflows and configuration
-- **Best of both worlds**: Conciseness for first-time visitors + completeness for advanced users
-- **Clear reader journey**: Quick start → detailed documentation
-
-See the complete evaluation with detailed strengths/weaknesses analysis in [`docs/specs/features/evaluations/feature-06-eval.md`](docs/specs/features/evaluations/feature-06-eval.md).
-
-After selecting a winner:
-
-```bash
-aigon feature-close 55 cx
-aigon feature-cleanup 55 --push
-```
+**Meta example:** This README was itself improved using Fleet mode — three agents competed, and the best approach was selected through evaluation. See [`docs/specs/features/evaluations/feature-06-eval.md`](docs/specs/features/evaluations/feature-06-eval.md).
 
 To adopt valuable improvements from losing agents (extra tests, error handling, edge cases):
 
