@@ -86,6 +86,7 @@
           if (repo) html.push(`<span class="console-repo">${repo}</span>`);
           html.push(`<span class="console-cmd">${cmd}</span>`);
           html.push(`<span class="console-dur">${escHtml(dur)}</span>`);
+          html.push('<span class="console-copy" title="Copy to clipboard">⧉</span>');
           html.push('</div>');
           // Detail section (hidden until click)
           const hasStdout = evt.stdout && evt.stdout.trim();
@@ -144,6 +145,21 @@
       // Prevent clicks inside detail from toggling
       container.querySelectorAll('.console-detail').forEach(detail => {
         detail.addEventListener('click', (e) => e.stopPropagation());
+      });
+      // Copy button
+      container.querySelectorAll('.console-copy').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const entry = btn.closest('.console-entry');
+          const idx = entry ? entry.dataset.idx : null;
+          const sorted = [...events].reverse();
+          const evt = idx != null ? sorted[parseInt(idx)] : null;
+          if (!evt) return;
+          const text = [evt.command || evt.action, evt.stdout || '', evt.stderr ? 'STDERR:\n' + evt.stderr : ''].filter(Boolean).join('\n\n');
+          navigator.clipboard.writeText(text).then(() => {
+            btn.textContent = '✓'; setTimeout(() => { btn.textContent = '⧉'; }, 1000);
+          });
+        });
       });
 
       // Clear button

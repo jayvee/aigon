@@ -10,6 +10,7 @@
     "implementFlag": "",
     "implementPrompt": "/prompts:aigon-feature-do {featureId}",
     "evalPrompt": "/prompts:aigon-feature-eval {featureId}",
+    "reviewPrompt": "/prompts:aigon-feature-review {featureId}",
     "models": {
       "research": "gpt-5.2",
       "implement": "gpt-5.3-codex",

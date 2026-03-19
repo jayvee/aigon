@@ -10,6 +10,7 @@
     "implementFlag": "--permission-mode acceptEdits",
     "implementPrompt": "/aigon:feature-do {featureId}",
     "evalPrompt": "/aigon:feature-eval {featureId}",
+    "reviewPrompt": "/aigon:feature-review {featureId}",
     "models": {
       "research": "opus",
       "implement": "sonnet",

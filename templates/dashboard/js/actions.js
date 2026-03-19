@@ -82,6 +82,11 @@ function buildFeatureActions(feature, repoPath, pipelineType) {
   const overflow = [];
 
   deduped.forEach((va, i) => {
+    // When winner is picked, promote close to primary and demote eval to overflow
+    if (evalPickWinner) {
+      if (va.action === 'feature-close') { primary.push(va); return; }
+      if (va.action === 'feature-eval') { overflow.push(va); return; }
+    }
     if (va.priority === 'high') {
       if (primary.length === 0) primary.push(va);
       else secondary.push(va);
@@ -180,6 +185,12 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
         await requestAction('feature-eval', [id, '--setup-only'], repoPath, btn);
       }
       await requestFeatureOpen(id, evalAgent[0], repoPath, null, pipelineType, 'eval');
+      break;
+    }
+    case 'feature-review': {
+      const reviewAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose review agent', submitLabel: 'Run Review' });
+      if (!reviewAgent || reviewAgent.length === 0) return;
+      await requestFeatureOpen(id, reviewAgent[0], repoPath, null, pipelineType, 'review');
       break;
     }
     case 'feature-prioritise':
@@ -308,8 +319,12 @@ async function submitCloseModal() {
     adoptFlags.push('--adopt', cb.value);
   });
 
+  // Capture values before hideCloseModal nulls them
+  const featureId = closeModalFeature.id;
+  const repoPath = closeModalRepoPath;
+
   hideCloseModal();
-  await requestAction('feature-close', [closeModalFeature.id, winnerId, ...adoptFlags], closeModalRepoPath);
+  await requestAction('feature-close', [featureId, winnerId, ...adoptFlags], repoPath);
 }
 
 // Wire close modal events once DOM is ready

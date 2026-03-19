@@ -166,7 +166,7 @@
     .kcard-agent-actions .btn{font-size:11px;padding:3px 8px}
     .btn-overflow{padding:2px 8px!important;font-size:14px;line-height:1;color:var(--text-tertiary);letter-spacing:.05em}
     .kcard-overflow{position:relative;display:inline-flex}
-    .kcard-overflow-menu{display:none;position:absolute;right:0;top:calc(100% + 3px);z-index:200;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:6px;padding:3px;min-width:110px;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+    .kcard-overflow-menu{display:none;position:absolute;right:0;bottom:calc(100% + 3px);z-index:200;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:6px;padding:3px;min-width:110px;box-shadow:0 4px 12px rgba(0,0,0,.35)}
     .kcard-overflow-menu.open{display:block}
     .kcard-overflow-item{display:block;width:100%;text-align:left;padding:5px 10px;font-size:11px;background:transparent;border:none;color:#F87171;border-radius:4px;cursor:pointer;white-space:nowrap}
     .kcard-overflow-item:hover{background:var(--bg-elevated)}
@@ -433,6 +433,9 @@
     .console-repo{color:var(--text-tertiary);background:var(--bg-tertiary);padding:1px 5px;border-radius:3px;font-size:10px;flex-shrink:0;margin-right:4px}
     .console-cmd{color:var(--text-primary);flex:1;overflow:hidden;text-overflow:ellipsis;font-size:11px}
     .console-dur{color:var(--text-tertiary);flex-shrink:0;font-size:10px;min-width:40px;text-align:right}
+    .console-copy{color:var(--text-tertiary);flex-shrink:0;font-size:12px;cursor:pointer;opacity:0;transition:opacity .15s;padding:0 2px}
+    .console-entry-row:hover .console-copy{opacity:1}
+    .console-copy:hover{color:var(--text-primary)}
     .console-detail{padding:0 12px 8px 12px;display:none;position:relative}
     .console-entry.open .console-detail{display:block}
     .console-close-btn{position:absolute;top:4px;right:4px;background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:14px;line-height:1;padding:2px 5px;border-radius:3px}

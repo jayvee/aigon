@@ -56,9 +56,12 @@
         const rawText = await res.text();
         try { payload = JSON.parse(rawText); } catch (_) { payload = { error: rawText }; }
         if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status + (rawText ? ': ' + rawText.slice(0, 120) : '')));
-        const stderrError = payload.stderr && /fatal:|error:|❌|Error:/i.test(String(payload.stderr));
-        if (stderrError) {
-          showToast('Action may have failed — check Console', 'Console', () => { state.view = 'console'; localStorage.setItem(lsKey('view'), 'console'); render(); }, { error: true });
+        const exitFailed = payload.exitCode !== undefined && payload.exitCode !== 0;
+        const stderrError = !exitFailed && payload.stderr && /fatal:|error:|❌|Error:/i.test(String(payload.stderr));
+        if (exitFailed) {
+          showToast('Action failed (exit ' + payload.exitCode + ') — check Console', 'Console', () => { state.view = 'console'; localStorage.setItem(lsKey('view'), 'console'); render(); }, { error: true });
+        } else if (stderrError) {
+          showToast('Done with warnings — check Console', 'Console', () => { state.view = 'console'; localStorage.setItem(lsKey('view'), 'console'); render(); });
         } else {
           showToast('Done: ' + (payload.command || action));
         }

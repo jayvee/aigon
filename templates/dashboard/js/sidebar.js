@@ -78,7 +78,7 @@
         pickerResolve = resolve;
         document.getElementById('agent-picker-title').textContent = opts.title || 'Select Agents';
         document.getElementById('agent-picker-desc').textContent = '#' + featureId + ' ' + featureName;
-        const checkboxes = document.querySelectorAll('#agent-picker input[type=checkbox]');
+        const checkboxes = document.querySelectorAll('#agent-picker .agent-checks input');
         checkboxes.forEach(cb => {
           cb.checked = false;
           cb.type = pickerSingleMode ? 'radio' : 'checkbox';
