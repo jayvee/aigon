@@ -24,8 +24,17 @@
       toolbar.innerHTML = '<strong style="font-size:15px;font-weight:600;letter-spacing:-.01em">Tmux Sessions</strong>' +
         '<span style="font-size:12px;color:var(--text-tertiary)">' + sessions.length + ' session' + (sessions.length === 1 ? '' : 's') + '</span>' +
         (orphanCount > 0 ? '<button class="btn btn-warn" id="sessions-kill-orphans-btn" style="font-size:11px;padding:4px 10px">Kill ' + orphanCount + ' Orphan' + (orphanCount === 1 ? '' : 's') + '</button>' : '') +
-        '<button class="btn" id="sessions-refresh-btn" style="margin-left:auto">↺ Refresh</button>';
+        '<button class="btn" id="sessions-tile-btn" style="margin-left:auto" title="Arrange all iTerm2 windows into a grid">⊞ Tile Windows</button>' +
+        '<button class="btn" id="sessions-refresh-btn">↺ Refresh</button>';
       container.appendChild(toolbar);
+      document.getElementById('sessions-tile-btn').onclick = async () => {
+        try {
+          const r = await fetch('/api/tile-windows', { method: 'POST' });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.error || 'Failed');
+          showToast('Windows tiled');
+        } catch (e) { showToast('Tile failed: ' + e.message, null, null, {error:true}); }
+      };
       document.getElementById('sessions-refresh-btn').onclick = () => renderSessions();
       const killOrphansBtn = document.getElementById('sessions-kill-orphans-btn');
       if (killOrphansBtn) {
