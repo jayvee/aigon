@@ -250,7 +250,8 @@
         icon = '○'; label = 'Not started'; cls = 'status-idle';
       }
       const devServerLink = opts.showDevLink ? buildDevServerLinkHtml(agent.devServerUrl) : '';
-      return '<span class="kcard-agent-status ' + cls + '">' + icon + ' ' + label + '</span>' + devServerLink;
+      const devSlot = opts.showDevLink ? '<span class="kcard-dev-slot">' + devServerLink + '</span>' : '';
+      return '<span class="kcard-agent-status ' + cls + '">' + icon + ' ' + label + '</span>' + devSlot;
     }
 
     // AGENT_ACTION_LABELS moved to actions.js (shared between monitor + pipeline)
@@ -366,7 +367,13 @@
           const menu = toggle.parentElement.querySelector('.kcard-overflow-menu');
           const isOpen = menu && menu.classList.contains('open');
           card.querySelectorAll('.kcard-overflow-menu').forEach(m => m.classList.remove('open'));
-          if (!isOpen && menu) menu.classList.add('open');
+          if (!isOpen && menu) {
+            // Position fixed menu relative to toggle button
+            const rect = toggle.getBoundingClientRect();
+            menu.style.right = (window.innerWidth - rect.right) + 'px';
+            menu.style.bottom = (window.innerHeight - rect.top + 3) + 'px';
+            menu.classList.add('open');
+          }
         };
       });
 
