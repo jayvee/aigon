@@ -122,6 +122,14 @@
           return '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(synthCmd) + '" title="All agents submitted — synthesize findings">Copy next</button>';
         },
         buildNextActionHtml(feature, repoPath) { return buildMonitorActionHtml(feature, repoPath); },
+        buildAgentOverflowHtml(agent, feature, repoPath) {
+          const canStartDevServer = !agent.devServerUrl && agent.devServerEligible && agent.worktreePath;
+          if (!canStartDevServer) return '';
+          const items = '<button class="kcard-overflow-item kcard-overflow-item-neutral monitor-dev-server-start" ' +
+            'data-dev-server-start="1" data-worktree-path="' + escHtml(agent.worktreePath) + '" data-repo-path="' + escHtml(repoPath || '') + '">' +
+            'Start Dev Server</button>';
+          return '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
+        },
         buildAskAgentHtml(repoPath) { return buildAskAgentHtml(repoPath); },
         handleAskClick(e) {
           const btn = e.target.closest('[data-ask-run]');
@@ -194,6 +202,15 @@
             handleFeatureAction(va, feature, repoPath, btn, 'features');
             return;
           }
+          if (btn.dataset.devServerStart === '1') {
+            e.stopPropagation();
+            const worktreePath = btn.dataset.worktreePath || '';
+            const repoPath = btn.dataset.repoPath || '';
+            if (!worktreePath) return;
+            btn._origText = btn.textContent;
+            requestAction('dev-server', ['start', '--worktree', worktreePath], repoPath, btn);
+            return;
+          }
           // Overflow toggle
           if (btn.classList.contains('kcard-overflow-toggle')) {
             e.stopPropagation();
@@ -211,5 +228,4 @@
         }
       };
     }
-
 
