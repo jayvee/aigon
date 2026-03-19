@@ -56,6 +56,9 @@ function resetRepo(repoName) {
         console.log(`  🗑️  Removed worktrees: ${worktreesDir}`);
     }
 
+    // 2b. Prune git worktree references (must happen AFTER directory removal)
+    run(`git -C "${repoPath}" worktree prune`, { ignoreError: true });
+
     // 3. Clear manifests, locks, state
     for (const subdir of ['state', 'locks']) {
         const dir = path.join(repoPath, '.aigon', subdir);
