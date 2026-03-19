@@ -45,6 +45,24 @@ Agent: cx
 - `npm test` (173 passed, 1 pre-existing unrelated failure: `feature-eval --force bypasses the completion warning and creates the evaluation file`)
 - Playwright screenshot captured after dashboard HTML edit (`temp/screenshots/feature-109-new-feature-modal.png`).
 
+## Code Review
+
+**Reviewed by**: cc (Claude Opus 4.6)
+**Date**: 2026-03-19
+
+### Findings
+- **tmux send-keys key name injection**: In `lib/dashboard-server.js`, the existing-session path used `runTmux(['send-keys', '-t', sessionName, prompt, 'Enter'])` without the `-l` (literal) flag. Without `-l`, tmux interprets arguments as key names — if a user's feature description contains words like "Enter", "Escape", "Space", or "C-c", tmux sends those as key presses instead of literal text. This is a correctness bug and a mild security concern for the local environment.
+
+### Fixes Applied
+- `3cd03e8 fix(review): use tmux send-keys -l for literal text in ask session` — split into two `runTmux` calls: first with `-l` flag for literal prompt text, then a separate call for the `Enter` keypress.
+
+### Notes
+- Overall implementation is solid and well-structured. Good separation of concerns between modal UI, validation, action dispatch, and agent handoff.
+- Toast uses `textContent` (not `innerHTML`), so no XSS risk from user-provided feature names — correctly done.
+- The `message` alias for `prompt` in `/api/session/ask` is a clean backwards-compatible addition.
+- Test coverage is thorough: modal open/close, validation, create+ask flow, and error display.
+- The old global `+ Create` button was correctly removed and replaced with the column-scoped `+ New Feature` button.
+
 ## Conversation Summary
 - User invoked `/prompts:aigon-feature-do 109` and then provided full feature-do workflow instructions.
 - Implementation focused on dashboard UX + handoff plumbing to match acceptance criteria exactly.
