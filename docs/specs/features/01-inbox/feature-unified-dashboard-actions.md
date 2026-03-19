@@ -28,8 +28,20 @@ npm run test:dashboard
 - Extract action rendering from `monitor.js` and `pipeline.js` into a shared `js/actions.js` module
 - The module takes a feature object (with `validActions`, `evalStatus`, `winnerAgent`, `agents`, `stage`) and returns action button HTML
 - Both views call this module instead of having their own rendering logic
-- The state machine already provides `validActions` — this feature is purely view-layer unification
-- Close modal enhanced: if feature has multiple agents, show adoption checkboxes alongside the winner picker
+- The state machine already provides `validActions` with `priority` field and `getRecommendedActions()` — this feature is purely view-layer unification
+
+### Action hierarchy (3 tiers)
+| Tier | Source | Visual | Count |
+|------|--------|--------|-------|
+| **Primary** | `getRecommendedActions()[0]` | Solid filled button | 1 per card |
+| **Secondary** | Other `priority: 'high'` actions | Outlined/ghost button | 0-2 |
+| **Overflow** | Everything else | Hidden in `⋯` dropdown | 0+ |
+
+One clear call-to-action, optional extras visible but subordinate, rare actions tucked away.
+
+### Close modal
+- Winner picker (pre-selects `winnerAgent` if eval set one)
+- Adoption checkboxes: "Adopt from gg", "Adopt from all" (when fleet has 2+ agents)
 - Fleet close: `requestAction('feature-close', [id, winnerAgent, ...adoptFlags], repoPath)`
 
 ## Dependencies
