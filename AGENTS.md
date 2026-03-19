@@ -59,6 +59,24 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 
 Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/devserver.js`.
 
+## Install Architecture
+`aigon install-agent` writes **only aigon-owned files** — it never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).
+
+**Per-agent outputs:**
+- **cc**: `.claude/commands/aigon/*.md`, `.claude/settings.json` (permissions + hooks), `.claude/skills/aigon/SKILL.md`
+- **gg**: `.gemini/commands/aigon/*.toml`, `.gemini/settings.json` (hooks), `.gemini/policies/aigon.toml`
+- **cx**: `~/.codex/prompts/aigon-*.md` (global), `.codex/prompt.md`, `.codex/config.toml`
+- **cu**: `.cursor/commands/aigon-*.md`, `.cursor/cli.json`, `.cursor/hooks.json`, `.cursor/rules/aigon.mdc`
+
+**Shared:** `AGENTS.md` (scaffolded on first install only, never overwritten), `docs/agents/{agent}.md` (marker blocks), `docs/development_workflow.md` (full overwrite)
+
+**Context delivery** (no root file injection):
+- CC/GG: SessionStart hook `aigon project-context` prints doc pointers to stdout → agent ingests as conversation context
+- CU: `.cursor/rules/aigon.mdc` with `alwaysApply: true`
+- CX: `.codex/prompt.md` with marker blocks
+
+**Auto-update**: SessionStart hook `aigon check-version` detects version mismatch → runs `aigon update` → re-runs `install-agent` for all detected agents
+
 ## Where To Add Code
 - **New command** → edit `lib/commands/{domain}.js` (pick the matching domain)
 - **Shared logic (2+ commands)** → `lib/{domain}.js` (most specific owner)
@@ -86,12 +104,3 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 3. `docs/development_workflow.md` — feature/research lifecycle
 4. Active spec: `docs/specs/features/03-in-progress/feature-NNN-*.md`
 5. Agent-specific notes: `docs/agents/{id}.md`
-<!-- AIGON_START -->
-## Aigon
-
-This project uses the Aigon development workflow.
-
-- Agent-specific notes: `docs/agents/*.md`
-- Architecture overview: `docs/architecture.md`
-- Development workflow: `docs/development_workflow.md`
-<!-- AIGON_END -->
