@@ -31,7 +31,19 @@
       return isSoloDrive(agent) ? 'Drive' : (AGENT_DISPLAY_NAMES[agent.id] || agent.id);
     }
 
-    function buildAgentStatusHtml(agent) {
+    function buildDevServerLinkHtml(devServerUrl) {
+      if (!devServerUrl) return '';
+      const safeUrl = escHtml(devServerUrl);
+      return '<a class="monitor-dev-link" href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" title="Open dev server: ' + safeUrl + '" aria-label="Open dev server">' +
+        '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">' +
+        '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"></circle>' +
+        '<path d="M2 8h12M8 2c1.8 1.7 2.8 3.8 2.8 6S9.8 12.3 8 14M8 2C6.2 3.7 5.2 5.8 5.2 8s1 4.3 2.8 6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"></path>' +
+        '</svg>' +
+      '</a>';
+    }
+
+    function buildAgentStatusHtml(agent, options) {
+      const opts = options || {};
       const status = agent.status || 'idle';
       const tmuxRunning = agent.tmuxRunning || false;
       const drive = isSoloDrive(agent);
@@ -47,14 +59,15 @@
       } else {
         icon = '○'; label = 'Not started'; cls = 'status-idle';
       }
-      return '<span class="kcard-agent-status ' + cls + '">' + icon + ' ' + label + '</span>';
+      const devServerLink = opts.showDevLink ? buildDevServerLinkHtml(agent.devServerUrl) : '';
+      return '<span class="kcard-agent-status ' + cls + '">' + icon + ' ' + label + '</span>' + devServerLink;
     }
 
     // AGENT_ACTION_LABELS moved to actions.js (shared between monitor + pipeline)
 
     function buildAgentSectionHtml(agent, agentValidActions) {
       const displayName = AGENT_DISPLAY_NAMES[agent.id] || agent.id;
-      const statusHtml = buildAgentStatusHtml(agent);
+      const statusHtml = buildAgentStatusHtml(agent, { showDevLink: true });
       const primaryActions = agentValidActions.filter(va => va.action !== 'feature-stop' && va.action !== 'research-stop');
       const overflowActions = agentValidActions.filter(va => va.action === 'feature-stop' || va.action === 'research-stop');
       let actionsHtml = '';
@@ -124,7 +137,7 @@
       } else if (isSoloDriveBranch) {
         // Drive mode (branch): same visual structure as agent sections but labeled "Drive"
         const soloAgent = agents[0];
-        const statusHtml = buildAgentStatusHtml(soloAgent);
+        const statusHtml = buildAgentStatusHtml(soloAgent, { showDevLink: true });
         innerHtml += '<div class="kcard-agent agent-solo">' +
           '<div class="kcard-agent-header"><span class="kcard-agent-name">Drive</span>' + statusHtml + '</div>' +
           '</div>';
@@ -402,5 +415,3 @@
         }
       };
     }
-
-
