@@ -24,7 +24,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { spawnSync, execFileSync } = require('child_process');
+const { spawnSync, execFileSync, execSync } = require('child_process');
 
 const FIXTURES_DIR = path.join(os.homedir(), 'src');
 const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
