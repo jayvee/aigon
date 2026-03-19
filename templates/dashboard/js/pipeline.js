@@ -23,7 +23,7 @@
       return agents.map(a => '<span class="agent-badge ' + escHtml(a.status || '') + '">' + escHtml(a.id) + '</span>').join('');
     }
 
-    const AGENT_DISPLAY_NAMES = { cc: 'Claude Code', gg: 'Gemini', cx: 'Codex', cu: 'Cursor', solo: 'Agent' };
+    // AGENT_DISPLAY_NAMES moved to actions.js (shared between monitor + pipeline)
 
     function isSoloDrive(agent) { return agent.id === 'solo' && !agent.tmuxSession; }
 
@@ -50,14 +50,7 @@
       return '<span class="kcard-agent-status ' + cls + '">' + icon + ' ' + label + '</span>';
     }
 
-    // Remap state machine action labels to clean, agent-ID-free button text.
-    const AGENT_ACTION_LABELS = {
-      'feature-attach':  'View',
-      'feature-focus':   'View',
-      'feature-open':    (va, agent) => (agent.status === 'implementing') ? 'Restart' : 'Start',
-      'research-attach': 'View',
-      'research-open':   'Start'
-    };
+    // AGENT_ACTION_LABELS moved to actions.js (shared between monitor + pipeline)
 
     function buildAgentSectionHtml(agent, agentValidActions) {
       const displayName = AGENT_DISPLAY_NAMES[agent.id] || agent.id;
@@ -69,7 +62,7 @@
         const va = primaryActions[0];
         const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
         const labelOverride = AGENT_ACTION_LABELS[va.action];
-        const label = typeof labelOverride === 'function' ? labelOverride(va, agent) : (labelOverride || va.label);
+        const label = typeof labelOverride === 'function' ? labelOverride(va, { agents: [agent] }) : (labelOverride || va.label);
         actionsHtml += '<button class="' + btnCls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">' + escHtml(label) + '</button>';
       }
       if (overflowActions.length > 0) {
@@ -84,113 +77,7 @@
         '</div>';
     }
 
-    // Maps validActions to button CSS classes using priority as the primary signal.
-    // priority:'high' → primary (prominent, recommended next step)
-    // feature-stop → danger (destructive)
-    // everything else → secondary (subdued, available but not competing)
-    function validActionBtnClass(action, priority) {
-      if (priority === 'high') return 'btn btn-primary';
-      if (action === 'feature-stop') return 'btn btn-danger';
-      return 'btn btn-secondary';
-    }
-
-    // Builds button HTML from server-provided validActions.
-    // Returns only action buttons — status badges are handled separately in buildKanbanCard.
-    // Transitions are used for drag-drop only (not rendered as buttons) —
-    // except specific transitions that should appear as buttons (prioritise, close, triage).
-    function buildValidActionsHtml(validActions) {
-      if (!validActions || validActions.length === 0) return '';
-      // Filter: show in-state actions as buttons, plus specific transitions that need buttons
-      const transitionsAsButtons = ['feature-prioritise', 'research-prioritise', 'feature-close', 'research-close', 'feedback-triage'];
-      const buttonsToRender = validActions.filter(va => {
-        if (va.type === 'action') return true;
-        // Only render transition as button if it's in the explicit list
-        return va.type === 'transition' && transitionsAsButtons.includes(va.action);
-      });
-      // Deduplicate: if a transition and an action have the same action name, keep only the action
-      const seen = new Set();
-      const deduped = [];
-      // Actions first (preferred), then transitions
-      const sorted = [...buttonsToRender.filter(v => v.type === 'action'), ...buttonsToRender.filter(v => v.type === 'transition')];
-      for (const va of sorted) {
-        const key = va.action + (va.agentId || '');
-        if (!seen.has(key)) { seen.add(key); deduped.push(va); }
-      }
-      // Sort: high-priority (primary) first, then normal, then stop/danger last
-      deduped.sort((a, b) => {
-        const rank = v => v.priority === 'high' ? 0 : v.action === 'feature-stop' ? 2 : 1;
-        return rank(a) - rank(b);
-      });
-      return deduped.map(va => {
-        const cls = validActionBtnClass(va.action, va.priority);
-        const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
-        return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '"' + agentAttr + '>' + escHtml(va.label) + '</button>';
-      }).join('');
-    }
-
-    // Dispatches a validAction click to the appropriate API endpoint
-    async function handleValidAction(va, feature, repoPath, btn, pipelineType) {
-      const id = feature.id;
-      const agentId = va.agentId || null;
-      switch (va.action) {
-        case 'feature-open':
-        case 'feature-attach':
-        case 'feature-focus':
-        case 'research-open':
-        case 'research-attach':
-          await requestFeatureOpen(id, agentId, repoPath, btn, pipelineType);
-          break;
-        case 'feature-setup':
-        case 'research-setup': {
-          const agents = await showAgentPicker(id, feature.name);
-          if (!agents) return;
-          await requestAction(pipelineCommand(pipelineType, 'setup'), [id, ...agents], repoPath, btn);
-          for (const agent of agents) {
-            await requestFeatureOpen(id, agent, repoPath, null, pipelineType);
-          }
-          break;
-        }
-        case 'feature-autopilot': {
-          const agents = await showAgentPicker(id, feature.name, { title: 'Select Autopilot Agents', submitLabel: 'Autopilot' });
-          if (!agents) return;
-          if (agents.length < 2) { showToast('Select at least 2 agents for autopilot'); return; }
-          await requestAction('feature-autopilot', [id, ...agents], repoPath, btn);
-          break;
-        }
-        case 'feature-eval': {
-          // Pick which agent runs the evaluation
-          const evalAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose evaluation agent', submitLabel: 'Run Evaluation' });
-          if (!evalAgent || evalAgent.length === 0) return;
-          // If not already in evaluation, do the state transition first
-          if (feature.stage !== 'in-evaluation') {
-            await requestAction('feature-eval', [id, '--setup-only'], repoPath, btn);
-          }
-          // Open a dedicated eval session — runs from main repo with eval prompt
-          await requestFeatureOpen(id, evalAgent[0], repoPath, null, pipelineType, 'eval');
-          break;
-        }
-        case 'feature-prioritise':
-        case 'research-prioritise':
-          await requestAction(pipelineCommand(pipelineType, 'prioritise'), [feature.name], repoPath, btn);
-          break;
-        case 'feature-close': {
-          // For fleet eval cards, show winner picker before closing
-          if (feature.stage === 'in-evaluation') {
-            const picked = await showAgentPicker(id, feature.name, { single: true, title: 'Pick winner to merge', submitLabel: 'Close & Merge', preselect: feature.winnerAgent });
-            if (!picked || picked.length === 0) return;
-            await requestAction('feature-close', [id, picked[0]], repoPath, btn);
-          } else {
-            await requestAction('feature-close', [id, ...(agentId ? [agentId] : [])], repoPath, btn);
-          }
-          break;
-        }
-        case 'feature-stop':
-          await requestAction('feature-stop', [id, ...(agentId ? [agentId] : [])], repoPath, btn);
-          break;
-        default:
-          await requestAction(va.action, [id, ...(agentId ? [agentId] : [])], repoPath, btn);
-      }
-    }
+    // validActionBtnClass, buildValidActionsHtml, handleValidAction moved to actions.js
 
     function buildKanbanCard(feature, repoPath, pipelineType) {
       const card = document.createElement('div');
@@ -230,12 +117,8 @@
           innerHtml += buildAgentSectionHtml(agent, agentActions);
         });
         // Card-level actions (non-per-agent: close, eval, review, etc.)
-        const cardLevelActions = validActions.filter(va => !va.agentId);
-        if (cardLevelActions.length > 0) {
-          const cardActionsHtml = cardLevelActions.map(va => {
-            const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
-            return '<button class="' + btnCls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '">' + escHtml(va.label) + '</button>';
-          }).join('');
+        const cardActionsHtml = buildFeatureActions(feature, repoPath, pipelineType);
+        if (cardActionsHtml) {
           innerHtml += '<div class="kcard-transitions">' + cardActionsHtml + '</div>';
         }
       } else if (isSoloDriveBranch) {
@@ -246,19 +129,14 @@
           '<div class="kcard-agent-header"><span class="kcard-agent-name">Drive</span>' + statusHtml + '</div>' +
           '</div>';
         // Card-level actions (close, review — no session controls)
-        const cardLevelActions = validActions.filter(va => !va.agentId || va.agentId === 'solo');
-        const nonSessionActions = cardLevelActions.filter(va => va.action !== 'feature-open' && va.action !== 'feature-attach' && va.action !== 'feature-stop');
-        if (nonSessionActions.length > 0) {
-          const cardActionsHtml = nonSessionActions.map(va => {
-            const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
-            return '<button class="' + btnCls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '">' + escHtml(va.label) + '</button>';
-          }).join('');
-          innerHtml += '<div class="kcard-transitions">' + cardActionsHtml + '</div>';
+        const soloCardActionsHtml = buildFeatureActions(feature, repoPath, pipelineType);
+        if (soloCardActionsHtml) {
+          innerHtml += '<div class="kcard-transitions">' + soloCardActionsHtml + '</div>';
         }
       } else {
         // Legacy layout for cards without active agents (inbox, backlog, done, research, feedback)
         const agentBadgesHtml = buildAgentBadgesHtml(agents);
-        const actionsHtml = buildValidActionsHtml(validActions);
+        const actionsHtml = buildFeatureActions(feature, repoPath, pipelineType);
         let evalStatusHtml = '';
         if (feature.evalStatus) {
           let evalStatusRow = '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>';
@@ -346,7 +224,7 @@
         btn._origText = btn.textContent;
         btn.onclick = async (e) => {
           e.stopPropagation();
-          await handleValidAction(va, feature, repoPath, btn, pipelineType);
+          await handleFeatureAction(va, feature, repoPath, btn, pipelineType);
         };
       });
 
@@ -401,7 +279,7 @@
               const featureId = card ? card.dataset.featureId : '';
               const featureName = card ? card.dataset.featureName : '';
               const feature = (repo[pType] || []).find(f => String(f.id) === String(featureId)) || { id: featureId, name: featureName, stage: card ? card.dataset.stage : '' };
-              handleValidAction({ action, agentId, label: btn.textContent }, feature, repo.path, btn, pType);
+              handleFeatureAction({ action, agentId, label: btn.textContent }, feature, repo.path, btn, pType);
             };
           });
         };
@@ -433,7 +311,7 @@
           const featureId = card ? card.dataset.featureId : '';
           const featureName = card ? card.dataset.featureName : '';
           const feature = (repo[pType] || []).find(f => String(f.id) === String(featureId)) || { id: featureId, name: featureName, stage: card ? card.dataset.stage : '' };
-          handleValidAction({ action, agentId, label: btn.textContent }, feature, repo.path, btn, pType);
+          handleFeatureAction({ action, agentId, label: btn.textContent }, feature, repo.path, btn, pType);
         };
       });
     }
