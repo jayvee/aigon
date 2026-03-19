@@ -259,27 +259,31 @@ aigon install-agent cc cx gg cu
 
 📦 Installing Claude (cc)...
    ✅ Created: docs/agents/claude.md
-   ✅ Created: CLAUDE.md
-   ✅ Commands: 19 created
+   ✅ Commands: 56 created
    ✅ Created: .claude/skills/aigon/SKILL.md
    ✅ Added permissions to .claude/settings.json
    🛡️  Added deny rules to .claude/settings.json
+   🔄 Added SessionStart hook to .claude/settings.json
 
 📦 Installing Codex (cx)...
    ✅ Created: docs/agents/codex.md
    ✅ Installed global prompts: ~/.codex/prompts
    ⚠️  Note: Codex prompts are global (shared across all projects)
+   ✅ Created: .codex/prompt.md
    ✅ Created: .codex/config.toml
 
 📦 Installing Gemini (gg)...
    ✅ Created: docs/agents/gemini.md
-   ✅ Commands: 19 created
-   ✅ Added allowedTools to .gemini/settings.json
+   ✅ Commands: 56 created
+   ✅ Created .gemini/policies/aigon.toml (Policy Engine)
+   🔄 Added SessionStart hook to .gemini/settings.json
 
 📦 Installing Cursor (cu)...
    ✅ Created: docs/agents/cursor.md
-   ✅ Commands: 19 created
+   ✅ Commands: 56 created
    ✅ Added permissions to .cursor/cli.json
+   🔄 Added SessionStart hook to .cursor/hooks.json
+   ✅ Created: .cursor/rules/aigon.mdc
 
 🎉 Installed Aigon for: Claude, Codex, Gemini, Cursor
 ```
@@ -317,50 +321,48 @@ Primary day-to-day usage is via slash commands.
 | `cx` | Codex | `/prompts:aigon-` | `codex` | Global prompts in `~/.codex/prompts/` |
 | `cu` | Cursor | `/aigon-` | `agent` | Supports Cursor Agent and Composer command flows |
 
-### Generated files
+### What `install-agent` writes (and what it doesn't)
 
-`aigon install-agent` creates/upgrades agent docs and command files, including:
+`aigon install-agent` writes **only aigon-owned files**. It never touches user-owned root files like `CLAUDE.md`.
 
-- root files like `AGENTS.md`, plus `CLAUDE.md` for Claude compatibility
-- `docs/agents/*.md`
-- command files under `.claude/`, `.gemini/`, `.cursor/`, and `~/.codex/prompts/`
-- Cursor settings file `.cursor/cli.json`
+**Files created/updated per agent:**
 
-### Updating safely
+| Agent | Slash commands | Settings/permissions | Context delivery | Hooks |
+|-------|---------------|---------------------|-----------------|-------|
+| **cc** (Claude) | `.claude/commands/aigon/*.md` | `.claude/settings.json` (permissions, hooks) | `.claude/skills/aigon/SKILL.md` + SessionStart hook | `aigon check-version`, `aigon project-context` |
+| **gg** (Gemini) | `.gemini/commands/aigon/*.toml` | `.gemini/settings.json` (hooks), `.gemini/policies/aigon.toml` | SessionStart hook | `aigon check-version`, `aigon project-context` |
+| **cx** (Codex) | `~/.codex/prompts/aigon-*.md` (global) | `.codex/config.toml` | `.codex/prompt.md` | — |
+| **cu** (Cursor) | `.cursor/commands/aigon-*.md` | `.cursor/cli.json`, `.cursor/hooks.json` | `.cursor/rules/aigon.mdc` | `aigon check-version` |
 
-Use:
+**Shared files (all agents):**
+
+| File | Ownership | Created | Updated on re-install |
+|------|-----------|---------|----------------------|
+| `AGENTS.md` | User-owned | Scaffolded on first install only | Never — your file, your content |
+| `docs/agents/{agent}.md` | Aigon-owned (marker blocks) | Yes | Yes (content between markers only) |
+| `docs/development_workflow.md` | Aigon-owned | Yes | Yes (full overwrite) |
+
+**What aigon never writes to:**
+- `CLAUDE.md` — entirely user-owned
+- Any file outside the paths listed above
+
+### How context reaches each agent
+
+Instead of injecting marker blocks into user-owned files, aigon delivers context through each agent's native extension mechanism:
+
+- **Claude Code / Gemini CLI**: A `SessionStart` hook runs `aigon project-context`, which prints doc pointers to stdout. The agent ingests this as conversation context on every session start.
+- **Cursor**: A native rules file at `.cursor/rules/aigon.mdc` with `alwaysApply: true` provides the same context.
+- **Codex**: A native prompt file at `.codex/prompt.md` provides the same context.
+
+### Updating
 
 ```bash
 aigon update
 ```
 
-Aigon updates only the managed blocks wrapped with:
+Re-runs `install-agent` for all detected agents. Updates command templates, hooks, and aigon-owned doc files. Never touches `CLAUDE.md` or `AGENTS.md`.
 
-- `<!-- AIGON_START -->`
-- `<!-- AIGON_END -->`
-
-Custom content outside those markers is preserved. This is how you keep project-specific instructions while still receiving template updates.
-
-Example from `CLAUDE.md`:
-```markdown
-# Project Instructions
-
-Your custom instructions here...
-
-<!-- AIGON_START -->
-## Aigon
-
-This project uses the Aigon development workflow.
-
-- Shared project instructions: `AGENTS.md`
-- Claude-specific notes: `docs/agents/claude.md`
-- Development workflow: `docs/development_workflow.md`
-<!-- AIGON_END -->
-
-More custom instructions here...
-```
-
-When you run `aigon update`, only the content between `AIGON_START` and `AIGON_END` is updated. Your custom content remains untouched.
+**Auto-update**: The `aigon check-version` SessionStart hook detects version mismatches and runs `aigon update` automatically on the next agent session start.
 
 ### Configuration and Security
 
@@ -405,23 +407,13 @@ See the [Complete Guide](GUIDE.md#configuration) for all config commands and opt
 
 ## Project-Specific Agent Instructions
 
-Add shared project rules in `AGENTS.md` outside managed marker blocks. Use `CLAUDE.md` for Claude-only compatibility instructions when needed.
+Add shared project rules directly in `AGENTS.md` and/or `CLAUDE.md`. These are your files — aigon scaffolds `AGENTS.md` on first install but never overwrites it afterward.
 
-Example pattern:
+- **`AGENTS.md`**: Shared instructions read by Gemini, Codex, and Cursor (agents that support `supportsAgentsMd`)
+- **`CLAUDE.md`**: Claude Code's native project instructions file — Claude reads this automatically
+- **`docs/agents/{id}.md`**: Agent-specific operational notes (aigon-managed, marker blocks updated on install)
 
-```markdown
-# AGENTS.md
-
-Project custom instructions here (outside marker block)
-
-<!-- AIGON_START -->
-... Aigon-managed generated content ...
-<!-- AIGON_END -->
-
-More project custom instructions here (outside marker block)
-```
-
-When you run `aigon update` or `aigon install-agent ...` again, the Aigon-managed block updates and your custom sections remain.
+Aigon delivers its own context (doc pointers to workflow files) via SessionStart hooks and native rules files — it does not inject content into your root instruction files.
 
 ---
 
