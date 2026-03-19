@@ -196,64 +196,17 @@ npm install
 npm link
 ```
 
-### 2. Initialize your project
+### 2. Initialize your project and install agents
 
 ```bash
 cd /path/to/your/project
-aigon init
+aigon init                         # Create docs/specs directory structure
+aigon install-agent cc gg          # Install agents you want to use
 ```
 
-Output:
-```
-aigon init
-ACTION: Initializing Aigon in ./docs/specs ...
-✅ ./docs/specs directory structure created.
-aigon install-agent cc cx gg cu
-✅ Created: docs/development_workflow.md
-✅ Created: AGENTS.md
+`aigon init` creates the `docs/specs/` folder structure (features, research, feedback with Kanban lanes). `aigon install-agent` then sets up slash commands, settings, and hooks for each agent. See [Supported agents](#supported-agents) for agent codes.
 
-📦 Installing Claude (cc)...
-   ✅ Created: docs/agents/claude.md
-   ✅ Commands: 56 created
-   ✅ Created: .claude/skills/aigon/SKILL.md
-   ✅ Added permissions to .claude/settings.json
-   🛡️  Added deny rules to .claude/settings.json
-   🔄 Added SessionStart hook to .claude/settings.json
-
-📦 Installing Codex (cx)...
-   ✅ Created: docs/agents/codex.md
-   ✅ Installed global prompts: ~/.codex/prompts
-   ⚠️  Note: Codex prompts are global (shared across all projects)
-   ✅ Created: .codex/prompt.md
-   ✅ Created: .codex/config.toml
-
-📦 Installing Gemini (gg)...
-   ✅ Created: docs/agents/gemini.md
-   ✅ Commands: 56 created
-   ✅ Created .gemini/policies/aigon.toml (Policy Engine)
-   🔄 Added SessionStart hook to .gemini/settings.json
-
-📦 Installing Cursor (cu)...
-   ✅ Created: docs/agents/cursor.md
-   ✅ Commands: 56 created
-   ✅ Added permissions to .cursor/cli.json
-   🔄 Added SessionStart hook to .cursor/hooks.json
-   ✅ Created: .cursor/rules/aigon.mdc
-
-🎉 Installed Aigon for: Claude, Codex, Gemini, Cursor
-```
-
-### 3. Install agent integrations
-
-```bash
-# Install one agent
-aigon install-agent cc
-
-# Install multiple agents
-aigon install-agent cc gg cx cu
-```
-
-### 4. Start using Aigon
+### 3. Start using Aigon
 
 There are three ways to interact with Aigon — use whichever fits the moment:
 
@@ -321,7 +274,7 @@ aigon dashboard start                  # Start the dashboard
 aigon dashboard open                   # Open in browser (http://aigon.localhost)
 ```
 
-A terminal board view is also available via `aigon board`. For dashboard commands, VS Code sidebar, menubar integration, and the HTTP API, see the [Complete Guide](GUIDE.md#dashboard).
+A terminal board view is also available via `aigon board`. For dashboard commands and detailed configuration, see the [Complete Guide](GUIDE.md#dashboard-live-multi-repo-monitoring).
 
 ---
 
@@ -385,7 +338,7 @@ Re-runs `install-agent` for all detected agents. Updates command templates, hook
 - **cc** (Claude): `--permission-mode acceptEdits` (auto-edits, prompts for risky Bash)
 - **cu** (Cursor): `--force` (auto-approves commands)
 - **gg** (Gemini): `--yolo` (auto-approves all)
-- **cx** (Codex): `--full-auto` (workspace-write, smart approval)
+- **cx** (Codex): interactive by default (`--full-auto` only in autonomous mode)
 
 **To use stricter permissions** (e.g., for corporate environments):
 
@@ -438,7 +391,7 @@ Aigon organises work into three lifecycles:
 
 | Lifecycle | Purpose | Commands |
 |-----------|---------|----------|
-| **Features** | Build and ship code | `feature-create` → `feature-prioritise` → `feature-setup` → `feature-do` → `feature-eval` → `feature-close` |
+| **Features** | Build and ship code | `feature-create` → `feature-prioritise` → `feature-setup` → `feature-do` → `feature-close` (Fleet adds `feature-eval` before close) |
 | **Research** | Investigate before building | `research-create` → `research-prioritise` → `research-setup` → `research-do` → `research-synthesize` → `research-close` |
 | **Feedback** | Capture and triage user input | `feedback-create` → `feedback-list` → `feedback-triage` |
 
@@ -462,7 +415,7 @@ The examples below show each combination with realistic commands.
 /aigon:feature-prioritise jwt-auth          # Assigns ID (e.g., #07)
 /aigon:feature-setup 07                     # Creates branch
 /aigon:feature-do 07                        # Agent implements the spec
-/aigon:feature-eval 07                      # Code review
+/aigon:feature-review 07                    # Optional: cross-agent code review
 /aigon:feature-close 07                     # Merge to main
 ```
 
@@ -580,9 +533,9 @@ See the [Complete Guide](GUIDE.md#local-dev-proxy) for URL scheme, per-project c
 
 ---
 
-## Multi-Agent Evaluation
+## Multi-Agent Evaluation (Fleet Only)
 
-After Fleet implementations are complete, `feature-eval` generates a structured comparison so you can score implementations against spec compliance, quality, and performance:
+After Fleet implementations are complete, `feature-eval` generates a structured comparison so you can score implementations against spec compliance, quality, and performance. Note: `feature-eval` requires multiple implementations to compare — it is Fleet-only and will reject solo/Drive features.
 
 ```bash
 aigon feature-eval 55                      # Compare implementations
