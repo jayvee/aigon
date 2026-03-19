@@ -181,13 +181,167 @@ function createBrewboard(repoDir) {
 
     write(path.join(repoDir, 'next.config.js'), `module.exports = {};\n`);
 
-    // Minimal JSX type declarations so `tsc --noEmit` works without @types/react
-    write(path.join(repoDir, 'src', 'global.d.ts'), `declare namespace JSX {\n  interface Element {}\n  interface IntrinsicElements {\n    [elemName: string]: any;\n  }\n}\n`);
 
-    write(path.join(repoDir, 'src', 'app', 'page.tsx'), `export default function Home() {\n  return <main><h1>BrewBoard</h1></main>;\n}\n`);
-    write(path.join(repoDir, 'src', 'app', 'layout.tsx'), `export default function RootLayout({ children }: { children: unknown }) {\n  return <html><body>{children}</body></html>;\n}\n`);
-    write(path.join(repoDir, 'src', 'components', 'BeerCard.tsx'), `export function BeerCard({ name, style, rating }: { name: string; style: string; rating: number }) {\n  return <div className="beer-card"><h2>{name}</h2><p>{style}</p><span>{rating}/5</span></div>;\n}\n`);
+    // Layout with metadata, global styles, and Geist font
+    write(path.join(repoDir, 'src', 'app', 'layout.tsx'), `import type { Metadata } from 'next';
+import './globals.css';
+
+export const metadata: Metadata = {
+  title: 'BrewBoard',
+  description: 'Track and share your craft beer collection',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body className="bg-amber-50 text-stone-800 min-h-screen">{children}</body>
+    </html>
+  );
+}
+`);
+
+    // Global CSS with Tailwind
+    write(path.join(repoDir, 'src', 'app', 'globals.css'), `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+`);
+
+    // Home page with beer collection
+    write(path.join(repoDir, 'src', 'app', 'page.tsx'), `import { BeerCard } from '@/components/BeerCard';
+
+const BEERS = [
+  { id: 1, name: 'Hazy IPA', brewery: 'Mountain Goat', style: 'IPA', rating: 4.5 },
+  { id: 2, name: 'Pale Ale', brewery: 'Stone & Wood', style: 'Pale Ale', rating: 4.2 },
+  { id: 3, name: 'Stout', brewery: 'Pirate Life', style: 'Stout', rating: 4.8 },
+  { id: 4, name: 'Lager', brewery: 'Balter', style: 'Lager', rating: 3.9 },
+  { id: 5, name: 'Sour Cherry', brewery: 'Wildflower', style: 'Sour', rating: 4.6 },
+  { id: 6, name: 'West Coast IPA', brewery: 'Hop Nation', style: 'IPA', rating: 4.3 },
+];
+
+export default function Home() {
+  return (
+    <main className="max-w-4xl mx-auto p-8">
+      <header className="mb-8">
+        <h1 className="text-4xl font-bold text-stone-900">BrewBoard</h1>
+        <p className="text-stone-500 mt-2">Your craft beer collection</p>
+      </header>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {BEERS.map(beer => (
+          <BeerCard key={beer.id} {...beer} />
+        ))}
+      </div>
+    </main>
+  );
+}
+`);
+
+    // BeerCard component
+    write(path.join(repoDir, 'src', 'components', 'BeerCard.tsx'), `type BeerCardProps = {
+  name: string;
+  brewery: string;
+  style: string;
+  rating: number;
+};
+
+export function BeerCard({ name, brewery, style, rating }: BeerCardProps) {
+  return (
+    <div className="bg-white rounded-lg border border-stone-200 p-4 hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="font-semibold text-lg text-stone-900">{name}</h2>
+          <p className="text-stone-500 text-sm">{brewery}</p>
+        </div>
+        <span className="bg-amber-100 text-amber-800 text-xs font-medium px-2 py-1 rounded">{style}</span>
+      </div>
+      <div className="mt-3 flex items-center gap-1">
+        {'★'.repeat(Math.round(rating))}{'☆'.repeat(5 - Math.round(rating))}
+        <span className="text-stone-400 text-sm ml-1">{rating}</span>
+      </div>
+    </div>
+  );
+}
+`);
+
     write(path.join(repoDir, 'src', 'lib', 'api.ts'), `export async function fetchBeers() {\n  const res = await fetch('/api/beers');\n  return res.json();\n}\n`);
+
+    // Tailwind config
+    write(path.join(repoDir, 'tailwind.config.ts'), `import type { Config } from 'tailwindcss';
+
+const config: Config = {
+  content: ['./src/**/*.{ts,tsx}'],
+  darkMode: 'class',
+  theme: { extend: {} },
+  plugins: [],
+};
+export default config;
+`);
+
+    // PostCSS config for Tailwind
+    write(path.join(repoDir, 'postcss.config.mjs'), `/** @type {import('postcss-load-config').Config} */
+const config = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+export default config;
+`);
+
+    // Update package.json with Tailwind deps
+    write(path.join(repoDir, 'package.json'), JSON.stringify({
+        name: 'brewboard',
+        version: '0.1.0',
+        private: true,
+        description: 'Track and share your craft beer collection',
+        scripts: {
+            dev: 'next dev --port $PORT',
+            build: 'next build',
+            start: 'next start',
+        },
+        dependencies: {
+            next: '^14.2.0',
+            react: '^18.3.0',
+            'react-dom': '^18.3.0',
+        },
+        devDependencies: {
+            tailwindcss: '^3.4.0',
+            postcss: '^8.4.0',
+            autoprefixer: '^10.4.0',
+            typescript: '^5.0.0',
+            '@types/react': '^18.3.0',
+            '@types/node': '^20.0.0',
+        },
+    }, null, 2));
+
+    // Update next.config with path aliases
+    write(path.join(repoDir, 'next.config.js'), `/** @type {import('next').NextConfig} */\nmodule.exports = {};\n`);
+
+    // Update tsconfig with path aliases
+    write(path.join(repoDir, 'tsconfig.json'), JSON.stringify({
+        compilerOptions: {
+            target: 'ES2017',
+            lib: ['dom', 'dom.iterable', 'esnext'],
+            allowJs: true,
+            skipLibCheck: true,
+            strict: true,
+            noEmit: true,
+            esModuleInterop: true,
+            module: 'esnext',
+            moduleResolution: 'bundler',
+            resolveJsonModule: true,
+            isolatedModules: true,
+            jsx: 'preserve',
+            incremental: true,
+            plugins: [{ name: 'next' }],
+            paths: { '@/*': ['./src/*'] },
+        },
+        include: ['next-env.d.ts', '**/*.ts', '**/*.tsx', '.next/types/**/*.ts'],
+        exclude: ['node_modules'],
+    }, null, 2));
+
+    // Install dependencies
+    console.log('    Installing npm dependencies...');
+    execSync('npm install --silent 2>/dev/null', { cwd: repoDir, stdio: 'pipe', timeout: 120000 });
 
     commit(repoDir, 'feat: initial BrewBoard project setup');
 
