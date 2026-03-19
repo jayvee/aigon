@@ -127,9 +127,22 @@ function buildFeatureActions(feature, repoPath, pipelineType) {
     html += renderBtn(va, 'btn btn-secondary');
   });
 
+  // Add "View Review" entries for each review session
+  const reviews = feature.reviewSessions || [];
+  reviews.forEach(r => {
+    if (r.session) {
+      const agentName = AGENT_DISPLAY_NAMES[r.agent] || r.agent;
+      overflow.push({ _reviewSession: r.session, _reviewLabel: 'View ' + agentName + ' Review' });
+    }
+  });
+
   // Overflow dropdown
   if (overflow.length > 0) {
     const items = overflow.map(va => {
+      // Special: review session link
+      if (va._reviewSession) {
+        return '<button class="kcard-overflow-item" data-view-review="' + escHtml(va._reviewSession) + '">' + escHtml(va._reviewLabel) + '</button>';
+      }
       const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
       const cls = (va.action === 'feature-stop' || va.action === 'research-stop') ? 'kcard-overflow-item kcard-va-btn btn-danger' : 'kcard-overflow-item kcard-va-btn';
       return '<button class="' + cls + '" data-va-action="' + escHtml(va.action) + '"' + agentAttr + '>' + escHtml(actionLabel(va)) + '</button>';

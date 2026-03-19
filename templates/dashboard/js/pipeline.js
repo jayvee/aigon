@@ -298,9 +298,18 @@
       const isSoloDriveBranch = agents.length === 1 && agents[0].id === 'solo' && !agents[0].tmuxSession;
       const hasAgentSections = agents.length > 0 && !isSoloDriveBranch;
 
+      const reviews = feature.reviewSessions || [];
+      let reviewBadgeHtml = '';
+      if (reviews.length > 0) {
+        const anyRunning = reviews.some(r => r.running);
+        const agentNames = reviews.map(r => r.agent).join(', ');
+        reviewBadgeHtml = '<span class="review-badge' + (anyRunning ? ' review-running' : '') + '">' +
+          (anyRunning ? '● reviewing' : '✓ reviewed') + ' (' + escHtml(agentNames) + ')</span>';
+      }
+
       let innerHtml =
         (feature.id ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>';
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + reviewBadgeHtml + '</div>';
 
       if (hasAgentSections) {
         // New agent section layout: one visual block per agent
@@ -386,6 +395,15 @@
           openDrawer(feature.evalPath, displayName + ' — Eval', feature.stage, repoPath);
         };
       }
+
+      // Wire "View Review" buttons
+      card.querySelectorAll('[data-view-review]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          card.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
+          openPeekPanel(btn.getAttribute('data-view-review'));
+        };
+      });
 
       let wasDragged = false;
       card.addEventListener('dragstart', (e) => {
