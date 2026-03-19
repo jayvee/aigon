@@ -149,14 +149,13 @@
 
         <!-- ── Pipeline view — Alpine component ─────────────────────────────── -->
         <div id="pipeline-view" x-data="pipelineView()" x-cloak x-show="$store.dashboard.view === 'pipeline'">
-          <!-- Pipeline type toggle + Create button -->
+          <!-- Pipeline type toggle -->
           <div class="pipeline-toolbar">
             <div class="pipeline-type-toggle">
               <template x-for="opt in pipelineTypeOpts" :key="opt.key">
                 <button class="toggle-btn" :class="{ active: $store.dashboard.pipelineType === opt.key }" x-on:click="setPipelineType(opt.key)" x-text="opt.label"></button>
               </template>
             </div>
-            <button class="btn btn-primary" style="font-size:12px;padding:5px 12px" x-on:click="createNewSpec()">+ Create</button>
           </div>
           <!-- Empty state -->
           <div class="empty" x-show="visibleRepos.length === 0" x-text="emptyMessage"></div>
@@ -176,7 +175,12 @@
                        x-on:drop.prevent="onDrop($event, stage, repo.path)">
                     <div class="col-h">
                       <span class="col-title" x-text="STAGE_LABELS[stage]"></span>
-                      <span class="col-count" x-text="getStageDisplayCount(repo, stage)"></span>
+                      <span style="display:flex;align-items:center;gap:8px">
+                        <span class="col-count" x-text="getStageDisplayCount(repo, stage)"></span>
+                        <button class="btn btn-primary col-new-feature-btn"
+                                x-show="$store.dashboard.pipelineType === 'features' && stage === 'inbox'"
+                                x-on:click.stop="createNewSpec(repo.path)">+ New Feature</button>
+                      </span>
                     </div>
                     <div class="col-body" x-effect="renderKanbanColCards($el, repo, stage)"></div>
                   </div>
@@ -233,16 +237,19 @@
       </div>
     </div>
   </div>
-  <!-- Create spec modal -->
-  <div id="create-modal" class="modal-backdrop" x-ignore style="display:none">
-    <div class="modal-box">
+  <!-- Create feature modal -->
+  <div id="create-modal" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
+    <div class="modal-box create-modal-box">
       <h3 id="create-modal-title">New Feature</h3>
       <div id="create-modal-repo-picker" style="display:none;margin-bottom:14px">
         <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px">Repository</label>
         <select id="create-modal-repo" class="create-input" style="padding:8px 10px"></select>
       </div>
       <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px">Name</label>
-      <input type="text" id="create-modal-name" class="create-input" placeholder="e.g. dark mode toggle" autofocus />
+      <input type="text" id="create-modal-name" class="create-input" placeholder="e.g. dark mode toggle" maxlength="80" autofocus />
+      <label style="display:block;font-size:12px;color:var(--text-secondary);margin:12px 0 6px">Description (optional)</label>
+      <textarea id="create-modal-description" class="create-input create-textarea" rows="4" placeholder="What should this feature do? Any technical ideas or constraints?"></textarea>
+      <p id="create-modal-error" class="modal-error" style="display:none"></p>
       <div class="modal-actions" style="margin-top:16px">
         <button class="btn" id="create-modal-cancel">Cancel</button>
         <button class="btn btn-primary" id="create-modal-submit">Create</button>
