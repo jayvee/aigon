@@ -132,11 +132,14 @@
       if (!text || !peekState.sessionName) return;
       input.value = '';
       try {
-        await fetch('/api/session-input', {
+        var resp = await fetch('/api/session-input', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ name: peekState.sessionName, text: text })
         });
+        var result = await resp.json();
+        console.log('[peek] send-input response:', result);
+        if (!result.ok) showToast('Send failed: ' + (result.error || 'unknown'), null, null, {error: true});
       } catch (err) {
         showToast('Send failed: ' + err.message, null, null, {error: true});
       }
