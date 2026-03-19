@@ -24,3 +24,4 @@ docs/agents/
 # Aigon manifest state and locks (runtime-only, never committed)
 .aigon/state/
 .aigon/locks/
+next-env.d.ts

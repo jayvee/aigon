@@ -99,8 +99,7 @@ FEATURES
 11. [Hooks](#hooks)
 12. [Local Dev Proxy](#local-dev-proxy)
 13. [Multi-Agent Evaluation](#multi-agent-evaluation)
-14. [CLI Reference](#cli-reference)
-15. [Agent Slash Commands](#agent-slash-commands)
+14. [CLI Reference](GUIDE.md#cli-reference) (in Complete Guide)
 
 ---
 
@@ -121,6 +120,8 @@ Everything is stored in your repo:
 That history becomes reusable context for future AI sessions, code reviews, and onboarding. In contrast, tool-hosted chat history is typically siloed per vendor account and hard to reuse across tools.
 
 ### Complete product lifecycle: Research → Ideas → Features → Feedback (loop)
+
+![Aigon lifecycle: Research and Feedback feed into Features, which flow through Build, Evaluate, and Ship, then loop back as user feedback](docs/images/aigon-lifecycle-loop.svg)
 
 Aigon handles the **full lifecycle of changes**, creating a closed loop from exploration to shipped code and back:
 
@@ -748,6 +749,24 @@ Detach from any session with `Ctrl-b d`. Reattach manually with `tmux attach -t 
 
 ## Visualizing Work — Aigon Dashboard
 
+### Dashboard in Action
+
+A Fleet run on the BrewBoard seed project — Codex (cx) and Gemini (gg) compete to implement dark mode, then Claude Code (cc) evaluates and the winner is merged:
+
+**1. Fleet started — Codex and Gemini implementing in parallel**
+
+![Fleet started — Codex and Gemini implementing in parallel](docs/images/aigon-dashboard-01-fleet-start.gif)
+
+**2. Both agents submitted — Claude Code evaluating the implementations**
+
+![Claude Code evaluating the implementations](docs/images/aigon-dashboard-02-fleet-evaluation.gif)
+
+**3. Evaluation complete — winner selected and merged**
+
+![Evaluation complete — winner selected and merged](docs/images/aigon-dashboard-03-fleet-submitted.gif)
+
+---
+
 Once you start using aigon on multiple repositories with multiple features in parallel, you need a dashboard to work out what's happening where and to be able to intercept and take over as required.
 
 **Aigon Dashboard** is a foreground HTTP server that watches all your registered repos and exposes a unified HTTP API. Every view — the web dashboard, VS Code sidebar, macOS menubar icon, and CLI status — consumes that one API rather than reading log files independently.
@@ -934,15 +953,9 @@ aigon feature-backfill-timestamps             # apply
 
 After backfilling, click **Refresh** in the Statistics tab to reload analytics.
 
-### Migration from Conductor
-
-The `aigon conduct` orchestration command runs the Fleet autopilot — it sets up worktrees, spawns autonomous agent loops, monitors progress, and triggers evaluation when all agents submit.
-
-### Kanban Board View (default)
+### Kanban Board View (terminal)
 
 Aigon also provides two terminal views: **Kanban board** (visual overview) and **detailed list** (with work mode indicators and contextual next-action hints).
-
-### Kanban Board View (default)
 
 ```bash
 aigon board --all    # Show all including done items
@@ -1206,262 +1219,7 @@ The `--adopt` flag prints diffs from each losing agent after merging the winner,
 
 ---
 
-## CLI Reference
-
-### Research commands
-
-| Command | Usage |
-|---|---|
-| Research Create | `aigon research-create <name>` |
-| Research Prioritise | `aigon research-prioritise <name>` |
-| Research Setup | `aigon research-setup <ID> [agents...]` |
-| Research Open | `aigon research-open <ID>` |
-| Research Conduct | `aigon research-do <ID>` |
-| Research Synthesize | `aigon research-synthesize <ID>` |
-| Research Done | `aigon research-close <ID> [--complete]` |
-
-### Feature commands
-
-| Command | Usage |
-|---|---|
-| Feature Create | `aigon feature-create <name>` |
-| Feature Now | `aigon feature-now <name>` (inbox match → prioritise + setup + implement; no match → create new) |
-| Feature Prioritise | `aigon feature-prioritise <name>` |
-| Feature Setup | `aigon feature-setup <ID> [agents...]` |
-| Feature Implement | `aigon feature-do <ID> [--autonomous] [--auto-submit] [--no-auto-submit]` |
-| Feature Eval | `aigon feature-eval <ID>` |
-| Feature Review | `aigon feature-review <ID>` |
-| Feature Done | `aigon feature-close <ID> [agent] [--adopt <agents...\|all>]` |
-| Feature Cleanup | `aigon feature-cleanup <ID> [--push]` |
-| Worktree Open | `aigon feature-open <ID> [agent] [--terminal=<type>]` |
-| Worktree Open (Fleet) | `aigon feature-open <ID> --all` |
-| Worktree Open (Parallel) | `aigon feature-open <ID> <ID>... [--agent=<code>]` |
-
-### Feedback commands
-
-| Command | Usage |
-|---|---|
-| Feedback Create | `aigon feedback-create "<title>"` |
-| Feedback List | `aigon feedback-list [--inbox\|--triaged\|--actionable\|--all] [--type <type>] [--severity <severity>] [--tag <tag>]` |
-| Feedback Triage | `aigon feedback-triage <ID> [--type <type>] [--severity <severity>] [--tags <csv>] [--status <status>] [--duplicate-of <ID>] [--apply --yes]` |
-
-### Visualization commands
-
-| Command | Usage |
-|---|---|
-| Board | `aigon board` |
-| Board (List View) | `aigon board --list` |
-| Board (Filtered) | `aigon board [--features\|--research] [--active\|--all\|--inbox\|--backlog\|--done]` |
-| Board (No hints) | `aigon board --no-actions` |
-
-### Agent status commands
-
-Track live agent state via YAML front matter in implementation log files. Agents call these automatically as instructed by the `feature-do` and `feature-submit` templates.
-
-| Command | Usage |
-|---|---|
-| Agent Status (set) | `aigon agent-status <implementing\|waiting\|submitted>` |
-| Status (view) | `aigon status` (all in-progress features) |
-| Status (view) | `aigon status <ID>` (per-agent table for one feature) |
-
-Example output:
-```
-#31  log-status-tracking
-  cc    waiting        11:23
-  gg    implementing   11:15
-  cx    submitted      10:58
-```
-
-### Dashboard commands
-
-Multi-repo status monitoring via a unified background service — web dashboard, VS Code sidebar, macOS menubar, and notifications all in one.
-
-| Command | Usage |
-|---|---|
-| DashboardStart | `aigon dashboard start [--port N]` (start service: daemon + dashboard + API) |
-| DashboardStop | `aigon dashboard stop` |
-| DashboardStatus | `aigon dashboard status` |
-| DashboardOpen | `aigon dashboard open` (open web dashboard in browser) |
-| DashboardInstall | `aigon dashboard install` (auto-start on login via launchd) |
-| DashboardUninstall | `aigon dashboard uninstall` |
-| DashboardAdd | `aigon dashboard add [path]` (register repo, default: cwd) |
-| DashboardRemove | `aigon dashboard remove [path]` |
-| DashboardList | `aigon dashboard list` |
-| VS Code Install | `aigon dashboard vscode-install` |
-| VS Code Uninstall | `aigon dashboard vscode-uninstall` |
-| Menubar Install | `aigon dashboard menubar-install` (SwiftBar/xbar plugin) |
-| Menubar Uninstall | `aigon dashboard menubar-uninstall` |
-| Terminal Focus | `aigon terminal-focus <featureId> [agent]` (open agent terminal) |
-
-> **Migration:** The old `aigon conductor` monitoring commands still work but print deprecation notices. `aigon conduct` (orchestration) is unaffected.
-
-### Dev server commands
-
-| Command | Usage |
-|---|---|
-| Proxy Install | `aigon proxy install` (one-time: system daemon on port 80, auto-starts on boot) |
-| Dev Server Start | `aigon dev-server start [--port N]` (starts process, registers with proxy) |
-| Dev Server Start (register only) | `aigon dev-server start --register-only` |
-| Dev Server Stop | `aigon dev-server stop [serverId]` (kills process + deregisters) |
-| Dev Server List | `aigon dev-server list` |
-| Dev Server Logs | `aigon dev-server logs [-f] [-n N]` |
-| Dev Server GC | `aigon dev-server gc` |
-| Dev Server URL | `aigon dev-server url` |
-
-### Utility commands
-
-| Command | Usage |
-|---|---|
-| Init | `aigon init` |
-| Install Agent | `aigon install-agent <cc\|gg\|cx\|cu> [more...]` |
-| Update | `aigon update` |
-| Hooks | `aigon hooks [list]` |
-| Config | `aigon config <init\|set\|get\|show\|models> [--global\|--project]` |
-| Config Models | `aigon config models` (show resolved model configuration for all agents) |
-| Profile | `aigon profile [show\|set\|detect]` |
-| Doctor | `aigon doctor [--register]` (port + model health checks) |
-
-Example output from `aigon board --list --all`:
-```
-Inbox (8):
-        base-port-config
-        change-banner-in-bakeoff
-        create-plugin
-        parallel-features
-        refactor-aigon-sub-commands
-        research-open-arena
-        subdomain-configuration-for-bakeoff-mode
-        update-docs-prompt-to-done
-
-Done (9):
-   #01  support-hooks
-   #02  unify-workflow
-   #03  arena-research
-   #04  add-sample-chat-for-workflow
-   #05  command-metadata-improvements
-   #06  readme-uplift
-        change-worktree-location
-        install-agent-cleanup-old-commands
-        feature-open-terminal
-```
-
----
-
-## Agent Slash Commands
-
-The command set is consistent across agents. Differences are only command prefix and storage location.
-
-### Claude (`/aigon:`)
-
-| Slash Command | Description |
-|---|---|
-| `/aigon:feature-create <name>` | Create a feature spec |
-| `/aigon:feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
-| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:feature-setup <ID> [agents...]` | Setup Drive (branch/worktree) or Fleet |
-| `/aigon:next` (alias: `/aigon:n`) | Suggest the most likely next workflow command |
-| `/aigon:board` | Show Kanban board or list view |
-| `/aigon:feature-do <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
-| `/aigon:feature-eval <ID>` | Generate review/comparison template |
-| `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon:feature-close <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
-| `/aigon:feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
-| `/aigon:feature-open [ID] [agent]` | Open worktree(s) with agent CLI |
-| `/aigon:research-create <name>` | Create a research topic |
-| `/aigon:research-prioritise <name>` | Prioritise a research topic |
-| `/aigon:research-setup <ID> [agents...]` | Setup Drive or Fleet research |
-| `/aigon:research-open <ID>` | Open Fleet research agents side-by-side |
-| `/aigon:research-do <ID>` | Write findings |
-| `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
-| `/aigon:research-close <ID>` | Complete research topic |
-| `/aigon:feedback-create <title>` | Create a feedback item |
-| `/aigon:feedback-list [filters...]` | List and filter feedback items |
-| `/aigon:feedback-triage <ID>` | Triage feedback with AI assistance |
-| `/aigon:help` | Show available Aigon commands |
-
-### Gemini (`/aigon:`)
-
-| Slash Command | Description |
-|---|---|
-| `/aigon:feature-create <name>` | Create a feature spec |
-| `/aigon:feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
-| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:feature-setup <ID> [agents...]` | Setup Drive (branch/worktree) or Fleet |
-| `/aigon:next` (alias: `/aigon:n`) | Suggest the most likely next workflow command |
-| `/aigon:board` | Show Kanban board or list view |
-| `/aigon:feature-do <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
-| `/aigon:feature-eval <ID>` | Generate review/comparison template |
-| `/aigon:feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon:feature-close <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
-| `/aigon:feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
-| `/aigon:feature-open [ID] [agent]` | Open worktree(s) with agent CLI |
-| `/aigon:research-create <name>` | Create a research topic |
-| `/aigon:research-prioritise <name>` | Prioritise a research topic |
-| `/aigon:research-setup <ID> [agents...]` | Setup Drive or Fleet research |
-| `/aigon:research-open <ID>` | Open Fleet research agents side-by-side |
-| `/aigon:research-do <ID>` | Write findings |
-| `/aigon:research-synthesize <ID>` | Compare and synthesize all findings |
-| `/aigon:research-close <ID>` | Complete research topic |
-| `/aigon:feedback-create <title>` | Create a feedback item |
-| `/aigon:feedback-list [filters...]` | List and filter feedback items |
-| `/aigon:feedback-triage <ID>` | Triage feedback with AI assistance |
-| `/aigon:help` | Show available Aigon commands |
-
-### Codex (`/prompts:aigon-`)
-
-| Slash Command | Description |
-|---|---|
-| `/prompts:aigon-feature-create <name>` | Create a feature spec |
-| `/prompts:aigon-feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
-| `/prompts:aigon-feature-prioritise <name>` | Assign ID and move to backlog |
-| `/prompts:aigon-feature-setup <ID> [agents...]` | Setup Drive (branch/worktree) or Fleet |
-| `/prompts:aigon-next` (alias: `/prompts:aigon-n`) | Suggest the most likely next workflow command |
-| `/prompts:aigon-board` | Show Kanban board or list view |
-| `/prompts:aigon-feature-do <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
-| `/prompts:aigon-feature-eval <ID>` | Generate review/comparison template |
-| `/prompts:aigon-feature-review <ID>` | Cross-agent code review with fixes |
-| `/prompts:aigon-feature-close <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
-| `/prompts:aigon-feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
-| `/prompts:aigon-feature-open [ID] [agent]` | Open worktree(s) with agent CLI |
-| `/prompts:aigon-research-create <name>` | Create a research topic |
-| `/prompts:aigon-research-prioritise <name>` | Prioritise a research topic |
-| `/prompts:aigon-research-setup <ID> [agents...]` | Setup Drive or Fleet research |
-| `/prompts:aigon-research-open <ID>` | Open Fleet research agents side-by-side |
-| `/prompts:aigon-research-do <ID>` | Write findings |
-| `/prompts:aigon-research-synthesize <ID>` | Compare and synthesize all findings |
-| `/prompts:aigon-research-close <ID>` | Complete research topic |
-| `/prompts:aigon-feedback-create <title>` | Create a feedback item |
-| `/prompts:aigon-feedback-list [filters...]` | List and filter feedback items |
-| `/prompts:aigon-feedback-triage <ID>` | Triage feedback with AI assistance |
-| `/prompts:aigon-help` | Show available Aigon commands |
-
-### Cursor (`/aigon-`)
-
-| Slash Command | Description |
-|---|---|
-| `/aigon-feature-create <name>` | Create a feature spec |
-| `/aigon-feature-now <name>` | Fast-track: inbox match → prioritise + setup + implement; or create new + implement |
-| `/aigon-feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon-feature-setup <ID> [agents...]` | Setup Drive (branch/worktree) or Fleet |
-| `/aigon-next` (alias: `/aigon-n`) | Suggest the most likely next workflow command |
-| `/aigon-board` | Show Kanban board or list view |
-| `/aigon-feature-do <ID> [--autonomous]` | Implement; `--autonomous` for [autonomous loop](https://ghuntley.com/ralph/) |
-| `/aigon-feature-eval <ID>` | Generate review/comparison template |
-| `/aigon-feature-review <ID>` | Cross-agent code review with fixes |
-| `/aigon-feature-close <ID> [agent] [--adopt]` | Merge and complete feature; `--adopt` cherry-picks from losers |
-| `/aigon-feature-cleanup <ID> [--push]` | Cleanup Fleet worktrees and branches |
-| `/aigon-feature-open [ID] [agent]` | Open worktree(s) with agent CLI |
-| `/aigon-research-create <name>` | Create a research topic |
-| `/aigon-research-prioritise <name>` | Prioritise a research topic |
-| `/aigon-research-setup <ID> [agents...]` | Setup Drive or Fleet research |
-| `/aigon-research-open <ID>` | Open Fleet research agents side-by-side |
-| `/aigon-research-do <ID>` | Write findings |
-| `/aigon-research-synthesize <ID>` | Compare and synthesize all findings |
-| `/aigon-research-close <ID>` | Complete research topic |
-| `/aigon-feedback-create <title>` | Create a feedback item |
-| `/aigon-feedback-list [filters...]` | List and filter feedback items |
-| `/aigon-feedback-triage <ID>` | Triage feedback with AI assistance |
-| `/aigon-help` | Show available Aigon commands |
+For the full CLI reference and agent slash command tables, see the [Complete Guide — CLI Reference](GUIDE.md#cli-reference).
 
 ---
 
