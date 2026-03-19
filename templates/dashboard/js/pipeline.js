@@ -92,12 +92,16 @@
       setCreateModalBusy(true);
 
       try {
+        // Build args: name + optional description
+        const createArgs = [name];
+        if (description) createArgs.push('--description', description);
+
         const actionRes = await fetch('/api/action', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             action: 'feature-create',
-            args: [name],
+            args: createArgs,
             repoPath: pickedRepo
           })
         });
@@ -113,7 +117,9 @@
         hideCreateModal();
         showToast('Created feature: ' + name);
 
-        const agentId = (typeof getAskAgent === 'function' && getAskAgent()) || 'cc';
+        // Use agent picked in modal, fall back to sidebar agent
+        const agentRadio = document.querySelector('#create-modal-agent input[name="create-agent"]:checked');
+        const agentId = (agentRadio && agentRadio.value) || (typeof getAskAgent === 'function' && getAskAgent()) || 'cc';
         const slug = slugifyFeatureName(name);
         const specPath = `docs/specs/features/01-inbox/feature-${slug}.md`;
         const prompt = [
@@ -125,14 +131,19 @@
           'Read the spec template, then fill in acceptance criteria, technical approach, dependencies, and out-of-scope based on this context.'
         ].join('\n');
 
-        const askRes = await fetch('/api/session/ask', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ repoPath: pickedRepo, agentId, message: prompt })
-        }).catch(() => null);
-        if (!askRes || !askRes.ok) {
-          const askPayload = askRes ? await askRes.json().catch(() => ({})) : {};
-          showToast('Feature created, but failed to open agent session: ' + (askPayload.error || 'Unknown error'), null, null, { error: true });
+        // Skip agent session if "None" was selected
+        if (!agentId) {
+          // No agent — just create the file, user will refine manually
+        } else {
+          const askRes = await fetch('/api/session/ask', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ repoPath: pickedRepo, agentId, message: prompt })
+          }).catch(() => null);
+          if (!askRes || !askRes.ok) {
+            const askPayload = askRes ? await askRes.json().catch(() => ({})) : {};
+            showToast('Feature created, but failed to open agent session: ' + (askPayload.error || 'Unknown error'), null, null, { error: true });
+          }
         }
       } catch (e) {
         setCreateModalError(e.message || 'Failed to create feature.');
