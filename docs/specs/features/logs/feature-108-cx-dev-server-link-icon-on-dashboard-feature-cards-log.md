@@ -52,3 +52,19 @@ Agent: cx
 - The frontend rendering, CSS, overflow menu, and "Start Dev Server" action all look correct and well-integrated.
 - The `kanban-col { overflow: visible }` change is needed for overflow menus to render outside column bounds — verified in Pipeline screenshot.
 - Screenshots confirm the UI renders cleanly in both Monitor and Pipeline views.
+
+**Reviewed by**: gg
+**Date**: 2026-03-19
+
+### Findings
+1. **Redundancy and Code Quality (minor)**: Profile detection and appId derivation were re-implemented in `dashboard-server.js` instead of reusing `lib/config.js` and `lib/proxy.js`.
+2. **Bug — dev server link missing for non-manifest agents (minor)**: The liveness check fix was only applied to the manifest-based discovery loop, leaving the fallback loops (log-based discovery) with the original deterministic "dead link" behavior.
+3. **Missing Solo Drive Support (minor)**: Solo features (no multi-agent manifest) were excluded from dev server affordances, even when running in a worktree or from the main repo.
+
+### Fixes Applied
+- `fix(review): refactor profile/appId helpers and fix solo dev server support` — Refactored `lib/config.js` and `lib/proxy.js` to support cross-repo lookups, removed redundant logic from `dashboard-server.js`, and unified the liveness check across all discovery loops. Added dev server support for solo mode agents.
+
+### Notes
+- Refactoring improves long-term maintainability by centralizing domain logic.
+- Solo mode now correctly shows the globe icon and "Start Dev Server" overflow option.
+- Verified syntax with `node --check`.
