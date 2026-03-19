@@ -94,7 +94,7 @@
             const badge = document.createElement('span');
             badge.className = 'agent-check-badge';
             badge.textContent = 'implemented';
-            cb.after(badge);
+            row.querySelector('.agent-check-hint').before(badge);
           }
         });
         document.getElementById('agent-picker-submit').textContent = opts.submitLabel || 'Setup';
