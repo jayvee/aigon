@@ -157,6 +157,12 @@
           await requestAction('feature-autopilot', [id, ...agents], repoPath, btn);
           break;
         }
+        case 'feature-eval': {
+          // Open an interactive agent session to run the eval — the agent handles
+          // both the state transition and the evaluation document creation.
+          await requestFeatureOpen(id, 'cc', repoPath, btn, pipelineType);
+          break;
+        }
         case 'feature-prioritise':
         case 'research-prioritise':
           await requestAction(pipelineCommand(pipelineType, 'prioritise'), [feature.name], repoPath, btn);
