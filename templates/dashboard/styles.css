@@ -124,7 +124,7 @@
     .toggle-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
     .toggle-btn.active{background:var(--accent);color:#fff}
     /* Pipeline / Kanban */
-    .kanban{display:grid;grid-template-columns:repeat(5,minmax(200px,1fr));gap:10px;align-items:start;overflow-x:auto;padding-bottom:8px}
+    .kanban{display:grid;grid-template-columns:repeat(var(--kanban-cols,5),minmax(0,1fr));gap:10px;align-items:start;overflow-x:auto;padding-bottom:8px;min-width:fit-content}
     .kanban-col{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:visible;min-height:120px}
     .kanban-col.drag-over{border-color:rgba(59,130,246,.6);background:rgba(59,130,246,.06)}
     .kanban-col.drag-blocked{border-color:rgba(239,68,68,.4)}
@@ -157,8 +157,8 @@
     .agent-cu{border-left-color:#FB923C}
     .agent-solo{border-left-color:#94A3B8}
     .kcard-agent-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px}
-    .kcard-agent-name{font-size:10px;font-weight:600;font-family:var(--mono);color:var(--text-secondary);flex-shrink:0}
-    .kcard-agent-status{font-size:10px;color:var(--text-tertiary);text-align:right}
+    .kcard-agent-name{font-size:10px;font-weight:600;font-family:var(--mono);color:var(--text-secondary);flex-shrink:0;min-width:80px}
+    .kcard-agent-status{font-size:10px;color:var(--text-tertiary);text-align:right;white-space:nowrap}
     .kcard-agent-status.status-running{color:#4ADE80}
     .kcard-agent-status.status-waiting{color:#FCD34D}
     .kcard-agent-status.status-submitted{color:#86EFAC}
@@ -196,6 +196,7 @@
     .create-input:focus{border-color:var(--accent)}
     .create-input::placeholder{color:var(--text-tertiary)}
     .create-textarea{resize:vertical;min-height:92px;line-height:1.5}
+    .pipeline-paused-toggle{font-size:11px;padding:4px 10px;margin-left:8px}
     .create-agent-picks{display:flex;gap:8px}
     .create-agent-opt{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-secondary);cursor:pointer}
     .create-agent-opt input{margin:0}
