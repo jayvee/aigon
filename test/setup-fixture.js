@@ -96,18 +96,34 @@ function logContent(num, desc, status = 'implementing') {
     return `---\nstatus: ${status}\nupdated: ${now}\nstartedAt: ${now}\nevents:\n  - { ts: "${now}", status: ${status} }\n---\n\n# Implementation Log: Feature ${num} - ${desc}\n\n## Plan\n\nImplemented the feature as specified.\n\n## Progress\n\nCompleted all acceptance criteria.\n\n## Decisions\n\nUsed standard patterns consistent with existing codebase.\n`;
 }
 
+// Ports: brewboard=4200, brewboard-api=4210, trailhead=4220 (well clear of 3000-range dev servers and 4100-range dashboards)
+const FIXTURE_PORTS = {
+    brewboard: 4200,
+    'brewboard-api': 4210,
+    trailhead: 4220,
+};
+
 function writeFixtureConfig(repoDir) {
+    const repoName = path.basename(repoDir);
+    const port = FIXTURE_PORTS[repoName] || 4200;
+
     // Use cheap models for fixture repos to save tokens. Each agent gets its own provider's cheapest.
     const config = {
         agents: {
             cc: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } },
             gg: { models: { research: 'gemini-2.5-flash', implement: 'gemini-2.5-flash', evaluate: 'gemini-2.5-flash' } },
             cx: { models: { research: 'gpt-4.1-mini', implement: 'gpt-4.1-mini', evaluate: 'gpt-4.1-mini' } },
-        }
+        },
+        devProxy: {
+            basePort: port,
+        },
     };
     const aigonDir = path.join(repoDir, '.aigon');
     fs.mkdirSync(aigonDir, { recursive: true });
     write(path.join(aigonDir, 'config.json'), JSON.stringify(config, null, 2) + '\n');
+
+    // Write .env with PORT so worktree setup doesn't warn
+    write(path.join(repoDir, '.env'), `PORT=${port}\n`);
 }
 
 function researchContent(title, summary) {
