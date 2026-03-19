@@ -369,3 +369,11 @@
       }
     });
 
+    // Close drawer when the page regains focus from another tab
+    // Prevents the drawer from appearing to "pop out" when returning to the dashboard
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && drawerEl.classList.contains('open') && !drawerState.dirty) {
+        closeDrawer();
+      }
+    });
+
