@@ -83,29 +83,17 @@ git worktree list | grep -c "feature-<ID>-"
 
 Replace `<ID>` with the actual feature ID (padded with leading zero if needed, e.g., "01").
 
-**Then tell the user based on the mode:**
+**Then tell the user:**
 
-**If 2+ worktrees exist (Fleet Mode):**
+> Implementation complete — code is on the branch, ready for review.
+> You can ask me to make changes here, or close/eval the feature from the main repo when satisfied.
 
-> Implementation submitted ✅
->
-> Changes committed and log written.
->
-> **Next step for you:** Switch back to the main repo session and run `/aigon:feature-eval <ID>` from there to compare all implementations.
+**STAY in the session.** The user may want to review and request changes. If they do, make the changes, commit, and confirm. No need to re-run agent-status.
 
-**If only 1 worktree exists (Drive Worktree Mode):**
-
-> Implementation submitted ✅
->
-> Changes committed and log written.
->
-> **Next step for you:** Switch back to the main repo session and run `/aigon:feature-close <ID>` to merge your implementation.
-
-**STOP here. Do NOT:**
+**Do NOT:**
 - Run `aigon feature-close` from this worktree
 - Run `aigon feature-eval` from this worktree
-- Push to remote
-- Start any new work
+- Suggest the user run close or eval — that's their decision
 
 ## Exit session
 

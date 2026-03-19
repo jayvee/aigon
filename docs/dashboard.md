@@ -174,9 +174,9 @@ Both Monitor and Pipeline have a type toggle to filter by: All, Features, Resear
 ## Notifications
 
 The server sends macOS notifications (`osascript`) when:
-- An agent transitions to `waiting` status
-- All agents on a feature submit (triggers auto-eval if enabled)
-- All research agents submit (ready for synthesis)
+- An agent signals implementation complete (`submitted` status)
+- All agents on a feature are done (triggers auto-eval if enabled)
+- All research agents are done (ready for synthesis)
 
 ## Auto-Eval
 

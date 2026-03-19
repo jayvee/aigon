@@ -152,12 +152,10 @@ Implement the feature according to the spec. Commit with conventional commits (`
 
 {{MANUAL_TESTING_GUIDANCE}}
 
-**Signal that you are waiting for the user:**
+**Signal that implementation is complete:**
 ```bash
-aigon agent-status waiting
+aigon agent-status submitted
 ```
-
-**STOP and WAIT for user confirmation before proceeding** — do NOT continue until the user confirms testing is complete.
 
 ## Step 6: Update the implementation log
 
@@ -172,14 +170,10 @@ Commit the log file.
 
 ## Step 7: STOP — Implementation complete
 
-**CRITICAL: Do NOT proceed to feature-close automatically.**
+Tell the user:
 
-Tell the user: "Implementation complete. Ready for your review."
+> "Implementation complete — code is on the branch, ready for review. You can ask me to make changes, or close the feature when satisfied."
 
-**STOP and WAIT** for the user to:
-- Review the code changes
-- Test the feature themselves
-- Optionally run `{{CMD_PREFIX}}feature-eval` for code review
-- Approve with `{{CMD_PREFIX}}feature-close`
+**STAY in the session.** The user may review and request changes. If they do, make the changes and commit. Do NOT run or suggest `feature-close`.
 
 **This implementation session is complete.**
