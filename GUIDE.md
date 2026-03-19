@@ -9,18 +9,19 @@ For a quick overview and getting started, see the main [README.md](README.md).
 ## Table of Contents
 
 1. [Command Surfaces (CLI vs In-Agent)](#command-surfaces-cli-vs-in-agent)
-2. [Detailed Research Lifecycle](#detailed-research-lifecycle)
-3. [Detailed Feature Lifecycle](#detailed-feature-lifecycle)
+2. [Detailed Feature Lifecycle](#detailed-feature-lifecycle)
+3. [Detailed Research Lifecycle](#detailed-research-lifecycle)
 4. [Detailed Feedback Lifecycle](#detailed-feedback-lifecycle)
 5. [Agent Status Tracking](#agent-status-tracking)
-6. [The Big Picture: Closing the Loop](#the-big-picture-closing-the-loop)
+6. [Traceability](#traceability)
 7. [Hooks Deep Dive](#hooks-deep-dive)
 8. [Project Profiles](#project-profiles)
 9. [Local Dev Proxy](#local-dev-proxy)
 10. [Opening Worktrees](#opening-worktrees)
 11. [Configuration](#configuration)
 12. [Multi-Agent Evaluation Examples](#multi-agent-evaluation-examples)
-13. [Contributing / Developing Aigon](#contributing--developing-aigon)
+13. [CLI Reference](#cli-reference)
+14. [Contributing / Developing Aigon](#contributing--developing-aigon)
 
 ---
 
@@ -37,7 +38,7 @@ This is independent from workflow mode (Drive/Fleet/Autopilot/Swarm).
 
 1. Start in an **in-agent session** when defining work (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) so you can iterate conversationally.
 2. Stay **in-agent** for execution (`feature-do`, `feature-review`, `research-do`, `research-synthesize`).
-3. Use **CLI context** for orchestration and terminal operations (`feature-setup`, `feature-open`, `feature-eval`, `feature-close`, `feature-cleanup`), especially from the main repo.
+3. Use **CLI context** for orchestration and terminal operations (`feature-setup`, `feature-open`, `feature-eval` (Fleet), `feature-close`, `feature-cleanup`), especially from the main repo.
 
 ### Surface recommendations
 
@@ -90,21 +91,19 @@ Drive mode supports two workspace styles: **branch** (work in the current repo) 
 3.  **Setup:**
     * **Branch mode:** `/aigon:feature-setup 108` (or `aigon feature-setup 108`) — creates a Git branch (`feature-108-dark-mode`) in the current repo.
     * **Worktree mode:** `/aigon:feature-setup 108 cc` (or `aigon feature-setup 108 cc`) — creates an isolated worktree at `../<repo>-worktrees/feature-108-cc-dark-mode`, ideal for working on multiple features in parallel.
-    * Both modes auto-create an Implementation Log with `status: implementing` front matter (see [Agent Status Tracking](#agent-status-tracking)).
+    * Both modes auto-create an Implementation Log and write agent status to `.aigon/state/` (see [Agent Status Tracking](#agent-status-tracking)).
 4.  **Implement:** `aigon feature-do 108` (launches the default `cc` agent from a plain shell) or `aigon feature-do 108 --agent=cx` (launch Codex). Inside an active agent session, use `/aigon:feature-do 108` (or `/aigon-feature-do 108` for Cursor, `/prompts:aigon-feature-do 108` for Codex) to show instructions without launching a nested agent.
     * **Shell-launch mode** (plain terminal, no active agent): Aigon detects no agent session and spawns the chosen agent directly. Default agent is `cc`; override with `--agent=<cc|gg|cx|cu>`.
     * **Instruction mode** (inside an agent session): Aigon detects the active session and shows spec location and next steps instead of launching another agent.
     * Agent reads the feature spec and creates **tasks from the acceptance criteria** for progress tracking.
     * Agent codes the solution, auto-signals status transitions (`implementing` → `waiting`), and *must* fill out the Implementation Log.
     * Before stopping, agents provide a **Manual Testing Checklist** and (for web/API projects) start and open the dev server so you can verify immediately.
-5.  **Evaluate (Optional):** `/aigon:feature-eval 108` (or `aigon feature-eval 108`)
-    * Creates code review checklist for the implementation.
-6.  **Cross-Agent Review (Optional):** Have a different agent review the code and commit fixes:
+5.  **Cross-Agent Review (Optional):** Have a different agent review the code and commit fixes:
     * Open a session with a different agent (e.g., Codex if Claude implemented)
     * `/aigon:feature-review 108` (or `/aigon-feature-review 108` for Cursor, `/prompts:aigon-feature-review 108` for Codex)
     * The reviewing agent reads the spec, reviews `git diff main...HEAD`, and commits targeted fixes with `fix(review):` prefix
     * Review the fix commits before proceeding
-7.  **Finish:** `/aigon:feature-close 108` (or `aigon feature-close 108`)
+6.  **Finish:** `/aigon:feature-close 108` (or `aigon feature-close 108`)
     * Merges the branch and archives the log.
     * For Drive mode (worktree), the agent is auto-detected — no need to specify it.
 
@@ -122,7 +121,7 @@ Run multiple agents in competition to find the optimal solution.
         * `../<repo>-worktrees/feature-108-cc-dark-mode` (Claude)
         * `../<repo>-worktrees/feature-108-gg-dark-mode` (Gemini)
         * `../<repo>-worktrees/feature-108-cx-dark-mode` (Codex)
-    * **Auto-creates** Implementation Log templates in each worktree with `status: implementing` front matter.
+    * **Auto-creates** Implementation Log templates in each worktree and writes agent status to `.aigon/state/`.
     * **STOPS** - does not implement (user must open each worktree separately).
 4.  **Implement:** Open all worktrees side-by-side with `aigon feature-open 108 --all` (or individually with `aigon feature-open 108 cc`), or launch an agent directly from a worktree shell with `aigon feature-do 108`.
     * **Warp**: Opens all agents side-by-side in split panes and auto-starts each with `/aigon:feature-do 108`.
@@ -302,7 +301,7 @@ aigon feedback-triage 01 \
   --status actionable \
   --apply --yes
 ```
-File moves to `03-actionable/`, ready for promotion (handled by feature #15: feedback-promote-traceability).
+File moves to `03-actionable/`, ready to be turned into a research topic or feature spec.
 
 ### Safety Model
 
@@ -317,27 +316,15 @@ This prevents accidental data corruption while allowing scripted workflows.
 
 ## Agent Status Tracking
 
-Aigon embeds live agent state directly in implementation log files using YAML front matter. This lets you (and future tooling) see what every agent is doing without watching any terminals.
+Aigon tracks live agent state in JSON files under `.aigon/state/`. This lets you (and tooling like the dashboard) see what every agent is doing without watching terminals.
 
 ### How it works
 
-When `feature-setup` creates a log file, it initialises front matter:
-
-```yaml
----
-status: implementing
-updated: 2026-03-03T11:23:00Z
----
-
-# Implementation Log: Feature 31 - log-status-tracking
-...
-```
-
-As agents work through the `feature-do` and `feature-submit` templates, they automatically call `aigon agent-status` at key transitions:
+As agents work through `feature-do` and `feature-submit`, they call `aigon agent-status` at key transitions. Each call writes to `.aigon/state/feature-{id}-{agent}.json` in the **main repo** (not inside worktrees):
 
 | Lifecycle point | Status |
 |---|---|
-| Start of implementation (Step 3) | `implementing` |
+| Start of implementation | `implementing` |
 | Before STOP/WAIT at end of testing | `waiting` |
 | After final log commit in feature-submit | `submitted` |
 
@@ -366,148 +353,49 @@ aigon agent-status waiting
 aigon agent-status submitted
 ```
 
-The command auto-detects the feature ID and agent from the current branch name. No git commit — just a file edit.
-
-### Backwards compatibility
-
-Log files created before this feature was added (no front matter) are handled gracefully — `aigon status` shows `unknown` for them rather than erroring.
+The command auto-detects the feature ID and agent from the current branch name.
 
 ---
 
 ## Dashboard: Live Multi-Repo Monitoring
 
-Once you start using aigon on multiple repositories with multiple features in parallel, you need a dashboard to work out what's happening where and to be able to intercept and take over as required. The Aigon Dashboard is a foreground HTTP server that watches all your registered repos, exposes a unified HTTP API, and powers every monitoring view — web dashboard, VS Code sidebar, macOS menubar, and notifications.
+The Aigon Dashboard is a foreground HTTP server that watches all your registered repos and provides a web UI for monitoring features, agent status, and statistics.
 
-### Step 1: Register your repos
-
-Tell the dashboard which repos to watch:
+### Register your repos
 
 ```bash
 aigon dashboard add ~/src/my-project
 aigon dashboard add ~/src/another-project
-aigon dashboard list   # see what's registered
+aigon dashboard list                       # See what's registered
+aigon dashboard remove ~/src/old-project   # Unregister a repo
 ```
 
-### Step 2: Start the dashboard
-
-The dashboard runs as a foreground HTTP server — combining the status poller, macOS notifications, and web UI into one:
+### Start the dashboard
 
 ```bash
-aigon dashboard start           # start the service (default port 4321)
-aigon dashboard status          # check it's running + see waiting agents
-aigon dashboard open            # open the web dashboard in your browser
-aigon dashboard stop            # shut it down
+aigon dashboard start           # Start the service (default port 4321)
+aigon dashboard status          # Check it's running + see waiting agents
+aigon dashboard open            # Open the web dashboard in your browser
+aigon dashboard stop            # Shut it down
 ```
 
-The service polls every 30 seconds and fires a macOS notification when an agent reaches `waiting` or when all agents submit. The web dashboard is always available at `http://127.0.0.1:4321` while the service is running.
-
-To have the dashboard start automatically on login:
-
-```bash
-aigon dashboard install         # set up launchd auto-start
-aigon dashboard uninstall       # remove auto-start
-```
-
-### Step 3: Install the VS Code sidebar extension
-
-The extension shows a live tree of all features and agent statuses across every registered repo, directly in the Explorer panel.
-
-```bash
-aigon dashboard vscode-install
-```
-
-Then reload VS Code (`Cmd+Shift+P` → "Developer: Reload Window"). You'll see an **Aigon** section in the Explorer sidebar with a **Needs Attention** section at the top:
-
-<!-- TODO: Replace with actual screenshot -->
-<!-- ![VS Code Sidebar](docs/images/vscode-sidebar.png) -->
-
-```
-AIGON
-├── 🔔 Needs Attention (2)
-│   ├── 🔔 #31 log-status-tracking    my-project · Claude needs input
-│   └── ✅ #12 dark-mode               my-app · Ready for eval
-├── 📁 my-project
-│   ├── 🔔 #31  log-status-tracking
-│   │   └── 🔔 cc  ● waiting  11:23
-│   └── ⟳  #32  conductor-daemon
-│       └── ⟳  gg  ○ implementing  11:15
-└── 📁 my-app
-    └── ✅ #12  dark-mode
-        └── ✓  solo  ✓ submitted
-```
-
-- **🔔 Needs Attention** — items requiring your input, surfaced across all repos
-- **🔔 bell** — agent needs your input (click to copy `/afd <ID>` to clipboard)
-- **⟳ spinner** — agent is still implementing
-- **✓ green check** — all agents submitted
-- **🏆 trophy** — evaluation complete, pick the winner
-
-The tree refreshes automatically as log files change. Use the toolbar buttons to manually refresh or toggle between active-only and all-stages view.
-
-### Alternative: macOS Menubar
-
-If you prefer a lightweight, IDE-independent option, install the menubar plugin instead of (or alongside) the VS Code extension. It shows a gear icon in your macOS menubar with live agent status — click any agent to jump straight to its terminal. The menubar plugin calls the dashboard's HTTP API for its data.
-
-```bash
-# Install SwiftBar (one-time)
-brew install --cask swiftbar
-
-# Install the Aigon menubar plugin
-aigon dashboard menubar-install
-```
-
-The menubar shows `⚙ 3 needs attention` (or `⚙ 5 running`, `⚙ –`). A **Needs Attention** section at the top surfaces waiting agents and eval-ready features. Click an agent to open its terminal; Option-click to copy the slash command.
+The service polls every 30 seconds and fires a macOS notification when an agent reaches `waiting` or when all agents submit.
 
 You can also jump to an agent's terminal directly:
 
 ```bash
-aigon terminal-focus 39        # open terminal for feature #39
-aigon terminal-focus 39 cc     # specific agent
-```
-
-### Uninstalling
-
-```bash
-aigon dashboard vscode-uninstall   # remove VS Code extension
-aigon dashboard menubar-uninstall  # remove menubar plugin
+aigon terminal-focus 39        # Open terminal for feature #39
+aigon terminal-focus 39 cc     # Specific agent
 ```
 
 ---
 
-## The Big Picture: Closing the Loop
+## Traceability
 
-Aigon manages the complete product development cycle as a continuous loop:
-
-![Aigon lifecycle loop](docs/images/aigon-lifecycle-loop.svg)
-
-### The Three Pillars
-
-**1. Research (Internal Exploration)**
-- Broad technical investigations
-- "What options exist?"
-- Multiple agents can conduct parallel findings
-- Synthesis produces recommendations
-- Low volume, curated, deliberate
-
-**2. Features (Delivery Pipeline)**
-- Specific implementation specs
-- "How do we build this?"
-- Informed by research findings
-- Acceptance criteria define "done"
-- Implementation logs track decisions
-
-**3. Feedback (External Signal)**
-- Raw user/customer input
-- "What problems exist in prod?"
-- High volume, noisy, needs triage
-- Attribution + provenance required
-- Rapid response for high-severity
-
-### Traceability Links
+Aigon supports forward and backward traceability across its three lifecycles. For the full lifecycle overview, see the [README — Complete Product Lifecycle](README.md#complete-product-lifecycle-research--ideas--features--feedback-loop).
 
 **Forward traceability** (why we built this):
 - Feature spec references feedback IDs and research IDs
-- Implementation log explains which inputs drove decisions
 - "Feature #108 addresses feedback #42 and was informed by research #07"
 
 **Backward traceability** (what happened to my request):
@@ -515,19 +403,13 @@ Aigon manages the complete product development cycle as a continuous loop:
 - Research topic's output section lists created features
 - "Feedback #42 resulted in feature #108, shipped in v2.1"
 
-**Circular flow:**
-- Shipped features generate new feedback
-- Feedback spawns research topics or new features
-- Research findings inform feature implementation
-- The loop continues, creating an auditable product history
-
 ### Example Flow
 
 1. **User reports bug** → `aigon feedback-create "Export broken on Safari"`
 2. **Triage suggests type=bug, severity=high** → Move to triaged
 3. **Product decision** → Mark as actionable
-4. **Promote to feature** → `aigon feedback-promote 12` creates feature #55 with link back to feedback #12
-5. **Implement and ship** → Feature #55 goes through normal workflow
+4. **Create feature from feedback** → `aigon feature-create "fix-safari-export"` and link to feedback #12 in the spec
+5. **Implement and ship** → Feature goes through normal workflow
 6. **User confirms fix** → Mark feedback #12 as done
 7. **New feedback arrives** → Cycle continues
 
@@ -1020,7 +902,7 @@ Creates `~/.aigon/config.json`:
     "cc": { "cli": "claude", "implementFlag": "--permission-mode acceptEdits" },
     "cu": { "cli": "agent", "implementFlag": "--force" },
     "gg": { "cli": "gemini", "implementFlag": "--yolo" },
-    "cx": { "cli": "codex", "implementFlag": "--full-auto" }
+    "cx": { "cli": "codex", "implementFlag": "" }
   }
 }
 ```
@@ -1054,7 +936,7 @@ By default, Aigon uses "yolo mode" flags that auto-approve commands:
 - **cc** (Claude): `--permission-mode acceptEdits` (auto-edits, prompts for risky Bash)
 - **cu** (Cursor): `--force` (auto-approves commands)
 - **gg** (Gemini): `--yolo` (auto-approves all)
-- **cx** (Codex): `--full-auto` (workspace-write, smart approval)
+- **cx** (Codex): interactive by default (`--full-auto` only in autonomous mode)
 
 For stricter security (e.g., corporate environments):
 
@@ -1213,7 +1095,9 @@ The `--adopt` flag prints diffs from losing agents after merging the winner. Rev
 | Research Setup | `aigon research-setup <ID> [agents...]` |
 | Research Open | `aigon research-open <ID>` |
 | Research Conduct | `aigon research-do <ID>` |
+| Research Submit | `aigon research-submit [ID] [agent]` (signal findings complete) |
 | Research Synthesize | `aigon research-synthesize <ID>` |
+| Research Autopilot | `aigon research-autopilot <ID> [agents...]` (Fleet: spawn + monitor + synthesize) |
 | Research Done | `aigon research-close <ID> [--complete]` |
 
 ### Feature commands
@@ -1224,15 +1108,21 @@ The `--adopt` flag prints diffs from losing agents after merging the winner. Rev
 | Feature Now | `aigon feature-now <name>` (inbox match → prioritise + setup + implement; no match → create new) |
 | Feature Prioritise | `aigon feature-prioritise <name>` |
 | Feature Setup | `aigon feature-setup <ID> [agents...]` |
-| Feature Implement | `aigon feature-do <ID> [--autonomous] [--auto-submit] [--no-auto-submit]` |
-| Feature Eval | `aigon feature-eval <ID>` |
+| Feature Implement | `aigon feature-do <ID> [--agent=<id>] [--autonomous] [--auto-submit] [--no-auto-submit]` |
+| Feature Submit | `aigon feature-submit` (agent-only: commit changes, write log, signal done) |
+| Feature Validate | `aigon feature-validate <ID> [--dry-run]` (evaluate acceptance criteria) |
+| Feature Eval | `aigon feature-eval <ID> [--force]` (Fleet only: compare implementations) |
 | Feature Review | `aigon feature-review <ID>` |
 | Feature Done | `aigon feature-close <ID> [agent] [--adopt <agents...\|all>]` |
 | Feature Cleanup | `aigon feature-cleanup <ID> [--push]` |
 | Feature Reset | `aigon feature-reset <ID>` |
+| Feature Autopilot | `aigon feature-autopilot <ID> [agents...]` (Fleet: setup + spawn + monitor + eval) |
+| Feature Autopilot Stop | `aigon feature-autopilot stop <ID>` |
+| Feature Autopilot Attach | `aigon feature-autopilot attach <ID> <agent>` |
 | Worktree Open | `aigon feature-open <ID> [agent] [--terminal=<type>]` |
 | Worktree Open (Fleet) | `aigon feature-open <ID> --all` |
 | Worktree Open (Parallel) | `aigon feature-open <ID> <ID>... [--agent=<code>]` |
+| Sessions Close | `aigon sessions-close <ID>` (kill all agent sessions for a feature) |
 
 ### Feedback commands
 
@@ -1267,24 +1157,39 @@ The `--adopt` flag prints diffs from losing agents after merging the winner. Rev
 | Dashboard Stop | `aigon dashboard stop` |
 | Dashboard Status | `aigon dashboard status` |
 | Dashboard Open | `aigon dashboard open` |
-| Dashboard Install | `aigon dashboard install` (auto-start on login) |
 | Dashboard Add | `aigon dashboard add [path]` |
 | Dashboard Remove | `aigon dashboard remove [path]` |
 | Dashboard List | `aigon dashboard list` |
 | Terminal Focus | `aigon terminal-focus <featureId> [agent]` |
 
-### Dev server commands
+### Dev server and proxy commands
 
 | Command | Usage |
 |---|---|
 | Proxy Install | `aigon proxy install` (one-time: system daemon on port 80) |
-| Dev Server Start | `aigon dev-server start [--port N]` |
+| Proxy Start/Stop/Status | `aigon proxy <start\|stop\|status\|uninstall>` |
+| Dev Server Start | `aigon dev-server start [--port N] [--open]` |
 | Dev Server Start (register only) | `aigon dev-server start --register-only` |
 | Dev Server Stop | `aigon dev-server stop [serverId]` |
+| Dev Server Open | `aigon dev-server open` (open URL in browser) |
 | Dev Server List | `aigon dev-server list` |
 | Dev Server Logs | `aigon dev-server logs [-f] [-n N]` |
 | Dev Server GC | `aigon dev-server gc` |
 | Dev Server URL | `aigon dev-server url` |
+
+### Conductor commands
+
+| Command | Usage |
+|---|---|
+| Conduct | `aigon conduct <ID> [agents...]` (start arena: setup, spawn, monitor, eval) |
+| Conduct Status | `aigon conduct status [ID]` |
+
+### Deploy commands
+
+| Command | Usage |
+|---|---|
+| Deploy | `aigon deploy` (run configured deploy command) |
+| Deploy Preview | `aigon deploy --preview` (run configured preview command) |
 
 ### Utility commands
 
@@ -1298,6 +1203,8 @@ The `--adopt` flag prints diffs from losing agents after merging the winner. Rev
 | Config | `aigon config <init\|set\|get\|show\|models> [--global\|--project]` |
 | Profile | `aigon profile [show\|set\|detect]` |
 | Doctor | `aigon doctor [--register]` |
+| Next | `aigon next` (agent-only: suggest next workflow action) |
+| Help | `aigon help` |
 
 ---
 
@@ -1314,7 +1221,8 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
 | `/aigon:feature-setup <ID> [agents...]` | Setup Drive or Fleet |
 | `/aigon:feature-do <ID> [--autonomous]` | Implement feature |
-| `/aigon:feature-eval <ID>` | Generate review/comparison |
+| `/aigon:feature-submit` | Commit changes, write log, signal done |
+| `/aigon:feature-eval <ID>` | Generate Fleet comparison |
 | `/aigon:feature-review <ID>` | Cross-agent code review |
 | `/aigon:feature-close <ID> [agent] [--adopt]` | Merge and complete |
 | `/aigon:feature-cleanup <ID> [--push]` | Cleanup worktrees |
@@ -1360,33 +1268,13 @@ The command directories (`.claude/commands/`, `.cursor/commands/`, `.gemini/comm
 
 ### What `install-agent` Writes (and What It Doesn't)
 
-`aigon install-agent` writes **only aigon-owned files**. It never touches user-owned root files like `CLAUDE.md`.
+For the full per-agent file listing and context delivery details, see [README — Installation, Agents, and Updates](README.md#installation-agents-and-updates).
 
-**Per-agent files:**
+**Key points for contributors:**
 
-| Agent | Slash commands | Settings/permissions | Context delivery | Hooks |
-|-------|---------------|---------------------|-----------------|-------|
-| **cc** (Claude) | `.claude/commands/aigon/*.md` | `.claude/settings.json` | `.claude/skills/aigon/SKILL.md` + SessionStart hook (`aigon project-context`) | `check-version`, `project-context` |
-| **gg** (Gemini) | `.gemini/commands/aigon/*.toml` | `.gemini/settings.json`, `.gemini/policies/aigon.toml` | SessionStart hook (`aigon project-context`) | `check-version`, `project-context` |
-| **cx** (Codex) | `~/.codex/prompts/aigon-*.md` (global) | `.codex/config.toml` | `.codex/prompt.md` (marker blocks, aigon-owned) | — |
-| **cu** (Cursor) | `.cursor/commands/aigon-*.md` | `.cursor/cli.json`, `.cursor/hooks.json` | `.cursor/rules/aigon.mdc` (full overwrite, aigon-owned) | `check-version` |
-
-**Shared files (all agents):**
-
-| File | Ownership | First install | Subsequent installs |
-|------|-----------|--------------|-------------------|
-| `AGENTS.md` | **User-owned** | Scaffolded (created if missing) | Never touched |
-| `CLAUDE.md` | **User-owned** | Not created | Never touched |
-| `docs/agents/{agent}.md` | Aigon-owned (markers) | Created | Marker block updated |
-| `docs/development_workflow.md` | Aigon-owned | Created | Full overwrite |
-
-**How context reaches each agent (without touching root files):**
-
-- **Claude Code / Gemini CLI**: SessionStart hook runs `aigon project-context` which prints doc pointers to stdout. The agent ingests this as conversation context.
-- **Cursor**: Native rules file `.cursor/rules/aigon.mdc` with `alwaysApply: true`.
-- **Codex**: Native prompt file `.codex/prompt.md` with marker blocks.
-
-**Important:** Commit settings and config files to Git (`.claude/settings.json`, `.cursor/cli.json`, `.gemini/settings.json`, etc.). This ensures worktrees inherit agent configurations. Command files are gitignored — they're regenerated from templates.
+- `install-agent` writes **only aigon-owned files** — never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).
+- Command files (`.claude/commands/`, `.cursor/commands/`, `.gemini/commands/`) are **gitignored** — regenerated from templates.
+- Settings files (`.claude/settings.json`, `.cursor/cli.json`, `.gemini/settings.json`, etc.) **should be committed** so worktrees inherit agent configurations.
 
 ### Code Module Structure
 
