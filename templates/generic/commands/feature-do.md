@@ -166,7 +166,7 @@ Then follow the **one** matching section below:
 
 ---
 
-### AUTO_SUBMIT → submit and exit
+### AUTO_SUBMIT → signal done and exit
 
 ```bash
 aigon agent-status submitted
@@ -175,31 +175,34 @@ This session is complete. Do not suggest follow-up commands.
 
 ---
 
-### WORKTREE → submit and stop
+### WORKTREE → signal done and stay
 
 You are in a worktree (Drive worktree or Fleet). Run:
 ```bash
 aigon agent-status submitted
 ```
-Then tell the user: "Implementation complete and submitted."
+Then tell the user:
 
-**STOP.** Do NOT run feature-close or suggest it — that must be done from the main repo by the user.
+> "Implementation complete — code is on the branch, ready for review. You can ask me to make changes here, or close the feature from the main repo when satisfied."
+
+**STAY in the session.** The user may want to review your work and ask for changes. If they do, make the changes, commit, and say "Changes made and committed." No need to re-run agent-status — the status stays `submitted` and the branch tip always has the latest code.
+
+Do NOT run or suggest `feature-close` — that's the user's decision from the main repo.
 
 ---
 
-### BRANCH → submit and stop
+### BRANCH → signal done and stay
 
 You are on a branch in the main repo (Drive branch mode). Run:
 ```bash
 aigon agent-status submitted
 ```
-Then tell the user: "Implementation complete and submitted. Run `/aigon:feature-close <ID>` when ready."
+Then tell the user:
 
-**STOP and WAIT.** Do not run feature-close yourself.
+> "Implementation complete — code is on the branch, ready for review. You can ask me to make changes, or run `/aigon:feature-close <ID>` when satisfied."
+
+**STAY in the session.** The user may review and request changes. If they do, make the changes and commit. No need to re-run agent-status.
 
 ## Prompt Suggestion
 
-**IMPORTANT:** End your final response with the suggested next command on its own line. This tells the user what to run next and enables prompt suggestions. Use the actual feature ID:
-
-- **Drive mode:** `{{CMD_PREFIX}}feature-close <ID>`
-- **Fleet / worktree:** `{{CMD_PREFIX}}feature-submit`
+End your final response with a brief summary of what was implemented (files changed, approach taken). Do NOT suggest a slash command — the user decides what to do next.
