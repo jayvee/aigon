@@ -1,6 +1,6 @@
 - **NEVER run your dev command directly** — this bypasses port allocation and will cause port conflicts
 - Run `aigon dev-server start` — allocates your agent's unique port, starts the server, registers with the proxy, and waits for healthy
-- Use the URL printed by the command — never use `http://localhost:3000` or the default port
+- Use the URL printed by the command — always use the allocated URL
 - Use `aigon dev-server logs` to check startup output if anything seems wrong
 - Test endpoints using `curl` or a REST client
 - Ask the user to verify
