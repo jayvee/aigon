@@ -25,3 +25,4 @@ docs/agents/
 .aigon/state/
 .aigon/locks/
 next-env.d.ts
+.aigon/worktree.json
