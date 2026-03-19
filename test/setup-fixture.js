@@ -83,18 +83,11 @@ function featureBacklogContent(id, title, summary, ac, approach) {
     return featureInboxContent(title, summary, ac, approach);
 }
 
-function featureInProgressContent(id, title, summary, ac, approach) {
-    return featureInboxContent(title, summary, ac, approach);
-}
 
 function featureDoneContent(id, title, summary) {
     return featureInboxContent(title, summary);
 }
 
-function logContent(num, desc, status = 'implementing') {
-    const now = new Date().toISOString();
-    return `---\nstatus: ${status}\nupdated: ${now}\nstartedAt: ${now}\nevents:\n  - { ts: "${now}", status: ${status} }\n---\n\n# Implementation Log: Feature ${num} - ${desc}\n\n## Plan\n\nImplemented the feature as specified.\n\n## Progress\n\nCompleted all acceptance criteria.\n\n## Decisions\n\nUsed standard patterns consistent with existing codebase.\n`;
-}
 
 // Ports: brewboard=4200, brewboard-api=4210, trailhead=4220 (well clear of 3000-range dev servers and 4100-range dashboards)
 const FIXTURE_PORTS = {
@@ -387,19 +380,17 @@ export default config;
              'Deduplicate by name+brewery (case-insensitive)'],
             'Simple string parsing — split by newline, then by comma. No external dependencies.'));
 
-    // ── features/03-in-progress (2 items, with IDs) ──────────────────────────
-    const inProgressDir = path.join(repoDir, 'docs', 'specs', 'features', '03-in-progress');
-
-    write(path.join(inProgressDir, 'feature-03-user-profiles.md'),
-        featureInProgressContent('03', 'User Profiles',
+    // ── features/02-backlog (continued — items that would have been in-progress) ─
+    write(path.join(backlogDir, 'feature-03-user-profiles.md'),
+        featureBacklogContent('03', 'User Profiles',
             'Add a static profile page component that displays a username and collection count.',
             ['Create `src/components/profile-card.tsx` with props `{ username: string, beerCount: number }`',
              'Render username as an h2 and beer count as a paragraph',
              'Export the component as default'],
             'Simple presentational React component. No data fetching — just props in, JSX out.'));
 
-    write(path.join(inProgressDir, 'feature-04-rating-system.md'),
-        featureInProgressContent('04', 'Rating System',
+    write(path.join(backlogDir, 'feature-04-rating-system.md'),
+        featureBacklogContent('04', 'Rating System',
             'Add a star rating display component that renders 1-5 stars with half-star support.',
             ['Create `src/components/star-rating.tsx` with props `{ rating: number }` (0.0 to 5.0)',
              'Render filled, half-filled, and empty star characters (★ ½ ☆)',
@@ -415,19 +406,14 @@ export default config;
     write(path.join(doneDir, 'feature-06-search.md'),
         featureDoneContent('06', 'Search', 'Full-text search across beers, breweries, and styles. Results ranked by relevance with highlighted matches.'));
 
-    // ── feature logs (for in-progress features) ───────────────────────────────
-    const logsDir = path.join(repoDir, 'docs', 'specs', 'features', 'logs');
-    write(path.join(logsDir, 'feature-03-user-profiles-log.md'), logContent('03', 'user-profiles'));
-    write(path.join(logsDir, 'feature-04-rating-system-log.md'), logContent('04', 'rating-system'));
-
-    // ── research-topics ──────────────────────────────────────────────────────
+    // ── research-topics (all in backlog or done — nothing in-progress without a session) ─
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '01-inbox', 'research-payment-providers.md'),
         researchContent('Payment Providers', 'Evaluate Stripe vs Paddle vs Lemon Squeezy for handling subscriptions, VAT, and international currencies.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-01-caching-strategy.md'),
         researchContent('Caching Strategy', 'Research Redis vs in-memory vs CDN edge caching for the beer catalogue. Consider cold-start times and invalidation complexity.'));
 
-    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '03-in-progress', 'research-02-offline-sync.md'),
+    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-02-offline-sync.md'),
         researchContent('Offline Sync', 'Evaluate approaches for offline support: service workers + IndexedDB, vs a dedicated sync library like PowerSync or ElectricSQL.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '04-done', 'research-03-auth-providers.md'),
@@ -543,19 +529,17 @@ function createBrewboardApi(repoDir) {
              'Export the schema as a string constant'],
             'Just the schema string. No resolver implementation needed — schema only.'));
 
-    // ── features/03-in-progress ──────────────────────────────────────────────
-    const inProgressDir = path.join(repoDir, 'docs', 'specs', 'features', '03-in-progress');
-
-    write(path.join(inProgressDir, 'feature-03-full-text-search.md'),
-        featureInProgressContent('03', 'Full-Text Search',
+    // ── features/02-backlog (continued) ─────────────────────────────────────
+    write(path.join(backlogDir, 'feature-03-full-text-search.md'),
+        featureBacklogContent('03', 'Full-Text Search',
             'Add a search query builder function.',
             ['Create `src/lib/search-query.js` exporting `function buildSearchQuery(term, types)` that returns a SQL string',
              'Use `to_tsquery` for the term and filter by types array',
              'Return empty results SQL if term is empty (not an error)'],
             'String template to build a SQL query. One file, one function.'));
 
-    write(path.join(inProgressDir, 'feature-04-image-uploads.md'),
-        featureInProgressContent('04', 'Image Uploads',
+    write(path.join(backlogDir, 'feature-04-image-uploads.md'),
+        featureBacklogContent('04', 'Image Uploads',
             'Add a file validation utility for image uploads.',
             ['Create `src/lib/validate-image.js` exporting `function validateImage(file)` that checks file type and size',
              'Accept only jpeg, png, webp with max size 5MB',
@@ -571,19 +555,16 @@ function createBrewboardApi(repoDir) {
     write(path.join(doneDir, 'feature-06-pagination.md'),
         featureDoneContent('06', 'Pagination', 'Cursor-based pagination for all list endpoints. Returns `next_cursor` and `has_more` alongside data.'));
 
-    // ── feature logs ─────────────────────────────────────────────────────────
-    const logsDir = path.join(repoDir, 'docs', 'specs', 'features', 'logs');
-    write(path.join(logsDir, 'feature-03-full-text-search-log.md'), logContent('03', 'full-text-search'));
-    write(path.join(logsDir, 'feature-04-image-uploads-log.md'), logContent('04', 'image-uploads'));
+    // No feature logs — logs are created by feature-setup, not pre-seeded
 
-    // ── research-topics ──────────────────────────────────────────────────────
+    // ── research-topics (nothing in-progress without a running session) ──────
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '01-inbox', 'research-event-sourcing.md'),
         researchContent('Event Sourcing', 'Should the API switch to event sourcing for the ratings and check-in history? Evaluate EventStore vs Kafka vs Postgres WAL.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-01-database-sharding.md'),
         researchContent('Database Sharding', 'At 10M beer ratings, will a single Postgres instance hold up? Research read replicas, Citus extension, and PlanetScale Vitess.'));
 
-    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '03-in-progress', 'research-02-observability-stack.md'),
+    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-02-observability-stack.md'),
         researchContent('Observability Stack', 'Compare OpenTelemetry + Grafana vs Datadog vs Honeycomb for distributed tracing across API, workers, and DB.'));
 
     // ── feedback (realistic API consumer reports) ──────────────────────────
@@ -750,19 +731,17 @@ final class HikeTests: XCTestCase {
              'Add `func distanceTo(lat: Double, lon: Double) -> Double` using the Haversine formula'],
             'Simple struct with Codable. Haversine formula for distance calculation.'));
 
-    // ── features/03-in-progress ──────────────────────────────────────────────
-    const inProgressDir = path.join(repoDir, 'docs', 'specs', 'features', '03-in-progress');
-
-    write(path.join(inProgressDir, 'feature-03-offline-maps.md'),
-        featureInProgressContent('03', 'Offline Maps',
+    // ── features/02-backlog (continued) ─────────────────────────────────────
+    write(path.join(backlogDir, 'feature-03-offline-maps.md'),
+        featureBacklogContent('03', 'Offline Maps',
             'Add a helper that calculates tile coordinates for a given bounding box.',
             ['Create `Sources/Trailhead/TileCalculator.swift` with `func tilesForRegion(minLat: Double, maxLat: Double, minLon: Double, maxLon: Double, zoom: Int) -> [(x: Int, y: Int)]`',
              'Use the standard Slippy Map tile numbering formula',
              'Return all tile (x, y) pairs within the bounding box at the given zoom level'],
             'Standard OSM tile math: x = floor((lon + 180) / 360 * 2^zoom), y from lat using Mercator projection.'));
 
-    write(path.join(inProgressDir, 'feature-04-hike-stats-widget.md'),
-        featureInProgressContent('04', 'Hike Stats Widget',
+    write(path.join(backlogDir, 'feature-04-hike-stats-widget.md'),
+        featureBacklogContent('04', 'Hike Stats Widget',
             'Add a function that summarises weekly hike statistics from an array of hikes.',
             ['Create `Sources/Trailhead/WeeklyStats.swift` with `func weeklyStats(hikes: [Hike], referenceDate: Date) -> WeeklyStats`',
              'WeeklyStats struct: `{ hikeCount: Int, totalDistanceKm: Double, totalElevationGainM: Double }`',
@@ -778,19 +757,16 @@ final class HikeTests: XCTestCase {
     write(path.join(doneDir, 'feature-06-icloud-sync.md'),
         featureDoneContent('06', 'iCloud Sync', 'Sync hike records across the user\'s devices using CloudKit. Conflicts resolved by last-write-wins on the name/notes fields; GPS tracks are immutable.'));
 
-    // ── feature logs ─────────────────────────────────────────────────────────
-    const logsDir = path.join(repoDir, 'docs', 'specs', 'features', 'logs');
-    write(path.join(logsDir, 'feature-03-offline-maps-log.md'), logContent('03', 'offline-maps'));
-    write(path.join(logsDir, 'feature-04-hike-stats-widget-log.md'), logContent('04', 'hike-stats-widget'));
+    // No feature logs — logs are created by feature-setup, not pre-seeded
 
-    // ── research-topics ──────────────────────────────────────────────────────
+    // ── research-topics (nothing in-progress without a running session) ──────
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '01-inbox', 'research-live-activities.md'),
         researchContent('Live Activities for Active Hikes', 'Can we use ActivityKit Live Activities to show real-time hike stats on the Dynamic Island and Lock Screen during an active session?'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-01-route-planning.md'),
         researchContent('Route Planning APIs', 'Evaluate MapKit routing vs OpenRouteService vs Komoot API for suggesting hiking routes based on difficulty, length, and starting point.'));
 
-    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '03-in-progress', 'research-02-battery-usage.md'),
+    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-02-battery-usage.md'),
         researchContent('GPS Battery Optimisation', 'Background GPS tracking drains the battery fast. Research CLLocationManager accuracy modes, significant-change API, and deferred location updates as power-saving strategies.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '04-done', 'research-03-map-sdk-choice.md'),
