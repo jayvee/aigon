@@ -125,7 +125,7 @@
     .toggle-btn.active{background:var(--accent);color:#fff}
     /* Pipeline / Kanban */
     .kanban{display:grid;grid-template-columns:repeat(5,minmax(200px,1fr));gap:10px;align-items:start;overflow-x:auto;padding-bottom:8px}
-    .kanban-col{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden;min-height:120px}
+    .kanban-col{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:visible;min-height:120px}
     .kanban-col.drag-over{border-color:rgba(59,130,246,.6);background:rgba(59,130,246,.06)}
     .kanban-col.drag-blocked{border-color:rgba(239,68,68,.4)}
     .col-h{padding:9px 12px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center}
@@ -162,6 +162,9 @@
     .kcard-agent-status.status-waiting{color:#FCD34D}
     .kcard-agent-status.status-submitted{color:#86EFAC}
     .kcard-agent-status.status-ended,.kcard-agent-status.status-idle{color:var(--text-tertiary)}
+    .monitor-dev-link{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;color:var(--text-secondary);border:1px solid var(--border-subtle);border-radius:999px;text-decoration:none;opacity:.86;transition:opacity .12s ease,border-color .12s ease,color .12s ease}
+    .monitor-dev-link svg{width:11px;height:11px;display:block}
+    .monitor-dev-link:hover{opacity:1;border-color:var(--accent);color:var(--text-primary)}
     .kcard-agent-actions{display:flex;gap:4px;align-items:center;margin-top:3px}
     .kcard-agent-actions .btn{font-size:11px;padding:3px 8px}
     .btn-overflow{padding:2px 8px!important;font-size:14px;line-height:1;color:var(--text-tertiary);letter-spacing:.05em}
@@ -169,6 +172,8 @@
     .kcard-overflow-menu{display:none;position:absolute;right:0;bottom:calc(100% + 3px);z-index:200;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:6px;padding:3px;min-width:110px;box-shadow:0 4px 12px rgba(0,0,0,.35)}
     .kcard-overflow-menu.open{display:block}
     .kcard-overflow-item{display:block;width:100%;text-align:left;padding:5px 10px;font-size:11px;background:transparent;border:none;color:#F87171;border-radius:4px;cursor:pointer;white-space:nowrap}
+    .kcard-overflow-item.kcard-overflow-item-neutral{color:var(--text-secondary)}
+    .kcard-overflow-item.kcard-overflow-item-neutral:hover{color:var(--text-primary)}
     .kcard-overflow-item:hover{background:var(--bg-elevated)}
     .kcard-transitions{margin-top:6px;padding-top:6px;border-top:1px solid var(--border-subtle);display:flex;gap:5px;flex-wrap:wrap;align-items:center}
     .kcard-transitions .btn{font-size:11px;padding:3px 8px}
