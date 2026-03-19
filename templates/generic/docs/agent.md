@@ -17,7 +17,7 @@
 | `{{CMD_PREFIX}}feature-do <ID> [--autonomous]` | Implement feature; `--autonomous` runs iterative retry loop |
 | `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `{{CMD_PREFIX}}feature-review <ID>` | Code review with fixes by a different agent |
-| `{{CMD_PREFIX}}feature-submit` | (agent-only) Commit changes, write log, signal implementation complete |
+| `{{CMD_PREFIX}}feature-submit` | (you must run this) Commit changes, write log, signal implementation complete |
 | `{{CMD_PREFIX}}feature-close <ID> [agent]` | Merge and complete feature |
 | `{{CMD_PREFIX}}feature-autopilot <ID> [agents...]` | Fleet autopilot: setup + spawn + monitor + eval |
 | `{{CMD_PREFIX}}feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
@@ -30,7 +30,7 @@
 | `{{CMD_PREFIX}}research-setup <ID> [agents...]` | Setup for Drive or Fleet research |
 | `{{CMD_PREFIX}}research-open <ID>` | Open all Fleet agents side-by-side for parallel research |
 | `{{CMD_PREFIX}}research-do <ID>` | Conduct research (write findings) |
-| `{{CMD_PREFIX}}research-submit` | (agent-only) Signal research findings are complete |
+| `{{CMD_PREFIX}}research-submit` | (you must run this) Signal research findings are complete |
 | `{{CMD_PREFIX}}research-close <ID>` | Complete research topic |
 
 ### Feedback Commands
@@ -50,6 +50,15 @@
 
 - **Drive mode**: `{{CMD_PREFIX}}feature-setup <ID>` - Creates branch only, work in current directory
 - **Fleet mode**: `{{CMD_PREFIX}}feature-setup <ID> <agents...>` - Creates worktrees for parallel implementation
+
+## Mandatory Lifecycle Commands
+
+A feature is NOT complete until you run these commands yourself:
+
+1. `aigon agent-status implementing` — when you start coding
+2. `aigon agent-status submitted` — after committing all code and log updates
+
+These are CLI commands you run directly — not slash commands, not auto-invoked. The `aigon agent-status` command writes state to the **main repo** (not the worktree), so you won't see state files locally. Just run the command and trust the output.
 
 ## Critical Rules
 
