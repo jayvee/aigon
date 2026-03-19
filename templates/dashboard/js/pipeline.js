@@ -2,10 +2,20 @@
 
     const STAGE_ORDER = ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'];
     const STAGE_LABELS = { inbox: 'Inbox', backlog: 'Backlog', 'in-progress': 'In-Progress', 'in-evaluation': 'Evaluation', done: 'Done', paused: 'Paused', triaged: 'Triaged', actionable: 'Actionable', 'wont-fix': "Won't Fix", duplicate: 'Duplicate' };
-    const PIPELINE_STAGES = {
+    const PIPELINE_STAGES_BASE = {
       features: ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'],
       research: ['inbox', 'backlog', 'in-progress', 'paused', 'done'],
       feedback: ['inbox', 'triaged', 'actionable', 'done', 'wont-fix']
+    };
+    // Paused column is hidden by default for features, toggled via UI
+    const PIPELINE_STAGES = {
+      get features() {
+        const base = PIPELINE_STAGES_BASE.features;
+        const show = localStorage.getItem(lsKey('showPaused')) === '1';
+        return show ? [...base.slice(0, -1), 'paused', base[base.length - 1]] : base;
+      },
+      get research() { return PIPELINE_STAGES_BASE.research; },
+      get feedback() { return PIPELINE_STAGES_BASE.feedback; }
     };
     // ALLOWED_TRANSITIONS removed — transitions are now validated server-side via
     // validActions in the /api/status response. Drag-drop uses validTargetStages
@@ -92,49 +102,42 @@
       setCreateModalBusy(true);
 
       try {
-        // Build args: name + optional description
-        const createArgs = [name];
-        if (description) createArgs.push('--description', description);
-
-        const actionRes = await fetch('/api/action', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            action: 'feature-create',
-            args: createArgs,
-            repoPath: pickedRepo
-          })
-        });
-        const actionPayload = await actionRes.json().catch(() => ({}));
-        if (!actionRes.ok) {
-          const details = actionPayload && actionPayload.details ? actionPayload.details : {};
-          const detailedError = String(details.stderr || details.error || '').trim();
-          const topLevelError = String(actionPayload.error || '').trim();
-          throw new Error(detailedError || topLevelError || ('HTTP ' + actionRes.status));
-        }
-
-        await requestRefresh();
-        hideCreateModal();
-        showToast('Created feature: ' + name);
-
         // Use agent picked in modal, fall back to sidebar agent
         const agentRadio = document.querySelector('#create-modal-agent input[name="create-agent"]:checked');
         const agentId = (agentRadio && agentRadio.value) || (typeof getAskAgent === 'function' && getAskAgent()) || 'cc';
-        const slug = slugifyFeatureName(name);
-        const specPath = `docs/specs/features/01-inbox/feature-${slug}.md`;
-        const prompt = [
-          `Flesh out the feature spec at ${specPath}.`,
-          '',
-          `Feature name: "${name}"`,
-          `User description: "${description || 'No rough description provided.'}"`,
-          '',
-          'Read the spec template, then fill in acceptance criteria, technical approach, dependencies, and out-of-scope based on this context.'
-        ].join('\n');
 
-        // Skip agent session if "None" was selected
         if (!agentId) {
-          // No agent — just create the file, user will refine manually
+          // "None" selected — create the file via CLI, no agent session
+          const createArgs = [name];
+          if (description) createArgs.push('--description', description);
+
+          const actionRes = await fetch('/api/action', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              action: 'feature-create',
+              args: createArgs,
+              repoPath: pickedRepo
+            })
+          });
+          const actionPayload = await actionRes.json().catch(() => ({}));
+          if (!actionRes.ok) {
+            const details = actionPayload && actionPayload.details ? actionPayload.details : {};
+            const detailedError = String(details.stderr || details.error || '').trim();
+            const topLevelError = String(actionPayload.error || '').trim();
+            throw new Error(detailedError || topLevelError || ('HTTP ' + actionRes.status));
+          }
+          await requestRefresh();
+          hideCreateModal();
+          showToast('Created feature: ' + name);
         } else {
+          // Agent selected — use the slash command which creates + explores + fleshes out
+          const descContext = description ? `\n\nUser description: "${description}"` : '';
+          const prompt = `/aigon:feature-create ${name}${descContext}`;
+
+          hideCreateModal();
+          showToast('Opening agent to create feature: ' + name);
+
           const askRes = await fetch('/api/session/ask', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
@@ -142,7 +145,7 @@
           }).catch(() => null);
           if (!askRes || !askRes.ok) {
             const askPayload = askRes ? await askRes.json().catch(() => ({})) : {};
-            showToast('Feature created, but failed to open agent session: ' + (askPayload.error || 'Unknown error'), null, null, { error: true });
+            showToast('Failed to open agent session: ' + (askPayload.error || 'Unknown error'), null, null, { error: true });
           }
         }
       } catch (e) {
@@ -523,7 +526,15 @@
           { key: 'research', label: 'Research' },
           { key: 'feedback', label: 'Feedback' }
         ],
-        get currentStages() { return PIPELINE_STAGES[Alpine.store('dashboard').pipelineType || 'features'] || STAGE_ORDER; },
+        get currentStages() {
+          const pType = Alpine.store('dashboard').pipelineType || 'features';
+          const base = PIPELINE_STAGES_BASE[pType] || STAGE_ORDER;
+          // Read reactive showPaused flag (triggers Alpine re-render when toggled)
+          if (pType === 'features' && Alpine.store('dashboard')._showPaused) {
+            return [...base.slice(0, -1), 'paused', base[base.length - 1]];
+          }
+          return base;
+        },
         get visibleRepos() { return getVisibleRepos(Alpine.store('dashboard').data || { repos: [] }); },
         get emptyMessage() {
           return (Alpine.store('dashboard').selectedRepo === 'all')
@@ -531,6 +542,12 @@
             : 'No data for selected repo.';
         },
         setPipelineType(t) { Alpine.store('dashboard').pipelineType = t; localStorage.setItem(lsKey('pipelineType'), t); },
+        get showPaused() { return !!Alpine.store('dashboard')._showPaused; },
+        togglePaused() {
+          const next = !this.showPaused;
+          Alpine.store('dashboard')._showPaused = next;
+          localStorage.setItem(lsKey('showPaused'), next ? '1' : '0');
+        },
         getStageDisplayCount(repo, stage) {
           const s = Alpine.store('dashboard');
           const pType = s.pipelineType || 'features';
@@ -597,7 +614,7 @@
               break;
             }
             default:
-              await requestAction(transition.action, [featureId], effectiveRepo);
+              await requestAction(transition.action, [featureId || featureName], effectiveRepo);
           }
         }
       };
