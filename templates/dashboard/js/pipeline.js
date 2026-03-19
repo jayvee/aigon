@@ -158,9 +158,12 @@
           break;
         }
         case 'feature-eval': {
-          // Open an interactive agent session to run the eval — the agent handles
-          // both the state transition and the evaluation document creation.
-          await requestFeatureOpen(id, 'cc', repoPath, btn, pipelineType);
+          // If not already in evaluation, do the state transition first
+          if (feature.stage !== 'in-evaluation') {
+            await requestAction('feature-eval', [id, '--setup-only'], repoPath, btn);
+          }
+          // Open a dedicated eval session — runs from main repo with eval prompt
+          await requestFeatureOpen(id, 'cc', repoPath, null, pipelineType, 'eval');
           break;
         }
         case 'feature-prioritise':
