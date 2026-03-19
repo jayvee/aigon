@@ -35,3 +35,20 @@ Agent: cx
 - Kept Start Dev Server action in overflow to avoid adding visual noise to every row.
 - Extended shared agent status rendering instead of duplicating link markup between Monitor and Pipeline views.
 - Fixed the pipeline dropdown clipping at container level instead of introducing per-menu absolute positioning hacks.
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-03-19
+
+### Findings
+1. **Bug — globe icon shown without live dev server (critical)**: `devServerUrl` was set to a deterministic URL whenever a worktree existed on a web/api profile, without checking the dev proxy registry or verifying the process was alive. This produced dead links for every agent, violating the spec's acceptance criteria ("Icon is NOT shown when no dev server is registered or PID is dead").
+2. **Scope creep in proxy.js (minor, kept)**: Added `isPortInUseSync` fallback to `reconcileProxyRoutes` and `gcDevServers` — unrelated to this feature but defensible as a liveness detection improvement. No revert needed.
+
+### Fixes Applied
+- `fix(review): check dev proxy registry for live PID before showing globe icon` — reads `loadProxyRegistry()` once per repo, looks up the serverId (`{agent}-{featureId}`), and only sets `devServerUrl` when the entry exists and `isProcessAlive(pid)` returns true.
+
+### Notes
+- The frontend rendering, CSS, overflow menu, and "Start Dev Server" action all look correct and well-integrated.
+- The `kanban-col { overflow: visible }` change is needed for overflow menus to render outside column bounds — verified in Pipeline screenshot.
+- Screenshots confirm the UI renders cleanly in both Monitor and Pipeline views.
