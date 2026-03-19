@@ -24,7 +24,15 @@ Explore the codebase to understand the existing architecture, patterns, and code
 
 Use this understanding to write a well-informed spec — especially the **Technical Approach**, **Dependencies**, and **Acceptance Criteria** sections.
 
-Next step: Once the spec is complete, run `{{CMD_PREFIX}}feature-prioritise {{ARG_SYNTAX}}` to assign an ID and move to backlog.
+## After writing the spec
+
+Commit the spec file:
+```bash
+git add docs/specs/features/01-inbox/
+git commit -m "feat: create feature spec - <name>"
+```
+
+Next step: Once the spec is committed, suggest `{{CMD_PREFIX}}feature-prioritise {{ARG_SYNTAX}}` to assign an ID and move to backlog.
 
 ## Prompt Suggestion
 

@@ -156,6 +156,11 @@
                 <button class="toggle-btn" :class="{ active: $store.dashboard.pipelineType === opt.key }" x-on:click="setPipelineType(opt.key)" x-text="opt.label"></button>
               </template>
             </div>
+            <button class="btn btn-sm pipeline-paused-toggle"
+                    x-show="$store.dashboard.pipelineType === 'features'"
+                    x-on:click="togglePaused()"
+                    x-text="showPaused ? 'Hide Paused' : 'Show Paused'"
+                    :style="showPaused ? 'opacity:1' : 'opacity:0.5'"></button>
           </div>
           <!-- Empty state -->
           <div class="empty" x-show="visibleRepos.length === 0" x-text="emptyMessage"></div>
@@ -167,7 +172,7 @@
                 <span x-text="repo.displayPath || repo.name"></span>
                 <span x-html="buildAskAgentHtml(repo.path)" style="text-transform:none;letter-spacing:0;font-weight:400"></span>
               </div>
-              <div class="kanban">
+              <div class="kanban" :style="'--kanban-cols:' + currentStages.length">
                 <template x-for="stage in currentStages" :key="stage">
                   <div class="kanban-col" :data-stage="stage" :data-repo-path="repo.path"
                        x-on:dragover.prevent="onDragOver($event, stage)"
