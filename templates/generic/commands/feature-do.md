@@ -75,7 +75,7 @@ For non-trivial features, **use plan mode** before implementation to explore the
 
 ## Step 3: Implement and break into tasks from acceptance criteria
 
-**Signal that you are starting implementation:**
+**Signal that you are starting implementation (you MUST run this shell command — do NOT write .aigon/state/ files directly):**
 ```bash
 aigon agent-status implementing
 ```
@@ -155,6 +155,8 @@ Update it with:
 ## Step 7: Signal completion
 
 **THIS IS THE FINAL STEP. YOU MUST COMPLETE IT.**
+
+**IMPORTANT:** You MUST use `aigon agent-status` CLI commands below — do NOT write `.aigon/state/` JSON files directly. The CLI resolves the correct target directory (main repo, not worktree).
 
 After committing your code (Step 5) and log (Step 6), run this command to detect your mode and signal the correct status:
 
