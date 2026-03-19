@@ -158,12 +158,15 @@
           break;
         }
         case 'feature-eval': {
+          // Pick which agent runs the evaluation
+          const evalAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose evaluation agent', submitLabel: 'Run Evaluation' });
+          if (!evalAgent || evalAgent.length === 0) return;
           // If not already in evaluation, do the state transition first
           if (feature.stage !== 'in-evaluation') {
             await requestAction('feature-eval', [id, '--setup-only'], repoPath, btn);
           }
           // Open a dedicated eval session — runs from main repo with eval prompt
-          await requestFeatureOpen(id, 'cc', repoPath, null, pipelineType, 'eval');
+          await requestFeatureOpen(id, evalAgent[0], repoPath, null, pipelineType, 'eval');
           break;
         }
         case 'feature-prioritise':
