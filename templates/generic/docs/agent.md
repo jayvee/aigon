@@ -17,7 +17,7 @@
 | `{{CMD_PREFIX}}feature-do <ID> [--autonomous]` | Implement feature; `--autonomous` runs iterative retry loop |
 | `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `{{CMD_PREFIX}}feature-review <ID>` | Code review with fixes by a different agent |
-| `{{CMD_PREFIX}}feature-submit` | (agent-only) Commit changes, write log, signal done |
+| `{{CMD_PREFIX}}feature-submit` | (agent-only) Commit changes, write log, signal implementation complete |
 | `{{CMD_PREFIX}}feature-close <ID> [agent]` | Merge and complete feature |
 | `{{CMD_PREFIX}}feature-autopilot <ID> [agents...]` | Fleet autopilot: setup + spawn + monitor + eval |
 | `{{CMD_PREFIX}}feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
@@ -30,7 +30,7 @@
 | `{{CMD_PREFIX}}research-setup <ID> [agents...]` | Setup for Drive or Fleet research |
 | `{{CMD_PREFIX}}research-open <ID>` | Open all Fleet agents side-by-side for parallel research |
 | `{{CMD_PREFIX}}research-do <ID>` | Conduct research (write findings) |
-| `{{CMD_PREFIX}}research-submit` | (agent-only) Signal research findings complete |
+| `{{CMD_PREFIX}}research-submit` | (agent-only) Signal research findings are complete |
 | `{{CMD_PREFIX}}research-close <ID>` | Complete research topic |
 
 ### Feedback Commands
@@ -79,7 +79,7 @@
    - Run `{{CMD_PREFIX}}feature-do <ID>`
    - Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
    - Implement the feature
-   - **STOP** - Do NOT commit or write log until user runs `{{CMD_PREFIX}}feature-submit`
+   - The `feature-do` command handles commit, log, and signaling completion — stay in the session for user review
 4. Return to main repo for evaluation: `{{CMD_PREFIX}}feature-eval <ID>`
 5. Merge winner: `{{CMD_PREFIX}}feature-close <ID> cx`
 6. Clean up losers: `{{CMD_PREFIX}}feature-cleanup <ID> --push` (to save branches) or `{{CMD_PREFIX}}feature-cleanup <ID>` (to delete)
