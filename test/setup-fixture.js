@@ -100,12 +100,14 @@ function writeFixtureConfig(repoDir) {
     const repoName = path.basename(repoDir);
     const port = FIXTURE_PORTS[repoName] || 4200;
 
-    // Use cheap models for fixture repos to save tokens. Each agent gets its own provider's cheapest.
+    // Use production-grade models so workflow testing is realistic.
+    // Cheap models skip process steps (e.g. writing status files directly
+    // instead of running `aigon agent-status`), giving false negatives.
     const config = {
         agents: {
-            cc: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } },
-            gg: { models: { research: 'gemini-2.5-flash', implement: 'gemini-2.5-flash', evaluate: 'gemini-2.5-flash' } },
-            cx: { models: { research: 'gpt-4.1-mini', implement: 'gpt-4.1-mini', evaluate: 'gpt-4.1-mini' } },
+            cc: { models: {} },
+            gg: { models: {} },
+            cx: { models: {} },
         },
         devProxy: {
             basePort: port,
@@ -341,6 +343,7 @@ export default config;
     // Initialize aigon
     runAigon(['init'], repoDir);
     writeFixtureConfig(repoDir);
+    runAigon(['install-agent', 'cc'], repoDir);
     commit(repoDir, 'chore: initialize aigon spec structure');
 
     // ── features/01-inbox (2 items, no ID) ──────────────────────────────────
@@ -490,6 +493,7 @@ function createBrewboardApi(repoDir) {
     // Initialize aigon
     runAigon(['init'], repoDir);
     writeFixtureConfig(repoDir);
+    runAigon(['install-agent', 'cc'], repoDir);
     commit(repoDir, 'chore: initialize aigon spec structure');
 
     // ── features/01-inbox ────────────────────────────────────────────────────
@@ -691,6 +695,7 @@ final class HikeTests: XCTestCase {
     // Initialize aigon
     runAigon(['init'], repoDir);
     writeFixtureConfig(repoDir);
+    runAigon(['install-agent', 'cc'], repoDir);
     commit(repoDir, 'chore: initialize aigon spec structure');
 
     // ── features/01-inbox ────────────────────────────────────────────────────
@@ -808,10 +813,66 @@ final class HikeTests: XCTestCase {
 
 // ─── main ─────────────────────────────────────────────────────────────────────
 
+function cleanupFixtureArtifacts(repoNames) {
+    // Kill tmux sessions belonging to fixture repos
+    for (const name of repoNames) {
+        try {
+            const result = spawnSync('tmux', ['list-sessions', '-F', '#{session_name}'], { encoding: 'utf8', stdio: 'pipe' });
+            if (result.status === 0 && result.stdout) {
+                const sessions = result.stdout.trim().split('\n').filter(s =>
+                    s.startsWith('aigon-') && s.includes(name.replace(/-/g, ''))
+                );
+                for (const session of sessions) {
+                    spawnSync('tmux', ['kill-session', '-t', session], { stdio: 'pipe' });
+                    console.log(`  🔪 Killed tmux session: ${session}`);
+                }
+            }
+        } catch (_) { /* tmux not running */ }
+    }
+
+    // Remove worktree directories (must use git worktree remove before rmSync)
+    for (const name of repoNames) {
+        const repoDir = path.join(FIXTURES_DIR, name);
+        const worktreeDir = path.join(FIXTURES_DIR, `${name}-worktrees`);
+        if (fs.existsSync(worktreeDir) && fs.existsSync(repoDir)) {
+            console.log(`  🗑️  Removing worktrees: ${name}-worktrees/`);
+            // List and remove each git worktree properly
+            try {
+                const entries = fs.readdirSync(worktreeDir);
+                for (const entry of entries) {
+                    const wtPath = path.join(worktreeDir, entry);
+                    if (fs.statSync(wtPath).isDirectory()) {
+                        spawnSync('git', ['worktree', 'remove', '--force', wtPath], { cwd: repoDir, stdio: 'pipe' });
+                    }
+                }
+            } catch (_) { /* best-effort */ }
+            // Clean up the parent directory if anything remains
+            try { fs.rmSync(worktreeDir, { recursive: true, force: true }); } catch (_) {}
+        } else if (fs.existsSync(worktreeDir)) {
+            // No main repo (already deleted or missing) — force remove
+            try { fs.rmSync(worktreeDir, { recursive: true, force: true }); } catch (_) {}
+        }
+    }
+
+    // Stop dev servers via aigon (best-effort)
+    for (const name of repoNames) {
+        const repoDir = path.join(FIXTURES_DIR, name);
+        if (fs.existsSync(repoDir)) {
+            spawnSync(process.execPath, [CLI_PATH, 'dev-server', 'stop', '--all'], {
+                cwd: repoDir, encoding: 'utf8', stdio: 'pipe'
+            });
+        }
+    }
+}
+
 function main() {
     const brewboardDir = path.join(FIXTURES_DIR, 'brewboard');
     const apiDir = path.join(FIXTURES_DIR, 'brewboard-api');
     const trailheadDir = path.join(FIXTURES_DIR, 'trailhead');
+    const repoNames = ['brewboard', 'brewboard-api', 'trailhead'];
+
+    // Clean up tmux sessions, worktrees, and dev servers first
+    cleanupFixtureArtifacts(repoNames);
 
     // Clean existing fixture repos before regenerating
     for (const dir of [brewboardDir, apiDir, trailheadDir]) {
