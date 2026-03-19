@@ -74,16 +74,28 @@
     function showAgentPicker(featureId, featureName, options) {
       const opts = options || {};
       pickerSingleMode = !!opts.single;
+      const implAgents = opts.implementingAgents || [];
       return new Promise((resolve) => {
         pickerResolve = resolve;
         document.getElementById('agent-picker-title').textContent = opts.title || 'Select Agents';
         document.getElementById('agent-picker-desc').textContent = '#' + featureId + ' ' + featureName;
-        const checkboxes = document.querySelectorAll('#agent-picker .agent-checks input');
-        checkboxes.forEach(cb => {
+        const rows = document.querySelectorAll('#agent-picker .agent-checks .agent-check-row');
+        rows.forEach(row => {
+          const cb = row.querySelector('input');
           cb.checked = false;
           cb.type = pickerSingleMode ? 'radio' : 'checkbox';
           cb.name = pickerSingleMode ? 'agent-pick' : '';
           if (opts.preselect && cb.value === opts.preselect) cb.checked = true;
+          // Remove any existing badge
+          const existing = row.querySelector('.agent-check-badge');
+          if (existing) existing.remove();
+          // Add implementing badge if applicable
+          if (implAgents.includes(cb.value)) {
+            const badge = document.createElement('span');
+            badge.className = 'agent-check-badge';
+            badge.textContent = 'implemented';
+            cb.after(badge);
+          }
         });
         document.getElementById('agent-picker-submit').textContent = opts.submitLabel || 'Setup';
         document.getElementById('agent-picker').style.display = 'flex';

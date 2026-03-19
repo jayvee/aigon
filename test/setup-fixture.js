@@ -71,6 +71,28 @@ function commit(cwd, message) {
     runGit(['commit', '-m', message, '--allow-empty'], cwd);
 }
 
+function getGitHubUser() {
+    try {
+        return execSync('gh api user --jq .login', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+    } catch (e) {
+        console.log('  ⚠️  gh CLI not available — skipping GitHub remote setup');
+        return null;
+    }
+}
+
+function addGitHubRemote(repoDir, repoName, ghUser) {
+    const remoteUrl = `https://github.com/${ghUser}/${repoName}.git`;
+    try {
+        // Create repo if it doesn't exist (ignore error if it already exists)
+        execSync(`gh repo create ${repoName} --private --description "Aigon seed repo" 2>/dev/null || true`, { stdio: 'pipe' });
+        runGit(['remote', 'add', 'origin', remoteUrl], repoDir);
+        execSync('git push --force -u origin main', { cwd: repoDir, stdio: 'pipe' });
+        console.log(`  ✓ Pushed ${repoName} to ${remoteUrl}`);
+    } catch (e) {
+        console.log(`  ⚠️  Could not push ${repoName} to GitHub: ${e.message}`);
+    }
+}
+
 // ─── feature spec helpers ─────────────────────────────────────────────────────
 
 function featureInboxContent(title, summary, ac, approach) {
@@ -892,6 +914,16 @@ function main() {
         createBrewboard(brewboardDir);
         createBrewboardApi(apiDir);
         createTrailhead(trailheadDir);
+
+        // Add GitHub remotes and push seed state
+        const ghUser = getGitHubUser();
+        if (ghUser) {
+            for (const name of repoNames) {
+                const dir = path.join(FIXTURES_DIR, name);
+                addGitHubRemote(dir, name, ghUser);
+            }
+        }
+
         console.log(`\nFixtures ready in ${FIXTURES_DIR}/`);
         console.log('  brewboard/     — web SaaS (features, research, feedback seeded)');
         console.log('  brewboard-api/ — REST API backend (features, research, feedback seeded)');
