@@ -71,12 +71,13 @@
       }
     }
 
-    async function requestFeatureOpen(featureId, agentId, repoPath, btn, pType) {
+    async function requestFeatureOpen(featureId, agentId, repoPath, btn, pType, mode) {
       if (btn) { btn.disabled = true; btn.textContent = '...'; }
       try {
         const body = { featureId, agentId };
         if (repoPath) body.repoPath = repoPath;
         if (pType) body.pipelineType = pType;
+        if (mode) body.mode = mode;
         const res = await fetch('/api/feature-open', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
