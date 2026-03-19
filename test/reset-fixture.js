@@ -98,7 +98,30 @@ function resetRepo(repoName) {
         if (moved > 0) console.log(`  📋 Moved ${moved} feature(s) back to backlog`);
     }
 
-    // 7. Remove log files (they'll be recreated by feature-setup)
+    // 7. Rewrite config with correct per-provider models
+    const FIXTURE_PORTS = { brewboard: 4200, 'brewboard-api': 4210, trailhead: 4220 };
+    const port = FIXTURE_PORTS[repoName] || 4200;
+    const configPath = path.join(repoPath, '.aigon', 'config.json');
+    const config = {
+        profile: 'web',
+        agents: {
+            cc: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } },
+            gg: { models: { research: 'gemini-2.5-flash', implement: 'gemini-2.5-flash', evaluate: 'gemini-2.5-flash' } },
+            cx: { models: { research: 'gpt-4.1-mini', implement: 'gpt-4.1-mini', evaluate: 'gpt-4.1-mini' } },
+        },
+        devProxy: { basePort: port },
+    };
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
+    fs.writeFileSync(path.join(repoPath, '.env'), `PORT=${port}\n`);
+    console.log(`  🔧 Config reset (models + PORT=${port})`);
+
+    // 8. Reinstall agent commands
+    const aigonCli = path.join(__dirname, '..', 'aigon-cli.js');
+    run(`node "${aigonCli}" install-agent cc gg`, { cwd: repoPath, ignoreError: true });
+    console.log(`  🔧 Reinstalled agent commands (cc, gg)`);
+
+    // 10. Remove log files (they'll be recreated by feature-setup)
     const logsDir = path.join(specsRoot, 'logs');
     if (fs.existsSync(logsDir)) {
         const logFiles = fs.readdirSync(logsDir).filter(f => f.endsWith('-log.md'));
@@ -106,7 +129,7 @@ function resetRepo(repoName) {
         if (logFiles.length > 0) console.log(`  🗑️  Removed ${logFiles.length} log file(s)`);
     }
 
-    // 8. Remove evaluation files
+    // 11. Remove evaluation files
     const evalsDir = path.join(specsRoot, 'evaluations');
     if (fs.existsSync(evalsDir)) {
         const evalFiles = fs.readdirSync(evalsDir).filter(f => f.endsWith('.md'));
