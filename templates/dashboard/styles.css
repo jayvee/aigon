@@ -131,6 +131,7 @@
     .col-h{padding:9px 12px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center}
     .col-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary)}
     .col-count{font-size:11px;color:var(--text-tertiary)}
+    .col-new-feature-btn{font-size:10px;padding:3px 8px}
     .col-body{padding:8px;display:grid;gap:6px;min-height:60px}
     .kcard{border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,.01);padding:8px 10px;cursor:grab;transition:background .12s ease,border-color .12s ease,box-shadow .12s ease}
     .kcard:hover{background:var(--bg-elevated);border-color:var(--border-default)}
@@ -190,9 +191,12 @@
     .agent-check-label{font-family:var(--mono);font-size:13px;flex:1}
     .agent-check-hint{font-size:11px;color:var(--text-tertiary)}
     .modal-actions{display:flex;gap:8px;justify-content:flex-end}
+    .create-modal-box{max-width:520px}
     .create-input{width:100%;padding:10px 12px;background:var(--bg-root);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:8px;font:13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;outline:none;transition:border-color .12s ease}
     .create-input:focus{border-color:var(--accent)}
     .create-input::placeholder{color:var(--text-tertiary)}
+    .create-textarea{resize:vertical;min-height:92px;line-height:1.5}
+    .modal-error{margin:10px 0 0;color:#fca5a5;font-size:12px}
     .modal-actions .btn{padding:6px 16px}
     /* Settings view */
     .settings-area{padding:16px 0 28px;max-width:640px}
