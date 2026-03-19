@@ -45,7 +45,7 @@
   "templatePath": "generic/docs/agent.md",
   "extras": {
     "prompt": {
-      "enabled": false,
+      "enabled": true,
       "path": ".codex/prompt.md"
     },
     "config": {
