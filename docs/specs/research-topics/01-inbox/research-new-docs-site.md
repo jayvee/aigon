@@ -2,7 +2,7 @@
 
 ## Context
 
-Aigon currently has no public documentation site. All docs live as markdown files in the repo (`docs/`, `CLAUDE.md`, `AGENTS.md`, `docs/development_workflow.md`). As aigon grows toward a commercial product (AADE), it needs a proper online docs site that:
+Aigon has an existing website at [aigon.build](https://aigon.build) (source: `~/src/aigon-site`), but it lacks proper documentation. All docs live as markdown files in the main aigon repo (`docs/`, `CLAUDE.md`, `AGENTS.md`, `docs/development_workflow.md`). This research is about rebuilding aigon.build with a new docs-focused framework — replacing or extending the current site with a proper documentation system. As aigon grows toward a commercial product (AADE), it needs:
 
 - Makes aigon accessible to new users who aren't reading the source
 - Presents the workflow (create → prioritise → start → evaluate → close) clearly
@@ -22,7 +22,8 @@ The user was impressed by [spec-kitty.ai](https://spec-kitty.ai/) docs and wants
 - [ ] Should aigon auto-generate command reference from the CLI source code, or maintain docs manually?
 - [ ] What's the minimum viable docs structure? (Getting started, commands reference, workflow guide, configuration, FAQ)
 - [ ] Can existing repo markdown (`docs/development_workflow.md`, help text, slash command templates) be reused as docs source?
-- [ ] What hosting/domain makes sense? (docs.aigon.dev, aigon.dev/docs, etc.)
+- [ ] What is the current aigon-site (`~/src/aigon-site`) built with? Should we rebuild from scratch or migrate?
+- [ ] Should docs live at aigon.build/docs or replace the entire site? (Landing page + docs in one framework vs separate)
 
 ## Scope
 
@@ -38,8 +39,7 @@ The user was impressed by [spec-kitty.ai](https://spec-kitty.ai/) docs and wants
 - Actually building the docs site (that's a feature)
 - Writing all the documentation content
 - Domain registration or DNS setup
-- Marketing site / landing page (separate from docs)
-- Pricing page or commercial content
+- Pricing page or commercial content (may come later with AADE)
 
 ## Inspiration
 
@@ -47,3 +47,4 @@ The user was impressed by [spec-kitty.ai](https://spec-kitty.ai/) docs and wants
 - [Turborepo docs](https://turbo.build/repo/docs) — CLI tool with excellent docs
 - [Geistdocs](https://preview.geistdocs.com/docs) — Vercel's own documentation template
 - Aigon's existing docs in `docs/` directory as content source
+- Current aigon-site (`~/src/aigon-site`) at [aigon.build](https://aigon.build) as the deployment target
