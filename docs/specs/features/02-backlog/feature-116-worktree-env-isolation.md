@@ -2,92 +2,75 @@
 
 ## Summary
 
-Prevent `.env.local` and other environment files from causing merge conflicts during `feature-close`. Currently, `setupWorktreeEnvironment()` writes agent-specific env vars (PORT, banner color, dev URL) into `.env.local` inside the worktree, then `git add -A` commits it to the feature branch. When merging back to main, the divergent `.env.local` causes a conflict. This feature ensures environment files never pollute git history while preserving the worktree's ability to run dev servers independently.
+Ensure `.env.local` is always gitignored in every aigon-managed repo, so worktree setup and feature-close never cause merge conflicts from environment files. The root cause was that `.env.local` was not in `.gitignore` — once gitignored, `git add -A` can't stage it. This feature ensures aigon enforces this as a default for all repos, not just ones we've manually fixed.
 
-## Problem Chain
+## What Already Happened
 
-1. `setupWorktreeEnvironment()` in `lib/worktree.js:1080` writes `.env.local` to worktree
-2. `lib/worktree.js:1118` runs `git add -A && git commit` — commits `.env.local` to feature branch
-3. `feature-close` in `lib/commands/feature.js:1490` also runs `git add -A` on auto-commit
-4. `git merge --no-ff` hits conflict because main and feature branch have different `.env.local`
+- Purged `.env.local` from aigon git history (31 commits rewritten)
+- Added `.env.local` / `.env*.local` to aigon's `.gitignore`
+- Added auto-resolve safety net in `feature-close` merge for `.env*.local` conflicts
+- Verified all repos under `~/src/` have `.env.local` gitignored
 
-The root cause is that **aigon itself** commits `.env.local` during worktree setup — not the agent.
+## What Remains
 
-## User Stories
-
-- [ ] As a developer, I can close any feature without `.env.local` merge conflicts
-- [ ] As a developer, worktree dev servers still get the correct PORT and agent config
-- [ ] As a developer using a repo that intentionally tracks `.env.local`, my main branch copy is unaffected
+Aigon must **proactively ensure** `.env*.local` is gitignored in every repo it manages, so this never recurs.
 
 ## Acceptance Criteria
 
-- [ ] `setupWorktreeEnvironment()` does NOT commit `.env.local` to the feature branch
-- [ ] `.env.local` is excluded from all `git add -A` operations in aigon (worktree setup, feature-close auto-commit)
-- [ ] Worktree `.env.local` still contains PORT, AIGON_AGENT_NAME, banner vars, dev URL
-- [ ] `feature-close` merge never conflicts on `.env.local` or `.env*.local`
-- [ ] Existing repos with tracked `.env.local` are not broken (no forced `.gitignore` changes)
-- [ ] Works for all profiles (web, api, ios, android, library, generic)
+- [ ] `aigon init` adds `.env.local` and `.env*.local` to the repo's `.gitignore` if not already present
+- [ ] `aigon install-agent` checks and warns if `.env.local` is not gitignored
+- [ ] `aigon doctor` detects tracked `.env.local` files and offers `--fix` to untrack + gitignore them
+- [ ] `aigon seed-reset` ensures seed repos have `.env*.local` in `.gitignore`
+- [ ] Worktree `.env.local` still gets correct PORT, banner vars, dev URL (no functional change)
 
 ## Validation
 
 ```bash
+node -c lib/commands/setup.js
 node -c lib/worktree.js
-node -c lib/commands/feature.js
+# After init on a fresh repo, .env.local should be in .gitignore
+# After doctor --fix on a repo with tracked .env.local, it should be untracked
 ```
 
 ## Technical Approach
 
-### Option A: Exclude from git operations (recommended — minimal change)
+### 1. `aigon init` — add to `.gitignore` scaffold
 
-Replace `git add -A` with explicit exclusions at the three commit sites:
+When creating `.gitignore` (or appending to existing), include:
+```
+.env.local
+.env*.local
+```
 
-1. **`lib/worktree.js:1118`** — worktree setup commit:
-   ```js
-   execSync(`git add -A -- ':!.env.local' ':!.env*.local'`, { cwd: worktreePath });
-   execSync(`git commit -m "chore: worktree setup for ${agentId}"`, { cwd: worktreePath });
-   ```
+### 2. `aigon install-agent` — warn on missing gitignore
 
-2. **`lib/commands/feature.js:1490`** — drive mode auto-commit:
-   ```js
-   runGit(`git add -A -- ':!.env.local' ':!.env*.local'`);
-   ```
+During install, check `git ls-files .env.local`. If tracked, warn:
+```
+⚠️  .env.local is tracked by git — this will cause merge conflicts during feature-close.
+    Fix: echo '.env.local' >> .gitignore && git rm --cached .env.local
+```
 
-3. **`lib/commands/feature.js:1507`** — worktree mode auto-commit:
-   ```js
-   execSync(`git -C "${worktreePath}" add -A -- ':!.env.local' ':!.env*.local'`);
-   ```
+### 3. `aigon doctor --fix` — auto-repair
 
-Also keep the auto-resolve safety net in `feature-close` merge (already implemented) as belt-and-suspenders.
+Add a check that:
+- Verifies `.env*.local` is in `.gitignore`
+- If `--fix`: adds to `.gitignore` and runs `git rm --cached .env.local`
 
-### Option B: Write to `.env.local.aigon` + `.gitignore` it
+### 4. Keep the auto-resolve safety net
 
-Write agent vars to a separate file (`.env.local.aigon`), add it to `.gitignore`, and have the dev server load both. Problem: Next.js and other frameworks only read `.env.local` — would require a wrapper script.
-
-### Option C: Symlink / process env injection
-
-More architectural change. Workaround for PORT-per-agent requirement makes this complex. Defer to a future feature if Option A proves insufficient.
-
-### Recommendation
-
-**Option A** — it's 3 line changes, zero migration, works for every repo. The auto-resolve in `feature-close` is the safety net for edge cases (e.g., agent manually running `git add .env.local`).
+The `feature-close` merge auto-resolve for `.env*.local` and `.aigon/` conflicts stays as belt-and-suspenders for repos we don't control.
 
 ## Dependencies
 
-- The auto-resolve merge logic in `feature-close` (already implemented in current session)
+- None (all infrastructure already exists)
 
 ## Out of Scope
 
-- Forcing `.gitignore` changes on user repos
-- Removing `.env.local` from git history (existing repos keep their tracked copy)
-- Alternative env injection mechanisms (direnv, process env, etc.)
-- Agent template changes (agents don't need to know about this)
-
-## Open Questions
-
-- Should `feature-submit` template explicitly warn agents not to `git add .env.local`?
-- Should `aigon doctor` check for `.env.local` in git history and warn?
+- Changing how `setupWorktreeEnvironment()` writes `.env.local` (it's fine — the file just shouldn't be tracked)
+- Filtering `git add -A` pathspecs (unnecessary if gitignored)
+- Alternative env injection mechanisms (direnv, process env, symlinks)
 
 ## Related
 
-- Feedback: `.env.local should not block feature-close` (existing memory)
-- CLAUDE.md rule: "Filter `.env.local` — never let it block `feature-close` or `feature-submit`"
+- Feedback: `.env.local should not block feature-close`
+- CLAUDE.md rule: "Filter `.env.local`"
