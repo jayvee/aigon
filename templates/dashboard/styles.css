@@ -405,6 +405,16 @@
     .amp-insights-coaching-title{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);margin-top:4px}
     .amp-insights-coaching-list{margin:0;padding-left:20px;display:grid;gap:4px;color:var(--text-secondary);font-size:12px}
     .amp-insights-gated{font-size:12px;color:var(--text-tertiary);padding:10px;border:1px dashed var(--border-subtle);border-radius:10px}
+    .amplification-standalone{padding-bottom:28px}
+    .amp-autonomy-dist{display:grid;gap:8px}
+    .amp-autonomy-bar-row{display:flex;align-items:center;gap:10px}
+    .amp-autonomy-bar-bg{flex:1;height:8px;background:var(--bg-elevated);border-radius:4px;overflow:hidden}
+    .amp-autonomy-bar-fill{height:100%;border-radius:4px;transition:width .3s ease}
+    .amp-autonomy-bar-fill.autonomy-good{background:#22c55e}
+    .amp-autonomy-bar-fill.autonomy-mid{background:#f59e0b}
+    .amp-autonomy-bar-fill.autonomy-collab{background:#3b82f6}
+    .amp-autonomy-bar-fill.autonomy-risk{background:#ef4444}
+    .amp-autonomy-bar-count{font-size:11px;color:var(--text-tertiary);min-width:60px;text-align:right}
     .stats-block{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:16px}
     .stats-block-title{font-size:13px;font-weight:600;margin:0 0 14px;display:flex;justify-content:space-between;align-items:center}
     .stats-block-score{font-size:20px;font-weight:700;color:var(--accent)}
