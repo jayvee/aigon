@@ -497,19 +497,7 @@
         moreBtn.onclick = () => {
           hiddenContainer.style.display = '';
           moreBtn.remove();
-          // Wire up valid-action buttons on revealed cards
-          hiddenContainer.querySelectorAll('.kcard-va-btn').forEach(btn => {
-            btn.onclick = (e) => {
-              e.stopPropagation();
-              const action = btn.getAttribute('data-va-action') || '';
-              const agentId = btn.getAttribute('data-agent') || null;
-              const card = btn.closest('.kcard');
-              const featureId = card ? card.dataset.featureId : '';
-              const featureName = card ? card.dataset.featureName : '';
-              const feature = (repo[pType] || []).find(f => String(f.id) === String(featureId)) || { id: featureId, name: featureName, stage: card ? card.dataset.stage : '' };
-              handleFeatureAction({ action, agentId, label: btn.textContent }, feature, repo.path, btn, pType);
-            };
-          });
+          // Buttons are already wired per-card inside buildKanbanCard() via closure
         };
         colBody.appendChild(moreBtn);
       }
@@ -529,19 +517,9 @@
         };
         colBody.appendChild(moreBtn);
       }
-      // Wire up valid-action button clicks on newly rendered cards
-      colBody.querySelectorAll('.kcard-va-btn').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const action = btn.getAttribute('data-va-action') || '';
-          const agentId = btn.getAttribute('data-agent') || null;
-          const card = btn.closest('.kcard');
-          const featureId = card ? card.dataset.featureId : '';
-          const featureName = card ? card.dataset.featureName : '';
-          const feature = (repo[pType] || []).find(f => String(f.id) === String(featureId)) || { id: featureId, name: featureName, stage: card ? card.dataset.stage : '' };
-          handleFeatureAction({ action, agentId, label: btn.textContent }, feature, repo.path, btn, pType);
-        };
-      });
+      // Note: valid-action button clicks are wired per-card inside buildKanbanCard()
+      // via closure over the correct feature object. Do NOT re-wire here — that
+      // overwrites the closure and breaks items without IDs (e.g. inbox cards).
     }
 
     function pipelineView() {
