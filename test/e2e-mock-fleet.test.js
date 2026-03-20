@@ -157,8 +157,8 @@ async function main() {
         const desc = 'fleet-test-feature';
 
         // Setup fleet: two agents cc and gg
-        const setupResult = runAigon(['feature-setup', featureId, 'cc', 'gg'], { cwd: tmpDir });
-        check('feature-setup (fleet) exits 0', () => {
+        const setupResult = runAigon(['feature-start', featureId, 'cc', 'gg'], { cwd: tmpDir });
+        check('feature-start (fleet) exits 0', () => {
             if (setupResult.exitCode !== 0)
                 throw new Error(`exit ${setupResult.exitCode}: ${setupResult.stderr.slice(0, 300)}`);
         });

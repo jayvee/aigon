@@ -138,7 +138,7 @@ Aigon uses four modes across two axes:
 - **Fleet mode**: multiple agents, hands-on competition
 - **Autopilot mode**: one agent, hands-off autonomous loop
 - **Swarm mode**: multiple agents, hands-off autonomous loop
-- **Fleet research**: parallel findings plus synthesis (`research-setup` + `research-open` + `research-synthesize`)
+- **Fleet research**: parallel findings plus synthesis (`research-start` + `research-open` + `research-synthesize`)
 
 ---
 
@@ -214,7 +214,7 @@ There are three ways to interact with Aigon — use whichever fits the moment:
 |---|---|---|---|
 | **Where** | Inside an agent session | Terminal / shell | Browser UI |
 | **Best for** | Writing specs, implementing features, research — anything conversational | Orchestration, setup, scripting, automation | Visual overview, monitoring Fleet runs, launching actions across repos |
-| **Example** | `/aigon:feature-do 07` | `aigon feature-setup 07 cc gg` | Click "Start feature" on a kanban card |
+| **Example** | `/aigon:feature-do 07` | `aigon feature-start 07 cc gg` | Click "Start feature" on a kanban card |
 
 **Slash commands**  — you stay in your agent and use Aigon commands naturally in conversation:
 
@@ -225,7 +225,7 @@ There are three ways to interact with Aigon — use whichever fits the moment:
 **CLI commands** handle orchestration that spans agents and repos — setting up Fleet worktrees, opening terminals, closing features:
 
 ```bash
-aigon feature-setup 07 cc gg cx    # Create 3 worktrees for Fleet
+aigon feature-start 07 cc gg cx    # Create 3 worktrees for Fleet
 aigon feature-open 07 --all        # Open all agents side-by-side
 aigon feature-close 07 cc          # Merge the winner
 ```
@@ -391,8 +391,8 @@ Aigon organises work into three lifecycles:
 
 | Lifecycle | Purpose | Commands |
 |-----------|---------|----------|
-| **Features** | Build and ship code | `feature-create` → `feature-prioritise` → `feature-setup` → `feature-do` → `feature-close` (Fleet adds `feature-eval` before close) |
-| **Research** | Investigate before building | `research-create` → `research-prioritise` → `research-setup` → `research-do` → `research-synthesize` → `research-close` |
+| **Features** | Build and ship code | `feature-create` → `feature-prioritise` → `feature-start` → `feature-do` → `feature-close` (Fleet adds `feature-eval` before close) |
+| **Research** | Investigate before building | `research-create` → `research-prioritise` → `research-start` → `research-do` → `research-synthesize` → `research-close` |
 | **Feedback** | Capture and triage user input | `feedback-create` → `feedback-list` → `feedback-triage` |
 
 Each lifecycle can run in any of four modes:
@@ -413,7 +413,7 @@ The examples below show each combination with realistic commands.
 ```text
 /aigon:feature-create jwt-auth
 /aigon:feature-prioritise jwt-auth          # Assigns ID (e.g., #07)
-/aigon:feature-setup 07                     # Creates branch
+/aigon:feature-start 07                     # Creates branch
 /aigon:feature-do 07                        # Agent implements the spec
 /aigon:feature-review 07                    # Optional: cross-agent code review
 /aigon:feature-close 07                     # Merge to main
@@ -424,7 +424,7 @@ The examples below show each combination with realistic commands.
 ### Fleet Mode — multiple agents compete
 
 ```text
-/aigon:feature-setup 07 cc gg cx           # 3 worktrees, 3 branches
+/aigon:feature-start 07 cc gg cx           # 3 worktrees, 3 branches
 /aigon:feature-open 07 --all               # Opens all agents side-by-side
 ```
 
@@ -474,7 +474,7 @@ aigon config set --global tmuxApp iterm2   # Use iTerm2 with native tmux -CC int
 ### Session Lifecycle
 
 ```bash
-aigon feature-setup 07 cc gg cx            # Creates tmux sessions: aigon-f7-cc, aigon-f7-gg, aigon-f7-cx
+aigon feature-start 07 cc gg cx            # Creates tmux sessions: aigon-f7-cc, aigon-f7-gg, aigon-f7-cx
 aigon feature-open 07 cc                  # Attaches to aigon-f7-cc (or creates if missing)
 aigon feature-open 07 --all               # Opens all agents in separate windows
 

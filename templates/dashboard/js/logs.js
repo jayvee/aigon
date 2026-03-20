@@ -485,7 +485,7 @@
       html.push(buildStatCard('Features Completed', String(totalCompleted),
         statsState.period === '30d' && trend30 !== null ? trendIcon(trend30) : null));
       html.push(buildStatCard('Cycle Time', fmtHours(medianCycle), null, medianCycle !== null ? 'median, start to close' : null,
-        'Median wall-clock time from feature-setup to feature-close. Lower is better.'));
+        'Median wall-clock time from feature-start to feature-close. Lower is better.'));
       html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null, null,
         'Percentage of features that passed evaluation on the first attempt without needing rework.'));
       html.push('</div>');

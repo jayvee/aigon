@@ -85,7 +85,7 @@ test.describe('Dashboard state consistency', () => {
             await expect(prioBtn).toBeVisible();
 
             // No Start feature, no Close, no Eval on inbox cards
-            await expect(card.locator('.kcard-va-btn[data-va-action="feature-setup"]')).toHaveCount(0);
+            await expect(card.locator('.kcard-va-btn[data-va-action="feature-start"]')).toHaveCount(0);
             await expect(card.locator('.kcard-va-btn[data-va-action="feature-close"]')).toHaveCount(0);
             await expect(card.locator('.kcard-va-btn[data-va-action="feature-eval"]')).toHaveCount(0);
         }
@@ -108,7 +108,7 @@ test.describe('Dashboard state consistency', () => {
                 const card = backlogCards.nth(i);
 
                 // Backlog cards should have Start feature action
-                const setupBtn = card.locator('.kcard-va-btn[data-va-action="feature-setup"]');
+                const setupBtn = card.locator('.kcard-va-btn[data-va-action="feature-start"]');
                 await expect(setupBtn).toBeVisible();
                 await expect(setupBtn).toContainText('Start feature');
 

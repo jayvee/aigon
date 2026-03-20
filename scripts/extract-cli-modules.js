@@ -24,7 +24,7 @@ const COMMAND_GROUPS = {
         'feature-create',
         'feature-prioritise',
         'feature-now',
-        'feature-setup',
+        'feature-start',
         'feature-do',
         'feature-submit',
         'feature-validate',
@@ -40,7 +40,7 @@ const COMMAND_GROUPS = {
     research: [
         'research-create',
         'research-prioritise',
-        'research-setup',
+        'research-start',
         'research-open',
         'research-do',
         'research-submit',

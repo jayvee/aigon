@@ -99,7 +99,7 @@ test.describe('Solo worktree lifecycle', () => {
         // ── Step 4: Start feature → agent picker → select cc → Setup ──────────
 
         const backlogCard = page.locator('.kcard').filter({ hasText: 'e2e solo feature' }).first();
-        const setupBtn = backlogCard.locator('.kcard-va-btn[data-va-action="feature-setup"]');
+        const setupBtn = backlogCard.locator('.kcard-va-btn[data-va-action="feature-start"]');
         await expect(setupBtn).toBeVisible({ timeout: 5000 });
         await expect(setupBtn).toContainText('Start feature');
 
@@ -115,13 +115,13 @@ test.describe('Solo worktree lifecycle', () => {
         await ccCheckbox.check();
         await expect(ccCheckbox).toBeChecked();
 
-        // Submit — this runs `aigon feature-setup <id> cc` against the fixture repo
+        // Submit — this runs `aigon feature-start <id> cc` against the fixture repo
         const [setupResp] = await Promise.all([
             page.waitForResponse('**/api/action'),
             page.click('#agent-picker-submit'),
         ]);
         const setupJson = await setupResp.json().catch(() => ({}));
-        expect(setupJson.ok, `feature-setup failed: ${setupJson.error || setupJson.stderr || ''}`).toBe(true);
+        expect(setupJson.ok, `feature-start failed: ${setupJson.error || setupJson.stderr || ''}`).toBe(true);
 
         // Wait for UI refresh after setup
         await page.waitForResponse('**/api/refresh');
@@ -141,7 +141,7 @@ test.describe('Solo worktree lifecycle', () => {
         const desc = 'e2e-solo-feature';
         const worktreePath = path.join(ctx.worktreeBase, `feature-${paddedId}-cc-${desc}`);
 
-        // Wait for the worktree to be created by feature-setup
+        // Wait for the worktree to be created by feature-start
         await waitForPath(worktreePath, 15000);
 
         const agent = new MockAgent({
