@@ -39,6 +39,7 @@ const {
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
 const { isSameProviderFamily, getProfilePlaceholders, gcDevServers, validateRegistry, loadProxyRegistry, saveProxyRegistry, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, getDevProxyUrl, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, collectAnalyticsData } = require('./lib/utils');
+const { getFeatureGitSignals } = require('./lib/git');
 const { tryOrDefault, classifyError } = require('./lib/errors');
 const { detectDashboardContext } = require('./lib/devserver');
 
@@ -64,6 +65,10 @@ function withTempDir(fn) {
     } finally {
         fs.rmSync(tempDir, { recursive: true, force: true });
     }
+}
+
+function runGit(args, cwd) {
+    return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 }
 
 function withProjectConfig(config, fn) {
@@ -176,6 +181,122 @@ test('matchTmuxSessionByEntityId returns null for non-match', () => {
     assert.strictEqual(matchTmuxSessionByEntityId('aigon-f40-cx', '41'), null);
 });
 test('shellQuote escapes apostrophes safely', () => assert.strictEqual(shellQuote("it's"), "'it'\\''s'"));
+
+console.log('\nGit Signals');
+test('getFeatureGitSignals computes commit, diff, and rework metrics', () => withTempDir(tempDir => {
+    runGit(['init'], tempDir);
+    runGit(['config', 'user.name', 'Aigon Test'], tempDir);
+    runGit(['config', 'user.email', 'test@example.com'], tempDir);
+    const initialBranch = runGit(['branch', '--show-current'], tempDir);
+    if (initialBranch !== 'main') {
+        runGit(['checkout', '-b', 'main'], tempDir);
+    }
+
+    fs.writeFileSync(path.join(tempDir, 'alpha.js'), 'const a = 1;\n');
+    runGit(['add', '.'], tempDir);
+    runGit(['commit', '-m', 'chore: seed'], tempDir);
+
+    runGit(['checkout', '-b', 'feature-77-test'], tempDir);
+
+    fs.writeFileSync(path.join(tempDir, 'alpha.js'), 'const a = 2;\n');
+    runGit(['add', '.'], tempDir);
+    runGit(['commit', '-m', 'feat: update alpha'], tempDir);
+
+    fs.writeFileSync(path.join(tempDir, 'alpha.js'), 'const a = 3;\n');
+    runGit(['add', '.'], tempDir);
+    runGit(['commit', '-m', 'fix: stabilize alpha'], tempDir);
+
+    fs.writeFileSync(path.join(tempDir, 'alpha.js'), 'const a = 4;\n');
+    runGit(['add', '.'], tempDir);
+    runGit(['commit', '-m', 'fixup: tighten alpha'], tempDir);
+
+    fs.writeFileSync(path.join(tempDir, 'alpha.js'), 'const a = 5;\n');
+    runGit(['add', '.'], tempDir);
+    runGit(['commit', '-m', 'bugfix: alpha edge case'], tempDir);
+
+    fs.writeFileSync(path.join(tempDir, 'alpha.js'), 'const a = 6;\n');
+    fs.writeFileSync(path.join(tempDir, 'beta.js'), 'module.exports = 1;\n');
+    runGit(['add', '.'], tempDir);
+    runGit(['commit', '-m', 'feat: expand scope'], tempDir);
+
+    const signals = getFeatureGitSignals({
+        cwd: tempDir,
+        baseRef: 'main',
+        targetRef: 'feature-77-test',
+        expectedScopeFiles: 2,
+    });
+
+    assert.strictEqual(signals.commit_count, 5);
+    assert.strictEqual(signals.fix_commit_count, 3);
+    assert.strictEqual(signals.fix_commit_ratio, 0.6);
+    assert.strictEqual(signals.files_touched, 2);
+    assert.strictEqual(signals.rework_thrashing, true);
+    assert.strictEqual(signals.rework_fix_cascade, true);
+    assert.strictEqual(signals.rework_scope_creep, false);
+    assert.ok(signals.lines_added > 0);
+    assert.ok(signals.lines_removed >= 0);
+    assert.strictEqual(signals.lines_changed, signals.lines_added + signals.lines_removed);
+}));
+
+test('getFeatureGitSignals marks scope creep when files touched exceed 2x expected', () => withTempDir(tempDir => {
+    runGit(['init'], tempDir);
+    runGit(['config', 'user.name', 'Aigon Test'], tempDir);
+    runGit(['config', 'user.email', 'test@example.com'], tempDir);
+    const initialBranch = runGit(['branch', '--show-current'], tempDir);
+    if (initialBranch !== 'main') {
+        runGit(['checkout', '-b', 'main'], tempDir);
+    }
+
+    fs.writeFileSync(path.join(tempDir, 'base.txt'), 'base\n');
+    runGit(['add', '.'], tempDir);
+    runGit(['commit', '-m', 'chore: seed'], tempDir);
+
+    runGit(['checkout', '-b', 'feature-88-scope'], tempDir);
+    fs.writeFileSync(path.join(tempDir, 'a.txt'), 'a\n');
+    fs.writeFileSync(path.join(tempDir, 'b.txt'), 'b\n');
+    fs.writeFileSync(path.join(tempDir, 'c.txt'), 'c\n');
+    runGit(['add', '.'], tempDir);
+    runGit(['commit', '-m', 'feat: add files'], tempDir);
+
+    const signals = getFeatureGitSignals({
+        cwd: tempDir,
+        baseRef: 'main',
+        targetRef: 'feature-88-scope',
+        expectedScopeFiles: 1,
+    });
+
+    assert.strictEqual(signals.files_touched, 3);
+    assert.strictEqual(signals.rework_scope_creep, true);
+}));
+
+test('getFeatureGitSignals returns zeroed metrics when range has no commits', () => withTempDir(tempDir => {
+    runGit(['init'], tempDir);
+    runGit(['config', 'user.name', 'Aigon Test'], tempDir);
+    runGit(['config', 'user.email', 'test@example.com'], tempDir);
+    const initialBranch = runGit(['branch', '--show-current'], tempDir);
+    if (initialBranch !== 'main') {
+        runGit(['checkout', '-b', 'main'], tempDir);
+    }
+
+    fs.writeFileSync(path.join(tempDir, 'seed.txt'), 'seed\n');
+    runGit(['add', '.'], tempDir);
+    runGit(['commit', '-m', 'chore: seed'], tempDir);
+
+    const signals = getFeatureGitSignals({
+        cwd: tempDir,
+        baseRef: 'main',
+        targetRef: 'main',
+        expectedScopeFiles: 1,
+    });
+
+    assert.strictEqual(signals.commit_count, 0);
+    assert.strictEqual(signals.files_touched, 0);
+    assert.strictEqual(signals.fix_commit_count, 0);
+    assert.strictEqual(signals.fix_commit_ratio, 0);
+    assert.strictEqual(signals.rework_thrashing, false);
+    assert.strictEqual(signals.rework_fix_cascade, false);
+    assert.strictEqual(signals.rework_scope_creep, false);
+}));
 
 console.log('\nDashboard Parsing');
 test('DASHBOARD_INTERACTIVE_ACTIONS includes core feature workflow actions', () => {
