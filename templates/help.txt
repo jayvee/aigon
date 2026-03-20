@@ -80,6 +80,7 @@ Feedback:
 Deploy:
   deploy                            Run the configured deploy command (production)
   deploy --preview                  Run the configured preview command (staging)
+  insights [--coach] [--refresh]    AADE rule-based insights (+ optional Pro coaching)
 
 Visualization:
   board                             Show Kanban board view of features and research
@@ -163,4 +164,3 @@ Agents:
   cu (cursor)   - Cursor
   gg (gemini)   - Gemini CLI
   cx (codex)    - OpenAI Codex
-
