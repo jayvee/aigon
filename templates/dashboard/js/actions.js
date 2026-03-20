@@ -29,7 +29,8 @@ function validActionBtnClass(action, priority) {
 const TRANSITIONS_AS_BUTTONS = [
   'feature-prioritise', 'research-prioritise',
   'feature-close', 'research-close',
-  'feedback-triage'
+  'feedback-triage',
+  'research-setup'
 ];
 
 /**
