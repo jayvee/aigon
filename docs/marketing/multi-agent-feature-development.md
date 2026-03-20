@@ -2,11 +2,11 @@ Feature prioritised as #28. It's been moved to the backlog.
                                                                                                                                                   
   Next, set up the feature for implementation:                                                                                                    
   
-  /aigon:feature-setup 28                                                                                                                         
+  /aigon:feature-start 28                                                                                                                         
                                                                                                                                                 
-❯ /aigon:feature-setup 28 cc cu cx                                                                                                                
+❯ /aigon:feature-start 28 cc cu cx                                                                                                                
                                    
-⏺ Bash(aigon feature-setup 28 cc cu cx)                                                                                                           
+⏺ Bash(aigon feature-start 28 cc cu cx)                                                                                                           
   ⎿  ✅ Moved: feature-28-export-all-user-data.md -> 03-in-progress/feature-28-export-all-user-data.md                                          
      Running git: git add docs/specs/features/                                                                                                    
      Running git: git commit -m "chore: start feature 28 - move spec to in-progress"

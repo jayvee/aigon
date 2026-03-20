@@ -592,14 +592,11 @@
             case 'research-prioritise':
               await requestAction(pipelineCommand(dragPType, 'prioritise'), [featureName], effectiveRepo);
               break;
-            case 'feature-setup':
-            case 'research-setup': {
+            case 'feature-start':
+            case 'research-start': {
               const agents = await showAgentPicker(featureId, featureName);
               if (!agents) return;
-              await requestAction(pipelineCommand(dragPType, 'setup'), [featureId, ...agents], effectiveRepo);
-              for (const agent of agents) {
-                await requestFeatureOpen(featureId, agent, effectiveRepo, null, dragPType);
-              }
+              await requestAction(pipelineCommand(dragPType, 'start'), [featureId, ...agents], effectiveRepo);
               break;
             }
             case 'feature-eval': {

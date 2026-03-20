@@ -124,7 +124,7 @@ function resetRepo(repoName) {
     run(`node "${aigonCli}" install-agent cc gg`, { cwd: repoPath, ignoreError: true });
     console.log(`  🔧 Reinstalled agent commands (cc, gg)`);
 
-    // 10. Remove log files (they'll be recreated by feature-setup)
+    // 10. Remove log files (they'll be recreated by feature-start)
     const logsDir = path.join(specsRoot, 'logs');
     if (fs.existsSync(logsDir)) {
         const logFiles = fs.readdirSync(logsDir).filter(f => f.endsWith('-log.md'));
