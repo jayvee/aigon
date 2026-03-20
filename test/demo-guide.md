@@ -76,7 +76,7 @@ A small, visually obvious feature for demonstrating the full lifecycle.
 ```
 1. cd ~/src/brewboard
 
-2. aigon feature-setup 01
+2. aigon feature-start 01
    → Creates branch feature-01-dark-mode (no worktree)
    → You stay in the main repo on the feature branch
 

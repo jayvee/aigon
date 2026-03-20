@@ -6,10 +6,10 @@ tools:
     command: aigon feature-prioritise {{id}}
   - name: aigon_feature_setup_solo
     description: Setup for solo mode - Create branch for feature
-    command: aigon feature-setup {{id}}
+    command: aigon feature-start {{id}}
   - name: aigon_feature_setup_arena
     description: Setup for arena mode - Create worktrees for multiple agents
-    command: aigon feature-setup {{id}} {{agents}}
+    command: aigon feature-start {{id}} {{agents}}
   - name: aigon_feature_implement
     description: Implement feature in current branch/worktree
     command: aigon feature-implement {{id}}
@@ -30,10 +30,10 @@ tools:
     command: aigon research-prioritise {{id}}
   - name: aigon_research_setup_solo
     description: Setup for solo research
-    command: aigon research-setup {{id}}
+    command: aigon research-start {{id}}
   - name: aigon_research_setup_arena
     description: Setup for arena research with multiple agents
-    command: aigon research-setup {{id}} {{agents}}
+    command: aigon research-start {{id}} {{agents}}
   - name: aigon_research_conduct
     description: Conduct research (write findings)
     command: aigon research-conduct {{id}}

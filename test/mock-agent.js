@@ -52,7 +52,7 @@ class MockAgent {
         const worktreeBase = path.join(path.dirname(repoPath), `${repoName}-worktrees`);
         this.worktreePath = path.join(worktreeBase, `feature-${featureId}-${agentId}-${desc}`);
 
-        // Log file path within the worktree (created by feature-setup via setupWorktreeEnvironment)
+        // Log file path within the worktree (created by feature-start via setupWorktreeEnvironment)
         this.logPath = path.join(
             this.worktreePath,
             'docs', 'specs', 'features', 'logs',

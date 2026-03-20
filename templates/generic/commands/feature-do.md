@@ -3,7 +3,7 @@
 
 Implement a feature. Works in Drive mode (branch), Drive mode (worktree) (parallel development), and Fleet mode (competition).
 
-**IMPORTANT:** Run `{{CMD_PREFIX}}feature-setup <ID>` first to prepare your workspace.
+**IMPORTANT:** Run `{{CMD_PREFIX}}feature-start <ID>` first to prepare your workspace.
 
 ## Argument Resolution
 

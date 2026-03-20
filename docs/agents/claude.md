@@ -13,7 +13,7 @@
 |---------|-------------|
 | `/aigon:feature-create <name>` | Create a new feature spec |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:feature-setup <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
+| `/aigon:feature-start <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
 | `/aigon:feature-do <ID> [--autonomous]` | Implement feature; `--autonomous` runs iterative retry loop |
 | `/aigon:feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `/aigon:feature-review <ID>` | Code review with fixes by a different agent |
@@ -27,7 +27,7 @@
 |---------|-------------|
 | `/aigon:research-create <name>` | Create a new research topic |
 | `/aigon:research-prioritise <name>` | Prioritise a research topic |
-| `/aigon:research-setup <ID> [agents...]` | Setup for Drive or Fleet research |
+| `/aigon:research-start <ID> [agents...]` | Setup for Drive or Fleet research |
 | `/aigon:research-open <ID>` | Open all Fleet agents side-by-side for parallel research |
 | `/aigon:research-do <ID>` | Conduct research (write findings) |
 | `/aigon:research-submit` | (you must run this) Signal research findings are complete |
@@ -48,8 +48,8 @@
 
 ## Modes
 
-- **Drive mode**: `/aigon:feature-setup <ID>` - Creates branch only, work in current directory
-- **Fleet mode**: `/aigon:feature-setup <ID> <agents...>` - Creates worktrees for parallel implementation
+- **Drive mode**: `/aigon:feature-start <ID>` - Creates branch only, work in current directory
+- **Fleet mode**: `/aigon:feature-start <ID> <agents...>` - Creates worktrees for parallel implementation
 
 ## Mandatory Lifecycle Commands
 
@@ -71,7 +71,7 @@ These are CLI commands you run directly — not slash commands, not auto-invoked
 
 ## Drive Mode Workflow
 
-1. Run `/aigon:feature-setup <ID>` to create branch and move spec
+1. Run `/aigon:feature-start <ID>` to create branch and move spec
 2. Run `/aigon:feature-do <ID>` to begin implementation
 3. Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
 4. Implement the feature according to the spec
@@ -82,7 +82,7 @@ These are CLI commands you run directly — not slash commands, not auto-invoked
 
 ## Fleet Mode Workflow
 
-1. Run `/aigon:feature-setup <ID> cc cx gg cu` to create worktrees for each agent
+1. Run `/aigon:feature-start <ID> cc cx gg cu` to create worktrees for each agent
 2. **STOP** - Tell the user to open the worktree in a separate session
 3. In the worktree session:
    - Run `/aigon:feature-do <ID>`
