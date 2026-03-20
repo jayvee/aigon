@@ -4,6 +4,10 @@ node_modules/
 # OS
 .DS_Store
 
+# Environment (secrets, per-machine config)
+.env.local
+.env*.local
+
 # Playwright
 playwright-report/
 test-results/
