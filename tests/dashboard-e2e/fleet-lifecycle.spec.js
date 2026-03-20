@@ -100,7 +100,7 @@ test.describe('Fleet mode lifecycle', () => {
         // ── Step 3: Start feature → agent picker → select cc AND gg ──────────
 
         const backlogCard = page.locator('.kcard').filter({ hasText: 'e2e fleet feature' }).first();
-        const setupBtn = backlogCard.locator('.kcard-va-btn[data-va-action="feature-setup"]');
+        const setupBtn = backlogCard.locator('.kcard-va-btn[data-va-action="feature-start"]');
         await expect(setupBtn).toBeVisible();
         await setupBtn.click();
 
@@ -118,7 +118,7 @@ test.describe('Fleet mode lifecycle', () => {
             page.click('#agent-picker-submit'),
         ]);
         const setupJson = await setupResp.json().catch(() => ({}));
-        expect(setupJson.ok, `feature-setup failed: ${setupJson.error || setupJson.stderr || ''}`).toBe(true);
+        expect(setupJson.ok, `feature-start failed: ${setupJson.error || setupJson.stderr || ''}`).toBe(true);
 
         await page.waitForResponse('**/api/refresh');
 
