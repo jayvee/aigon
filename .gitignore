@@ -17,3 +17,6 @@ next-env.d.ts
 
 # Temp
 temp/
+
+# Promotional GIF workflow
+docs/media/raw/
