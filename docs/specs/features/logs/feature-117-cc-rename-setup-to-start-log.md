@@ -1,3 +1,16 @@
+---
+commit_count: 3
+lines_added: 269
+lines_removed: 235
+lines_changed: 504
+files_touched: 52
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+---
+
 # Implementation Log: Feature 117 - rename-setup-to-start
 Agent: cc
 
