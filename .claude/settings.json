@@ -367,7 +367,17 @@
       "Edit(/Users/jviner/src/aigon-worktrees/feature-115-cx-aade-git-signals/**)",
       "Write(/Users/jviner/src/aigon-worktrees/feature-115-cx-aade-git-signals/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-115-cx-aade-git-signals:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-115-cx-aade-git-signals:*)"
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-115-cx-aade-git-signals:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-116-cx-worktree-env-isolation/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-116-cx-worktree-env-isolation/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-116-cx-worktree-env-isolation/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-116-cx-worktree-env-isolation:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-116-cx-worktree-env-isolation:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-117-cc-rename-setup-to-start/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-117-cc-rename-setup-to-start/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-117-cc-rename-setup-to-start/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-117-cc-rename-setup-to-start:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-117-cc-rename-setup-to-start:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
