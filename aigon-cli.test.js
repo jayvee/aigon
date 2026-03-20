@@ -23,6 +23,7 @@ const { createFeedbackCommands } = require('./lib/commands/feedback');
 const setupCommandsModule = require('./lib/commands/setup');
 const { createSetupCommands } = setupCommandsModule;
 const { createMiscCommands } = require('./lib/commands/misc');
+const insightsLib = require('./lib/insights');
 const {
     buildIncompleteSubmissionReconnectCommand,
     createAllCommands,
@@ -796,6 +797,7 @@ console.log('\nCommand Aliases');
 test('short alias afd resolves to feature-do', () => assert.strictEqual(COMMAND_ALIASES.afd, 'feature-do'));
 test('short alias afe resolves to feature-eval', () => assert.strictEqual(COMMAND_ALIASES.afe, 'feature-eval'));
 test('short alias ads resolves to dev-server', () => assert.strictEqual(COMMAND_ALIASES.ads, 'dev-server'));
+test('short alias ai resolves to insights', () => assert.strictEqual(COMMAND_ALIASES.ai, 'insights'));
 
 console.log('\nCommand Families');
 test('feature command module exposes feature-do', () => assert.strictEqual(typeof createFeatureCommands()['feature-do'], 'function'));
@@ -803,9 +805,33 @@ test('research command module exposes research-do', () => assert.strictEqual(typ
 test('feedback command module exposes feedback-triage', () => assert.strictEqual(typeof createFeedbackCommands()['feedback-triage'], 'function'));
 test('setup command module exposes doctor', () => assert.strictEqual(typeof createSetupCommands().doctor, 'function'));
 test('misc command module exposes help', () => assert.strictEqual(typeof createMiscCommands().help, 'function'));
+test('misc command module exposes insights', () => assert.strictEqual(typeof createMiscCommands().insights, 'function'));
 test('command families stay separated', () => {
     const misc = createMiscCommands();
     assert.strictEqual(Object.prototype.hasOwnProperty.call(misc, 'feature-do'), false);
+});
+
+console.log('\nInsights Engine');
+test('insights report handles insufficient data', () => {
+    const report = insightsLib.buildDeterministicInsights([
+        { featureId: '1', completedAtMs: 1, costUsd: 0.1, tokensPerLineChanged: 30, totalTokens: 1000, reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
+        { featureId: '2', completedAtMs: 2, costUsd: 0.2, tokensPerLineChanged: 40, totalTokens: 1200, reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
+    ]);
+    assert.strictEqual(report.insufficientData, true);
+    assert.match(report.summary, /Not enough data/i);
+});
+
+test('insights report computes outlier observation', () => {
+    const report = insightsLib.buildDeterministicInsights([
+        { featureId: '1', name: 'a', completedAtMs: 1, costUsd: 0.1, tokensPerLineChanged: 20, totalTokens: 1000, autonomyLabel: 'Full Autonomy', reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
+        { featureId: '2', name: 'b', completedAtMs: 2, costUsd: 0.11, tokensPerLineChanged: 22, totalTokens: 1100, autonomyLabel: 'Guided', reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
+        { featureId: '3', name: 'c', completedAtMs: 3, costUsd: 0.12, tokensPerLineChanged: 21, totalTokens: 1200, autonomyLabel: 'Full Autonomy', reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
+        { featureId: '4', name: 'd', completedAtMs: 4, costUsd: 1.0, tokensPerLineChanged: 90, totalTokens: 10000, autonomyLabel: 'Thrashing', reworkThrashing: true, reworkFixCascade: false, reworkScopeCreep: false, hasRework: true },
+    ]);
+    assert.strictEqual(report.insufficientData, false);
+    const outlier = report.observations.find(o => o.id === 'outlier-detection');
+    assert.ok(outlier);
+    assert.match(outlier.observation, /#4/);
 });
 
 console.log('\nWorktree Env Isolation');
@@ -1643,6 +1669,7 @@ test('collectAnalyticsData returns valid structure for empty repos', () => {
         assert.ok(analytics.volume, 'has volume');
         assert.ok(analytics.autonomy, 'has autonomy');
         assert.ok(analytics.quality, 'has quality');
+        assert.ok(analytics.amplification, 'has amplification');
         assert.ok(Array.isArray(analytics.agents), 'has agents');
         assert.ok(Array.isArray(analytics.evalWins), 'has evalWins');
     });
@@ -1662,7 +1689,7 @@ test('collectAnalyticsData returns features from done specs with selected logs',
         const startedAt = '2026-01-01T00:00:00Z';
         const completedAt = '2026-01-01T08:00:00Z';
         fs.writeFileSync(path.join(logsDir, 'feature-01-cc-test-feature-log.md'),
-            `---\nstatus: submitted\nupdated: ${completedAt}\nstartedAt: ${startedAt}\ncompletedAt: ${completedAt}\nevents:\n  - { ts: "${startedAt}", status: implementing }\n  - { ts: "${completedAt}", status: submitted }\n---\n\nLog body.`
+            `---\nstatus: submitted\nupdated: ${completedAt}\nstartedAt: ${startedAt}\ncompletedAt: ${completedAt}\ncost_usd: 1.2345\ntokens_per_line_changed: 2.5\nautonomy_label: Guided\nrework_thrashing: false\nrework_fix_cascade: false\nrework_scope_creep: true\nevents:\n  - { ts: "${startedAt}", status: implementing }\n  - { ts: "${completedAt}", status: submitted }\n---\n\nLog body.`
         );
 
         const analytics = collectAnalyticsData({ repos: [tmpDir], analytics: {} });
@@ -1674,6 +1701,17 @@ test('collectAnalyticsData returns features from done specs with selected logs',
         assert.strictEqual(f.completedAt, completedAt);
         assert.ok(f.durationMs > 0, 'duration should be positive');
         assert.strictEqual(f.firstPassSuccess, true, 'no wait events = first pass success');
+        assert.strictEqual(f.costUsd, 1.2345, 'cost_usd should be parsed');
+        assert.strictEqual(f.tokensPerLineChanged, 2.5, 'tokens_per_line_changed should be parsed');
+        assert.strictEqual(f.autonomyLabel, 'Guided', 'autonomy_label should be parsed');
+        assert.strictEqual(f.reworkThrashing, false, 'rework_thrashing should be parsed');
+        assert.strictEqual(f.reworkFixCascade, false, 'rework_fix_cascade should be parsed');
+        assert.strictEqual(f.reworkScopeCreep, true, 'rework_scope_creep should be parsed');
+        assert.strictEqual(f.hasReworkFlags, true, 'any true rework flag marks feature as rework');
+        assert.strictEqual(f.firstPassNoRework, false, 'rework flags imply not first-pass');
+        assert.strictEqual(f.hasAadeData, true, 'AADE fields should mark feature as having data');
+        assert.ok(analytics.amplification, 'amplification aggregate should exist');
+        assert.ok(analytics.amplification.trends, 'amplification trends should exist');
     });
 });
 
