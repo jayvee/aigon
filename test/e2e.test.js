@@ -340,35 +340,35 @@ group('feature lifecycle', () => {
         });
     });
 
-    test('feature-setup (Drive branch mode) creates branch and log file', () => {
+    test('feature-start (Drive branch mode) creates branch and log file', () => {
         withFixture('brewboard', (cwd, home) => {
             // feature-01-dark-mode is in backlog — set it up
-            const r = runAigon(['feature-setup', '1'], { cwd, home });
+            const r = runAigon(['feature-start', '1'], { cwd, home });
             assertExitCode(r, 0);
             assertBranchExists(cwd, 'feature-01-dark-mode');
             assertDirContainsFile(cwd, 'docs/specs/features/logs', f => f.includes('01') && f.endsWith('-log.md'));
         });
     });
 
-    test('feature-setup moves spec from backlog to in-progress', () => {
+    test('feature-start moves spec from backlog to in-progress', () => {
         withFixture('brewboard', (cwd, home) => {
-            runAigon(['feature-setup', '2'], { cwd, home });
+            runAigon(['feature-start', '2'], { cwd, home });
             // brewery-import should now be in-progress
             assertDirContainsFile(cwd, 'docs/specs/features/03-in-progress', f => f.includes('brewery-import'));
         });
     });
 
-    test('feature-setup creates tmux session in fleet mode', () => {
+    test('feature-start creates tmux session in fleet mode', () => {
         withFixture('brewboard', (cwd, home) => {
             const mockLog = path.join(os.tmpdir(), `aigon-tmux-${Date.now()}.log`);
             // Two agents = fleet mode
-            const r = runAigon(['feature-setup', '2', 'cc', 'gg'], { cwd, home, mockLog });
+            const r = runAigon(['feature-start', '2', 'cc', 'gg'], { cwd, home, mockLog });
             // fleet mode attempts worktree creation which calls tmux
             // we verify command ran without crash
             if (r.exitCode !== 0 && !r.stderr.includes('worktree')) {
                 // accept worktree errors (git repo may not have right state) but not crashes
                 if (r.exitCode !== 0 && r.stderr.includes('error:') && !r.stderr.includes('worktree')) {
-                    throw new Error(`feature-setup fleet crashed: ${r.stderr.slice(0, 300)}`);
+                    throw new Error(`feature-start fleet crashed: ${r.stderr.slice(0, 300)}`);
                 }
             }
         });
@@ -377,7 +377,7 @@ group('feature lifecycle', () => {
     test('feature-do prints instructions when feature is in-progress', () => {
         withFixture('brewboard', (cwd, home) => {
             // First move feature to in-progress via setup
-            runAigon(['feature-setup', '1'], { cwd, home });
+            runAigon(['feature-start', '1'], { cwd, home });
             const r = runAigon(['feature-do', '1'], { cwd, home });
             assertExitCode(r, 0);
             // Should show instructions or mode info
@@ -387,7 +387,7 @@ group('feature lifecycle', () => {
 
     test('feature-do detects Drive mode when on branch', () => {
         withFixture('brewboard', (cwd, home) => {
-            runAigon(['feature-setup', '2'], { cwd, home });
+            runAigon(['feature-start', '2'], { cwd, home });
             // Switch to the feature branch
             spawnSync('git', ['checkout', 'feature-02-brewery-import'], { cwd });
             const r = runAigon(['feature-do', '2'], { cwd, home });
@@ -402,7 +402,7 @@ group('feature lifecycle', () => {
     test('feature-close merges branch and moves spec to 05-done', () => {
         withFixture('brewboard', (cwd, home) => {
             // Full lifecycle: setup → checkout → close
-            runAigon(['feature-setup', '1'], { cwd, home });
+            runAigon(['feature-start', '1'], { cwd, home });
             spawnSync('git', ['checkout', 'feature-01-dark-mode'], { cwd });
             // Make a commit on the branch so it's ahead of main
             fs.writeFileSync(path.join(cwd, 'src', 'app', 'dark-mode.tsx'), `// dark mode\n`);
@@ -423,7 +423,7 @@ group('feature lifecycle', () => {
     test('feature-cleanup removes worktrees and branches', () => {
         withFixture('brewboard', (cwd, home) => {
             // Set up a drive branch first (cleanup works on branches too)
-            runAigon(['feature-setup', '2'], { cwd, home });
+            runAigon(['feature-start', '2'], { cwd, home });
             // Check that branch exists
             assertBranchExists(cwd, 'feature-02-brewery-import');
             const r = runAigon(['feature-cleanup', '2'], { cwd, home });
@@ -460,18 +460,18 @@ group('research lifecycle', () => {
         });
     });
 
-    test('research-setup (Drive mode) moves spec to in-progress', () => {
+    test('research-start (Drive mode) moves spec to in-progress', () => {
         withFixture('brewboard', (cwd, home) => {
             // research-01-caching-strategy is in backlog
-            const r = runAigon(['research-setup', '1'], { cwd, home });
+            const r = runAigon(['research-start', '1'], { cwd, home });
             assertExitCode(r, 0);
             assertDirContainsFile(cwd, 'docs/specs/research-topics/03-in-progress', f => f.includes('caching'));
         });
     });
 
-    test('research-setup fleet mode creates findings files', () => {
+    test('research-start fleet mode creates findings files', () => {
         withFixture('brewboard', (cwd, home) => {
-            const r = runAigon(['research-setup', '1', 'cc', 'gg'], { cwd, home });
+            const r = runAigon(['research-start', '1', 'cc', 'gg'], { cwd, home });
             assertExitCode(r, 0);
             // Findings files should be created in research-topics/logs/
             assertDirContainsFile(cwd, 'docs/specs/research-topics/logs', f => f.includes('findings'));
@@ -481,7 +481,7 @@ group('research lifecycle', () => {
     test('research-submit sets status to submitted in findings file', () => {
         withFixture('brewboard', (cwd, home) => {
             // Setup fleet mode to create findings file
-            runAigon(['research-setup', '1', 'cc'], { cwd, home });
+            runAigon(['research-start', '1', 'cc'], { cwd, home });
             const logsDir = path.join(cwd, 'docs/specs/research-topics/logs');
             const findingsFile = fs.readdirSync(logsDir).find(f => f.includes('-cc-findings'));
             if (!findingsFile) {
@@ -814,7 +814,7 @@ group('agent-status', () => {
     test('agent-status submitted updates log status on a feature branch', () => {
         withFixture('brewboard', (cwd, home) => {
             // Setup feature 2 (creates branch + log)
-            runAigon(['feature-setup', '2'], { cwd, home });
+            runAigon(['feature-start', '2'], { cwd, home });
             // Switch to the feature branch
             spawnSync('git', ['checkout', 'feature-02-brewery-import'], { cwd });
             const r = runAigon(['agent-status', 'submitted'], { cwd, home });
@@ -828,7 +828,7 @@ group('agent-status', () => {
 
     test('agent-status implementing updates log status', () => {
         withFixture('brewboard', (cwd, home) => {
-            runAigon(['feature-setup', '2'], { cwd, home });
+            runAigon(['feature-start', '2'], { cwd, home });
             spawnSync('git', ['checkout', 'feature-02-brewery-import'], { cwd });
             const r = runAigon(['agent-status', 'implementing'], { cwd, home });
             assertExitCode(r, 0);
