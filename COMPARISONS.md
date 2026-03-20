@@ -285,13 +285,13 @@ aigon feedback-triage 1              # AI-assisted categorisation
 
 ---
 
-## Where Aigon Honestly Falls Short
+## Aigon Gaps
 
 ### IDE Integration
-Aigon is CLI-only. There's no VS Code extension, no inline code suggestions, no visual diff viewer. If your team lives in an IDE and rarely opens a terminal, tools like Cursor, Augment, or Cline offer a more natural experience.
+Aigon is CLI and Web Dashboard based. If your team lives in an IDE and rarely opens a terminal, tools like Cursor, Augment, or Cline offer a more natural experience.
 
 ### Visual UI
-The dashboard exists for monitoring Fleet status, but there's no embedded browser testing, no visual diff comparison, and no screenshot-based verification. Cursor's aggregated diff view and embedded browser are genuinely better for visual comparison.
+The dashboard exists for monitoring Fleet status, but there's no embedded browser testing, no visual diff comparison, and no screenshot-based verification. Cursor's aggregated diff view and embedded browser are  better for visual comparison.
 
 ### Community Size
 Aigon is new and small. Cursor has millions of users, Cline has 5M+ installs, Aider has a thriving open-source community. Smaller community means fewer tutorials, fewer Stack Overflow answers, and less battle-testing.
