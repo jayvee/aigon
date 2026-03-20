@@ -38,3 +38,21 @@ Agent: cx
 - Detection for tracked files matches both `.env.local` and variant names like `.env.production.local`.
 - In `doctor`, issues are integrated into existing reconciliation output and included in the same fix/no-fix behavior.
 - Added `_test` exports for setup helpers to enable direct and deterministic unit tests.
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-03-20
+
+### Findings
+- Dead code path in `ensureEnvLocalGitignore()` (lines 43-46): the `!exists && updated.length === 0` branch is unreachable because `ENV_LOCAL_GITIGNORE_ENTRIES` is non-empty, so the loop always appends when no `.gitignore` exists. Harmless — not worth fixing.
+- No bugs, security issues, or missing edge cases found.
+
+### Fixes Applied
+- None needed.
+
+### Notes
+- All 5 acceptance criteria verified against the diff.
+- 3 new tests pass; 5 pre-existing failures confirmed identical on main.
+- Helpers are well-scoped to setup flows — no unnecessary coupling.
+- `_test` export pattern is consistent with the existing `createSetupCommands` export style.
