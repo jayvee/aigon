@@ -20,7 +20,8 @@ const manifestModule = require('./lib/manifest');
 const { createFeatureCommands } = require('./lib/commands/feature');
 const { createResearchCommands } = require('./lib/commands/research');
 const { createFeedbackCommands } = require('./lib/commands/feedback');
-const { createSetupCommands } = require('./lib/commands/setup');
+const setupCommandsModule = require('./lib/commands/setup');
+const { createSetupCommands } = setupCommandsModule;
 const { createMiscCommands } = require('./lib/commands/misc');
 const {
     buildIncompleteSubmissionReconnectCommand,
@@ -806,6 +807,63 @@ test('command families stay separated', () => {
     const misc = createMiscCommands();
     assert.strictEqual(Object.prototype.hasOwnProperty.call(misc, 'feature-do'), false);
 });
+
+console.log('\nWorktree Env Isolation');
+test('ensureEnvLocalGitignore creates expected entries and is idempotent', () => withTempDir(tempDir => {
+    const first = setupCommandsModule._test.ensureEnvLocalGitignore(tempDir);
+    assert.strictEqual(first.created, true);
+    assert.deepStrictEqual(first.addedEntries, ['.env.local', '.env*.local']);
+
+    const second = setupCommandsModule._test.ensureEnvLocalGitignore(tempDir);
+    assert.deepStrictEqual(second.addedEntries, []);
+
+    const gitignore = fs.readFileSync(path.join(tempDir, '.gitignore'), 'utf8');
+    assert.ok(gitignore.includes('.env.local'));
+    assert.ok(gitignore.includes('.env*.local'));
+}));
+
+test('getTrackedEnvLocalFiles returns tracked .env*.local files only', () => withTempDir(tempDir => {
+    runGit(['init', '-b', 'main'], tempDir);
+    runGit(['config', 'user.name', 'Aigon Test'], tempDir);
+    runGit(['config', 'user.email', 'test@example.com'], tempDir);
+
+    fs.writeFileSync(path.join(tempDir, '.env.local'), 'PORT=3000\n');
+    fs.writeFileSync(path.join(tempDir, '.env.production.local'), 'PORT=3001\n');
+    fs.writeFileSync(path.join(tempDir, '.env'), 'PORT=9999\n');
+    runGit(['add', '.'], tempDir);
+    runGit(['commit', '-m', 'chore: add env files'], tempDir);
+
+    const tracked = setupCommandsModule._test.getTrackedEnvLocalFiles(tempDir);
+    assert.deepStrictEqual(tracked.sort(), ['.env.local', '.env.production.local']);
+}));
+
+test('doctor --fix adds gitignore entries and untracks tracked .env.local', () => withTempDir(tempDir => {
+    runGit(['init', '-b', 'main'], tempDir);
+    runGit(['config', 'user.name', 'Aigon Test'], tempDir);
+    runGit(['config', 'user.email', 'test@example.com'], tempDir);
+
+    fs.mkdirSync(path.join(tempDir, 'docs/specs/features/03-in-progress'), { recursive: true });
+    fs.mkdirSync(path.join(tempDir, 'docs/specs/features/logs'), { recursive: true });
+    fs.writeFileSync(path.join(tempDir, '.gitignore'), 'node_modules/\n');
+    fs.writeFileSync(path.join(tempDir, '.env.local'), 'PORT=3000\n');
+    runGit(['add', '.'], tempDir);
+    runGit(['commit', '-m', 'chore: seed tracked env local'], tempDir);
+
+    const originalCwd = process.cwd();
+    try {
+        process.chdir(tempDir);
+        withCapturedConsole(() => {
+            createSetupCommands().doctor(['--fix']);
+        });
+    } finally {
+        process.chdir(originalCwd);
+    }
+
+    const gitignore = fs.readFileSync(path.join(tempDir, '.gitignore'), 'utf8');
+    assert.ok(gitignore.includes('.env.local'));
+    assert.ok(gitignore.includes('.env*.local'));
+    assert.strictEqual(runGit(['ls-files', '.env.local'], tempDir), '', '.env.local should be untracked');
+}));
 
 console.log('\nDashboard Constants');
 test('DASHBOARD_DEFAULT_PORT is 4100', () => assert.strictEqual(DASHBOARD_DEFAULT_PORT, 4100));
