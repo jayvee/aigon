@@ -2113,6 +2113,214 @@ test('dashboard log collection reads from flat logs/ directory', () => withTempD
     assert.strictEqual(logPathsByFeatureId['42'].length, 1, 'should have 1 log path');
 }));
 
+// ---------------------------------------------------------------------------
+// Branch Guard Tests
+// ---------------------------------------------------------------------------
+
+console.log('\nBranch Guard — assertOnDefaultBranch');
+
+test('assertOnDefaultBranch passes when on main', () => {
+    const { assertOnDefaultBranch } = require('./lib/git');
+    // We're running tests on main, so this should not throw
+    const currentBranch = require('child_process').execSync('git branch --show-current', { encoding: 'utf8' }).trim();
+    if (currentBranch === 'main' || currentBranch === 'master') {
+        assertOnDefaultBranch(); // should not throw
+    }
+});
+
+test('assertOnDefaultBranch throws when on wrong branch', () => {
+    withTempDir(tempDir => {
+        // Create a git repo on a non-default branch
+        const { execSync } = require('child_process');
+        execSync('git init && git commit --allow-empty -m "init"', { cwd: tempDir, stdio: 'pipe' });
+        execSync('git checkout -b feature-99-wrong', { cwd: tempDir, stdio: 'pipe' });
+
+        const origCwd = process.cwd();
+        process.chdir(tempDir);
+        // Clear cache so git module picks up new cwd
+        delete require.cache[require.resolve('./lib/git')];
+        const freshGit = require('./lib/git');
+
+        let threw = false;
+        try { freshGit.assertOnDefaultBranch(); } catch (e) {
+            threw = true;
+            assert.ok(e.message.includes('Must be on'), 'error should mention branch: ' + e.message);
+        }
+        assert.ok(threw, 'should have thrown on wrong branch');
+
+        process.chdir(origCwd);
+        delete require.cache[require.resolve('./lib/git')];
+    });
+});
+
+test('feature-create rejects wrong branch via subprocess', () => {
+    withTempDir(tempDir => {
+        // Create a git repo with specs dir, on a feature branch
+        const { execSync } = require('child_process');
+        execSync('git init && git commit --allow-empty -m "init"', { cwd: tempDir, stdio: 'pipe' });
+        const inboxDir = path.join(tempDir, 'docs', 'specs', 'features', '01-inbox');
+        fs.mkdirSync(inboxDir, { recursive: true });
+        fs.writeFileSync(path.join(inboxDir, '.gitkeep'), '');
+        execSync('git add -A && git commit -m "dirs"', { cwd: tempDir, stdio: 'pipe' });
+        execSync('git checkout -b feature-42-wrong', { cwd: tempDir, stdio: 'pipe' });
+
+        const result = spawnSync(process.execPath, [path.resolve('aigon-cli.js'), 'feature-create', 'test-blocked'], {
+            cwd: tempDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe']
+        });
+        const stderr = result.stderr || '';
+        assert.ok(stderr.includes('Must be on') || result.stdout.includes('Must be on'),
+            'should reject on wrong branch: ' + stderr + result.stdout);
+    });
+});
+
+test('feature-start rejects wrong branch via subprocess', () => {
+    withTempDir(tempDir => {
+        const { execSync } = require('child_process');
+        execSync('git init && git commit --allow-empty -m "init"', { cwd: tempDir, stdio: 'pipe' });
+        execSync('git checkout -b feature-42-wrong', { cwd: tempDir, stdio: 'pipe' });
+
+        const result = spawnSync(process.execPath, [path.resolve('aigon-cli.js'), 'feature-start', '42', 'cc'], {
+            cwd: tempDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe']
+        });
+        const output = (result.stderr || '') + (result.stdout || '');
+        assert.ok(output.includes('Must be on'), 'should reject start on wrong branch: ' + output);
+    });
+});
+
+test('feature-close rejects wrong branch via subprocess', () => {
+    withTempDir(tempDir => {
+        const { execSync } = require('child_process');
+        execSync('git init && git commit --allow-empty -m "init"', { cwd: tempDir, stdio: 'pipe' });
+        execSync('git checkout -b feature-42-wrong', { cwd: tempDir, stdio: 'pipe' });
+
+        const result = spawnSync(process.execPath, [path.resolve('aigon-cli.js'), 'feature-close', '42'], {
+            cwd: tempDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe']
+        });
+        const output = (result.stderr || '') + (result.stdout || '');
+        assert.ok(output.includes('Must be on'), 'should reject close on wrong branch: ' + output);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Manifest Read/Write Separation Tests
+// ---------------------------------------------------------------------------
+
+console.log('\nManifest — readManifest does not persist');
+
+test('readManifest returns transient object without persisting for unknown feature', () => {
+    withTempDir(tempDir => {
+        // Point manifest to temp state dir
+        const stateDir = path.join(tempDir, '.aigon', 'state');
+        fs.mkdirSync(stateDir, { recursive: true });
+
+        // Create a minimal spec folder so deriveFromFolder finds something
+        const specDir = path.join(tempDir, 'docs', 'specs', 'features', '02-backlog');
+        fs.mkdirSync(specDir, { recursive: true });
+        fs.writeFileSync(path.join(specDir, 'feature-999-test-feature.md'), '# Test');
+
+        // Use a fresh manifest module with overridden paths
+        const origCwd = process.cwd();
+        process.chdir(tempDir);
+        // Clear require cache to pick up new cwd
+        delete require.cache[require.resolve('./lib/manifest')];
+        const freshManifest = require('./lib/manifest');
+
+        const result = freshManifest.readManifest('999');
+        assert.strictEqual(result.stage, 'backlog', 'should derive stage from folder');
+
+        // Verify no file was written
+        const manifestFile = path.join(stateDir, 'feature-999.json');
+        assert.ok(!fs.existsSync(manifestFile), 'readManifest should NOT persist the file');
+
+        process.chdir(origCwd);
+        delete require.cache[require.resolve('./lib/manifest')];
+    });
+});
+
+test('ensureManifest creates and persists manifest file', () => {
+    withTempDir(tempDir => {
+        const stateDir = path.join(tempDir, '.aigon', 'state');
+        fs.mkdirSync(stateDir, { recursive: true });
+        const specDir = path.join(tempDir, 'docs', 'specs', 'features', '02-backlog');
+        fs.mkdirSync(specDir, { recursive: true });
+        fs.writeFileSync(path.join(specDir, 'feature-998-ensure-test.md'), '# Test');
+
+        const origCwd = process.cwd();
+        process.chdir(tempDir);
+        delete require.cache[require.resolve('./lib/manifest')];
+        const freshManifest = require('./lib/manifest');
+
+        const result = freshManifest.ensureManifest('998');
+        assert.strictEqual(result.stage, 'backlog');
+
+        // Verify file WAS written
+        const manifestFile = path.join(stateDir, 'feature-998.json');
+        assert.ok(fs.existsSync(manifestFile), 'ensureManifest should persist the file');
+
+        process.chdir(origCwd);
+        delete require.cache[require.resolve('./lib/manifest')];
+    });
+});
+
+test('readManifest returns persisted manifest when file exists', () => {
+    withTempDir(tempDir => {
+        const stateDir = path.join(tempDir, '.aigon', 'state');
+        fs.mkdirSync(stateDir, { recursive: true });
+        const manifestData = { id: '997', type: 'feature', stage: 'in-progress', agents: ['cc', 'cx'], pending: [], events: [] };
+        fs.writeFileSync(path.join(stateDir, 'feature-997.json'), JSON.stringify(manifestData));
+
+        const origCwd = process.cwd();
+        process.chdir(tempDir);
+        delete require.cache[require.resolve('./lib/manifest')];
+        const freshManifest = require('./lib/manifest');
+
+        const result = freshManifest.readManifest('997');
+        assert.strictEqual(result.stage, 'in-progress');
+        assert.deepStrictEqual(result.agents, ['cc', 'cx']);
+
+        process.chdir(origCwd);
+        delete require.cache[require.resolve('./lib/manifest')];
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Feature-start agent registration test
+// ---------------------------------------------------------------------------
+
+console.log('\nFeature-start — agent backfill');
+
+test('feature-start backfills agents when feature already in-progress with no agents', () => {
+    withTempDir(tempDir => {
+        const stateDir = path.join(tempDir, '.aigon', 'state');
+        fs.mkdirSync(stateDir, { recursive: true });
+
+        // Create a manifest that's in-progress but has no agents (simulates the race condition)
+        const manifestData = { id: '996', type: 'feature', stage: 'in-progress', name: 'test-backfill', agents: [], pending: [], events: [] };
+        fs.writeFileSync(path.join(stateDir, 'feature-996.json'), JSON.stringify(manifestData));
+
+        // Create spec in in-progress folder
+        const specDir = path.join(tempDir, 'docs', 'specs', 'features', '03-in-progress');
+        fs.mkdirSync(specDir, { recursive: true });
+        fs.writeFileSync(path.join(specDir, 'feature-996-test-backfill.md'), '# Test');
+
+        // Init a git repo on main so branch detection works
+        const { execSync } = require('child_process');
+        execSync('git init -b main && git add -A && git commit -m "init"', { cwd: tempDir, stdio: 'pipe' });
+
+        // Run feature-start via subprocess — it should backfill agents
+        const result = spawnSync(process.execPath, [path.resolve('aigon-cli.js'), 'feature-start', '996', 'cc', 'cx'], {
+            cwd: tempDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe']
+        });
+        const output = (result.stdout || '') + (result.stderr || '');
+        assert.ok(output.includes('Registered agents') || output.includes('cc, cx'),
+            'should backfill agents: ' + output);
+
+        // Read the manifest and check agents were backfilled
+        const updated = JSON.parse(fs.readFileSync(path.join(stateDir, 'feature-996.json'), 'utf8'));
+        assert.deepStrictEqual(updated.agents, ['cc', 'cx'], 'agents should be backfilled: ' + JSON.stringify(updated.agents));
+    });
+});
+
 console.log('');
 if (failed === 0) {
     console.log(`Passed: ${passed}`);
