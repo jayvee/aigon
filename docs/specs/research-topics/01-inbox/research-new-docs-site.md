@@ -2,7 +2,7 @@
 
 ## Context
 
-Aigon has an existing website at [aigon.build](https://aigon.build) (source: `~/src/aigon-site`), but it lacks proper documentation. All docs live as markdown files in the main aigon repo (`docs/`, `CLAUDE.md`, `AGENTS.md`, `docs/development_workflow.md`). This research is about rebuilding aigon.build with a new docs-focused framework — replacing or extending the current site with a proper documentation system. As aigon grows toward a commercial product (AADE), it needs:
+Aigon has an existing website at [aigon.build](https://aigon.build) (source: `~/src/aigon-site`), but it lacks proper documentation. User-facing docs currently live in the README and GUIDE files in the aigon repo (not CLAUDE.md/AGENTS.md — those are agent instructions, not user docs). This research is about rebuilding aigon.build with a new docs-focused framework — replacing or extending the current site with proper documentation. As aigon grows toward a commercial product (AADE), it needs:
 
 - Makes aigon accessible to new users who aren't reading the source
 - Presents the workflow (create → prioritise → start → evaluate → close) clearly
@@ -21,7 +21,7 @@ The user was impressed by [spec-kitty.ai](https://spec-kitty.ai/) docs and wants
 - [ ] How do comparable CLI tools document themselves? (Look at: Turborepo docs, pnpm docs, Wrangler docs, Railway CLI docs, Cursor docs)
 - [ ] Should aigon auto-generate command reference from the CLI source code, or maintain docs manually?
 - [ ] What's the minimum viable docs structure? (Getting started, commands reference, workflow guide, configuration, FAQ)
-- [ ] Can existing repo markdown (`docs/development_workflow.md`, help text, slash command templates) be reused as docs source?
+- [ ] Can existing repo markdown (README, GUIDE, help text) be reused as docs source?
 - [ ] What is the current aigon-site (`~/src/aigon-site`) built with? Should we rebuild from scratch or migrate?
 - [ ] Should docs live at aigon.build/docs or replace the entire site? (Landing page + docs in one framework vs separate)
 
@@ -46,5 +46,5 @@ The user was impressed by [spec-kitty.ai](https://spec-kitty.ai/) docs and wants
 - [spec-kitty.ai](https://spec-kitty.ai/) — user liked the structure and presentation
 - [Turborepo docs](https://turbo.build/repo/docs) — CLI tool with excellent docs
 - [Geistdocs](https://preview.geistdocs.com/docs) — Vercel's own documentation template
-- Aigon's existing docs in `docs/` directory as content source
+- Aigon's README and GUIDE as content source
 - Current aigon-site (`~/src/aigon-site`) at [aigon.build](https://aigon.build) as the deployment target
