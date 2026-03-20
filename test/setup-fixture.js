@@ -581,7 +581,7 @@ function createBrewboardApi(repoDir) {
     write(path.join(doneDir, 'feature-06-pagination.md'),
         featureDoneContent('06', 'Pagination', 'Cursor-based pagination for all list endpoints. Returns `next_cursor` and `has_more` alongside data.'));
 
-    // No feature logs — logs are created by feature-setup, not pre-seeded
+    // No feature logs — logs are created by feature-start, not pre-seeded
 
     // ── research-topics (nothing in-progress without a running session) ──────
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '01-inbox', 'research-event-sourcing.md'),
@@ -784,7 +784,7 @@ final class HikeTests: XCTestCase {
     write(path.join(doneDir, 'feature-06-icloud-sync.md'),
         featureDoneContent('06', 'iCloud Sync', 'Sync hike records across the user\'s devices using CloudKit. Conflicts resolved by last-write-wins on the name/notes fields; GPS tracks are immutable.'));
 
-    // No feature logs — logs are created by feature-setup, not pre-seeded
+    // No feature logs — logs are created by feature-start, not pre-seeded
 
     // ── research-topics (nothing in-progress without a running session) ──────
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '01-inbox', 'research-live-activities.md'),

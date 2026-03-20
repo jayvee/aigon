@@ -38,7 +38,7 @@ This is independent from workflow mode (Drive/Fleet/Autopilot/Swarm).
 
 1. Start in an **in-agent session** when defining work (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) so you can iterate conversationally.
 2. Stay **in-agent** for execution (`feature-do`, `feature-review`, `research-do`, `research-synthesize`).
-3. Use **CLI context** for orchestration and terminal operations (`feature-setup`, `feature-open`, `feature-eval` (Fleet), `feature-close`, `feature-cleanup`), especially from the main repo.
+3. Use **CLI context** for orchestration and terminal operations (`feature-start`, `feature-open`, `feature-eval` (Fleet), `feature-close`, `feature-cleanup`), especially from the main repo.
 
 ### Surface recommendations
 
@@ -46,7 +46,7 @@ This is independent from workflow mode (Drive/Fleet/Autopilot/Swarm).
 |---|---|---|
 | Spec authoring/refinement (`feature-create`, `feature-prioritise`, `research-create`, `research-prioritise`) | In-agent | Best for back-and-forth definition and scope shaping |
 | Agent execution (`feature-do`, `feature-review`, `research-do`, `research-synthesize`) | In-agent | Best when an agent session is already active |
-| Setup/orchestration (`init`, `install-agent`, `update`, `feature-setup`, `research-setup`, `feature-open`, `feature-close`, `feature-cleanup`) | CLI | Repo/worktree operations and coordination |
+| Setup/orchestration (`init`, `install-agent`, `update`, `feature-start`, `research-start`, `feature-open`, `feature-close`, `feature-cleanup`) | CLI | Repo/worktree operations and coordination |
 | Infra/config (`config`, `profile`, `proxy`, `dev-server`, `dashboard`) | CLI | Machine/project configuration and services |
 
 ### Mode × surface matrix
@@ -56,7 +56,7 @@ This is independent from workflow mode (Drive/Fleet/Autopilot/Swarm).
 | Drive | Fully supported | Fully supported |
 | Fleet | Fully supported (strong for orchestration) | Fully supported (strong for per-agent execution) |
 | Autopilot | Primary entry point (`feature-do --autonomous`) | Supported when already in-session |
-| Swarm | Primary entry point (`feature-setup ... --autonomous`) | Limited manual use after launch (agents run autonomously) |
+| Swarm | Primary entry point (`feature-start ... --autonomous`) | Limited manual use after launch (agents run autonomously) |
 
 The matrix describes common usage, not hard restrictions. In general, both surfaces are available; the best choice depends on whether you're iterating with an agent or orchestrating repo/worktree state.
 
@@ -89,8 +89,8 @@ Drive mode supports two workspace styles: **branch** (work in the current repo) 
     * The agent **explores the codebase** before writing the spec to understand existing architecture, patterns, and constraints.
 2.  **Prioritise:** `/aigon:feature-prioritise dark-mode` (or `aigon feature-prioritise dark-mode`) assigns an ID and moves to `/backlog`.
 3.  **Setup:**
-    * **Branch mode:** `/aigon:feature-setup 108` (or `aigon feature-setup 108`) — creates a Git branch (`feature-108-dark-mode`) in the current repo.
-    * **Worktree mode:** `/aigon:feature-setup 108 cc` (or `aigon feature-setup 108 cc`) — creates an isolated worktree at `../<repo>-worktrees/feature-108-cc-dark-mode`, ideal for working on multiple features in parallel.
+    * **Branch mode:** `/aigon:feature-start 108` (or `aigon feature-start 108`) — creates a Git branch (`feature-108-dark-mode`) in the current repo.
+    * **Worktree mode:** `/aigon:feature-start 108 cc` (or `aigon feature-start 108 cc`) — creates an isolated worktree at `../<repo>-worktrees/feature-108-cc-dark-mode`, ideal for working on multiple features in parallel.
     * Both modes auto-create an Implementation Log and write agent status to `.aigon/state/` (see [Agent Status Tracking](#agent-status-tracking)).
 4.  **Implement:** `aigon feature-do 108` (launches the default `cc` agent from a plain shell) or `aigon feature-do 108 --agent=cx` (launch Codex). Inside an active agent session, use `/aigon:feature-do 108` (or `/aigon-feature-do 108` for Cursor, `/prompts:aigon-feature-do 108` for Codex) to show instructions without launching a nested agent.
     * **Shell-launch mode** (plain terminal, no active agent): Aigon detects no agent session and spawns the chosen agent directly. Default agent is `cc`; override with `--agent=<cc|gg|cx|cu>`.
@@ -114,7 +114,7 @@ Run multiple agents in competition to find the optimal solution.
 1.  **Create:** `/aigon:feature-create "Dark Mode"` (or `aigon feature-create "Dark Mode"`) creates a templated spec in `/inbox`.
     * The agent **explores the codebase** before writing the spec.
 2.  **Prioritise:** `/aigon:feature-prioritise dark-mode` (or `aigon feature-prioritise dark-mode`) assigns an ID and moves to `/backlog`.
-3.  **Setup Fleet:** `/aigon:feature-setup 108 cc gg cx` (or `aigon feature-setup 108 cc gg cx`)
+3.  **Setup Fleet:** `/aigon:feature-start 108 cc gg cx` (or `aigon feature-start 108 cc gg cx`)
     * Moves Spec to `/03-in-progress`.
     * Creates agent-specific **Git Branches** (`feature-108-cc-dark-mode`, `feature-108-gg-dark-mode`, `feature-108-cx-dark-mode`).
     * Creates **Git Worktrees** in a grouped folder:
@@ -175,7 +175,7 @@ Run multiple agents in competition to find the optimal solution.
 
 * **Create:** `/aigon:research-create "API Design"` (or `aigon research-create "API Design"`) creates a templated topic in `/01-inbox`. The agent **explores the codebase** before writing the topic to understand relevant existing code and constraints.
 * **Prioritise:** `/aigon:research-prioritise api-design` (or `aigon research-prioritise api-design`) moves it to `/02-backlog` and assigns a global ID.
-* **Setup:** `/aigon:research-setup 05` (or `aigon research-setup 05`) moves to `/03-in-progress`.
+* **Setup:** `/aigon:research-start 05` (or `aigon research-start 05`) moves to `/03-in-progress`.
 * **Execute:** `/aigon:research-do 05` (or `/aigon-research-do 05` for Cursor, `/prompts:aigon-research-do 05` for Codex). Agent reads the topic file, writes findings and recommendations directly into the document.
 * **Done:** `/aigon:research-close 05` (or `aigon research-close 05`) moves to `/04-done`.
 * **Output:** The research file becomes a complete record, with suggested features in the Output section.
@@ -186,7 +186,7 @@ Run multiple agents to get diverse perspectives on a research topic.
 
 * **Create:** `/aigon:research-create "API Design"` (or `aigon research-create "API Design"`) creates a templated topic in `/01-inbox`. The agent **explores the codebase** first.
 * **Prioritise:** `/aigon:research-prioritise api-design` (or `aigon research-prioritise api-design`) moves it to `/02-backlog` and assigns a global ID.
-* **Setup Fleet:** `/aigon:research-setup 05 cc gg cx` (or `aigon research-setup 05 cc gg cx`)
+* **Setup Fleet:** `/aigon:research-start 05 cc gg cx` (or `aigon research-start 05 cc gg cx`)
     * Moves topic to `/03-in-progress`.
     * Creates **separate findings files** for each agent in `logs/`:
         * `research-05-cc-findings.md` (Claude)
@@ -430,7 +430,7 @@ Define hooks in `docs/aigon-hooks.md`. Aigon automatically detects and runs hook
 ```markdown
 # Aigon Hooks
 
-## pre-feature-setup
+## pre-feature-start
 
 Creates database branches for each agent worktree (Fleet mode).
 
@@ -442,7 +442,7 @@ if [ "$AIGON_MODE" = "fleet" ]; then
 fi
 ```
 
-## post-feature-setup
+## post-feature-start
 
 ```bash
 echo "Setup complete for feature $AIGON_FEATURE_ID in $AIGON_MODE mode"
@@ -465,8 +465,8 @@ done
 |------|-------------|
 | `pre-feature-now` | Runs before fast-track feature creation |
 | `post-feature-now` | Runs after fast-track feature creation completes |
-| `pre-feature-setup` | Runs before creating branch (Drive) or worktrees (Fleet) |
-| `post-feature-setup` | Runs after setup completes |
+| `pre-feature-start` | Runs before creating branch (Drive) or worktrees (Fleet) |
+| `post-feature-start` | Runs after setup completes |
 | `pre-feature-do` | Runs before implementation begins |
 | `post-feature-do` | Runs after implementation setup |
 | `pre-feature-close` | Runs before merging a feature |
@@ -485,7 +485,7 @@ Hooks have access to context via environment variables:
 | `AIGON_MODE` | Current mode: "drive" or "fleet" | Feature commands |
 | `AIGON_FEATURE_ID` | Feature ID (e.g., "01") | Feature commands |
 | `AIGON_FEATURE_NAME` | Feature name slug | Feature commands |
-| `AIGON_AGENTS` | Space-separated list of agents | feature-setup (Fleet), feature-cleanup |
+| `AIGON_AGENTS` | Space-separated list of agents | feature-start (Fleet), feature-cleanup |
 | `AIGON_AGENT` | Current agent name | feature-do (Fleet), feature-close (Fleet) |
 | `AIGON_WORKTREE_PATH` | Path to current worktree | feature-do (Fleet) |
 
@@ -549,7 +549,7 @@ For `web` and `api` profiles, Aigon reads `PORT` from your `.env.local` or `.env
 PORT=3400 in .env → cc=3401, gg=3402, cx=3403, cu=3404
 ```
 
-This avoids port clashes when running multiple Aigon projects simultaneously. Each worktree gets a `.env.local` with the agent-specific PORT written during `aigon feature-setup`.
+This avoids port clashes when running multiple Aigon projects simultaneously. Each worktree gets a `.env.local` with the agent-specific PORT written during `aigon feature-start`.
 
 A port summary is shown during `aigon init`, `aigon update`, `aigon install-agent`, and `aigon profile show`:
 
@@ -1092,7 +1092,7 @@ The `--adopt` flag prints diffs from losing agents after merging the winner. Rev
 |---|---|
 | Research Create | `aigon research-create <name>` |
 | Research Prioritise | `aigon research-prioritise <name>` |
-| Research Setup | `aigon research-setup <ID> [agents...]` |
+| Research Setup | `aigon research-start <ID> [agents...]` |
 | Research Open | `aigon research-open <ID>` |
 | Research Conduct | `aigon research-do <ID>` |
 | Research Submit | `aigon research-submit [ID] [agent]` (signal findings complete) |
@@ -1107,7 +1107,7 @@ The `--adopt` flag prints diffs from losing agents after merging the winner. Rev
 | Feature Create | `aigon feature-create <name>` |
 | Feature Now | `aigon feature-now <name>` (inbox match → prioritise + setup + implement; no match → create new) |
 | Feature Prioritise | `aigon feature-prioritise <name>` |
-| Feature Setup | `aigon feature-setup <ID> [agents...]` |
+| Feature Setup | `aigon feature-start <ID> [agents...]` |
 | Feature Implement | `aigon feature-do <ID> [--agent=<id>] [--autonomous] [--auto-submit] [--no-auto-submit]` |
 | Feature Submit | `aigon feature-submit` (agent-only: commit changes, write log, signal done) |
 | Feature Validate | `aigon feature-validate <ID> [--dry-run]` (evaluate acceptance criteria) |
@@ -1219,7 +1219,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-create <name>` | Create a feature spec |
 | `/aigon:feature-now <name>` | Fast-track: create + setup + implement |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:feature-setup <ID> [agents...]` | Setup Drive or Fleet |
+| `/aigon:feature-start <ID> [agents...]` | Setup Drive or Fleet |
 | `/aigon:feature-do <ID> [--autonomous]` | Implement feature |
 | `/aigon:feature-submit` | Commit changes, write log, signal done |
 | `/aigon:feature-eval <ID>` | Generate Fleet comparison |
@@ -1229,7 +1229,7 @@ The command set is consistent across agents. Differences are only command prefix
 | `/aigon:feature-open [ID] [agent]` | Open worktree(s) |
 | `/aigon:research-create <name>` | Create research topic |
 | `/aigon:research-prioritise <name>` | Prioritise research |
-| `/aigon:research-setup <ID> [agents...]` | Setup research |
+| `/aigon:research-start <ID> [agents...]` | Setup research |
 | `/aigon:research-do <ID>` | Write findings |
 | `/aigon:research-synthesize <ID>` | Compare findings |
 | `/aigon:research-close <ID>` | Complete research |

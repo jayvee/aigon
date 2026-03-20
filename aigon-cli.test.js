@@ -1142,7 +1142,7 @@ test('feature inbox → backlog transition always available', () => {
 
 test('feature backlog → in-progress transition always available', () => {
     const transitions = getValidTransitions('feature', 'backlog', {});
-    assert.ok(transitions.some(t => t.action === 'feature-setup' && t.to === 'in-progress'));
+    assert.ok(transitions.some(t => t.action === 'feature-start' && t.to === 'in-progress'));
 });
 
 test('feature in-progress → in-evaluation blocked when not all submitted', () => {
@@ -1405,19 +1405,19 @@ function withCleanManifest(featureId, fn) {
 // TRANSITION_DEFS structure
 test('TRANSITION_DEFS has entries for all core feature actions', () => {
     assert.ok(TRANSITION_DEFS['feature-prioritise'], 'has feature-prioritise');
-    assert.ok(TRANSITION_DEFS['feature-setup'], 'has feature-setup');
+    assert.ok(TRANSITION_DEFS['feature-start'], 'has feature-start');
     assert.ok(TRANSITION_DEFS['feature-eval'], 'has feature-eval');
     assert.ok(TRANSITION_DEFS['feature-close'], 'has feature-close');
 });
 
-test('TRANSITION_DEFS feature-setup sideEffects returns move-spec for drive mode', () => {
-    const effects = TRANSITION_DEFS['feature-setup'].sideEffects({ agents: [] });
+test('TRANSITION_DEFS feature-start sideEffects returns move-spec for drive mode', () => {
+    const effects = TRANSITION_DEFS['feature-start'].sideEffects({ agents: [] });
     assert.ok(effects.includes('move-spec'), 'includes move-spec');
     assert.ok(effects.includes('init-log'), 'includes init-log for drive mode');
 });
 
-test('TRANSITION_DEFS feature-setup sideEffects returns worktree ops for fleet mode', () => {
-    const effects = TRANSITION_DEFS['feature-setup'].sideEffects({ agents: ['cc', 'gg'] });
+test('TRANSITION_DEFS feature-start sideEffects returns worktree ops for fleet mode', () => {
+    const effects = TRANSITION_DEFS['feature-start'].sideEffects({ agents: ['cc', 'gg'] });
     assert.ok(effects.includes('move-spec'), 'includes move-spec');
     assert.ok(effects.includes('create-worktree-cc'), 'includes create-worktree-cc');
     assert.ok(effects.includes('init-log-cc'), 'includes init-log-cc');
@@ -1432,11 +1432,11 @@ test('TRANSITION_DEFS feature-close accepts in-evaluation and in-progress as sou
 });
 
 // requestTransition — valid transitions
-test('requestTransition advances stage from backlog to in-progress for feature-setup', () => {
+test('requestTransition advances stage from backlog to in-progress for feature-start', () => {
     withCleanManifest('9999', () => {
         // Bootstrap a manifest with stage 'backlog'
         manifestModule.writeManifest('9999', { id: '9999', type: 'feature', name: 'test-feature', stage: 'backlog', agents: [], pending: [] });
-        const pending = requestTransition('9999', 'feature-setup', { agents: ['cc'] });
+        const pending = requestTransition('9999', 'feature-start', { agents: ['cc'] });
         assert.ok(Array.isArray(pending), 'returns array');
         assert.ok(pending.includes('move-spec'), 'pending includes move-spec');
         assert.ok(pending.includes('create-worktree-cc'), 'pending includes create-worktree-cc');

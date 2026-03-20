@@ -156,8 +156,8 @@ async function main() {
             if (!f) throw new Error(`No spec with ID ${paddedId} found in 02-backlog`);
         });
 
-        const setupResult = runAigon(['feature-setup', featureId, 'cc'], { cwd: tmpDir });
-        check('feature-setup exits 0', () => {
+        const setupResult = runAigon(['feature-start', featureId, 'cc'], { cwd: tmpDir });
+        check('feature-start exits 0', () => {
             if (setupResult.exitCode !== 0)
                 throw new Error(`exit ${setupResult.exitCode}: ${setupResult.stderr.slice(0, 200)}`);
         });

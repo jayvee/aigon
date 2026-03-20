@@ -13,7 +13,7 @@
 |---------|-------------|
 | `{{CMD_PREFIX}}feature-create <name>` | Create a new feature spec |
 | `{{CMD_PREFIX}}feature-prioritise <name>` | Assign ID and move to backlog |
-| `{{CMD_PREFIX}}feature-setup <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
+| `{{CMD_PREFIX}}feature-start <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
 | `{{CMD_PREFIX}}feature-do <ID> [--autonomous]` | Implement feature; `--autonomous` runs iterative retry loop |
 | `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `{{CMD_PREFIX}}feature-review <ID>` | Code review with fixes by a different agent |
@@ -27,7 +27,7 @@
 |---------|-------------|
 | `{{CMD_PREFIX}}research-create <name>` | Create a new research topic |
 | `{{CMD_PREFIX}}research-prioritise <name>` | Prioritise a research topic |
-| `{{CMD_PREFIX}}research-setup <ID> [agents...]` | Setup for Drive or Fleet research |
+| `{{CMD_PREFIX}}research-start <ID> [agents...]` | Setup for Drive or Fleet research |
 | `{{CMD_PREFIX}}research-open <ID>` | Open all Fleet agents side-by-side for parallel research |
 | `{{CMD_PREFIX}}research-do <ID>` | Conduct research (write findings) |
 | `{{CMD_PREFIX}}research-submit` | (you must run this) Signal research findings are complete |
@@ -48,8 +48,8 @@
 
 ## Modes
 
-- **Drive mode**: `{{CMD_PREFIX}}feature-setup <ID>` - Creates branch only, work in current directory
-- **Fleet mode**: `{{CMD_PREFIX}}feature-setup <ID> <agents...>` - Creates worktrees for parallel implementation
+- **Drive mode**: `{{CMD_PREFIX}}feature-start <ID>` - Creates branch only, work in current directory
+- **Fleet mode**: `{{CMD_PREFIX}}feature-start <ID> <agents...>` - Creates worktrees for parallel implementation
 
 ## Mandatory Lifecycle Commands
 
@@ -71,7 +71,7 @@ These are CLI commands you run directly — not slash commands, not auto-invoked
 
 ## Drive Mode Workflow
 
-1. Run `{{CMD_PREFIX}}feature-setup <ID>` to create branch and move spec
+1. Run `{{CMD_PREFIX}}feature-start <ID>` to create branch and move spec
 2. Run `{{CMD_PREFIX}}feature-do <ID>` to begin implementation
 3. Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
 4. Implement the feature according to the spec
@@ -82,7 +82,7 @@ These are CLI commands you run directly — not slash commands, not auto-invoked
 
 ## Fleet Mode Workflow
 
-1. Run `{{CMD_PREFIX}}feature-setup <ID> cc cx gg cu` to create worktrees for each agent
+1. Run `{{CMD_PREFIX}}feature-start <ID> cc cx gg cu` to create worktrees for each agent
 2. **STOP** - Tell the user to open the worktree in a separate session
 3. In the worktree session:
    - Run `{{CMD_PREFIX}}feature-do <ID>`

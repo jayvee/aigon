@@ -30,7 +30,7 @@ const TRANSITIONS_AS_BUTTONS = [
   'feature-prioritise', 'research-prioritise',
   'feature-close', 'research-close',
   'feedback-triage',
-  'research-setup'
+  'research-start'
 ];
 
 /**
@@ -175,14 +175,11 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     case 'research-attach':
       await requestFeatureOpen(id, agentId, repoPath, btn, pipelineType);
       break;
-    case 'feature-setup':
-    case 'research-setup': {
+    case 'feature-start':
+    case 'research-start': {
       const agents = await showAgentPicker(id, feature.name);
       if (!agents) return;
-      await requestAction(pCmd('setup'), [id, ...agents], repoPath, btn);
-      for (const agent of agents) {
-        await requestFeatureOpen(id, agent, repoPath, null, pipelineType);
-      }
+      await requestAction(pCmd('start'), [id, ...agents], repoPath, btn);
       break;
     }
     case 'feature-autopilot': {

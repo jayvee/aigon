@@ -13,14 +13,14 @@ If no ID is provided, or the ID doesn't match an existing feature:
 ## Usage
 
 ### Drive mode (branch or worktree)
-If you used `feature-setup {{ARG1_SYNTAX}}` or `feature-setup {{ARG1_SYNTAX}} <agent>`:
+If you used `feature-start {{ARG1_SYNTAX}}` or `feature-start {{ARG1_SYNTAX}} <agent>`:
 ```bash
 aigon feature-close {{ARG1_SYNTAX}}
 ```
 The command auto-detects whether the feature uses a branch or a Drive worktree.
 
 ### Fleet mode
-If you used `feature-setup {{ARG1_SYNTAX}} cc gg cx cu`:
+If you used `feature-start {{ARG1_SYNTAX}} cc gg cx cu`:
 ```bash
 aigon feature-close {{ARG1_SYNTAX}} <winning-agent>
 ```
@@ -192,7 +192,7 @@ After the command completes, check the pipeline and suggest the most useful next
 
 3. Otherwise, check the pipeline:
    - List files in `./docs/specs/features/02-backlog/` matching `feature-*.md`
-   - If features exist in **backlog**: suggest setting up the next one — `{{CMD_PREFIX}}feature-setup <next-ID>`
+   - If features exist in **backlog**: suggest setting up the next one — `{{CMD_PREFIX}}feature-start <next-ID>`
    - If backlog is empty, list files in `./docs/specs/features/01-inbox/` matching `feature-*.md`
    - If features exist in **inbox**: suggest prioritising — `{{CMD_PREFIX}}feature-prioritise`
    - If both are empty: let the user know the pipeline is clear

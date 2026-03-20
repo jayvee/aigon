@@ -254,7 +254,7 @@ These capabilities are unique to Aigon — no other tool in this comparison offe
 Run unlimited competing agents across different AI providers on the same feature. Claude Code, Gemini CLI, Codex CLI, and Cursor each implement independently in isolated Git worktrees. No other tool orchestrates agents from different vendors in parallel competition.
 
 ```bash
-aigon feature-setup 42 cc gg cx cu   # Claude, Gemini, Codex, Cursor
+aigon feature-start 42 cc gg cx cu   # Claude, Gemini, Codex, Cursor
 aigon feature-open 42                # Launch all agents
 aigon feature-eval 42                # Compare implementations with rubrics
 ```
@@ -310,7 +310,7 @@ Aigon works best alongside other tools, not as a replacement. Its strength is or
 ```bash
 # Aigon manages the workflow, Cursor is one implementation agent
 aigon feature-create dark-mode
-aigon feature-setup 42 cc gg cu      # Claude, Gemini, and Cursor
+aigon feature-start 42 cc gg cu      # Claude, Gemini, and Cursor
 aigon feature-open 42                # Cursor gets its own worktree
 aigon feature-eval 42                # Compare all three implementations
 ```
