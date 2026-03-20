@@ -38,7 +38,10 @@
       cycleTimeChart: null,
       cycleTimeSeries: [],
       filteredFeatures: [],
-      featureListPage: 0
+      featureListPage: 0,
+      insightsData: null,
+      insightsLoading: false,
+      insightsError: null
     };
 
     async function loadAnalytics() {
@@ -481,4 +484,3 @@
         return true;
       });
     }
-
