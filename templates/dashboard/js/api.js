@@ -60,6 +60,8 @@
         const stderrError = !exitFailed && payload.stderr && /fatal:|error:|❌|Error:/i.test(String(payload.stderr));
         if (exitFailed) {
           showToast('Action failed (exit ' + payload.exitCode + ') — check Console', 'Console', () => { state.view = 'console'; localStorage.setItem(lsKey('view'), 'console'); render(); }, { error: true });
+        } else if (payload.agentWarning) {
+          showToast('Warning: ' + payload.agentWarning, 'Console', () => { state.view = 'console'; localStorage.setItem(lsKey('view'), 'console'); render(); }, { error: true });
         } else if (stderrError) {
           showToast('Done with warnings — check Console', 'Console', () => { state.view = 'console'; localStorage.setItem(lsKey('view'), 'console'); render(); });
         } else {
