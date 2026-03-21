@@ -1,3 +1,16 @@
+---
+commit_count: 5
+lines_added: 224
+lines_removed: 9
+lines_changed: 233
+files_touched: 6
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+---
+
 # Implementation Log: Feature 127 - manifest-and-branch-safety
 Agent: cc
 
