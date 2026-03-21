@@ -1,0 +1,14 @@
+# Aigon CLI — auto-generated policy rules
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "aigon"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "node"
+argsPattern = "aigon-cli\\.js"
+decision = "allow"
+priority = 100

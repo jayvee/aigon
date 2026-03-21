@@ -1,0 +1,19 @@
+{
+  "id": "05",
+  "type": "feature",
+  "name": "deploy-demo-update",
+  "stage": "done",
+  "specPath": "/Users/jviner/src/aigon-site/docs/specs/features/05-done/feature-05-deploy-demo-update.md",
+  "agents": [
+    "deploy"
+  ],
+  "winner": null,
+  "pending": [],
+  "events": [
+    {
+      "type": "bootstrapped",
+      "at": "2026-03-18T22:52:37.954Z",
+      "actor": "system"
+    }
+  ]
+}
