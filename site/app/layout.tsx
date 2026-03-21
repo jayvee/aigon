@@ -1,6 +1,6 @@
 import "./global.css";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Sora } from "next/font/google";
 import { RootProvider } from "fumadocs-ui/provider";
 import type { ReactNode } from "react";
 
@@ -12,6 +12,11 @@ const geist = Geist({
 const geistMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-geist-mono",
+});
+
+const sora = Sora({
+  subsets: ["latin"],
+  variable: "--font-sora",
 });
 
 export const metadata: Metadata = {
@@ -43,7 +48,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${geist.variable} ${geistMono.variable}`}
+      className={`${geist.variable} ${geistMono.variable} ${sora.variable}`}
+
       suppressHydrationWarning
     >
       <body className="font-[family-name:var(--font-geist-sans)]">
