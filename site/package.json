@@ -2,10 +2,29 @@
   "name": "@aigon/site",
   "private": true,
   "version": "0.1.0",
-  "description": "Aigon docs and marketing site (static for now, Next.js-ready)",
+  "description": "Aigon documentation and marketing site",
   "scripts": {
-    "dev": "python3 -m http.server 8080",
-    "build": "echo 'Static site: no build step required'",
-    "preview": "python3 -m http.server 8080"
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "preview": "next build && next start"
+  },
+  "dependencies": {
+    "fumadocs-core": "^15.0.0",
+    "fumadocs-mdx": "^11.0.0",
+    "fumadocs-ui": "^15.0.0",
+    "lucide-react": "^0.469.0",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0"
   }
 }
