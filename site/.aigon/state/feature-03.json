@@ -1,0 +1,19 @@
+{
+  "id": "03",
+  "type": "feature",
+  "name": "arena-adopt-best-of-losers",
+  "stage": "done",
+  "specPath": "/Users/jviner/src/aigon-site/docs/specs/features/05-done/feature-03-arena-adopt-best-of-losers.md",
+  "agents": [
+    "arena"
+  ],
+  "winner": null,
+  "pending": [],
+  "events": [
+    {
+      "type": "bootstrapped",
+      "at": "2026-03-18T22:52:37.902Z",
+      "actor": "system"
+    }
+  ]
+}
