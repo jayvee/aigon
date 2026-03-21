@@ -43,39 +43,36 @@ The CLI will:
 
 ## Step 2: Confirm setup and next steps
 
+`feature-start` creates the workspace AND opens agent terminals automatically. The agents are already running — there is no separate "open" step.
+
 ### Drive Mode (branch)
 
-After the CLI completes:
+After the CLI completes, the agent is running `feature-do` in your current terminal. Wait for implementation to complete, then:
 ```bash
-{{CMD_PREFIX}}feature-do 55     # Start implementing
+{{CMD_PREFIX}}feature-close <ID>
 ```
 
-### Drive Worktree Mode (parallel development)
+### Drive Worktree Mode
 
-After the CLI completes, open the worktree using:
+After the CLI completes, the agent terminal is already open and implementing. Wait for it to submit, then close from the main repo:
+```bash
+{{CMD_PREFIX}}feature-close <ID>
 ```
-{{CMD_PREFIX}}feature-open 55
-```
-
-This opens Warp terminal with the agent CLI running `{{CMD_PREFIX}}feature-do` automatically.
-
-Remember that `{{CMD_PREFIX}}feature-close` must be run from the main repo later.
 
 ### Fleet Mode (competition)
 
-After the CLI completes, open all worktrees side-by-side:
+After the CLI completes, all agent terminals are already open and implementing. Wait for all agents to submit, then evaluate:
 ```bash
-{{CMD_PREFIX}}feature-open 55 --all         # Opens all Fleet agents side-by-side in Warp
+{{CMD_PREFIX}}feature-eval <ID>
 ```
 
-Or open individually:
-```
-{{CMD_PREFIX}}feature-open 55 cc    # Open Claude's worktree
-{{CMD_PREFIX}}feature-open 55 gg    # Open Gemini's worktree
-{{CMD_PREFIX}}feature-open 55 cx    # Open Codex's worktree
-```
+### Re-opening a crashed/ended session
 
-Each terminal opens with the agent CLI running `{{CMD_PREFIX}}feature-do` automatically. After all implementations complete, return to main repo and run `{{CMD_PREFIX}}feature-eval 55` to compare.
+If an agent session dies, use `feature-open` to re-attach:
+```bash
+{{CMD_PREFIX}}feature-open <ID>          # Re-open a Drive worktree agent
+{{CMD_PREFIX}}feature-open <ID> cc       # Re-open a specific Fleet agent
+```
 
 ## Important Notes
 
@@ -83,11 +80,12 @@ Each terminal opens with the agent CLI running `{{CMD_PREFIX}}feature-do` automa
 - **Drive worktree mode**: You'll work in an isolated worktree — ideal for parallel development of multiple features
 - **Fleet mode**: Multiple agents compete on the same feature in their own worktrees
 - Worktrees are created in `../<repo>-worktrees/` to keep them grouped with the project
+- Agents start automatically — no need to run `feature-open` after `feature-start`
 
 ## Prompt Suggestion
 
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID and choose based on mode:
 
-- **Drive mode (branch):** `{{CMD_PREFIX}}feature-do <ID>`
-- **Drive worktree:** `{{CMD_PREFIX}}feature-open <ID>`
-- **Fleet:** `{{CMD_PREFIX}}feature-open <ID> --all`
+- **Drive mode (branch):** `{{CMD_PREFIX}}feature-close <ID>`
+- **Drive worktree:** `{{CMD_PREFIX}}feature-close <ID>`
+- **Fleet:** `{{CMD_PREFIX}}feature-eval <ID>`
