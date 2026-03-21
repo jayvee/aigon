@@ -32,3 +32,17 @@ Extract all AADE (Amplification) code from the aigon repo into a separate privat
 - **`collectAnalyticsData()` stays in free tier** (in `lib/utils.js`) — it aggregates data that the dashboard statistics view also uses. The AADE fields it collects are still populated from log frontmatter; they just don't get analyzed without pro.
 - **logs.js amplification section stays** — it renders inline AADE metrics from the analytics API endpoint, which serves data from `collectAnalyticsData()`. This is basic metric display, not the insights engine.
 - **No `templates/dashboard/js/insights.js` existed** — the spec assumed this file existed but it didn't. All insights rendering was inside `amplification.js`.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-22
+
+### Findings
+- `templates/dashboard/js/logs.js` still shipped the AADE amplification/insights section inside the public dashboard statistics page, which left AADE-specific UI and analysis logic in this repo after the extraction.
+
+### Fixes Applied
+- `a2ef5a3` — `fix(review): remove leftover AADE dashboard analytics from stats view`
+
+### Notes
+- Validated the review fix by parsing `templates/dashboard/js/logs.js` with Node after removing the leftover amplification section.
