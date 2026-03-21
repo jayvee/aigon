@@ -80,7 +80,7 @@ FEATURES
 Next actions:
   billing-integration        → /afn billing-integration
   email-templates            → /afn email-templates
-  #13 dark-mode              → /afse 13
+  #13 dark-mode              → /afs 13
   #11 search-api             → /afd 11
   #12 notifications          → /afd 12
   #14 profile-redesign       → /afe 14
@@ -96,7 +96,7 @@ RESEARCH
 
 Next actions:
   api-performance            → /arp api-performance
-  #01 auth-patterns          → /arse 01
+  #01 auth-patterns          → /ars 01
   #02 caching-strategy       → /ardn 02
 ```
 

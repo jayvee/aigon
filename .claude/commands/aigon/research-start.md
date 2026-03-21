@@ -1,8 +1,8 @@
 ---
-description: Setup research <ID> [agents...] - prepare for Drive or Fleet mode (shortcut for research-setup)
+description: Start research <ID> [agents...] - begin Drive or Fleet research
 argument-hint: "<ID> [agents...]"
 ---
-# aigon-research-setup
+# aigon-research-start
 
 Prepare to conduct research in either Drive or Fleet mode.
 
@@ -10,10 +10,10 @@ Prepare to conduct research in either Drive or Fleet mode.
 
 ```bash
 # Drive mode (single agent)
-aigon research-setup {{args}}
+aigon research-start {{args}}
 
 # Fleet mode (multiple agents)
-aigon research-setup {{args}} <agent1> <agent2> [agent3...]
+aigon research-start {{args}} <agent1> <agent2> [agent3...]
 ```
 
 ## Argument Resolution
@@ -35,7 +35,7 @@ Sets up for a single agent to research the topic.
 
 Example:
 ```bash
-aigon research-setup 05
+aigon research-start 05
 ```
 
 This will:
@@ -52,7 +52,7 @@ Sets up for multiple agents to research the same topic in parallel.
 
 Example:
 ```bash
-aigon research-setup 05 cc gg
+aigon research-start 05 cc gg
 ```
 
 This will:

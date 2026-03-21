@@ -19,10 +19,10 @@ If no name is provided, or the name doesn't match an existing topic in the inbox
 
 This assigns an ID to the research topic and moves it from `01-inbox/` to `02-backlog/`.
 
-Next step: Run `/aigon:research-setup <ID>` (Drive) or `/aigon:research-setup <ID> cc gg` (Fleet) to begin.
+Next step: Run `/aigon:research-start <ID>` (Drive) or `/aigon:research-start <ID> cc gg` (Fleet) to begin.
 
 ## Prompt Suggestion
 
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID assigned by the CLI:
 
-`/aigon:research-setup <ID>`
+`/aigon:research-start <ID>`
