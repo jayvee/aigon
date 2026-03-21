@@ -1,6 +1,116 @@
 ---
 title: Agents
-description: Supported agents and their configuration.
+description: Supported agents, installation, and how context reaches each one.
 ---
 
-Agent configuration reference. Content coming soon.
+Aigon supports four AI coding agents. Each gets its own slash command prefix, settings, and context delivery mechanism.
+
+## Supported agents
+
+| Code | Agent | Slash prefix | CLI command |
+|------|-------|-------------|-------------|
+| `cc` | Claude Code | `/aigon:` | `claude` |
+| `gg` | Gemini CLI | `/aigon:` | `gemini` |
+| `cx` | Codex CLI | `/prompts:aigon-` | `codex` |
+| `cu` | Cursor | `/aigon-` | `agent` |
+
+## Installing agents
+
+```bash
+aigon install-agent cc gg          # Install Claude + Gemini
+aigon install-agent cx cu          # Add Codex + Cursor later
+```
+
+Install only the agents you have access to. You can add more at any time.
+
+## What install-agent writes
+
+`aigon install-agent` writes **only aigon-owned files**. It never touches user-owned root files like `CLAUDE.md`.
+
+### Per-agent files
+
+| Agent | Slash commands | Settings | Context delivery |
+|-------|---------------|----------|-----------------|
+| **cc** | `.claude/commands/aigon/*.md` | `.claude/settings.json` | `.claude/skills/aigon/SKILL.md` + SessionStart hook |
+| **gg** | `.gemini/commands/aigon/*.toml` | `.gemini/settings.json` | SessionStart hook |
+| **cx** | `~/.codex/prompts/aigon-*.md` (global) | `.codex/config.toml` | `.codex/prompt.md` |
+| **cu** | `.cursor/commands/aigon-*.md` | `.cursor/cli.json`, `.cursor/hooks.json` | `.cursor/rules/aigon.mdc` |
+
+### Shared files (all agents)
+
+| File | Created | Updated on re-install |
+|------|---------|----------------------|
+| `AGENTS.md` | Scaffolded on first install only | Never (your file) |
+| `docs/agents/{agent}.md` | Yes | Yes (marker blocks only) |
+| `docs/development_workflow.md` | Yes | Yes (full overwrite) |
+
+## How context reaches each agent
+
+Instead of injecting into user-owned files, Aigon delivers context through each agent's native extension mechanism:
+
+- **Claude Code / Gemini CLI**: A `SessionStart` hook runs `aigon project-context`, which prints doc pointers to stdout. The agent ingests this as conversation context.
+- **Cursor**: `.cursor/rules/aigon.mdc` with `alwaysApply: true`
+- **Codex**: `.codex/prompt.md` with marker blocks
+
+## Updating
+
+```bash
+aigon update
+```
+
+Re-runs `install-agent` for all detected agents. Updates command templates, hooks, and aigon-owned doc files. Never touches `CLAUDE.md` or `AGENTS.md`.
+
+**Auto-update**: The `aigon check-version` SessionStart hook detects version mismatches and runs `aigon update` automatically.
+
+## Project-specific instructions
+
+Add shared project rules directly in your root instruction files:
+
+- **`AGENTS.md`** — Read by Gemini, Codex, and Cursor
+- **`CLAUDE.md`** — Claude Code's native project instructions
+- **`docs/agents/{id}.md`** — Agent-specific operational notes (aigon-managed)
+
+## Permission modes
+
+Default "yolo mode" flags auto-approve commands:
+
+| Agent | Default flag | Effect |
+|-------|-------------|--------|
+| `cc` | `--permission-mode acceptEdits` | Auto-edits, prompts for risky Bash |
+| `cu` | `--force` | Auto-approves commands |
+| `gg` | `--yolo` | Auto-approves all |
+| `cx` | _(empty)_ | Interactive by default (`--full-auto` only in autonomous mode) |
+
+Override with:
+
+```bash
+aigon config set --global agents.cc.implementFlag ""
+```
+
+## Using agents in Fleet mode
+
+In Fleet mode, each agent gets an isolated worktree. Mismatch protection prevents launching the wrong agent in a worktree:
+
+```
+feature-108-cc-dark-mode/  → only cc can run here
+feature-108-gg-dark-mode/  → only gg can run here
+feature-108-cx-dark-mode/  → only cx can run here
+```
+
+## Terminal integration
+
+How agents launch depends on your terminal config:
+
+| Terminal | Agent auto-launch | Persistent sessions |
+|----------|------------------|-------------------|
+| Warp | Yes (split panes) | No |
+| tmux | Yes (named sessions) | Yes |
+| VS Code / Cursor | Manual | No |
+| Terminal.app | Yes (new window) | No |
+
+Configure with:
+
+```bash
+aigon config set --global terminal tmux
+aigon config set --global tmuxApp iterm2
+```

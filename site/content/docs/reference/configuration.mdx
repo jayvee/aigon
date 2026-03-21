@@ -1,6 +1,197 @@
 ---
 title: Configuration
-description: Aigon configuration files and options.
+description: Aigon configuration files, scopes, profiles, and options.
 ---
 
-Configuration reference. Content coming soon.
+Aigon uses a unified `aigon config` command with two scopes:
+
+- **Project** (`.aigon/config.json`) — per-project settings
+- **Global** (`~/.aigon/config.json`) — user-wide settings
+
+Project scope is the default. Use `--global` for user-wide settings.
+
+## Config commands
+
+```bash
+# Initialise
+aigon config init                           # Create project config (auto-detects profile)
+aigon config init --global                  # Create global config
+
+# Set values (dot-notation for nested keys)
+aigon config set profile web
+aigon config set --global terminal warp
+aigon config set fleet.testInstructions "run npm test"
+
+# Get values (shows where the value comes from)
+aigon config get terminal
+aigon config get profile
+
+# Show merged effective config
+aigon config show
+aigon config show --global
+aigon config show --project
+
+# View model configuration
+aigon config models
+```
+
+## Global config
+
+Created with `aigon config init --global` at `~/.aigon/config.json`:
+
+```json
+{
+  "terminal": "warp",
+  "tmuxApp": "terminal",
+  "agents": {
+    "cc": { "cli": "claude", "implementFlag": "--permission-mode acceptEdits" },
+    "cu": { "cli": "agent", "implementFlag": "--force" },
+    "gg": { "cli": "gemini", "implementFlag": "--yolo" },
+    "cx": { "cli": "codex", "implementFlag": "" }
+  }
+}
+```
+
+## Project config
+
+Created with `aigon config init` at `.aigon/config.json`:
+
+```json
+{
+  "profile": "web",
+  "appId": "my-app",
+  "devProxy": {
+    "command": "npm run dev",
+    "healthCheck": "/api/health",
+    "basePort": 3000
+  }
+}
+```
+
+## Configuration options
+
+| Key | Scope | Description | Values |
+|-----|-------|-------------|--------|
+| `terminal` | Global | Default terminal for `feature-open` | `warp`, `tmux`, `code`, `cursor`, `terminal` |
+| `tmuxApp` | Global | Terminal app hosting tmux sessions | `terminal` (default), `iterm2` |
+| `profile` | Project | Project type | `web`, `api`, `ios`, `android`, `library`, `generic` |
+| `appId` | Project | App domain for dev proxy | Auto-detected from `package.json` |
+| `agents.{id}.cli` | Global | CLI command for each agent | `claude`, `gemini`, `codex`, `agent` |
+| `agents.{id}.implementFlag` | Global | CLI flags for permission prompts | String (empty = manual approval) |
+| `fleet.testInstructions` | Project | Custom test instructions for Fleet mode | String |
+| `devProxy.command` | Project | Dev server start command | Default: `npm run dev` |
+| `devProxy.healthCheck` | Project | Path to verify server is up | Default: `/` |
+| `devProxy.basePort` | Project | Starting port for allocation | Default: `3000` |
+
+## Precedence
+
+**Priority order:** Environment variable > Project config > Global config > Defaults
+
+Use `aigon config get <key>` to see which level a value comes from. Set `AIGON_TERMINAL=code` to override the terminal for a single session.
+
+## Project profiles
+
+Aigon auto-detects your project type and adapts behaviour accordingly:
+
+| Profile | Detected By |
+|---------|-------------|
+| `ios` | `*.xcodeproj`, `*.xcworkspace`, `Package.swift` |
+| `android` | `build.gradle`, `build.gradle.kts` |
+| `web` | `package.json` with `scripts.dev` + framework config |
+| `api` | `manage.py`, `app.py`, `main.go`, `server.js` |
+| `library` | `Cargo.toml`, `go.mod`, `pyproject.toml`, `setup.py` |
+| `generic` | Fallback when nothing matches |
+
+```bash
+aigon profile detect        # See what Aigon auto-detects
+aigon profile show          # View current profile and settings
+aigon profile set ios       # Override auto-detection
+aigon update                # Regenerate templates after changing profile
+```
+
+### Profile behaviour
+
+- **`web` / `api`**: Dev server enabled, agent-specific ports assigned, `.env.local` created in worktrees
+- **`ios` / `android` / `library` / `generic`**: No dev server, no PORT, project-appropriate test instructions
+
+### Port configuration (web/api profiles)
+
+```
+PORT=3400 in .env → cc=3401, gg=3402, cx=3403, cu=3404
+```
+
+Ports are derived from your base PORT using fixed offsets, avoiding clashes when running multiple projects.
+
+## Model selection
+
+Per-agent, per-task model selection:
+
+```bash
+# View resolved models
+aigon config models
+
+# Override for specific agent/task
+aigon config set agents.cc.models.research haiku
+aigon config set agents.gg.models.evaluate gemini-2.5-flash
+
+# Per-session override via env var (highest priority)
+AIGON_CC_RESEARCH_MODEL=haiku aigon config models
+```
+
+Env var pattern: `AIGON_{AGENT}_{TASK}_MODEL` where AGENT is `CC/GG/CX/CU` and TASK is `RESEARCH/IMPLEMENT/EVALUATE`.
+
+## CLI flag overrides
+
+Default "yolo mode" flags auto-approve agent commands:
+
+| Agent | Default flag | Effect |
+|-------|-------------|--------|
+| `cc` (Claude) | `--permission-mode acceptEdits` | Auto-edits, prompts for risky Bash |
+| `cu` (Cursor) | `--force` | Auto-approves commands |
+| `gg` (Gemini) | `--yolo` | Auto-approves all |
+| `cx` (Codex) | _(empty)_ | Interactive by default |
+
+For stricter permissions:
+
+```bash
+aigon config set --global agents.cc.implementFlag ""
+```
+
+Set `implementFlag` to `""` (empty string) to require manual approval prompts.
+
+## Hooks
+
+Hooks let you run custom scripts before and after Aigon commands. Define hooks in `docs/aigon-hooks.md`:
+
+```markdown
+## pre-feature-start
+
+\`\`\`bash
+if [ "$AIGON_MODE" = "fleet" ]; then
+  for agent in $AIGON_AGENTS; do
+    neon branches create --name "feature-${AIGON_FEATURE_ID}-${agent}"
+  done
+fi
+\`\`\`
+```
+
+### Hook behaviour
+
+- **Pre-hooks** run before the command. Failure aborts the command.
+- **Post-hooks** run after. Failure warns but doesn't roll back.
+
+### Environment variables in hooks
+
+| Variable | Description |
+|----------|-------------|
+| `AIGON_COMMAND` | The command being run |
+| `AIGON_PROJECT_ROOT` | Root directory of the project |
+| `AIGON_MODE` | Current mode: "drive" or "fleet" |
+| `AIGON_FEATURE_ID` | Feature ID |
+| `AIGON_AGENTS` | Space-separated list of agents |
+| `AIGON_AGENT` | Current agent name |
+| `AIGON_WORKTREE_PATH` | Path to current worktree |
+
+```bash
+aigon hooks list            # Inspect discovered hooks
+```

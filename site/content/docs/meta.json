@@ -3,7 +3,8 @@
   "pages": [
     "getting-started",
     "...guides",
+    "...concepts",
     "...reference",
-    "...concepts"
+    "comparisons"
   ]
 }
