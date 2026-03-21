@@ -3,15 +3,95 @@ title: Research Workflow
 description: Investigate options before committing to a feature approach.
 ---
 
-The research workflow lets you explore multiple approaches to a problem before writing a spec.
+The research workflow lets you explore technical possibilities with one or more agents before writing a feature spec. Research is the inbound funnel — it feeds into feature creation.
 
-## Workflow
+## When to use
+
+- You're evaluating multiple technical approaches (e.g., "which auth library?")
+- You need diverse perspectives before committing
+- The problem space is unclear and needs exploration
+
+## Drive mode (single agent)
 
 ```bash
-aigon research-create "auth-strategy"
-aigon research-prioritise auth-strategy
-/aigon:research-start 03 cc gg
-# Each agent writes findings
-/aigon:research-synthesize 03
-aigon research-close 03
+# Create a research topic
+/aigon:research-create "API Design Patterns"
+
+# Prioritise and assign an ID
+/aigon:research-prioritise api-design    # Assigns ID, e.g. #05
+
+# Start research
+/aigon:research-start 05
+
+# Agent investigates and writes findings
+/aigon:research-do 05
+
+# Close when done
+/aigon:research-close 05
 ```
+
+The agent reads the topic file, explores the codebase and external resources, and writes findings and recommendations directly into the document.
+
+## Fleet mode (multi-agent)
+
+Run multiple agents to get diverse perspectives:
+
+```bash
+# Create and prioritise
+/aigon:research-create "API Design Patterns"
+/aigon:research-prioritise api-design
+
+# Set up Fleet research with multiple agents
+/aigon:research-start 05 cc gg cx
+```
+
+This creates separate findings files for each agent:
+- `research-05-cc-findings.md`
+- `research-05-gg-findings.md`
+- `research-05-cx-findings.md`
+
+### Execute
+
+Open all agents side-by-side:
+
+```bash
+aigon research-open 05
+```
+
+Each agent runs `/aigon:research-do 05` and writes only to their own findings file.
+
+### Synthesise
+
+After all agents finish, synthesise the findings:
+
+```bash
+/aigon:research-synthesize 05
+```
+
+The synthesising agent reads all findings, presents a comparison with recommendations, and asks which features to include. Use a different model than those that conducted the research for unbiased synthesis.
+
+### Complete
+
+```bash
+/aigon:research-close 05
+```
+
+The main research file contains the synthesised recommendation, with individual findings preserved in `logs/`.
+
+## Research autopilot
+
+For fully hands-off research:
+
+```bash
+aigon research-autopilot 05 cc gg
+```
+
+This handles setup, spawning agents, monitoring, and synthesis in one command.
+
+## Output
+
+Research output typically includes:
+- Findings per agent (what they discovered)
+- Trade-off analysis
+- Recommended approach
+- Suggested feature specs to create next

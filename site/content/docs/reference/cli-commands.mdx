@@ -3,4 +3,62 @@ title: CLI Commands
 description: Complete reference for all Aigon CLI commands.
 ---
 
-Full CLI command reference. Content coming soon.
+Auto-generated reference for all Aigon CLI commands. Each command has its own page with synopsis, aliases, and usage examples.
+
+
+## Feature Commands
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| [`feature-create`](/docs/reference/commands/feature-create) | `afc` | Create feature \<name\> - creates spec in inbox |
+| [`feature-now`](/docs/reference/commands/feature-now) | `afn` | Fast-track feature \<name\> - create + setup + implement in one step |
+| [`feature-prioritise`](/docs/reference/commands/feature-prioritise) | `afp` | Prioritise feature \<name\> - assigns ID, moves to backlog |
+| [`feature-start`](/docs/reference/commands/feature-start) | `afs` | Start feature \<ID\> [agents...] - create workspace and begin implementation |
+| [`feature-do`](/docs/reference/commands/feature-do) | `afd` | Do feature \<ID\> - works in both Drive and Fleet modes |
+| [`feature-submit`](/docs/reference/commands/feature-submit) | `afsb` | Submit feature implementation - commit changes, write log, signal done |
+| [`feature-validate`](/docs/reference/commands/feature-validate) | — |  |
+| [`feature-eval`](/docs/reference/commands/feature-eval) | `afe` | Evaluate feature \<ID\> - code review or comparison |
+| [`feature-review`](/docs/reference/commands/feature-review) | `afr` | Review feature \<ID\> - code review with fixes by a different agent |
+| [`feature-close`](/docs/reference/commands/feature-close) | `afcl` | Close feature \<ID\> [agent] [--adopt] - merges branch, cleans up, optionally adopts from losers |
+| [`feature-cleanup`](/docs/reference/commands/feature-cleanup) | — | Cleanup feature \<ID\> [--push] - remove all worktrees and branches |
+| [`feature-reset`](/docs/reference/commands/feature-reset) | — | Reset feature \<ID\> - remove worktrees, branches, state, and move spec to backlog |
+| [`feature-autopilot`](/docs/reference/commands/feature-autopilot) | `afap` | Feature autopilot \<ID\> [agents...] - Fleet setup + spawn + monitor + eval |
+| [`feature-open`](/docs/reference/commands/feature-open) | `afo` | Open feature worktree in terminal and start agent |
+
+## Research Commands
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| [`research-create`](/docs/reference/commands/research-create) | `arc` | Create research \<name\> - creates topic in inbox |
+| [`research-prioritise`](/docs/reference/commands/research-prioritise) | `arp` | Prioritise research \<name\> - assigns ID, moves to backlog |
+| [`research-start`](/docs/reference/commands/research-start) | `ars` | Start research \<ID\> [agents...] - begin Drive or Fleet research |
+| [`research-open`](/docs/reference/commands/research-open) | `aro` | Open all Fleet research agents side-by-side in terminal |
+| [`research-do`](/docs/reference/commands/research-do) | `ard` | Do research \<ID\> - agent writes findings |
+| [`research-submit`](/docs/reference/commands/research-submit) | `arsb` | Submit research findings - signal completion for Fleet autopilot |
+| [`research-synthesize`](/docs/reference/commands/research-synthesize) | `arsy` | Synthesize research \<ID\> - compare findings and select features |
+| [`research-close`](/docs/reference/commands/research-close) | `arcl` | Close research \<ID\> - moves to done |
+| [`research-autopilot`](/docs/reference/commands/research-autopilot) | `arap` | Research autopilot \<ID\> [agents...] - Fleet setup + spawn + monitor + synthesize |
+
+## Feedback Commands
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| [`feedback-create`](/docs/reference/commands/feedback-create) | `afbc` | Create feedback \<title\> |
+| [`feedback-list`](/docs/reference/commands/feedback-list) | `afbl` | List feedback items with filters |
+| [`feedback-triage`](/docs/reference/commands/feedback-triage) | `afbt` | Triage feedback \<ID\> with AI-assisted recommendations |
+
+## Infrastructure Commands
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| [`board`](/docs/reference/commands/board) | `ab` | Show Kanban board or list view |
+| [`sessions-close`](/docs/reference/commands/sessions-close) | — | Kill all agent sessions for a feature/research ID and close Warp tab |
+| [`dev-server`](/docs/reference/commands/dev-server) | `ads` | Manage dev server - start, stop, logs, list |
+| [`conductor`](/docs/reference/commands/conductor) | — |  |
+| [`dashboard`](/docs/reference/commands/dashboard) | — |  |
+| [`agent-status`](/docs/reference/commands/agent-status) | — |  |
+| [`status`](/docs/reference/commands/status) | — |  |
+| [`deploy`](/docs/reference/commands/deploy) | `ad` |  |
+| [`insights`](/docs/reference/commands/insights) | `ai` |  |
+| [`help`](/docs/reference/commands/help) | `ah` | Show Aigon commands |
+| [`next`](/docs/reference/commands/next) | `an` | Suggest the most likely next workflow action based on current context |

@@ -5,6 +5,8 @@ description: Install Aigon and run your first spec-driven feature loop.
 
 ## Installation
 
+Clone the repository and link the CLI globally:
+
 ```bash
 git clone https://github.com/jayvee/aigon.git
 cd aigon
@@ -12,20 +14,84 @@ npm install
 npm link
 ```
 
+Verify the install:
+
+```bash
+aigon --version
+```
+
 ## Initialize a project
+
+Navigate to any Git repository and run:
 
 ```bash
 cd /path/to/your/project
 aigon init
-aigon install-agent cc gg cx cu
 ```
+
+This creates the `docs/specs/` folder structure with Kanban lanes for features, research, and feedback.
+
+Then install the agents you want to use:
+
+```bash
+aigon install-agent cc gg          # Claude Code + Gemini CLI
+```
+
+| Code | Agent | Slash prefix |
+|------|-------|-------------|
+| `cc` | Claude Code | `/aigon:` |
+| `gg` | Gemini CLI | `/aigon:` |
+| `cx` | Codex CLI | `/prompts:aigon-` |
+| `cu` | Cursor | `/aigon-` |
+
+Install only the agents you have access to. You can add more later with `aigon install-agent`.
+
+## Three ways to interact
+
+| | Slash Commands | CLI | Dashboard |
+|---|---|---|---|
+| **Where** | Inside an agent session | Terminal / shell | Browser UI |
+| **Best for** | Writing specs, implementing features | Orchestration, setup, scripting | Visual overview, monitoring Fleet runs |
+| **Example** | `/aigon:feature-do 07` | `aigon feature-start 07 cc gg` | Click "Start feature" on a kanban card |
+
+All three surfaces drive the same underlying workflow. Mix them freely.
 
 ## Your first feature
 
-In Claude Code:
+The fastest path from idea to implementation is `feature-now`:
 
 ```bash
 /aigon:feature-now dark-mode
 ```
 
-This creates a feature spec, sets up the workspace, and starts implementation — all in one command.
+This creates a feature spec, assigns an ID, sets up the workspace, and starts implementation — all in one command. The agent explores your codebase, writes the spec, and begins coding.
+
+### Step by step (the full loop)
+
+For more control, use the individual commands:
+
+```bash
+# 1. Create a spec in the inbox
+/aigon:feature-create "Dark Mode"
+
+# 2. Assign an ID and move to backlog
+/aigon:feature-prioritise dark-mode
+
+# 3. Create a branch (Drive mode) or worktrees (Fleet mode)
+/aigon:feature-start 07
+
+# 4. Implement the spec
+/aigon:feature-do 07
+
+# 5. Merge to main
+/aigon:feature-close 07
+```
+
+Each step moves the spec file through the Kanban folders: `inbox → backlog → in-progress → done`.
+
+## What's next
+
+- **[Drive Mode](/docs/guides/drive-mode)** — hands-on implementation with one agent
+- **[Fleet Mode](/docs/guides/fleet-mode)** — multiple agents competing in parallel
+- **[Autopilot Mode](/docs/guides/autopilot-mode)** — hands-off autonomous loops
+- **[Concepts](/docs/concepts/specs-and-state)** — understand the spec-driven architecture
