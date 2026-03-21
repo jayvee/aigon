@@ -25,3 +25,18 @@ Add an un-bypassable security scan gate to three CLI commands: `feature-close`, 
 - **Graceful degradation**: If gitleaks binary isn't installed, we warn and continue — doesn't break workflows for users who haven't set up scanners
 - **Config design**: Used `mergeGateStages` (not overloading existing `stages` array) to avoid breaking the pre-commit hook config. `scannerDefs` holds named scanner definitions with `{{defaultBranch}}` placeholder interpolation.
 - **Mode semantics**: `enforce` blocks the operation; `warn` prints warnings but allows it; `off` skips entirely. The `passed` return value accounts for mode — in warn mode, `passed` returns true even with findings.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-22
+
+### Findings
+- The default gitleaks command only scanned `defaultBranch..HEAD`, which misses staged-but-uncommitted changes and makes `research-close` effectively a no-op on the default branch.
+
+### Fixes Applied
+- Switched the default gitleaks integration to scan a temporary snapshot of changed files built from committed branch diff plus the staged index.
+- Added tests covering changed-path collection and snapshot content resolution.
+
+### Notes
+- Custom scanners still work as configured; the built-in gitleaks path now matches the spec’s staged-plus-committed requirement.
