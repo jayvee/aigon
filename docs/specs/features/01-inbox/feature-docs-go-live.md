@@ -1,42 +1,47 @@
 # Feature: docs-go-live
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
 
-## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+Switch aigon.build from Cloudflare Pages to Vercel, configure DNS, set up redirects for any changed paths, enable Fumadocs AI chat, and decommission the old Cloudflare deployment. This is the final step — everything before this runs on Vercel preview URLs.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+
+- [ ] aigon.build DNS points to Vercel (CNAME or A record)
+- [ ] SSL certificate provisioned and working on Vercel
+- [ ] Old Cloudflare Pages deployment decommissioned
+- [ ] Redirects configured for any paths that changed (301s, not 404s)
+- [ ] AI chat enabled using Fumadocs LLM integration + llms.txt
+- [ ] Google Search Console updated (if applicable)
+- [ ] Old aigon-site repo archived on GitHub with README pointing to aigon/site/
+- [ ] Verify site loads correctly from multiple regions
 
 ## Validation
-<!-- Optional: commands Ralph runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
+
 ```bash
-# Example: node --check aigon-cli.js
+curl -sI https://aigon.build | head -5  # verify Vercel serving
+curl -sI https://aigon.build/docs/ | head -5  # verify docs section
 ```
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+
+1. In Cloudflare: remove Pages deployment, update DNS records to point to Vercel
+2. In Vercel: add custom domain `aigon.build`, verify DNS propagation
+3. Configure `next.config.ts` redirects for any changed URL patterns
+4. Enable Fumadocs AI chat in config
+5. Generate `llms.txt` for LLM consumption of docs
+6. Archive `aigon-site` repo on GitHub
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites -->
--
+
+- Feature: docs-content (site must have real content before going live)
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
 
-## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Ongoing content maintenance
+- Analytics setup (follow-up)
+- SEO optimization beyond basic redirects
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research:
+
+- Research: #17 new-docs-site
+- Feature: docs-content (prerequisite)
