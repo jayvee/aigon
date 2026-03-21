@@ -41,6 +41,7 @@ const {
 } = require('./lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
 const { isSameProviderFamily, getProfilePlaceholders, gcDevServers, validateRegistry, loadProxyRegistry, saveProxyRegistry, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, getDevProxyUrl, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, collectAnalyticsData } = require('./lib/utils');
+const { mergeSecurityConfig } = require('./lib/config');
 const { getFeatureGitSignals } = require('./lib/git');
 const { tryOrDefault, classifyError } = require('./lib/errors');
 const { detectDashboardContext } = require('./lib/devserver');
@@ -144,6 +145,18 @@ test('omits playwright verification placeholder when disabled', () => withProjec
         const placeholders = getProfilePlaceholders();
         assert.strictEqual(placeholders.PLAYWRIGHT_VERIFICATION, '');
     }));
+
+console.log('\nSecurity Config');
+test('mergeSecurityConfig preserves defaults while applying overrides', () => {
+    const merged = mergeSecurityConfig(
+        { enabled: false, scanners: ['gitleaks'] },
+        { mode: 'warn', stages: ['pre-commit', 'pre-push'] }
+    );
+    assert.strictEqual(merged.enabled, false);
+    assert.strictEqual(merged.mode, 'warn');
+    assert.deepStrictEqual(merged.stages, ['pre-commit', 'pre-push']);
+    assert.deepStrictEqual(merged.scanners, ['gitleaks']);
+});
 test('omits playwright verification placeholder for non-web profiles', () => withProjectConfig({
         profile: 'library',
         verification: { playwright: { enabled: true } }
@@ -863,6 +876,54 @@ test('getTrackedEnvLocalFiles returns tracked .env*.local files only', () => wit
     assert.deepStrictEqual(tracked.sort(), ['.env.local', '.env.production.local']);
 }));
 
+test('init scaffolds pre-commit hook and env local gitignore entries', () => withTempDir(tempDir => {
+    runGit(['init', '-b', 'main'], tempDir);
+    runGit(['config', 'user.name', 'Aigon Test'], tempDir);
+    runGit(['config', 'user.email', 'test@example.com'], tempDir);
+
+    const originalCwd = process.cwd();
+    try {
+        process.chdir(tempDir);
+        withCapturedConsole(() => {
+            createSetupCommands().init([]);
+        });
+    } finally {
+        process.chdir(originalCwd);
+    }
+
+    const gitignore = fs.readFileSync(path.join(tempDir, '.gitignore'), 'utf8');
+    assert.ok(gitignore.includes('.env.local'));
+    assert.ok(gitignore.includes('.env*.local'));
+    assert.ok(fs.existsSync(path.join(tempDir, '.githooks', 'pre-commit')));
+}));
+
+test('ensurePreCommitHook writes executable hook that blocks .env.local commits', () => withTempDir(tempDir => {
+    runGit(['init', '-b', 'main'], tempDir);
+    runGit(['config', 'user.name', 'Aigon Test'], tempDir);
+    runGit(['config', 'user.email', 'test@example.com'], tempDir);
+    fs.writeFileSync(path.join(tempDir, 'README.md'), '# test\n');
+    runGit(['add', 'README.md'], tempDir);
+    runGit(['commit', '-m', 'chore: seed'], tempDir);
+
+    setupCommandsModule._test.ensurePreCommitHook(tempDir);
+    runGit(['config', 'core.hooksPath', '.githooks'], tempDir);
+
+    const hookPath = path.join(tempDir, '.githooks', 'pre-commit');
+    assert.ok(fs.existsSync(hookPath), 'pre-commit hook should exist');
+    fs.accessSync(hookPath, fs.constants.X_OK);
+
+    fs.writeFileSync(path.join(tempDir, '.env.local'), 'SECRET=abc\n');
+    runGit(['add', '.env.local'], tempDir);
+
+    const commit = spawnSync('git', ['commit', '-m', 'chore: try commit env local'], {
+        cwd: tempDir,
+        encoding: 'utf8',
+    });
+    const output = `${commit.stdout || ''}${commit.stderr || ''}`;
+    assert.notStrictEqual(commit.status, 0, 'commit should be blocked');
+    assert.ok(output.includes('Refusing to commit environment files'), 'error message should explain the block');
+}));
+
 test('doctor --fix adds gitignore entries and untracks tracked .env.local', () => withTempDir(tempDir => {
     runGit(['init', '-b', 'main'], tempDir);
     runGit(['config', 'user.name', 'Aigon Test'], tempDir);
@@ -889,6 +950,45 @@ test('doctor --fix adds gitignore entries and untracks tracked .env.local', () =
     assert.ok(gitignore.includes('.env.local'));
     assert.ok(gitignore.includes('.env*.local'));
     assert.strictEqual(runGit(['ls-files', '.env.local'], tempDir), '', '.env.local should be untracked');
+    assert.strictEqual(runGit(['config', '--get', 'core.hooksPath'], tempDir), '.githooks');
+    assert.ok(fs.existsSync(path.join(tempDir, '.githooks', 'pre-commit')), 'doctor --fix should scaffold pre-commit hook');
+}));
+
+test('install-agent sets core.hooksPath to .githooks', () => withTempDir(tempDir => {
+    runGit(['init', '-b', 'main'], tempDir);
+    runGit(['config', 'user.name', 'Aigon Test'], tempDir);
+    runGit(['config', 'user.email', 'test@example.com'], tempDir);
+
+    const cliPath = path.join(__dirname, 'aigon-cli.js');
+    const result = spawnSync(process.execPath, [cliPath, 'install-agent', 'cc'], {
+        cwd: tempDir,
+        encoding: 'utf8',
+    });
+    assert.strictEqual(result.status, 0, `install-agent should succeed: ${result.stderr || result.stdout}`);
+
+    assert.strictEqual(runGit(['config', '--get', 'core.hooksPath'], tempDir), '.githooks');
+    assert.ok(fs.existsSync(path.join(tempDir, '.githooks', 'pre-commit')), 'install-agent should scaffold pre-commit hook');
+}));
+
+test('config init writes project security schema defaults', () => withTempDir(tempDir => {
+    runGit(['init', '-b', 'main'], tempDir);
+    runGit(['config', 'user.name', 'Aigon Test'], tempDir);
+    runGit(['config', 'user.email', 'test@example.com'], tempDir);
+
+    const cliPath = path.join(__dirname, 'aigon-cli.js');
+    const result = spawnSync(process.execPath, [cliPath, 'config', 'init'], {
+        cwd: tempDir,
+        encoding: 'utf8',
+    });
+    assert.strictEqual(result.status, 0, `config init should succeed: ${result.stderr || result.stdout}`);
+
+    const configPath = path.join(tempDir, '.aigon', 'config.json');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    assert.ok(config.security, 'project config should include security block');
+    assert.strictEqual(config.security.enabled, true);
+    assert.strictEqual(config.security.mode, 'enforce');
+    assert.deepStrictEqual(config.security.stages, ['pre-commit']);
+    assert.deepStrictEqual(config.security.scanners, ['env-local-blocker']);
 }));
 
 console.log('\nDashboard Constants');

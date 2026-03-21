@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+
+STAGED_FILES="$(git diff --cached --name-only --diff-filter=ACMR || true)"
+BLOCKED_FILES="$(printf '%s\n' "$STAGED_FILES" | grep -E '(^|/)\.env$|(^|/)\.env(\..+)?\.local$' || true)"
+
+if [ -n "$BLOCKED_FILES" ]; then
+  echo "ERROR: Refusing to commit environment files that may contain secrets."
+  echo "$BLOCKED_FILES"
+  echo "Remove from commit with: git reset HEAD <file>"
+  exit 1
+fi
+
+exit 0
