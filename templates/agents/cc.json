@@ -78,6 +78,18 @@
               }
             ]
           }
+        ],
+        "SessionEnd": [
+          {
+            "matcher": ".*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "aigon capture-session-telemetry",
+                "timeout": 30
+              }
+            ]
+          }
         ]
       }
     }
