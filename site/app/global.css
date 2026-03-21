@@ -45,7 +45,7 @@
   --color-aigon-terminal-text: #d2f4e5;
 
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: "Sora", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sora), "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", "IBM Plex Mono", ui-monospace, monospace;
 }
 
