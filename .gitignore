@@ -24,3 +24,9 @@ temp/
 
 # Promotional GIF workflow
 docs/media/raw/
+
+# Site (future Next.js)
+site/node_modules/
+site/.next/
+site/.env.local
+site/.env*.local
