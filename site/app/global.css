@@ -1,0 +1,65 @@
+@import "tailwindcss";
+@import "fumadocs-ui/style.css";
+
+:root {
+  /* Aigon warm editorial palette — light mode */
+  --color-fd-background: 43 40% 94%;
+  --color-fd-foreground: 35 24% 10%;
+  --color-fd-muted: 35 8% 34%;
+  --color-fd-muted-foreground: 35 8% 34%;
+  --color-fd-card: 40 60% 98%;
+  --color-fd-popover: 40 60% 98%;
+  --color-fd-border: 35 24% 10% / 0.14;
+  --color-fd-accent-foreground: 20 69% 49%;
+  --color-fd-accent: 20 69% 49% / 0.12;
+  --color-fd-primary: 20 69% 49%;
+  --color-fd-primary-foreground: 0 0% 100%;
+  --color-fd-ring: 20 69% 49%;
+}
+
+.dark {
+  /* Aigon warm editorial palette — dark mode (default) */
+  --color-fd-background: 225 14% 7%;
+  --color-fd-foreground: 38 18% 88%;
+  --color-fd-muted: 38 8% 52%;
+  --color-fd-muted-foreground: 38 8% 52%;
+  --color-fd-card: 224 14% 10%;
+  --color-fd-popover: 224 14% 10%;
+  --color-fd-border: 38 18% 88% / 0.12;
+  --color-fd-accent-foreground: 20 69% 55%;
+  --color-fd-accent: 20 69% 55% / 0.12;
+  --color-fd-primary: 20 69% 55%;
+  --color-fd-primary-foreground: 0 0% 100%;
+  --color-fd-ring: 20 69% 55%;
+}
+
+/* Aigon custom colors */
+@theme {
+  --color-aigon-orange: #d55f2a;
+  --color-aigon-teal: #0f7775;
+  --color-aigon-blue: #1f4f8a;
+  --color-aigon-cream: #f7f2e8;
+  --color-aigon-cream-alt: #fffaf1;
+  --color-aigon-dark: #101113;
+  --color-aigon-terminal: #16181d;
+  --color-aigon-terminal-text: #d2f4e5;
+
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Sora", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* Landing page custom styles */
+.landing-gradient-dark {
+  background:
+    radial-gradient(circle at 95% 2%, rgba(213, 95, 42, 0.15), transparent 44%),
+    radial-gradient(circle at 8% 30%, rgba(15, 119, 117, 0.1), transparent 42%),
+    linear-gradient(180deg, #0d0e10 0%, #101113 52%, #0e0f11 100%);
+}
+
+.landing-gradient-light {
+  background:
+    radial-gradient(circle at 95% 2%, rgba(213, 95, 42, 0.2), transparent 44%),
+    radial-gradient(circle at 8% 30%, rgba(15, 119, 117, 0.14), transparent 42%),
+    linear-gradient(180deg, #faf5ea 0%, #f7f2e8 52%, #f5efe3 100%);
+}

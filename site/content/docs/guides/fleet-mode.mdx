@@ -1,0 +1,22 @@
+---
+title: Fleet Mode
+description: Orchestrate competing implementations across multiple agents.
+---
+
+Fleet mode runs multiple agents in parallel on the same feature spec, so you can compare and adopt the best implementation.
+
+## When to use
+
+Use Fleet mode when you want multiple perspectives on the same problem.
+
+## Workflow
+
+```bash
+aigon feature-create "my-feature"
+aigon feature-prioritise my-feature
+/aigon:feature-start 07 cc gg cx
+/aigon:feature-open 07
+# Each agent runs /aigon:feature-do 07
+/aigon:feature-eval 07
+aigon feature-close 07 cc --adopt
+```

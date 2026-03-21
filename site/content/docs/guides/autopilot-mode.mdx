@@ -1,0 +1,18 @@
+---
+title: Autopilot Mode
+description: Autonomous retry loop until validation passes.
+---
+
+Autopilot mode runs an agent in a loop — implement, validate, retry — until checks pass or budget runs out.
+
+## When to use
+
+Use Autopilot when the scope is clear and you want hands-off execution.
+
+## Workflow
+
+```bash
+aigon feature-create "my-feature"
+aigon feature-prioritise my-feature
+aigon feature-autopilot 07
+```
