@@ -407,7 +407,17 @@
       "Edit(/Users/jviner/src/aigon-worktrees/feature-122-cc-aade-extract-to-private-package/**)",
       "Write(/Users/jviner/src/aigon-worktrees/feature-122-cc-aade-extract-to-private-package/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-122-cc-aade-extract-to-private-package:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-122-cc-aade-extract-to-private-package:*)"
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-122-cc-aade-extract-to-private-package:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-120-cc-security-scan-merge-gate/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-120-cc-security-scan-merge-gate/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-120-cc-security-scan-merge-gate/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-120-cc-security-scan-merge-gate:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-120-cc-security-scan-merge-gate:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-127-cc-manifest-and-branch-safety/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-127-cc-manifest-and-branch-safety/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-127-cc-manifest-and-branch-safety/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-127-cc-manifest-and-branch-safety:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-127-cc-manifest-and-branch-safety:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
