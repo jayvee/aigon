@@ -1,0 +1,19 @@
+{
+  "id": "07",
+  "type": "feature",
+  "name": "menubar-showcase",
+  "stage": "done",
+  "specPath": "/Users/jviner/src/aigon-site/docs/specs/features/05-done/feature-07-menubar-showcase.md",
+  "agents": [
+    "menubar"
+  ],
+  "winner": null,
+  "pending": [],
+  "events": [
+    {
+      "type": "bootstrapped",
+      "at": "2026-03-18T22:52:38.001Z",
+      "actor": "system"
+    }
+  ]
+}
