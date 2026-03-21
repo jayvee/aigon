@@ -1,0 +1,134 @@
+---
+title: Comparisons
+description: How Aigon compares to Cursor, Copilot Workspace, Kiro, and other AI development tools.
+---
+
+Aigon is a CLI-first, vendor-independent workflow orchestrator — it manages specs, agents, and evaluations while letting you choose which AI models do the actual coding.
+
+## What makes Aigon different
+
+- Orchestrates Claude Code, Gemini CLI, Codex CLI, and Cursor together — the only tool that does this
+- Full spec lifecycle with Kanban (inbox → backlog → in-progress → done)
+- Parallel research workflows with synthesis
+- Feedback triage loop that closes the gap from user input back to features
+- Fleet mode: unlimited competing agents with structured evaluation
+
+## Where Aigon falls short
+
+- CLI-only — no native IDE experience
+- No embedded browser testing or visual diffs
+- Smaller community than established tools
+- More setup steps than one-click IDE solutions
+
+## Feature matrix
+
+| Dimension | Aigon | Cursor | Copilot WS | Kiro | AmpCode | Augment | Cline | Aider | OpenCode |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Multi-agent | ● | ◐ | ○ | ◐ | ◐ | ● | ○ | ○ | ○ |
+| Vendor independence | ● | ○ | ○ | ○ | ◐ | ◐ | ● | ● | ● |
+| Spec lifecycle | ● | ○ | ◐ | ● | ○ | ◐ | ○ | ○ | ○ |
+| Research workflows | ● | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
+| Feedback loop | ● | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
+| IDE integration | ○ | ● | ● | ● | ○ | ● | ● | ◐ | ◐ |
+| Autonomous mode | ● | ● | ◐ | ● | ● | ● | ● | ● | ◐ |
+| Structured evaluation | ● | ○ | ○ | ○ | ◐ | ○ | ○ | ○ | ○ |
+
+**Legend:** ● full support · ◐ partial · ○ none or N/A
+
+## Commercial tools
+
+### Cursor IDE
+
+**VS Code fork with built-in AI agents, visual multi-agent orchestration, and embedded browser testing.**
+
+- **Philosophy:** All-in-one IDE — accept lock-in for maximum convenience
+- **Pricing:** Free (limited) · Pro $20/mo · Ultra $200/mo
+- **Choose Cursor when:** You want a polished visual IDE and vendor lock-in is acceptable
+- **Choose Aigon when:** You need vendor independence, Git-committed context, or structured spec workflows
+
+### AWS Kiro
+
+**Agentic IDE from AWS emphasising spec-driven development with EARS notation.**
+
+- **Philosophy:** Bridge prototype to production with structured specifications
+- **Pricing:** Free (uses Claude Sonnet under the hood)
+- **Choose Kiro when:** You want spec-driven development inside an IDE
+- **Choose Aigon when:** You need multi-vendor agents, Fleet competition, or research workflows
+
+### AmpCode
+
+**CLI-based coding agent with specialised sub-agents and composable Skills.**
+
+- **Philosophy:** Travel light at the frontier — evolve with models
+- **Pricing:** Pay-as-you-go with no markup
+- **Choose AmpCode when:** You want a CLI-first single agent with code review built in
+- **Choose Aigon when:** You need multi-agent Fleet competition or workflow orchestration
+
+### Augment Code
+
+**AI platform built around a "Context Engine" for deep codebase understanding.**
+
+- **Philosophy:** Context depth over model choice
+- **Pricing:** Enterprise (contact sales)
+- **Choose Augment when:** You have a large enterprise codebase and need deep context-aware review
+- **Choose Aigon when:** You want transparent, Git-committed context and vendor independence
+
+## Open source tools
+
+### Cline
+
+**Open-source autonomous coding agent for VS Code (5M+ installs).**
+
+- **Choose Cline when:** You want an IDE-embedded experience with a large community
+- **Choose Aigon when:** You need multi-agent Fleet competition or workflow orchestration
+
+### Aider
+
+**Terminal AI pair programmer with broad model support.**
+
+- **Choose Aider when:** You want interactive pair programming with fluid conversation
+- **Choose Aigon when:** You need structured spec lifecycle or multi-agent competition
+
+### GSD (Get Shit Done)
+
+**Spec-driven development for Claude Code with wave-based parallel execution.**
+
+- **Choose GSD when:** You want wave-based execution with automatic dependency ordering
+- **Choose Aigon when:** You need a full Kanban lifecycle across many features and multi-vendor Fleet
+
+### OpenSpec
+
+**Lightweight spec-driven development framework compatible with 20+ AI assistants.**
+
+- **Choose OpenSpec when:** You want a minimal, tool-agnostic spec layer
+- **Choose Aigon when:** You need multi-agent orchestration and evaluation
+
+## Complementary usage
+
+Aigon works best **alongside** other tools. Its strength is orchestration — use specialised tools for implementation.
+
+### Aigon + Cursor
+
+```bash
+aigon feature-start 42 cc gg cu      # Claude, Gemini, and Cursor compete
+aigon feature-open 42                # Cursor gets its own worktree
+aigon feature-eval 42                # Compare all implementations
+```
+
+### Aigon + Aider
+
+Use Aider for exploratory prototyping, then bring results into Aigon's spec lifecycle for structured evaluation.
+
+### Aigon + Cline
+
+Use Cline for interactive single-agent implementation within VS Code while Aigon manages the broader lifecycle.
+
+## Key takeaway
+
+AI development tools fall into three categories:
+
+1. **IDE-embedded agents** (Cursor, Augment, Cline) — polish, visual UI, single-agent convenience
+2. **CLI agents** (AmpCode, Aider, OpenCode) — terminal-first, model-flexible implementation
+3. **Workflow orchestrators** (Aigon, Kiro, GSD) — structured specs, lifecycle management
+
+Aigon is the only tool at the intersection of workflow orchestration and multi-vendor agent competition.

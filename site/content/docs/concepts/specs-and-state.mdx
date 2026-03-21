@@ -1,6 +1,96 @@
 ---
 title: Specs and State
-description: How Aigon manages feature specs, state transitions, and the lifecycle.
+description: How Aigon uses the filesystem as a state machine for workflow management.
 ---
 
-Specs and state management. Content coming soon.
+Aigon implements spec-driven AI development using Git and the filesystem as the foundation. All workflow state lives in your repository as Markdown files.
+
+## Core principles
+
+- **State-as-Folders**: Task status is defined by *where it lives* (`inbox`, `backlog`, `in-progress`), not by database records
+- **Decoupled Lifecycles**: Research explores *what* to build; Features define *how* to build it
+- **Traceable History**: All agent conversations and implementation attempts are preserved as Markdown files
+
+## The specs architecture
+
+All workflow state lives in `docs/specs/`, organised into three pillars:
+
+### Inbound funnels (what to build)
+
+- **`feedback/`** — Raw user/customer input requiring triage and routing
+- **`research-topics/`** — Internal investigations exploring technical possibilities
+
+### Delivery pipeline (how to build it)
+
+- **`features/`** — Implementation specs with acceptance criteria
+
+### Lifecycle folders (Kanban)
+
+Each pillar uses folder-based status:
+
+| Folder | Purpose |
+|--------|---------|
+| `01-inbox/` | New, unprioritised items |
+| `02-backlog/` | Prioritised, ready to start |
+| `02-triaged/` | Classified and validated (feedback only) |
+| `03-in-progress/` | Currently being worked on |
+| `03-actionable/` | Ready to promote (feedback only) |
+| `04-in-evaluation/` | Completed, being reviewed |
+| `05-done/` | Finished and merged |
+| `06-paused/` | Temporarily on hold |
+
+### Supporting files
+
+- **`logs/`** — Implementation logs (selected winners + alternatives)
+- **`evaluations/`** — Fleet comparison reports
+
+## Naming conventions
+
+| Stage | Pattern | Example |
+|-------|---------|---------|
+| Draft (inbox) | `feature-description.md` | `feature-dark-mode.md` |
+| Prioritised | `feature-{ID}-description.md` | `feature-55-dark-mode.md` |
+| Agent-specific (Fleet) | `feature-{ID}-{agent}-description-log.md` | `feature-55-cc-dark-mode-log.md` |
+
+## State machine
+
+Specs transition through states via the `requestTransition()` gatekeeper. You cannot skip steps — the state machine enforces valid transitions.
+
+```mermaid
+flowchart LR
+    inbox --> backlog
+    backlog --> in-progress
+    in-progress --> in-evaluation
+    in-progress --> done
+    in-evaluation --> done
+    in-progress --> paused
+    paused --> in-progress
+```
+
+All transitions go through the CLI — never move spec files manually.
+
+## Manifests (local reliability layer)
+
+Feature/research state lives in two layers:
+
+1. **Folders** (`docs/specs/features/03-in-progress/`) — shared ground truth, committed to Git
+2. **Manifests** (`.aigon/state/feature-{id}.json`) — local reliability layer, gitignored, crash-safe
+
+Agents write status to `.aigon/state/feature-{id}-{agent}.json` in the main repo (not inside worktrees). Run `aigon doctor --fix` to detect and repair desyncs between the two layers.
+
+## The complete lifecycle loop
+
+```mermaid
+flowchart TD
+    R[Research] -->|informs| F[Feature Specs]
+    F --> B[Build]
+    B --> E[Evaluate]
+    E --> S[Ship]
+    S --> FB[User Feedback]
+    FB -->|spawns| R
+    FB -->|spawns| F
+```
+
+**Forward traceability**: "Feature #108 addresses feedback #42 and was informed by research #07"
+
+**Backward traceability**: "Feedback #42 resulted in feature #108, shipped in v2.1"
