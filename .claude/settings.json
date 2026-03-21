@@ -1,0 +1,57 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(aigon:*)",
+      "WebFetch(*)",
+      "WebSearch",
+      "Task",
+      "Read(../{{CF_PROJECT}}-worktrees/**)",
+      "Bash(cd ../{{CF_PROJECT}}-worktrees/**)",
+      "Bash(git -C ../{{CF_PROJECT}}-worktrees/**)",
+      "Read(/Users/jviner/src/aigon-site-worktrees/feature-01-cx-aigon-website/**)",
+      "Bash(cd /Users/jviner/src/aigon-site-worktrees/feature-01-cx-aigon-website:*)",
+      "Bash(git -C /Users/jviner/src/aigon-site-worktrees/feature-01-cx-aigon-website:*)",
+      "Read(/Users/jviner/src/aigon-site-worktrees/feature-04-cc-fix-agent-command-demos/**)",
+      "Edit(/Users/jviner/src/aigon-site-worktrees/feature-04-cc-fix-agent-command-demos/**)",
+      "Write(/Users/jviner/src/aigon-site-worktrees/feature-04-cc-fix-agent-command-demos/**)",
+      "Bash(cd /Users/jviner/src/aigon-site-worktrees/feature-04-cc-fix-agent-command-demos:*)",
+      "Bash(git -C /Users/jviner/src/aigon-site-worktrees/feature-04-cc-fix-agent-command-demos:*)",
+      "Read(/Users/jviner/src/aigon-site-worktrees/feature-09-cx-aigon-site-vocabulary-update/**)",
+      "Edit(/Users/jviner/src/aigon-site-worktrees/feature-09-cx-aigon-site-vocabulary-update/**)",
+      "Write(/Users/jviner/src/aigon-site-worktrees/feature-09-cx-aigon-site-vocabulary-update/**)",
+      "Bash(cd /Users/jviner/src/aigon-site-worktrees/feature-09-cx-aigon-site-vocabulary-update:*)",
+      "Bash(git -C /Users/jviner/src/aigon-site-worktrees/feature-09-cx-aigon-site-vocabulary-update:*)",
+      "Read(/Users/jviner/src/aigon-site-worktrees/feature-11-cc-add-dashboard/**)",
+      "Edit(/Users/jviner/src/aigon-site-worktrees/feature-11-cc-add-dashboard/**)",
+      "Write(/Users/jviner/src/aigon-site-worktrees/feature-11-cc-add-dashboard/**)",
+      "Bash(cd /Users/jviner/src/aigon-site-worktrees/feature-11-cc-add-dashboard:*)",
+      "Bash(git -C /Users/jviner/src/aigon-site-worktrees/feature-11-cc-add-dashboard:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(sudo:*)",
+      "Bash(su:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/opt/homebrew/bin/aigon check-version",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "/Users/jviner/.local/state/fnm_multishells/59316_1773881538147/bin/aigon project-context",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "id": "11",
+  "type": "feature",
+  "name": "add-dashboard",
+  "stage": "done",
+  "specPath": "/Users/jviner/src/aigon-site/docs/specs/features/05-done/feature-11-add-dashboard.md",
+  "agents": [
+    "cc"
+  ],
+  "winner": null,
+  "pending": [],
+  "events": [
+    {
+      "type": "bootstrapped",
+      "at": "2026-03-18T22:52:37.815Z",
+      "actor": "system"
+    }
+  ]
+}

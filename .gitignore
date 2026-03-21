@@ -1,0 +1,10 @@
+.aigon/.board-map.json
+.env.local
+.DS_Store
+*.swp
+*~
+.wrangler/
+.playwright-mcp/
+tmp/
+temp-content/
+package-lock.json
