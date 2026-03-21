@@ -1,4 +1,5 @@
 {
+  "tier": "pro",
   "devProxy": {
     "command": "node aigon-cli.js dashboard",
     "healthCheck": "/api/status",
