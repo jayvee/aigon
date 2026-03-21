@@ -2,9 +2,19 @@
 
 ## Summary
 
-Add a `--background` flag to `feature-start` and `research-start` that creates tmux sessions without opening terminal windows. Add a `backgroundAgents` setting (global and per-repo) that makes background the default. Expose all aigon settings in the dashboard Settings tab — both global (`~/.aigon/config.json`) and project (`.aigon/config.json`) — with the ability to edit them from the dashboard UI.
+Three parts: (1) Add `--background` flag so agents run without popping up terminal windows. (2) Auto-detect agent completion so we stop relying on agents to explicitly signal "submitted". (3) Expose all aigon settings in the dashboard Settings tab.
+
+The completion detection is the most important part. Currently agents finish their work, commit code, their session ends — but they often don't run `aigon agent-status submitted`. The dashboard shows them as "Running" or "Session ended" with no next action. Instead of relying on agents to signal, **detect completion from evidence**: worktree has implementation commits + tmux session is dead = agent is done.
 
 ## Acceptance Criteria
+
+### Auto-detect Agent Completion (critical)
+- [ ] Dashboard polling detects: agent status is `implementing` + tmux session dead + worktree has commits beyond setup → auto-transition to `submitted`
+- [ ] Also detect: no agent status file at all + tmux session dead + worktree has implementation commits → create status file as `submitted`
+- [ ] Auto-detection runs during normal dashboard status polling (no extra overhead)
+- [ ] When auto-detected, dashboard shows "Submitted (auto-detected)" to distinguish from explicit submission
+- [ ] `aigon doctor` also detects and fixes stale implementing statuses
+- [ ] Works for both features and research
 
 ### Background Agents
 - [ ] `aigon feature-start 42 cc cx --background` creates worktrees and tmux sessions but does NOT open terminal windows
@@ -13,18 +23,17 @@ Add a `--background` flag to `feature-start` and `research-start` that creates t
 - [ ] Dashboard "View" button opens iTerm2/terminal attached to the existing tmux session
 - [ ] `backgroundAgents` setting in `.aigon/config.json` makes `--background` the default
 - [ ] `--foreground` flag overrides the setting when you want terminal windows
-- [ ] Setting works at both global (`~/.aigon/config.json`) and project (`.aigon/config.json`) levels
-- [ ] Project setting overrides global setting
+- [ ] Setting works at both global and project levels (project overrides global)
 
 ### Dashboard Settings UI
 - [ ] Settings tab shows all global settings from `~/.aigon/config.json`
 - [ ] Settings tab shows all project settings from `.aigon/config.json` (per repo)
 - [ ] Clear visual separation between global and project settings
 - [ ] Settings are editable: toggle booleans, edit strings, select from enums
-- [ ] Changes are saved immediately to the appropriate config file
-- [ ] `backgroundAgents` toggle is prominent (likely the most-used setting)
-- [ ] Settings tab shows which values are inherited (global default) vs overridden (project)
-- [ ] Read-only display of computed/effective config (merged global + project)
+- [ ] Changes saved immediately to the appropriate config file
+- [ ] `backgroundAgents` toggle is prominent
+- [ ] Settings tab shows which values are inherited vs overridden
+- [ ] Read-only display of computed/effective config
 - [ ] Dashboard restarts are not required after settings changes
 
 ## Validation
@@ -38,59 +47,67 @@ node -c lib/dashboard-server.js
 
 ## Technical Approach
 
+### Auto-detect Agent Completion
+
+In the dashboard status polling (`collectDashboardStatusData` in `lib/dashboard-server.js`), after building the agent list for each feature:
+
+```js
+// For each agent with status 'implementing' and no running tmux session:
+if (agent.status === 'implementing' && !agent.tmuxRunning) {
+    // Check if worktree has commits beyond setup
+    const hasWork = worktreeHasImplementationCommits(agent.worktreePath);
+    if (hasWork) {
+        // Auto-signal submitted
+        writeAgentStatus(featureId, agent.id, { status: 'submitted', updatedAt: new Date().toISOString() });
+        agent.status = 'submitted';
+        agent.autoDetected = true;
+    }
+}
+```
+
+`worktreeHasImplementationCommits(path)` checks:
+```bash
+git -C <worktreePath> log --oneline --no-walk HEAD -- ':!.env.local' ':!.aigon/' | head -1
+```
+If the latest commit is NOT a "chore: worktree setup" commit, the agent did real work.
+
+For agents with **no status file at all** + dead session + worktree with commits: same logic, create the status file.
+
 ### Background Flag
 
-1. In `feature-start` (`lib/commands/feature.js`): after creating worktrees and tmux sessions, check `--background` flag or `getEffectiveConfig().backgroundAgents`. If true, skip the `openTerminalAppWithCommand` calls.
-
-2. Same in `research-start` (`lib/commands/research.js`): skip `openTerminalAppWithCommand` for each agent.
-
-3. Add to config schema in `lib/config.js`:
-   ```json
-   { "backgroundAgents": false }
-   ```
-
+1. In `feature-start`: check `--background` flag or `getEffectiveConfig().backgroundAgents`. If true, skip `openTerminalAppWithCommand` calls.
+2. Same in `research-start`.
+3. Config schema: `{ "backgroundAgents": false }`
 4. CLI flag precedence: `--background` > `--foreground` > config setting > default (false)
 
 ### Dashboard Settings Tab
 
-1. Add `/api/settings` endpoint to `lib/dashboard-server.js`:
-   - `GET /api/settings` → returns `{ global: {...}, project: {...}, effective: {...} }`
-   - `PUT /api/settings` → body: `{ scope: "global"|"project", key: "backgroundAgents", value: true }`
-   - Writes to the appropriate config file via `lib/config.js`
+1. `/api/settings` endpoint:
+   - `GET` → returns `{ global: {...}, project: {...}, effective: {...} }`
+   - `PUT` → body: `{ scope: "global"|"project", key: "backgroundAgents", value: true }`
 
-2. Dashboard Settings tab (`templates/dashboard/js/settings.js`):
-   - Two-column layout: Global | Project
-   - Each setting shows: key, current value, source (global/project/default)
-   - Toggle switches for booleans
-   - Text inputs for strings
-   - Dropdown for enums (terminal type, profile, etc.)
-   - Save button or auto-save on change
+2. Settings tab UI: two-column layout (Global | Project), toggles for booleans, dropdowns for enums, auto-save.
 
 3. Known settings to expose:
-   - `backgroundAgents` (boolean) — run agents without opening terminals
-   - `terminal` (enum: warp/tmux/code/cursor) — terminal preference
-   - `profile` (enum: web/api/ios/android/library/generic) — project profile
-   - `security.enabled` (boolean) — security scanning
-   - `security.mode` (enum: enforce/warn/off) — scanning mode
-   - `devServer.enabled` (boolean) — dev server auto-start
-   - Agent model overrides (`agents.cc.implement.model`, etc.)
-
-### Dashboard "View" Button
-
-Already exists via `feature-open` / `research-open` actions in the state machine. When agents are running in background, the "View" button calls `requestFeatureOpen` which opens a terminal window attached to the existing tmux session. No change needed — this already works.
+   - `backgroundAgents` (boolean)
+   - `terminal` (enum: warp/tmux/code/cursor)
+   - `profile` (enum: web/api/ios/android/library/generic)
+   - `security.enabled` (boolean)
+   - `security.mode` (enum: enforce/warn/off)
+   - `devServer.enabled` (boolean)
+   - Agent model overrides
 
 ## Dependencies
 
-- None. Uses existing config system and dashboard infrastructure.
+- None.
 
 ## Out of Scope
 
-- Per-agent background setting (e.g., cc in foreground, cx in background) — keep it simple
-- Terminal multiplexer UI in the dashboard (viewing tmux output in the browser)
+- Per-agent background setting
+- Terminal multiplexer UI in the dashboard (viewing tmux output in browser)
 - Config file validation/schema enforcement
-- Config migration between versions
 
 ## Related
 
-- Feature #117: rename-setup-to-start (touches same `feature-start` code)
-- Dashboard Settings tab already exists but is minimal
+- Feature #117: rename-setup-to-start (touches same code)
+- The "agents don't signal submitted" gap observed across features 114, 118, 126
