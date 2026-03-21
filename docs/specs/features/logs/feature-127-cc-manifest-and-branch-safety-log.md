@@ -28,3 +28,18 @@ Targeted 4 root causes from the 2026-03-20/21 incident. Branch guard (RC1) was a
 - `lib/dashboard-server.js` — Post-dispatch agent verification
 - `templates/dashboard/js/api.js` — agentWarning toast
 - `aigon-cli.test.js` — 3 new tests
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-22
+
+### Findings
+- Dashboard `feature-start` verification only checked agent registration when the manifest file already existed. If the CLI exited `0` without writing a manifest, the dashboard still reported success, leaving the silent partial-failure path from the spec unfixed.
+
+### Fixes Applied
+- `fix(review): fail dashboard feature-start verification when manifest is missing`
+
+### Notes
+- Added focused dashboard action tests that exercise `runDashboardInteractiveAction()` for both missing-manifest and missing-agent cases.
+- `node aigon-cli.test.js` still has 7 unrelated pre-existing failures already documented above; `node lib/manifest.test.js` passes.
