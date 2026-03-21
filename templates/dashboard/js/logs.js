@@ -520,6 +520,38 @@
       html.push('<div style="height:220px;position:relative"><canvas id="volume-chart-canvas"></canvas></div>');
       html.push('</div>');
 
+      // AADE free-tier cards: raw token/cost/rework numbers
+      const amp = analytics.amplification || {};
+      const filteredWithCost = filteredFeatures.filter(f => f.costUsd !== null && f.costUsd !== undefined);
+      const filteredWithTokens = filteredFeatures.filter(f => f.totalTokens !== null && f.totalTokens !== undefined);
+      const filteredReworkCount = filteredFeatures.filter(f => f.hasRework).length;
+      const filteredTotalCost = filteredWithCost.reduce((s, f) => s + f.costUsd, 0);
+      const filteredTotalTokens = filteredWithTokens.reduce((s, f) => s + f.totalTokens, 0);
+      const filteredAvgCost = filteredWithCost.length > 0
+        ? Math.round((filteredTotalCost / filteredWithCost.length) * 100) / 100 : null;
+
+      if (filteredWithCost.length > 0 || filteredWithTokens.length > 0) {
+        html.push('<div class="stats-section-title">AI Cost &amp; Tokens</div>');
+        html.push('<div class="stats-cards">');
+        html.push(buildStatCard('Total AI Cost',
+          filteredTotalCost > 0 ? '$' + filteredTotalCost.toFixed(2) : '$0.00',
+          null, filteredWithCost.length + ' features tracked',
+          'Total cost of AI tokens across all features in the selected period.'));
+        html.push(buildStatCard('Avg Cost / Feature',
+          filteredAvgCost !== null ? '$' + filteredAvgCost.toFixed(2) : '\u2014',
+          null, null,
+          'Average AI cost per feature.'));
+        html.push(buildStatCard('Total Tokens',
+          filteredTotalTokens > 0 ? (filteredTotalTokens > 1e6 ? (filteredTotalTokens / 1e6).toFixed(1) + 'M' : filteredTotalTokens.toLocaleString()) : '\u2014',
+          null, null,
+          'Total tokens (input + output + cache) consumed across features.'));
+        html.push(buildStatCard('Rework Flags',
+          String(filteredReworkCount),
+          null, totalCompleted > 0 ? fmtPct(filteredReworkCount / totalCompleted) + ' of features' : null,
+          'Features with at least one rework signal: thrashing (file touched 5+ times), fix cascade (3+ consecutive fix commits), or scope creep (touched 2x expected files).'));
+        html.push('</div>');
+      }
+
       // Quality block
       html.push('<div class="stats-row">');
       const quality = analytics.quality || {};
