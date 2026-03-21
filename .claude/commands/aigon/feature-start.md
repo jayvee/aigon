@@ -1,8 +1,8 @@
 ---
-description: Setup feature <ID> [agents...] - prepare workspace for implementation
+description: Start feature <ID> [agents...] - create workspace and begin implementation
 argument-hint: "<ID> [agents...]"
 ---
-# aigon-feature-setup
+# aigon-feature-start
 
 Prepare your workspace to implement a feature in either Drive or Fleet mode.
 
@@ -21,13 +21,13 @@ If no ID is provided, or the ID doesn't match an existing feature in the backlog
 
 ```bash
 # Drive mode (creates branch in current repo) — user passes only an ID
-aigon feature-setup {{args}}
+aigon feature-start {{args}}
 
 # Drive worktree mode (creates worktree for parallel development) — user passes ID + agent
-aigon feature-setup {{args}} <agent>
+aigon feature-start {{args}} <agent>
 
 # Fleet mode (multiple agents compete in separate worktrees) — user passes ID + 2+ agents
-aigon feature-setup {{args}} <agent1> <agent2> [agent3...]
+aigon feature-start {{args}} <agent1> <agent2> [agent3...]
 ```
 
 The mode is determined automatically based on what the user provides:

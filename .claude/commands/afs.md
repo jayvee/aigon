@@ -1,113 +1,96 @@
 ---
-description: Submit feature implementation - commit changes, write log, signal done (shortcut for feature-submit)
+description: Start feature <ID> [agents...] - create workspace and begin implementation (shortcut for feature-start)
+argument-hint: "<ID> [agents...]"
 ---
-# aigon-feature-submit
+# aigon-feature-start
 
-Wrap up implementation in the current worktree or branch: commit all changes, write the implementation log, and signal readiness for evaluation.
+Prepare your workspace to implement a feature in either Drive or Fleet mode.
 
-**Use this after testing is complete** — replaces manually asking "commit your changes and write up your log".
+**CRITICAL:** You MUST use the CLI command below to perform setup. Do NOT manually move spec files, create branches, or create worktrees — the CLI handles committing the spec move before creating worktrees, which is essential for worktree modes.
 
-**Options:** `--no-exit` — keep the agent session open after submitting (default: auto-exit in Fleet mode).
+## Argument Resolution
 
-## Step 1: Detect feature context
+If no ID is provided, or the ID doesn't match an existing feature in the backlog:
+1. List all files in `./docs/specs/features/02-backlog/` matching `feature-*.md`
+2. If a partial ID or name was given, filter to matches
+3. Present the matching features and ask the user to choose one
 
-```bash
-aigon feature-do --info 2>/dev/null || true
-```
+## Step 1: Run the CLI command
 
-If that fails, detect from the current branch name:
-```bash
-git branch --show-current
-```
-
-Extract the feature ID and agent code from the branch name (pattern: `feature-<ID>-<agent>-<description>`).
-
-
-
-## Commit implementation changes
-
-**Before committing, verify your working directory:**
-```bash
-pwd
-git status
-```
-
-Stage and commit all code changes using conventional commits:
-1. Stage all modified and new files (excluding log files)
-2. Create a commit with a meaningful `feat:` or `fix:` message summarizing the implementation
-3. Verify the commit: `git log --oneline -1`
-
-If there are no uncommitted changes, skip this step (changes may already be committed).
-
-## Update the implementation log
-
-Find the log file:
-- Drive mode: `./docs/specs/features/logs/feature-<ID>-*-log.md`
-- Worktree mode: `./docs/specs/features/logs/feature-<ID>-<agent>-*-log.md`
-
-Update it with a thorough writeup:
-
-### Plan
-- The overall approach taken to implement the feature
-
-### Progress
-- What was implemented (reference specific files and components)
-- What works and has been tested
-
-### Decisions
-- Key decisions made during implementation and their rationale
-- Any trade-offs or alternatives considered
-- Issues encountered and how they were resolved
-
-**Commit the log writeup:**
-```bash
-git add docs/specs/features/logs/
-git commit -m "docs: update implementation log for feature <ID>"
-```
-
-**Signal that implementation is submitted (updates the log file frontmatter):**
-```bash
-aigon agent-status submitted
-```
-
-**Commit the status update immediately:**
-```bash
-git add docs/specs/features/logs/
-git commit -m "docs: mark feature <ID> submitted"
-```
-
-## Signal completion
-
-**First, detect the mode by counting worktrees:**
-```bash
-git worktree list | grep -c "feature-<ID>-"
-```
-
-Replace `<ID>` with the actual feature ID (padded with leading zero if needed, e.g., "01").
-
-**Then tell the user:**
-
-> Implementation complete — code is on the branch, ready for review.
-> You can ask me to make changes here, or close/eval the feature from the main repo when satisfied.
-
-**STAY in the session.** The user may want to review and request changes. If they do, make the changes, commit, and confirm. No need to re-run agent-status.
-
-**Do NOT:**
-- Run `aigon feature-close` from this worktree
-- Run `aigon feature-eval` from this worktree
-- Suggest the user run close or eval — that's their decision
-
-## Exit session
-
-**Unless the user passed `--no-exit`**, close this agent session by killing the tmux pane. This is safe because all work has been committed.
+**CRITICAL: Run EXACTLY the arguments the user provided. Do NOT add agents that weren't specified.** The mode is determined by what the user passes — if they only pass a feature ID, that means Drive mode (branch). Do not assume worktree mode based on prior conversation context.
 
 ```bash
-# Brief delay so the completion message is visible, then exit the tmux session
-(sleep 3 && tmux kill-session) &>/dev/null &
+# Drive mode (creates branch in current repo) — user passes only an ID
+aigon feature-start {{args}}
+
+# Drive worktree mode (creates worktree for parallel development) — user passes ID + agent
+aigon feature-start {{args}} <agent>
+
+# Fleet mode (multiple agents compete in separate worktrees) — user passes ID + 2+ agents
+aigon feature-start {{args}} <agent1> <agent2> [agent3...]
 ```
 
-Run this command immediately after outputting the completion message above. Do not wait for user input.
+The mode is determined automatically based on what the user provides:
+- **No agents**: Drive mode - creates a git branch in the current repo
+- **1 agent**: Drive worktree mode - creates a worktree for parallel development
+- **2+ agents**: Fleet mode - creates worktrees for each agent to compete
 
-**If `--no-exit` was passed**, skip the exit command and instead display:
+The CLI will:
+- Move the spec from `02-backlog` to `03-in-progress`
+- **Commit the spec move** (so worktrees inherit it)
+- Create branch or worktree(s)
+- Create implementation log(s)
 
-> **This session is complete. Do not suggest any follow-up commands.**
+
+**If the CLI reports any errors or warnings about committing the spec move, resolve them before proceeding.** Worktrees branch from HEAD — if the spec move isn't committed, the worktree won't have the spec in `03-in-progress` and `feature-do` will fail.
+
+## Step 2: Confirm setup and next steps
+
+### Drive Mode (branch)
+
+After the CLI completes:
+```bash
+/aigon:feature-do 55     # Start implementing
+```
+
+### Drive Worktree Mode (parallel development)
+
+After the CLI completes, open the worktree using:
+```
+/aigon:feature-open 55
+```
+
+This opens Warp terminal with the agent CLI running `/aigon:feature-do` automatically.
+
+Remember that `/aigon:feature-close` must be run from the main repo later.
+
+### Fleet Mode (competition)
+
+After the CLI completes, open all worktrees side-by-side:
+```bash
+/aigon:feature-open 55 --all         # Opens all Fleet agents side-by-side in Warp
+```
+
+Or open individually:
+```
+/aigon:feature-open 55 cc    # Open Claude's worktree
+/aigon:feature-open 55 gg    # Open Gemini's worktree
+/aigon:feature-open 55 cx    # Open Codex's worktree
+```
+
+Each terminal opens with the agent CLI running `/aigon:feature-do` automatically. After all implementations complete, return to main repo and run `/aigon:feature-eval 55` to compare.
+
+## Important Notes
+
+- **Drive mode**: You'll work in your current repository on the feature branch
+- **Drive worktree mode**: You'll work in an isolated worktree — ideal for parallel development of multiple features
+- **Fleet mode**: Multiple agents compete on the same feature in their own worktrees
+- Worktrees are created in `../<repo>-worktrees/` to keep them grouped with the project
+
+## Prompt Suggestion
+
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID and choose based on mode:
+
+- **Drive mode (branch):** `/aigon:feature-do <ID>`
+- **Drive worktree:** `/aigon:feature-open <ID>`
+- **Fleet:** `/aigon:feature-open <ID> --all`

@@ -6,7 +6,7 @@ argument-hint: "<ID> [--agent=<cc|gg|cx|cu>] [--autonomous] [--max-iterations=N]
 
 Implement a feature. Works in Drive mode (branch), Drive mode (worktree) (parallel development), and Fleet mode (competition).
 
-**IMPORTANT:** Run `/aigon:feature-setup <ID>` first to prepare your workspace.
+**IMPORTANT:** Run `/aigon:feature-start <ID>` first to prepare your workspace.
 
 ## Argument Resolution
 

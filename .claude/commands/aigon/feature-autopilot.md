@@ -37,7 +37,7 @@ aigon feature-autopilot {{args}} cc gg cx --auto-eval
 
 ## What it does
 
-1. **Setup phase**: If no worktrees exist, runs `feature-setup` to create them
+1. **Setup phase**: If no worktrees exist, runs `feature-start` to create them
 2. **Spawn phase**: Creates a tmux session for each agent, running `feature-do --autonomous --auto-submit`
 3. **Monitor phase**: Polls agent log files every 30s, prints status table, detects completion
 4. **Eval phase**: If `--auto-eval`, runs `feature-eval` automatically; otherwise prints the command to run

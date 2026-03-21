@@ -10,7 +10,7 @@ description: Show Aigon commands
 | `/aigon:feature-create <name>` | Create a new feature spec |
 | `/aigon:feature-now <name>` | Fast-track: inbox → prioritise → setup → implement, or create new + implement |
 | `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
-| `/aigon:feature-setup <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
+| `/aigon:feature-start <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
 | `/aigon:feature-do <ID> [--autonomous]` | Do feature work; `--autonomous` enables the autonomous retry loop |
 | `/aigon:feature-submit` | Commit changes, write log, signal done for evaluation |
 | `/aigon:feature-eval <ID>` | Create evaluation (code review or comparison) |
@@ -26,7 +26,7 @@ description: Show Aigon commands
 |---------|-------------|
 | `/aigon:research-create <name>` | Create a new research topic |
 | `/aigon:research-prioritise <name>` | Prioritise a research topic |
-| `/aigon:research-setup <ID> [agents...]` | Setup for Drive or Fleet research |
+| `/aigon:research-start <ID> [agents...]` | Setup for Drive or Fleet research |
 | `/aigon:research-open <ID>` | Open all Fleet agents side-by-side for parallel research |
 | `/aigon:research-do <ID>` | Conduct research (write findings) |
 | `/aigon:research-submit [ID]` | Signal research findings complete (Fleet mode) |
@@ -74,11 +74,11 @@ All commands have top-level short aliases prefixed with `a` (for aigon):
 |----------|---------|----------|---------|
 | `/afc` | feature-create | `/arc` | research-create |
 | `/afn` | feature-now | `/arp` | research-prioritise |
-| `/afp` | feature-prioritise | `/arse` | research-setup |
-| `/afse` | feature-setup | `/aro` | research-open |
+| `/afp` | feature-prioritise | `/ars` | research-start |
+| `/afs` | feature-start | `/aro` | research-open |
 | `/afd` | feature-do | `/ard` | research-do |
-| `/afs` | feature-submit | `/arsb` | research-submit |
-| `/afe` | feature-eval | `/ars` | research-synthesize |
+| `/afsb` | feature-submit | `/arsb` | research-submit |
+| `/afe` | feature-eval | `/arsy` | research-synthesize |
 | `/afr` | feature-review | `/arcl` | research-close |
 | `/afcl` | feature-close | `/arap` | research-autopilot |
 | `/afap` | feature-autopilot | `/afbc` | feedback-create |
