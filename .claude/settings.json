@@ -403,11 +403,11 @@
       "Write(/Users/jviner/src/aigon-worktrees/feature-121-cc-docs-merge-repos/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-121-cc-docs-merge-repos:*)",
       "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-121-cc-docs-merge-repos:*)",
-      "Read(/Users/jviner/src/aigon-worktrees/feature-121-cx-docs-merge-repos/**)",
-      "Edit(/Users/jviner/src/aigon-worktrees/feature-121-cx-docs-merge-repos/**)",
-      "Write(/Users/jviner/src/aigon-worktrees/feature-121-cx-docs-merge-repos/**)",
-      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-121-cx-docs-merge-repos:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-121-cx-docs-merge-repos:*)"
+      "Read(/Users/jviner/src/aigon-worktrees/feature-122-cc-aade-extract-to-private-package/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-122-cc-aade-extract-to-private-package/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-122-cc-aade-extract-to-private-package/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-122-cc-aade-extract-to-private-package:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-122-cc-aade-extract-to-private-package:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",

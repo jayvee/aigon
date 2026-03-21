@@ -32,3 +32,4 @@ site/.env.local
 site/.env*.local
 site/out/
 site/.vercel/
+.aigon/insights-cache.json
