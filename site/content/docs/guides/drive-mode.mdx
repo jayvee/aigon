@@ -1,0 +1,21 @@
+---
+title: Drive Mode
+description: Hands-on implementation with a single agent.
+---
+
+Drive mode gives you tight control over implementation details and review checkpoints with a single agent.
+
+## When to use
+
+Use Drive mode when you want to guide the implementation closely and review each step.
+
+## Workflow
+
+```bash
+aigon feature-create "my-feature"
+aigon feature-prioritise my-feature
+/aigon:feature-start 07
+/aigon:feature-do 07
+/aigon:feature-submit 07
+aigon feature-close 07
+```

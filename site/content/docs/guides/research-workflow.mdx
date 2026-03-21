@@ -1,0 +1,17 @@
+---
+title: Research Workflow
+description: Investigate options before committing to a feature approach.
+---
+
+The research workflow lets you explore multiple approaches to a problem before writing a spec.
+
+## Workflow
+
+```bash
+aigon research-create "auth-strategy"
+aigon research-prioritise auth-strategy
+/aigon:research-start 03 cc gg
+# Each agent writes findings
+/aigon:research-synthesize 03
+aigon research-close 03
+```
