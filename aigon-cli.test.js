@@ -2465,8 +2465,38 @@ test('feature-start merges new agents into existing agent list', () => {
 
 console.log('\nDashboard — action dispatch verification');
 
-test('runDashboardInteractiveAction adds agentWarning when agents not registered', () => {
+test('runDashboardInteractiveAction fails feature-start when manifest is missing after CLI success', () => {
     withTempDir(tempDir => {
+        const childProcess = require('child_process');
+        const originalSpawnSync = childProcess.spawnSync;
+        childProcess.spawnSync = () => ({ status: 0, stdout: 'ok\n', stderr: '' });
+
+        try {
+            delete require.cache[require.resolve('./lib/dashboard-server')];
+            const dashServer = require('./lib/dashboard-server');
+            const result = dashServer.runDashboardInteractiveAction({
+                action: 'feature-start',
+                args: ['993', 'cc', 'gg'],
+                repoPath: tempDir
+            });
+
+            assert.strictEqual(result.ok, false, 'missing manifest should fail verification');
+            assert.strictEqual(result.status, 422, 'missing manifest should return unprocessable status');
+            assert.ok(String(result.error).includes('without creating manifest'),
+                'should explain missing manifest: ' + JSON.stringify(result));
+        } finally {
+            childProcess.spawnSync = originalSpawnSync;
+            delete require.cache[require.resolve('./lib/dashboard-server')];
+        }
+    });
+});
+
+test('runDashboardInteractiveAction fails feature-start when agents not registered', () => {
+    withTempDir(tempDir => {
+        const childProcess = require('child_process');
+        const originalSpawnSync = childProcess.spawnSync;
+        childProcess.spawnSync = () => ({ status: 0, stdout: 'ok\n', stderr: '' });
+
         const stateDir = path.join(tempDir, '.aigon', 'state');
         fs.mkdirSync(stateDir, { recursive: true });
 
@@ -2474,17 +2504,23 @@ test('runDashboardInteractiveAction adds agentWarning when agents not registered
         const manifestData = { id: '994', type: 'feature', stage: 'in-progress', agents: [], pending: [], events: [] };
         fs.writeFileSync(path.join(stateDir, 'feature-994.json'), JSON.stringify(manifestData));
 
-        // We need the dashboard server module — test the verification logic directly
-        delete require.cache[require.resolve('./lib/dashboard-server')];
-        const dashServer = require('./lib/dashboard-server');
+        try {
+            delete require.cache[require.resolve('./lib/dashboard-server')];
+            const dashServer = require('./lib/dashboard-server');
+            const result = dashServer.runDashboardInteractiveAction({
+                action: 'feature-start',
+                args: ['994', 'cc', 'gg'],
+                repoPath: tempDir
+            });
 
-        // Use buildDashboardActionCommandArgs to verify it constructs correct args
-        const cmdArgs = dashServer.buildDashboardActionCommandArgs('feature-start', ['994', 'cc', 'gg']);
-        assert.ok(Array.isArray(cmdArgs), 'should return array');
-        assert.ok(cmdArgs.includes('feature-start'), 'should include action');
-        assert.ok(cmdArgs.includes('994'), 'should include feature id');
-        assert.ok(cmdArgs.includes('cc'), 'should include agent cc');
-        assert.ok(cmdArgs.includes('gg'), 'should include agent gg');
+            assert.strictEqual(result.ok, false, 'missing agents should fail verification');
+            assert.strictEqual(result.status, 422, 'missing agents should return unprocessable status');
+            assert.ok(String(result.error).includes('Agents not registered'),
+                'should explain missing agents: ' + JSON.stringify(result));
+        } finally {
+            childProcess.spawnSync = originalSpawnSync;
+            delete require.cache[require.resolve('./lib/dashboard-server')];
+        }
     });
 });
 
