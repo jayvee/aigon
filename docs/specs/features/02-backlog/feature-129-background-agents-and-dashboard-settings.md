@@ -8,12 +8,17 @@ The completion detection is the most important part. Currently agents finish the
 
 ## Acceptance Criteria
 
-### Auto-detect Agent Completion (critical)
-- [ ] Dashboard polling detects: agent status is `implementing` + tmux session dead + worktree has commits beyond setup → auto-transition to `submitted`
-- [ ] Also detect: no agent status file at all + tmux session dead + worktree has implementation commits → create status file as `submitted`
-- [ ] Auto-detection runs during normal dashboard status polling (no extra overhead)
-- [ ] When auto-detected, dashboard shows "Submitted (auto-detected)" to distinguish from explicit submission
-- [ ] `aigon doctor` also detects and fixes stale implementing statuses
+### Auto-detect Agent Session End (critical)
+- [ ] Dashboard polling detects: agent status is `implementing` + tmux session dead + worktree has commits beyond setup → set status to `needs-review`
+- [ ] Also detect: no agent status file + dead session + worktree with implementation commits → create status file as `needs-review`
+- [ ] `needs-review` is a new agent status meaning "session ended, work exists, human should check"
+- [ ] Dashboard shows `needs-review` agents with amber indicator and three buttons: [Mark Submitted] [Re-open Agent] [View Work]
+- [ ] "Mark Submitted" sets status to `submitted` (user confirmed the work is done)
+- [ ] "Re-open Agent" creates a new tmux session in the worktree and opens terminal (agent continues where it left off)
+- [ ] "View Work" opens the worktree diff or attaches to view the code
+- [ ] Explicit `aigon agent-status submitted` from the agent bypasses needs-review entirely (goes straight to submitted)
+- [ ] Auto-detection runs during normal dashboard polling (no extra overhead)
+- [ ] `aigon doctor` also detects stale implementing statuses and flags them
 - [ ] Works for both features and research
 
 ### Background Agents
