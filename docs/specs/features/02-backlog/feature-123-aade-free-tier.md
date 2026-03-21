@@ -2,7 +2,7 @@
 
 ## Summary
 
-Capture token/cost/git-signal/rework telemetry locally and expose raw metrics in the dashboard — all free forever. The free tier is data collection and basic display only. All analysis, insights, coaching, and trends are Pro. Includes upgrade prompts at Pro boundaries to create natural upgrade desire.
+Capture token/cost/git-signal/rework telemetry locally and expose raw metrics in the dashboard. Data collection and basic number display are free. All analysis, insights, coaching, and trends are Pro-only. Includes upgrade prompts at Pro boundaries.
 
 ## User Stories
 
