@@ -23,7 +23,8 @@ const { createFeedbackCommands } = require('./lib/commands/feedback');
 const setupCommandsModule = require('./lib/commands/setup');
 const { createSetupCommands } = setupCommandsModule;
 const { createMiscCommands } = require('./lib/commands/misc');
-const insightsLib = require('./lib/insights');
+const { isProAvailable, getPro } = require('./lib/pro');
+const insightsLib = isProAvailable() ? getPro().insights : null;
 const {
     buildIncompleteSubmissionReconnectCommand,
     createAllCommands,
@@ -824,28 +825,32 @@ test('command families stay separated', () => {
     assert.strictEqual(Object.prototype.hasOwnProperty.call(misc, 'feature-do'), false);
 });
 
-console.log('\nInsights Engine');
-test('insights report handles insufficient data', () => {
-    const report = insightsLib.buildDeterministicInsights([
-        { featureId: '1', completedAtMs: 1, costUsd: 0.1, tokensPerLineChanged: 30, totalTokens: 1000, reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
-        { featureId: '2', completedAtMs: 2, costUsd: 0.2, tokensPerLineChanged: 40, totalTokens: 1200, reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
-    ]);
-    assert.strictEqual(report.insufficientData, true);
-    assert.match(report.summary, /Not enough data/i);
-});
+console.log('\nInsights Engine (Pro)');
+if (insightsLib) {
+    test('insights report handles insufficient data', () => {
+        const report = insightsLib.buildDeterministicInsights([
+            { featureId: '1', completedAtMs: 1, costUsd: 0.1, tokensPerLineChanged: 30, totalTokens: 1000, reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
+            { featureId: '2', completedAtMs: 2, costUsd: 0.2, tokensPerLineChanged: 40, totalTokens: 1200, reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
+        ]);
+        assert.strictEqual(report.insufficientData, true);
+        assert.match(report.summary, /Not enough data/i);
+    });
 
-test('insights report computes outlier observation', () => {
-    const report = insightsLib.buildDeterministicInsights([
-        { featureId: '1', name: 'a', completedAtMs: 1, costUsd: 0.1, tokensPerLineChanged: 20, totalTokens: 1000, autonomyLabel: 'Full Autonomy', reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
-        { featureId: '2', name: 'b', completedAtMs: 2, costUsd: 0.11, tokensPerLineChanged: 22, totalTokens: 1100, autonomyLabel: 'Guided', reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
-        { featureId: '3', name: 'c', completedAtMs: 3, costUsd: 0.12, tokensPerLineChanged: 21, totalTokens: 1200, autonomyLabel: 'Full Autonomy', reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
-        { featureId: '4', name: 'd', completedAtMs: 4, costUsd: 1.0, tokensPerLineChanged: 90, totalTokens: 10000, autonomyLabel: 'Thrashing', reworkThrashing: true, reworkFixCascade: false, reworkScopeCreep: false, hasRework: true },
-    ]);
-    assert.strictEqual(report.insufficientData, false);
-    const outlier = report.observations.find(o => o.id === 'outlier-detection');
-    assert.ok(outlier);
-    assert.match(outlier.observation, /#4/);
-});
+    test('insights report computes outlier observation', () => {
+        const report = insightsLib.buildDeterministicInsights([
+            { featureId: '1', name: 'a', completedAtMs: 1, costUsd: 0.1, tokensPerLineChanged: 20, totalTokens: 1000, autonomyLabel: 'Full Autonomy', reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
+            { featureId: '2', name: 'b', completedAtMs: 2, costUsd: 0.11, tokensPerLineChanged: 22, totalTokens: 1100, autonomyLabel: 'Guided', reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
+            { featureId: '3', name: 'c', completedAtMs: 3, costUsd: 0.12, tokensPerLineChanged: 21, totalTokens: 1200, autonomyLabel: 'Full Autonomy', reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false },
+            { featureId: '4', name: 'd', completedAtMs: 4, costUsd: 1.0, tokensPerLineChanged: 90, totalTokens: 10000, autonomyLabel: 'Thrashing', reworkThrashing: true, reworkFixCascade: false, reworkScopeCreep: false, hasRework: true },
+        ]);
+        assert.strictEqual(report.insufficientData, false);
+        const outlier = report.observations.find(o => o.id === 'outlier-detection');
+        assert.ok(outlier);
+        assert.match(outlier.observation, /#4/);
+    });
+} else {
+    console.log('  (skipped — @aigon/pro not installed)');
+}
 
 console.log('\nWorktree Env Isolation');
 test('ensureEnvLocalGitignore creates expected entries and is idempotent', () => withTempDir(tempDir => {
