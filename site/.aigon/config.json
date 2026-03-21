@@ -1,0 +1,10 @@
+{
+  "profile": "web",
+  "devProxy": {
+    "command": "python3 -m http.server $PORT",
+    "basePort": 3400
+  },
+  "commands": {
+    "deploy": "git push origin main"
+  }
+}
