@@ -1,4 +1,4 @@
-# Feature: aade-free-tier
+# Feature: aade-telemetry
 
 ## Summary
 
