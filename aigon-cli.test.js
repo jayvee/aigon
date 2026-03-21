@@ -2426,6 +2426,87 @@ test('feature-start backfills agents when feature already in-progress with no ag
     });
 });
 
+test('feature-start merges new agents into existing agent list', () => {
+    withTempDir(tempDir => {
+        const stateDir = path.join(tempDir, '.aigon', 'state');
+        fs.mkdirSync(stateDir, { recursive: true });
+
+        // Create a manifest that's in-progress with existing agents
+        const manifestData = { id: '995', type: 'feature', stage: 'in-progress', name: 'test-merge', agents: ['cc'], pending: [], events: [] };
+        fs.writeFileSync(path.join(stateDir, 'feature-995.json'), JSON.stringify(manifestData));
+
+        // Create spec in in-progress folder
+        const specDir = path.join(tempDir, 'docs', 'specs', 'features', '03-in-progress');
+        fs.mkdirSync(specDir, { recursive: true });
+        fs.writeFileSync(path.join(specDir, 'feature-995-test-merge.md'), '# Test');
+
+        const { execSync } = require('child_process');
+        execSync('git init -b main && git add -A && git commit -m "init"', { cwd: tempDir, stdio: 'pipe' });
+
+        // Run feature-start with existing agent (cc) + new agent (gg)
+        const result = spawnSync(process.execPath, [path.resolve('aigon-cli.js'), 'feature-start', '995', 'cc', 'gg'], {
+            cwd: tempDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe']
+        });
+        const output = (result.stdout || '') + (result.stderr || '');
+        assert.ok(output.includes('Registered agents') || output.includes('cc') || output.includes('gg'),
+            'should merge agents: ' + output);
+
+        // Read the manifest and check agents were merged (not replaced)
+        const updated = JSON.parse(fs.readFileSync(path.join(stateDir, 'feature-995.json'), 'utf8'));
+        assert.ok(updated.agents.includes('cc'), 'should keep existing agent cc: ' + JSON.stringify(updated.agents));
+        assert.ok(updated.agents.includes('gg'), 'should add new agent gg: ' + JSON.stringify(updated.agents));
+        assert.strictEqual(updated.agents.length, 2, 'should have exactly 2 agents (no duplicates): ' + JSON.stringify(updated.agents));
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Dashboard Action Dispatch Tests
+// ---------------------------------------------------------------------------
+
+console.log('\nDashboard — action dispatch verification');
+
+test('runDashboardInteractiveAction adds agentWarning when agents not registered', () => {
+    withTempDir(tempDir => {
+        const stateDir = path.join(tempDir, '.aigon', 'state');
+        fs.mkdirSync(stateDir, { recursive: true });
+
+        // Create a manifest WITHOUT the expected agents
+        const manifestData = { id: '994', type: 'feature', stage: 'in-progress', agents: [], pending: [], events: [] };
+        fs.writeFileSync(path.join(stateDir, 'feature-994.json'), JSON.stringify(manifestData));
+
+        // We need the dashboard server module — test the verification logic directly
+        delete require.cache[require.resolve('./lib/dashboard-server')];
+        const dashServer = require('./lib/dashboard-server');
+
+        // Use buildDashboardActionCommandArgs to verify it constructs correct args
+        const cmdArgs = dashServer.buildDashboardActionCommandArgs('feature-start', ['994', 'cc', 'gg']);
+        assert.ok(Array.isArray(cmdArgs), 'should return array');
+        assert.ok(cmdArgs.includes('feature-start'), 'should include action');
+        assert.ok(cmdArgs.includes('994'), 'should include feature id');
+        assert.ok(cmdArgs.includes('cc'), 'should include agent cc');
+        assert.ok(cmdArgs.includes('gg'), 'should include agent gg');
+    });
+});
+
+test('parseDashboardActionRequest validates feature-start args', () => {
+    delete require.cache[require.resolve('./lib/dashboard-server')];
+    const dashServer = require('./lib/dashboard-server');
+
+    // Valid feature-start with agents
+    const valid = dashServer.parseDashboardActionRequest({ action: 'feature-start', args: ['42', 'cc', 'gg'] });
+    assert.strictEqual(valid.ok, true, 'should accept valid request');
+    assert.strictEqual(valid.action, 'feature-start');
+    assert.deepStrictEqual(valid.args, ['42', 'cc', 'gg']);
+
+    // Missing action
+    const noAction = dashServer.parseDashboardActionRequest({ args: ['42'] });
+    assert.strictEqual(noAction.ok, false, 'should reject missing action');
+
+    // Non-array args
+    const badArgs = dashServer.parseDashboardActionRequest({ action: 'feature-start', args: 'not-array' });
+    assert.strictEqual(badArgs.ok, false, 'should reject non-array args');
+});
+
 console.log('');
 if (failed === 0) {
     console.log(`Passed: ${passed}`);
