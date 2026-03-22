@@ -142,7 +142,9 @@
       return { totalItems, featureCount, researchCount, feedbackCount, hasWaiting, hasError, waitingCount, errorCount };
     }
 
-    function renderSidebar(repos) {
+    function renderSidebar(repos, options) {
+      const opts = options || {};
+      const includeAll = opts.includeAll !== false;
       const sidebar = document.getElementById('repo-sidebar');
       const mobile = document.getElementById('repo-select-mobile');
       const hadFocus = sidebar.contains(document.activeElement);
@@ -163,20 +165,21 @@
         return latestTime(bItems) - latestTime(aItems);
       });
 
-      // "All" option
-      const allBtn = document.createElement('button');
-      allBtn.className = 'sidebar-item' + (state.selectedRepo === 'all' ? ' active' : '');
-      allBtn.setAttribute('role', 'option');
-      allBtn.setAttribute('aria-selected', state.selectedRepo === 'all' ? 'true' : 'false');
-      allBtn.setAttribute('tabindex', state.selectedRepo === 'all' ? '0' : '-1');
-      allBtn.innerHTML = '<span class="sidebar-name">All Repos</span>';
-      allBtn.onclick = () => selectRepo('all');
-      sidebar.appendChild(allBtn);
+      if (includeAll) {
+        const allBtn = document.createElement('button');
+        allBtn.className = 'sidebar-item' + (state.selectedRepo === 'all' ? ' active' : '');
+        allBtn.setAttribute('role', 'option');
+        allBtn.setAttribute('aria-selected', state.selectedRepo === 'all' ? 'true' : 'false');
+        allBtn.setAttribute('tabindex', state.selectedRepo === 'all' ? '0' : '-1');
+        allBtn.innerHTML = '<span class="sidebar-name">All Repos</span>';
+        allBtn.onclick = () => selectRepo('all');
+        sidebar.appendChild(allBtn);
 
-      const allOpt = document.createElement('option');
-      allOpt.value = 'all';
-      allOpt.textContent = 'All Repos';
-      mobile.appendChild(allOpt);
+        const allOpt = document.createElement('option');
+        allOpt.value = 'all';
+        allOpt.textContent = 'All Repos';
+        mobile.appendChild(allOpt);
+      }
 
       // Per-repo items
       sorted.forEach(repo => {
@@ -217,7 +220,12 @@
 
       // Validate: if selectedRepo no longer exists, reset to 'all'
       if (state.selectedRepo !== 'all' && !(repos || []).some(r => r.path === state.selectedRepo)) {
-        selectRepo('all');
+        selectRepo(includeAll ? 'all' : (((repos || []).find(r => !isRepoHidden(r.path)) || {}).path || 'all'));
+      }
+
+      if (!includeAll && state.selectedRepo === 'all') {
+        const firstVisibleRepo = ((repos || []).find(r => !isRepoHidden(r.path)) || {}).path || '';
+        if (firstVisibleRepo) selectRepo(firstVisibleRepo);
       }
 
       // Restore focus if sidebar had focus before re-render
@@ -282,4 +290,3 @@
     document.getElementById('repo-select-mobile').addEventListener('change', (e) => {
       selectRepo(e.target.value);
     });
-

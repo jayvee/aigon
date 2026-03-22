@@ -8,8 +8,8 @@
       const repos = (state.data && state.data.repos) || [];
       if (repos.length === 0) return '';
       const validRepoPaths = repos.map(r => r.path);
-      if (state.settingsRepo && validRepoPaths.includes(state.settingsRepo)) return state.settingsRepo;
       if (state.selectedRepo && state.selectedRepo !== 'all' && validRepoPaths.includes(state.selectedRepo)) return state.selectedRepo;
+      if (state.settingsRepo && validRepoPaths.includes(state.settingsRepo)) return state.settingsRepo;
       return repos[0].path;
     }
 
@@ -65,6 +65,17 @@
       }
     }
 
+    function captureDetailScrollTop() {
+      const detailArea = document.getElementById('detail-area');
+      return detailArea ? detailArea.scrollTop : 0;
+    }
+
+    function restoreDetailScrollTop(scrollTop) {
+      const detailArea = document.getElementById('detail-area');
+      if (!detailArea) return;
+      detailArea.scrollTop = scrollTop;
+    }
+
     async function fetchDashboardSettings(repoPath) {
       const qs = repoPath ? ('?repoPath=' + encodeURIComponent(repoPath)) : '';
       const res = await fetch('/api/settings' + qs, { cache: 'no-store' });
@@ -82,42 +93,6 @@
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
       return payload;
-    }
-
-    function buildSettingsRepoSelector(repos, targetRepo) {
-      const wrap = document.createElement('div');
-      wrap.className = 'settings-target-wrap';
-
-      const label = document.createElement('label');
-      label.className = 'settings-target-label';
-      label.textContent = 'Project override target';
-      label.htmlFor = 'settings-target-repo';
-
-      const select = document.createElement('select');
-      select.id = 'settings-target-repo';
-      select.className = 'settings-select settings-target-select';
-
-      repos.forEach(repo => {
-        const opt = document.createElement('option');
-        opt.value = repo.path;
-        opt.textContent = repo.path.replace(/^\/Users\/[^/]+\//, '~/');
-        select.appendChild(opt);
-      });
-      select.value = targetRepo;
-      select.onchange = () => {
-        state.settingsRepo = select.value;
-        localStorage.setItem(lsKey('settingsRepo'), state.settingsRepo);
-        renderSettings();
-      };
-
-      const hint = document.createElement('div');
-      hint.className = 'settings-target-hint';
-      hint.textContent = 'Project settings write to .aigon/config.json for the selected repo only.';
-
-      wrap.appendChild(label);
-      wrap.appendChild(select);
-      wrap.appendChild(hint);
-      return wrap;
     }
 
     function renderConfigEditorSection(area, settingsData, repoPath) {
@@ -144,15 +119,9 @@
         const labelCol = document.createElement('div');
         labelCol.className = 'settings-config-label';
         labelCol.innerHTML = '<div class="settings-config-name-row"><div class="settings-config-name">' + escHtml(def.label) + '</div>' +
-          (def.description ? '<button type="button" class="settings-help" aria-label="' + escHtml(def.label + ' help') + '" title="' + escHtml(def.description) + '">?</button>' : '') +
+          (def.description ? '<button type="button" class="settings-help" aria-label="' + escHtml(def.label + ' help') + '" data-settings-tooltip="' + escHtml(def.description) + '">?</button>' : '') +
           '</div>' +
           '<div class="settings-config-key">' + escHtml(def.key) + '</div>';
-        if (def.description) {
-          const helpText = document.createElement('div');
-          helpText.className = 'settings-config-helptext';
-          helpText.textContent = def.description;
-          labelCol.appendChild(helpText);
-        }
 
         const sourceBadge = document.createElement('span');
         sourceBadge.className = 'settings-source-badge source-' + escHtml(def.source || 'default');
@@ -265,8 +234,7 @@
     }
 
     function renderSettings() {
-      captureSettingsUiState();
-      const renderToken = ++settingsUiState.renderToken;
+      const scrollTop = captureDetailScrollTop();
       document.getElementById('monitor-summary').style.display = 'none';
       document.getElementById('repo-header').style.display = 'none';
       document.getElementById('repo-sidebar').style.display = 'none';
@@ -275,7 +243,7 @@
       const data = state.data || {};
       document.getElementById('updated-text').textContent = 'Updated ' + relTime(data.generatedAt || new Date().toISOString());
 
-      const reposRoot = document.getElementById('repos');
+      const reposRoot = document.getElementById('settings-view');
       const empty = document.getElementById('empty');
       reposRoot.className = '';
       reposRoot.innerHTML = '';
@@ -385,27 +353,6 @@
       section.appendChild(form);
       area.appendChild(section);
 
-      const targetRepo = getSettingsTargetRepo();
-      const reposForSelector = (state.data && state.data.repos) || [];
-      if (reposForSelector.length > 0) {
-        area.appendChild(buildSettingsRepoSelector(reposForSelector, targetRepo));
-      }
-      const configSection = document.createElement('div');
-      configSection.className = 'settings-section';
-      configSection.innerHTML = '<h3>Loading settings...</h3>';
-      area.appendChild(configSection);
-      fetchDashboardSettings(targetRepo)
-        .then(payload => {
-          if (renderToken !== settingsUiState.renderToken) return;
-          configSection.remove();
-          renderConfigEditorSection(area, payload, targetRepo);
-          restoreSettingsUiState(area);
-        })
-        .catch(err => {
-          if (renderToken !== settingsUiState.renderToken) return;
-          configSection.innerHTML = '<h3>Configuration</h3><p class="settings-empty">Failed to load settings: ' + escHtml(err.message) + '</p>';
-        });
-
       // ── Notifications section ─────────────────────────────────────────────
       const NOTIF_TYPE_LABELS = {
         'agent-waiting': 'Agent waiting',
@@ -472,5 +419,57 @@
       area.appendChild(notifSection);
 
       reposRoot.appendChild(area);
+      restoreDetailScrollTop(scrollTop);
+    }
+
+    function renderConfigView() {
+      captureSettingsUiState();
+      const renderToken = ++settingsUiState.renderToken;
+      const scrollTop = captureDetailScrollTop();
+      document.getElementById('monitor-summary').style.display = 'none';
+      document.getElementById('repo-header').style.display = 'none';
+      document.getElementById('repo-sidebar').style.display = 'none';
+      document.getElementById('repo-select-mobile').style.display = 'none';
+      setHealth();
+      const data = state.data || {};
+      document.getElementById('updated-text').textContent = 'Updated ' + relTime(data.generatedAt || new Date().toISOString());
+
+      const configRoot = document.getElementById('config-view');
+      const empty = document.getElementById('empty');
+      configRoot.className = '';
+      configRoot.innerHTML = '';
+      empty.style.display = 'none';
+
+      const area = document.createElement('div');
+      area.className = 'settings-area';
+
+      const intro = document.createElement('div');
+      intro.className = 'settings-section';
+      intro.innerHTML = '<h3>Config</h3><p>Edit Aigon configuration files for the repo selected in the left sidebar. Dashboard UI preferences stay in Settings; this tab is only for values that affect Aigon behavior.</p>';
+      area.appendChild(intro);
+
+      const targetRepo = getSettingsTargetRepo();
+
+      const configSection = document.createElement('div');
+      configSection.className = 'settings-section';
+      configSection.innerHTML = '<h3>Loading config...</h3>';
+      area.appendChild(configSection);
+
+      fetchDashboardSettings(targetRepo)
+        .then(payload => {
+          if (renderToken !== settingsUiState.renderToken) return;
+          configSection.remove();
+          renderConfigEditorSection(area, payload, targetRepo);
+          restoreDetailScrollTop(scrollTop);
+          restoreSettingsUiState(area);
+        })
+        .catch(err => {
+          if (renderToken !== settingsUiState.renderToken) return;
+          configSection.innerHTML = '<h3>Config</h3><p class="settings-empty">Failed to load config: ' + escHtml(err.message) + '</p>';
+          restoreDetailScrollTop(scrollTop);
+        });
+
+      configRoot.appendChild(area);
+      restoreDetailScrollTop(scrollTop);
       restoreSettingsUiState(area);
     }

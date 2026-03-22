@@ -213,6 +213,10 @@
     .settings-section{margin-bottom:24px}
     .settings-section h3{margin:0 0 12px;font-size:15px;font-weight:600;letter-spacing:-.01em}
     .settings-section p{color:var(--text-secondary);font-size:12px;margin:0 0 12px}
+    .settings-target-wrap{display:grid;gap:6px;margin-bottom:18px;padding:12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px}
+    .settings-target-label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary)}
+    .settings-target-select{padding:8px 10px;background:rgba(255,255,255,.02);border:1px solid var(--border-subtle);border-radius:8px}
+    .settings-target-hint{font-size:12px;color:var(--text-secondary)}
     .repo-list{display:grid;gap:6px;margin-bottom:12px}
     .repo-list-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px}
     .repo-list-item:hover{border-color:var(--border-default)}
@@ -231,9 +235,18 @@
     .settings-empty{color:var(--text-tertiary);font-size:12px;padding:12px;text-align:center}
     .settings-config-rows{display:grid;gap:12px}
     .settings-config-row{display:grid;grid-template-columns:minmax(180px,220px) minmax(0,1fr);gap:12px;padding:14px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px}
+    .settings-config-explainer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 12px;padding:12px;background:rgba(255,255,255,.02);border:1px solid var(--border-subtle);border-radius:10px}
+    .settings-config-colhead{display:block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:4px}
+    .settings-config-colcopy{display:block;font-size:12px;color:var(--text-secondary);line-height:1.45}
     .settings-config-label{display:grid;gap:4px;align-content:start;min-width:0}
+    .settings-config-name-row{display:flex;align-items:center;gap:6px;min-width:0}
     .settings-config-name{font-size:13px;font-weight:600;color:var(--text-primary)}
     .settings-config-key{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);word-break:break-word}
+    .settings-help{position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border-radius:999px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);font-size:11px;font-weight:700;cursor:help;flex-shrink:0}
+    .settings-help:hover{color:var(--text-primary);border-color:var(--border-default)}
+    .settings-help[data-settings-tooltip]::before{content:'';position:absolute;top:calc(100% + 2px);left:50%;transform:translateX(-50%);border:5px solid transparent;border-bottom-color:#1a1a1e;pointer-events:none;opacity:0;transition:opacity .15s;z-index:1001}
+    .settings-help[data-settings-tooltip]::after{content:attr(data-settings-tooltip);position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%);background:#1a1a1e;color:#e4e4e7;font-size:11px;font-weight:400;padding:8px 12px;border-radius:6px;white-space:normal;width:240px;pointer-events:none;opacity:0;transition:opacity .15s;border:1px solid #333;z-index:1000;line-height:1.45;text-align:left;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+    .settings-help[data-settings-tooltip]:hover::before,.settings-help[data-settings-tooltip]:hover::after{opacity:1}
     .settings-source-badge{display:inline-flex;align-items:center;justify-content:center;width:fit-content;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary)}
     .settings-source-badge.source-default{background:rgba(148,163,184,.08);border-color:rgba(148,163,184,.22);color:#cbd5e1}
     .settings-source-badge.source-global{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.3);color:#93c5fd}
@@ -583,6 +596,7 @@
     .toggle-switch input:checked + .toggle-track::after{transform:translateX(16px)}
     .toggle-switch input:disabled + .toggle-track{opacity:.4;cursor:default}
     @media (max-width: 760px){
+      .settings-config-explainer{grid-template-columns:1fr}
       .settings-config-row{grid-template-columns:1fr}
       .settings-config-controls{grid-template-columns:1fr}
     }
