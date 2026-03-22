@@ -13,81 +13,118 @@ Fleet mode runs multiple agents in parallel on the same feature spec. Each agent
 
 ## How it works
 
-```
-feature-start 108 cc gg cx
-       ↓
-  ┌────┴────┐────────┐
-  cc        gg       cx        ← isolated worktrees
-  │         │         │
-  feature-do feature-do feature-do
-  │         │         │
-  └────┬────┘────────┘
-       ↓
-  feature-eval 108              ← compare implementations
-       ↓
-  feature-close 108 cx          ← merge the winner
-```
+<div className="my-8 flex justify-center">
+  <svg width="520" height="340" viewBox="0 0 520 340" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-lg">
+    {/* Start */}
+    <rect x="120" y="8" width="280" height="36" rx="8" fill="#d55f2a" fillOpacity="0.15" stroke="#d55f2a" strokeOpacity="0.4"/>
+    <text x="260" y="31" textAnchor="middle" fill="#d55f2a" fontSize="13" fontFamily="monospace">feature-start 108 cc gg cx</text>
+
+    {/* Arrow down */}
+    <line x1="260" y1="44" x2="260" y2="72" stroke="#555" strokeWidth="1.5"/>
+    <polygon points="260,78 255,72 265,72" fill="#555"/>
+
+    {/* Fan out lines */}
+    <line x1="260" y1="78" x2="100" y2="100" stroke="#555" strokeWidth="1"/>
+    <line x1="260" y1="78" x2="260" y2="100" stroke="#555" strokeWidth="1"/>
+    <line x1="260" y1="78" x2="420" y2="100" stroke="#555" strokeWidth="1"/>
+
+    {/* Agent boxes */}
+    <rect x="50" y="100" width="100" height="60" rx="8" fill="#3B82F6" fillOpacity="0.1" stroke="#3B82F6" strokeOpacity="0.4"/>
+    <text x="100" y="124" textAnchor="middle" fill="#3B82F6" fontSize="14" fontWeight="600" fontFamily="sans-serif">Claude</text>
+    <text x="100" y="146" textAnchor="middle" fill="#888" fontSize="11" fontFamily="monospace">feature-do</text>
+
+    <rect x="210" y="100" width="100" height="60" rx="8" fill="#8B5CF6" fillOpacity="0.1" stroke="#8B5CF6" strokeOpacity="0.4"/>
+    <text x="260" y="124" textAnchor="middle" fill="#8B5CF6" fontSize="14" fontWeight="600" fontFamily="sans-serif">Gemini</text>
+    <text x="260" y="146" textAnchor="middle" fill="#888" fontSize="11" fontFamily="monospace">feature-do</text>
+
+    <rect x="370" y="100" width="100" height="60" rx="8" fill="#22C55E" fillOpacity="0.1" stroke="#22C55E" strokeOpacity="0.4"/>
+    <text x="420" y="124" textAnchor="middle" fill="#22C55E" fontSize="14" fontWeight="600" fontFamily="sans-serif">Codex</text>
+    <text x="420" y="146" textAnchor="middle" fill="#888" fontSize="11" fontFamily="monospace">feature-do</text>
+
+    {/* Worktree label */}
+    <text x="510" y="135" textAnchor="end" fill="#666" fontSize="11" fontFamily="sans-serif" fontStyle="italic">isolated worktrees</text>
+
+    {/* Fan in lines */}
+    <line x1="100" y1="160" x2="260" y2="200" stroke="#555" strokeWidth="1"/>
+    <line x1="260" y1="160" x2="260" y2="200" stroke="#555" strokeWidth="1"/>
+    <line x1="420" y1="160" x2="260" y2="200" stroke="#555" strokeWidth="1"/>
+
+    {/* Arrow */}
+    <polygon points="260,206 255,200 265,200" fill="#555"/>
+
+    {/* Eval */}
+    <rect x="140" y="210" width="240" height="36" rx="8" fill="#0f7775" fillOpacity="0.15" stroke="#0f7775" strokeOpacity="0.4"/>
+    <text x="260" y="233" textAnchor="middle" fill="#0f7775" fontSize="13" fontFamily="monospace">feature-eval 108</text>
+    <text x="420" y="233" fill="#666" fontSize="11" fontFamily="sans-serif" fontStyle="italic">compare</text>
+
+    {/* Arrow down */}
+    <line x1="260" y1="246" x2="260" y2="274" stroke="#555" strokeWidth="1.5"/>
+    <polygon points="260,280 255,274 265,274" fill="#555"/>
+
+    {/* Close */}
+    <rect x="130" y="284" width="260" height="36" rx="8" fill="#d55f2a" fillOpacity="0.15" stroke="#d55f2a" strokeOpacity="0.4"/>
+    <text x="260" y="307" textAnchor="middle" fill="#d55f2a" fontSize="13" fontFamily="monospace">feature-close 108 cx</text>
+    <text x="430" y="307" fill="#666" fontSize="11" fontFamily="sans-serif" fontStyle="italic">merge winner</text>
+  </svg>
+</div>
 
 ## Full workflow
 
+All commands below work as both CLI (`aigon feature-start ...`) and slash commands (`/aigon:feature-start ...` or `/afs ...`). We show CLI form here — use whichever surface you prefer.
+
 ### 1. Create and prioritise
 
-```
-/aigon:feature-create dark-mode
-Add a dark/light mode toggle with system preference detection
-and localStorage persistence...
+```bash
+aigon feature-create dark-mode
+# → Describe the feature: dark/light mode toggle, CSS custom properties,
+#   system preference detection, localStorage persistence...
 
-/aigon:feature-prioritise dark-mode      # Assigns ID, e.g. #108
+aigon feature-prioritise dark-mode       # Assigns ID, e.g. #108
 ```
 
-### 2. Set up Fleet
+### 2. Start Fleet
 
 ```bash
-/aigon:feature-start 108 cc gg cx
+aigon feature-start 108 cc gg cx
 ```
 
-This creates three isolated worktrees:
-- `../<repo>-worktrees/feature-108-cc-dark-mode`
-- `../<repo>-worktrees/feature-108-gg-dark-mode`
-- `../<repo>-worktrees/feature-108-cx-dark-mode`
+This does everything in one step:
+- Creates three isolated worktrees (`../<repo>-worktrees/feature-108-cc-dark-mode`, etc.)
+- Creates a tmux session for each agent (`aigon-f108-cc`, `aigon-f108-gg`, `aigon-f108-cx`)
+- Opens terminal windows and launches each agent with `feature-do`
+- Each agent reads the same spec but builds independently in their own worktree
 
-Each gets its own branch, implementation log, and agent status file.
-
-### 3. Open agents
+The agents start implementing immediately. You can monitor progress in the dashboard or attach to any session:
 
 ```bash
-aigon feature-open 108 --all     # Opens all agents side-by-side
-aigon feature-open 108 cc        # Open a single agent
+tmux attach -t aigon-f108-cc     # Attach to Claude's session
 ```
 
-Terminal behaviour depends on your config:
-- **Warp**: Split panes with agents auto-started
-- **tmux**: Persistent named sessions (`aigon-f108-cc`, etc.) that survive terminal closes
-- **VS Code / Cursor**: Opens the folder; run the agent manually
-
-### 4. Implement
-
-Each agent runs `/aigon:feature-do 108` independently in their worktree. They read the same spec but build independently.
-
-### 5. Cross-agent review (optional)
-
-In each worktree, open a session with a different agent:
+If a session ends or crashes, re-open it:
 
 ```bash
-/aigon:feature-review 108
+aigon feature-open 108 cc        # Restart a specific agent
 ```
 
-### 6. Evaluate
+### 3. Cross-agent review (optional)
+
+In each worktree, open a session with a different agent to review the code:
+
+```bash
+aigon feature-review 108
+```
+
+### 4. Evaluate
 
 Back in the main repo:
 
 ```bash
-/aigon:feature-eval 108
+aigon feature-eval 108
 ```
 
 This moves the feature to `04-in-evaluation/` and creates a comparison template. Aigon warns if the evaluator shares a provider family with an implementer (use `--allow-same-model-judge` to suppress).
 
-### 7. Merge the winner
+### 5. Merge the winner
 
 ```bash
 aigon feature-close 108 cx              # Merge Codex's implementation
@@ -96,7 +133,7 @@ aigon feature-close 108 cx --adopt all  # Merge + review diffs from losers
 
 The `--adopt` flag prints diffs from losing agents after merging, so you can cherry-pick valuable improvements (extra tests, error handling, edge cases).
 
-### 8. Clean up
+### 6. Clean up
 
 ```bash
 aigon feature-cleanup 108               # Remove losing worktrees and branches
