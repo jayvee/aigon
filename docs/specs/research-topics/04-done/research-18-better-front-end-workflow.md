@@ -75,3 +75,34 @@ Each agent should independently investigate the landscape. Prioritise hands-on f
 2. **Latency and reliability** — a tool that takes 30s per screenshot won't speed up the loop
 3. **Integration effort** — how many lines of config/code to get it working with an AI coding agent?
 4. **The autonomous loop** — can the agent drive the whole cycle without human intervention?
+
+## Recommendation
+
+Based on user feedback, the initial approach to build custom Aigon orchestration (e.g., an `aigon frontend-verify` command) has been rejected. The user explicitly stated: *"I dont understand why Reinvent the wheel here. There are already solutions for this, so why are we building a whole lot of code to do browser verification when it already exists? Libraries exist; people have already done this. Go back to square one, do the research, and find out what I can just plug in and make work."*
+
+Therefore, the recommendation is to **reset the research focus**. We will avoid building custom features and instead evaluate existing, plug-and-play solutions (like Vercel's `agent-browser`, standard Playwright MCP, or `browser-use`) that require minimal to zero custom code. 
+
+## Output
+
+### Selected Features
+
+*(None selected. User requested to avoid building custom features and instead find existing plug-and-play solutions.)*
+
+### Feature Dependencies
+
+*(None)*
+
+### Not Selected
+
+- **frontend-verify-command**: Rejected. User does not want to build custom commands for functionality that already exists.
+- **feature-browser-verification-step**: Rejected.
+- **agent-browser-setup**: Rejected.
+- **frontend-verify-playwright-backend**: Rejected.
+- **ralph-loop-browser-verify**: Rejected.
+- **frontend-verify-accessibility**: Rejected.
+- **agent-browser-mcp-config**: Rejected.
+- **fleet-visual-comparison**: Rejected.
+- **frontend-verify-browserbase-adapter**: Rejected.
+- **playwright-video-recording**: Rejected.
+- **visual-regression-backstop**: Rejected.
+- **frontend-review-annotations**: Rejected.
