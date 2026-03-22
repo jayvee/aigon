@@ -3,6 +3,27 @@ Agent: cc
 
 ## Plan
 
+1. Add PostCommit hook to CC settings template (cc.json)
+2. Implement `security-scan-commit` command in misc.js
+3. Ensure install-agent hook merging handles PostCommit generically
+4. Write comprehensive security documentation (docs/security.md)
+5. Add `aigon doctor` check for GitHub secret scanning via gh CLI
+6. Add tests for all new functionality
+
 ## Progress
 
+- All 6 acceptance criteria implemented
+- 21/21 security tests pass (5 new tests added)
+- No test regressions (15 pre-existing failures unchanged)
+
 ## Decisions
+
+- **PostCommit vs PreCommit for CC hook**: Used PostCommit because Claude Code's PostCommit event fires after the commit is made. This means it warns rather than blocks, but crucially it runs outside git's mechanism — `--no-verify` cannot bypass it. The warning includes remediation steps (amend commit, rotate credential).
+
+- **Single security doc vs separate files**: Combined all GitHub setup guides (push protection, CodeQL, Dependabot) into a single `docs/security.md` that documents the full four-layer defense approach. This gives users one place to understand the complete security posture.
+
+- **Gitleaks commit scan command**: Used `gitleaks git --log-opts="-1"` for PostCommit scanning (scans the git log of the last commit) rather than the snapshot-based approach used by the merge gate. This is more appropriate for per-commit scanning — the merge gate scans the full diff vs default branch.
+
+- **Doctor check is non-fixable**: GitHub secret scanning requires admin access and cannot be auto-fixed by `aigon doctor --fix`. The check reports status and provides a direct link to the settings page.
+
+- **Configurable commit scan command**: Added `scannerDefs.gitleaks.commitCommand` as a separate config key from the merge-gate `command`, since they use different gitleaks modes (git log vs file scan).
