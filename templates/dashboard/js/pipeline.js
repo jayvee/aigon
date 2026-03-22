@@ -240,7 +240,7 @@
       const endedFlag = !!(agent.flags && agent.flags.sessionEnded);
       let icon, label, cls;
       if (status === 'implementing' && endedFlag) {
-        icon = '⚠'; label = 'Session ended'; cls = 'status-flagged';
+        icon = '◐'; label = 'Finished (unconfirmed)'; cls = 'status-flagged';
       } else if (status === 'implementing' && (tmuxRunning || drive)) {
         icon = '●'; label = drive ? 'Implementing' : 'Running'; cls = 'status-running';
       } else if (status === 'implementing' && !tmuxRunning) {
