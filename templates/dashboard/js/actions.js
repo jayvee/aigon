@@ -231,7 +231,21 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await requestAction(va.action, [id, ...(agentId ? [agentId] : [])], repoPath, btn);
       break;
     default:
-      await requestAction(va.action, [id, ...(agentId ? [agentId] : [])], repoPath, btn);
+      // Generic handler: agent-mode actions get agent picker + terminal session
+      if (va.mode === 'agent') {
+        const implAgents = (feature.agents || []).map(a => a.id);
+        const actionLabel = va.label || va.action.split('-').pop();
+        const picked = await showAgentPicker(id, feature.name, {
+          single: true,
+          title: 'Choose agent for ' + actionLabel,
+          submitLabel: actionLabel,
+          implementingAgents: implAgents
+        });
+        if (!picked || picked.length === 0) return;
+        await requestFeatureOpen(id, picked[0], repoPath, null, pipelineType, va.action.split('-').pop());
+      } else {
+        await requestAction(va.action, [id, ...(agentId ? [agentId] : [])], repoPath, btn);
+      }
   }
 }
 
