@@ -18,10 +18,10 @@
 }
 
 .dark {
-  /* Aigon warm editorial palette — dark mode (default) */
-  /* Foreground softened to ~rgba(255,255,255,0.8) — less punchy, easier on eyes (Linear-style) */
+  /* Aigon warm editorial palette — dark mode
+     Hierarchy: headings (90%) > body (72%) > muted (45%) */
   --color-fd-background: 225 14% 7%;
-  --color-fd-foreground: 38 10% 75%;
+  --color-fd-foreground: 38 8% 72%;
   --color-fd-muted: 38 6% 45%;
   --color-fd-muted-foreground: 38 6% 45%;
   --color-fd-card: 224 14% 11%;
@@ -52,6 +52,11 @@
   /* Warm shadows */
   --shadow-warm: 0 16px 40px rgba(35, 30, 20, 0.10);
   --shadow-warm-tight: 0 8px 18px rgba(35, 30, 20, 0.14);
+}
+
+/* Headings brighter than body text — clear visual hierarchy */
+.dark :is(h1, h2, h3, h4, h5, h6) {
+  color: hsl(38 12% 90%);
 }
 
 /* Fix heading anchor — always visible, not just on hover */
