@@ -92,7 +92,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           sidebar={{ defaultMenuCollapseLevel: 1 }}
           darkMode={true}
           nextThemes={{
-            defaultTheme: "dark",
+            defaultTheme: "light",
             attribute: "class",
             storageKey: "theme",
           }}
