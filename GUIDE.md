@@ -631,8 +631,7 @@ Add a `devProxy` section to your project's `.aigon/config.json`:
   "appId": "whenswell",
   "devProxy": {
     "command": "npm run dev",
-    "healthCheck": "/api/health",
-    "basePort": 3000
+    "healthCheck": "/api/health"
   }
 }
 ```
@@ -642,13 +641,12 @@ Add a `devProxy` section to your project's `.aigon/config.json`:
 | `appId` | The app domain (`whenswell.localhost`) | `package.json` name or directory name |
 | `devProxy.command` | How to start the dev server | `npm run dev` |
 | `devProxy.healthCheck` | Path to verify the server is up | `/` |
-| `devProxy.basePort` | Preferred starting port for allocation | `3000` |
+| `devProxy.basePort` | Preferred starting port for allocation | Auto-allocated via global registry |
 
 Set values with:
 
 ```bash
 aigon config set appId whenswell
-aigon config set devProxy.basePort 3100
 aigon config set devProxy.command "npm run dev"
 ```
 
@@ -680,7 +678,7 @@ $ aigon dev-server start
 The command:
 
 1. **Auto-detects context** — app ID (from `.aigon/config.json`, `package.json`, or dirname), agent ID and feature ID (from worktree path or branch name)
-2. **Allocates a port** — tries `basePort` + agent offset (cc=+1, gg=+2, cx=+3, cu=+4), scans upward if occupied
+2. **Allocates a port** — reads the base port auto-allocated in the global registry (`~/.aigon/ports.json`) + agent offset (cc=+1, gg=+2, cx=+3, cu=+4), scans upward if occupied
 3. **Writes `PORT=<allocated>` to `.env.local`**
 4. **Spawns the dev server** in the background using the `devProxy.command` from config (default: `npm run dev`), with `PORT` set in the environment
 5. **Redirects output** to a log file at `~/.aigon/dev-proxy/logs/{appId}-{serverId}.log`
@@ -773,7 +771,7 @@ Each app sets its own `appId`, so URLs are unique across projects:
 - `http://cc-119.whenswell.localhost` (whenswell project)
 - `http://cc-5.shopkeeper.localhost` (shopkeeper project)
 
-Ports are allocated dynamically and can't collide — if one app takes port 3000, the next app automatically gets the next available port. You can optionally set different `devProxy.basePort` values per app for predictable port ranges:
+Ports are allocated dynamically and can't collide. Aigon manages a global port registry at `~/.aigon/ports.json`. When you run `aigon init` or `aigon install-agent`, Aigon reserves a unique block of 10 ports for the repository (e.g., 3000 for app A, 3010 for app B). You can optionally override this by explicitly setting a base port:
 
 ```bash
 # In whenswell
