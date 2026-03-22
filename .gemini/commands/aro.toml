@@ -18,7 +18,7 @@ Open all Fleet research agents side-by-side in Warp terminal, each pre-loaded wi
 This command is for **Fleet mode research only**. It opens multiple terminal panes (one per agent) so you can run parallel research.
 
 **Prerequisites:**
-- Research must be set up in Fleet mode: `aigon research-setup <ID> cc gg cx`
+- Research must be set up in Fleet mode: `aigon research-start <ID> cc gg cx`
 - Findings files must exist in `docs/specs/research-topics/logs/`
 
 ## What It Does
@@ -32,7 +32,7 @@ This command is for **Fleet mode research only**. It opens multiple terminal pan
 
 After running:
 ```bash
-aigon research-setup 05 cc gg cx
+aigon research-start 05 cc gg cx
 ```
 
 You can open all agents side-by-side:
@@ -47,7 +47,7 @@ This opens Warp with 3 panes:
 
 ## Error Cases
 
-- **Not in Fleet mode**: Shows error with instructions to run `research-setup` with agents
+- **Not in Fleet mode**: Shows error with instructions to run `research-start` with agents
 - **Research not found**: Shows error if research ID doesn't exist or isn't in progress
 - **Agent not configured**: Lists which agents need to be installed
 

@@ -43,7 +43,7 @@ This assigns an ID and moves the spec from `01-inbox/` to `02-backlog/`. Note th
 ### A3: Setup (Drive mode)
 
 ```bash
-aigon feature-setup <ID>
+aigon feature-start <ID>
 ```
 
 This moves the spec to `03-in-progress/`, creates the branch, and creates the implementation log.

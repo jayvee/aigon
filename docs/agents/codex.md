@@ -17,7 +17,7 @@
 | `/prompts:aigon-feature-do <ID> [--autonomous]` | Implement feature; `--autonomous` runs iterative retry loop |
 | `/prompts:aigon-feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `/prompts:aigon-feature-review <ID>` | Code review with fixes by a different agent |
-| `/prompts:aigon-feature-submit` | (agent-only) Commit changes, write log, signal implementation complete |
+| `/prompts:aigon-feature-submit` | (you must run this) Commit changes, write log, signal implementation complete |
 | `/prompts:aigon-feature-close <ID> [agent]` | Merge and complete feature |
 | `/prompts:aigon-feature-autopilot <ID> [agents...]` | Fleet autopilot: setup + spawn + monitor + eval |
 | `/prompts:aigon-feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
@@ -30,7 +30,7 @@
 | `/prompts:aigon-research-start <ID> [agents...]` | Setup for Drive or Fleet research |
 | `/prompts:aigon-research-open <ID>` | Open all Fleet agents side-by-side for parallel research |
 | `/prompts:aigon-research-do <ID>` | Conduct research (write findings) |
-| `/prompts:aigon-research-submit` | (agent-only) Signal research findings are complete |
+| `/prompts:aigon-research-submit` | (you must run this) Signal research findings are complete |
 | `/prompts:aigon-research-close <ID>` | Complete research topic |
 
 ### Feedback Commands
@@ -50,6 +50,15 @@
 
 - **Drive mode**: `/prompts:aigon-feature-start <ID>` - Creates branch only, work in current directory
 - **Fleet mode**: `/prompts:aigon-feature-start <ID> <agents...>` - Creates worktrees for parallel implementation
+
+## Mandatory Lifecycle Commands
+
+A feature is NOT complete until you run these commands yourself:
+
+1. `aigon agent-status implementing` — when you start coding
+2. `aigon agent-status submitted` — after committing all code and log updates
+
+These are CLI commands you run directly — not slash commands, not auto-invoked. The `aigon agent-status` command writes state to the **main repo** (not the worktree), so you won't see state files locally. Just run the command and trust the output.
 
 ## Critical Rules
 

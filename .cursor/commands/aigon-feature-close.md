@@ -12,14 +12,14 @@ If no ID is provided, or the ID doesn't match an existing feature:
 ## Usage
 
 ### Drive mode (branch or worktree)
-If you used `feature-setup <name>` or `feature-setup <name> <agent>`:
+If you used `feature-start <name>` or `feature-start <name> <agent>`:
 ```bash
 aigon feature-close <name>
 ```
 The command auto-detects whether the feature uses a branch or a Drive worktree.
 
 ### Fleet mode
-If you used `feature-setup <name> cc gg cx cu`:
+If you used `feature-start <name> cc gg cx cu`:
 ```bash
 aigon feature-close <name> <winning-agent>
 ```
@@ -191,7 +191,7 @@ After the command completes, check the pipeline and suggest the most useful next
 
 3. Otherwise, check the pipeline:
    - List files in `./docs/specs/features/02-backlog/` matching `feature-*.md`
-   - If features exist in **backlog**: suggest setting up the next one — `/aigon-feature-setup <next-ID>`
+   - If features exist in **backlog**: suggest setting up the next one — `/aigon-feature-start <next-ID>`
    - If backlog is empty, list files in `./docs/specs/features/01-inbox/` matching `feature-*.md`
    - If features exist in **inbox**: suggest prioritising — `/aigon-feature-prioritise`
    - If both are empty: let the user know the pipeline is clear

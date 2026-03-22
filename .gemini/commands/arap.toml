@@ -35,7 +35,7 @@ aigon research-autopilot {{args}} cc gg cx --auto-synthesize
 
 ## What it does
 
-1. **Setup phase**: If no findings files exist, runs `research-setup` to create them
+1. **Setup phase**: If no findings files exist, runs `research-start` to create them
 2. **Spawn phase**: Creates a tmux session for each agent, running `research-do`
 3. **Monitor phase**: Polls agent findings files every 30s for `submitted` status, prints status table
 4. **Synthesize phase**: If `--auto-synthesize`, runs `research-synthesize` automatically; otherwise prints the command
