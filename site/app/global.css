@@ -54,13 +54,26 @@
   --shadow-warm-tight: 0 8px 18px rgba(35, 30, 20, 0.14);
 }
 
-/* Fix heading anchor hover — larger click target, stays visible longer */
-.prose h2 .fd-heading-anchor,
-.prose h3 .fd-heading-anchor,
-.prose h4 .fd-heading-anchor,
-[class*="heading"] a[href^="#"] {
-  padding: 0.25em 0.5em;
-  margin-left: -0.5em;
+/* Fix heading anchor — always visible, not just on hover */
+h2 > a[href^="#"],
+h3 > a[href^="#"],
+h4 > a[href^="#"],
+[data-heading] > a[href^="#"],
+.prose :is(h2, h3, h4) > a[href^="#"] {
+  opacity: 0.3 !important;
+  visibility: visible !important;
+  display: inline !important;
+  padding: 0 0.4em;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+h2:hover > a[href^="#"],
+h3:hover > a[href^="#"],
+h4:hover > a[href^="#"],
+[data-heading]:hover > a[href^="#"],
+.prose :is(h2, h3, h4):hover > a[href^="#"] {
+  opacity: 0.7 !important;
 }
 
 /* Landing page custom styles */
