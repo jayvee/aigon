@@ -98,6 +98,25 @@
       }
     }
 
+    async function requestAgentFlagAction(action, payload, btn) {
+      if (btn) { btn.disabled = true; btn.textContent = '...'; }
+      try {
+        const res = await fetch('/api/agent-flag-action', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(Object.assign({ action }, payload || {}))
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.error || ('HTTP ' + res.status));
+        showToast(body.message || 'Done');
+        await requestRefresh();
+      } catch (e) {
+        showToast('Action failed: ' + e.message, null, null, { error: true });
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = btn._origText || 'Run'; }
+      }
+    }
+
     // ── Session execution ─────────────────────────────────────────────────────
 
     async function executeNextAction(command, mode, repoPath, btn) {
@@ -155,4 +174,3 @@
         if (btn) { btn.disabled = false; btn.textContent = origText; }
       }
     }
-
