@@ -2478,6 +2478,82 @@ test('readManifest returns persisted manifest when file exists', () => {
     });
 });
 
+test('feature-prioritise/start/close cycle is stable across repeated runs with dashboard-style manifest reads', () => {
+    withTempDir(tempDir => {
+        const runCli = (args) => spawnSync(process.execPath, [path.resolve('aigon-cli.js'), ...args], {
+            cwd: tempDir,
+            encoding: 'utf8',
+            stdio: ['pipe', 'pipe', 'pipe'],
+        });
+
+        const combinedOutput = (result) => `${result.stdout || ''}${result.stderr || ''}`;
+        const assertCliOk = (result, label) => {
+            if (result.status !== 0) {
+                throw new Error(`${label} failed (exit=${result.status}): ${combinedOutput(result).slice(0, 600)}`);
+            }
+        };
+
+        runGit(['init'], tempDir);
+        runGit(['config', 'user.name', 'Aigon Test'], tempDir);
+        runGit(['config', 'user.email', 'test@example.com'], tempDir);
+        const defaultBranch = 'master';
+
+        const initResult = runCli(['init']);
+        assertCliOk(initResult, 'aigon init');
+        runGit(['checkout', '-B', 'master'], tempDir);
+
+        const stateDir = path.join(tempDir, '.aigon', 'state');
+        fs.mkdirSync(stateDir, { recursive: true });
+        fs.writeFileSync(path.join(stateDir, 'feature-01.json'), JSON.stringify({
+            id: '01',
+            type: 'feature',
+            name: 'stale',
+            stage: 'done',
+            agents: [],
+            winner: null,
+            pending: [],
+            events: [],
+        }, null, 2));
+
+        for (let i = 0; i < 5; i++) {
+            const slug = `manifest-cycle-${i}`;
+            assertCliOk(runCli(['feature-create', slug]), `feature-create ${slug}`);
+
+            const prioritiseResult = runCli(['feature-prioritise', slug]);
+            assertCliOk(prioritiseResult, `feature-prioritise ${slug}`);
+            const match = combinedOutput(prioritiseResult).match(/Assigned ID:\s*(\d+)/);
+            if (!match) throw new Error(`Could not parse assigned ID: ${combinedOutput(prioritiseResult).slice(0, 400)}`);
+            const unpaddedId = String(parseInt(match[1], 10));
+
+            const origCwd = process.cwd();
+            process.chdir(tempDir);
+            delete require.cache[require.resolve('./lib/manifest')];
+            const freshManifest = require('./lib/manifest');
+            for (let poll = 0; poll < 5; poll++) freshManifest.readManifest(unpaddedId);
+            const afterPoll = freshManifest.readManifest(unpaddedId);
+            process.chdir(origCwd);
+            delete require.cache[require.resolve('./lib/manifest')];
+
+            assert.strictEqual(afterPoll.stage, 'backlog', 'prioritise should always persist backlog stage');
+            assert.deepStrictEqual(afterPoll.pending, [], 'prioritise should clear stale pending operations');
+
+            const startResult = runCli(['feature-start', unpaddedId]);
+            const startOutput = combinedOutput(startResult);
+            assertCliOk(startResult, `feature-start ${unpaddedId}`);
+            assert.ok(!startOutput.includes('Invalid transition'), `feature-start should not hit invalid transition: ${startOutput.slice(0, 400)}`);
+
+            runGit(['commit', '--allow-empty', '-m', `test: cycle ${i}`], tempDir);
+            runGit(['checkout', defaultBranch], tempDir);
+
+            const closeResult = runCli(['feature-close', unpaddedId]);
+            const closeOutput = combinedOutput(closeResult);
+            if (closeResult.status !== 0 && !closeOutput.includes('push')) {
+                throw new Error(`feature-close ${unpaddedId} failed: ${closeOutput.slice(0, 500)}`);
+            }
+        }
+    });
+});
+
 // ---------------------------------------------------------------------------
 // Feature-start agent registration test
 // ---------------------------------------------------------------------------
