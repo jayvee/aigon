@@ -342,6 +342,17 @@
           const agentActions = validActions.filter(va => va.agentId === agent.id);
           innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType);
         });
+        // Synthesis session row (research only)
+        if (feature.synthesizeSession && feature.synthesizeSession.running) {
+          const synth = feature.synthesizeSession;
+          const synthAgent = AGENT_DISPLAY_NAMES[synth.agent] || synth.agent;
+          innerHtml += '<div class="kcard-agent agent-synth">' +
+            '<div class="kcard-agent-header"><span class="kcard-agent-name">Synthesize</span>' +
+            '<span class="kcard-agent-status status-implementing">● ' + escHtml(synthAgent) + '</span></div>' +
+            '<div class="kcard-agent-actions">' +
+            '<button class="btn btn-secondary kcard-synth-view" data-synth-session="' + escHtml(synth.session) + '">View</button>' +
+            '</div></div>';
+        }
         // Card-level actions (non-per-agent: close, eval, review, etc.)
         const cardActionsHtml = buildFeatureActions(feature, repoPath, pipelineType);
         if (cardActionsHtml) {
@@ -479,6 +490,18 @@
           const agentId = btn.getAttribute('data-flag-agent');
           const targetRepoPath = btn.getAttribute('data-flag-repo') || repoPath;
           await requestAgentFlagAction(action, { entityType, id, agentId, repoPath: targetRepoPath }, btn);
+        };
+      });
+
+      // Synthesis session view button
+      card.querySelectorAll('.kcard-synth-view').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const sessionName = btn.getAttribute('data-synth-session');
+          // Parse agent from session name: {repo}-r{id}-synthesize-{agent}
+          const synthMatch = sessionName.match(/synthesize-(\w+)$/);
+          const synthAgentId = synthMatch ? synthMatch[1] : 'cc';
+          await requestFeatureOpen(feature.id, synthAgentId, repoPath, btn, pipelineType, 'synthesize');
         };
       });
 
