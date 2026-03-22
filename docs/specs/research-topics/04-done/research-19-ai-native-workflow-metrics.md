@@ -93,3 +93,78 @@ The user has gathered initial ideas from multiple AI conversations, organized in
 - Metrics requiring IDE-level instrumentation (keystroke tracking, suggestion acceptance in editor)
 - General software quality metrics that don't change with AI (uptime, SLA compliance)
 - Building the actual metrics implementation (that's a separate feature)
+
+## Recommendation
+
+### The Central Finding
+
+AI increases individual output but organizational delivery metrics stay flat (Faros AI, 2025). Bottlenecks shift downstream — review queues grow 91%, bugs increase 9%, PR size grows 154%. Metrics that measure only generation speed are vanity metrics. The metrics that matter measure **end-to-end value delivery**: did the code ship, did it survive, did it cause rework?
+
+### Aigon's Unique Vantage Point
+
+No existing tool measures from the workflow orchestrator layer. GitHub/Cursor see IDE telemetry. GitClear sees code movement. DX sees surveys. Aigon uniquely sees: feature lifecycle (spec to completion), agent session timing and iterations, worktree lifecycle, state transitions, multi-agent coordination, and the full prompt-to-merge arc.
+
+### What Aigon Already Tracks
+
+Aigon already computes significant metrics from existing data:
+- `firstPassSuccess` — feature completed without entering `waiting` state
+- `autonomyRatio` / `waitCount` — flow interruption and agent independence
+- `costUsd` / `tokensPerLineChanged` — basic cost telemetry from Claude transcripts
+- `rework_thrashing` / `rework_fix_cascade` / `rework_scope_creep` — git-derived rework signals during implementation
+- Feature lifecycle timestamps (spec creation → implementing → submitted → done)
+
+### Strategic Direction
+
+Aigon should measure **whether AI output survives, not just whether it appears quickly**. The product thesis:
+1. Aigon measures whether AI output survives, not just whether it appears quickly
+2. Aigon measures orchestration friction, not just code generation
+3. Aigon connects agent cost, review burden, and rework into a single workflow view
+
+All three research agents (CC, GG, CX) converged on this framing. The key gap to fill is **post-merge durability** — persistence rate, edit distance, and post-merge rework — which no existing tool measures at the feature level.
+
+### Consensus Across Agents
+
+- Traditional metrics (DORA, velocity, LOC) are misleading for AI-native workflows
+- Persistence Rate / Code Survivability is the flagship differentiator
+- Agent commit attribution is the foundational prerequisite
+- A balanced scorecard beats a single productivity score
+- Free-tier metrics should be a growth lever with deeper quality/ROI metrics reserved for Pro
+
+### Deferred Metrics
+
+The following were researched but deferred from implementation:
+- **Amplification Factor / Developer Time Saved** — methodologically fraught; METR RCT found AI makes experienced devs 19% slower, while self-reports claim 20% faster (40pp perception gap)
+- **Mutation Score** — gold standard for test quality but computationally expensive; better as periodic audit
+- **AI Bug Density** — requires SAST/lint integration; strong published baselines (1.7x) but complex attribution
+- **Autonomous Resolution Rate** — more relevant to SRE/support than current feature workflows
+- **Review Quality / Engagement** — requires GitHub/GitLab API integration; deferred to later phase
+
+## Output
+
+### Selected Features
+
+| Feature Name | Description | Priority | Create Command |
+|--------------|-------------|----------|----------------|
+| metrics-git-attribution | Formalize agent commit attribution (Co-authored-by, agent email, git notes) as the foundation for all quality metrics | high | `aigon feature-create "metrics-git-attribution"` |
+| metrics-code-durability | Post-merge code analysis: persistence rate (T+7d, T+30d via git blame), edit distance (agent output vs merged code), and post-merge rework rate | high | `aigon feature-create "metrics-code-durability"` |
+| metrics-insights-scorecard | Aigon Pro dashboard combining existing metrics (first-pass success, autonomy ratio, wait burden, cost, rework) with new durability metrics into a balanced scorecard with trends and agent comparisons | high | `aigon feature-create "metrics-insights-scorecard"` |
+| metrics-session-telemetry | Normalize per-session telemetry across all agents into a common schema (turns, tool calls, tokens input/output, cost) for cross-agent comparison and accurate cost-per-durable-change | medium | `aigon feature-create "metrics-session-telemetry"` |
+
+### Feature Dependencies
+
+- `metrics-code-durability` depends on `metrics-git-attribution` (needs reliable AI/human attribution to measure persistence)
+- `metrics-insights-scorecard` depends on `metrics-code-durability` (durability is the flagship metric in the dashboard)
+- `metrics-insights-scorecard` can ship a v1 with existing metrics before durability lands
+- `metrics-session-telemetry` is independent but enriches `metrics-insights-scorecard` with cross-agent cost data
+
+### Not Selected
+
+- **metric-prompt-to-pr-latency**: Timestamps already exist in manifests; sub-phase decomposition is a view within the scorecard dashboard, not a standalone feature
+- **metric-first-pass-success**: Already implemented (`firstPassSuccess` in `lib/utils.js`)
+- **metric-flow-interruption**: Already implemented (`waitCount`, `autonomyRatio` in `lib/utils.js`)
+- **metric-rework-rate (implementation window)**: Already implemented (`rework_thrashing`, `rework_fix_cascade`, `rework_scope_creep` in `lib/git.js`)
+- **metric-review-engagement**: Requires external API integration; deferred
+- **metric-amplification-factor**: Methodologically fraught (METR study)
+- **metric-mutation-score**: Computationally expensive; periodic audit only
+- **metric-bug-density-segmented**: Requires SAST/lint integration
+- **metric-autonomous-resolution**: More SRE-focused than current workflows
