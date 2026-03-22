@@ -3,23 +3,25 @@ title: Aigon Documentation
 description: Spec-driven AI development and multi-agent orchestration.
 ---
 
-import { Cards } from 'nextra/components'
-
 Welcome to the Aigon documentation. Aigon is a CLI-first, vendor-independent workflow for research, feature delivery, and feedback loops across Claude, Gemini, Codex, and Cursor.
 
 ## Sections
 
-<Cards>
-  <Cards.Card title="Concepts" href="/docs/concepts">
-    Three workflows, four execution modes, and how Aigon organises your work.
-  </Cards.Card>
-  <Cards.Card title="Getting Started" href="/docs/getting-started">
-    Install Aigon and run your first feature loop in under five minutes.
-  </Cards.Card>
-  <Cards.Card title="Guides" href="/docs/guides">
-    Step-by-step walkthroughs for Drive, Fleet, Research, and Dashboard.
-  </Cards.Card>
-  <Cards.Card title="Reference" href="/docs/reference">
-    CLI commands, configuration, agents, and file structure.
-  </Cards.Card>
-</Cards>
+<div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <a href="/docs/concepts" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Concepts</h3>
+    <p className="text-sm text-gray-400 m-0">Three workflows, four execution modes, and how Aigon organises your work.</p>
+  </a>
+  <a href="/docs/getting-started" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Getting Started</h3>
+    <p className="text-sm text-gray-400 m-0">Install Aigon and run your first feature loop in under five minutes.</p>
+  </a>
+  <a href="/docs/guides" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Guides</h3>
+    <p className="text-sm text-gray-400 m-0">Step-by-step walkthroughs for Drive, Fleet, Research, and Dashboard.</p>
+  </a>
+  <a href="/docs/reference" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Reference</h3>
+    <p className="text-sm text-gray-400 m-0">CLI commands, configuration, agents, and file structure.</p>
+  </a>
+</div>
