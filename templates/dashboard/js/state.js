@@ -10,6 +10,7 @@
       lastStatuses: new Map(),
       collapsed: JSON.parse(localStorage.getItem(lsKey('collapsed')) || '{}'),
       hiddenRepos: JSON.parse(localStorage.getItem(lsKey('hiddenRepos')) || '[]'),
+      sidebarHidden: localStorage.getItem(lsKey('sidebarHidden')) === 'true',
       filter: localStorage.getItem(lsKey('filter')) || 'all',
       view: localStorage.getItem(lsKey('view')) || 'monitor',
       selectedRepo: localStorage.getItem(lsKey('selectedRepo')) || 'all',

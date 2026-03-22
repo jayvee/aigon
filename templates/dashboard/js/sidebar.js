@@ -149,6 +149,10 @@
       const mobile = document.getElementById('repo-select-mobile');
       const hadFocus = sidebar.contains(document.activeElement);
       sidebar.innerHTML = '';
+      const resizeHandle = document.createElement('div');
+      resizeHandle.className = 'sidebar-resize';
+      resizeHandle.id = 'sidebar-resize';
+      sidebar.appendChild(resizeHandle);
       mobile.innerHTML = '';
 
       // Sort repos: active agents first, then by most recent activity

@@ -76,8 +76,12 @@
       detailArea.scrollTop = scrollTop;
     }
 
-    async function fetchDashboardSettings(repoPath) {
-      const qs = repoPath ? ('?repoPath=' + encodeURIComponent(repoPath)) : '';
+    async function fetchDashboardSettings(repoPath, options) {
+      const opts = options || {};
+      const params = [];
+      if (opts.globalOnly) params.push('globalOnly=1');
+      else if (repoPath) params.push('repoPath=' + encodeURIComponent(repoPath));
+      const qs = params.length ? ('?' + params.join('&')) : '';
       const res = await fetch('/api/settings' + qs, { cache: 'no-store' });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
@@ -98,14 +102,20 @@
     function renderConfigEditorSection(area, settingsData, repoPath) {
       const section = document.createElement('div');
       section.className = 'settings-section';
+      const globalOnly = !!settingsData.globalOnly;
       const projectName = settingsData.projectName || (repoPath ? repoPath.split('/').filter(Boolean).pop() : 'selected repo');
-      section.innerHTML = '<h3>Configuration</h3><p>Global values come from <code>' + escHtml(settingsData.globalConfigPath || '~/.aigon/config.json') + '</code>. Project values are overrides for <strong>' + escHtml(projectName) + '</strong> from <code>' + escHtml(settingsData.projectConfigPath || '.aigon/config.json') + '</code>. Effective shows the final merged value Aigon will use for that repo.</p>';
+      if (globalOnly) {
+        section.innerHTML = '<h3>Global Defaults</h3><p>Editing <code>' + escHtml(settingsData.globalConfigPath || '~/.aigon/config.json') + '</code>. These defaults apply across repos unless a repo overrides them.</p>';
+      } else {
+        section.innerHTML = '<h3>Repo Overrides</h3><p>Editing overrides for <strong>' + escHtml(projectName) + '</strong> in <code>' + escHtml(settingsData.projectConfigPath || '.aigon/config.json') + '</code>. Global defaults from <code>' + escHtml(settingsData.globalConfigPath || '~/.aigon/config.json') + '</code> are shown as inherited context.</p>';
+      }
 
       const explainer = document.createElement('div');
       explainer.className = 'settings-config-explainer';
-      explainer.innerHTML =
-        '<div><span class="settings-config-colhead">Global default</span><span class="settings-config-colcopy">Applies across repos unless a project overrides it.</span></div>' +
-        '<div><span class="settings-config-colhead">Project override</span><span class="settings-config-colcopy">Applies only to <code>' + escHtml(projectName) + '</code>.</span></div>';
+      explainer.innerHTML = globalOnly
+        ? '<div><span class="settings-config-colhead">Global defaults</span><span class="settings-config-colcopy">The baseline Aigon will use across repos. Values come from built-in defaults plus any overrides in <code>' + escHtml(settingsData.globalConfigPath || '~/.aigon/config.json') + '</code>.</span></div>'
+        : '<div><span class="settings-config-colhead">Inherited global defaults</span><span class="settings-config-colcopy">Read-only baseline for this repo, resolved from built-in defaults plus <code>' + escHtml(settingsData.globalConfigPath || '~/.aigon/config.json') + '</code>.</span></div>' +
+          '<div><span class="settings-config-colhead">Repo override</span><span class="settings-config-colcopy">Applies only to <code>' + escHtml(projectName) + '</code>.</span></div>';
       section.appendChild(explainer);
 
       const rows = document.createElement('div');
@@ -131,12 +141,16 @@
         const controls = document.createElement('div');
         controls.className = 'settings-config-controls';
 
+        function renderValueText(value) {
+          return value == null ? 'Unset' : JSON.stringify(value);
+        }
+
         function renderInput(scope, value, disabledBySource) {
           const wrap = document.createElement('div');
           wrap.className = 'settings-config-input-wrap';
           const scopeLabel = document.createElement('div');
           scopeLabel.className = 'settings-config-scope';
-          scopeLabel.textContent = scope === 'global' ? 'Global default' : 'Project override';
+          scopeLabel.textContent = scope === 'global' ? (globalOnly ? 'Global default' : 'Inherited global default') : 'Project override';
           const inputSlot = document.createElement('div');
           inputSlot.className = 'settings-config-input';
 
@@ -195,20 +209,35 @@
               await updateDashboardSetting(scope, def.key, nextValue, repoPath);
               delete settingsUiState.drafts[draftKey];
               showToast('Updated ' + def.key + ' (' + scope + ')');
-              renderSettings();
+              render();
             } catch (e) {
               showToast('Update failed: ' + e.message, null, null, { error: true });
-              renderSettings();
+              render();
             }
           };
 
           wrap.appendChild(scopeLabel);
           wrap.appendChild(inputSlot);
+          const hint = document.createElement('div');
+          hint.className = 'settings-config-hint';
+          if (scope === 'global' && def.globalOverrideValue == null && def.builtInValue != null) {
+            hint.innerHTML = 'Using built-in default <code>' + escHtml(renderValueText(def.builtInValue)) + '</code>';
+          } else {
+            hint.innerHTML = '&nbsp;';
+            hint.setAttribute('aria-hidden', 'true');
+            hint.classList.add('settings-config-hint-empty');
+          }
+          wrap.appendChild(hint);
           return wrap;
         }
 
-        controls.appendChild(renderInput('global', def.globalValue, false));
-        controls.appendChild(renderInput('project', def.projectValue, false));
+        if (globalOnly) {
+          controls.classList.add('settings-config-controls-single');
+          controls.appendChild(renderInput('global', def.globalValue, false));
+        } else {
+          controls.appendChild(renderInput('global', def.globalValue, true));
+          controls.appendChild(renderInput('project', def.projectValue, false));
+        }
 
         const effective = document.createElement('div');
         effective.className = 'settings-effective';
@@ -225,7 +254,7 @@
 
       const rawSection = document.createElement('div');
       rawSection.className = 'settings-section';
-      rawSection.innerHTML = '<h3>Computed Config</h3><p>Read-only merged configuration used by command execution.</p>';
+      rawSection.innerHTML = '<h3>' + (globalOnly ? 'Global Config' : 'Computed Config') + '</h3><p>' + (globalOnly ? 'Read-only view of the current global configuration file.' : 'Read-only merged configuration used by command execution.') + '</p>';
       const pre = document.createElement('pre');
       pre.className = 'settings-json';
       pre.textContent = JSON.stringify(settingsData.effective || {}, null, 2);
@@ -428,8 +457,6 @@
       const scrollTop = captureDetailScrollTop();
       document.getElementById('monitor-summary').style.display = 'none';
       document.getElementById('repo-header').style.display = 'none';
-      document.getElementById('repo-sidebar').style.display = 'none';
-      document.getElementById('repo-select-mobile').style.display = 'none';
       setHealth();
       const data = state.data || {};
       document.getElementById('updated-text').textContent = 'Updated ' + relTime(data.generatedAt || new Date().toISOString());
@@ -445,21 +472,22 @@
 
       const intro = document.createElement('div');
       intro.className = 'settings-section';
-      intro.innerHTML = '<h3>Config</h3><p>Edit Aigon configuration files for the repo selected in the left sidebar. Dashboard UI preferences stay in Settings; this tab is only for values that affect Aigon behavior.</p>';
+      intro.innerHTML = '<h3>Config</h3><p>Select <strong>All Repos</strong> in the left sidebar to edit global defaults. Select a specific repo to edit only that repo\'s overrides.</p>';
       area.appendChild(intro);
 
       const targetRepo = getSettingsTargetRepo();
+      const globalOnly = state.selectedRepo === 'all';
 
       const configSection = document.createElement('div');
       configSection.className = 'settings-section';
       configSection.innerHTML = '<h3>Loading config...</h3>';
       area.appendChild(configSection);
 
-      fetchDashboardSettings(targetRepo)
+      fetchDashboardSettings(globalOnly ? '' : targetRepo, { globalOnly: globalOnly })
         .then(payload => {
           if (renderToken !== settingsUiState.renderToken) return;
           configSection.remove();
-          renderConfigEditorSection(area, payload, targetRepo);
+          renderConfigEditorSection(area, payload, globalOnly ? '' : targetRepo);
           restoreDetailScrollTop(scrollTop);
           restoreSettingsUiState(area);
         })

@@ -82,6 +82,20 @@
 
     // ── Main render dispatch ───────────────────────────────────────────────────
 
+    function viewUsesRepoSidebar(view) {
+      return view === 'monitor' || view === 'pipeline' || view === 'config';
+    }
+
+    function updateSidebarToggle() {
+      const btn = document.getElementById('sidebar-toggle-btn');
+      if (!btn) return;
+      const enabled = viewUsesRepoSidebar(state.view);
+      btn.style.display = enabled ? '' : 'none';
+      btn.setAttribute('aria-label', state.sidebarHidden ? 'Show sidebar' : 'Hide sidebar');
+      btn.setAttribute('title', state.sidebarHidden ? 'Show sidebar' : 'Hide sidebar');
+      btn.classList.toggle('is-hidden', !!state.sidebarHidden);
+    }
+
     async function renderSessions() {
       const container = document.getElementById('sessions-view');
       container.innerHTML = '<div style="padding:12px 0;color:var(--text-tertiary);font-size:12px">Loading sessions…</div>';
@@ -225,6 +239,7 @@
 
     function render() {
       updateViewTabs();
+      updateSidebarToggle();
       const sidebar = document.getElementById('repo-sidebar');
       const mobileSelect = document.getElementById('repo-select-mobile');
       if (state.view === 'settings') {
@@ -240,8 +255,8 @@
         document.getElementById('repo-header').style.display = 'none';
         renderSettings();
       } else if (state.view === 'config') {
-        sidebar.style.display = '';
-        mobileSelect.style.display = '';
+        sidebar.style.display = state.sidebarHidden ? 'none' : '';
+        mobileSelect.style.display = state.sidebarHidden ? 'none' : '';
         document.getElementById('settings-view').style.display = 'none';
         document.getElementById('config-view').style.display = '';
         document.getElementById('sessions-view').style.display = 'none';
@@ -250,7 +265,7 @@
         document.getElementById('logs-view').style.display = 'none';
         document.getElementById('console-view').style.display = 'none';
         const allRepos = ((state.data || {}).repos || []);
-        renderSidebar(allRepos, { includeAll: false });
+        renderSidebar(allRepos);
         const selectedRepoData = state.selectedRepo !== 'all' ? allRepos.find(r => r.path === state.selectedRepo) : null;
         renderRepoHeader(selectedRepoData);
         renderConfigView();
@@ -321,8 +336,8 @@
         renderConsole();
       } else {
         // monitor or pipeline — Alpine components handle the view content
-        sidebar.style.display = '';
-        mobileSelect.style.display = '';
+        sidebar.style.display = state.sidebarHidden ? 'none' : '';
+        mobileSelect.style.display = state.sidebarHidden ? 'none' : '';
         document.getElementById('settings-view').style.display = 'none';
         document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
@@ -389,6 +404,11 @@
 
     render();
     document.getElementById('refresh-btn').onclick = requestRefresh;
+    document.getElementById('sidebar-toggle-btn').onclick = () => {
+      state.sidebarHidden = !state.sidebarHidden;
+      localStorage.setItem(lsKey('sidebarHidden'), String(state.sidebarHidden));
+      render();
+    };
     setInterval(refreshTimestamps, TS_MS);
     setInterval(poll, POLL_MS);
     setTimeout(poll, 400);
