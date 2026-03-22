@@ -128,13 +128,13 @@ export default function HomePage() {
               href="/docs/getting-started"
               className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-aigon-orange text-white font-semibold hover:opacity-90 transition-opacity"
             >
-              Start in 5 minutes
+              Get started
             </Link>
             <Link
-              href="#workflow"
+              href="/docs"
               className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/10 font-semibold hover:border-aigon-orange/30 hover:bg-aigon-orange/5 transition-all"
             >
-              How it works
+              Read the docs &rarr;
             </Link>
           </div>
           <ul className="space-y-2 text-muted text-sm">
@@ -494,35 +494,77 @@ position of the menu bar`}</code>
         </div>
       </section>
 
+      {/* Docs CTA */}
+      <section className="py-20 border-t border-white/[0.06]" id="docs-cta">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <p className="text-xs font-bold tracking-[0.12em] uppercase text-aigon-orange mb-3">
+                Documentation
+              </p>
+              <h2 className="text-3xl font-bold font-[family-name:var(--font-heading)] mb-4">
+                Everything you need to get productive.
+              </h2>
+              <p className="text-muted mb-6">
+                Concepts, step-by-step guides for every mode, complete CLI reference,
+                and configuration details. Install in five minutes and run your first
+                feature loop.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/docs/getting-started"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-aigon-orange text-white font-semibold hover:opacity-90 transition-opacity"
+                >
+                  Get started
+                </Link>
+                <Link
+                  href="/docs"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/10 font-semibold hover:border-aigon-orange/30 hover:bg-aigon-orange/5 transition-all"
+                >
+                  Browse docs &rarr;
+                </Link>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Link href="/docs/concepts" className="block rounded-lg border border-gray-800 p-4 hover:border-gray-600 transition-colors no-underline">
+                <h3 className="text-sm font-semibold mb-1">Concepts</h3>
+                <p className="text-xs text-gray-400 m-0">Workflows, modes, surfaces</p>
+              </Link>
+              <Link href="/docs/guides/fleet-mode" className="block rounded-lg border border-gray-800 p-4 hover:border-gray-600 transition-colors no-underline">
+                <h3 className="text-sm font-semibold mb-1">Fleet Mode</h3>
+                <p className="text-xs text-gray-400 m-0">Competing agents guide</p>
+              </Link>
+              <Link href="/docs/reference/commands" className="block rounded-lg border border-gray-800 p-4 hover:border-gray-600 transition-colors no-underline">
+                <h3 className="text-sm font-semibold mb-1">CLI Reference</h3>
+                <p className="text-xs text-gray-400 m-0">Every command documented</p>
+              </Link>
+              <Link href="/docs/guides/dashboard" className="block rounded-lg border border-gray-800 p-4 hover:border-gray-600 transition-colors no-underline">
+                <h3 className="text-sm font-semibold mb-1">Dashboard</h3>
+                <p className="text-xs text-gray-400 m-0">Visual workflow UI</p>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Community */}
       <section className="py-16 border-t border-white/[0.06]" id="community">
         <div className="max-w-5xl mx-auto px-6 text-center">
-          <p className="text-xs font-bold tracking-[0.12em] uppercase text-aigon-orange mb-3">
-            Community
-          </p>
-          <h2 className="text-3xl font-bold font-[family-name:var(--font-heading)] mb-4">
-            Help shape the next generation of collaborative AI development.
+          <h2 className="text-2xl font-bold font-[family-name:var(--font-heading)] mb-4">
+            Open source. MIT licensed.
           </h2>
-          <p className="text-muted mb-8 max-w-2xl mx-auto">
+          <p className="text-muted mb-6 max-w-2xl mx-auto">
             Contribute specs, improve workflows, and share real-world patterns
-            for running multi-agent engineering teams effectively.
+            for running multi-agent engineering teams.
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <a
-              href="https://github.com/jayvee/aigon"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-aigon-orange text-white font-semibold hover:opacity-90 transition-opacity"
-            >
-              Star on GitHub
-            </a>
-            <Link
-              href="/docs/getting-started"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/10 font-semibold hover:border-aigon-orange/30 hover:bg-aigon-orange/5 transition-all"
-            >
-              Install guide
-            </Link>
-          </div>
+          <a
+            href="https://github.com/jayvee/aigon"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-aigon-orange text-white font-semibold hover:opacity-90 transition-opacity"
+          >
+            Star on GitHub
+          </a>
         </div>
       </section>
 
