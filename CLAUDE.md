@@ -89,6 +89,14 @@ Feature/research state lives in **two layers**:
 
 **Auto-update**: SessionStart hook `aigon check-version` detects version mismatch → runs `aigon update` → re-runs `install-agent` for all detected agents
 
+## Aigon Pro (`@aigon/pro`)
+- **Private repo**: `~/src/aigon-pro` (github.com/jayvee/aigon-pro)
+- **Integration point**: `lib/pro.js` — `require('@aigon/pro')` with graceful fallback
+- **What's there**: insights engine, amplification dashboard, AI coaching — all commercial AADE features
+- **Dev setup**: `cd ~/src/aigon-pro && npm link`, then `cd ~/src/aigon && npm link @aigon/pro`
+- **Cross-repo features**: specs live in aigon, but note Pro file changes in the spec; commit to both repos separately
+- See `docs/architecture.md` § "Aigon Pro" for full details
+
 ## Where To Add Code
 - **New command** → edit `lib/commands/{domain}.js` (pick the matching domain)
 - **Shared logic (2+ commands)** → `lib/{domain}.js` (most specific owner)
@@ -96,12 +104,13 @@ Feature/research state lives in **two layers**:
 - **Agent prompts or install content** → `templates/`; run `aigon install-agent cc` after
 - **Workflow state changes** → update command module AND affected templates together
 
-## Five Rules Before Editing
+## Six Rules Before Editing
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit
 4. **Restart after backend edits** — after changing any `lib/*.js`, restart `node aigon-cli.js dashboard`
 5. **Don't move spec files manually** — always use `aigon` CLI commands to transition state
+6. **Update docs when you change architecture** — if your changes add modules, change repo structure, introduce new patterns, or affect how agents should work, update `CLAUDE.md`, `docs/architecture.md`, and/or `AGENTS.md` in the same PR. Documentation is not a follow-up task — it ships with the code.
 
 ## Common Agent Mistakes
 - **Inventing args**: adding `cc` or `--autonomous` to a plain command → causes wrong mode (Drive vs Fleet)
