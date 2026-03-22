@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Hide the # anchor symbol on headings — show link icon on hover instead */
+.nextra-content :is(h2, h3, h4, h5, h6) .subheading-anchor {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.nextra-content :is(h2, h3, h4, h5, h6):hover .subheading-anchor {
+  opacity: 0.5;
+}
+
 /* Aigon custom colors */
 @theme {
   --color-aigon-orange: #d55f2a;

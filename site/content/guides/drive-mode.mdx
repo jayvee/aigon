@@ -1,77 +1,88 @@
 ---
 title: Drive Mode
-description: Hands-on implementation with a single agent.
+description: Hands-on implementation with a single agent — the default way to build features with Aigon.
 ---
 
-Drive mode gives you tight control over implementation — you and one agent, step by step. It's the default mode and the best starting point.
+Drive mode is the most common way to use Aigon. You work with one agent, guiding the implementation step by step. Think of it as pair programming where the agent writes the code while you steer direction, review decisions, and set the pace.
+
+This is the default mode — if you run `feature-start` without specifying multiple agents, you're in Drive mode. It's the right choice for most features and the best way to learn the Aigon workflow.
+
+**What happens in Drive mode:**
+- You describe a feature in natural language
+- The agent writes a spec with acceptance criteria
+- You start the feature — the agent codes in a branch or worktree
+- You review, give feedback, and the agent iterates
+- When you're happy, you close and merge
+
+Every step produces a paper trail: the spec, the implementation log, and the git history. Nothing is lost.
 
 ## When to use
 
-- You want to guide the implementation and review each step
-- The feature is straightforward and doesn't need competing approaches
-- You're learning the Aigon workflow
+- **Most features** — Drive is the default for a reason
+- **You want control** — you guide each step and review before merging
+- **Learning Aigon** — the simplest mode to understand the full lifecycle
+- **Solo work** — one agent, one branch, straightforward
+
+For important features where you want multiple perspectives, use [Fleet mode](/docs/guides/fleet-mode) instead.
 
 ## Workspace styles
 
 Drive mode supports two workspace styles:
 
-| Style | Command | Where code lives |
-|-------|---------|-----------------|
-| **Branch** | `feature-start 07` | Current repo, new branch |
-| **Worktree** | `feature-start 07 cc` | Isolated directory at `../<repo>-worktrees/` |
+| Style | Command | Where code lives | Best for |
+|-------|---------|-----------------|----------|
+| **Branch** | `aigon feature-start 07` | Current repo, new branch | Simple features, quick work |
+| **Worktree** | `aigon feature-start 07 cc` | Isolated directory at `../<repo>-worktrees/` | Parallel features, isolation |
 
-Use **branch** for simple features. Use **worktree** when you want isolation or are working on multiple features in parallel.
-
-## Lifecycle overview
-
-![Feature lifecycle](/img/aigon-feature-lifecycle.svg)
+Use **branch** when you're working on one thing at a time. Use **worktree** when you want to run multiple features in parallel — each gets its own directory, its own tmux session, and its own agent.
 
 ## Full workflow
+
+All commands below work as both CLI (`aigon feature-start ...`) and slash commands (`/aigon:feature-start ...`). We show both forms.
 
 ### 1. Create a feature
 
 ```
-/aigon:feature-create dark-mode
-Add a dark/light mode toggle to the site header.
-Use CSS custom properties. Default to system preference.
+aigon feature-create dark-mode
+# or: /aigon:feature-create dark-mode
+
+# Describe what you want:
+# Add a dark/light mode toggle to the site header.
+# Use CSS custom properties. Default to system preference.
 ```
 
-Describe what you want — the agent explores your codebase, then writes a detailed spec with acceptance criteria. The spec lands in `docs/specs/features/01-inbox/`.
+This is a conversation — you describe the feature, the agent asks clarifying questions, explores your codebase, and writes a detailed spec with acceptance criteria. The spec lands in `docs/specs/features/01-inbox/`.
 
 ### 2. Prioritise
 
 ```bash
-/aigon:feature-prioritise dark-mode
+aigon feature-prioritise dark-mode    # Assigns ID, e.g. #108
 ```
 
-Assigns a global ID (e.g., `#108`) and moves the spec to `02-backlog/`.
+Moves the spec to `02-backlog/` and assigns a global ID.
 
-### 3. Set up workspace
+### 3. Start
 
 ```bash
-# Branch mode (work in current repo)
-/aigon:feature-start 108
-
-# Worktree mode (isolated directory)
-/aigon:feature-start 108 cc
+aigon feature-start 108               # Branch mode
+aigon feature-start 108 cc            # Worktree mode (isolated)
 ```
 
-Both modes create an implementation log and write agent status to `.aigon/state/`.
+Creates the workspace, opens a tmux session, and launches the agent. The agent starts implementing immediately — reading the spec, creating tasks from acceptance criteria, and writing code.
 
-### 4. Implement
+### 4. Work
+
+The agent implements the feature. You can:
+- **Watch** — attach to the tmux session and observe
+- **Guide** — jump in and give feedback, redirect, or refine
+- **Wait** — let the agent work and check back when it signals `submitted`
+
+### 5. Review (optional)
+
+Open a session with a different agent for a cross-agent code review:
 
 ```bash
-/aigon:feature-do 108
-```
-
-The agent reads the spec, creates tasks from the acceptance criteria, and implements the feature. It auto-signals status transitions (`implementing` → `waiting`) and fills out the implementation log.
-
-### 5. Cross-agent review (optional)
-
-Open a session with a different agent and run:
-
-```bash
-/aigon:feature-review 108
+aigon feature-review 108
 ```
 
 The reviewing agent reads the spec, reviews `git diff main...HEAD`, and commits targeted fixes with `fix(review):` prefix.
@@ -79,17 +90,18 @@ The reviewing agent reads the spec, reviews `git diff main...HEAD`, and commits 
 ### 6. Close
 
 ```bash
-/aigon:feature-close 108
+aigon feature-close 108
 ```
 
-Merges the branch to main and archives the log. For worktree mode, the agent is auto-detected.
+Merges the branch to main, moves the spec to `05-done/`, and archives the implementation log. For worktree mode, the agent is auto-detected and the worktree is cleaned up.
 
 ## Fast-track
 
-Skip the full loop when you just want to go:
+Skip the full loop when you know exactly what you want:
 
 ```bash
-/aigon:feature-now dark-mode
+aigon feature-now dark-mode
+# Describe the feature...
 ```
 
-Creates the spec, sets up the workspace, and starts implementation in one command.
+Creates the spec, prioritises, sets up the workspace, and starts implementation — all in one command. The agent still writes a full spec, but the lifecycle is compressed.
