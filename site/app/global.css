@@ -18,15 +18,15 @@
 }
 
 .dark {
-  /* Aigon warm editorial palette — dark mode
-     fd-foreground controls headings (bright). Body text dimmed separately below. */
-  --color-fd-background: 225 14% 7%;
-  --color-fd-foreground: 38 12% 92%;
-  --color-fd-muted: 38 6% 45%;
-  --color-fd-muted-foreground: 38 6% 45%;
-  --color-fd-card: 224 14% 11%;
-  --color-fd-popover: 224 14% 11%;
-  --color-fd-border: 30 10% 40% / 0.15;
+  /* Linear-style dark mode: soft off-white text, not gray, not blinding.
+     Headings and body same brightness. ~rgba(255,255,255,0.85) */
+  --color-fd-background: 228 12% 8%;
+  --color-fd-foreground: 0 0% 85%;
+  --color-fd-muted: 0 0% 50%;
+  --color-fd-muted-foreground: 0 0% 50%;
+  --color-fd-card: 228 12% 11%;
+  --color-fd-popover: 228 12% 11%;
+  --color-fd-border: 0 0% 100% / 0.08;
   --color-fd-accent-foreground: 20 69% 55%;
   --color-fd-accent: 20 69% 55% / 0.12;
   --color-fd-primary: 20 69% 55%;
@@ -54,16 +54,10 @@
   --shadow-warm-tight: 0 8px 18px rgba(35, 30, 20, 0.14);
 }
 
-/* Body text softer than headings — headings use fd-foreground (92%), body dimmed to 72% */
-.dark .prose {
-  --tw-prose-body: hsl(38 8% 72%);
-}
-
-.dark p,
-.dark li,
-.dark td,
-.dark .prose > :not(h1, h2, h3, h4, h5, h6, pre, table, .not-prose) {
-  color: hsl(38 8% 72%);
+/* Force text color — Tailwind v4 defaults to pure white in dark mode,
+   ignoring fd-foreground. Override at html level. */
+.dark, .dark body {
+  color: hsl(0 0% 85%) !important;
 }
 
 /* Fix heading anchor — always visible, not just on hover */
