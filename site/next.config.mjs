@@ -1,9 +1,12 @@
-import { createMDX } from "fumadocs-mdx/next";
+import nextra from "nextra";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const withMDX = createMDX();
+
+const withNextra = nextra({
+  contentDirBasePath: "/docs",
+});
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -11,4 +14,4 @@ const config = {
   outputFileTracingRoot: resolve(__dirname),
 };
 
-export default withMDX(config);
+export default withNextra(config);

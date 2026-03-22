@@ -116,7 +116,7 @@ export default function HomePage() {
             <br />
             Orchestrate any agent &mdash; or all of them at once.
           </h1>
-          <p className="text-lg text-fd-muted-foreground max-w-3xl mb-8">
+          <p className="text-lg text-muted max-w-3xl mb-8">
             Aigon captures the full product lifecycle &mdash; research, feature
             delivery, and user feedback &mdash; in specs and logs committed
             directly to your repository. Run one agent with tight control, or
@@ -132,12 +132,12 @@ export default function HomePage() {
             </Link>
             <Link
               href="#workflow"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/10 text-fd-foreground font-semibold hover:border-aigon-orange/30 hover:bg-aigon-orange/5 transition-all"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/10 font-semibold hover:border-aigon-orange/30 hover:bg-aigon-orange/5 transition-all"
             >
               How it works
             </Link>
           </div>
-          <ul className="space-y-2 text-fd-muted-foreground text-sm">
+          <ul className="space-y-2 text-muted text-sm">
             <li>
               Work visually with a Kanban board, drop to the CLI for scripting,
               or drive from slash commands inside your agent
@@ -157,7 +157,7 @@ export default function HomePage() {
 
         {/* Fleet showcase */}
         <div className="max-w-6xl mx-auto px-6 mt-16">
-          <p className="text-sm text-fd-muted-foreground mb-8 text-center">
+          <p className="text-sm text-muted mb-8 text-center">
             Codex and Gemini compete, Claude Code evaluates &mdash; best
             implementation wins.
           </p>
@@ -177,7 +177,7 @@ export default function HomePage() {
               },
             ].map((step) => (
               <div key={step.label}>
-                <p className="text-sm text-fd-muted-foreground mb-3 text-center">
+                <p className="text-sm text-muted mb-3 text-center">
                   {step.label}
                 </p>
                 <div className="rounded-xl landing-image overflow-hidden">
@@ -211,7 +211,7 @@ export default function HomePage() {
                 className="rounded-xl p-6 landing-card"
               >
                 <h3 className="font-semibold mb-2">{card.title}</h3>
-                <p className="text-sm text-fd-muted-foreground">{card.text}</p>
+                <p className="text-sm text-muted">{card.text}</p>
               </article>
             ))}
           </div>
@@ -251,7 +251,7 @@ export default function HomePage() {
                   {card.tag}
                 </p>
                 <h3 className="font-semibold mb-2">{card.title}</h3>
-                <p className="text-sm text-fd-muted-foreground mb-3">
+                <p className="text-sm text-muted mb-3">
                   {card.text}
                 </p>
                 <pre className="text-xs bg-aigon-terminal text-aigon-terminal-text p-3 rounded-lg overflow-x-auto">
@@ -278,23 +278,23 @@ export default function HomePage() {
             <span className="px-3 py-1.5 rounded-lg bg-aigon-teal/10 border border-aigon-teal text-aigon-teal">
               Research
             </span>
-            <span className="text-fd-muted-foreground">&rarr;</span>
+            <span className="text-muted">&rarr;</span>
             <span className="px-3 py-1.5 rounded-lg bg-aigon-orange/10 border border-aigon-orange text-aigon-orange">
               Features
             </span>
-            <span className="text-fd-muted-foreground">&rarr;</span>
+            <span className="text-muted">&rarr;</span>
             <span className="px-3 py-1.5 rounded-lg bg-aigon-orange/10 border border-aigon-orange/30 text-aigon-orange">
               Build
             </span>
-            <span className="text-fd-muted-foreground">&rarr;</span>
+            <span className="text-muted">&rarr;</span>
             <span className="px-3 py-1.5 rounded-lg bg-aigon-orange/10 border border-aigon-orange/30 text-aigon-orange">
               Evaluate
             </span>
-            <span className="text-fd-muted-foreground">&rarr;</span>
+            <span className="text-muted">&rarr;</span>
             <span className="px-3 py-1.5 rounded-lg bg-aigon-teal/10 border border-aigon-teal text-aigon-teal">
               Ship
             </span>
-            <span className="text-fd-muted-foreground">&larr;</span>
+            <span className="text-muted">&larr;</span>
             <span className="px-3 py-1.5 rounded-lg bg-aigon-blue/10 border border-aigon-blue text-aigon-blue">
               Feedback
             </span>
@@ -318,13 +318,13 @@ export default function HomePage() {
                     {card.tag}
                   </p>
                   <h3 className="font-semibold mb-2">{card.title}</h3>
-                  <p className="text-sm text-fd-muted-foreground mb-3">
+                  <p className="text-sm text-muted mb-3">
                     {card.text}
                   </p>
                   <pre className="text-xs bg-aigon-terminal text-aigon-terminal-text p-3 rounded-lg overflow-x-auto mb-3">
                     <code>{card.code}</code>
                   </pre>
-                  <p className="text-xs text-fd-muted-foreground">
+                  <p className="text-xs text-muted">
                     Outcome: {card.outcome}
                   </p>
                 </article>
@@ -343,7 +343,7 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold font-[family-name:var(--font-heading)] mb-4">
             A Kanban board for spec-driven development.
           </h2>
-          <p className="text-fd-muted-foreground mb-8 max-w-3xl">
+          <p className="text-muted mb-8 max-w-3xl">
             The Aigon Dashboard is the visual way into your spec-driven
             workflow. Same pipeline, same agents &mdash; but managed through a
             browser UI instead of CLI commands.
@@ -356,7 +356,7 @@ export default function HomePage() {
                 Visual Workflow
               </p>
               <h3 className="font-semibold mb-2">Drag specs from inbox to done</h3>
-              <p className="text-sm text-fd-muted-foreground">
+              <p className="text-sm text-muted">
                 Move features through your development pipeline with a familiar
                 Kanban interface.
               </p>
@@ -368,7 +368,7 @@ export default function HomePage() {
               <h3 className="font-semibold mb-2">
                 See every agent, every repo, at a glance
               </h3>
-              <p className="text-sm text-fd-muted-foreground">
+              <p className="text-sm text-muted">
                 Running sessions, attention items, and recent events across all
                 your repositories.
               </p>
@@ -380,7 +380,7 @@ export default function HomePage() {
               <h3 className="font-semibold mb-2">
                 Throughput, cycle time, agent performance
               </h3>
-              <p className="text-sm text-fd-muted-foreground">
+              <p className="text-sm text-muted">
                 Know which agents ship fastest, how your cycle time trends, and
                 whether your pace is accelerating.
               </p>
@@ -392,7 +392,7 @@ export default function HomePage() {
               <h3 className="font-semibold mb-2">
                 Monitor agents from your phone
               </h3>
-              <p className="text-sm text-fd-muted-foreground">
+              <p className="text-sm text-muted">
                 Open the dashboard on your phone over LAN, or use Tailscale to
                 check on agents from anywhere.
               </p>
@@ -420,7 +420,7 @@ cd /path/to/your/project
 aigon init
 aigon install-agent cc gg cx cu`}</code>
             </pre>
-            <p className="text-sm text-fd-muted-foreground mb-2">
+            <p className="text-sm text-muted mb-2">
               Then, in Claude Code:
             </p>
             <pre className="text-sm bg-aigon-terminal text-aigon-terminal-text p-4 rounded-lg overflow-x-auto">
@@ -436,7 +436,7 @@ position of the menu bar`}</code>
               className="block rounded-xl p-6 landing-card hover:border-aigon-orange/30 transition-all"
             >
               <h3 className="font-semibold mb-1">Getting Started</h3>
-              <p className="text-sm text-fd-muted-foreground">
+              <p className="text-sm text-muted">
                 Install, initialize, and run your first feature loop.
               </p>
             </Link>
@@ -445,17 +445,17 @@ position of the menu bar`}</code>
               className="block rounded-xl p-6 landing-card hover:border-aigon-orange/30 transition-all"
             >
               <h3 className="font-semibold mb-1">Workflow Guide</h3>
-              <p className="text-sm text-fd-muted-foreground">
+              <p className="text-sm text-muted">
                 Research, specs, implementation, evaluation, and completion
                 flow.
               </p>
             </Link>
             <Link
-              href="/docs/reference/cli-commands"
+              href="/docs/reference/commands"
               className="block rounded-xl p-6 landing-card hover:border-aigon-orange/30 transition-all"
             >
               <h3 className="font-semibold mb-1">CLI Reference</h3>
-              <p className="text-sm text-fd-muted-foreground">
+              <p className="text-sm text-muted">
                 Complete command reference with examples.
               </p>
             </Link>
@@ -473,7 +473,7 @@ position of the menu bar`}</code>
             <h2 className="text-3xl font-bold font-[family-name:var(--font-heading)] mb-4">
               Open source, git-native, and intentionally simple.
             </h2>
-            <p className="text-fd-muted-foreground">
+            <p className="text-muted">
               Aigon is built for teams who want disciplined AI-assisted
               engineering, not opaque automation.
             </p>
@@ -485,7 +485,7 @@ position of the menu bar`}</code>
                 className="border-l-2 border-aigon-orange/40 pl-4"
               >
                 <strong className="block mb-0.5">{p.title}</strong>
-                <span className="text-sm text-fd-muted-foreground">
+                <span className="text-sm text-muted">
                   {p.text}
                 </span>
               </li>
@@ -503,7 +503,7 @@ position of the menu bar`}</code>
           <h2 className="text-3xl font-bold font-[family-name:var(--font-heading)] mb-4">
             Help shape the next generation of collaborative AI development.
           </h2>
-          <p className="text-fd-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-muted mb-8 max-w-2xl mx-auto">
             Contribute specs, improve workflows, and share real-world patterns
             for running multi-agent engineering teams effectively.
           </p>
@@ -518,7 +518,7 @@ position of the menu bar`}</code>
             </a>
             <Link
               href="/docs/getting-started"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/10 text-fd-foreground font-semibold hover:border-aigon-orange/30 hover:bg-aigon-orange/5 transition-all"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/10 font-semibold hover:border-aigon-orange/30 hover:bg-aigon-orange/5 transition-all"
             >
               Install guide
             </Link>
@@ -528,7 +528,7 @@ position of the menu bar`}</code>
 
       {/* Footer */}
       <footer className="py-8 border-t border-white/[0.06]">
-        <div className="max-w-5xl mx-auto px-6 flex flex-wrap items-center justify-between gap-4 text-sm text-fd-muted-foreground">
+        <div className="max-w-5xl mx-auto px-6 flex flex-wrap items-center justify-between gap-4 text-sm text-muted">
           <span>Aigon</span>
           <span>
             The spec-driven orchestration layer for AI development.
