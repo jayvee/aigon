@@ -104,7 +104,7 @@ const principles = [
 
 export default function HomePage() {
   return (
-    <main className="landing-gradient-dark dark:landing-gradient-dark">
+    <main className="bg-[#111] text-gray-200 min-h-screen">
       {/* Hero */}
       <section className="py-20 md:py-28">
         <div className="max-w-5xl mx-auto px-6">
