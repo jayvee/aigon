@@ -52,9 +52,9 @@ This command is for agents to conduct research after setup is complete.
 
 ## When You're Done
 
-**If Fleet mode (findings file exists):**
-
 **THIS IS THE FINAL STEP. YOU MUST COMPLETE IT.**
+
+**If Fleet mode (findings file exists):**
 
 1. **Commit your findings file:**
    ```bash
@@ -64,16 +64,10 @@ This command is for agents to conduct research after setup is complete.
 
 2. **Signal completion** so the dashboard knows you're done:
    ```bash
-   aigon research-submit
+   aigon research-submit {{ARG_SYNTAX}}
    ```
 
-3. **Commit the status update:**
-   ```bash
-   git add docs/specs/research-topics/logs/
-   git commit -m "docs: mark research submitted"
-   ```
-
-4. **STOP** — do NOT run `aigon research-close`. The user will synthesize all agents' findings.
+3. **STAY in the session.** The user may want to review your findings and ask follow-up questions. Do NOT run `aigon research-close` — the user will synthesize all agents' findings.
 
 **If Drive mode (no findings file):**
 - Run `aigon research-close {{ARG_SYNTAX}}` to complete the research
