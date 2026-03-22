@@ -168,11 +168,23 @@ Update it with:
 
 **Then commit the log file.**
 
+## Step 6.5: Start the dev server
+
+After committing, start the dev server so your implementation is available for preview:
+
+```bash
+aigon dev-server start
+```
+
+This allocates a port, starts the project's dev server in the background, and prints the URL. Leave it running — the evaluator or user will use it to verify your work.
+
+> **NEVER run `npm run dev` or `next dev` directly.** Always use `aigon dev-server start` for correct port allocation.
+
 ## Step 7: Signal completion
 
 **THIS IS THE FINAL STEP. YOU MUST COMPLETE IT. DO NOT SKIP THIS STEP.**
 
-After committing your code (Step 5) and log (Step 6), run this command **immediately**:
+After committing your code (Step 5), log (Step 6), and starting the dev server (Step 6.5), run this command **immediately**:
 
 ```bash
 aigon agent-status submitted
