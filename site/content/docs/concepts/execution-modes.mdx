@@ -20,7 +20,8 @@ Aigon uses four modes across two axes: number of agents and level of autonomy.
 
 - Best for: most features, learning the workflow, tight control
 - Workspace: branch or worktree
-- Command: `/aigon:feature-do 07`
+- Slash command: `/aigon:feature-start 07`
+- CLI: `aigon feature-start 07`
 
 ## Fleet
 
@@ -28,7 +29,8 @@ Aigon uses four modes across two axes: number of agents and level of autonomy.
 
 - Best for: important features where you want the best approach
 - Workspace: one worktree per agent
-- Command: `aigon feature-start 07 cc gg cx`
+- Slash command: `/afs 07 cc gg cx`
+- CLI: `aigon feature-start 07 cc gg cx`
 
 ## Autopilot
 
@@ -36,7 +38,8 @@ Aigon uses four modes across two axes: number of agents and level of autonomy.
 
 - Best for: well-scoped features with clear validation checks
 - Workspace: branch or worktree
-- Command: `aigon feature-do 07 --autonomous`
+- Slash command: `/aigon:feature-do 07 --autonomous`
+- CLI: `aigon feature-do 07 --autonomous`
 
 ## Swarm
 
@@ -44,7 +47,7 @@ Aigon uses four modes across two axes: number of agents and level of autonomy.
 
 - Best for: maximum coverage with minimal supervision
 - Workspace: one worktree per agent
-- Command: `aigon feature-start 07 cc gg --autonomous --auto-submit`
+- CLI: `aigon feature-start 07 cc gg --autonomous --auto-submit`
 
 ## Mode selection guide
 

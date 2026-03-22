@@ -54,6 +54,15 @@
   --shadow-warm-tight: 0 8px 18px rgba(35, 30, 20, 0.14);
 }
 
+/* Fix heading anchor hover — larger click target, stays visible longer */
+.prose h2 .fd-heading-anchor,
+.prose h3 .fd-heading-anchor,
+.prose h4 .fd-heading-anchor,
+[class*="heading"] a[href^="#"] {
+  padding: 0.25em 0.5em;
+  margin-left: -0.5em;
+}
+
 /* Landing page custom styles */
 .landing-gradient-dark {
   background:
