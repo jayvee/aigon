@@ -92,9 +92,9 @@ aigon ${name}${argHints ? ` ${argHints}` : ''}
 
     if (aliases) {
         mdx += `
-## Aliases
+## Shortcuts
 
-${aliases.split(', ').map(a => `- \`${a}\``).join('\n')}
+${aliases.split(', ').map(a => `- \`/${a}\` (slash command) · \`aigon ${a}\` (CLI)`).join('\n')}
 `;
     }
 
