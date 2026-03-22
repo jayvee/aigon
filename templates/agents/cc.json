@@ -90,18 +90,6 @@
               }
             ]
           }
-        ],
-        "PostCommit": [
-          {
-            "matcher": ".*",
-            "hooks": [
-              {
-                "type": "command",
-                "command": "aigon security-scan-commit",
-                "timeout": 60
-              }
-            ]
-          }
         ]
       }
     }
