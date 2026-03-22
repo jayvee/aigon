@@ -31,7 +31,7 @@ The dashboard and CLI are interchangeable views of the same state. Any action yo
 
 ## Pipeline
 
-Drag features through the Kanban board: inbox → backlog → in-progress → evaluation → done.
+Drag features through the pipeline: inbox → backlog → in-progress → in-evaluation → done.
 
 ![Pipeline view](/img/aigon-dashboard-kanban.png)
 
@@ -91,7 +91,9 @@ aigon dashboard open           # Open in browser
 
 The dashboard binds to `0.0.0.0` by default, making it accessible from any device on the local network.
 
-![Mobile dashboard](/img/aigon-dashboard-mobile.png)
+<div className="max-w-sm mx-auto">
+  <img src="/img/aigon-dashboard-mobile-peak.png" alt="Dashboard on mobile" className="rounded-xl landing-image" />
+</div>
 
 - **Same WiFi**: Open `http://<mac-ip>:4100` in a browser
 - **Outside LAN**: Install [Tailscale](https://tailscale.com/) on both devices, then use `http://<tailscale-ip>:4100`
