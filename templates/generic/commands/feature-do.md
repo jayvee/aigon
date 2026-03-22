@@ -170,15 +170,9 @@ Update it with:
 
 ## Step 6.5: Start the dev server
 
-After committing, start the dev server so your implementation is available for preview:
+**You MUST start the dev server before signalling completion.** The evaluator and user need a running preview of your implementation.
 
-```bash
-aigon dev-server start
-```
-
-This allocates a port, starts the project's dev server in the background, and prints the URL. Leave it running — the evaluator or user will use it to verify your work.
-
-> **NEVER run `npm run dev` or `next dev` directly.** Always use `aigon dev-server start` for correct port allocation.
+Start the dev server and leave it running.
 
 ## Step 7: Signal completion
 
