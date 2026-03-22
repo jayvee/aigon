@@ -40,7 +40,8 @@ Each iteration gets a fresh context window but can see the history of previous a
 
 ```bash
 # Create and set up the feature first
-/aigon:feature-create "fix-pagination"
+/aigon:feature-create fix-pagination
+# → Describe the bug: pagination shows wrong page count after filtering...
 /aigon:feature-prioritise fix-pagination
 /aigon:feature-start 42
 

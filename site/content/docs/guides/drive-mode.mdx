@@ -28,13 +28,15 @@ Use **branch** for simple features. Use **worktree** when you want isolation or 
 
 ## Full workflow
 
-### 1. Create a spec
+### 1. Create a feature
 
-```bash
-/aigon:feature-create "Dark Mode"
+```
+/aigon:feature-create dark-mode
+Add a dark/light mode toggle to the site header.
+Use CSS custom properties. Default to system preference.
 ```
 
-The agent explores your codebase before writing the spec — understanding existing architecture, patterns, and constraints. The spec lands in `docs/specs/features/01-inbox/`.
+Describe what you want — the agent explores your codebase, then writes a detailed spec with acceptance criteria. The spec lands in `docs/specs/features/01-inbox/`.
 
 ### 2. Prioritise
 
