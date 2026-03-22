@@ -60,26 +60,21 @@
   color: hsl(0 0% 85%) !important;
 }
 
-/* Fix heading anchor — always visible, not just on hover */
-h2 > a[href^="#"],
-h3 > a[href^="#"],
-h4 > a[href^="#"],
-[data-heading] > a[href^="#"],
-.prose :is(h2, h3, h4) > a[href^="#"] {
-  opacity: 0.3 !important;
-  visibility: visible !important;
-  display: inline !important;
-  padding: 0 0.4em;
+/* Heading anchors: text is inside <a>, don't dim it.
+   The link icon (svg) should be visible on heading hover, not just anchor hover. */
+:is(h2, h3, h4) > a[href^="#"] {
+  opacity: 1 !important;
   text-decoration: none;
-  transition: opacity 0.15s;
+  color: inherit !important;
 }
 
-h2:hover > a[href^="#"],
-h3:hover > a[href^="#"],
-h4:hover > a[href^="#"],
-[data-heading]:hover > a[href^="#"],
-.prose :is(h2, h3, h4):hover > a[href^="#"] {
-  opacity: 0.7 !important;
+/* Show link icon on heading hover (not just peer hover — fixes the disappearing icon) */
+:is(h2, h3, h4):hover > svg {
+  opacity: 0.5 !important;
+}
+
+:is(h2, h3, h4) > svg:hover {
+  opacity: 1 !important;
 }
 
 /* Landing page custom styles */
