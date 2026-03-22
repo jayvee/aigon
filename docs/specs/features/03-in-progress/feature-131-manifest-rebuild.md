@@ -4,6 +4,8 @@
 
 The manifest system is fundamentally broken. Every new feature hits `Invalid transition: 'feature-start' from stage 'done'. Expected: backlog` because stale manifests are created before the feature even exists. This has been attempted to be fixed five times in the 2026-03-20/22 session and keeps recurring. The system needs to be rebuilt from the ground up with a clear ownership model.
 
+This feature now intentionally removes folder-derived backward-compat behavior from runtime manifest reads: if a manifest file does not exist, `readManifest()` returns `null`.
+
 ## Incident History
 
 ### How it started (2026-03-20)
@@ -58,6 +60,7 @@ This happens on 100% of new features. It is the most disruptive bug in the workf
 - [ ] Manifests are only created by explicit CLI commands: `feature-prioritise`, `feature-start`, `feature-close`
 - [ ] No stale manifests exist after a clean `feature-prioritise`
 - [ ] `feature-start` on a just-prioritised feature never hits "stage done"
+- [ ] Runtime manifest reads never derive state from spec folders; missing manifest reads return `null`
 - [ ] Test: automated test that runs prioritise → start → close cycle 5 times without failure
 - [ ] The fix survives dashboard being open and polling during the entire cycle
 - [ ] No `rm .aigon/state/` workaround needed, ever
@@ -83,14 +86,14 @@ for (let i = 0; i < 3; i++) {
 
 ## Technical Approach
 
-### Option A: Manifests only from state machine transitions
+### Option A: Manifests only from explicit command transitions
 
-Remove ALL manifest creation paths except `requestTransition()`. No `ensureManifest()`, no `bootstrapManifest()`, no lazy creation. The manifest is created exactly once, by the first transition (`feature-prioritise` → backlog).
+Remove ALL implicit creation/derivation paths (`ensureManifest()`, `bootstrapManifest()`, lazy folder bootstrap on read). Manifest files are created and rewritten only by explicit feature workflow commands (starting with `feature-prioritise`).
 
-- `readManifest()` returns `null` if no file exists — callers must handle null
-- `deriveFromFolder()` is only used by `doctor --fix` and dashboard display (never persisted)
-- Dashboard renders features without manifests using folder-derived state (transient)
-- State machine is the single writer
+- `readManifest()` returns `null` if no file exists — callers must handle null explicitly
+- No runtime folder-derivation fallback for manifests
+- Dashboard renders from spec folders + state files directly, without calling manifest bootstrap logic
+- Transition validation rejects missing manifests instead of creating them implicitly
 
 ### Option B: Manifest creation at feature-create time
 
