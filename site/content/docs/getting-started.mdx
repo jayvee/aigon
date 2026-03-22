@@ -20,6 +20,29 @@ Verify the install:
 aigon --version
 ```
 
+### Optional tools
+
+Aigon works without these, but they unlock additional capabilities:
+
+| Tool | What it enables | Install |
+|------|----------------|---------|
+| **tmux** | Persistent agent sessions that survive terminal closes | `brew install tmux` |
+| **gitleaks** | Secret scanning in pre-commit hooks and merge gates | `brew install gitleaks` |
+| **Playwright** | Dashboard end-to-end tests | `npx playwright install` |
+
+### Agent CLIs
+
+Install at least one agent CLI to use aigon:
+
+| Agent | CLI | Install |
+|-------|-----|---------|
+| Claude Code | `claude` | `brew install claude` |
+| Gemini CLI | `gemini` | `npm install -g @anthropic-ai/gemini-cli` |
+| Codex CLI | `codex` | `npm install -g @openai/codex` |
+| Cursor | `cursor` | [cursor.com](https://cursor.com) |
+
+You don't need all of them — install whichever you have access to. Fleet mode works best with 2+ agents.
+
 ## Initialize a project
 
 Navigate to any Git repository and run:
