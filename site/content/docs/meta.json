@@ -2,8 +2,8 @@
   "title": "Documentation",
   "pages": [
     "getting-started",
-    "...guides",
     "...concepts",
+    "...guides",
     "...reference"
   ]
 }
