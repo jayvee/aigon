@@ -1,3 +1,14 @@
+    // ── Insights stub (content rendered by Pro amplification.js when available) ─
+    function renderInsights() {
+      var c = document.getElementById('insights-view');
+      if (c && !c.innerHTML.trim()) {
+        c.innerHTML = '<div class="stats-empty-msg" style="text-align:center;padding:40px 20px">' +
+          '<div style="font-size:18px;font-weight:600;margin-bottom:8px">Insights</div>' +
+          '<div style="color:var(--text-secondary);margin-bottom:16px">Workflow insights are available in the Statistics tab, or via <code>aigon insights</code>.</div>' +
+          '</div>';
+      }
+    }
+
     // ── Main render dispatch ───────────────────────────────────────────────────
 
     async function renderSessions() {
