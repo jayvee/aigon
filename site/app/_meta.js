@@ -9,7 +9,6 @@ export default {
       breadcrumb: false,
       pagination: false,
       footer: false,
-      navbar: false,
     },
   },
   docs: {
