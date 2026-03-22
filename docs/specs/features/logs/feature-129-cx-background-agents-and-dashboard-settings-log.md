@@ -1,3 +1,25 @@
+---
+commit_count: 2
+lines_added: 1028
+lines_removed: 46
+lines_changed: 1074
+files_touched: 12
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 228449
+output_tokens: 3534072
+cache_creation_input_tokens: 62690943
+cache_read_input_tokens: 2512692451
+thinking_tokens: 0
+total_tokens: 2579145915
+cost_usd: 4774.5073
+sessions: 183
+model: "claude-opus-4-6"
+tokens_per_line_changed: 2401439.4
+---
 # Implementation Log: Feature 129 - background-agents-and-dashboard-settings
 Agent: cx
 
