@@ -106,12 +106,21 @@ Once user confirms, update the main research document:
 - other-feature: Reason not selected
 ```
 
-## Step 6: Complete
+## Step 6: Signal completion
 
-After updating the document, run:
+**THIS IS THE FINAL STEP. YOU MUST COMPLETE IT. DO NOT SKIP THIS STEP.**
+
+After updating the document, signal that synthesis is done:
+
 ```bash
-aigon research-close {ID} --complete
+aigon agent-status submitted
 ```
+
+Then tell the user:
+
+> "Synthesis complete. Selected features are listed in the research doc with create commands. Run `/aigon:research-close {ID}` when ready, or create the suggested features first."
+
+**STAY in the session.** The user may want to review the synthesis or ask for changes.
 
 ## Important
 
