@@ -3,6 +3,7 @@
   "pages": [
     "commands",
     "configuration",
-    "agents"
+    "agents",
+    "file-structure"
   ]
 }

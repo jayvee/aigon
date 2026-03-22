@@ -1,7 +1,6 @@
 {
   "title": "Concepts",
   "pages": [
-    "specs-and-state",
     "execution-modes",
     "evaluation"
   ]
