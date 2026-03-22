@@ -48,17 +48,17 @@ export function DashboardGallery() {
             onClick={() => setActive(v.id)}
             role="tab"
             aria-selected={active === v.id}
-            className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm rounded-lg transition-all ${
               active === v.id
                 ? "bg-aigon-orange text-white"
-                : "border border-fd-border text-fd-muted-foreground hover:bg-fd-accent"
+                : "landing-tab text-fd-muted-foreground"
             }`}
           >
             {v.label}
           </button>
         ))}
       </div>
-      <div className="rounded-xl border border-fd-border overflow-hidden bg-fd-card">
+      <div className="rounded-xl landing-image overflow-hidden">
         <img
           src={view.src}
           alt={view.alt}

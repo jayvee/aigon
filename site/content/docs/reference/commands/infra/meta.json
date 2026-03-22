@@ -1,0 +1,16 @@
+{
+  "title": "Infrastructure",
+  "pages": [
+    "board",
+    "dashboard",
+    "dev-server",
+    "deploy",
+    "insights",
+    "agent-status",
+    "conductor",
+    "sessions-close",
+    "status",
+    "help",
+    "next"
+  ]
+}

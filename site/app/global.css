@@ -9,7 +9,7 @@
   --color-fd-muted-foreground: 35 8% 34%;
   --color-fd-card: 40 60% 98%;
   --color-fd-popover: 40 60% 98%;
-  --color-fd-border: 35 24% 10% / 0.14;
+  --color-fd-border: 35 24% 10% / 0.10;
   --color-fd-accent-foreground: 20 69% 49%;
   --color-fd-accent: 20 69% 49% / 0.12;
   --color-fd-primary: 20 69% 49%;
@@ -21,11 +21,11 @@
   /* Aigon warm editorial palette — dark mode (default) */
   --color-fd-background: 225 14% 7%;
   --color-fd-foreground: 38 18% 88%;
-  --color-fd-muted: 38 8% 52%;
-  --color-fd-muted-foreground: 38 8% 52%;
-  --color-fd-card: 224 14% 10%;
-  --color-fd-popover: 224 14% 10%;
-  --color-fd-border: 38 18% 88% / 0.12;
+  --color-fd-muted: 38 8% 42%;
+  --color-fd-muted-foreground: 38 8% 42%;
+  --color-fd-card: 224 14% 11%;
+  --color-fd-popover: 224 14% 11%;
+  --color-fd-border: 30 10% 40% / 0.15;
   --color-fd-accent-foreground: 20 69% 55%;
   --color-fd-accent: 20 69% 55% / 0.12;
   --color-fd-primary: 20 69% 55%;
@@ -47,6 +47,10 @@
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sora), "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Warm shadows */
+  --shadow-warm: 0 16px 40px rgba(35, 30, 20, 0.10);
+  --shadow-warm-tight: 0 8px 18px rgba(35, 30, 20, 0.14);
 }
 
 /* Landing page custom styles */
@@ -62,4 +66,46 @@
     radial-gradient(circle at 95% 2%, rgba(213, 95, 42, 0.2), transparent 44%),
     radial-gradient(circle at 8% 30%, rgba(15, 119, 117, 0.14), transparent 42%),
     linear-gradient(180deg, #faf5ea 0%, #f7f2e8 52%, #f5efe3 100%);
+}
+
+/* Warm card styling for landing page */
+.landing-card {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(135deg, rgba(213, 95, 42, 0.03), rgba(15, 119, 117, 0.02));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.landing-card:hover {
+  border-color: rgba(213, 95, 42, 0.15);
+}
+
+/* Screenshot/image styling */
+.landing-image {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Terminal window styling */
+.terminal-window {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 24%), #16181d;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Tab buttons */
+.landing-tab {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s;
+}
+
+.landing-tab:hover {
+  border-color: rgba(213, 95, 42, 0.25);
+  background: rgba(213, 95, 42, 0.05);
+}
+
+.landing-tab-active {
+  background: rgba(213, 95, 42, 0.12);
+  border-color: rgba(213, 95, 42, 0.3);
+  color: #d55f2a;
 }

@@ -1,0 +1,8 @@
+{
+  "title": "Feedback Commands",
+  "pages": [
+    "feedback-create",
+    "feedback-list",
+    "feedback-triage"
+  ]
+}
