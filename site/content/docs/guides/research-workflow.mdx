@@ -13,7 +13,42 @@ The research workflow lets you explore technical possibilities with one or more 
 
 ## Lifecycle overview
 
-![Research lifecycle](/img/aigon-research-lifecycle.svg)
+<div className="my-8 flex justify-center">
+  <svg width="480" height="300" viewBox="0 0 480 300" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-md">
+    {/* Create */}
+    <rect x="140" y="8" width="200" height="36" rx="8" fill="#0f7775" fillOpacity="0.15" stroke="#0f7775" strokeOpacity="0.4"/>
+    <text x="240" y="31" textAnchor="middle" fill="#0f7775" fontSize="13" fontFamily="monospace">research-create</text>
+
+    <line x1="240" y1="44" x2="240" y2="62" stroke="#555" strokeWidth="1.5"/>
+    <polygon points="240,68 235,62 245,62" fill="#555"/>
+
+    {/* Prioritise */}
+    <rect x="130" y="72" width="220" height="36" rx="8" fill="#0f7775" fillOpacity="0.15" stroke="#0f7775" strokeOpacity="0.4"/>
+    <text x="240" y="95" textAnchor="middle" fill="#0f7775" fontSize="13" fontFamily="monospace">research-prioritise</text>
+
+    <line x1="240" y1="108" x2="240" y2="126" stroke="#555" strokeWidth="1.5"/>
+    <polygon points="240,132 235,126 245,126" fill="#555"/>
+
+    {/* Start */}
+    <rect x="110" y="136" width="260" height="36" rx="8" fill="#d55f2a" fillOpacity="0.15" stroke="#d55f2a" strokeOpacity="0.4"/>
+    <text x="240" y="159" textAnchor="middle" fill="#d55f2a" fontSize="13" fontFamily="monospace">research-start 05 cc gg cx</text>
+
+    <line x1="240" y1="172" x2="240" y2="190" stroke="#555" strokeWidth="1.5"/>
+    <polygon points="240,196 235,190 245,190" fill="#555"/>
+
+    {/* Agents do research */}
+    <rect x="130" y="200" width="220" height="36" rx="8" fill="#3B82F6" fillOpacity="0.1" stroke="#3B82F6" strokeOpacity="0.4"/>
+    <text x="240" y="223" textAnchor="middle" fill="#3B82F6" fontSize="13" fontFamily="monospace">agents research</text>
+    <text x="410" y="223" fill="#666" fontSize="11" fontFamily="sans-serif" fontStyle="italic">parallel</text>
+
+    <line x1="240" y1="236" x2="240" y2="254" stroke="#555" strokeWidth="1.5"/>
+    <polygon points="240,260 235,254 245,254" fill="#555"/>
+
+    {/* Synthesize + Close */}
+    <rect x="120" y="264" width="240" height="36" rx="8" fill="#0f7775" fillOpacity="0.15" stroke="#0f7775" strokeOpacity="0.4"/>
+    <text x="240" y="287" textAnchor="middle" fill="#0f7775" fontSize="13" fontFamily="monospace">research-synthesize → close</text>
+  </svg>
+</div>
 
 All commands below work as both CLI (`aigon research-start ...`) and slash commands (`/aigon:research-start ...` or `/ars ...`). We show CLI form here.
 
