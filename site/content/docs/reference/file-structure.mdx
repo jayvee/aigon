@@ -11,18 +11,13 @@ Aigon stores all workflow state as files in your repository. Features, research 
 - **Decoupled Lifecycles**: Research explores *what* to build; Features define *how* to build it
 - **Traceable History**: All agent conversations and implementation attempts are preserved as Markdown files
 
-## The specs architecture
+## Directory layout
 
-All workflow state lives in `docs/specs/`, organised into three pillars:
+All workflow state lives in `docs/specs/`, organised into three areas:
 
-### Inbound funnels (what to build)
-
-- **`feedback/`** — Raw user/customer input requiring triage and routing
-- **`research-topics/`** — Internal investigations exploring technical possibilities
-
-### Delivery pipeline (how to build it)
-
-- **`features/`** — Implementation specs with acceptance criteria
+- **`features/`** — Implementation specs with acceptance criteria (the delivery pipeline)
+- **`research-topics/`** — Investigations exploring technical possibilities (the discovery pipeline)
+- **`feedback/`** — User input, bugs, and improvement ideas (the triage pipeline)
 
 ### Lifecycle folders (Kanban)
 
