@@ -3,16 +3,87 @@ title: Autopilot Mode
 description: Autonomous retry loop until validation passes.
 ---
 
-Autopilot mode runs an agent in a loop — implement, validate, retry — until checks pass or budget runs out.
+Autopilot mode runs an agent in a loop — implement, validate, retry — until all checks pass or the iteration budget runs out. A fresh agent session is spawned each iteration to avoid context rot.
 
 ## When to use
 
-Use Autopilot when the scope is clear and you want hands-off execution.
+- The scope is well-defined with clear acceptance criteria
+- The feature spec has a `## Validation` section with executable checks
+- You want hands-off execution
+
+## Modes
+
+| Mode | Agents | Command |
+|------|--------|---------|
+| **Autopilot** | Single agent | `feature-do 07 --autonomous` |
+| **Swarm** | Multiple agents | `feature-start 07 cc gg --autonomous --auto-submit` |
+
+Swarm is Fleet + Autopilot — multiple agents compete, each running autonomously.
+
+## How it works
+
+```
+Iteration 1:  spawn agent → implement → run validation
+                                          ↓ fail
+Iteration 2:  spawn fresh agent → read previous attempt → fix → validate
+                                          ↓ fail
+Iteration 3:  spawn fresh agent → read attempts 1-2 → fix → validate
+                                          ↓ pass ✓
+Done — agent signals submitted
+```
+
+Each iteration gets a fresh context window but can see the history of previous attempts.
 
 ## Workflow
 
+### Single agent (Autopilot)
+
 ```bash
-aigon feature-create "my-feature"
-aigon feature-prioritise my-feature
-aigon feature-autopilot 07
+# Create and set up the feature first
+/aigon:feature-create "fix-pagination"
+/aigon:feature-prioritise fix-pagination
+/aigon:feature-start 42
+
+# Run autonomously (max 5 iterations by default)
+aigon feature-do 42 --autonomous
+
+# Or with options
+aigon feature-do 42 --autonomous --max-iterations=3 --agent=cx
 ```
+
+### Multiple agents (Swarm)
+
+```bash
+# Set up Fleet with autonomous mode
+aigon feature-start 42 cc gg cx --autonomous --auto-submit
+
+# Or use the autopilot command for full orchestration
+aigon feature-autopilot 42 cc gg cx
+```
+
+The `feature-autopilot` command handles setup, spawning, monitoring, and evaluation in one step.
+
+## Writing validation checks
+
+Add a `## Validation` section to your feature spec:
+
+```markdown
+## Validation
+
+\`\`\`bash
+cd site && npm run build && echo "Build OK"
+npm test
+\`\`\`
+```
+
+Each command must exit 0 for validation to pass. The agent runs these after each implementation attempt.
+
+## Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--autonomous` | off | Enable autonomous retry loop |
+| `--max-iterations=N` | 5 | Maximum retry attempts |
+| `--auto-submit` | off | Auto-signal submitted on success (for Swarm) |
+| `--agent=<id>` | cc | Which agent to use |
+| `--dry-run` | off | Show what would run without executing |
