@@ -60,6 +60,11 @@
   color: hsl(0 0% 85%) !important;
 }
 
+/* Docs H2s should read as off-white, not the default muted-looking foreground. */
+.dark #nd-docs-layout article .prose h2 {
+  color: hsl(0 0% 94%) !important;
+}
+
 /* Heading anchors: text is inside <a>, don't dim it.
    The link icon (svg) should be visible on heading hover, not just anchor hover. */
 :is(h2, h3, h4) > a[href^="#"] {
