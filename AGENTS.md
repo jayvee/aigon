@@ -59,6 +59,14 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 
 Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/devserver.js`.
 
+## Aigon Pro (`@aigon/pro`)
+- **Private repo**: `~/src/aigon-pro` (github.com/jayvee/aigon-pro)
+- **Integration point**: `lib/pro.js` — `require('@aigon/pro')` with graceful fallback
+- **What's there**: insights engine, amplification dashboard, AI coaching — all commercial AADE features
+- **Dev setup**: `cd ~/src/aigon-pro && npm link`, then `cd ~/src/aigon && npm link @aigon/pro`
+- **Cross-repo features**: specs live in aigon, but note Pro file changes in the spec; commit to both repos separately
+- See `docs/architecture.md` § "Aigon Pro" for full details
+
 ## Install Architecture
 `aigon install-agent` writes **only aigon-owned files** — it never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).
 
@@ -84,12 +92,13 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 - **Agent prompts or install content** → `templates/`; run `aigon install-agent cc` after
 - **Workflow state changes** → update command module AND affected templates together
 
-## Five Rules Before Editing
+## Six Rules Before Editing
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit
 4. **Restart after backend edits** — after changing any `lib/*.js`, restart `node aigon-cli.js dashboard`
 5. **Don't move spec files manually** — always use `aigon` CLI commands to transition state
+6. **Update docs when you change architecture** — if your changes add modules, change repo structure, introduce new patterns, or affect how agents should work, update `AGENTS.md`, `docs/architecture.md`, and/or `CLAUDE.md` in the same PR. Documentation is not a follow-up task — it ships with the code.
 
 ## Common Agent Mistakes
 - **Inventing args**: adding `cc` or `--autonomous` to a plain command → causes wrong mode (Drive vs Fleet)
@@ -97,6 +106,7 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 - **Complexity for simplicity**: responding to "simplify" with smarter/more code instead of removing code
 - **`.env.local` blocking flow**: treating it as uncommitted changes → blocks `feature-close`
 - **Editing working copies**: changing `.claude/commands/` instead of `templates/` → lost on next sync
+- **Shipping architecture changes without docs**: adding modules, repos, or patterns without updating `AGENTS.md` or `docs/architecture.md` → next agent has no awareness of the change
 
 ## Reading Order
 1. `AGENTS.md` (this file) — quick orientation

@@ -146,6 +146,17 @@ The **dev server** runs a local development server of this project's source code
 
 Generate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each criterion. Present the checklist in your response before stopping.
 
+## Step 4.5: Update documentation if needed
+
+If your changes affect any of the following, update the relevant docs **before committing**:
+
+- **New modules or files** → update Module Map in `CLAUDE.md` and `docs/architecture.md`
+- **New repo structure or external dependencies** → update `docs/architecture.md`
+- **New patterns or conventions agents should follow** → update `CLAUDE.md` and/or `AGENTS.md`
+- **Cross-repo changes (e.g., `@aigon/pro`)** → note what changed in both repos
+
+Documentation ships with the code, not as a follow-up.
+
 ## Step 5: Commit your implementation
 
 **IMPORTANT: You MUST commit before proceeding.**
