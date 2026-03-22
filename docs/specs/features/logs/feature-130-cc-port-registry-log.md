@@ -15,10 +15,10 @@ cache_creation_input_tokens: 66216703
 cache_read_input_tokens: 2745239643
 thinking_tokens: 0
 total_tokens: 2815339820
-cost_usd: 5198.4399
+cost_usd: null
 sessions: 188
 model: "claude-opus-4-6"
-tokens_per_line_changed: 6413074.76
+tokens_per_line_changed: null
 ---
 # Implementation Log: Feature 130 - port-registry
 Agent: cc

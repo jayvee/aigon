@@ -549,58 +549,41 @@
       const fpTrend = buildWeeklyFirstPassTrend(filteredFeatures);
       const fpSpark = buildSparklineSvg(fpTrend, '#22c55e') || '<div class="amp-spark-empty">No data</div>';
 
-      const recentCards = filteredFeatures
-        .filter(f => f.completedAt)
-        .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
-        .slice(0, 8)
-        .map(f => {
-          const featureId = escHtml(String(f.featureNum || ''));
-          const desc = escHtml(f.desc || '');
-          const cost = fmtUsd(f.costUsd);
-          // Use frontmatter label if available, otherwise derive from autonomyRatio
-          const derived = f.autonomyLabel ? { label: f.autonomyLabel, cls: getAutonomyClass(f.autonomyLabel) } : deriveAutonomyLabel(f.autonomyRatio);
-          const label = derived.label ? escHtml(derived.label) : '—';
-          const labelClass = derived.cls;
-          const rework = buildReworkBadges(f);
-          return `<article class="amp-feature-card">
-            <div class="amp-card-header">
-              <span class="amp-feature-id">#${featureId}</span>
-              <span class="amp-cost">${cost}</span>
-            </div>
-            <div class="amp-feature-name" title="${desc}">${desc || 'No description'}</div>
-            <div class="amp-card-meta">
-              <span class="amp-autonomy-pill ${labelClass}">${label}</span>
-            </div>
-            <div class="amp-rework">${rework}</div>
-          </article>`;
-        });
-
       // Autonomy score display with derived label pill
       const autonomyScoreDisplay = autonomyScore !== null ? fmtPct(autonomyScore) : '—';
       const autonomyLabelHtml = autonomyDerived.label
         ? `<span class="amp-autonomy-pill ${autonomyDerived.cls}" style="font-size:10px">${escHtml(autonomyDerived.label)}</span>`
         : '';
 
+      const withTokens = filteredFeatures.filter(f => f.billableTokens !== null && f.billableTokens !== undefined);
+      const avgTokensPerFeature = withTokens.length > 0
+        ? Math.round(withTokens.reduce((s, f) => s + f.billableTokens, 0) / withTokens.length)
+        : null;
+
       return `
         <details class="stats-block amplification-section" open>
           <summary class="amplification-summary">
-            <span>Amplification</span>
-            <span class="amplification-count">${withAade.length} features with AADE data</span>
+            <span>Amplification (AADE)</span>
+            <span class="amplification-count">${withAade.length} features with AI-Assisted Development Effectiveness data</span>
           </summary>
           <div class="amplification-body">
             <div class="stats-cards amp-top-cards">
-              ${buildStatCard('Autonomy Score', autonomyScoreDisplay, autonomyLabelHtml, withAutonomy.length > 0 ? `${withAutonomy.length} features` : 'No autonomy data',
-                'Average autonomy ratio across features. Higher means less human intervention needed.')}
+              ${buildStatCard('Active Time Ratio', autonomyScoreDisplay, autonomyLabelHtml, withAutonomy.length > 0 ? `${withAutonomy.length} features` : 'No autonomy data',
+                'Percentage of wall-clock time the agent spent actively working vs waiting for human input. Calculated as 1 − (wait time / total time). 100% means the agent never paused for human intervention. Note: Drive mode features without waiting events always show 100%.')}
               ${buildStatCard('First-Pass Rate (No Rework)', fmtPct(firstPassNoRework), null, withReworkSignals.length > 0 ? `${withReworkSignals.length} features` : 'No rework signal data',
-                'Percentage of features with no rework flags (thrashing, fix cascade, scope creep).')}
+                'Percentage of features completed without triggering any rework flags. Rework flags include: thrashing (repeated back-and-forth edits), fix cascades (one fix causing another), and scope creep (implementation exceeding spec). Higher is better — it means the agent got it right the first time.')}
               ${buildStatCard('Rework Rate', fmtPct(reworkRate), null, withReworkSignals.length > 0 ? `${withReworkSignals.length} features` : 'No rework signal data',
-                'Percentage of features that triggered at least one rework flag. Lower is better.')}
+                'Percentage of features that triggered at least one rework flag (thrashing, fix cascade, or scope creep). This is the inverse of First-Pass Rate. Lower is better — high rework suggests specs need more detail or features should be scoped smaller.')}
               ${buildStatCard('Avg Cost / Feature', withCost.length ? fmtUsd(withCost.reduce((s, f) => s + f.costUsd, 0) / withCost.length) : '—', null,
-                withCost.length > 0 ? `${withCost.length} features with cost data` : 'Awaiting telemetry adapters')}
+                withCost.length > 0 ? `${withCost.length} features with cost data` : 'Awaiting telemetry adapters',
+                'Estimated AI compute cost per feature at API list prices. For plan/subscription users this is indicative only — your actual cost depends on your plan. Calculated from input, output, cache read, and cache write tokens at published per-token rates.')}
+              ${buildStatCard('Avg Tokens / Feature', avgTokensPerFeature !== null ? avgTokensPerFeature.toLocaleString() : '—', null,
+                withTokens.length > 0 ? `${withTokens.length} features with token data` : 'Awaiting telemetry adapters',
+                'Average billable tokens (input + output + thinking) consumed per feature. Does not include cache tokens. Useful for comparing feature complexity and agent efficiency across your project history.')}
             </div>
             <div class="stats-row amp-trend-row">
               <div class="stats-block">
-                <div class="stats-block-title">Autonomy Score Trend</div>
+                <div class="stats-block-title">Active Time Ratio Trend</div>
                 <div class="amp-spark-grid">
                   <div class="amp-spark-card">
                     <div class="amp-spark-title">Weekly</div>
@@ -626,48 +609,6 @@
                 </div>
               </div>
             </div>
-            <div class="stats-section-title">Recent Features</div>
-            <div class="amp-feature-grid">
-              ${recentCards.length > 0 ? recentCards.join('') : '<div class="amp-empty">No completed features in this filter window.</div>'}
-            </div>
-            <div class="stats-section-title">Insights</div>
-            <div class="amp-insights-toolbar">
-              <span class="amp-insights-meta">${statsState.insightsData && statsState.insightsData.generatedAt ? `Updated ${escHtml(relTime(statsState.insightsData.generatedAt))}` : 'No cached insights yet'}</span>
-              <button class="btn" id="amp-insights-refresh-btn">Refresh insights</button>
-            </div>
-            <div class="amp-insights-body">
-              ${(() => {
-                if (statsState.insightsLoading) {
-                  return '<div class="amp-empty">Loading insights…</div>';
-                }
-                if (statsState.insightsError) {
-                  return `<div class="amp-empty">Failed to load insights: ${escHtml(statsState.insightsError)}</div>`;
-                }
-                const payload = statsState.insightsData;
-                if (!payload || !payload.report) {
-                  return '<div class="amp-empty">Run <code>aigon insights</code> or refresh to generate cached insights.</div>';
-                }
-                if (payload.report.insufficientData) {
-                  return `<div class="amp-empty">${escHtml(payload.report.summary || 'Not enough data for insights yet.')}</div>`;
-                }
-                const items = (payload.report.observations || []).map(obs => {
-                  const severity = escHtml(String(obs.severity || 'info').toLowerCase());
-                  return `<article class="amp-insight-item">
-                    <div class="amp-insight-title"><span class="amp-insight-sev ${severity}">${severity.toUpperCase()}</span> ${escHtml(obs.title || 'Insight')}</div>
-                    <div class="amp-insight-observation">${escHtml(obs.observation || '')}</div>
-                    <div class="amp-insight-action">Action: ${escHtml(obs.action || '—')}</div>
-                  </article>`;
-                }).join('');
-
-                let coachingHtml = '<div class="amp-insights-gated">AI coaching is available for Pro tier with <code>aigon insights --coach</code>.</div>';
-                if (payload.coaching && payload.coaching.ok && Array.isArray(payload.coaching.recommendations) && payload.coaching.recommendations.length > 0) {
-                  coachingHtml = `<div class="amp-insights-coaching-title">AI Coaching (Pro)</div><ol class="amp-insights-coaching-list">${payload.coaching.recommendations.slice(0, 5).map(rec => `<li>${escHtml(rec)}</li>`).join('')}</ol>`;
-                } else if (payload.coaching && payload.coaching.error && !payload.coaching.gated) {
-                  coachingHtml = `<div class="amp-insights-gated">AI coaching unavailable: ${escHtml(payload.coaching.error)}</div>`;
-                }
-                return `${items}${coachingHtml}`;
-              })()}
-            </div>
           </div>
         </details>
       `;
@@ -684,10 +625,6 @@
         container.innerHTML = '<div class="stats-empty-msg">Loading statistics…</div>';
         await loadAnalytics();
       }
-      if (!statsState.insightsData && !statsState.insightsLoading) {
-        await loadInsights(false);
-      }
-
       const analytics = statsState.data;
 
       if (!analytics || statsState.error) {
@@ -877,7 +814,7 @@
       }
 
       // Amplification section
-      html.push(buildAmplificationSection(filteredFeatures));
+      // Amplification section moved to Insights tab
 
       // Feature list section (populated after render via renderFeatureList)
       html.push('<div class="stats-section-title" style="margin-top:4px">Features</div>');
@@ -958,12 +895,6 @@
       document.getElementById('ct-nav-prev')?.addEventListener('click', () => panCycleTimeChart('prev'));
       document.getElementById('ct-nav-next')?.addEventListener('click', () => panCycleTimeChart('next'));
 
-      const insightsRefreshBtn = document.getElementById('amp-insights-refresh-btn');
-      if (insightsRefreshBtn) insightsRefreshBtn.onclick = async () => {
-        insightsRefreshBtn.disabled = true;
-        await loadInsights(true);
-        renderStatistics();
-      };
 
       // Feature list
       renderFeatureList();

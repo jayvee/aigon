@@ -13,6 +13,7 @@
       filter: localStorage.getItem(lsKey('filter')) || 'all',
       view: localStorage.getItem(lsKey('view')) || 'monitor',
       selectedRepo: localStorage.getItem(lsKey('selectedRepo')) || 'all',
+      settingsRepo: localStorage.getItem(lsKey('settingsRepo')) || '',
       pipelineType: localStorage.getItem(lsKey('pipelineType')) || 'features',
       monitorType: localStorage.getItem(lsKey('monitorType')) || 'all',
       pendingActions: new Set()
@@ -40,4 +41,3 @@
       Alpine.store('dashboard', _rawState);
       state = Alpine.store('dashboard'); // all future writes go through the proxy
     });
-
