@@ -1,0 +1,62 @@
+---
+title: Core Concepts
+description: The three workflows and four execution modes that make up Aigon.
+---
+
+Aigon organises development work into three workflows, each with its own lifecycle.
+
+## Three workflows
+
+### Features
+
+The core delivery workflow. A feature moves through: **create → prioritise → start → implement → evaluate → close**. Features produce code that gets merged to your main branch.
+
+Features support all four [execution modes](/docs/concepts/execution-modes) — Drive, Fleet, Autopilot, and Swarm.
+
+### Research
+
+The discovery workflow. Research topics move through: **create → prioritise → start → investigate → synthesize → close**. Research produces findings and recommendations that feed into feature creation.
+
+Research supports Drive (one agent) and Fleet (multiple agents for diverse perspectives). There is no autopilot or evaluation step — research is synthesized, not scored.
+
+### Feedback
+
+The triage workflow. Feedback items move through: **create → triage → promote/reject → close**. Feedback captures user input, bugs, and improvement ideas. Triaged feedback can be promoted to a feature or research topic.
+
+Feedback does not use agents or execution modes — it's a lightweight categorisation workflow.
+
+## Four execution modes
+
+Modes apply to **features** (all four) and **research** (Drive and Fleet only).
+
+|  | One agent | Multiple agents |
+|---|---|---|
+| **Hands-on** | [Drive](/docs/guides/drive-mode) | [Fleet](/docs/guides/fleet-mode) |
+| **Hands-off** | [Autopilot](/docs/guides/autopilot-mode) | Swarm |
+
+See [Execution Modes](/docs/concepts/execution-modes) for details.
+
+## Three surfaces
+
+You interact with Aigon through three interchangeable surfaces:
+
+- **Slash commands** — inside an agent session (`/aigon:feature-start 42`)
+- **CLI** — from any terminal (`aigon feature-start 42`)
+- **Dashboard** — browser UI at `aigon.localhost` (click "Start" on a card)
+
+All three drive the same underlying state. Mix them freely.
+
+## State as folders
+
+Aigon stores all workflow state as files in your repository. Items move through folders that represent lifecycle stages:
+
+```
+docs/specs/features/
+  01-inbox/        → ideas
+  02-backlog/      → prioritised, assigned an ID
+  03-in-progress/  → being worked on
+  04-in-evaluation/→ comparing implementations (Fleet)
+  05-done/         → merged and complete
+```
+
+Research and feedback follow the same pattern with their own folder structures. See [File Structure](/docs/reference/file-structure) for the full layout.

@@ -1,7 +1,10 @@
 {
   "title": "Concepts",
   "pages": [
+    "---Core---",
+    "index",
     "execution-modes",
+    "---Features---",
     "evaluation"
   ]
 }
