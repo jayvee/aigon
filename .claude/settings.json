@@ -442,7 +442,17 @@
       "Edit(/Users/jviner/src/aigon-worktrees/feature-128-cc-docs-content/**)",
       "Write(/Users/jviner/src/aigon-worktrees/feature-128-cc-docs-content/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-128-cc-docs-content:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-128-cc-docs-content:*)"
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-128-cc-docs-content:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-130-cc-port-registry/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-130-cc-port-registry/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-130-cc-port-registry/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-130-cc-port-registry:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-130-cc-port-registry:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-131-cx-manifest-rebuild/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-131-cx-manifest-rebuild/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-131-cx-manifest-rebuild/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-131-cx-manifest-rebuild:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-131-cx-manifest-rebuild:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
