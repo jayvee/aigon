@@ -452,7 +452,12 @@
       "Edit(/Users/jviner/src/aigon-worktrees/feature-131-cx-manifest-rebuild/**)",
       "Write(/Users/jviner/src/aigon-worktrees/feature-131-cx-manifest-rebuild/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-131-cx-manifest-rebuild:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-131-cx-manifest-rebuild:*)"
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-131-cx-manifest-rebuild:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-133-cc-security-scan-docs-and-extras/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-133-cc-security-scan-docs-and-extras/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-133-cc-security-scan-docs-and-extras/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-133-cc-security-scan-docs-and-extras:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-133-cc-security-scan-docs-and-extras:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",

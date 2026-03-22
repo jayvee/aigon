@@ -1,8 +1,11 @@
 import "./global.css";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Sora } from "next/font/google";
-import { RootProvider } from "fumadocs-ui/provider";
 import type { ReactNode } from "react";
+import { Geist, Geist_Mono, Sora } from "next/font/google";
+import { Footer, Layout, Navbar } from "nextra-theme-docs";
+import { Head } from "nextra/components";
+import { getPageMap } from "nextra/page-map";
+import "nextra-theme-docs/style.css";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -44,22 +47,58 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+const logo = (
+  <span className="flex items-center gap-2 font-semibold">
+    <img
+      src="/img/aigon-icon.svg"
+      alt=""
+      width={20}
+      height={20}
+      aria-hidden
+    />
+    Aigon
+  </span>
+);
+
+const navbar = (
+  <Navbar
+    logo={logo}
+    logoLink="/"
+    projectLink="https://github.com/jayvee/aigon"
+  />
+);
+
+const footer = (
+  <Footer>
+    <span>MIT {new Date().getFullYear()} &copy; Aigon</span>
+  </Footer>
+);
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
+      dir="ltr"
       className={`${geist.variable} ${geistMono.variable} ${sora.variable}`}
-
       suppressHydrationWarning
     >
+      <Head />
       <body className="font-[family-name:var(--font-geist-sans)]">
-        <RootProvider
-          theme={{
+        <Layout
+          navbar={navbar}
+          footer={footer}
+          pageMap={await getPageMap()}
+          docsRepositoryBase="https://github.com/jayvee/aigon/tree/main/site/content"
+          sidebar={{ defaultMenuCollapseLevel: 1 }}
+          darkMode={true}
+          nextThemes={{
             defaultTheme: "dark",
+            attribute: "class",
+            storageKey: "theme",
           }}
         >
           {children}
-        </RootProvider>
+        </Layout>
       </body>
     </html>
   );

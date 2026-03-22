@@ -67,7 +67,7 @@ export function TerminalWindow({
         <span className="size-3 rounded-full bg-[#ff5f57]" />
         <span className="size-3 rounded-full bg-[#febc2e]" />
         <span className="size-3 rounded-full bg-[#28c840]" />
-        <span className="ml-2 text-xs text-fd-muted-foreground font-mono">
+        <span className="ml-2 text-xs text-muted font-mono">
           {title}
         </span>
       </div>
@@ -83,7 +83,7 @@ export function TerminalWindow({
                 {line.text}
               </span>
             ) : (
-              <span className="text-fd-muted-foreground">{line.text}</span>
+              <span className="text-muted">{line.text}</span>
             )}
           </div>
         ))}
