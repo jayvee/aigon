@@ -55,8 +55,10 @@
 }
 
 /* Headings brighter than body text — clear visual hierarchy */
-.dark :is(h1, h2, h3, h4, h5, h6) {
-  color: hsl(38 12% 90%);
+.dark :is(h1, h2, h3, h4, h5, h6),
+.dark [data-heading],
+.dark .prose :is(h1, h2, h3, h4, h5, h6) {
+  color: hsl(38 12% 92%) !important;
 }
 
 /* Fix heading anchor — always visible, not just on hover */
