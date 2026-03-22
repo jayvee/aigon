@@ -15,61 +15,60 @@ The research workflow lets you explore technical possibilities with one or more 
 
 ![Research lifecycle](/img/aigon-research-lifecycle.svg)
 
+All commands below work as both CLI (`aigon research-start ...`) and slash commands (`/aigon:research-start ...` or `/ars ...`). We show CLI form here.
+
 ## Drive mode (single agent)
 
 ```bash
-# Create a research topic
-/aigon:research-create "API Design Patterns"
+# Create a research topic — describe what you want to investigate
+aigon research-create api-design
+# → Describe: evaluate REST vs GraphQL vs tRPC for our use case...
 
 # Prioritise and assign an ID
-/aigon:research-prioritise api-design    # Assigns ID, e.g. #05
+aigon research-prioritise api-design     # Assigns ID, e.g. #05
 
-# Start research
-/aigon:research-start 05
+# Start research — agent investigates and writes findings
+aigon research-start 05
 
-# Agent investigates and writes findings
-/aigon:research-do 05
+# Agent writes findings directly into the research document
+aigon research-do 05
 
 # Close when done
-/aigon:research-close 05
+aigon research-close 05
 ```
-
-The agent reads the topic file, explores the codebase and external resources, and writes findings and recommendations directly into the document.
 
 ## Fleet mode (multi-agent)
 
 Run multiple agents to get diverse perspectives:
 
 ```bash
-# Create and prioritise
-/aigon:research-create "API Design Patterns"
-/aigon:research-prioritise api-design
-
-# Set up Fleet research with multiple agents
-/aigon:research-start 05 cc gg cx
+aigon research-start 05 cc gg cx
 ```
 
-This creates separate findings files for each agent:
-- `research-05-cc-findings.md`
-- `research-05-gg-findings.md`
-- `research-05-cx-findings.md`
+This does everything in one step:
+- Creates separate findings files for each agent (`research-05-cc-findings.md`, etc.)
+- Creates a tmux session for each agent
+- Opens terminal windows and launches each agent with `research-do`
+- Each agent researches independently and writes to their own findings file
 
-### Execute
-
-Open all agents side-by-side:
+The agents start researching immediately. You can monitor progress in the dashboard or attach to any session:
 
 ```bash
-aigon research-open 05
+tmux attach -t aigon-r05-cc              # Attach to Claude's session
 ```
 
-Each agent runs `/aigon:research-do 05` and writes only to their own findings file.
+If a session ends or crashes, re-open it:
+
+```bash
+aigon research-open 05                   # Re-open all agents
+```
 
 ### Synthesise
 
-After all agents finish, synthesise the findings:
+After all agents submit their findings, synthesise the results:
 
 ```bash
-/aigon:research-synthesize 05
+aigon research-synthesize 05
 ```
 
 The synthesising agent reads all findings, presents a comparison with recommendations, and asks which features to include. Use a different model than those that conducted the research for unbiased synthesis.
@@ -77,7 +76,7 @@ The synthesising agent reads all findings, presents a comparison with recommenda
 ### Complete
 
 ```bash
-/aigon:research-close 05
+aigon research-close 05
 ```
 
 The main research file contains the synthesised recommendation, with individual findings preserved in `logs/`.
