@@ -1,5 +1,148 @@
     // ── Settings view ──────────────────────────────────────────────────────────
 
+    function readConductorReposFromGlobalConfig_client() {
+      return (state.data && state.data.repos) ? state.data.repos.map(r => r.path) : [];
+    }
+
+    function getSettingsTargetRepo() {
+      const repos = (state.data && state.data.repos) || [];
+      if (repos.length === 0) return '';
+      if (state.selectedRepo && state.selectedRepo !== 'all') return state.selectedRepo;
+      return repos[0].path;
+    }
+
+    async function fetchDashboardSettings(repoPath) {
+      const qs = repoPath ? ('?repoPath=' + encodeURIComponent(repoPath)) : '';
+      const res = await fetch('/api/settings' + qs, { cache: 'no-store' });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+      return payload;
+    }
+
+    async function updateDashboardSetting(scope, key, value, repoPath) {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ scope: scope, key: key, value: value, repoPath: repoPath })
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+      return payload;
+    }
+
+    function renderConfigEditorSection(area, settingsData, repoPath) {
+      const section = document.createElement('div');
+      section.className = 'settings-section';
+      section.innerHTML = '<h3>Configuration</h3><p>Edit global and project settings. Effective value shows inherited vs overridden behavior.</p>';
+
+      const rows = document.createElement('div');
+      rows.className = 'settings-config-rows';
+      const settings = settingsData.settings || [];
+
+      settings.forEach(def => {
+        const row = document.createElement('div');
+        row.className = 'settings-config-row';
+
+        const labelCol = document.createElement('div');
+        labelCol.className = 'settings-config-label';
+        labelCol.innerHTML = '<div class="settings-config-name">' + escHtml(def.label) + '</div>' +
+          '<div class="settings-config-key">' + escHtml(def.key) + '</div>';
+
+        const sourceBadge = document.createElement('span');
+        sourceBadge.className = 'settings-source-badge source-' + escHtml(def.source || 'default');
+        sourceBadge.textContent = def.source || 'default';
+        labelCol.appendChild(sourceBadge);
+
+        const controls = document.createElement('div');
+        controls.className = 'settings-config-controls';
+
+        function renderInput(scope, value, disabledBySource) {
+          const wrap = document.createElement('div');
+          wrap.className = 'settings-config-input-wrap';
+          const scopeLabel = document.createElement('div');
+          scopeLabel.className = 'settings-config-scope';
+          scopeLabel.textContent = scope === 'global' ? 'Global' : 'Project';
+          const inputSlot = document.createElement('div');
+          inputSlot.className = 'settings-config-input';
+
+          let input;
+          if (def.type === 'boolean') {
+            const sw = document.createElement('label');
+            sw.className = 'toggle-switch';
+            input = document.createElement('input');
+            input.type = 'checkbox';
+            input.checked = !!value;
+            const track = document.createElement('span');
+            track.className = 'toggle-track';
+            sw.appendChild(input);
+            sw.appendChild(track);
+            inputSlot.appendChild(sw);
+          } else if (def.type === 'enum') {
+            input = document.createElement('select');
+            input.className = 'settings-select';
+            (def.options || []).forEach(opt => {
+              const el = document.createElement('option');
+              el.value = opt;
+              el.textContent = opt;
+              input.appendChild(el);
+            });
+            input.value = value == null ? '' : String(value);
+            inputSlot.appendChild(input);
+          } else {
+            input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'settings-input';
+            input.value = value == null ? '' : String(value);
+            input.placeholder = 'Unset';
+            inputSlot.appendChild(input);
+          }
+
+          input.disabled = !!disabledBySource;
+          input.onchange = async () => {
+            try {
+              let nextValue;
+              if (def.type === 'boolean') nextValue = !!input.checked;
+              else nextValue = input.value;
+              await updateDashboardSetting(scope, def.key, nextValue, repoPath);
+              showToast('Updated ' + def.key + ' (' + scope + ')');
+              renderSettings();
+            } catch (e) {
+              showToast('Update failed: ' + e.message, null, null, { error: true });
+              renderSettings();
+            }
+          };
+
+          wrap.appendChild(scopeLabel);
+          wrap.appendChild(inputSlot);
+          return wrap;
+        }
+
+        controls.appendChild(renderInput('global', def.globalValue, false));
+        controls.appendChild(renderInput('project', def.projectValue, false));
+
+        const effective = document.createElement('div');
+        effective.className = 'settings-effective';
+        effective.innerHTML = '<span class="settings-effective-label">Effective</span><code>' + escHtml(JSON.stringify(def.effectiveValue)) + '</code>';
+
+        row.appendChild(labelCol);
+        row.appendChild(controls);
+        row.appendChild(effective);
+        rows.appendChild(row);
+      });
+
+      section.appendChild(rows);
+      area.appendChild(section);
+
+      const rawSection = document.createElement('div');
+      rawSection.className = 'settings-section';
+      rawSection.innerHTML = '<h3>Computed Config</h3><p>Read-only merged configuration used by command execution.</p>';
+      const pre = document.createElement('pre');
+      pre.className = 'settings-json';
+      pre.textContent = JSON.stringify(settingsData.effective || {}, null, 2);
+      rawSection.appendChild(pre);
+      area.appendChild(rawSection);
+    }
+
     function renderSettings() {
       document.getElementById('monitor-summary').style.display = 'none';
       document.getElementById('repo-header').style.display = 'none';
@@ -36,11 +179,9 @@
           item.className = 'repo-list-item' + (hidden ? ' repo-hidden' : '');
           const displayPath = repoPath.replace(/^\/Users\/[^/]+\//, '~/');
 
-          // Visibility toggle
           const visBtn = document.createElement('button');
           visBtn.className = 'repo-list-vis' + (hidden ? ' hidden-state' : '');
           visBtn.title = hidden ? 'Show in dashboard' : 'Hide from dashboard';
-          visBtn.textContent = hidden ? '\u{1F441}\u{FE0F}\u200D\u{1F5E8}\u{FE0F}' : '\u{1F441}\u{FE0F}';
           visBtn.textContent = hidden ? '○' : '●';
           visBtn.onclick = () => {
             toggleRepoVisibility(repoPath);
@@ -78,7 +219,6 @@
       }
       section.appendChild(list);
 
-      // Add repo form
       const form = document.createElement('div');
       form.className = 'add-repo-form';
       const input = document.createElement('input');
@@ -120,8 +260,21 @@
       form.appendChild(input);
       form.appendChild(addBtn);
       section.appendChild(form);
-
       area.appendChild(section);
+
+      const targetRepo = getSettingsTargetRepo();
+      const configSection = document.createElement('div');
+      configSection.className = 'settings-section';
+      configSection.innerHTML = '<h3>Loading settings...</h3>';
+      area.appendChild(configSection);
+      fetchDashboardSettings(targetRepo)
+        .then(payload => {
+          configSection.remove();
+          renderConfigEditorSection(area, payload, targetRepo);
+        })
+        .catch(err => {
+          configSection.innerHTML = '<h3>Configuration</h3><p class="settings-empty">Failed to load settings: ' + escHtml(err.message) + '</p>';
+        });
 
       // ── Notifications section ─────────────────────────────────────────────
       const NOTIF_TYPE_LABELS = {
@@ -163,27 +316,25 @@
           sw.appendChild(track);
           row.appendChild(labelDiv);
           row.appendChild(sw);
-          return { row, inp };
+          return { row: row };
         }
 
-        // Master toggle
-        const { row: masterRow, inp: masterInp } = makeToggleRow('Enable macOS notifications', cfg.enabled, false, async (val) => {
+        const masterRow = makeToggleRow('Enable macOS notifications', cfg.enabled, false, async (val) => {
           try {
             await fetch('/api/settings/notifications', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ enabled: val }) });
           } catch (_) {}
           loadAndRenderNotifToggles();
         });
-        notifSection.appendChild(masterRow);
+        notifSection.appendChild(masterRow.row);
 
-        // Per-type toggles
         Object.entries(NOTIF_TYPE_LABELS).forEach(([type, label]) => {
-          const { row, inp } = makeToggleRow(label, cfg.types[type] !== false, !cfg.enabled, async (val) => {
+          const row = makeToggleRow(label, cfg.types[type] !== false, !cfg.enabled, async (val) => {
             try {
               await fetch('/api/settings/notifications', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ types: { [type]: val } }) });
             } catch (_) {}
           });
-          row.style.paddingLeft = '24px';
-          notifSection.appendChild(row);
+          row.row.style.paddingLeft = '24px';
+          notifSection.appendChild(row.row);
         });
       }
 
@@ -192,8 +343,3 @@
 
       reposRoot.appendChild(area);
     }
-
-    function readConductorReposFromGlobalConfig_client() {
-      return (state.data && state.data.repos) ? state.data.repos.map(r => r.path) : [];
-    }
-
