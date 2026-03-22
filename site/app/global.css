@@ -67,19 +67,11 @@
   opacity: 1 !important;
 }
 
-/* Landing page custom styles */
+/* Landing page — subtle gradient overlay on Nextra's native bg */
 .landing-gradient-dark {
   background:
-    radial-gradient(circle at 95% 2%, rgba(213, 95, 42, 0.15), transparent 44%),
-    radial-gradient(circle at 8% 30%, rgba(15, 119, 117, 0.1), transparent 42%),
-    linear-gradient(180deg, #0d0e10 0%, #101113 52%, #0e0f11 100%);
-}
-
-.landing-gradient-light {
-  background:
-    radial-gradient(circle at 95% 2%, rgba(213, 95, 42, 0.2), transparent 44%),
-    radial-gradient(circle at 8% 30%, rgba(15, 119, 117, 0.14), transparent 42%),
-    linear-gradient(180deg, #faf5ea 0%, #f7f2e8 52%, #f5efe3 100%);
+    radial-gradient(circle at 95% 2%, rgba(213, 95, 42, 0.08), transparent 44%),
+    radial-gradient(circle at 8% 30%, rgba(15, 119, 117, 0.06), transparent 42%);
 }
 
 /* Warm card styling for landing page */
