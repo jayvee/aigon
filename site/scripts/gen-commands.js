@@ -59,6 +59,15 @@ function escapeMdx(text) {
 }
 
 /**
+ * Extract --flag patterns from argHints string
+ */
+function getFlags(argHints) {
+    if (!argHints) return [];
+    const found = argHints.match(/--[a-z0-9-]+(?:=<[^>]+>)?/gi) || [];
+    return Array.from(new Set(found));
+}
+
+/**
  * Generate MDX content for a single command
  */
 function generateCommandMdx(name, def, description) {
@@ -89,11 +98,12 @@ ${aliases.split(', ').map(a => `- \`${a}\``).join('\n')}
 `;
     }
 
-    if (argHints) {
+    const flags = getFlags(argHints);
+    if (flags.length > 0) {
         mdx += `
-## Arguments
+## Flags
 
-\`${escapeMdx(argHints)}\`
+${flags.map(f => `- \`${f}\``).join('\n')}
 `;
     }
 
