@@ -1,3 +1,25 @@
+---
+commit_count: 3
+lines_added: 2659
+lines_removed: 48
+lines_changed: 2707
+files_touched: 60
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 231525
+output_tokens: 3572952
+cache_creation_input_tokens: 63769423
+cache_read_input_tokens: 2535592606
+thinking_tokens: 0
+total_tokens: 2603166506
+cost_usd: 4832.0413
+sessions: 185
+model: "claude-opus-4-6"
+tokens_per_line_changed: 961642.6
+---
 # Implementation Log: Feature 128 - docs-content
 Agent: cc
 
