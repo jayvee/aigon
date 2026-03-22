@@ -1778,6 +1778,16 @@ test('requestTransition throws for unknown action', () => {
     });
 });
 
+test('requestTransition throws when manifest is missing', () => {
+    withCleanManifest('9989', () => {
+        assert.throws(
+            () => requestTransition('9989', 'feature-start', {}),
+            (err) => err.message.includes('Manifest not found'),
+            'throws for missing manifest'
+        );
+    });
+});
+
 // completePendingOp
 test('completePendingOp removes first occurrence of op from pending', () => {
     withCleanManifest('9993', () => {
@@ -2400,30 +2410,21 @@ test('feature-close rejects wrong branch via subprocess', () => {
 // Manifest Read/Write Separation Tests
 // ---------------------------------------------------------------------------
 
-console.log('\nManifest — readManifest does not persist');
+console.log('\nManifest — explicit read/write contract');
 
-test('readManifest returns transient object without persisting for unknown feature', () => {
+test('readManifest returns null for unknown feature and does not persist', () => {
     withTempDir(tempDir => {
-        // Point manifest to temp state dir
         const stateDir = path.join(tempDir, '.aigon', 'state');
         fs.mkdirSync(stateDir, { recursive: true });
 
-        // Create a minimal spec folder so deriveFromFolder finds something
-        const specDir = path.join(tempDir, 'docs', 'specs', 'features', '02-backlog');
-        fs.mkdirSync(specDir, { recursive: true });
-        fs.writeFileSync(path.join(specDir, 'feature-999-test-feature.md'), '# Test');
-
-        // Use a fresh manifest module with overridden paths
         const origCwd = process.cwd();
         process.chdir(tempDir);
-        // Clear require cache to pick up new cwd
         delete require.cache[require.resolve('./lib/manifest')];
         const freshManifest = require('./lib/manifest');
 
         const result = freshManifest.readManifest('999');
-        assert.strictEqual(result.stage, 'backlog', 'should derive stage from folder');
+        assert.strictEqual(result, null, 'missing coordinator manifest should return null');
 
-        // Verify no file was written
         const manifestFile = path.join(stateDir, 'feature-999.json');
         assert.ok(!fs.existsSync(manifestFile), 'readManifest should NOT persist the file');
 
@@ -2432,25 +2433,30 @@ test('readManifest returns transient object without persisting for unknown featu
     });
 });
 
-test('ensureManifest creates and persists manifest file', () => {
+test('writeManifest creates and persists manifest file', () => {
     withTempDir(tempDir => {
         const stateDir = path.join(tempDir, '.aigon', 'state');
         fs.mkdirSync(stateDir, { recursive: true });
-        const specDir = path.join(tempDir, 'docs', 'specs', 'features', '02-backlog');
-        fs.mkdirSync(specDir, { recursive: true });
-        fs.writeFileSync(path.join(specDir, 'feature-998-ensure-test.md'), '# Test');
 
         const origCwd = process.cwd();
         process.chdir(tempDir);
         delete require.cache[require.resolve('./lib/manifest')];
         const freshManifest = require('./lib/manifest');
 
-        const result = freshManifest.ensureManifest('998');
+        const result = freshManifest.writeManifest('998', {
+            id: '998',
+            type: 'feature',
+            name: 'explicit-create',
+            stage: 'backlog',
+            specPath: null,
+            agents: [],
+            winner: null,
+            pending: [],
+        }, { type: 'transition:feature-prioritise', actor: 'test' });
         assert.strictEqual(result.stage, 'backlog');
 
-        // Verify file WAS written
         const manifestFile = path.join(stateDir, 'feature-998.json');
-        assert.ok(fs.existsSync(manifestFile), 'ensureManifest should persist the file');
+        assert.ok(fs.existsSync(manifestFile), 'writeManifest should persist the file');
 
         process.chdir(origCwd);
         delete require.cache[require.resolve('./lib/manifest')];
@@ -2475,6 +2481,82 @@ test('readManifest returns persisted manifest when file exists', () => {
 
         process.chdir(origCwd);
         delete require.cache[require.resolve('./lib/manifest')];
+    });
+});
+
+test('feature-prioritise/start/close cycle is stable across repeated runs with dashboard-style manifest reads', () => {
+    withTempDir(tempDir => {
+        const runCli = (args) => spawnSync(process.execPath, [path.resolve('aigon-cli.js'), ...args], {
+            cwd: tempDir,
+            encoding: 'utf8',
+            stdio: ['pipe', 'pipe', 'pipe'],
+        });
+
+        const combinedOutput = (result) => `${result.stdout || ''}${result.stderr || ''}`;
+        const assertCliOk = (result, label) => {
+            if (result.status !== 0) {
+                throw new Error(`${label} failed (exit=${result.status}): ${combinedOutput(result).slice(0, 600)}`);
+            }
+        };
+
+        runGit(['init'], tempDir);
+        runGit(['config', 'user.name', 'Aigon Test'], tempDir);
+        runGit(['config', 'user.email', 'test@example.com'], tempDir);
+        const defaultBranch = 'master';
+
+        const initResult = runCli(['init']);
+        assertCliOk(initResult, 'aigon init');
+        runGit(['checkout', '-B', 'master'], tempDir);
+
+        const stateDir = path.join(tempDir, '.aigon', 'state');
+        fs.mkdirSync(stateDir, { recursive: true });
+        fs.writeFileSync(path.join(stateDir, 'feature-01.json'), JSON.stringify({
+            id: '01',
+            type: 'feature',
+            name: 'stale',
+            stage: 'done',
+            agents: [],
+            winner: null,
+            pending: [],
+            events: [],
+        }, null, 2));
+
+        for (let i = 0; i < 5; i++) {
+            const slug = `manifest-cycle-${i}`;
+            assertCliOk(runCli(['feature-create', slug]), `feature-create ${slug}`);
+
+            const prioritiseResult = runCli(['feature-prioritise', slug]);
+            assertCliOk(prioritiseResult, `feature-prioritise ${slug}`);
+            const match = combinedOutput(prioritiseResult).match(/Assigned ID:\s*(\d+)/);
+            if (!match) throw new Error(`Could not parse assigned ID: ${combinedOutput(prioritiseResult).slice(0, 400)}`);
+            const unpaddedId = String(parseInt(match[1], 10));
+
+            const origCwd = process.cwd();
+            process.chdir(tempDir);
+            delete require.cache[require.resolve('./lib/manifest')];
+            const freshManifest = require('./lib/manifest');
+            for (let poll = 0; poll < 5; poll++) freshManifest.readManifest(unpaddedId);
+            const afterPoll = freshManifest.readManifest(unpaddedId);
+            process.chdir(origCwd);
+            delete require.cache[require.resolve('./lib/manifest')];
+
+            assert.strictEqual(afterPoll.stage, 'backlog', 'prioritise should always persist backlog stage');
+            assert.deepStrictEqual(afterPoll.pending, [], 'prioritise should clear stale pending operations');
+
+            const startResult = runCli(['feature-start', unpaddedId]);
+            const startOutput = combinedOutput(startResult);
+            assertCliOk(startResult, `feature-start ${unpaddedId}`);
+            assert.ok(!startOutput.includes('Invalid transition'), `feature-start should not hit invalid transition: ${startOutput.slice(0, 400)}`);
+
+            runGit(['commit', '--allow-empty', '-m', `test: cycle ${i}`], tempDir);
+            runGit(['checkout', defaultBranch], tempDir);
+
+            const closeResult = runCli(['feature-close', unpaddedId]);
+            const closeOutput = combinedOutput(closeResult);
+            if (closeResult.status !== 0 && !closeOutput.includes('push')) {
+                throw new Error(`feature-close ${unpaddedId} failed: ${closeOutput.slice(0, 500)}`);
+            }
+        }
     });
 });
 
