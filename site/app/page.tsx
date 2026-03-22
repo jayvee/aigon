@@ -116,14 +116,39 @@ export default function HomePage() {
             <br />
             Orchestrate any agent &mdash; or all of them at once.
           </h1>
-          <p className="text-lg text-muted max-w-3xl mb-8">
+          <p className="text-lg text-muted max-w-3xl mb-10">
             Aigon captures the full product lifecycle &mdash; research, feature
             delivery, and user feedback &mdash; in specs and logs committed
             directly to your repository. Run one agent with tight control, or
             orchestrate competing implementations in parallel &mdash; then
             evaluate and merge the best outcome.
           </p>
-          <div className="flex flex-wrap gap-3 mb-10">
+          <ul className="space-y-3 text-muted text-sm mb-10 list-none pl-0">
+            <li className="flex items-start gap-2">
+              <span className="text-aigon-orange mt-0.5">&#x2713;</span>
+              Work visually with a Kanban board, drop to the CLI for scripting,
+              or drive from slash commands inside your agent
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-aigon-orange mt-0.5">&#x2713;</span>
+              Four clear modes: Drive, Fleet, Autopilot, and Swarm
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-aigon-orange mt-0.5">&#x2713;</span>
+              Specs, logs, and research findings in Git &mdash; searchable,
+              portable, permanent
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-aigon-orange mt-0.5">&#x2713;</span>
+              Works with Claude, Gemini, Cursor, and Codex &mdash; swap freely
+              or run them head-to-head
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-aigon-orange mt-0.5">&#x2713;</span>
+              No required SaaS account, plain files in Git
+            </li>
+          </ul>
+          <div className="flex flex-wrap gap-3">
             <Link
               href="/docs/getting-started"
               className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-aigon-orange text-white font-semibold hover:opacity-90 transition-opacity"
@@ -137,22 +162,6 @@ export default function HomePage() {
               Read the docs &rarr;
             </Link>
           </div>
-          <ul className="space-y-2 text-muted text-sm">
-            <li>
-              Work visually with a Kanban board, drop to the CLI for scripting,
-              or drive from slash commands inside your agent
-            </li>
-            <li>Four clear modes: Drive, Fleet, Autopilot, and Swarm</li>
-            <li>
-              Specs, logs, and research findings in Git &mdash; searchable,
-              portable, permanent
-            </li>
-            <li>
-              Works with Claude, Gemini, Cursor, and Codex &mdash; swap freely
-              or run them head-to-head
-            </li>
-            <li>No required SaaS account, plain files in Git</li>
-          </ul>
         </div>
 
         {/* Fleet showcase */}
