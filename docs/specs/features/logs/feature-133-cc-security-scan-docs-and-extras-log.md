@@ -27,3 +27,20 @@ Agent: cc
 - **Doctor check is non-fixable**: GitHub secret scanning requires admin access and cannot be auto-fixed by `aigon doctor --fix`. The check reports status and provides a direct link to the settings page.
 
 - **Configurable commit scan command**: Added `scannerDefs.gitleaks.commitCommand` as a separate config key from the merge-gate `command`, since they use different gitleaks modes (git log vs file scan).
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-22
+
+### Findings
+- `mergeSecurityConfig()` only merged `scannerDefs` one level deep, so setting `security.scannerDefs.gitleaks.commitCommand` removed the default `gitleaks.command` used by the merge gate.
+- `security-scan-commit` hard-coded its binary availability check to `gitleaks`, which made the new configurable `commitCommand` ineffective for alternate wrappers or binary names.
+
+### Fixes Applied
+- Preserved nested scanner definition fields when merging `scannerDefs`, so `commitCommand` can be added without breaking merge-gate scanning.
+- Updated `security-scan-commit` to derive the binary check from the configured command and added a regression test covering the `commitCommand` merge case.
+
+### Notes
+- Focused validation passed with `node lib/security.test.js`.
+- The full repository test suite still has unrelated pre-existing failures, matching the implementation log.
