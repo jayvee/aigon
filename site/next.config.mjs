@@ -12,6 +12,14 @@ const withNextra = nextra({
 const config = {
   reactStrictMode: true,
   outputFileTracingRoot: resolve(__dirname),
+  async rewrites() {
+    return [
+      {
+        source: "/",
+        destination: "/home.html",
+      },
+    ];
+  },
 };
 
 export default withNextra(config);
