@@ -61,9 +61,9 @@ export function TerminalWindow({
 
   return (
     <div
-      className={`rounded-xl border border-fd-border overflow-hidden bg-aigon-terminal ${className}`}
+      className={`rounded-xl terminal-window overflow-hidden ${className}`}
     >
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-fd-border bg-aigon-terminal">
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.06] bg-aigon-terminal">
         <span className="size-3 rounded-full bg-[#ff5f57]" />
         <span className="size-3 rounded-full bg-[#febc2e]" />
         <span className="size-3 rounded-full bg-[#28c840]" />

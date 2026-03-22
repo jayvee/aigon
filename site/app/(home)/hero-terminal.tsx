@@ -87,7 +87,7 @@ export function HeroTerminal() {
             className={`px-4 py-2 text-sm rounded-lg transition-colors ${
               active === name
                 ? "bg-aigon-orange text-white"
-                : "border border-fd-border text-fd-muted-foreground hover:bg-fd-accent"
+                : "landing-tab text-fd-muted-foreground"
             }`}
           >
             {name}

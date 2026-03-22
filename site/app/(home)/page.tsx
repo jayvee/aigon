@@ -132,7 +132,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="#workflow"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-fd-border text-fd-foreground font-semibold hover:bg-fd-accent transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/10 text-fd-foreground font-semibold hover:border-aigon-orange/30 hover:bg-aigon-orange/5 transition-all"
             >
               How it works
             </Link>
@@ -180,7 +180,7 @@ export default function HomePage() {
                 <p className="text-xs text-fd-muted-foreground mb-2">
                   {step.label}
                 </p>
-                <div className="rounded-lg border border-fd-border overflow-hidden">
+                <div className="rounded-lg landing-image overflow-hidden">
                   <img
                     src={step.src}
                     alt={step.label}
@@ -195,7 +195,7 @@ export default function HomePage() {
       </section>
 
       {/* Problem */}
-      <section className="py-16 border-t border-fd-border" id="problem">
+      <section className="py-16 border-t border-white/[0.06]" id="problem">
         <div className="max-w-5xl mx-auto px-6">
           <p className="text-xs font-bold tracking-[0.12em] uppercase text-aigon-orange mb-3">
             The problem
@@ -208,7 +208,7 @@ export default function HomePage() {
             {problemCards.map((card) => (
               <article
                 key={card.title}
-                className="rounded-xl border border-fd-border p-6 bg-fd-card"
+                className="rounded-xl p-6 landing-card"
               >
                 <h3 className="font-semibold mb-2">{card.title}</h3>
                 <p className="text-sm text-fd-muted-foreground">{card.text}</p>
@@ -219,7 +219,7 @@ export default function HomePage() {
       </section>
 
       {/* CLI Demo */}
-      <section className="py-16 border-t border-fd-border" id="cli-demo">
+      <section className="py-16 border-t border-white/[0.06]" id="cli-demo">
         <div className="max-w-5xl mx-auto px-6">
           <p className="text-xs font-bold tracking-[0.12em] uppercase text-aigon-orange mb-3">
             CLI in action
@@ -233,7 +233,7 @@ export default function HomePage() {
       </section>
 
       {/* Value */}
-      <section className="py-16 border-t border-fd-border" id="value">
+      <section className="py-16 border-t border-white/[0.06]" id="value">
         <div className="max-w-5xl mx-auto px-6">
           <p className="text-xs font-bold tracking-[0.12em] uppercase text-aigon-orange mb-3">
             Value proposition
@@ -245,7 +245,7 @@ export default function HomePage() {
             {valueCards.map((card) => (
               <article
                 key={card.title}
-                className="rounded-xl border border-fd-border p-6 bg-fd-card"
+                className="rounded-xl p-6 landing-card"
               >
                 <p className="text-xs font-bold tracking-wider uppercase text-aigon-teal mb-2">
                   {card.tag}
@@ -264,7 +264,7 @@ export default function HomePage() {
       </section>
 
       {/* Workflow */}
-      <section className="py-16 border-t border-fd-border" id="workflow">
+      <section className="py-16 border-t border-white/[0.06]" id="workflow">
         <div className="max-w-5xl mx-auto px-6">
           <p className="text-xs font-bold tracking-[0.12em] uppercase text-aigon-orange mb-3">
             How it works
@@ -283,11 +283,11 @@ export default function HomePage() {
               Features
             </span>
             <span className="text-fd-muted-foreground">&rarr;</span>
-            <span className="px-3 py-1.5 rounded-lg bg-fd-accent border border-fd-border">
+            <span className="px-3 py-1.5 rounded-lg bg-aigon-orange/10 border border-aigon-orange/30 text-aigon-orange">
               Build
             </span>
             <span className="text-fd-muted-foreground">&rarr;</span>
-            <span className="px-3 py-1.5 rounded-lg bg-fd-accent border border-fd-border">
+            <span className="px-3 py-1.5 rounded-lg bg-aigon-orange/10 border border-aigon-orange/30 text-aigon-orange">
               Evaluate
             </span>
             <span className="text-fd-muted-foreground">&rarr;</span>
@@ -312,7 +312,7 @@ export default function HomePage() {
               {modeCards.map((card) => (
                 <article
                   key={card.title}
-                  className="rounded-xl border border-fd-border p-6 bg-fd-card"
+                  className="rounded-xl p-6 landing-card"
                 >
                   <p className="text-xs font-bold tracking-wider uppercase text-aigon-teal mb-2">
                     {card.tag}
@@ -335,7 +335,7 @@ export default function HomePage() {
       </section>
 
       {/* Dashboard */}
-      <section className="py-16 border-t border-fd-border" id="dashboard">
+      <section className="py-16 border-t border-white/[0.06]" id="dashboard">
         <div className="max-w-5xl mx-auto px-6">
           <p className="text-xs font-bold tracking-[0.12em] uppercase text-aigon-orange mb-3">
             Your workflow, visualised
@@ -351,7 +351,7 @@ export default function HomePage() {
           <DashboardGallery />
 
           <div className="grid sm:grid-cols-2 gap-6 mt-10">
-            <article className="rounded-xl border border-fd-border p-6 bg-fd-card">
+            <article className="rounded-xl p-6 landing-card">
               <p className="text-xs font-bold tracking-wider uppercase text-aigon-teal mb-2">
                 Visual Workflow
               </p>
@@ -361,7 +361,7 @@ export default function HomePage() {
                 Kanban interface.
               </p>
             </article>
-            <article className="rounded-xl border border-fd-border p-6 bg-fd-card">
+            <article className="rounded-xl p-6 landing-card">
               <p className="text-xs font-bold tracking-wider uppercase text-aigon-teal mb-2">
                 Monitor
               </p>
@@ -373,7 +373,7 @@ export default function HomePage() {
                 your repositories.
               </p>
             </article>
-            <article className="rounded-xl border border-fd-border p-6 bg-fd-card">
+            <article className="rounded-xl p-6 landing-card">
               <p className="text-xs font-bold tracking-wider uppercase text-aigon-teal mb-2">
                 Measure
               </p>
@@ -385,7 +385,7 @@ export default function HomePage() {
                 whether your pace is accelerating.
               </p>
             </article>
-            <article className="rounded-xl border border-fd-border p-6 bg-fd-card">
+            <article className="rounded-xl p-6 landing-card">
               <p className="text-xs font-bold tracking-wider uppercase text-aigon-teal mb-2">
                 Remote Access
               </p>
@@ -402,7 +402,7 @@ export default function HomePage() {
       </section>
 
       {/* Docs / Quickstart */}
-      <section className="py-16 border-t border-fd-border" id="docs-section">
+      <section className="py-16 border-t border-white/[0.06]" id="docs-section">
         <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12">
           <div>
             <p className="text-xs font-bold tracking-[0.12em] uppercase text-aigon-orange mb-3">
@@ -433,7 +433,7 @@ position of the menu bar`}</code>
           <div className="space-y-4">
             <Link
               href="/docs/getting-started"
-              className="block rounded-xl border border-fd-border p-6 bg-fd-card hover:border-aigon-orange/50 transition-colors"
+              className="block rounded-xl p-6 landing-card hover:border-aigon-orange/30 transition-all"
             >
               <h3 className="font-semibold mb-1">Getting Started</h3>
               <p className="text-sm text-fd-muted-foreground">
@@ -442,7 +442,7 @@ position of the menu bar`}</code>
             </Link>
             <Link
               href="/docs/guides/drive-mode"
-              className="block rounded-xl border border-fd-border p-6 bg-fd-card hover:border-aigon-orange/50 transition-colors"
+              className="block rounded-xl p-6 landing-card hover:border-aigon-orange/30 transition-all"
             >
               <h3 className="font-semibold mb-1">Workflow Guide</h3>
               <p className="text-sm text-fd-muted-foreground">
@@ -452,7 +452,7 @@ position of the menu bar`}</code>
             </Link>
             <Link
               href="/docs/reference/cli-commands"
-              className="block rounded-xl border border-fd-border p-6 bg-fd-card hover:border-aigon-orange/50 transition-colors"
+              className="block rounded-xl p-6 landing-card hover:border-aigon-orange/30 transition-all"
             >
               <h3 className="font-semibold mb-1">CLI Reference</h3>
               <p className="text-sm text-fd-muted-foreground">
@@ -464,7 +464,7 @@ position of the menu bar`}</code>
       </section>
 
       {/* Philosophy */}
-      <section className="py-16 border-t border-fd-border">
+      <section className="py-16 border-t border-white/[0.06]">
         <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12">
           <div>
             <p className="text-xs font-bold tracking-[0.12em] uppercase text-aigon-orange mb-3">
@@ -495,7 +495,7 @@ position of the menu bar`}</code>
       </section>
 
       {/* Community */}
-      <section className="py-16 border-t border-fd-border" id="community">
+      <section className="py-16 border-t border-white/[0.06]" id="community">
         <div className="max-w-5xl mx-auto px-6 text-center">
           <p className="text-xs font-bold tracking-[0.12em] uppercase text-aigon-orange mb-3">
             Community
@@ -518,7 +518,7 @@ position of the menu bar`}</code>
             </a>
             <Link
               href="/docs/getting-started"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-fd-border text-fd-foreground font-semibold hover:bg-fd-accent transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/10 text-fd-foreground font-semibold hover:border-aigon-orange/30 hover:bg-aigon-orange/5 transition-all"
             >
               Install guide
             </Link>
@@ -527,7 +527,7 @@ position of the menu bar`}</code>
       </section>
 
       {/* Footer */}
-      <footer className="py-8 border-t border-fd-border">
+      <footer className="py-8 border-t border-white/[0.06]">
         <div className="max-w-5xl mx-auto px-6 flex flex-wrap items-center justify-between gap-4 text-sm text-fd-muted-foreground">
           <span>Aigon</span>
           <span>

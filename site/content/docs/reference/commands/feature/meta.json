@@ -1,0 +1,19 @@
+{
+  "title": "Feature Commands",
+  "pages": [
+    "feature-create",
+    "feature-prioritise",
+    "feature-start",
+    "feature-now",
+    "feature-do",
+    "feature-submit",
+    "feature-open",
+    "feature-eval",
+    "feature-review",
+    "feature-close",
+    "feature-cleanup",
+    "feature-autopilot",
+    "feature-validate",
+    "feature-reset"
+  ]
+}
