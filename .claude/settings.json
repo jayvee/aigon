@@ -437,7 +437,12 @@
       "Edit(/Users/jviner/src/aigon-worktrees/feature-129-cx-background-agents-and-dashboard-settings/**)",
       "Write(/Users/jviner/src/aigon-worktrees/feature-129-cx-background-agents-and-dashboard-settings/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-129-cx-background-agents-and-dashboard-settings:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-129-cx-background-agents-and-dashboard-settings:*)"
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-129-cx-background-agents-and-dashboard-settings:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-128-cc-docs-content/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-128-cc-docs-content/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-128-cc-docs-content/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-128-cc-docs-content:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-128-cc-docs-content:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
@@ -466,6 +471,18 @@
             "type": "command",
             "command": "/opt/homebrew/bin/aigon project-context",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jviner/.local/state/fnm_multishells/7365_1774154010918/bin/aigon capture-session-telemetry",
+            "timeout": 30
           }
         ]
       }
