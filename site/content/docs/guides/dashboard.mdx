@@ -5,6 +5,8 @@ description: Visual pipeline for monitoring features, agents, and statistics acr
 
 The Aigon Dashboard is a browser-based control centre for all your repos. Monitor agent progress, launch features, run evaluations, and merge winners — all from one place.
 
+![Dashboard Pipeline view](/img/aigon-dashboard-kanban.png)
+
 ## Getting started
 
 ```bash
@@ -27,6 +29,46 @@ The dashboard and CLI are interchangeable views of the same state. Any action yo
 | Evaluate | `aigon feature-eval 42` | "Evaluate" button |
 | Close/merge | `aigon feature-close 42 cc` | "Close" button with agent picker |
 
+## Pipeline
+
+Drag features through the Kanban board: inbox → backlog → in-progress → evaluation → done.
+
+![Pipeline view](/img/aigon-dashboard-kanban.png)
+
+## Fleet monitoring
+
+Watch agents compete in real-time. The dashboard shows status badges for each agent and surfaces action buttons when they submit.
+
+![Fleet start — agents implementing in parallel](/img/aigon-dashboard-01-fleet-start.gif)
+
+![Both submitted — evaluation ready](/img/aigon-dashboard-02-fleet-evaluation.gif)
+
+![Evaluation complete — winner merged](/img/aigon-dashboard-03-fleet-submitted.gif)
+
+## Monitor view
+
+See every agent session across all repos — running, attached, or ended.
+
+![Monitor view](/img/aigon-dashboard-monitor.png)
+
+## Statistics
+
+Track throughput, cycle time, and agent performance across all repos.
+
+![Statistics](/img/aigon-dashboard-statistics.png)
+
+- **Volume** — features completed per period with trend
+- **Cycle Time** — average hours from setup to close
+- **Agent Leaderboard** — wins, speed, and fleet win % per agent
+
+## Console and Logs
+
+View live agent output and command history.
+
+![Console](/img/aigon-dashboard-console.png)
+
+![Logs](/img/aigon-dashboard-logs.png)
+
 ## Managing repos
 
 ```bash
@@ -40,27 +82,19 @@ aigon dashboard remove ~/src/old-project   # Unregister a repo
 
 ```bash
 aigon dashboard start          # Start the service
+aigon dashboard restart        # Stop and restart
 aigon dashboard status         # Check health + see waiting agents
 aigon dashboard open           # Open in browser
-aigon dashboard stop           # Shut down
 ```
 
-## Terminal focus
+## Remote access
 
-Jump directly to an agent's terminal session:
+The dashboard binds to `0.0.0.0` by default, making it accessible from any device on the local network.
 
-```bash
-aigon terminal-focus 39        # Open terminal for feature #39
-aigon terminal-focus 39 cc     # Specific agent
-```
+![Mobile dashboard](/img/aigon-dashboard-mobile.png)
 
-## Statistics
-
-The dashboard tracks throughput, cycle time, and agent performance across all repos:
-
-- **Volume** — features completed per period with trend
-- **Cycle Time** — average hours from setup to close
-- **Agent Leaderboard** — wins, speed, and fleet win % per agent
+- **Same WiFi**: Open `http://<mac-ip>:4100` in a browser
+- **Outside LAN**: Install [Tailscale](https://tailscale.com/) on both devices, then use `http://<tailscale-ip>:4100`
 
 ## Terminal board view
 
@@ -72,10 +106,3 @@ aigon board --list             # List view
 aigon board --features         # Features only
 aigon board --research         # Research only
 ```
-
-## Remote access
-
-The dashboard binds to `0.0.0.0` by default, making it accessible from any device on the local network:
-
-- **Same WiFi**: Open `http://<mac-ip>:4100` in a browser
-- **Outside LAN**: Install [Tailscale](https://tailscale.com/) on both devices, then use `http://<tailscale-ip>:4100`
