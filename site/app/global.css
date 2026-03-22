@@ -19,10 +19,11 @@
 
 .dark {
   /* Aigon warm editorial palette — dark mode (default) */
+  /* Foreground softened to ~rgba(255,255,255,0.8) — less punchy, easier on eyes (Linear-style) */
   --color-fd-background: 225 14% 7%;
-  --color-fd-foreground: 38 18% 88%;
-  --color-fd-muted: 38 8% 42%;
-  --color-fd-muted-foreground: 38 8% 42%;
+  --color-fd-foreground: 38 10% 75%;
+  --color-fd-muted: 38 6% 45%;
+  --color-fd-muted-foreground: 38 6% 45%;
   --color-fd-card: 224 14% 11%;
   --color-fd-popover: 224 14% 11%;
   --color-fd-border: 30 10% 40% / 0.15;
