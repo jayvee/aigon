@@ -237,8 +237,11 @@
       const status = agent.status || 'idle';
       const tmuxRunning = agent.tmuxRunning || false;
       const drive = isSoloDrive(agent);
+      const endedFlag = !!(agent.flags && agent.flags.sessionEnded);
       let icon, label, cls;
-      if (status === 'implementing' && (tmuxRunning || drive)) {
+      if (status === 'implementing' && endedFlag) {
+        icon = '⚠'; label = 'Session ended'; cls = 'status-flagged';
+      } else if (status === 'implementing' && (tmuxRunning || drive)) {
         icon = '●'; label = drive ? 'Implementing' : 'Running'; cls = 'status-running';
       } else if (status === 'implementing' && !tmuxRunning) {
         icon = '○'; label = 'Session ended'; cls = 'status-ended';
@@ -256,12 +259,22 @@
 
     // AGENT_ACTION_LABELS moved to actions.js (shared between monitor + pipeline)
 
-    function buildAgentSectionHtml(agent, agentValidActions) {
+    function buildAgentSectionHtml(agent, agentValidActions, feature, repoPath, pipelineType) {
       const displayName = AGENT_DISPLAY_NAMES[agent.id] || agent.id;
       const statusHtml = buildAgentStatusHtml(agent, { showDevLink: true });
       const primaryActions = agentValidActions.filter(va => va.action !== 'feature-stop' && va.action !== 'research-stop');
       const overflowActions = agentValidActions.filter(va => va.action === 'feature-stop' || va.action === 'research-stop');
       let actionsHtml = '';
+      const entityType = pipelineType === 'research' ? 'research' : 'feature';
+      if (agent.flags && agent.flags.sessionEnded) {
+        const attrs = ' data-flag-entity="' + escHtml(entityType) + '"' +
+          ' data-flag-id="' + escHtml(feature.id) + '"' +
+          ' data-flag-agent="' + escHtml(agent.id) + '"' +
+          ' data-flag-repo="' + escHtml(repoPath || '') + '"';
+        actionsHtml += '<button class="btn btn-primary kcard-flag-btn" data-flag-action="mark-submitted"' + attrs + '>Mark Submitted</button>';
+        actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="reopen-agent"' + attrs + '>Re-open Agent</button>';
+        actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="view-work"' + attrs + '>View Work</button>';
+      }
       if (primaryActions.length > 0) {
         const va = primaryActions[0];
         const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
@@ -327,7 +340,7 @@
         // Agent sections
         agents.forEach(agent => {
           const agentActions = validActions.filter(va => va.agentId === agent.id);
-          innerHtml += buildAgentSectionHtml(agent, agentActions);
+          innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType);
         });
         // Card-level actions (non-per-agent: close, eval, review, etc.)
         const cardActionsHtml = buildFeatureActions(feature, repoPath, pipelineType);
@@ -453,6 +466,19 @@
         btn.onclick = async (e) => {
           e.stopPropagation();
           await handleFeatureAction(va, feature, repoPath, btn, pipelineType);
+        };
+      });
+
+      card.querySelectorAll('.kcard-flag-btn').forEach(btn => {
+        btn._origText = btn.textContent;
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const action = btn.getAttribute('data-flag-action');
+          const entityType = btn.getAttribute('data-flag-entity');
+          const id = btn.getAttribute('data-flag-id');
+          const agentId = btn.getAttribute('data-flag-agent');
+          const targetRepoPath = btn.getAttribute('data-flag-repo') || repoPath;
+          await requestAgentFlagAction(action, { entityType, id, agentId, repoPath: targetRepoPath }, btn);
         };
       });
 
