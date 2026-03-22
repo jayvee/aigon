@@ -14,7 +14,7 @@
     "models": {
       "research": "gpt-5.2",
       "implement": "gpt-5.3-codex",
-      "evaluate": "gpt-5.2 pro"
+      "evaluate": "gpt-5.4"
     }
   },
   "placeholders": {
