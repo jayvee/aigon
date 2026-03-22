@@ -104,13 +104,31 @@ Feature/research state lives in **two layers**:
 - **Agent prompts or install content** → `templates/`; run `aigon install-agent cc` after
 - **Workflow state changes** → update command module AND affected templates together
 
-## Six Rules Before Editing
+## Seven Rules Before Editing
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit
 4. **Restart after backend edits** — after changing any `lib/*.js`, restart `node aigon-cli.js dashboard`
 5. **Don't move spec files manually** — always use `aigon` CLI commands to transition state
 6. **Update docs when you change architecture** — if your changes add modules, change repo structure, introduce new patterns, or affect how agents should work, update `CLAUDE.md`, `docs/architecture.md`, and/or `AGENTS.md` in the same PR. Documentation is not a follow-up task — it ships with the code.
+7. **Use the frontend-design skill for ALL visual work** — see below.
+
+## Frontend & Visual Design Rules
+**MANDATORY: Always invoke `Skill(frontend-design)` before editing any visual component.**
+
+This applies to:
+- Page layouts (landing page, docs pages, any `.tsx` that renders UI)
+- CSS files (global.css, Tailwind config, any styling)
+- Component styling (cards, buttons, terminals, galleries)
+- Color changes, typography, spacing, borders, shadows
+
+The process for any visual change:
+1. **Invoke `Skill(frontend-design)`** — get design guidance before writing code
+2. **Use shadcn/ui components** where available instead of raw Tailwind classes
+3. **Verify with Playwright** — take a screenshot after every visual change
+4. **Compare against reference** — if there's an existing design (e.g., aigon.build), compare side-by-side
+
+Never hand-write CSS or guess at Tailwind classes for visual design. The frontend-design skill produces production-grade interfaces; hand-written CSS produces inconsistent, broken results.
 
 ## Common Agent Mistakes
 - **Inventing args**: adding `cc` or `--autonomous` to a plain command → causes wrong mode (Drive vs Fleet)
