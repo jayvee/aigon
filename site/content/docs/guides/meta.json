@@ -1,0 +1,11 @@
+{
+  "title": "Guides",
+  "pages": [
+    "drive-mode",
+    "fleet-mode",
+    "autopilot-mode",
+    "research-workflow",
+    "feedback-workflow",
+    "dashboard"
+  ]
+}

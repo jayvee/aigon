@@ -1,0 +1,90 @@
+---
+title: Feedback Workflow
+description: Capture user input and route it back into your product workflow.
+---
+
+Feedback captures raw user/customer input and routes it back into your product workflow. Unlike features (what to build) and research (how to explore), feedback represents external signal that closes the loop between shipped code and user experience.
+
+## Create a feedback item
+
+```bash
+/aigon:feedback-create "User login is slow on mobile"
+```
+
+This creates a feedback file in `docs/specs/feedback/01-inbox/` with an auto-assigned ID, YAML frontmatter (status, type, reporter, source), and sections for summary, evidence, triage notes, and proposed next action.
+
+## List and filter
+
+```bash
+aigon feedback-list                    # Active lanes (inbox, triaged, actionable)
+aigon feedback-list --inbox            # Specific status
+aigon feedback-list --type bug         # By metadata
+aigon feedback-list --severity critical
+aigon feedback-list --tag mobile
+aigon feedback-list --all              # Including done, wont-fix, duplicate
+```
+
+## Triage (AI-assisted)
+
+```bash
+/aigon:feedback-triage 01
+```
+
+The AI analyses the feedback and suggests:
+- **Type**: bug, feature-request, question, etc.
+- **Severity**: low, medium, high, critical
+- **Tags**: for categorisation
+- **Duplicate candidates**: based on title + summary similarity
+- **Next action**: keep, mark-duplicate, promote-feature, promote-research, wont-fix
+
+Apply the suggestions:
+
+```bash
+aigon feedback-triage 01 \
+  --type bug \
+  --severity high \
+  --tags "mobile,performance" \
+  --status triaged \
+  --apply --yes
+```
+
+## Duplicate handling
+
+```bash
+aigon feedback-triage 05 \
+  --status duplicate \
+  --duplicate-of 02 \
+  --apply --yes
+```
+
+The file moves to `06-duplicate/` with `duplicate_of: 02` in frontmatter.
+
+## Promote to feature or research
+
+When feedback is actionable:
+
+```bash
+aigon feedback-triage 01 --status actionable --apply --yes
+```
+
+The file moves to `03-actionable/`, ready to be turned into a research topic or feature spec.
+
+## Safety model
+
+Feedback triage uses a preview-first approach:
+- **Default**: Shows what would change without modifying files
+- **Apply**: Requires explicit `--apply --yes` to commit changes
+- No interactive prompts (safe for automation)
+
+## Traceability
+
+Feedback creates an auditable trail:
+
+1. User reports bug → `feedback-create "Export broken on Safari"`
+2. Triage suggests type=bug, severity=high → move to triaged
+3. Product decision → mark as actionable
+4. Create feature from feedback → link to feedback ID in the spec
+5. Implement and ship
+6. User confirms fix → mark feedback as done
+
+This answers both "why did we build this?" (forward) and "what happened to my request?" (backward).

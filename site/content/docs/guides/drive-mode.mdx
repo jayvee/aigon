@@ -3,19 +3,87 @@ title: Drive Mode
 description: Hands-on implementation with a single agent.
 ---
 
-Drive mode gives you tight control over implementation details and review checkpoints with a single agent.
+Drive mode gives you tight control over implementation — you and one agent, step by step. It's the default mode and the best starting point.
 
 ## When to use
 
-Use Drive mode when you want to guide the implementation closely and review each step.
+- You want to guide the implementation and review each step
+- The feature is straightforward and doesn't need competing approaches
+- You're learning the Aigon workflow
 
-## Workflow
+## Workspace styles
+
+Drive mode supports two workspace styles:
+
+| Style | Command | Where code lives |
+|-------|---------|-----------------|
+| **Branch** | `feature-start 07` | Current repo, new branch |
+| **Worktree** | `feature-start 07 cc` | Isolated directory at `../<repo>-worktrees/` |
+
+Use **branch** for simple features. Use **worktree** when you want isolation or are working on multiple features in parallel.
+
+## Full workflow
+
+### 1. Create a spec
 
 ```bash
-aigon feature-create "my-feature"
-aigon feature-prioritise my-feature
-/aigon:feature-start 07
-/aigon:feature-do 07
-/aigon:feature-submit 07
-aigon feature-close 07
+/aigon:feature-create "Dark Mode"
 ```
+
+The agent explores your codebase before writing the spec — understanding existing architecture, patterns, and constraints. The spec lands in `docs/specs/features/01-inbox/`.
+
+### 2. Prioritise
+
+```bash
+/aigon:feature-prioritise dark-mode
+```
+
+Assigns a global ID (e.g., `#108`) and moves the spec to `02-backlog/`.
+
+### 3. Set up workspace
+
+```bash
+# Branch mode (work in current repo)
+/aigon:feature-start 108
+
+# Worktree mode (isolated directory)
+/aigon:feature-start 108 cc
+```
+
+Both modes create an implementation log and write agent status to `.aigon/state/`.
+
+### 4. Implement
+
+```bash
+/aigon:feature-do 108
+```
+
+The agent reads the spec, creates tasks from the acceptance criteria, and implements the feature. It auto-signals status transitions (`implementing` → `waiting`) and fills out the implementation log.
+
+### 5. Cross-agent review (optional)
+
+Open a session with a different agent and run:
+
+```bash
+/aigon:feature-review 108
+```
+
+The reviewing agent reads the spec, reviews `git diff main...HEAD`, and commits targeted fixes with `fix(review):` prefix.
+
+### 6. Close
+
+```bash
+/aigon:feature-close 108
+```
+
+Merges the branch to main and archives the log. For worktree mode, the agent is auto-detected.
+
+## Fast-track
+
+Skip the full loop when you just want to go:
+
+```bash
+/aigon:feature-now dark-mode
+```
+
+Creates the spec, sets up the workspace, and starts implementation in one command.

@@ -1,6 +1,94 @@
 ---
 title: Evaluation
-description: How Aigon compares implementations and selects winners.
+description: Structured comparison of Fleet implementations with rubrics and scoring.
 ---
 
-Evaluation process explained. Content coming soon.
+After Fleet agents submit their implementations, `feature-eval` generates a structured comparison so you can score and select the best one.
+
+## When evaluation applies
+
+Evaluation is **Fleet-only** — it requires multiple implementations to compare. For Drive mode, use `feature-review` for cross-agent code review instead.
+
+## Running an evaluation
+
+```bash
+/aigon:feature-eval 108
+```
+
+This:
+1. Moves the feature to `04-in-evaluation/`
+2. Creates a comparison template listing all implementations
+3. Launches an evaluator agent to review the code
+
+## Evaluator bias detection
+
+Aigon warns if the evaluator shares a provider family with an implementer (e.g., Claude evaluating Claude's work). To suppress:
+
+```bash
+aigon feature-eval 108 --allow-same-model-judge
+```
+
+**Tip:** Use a different model for evaluation than those that implemented. For example, if Claude and Gemini implemented, evaluate with Codex.
+
+## Evaluation criteria
+
+The evaluation template scores each implementation on:
+
+| Criteria | What it measures |
+|----------|-----------------|
+| Code Quality | Readability, structure, idiomatic patterns |
+| Spec Compliance | All acceptance criteria met |
+| Performance | Efficiency, resource usage |
+| Maintainability | Ease of future changes, test coverage |
+
+Each criterion gets a score out of 10, producing a total out of 40.
+
+## Example output
+
+```markdown
+## Evaluation Criteria
+
+| Criteria | cc | cx | gg |
+|----------|----|----|-----|
+| Code Quality | 9/10 | 10/10 | 6/10 |
+| Spec Compliance | 10/10 | 10/10 | 7/10 |
+| Performance | 9/10 | 10/10 | 8/10 |
+| Maintainability | 9/10 | 10/10 | 6/10 |
+| **TOTAL** | **37/40** | **40/40** | **27/40** |
+```
+
+The evaluation also includes a strengths/weaknesses analysis for each agent's implementation.
+
+## After evaluation
+
+### Merge the winner
+
+```bash
+aigon feature-close 108 cx              # Merge Codex's implementation
+```
+
+### Adopt improvements from losers
+
+```bash
+aigon feature-close 108 cx --adopt all  # Review diffs from all losers
+aigon feature-close 108 cx --adopt gg   # Review diffs from specific agents
+```
+
+The `--adopt` flag prints diffs from losing agents after merging the winner. Review for extra tests, better error handling, documentation, and edge cases worth keeping.
+
+### Clean up
+
+```bash
+aigon feature-cleanup 108               # Remove losing worktrees and branches
+aigon feature-cleanup 108 --push        # Push branches to origin first
+```
+
+## Cross-agent review (alternative to Fleet eval)
+
+For Drive mode or when you want a quick review without full evaluation:
+
+```bash
+/aigon:feature-review 108
+```
+
+A different agent reviews the code, reads the spec, checks `git diff main...HEAD`, and commits targeted fixes with `fix(review):` prefix.

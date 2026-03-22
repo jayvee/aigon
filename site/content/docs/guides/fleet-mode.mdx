@@ -3,20 +3,103 @@ title: Fleet Mode
 description: Orchestrate competing implementations across multiple agents.
 ---
 
-Fleet mode runs multiple agents in parallel on the same feature spec, so you can compare and adopt the best implementation.
+Fleet mode runs multiple agents in parallel on the same feature spec. Each agent works in an isolated Git worktree. You compare the results and merge the winner.
 
 ## When to use
 
-Use Fleet mode when you want multiple perspectives on the same problem.
+- You want multiple perspectives on a non-trivial problem
+- The feature is important enough to warrant comparison
+- You want to discover the best approach through competition
 
-## Workflow
+## How it works
+
+```
+feature-start 108 cc gg cx
+       ↓
+  ┌────┴────┐────────┐
+  cc        gg       cx        ← isolated worktrees
+  │         │         │
+  feature-do feature-do feature-do
+  │         │         │
+  └────┬────┘────────┘
+       ↓
+  feature-eval 108              ← compare implementations
+       ↓
+  feature-close 108 cx          ← merge the winner
+```
+
+## Full workflow
+
+### 1. Create and prioritise
 
 ```bash
-aigon feature-create "my-feature"
-aigon feature-prioritise my-feature
-/aigon:feature-start 07 cc gg cx
-/aigon:feature-open 07
-# Each agent runs /aigon:feature-do 07
-/aigon:feature-eval 07
-aigon feature-close 07 cc --adopt
+/aigon:feature-create "Dark Mode"
+/aigon:feature-prioritise dark-mode      # Assigns ID, e.g. #108
 ```
+
+### 2. Set up Fleet
+
+```bash
+/aigon:feature-start 108 cc gg cx
+```
+
+This creates three isolated worktrees:
+- `../<repo>-worktrees/feature-108-cc-dark-mode`
+- `../<repo>-worktrees/feature-108-gg-dark-mode`
+- `../<repo>-worktrees/feature-108-cx-dark-mode`
+
+Each gets its own branch, implementation log, and agent status file.
+
+### 3. Open agents
+
+```bash
+aigon feature-open 108 --all     # Opens all agents side-by-side
+aigon feature-open 108 cc        # Open a single agent
+```
+
+Terminal behaviour depends on your config:
+- **Warp**: Split panes with agents auto-started
+- **tmux**: Persistent named sessions (`aigon-f108-cc`, etc.) that survive terminal closes
+- **VS Code / Cursor**: Opens the folder; run the agent manually
+
+### 4. Implement
+
+Each agent runs `/aigon:feature-do 108` independently in their worktree. They read the same spec but build independently.
+
+### 5. Cross-agent review (optional)
+
+In each worktree, open a session with a different agent:
+
+```bash
+/aigon:feature-review 108
+```
+
+### 6. Evaluate
+
+Back in the main repo:
+
+```bash
+/aigon:feature-eval 108
+```
+
+This moves the feature to `04-in-evaluation/` and creates a comparison template. Aigon warns if the evaluator shares a provider family with an implementer (use `--allow-same-model-judge` to suppress).
+
+### 7. Merge the winner
+
+```bash
+aigon feature-close 108 cx              # Merge Codex's implementation
+aigon feature-close 108 cx --adopt all  # Merge + review diffs from losers
+```
+
+The `--adopt` flag prints diffs from losing agents after merging, so you can cherry-pick valuable improvements (extra tests, error handling, edge cases).
+
+### 8. Clean up
+
+```bash
+aigon feature-cleanup 108               # Remove losing worktrees and branches
+aigon feature-cleanup 108 --push        # Push branches to origin first
+```
+
+## Mismatch protection
+
+If `--agent=gg` is specified inside a `feature-108-cc-*` worktree, Aigon exits with an error instead of launching the wrong agent.

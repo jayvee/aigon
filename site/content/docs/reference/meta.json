@@ -1,0 +1,9 @@
+{
+  "title": "Reference",
+  "pages": [
+    "cli-commands",
+    "...commands",
+    "configuration",
+    "agents"
+  ]
+}

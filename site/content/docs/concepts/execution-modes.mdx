@@ -1,6 +1,85 @@
 ---
 title: Execution Modes
-description: Drive, Fleet, Autopilot, and Swarm — when to use each mode.
+description: Drive, Fleet, Autopilot, and Swarm — four modes across two axes.
 ---
 
-Execution modes explained. Content coming soon.
+Aigon uses four modes across two axes: number of agents and level of autonomy.
+
+```
+                    One Agent          Multi-Agent
+                 ┌──────────────┬──────────────────┐
+  Hands-on       │    Drive     │      Fleet       │
+                 ├──────────────┼──────────────────┤
+  Hands-off      │  Autopilot   │      Swarm       │
+                 └──────────────┴──────────────────┘
+```
+
+## Drive
+
+**One agent, hands-on.** You guide the implementation step by step.
+
+- Best for: most features, learning the workflow, tight control
+- Workspace: branch or worktree
+- Command: `/aigon:feature-do 07`
+
+## Fleet
+
+**Multiple agents, hands-on competition.** Agents work in isolated worktrees on the same spec. You evaluate and pick the winner.
+
+- Best for: important features where you want the best approach
+- Workspace: one worktree per agent
+- Command: `aigon feature-start 07 cc gg cx`
+
+## Autopilot
+
+**One agent, hands-off.** The agent retries in a loop until validation passes or the iteration budget runs out. Each iteration spawns a fresh agent session.
+
+- Best for: well-scoped features with clear validation checks
+- Workspace: branch or worktree
+- Command: `aigon feature-do 07 --autonomous`
+
+## Swarm
+
+**Multiple agents, hands-off.** Fleet + Autopilot — multiple agents compete, each running autonomously.
+
+- Best for: maximum coverage with minimal supervision
+- Workspace: one worktree per agent
+- Command: `aigon feature-start 07 cc gg --autonomous --auto-submit`
+
+## Mode selection guide
+
+| Situation | Mode | Why |
+|-----------|------|-----|
+| Routine feature, clear spec | Drive | Fast, simple |
+| Critical feature, need best approach | Fleet | Compare implementations |
+| Well-defined with good test coverage | Autopilot | Hands-off with validation |
+| Important + well-defined | Swarm | Multiple autonomous agents |
+| Exploring a technical question | Research (Drive or Fleet) | Investigation before building |
+
+## Command surfaces
+
+Each mode works with both CLI and slash commands:
+
+| Mode | CLI Context | In-Agent Context |
+|------|-------------|-----------------|
+| Drive | Fully supported | Fully supported |
+| Fleet | Strong for orchestration | Strong for per-agent execution |
+| Autopilot | Primary entry point | Supported in-session |
+| Swarm | Primary entry point | Limited (agents run autonomously) |
+
+## Agent status tracking
+
+As agents work, they signal status transitions via `aigon agent-status`:
+
+| Status | Meaning |
+|--------|---------|
+| `implementing` | Agent is writing code |
+| `waiting` | Agent finished, awaiting review |
+| `submitted` | Agent committed code and log |
+
+Check status:
+
+```bash
+aigon status              # All in-progress features
+aigon status 31           # One feature, per-agent table
+```
