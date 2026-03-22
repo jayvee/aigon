@@ -1,10 +1,5 @@
 {
   "tier": "pro",
-  "devProxy": {
-    "command": "node aigon-cli.js dashboard",
-    "healthCheck": "/api/status",
-    "basePort": 4100
-  },
   "agents": {
     "cc": {
       "models": {
