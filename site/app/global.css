@@ -54,10 +54,12 @@
   --shadow-warm-tight: 0 8px 18px rgba(35, 30, 20, 0.14);
 }
 
-/* Headings brighter than body text — clear visual hierarchy */
-.dark :is(h1, h2, h3, h4, h5, h6),
-.dark [data-heading],
-.dark .prose :is(h1, h2, h3, h4, h5, h6) {
+/* Headings brighter than body text — override Fumadocs prose heading variable */
+.dark {
+  --tw-prose-headings: hsl(38 12% 92%);
+}
+
+.dark :is(h1, h2, h3, h4, h5, h6) {
   color: hsl(38 12% 92%) !important;
 }
 
