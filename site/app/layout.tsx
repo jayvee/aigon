@@ -6,7 +6,6 @@ import { Footer, Layout, Navbar } from "nextra-theme-docs";
 import { Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
 import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import "nextra-theme-docs/style.css";
 
 const geist = Geist({
@@ -102,7 +101,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           {children}
         </Layout>
         <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   );
