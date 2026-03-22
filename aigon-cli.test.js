@@ -1778,6 +1778,16 @@ test('requestTransition throws for unknown action', () => {
     });
 });
 
+test('requestTransition throws when manifest is missing', () => {
+    withCleanManifest('9989', () => {
+        assert.throws(
+            () => requestTransition('9989', 'feature-start', {}),
+            (err) => err.message.includes('Manifest not found'),
+            'throws for missing manifest'
+        );
+    });
+});
+
 // completePendingOp
 test('completePendingOp removes first occurrence of op from pending', () => {
     withCleanManifest('9993', () => {
@@ -2400,30 +2410,21 @@ test('feature-close rejects wrong branch via subprocess', () => {
 // Manifest Read/Write Separation Tests
 // ---------------------------------------------------------------------------
 
-console.log('\nManifest — readManifest does not persist');
+console.log('\nManifest — explicit read/write contract');
 
-test('readManifest returns transient object without persisting for unknown feature', () => {
+test('readManifest returns null for unknown feature and does not persist', () => {
     withTempDir(tempDir => {
-        // Point manifest to temp state dir
         const stateDir = path.join(tempDir, '.aigon', 'state');
         fs.mkdirSync(stateDir, { recursive: true });
 
-        // Create a minimal spec folder so deriveFromFolder finds something
-        const specDir = path.join(tempDir, 'docs', 'specs', 'features', '02-backlog');
-        fs.mkdirSync(specDir, { recursive: true });
-        fs.writeFileSync(path.join(specDir, 'feature-999-test-feature.md'), '# Test');
-
-        // Use a fresh manifest module with overridden paths
         const origCwd = process.cwd();
         process.chdir(tempDir);
-        // Clear require cache to pick up new cwd
         delete require.cache[require.resolve('./lib/manifest')];
         const freshManifest = require('./lib/manifest');
 
         const result = freshManifest.readManifest('999');
-        assert.strictEqual(result.stage, 'backlog', 'should derive stage from folder');
+        assert.strictEqual(result, null, 'missing coordinator manifest should return null');
 
-        // Verify no file was written
         const manifestFile = path.join(stateDir, 'feature-999.json');
         assert.ok(!fs.existsSync(manifestFile), 'readManifest should NOT persist the file');
 
@@ -2432,25 +2433,30 @@ test('readManifest returns transient object without persisting for unknown featu
     });
 });
 
-test('ensureManifest creates and persists manifest file', () => {
+test('writeManifest creates and persists manifest file', () => {
     withTempDir(tempDir => {
         const stateDir = path.join(tempDir, '.aigon', 'state');
         fs.mkdirSync(stateDir, { recursive: true });
-        const specDir = path.join(tempDir, 'docs', 'specs', 'features', '02-backlog');
-        fs.mkdirSync(specDir, { recursive: true });
-        fs.writeFileSync(path.join(specDir, 'feature-998-ensure-test.md'), '# Test');
 
         const origCwd = process.cwd();
         process.chdir(tempDir);
         delete require.cache[require.resolve('./lib/manifest')];
         const freshManifest = require('./lib/manifest');
 
-        const result = freshManifest.ensureManifest('998');
+        const result = freshManifest.writeManifest('998', {
+            id: '998',
+            type: 'feature',
+            name: 'explicit-create',
+            stage: 'backlog',
+            specPath: null,
+            agents: [],
+            winner: null,
+            pending: [],
+        }, { type: 'transition:feature-prioritise', actor: 'test' });
         assert.strictEqual(result.stage, 'backlog');
 
-        // Verify file WAS written
         const manifestFile = path.join(stateDir, 'feature-998.json');
-        assert.ok(fs.existsSync(manifestFile), 'ensureManifest should persist the file');
+        assert.ok(fs.existsSync(manifestFile), 'writeManifest should persist the file');
 
         process.chdir(origCwd);
         delete require.cache[require.resolve('./lib/manifest')];
