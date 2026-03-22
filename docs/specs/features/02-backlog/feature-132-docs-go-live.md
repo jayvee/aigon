@@ -6,14 +6,23 @@ Switch aigon.build from Cloudflare Pages to Vercel, configure DNS, set up redire
 
 ## Acceptance Criteria
 
+### DNS & Deployment
 - [ ] aigon.build DNS points to Vercel (CNAME or A record)
 - [ ] SSL certificate provisioned and working on Vercel
 - [ ] Old Cloudflare Pages deployment decommissioned
 - [ ] Redirects configured for any paths that changed (301s, not 404s)
+- [ ] Verify site loads correctly from multiple regions
+
+### Docs Features
 - [ ] AI chat enabled using Fumadocs LLM integration + llms.txt
 - [ ] Google Search Console updated (if applicable)
+
+### Repo Cleanup
 - [ ] Old aigon-site repo archived on GitHub with README pointing to aigon/site/
-- [ ] Verify site loads correctly from multiple regions
+- [ ] README.md slimmed down: brief overview + "Full documentation at https://aigon.build/docs"
+- [ ] README.md links to key docs pages: Getting Started, Execution Modes, CLI Reference, Dashboard
+- [ ] GUIDE.md deprecated: replaced with a one-liner pointing to https://aigon.build/docs
+- [ ] Help text (`templates/help.txt`) updated to reference aigon.build/docs
 
 ## Validation
 
@@ -30,6 +39,9 @@ curl -sI https://aigon.build/docs/ | head -5  # verify docs section
 4. Enable Fumadocs AI chat in config
 5. Generate `llms.txt` for LLM consumption of docs
 6. Archive `aigon-site` repo on GitHub
+7. Slim down README.md — keep install instructions + brief overview, replace detailed docs with links to aigon.build/docs
+8. Replace GUIDE.md content with: `Full documentation is at [aigon.build/docs](https://aigon.build/docs)`
+9. Update `templates/help.txt` footer to reference aigon.build/docs
 
 ## Dependencies
 
