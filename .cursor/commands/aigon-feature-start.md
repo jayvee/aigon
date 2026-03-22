@@ -1,4 +1,4 @@
-# aigon-feature-setup
+# aigon-feature-start
 
 Prepare your workspace to implement a feature in either Drive or Fleet mode.
 
@@ -17,13 +17,13 @@ If no ID is provided, or the ID doesn't match an existing feature in the backlog
 
 ```bash
 # Drive mode (creates branch in current repo) — user passes only an ID
-aigon feature-setup <name>
+aigon feature-start <name>
 
 # Drive worktree mode (creates worktree for parallel development) — user passes ID + agent
-aigon feature-setup <name> <agent>
+aigon feature-start <name> <agent>
 
 # Fleet mode (multiple agents compete in separate worktrees) — user passes ID + 2+ agents
-aigon feature-setup <name> <agent1> <agent2> [agent3...]
+aigon feature-start <name> <agent1> <agent2> [agent3...]
 ```
 
 The mode is determined automatically based on what the user provides:
@@ -42,39 +42,36 @@ The CLI will:
 
 ## Step 2: Confirm setup and next steps
 
+`feature-start` creates the workspace AND opens agent terminals automatically. The agents are already running — there is no separate "open" step.
+
 ### Drive Mode (branch)
 
-After the CLI completes:
+After the CLI completes, the agent is running `feature-do` in your current terminal. Wait for implementation to complete, then:
 ```bash
-/aigon-feature-do 55     # Start implementing
+/aigon-feature-close <ID>
 ```
 
-### Drive Worktree Mode (parallel development)
+### Drive Worktree Mode
 
-After the CLI completes, open the worktree using:
+After the CLI completes, the agent terminal is already open and implementing. Wait for it to submit, then close from the main repo:
+```bash
+/aigon-feature-close <ID>
 ```
-/aigon-feature-open 55
-```
-
-This opens Warp terminal with the agent CLI running `/aigon-feature-do` automatically.
-
-Remember that `/aigon-feature-close` must be run from the main repo later.
 
 ### Fleet Mode (competition)
 
-After the CLI completes, open all worktrees side-by-side:
+After the CLI completes, all agent terminals are already open and implementing. Wait for all agents to submit, then evaluate:
 ```bash
-/aigon-feature-open 55 --all         # Opens all Fleet agents side-by-side in Warp
+/aigon-feature-eval <ID>
 ```
 
-Or open individually:
-```
-/aigon-feature-open 55 cc    # Open Claude's worktree
-/aigon-feature-open 55 gg    # Open Gemini's worktree
-/aigon-feature-open 55 cx    # Open Codex's worktree
-```
+### Re-opening a crashed/ended session
 
-Each terminal opens with the agent CLI running `/aigon-feature-do` automatically. After all implementations complete, return to main repo and run `/aigon-feature-eval 55` to compare.
+If an agent session dies, use `feature-open` to re-attach:
+```bash
+/aigon-feature-open <ID>          # Re-open a Drive worktree agent
+/aigon-feature-open <ID> cc       # Re-open a specific Fleet agent
+```
 
 ## Important Notes
 
@@ -82,11 +79,12 @@ Each terminal opens with the agent CLI running `/aigon-feature-do` automatically
 - **Drive worktree mode**: You'll work in an isolated worktree — ideal for parallel development of multiple features
 - **Fleet mode**: Multiple agents compete on the same feature in their own worktrees
 - Worktrees are created in `../<repo>-worktrees/` to keep them grouped with the project
+- Agents start automatically — no need to run `feature-open` after `feature-start`
 
 ## Prompt Suggestion
 
 End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID and choose based on mode:
 
-- **Drive mode (branch):** `/aigon-feature-do <ID>`
-- **Drive worktree:** `/aigon-feature-open <ID>`
-- **Fleet:** `/aigon-feature-open <ID> --all`
+- **Drive mode (branch):** `/aigon-feature-close <ID>`
+- **Drive worktree:** `/aigon-feature-close <ID>`
+- **Fleet:** `/aigon-feature-eval <ID>`

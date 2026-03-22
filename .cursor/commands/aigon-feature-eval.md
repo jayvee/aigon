@@ -84,28 +84,39 @@ Add notes on:
 
 ### Fleet Mode
 
-Fill in the evaluation table scoring each implementation on:
-- Code Quality
-- Spec Compliance
-- Performance
-- Maintainability
+Write the evaluation using this exact structure. Copy each template table below and fill in the values.
 
-Use this exact table format with Unicode box-drawing characters throughout (no plain `|` pipes):
+**Scoring table** — score each criterion out of 10:
 
-```
-  ┌────────┬───────┬───────┬──────────┬───────┐
-  │ Agent  │ Lines │ Tests │ Coverage │ Score │
-  ├────────┼───────┼───────┼──────────┼───────┤
-  │ cc     │   94  │  8/8  │   91%    │ 36/40 │
-  │ cx     │   71  │  8/8  │   88%    │ 34/40 │
-  └────────┴───────┴───────┴──────────┴───────┘
+```markdown
+| Criteria | cx | gg |
+|---|---|---|
+| Code Quality | /10 | /10 |
+| Spec Compliance | /10 | /10 |
+| Performance | /10 | /10 |
+| Maintainability | /10 | /10 |
+| **Total** | **/40** | **/40** |
 ```
 
-Use `│` for all column separators, `─` for horizontal lines, and the correct corner/junction characters. Align values within columns.
+**Summary table** — lines changed and total score per agent:
 
-Document:
-- Strengths & Weaknesses for each agent
-- Your recommendation for the winner
+```markdown
+| Agent | Lines | Score |
+|---|---|---|
+| cx | | /40 |
+| gg | | /40 |
+```
+
+Adjust agent columns to match the actual agents being evaluated.
+
+**IMPORTANT formatting rules:**
+- Use standard GFM markdown tables (`| col | col |` with `|---|---|` separator rows) exactly as shown above
+- Do NOT use Unicode box-drawing characters (`┌─┬─┐`, `│`, `├─┼─┤`, `└─┴─┘`) — they break dashboard rendering
+- Do NOT wrap tables in code fences — write them as raw markdown so they render as HTML tables
+
+After the tables, document:
+- **Strengths & Weaknesses** for each agent (use `####` agent headings with bullet lists)
+- **Recommendation** — which agent wins and why (1-2 sentences)
 
 ## Step 5: Present evaluation and STOP
 

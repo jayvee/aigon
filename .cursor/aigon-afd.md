@@ -2,7 +2,7 @@
 
 Implement a feature. Works in Drive mode (branch), Drive mode (worktree) (parallel development), and Fleet mode (competition).
 
-**IMPORTANT:** Run `/aigon-feature-setup <ID>` first to prepare your workspace.
+**IMPORTANT:** Run `/aigon-feature-start <ID>` first to prepare your workspace.
 
 ## Argument Resolution
 
@@ -138,6 +138,17 @@ The **dev server** runs a local development server of this project's source code
 
 Generate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each criterion. Present the checklist in your response before stopping.
 
+## Step 4.5: Update documentation if needed
+
+If your changes affect any of the following, update the relevant docs **before committing**:
+
+- **New modules or files** → update Module Map in `CLAUDE.md` and `docs/architecture.md`
+- **New repo structure or external dependencies** → update `docs/architecture.md`
+- **New patterns or conventions agents should follow** → update `CLAUDE.md` and/or `AGENTS.md`
+- **Cross-repo changes (e.g., `@aigon/pro`)** → note what changed in both repos
+
+Documentation ships with the code, not as a follow-up.
+
 ## Step 5: Commit your implementation
 
 **IMPORTANT: You MUST commit before proceeding.**
@@ -171,51 +182,21 @@ Update it with:
 
 ## Step 7: Signal completion
 
-**THIS IS THE FINAL STEP. YOU MUST COMPLETE IT.**
+**THIS IS THE FINAL STEP. YOU MUST COMPLETE IT. DO NOT SKIP THIS STEP.**
 
-**IMPORTANT:** You MUST use `aigon agent-status` CLI commands below — do NOT write `.aigon/state/` JSON files directly. The CLI resolves the correct target directory (main repo, not worktree).
-
-After committing your code (Step 5) and log (Step 6), run this command to detect your mode and signal the correct status:
-
-```bash
-if test -f .aigon/auto-submit; then echo "AUTO_SUBMIT"; elif test -f .aigon/worktree.json; then echo "WORKTREE"; else echo "BRANCH"; fi
-```
-
-Then follow the **one** matching section below:
-
----
-
-### AUTO_SUBMIT → signal done and exit
+After committing your code (Step 5) and log (Step 6), run this command **immediately**:
 
 ```bash
 aigon agent-status submitted
 ```
-This session is complete. Do not suggest follow-up commands.
 
----
+This signals to the dashboard that your work is done. **You must run this command before doing anything else.**
 
-### WORKTREE → signal done and stay
-
-You are in a worktree (Drive worktree or Fleet). Run:
-```bash
-aigon agent-status submitted
-```
 Then tell the user:
 
-> "Implementation complete — code is on the branch, ready for review. You can ask me to make changes here, or close the feature from the main repo when satisfied."
+> "Implementation submitted. You can review my changes, ask for modifications, or close the feature when ready."
 
-**STAY in the session.** The user may want to review your work and ask for changes. If they do, make the changes, commit, and say "Changes made and committed." No need to re-run agent-status — the status stays `submitted` and the branch tip always has the latest code.
-
-Do NOT run or suggest `feature-close` — that's the user's decision from the main repo.
-
----
-
-### BRANCH → signal done and stay
-
-You are on a branch in the main repo (Drive branch mode). Run:
-```bash
-aigon agent-status submitted
-```
+**STAY in the session.** The user may want to review your work and ask for changes. If they do, make the changes, commit, and say "Changes committed." Do NOT run or suggest `feature-close` — that's the user's decision.
 Then tell the user:
 
 > "Implementation complete — code is on the branch, ready for review. You can ask me to make changes, or run `/aigon:feature-close <ID>` when satisfied."

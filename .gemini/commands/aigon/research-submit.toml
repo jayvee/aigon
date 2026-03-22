@@ -40,10 +40,9 @@ This updates your findings file's status to `submitted`, which the `research-aut
 
 ## After Submitting
 
-**STOP** — do not run any further commands. The user (or autopilot) will:
-- Wait for all agents to submit
-- Run `/aigon:research-synthesize {{args}}` to compare findings
-- Run `/aigon:research-close {{args}}` to complete the research
+**STAY in the session.** The user may want to review your findings and ask follow-up questions.
+
+Do NOT run `aigon research-close` — the user (or autopilot) will synthesize all agents' findings.
 
 ## Prompt Suggestion
 
