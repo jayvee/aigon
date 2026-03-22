@@ -5,7 +5,8 @@
 
       document.getElementById('monitor-summary').style.display = 'none';
       document.getElementById('repo-header').style.display = 'none';
-      document.getElementById('repos').style.display = 'none';
+      document.getElementById('settings-view').style.display = 'none';
+      document.getElementById('config-view').style.display = 'none';
       document.getElementById('empty').style.display = 'none';
 
       // Load analytics data for the amplification section
@@ -229,18 +230,35 @@
       if (state.view === 'settings') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
+        document.getElementById('settings-view').style.display = '';
+        document.getElementById('config-view').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('insights-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
         document.getElementById('console-view').style.display = 'none';
-        document.getElementById('repos').style.display = '';
         document.getElementById('repo-header').style.display = 'none';
         renderSettings();
+      } else if (state.view === 'config') {
+        sidebar.style.display = '';
+        mobileSelect.style.display = '';
+        document.getElementById('settings-view').style.display = 'none';
+        document.getElementById('config-view').style.display = '';
+        document.getElementById('sessions-view').style.display = 'none';
+        document.getElementById('statistics-view').style.display = 'none';
+        document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('logs-view').style.display = 'none';
+        document.getElementById('console-view').style.display = 'none';
+        const allRepos = ((state.data || {}).repos || []);
+        renderSidebar(allRepos, { includeAll: false });
+        const selectedRepoData = state.selectedRepo !== 'all' ? allRepos.find(r => r.path === state.selectedRepo) : null;
+        renderRepoHeader(selectedRepoData);
+        renderConfigView();
       } else if (state.view === 'sessions') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
-        document.getElementById('repos').style.display = 'none';
+        document.getElementById('settings-view').style.display = 'none';
+        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = '';
         document.getElementById('statistics-view').style.display = 'none';
@@ -252,7 +270,8 @@
       } else if (state.view === 'statistics') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
-        document.getElementById('repos').style.display = 'none';
+        document.getElementById('settings-view').style.display = 'none';
+        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = '';
@@ -264,7 +283,8 @@
       } else if (state.view === 'insights') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
-        document.getElementById('repos').style.display = 'none';
+        document.getElementById('settings-view').style.display = 'none';
+        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
@@ -276,7 +296,8 @@
       } else if (state.view === 'logs') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
-        document.getElementById('repos').style.display = 'none';
+        document.getElementById('settings-view').style.display = 'none';
+        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
@@ -288,7 +309,8 @@
       } else if (state.view === 'console') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
-        document.getElementById('repos').style.display = 'none';
+        document.getElementById('settings-view').style.display = 'none';
+        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
@@ -301,7 +323,8 @@
         // monitor or pipeline — Alpine components handle the view content
         sidebar.style.display = '';
         mobileSelect.style.display = '';
-        document.getElementById('repos').style.display = 'none'; // settings only
+        document.getElementById('settings-view').style.display = 'none';
+        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
