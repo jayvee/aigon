@@ -1,12 +1,82 @@
-    // ── Insights stub (content rendered by Pro amplification.js when available) ─
-    function renderInsights() {
+    // ── Insights view ──────────────────────────────────────────────────────────
+    async function renderInsights() {
       var c = document.getElementById('insights-view');
-      if (c && !c.innerHTML.trim()) {
-        c.innerHTML = '<div class="stats-empty-msg" style="text-align:center;padding:40px 20px">' +
-          '<div style="font-size:18px;font-weight:600;margin-bottom:8px">Insights</div>' +
-          '<div style="color:var(--text-secondary);margin-bottom:16px">Workflow insights are available in the Statistics tab, or via <code>aigon insights</code>.</div>' +
-          '</div>';
+      if (!c) return;
+
+      document.getElementById('monitor-summary').style.display = 'none';
+      document.getElementById('repo-header').style.display = 'none';
+      document.getElementById('repos').style.display = 'none';
+      document.getElementById('empty').style.display = 'none';
+
+      // Load analytics data for the amplification section
+      if (!statsState.data) {
+        c.innerHTML = '<div class="amp-empty" style="padding:20px">Loading insights…</div>';
+        await loadAnalytics();
       }
+
+      // Load insights data
+      if (!statsState.insightsData && !statsState.insightsLoading) {
+        await loadInsights(false);
+      }
+
+      var analytics = statsState.data;
+      var filteredFeatures = analytics ? analytics.features || [] : [];
+
+      // Build amplification section (reuses function from logs.js)
+      var ampHtml = '';
+      if (typeof buildAmplificationSection === 'function') {
+        ampHtml = buildAmplificationSection(filteredFeatures);
+      }
+
+      // Build insights observations
+      var insightsHtml = '';
+      var payload = statsState.insightsData;
+
+      if (statsState.insightsLoading) {
+        insightsHtml = '<div class="amp-empty">Loading insights…</div>';
+      } else if (statsState.insightsError) {
+        insightsHtml = '<div class="amp-empty">Failed to load insights: ' + escHtml(statsState.insightsError) + '</div>';
+      } else if (!payload || !payload.report) {
+        insightsHtml = '<div class="amp-empty">Run <code>aigon insights</code> or click Refresh to generate insights.</div>';
+      } else if (payload.report.insufficientData) {
+        insightsHtml = '<div class="amp-empty">' + escHtml(payload.report.summary || 'Not enough data for insights yet.') + '</div>';
+      } else {
+        insightsHtml = (payload.report.observations || []).map(function(obs) {
+          var severity = escHtml(String(obs.severity || 'info').toLowerCase());
+          return '<article class="amp-insight-item">' +
+            '<div class="amp-insight-title"><span class="amp-insight-sev ' + severity + '">' + severity.toUpperCase() + '</span> ' + escHtml(obs.title || 'Insight') + '</div>' +
+            '<div class="amp-insight-observation">' + escHtml(obs.observation || '') + '</div>' +
+            '<div class="amp-insight-action">Action: ' + escHtml(obs.action || '—') + '</div>' +
+            '</article>';
+        }).join('');
+
+        var coachingHtml = '<div class="amp-insights-gated">AI coaching is available for Pro tier with <code>aigon insights --coach</code>.</div>';
+        if (payload.coaching && payload.coaching.ok && Array.isArray(payload.coaching.recommendations) && payload.coaching.recommendations.length > 0) {
+          coachingHtml = '<div class="amp-insights-coaching-title">AI Coaching (Pro)</div><ol class="amp-insights-coaching-list">' + payload.coaching.recommendations.slice(0, 5).map(function(rec) { return '<li>' + escHtml(rec) + '</li>'; }).join('') + '</ol>';
+        } else if (payload.coaching && payload.coaching.error && !payload.coaching.gated) {
+          coachingHtml = '<div class="amp-insights-gated">AI coaching unavailable: ' + escHtml(payload.coaching.error) + '</div>';
+        }
+        insightsHtml += coachingHtml;
+      }
+
+      var meta = payload && payload.generatedAt ? 'Updated ' + escHtml(relTime(payload.generatedAt)) : 'No cached insights yet';
+
+      c.innerHTML = '<div style="padding:0 0 28px">' +
+        ampHtml +
+        '<div class="stats-section-title" style="margin-top:20px">Observations</div>' +
+        '<div class="amp-insights-toolbar">' +
+          '<span class="amp-insights-meta">' + meta + '</span>' +
+          '<button class="btn" id="amp-insights-refresh-btn">Refresh</button>' +
+        '</div>' +
+        '<div class="amp-insights-body">' + insightsHtml + '</div>' +
+        '</div>';
+
+      var refreshBtn = document.getElementById('amp-insights-refresh-btn');
+      if (refreshBtn) refreshBtn.onclick = async function() {
+        refreshBtn.disabled = true;
+        await loadInsights(true);
+        renderInsights();
+      };
     }
 
     // ── Main render dispatch ───────────────────────────────────────────────────

@@ -8,7 +8,7 @@ fix_commit_count: 0
 fix_commit_ratio: 0
 rework_thrashing: false
 rework_fix_cascade: false
-rework_scope_creep: true
+rework_scope_creep: false
 ---
 
 # Implementation Log: Feature 123 - aade-telemetry

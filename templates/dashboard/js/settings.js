@@ -7,8 +7,62 @@
     function getSettingsTargetRepo() {
       const repos = (state.data && state.data.repos) || [];
       if (repos.length === 0) return '';
-      if (state.selectedRepo && state.selectedRepo !== 'all') return state.selectedRepo;
+      const validRepoPaths = repos.map(r => r.path);
+      if (state.settingsRepo && validRepoPaths.includes(state.settingsRepo)) return state.settingsRepo;
+      if (state.selectedRepo && state.selectedRepo !== 'all' && validRepoPaths.includes(state.selectedRepo)) return state.selectedRepo;
       return repos[0].path;
+    }
+
+    const settingsUiState = {
+      drafts: {},
+      focus: null,
+      renderToken: 0
+    };
+
+    function settingsDraftKey(scope, key) {
+      return scope + ':' + key;
+    }
+
+    function cssEsc(value) {
+      if (window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(String(value));
+      return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    }
+
+    function readSettingsInputValue(type, input) {
+      if (type === 'boolean') return !!input.checked;
+      return input.value;
+    }
+
+    function writeSettingsInputValue(type, input, value) {
+      if (type === 'boolean') input.checked = !!value;
+      else input.value = value == null ? '' : String(value);
+    }
+
+    function captureSettingsUiState() {
+      const active = document.activeElement;
+      settingsUiState.focus = null;
+      if (!active || !active.dataset) return;
+      if (!active.dataset.settingsKey || !active.dataset.settingsScope) return;
+      settingsUiState.focus = {
+        key: active.dataset.settingsKey,
+        scope: active.dataset.settingsScope,
+        selectionStart: typeof active.selectionStart === 'number' ? active.selectionStart : null,
+        selectionEnd: typeof active.selectionEnd === 'number' ? active.selectionEnd : null
+      };
+    }
+
+    function restoreSettingsUiState(area) {
+      const focus = settingsUiState.focus;
+      if (!focus || !area) return;
+      const selector = '[data-settings-key="' + cssEsc(focus.key) + '"][data-settings-scope="' + cssEsc(focus.scope) + '"]';
+      const input = area.querySelector(selector);
+      if (!input) return;
+      input.focus({ preventScroll: true });
+      if (typeof focus.selectionStart === 'number' && typeof input.setSelectionRange === 'function') {
+        try {
+          input.setSelectionRange(focus.selectionStart, focus.selectionEnd == null ? focus.selectionStart : focus.selectionEnd);
+        } catch (_) {}
+      }
     }
 
     async function fetchDashboardSettings(repoPath) {
@@ -30,10 +84,54 @@
       return payload;
     }
 
+    function buildSettingsRepoSelector(repos, targetRepo) {
+      const wrap = document.createElement('div');
+      wrap.className = 'settings-target-wrap';
+
+      const label = document.createElement('label');
+      label.className = 'settings-target-label';
+      label.textContent = 'Project override target';
+      label.htmlFor = 'settings-target-repo';
+
+      const select = document.createElement('select');
+      select.id = 'settings-target-repo';
+      select.className = 'settings-select settings-target-select';
+
+      repos.forEach(repo => {
+        const opt = document.createElement('option');
+        opt.value = repo.path;
+        opt.textContent = repo.path.replace(/^\/Users\/[^/]+\//, '~/');
+        select.appendChild(opt);
+      });
+      select.value = targetRepo;
+      select.onchange = () => {
+        state.settingsRepo = select.value;
+        localStorage.setItem(lsKey('settingsRepo'), state.settingsRepo);
+        renderSettings();
+      };
+
+      const hint = document.createElement('div');
+      hint.className = 'settings-target-hint';
+      hint.textContent = 'Project settings write to .aigon/config.json for the selected repo only.';
+
+      wrap.appendChild(label);
+      wrap.appendChild(select);
+      wrap.appendChild(hint);
+      return wrap;
+    }
+
     function renderConfigEditorSection(area, settingsData, repoPath) {
       const section = document.createElement('div');
       section.className = 'settings-section';
-      section.innerHTML = '<h3>Configuration</h3><p>Edit global and project settings. Effective value shows inherited vs overridden behavior.</p>';
+      const projectName = settingsData.projectName || (repoPath ? repoPath.split('/').filter(Boolean).pop() : 'selected repo');
+      section.innerHTML = '<h3>Configuration</h3><p>Global values come from <code>' + escHtml(settingsData.globalConfigPath || '~/.aigon/config.json') + '</code>. Project values are overrides for <strong>' + escHtml(projectName) + '</strong> from <code>' + escHtml(settingsData.projectConfigPath || '.aigon/config.json') + '</code>. Effective shows the final merged value Aigon will use for that repo.</p>';
+
+      const explainer = document.createElement('div');
+      explainer.className = 'settings-config-explainer';
+      explainer.innerHTML =
+        '<div><span class="settings-config-colhead">Global default</span><span class="settings-config-colcopy">Applies across repos unless a project overrides it.</span></div>' +
+        '<div><span class="settings-config-colhead">Project override</span><span class="settings-config-colcopy">Applies only to <code>' + escHtml(projectName) + '</code>.</span></div>';
+      section.appendChild(explainer);
 
       const rows = document.createElement('div');
       rows.className = 'settings-config-rows';
@@ -45,8 +143,16 @@
 
         const labelCol = document.createElement('div');
         labelCol.className = 'settings-config-label';
-        labelCol.innerHTML = '<div class="settings-config-name">' + escHtml(def.label) + '</div>' +
+        labelCol.innerHTML = '<div class="settings-config-name-row"><div class="settings-config-name">' + escHtml(def.label) + '</div>' +
+          (def.description ? '<button type="button" class="settings-help" aria-label="' + escHtml(def.label + ' help') + '" title="' + escHtml(def.description) + '">?</button>' : '') +
+          '</div>' +
           '<div class="settings-config-key">' + escHtml(def.key) + '</div>';
+        if (def.description) {
+          const helpText = document.createElement('div');
+          helpText.className = 'settings-config-helptext';
+          helpText.textContent = def.description;
+          labelCol.appendChild(helpText);
+        }
 
         const sourceBadge = document.createElement('span');
         sourceBadge.className = 'settings-source-badge source-' + escHtml(def.source || 'default');
@@ -61,7 +167,7 @@
           wrap.className = 'settings-config-input-wrap';
           const scopeLabel = document.createElement('div');
           scopeLabel.className = 'settings-config-scope';
-          scopeLabel.textContent = scope === 'global' ? 'Global' : 'Project';
+          scopeLabel.textContent = scope === 'global' ? 'Global default' : 'Project override';
           const inputSlot = document.createElement('div');
           inputSlot.className = 'settings-config-input';
 
@@ -92,10 +198,23 @@
             input = document.createElement('input');
             input.type = 'text';
             input.className = 'settings-input';
-            input.value = value == null ? '' : String(value);
             input.placeholder = 'Unset';
             inputSlot.appendChild(input);
           }
+
+          input.dataset.settingsKey = def.key;
+          input.dataset.settingsScope = scope;
+          const draftKey = settingsDraftKey(scope, def.key);
+          const draftValue = Object.prototype.hasOwnProperty.call(settingsUiState.drafts, draftKey)
+            ? settingsUiState.drafts[draftKey]
+            : value;
+          writeSettingsInputValue(def.type, input, draftValue);
+
+          const syncDraft = () => {
+            settingsUiState.drafts[draftKey] = readSettingsInputValue(def.type, input);
+          };
+          if (def.type === 'boolean') input.onchange = syncDraft;
+          else input.oninput = syncDraft;
 
           input.disabled = !!disabledBySource;
           input.onchange = async () => {
@@ -103,7 +222,9 @@
               let nextValue;
               if (def.type === 'boolean') nextValue = !!input.checked;
               else nextValue = input.value;
+              settingsUiState.drafts[draftKey] = nextValue;
               await updateDashboardSetting(scope, def.key, nextValue, repoPath);
+              delete settingsUiState.drafts[draftKey];
               showToast('Updated ' + def.key + ' (' + scope + ')');
               renderSettings();
             } catch (e) {
@@ -144,6 +265,8 @@
     }
 
     function renderSettings() {
+      captureSettingsUiState();
+      const renderToken = ++settingsUiState.renderToken;
       document.getElementById('monitor-summary').style.display = 'none';
       document.getElementById('repo-header').style.display = 'none';
       document.getElementById('repo-sidebar').style.display = 'none';
@@ -263,16 +386,23 @@
       area.appendChild(section);
 
       const targetRepo = getSettingsTargetRepo();
+      const reposForSelector = (state.data && state.data.repos) || [];
+      if (reposForSelector.length > 0) {
+        area.appendChild(buildSettingsRepoSelector(reposForSelector, targetRepo));
+      }
       const configSection = document.createElement('div');
       configSection.className = 'settings-section';
       configSection.innerHTML = '<h3>Loading settings...</h3>';
       area.appendChild(configSection);
       fetchDashboardSettings(targetRepo)
         .then(payload => {
+          if (renderToken !== settingsUiState.renderToken) return;
           configSection.remove();
           renderConfigEditorSection(area, payload, targetRepo);
+          restoreSettingsUiState(area);
         })
         .catch(err => {
+          if (renderToken !== settingsUiState.renderToken) return;
           configSection.innerHTML = '<h3>Configuration</h3><p class="settings-empty">Failed to load settings: ' + escHtml(err.message) + '</p>';
         });
 
@@ -342,4 +472,5 @@
       area.appendChild(notifSection);
 
       reposRoot.appendChild(area);
+      restoreSettingsUiState(area);
     }

@@ -15,10 +15,10 @@ cache_creation_input_tokens: 63769423
 cache_read_input_tokens: 2535592606
 thinking_tokens: 0
 total_tokens: 2603166506
-cost_usd: 4832.0413
+cost_usd: null
 sessions: 185
 model: "claude-opus-4-6"
-tokens_per_line_changed: 961642.6
+tokens_per_line_changed: null
 ---
 # Implementation Log: Feature 128 - docs-content
 Agent: cc
