@@ -22,6 +22,10 @@ Extract the feature ID and agent code from the branch name (pattern: `feature-<I
 
 {{STOP_DEV_SERVER_STEP}}
 
+## Check documentation is up to date
+
+Before committing, verify that if your changes added modules, changed repo structure, introduced new patterns, or affected cross-repo workflows, you've updated `CLAUDE.md`, `docs/architecture.md`, and/or `AGENTS.md`. Documentation ships with the code.
+
 ## Commit implementation changes
 
 **Before committing, verify your working directory:**

@@ -155,6 +155,53 @@ Components:
 - `{agent}` — agent short code (`cc`, `gg`, `cx`, `cu`)
 - `{desc}` — kebab-case feature description from the spec filename
 
+## Aigon Pro (`@aigon/pro`)
+
+Aigon has a **free/pro split**. Commercial AADE (Amplification) features live in a separate private repo to keep them out of the public git history.
+
+| | Aigon (this repo) | Aigon Pro (`~/src/aigon-pro`) |
+|---|---|---|
+| **Repo** | `github.com/jayvee/aigon` (public) | `github.com/jayvee/aigon-pro` (private) |
+| **Package** | `aigon` | `@aigon/pro` |
+| **Contains** | CLI, workflow engine, dashboard, free-tier features | Insights engine, amplification dashboard, AI coaching |
+| **Data collection** | Yes — `getFeatureGitSignals()` in `lib/git.js` collects metrics | No — uses data collected by the free tier |
+| **Analysis/insights** | Rule-based basics only | Full insights, trends, AI coaching |
+
+### How the integration works
+
+`lib/pro.js` is the single integration point:
+
+```js
+let pro = null;
+try { pro = require('@aigon/pro'); } catch { /* free tier */ }
+module.exports = { isProAvailable: () => !!pro, getPro: () => pro };
+```
+
+When `@aigon/pro` is installed (via `npm link` during development), Pro features light up. When absent, the CLI gracefully degrades — dashboard shows "Upgrade to Pro" placeholders, `aigon insights` shows a free-tier message.
+
+### Cross-repo development
+
+Features are always tracked in the **aigon** repo (specs, logs, board). When a feature touches Pro code:
+
+1. The feature spec in aigon should note which `@aigon/pro` files need changes
+2. The agent should `cd ~/src/aigon-pro` to make and commit Pro changes
+3. Run `npm link` in `~/src/aigon-pro`, then `npm link @aigon/pro` in aigon to test integration
+4. Both repos need separate commits — aigon for the integration, aigon-pro for the Pro logic
+
+### Aigon Pro repo structure
+
+```
+~/src/aigon-pro/
+├── index.js            # main entry: exports insights, dashboard components
+├── lib/insights.js     # rule-based + AI insights engine
+├── dashboard/
+│   └── amplification.js  # amplification metrics dashboard view
+├── commands/
+│   └── insights.md     # slash command template for insights
+└── tests/
+    └── insights.test.js
+```
+
 ## Design Rules
 
 - Keep `aigon-cli.js` free of business logic.
