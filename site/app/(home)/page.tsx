@@ -156,12 +156,12 @@ export default function HomePage() {
         </div>
 
         {/* Fleet showcase */}
-        <div className="max-w-5xl mx-auto px-6 mt-16">
-          <p className="text-sm text-fd-muted-foreground mb-6 text-center">
+        <div className="max-w-6xl mx-auto px-6 mt-16">
+          <p className="text-sm text-fd-muted-foreground mb-8 text-center">
             Codex and Gemini compete, Claude Code evaluates &mdash; best
             implementation wins.
           </p>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="space-y-8">
             {[
               {
                 label: "1. Fleet started \u2014 agents implementing in parallel",
@@ -177,10 +177,10 @@ export default function HomePage() {
               },
             ].map((step) => (
               <div key={step.label}>
-                <p className="text-xs text-fd-muted-foreground mb-2">
+                <p className="text-sm text-fd-muted-foreground mb-3 text-center">
                   {step.label}
                 </p>
-                <div className="rounded-lg landing-image overflow-hidden">
+                <div className="rounded-xl landing-image overflow-hidden">
                   <img
                     src={step.src}
                     alt={step.label}
