@@ -19,9 +19,9 @@
 
 .dark {
   /* Aigon warm editorial palette — dark mode
-     Hierarchy: headings (90%) > body (72%) > muted (45%) */
+     fd-foreground controls headings (bright). Body text dimmed separately below. */
   --color-fd-background: 225 14% 7%;
-  --color-fd-foreground: 38 8% 72%;
+  --color-fd-foreground: 38 12% 92%;
   --color-fd-muted: 38 6% 45%;
   --color-fd-muted-foreground: 38 6% 45%;
   --color-fd-card: 224 14% 11%;
@@ -54,13 +54,16 @@
   --shadow-warm-tight: 0 8px 18px rgba(35, 30, 20, 0.14);
 }
 
-/* Headings brighter than body text — override Fumadocs prose heading variable */
-.dark {
-  --tw-prose-headings: hsl(38 12% 92%);
+/* Body text softer than headings — headings use fd-foreground (92%), body dimmed to 72% */
+.dark .prose {
+  --tw-prose-body: hsl(38 8% 72%);
 }
 
-.dark :is(h1, h2, h3, h4, h5, h6) {
-  color: hsl(38 12% 92%) !important;
+.dark p,
+.dark li,
+.dark td,
+.dark .prose > :not(h1, h2, h3, h4, h5, h6, pre, table, .not-prose) {
+  color: hsl(38 8% 72%);
 }
 
 /* Fix heading anchor — always visible, not just on hover */
