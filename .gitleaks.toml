@@ -1,0 +1,5 @@
+[allowlist]
+paths = [
+  '''site/app/\(home\)/page\.tsx''',
+  '''site/content/'''
+]
