@@ -145,19 +145,14 @@
       updateViewTabs();
       const sidebar = document.getElementById('repo-sidebar');
       const mobileSelect = document.getElementById('repo-select-mobile');
-      // Helper to hide all non-Alpine view containers
-      function hideAllViews() {
-        document.getElementById('sessions-view').style.display = 'none';
-        document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('amplification-view').style.display = 'none';
-        document.getElementById('logs-view').style.display = 'none';
-        document.getElementById('console-view').style.display = 'none';
-      }
-
       if (state.view === 'settings') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
-        hideAllViews();
+        document.getElementById('sessions-view').style.display = 'none';
+        document.getElementById('statistics-view').style.display = 'none';
+        document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('logs-view').style.display = 'none';
+        document.getElementById('console-view').style.display = 'none';
         document.getElementById('repos').style.display = '';
         document.getElementById('repo-header').style.display = 'none';
         renderSettings();
@@ -166,8 +161,11 @@
         mobileSelect.style.display = 'none';
         document.getElementById('repos').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
-        hideAllViews();
         document.getElementById('sessions-view').style.display = '';
+        document.getElementById('statistics-view').style.display = 'none';
+        document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('logs-view').style.display = 'none';
+        document.getElementById('console-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         renderSessions();
       } else if (state.view === 'statistics') {
@@ -175,26 +173,35 @@
         mobileSelect.style.display = 'none';
         document.getElementById('repos').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
-        hideAllViews();
+        document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = '';
+        document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('logs-view').style.display = 'none';
+        document.getElementById('console-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         renderStatistics();
-      } else if (state.view === 'amplification') {
+      } else if (state.view === 'insights') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('repos').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
-        hideAllViews();
-        document.getElementById('amplification-view').style.display = '';
+        document.getElementById('sessions-view').style.display = 'none';
+        document.getElementById('statistics-view').style.display = 'none';
+        document.getElementById('insights-view').style.display = '';
+        document.getElementById('logs-view').style.display = 'none';
+        document.getElementById('console-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
-        renderAmplification();
+        renderInsights();
       } else if (state.view === 'logs') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('repos').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
-        hideAllViews();
+        document.getElementById('sessions-view').style.display = 'none';
+        document.getElementById('statistics-view').style.display = 'none';
+        document.getElementById('insights-view').style.display = 'none';
         document.getElementById('logs-view').style.display = '';
+        document.getElementById('console-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         renderLogsView();
       } else if (state.view === 'console') {
@@ -202,7 +209,10 @@
         mobileSelect.style.display = 'none';
         document.getElementById('repos').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
-        hideAllViews();
+        document.getElementById('sessions-view').style.display = 'none';
+        document.getElementById('statistics-view').style.display = 'none';
+        document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('logs-view').style.display = 'none';
         document.getElementById('console-view').style.display = '';
         document.getElementById('repo-header').style.display = 'none';
         renderConsole();
@@ -212,7 +222,11 @@
         mobileSelect.style.display = '';
         document.getElementById('repos').style.display = 'none'; // settings only
         document.getElementById('empty').style.display = 'none';
-        hideAllViews();
+        document.getElementById('sessions-view').style.display = 'none';
+        document.getElementById('statistics-view').style.display = 'none';
+        document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('logs-view').style.display = 'none';
+        document.getElementById('console-view').style.display = 'none';
         // Sidebar + header are shared between monitor and pipeline
         const allRepos = ((state.data || {}).repos || []);
         renderSidebar(allRepos);

@@ -852,6 +852,96 @@ if (insightsLib) {
     console.log('  (skipped — @aigon/pro not installed)');
 }
 
+test('insights report with zero features returns insufficient data', () => {
+    const report = insightsLib.buildDeterministicInsights([]);
+    assert.strictEqual(report.insufficientData, true);
+    assert.strictEqual(report.aggregates.totalFeatures, 0);
+});
+
+test('insights report with all null cost/token fields degrades gracefully', () => {
+    const features = Array.from({ length: 5 }, (_, i) => ({
+        featureId: String(i + 1), name: 'f' + (i + 1), completedAtMs: i + 1,
+        costUsd: null, tokensPerLineChanged: null, totalTokens: null, linesChanged: null,
+        autonomyLabel: null, reworkThrashing: false, reworkFixCascade: false, reworkScopeCreep: false, hasRework: false,
+    }));
+    const report = insightsLib.buildDeterministicInsights(features);
+    assert.strictEqual(report.insufficientData, false);
+    assert.ok(report.observations.length >= 4);
+    const costObs = report.observations.find(o => o.id === 'cost-trend');
+    assert.strictEqual(costObs.severity, 'info');
+});
+
+test('insights report with no rework data shows info severity', () => {
+    const features = Array.from({ length: 4 }, (_, i) => ({
+        featureId: String(i + 1), name: 'f' + (i + 1), completedAtMs: i + 1,
+        costUsd: 0.1, tokensPerLineChanged: 20, totalTokens: 1000,
+        autonomyLabel: 'Full Autonomy', reworkThrashing: null, reworkFixCascade: null, reworkScopeCreep: null, hasRework: false,
+    }));
+    const report = insightsLib.buildDeterministicInsights(features);
+    const reworkObs = report.observations.find(o => o.id === 'rework-frequency');
+    assert.ok(reworkObs);
+});
+
+test('insights report high rework rate triggers warn severity', () => {
+    const features = Array.from({ length: 4 }, (_, i) => ({
+        featureId: String(i + 1), name: 'f' + (i + 1), completedAtMs: i + 1,
+        costUsd: 0.1, tokensPerLineChanged: 20, totalTokens: 1000,
+        autonomyLabel: 'Guided', reworkThrashing: i < 3, reworkFixCascade: false, reworkScopeCreep: false,
+        hasRework: i < 3,
+    }));
+    const report = insightsLib.buildDeterministicInsights(features);
+    const reworkObs = report.observations.find(o => o.id === 'rework-frequency');
+    assert.strictEqual(reworkObs.severity, 'warn');
+});
+
+test('insights cache write and read round-trip', () => withTempDir(tempDir => {
+    const payload = {
+        generatedAt: new Date().toISOString(),
+        source: 'aigon-insights',
+        tier: 'free',
+        report: { insufficientData: false, observations: [{ id: 'test', title: 'Test' }] },
+        coaching: null,
+    };
+    insightsLib.writeInsightsCache(payload, tempDir);
+    const read = insightsLib.readInsightsCache(tempDir);
+    assert.deepStrictEqual(read.report.observations[0].id, 'test');
+    assert.strictEqual(read.tier, 'free');
+}));
+
+test('insights readInsightsCache returns null for missing cache', () => withTempDir(tempDir => {
+    assert.strictEqual(insightsLib.readInsightsCache(tempDir), null);
+}));
+
+test('insights CLI format includes severity and action', () => {
+    const payload = {
+        generatedAt: new Date().toISOString(),
+        tier: 'free',
+        report: {
+            insufficientData: false,
+            observations: [
+                { id: 'test', title: 'Test insight', severity: 'warn', observation: 'Something happened', action: 'Fix it' },
+            ],
+        },
+        coaching: null,
+    };
+    const output = insightsLib.formatInsightsForCli(payload);
+    assert.match(output, /WARN/);
+    assert.match(output, /Test insight/);
+    assert.match(output, /Fix it/);
+});
+
+test('insights CLI format with coaching shows recommendations', () => {
+    const payload = {
+        generatedAt: new Date().toISOString(),
+        tier: 'pro',
+        report: { insufficientData: false, observations: [] },
+        coaching: { ok: true, recommendations: ['Reduce batch size', 'Add acceptance criteria'] },
+    };
+    const output = insightsLib.formatInsightsForCli(payload, { includeCoaching: true });
+    assert.match(output, /Reduce batch size/);
+    assert.match(output, /Add acceptance criteria/);
+});
+
 console.log('\nWorktree Env Isolation');
 test('ensureEnvLocalGitignore creates expected entries and is idempotent', () => withTempDir(tempDir => {
     const first = setupCommandsModule._test.ensureEnvLocalGitignore(tempDir);

@@ -361,6 +361,23 @@
 
     const FEAT_LIST_PAGE_SIZE = 20;
 
+    async function loadInsights(refresh) {
+      if (statsState.insightsLoading) return;
+      statsState.insightsLoading = true;
+      statsState.insightsError = null;
+      try {
+        const endpoint = refresh ? '/api/insights/refresh' : '/api/insights';
+        const method = refresh ? 'POST' : 'GET';
+        const res = await fetch(endpoint, { method, cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        statsState.insightsData = await res.json();
+      } catch (e) {
+        statsState.insightsError = e.message;
+      } finally {
+        statsState.insightsLoading = false;
+      }
+    }
+
     function renderFeatureList() {
       const el = document.getElementById('stats-feature-list');
       if (!el) return;
@@ -428,6 +445,234 @@
       return Number(v).toFixed(decimals);
     }
 
+    function buildDailyMetricTrend(features, metricKey, days) {
+      const since = Date.now() - days * 86400000;
+      const buckets = {};
+      features.forEach(f => {
+        const completedTs = f.completedAt ? new Date(f.completedAt).getTime() : null;
+        if (!completedTs || completedTs < since) return;
+        const value = f[metricKey];
+        if (value === null || value === undefined) return;
+        const day = new Date(completedTs).toISOString().slice(0, 10);
+        if (!buckets[day]) buckets[day] = { sum: 0, count: 0 };
+        buckets[day].sum += value;
+        buckets[day].count += 1;
+      });
+      return Object.keys(buckets).sort().map(day => ({
+        day,
+        score: buckets[day].count > 0 ? buckets[day].sum / buckets[day].count : 0
+      }));
+    }
+
+    function deriveAutonomyLabel(ratio) {
+      if (ratio === null || ratio === undefined) return { label: null, cls: '' };
+      if (ratio >= 0.95) return { label: 'Full Autonomy', cls: 'autonomy-good' };
+      if (ratio >= 0.80) return { label: 'Light Touch', cls: 'autonomy-good' };
+      if (ratio >= 0.60) return { label: 'Guided', cls: 'autonomy-mid' };
+      if (ratio >= 0.30) return { label: 'Collaborative', cls: 'autonomy-collab' };
+      return { label: 'Thrashing', cls: 'autonomy-risk' };
+    }
+
+    function buildWeeklyFirstPassTrend(features) {
+      const buckets = {};
+      features.forEach(f => {
+        if (f.firstPassSuccess === null || f.firstPassSuccess === undefined) return;
+        const ts = f.completedAt ? new Date(f.completedAt) : null;
+        if (!ts || isNaN(ts)) return;
+        const d = new Date(ts);
+        const dow = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() - dow + 1);
+        const key = d.toISOString().slice(0, 10);
+        if (!buckets[key]) buckets[key] = { pass: 0, total: 0 };
+        buckets[key].total++;
+        if (f.firstPassSuccess) buckets[key].pass++;
+      });
+      return Object.keys(buckets).sort().map(week => ({
+        day: week,
+        score: buckets[week].total > 0 ? buckets[week].pass / buckets[week].total : 0
+      }));
+    }
+
+    function getAutonomyClass(label) {
+      const normalized = String(label || '').toLowerCase();
+      if (normalized.includes('full autonomy') || normalized.includes('light touch')) return 'autonomy-good';
+      if (normalized.includes('guided')) return 'autonomy-mid';
+      if (normalized.includes('collaborative')) return 'autonomy-collab';
+      if (normalized.includes('thrashing')) return 'autonomy-risk';
+      return '';
+    }
+
+    function buildReworkBadges(feature) {
+      const tags = [];
+      if (feature.reworkThrashing === true) tags.push('<span class="amp-rework-tag rework-risk">Thrashing</span>');
+      if (feature.reworkFixCascade === true) tags.push('<span class="amp-rework-tag rework-warn">Fix cascade</span>');
+      if (feature.reworkScopeCreep === true) tags.push('<span class="amp-rework-tag rework-warn">Scope creep</span>');
+      if (tags.length === 0) return '<span class="amp-no-rework">No rework flags</span>';
+      return tags.join('');
+    }
+
+    function buildAmplificationSection(filteredFeatures) {
+      const analytics = statsState.data || {};
+      const withAade = filteredFeatures.filter(f => f.hasAadeData);
+      const withCost = filteredFeatures.filter(f => f.costUsd !== null && f.costUsd !== undefined);
+      const withTpl = filteredFeatures.filter(f => f.tokensPerLineChanged !== null && f.tokensPerLineChanged !== undefined);
+      const withReworkSignals = filteredFeatures.filter(f => f.firstPassNoRework !== null && f.firstPassNoRework !== undefined);
+      const firstPassNoRework = withReworkSignals.length > 0
+        ? withReworkSignals.filter(f => f.firstPassNoRework).length / withReworkSignals.length
+        : null;
+      const reworkRate = withReworkSignals.length > 0
+        ? withReworkSignals.filter(f => f.hasReworkFlags).length / withReworkSignals.length
+        : null;
+
+      // Autonomy score from filtered features
+      const withAutonomy = filteredFeatures.filter(f => f.autonomyRatio !== null && f.autonomyRatio !== undefined);
+      const autonomyScore = withAutonomy.length > 0
+        ? withAutonomy.reduce((s, f) => s + f.autonomyRatio, 0) / withAutonomy.length
+        : null;
+      const autonomyDerived = deriveAutonomyLabel(autonomyScore);
+
+      // Sparkline trends
+      const costTrend7d = buildDailyMetricTrend(filteredFeatures, 'costUsd', 7);
+      const costTrend30d = buildDailyMetricTrend(filteredFeatures, 'costUsd', 30);
+      const tplTrend7d = buildDailyMetricTrend(filteredFeatures, 'tokensPerLineChanged', 7);
+      const tplTrend30d = buildDailyMetricTrend(filteredFeatures, 'tokensPerLineChanged', 30);
+      const costSpark7 = buildSparklineSvg(costTrend7d, '#f59e0b') || '<div class="amp-spark-empty">No data</div>';
+      const costSpark30 = buildSparklineSvg(costTrend30d, '#f97316') || '<div class="amp-spark-empty">No data</div>';
+      const tplSpark7 = buildSparklineSvg(tplTrend7d, '#22c55e') || '<div class="amp-spark-empty">No data</div>';
+      const tplSpark30 = buildSparklineSvg(tplTrend30d, '#16a34a') || '<div class="amp-spark-empty">No data</div>';
+
+      // Autonomy trend sparkline (from server-computed weekly trend)
+      const autonomyTrend = (analytics.autonomy && analytics.autonomy.trend) || [];
+      const autonomySpark = buildSparklineSvg(autonomyTrend, '#3b82f6') || '<div class="amp-spark-empty">No data</div>';
+
+      // First-pass rate trend (weekly, computed from filtered features)
+      const fpTrend = buildWeeklyFirstPassTrend(filteredFeatures);
+      const fpSpark = buildSparklineSvg(fpTrend, '#22c55e') || '<div class="amp-spark-empty">No data</div>';
+
+      const recentCards = filteredFeatures
+        .filter(f => f.completedAt)
+        .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
+        .slice(0, 8)
+        .map(f => {
+          const featureId = escHtml(String(f.featureNum || ''));
+          const desc = escHtml(f.desc || '');
+          const cost = fmtUsd(f.costUsd);
+          // Use frontmatter label if available, otherwise derive from autonomyRatio
+          const derived = f.autonomyLabel ? { label: f.autonomyLabel, cls: getAutonomyClass(f.autonomyLabel) } : deriveAutonomyLabel(f.autonomyRatio);
+          const label = derived.label ? escHtml(derived.label) : '—';
+          const labelClass = derived.cls;
+          const rework = buildReworkBadges(f);
+          return `<article class="amp-feature-card">
+            <div class="amp-card-header">
+              <span class="amp-feature-id">#${featureId}</span>
+              <span class="amp-cost">${cost}</span>
+            </div>
+            <div class="amp-feature-name" title="${desc}">${desc || 'No description'}</div>
+            <div class="amp-card-meta">
+              <span class="amp-autonomy-pill ${labelClass}">${label}</span>
+            </div>
+            <div class="amp-rework">${rework}</div>
+          </article>`;
+        });
+
+      // Autonomy score display with derived label pill
+      const autonomyScoreDisplay = autonomyScore !== null ? fmtPct(autonomyScore) : '—';
+      const autonomyLabelHtml = autonomyDerived.label
+        ? `<span class="amp-autonomy-pill ${autonomyDerived.cls}" style="font-size:10px">${escHtml(autonomyDerived.label)}</span>`
+        : '';
+
+      return `
+        <details class="stats-block amplification-section" open>
+          <summary class="amplification-summary">
+            <span>Amplification</span>
+            <span class="amplification-count">${withAade.length} features with AADE data</span>
+          </summary>
+          <div class="amplification-body">
+            <div class="stats-cards amp-top-cards">
+              ${buildStatCard('Autonomy Score', autonomyScoreDisplay, autonomyLabelHtml, withAutonomy.length > 0 ? `${withAutonomy.length} features` : 'No autonomy data',
+                'Average autonomy ratio across features. Higher means less human intervention needed.')}
+              ${buildStatCard('First-Pass Rate (No Rework)', fmtPct(firstPassNoRework), null, withReworkSignals.length > 0 ? `${withReworkSignals.length} features` : 'No rework signal data',
+                'Percentage of features with no rework flags (thrashing, fix cascade, scope creep).')}
+              ${buildStatCard('Rework Rate', fmtPct(reworkRate), null, withReworkSignals.length > 0 ? `${withReworkSignals.length} features` : 'No rework signal data',
+                'Percentage of features that triggered at least one rework flag. Lower is better.')}
+              ${buildStatCard('Avg Cost / Feature', withCost.length ? fmtUsd(withCost.reduce((s, f) => s + f.costUsd, 0) / withCost.length) : '—', null,
+                withCost.length > 0 ? `${withCost.length} features with cost data` : 'Awaiting telemetry adapters')}
+            </div>
+            <div class="stats-row amp-trend-row">
+              <div class="stats-block">
+                <div class="stats-block-title">Autonomy Score Trend</div>
+                <div class="amp-spark-grid">
+                  <div class="amp-spark-card">
+                    <div class="amp-spark-title">Weekly</div>
+                    <div class="sparkline-wrap amp-spark-wrap">${autonomySpark}</div>
+                  </div>
+                  <div class="amp-spark-card">
+                    <div class="amp-spark-title">First-Pass Rate (Weekly)</div>
+                    <div class="sparkline-wrap amp-spark-wrap">${fpSpark}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="stats-block">
+                <div class="stats-block-title">Cost per Feature Trend</div>
+                <div class="amp-spark-grid">
+                  <div class="amp-spark-card">
+                    <div class="amp-spark-title">7d</div>
+                    <div class="sparkline-wrap amp-spark-wrap">${costSpark7}</div>
+                  </div>
+                  <div class="amp-spark-card">
+                    <div class="amp-spark-title">30d</div>
+                    <div class="sparkline-wrap amp-spark-wrap">${costSpark30}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="stats-section-title">Recent Features</div>
+            <div class="amp-feature-grid">
+              ${recentCards.length > 0 ? recentCards.join('') : '<div class="amp-empty">No completed features in this filter window.</div>'}
+            </div>
+            <div class="stats-section-title">Insights</div>
+            <div class="amp-insights-toolbar">
+              <span class="amp-insights-meta">${statsState.insightsData && statsState.insightsData.generatedAt ? `Updated ${escHtml(relTime(statsState.insightsData.generatedAt))}` : 'No cached insights yet'}</span>
+              <button class="btn" id="amp-insights-refresh-btn">Refresh insights</button>
+            </div>
+            <div class="amp-insights-body">
+              ${(() => {
+                if (statsState.insightsLoading) {
+                  return '<div class="amp-empty">Loading insights…</div>';
+                }
+                if (statsState.insightsError) {
+                  return `<div class="amp-empty">Failed to load insights: ${escHtml(statsState.insightsError)}</div>`;
+                }
+                const payload = statsState.insightsData;
+                if (!payload || !payload.report) {
+                  return '<div class="amp-empty">Run <code>aigon insights</code> or refresh to generate cached insights.</div>';
+                }
+                if (payload.report.insufficientData) {
+                  return `<div class="amp-empty">${escHtml(payload.report.summary || 'Not enough data for insights yet.')}</div>`;
+                }
+                const items = (payload.report.observations || []).map(obs => {
+                  const severity = escHtml(String(obs.severity || 'info').toLowerCase());
+                  return `<article class="amp-insight-item">
+                    <div class="amp-insight-title"><span class="amp-insight-sev ${severity}">${severity.toUpperCase()}</span> ${escHtml(obs.title || 'Insight')}</div>
+                    <div class="amp-insight-observation">${escHtml(obs.observation || '')}</div>
+                    <div class="amp-insight-action">Action: ${escHtml(obs.action || '—')}</div>
+                  </article>`;
+                }).join('');
+
+                let coachingHtml = '<div class="amp-insights-gated">AI coaching is available for Pro tier with <code>aigon insights --coach</code>.</div>';
+                if (payload.coaching && payload.coaching.ok && Array.isArray(payload.coaching.recommendations) && payload.coaching.recommendations.length > 0) {
+                  coachingHtml = `<div class="amp-insights-coaching-title">AI Coaching (Pro)</div><ol class="amp-insights-coaching-list">${payload.coaching.recommendations.slice(0, 5).map(rec => `<li>${escHtml(rec)}</li>`).join('')}</ol>`;
+                } else if (payload.coaching && payload.coaching.error && !payload.coaching.gated) {
+                  coachingHtml = `<div class="amp-insights-gated">AI coaching unavailable: ${escHtml(payload.coaching.error)}</div>`;
+                }
+                return `${items}${coachingHtml}`;
+              })()}
+            </div>
+          </div>
+        </details>
+      `;
+    }
+
     async function renderStatistics() {
       const container = document.getElementById('statistics-view');
       document.getElementById('monitor-summary').style.display = 'none';
@@ -439,6 +684,10 @@
         container.innerHTML = '<div class="stats-empty-msg">Loading statistics…</div>';
         await loadAnalytics();
       }
+      if (!statsState.insightsData && !statsState.insightsLoading) {
+        await loadInsights(false);
+      }
+
       const analytics = statsState.data;
 
       if (!analytics || statsState.error) {
@@ -519,38 +768,6 @@
       html.push('</div>');
       html.push('<div style="height:220px;position:relative"><canvas id="volume-chart-canvas"></canvas></div>');
       html.push('</div>');
-
-      // AADE free-tier cards: raw token/cost/rework numbers
-      const amp = analytics.amplification || {};
-      const filteredWithCost = filteredFeatures.filter(f => f.costUsd !== null && f.costUsd !== undefined);
-      const filteredWithTokens = filteredFeatures.filter(f => f.totalTokens !== null && f.totalTokens !== undefined);
-      const filteredReworkCount = filteredFeatures.filter(f => f.hasRework).length;
-      const filteredTotalCost = filteredWithCost.reduce((s, f) => s + f.costUsd, 0);
-      const filteredTotalTokens = filteredWithTokens.reduce((s, f) => s + f.totalTokens, 0);
-      const filteredAvgCost = filteredWithCost.length > 0
-        ? Math.round((filteredTotalCost / filteredWithCost.length) * 100) / 100 : null;
-
-      if (filteredWithCost.length > 0 || filteredWithTokens.length > 0) {
-        html.push('<div class="stats-section-title">AI Cost &amp; Tokens</div>');
-        html.push('<div class="stats-cards">');
-        html.push(buildStatCard('Total AI Cost',
-          filteredTotalCost > 0 ? '$' + filteredTotalCost.toFixed(2) : '$0.00',
-          null, filteredWithCost.length + ' features tracked',
-          'Total cost of AI tokens across all features in the selected period.'));
-        html.push(buildStatCard('Avg Cost / Feature',
-          filteredAvgCost !== null ? '$' + filteredAvgCost.toFixed(2) : '\u2014',
-          null, null,
-          'Average AI cost per feature.'));
-        html.push(buildStatCard('Total Tokens',
-          filteredTotalTokens > 0 ? (filteredTotalTokens > 1e6 ? (filteredTotalTokens / 1e6).toFixed(1) + 'M' : filteredTotalTokens.toLocaleString()) : '\u2014',
-          null, null,
-          'Total tokens (input + output + cache) consumed across features.'));
-        html.push(buildStatCard('Rework Flags',
-          String(filteredReworkCount),
-          null, totalCompleted > 0 ? fmtPct(filteredReworkCount / totalCompleted) + ' of features' : null,
-          'Features with at least one rework signal: thrashing (file touched 5+ times), fix cascade (3+ consecutive fix commits), or scope creep (touched 2x expected files).'));
-        html.push('</div>');
-      }
 
       // Quality block
       html.push('<div class="stats-row">');
@@ -659,6 +876,9 @@
         html.push('<div class="stats-empty-msg">No completed features found. Statistics will appear here once features are closed.</div>');
       }
 
+      // Amplification section
+      html.push(buildAmplificationSection(filteredFeatures));
+
       // Feature list section (populated after render via renderFeatureList)
       html.push('<div class="stats-section-title" style="margin-top:4px">Features</div>');
       html.push('<div class="stats-block" style="overflow-x:auto"><div id="stats-feature-list"></div></div>');
@@ -737,6 +957,13 @@
       // Cycle time nav buttons
       document.getElementById('ct-nav-prev')?.addEventListener('click', () => panCycleTimeChart('prev'));
       document.getElementById('ct-nav-next')?.addEventListener('click', () => panCycleTimeChart('next'));
+
+      const insightsRefreshBtn = document.getElementById('amp-insights-refresh-btn');
+      if (insightsRefreshBtn) insightsRefreshBtn.onclick = async () => {
+        insightsRefreshBtn.disabled = true;
+        await loadInsights(true);
+        renderStatistics();
+      };
 
       // Feature list
       renderFeatureList();
