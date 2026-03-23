@@ -199,6 +199,16 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await requestFeatureOpen(id, evalAgent[0], repoPath, null, pipelineType, 'eval');
       break;
     }
+    case 'research-eval': {
+      const researchAgents = (feature.agents || []).map(a => a.id);
+      const synthAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose evaluation agent', submitLabel: 'Run Evaluation', implementingAgents: researchAgents });
+      if (!synthAgent || synthAgent.length === 0) return;
+      if (feature.stage !== 'in-evaluation') {
+        await requestAction('research-eval', [id, '--setup-only'], repoPath, btn);
+      }
+      await requestFeatureOpen(id, synthAgent[0], repoPath, null, pipelineType, 'synthesize');
+      break;
+    }
     case 'feature-review': {
       const implAgentsR = (feature.agents || []).map(a => a.id);
       const reviewAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose review agent', submitLabel: 'Run Review', implementingAgents: implAgentsR });
