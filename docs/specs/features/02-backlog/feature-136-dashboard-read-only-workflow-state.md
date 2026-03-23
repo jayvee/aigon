@@ -2,7 +2,7 @@
 
 ## Summary
 
-Make the dashboard strictly read-only with respect to workflow state. Dashboard polling and status collection must never mutate manifests, agent status files, or any other workflow truth. Any status transitions currently inferred during reads should instead happen through explicit commands, signals, or an optional background orchestrator/coordinator process.
+Make the dashboard strictly read-only with respect to workflow state. The recent feature/research unification removed a lot of workflow drift, but dashboard polling still mutates state by persisting inferred session-ended flags during `collectDashboardStatusData()`. Viewing the dashboard must not write manifests, agent status files, or any other workflow truth. Any inferred transitions should happen through explicit commands, signals, or an optional background reconciler.
 
 ## User Stories
 
@@ -14,9 +14,10 @@ Make the dashboard strictly read-only with respect to workflow state. Dashboard 
 
 - Dashboard polling paths do not write agent status, manifests, or other workflow state files.
 - `collectDashboardStatusData()` and related helpers are side-effect free.
+- `lib/dashboard-server.js` no longer calls `writeAgentStatusAt()` from dashboard read/polling code.
 - Any current write-on-read behavior is moved behind an explicit command, signal, or optional background operator process.
 - Existing dashboard status views continue to render useful diagnostics even after write-on-read behavior is removed.
-- Tests cover the key regression: loading or refreshing the dashboard does not mutate workflow state.
+- Tests cover the key regression: loading or refreshing the dashboard does not mutate workflow state for either features or research.
 
 ## Validation
 
@@ -28,22 +29,22 @@ node -c lib/dashboard-server.js
 
 Manual validation:
 
-- Start the dashboard against a repo with an in-progress feature.
+- Start the dashboard against a repo with an in-progress feature and an in-progress research item.
 - Refresh the dashboard repeatedly.
 - Verify no workflow state files change unless an explicit action is triggered.
 
 ## Technical Approach
 
-- Audit `lib/dashboard-server.js` for any write-on-read behavior, especially in polling/status collection helpers.
-- Remove direct state writes from dashboard read paths.
-- Preserve diagnostic detection, but return it as read-only status data rather than persisting it.
-- If needed, introduce a small explicit command or signal path for transitions that were previously inferred during polling.
+- Audit `lib/dashboard-server.js` for any write-on-read behavior, especially `maybeFlagEndedSession()` inside `collectDashboardStatusData()`.
+- Remove direct state writes from dashboard read paths and keep any "session appears to have ended" result as derived response data only.
+- Preserve diagnostic detection, but return it as ephemeral read-only status data rather than persisting it.
+- If reconciled flags are still useful, move them behind an explicit repair/reconcile command or a background coordinator loop rather than the dashboard poller.
 - Keep the dashboard as a view/controller layer rather than a workflow authority.
 
 ## Dependencies
 
+- Should align with the unified entity/state-machine work already landed in `lib/entity.js` and `lib/state-machine.js`.
 - May depend on a shared workflow read model if one is introduced in parallel.
-- Should align with existing manifest/state-machine usage rather than inventing a second state source.
 
 ## Out of Scope
 
@@ -53,7 +54,7 @@ Manual validation:
 
 ## Open Questions
 
-- Should any inferred session-loss or timeout behavior move to the existing conductor/background process, or should it remain fully manual until the new engine exists?
+- Should inferred session-loss or timeout behavior move to the existing conductor/background process, or should it remain fully manual until an explicit reconcile path exists?
 - Do we want an explicit `aigon workflow-reconcile` style command for one-off repair/recovery?
 
 ## Related
@@ -61,4 +62,3 @@ Manual validation:
 - `lib/dashboard-server.js`
 - `lib/state-machine.js`
 - `docs/architecture.md`
-
