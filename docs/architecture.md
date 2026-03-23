@@ -292,3 +292,6 @@ npm run test:dashboard:e2e      # Dashboard E2E lifecycle tests
 node -c aigon-cli.js            # Quick syntax check (no tests)
 node -c lib/<module>.js         # Quick syntax check for a module
 ```
+### Workflow Read Model
+
+`lib/workflow-read-model.js` centralizes read-side workflow derivation used by consumers such as the dashboard and board. It builds a `StateContext` from discovered agents, asks `lib/state-machine.js` for valid and recommended actions, and formats consumer-facing action suggestions without mutating workflow state.
