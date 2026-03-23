@@ -44,7 +44,7 @@ const COMMAND_GROUPS = {
         'research-open',
         'research-do',
         'research-submit',
-        'research-synthesize',
+        'research-eval',
         'research-close',
         'research-autopilot',
         'research-conduct',
