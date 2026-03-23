@@ -15,7 +15,10 @@ const AGENT_ACTION_LABELS = {
     return (agent && agent.status === 'implementing') ? 'Restart' : 'Start';
   },
   'research-attach': 'View',
-  'research-open':   'Start'
+  'research-open':   (va, feature) => {
+    const agent = (feature.agents || []).find(a => a.id === va.agentId);
+    return (agent && agent.status === 'implementing') ? 'Restart' : 'Start';
+  }
 };
 
 // Maps action + priority to button CSS class
@@ -53,8 +56,11 @@ function buildFeatureActions(feature, repoPath, pipelineType) {
   if (validActions.length === 0) return '';
 
   // Filter: actions as buttons, plus specific transitions that need buttons
+  const evalRunning = feature.evalSession && feature.evalSession.running;
   const buttonsToRender = validActions.filter(va => {
     if (va.agentId) return false; // per-agent actions handled by buildAgentSectionHtml
+    // Hide eval/review actions when eval session is already running
+    if (evalRunning && (va.action === 'feature-eval' || va.action === 'research-eval' || va.action === 'feature-review')) return false;
     if (va.type === 'action') return true;
     return va.type === 'transition' && TRANSITIONS_AS_BUTTONS.includes(va.action);
   });
