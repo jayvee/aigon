@@ -270,7 +270,7 @@ Before building, run structured research with multiple agents investigating in p
 ```bash
 aigon research-create "auth library comparison"
 aigon research-autopilot 5 cc gg     # Parallel investigation
-aigon research-synthesize 5          # Compare and extract insights
+aigon research-eval 5                # Compare and extract insights
 ```
 
 ### 4. Feedback Triage Loop

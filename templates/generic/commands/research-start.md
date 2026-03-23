@@ -61,7 +61,7 @@ This will:
 Next steps:
 1. Run `{{CMD_PREFIX}}research-open 05` to open all agents side-by-side
 2. Each agent writes to their own findings file
-3. After all agents complete, run `{{CMD_PREFIX}}research-synthesize 05` to compare and select features
+3. After all agents complete, run `{{CMD_PREFIX}}research-eval 05` to compare and select features
 
 ## Important Notes
 

@@ -4,7 +4,7 @@
     const STAGE_LABELS = { inbox: 'Inbox', backlog: 'Backlog', 'in-progress': 'In-Progress', 'in-evaluation': 'Evaluation', done: 'Done', paused: 'Paused', triaged: 'Triaged', actionable: 'Actionable', 'wont-fix': "Won't Fix", duplicate: 'Duplicate' };
     const PIPELINE_STAGES_BASE = {
       features: ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'],
-      research: ['inbox', 'backlog', 'in-progress', 'paused', 'done'],
+      research: ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'],
       feedback: ['inbox', 'triaged', 'actionable', 'done', 'wont-fix']
     };
     // Paused column is hidden by default for features, toggled via UI
@@ -342,15 +342,15 @@
           const agentActions = validActions.filter(va => va.agentId === agent.id);
           innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType);
         });
-        // Synthesis session row (research only)
-        if (feature.synthesizeSession && feature.synthesizeSession.running) {
-          const synth = feature.synthesizeSession;
-          const synthAgent = AGENT_DISPLAY_NAMES[synth.agent] || synth.agent;
-          innerHtml += '<div class="kcard-agent agent-synth">' +
-            '<div class="kcard-agent-header"><span class="kcard-agent-name">Synthesize</span>' +
-            '<span class="kcard-agent-status status-implementing">● ' + escHtml(synthAgent) + '</span></div>' +
+        // Eval session row (research in-evaluation)
+        if (feature.evalSession && feature.evalSession.running) {
+          const evalSess = feature.evalSession;
+          const evalAgent = AGENT_DISPLAY_NAMES[evalSess.agent] || evalSess.agent;
+          innerHtml += '<div class="kcard-agent agent-eval">' +
+            '<div class="kcard-agent-header"><span class="kcard-agent-name">Evaluate</span>' +
+            '<span class="kcard-agent-status status-implementing">● ' + escHtml(evalAgent) + '</span></div>' +
             '<div class="kcard-agent-actions">' +
-            '<button class="btn btn-secondary kcard-synth-view" data-synth-session="' + escHtml(synth.session) + '">View</button>' +
+            '<button class="btn btn-secondary kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">View</button>' +
             '</div></div>';
         }
         // Card-level actions (non-per-agent: close, eval, review, etc.)
@@ -493,15 +493,15 @@
         };
       });
 
-      // Synthesis session view button
-      card.querySelectorAll('.kcard-synth-view').forEach(btn => {
+      // Eval session view button (research)
+      card.querySelectorAll('.kcard-eval-view').forEach(btn => {
         btn.onclick = async (e) => {
           e.stopPropagation();
-          const sessionName = btn.getAttribute('data-synth-session');
-          // Parse agent from session name: {repo}-r{id}-synthesize-{agent}
-          const synthMatch = sessionName.match(/synthesize-(\w+)$/);
-          const synthAgentId = synthMatch ? synthMatch[1] : 'cc';
-          await requestFeatureOpen(feature.id, synthAgentId, repoPath, btn, pipelineType, 'synthesize');
+          const sessionName = btn.getAttribute('data-eval-session');
+          // Parse agent from session name: {repo}-r{id}-eval-{agent}
+          const evalMatch = sessionName.match(/eval-(\w+)$/);
+          const evalAgentId = evalMatch ? evalMatch[1] : 'cc';
+          await requestFeatureOpen(feature.id, evalAgentId, repoPath, btn, pipelineType, 'eval');
         };
       });
 
