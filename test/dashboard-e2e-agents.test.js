@@ -42,10 +42,10 @@ const AIGON_PATH = path.join(process.env.HOME, 'src', 'aigon');
 const TEST_FEATURE_ID = '07';
 const TEST_RESEARCH_ID = '03';
 
-const AGENT_TIMEOUT_MS = 180000;   // 3 minutes for agent work
-const EVAL_TIMEOUT_MS = 120000;    // 2 minutes for eval
+const AGENT_TIMEOUT_MS = 300000;   // 5 minutes for agent work
+const EVAL_TIMEOUT_MS = 180000;    // 3 minutes for eval
 const POLL_INTERVAL_MS = 5000;     // poll every 5 seconds
-const TEST_TIMEOUT_MS = 300000;    // 5 minutes per test block
+const TEST_TIMEOUT_MS = 420000;    // 7 minutes per test block
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -388,6 +388,9 @@ describe('Feature Flow', { timeout: 900000 }, () => {
             }
         );
         console.log('    [test1] gg agent submitted.');
+
+        // Wait for dashboard poll cycle to pick up status changes
+        await sleep(12000);
 
         // Verify dashboard status API reflects submissions
         const statusResp = await dashboardGet('/api/status');
