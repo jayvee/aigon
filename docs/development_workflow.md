@@ -25,8 +25,9 @@ docs/specs/
 │   ├── 01-inbox/        # New research ideas
 │   ├── 02-backlog/      # Prioritised research
 │   ├── 03-in-progress/  # Active research
-│   ├── 04-done/         # Completed research
-│   └── 05-paused/       # On hold
+│   ├── 04-in-evaluation/# Comparing agent findings
+│   ├── 05-done/         # Completed research
+│   └── 06-paused/       # On hold
 ├── features/
 │   ├── 01-inbox/        # New feature ideas (feature-description.md)
 │   ├── 02-backlog/      # Prioritised features (feature-NN-description.md)

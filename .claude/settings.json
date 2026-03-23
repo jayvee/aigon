@@ -457,7 +457,17 @@
       "Edit(/Users/jviner/src/aigon-worktrees/feature-133-cc-security-scan-docs-and-extras/**)",
       "Write(/Users/jviner/src/aigon-worktrees/feature-133-cc-security-scan-docs-and-extras/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-133-cc-security-scan-docs-and-extras:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-133-cc-security-scan-docs-and-extras:*)"
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-133-cc-security-scan-docs-and-extras:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-134-cc-unified-pipeline-stages/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-134-cc-unified-pipeline-stages/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-134-cc-unified-pipeline-stages/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-134-cc-unified-pipeline-stages:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-134-cc-unified-pipeline-stages:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-134-cx-unified-pipeline-stages/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-134-cx-unified-pipeline-stages/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-134-cx-unified-pipeline-stages/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-134-cx-unified-pipeline-stages:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-134-cx-unified-pipeline-stages:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",

@@ -26,9 +26,9 @@ aigon research-autopilot {{ARG_SYNTAX}}
 aigon research-autopilot {{ARG_SYNTAX}} cc gg cx
 ```
 
-### With auto-synthesize
+### With auto-eval
 ```bash
-aigon research-autopilot {{ARG_SYNTAX}} cc gg cx --auto-synthesize
+aigon research-autopilot {{ARG_SYNTAX}} cc gg cx --auto-eval
 ```
 
 ## What it does

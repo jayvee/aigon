@@ -39,7 +39,7 @@ This updates your findings file's status to `submitted`, which the `research-aut
 
 **STAY in the session.** The user may want to review your findings and ask follow-up questions.
 
-Do NOT run `aigon research-close` — the user (or autopilot) will synthesize all agents' findings.
+Do NOT run `aigon research-close` — the user (or autopilot) will evaluate all agents' findings.
 
 ## Prompt Suggestion
 

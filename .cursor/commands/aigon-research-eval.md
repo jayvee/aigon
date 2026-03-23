@@ -1,24 +1,21 @@
-name = "research-synthesize"
-description = "Synthesize research <ID> - compare findings and select features"
-prompt = """
-# aigon-research-synthesize
+# aigon-research-eval
 
-Synthesize research findings from ALL agents, help the user select features, and update the main research document.
+Evaluate and synthesize research findings from ALL agents, help the user select features, and update the main research document. This transitions research from in-progress to in-evaluation (matching the feature pipeline).
 
 ## Argument Resolution
 
-If no ID is provided, or the ID doesn't match an existing topic in progress:
-1. List all files in `./docs/specs/research-topics/03-in-progress/` matching `research-*.md`
+If no ID is provided, or the ID doesn't match an existing topic in progress or in-evaluation:
+1. List all files in `./docs/specs/research-topics/03-in-progress/` and `./docs/specs/research-topics/04-in-evaluation/` matching `research-*.md`
 2. If a partial ID or name was given, filter to matches
 3. Present the matching topics and ask the user to choose one
 
 ## Recommended: Use a Different Model
 
-For unbiased synthesis, use a **different model** than those that conducted the research.
+For unbiased evaluation, use a **different model** than those that conducted the research.
 
 ```bash
 claude --model sonnet
-/aigon-research-synthesize 05
+/aigon-research-eval 05
 ```
 
 ## Step 1: Read All Findings
@@ -30,8 +27,10 @@ docs/specs/research-topics/logs/research-{ID}-*-findings.md
 
 Also read the main research topic:
 ```
-docs/specs/research-topics/03-in-progress/research-{ID}-*.md
+docs/specs/research-topics/04-in-evaluation/research-{ID}-*.md
 ```
+
+(If not found in `04-in-evaluation/`, check `03-in-progress/`.)
 
 ## Step 2: Synthesize Findings
 
@@ -70,17 +69,30 @@ Extract the `## Suggested Features` table from each agent's findings file.
 - `Unique to [Agent]` - Only one agent suggested
 - `Merged` - Combined similar suggestions from multiple agents
 
-## Step 4: Get User Approval
+## Step 4: Get User Approval and Create Features
 
 Ask the user:
 
-> "Here are the consolidated features. Which should I include in the final research output?
+> "Here are the consolidated features. Which should I create?
 > - Enter numbers to include (e.g., `1,2,3`)
 > - Enter `all` to include everything
 > - Enter `consensus` to include only consensus items
-> - Enter `none` to skip feature selection"
+> - Enter `none` to skip feature creation"
 
 Wait for user response before proceeding.
+
+**For each selected feature, run:**
+
+```bash
+aigon feature-create "feature-name"
+```
+
+After creating each feature, add a research origin backlink to the new feature spec:
+
+```markdown
+## Related
+- Research: #{ID} {research-name}
+```
 
 ## Step 5: Update Main Research Doc
 
@@ -108,20 +120,29 @@ Once user confirms, update the main research document:
 - other-feature: Reason not selected
 ```
 
-## Step 6: Complete
+## Step 6: Signal completion
 
-After updating the document, run:
+**THIS IS THE FINAL STEP. YOU MUST COMPLETE IT. DO NOT SKIP THIS STEP.**
+
+After updating the document, signal that evaluation is done:
+
 ```bash
-aigon research-close {ID} --complete
+aigon agent-status submitted
 ```
+
+Then tell the user:
+
+> "Evaluation complete. Selected features have been created with research backlinks. Run `/aigon:research-close {ID}` when ready."
+
+**STAY in the session.** The user may want to review the evaluation or ask for changes.
 
 ## Important
 
 - Read ALL findings files, not just your own
 - Be objective when presenting - don't favor your own findings
-- Wait for user confirmation before updating files
+- Wait for user confirmation before updating files or creating features
 - Use the exact table format so output is clean and actionable
+- Created features must include a research origin backlink
 
 
-ARGUMENTS: {{args}}
-"""
+ARGUMENTS: <args>

@@ -74,7 +74,7 @@ For complex research topics with multiple questions, consider creating an agent 
    aigon research-submit {{args}}
    ```
 
-3. **STAY in the session.** The user may want to review your findings and ask follow-up questions. Do NOT run `aigon research-close` — the user will synthesize all agents' findings.
+3. **STAY in the session.** The user may want to review your findings and ask follow-up questions. Do NOT run `aigon research-close` — the user will evaluate all agents' findings.
 
 **If Drive mode (no findings file):**
 - Run `aigon research-close {{args}}` to complete the research
