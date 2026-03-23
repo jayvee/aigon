@@ -16,6 +16,7 @@ Complete rewrite of `seed-reset` to be robust and predictable. The current imple
 8. **install-agent output not committed** — worktrees branched off stale committed state, got old templates
 9. **rm -rf worktrees dir failed with ENOTEMPTY** — .git worktree references blocked deletion
 10. **Dashboard crashed during reset** — readdirSync on deleted repo dir caused uncaughtException and process.exit
+11. **Dev server fails in worktrees** — `npm run dev` fails with "next: command not found" because deps not installed; dev-server start should auto-detect and run npm install
 
 ## User Stories
 
@@ -76,6 +77,10 @@ A seed repo must:
 - Move spec files between folders
 - Patch .gitignore and create commits for it
 - Assume anything about the current state of the target directory
+
+### Related: dev-server should auto-install deps
+
+`aigon dev-server start` should detect "command not found" failures and automatically run `npm install` before retrying. This prevents the common worktree failure where deps aren't installed.
 
 ## Dependencies
 
