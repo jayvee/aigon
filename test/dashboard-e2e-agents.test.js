@@ -266,7 +266,7 @@ async function startDashboard() {
     console.log(`    [setup] Starting dashboard on port ${DASHBOARD_PORT}...`);
     const proc = spawn(process.execPath, [CLI_PATH, 'dashboard'], {
         cwd: BREWBOARD_PATH,
-        env: { ...process.env, PORT: String(DASHBOARD_PORT), AIGON_TEST_MODEL: 'haiku' },
+        env: { ...process.env, PORT: String(DASHBOARD_PORT), AIGON_TEST_MODEL_CC: 'haiku' },
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
     });
