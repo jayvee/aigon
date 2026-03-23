@@ -20,11 +20,11 @@ This moves the research topic from `04-in-evaluation/` (or `03-in-progress/`) to
 
 ## Usage
 
-**After evaluation:** Run after `research-eval` has completed — the standard flow.
+**After evaluation:** Run after `research-eval` has completed — the standard parallel-work flow.
 
-**Drive mode:** Run directly after completing your research findings.
+**Drive mode:** Run after `research-do` is complete and the research pass is ready to finish.
 
-**Skipping eval:** Closing from in-progress (without running eval) will show a warning but proceed.
+**Skipping eval:** Closing from in-progress (without running eval) will show a warning but proceed. This is most relevant for single-agent research, just as feature close can skip comparative evaluation when there is nothing to compare.
 
 
 ARGUMENTS: {{args}}

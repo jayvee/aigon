@@ -1,17 +1,11 @@
-<!-- description: Start research <ID> [agents...] - begin Drive or Fleet research -->
+<!-- description: Start research <ID> [agents...] - create workspace and begin research -->
 # aigon-research-start
 
-Prepare to conduct research in either Drive or Fleet mode.
+Prepare your workspace to conduct research in either Drive or Fleet mode.
+
+**CRITICAL:** You MUST use the CLI command below to perform setup. Do NOT manually move topic files or create worktrees — the CLI handles committing the spec move before worktree setup, which is essential for parallel modes.
 
 ## Usage
-
-```bash
-# Drive mode (single agent)
-aigon research-start {{ARG1_SYNTAX}}
-
-# Fleet mode (multiple agents)
-aigon research-start {{ARG1_SYNTAX}} <agent1> <agent2> [agent3...]
-```
 
 ## Argument Resolution
 
@@ -20,62 +14,100 @@ If no ID is provided, or the ID doesn't match an existing topic in the backlog:
 2. If a partial ID or name was given, filter to matches
 3. Present the matching topics and ask the user to choose one
 
-## Mode Selection
+## Step 1: Run the CLI command
 
-The mode is determined automatically based on parameters:
-- **No agents**: Drive mode - one agent researches the topic
-- **2+ agents**: Fleet mode - multiple agents research in parallel
+**CRITICAL: Run EXACTLY the arguments the user provided. Do NOT add agents that weren't specified.**
 
-## Drive Mode
-
-Sets up for a single agent to research the topic.
-
-Example:
 ```bash
-aigon research-start 05
+# Drive mode — user passes only an ID
+aigon research-start {{ARG1_SYNTAX}}
+
+# Drive worktree mode — user passes ID + agent
+aigon research-start {{ARG1_SYNTAX}} <agent>
+
+# Fleet mode — user passes ID + 2+ agents
+aigon research-start {{ARG1_SYNTAX}} <agent1> <agent2> [agent3...]
 ```
 
-This will:
-- Move topic to in-progress
+The mode is determined automatically based on what the user provides:
+- **No agents**: Drive mode - conduct research in the current repo
+- **1 agent**: Drive worktree mode - create one research worktree
+- **2+ agents**: Fleet mode - create parallel research worktrees/findings contexts
 
-Next steps:
+The CLI will:
+- Move the topic from `02-backlog` to `03-in-progress`
+- **Commit the topic move** before any worktree setup
+- Create findings files for agents when needed
+- Create worktree/session context for parallel research
+
+## Step 2: Confirm setup and next steps
+
+Research now follows the same lifecycle shape as features: `start -> do -> submit -> eval -> close`.
+
+### Drive Mode
+
+After the CLI completes, run:
+
 ```bash
-{{CMD_PREFIX}}research-do 05     # Conduct the research
+{{CMD_PREFIX}}research-do <ID>
 ```
 
-## Fleet Mode
+When the research pass is complete, signal completion with `aigon agent-status submitted`, then close with:
 
-Sets up for multiple agents to research the same topic in parallel.
-
-Example:
 ```bash
-aigon research-start 05 cc gg
+{{CMD_PREFIX}}research-close <ID>
 ```
 
-This will:
-- Move topic to in-progress
-- Create findings files for each agent:
-  - `logs/research-05-cc-findings.md` (Claude)
-  - `logs/research-05-gg-findings.md` (Gemini)
+### Drive Worktree Mode
 
-Next steps:
-1. Run `{{CMD_PREFIX}}research-open 05` to open all agents side-by-side
-2. Each agent writes to their own findings file
-3. After all agents complete, run `{{CMD_PREFIX}}research-eval 05` to compare and select features
+After the CLI completes, the research agent session is ready in the worktree context. Run:
+
+```bash
+{{CMD_PREFIX}}research-do <ID>
+```
+
+When the research pass is complete, signal completion with `aigon agent-status submitted`, then close from the main repo:
+
+```bash
+{{CMD_PREFIX}}research-close <ID>
+```
+
+### Fleet Mode
+
+After the CLI completes, all agents conduct research in parallel and submit their findings. When all agents finish:
+
+```bash
+{{CMD_PREFIX}}research-eval <ID>
+```
+
+Then finish with:
+
+```bash
+{{CMD_PREFIX}}research-close <ID>
+```
+
+### Re-opening a crashed or ended Fleet session
+
+If research sessions need to be reopened or attached after setup, use:
+
+```bash
+{{CMD_PREFIX}}research-open <ID>
+```
 
 ## Important Notes
 
-- **Drive mode**: Agent writes findings directly to the main research doc
-- **Fleet mode**: Each agent writes ONLY to their own findings file
-- Fleet mode requires at least 2 agents
-- Findings files are created in `docs/specs/research-topics/logs/`
+- **Drive mode**: Write findings directly to the main research doc
+- **Drive worktree / Fleet mode**: Agents write only to their own findings files
+- `research-open` is a session-attach/reopen tool, not the primary next step after `research-start`
+- Findings files live in `docs/specs/research-topics/logs/`
 
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID and choose based on mode:
 
-- **Drive mode**: `{{CMD_PREFIX}}research-do <ID>`
-- **Fleet mode**: `{{CMD_PREFIX}}research-open <ID>`
+- **Drive mode:** `{{CMD_PREFIX}}research-do <ID>`
+- **Drive worktree:** `{{CMD_PREFIX}}research-do <ID>`
+- **Fleet:** `{{CMD_PREFIX}}research-eval <ID>`
 
 ARGUMENTS: {{ARG_SYNTAX}}

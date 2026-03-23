@@ -27,10 +27,11 @@
 |---------|-------------|
 | `/prompts:aigon-research-create <name>` | Create a new research topic |
 | `/prompts:aigon-research-prioritise <name>` | Prioritise a research topic |
-| `/prompts:aigon-research-start <ID> [agents...]` | Setup for Drive or Fleet research |
-| `/prompts:aigon-research-open <ID>` | Open all Fleet agents side-by-side for parallel research |
+| `/prompts:aigon-research-start <ID> [agents...]` | Setup for Drive or Fleet execution |
+| `/prompts:aigon-research-open <ID>` | Re-open or attach Fleet research sessions when needed |
 | `/prompts:aigon-research-do <ID>` | Conduct research (write findings) |
-| `/prompts:aigon-research-submit` | (you must run this) Signal research findings are complete |
+| `/prompts:aigon-research-submit [ID] [agent]` | Signal research findings are complete |
+| `/prompts:aigon-research-eval <ID>` | Synthesize findings before close |
 | `/prompts:aigon-research-close <ID>` | Complete research topic |
 
 ### Feedback Commands
@@ -92,6 +93,27 @@ These are CLI commands you run directly — not slash commands, not auto-invoked
 4. Return to main repo for evaluation: `/prompts:aigon-feature-eval <ID>`
 5. Merge winner: `/prompts:aigon-feature-close <ID> cx`
 6. Clean up losers: `/prompts:aigon-feature-cleanup <ID> --push` (to save branches) or `/prompts:aigon-feature-cleanup <ID>` (to delete)
+
+## Research Workflow
+
+Research follows the same lifecycle shape as features: `start -> do -> submit -> eval -> close`.
+
+### Drive Mode
+
+1. Run `/prompts:aigon-research-start <ID>` to move the topic to in-progress
+2. Run `/prompts:aigon-research-do <ID>` to conduct the research
+3. Write findings directly in the main research document
+4. Run `aigon agent-status submitted` when your research pass is complete
+5. Run `/prompts:aigon-research-close <ID>` when ready to finish
+
+### Fleet Mode
+
+1. Run `/prompts:aigon-research-start <ID> cc cx gg cu` to prepare and launch parallel research
+2. In each agent session, run `/prompts:aigon-research-do <ID>`
+3. Each agent writes only to its own findings file and signals completion
+4. Return to the main repo for synthesis: `/prompts:aigon-research-eval <ID>`
+5. Finish the topic: `/prompts:aigon-research-close <ID>`
+6. Use `/prompts:aigon-research-open <ID>` only to re-open or attach Fleet research sessions after setup
 
 
 ## Before Completing a Feature
