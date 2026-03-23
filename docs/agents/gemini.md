@@ -53,10 +53,10 @@
 
 ## Mandatory Lifecycle Commands
 
-A feature is NOT complete until you run these commands yourself:
+Feature and research work are NOT complete until you run these commands yourself:
 
-1. `aigon agent-status implementing` — when you start coding
-2. `aigon agent-status submitted` — after committing all code and log updates
+1. `aigon agent-status implementing` — when you start coding or begin active research
+2. `aigon agent-status submitted` — after committing all code, log updates, or research findings
 
 These are CLI commands you run directly — not slash commands, not auto-invoked. The `aigon agent-status` command writes state to the **main repo** (not the worktree), so you won't see state files locally. Just run the command and trust the output.
 
