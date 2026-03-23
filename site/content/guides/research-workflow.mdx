@@ -46,7 +46,7 @@ The research workflow lets you explore technical possibilities with one or more 
 
     {/* Synthesize + Close */}
     <rect x="120" y="264" width="240" height="36" rx="8" fill="#0f7775" fillOpacity="0.15" stroke="#0f7775" strokeOpacity="0.4"/>
-    <text x="240" y="287" textAnchor="middle" fill="#0f7775" fontSize="13" fontFamily="monospace">research-synthesize → close</text>
+    <text x="240" y="287" textAnchor="middle" fill="#0f7775" fontSize="13" fontFamily="monospace">research-eval → close</text>
   </svg>
 </div>
 
@@ -98,15 +98,15 @@ If a session ends or crashes, re-open it:
 aigon research-open 05                   # Re-open all agents
 ```
 
-### Synthesise
+### Evaluate
 
-After all agents submit their findings, synthesise the results:
+After all agents submit their findings, evaluate the results:
 
 ```bash
-aigon research-synthesize 05
+aigon research-eval 05
 ```
 
-The synthesising agent reads all findings, presents a comparison with recommendations, and asks which features to include. Use a different model than those that conducted the research for unbiased synthesis.
+The evaluating agent reads all findings, presents a comparison with recommendations, and asks which features to include. Use a different model than those that conducted the research for unbiased evaluation.
 
 ### Complete
 
@@ -114,7 +114,7 @@ The synthesising agent reads all findings, presents a comparison with recommenda
 aigon research-close 05
 ```
 
-The main research file contains the synthesised recommendation, with individual findings preserved in `logs/`.
+The main research file contains the evaluated recommendation, with individual findings preserved in `logs/`.
 
 ## Research autopilot
 

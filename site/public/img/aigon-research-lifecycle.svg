@@ -15,7 +15,7 @@
   <rect x="230" y="70" width="190" height="54" class="box" /><text x="258" y="102" class="t">research-prioritise</text>
   <rect x="455" y="70" width="170" height="54" class="box" /><text x="486" y="102" class="t">research-start</text>
   <rect x="660" y="70" width="140" height="54" class="box" /><text x="694" y="102" class="t">research-do</text>
-  <rect x="835" y="70" width="170" height="54" class="box" /><text x="859" y="102" class="t">research-synthesize</text>
+  <rect x="835" y="70" width="170" height="54" class="box" /><text x="859" y="102" class="t">research-eval</text>
   <rect x="1040" y="70" width="140" height="54" class="box" /><text x="1073" y="102" class="t">research-close</text>
   <line x1="194" y1="97" x2="226" y2="97" class="line" />
   <line x1="420" y1="97" x2="451" y2="97" class="line" />

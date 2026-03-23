@@ -112,7 +112,7 @@ Current shared modules:
 The Aigon workflow is state-as-location. Task state is represented by file location under `docs/specs/`.
 
 - `docs/specs/features/01-inbox` to `06-paused`
-- `docs/specs/research-topics/01-inbox` to `05-paused`
+- `docs/specs/research-topics/01-inbox` to `06-paused`
 - `docs/specs/feedback/01-inbox` to `06-duplicate`
 - `docs/specs/features/logs/`: implementation logs
 - `docs/specs/features/evaluations/`: evaluation outputs

@@ -67,7 +67,7 @@ This command is for agents to conduct research after setup is complete.
    aigon research-submit {{ARG_SYNTAX}}
    ```
 
-3. **STAY in the session.** The user may want to review your findings and ask follow-up questions. Do NOT run `aigon research-close` — the user will synthesize all agents' findings.
+3. **STAY in the session.** The user may want to review your findings and ask follow-up questions. Do NOT run `aigon research-close` — the user will evaluate all agents' findings.
 
 **If Drive mode (no findings file):**
 - Run `aigon research-close {{ARG_SYNTAX}}` to complete the research

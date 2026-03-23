@@ -30,7 +30,7 @@ description: Show Aigon commands (shortcut for help)
 | `/aigon:research-open <ID>` | Open all Fleet agents side-by-side for parallel research |
 | `/aigon:research-do <ID>` | Conduct research (write findings) |
 | `/aigon:research-submit [ID]` | Signal research findings complete (Fleet mode) |
-| `/aigon:research-synthesize <ID>` | Synthesize Fleet findings and select features |
+| `/aigon:research-eval <ID>` | Evaluate Fleet findings and recommend features |
 | `/aigon:research-close <ID>` | Complete a research topic |
 
 ## Feedback
@@ -78,7 +78,7 @@ All commands have top-level short aliases prefixed with `a` (for aigon):
 | `/afs` | feature-start | `/aro` | research-open |
 | `/afd` | feature-do | `/ard` | research-do |
 | `/afsb` | feature-submit | `/arsb` | research-submit |
-| `/afe` | feature-eval | `/arsy` | research-synthesize |
+| `/afe` | feature-eval | `/are` | research-eval |
 | `/afr` | feature-review | `/arcl` | research-close |
 | `/afcl` | feature-close | `/arap` | research-autopilot |
 | `/afap` | feature-autopilot | `/afbc` | feedback-create |

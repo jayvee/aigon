@@ -5,7 +5,7 @@ export default {
   "research-do": "research-do",
   "research-submit": "research-submit",
   "research-open": "research-open",
-  "research-synthesize": "research-synthesize",
+  "research-eval": "research-eval",
   "research-close": "research-close",
   "research-autopilot": "research-autopilot",
 };
