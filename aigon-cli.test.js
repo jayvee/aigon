@@ -1261,6 +1261,38 @@ test('install-agent sets core.hooksPath to .githooks', () => withTempDir(tempDir
     assert.ok(fs.existsSync(path.join(tempDir, '.githooks', 'pre-commit')), 'install-agent should scaffold pre-commit hook');
 }));
 
+test('doctor reports Cursor using the configured agent binary', () => withTempDir(tempDir => {
+    runGit(['init', '-b', 'main'], tempDir);
+    runGit(['config', 'user.name', 'Aigon Test'], tempDir);
+    runGit(['config', 'user.email', 'test@example.com'], tempDir);
+
+    const binDir = path.join(tempDir, 'bin');
+    fs.mkdirSync(binDir, { recursive: true });
+    const binaries = {
+        git: '#!/bin/sh\necho "git version 2.42.0"\n',
+        tmux: '#!/bin/sh\necho "tmux 3.4"\n',
+        claude: '#!/bin/sh\nexit 0\n',
+        gemini: '#!/bin/sh\nexit 0\n',
+        codex: '#!/bin/sh\nexit 0\n',
+        agent: '#!/bin/sh\nexit 0\n',
+    };
+    for (const [name, content] of Object.entries(binaries)) {
+        const file = path.join(binDir, name);
+        fs.writeFileSync(file, content, { mode: 0o755 });
+    }
+
+    const cliPath = path.join(__dirname, 'aigon-cli.js');
+    const result = spawnSync(process.execPath, [cliPath, 'doctor'], {
+        cwd: tempDir,
+        env: { ...process.env, PATH: binDir },
+        encoding: 'utf8',
+    });
+
+    const output = `${result.stdout || ''}${result.stderr || ''}`;
+    assert.ok(output.includes('agent (cu)'), output);
+    assert.ok(!output.includes('cursor (cu)'), output);
+}));
+
 test('config init writes project security schema defaults', () => withTempDir(tempDir => {
     runGit(['init', '-b', 'main'], tempDir);
     runGit(['config', 'user.name', 'Aigon Test'], tempDir);
