@@ -502,6 +502,83 @@ test('collectDashboardStatusData: in-progress features still include agent data'
     assert.ok(feature.agents.length > 0, 'in-progress feature has agents');
     assert.strictEqual(feature.agents[0].status, 'waiting');
 }));
+test('collectDashboardStatusData does not mutate feature agent status files during reads', () => withTempRepo(tempDir => {
+    const inProgressDir = path.join(tempDir, 'docs', 'specs', 'features', '03-in-progress');
+    const stateDir = path.join(tempDir, '.aigon', 'state');
+    const worktreeDir = path.join(tempDir + '-worktrees', 'feature-31-cc-read-only-check');
+    const worktreeGitDir = path.join(worktreeDir, '.git');
+    const manifestFile = path.join(stateDir, 'feature-31.json');
+    const statusFile = path.join(stateDir, 'feature-31-cc.json');
+    fs.mkdirSync(inProgressDir, { recursive: true });
+    fs.mkdirSync(stateDir, { recursive: true });
+    fs.mkdirSync(worktreeGitDir, { recursive: true });
+    fs.writeFileSync(path.join(inProgressDir, 'feature-31-read-only-check.md'), '# Feature\n');
+    fs.writeFileSync(manifestFile, JSON.stringify({ id: '31', stage: 'in-progress', agents: ['cc'] }, null, 2));
+    fs.writeFileSync(statusFile, JSON.stringify({
+        status: 'implementing',
+        flags: {},
+        updatedAt: '2024-01-01T00:00:00.000Z'
+    }, null, 2));
+
+    // Give the worktree apparent implementation progress so the dashboard would
+    // previously infer session-ended and persist flags on read.
+    const originalCwd = process.cwd();
+    process.chdir(worktreeDir);
+    try {
+        require('child_process').execSync('git init', { stdio: 'ignore' });
+        require('child_process').execSync('git config user.email "test@example.com"', { stdio: 'ignore' });
+        require('child_process').execSync('git config user.name "Test User"', { stdio: 'ignore' });
+        fs.writeFileSync(path.join(worktreeDir, 'README.md'), 'hello\n');
+        require('child_process').execSync('git add README.md && git commit -m "feat: progress"', { stdio: 'ignore' });
+    } finally {
+        process.chdir(originalCwd);
+    }
+
+    const before = fs.readFileSync(statusFile, 'utf8');
+    const result = collectDashboardStatusData();
+    const after = fs.readFileSync(statusFile, 'utf8');
+
+    const repo = (result.repos || []).find(r => r.path === path.resolve(tempDir));
+    const feature = (repo && repo.features || []).find(f => f.id === '31' && f.stage === 'in-progress');
+    assert.ok(feature, 'feature found');
+    assert.ok(feature.agents.length > 0, 'feature agents still returned');
+    assert.strictEqual(before, after, 'feature status file unchanged by dashboard read');
+}));
+test('collectDashboardStatusData does not mutate research agent status files during reads', () => withTempRepo(tempDir => {
+    const inProgressDir = path.join(tempDir, 'docs', 'specs', 'research-topics', '03-in-progress');
+    const logsDir = path.join(tempDir, 'docs', 'specs', 'research-topics', 'logs');
+    const stateDir = path.join(tempDir, '.aigon', 'state');
+    const manifestFile = path.join(stateDir, 'research-32.json');
+    const statusFile = path.join(stateDir, 'research-32-cc.json');
+    fs.mkdirSync(inProgressDir, { recursive: true });
+    fs.mkdirSync(logsDir, { recursive: true });
+    fs.mkdirSync(stateDir, { recursive: true });
+    fs.writeFileSync(path.join(inProgressDir, 'research-32-read-only-check.md'), '# Research\n');
+    fs.writeFileSync(manifestFile, JSON.stringify({ id: '32', stage: 'in-progress', agents: ['cc'] }, null, 2));
+    fs.writeFileSync(path.join(logsDir, 'research-32-cc-findings.md'), [
+        '# Findings',
+        '',
+        '## Findings',
+        'Line one',
+        'Line two',
+        'Line three'
+    ].join('\n'));
+    fs.writeFileSync(path.join(statusFile), JSON.stringify({
+        status: 'implementing',
+        flags: {},
+        updatedAt: '2024-01-01T00:00:00.000Z'
+    }, null, 2));
+
+    const before = fs.readFileSync(statusFile, 'utf8');
+    const result = collectDashboardStatusData();
+    const after = fs.readFileSync(statusFile, 'utf8');
+
+    const repo = (result.repos || []).find(r => r.path === path.resolve(tempDir));
+    const research = (repo && repo.research || []).find(r => r.id === '32' && r.stage === 'in-progress');
+    assert.ok(research, 'research found');
+    assert.ok(research.agents.length > 0, 'research agents still returned');
+    assert.strictEqual(before, after, 'research status file unchanged by dashboard read');
+}));
 
 console.log('\nFeature Eval Completion Check');
 test('collectIncompleteFeatureEvalAgents returns incomplete fleet agents from manifest', () => {
