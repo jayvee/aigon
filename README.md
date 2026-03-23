@@ -13,9 +13,11 @@ Aigon is a CLI-first, vendor-independent workflow for research, feature delivery
 
 ## Quick start
 
+**Prerequisites:** Node.js 18+, Git 2.20+, and tmux (for Fleet/worktree mode). See the [Getting Started guide](https://aigon.build/docs/getting-started) for platform-specific install instructions.
+
 ```bash
-git clone https://github.com/jayvee/aigon.git
-cd aigon && npm install && npm link
+git clone https://github.com/jayvee/aigon.git ~/src/aigon
+cd ~/src/aigon && npm install && npm link
 
 cd /path/to/your/project
 aigon init
