@@ -25,7 +25,9 @@ const commandArgs = args.slice(1);
 const cleanCommand = commandName ? commandName.replace(/^aigon-/, '') : null;
 const resolvedCommand = cleanCommand ? (COMMAND_ALIASES[cleanCommand] || cleanCommand) : cleanCommand;
 
-if (!resolvedCommand || resolvedCommand === 'help' || resolvedCommand === '--help' || resolvedCommand === '-h') {
+if (resolvedCommand === '--version' || resolvedCommand === '-v' || resolvedCommand === 'version') {
+    console.log(require('./package.json').version);
+} else if (!resolvedCommand || resolvedCommand === 'help' || resolvedCommand === '--help' || resolvedCommand === '-h') {
     commands.help();
 } else if (commands[resolvedCommand]) {
     const result = commands[resolvedCommand](commandArgs);
