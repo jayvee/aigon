@@ -219,8 +219,23 @@ describe('Research Flow', { timeout: 900000 }, () => {
     });
 
     it('Research Eval: launch eval agent and wait for completion', { timeout: TEST_TIMEOUT_MS }, async () => {
-        console.log(`    [test2] Launching eval for research ${TEST_RESEARCH_ID}...`);
+        console.log(`    [test2] Transitioning research ${TEST_RESEARCH_ID} to in-evaluation...`);
 
+        // Step 1: Move spec to in-evaluation (same as dashboard frontend does)
+        const setupResp = await dashboardPost('/api/action', {
+            action: 'research-eval',
+            args: [TEST_RESEARCH_ID, '--setup-only'],
+            repoPath: BREWBOARD_PATH,
+        });
+        console.log(`    [test2] Setup response: ok=${setupResp.body.ok}, stdout: ${(setupResp.body.stdout || '').slice(0, 200)}`);
+
+        // Verify spec moved to in-evaluation
+        await sleep(1000);
+        const evalSpec = findResearchSpec('04-in-evaluation', researchSpecPattern);
+        assert.ok(evalSpec, `research-${TEST_RESEARCH_ID} should be in 04-in-evaluation after setup`);
+
+        // Step 2: Launch eval agent in tmux
+        console.log(`    [test2] Launching eval agent...`);
         const resp = await dashboardPost('/api/feature-open', {
             featureId: TEST_RESEARCH_ID,
             agentId: 'cc',
