@@ -3,7 +3,7 @@
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
-- **Shared logic**: `lib/*.js` — 12 modules; see Module Map below
+- **Shared logic**: `lib/*.js` — 13 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **Dashboard**: foreground server — `node aigon-cli.js dashboard`; restart after any `lib/*.js` edit
@@ -53,6 +53,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
 | `lib/state-machine.js` | 602 | Spec state transitions (inbox → done) |
+| `lib/workflow-read-model.js` | 100 | Shared read-side workflow state/action derivation for dashboard and board |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | 383 | Branch, worktree, status, commit helpers |
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
