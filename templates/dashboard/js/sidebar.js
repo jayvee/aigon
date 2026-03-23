@@ -97,7 +97,7 @@
             row.querySelector('.agent-check-hint').before(badge);
           }
         });
-        document.getElementById('agent-picker-submit').textContent = opts.submitLabel || 'Setup';
+        document.getElementById('agent-picker-submit').textContent = opts.submitLabel || 'Start';
         document.getElementById('agent-picker').style.display = 'flex';
         document.getElementById('agent-picker-submit').focus();
       });
