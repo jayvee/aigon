@@ -109,7 +109,7 @@
                              x-on:click="openSpecItem($event, item, 'R#')">
                       <div class="card-h">
                         <span class="feature" x-html="researchTitle(item)"></span>
-                        <span class="head-actions" x-html="researchSynthBtn(item)"></span>
+                        <span class="head-actions" x-html="researchEvalBtn(item)"></span>
                       </div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents)" :key="agent.id">
