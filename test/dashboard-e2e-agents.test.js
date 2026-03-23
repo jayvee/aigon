@@ -180,7 +180,8 @@ function sleep(ms) {
  * @returns {boolean}
  */
 function agentStatusIs(entityType, entityId, agentId, expectedStatus) {
-    const statusPath = path.join(BREWBOARD_PATH, '.aigon', 'state', `${entityType}-${entityId}-${agentId}.json`);
+    // Note: writeAgentStatus always uses 'feature-' prefix regardless of entity type (manifest.js quirk)
+    const statusPath = path.join(BREWBOARD_PATH, '.aigon', 'state', `feature-${entityId}-${agentId}.json`);
     if (!fs.existsSync(statusPath)) return false;
     try {
         const data = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
