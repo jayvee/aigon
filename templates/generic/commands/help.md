@@ -24,11 +24,11 @@
 |---------|-------------|
 | `{{CMD_PREFIX}}research-create <name>` | Create a new research topic |
 | `{{CMD_PREFIX}}research-prioritise <name>` | Prioritise a research topic |
-| `{{CMD_PREFIX}}research-start <ID> [agents...]` | Setup for Drive or Fleet research |
-| `{{CMD_PREFIX}}research-open <ID>` | Open all Fleet agents side-by-side for parallel research |
+| `{{CMD_PREFIX}}research-start <ID> [agents...]` | Setup for Drive or Fleet execution |
+| `{{CMD_PREFIX}}research-open <ID>` | Re-open or attach Fleet research sessions |
 | `{{CMD_PREFIX}}research-do <ID>` | Conduct research (write findings) |
-| `{{CMD_PREFIX}}research-submit [ID]` | Signal research findings complete (Fleet mode) |
-| `{{CMD_PREFIX}}research-eval <ID>` | Evaluate Fleet findings and recommend features |
+| `{{CMD_PREFIX}}research-submit [ID]` | Signal research findings complete when using findings files |
+| `{{CMD_PREFIX}}research-eval <ID>` | Evaluate or synthesize parallel findings |
 | `{{CMD_PREFIX}}research-close <ID>` | Complete a research topic |
 
 ## Feedback
