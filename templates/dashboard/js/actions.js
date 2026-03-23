@@ -206,7 +206,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       if (feature.stage !== 'in-evaluation') {
         await requestAction('research-eval', [id, '--setup-only'], repoPath, btn);
       }
-      await requestFeatureOpen(id, synthAgent[0], repoPath, null, pipelineType, 'synthesize');
+      await requestFeatureOpen(id, synthAgent[0], repoPath, null, pipelineType, 'eval');
       break;
     }
     case 'feature-review': {
