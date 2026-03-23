@@ -14,6 +14,8 @@
     "test:dashboard:e2e": "npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list",
     "test:dashboard:api": "node --test test/dashboard-e2e.test.js",
     "test:dashboard:agents": "node --test test/dashboard-e2e-agents.test.js",
+    "test:dashboard:agents:features": "node --test test/dashboard-e2e-agents.test.js --test-name-pattern='Feature'",
+    "test:dashboard:agents:research": "node --test test/dashboard-e2e-agents.test.js --test-name-pattern='Research'",
     "test:all": "node aigon-cli.test.js && node test/e2e.test.js",
     "fixture:seed": "node test/setup-fixture.js",
     "fixture:reset": "node test/reset-fixture.js"
