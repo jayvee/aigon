@@ -114,6 +114,16 @@ function withCapturedConsole(fn) {
     }
 }
 
+function withMockPlatform(platform, fn) {
+    const original = process.platform;
+    Object.defineProperty(process, 'platform', { value: platform });
+    try {
+        return fn();
+    } finally {
+        Object.defineProperty(process, 'platform', { value: original });
+    }
+}
+
 console.log('\nProvider Family Map');
 test('cc maps to anthropic', () => assert.strictEqual(PROVIDER_FAMILIES.cc, 'anthropic'));
 test('gg maps to google', () => assert.strictEqual(PROVIDER_FAMILIES.gg, 'google'));
@@ -810,6 +820,92 @@ test('research-eval --force bypasses unfinished findings check', () => withTempD
 
     assert.strictEqual(contextWarningCalled, true);
 }));
+
+test('research-open falls back from warp to tmux on Linux', () => withTempDir(tempDir => {
+    const researchRoot = path.join(tempDir, 'docs/specs/research-topics');
+    const inProgressDir = path.join(researchRoot, '03-in-progress');
+    const logsDir = path.join(researchRoot, 'logs');
+
+    fs.mkdirSync(inProgressDir, { recursive: true });
+    fs.mkdirSync(logsDir, { recursive: true });
+    fs.writeFileSync(path.join(inProgressDir, 'research-41-linux-terminal-support.md'), '# Research 41\n');
+    fs.writeFileSync(path.join(logsDir, 'research-41-cc-findings.md'), '# Findings\n');
+    fs.writeFileSync(path.join(logsDir, 'research-41-gg-findings.md'), '# Findings\n');
+
+    let warpCalls = 0;
+    let ensureCalls = 0;
+    let openCalls = 0;
+
+    const commands = createAllCommands({
+        PATHS: {
+            features: {
+                root: path.join(tempDir, 'docs/specs/features'),
+                prefix: 'feature',
+                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused']
+            },
+            research: {
+                root: researchRoot,
+                prefix: 'research',
+                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused']
+            }
+        },
+        getEffectiveConfig: () => ({ terminal: 'warp' }),
+        loadAgentConfig: (agentId) => ({ name: agentId }),
+        openInWarpSplitPanes: () => { warpCalls++; },
+        assertTmuxAvailable: () => {},
+        ensureAgentSessions: () => {
+            ensureCalls++;
+            return [
+                { sessionName: 'aigon-r41-cc', created: true },
+                { sessionName: 'aigon-r41-gg', created: true }
+            ];
+        },
+        openTerminalAppWithCommand: () => { openCalls++; },
+        buildAgentCommand: ({ agent }) => `agent-${agent}`
+    });
+
+    const originalCwd = process.cwd();
+    process.chdir(tempDir);
+    try {
+        withMockPlatform('linux', () => {
+            const { output } = withCapturedConsole(() => {
+                commands['research-open'](['41']);
+            });
+            assert.strictEqual(warpCalls, 0);
+            assert.strictEqual(ensureCalls, 1);
+            assert.strictEqual(openCalls, 2);
+            assert.ok(output.some(line => line.includes('Falling back to tmux')));
+        });
+    } finally {
+        process.chdir(originalCwd);
+    }
+}));
+
+test('feature-open --all falls back from warp to tmux on Linux', () => {
+    let warpCalls = 0;
+    const opened = [];
+    const commands = createAllCommands({
+        getEffectiveConfig: () => ({ terminal: 'warp' }),
+        findWorktrees: () => [
+            { path: '/tmp/feature-141-cc', featureId: '141', agent: 'cc', desc: 'linux-terminal-support' },
+            { path: '/tmp/feature-141-gg', featureId: '141', agent: 'gg', desc: 'linux-terminal-support' }
+        ],
+        openInWarpSplitPanes: () => { warpCalls++; },
+        openSingleWorktree: (wt, agentCommand, terminal) => { opened.push({ wt, agentCommand, terminal }); },
+        buildAgentCommand: (wt) => `agent-${wt.agent}`,
+        getActiveProfile: () => ({ devServer: { enabled: false, ports: {} } })
+    });
+
+    withMockPlatform('linux', () => {
+        const { output } = withCapturedConsole(() => {
+            commands['feature-open'](['141', '--all']);
+        });
+        assert.strictEqual(warpCalls, 0);
+        assert.strictEqual(opened.length, 2);
+        assert.ok(opened.every(entry => entry.terminal === 'tmux'));
+        assert.ok(output.some(line => line.includes('Falling back to tmux')));
+    });
+});
 
 console.log('\nConfig Models Resolution');
 function runCliInDir(cwd, args, env = {}) {
