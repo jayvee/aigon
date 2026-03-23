@@ -2,6 +2,7 @@
 Aigon - Spec-Driven Development for AI Agents
 
 Usage: aigon <command> [arguments]
+       aigon --version
 
 Setup:
   init                              Initialize ./docs/specs directory structure
