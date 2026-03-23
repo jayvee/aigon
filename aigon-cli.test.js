@@ -624,7 +624,7 @@ test('research reconnect command uses terminal-focus with --research', () => {
         'aigon terminal-focus 52 cc --research'
     );
 });
-test('research-synthesize warns about unfinished findings and suggests terminal-focus', () => withTempDir(tempDir => {
+test('research-eval warns about unfinished findings and suggests terminal-focus', () => withTempDir(tempDir => {
     const researchRoot = path.join(tempDir, 'docs/specs/research-topics');
     const inProgressDir = path.join(researchRoot, '03-in-progress');
     const logsDir = path.join(researchRoot, 'logs');
@@ -651,23 +651,24 @@ test('research-synthesize warns about unfinished findings and suggests terminal-
             research: {
                 root: researchRoot,
                 prefix: 'research',
-                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-done']
+                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused']
             }
         },
         loadAgentConfig: (agentId) => ({ name: agentId === 'cc' ? 'Claude' : agentId }),
         printAgentContextWarning: () => {
             throw new Error('printAgentContextWarning should not run when findings are incomplete');
-        }
+        },
+        moveFile: () => ({}) // stub moveFile for eval transition
     });
 
     const { output } = withCapturedConsole(() => {
-        commands['research-synthesize'](['52']);
+        commands['research-eval'](['52']);
     });
 
     assert.strictEqual(output.some(line => line.includes('aigon terminal-focus 52 cc --research')), true);
-    assert.strictEqual(output.some(line => line.includes('aigon research-synthesize 52 --force')), true);
+    assert.strictEqual(output.some(line => line.includes('aigon research-eval 52 --force')), true);
 }));
-test('research-synthesize --force bypasses unfinished findings check', () => withTempDir(tempDir => {
+test('research-eval --force bypasses unfinished findings check', () => withTempDir(tempDir => {
     const researchRoot = path.join(tempDir, 'docs/specs/research-topics');
     const inProgressDir = path.join(researchRoot, '03-in-progress');
     const logsDir = path.join(researchRoot, 'logs');
@@ -695,17 +696,18 @@ test('research-synthesize --force bypasses unfinished findings check', () => wit
             research: {
                 root: researchRoot,
                 prefix: 'research',
-                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-done']
+                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused']
             }
         },
         loadAgentConfig: (agentId) => ({ name: agentId === 'cc' ? 'Claude' : agentId }),
         printAgentContextWarning: () => {
             contextWarningCalled = true;
-        }
+        },
+        moveFile: () => ({}) // stub moveFile for eval transition
     });
 
     withCapturedConsole(() => {
-        commands['research-synthesize'](['52', '--force']);
+        commands['research-eval'](['52', '--force']);
     });
 
     assert.strictEqual(contextWarningCalled, true);
@@ -1343,7 +1345,7 @@ test('FEATURE_STAGES has correct ordered stages', () => {
 });
 
 test('RESEARCH_STAGES has correct ordered stages', () => {
-    assert.deepStrictEqual(RESEARCH_STAGES, ['inbox', 'backlog', 'in-progress', 'paused', 'done']);
+    assert.deepStrictEqual(RESEARCH_STAGES, ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done', 'paused']);
 });
 
 test('FEEDBACK_STAGES has correct ordered stages', () => {
@@ -1455,17 +1457,24 @@ test('research inbox → backlog transition available', () => {
     assert.ok(transitions.some(t => t.action === 'research-prioritise'));
 });
 
-test('research in-progress → done blocked when not all submitted', () => {
+test('research in-progress → in-evaluation blocked when not all submitted', () => {
     const transitions = getValidTransitions('research', 'in-progress', {
         agentStatuses: { cc: 'implementing' }
     });
-    assert.ok(!transitions.some(t => t.action === 'research-close'));
+    assert.ok(!transitions.some(t => t.action === 'research-eval'));
+    // research-close from in-progress is always available (skip eval)
+    assert.ok(transitions.some(t => t.action === 'research-close'));
 });
 
-test('research in-progress → done available when all submitted', () => {
+test('research in-progress → in-evaluation available when all submitted', () => {
     const transitions = getValidTransitions('research', 'in-progress', {
         agentStatuses: { cc: 'submitted' }
     });
+    assert.ok(transitions.some(t => t.action === 'research-eval'));
+});
+
+test('research in-evaluation → done always available', () => {
+    const transitions = getValidTransitions('research', 'in-evaluation', {});
     assert.ok(transitions.some(t => t.action === 'research-close'));
 });
 

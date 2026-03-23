@@ -1,4 +1,4 @@
-<!-- description: Research autopilot <ID> [agents...] - Fleet setup + spawn + monitor + synthesize -->
+<!-- description: Research autopilot <ID> [agents...] - Fleet setup + spawn + monitor + evaluate -->
 # aigon-research-autopilot
 
 Run a fully autonomous Fleet research pipeline. Sets up findings files, spawns agents in parallel, monitors progress, and optionally runs synthesis when all agents submit.
@@ -36,7 +36,7 @@ aigon research-autopilot {{ARG_SYNTAX}} cc gg cx --auto-synthesize
 1. **Setup phase**: If no findings files exist, runs `research-start` to create them
 2. **Spawn phase**: Creates a tmux session for each agent, running `research-do`
 3. **Monitor phase**: Polls agent findings files every 30s for `submitted` status, prints status table
-4. **Synthesize phase**: If `--auto-synthesize`, runs `research-synthesize` automatically; otherwise prints the command
+4. **Evaluate phase**: If `--auto-eval`, runs `research-eval` automatically; otherwise prints the command
 
 ## Subcommands
 
@@ -47,7 +47,7 @@ aigon research-autopilot stop {{ARG_SYNTAX}}      # Stop all agents
 
 ## Options
 
-- `--auto-synthesize` — Automatically run `research-synthesize` when all agents submit
+- `--auto-eval` — Automatically run `research-eval` when all agents submit
 - `--poll-interval=N` — Seconds between status checks (default: 30)
 
 ## Requirements
@@ -65,8 +65,8 @@ Each spawned agent will:
 
 ## Prompt Suggestion
 
-After all agents submit, suggest the synthesis command:
+After all agents submit, suggest the eval command:
 
-`{{CMD_PREFIX}}research-synthesize {{ARG_SYNTAX}}`
+`{{CMD_PREFIX}}research-eval {{ARG_SYNTAX}}`
 
 ARGUMENTS: {{ARG_SYNTAX}}

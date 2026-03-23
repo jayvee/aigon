@@ -111,15 +111,18 @@
           return (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + evalBadge;
         },
         researchTitle(item) {
-          const readyToSynthesize = (item.validActions || []).some(a => a.action === 'research-synthesize');
-          const badge = readyToSynthesize ? '<span class="research-badge all-submitted">ready to synthesize</span>' : '<span class="research-badge">research</span>';
+          const readyToEval = (item.validActions || []).some(a => a.action === 'research-eval');
+          const inEval = item.stage === 'in-evaluation';
+          const badge = inEval ? '<span class="eval-badge">evaluating</span>'
+            : readyToEval ? '<span class="research-badge all-submitted">ready to evaluate</span>'
+            : '<span class="research-badge">research</span>';
           return (item.id ? 'R#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + badge;
         },
         feedbackTitle(item) { return (item.id ? 'FB#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + '<span class="research-badge">feedback</span>'; },
-        researchSynthBtn(item) {
-          if (!(item.validActions || []).some(a => a.action === 'research-synthesize')) return '';
-          const synthCmd = '/ars ' + String(item.id).padStart(2, '0');
-          return '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(synthCmd) + '" title="All agents submitted — synthesize findings">Copy next</button>';
+        researchEvalBtn(item) {
+          if (!(item.validActions || []).some(a => a.action === 'research-eval')) return '';
+          const evalCmd = '/are ' + String(item.id).padStart(2, '0');
+          return '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(evalCmd) + '" title="All agents submitted — evaluate findings">Copy next</button>';
         },
         buildNextActionHtml(feature, repoPath) { return buildMonitorActionHtml(feature, repoPath); },
         buildAgentOverflowHtml(agent, feature, repoPath) {
