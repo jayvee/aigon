@@ -93,7 +93,7 @@
           const s = Alpine.store('dashboard');
           const mt = s.monitorType || 'all';
           if (mt !== 'all' && mt !== 'research') return [];
-          const raw = [...(repo.research || [])].filter(r => r.stage === 'in-progress').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
+          const raw = [...(repo.research || [])].filter(r => r.stage === 'in-progress' || r.stage === 'in-evaluation').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
           return s.filter === 'all' ? raw : raw.filter(r => r.agents.some(a => a.status === s.filter));
         },
         getFeedback(repo) {

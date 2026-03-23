@@ -467,7 +467,12 @@
       "Edit(/Users/jviner/src/aigon-worktrees/feature-134-cx-unified-pipeline-stages/**)",
       "Write(/Users/jviner/src/aigon-worktrees/feature-134-cx-unified-pipeline-stages/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-134-cx-unified-pipeline-stages:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-134-cx-unified-pipeline-stages:*)"
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-134-cx-unified-pipeline-stages:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-135-cx-dashboard-detail-panel/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-135-cx-dashboard-detail-panel/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-135-cx-dashboard-detail-panel/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-135-cx-dashboard-detail-panel:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-135-cx-dashboard-detail-panel:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
