@@ -45,6 +45,8 @@ sudo pacman -S nodejs npm git tmux
 
 Clone the repository and link the CLI globally:
 
+**macOS:**
+
 ```bash
 git clone https://github.com/jayvee/aigon.git ~/src/aigon
 cd ~/src/aigon
@@ -52,7 +54,16 @@ npm install
 npm link
 ```
 
-> Clone to `~/src/aigon` or your preferred location for code repos. The path doesn't matter as long as you keep it around — `npm link` creates a global symlink to this directory.
+**Linux:**
+
+```bash
+git clone https://github.com/jayvee/aigon.git ~/src/aigon
+cd ~/src/aigon
+npm install
+sudo npm link
+```
+
+> Clone to `~/src/aigon` or your preferred location for code repos. The path doesn't matter as long as you keep it around — `npm link` creates a global symlink to this directory. On Linux, global npm commands (`npm link`, `npm i -g`) require `sudo`.
 
 Verify the install:
 
@@ -70,6 +81,8 @@ Install at least one agent CLI to use Aigon:
 | Gemini CLI | `gemini` | `npm i -g @google/gemini-cli` |
 | Codex CLI | `codex` | `npm i -g @openai/codex` |
 | Cursor | `agent` | [cursor.com](https://cursor.com) (desktop app) |
+
+> **Linux:** prefix `npm i -g` commands with `sudo` (e.g., `sudo npm i -g @google/gemini-cli`).
 
 You don't need all of them — install whichever you have access to. Fleet mode works best with 2+ agents.
 
