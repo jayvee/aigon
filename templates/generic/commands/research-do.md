@@ -64,7 +64,7 @@ This command is for agents to conduct research after setup is complete.
 
 2. **Signal completion** so the dashboard knows you're done:
    ```bash
-   aigon research-submit {{ARG_SYNTAX}}
+   aigon agent-status submitted
    ```
 
 3. **STAY in the session.** The user may want to review your findings and ask follow-up questions. Do NOT run `aigon research-close` — the user will evaluate all agents' findings.
