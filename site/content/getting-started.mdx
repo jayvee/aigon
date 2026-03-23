@@ -3,16 +3,56 @@ title: Getting Started
 description: Install Aigon and run your first spec-driven feature loop.
 ---
 
+## Prerequisites
+
+Before installing Aigon, make sure you have:
+
+| Prerequisite | Required | Check | Why |
+|---|---|---|---|
+| **Node.js 18+** | Yes | `node -v` | Aigon is a Node.js CLI |
+| **Git 2.20+** | Yes | `git --version` | Spec files are tracked in Git |
+| **tmux** | For Fleet/worktree mode | `tmux -V` | Persistent agent sessions that survive terminal closes. Optional if you only use single-agent Drive mode on a branch. |
+
+### Install prerequisites
+
+**macOS (Homebrew):**
+
+```bash
+brew install node git tmux
+```
+
+**Ubuntu / Debian:**
+
+```bash
+sudo apt install nodejs npm git tmux
+```
+
+**Fedora:**
+
+```bash
+sudo dnf install nodejs npm git tmux
+```
+
+**Arch:**
+
+```bash
+sudo pacman -S nodejs npm git tmux
+```
+
+> **Note:** On Ubuntu/Debian, the `nodejs` package may be outdated. For Node.js 18+, use the [NodeSource](https://github.com/nodesource/distributions) repository or [nvm](https://github.com/nvm-sh/nvm).
+
 ## Installation
 
 Clone the repository and link the CLI globally:
 
 ```bash
-git clone https://github.com/jayvee/aigon.git
-cd aigon
+git clone https://github.com/jayvee/aigon.git ~/src/aigon
+cd ~/src/aigon
 npm install
 npm link
 ```
+
+> Clone to `~/src/aigon` or your preferred location for code repos. The path doesn't matter as long as you keep it around — `npm link` creates a global symlink to this directory.
 
 Verify the install:
 
@@ -20,28 +60,35 @@ Verify the install:
 aigon --version
 ```
 
-### Optional tools
+### Agent CLIs
 
-Aigon works without these, but they unlock additional capabilities:
+Install at least one agent CLI to use Aigon:
+
+| Agent | CLI binary | Install |
+|-------|-----------|---------|
+| Claude Code | `claude` | `brew install claude` or `npm i -g @anthropic-ai/claude-code` |
+| Gemini CLI | `gemini` | `npm i -g @google/gemini-cli` |
+| Codex CLI | `codex` | `npm i -g @openai/codex` |
+| Cursor | `agent` | [cursor.com](https://cursor.com) (desktop app) |
+
+You don't need all of them — install whichever you have access to. Fleet mode works best with 2+ agents.
+
+### Optional tools
 
 | Tool | What it enables | Install |
 |------|----------------|---------|
-| **tmux** | Persistent agent sessions that survive terminal closes | `brew install tmux` |
 | **gitleaks** | Secret scanning in pre-commit hooks and merge gates | `brew install gitleaks` |
 | **Playwright** | Dashboard end-to-end tests | `npx playwright install` |
 
-### Agent CLIs
+### Verify your setup
 
-Install at least one agent CLI to use aigon:
+Run the doctor command to check that everything is configured correctly:
 
-| Agent | CLI | Install |
-|-------|-----|---------|
-| Claude Code | `claude` | `brew install claude` |
-| Gemini CLI | `gemini` | `npm install -g @anthropic-ai/gemini-cli` |
-| Codex CLI | `codex` | `npm install -g @openai/codex` |
-| Cursor | `cursor` | [cursor.com](https://cursor.com) |
+```bash
+aigon doctor
+```
 
-You don't need all of them — install whichever you have access to. Fleet mode works best with 2+ agents.
+Doctor checks Node.js version, Git availability, tmux, and which agent CLIs are in your PATH.
 
 ## Initialize a project
 
@@ -68,6 +115,8 @@ aigon install-agent cc gg          # Claude Code + Gemini CLI
 | `cu` | Cursor | `/aigon-` |
 
 Install only the agents you have access to. You can add more later with `aigon install-agent`.
+
+> **Tip:** `install-agent` checks whether the agent CLI binary is in your PATH and warns you if it's missing, so you'll know immediately if you need to install something first.
 
 ## Three ways to interact
 
@@ -118,6 +167,36 @@ Add a dark/light mode toggle with system preference detection...
 ```
 
 Each step moves the feature through the pipeline: `inbox → backlog → in-progress → done`.
+
+## Try it end-to-end
+
+Want to verify your installation works before using Aigon on a real project? Clone the seed repo and run a complete feature loop:
+
+```bash
+git clone https://github.com/jayvee/brewboard-seed.git ~/src/brewboard
+cd ~/src/brewboard
+aigon init
+aigon install-agent cc
+```
+
+Then open Claude Code in the project and run:
+
+```
+/aigon:feature-now "add dark mode"
+Add a dark mode toggle to the header. Use CSS custom properties.
+```
+
+**What to expect:**
+
+1. `aigon init` — creates `docs/specs/` directories and prints a success message
+2. `aigon install-agent cc` — installs Claude Code config files and prints what was created
+3. `/aigon:feature-now` — the agent creates a spec file, assigns an ID, and starts implementing. You'll see it reading files, writing code, and committing changes. When done, it signals "submitted" and asks you to review.
+
+If anything goes wrong, run `aigon doctor` to diagnose the issue.
+
+## Linux-specific setup
+
+For terminal emulator configuration, headless/SSH usage, and other Linux-specific details, see the [Linux install guide](/docs/linux-install).
 
 ## What's next
 

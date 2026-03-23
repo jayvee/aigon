@@ -1,10 +1,14 @@
 # Aigon on Linux
 
+> **Start here:** Follow the [Getting Started guide](https://aigon.build/docs/getting-started) first — it covers prerequisites, installation, and your first feature loop for all platforms. This page covers Linux-specific details.
+
 ## Prerequisites
+
+See the [Getting Started guide](https://aigon.build/docs/getting-started#prerequisites) for the full list. In short:
 
 - **Node.js** 18+ (`node -v`)
 - **Git** 2.20+ (`git --version`)
-- **tmux** — required for all agent sessions (`tmux -V`)
+- **tmux** — required for Fleet/worktree mode, optional for single-agent Drive mode (`tmux -V`)
 
 Install on Ubuntu/Debian:
 ```bash
@@ -21,18 +25,7 @@ Install on Arch:
 sudo pacman -S nodejs npm git tmux
 ```
 
-## Install Aigon
-
-```bash
-npm install -g aigon
-```
-
-Or clone and link:
-```bash
-git clone https://github.com/jayvee/aigon.git
-cd aigon
-npm link
-```
+> **Note:** On Ubuntu/Debian, the `nodejs` package may be outdated. For Node.js 18+, use the [NodeSource](https://github.com/nodesource/distributions) repository or [nvm](https://github.com/nvm-sh/nvm).
 
 ## Terminal Emulator Setup
 
@@ -82,10 +75,7 @@ After installation, verify your setup:
 aigon doctor
 ```
 
-On Linux, doctor checks for:
-- tmux availability
-- Supported terminal emulators
-- xdg-open availability
+Doctor checks Node.js version, Git, tmux, agent CLIs in PATH, terminal emulators, and xdg-open availability.
 
 ## Known Limitations vs macOS
 
