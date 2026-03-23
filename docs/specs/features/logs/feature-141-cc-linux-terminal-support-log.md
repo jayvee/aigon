@@ -28,3 +28,19 @@ Platform-gate all macOS-specific code (AppleScript, iTerm2, Warp, `open`) behind
 - **Config key `linuxTerminal`**: Separate from `tmuxApp` (which is macOS-specific iTerm2 vs Terminal.app)
 - **gio trash before rm**: GNOME's `gio trash` preserves files in trash; falls back to `trash-put` (trash-cli), then `rm`
 - **No changes to macOS paths**: All Linux code is additive, gated by `process.platform === 'linux'`
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-24
+
+### Findings
+- Linux `research-open` still defaulted to the Warp branch when `terminal=warp`, which only printed warnings on Linux and did not ensure tmux sessions existed.
+- Linux `feature-open --all` had the same issue for fleet side-by-side open flows, so the default Linux config could still route into a macOS-only path.
+
+### Fixes Applied
+- `856c9289` `fix(review): route linux open flows through tmux`
+
+### Notes
+- The review fix normalizes Linux `warp` and `terminal` selections to `tmux` in the command entry points that still bypassed the Linux-safe helper path.
+- Added regression coverage in `aigon-cli.test.js` for both `research-open` and `feature-open --all` on Linux.
