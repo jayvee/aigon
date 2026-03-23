@@ -99,12 +99,12 @@
 <line x1="475" y1="467" x2="475" y2="502" stroke="#7C3AED" stroke-width="1.5" marker-end="url(#arr-p)"/>
 <text x="490" y="490" font-size="10" fill="#7C3AED">all submitted</text>
 
-<!-- ═══ SYNTHESIZE (Fleet only) ═══ -->
+<!-- ═══ EVALUATE (Fleet only) ═══ -->
 <rect x="375" y="504" width="200" height="48" rx="7" fill="#F5F3FF" stroke="#C4B5FD" stroke-width="1.5"/>
-<text x="475" y="522" text-anchor="middle" font-size="13" font-weight="600" fill="#5B21B6">Synthesize</text>
-<text x="475" y="537" text-anchor="middle" font-size="10" fill="#7C3AED" font-style="italic">research-synthesize</text>
+<text x="475" y="522" text-anchor="middle" font-size="13" font-weight="600" fill="#5B21B6">Evaluate</text>
+<text x="475" y="537" text-anchor="middle" font-size="10" fill="#7C3AED" font-style="italic">research-eval</text>
 
-<!-- Synthesize → Done -->
+<!-- Evaluate → Done -->
 <path d="M 475 552 C 475 578 310 578 310 602" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arr)"/>
 <text x="410" y="572" font-size="10" fill="#6B7280">research-close</text>
 
@@ -133,6 +133,6 @@
 <text x="226" y="680" dominant-baseline="central" font-size="10" fill="#374151">optional / pause</text>
 <line x1="350" y1="680" x2="388" y2="680" stroke="#7C3AED" stroke-width="1.5" marker-end="url(#arr-p)"/>
 <text x="396" y="680" dominant-baseline="central" font-size="10" fill="#374151">Fleet-only path</text>
-<text x="50" y="696" font-size="10" fill="#6B7280" font-style="italic">Drive = one agent writes directly in topic file  /  Fleet = multiple agents write separate findings files, then synthesize</text>
+<text x="50" y="696" font-size="10" fill="#6B7280" font-style="italic">Drive = one agent writes directly in topic file  /  Fleet = multiple agents write separate findings files, then evaluate</text>
 
 </svg>
