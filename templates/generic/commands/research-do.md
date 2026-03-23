@@ -16,6 +16,16 @@ If no ID is provided, or the ID doesn't match an existing topic in progress:
 
 This command is for agents to conduct research after setup is complete.
 
+## Required Lifecycle Step
+
+Before starting active research, run:
+
+```bash
+aigon agent-status implementing
+```
+
+This updates your agent state in the main repo so the dashboard and coordinator know you're actively working.
+
 ## Your Task
 
 1. **Find the research topic** in `docs/specs/research-topics/03-in-progress/research-{ID}-*.md`
