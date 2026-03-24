@@ -139,7 +139,7 @@
     .col-count{font-size:11px;color:var(--text-tertiary)}
     .col-new-feature-btn{font-size:10px;padding:3px 8px}
     .col-body{padding:8px;display:grid;gap:6px;min-height:60px}
-    .kcard{border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,.01);padding:8px 10px;cursor:grab;transition:background .12s ease,border-color .12s ease,box-shadow .12s ease}
+    .kcard{border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,.01);padding:8px 10px;cursor:grab;transition:background .12s ease,border-color .12s ease,box-shadow .12s ease;min-width:0;overflow:hidden}
     .kcard:hover{background:var(--bg-elevated);border-color:var(--border-default)}
     .kcard.dragging{opacity:.3;cursor:grabbing}
     .kcard-id{font-size:11px;color:var(--text-tertiary);font-family:var(--mono)}
@@ -156,13 +156,13 @@
     .kcard-actions .btn{font-size:11px;padding:3px 8px}
     .kcard-actions .btn-secondary{font-size:10px;padding:2px 7px}
     /* Agent sections within in-progress/in-evaluation cards */
-    .kcard-agent{border-left:3px solid var(--border-subtle);border-radius:4px;padding:5px 8px;margin-top:5px;background:rgba(255,255,255,.015)}
+    .kcard-agent{border-left:3px solid var(--border-subtle);border-radius:4px;padding:5px 8px;margin-top:5px;background:rgba(255,255,255,.015);min-width:0;overflow:hidden}
     .agent-cc{border-left-color:#6B9EFF}
     .agent-gg{border-left-color:#A78BFA}
     .agent-cx{border-left-color:#4ADE80}
     .agent-cu{border-left-color:#FB923C}
     .agent-solo{border-left-color:#94A3B8}
-    .kcard-agent-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px}
+    .kcard-agent-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px;min-width:0}
     .kcard-agent-name{font-size:10px;font-weight:600;font-family:var(--mono);color:var(--text-secondary);flex-shrink:0}
     .kcard-agent-status{font-size:10px;color:var(--text-tertiary);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     .kcard-agent-status.status-running{color:#4ADE80}
@@ -173,7 +173,7 @@
     .monitor-dev-link{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;color:var(--text-secondary);border:1px solid var(--border-subtle);border-radius:999px;text-decoration:none;opacity:.86;transition:opacity .12s ease,border-color .12s ease,color .12s ease}
     .monitor-dev-link svg{width:11px;height:11px;display:block}
     .monitor-dev-link:hover{opacity:1;border-color:var(--accent);color:var(--text-primary)}
-    .kcard-agent-actions{display:flex;gap:4px;align-items:center;margin-top:3px}
+    .kcard-agent-actions{display:flex;gap:4px;align-items:center;margin-top:3px;flex-wrap:wrap}
     .kcard-agent-actions .btn{font-size:11px;padding:3px 8px}
     .btn-overflow{padding:2px 8px!important;font-size:14px;line-height:1;color:var(--text-tertiary);letter-spacing:.05em}
     .kcard-overflow{position:relative;display:inline-flex}
