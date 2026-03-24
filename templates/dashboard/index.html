@@ -14,13 +14,6 @@
     <div class="top">
       <h1><img src="assets/icon/aigon-icon.svg" alt="Aigon" width="28" height="28"/>Aigon Dashboard</h1>
       <div class="meta">
-        <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" title="Hide sidebar" aria-label="Hide sidebar">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-            <path d="M2.5 3.5h11"/>
-            <path d="M2.5 8h11"/>
-            <path d="M2.5 12.5h11"/>
-          </svg>
-        </button>
         <span class="health" aria-live="polite"><span class="dot" id="health-dot"></span><span id="health-text">Connected</span></span>
         <span id="updated-text">Updated just now</span>
         <button class="notif-btn" id="notif-bell-btn" title="Notifications" aria-label="Notifications">
@@ -43,6 +36,13 @@
     </nav>
     <select id="repo-select-mobile" class="repo-select-mobile" aria-label="Select repository"></select>
     <div class="dashboard-body">
+      <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" title="Hide sidebar" aria-label="Hide sidebar">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M2.5 3.5h11"/>
+          <path d="M2.5 8h11"/>
+          <path d="M2.5 12.5h11"/>
+        </svg>
+      </button>
       <nav id="repo-sidebar" class="repo-sidebar" role="listbox" aria-label="Repository selector"><div class="sidebar-resize" id="sidebar-resize"></div></nav>
       <div class="detail-area" id="detail-area">
         <div id="repo-header" class="repo-header-bar" x-ignore style="display:none"></div>
