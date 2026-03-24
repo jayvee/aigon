@@ -35,7 +35,7 @@
     /* Mobile repo dropdown (hidden by default) */
     .repo-select-mobile{display:none;width:100%;padding:8px 12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font:inherit;font-size:13px;margin-bottom:8px;flex-shrink:0}
     /* Detail area */
-    .detail-area{flex:1;overflow-y:auto;padding:0 0 28px 16px;min-width:0}
+    .detail-area{flex:1;overflow-y:auto;padding:0 16px 28px 16px;min-width:0}
     /* Repo header bar */
     .repo-header-bar{position:sticky;top:0;z-index:10;display:flex;align-items:baseline;gap:12px;padding:10px 0 10px;margin-bottom:4px;border-bottom:1px solid var(--border-subtle);background:var(--bg-root)}
     .repo-header-name{margin:0;font-size:18px;font-weight:600;letter-spacing:-.02em}
@@ -164,7 +164,7 @@
     .agent-solo{border-left-color:#94A3B8}
     .kcard-agent-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px}
     .kcard-agent-name{font-size:10px;font-weight:600;font-family:var(--mono);color:var(--text-secondary);flex-shrink:0;min-width:80px}
-    .kcard-agent-status{font-size:10px;color:var(--text-tertiary);text-align:right;white-space:nowrap}
+    .kcard-agent-status{font-size:10px;color:var(--text-tertiary);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     .kcard-agent-status.status-running{color:#4ADE80}
     .kcard-agent-status.status-waiting{color:#FCD34D}
     .kcard-agent-status.status-submitted{color:#86EFAC}
