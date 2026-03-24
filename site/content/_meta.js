@@ -4,5 +4,5 @@ export default {
   concepts: "Concepts",
   guides: "Guides",
   reference: "Reference",
-  comparisons: "Comparisons",
+  comparisons: { title: "Comparisons", display: "hidden" },
 };
