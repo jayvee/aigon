@@ -50,7 +50,7 @@ Clone the repository and link the CLI globally:
 ```bash
 git clone https://github.com/jayvee/aigon.git ~/src/aigon
 cd ~/src/aigon
-npm install
+npm ci
 npm link
 ```
 
@@ -59,7 +59,7 @@ npm link
 ```bash
 git clone https://github.com/jayvee/aigon.git ~/src/aigon
 cd ~/src/aigon
-npm install
+npm ci
 sudo npm link
 ```
 
@@ -283,7 +283,7 @@ Updating Aigon is two steps:
 1. **Update the CLI** — pull the latest code from GitHub:
 
 ```bash
-cd ~/src/aigon && git pull && npm install
+cd ~/src/aigon && git pull && npm ci
 ```
 
 2. **Update your projects** — happens automatically. The next time you start an agent session in any project, Aigon detects the version mismatch and re-runs `aigon update` to sync templates and agent configs. You can also run it manually:
