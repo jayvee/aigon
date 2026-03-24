@@ -3,7 +3,7 @@
     *{box-sizing:border-box}html,body{margin:0;background:var(--bg-root);color:var(--text-primary);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
     body{padding:0;overflow:hidden;height:100vh}
     .wrap{display:flex;flex-direction:column;height:100vh;max-width:1400px;margin:0 auto;padding:0 16px}
-    .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:16px 0 8px;flex-shrink:0}
+    .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:16px 0 8px;flex-shrink:0;flex-wrap:wrap}
     h1{margin:0;font-size:24px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
     h1 img{width:28px;height:28px;flex-shrink:0}
     .meta{display:flex;gap:10px;color:var(--text-secondary);align-items:center}
@@ -12,8 +12,8 @@
     .sidebar-toggle-btn:hover{color:var(--text-primary);border-color:var(--accent);background:rgba(255,255,255,.03)}
     .health{display:flex;align-items:center;gap:6px}
     /* View tabs */
-    .view-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border-subtle);padding-bottom:0;flex-shrink:0}
-    .view-tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);padding:8px 16px;cursor:pointer;font-size:13px;margin-bottom:-1px;transition:color .12s ease,border-color .12s ease}
+    .view-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border-subtle);padding-bottom:0;flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .view-tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);padding:8px 16px;cursor:pointer;font-size:13px;margin-bottom:-1px;transition:color .12s ease,border-color .12s ease;white-space:nowrap;flex-shrink:0}
     .view-tab:hover{color:var(--text-primary)}
     .view-tab.active{color:var(--text-primary);border-bottom-color:var(--accent)}
     /* Dashboard body: sidebar + detail */
