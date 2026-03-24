@@ -1,4 +1,6 @@
 <!-- AIGON_START -->
+> **Retired (March 2026):** The `cu` agent is no longer used. Cursor CLI has no Auto mode — every request draws from the paid quota pool, making it cost-prohibitive for Aigon-orchestrated use. Replaced by `mv` (Mistral Vibe).
+
 # Cursor Configuration
 
 ## Agent Identity
