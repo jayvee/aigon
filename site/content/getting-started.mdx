@@ -276,6 +276,25 @@ aigon feature-close 02
 
 If anything goes wrong, run `aigon doctor` to diagnose the issue.
 
+## Updating Aigon
+
+Updating Aigon is two steps:
+
+1. **Update the CLI** — pull the latest code from GitHub:
+
+```bash
+cd ~/src/aigon && git pull && npm install
+```
+
+2. **Update your projects** — happens automatically. The next time you start an agent session in any project, Aigon detects the version mismatch and re-runs `aigon update` to sync templates and agent configs. You can also run it manually:
+
+```bash
+cd /path/to/your/project
+aigon update
+```
+
+> If the dashboard is running, `aigon update` will restart it automatically to pick up the changes.
+
 ## Linux-specific setup
 
 For terminal emulator configuration, headless/SSH usage, and other Linux-specific details, see the [Linux install guide](/docs/linux-install).
