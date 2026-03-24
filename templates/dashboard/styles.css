@@ -130,7 +130,7 @@
     .toggle-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
     .toggle-btn.active{background:var(--accent);color:#fff}
     /* Pipeline / Kanban */
-    .kanban{display:grid;grid-template-columns:repeat(var(--kanban-cols,5),minmax(0,1fr));gap:10px;align-items:start;overflow-x:auto;padding-bottom:8px}
+    .kanban{display:grid;grid-template-columns:repeat(var(--kanban-cols,5),minmax(180px,1fr));gap:10px;align-items:start;overflow-x:auto;padding-bottom:8px}
     .kanban-col{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden;min-height:120px}
     .kanban-col.drag-over{border-color:rgba(59,130,246,.6);background:rgba(59,130,246,.06)}
     .kanban-col.drag-blocked{border-color:rgba(239,68,68,.4)}
@@ -319,7 +319,7 @@
     .drawer-font-controls{display:flex;gap:4px;align-items:center}
     .drawer-font-btn{padding:3px 8px;font-size:12px;min-width:unset}
     /* Responsive: sidebar collapses to dropdown */
-    @media (max-width: 768px){
+    @media (max-width: 1024px){
       .repo-sidebar{display:none}
       .repo-select-mobile{display:block}
       .detail-area{padding-left:0}
