@@ -13,13 +13,23 @@ If no ID is provided, or the ID doesn't match an existing topic in progress:
 2. If a partial ID or name was given, filter to matches
 3. Present the matching topics and ask the user to choose one
 
-This command is for agents to conduct research after setup is complete.
+This command is the research equivalent of `feature-do`: it is the main work step after `research-start`.
+
+## Required Lifecycle Step
+
+Before starting active research, run:
+
+```bash
+aigon agent-status implementing
+```
+
+This updates your agent state in the main repo so the dashboard and coordinator know you're actively working.
 
 ## Your Task
 
 1. **Find the research topic** in `docs/specs/research-topics/03-in-progress/research-{ID}-*.md`
 
-2. **Check for Fleet mode**: Look for your findings file at:
+2. **Check for worktree/Fleet mode**: Look for your findings file at:
    `docs/specs/research-topics/logs/research-{ID}-cu-findings.md`
 
 3. **Conduct deep research** to answer each question in the research doc. Go broad before going deep:
@@ -36,7 +46,7 @@ This command is for agents to conduct research after setup is complete.
 
 
 4. **Document your findings**:
-   - **If findings file exists (Fleet mode)**: Write ONLY to your findings file. Do not modify the main research doc or other agents' files.
+   - **If findings file exists (worktree/Fleet mode)**: Write ONLY to your findings file. Do not modify the main research doc or other agents' files.
    - **If no findings file (Drive mode)**: Write directly to the `## Findings` section of the main research doc.
 
 5. **Include sources**: Document links to references, documentation, and examples
@@ -53,7 +63,7 @@ This command is for agents to conduct research after setup is complete.
 
 **THIS IS THE FINAL STEP. YOU MUST COMPLETE IT.**
 
-**If Fleet mode (findings file exists):**
+**If findings file exists (worktree/Fleet mode):**
 
 1. **Commit your findings file:**
    ```bash
@@ -63,13 +73,13 @@ This command is for agents to conduct research after setup is complete.
 
 2. **Signal completion** so the dashboard knows you're done:
    ```bash
-   aigon research-submit <args>
+   aigon agent-status submitted
    ```
 
-3. **STAY in the session.** The user may want to review your findings and ask follow-up questions. Do NOT run `aigon research-close` — the user will evaluate all agents' findings.
+3. **STAY in the session.** The user may want to review your findings and ask follow-up questions. Do NOT run `aigon research-close` — the user will decide whether to evaluate or close next, just like feature work.
 
 **If Drive mode (no findings file):**
-- Run `aigon research-close <args>` to complete the research
+- Run `aigon research-close <args>` when the research pass is complete and ready to close
 
 ## Prompt Suggestion
 

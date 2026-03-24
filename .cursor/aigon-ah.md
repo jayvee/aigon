@@ -23,11 +23,11 @@
 |---------|-------------|
 | `/aigon-research-create <name>` | Create a new research topic |
 | `/aigon-research-prioritise <name>` | Prioritise a research topic |
-| `/aigon-research-start <ID> [agents...]` | Setup for Drive or Fleet research |
-| `/aigon-research-open <ID>` | Open all Fleet agents side-by-side for parallel research |
+| `/aigon-research-start <ID> [agents...]` | Setup for Drive or Fleet execution |
+| `/aigon-research-open <ID>` | Re-open or attach Fleet research sessions |
 | `/aigon-research-do <ID>` | Conduct research (write findings) |
-| `/aigon-research-submit [ID]` | Signal research findings complete (Fleet mode) |
-| `/aigon-research-eval <ID>` | Evaluate Fleet findings and recommend features |
+| `/aigon-research-submit [ID]` | Signal research findings complete when using findings files |
+| `/aigon-research-eval <ID>` | Evaluate or synthesize parallel findings |
 | `/aigon-research-close <ID>` | Complete a research topic |
 
 ## Feedback
