@@ -183,27 +183,60 @@ Each step moves the feature through the pipeline: `inbox → backlog → in-prog
 
 ## Try it end-to-end
 
-Want to verify your installation works before using Aigon on a real project? Clone the seed repo and run a complete feature loop:
+Want to verify your installation works before using Aigon on a real project? Clone the seed repo — a small Next.js app with features already in the pipeline — and run a complete feature loop.
+
+### 1. Set up the seed repo
 
 ```bash
 git clone https://github.com/jayvee/brewboard-seed.git ~/src/brewboard
 cd ~/src/brewboard
+npm install
 aigon init
-aigon install-agent cc
+aigon install-agent gg          # or: aigon install-agent cc
 ```
 
-Then open Claude Code in the project and run:
+> **Linux:** use `sudo npm link` when installing aigon, and `sudo npm i -g` for agent CLIs.
 
+### 2. Start a feature
+
+The seed repo has features ready in the backlog. Pick one and start it:
+
+```bash
+aigon feature-start 02 gg       # Drive worktree mode with Gemini
 ```
-/aigon:feature-now "add dark mode"
-Add a dark mode toggle to the header. Use CSS custom properties.
+
+This creates a worktree and launches Gemini in a tmux session. On macOS it opens a terminal window; on Linux it prints the attach command:
+
+```bash
+tmux attach -t brewboard-f2-gg-brewery-import
 ```
 
-**What to expect:**
+### 3. Watch the dashboard
 
-1. `aigon init` — creates `docs/specs/` directories and prints a success message
-2. `aigon install-agent cc` — installs Claude Code config files and prints what was created
-3. `/aigon:feature-now` — the agent creates a spec file, assigns an ID, and starts implementing. You'll see it reading files, writing code, and committing changes. When done, it signals "submitted" and asks you to review.
+While the agent works, start the dashboard and register the repo:
+
+```bash
+aigon dashboard &
+aigon dashboard add ~/src/brewboard
+```
+
+Then open [http://localhost:4100](http://localhost:4100) in your browser. You'll see the feature in the Pipeline view with the agent status updating in real-time.
+
+### 4. Close the feature
+
+When the agent shows "Submitted", close from the CLI or click "Accept & Close" in the dashboard:
+
+```bash
+aigon feature-close 02
+```
+
+**What to expect at each step:**
+
+1. `aigon init` — creates `docs/specs/` directories, rebuilds manifests for existing features
+2. `aigon install-agent` — writes agent config files, warns if the agent CLI isn't in your PATH
+3. `aigon feature-start` — moves spec to in-progress, creates worktree, starts agent in tmux
+4. `aigon dashboard` — web UI at localhost:4100 showing pipeline, agent status, sessions
+5. `aigon feature-close` — merges the feature branch to main, moves spec to done, cleans up
 
 If anything goes wrong, run `aigon doctor` to diagnose the issue.
 
