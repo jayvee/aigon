@@ -124,10 +124,12 @@ Once user confirms, update the main research document:
 
 **THIS IS THE FINAL STEP. YOU MUST COMPLETE IT. DO NOT SKIP THIS STEP.**
 
-After updating the document, signal that evaluation is done:
+After updating the document, commit your changes and signal completion:
 
 ```bash
-aigon agent-status submitted
+git add docs/specs/research-topics/
+git commit -m "docs: research evaluation for <name>"
+aigon research-submit <name>
 ```
 
 Then tell the user:

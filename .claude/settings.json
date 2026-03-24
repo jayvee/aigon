@@ -472,7 +472,17 @@
       "Edit(/Users/jviner/src/aigon-worktrees/feature-135-cx-dashboard-detail-panel/**)",
       "Write(/Users/jviner/src/aigon-worktrees/feature-135-cx-dashboard-detail-panel/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-135-cx-dashboard-detail-panel:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-135-cx-dashboard-detail-panel:*)"
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-135-cx-dashboard-detail-panel:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-141-cc-linux-terminal-support/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-141-cc-linux-terminal-support/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-141-cc-linux-terminal-support/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-141-cc-linux-terminal-support:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-141-cc-linux-terminal-support:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-142-cc-installation-docs-overhaul/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-142-cc-installation-docs-overhaul/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-142-cc-installation-docs-overhaul/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-142-cc-installation-docs-overhaul:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-142-cc-installation-docs-overhaul:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
