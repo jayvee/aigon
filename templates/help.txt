@@ -85,6 +85,8 @@ Deploy:
 
 Visualization:
   board                             Show Kanban board view of features and research
+  commits [--feature <id>] [--agent <id>] [--period <Nd|Nw|Nm>] [--limit <N>]
+                                    Show commit activity with feature/agent attribution
   board --list                      Show detailed list view (features and research)
   board --features                  Show only features
   board --research                  Show only research
@@ -121,6 +123,8 @@ Examples:
   aigon feature-eval 55                # Evaluate implementations
   aigon feature-close 55 cc             # Merge Claude's Fleet implementation
   aigon feature-cleanup 55 --push      # Clean up losing Fleet branches
+  aigon commits --period 30d           # Commit activity in the last 30 days
+  aigon commits --feature 145 --agent cx # Filter by feature and agent
 
   # Port health check
   aigon doctor                        # Show port assignments, flag conflicts
