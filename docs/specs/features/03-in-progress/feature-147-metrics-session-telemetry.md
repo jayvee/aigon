@@ -9,11 +9,11 @@ Normalize per-session telemetry across all agent types (Claude Code, Gemini, Cod
 - [ ] As a developer, I want to see how many iterations/turns each agent needed to complete a feature
 
 ## Acceptance Criteria
-- [ ] Common telemetry schema: `agent`, `model`, `startAt`, `endAt`, `turnCount`, `toolCalls`, `tokenUsage` (input/output separately), `costUsd`, `featureId`, `repoPath`
-- [ ] Telemetry records written to `.aigon/telemetry/` per session in the normalized format
-- [ ] Existing Claude transcript telemetry migrated to the common schema
-- [ ] At least one additional agent (GG or CX) emitting normalized telemetry
-- [ ] `collectAnalyticsData()` updated to consume normalized telemetry for cross-agent cost reporting
+- [x] Common telemetry schema: `agent`, `model`, `startAt`, `endAt`, `turnCount`, `toolCalls`, `tokenUsage` (input/output separately), `costUsd`, `featureId`, `repoPath`
+- [x] Telemetry records written to `.aigon/telemetry/` per session in the normalized format
+- [x] Existing Claude transcript telemetry migrated to the common schema
+- [x] At least one additional agent (GG or CX) emitting normalized telemetry
+- [x] `collectAnalyticsData()` updated to consume normalized telemetry for cross-agent cost reporting
 
 ## Validation
 ```bash
