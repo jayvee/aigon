@@ -2,7 +2,25 @@
 Agent: cc
 
 ## Plan
+- Add dependency helpers to `lib/entity.js` (buildFeatureIndex, resolveDepRef, detectCycle, rewriteDependsOn)
+- Integrate into `entityPrioritise()` for feature-only dependency resolution
+- Mirror canonical `dependsOn` array into coordinator manifest JSON
+- Write unit tests for all dependency helpers
 
 ## Progress
+- Verified `parseFrontMatter()` already handles `depends_on: [121, 126]` via `parseYamlScalar()`
+- Implemented `buildFeatureIndex()` — scans all spec folders, indexes by padded/unpadded ID and slug
+- Implemented `resolveDepRef()` — resolves numeric IDs, slugs, and names to canonical padded IDs
+- Implemented `detectCycle()` — iterative DFS with gray/black coloring, returns full cycle path
+- Implemented `rewriteDependsOn()` — rewrites frontmatter depends_on line with canonical IDs using `modifySpecFile()`
+- Integrated into `entityPrioritise()`: resolve deps, reject non-existent refs, detect cycles, rewrite spec, mirror to manifest
+- Added `dependsOn` field to manifest write (undefined when no deps, avoiding noise in manifest JSON)
+- Wrote 15 unit tests covering all helpers — all pass
+- Full test suite: 0 new failures (17 pre-existing failures unrelated to this feature)
 
 ## Decisions
+- **Dependency resolution is feature-only**: research topics don't support depends_on (per spec scope)
+- **Error handling during dep resolution**: non-existent refs cause hard error (return early); cycle detection also causes hard error. Parse/IO errors during dep reading are warnings (non-blocking) to avoid breaking prioritisation for unrelated issues
+- **Iterative DFS over recursive**: avoids stack overflow for large graphs, uses explicit stack with parent tracking for cycle path reconstruction
+- **dependsOn in manifest is undefined when empty**: avoids polluting manifest JSON for features without dependencies
+- **Exported helpers for testing**: buildFeatureIndex, resolveDepRef, detectCycle, rewriteDependsOn are exported from entity.js module for direct unit testing
