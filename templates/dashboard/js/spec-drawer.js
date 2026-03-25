@@ -10,13 +10,48 @@
     const drawerEl = document.getElementById('spec-drawer');
     const drawerTitle = document.getElementById('drawer-title');
     const drawerStage = document.getElementById('drawer-stage');
+    const drawerTabs = document.getElementById('drawer-tabs');
     const drawerPreview = document.getElementById('drawer-preview');
     const drawerEditor = document.getElementById('drawer-editor');
+    const drawerDetailContent = document.getElementById('drawer-detail-content');
     const drawerSaveBtn = document.getElementById('drawer-save');
     const drawerSaveStatus = document.getElementById('drawer-save-status');
     const drawerUndoBtn = document.getElementById('drawer-undo');
     const drawerRedoBtn = document.getElementById('drawer-redo');
     const drawerFontSizeLabel = document.getElementById('drawer-font-size');
+    const drawerModeToggle = drawerEl.querySelector('.drawer-mode-toggle');
+
+    const drawerDetailTabs = (typeof createDrawerDetailTabs === 'function')
+      ? createDrawerDetailTabs({
+        drawerEl,
+        tabsEl: drawerTabs,
+        detailEl: drawerDetailContent,
+        getDrawerState: () => drawerState,
+        onToggleSpecView: (showSpec) => {
+          if (showSpec) {
+            drawerDetailContent.style.display = 'none';
+            if (drawerState.mode === 'edit') {
+              drawerPreview.style.display = 'none';
+              drawerEditor.style.display = '';
+            } else {
+              drawerEditor.style.display = 'none';
+              drawerPreview.style.display = '';
+            }
+          } else {
+            drawerPreview.style.display = 'none';
+            drawerEditor.style.display = 'none';
+            drawerDetailContent.style.display = '';
+            if (drawerState.mode !== 'read') drawerState.mode = 'read';
+          }
+          updateDrawerModeButtons();
+          updateDrawerButtons();
+        }
+      })
+      : null;
+
+    function isSpecTabActive() {
+      return !drawerDetailTabs || drawerDetailTabs.getActiveTab() === 'spec';
+    }
 
     function applyDrawerFontSize() {
       const sz = drawerState.fontSize + 'px';
@@ -82,9 +117,10 @@
     }
 
     function updateDrawerButtons() {
-      drawerSaveBtn.disabled = !drawerState.dirty;
-      drawerUndoBtn.disabled = drawerState.undoStack.length === 0;
-      drawerRedoBtn.disabled = drawerState.redoStack.length === 0;
+      const canEditSpec = isSpecTabActive();
+      drawerSaveBtn.disabled = !canEditSpec || !drawerState.dirty;
+      drawerUndoBtn.disabled = !canEditSpec || drawerState.undoStack.length === 0;
+      drawerRedoBtn.disabled = !canEditSpec || drawerState.redoStack.length === 0;
     }
 
     function pushUndo() {
@@ -120,9 +156,12 @@
       drawerStage.textContent = stage;
       drawerPreview.innerHTML = '<span style="color:var(--text-tertiary)">Loading…</span>';
       drawerEditor.value = '';
+      drawerDetailContent.innerHTML = '';
+      drawerDetailContent.style.display = 'none';
       drawerEditor.style.display = 'none';
       drawerPreview.style.display = '';
       drawerSaveStatus.textContent = '';
+      if (drawerDetailTabs) drawerDetailTabs.reset();
       updateDrawerModeButtons();
       updateDrawerButtons();
       applyDrawerFontSize();
@@ -151,11 +190,13 @@
       drawerOverlay.classList.remove('open');
       drawerEl.classList.remove('open');
       document.body.classList.remove('split-view');
+      document.body.classList.remove('drawer-wide');
       if (!document.getElementById('terminal-panel').classList.contains('open')) {
         document.body.style.overflow = '';
       }
       drawerState.path = null;
       drawerState.dirty = false;
+      if (drawerDetailTabs) drawerDetailTabs.reset();
       // Refit terminal after spec drawer closes (terminal panel goes back to right side)
       setTimeout(() => { if (termState.fitAddon) try { termState.fitAddon.fit(); } catch (e) {} }, 300);
     }
@@ -167,6 +208,7 @@
     };
 
     function setDrawerMode(mode) {
+      if (!isSpecTabActive()) return;
       drawerState.mode = mode;
       updateDrawerModeButtons();
       if (mode === 'read') {
@@ -183,6 +225,8 @@
     }
 
     function updateDrawerModeButtons() {
+      const showModeToggle = isSpecTabActive();
+      if (drawerModeToggle) drawerModeToggle.style.display = showModeToggle ? '' : 'none';
       drawerEl.querySelectorAll('.drawer-mode-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.mode === drawerState.mode);
       });
@@ -315,6 +359,7 @@
         drawerState.dirty = false;
         drawerEditor.value = data.content;
         renderMarkdownPreview(data.content);
+        if (drawerDetailTabs) drawerDetailTabs.onDrawerRefresh();
         updateDrawerButtons();
         drawerSaveStatus.textContent = 'Refreshed';
         setTimeout(() => { if (drawerSaveStatus.textContent === 'Refreshed') drawerSaveStatus.textContent = ''; }, 2000);
@@ -353,12 +398,14 @@
       if (e.key === 'Escape') { closeDrawer(); return; }
       // Cmd+S to save
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        if (!isSpecTabActive()) return;
         e.preventDefault();
         saveDrawer();
         return;
       }
       // Cmd+Shift+E to toggle read/edit mode
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'e') {
+        if (!isSpecTabActive()) return;
         e.preventDefault();
         setDrawerMode(drawerState.mode === 'read' ? 'edit' : 'read');
         return;
@@ -377,4 +424,3 @@
         closeDrawer();
       }
     });
-
