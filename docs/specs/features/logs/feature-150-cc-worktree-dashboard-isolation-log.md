@@ -31,3 +31,21 @@ Replace scattered `assertOnDefaultBranch()` calls with a declarative action scop
 - **Dashboard worktree guard changed to info** (not error) — spec says dashboard should run from anywhere
 - **`readManifest`/`readAgentStatus` backward-compatible** — new `options` parameter is optional, existing callers unaffected
 - **`assertOnDefaultBranch()` kept in git.js** — not deleted, just no longer called; may be useful as a utility
+
+## Code Review
+
+**Reviewed by**: gg (Gemini)
+**Date**: 2026-03-26
+
+### Findings
+- `lib/manifest.js`: `writeManifest`, `writeAgentStatus`, and locking functions did not support the `options.mainRepoPath` redirection. This could lead to state fragmentation when agents in worktrees write status to their local `.aigon/state` while the dashboard reads from the main repo.
+- Redundant logic: `writeAgentStatusAt` was functionally similar to a redirected `writeAgentStatus`.
+
+### Fixes Applied
+- Updated `lib/manifest.js`: Added `options` support to all path helpers and write/lock functions.
+- Updated `lib/manifest.test.js`: Added unit tests for `mainRepoPath` redirection of manifests and locks.
+
+### Notes
+- The `action-scope.js` implementation is excellent and correctly handles command delegation.
+- Dashboard port hashing and worktree isolation are robust.
+- `writeAgentStatusAt` remains for backward compatibility but is now a wrapper or similar to redirected `writeAgentStatus`.
