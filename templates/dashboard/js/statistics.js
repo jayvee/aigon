@@ -1,13 +1,19 @@
     // ── Statistics view ────────────────────────────────────────────────────────
 
     const VOLUME_WINDOW = { daily: 30, weekly: 12, monthly: 6 };
-    const LS_KEYS = { period: 'aigon.stats.period', repo: 'aigon.stats.repo', gran: 'aigon.stats.gran' };
+    const LS_KEYS = {
+      period: 'aigon.stats.period',
+      repo: 'aigon.stats.repo',
+      gran: 'aigon.stats.gran',
+      commitGran: 'aigon.stats.commit.gran'
+    };
 
     function saveStatsPrefs() {
       try {
         localStorage.setItem(LS_KEYS.period, statsState.period);
         localStorage.setItem(LS_KEYS.repo, statsState.repoFilter);
         localStorage.setItem(LS_KEYS.gran, statsState.volumeGranularity);
+        localStorage.setItem(LS_KEYS.commitGran, statsState.commitGranularity);
       } catch (_) {}
     }
 
@@ -16,10 +22,11 @@
         return {
           period: localStorage.getItem(LS_KEYS.period) || '30d',
           repoFilter: localStorage.getItem(LS_KEYS.repo) || 'all',
-          volumeGranularity: localStorage.getItem(LS_KEYS.gran) || 'weekly'
+          volumeGranularity: localStorage.getItem(LS_KEYS.gran) || 'weekly',
+          commitGranularity: localStorage.getItem(LS_KEYS.commitGran) || 'weekly'
         };
       } catch (_) {
-        return { period: '30d', repoFilter: 'all', volumeGranularity: 'weekly' };
+        return { period: '30d', repoFilter: 'all', volumeGranularity: 'weekly', commitGranularity: 'weekly' };
       }
     }
 
@@ -28,15 +35,26 @@
       period: _savedPrefs.period,
       repoFilter: _savedPrefs.repoFilter,
       volumeGranularity: _savedPrefs.volumeGranularity,
+      commitGranularity: _savedPrefs.commitGranularity,
       volumeWindowEnd: null,
       cycleTimeWindowEnd: null,
+      commitWindowEnd: null,
       data: null,
+      commitsData: null,
       loading: false,
+      commitsLoading: false,
       error: null,
+      commitsError: null,
       volumeChart: null,
       volumeSeries: [],
       cycleTimeChart: null,
       cycleTimeSeries: [],
+      commitChart: null,
+      commitSeries: [],
+      commitFeatureFilter: 'all',
+      commitAgentFilter: 'all',
+      commitSort: { col: 'date', dir: 'desc' },
+      featureCommitMap: {},
       filteredFeatures: [],
       featureListPage: 0,
       insightsData: null,
@@ -56,6 +74,22 @@
         statsState.error = e.message;
       } finally {
         statsState.loading = false;
+      }
+    }
+
+    async function loadCommits(force) {
+      if (statsState.commitsLoading) return;
+      statsState.commitsLoading = true;
+      try {
+        const endpoint = force ? '/api/commits?force=1' : '/api/commits';
+        const res = await fetch(endpoint, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        statsState.commitsData = await res.json();
+        statsState.commitsError = null;
+      } catch (e) {
+        statsState.commitsError = e.message;
+      } finally {
+        statsState.commitsLoading = false;
       }
     }
 
@@ -172,6 +206,64 @@
       return filled;
     }
 
+    function buildCommitSeries(commits, granularity) {
+      const buckets = {};
+      let minTs = Infinity, maxTs = -Infinity;
+
+      commits.forEach(c => {
+        const ts = c.date ? new Date(c.date) : null;
+        if (!ts || isNaN(ts)) return;
+        const t = ts.getTime();
+        if (t < minTs) minTs = t;
+        if (t > maxTs) maxTs = t;
+        let key;
+        if (granularity === 'daily') {
+          key = ts.toISOString().slice(0, 10);
+        } else if (granularity === 'weekly') {
+          const d = new Date(ts);
+          const dow = d.getUTCDay() || 7;
+          d.setUTCDate(d.getUTCDate() - dow + 1);
+          key = d.toISOString().slice(0, 10);
+        } else {
+          key = ts.toISOString().slice(0, 7) + '-01';
+        }
+        buckets[key] = (buckets[key] || 0) + 1;
+      });
+
+      if (minTs === Infinity) return [];
+      const filled = [];
+      const cur = new Date(minTs);
+      const end = new Date(maxTs);
+
+      if (granularity === 'daily') {
+        cur.setUTCHours(0, 0, 0, 0);
+        end.setUTCHours(0, 0, 0, 0);
+        while (cur <= end) {
+          const key = cur.toISOString().slice(0, 10);
+          filled.push({ date: key, count: buckets[key] || 0 });
+          cur.setUTCDate(cur.getUTCDate() + 1);
+        }
+      } else if (granularity === 'weekly') {
+        const dow = cur.getUTCDay() || 7;
+        cur.setUTCDate(cur.getUTCDate() - dow + 1);
+        cur.setUTCHours(0, 0, 0, 0);
+        while (cur <= end) {
+          const key = cur.toISOString().slice(0, 10);
+          filled.push({ date: key, count: buckets[key] || 0 });
+          cur.setUTCDate(cur.getUTCDate() + 7);
+        }
+      } else {
+        cur.setUTCDate(1); cur.setUTCHours(0, 0, 0, 0);
+        end.setUTCDate(1); end.setUTCHours(0, 0, 0, 0);
+        while (cur <= end) {
+          const key = cur.toISOString().slice(0, 10);
+          filled.push({ date: key, count: buckets[key] || 0 });
+          cur.setUTCMonth(cur.getUTCMonth() + 1);
+        }
+      }
+      return filled;
+    }
+
     function renderVolumeChart(fullSeries, granularity) {
       statsState.volumeSeries = fullSeries || [];
       statsState.volumeWindowEnd = null; // reset to latest on full re-render
@@ -236,6 +328,66 @@
         }
       });
       applyVolumeWindow();
+    }
+
+    function renderCommitChart(fullSeries, granularity) {
+      statsState.commitSeries = fullSeries || [];
+      statsState.commitWindowEnd = null;
+
+      if (statsState.commitChart) {
+        statsState.commitChart.destroy();
+        statsState.commitChart = null;
+      }
+      const canvas = document.getElementById('commits-chart-canvas');
+      if (!canvas || !fullSeries || fullSeries.length === 0) return;
+
+      statsState.commitChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [{
+            data: [],
+            backgroundColor: 'rgba(244,114,182,0.65)',
+            hoverBackgroundColor: 'rgba(244,114,182,1)',
+            borderRadius: 3,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: ctx => granularity === 'weekly' ? ('Week of ' + ctx[0].label) : ctx[0].label,
+                label: ctx => ` ${ctx.parsed.y} commit${ctx.parsed.y !== 1 ? 's' : ''}`
+              },
+              backgroundColor: '#1a1a1f',
+              titleColor: '#ededef',
+              bodyColor: '#a0a0a8',
+              borderColor: 'rgba(255,255,255,0.1)',
+              borderWidth: 1,
+              padding: 10
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#6b6b76', font: { size: 11 } },
+              border: { color: 'rgba(255,255,255,0.06)' }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#6b6b76', font: { size: 11 }, precision: 0 },
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              border: { display: false }
+            }
+          }
+        }
+      });
+      applyCommitWindow();
     }
 
     function buildCycleTimeSeries(features, granularity) {
@@ -459,6 +611,62 @@
       }
     }
 
+    function applyCommitWindow() {
+      const series = statsState.commitSeries;
+      const gran = statsState.commitGranularity;
+      const windowSize = VOLUME_WINDOW[gran] || 8;
+      if (!series || !series.length) return;
+
+      const needsNav = series.length > windowSize;
+      const navEl = document.getElementById('commit-nav-controls');
+      if (navEl) navEl.style.visibility = needsNav ? 'visible' : 'hidden';
+
+      let startIdx, endIdx, slice;
+      if (!needsNav) {
+        startIdx = 0;
+        endIdx = series.length - 1;
+        slice = series.slice();
+        statsState.commitWindowEnd = endIdx;
+      } else {
+        if (statsState.commitWindowEnd === null) statsState.commitWindowEnd = series.length - 1;
+        statsState.commitWindowEnd = Math.min(statsState.commitWindowEnd, series.length - 1);
+        endIdx = statsState.commitWindowEnd;
+        startIdx = Math.max(0, endIdx - windowSize + 1);
+        slice = series.slice(startIdx, endIdx + 1);
+      }
+
+      const chart = statsState.commitChart;
+      if (chart) {
+        chart.data.labels = slice.map(d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(5, 10));
+        chart.data.datasets[0].data = slice.map(d => d.count);
+        chart.update('none');
+      }
+
+      if (needsNav) {
+        const fmt = d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(0, 10);
+        const rangeEl = document.getElementById('commit-nav-range');
+        if (rangeEl && slice.length) rangeEl.textContent = `${fmt(slice[0])} – ${fmt(slice[slice.length - 1])}`;
+        const btnPrev = document.getElementById('commit-nav-prev');
+        const btnNext = document.getElementById('commit-nav-next');
+        if (btnPrev) btnPrev.disabled = startIdx === 0;
+        if (btnNext) btnNext.disabled = endIdx >= series.length - 1;
+      }
+    }
+
+    function panCommitChart(direction) {
+      const series = statsState.commitSeries || [];
+      const windowSize = VOLUME_WINDOW[statsState.commitGranularity] || 8;
+      if (!series.length) return;
+      const step = Math.max(1, Math.floor(windowSize / 2));
+      const current = statsState.commitWindowEnd !== null ? statsState.commitWindowEnd : series.length - 1;
+      if (direction === 'prev') {
+        statsState.commitWindowEnd = Math.max(windowSize - 1, current - step);
+      } else {
+        statsState.commitWindowEnd = Math.min(series.length - 1, current + step);
+      }
+      applyCommitWindow();
+    }
+
     function panVolumeChart(direction) {
       const series = statsState.volumeSeries;
       const windowSize = VOLUME_WINDOW[statsState.volumeGranularity] || 8;
@@ -481,6 +689,19 @@
       return features.filter(f => {
         if (f.completedAt && new Date(f.completedAt).getTime() < since) return false;
         if (repoFilter !== 'all' && f.repoPath !== repoFilter) return false;
+        return true;
+      });
+    }
+
+    function filterCommitsByPeriodAndRepo(commits, period, repoFilter) {
+      const now = Date.now();
+      const daysMap = { '7d': 7, '30d': 30, '90d': 90, 'all': null };
+      const days = daysMap[period];
+      const since = days ? now - days * 86400000 : 0;
+      return (commits || []).filter(c => {
+        const ts = c.date ? new Date(c.date).getTime() : null;
+        if (!ts || ts < since) return false;
+        if (repoFilter !== 'all' && c.repoPath !== repoFilter) return false;
         return true;
       });
     }

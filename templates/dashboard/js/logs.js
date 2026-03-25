@@ -402,6 +402,8 @@
         const ctStr = ctHours !== null ? ctHours + 'h' : '—';
         const excludeBadge = f.cycleTimeExclude ? '<span class="feat-exclude-badge">excluded</span>' : '';
         const desc = escHtml(f.desc || '');
+        const featureKey = `${f.repoPath || ''}:${String(f.featureNum || '').padStart(2, '0')}`;
+        const commitStats = statsState.featureCommitMap[featureKey] || { count: 0, linesChanged: 0 };
         return `<tr>
           <td>${escHtml(date)}</td>
           <td>${escHtml(repo)}</td>
@@ -409,6 +411,8 @@
           <td class="fl-desc" title="${desc}">${desc}${excludeBadge}</td>
           <td>${escHtml(f.winnerAgent || '—')}</td>
           <td${ctClass}>${ctStr}</td>
+          <td>${escHtml(String(commitStats.count || 0))}</td>
+          <td>${escHtml(String(commitStats.linesChanged || 0))}</td>
         </tr>`;
       }).join('');
 
@@ -421,7 +425,7 @@
 
       el.innerHTML = `
         <table class="feat-list-table">
-          <thead><tr><th>Date</th><th>Repo</th><th>#</th><th>Feature</th><th>Agent</th><th>Cycle Time</th></tr></thead>
+          <thead><tr><th>Date</th><th>Repo</th><th>#</th><th>Feature</th><th>Agent</th><th>Cycle Time</th><th>Commits</th><th>Δ Lines</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
         ${pagination}`;
@@ -626,6 +630,7 @@
       if (!statsState.data) {
         container.innerHTML = '<div class="stats-empty-msg">Loading statistics…</div>';
         await loadAnalytics();
+        await loadCommits();
       }
       const analytics = statsState.data;
 
@@ -663,6 +668,42 @@
 
       // Filter features for the selected period + repo
       const filteredFeatures = filterFeaturesByPeriodAndRepo(analytics.features || [], statsState.period, statsState.repoFilter);
+      const allCommits = (statsState.commitsData && statsState.commitsData.commits) || [];
+      const repoPeriodCommits = filterCommitsByPeriodAndRepo(allCommits, statsState.period, statsState.repoFilter);
+      const commitFeatureOptions = [...new Set(repoPeriodCommits.map(c => c.featureId).filter(Boolean))]
+        .sort((a, b) => Number(a) - Number(b));
+      const commitAgentOptions = [...new Set(repoPeriodCommits.map(c => c.agent).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b));
+      if (statsState.commitFeatureFilter !== 'all' &&
+          statsState.commitFeatureFilter !== 'unattributed' &&
+          !commitFeatureOptions.includes(statsState.commitFeatureFilter)) {
+        statsState.commitFeatureFilter = 'all';
+      }
+      if (statsState.commitAgentFilter !== 'all' &&
+          statsState.commitAgentFilter !== 'unattributed' &&
+          !commitAgentOptions.includes(statsState.commitAgentFilter)) {
+        statsState.commitAgentFilter = 'all';
+      }
+      const filteredCommits = repoPeriodCommits.filter(c => {
+        if (statsState.commitFeatureFilter === 'unattributed' && c.featureId) return false;
+        if (statsState.commitFeatureFilter !== 'all' &&
+            statsState.commitFeatureFilter !== 'unattributed' &&
+            String(c.featureId || '') !== statsState.commitFeatureFilter) return false;
+        if (statsState.commitAgentFilter === 'unattributed' && c.agent) return false;
+        if (statsState.commitAgentFilter !== 'all' &&
+            statsState.commitAgentFilter !== 'unattributed' &&
+            String(c.agent || '') !== statsState.commitAgentFilter) return false;
+        return true;
+      });
+      const featureCommitMap = {};
+      filteredCommits.forEach(c => {
+        if (!c.featureId) return;
+        const key = `${c.repoPath || ''}:${String(c.featureId).padStart(2, '0')}`;
+        if (!featureCommitMap[key]) featureCommitMap[key] = { count: 0, linesChanged: 0 };
+        featureCommitMap[key].count += 1;
+        featureCommitMap[key].linesChanged += Number(c.linesAdded || 0) + Number(c.linesRemoved || 0);
+      });
+      statsState.featureCommitMap = featureCommitMap;
       const totalCompleted = filteredFeatures.length;
       const featWithDur = filteredFeatures.filter(f => f.durationMs && f.durationMs > 0 && !f.cycleTimeExclude);
       const durHoursSorted = featWithDur.map(f => f.durationMs / 3600000).sort((a, b) => a - b);
@@ -822,6 +863,117 @@
       html.push('<div class="stats-section-title" style="margin-top:4px">Features</div>');
       html.push('<div class="stats-block" style="overflow-x:auto"><div id="stats-feature-list"></div></div>');
 
+      // Commit analytics section
+      html.push('<div class="stats-section-title" style="margin-top:16px">Commits</div>');
+      html.push('<div class="stats-toolbar" style="margin-top:0">');
+      html.push('<label style="font-size:12px;color:var(--text-secondary)">Feature:</label>');
+      html.push('<select class="stats-select" id="commit-feature-filter">');
+      html.push(`<option value="all"${statsState.commitFeatureFilter === 'all' ? ' selected' : ''}>All</option>`);
+      html.push(`<option value="unattributed"${statsState.commitFeatureFilter === 'unattributed' ? ' selected' : ''}>Unattributed</option>`);
+      commitFeatureOptions.forEach(f => {
+        const v = String(f);
+        html.push(`<option value="${escHtml(v)}"${statsState.commitFeatureFilter === v ? ' selected' : ''}>#${escHtml(v.padStart(2, '0'))}</option>`);
+      });
+      html.push('</select>');
+      html.push('<label style="font-size:12px;color:var(--text-secondary)">Agent:</label>');
+      html.push('<select class="stats-select" id="commit-agent-filter">');
+      html.push(`<option value="all"${statsState.commitAgentFilter === 'all' ? ' selected' : ''}>All</option>`);
+      html.push(`<option value="unattributed"${statsState.commitAgentFilter === 'unattributed' ? ' selected' : ''}>Unattributed</option>`);
+      commitAgentOptions.forEach(a => {
+        html.push(`<option value="${escHtml(a)}"${statsState.commitAgentFilter === a ? ' selected' : ''}>${escHtml(a)}</option>`);
+      });
+      html.push('</select>');
+      html.push('</div>');
+
+      const commitTotal = filteredCommits.length;
+      const commitFiles = filteredCommits.reduce((s, c) => s + Number(c.filesChanged || 0), 0);
+      const commitAdded = filteredCommits.reduce((s, c) => s + Number(c.linesAdded || 0), 0);
+      const commitRemoved = filteredCommits.reduce((s, c) => s + Number(c.linesRemoved || 0), 0);
+      const commitAvgSize = commitTotal > 0 ? Math.round(((commitAdded + commitRemoved) / commitTotal) * 10) / 10 : null;
+
+      html.push('<div class="stats-cards">');
+      html.push(buildStatCard('Commits', String(commitTotal)));
+      html.push(buildStatCard('Files Changed', String(commitFiles)));
+      html.push(buildStatCard('Lines Added / Removed', `+${commitAdded} / -${commitRemoved}`));
+      html.push(buildStatCard('Avg Lines / Commit', commitAvgSize !== null ? String(commitAvgSize) : '—'));
+      html.push('</div>');
+
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Commits Over Time</div>');
+      html.push('<div style="display:flex;align-items:center;gap:8px">');
+      html.push('<span id="commit-nav-controls" style="display:flex;align-items:center;gap:4px">');
+      html.push('<button id="commit-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
+      html.push('<span id="commit-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
+      html.push('<button id="commit-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
+      html.push('</span>');
+      html.push('<div class="volume-granularity-btns" style="margin-left:8px">');
+      [['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].forEach(([g,l]) => {
+        const active = statsState.commitGranularity === g ? ' active' : '';
+        html.push(`<button class="commit-gran-btn${active}" data-gran="${g}">${l}</button>`);
+      });
+      html.push('</div>');
+      html.push('</div>');
+      html.push('</div>');
+      html.push('<div style="height:220px;position:relative"><canvas id="commits-chart-canvas"></canvas></div>');
+      html.push('</div>');
+
+      const commitSort = statsState.commitSort || { col: 'date', dir: 'desc' };
+      const sortedCommits = filteredCommits.slice().sort((a, b) => {
+        const toTs = (v) => (v ? new Date(v).getTime() : 0);
+        const col = commitSort.col;
+        let av;
+        let bv;
+        if (col === 'date') { av = toTs(a.date); bv = toTs(b.date); }
+        else if (col === 'featureId') { av = Number(a.featureId || -1); bv = Number(b.featureId || -1); }
+        else if (col === 'agent') { av = String(a.agent || ''); bv = String(b.agent || ''); }
+        else if (col === 'filesChanged') { av = Number(a.filesChanged || 0); bv = Number(b.filesChanged || 0); }
+        else if (col === 'linesAdded') { av = Number(a.linesAdded || 0); bv = Number(b.linesAdded || 0); }
+        else if (col === 'linesRemoved') { av = Number(a.linesRemoved || 0); bv = Number(b.linesRemoved || 0); }
+        else if (col === 'message') { av = String(a.message || ''); bv = String(b.message || ''); }
+        else { av = String(a[col] || ''); bv = String(b[col] || ''); }
+        if (av < bv) return commitSort.dir === 'asc' ? -1 : 1;
+        if (av > bv) return commitSort.dir === 'asc' ? 1 : -1;
+        return 0;
+      });
+      const commitRows = sortedCommits.slice(0, 200).map(c => {
+        const date = c.date ? c.date.slice(0, 10) : '—';
+        const featureLabel = c.featureId ? `#${String(c.featureId).padStart(2, '0')}` : '—';
+        const hash = c.hash ? c.hash.slice(0, 7) : '—';
+        const repo = c.repoPath ? c.repoPath.split('/').pop() : '—';
+        return `<tr>
+          <td>${escHtml(date)}</td>
+          <td class="commit-message" title="${escHtml(c.message || '')}">${escHtml(c.message || '')}</td>
+          <td class="commit-num">${escHtml(featureLabel)}</td>
+          <td class="commit-num">${escHtml(c.agent || '—')}</td>
+          <td class="commit-num">${escHtml(String(c.filesChanged || 0))}</td>
+          <td class="commit-num">${escHtml(String(c.linesAdded || 0))}</td>
+          <td class="commit-num">${escHtml(String(c.linesRemoved || 0))}</td>
+          <td class="commit-hash" title="${escHtml(c.hash || '')}">${escHtml(hash)}</td>
+          <td class="commit-repo">${escHtml(repo)}</td>
+        </tr>`;
+      }).join('');
+      const sortArrow = (key) => commitSort.col === key ? (commitSort.dir === 'asc' ? ' ↑' : ' ↓') : '';
+      html.push('<div class="stats-block" style="overflow-x:auto">');
+      html.push('<table class="commit-list-table">');
+      html.push('<thead><tr>');
+      html.push(`<th data-commit-sort="date">Date${sortArrow('date')}</th>`);
+      html.push(`<th data-commit-sort="message">Message${sortArrow('message')}</th>`);
+      html.push(`<th data-commit-sort="featureId">Feature${sortArrow('featureId')}</th>`);
+      html.push(`<th data-commit-sort="agent">Agent${sortArrow('agent')}</th>`);
+      html.push(`<th data-commit-sort="filesChanged">Files${sortArrow('filesChanged')}</th>`);
+      html.push(`<th data-commit-sort="linesAdded">+Lines${sortArrow('linesAdded')}</th>`);
+      html.push(`<th data-commit-sort="linesRemoved">-Lines${sortArrow('linesRemoved')}</th>`);
+      html.push('<th>Hash</th>');
+      html.push('<th>Repo</th>');
+      html.push('</tr></thead>');
+      html.push(`<tbody>${commitRows || '<tr><td colspan="9" class="commit-empty">No commits for the selected filters.</td></tr>'}</tbody>`);
+      html.push('</table>');
+      if (sortedCommits.length > 200) {
+        html.push(`<div class="commit-footnote">Showing latest 200 of ${sortedCommits.length} commits.</div>`);
+      }
+      html.push('</div>');
+
       html.push('</div>'); // end stats-view
 
       // Store filtered features for pagination (avoids re-rendering charts on page change)
@@ -839,6 +991,8 @@
 
       const ctSeries = buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity);
       renderCycleTimeChart(ctSeries, statsState.volumeGranularity);
+      const commitSeries = buildCommitSeries(filteredCommits, statsState.commitGranularity);
+      renderCommitChart(commitSeries, statsState.commitGranularity);
 
       // Wire up controls
       const repoSel = document.getElementById('stats-repo-filter');
@@ -846,6 +1000,7 @@
         statsState.repoFilter = repoSel.value;
         statsState.volumeWindowEnd = null;
         statsState.cycleTimeWindowEnd = null;
+        statsState.commitWindowEnd = null;
         statsState.featureListPage = 0;
         saveStatsPrefs();
         renderStatistics();
@@ -856,6 +1011,7 @@
         statsState.period = periodSel.value;
         statsState.volumeWindowEnd = null;
         statsState.cycleTimeWindowEnd = null;
+        statsState.commitWindowEnd = null;
         statsState.featureListPage = 0;
         saveStatsPrefs();
         renderStatistics();
@@ -870,6 +1026,7 @@
           const res = await fetch('/api/analytics?force=1', { cache: 'no-store' });
           if (!res.ok) throw new Error('HTTP ' + res.status);
           statsState.data = await res.json();
+          await loadCommits(true);
           statsState.error = null;
         } catch (e) {
           statsState.error = e.message;
@@ -889,6 +1046,41 @@
         };
       });
 
+      document.querySelectorAll('.commit-gran-btn').forEach(btn => {
+        btn.onclick = () => {
+          statsState.commitGranularity = btn.dataset.gran;
+          statsState.commitWindowEnd = null;
+          saveStatsPrefs();
+          renderStatistics();
+        };
+      });
+
+      const commitFeatureSel = document.getElementById('commit-feature-filter');
+      if (commitFeatureSel) commitFeatureSel.onchange = () => {
+        statsState.commitFeatureFilter = commitFeatureSel.value;
+        statsState.commitWindowEnd = null;
+        renderStatistics();
+      };
+      const commitAgentSel = document.getElementById('commit-agent-filter');
+      if (commitAgentSel) commitAgentSel.onchange = () => {
+        statsState.commitAgentFilter = commitAgentSel.value;
+        statsState.commitWindowEnd = null;
+        renderStatistics();
+      };
+
+      document.querySelectorAll('th[data-commit-sort]').forEach(th => {
+        th.onclick = () => {
+          const key = th.getAttribute('data-commit-sort');
+          if (statsState.commitSort.col === key) {
+            statsState.commitSort.dir = statsState.commitSort.dir === 'asc' ? 'desc' : 'asc';
+          } else {
+            statsState.commitSort.col = key;
+            statsState.commitSort.dir = key === 'date' ? 'desc' : 'asc';
+          }
+          renderStatistics();
+        };
+      });
+
       // Volume nav buttons
       document.getElementById('vol-nav-prev')?.addEventListener('click', () => panVolumeChart('prev'));
       document.getElementById('vol-nav-next')?.addEventListener('click', () => panVolumeChart('next'));
@@ -896,6 +1088,8 @@
       // Cycle time nav buttons
       document.getElementById('ct-nav-prev')?.addEventListener('click', () => panCycleTimeChart('prev'));
       document.getElementById('ct-nav-next')?.addEventListener('click', () => panCycleTimeChart('next'));
+      document.getElementById('commit-nav-prev')?.addEventListener('click', () => panCommitChart('prev'));
+      document.getElementById('commit-nav-next')?.addEventListener('click', () => panCommitChart('next'));
 
 
       // Feature list
