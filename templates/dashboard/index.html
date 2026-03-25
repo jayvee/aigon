@@ -359,9 +359,17 @@
         <button class="btn" id="drawer-close" aria-label="Close">&times;</button>
       </div>
     </div>
+    <div class="drawer-tabs" id="drawer-tabs" role="tablist" aria-label="Spec details">
+      <button class="drawer-tab active" data-tab="spec" role="tab" aria-selected="true">Spec</button>
+      <button class="drawer-tab" data-tab="events" role="tab" aria-selected="false">Events</button>
+      <button class="drawer-tab" data-tab="agents" role="tab" aria-selected="false">Agents</button>
+      <button class="drawer-tab" data-tab="stats" role="tab" aria-selected="false">Stats</button>
+      <button class="drawer-tab" data-tab="control" role="tab" aria-selected="false">Control</button>
+    </div>
     <div class="drawer-body" id="drawer-body">
       <div class="drawer-preview" id="drawer-preview"></div>
       <textarea class="drawer-editor" id="drawer-editor" style="display:none"></textarea>
+      <div class="drawer-detail-content" id="drawer-detail-content" style="display:none"></div>
     </div>
     <div class="drawer-footer">
       <div class="drawer-footer-left">
@@ -391,6 +399,7 @@
   <script src="/js/api.js"></script>
   <script src="/js/terminal.js"></script>
   <script src="/js/sidebar.js"></script>
+  <script src="/js/detail-tabs.js"></script>
   <script src="/js/spec-drawer.js"></script>
   <script src="/js/actions.js"></script>
   <script src="/js/monitor.js"></script>
