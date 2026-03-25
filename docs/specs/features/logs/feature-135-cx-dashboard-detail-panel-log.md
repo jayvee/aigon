@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 674
+lines_removed: 4
+lines_changed: 678
+files_touched: 6
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 210879
+output_tokens: 4214845
+cache_creation_input_tokens: 77787037
+cache_read_input_tokens: 3578806102
+thinking_tokens: 0
+total_tokens: 3661018863
+billable_tokens: 4425724
+cost_usd: 6735.1952
+sessions: 204
+model: "claude-opus-4-6"
+tokens_per_line_changed: 6527.62
+---
 # Implementation Log: Feature 135 - dashboard-detail-panel
 Agent: cx
 
