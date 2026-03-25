@@ -23,3 +23,22 @@ Agent: cx
 ## Decisions
 - Use layered attribution signals (email + trailers + notes) instead of a single signal to improve resilience across rebases/squashes and mixed workflows.
 - Keep attribution auto-configuration scoped to worktrees created by Aigon, so existing non-worktree flows are unaffected.
+
+## Code Review
+
+**Reviewed by**: cc (Claude Opus 4.6)
+**Date**: 2026-03-26
+
+### Findings
+1. **Security bug**: `installAgentGitAttribution` sets `core.hooksPath` to `.aigon/git-hooks` which only contains attribution hooks. This silently disables the existing `.githooks/pre-commit` security hook that blocks committing `.env` files. Any agent in a worktree could accidentally commit secrets.
+2. **Stale line counts**: AGENTS.md module map was updated with new descriptions but line counts were left at pre-change values (git.js: 383→899, worktree.js: 1111→1510).
+
+### Fixes Applied
+- `64c0270a` fix(review): preserve existing git hooks when setting core.hooksPath
+- `0a67b4f3` fix(review): update stale line counts in AGENTS.md module map
+
+### Notes
+- The classification logic (`_classifyCommitAttribution`) is well-designed — correctly handles edge cases like mixed authorship (agent author + human co-author, and vice versa).
+- The layered signal approach (email + trailers + git notes) is solid and matches the spec's resilience requirement for squash merges/rebases.
+- Test coverage is focused and tests real git operations in temp repos — good approach.
+- The `git blame --line-porcelain` parsing correctly handles non-contiguous groups from the same commit by accumulating group counts per SHA.
