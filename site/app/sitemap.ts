@@ -1,0 +1,26 @@
+import type { MetadataRoute } from "next";
+import { glob } from "fast-glob";
+import { resolve } from "node:path";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const contentDir = resolve(process.cwd(), "content");
+  const files = await glob("**/*.mdx", { cwd: contentDir });
+
+  const pages = files.map((file) => {
+    // content/index.mdx → /docs, content/getting-started.mdx → /docs/getting-started
+    const slug = file
+      .replace(/\/index\.mdx$/, "")
+      .replace(/\.mdx$/, "");
+
+    const url = slug === "index"
+      ? "https://aigon.build/docs"
+      : `https://aigon.build/docs/${slug}`;
+
+    return { url, lastModified: new Date() };
+  });
+
+  // Add the landing page
+  pages.unshift({ url: "https://aigon.build", lastModified: new Date() });
+
+  return pages;
+}
