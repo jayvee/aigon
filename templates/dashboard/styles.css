@@ -530,15 +530,26 @@
     .stats-leaderboard .agent-mono{font-family:var(--mono);font-weight:600;color:var(--text-primary)}
     .feat-list-table{width:100%;border-collapse:collapse;font-size:12px}
     .feat-list-table th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary);padding:0 8px 8px 0;border-bottom:1px solid var(--border-subtle)}
-    .feat-list-table th:nth-child(n+5){text-align:right}
+    .feat-list-table th:nth-child(n+6){text-align:right}
     .feat-list-table td{padding:6px 8px 6px 0;border-bottom:1px solid var(--border-subtle);color:var(--text-secondary);vertical-align:middle}
     .feat-list-table tr:last-child td{border-bottom:none}
     .feat-list-table .fl-desc{color:var(--text-primary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .feat-list-table .fl-num{font-family:var(--mono);color:var(--text-tertiary)}
-    .feat-list-table td:nth-child(n+5){text-align:right}
+    .feat-list-table td:nth-child(n+6){text-align:right}
     .feat-list-table .fl-ct-high{color:#f87171}
     .feat-exclude-badge{display:inline-block;font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:3px;background:rgba(251,191,36,0.15);color:#fbbf24;margin-left:4px}
     .feat-list-pagination{display:flex;align-items:center;gap:8px;padding:10px 0 2px;font-size:12px;color:var(--text-tertiary)}
+    .commit-list-table{width:100%;border-collapse:collapse;font-size:12px}
+    .commit-list-table th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary);padding:0 8px 8px 0;border-bottom:1px solid var(--border-subtle);cursor:pointer;white-space:nowrap}
+    .commit-list-table th:hover{color:var(--text-secondary)}
+    .commit-list-table td{padding:7px 8px 7px 0;border-bottom:1px solid var(--border-subtle);color:var(--text-secondary);vertical-align:middle}
+    .commit-list-table tr:last-child td{border-bottom:none}
+    .commit-list-table .commit-message{color:var(--text-primary);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .commit-list-table .commit-num{text-align:right}
+    .commit-list-table .commit-hash{font-family:var(--mono);font-size:11px;color:var(--text-tertiary)}
+    .commit-list-table .commit-repo{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .commit-list-table .commit-empty{text-align:center;color:var(--text-tertiary);padding:20px 0}
+    .commit-footnote{margin-top:8px;font-size:11px;color:var(--text-tertiary)}
     .stats-leaderboard .win-rate{font-weight:600;color:var(--accent)}
     .stats-empty-msg{color:var(--text-tertiary);font-size:12px;padding:20px;text-align:center;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius)}
     .volume-chart-wrap{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:16px;margin-bottom:16px}

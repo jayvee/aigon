@@ -1016,6 +1016,7 @@ test('feedback command module exposes feedback-triage', () => assert.strictEqual
 test('setup command module exposes doctor', () => assert.strictEqual(typeof createSetupCommands().doctor, 'function'));
 test('misc command module exposes help', () => assert.strictEqual(typeof createMiscCommands().help, 'function'));
 test('misc command module exposes insights', () => assert.strictEqual(typeof createMiscCommands().insights, 'function'));
+test('misc command module exposes commits', () => assert.strictEqual(typeof createMiscCommands().commits, 'function'));
 test('command families stay separated', () => {
     const misc = createMiscCommands();
     assert.strictEqual(Object.prototype.hasOwnProperty.call(misc, 'feature-do'), false);
