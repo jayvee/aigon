@@ -1,0 +1,52 @@
+{
+  "id": "mv",
+  "name": "Mistral Vibe",
+  "aliases": [
+    "mv",
+    "mistral",
+    "vibe"
+  ],
+  "cli": {
+    "command": "vibe",
+    "implementFlag": "-p",
+    "implementPrompt": "/aigon-feature-do {featureId}",
+    "evalPrompt": "/aigon-feature-eval {featureId}",
+    "reviewPrompt": "/aigon-feature-review {featureId}",
+    "models": {}
+  },
+  "placeholders": {
+    "AGENT_ID": "mv",
+    "AGENT_NAME": "Mistral Vibe",
+    "AGENT_TITLE": "Mistral Vibe Configuration",
+    "ARG_SYNTAX": "<args>",
+    "ARG1_SYNTAX": "<name>",
+    "CMD_PREFIX": "/aigon-",
+    "AGENT_TEAMS_RESEARCH_NOTE": "",
+    "AGENT_TEAMS_FEATURE_NOTE": "",
+    "AGENT_DEV_SERVER_NOTE": "",
+    "PERMISSION_SAVE_NOTE": ""
+  },
+  "output": {
+    "format": "plain",
+    "commandDir": ".vibe/commands",
+    "commandFilePrefix": "aigon-",
+    "commandFileExtension": ".md",
+    "frontmatter": []
+  },
+  "rootFile": null,
+  "supportsAgentsMd": true,
+  "agentFile": "mistral-vibe.md",
+  "templatePath": "generic/docs/agent.md",
+  "extras": {
+    "settings": {
+      "enabled": false
+    },
+    "hooks": {
+      "enabled": false
+    },
+    "rules": {
+      "enabled": false
+    }
+  },
+  "commands": []
+}
