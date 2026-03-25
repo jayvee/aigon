@@ -28,3 +28,19 @@ Extend the existing pluggable scanner architecture (from feature 120) to support
 - **120s timeout for semgrep**: Semgrep can take longer than gitleaks (especially on first run with rule downloads), so increased timeout from 60s to 120s.
 - **outputFormat field in scannerDefs**: Introduced a general pattern for scanner-specific output handling, not hardcoded to semgrep. Future scanners can define their own outputFormat.
 - **eslint-plugin-security as recommendation only**: Just a tip during init, not auto-installed, since it's an ESLint plugin the user must configure in their own config.
+
+## Code Review
+
+**Reviewed by**: gemini
+**Date**: 2026-03-26
+
+### Findings
+- Found a potential terminal formatting issue where newlines in semgrep messages would break the indentation and readability of the output.
+- Other parts of the implementation (JSON parsing, severity handling, config integration) are solid and well-tested.
+
+### Fixes Applied
+- fix(review): clean newlines in semgrep messages for terminal display (35fb3dd0)
+
+### Notes
+- The implementation is robust and follows the pluggable scanner pattern correctly.
+- Recommend merging once the fix is verified by the user.
