@@ -1,0 +1,58 @@
+---
+title: Security Scanning
+description: Merge gate security checks with gitleaks and Semgrep.
+---
+
+Aigon runs security scans at the merge gate — when you close or submit a feature, scanners check for secrets and vulnerabilities before the merge proceeds.
+
+## How it works
+
+When you run `aigon feature-close` or `aigon feature-submit`, Aigon executes configured scanners against your changed files:
+
+1. **gitleaks** — detects hardcoded secrets (API keys, tokens, passwords)
+2. **Semgrep** — static analysis for security vulnerabilities (OWASP patterns, injection risks)
+
+Both scanners run in diff-aware mode, scanning only files changed in the feature branch.
+
+## Scanner behaviour
+
+| Scanner | Blocks on | Warns on | Not installed |
+|---------|-----------|----------|---------------|
+| gitleaks | Any finding | — | Skipped with warning |
+| Semgrep | High severity | Medium severity | Skipped with warning |
+
+If a scanner binary is not installed, Aigon skips it gracefully and logs a warning. Install them for full protection:
+
+```bash
+brew install gitleaks
+brew install semgrep        # or: pip install semgrep
+```
+
+## Configuration
+
+Security scanning is enabled by default. Configure via `~/.aigon/config.json`:
+
+```json
+{
+  "security": {
+    "enabled": true,
+    "mergeGateStages": {
+      "featureClose": ["gitleaks", "semgrep"],
+      "featureSubmit": ["gitleaks", "semgrep"],
+      "researchClose": ["gitleaks"]
+    }
+  }
+}
+```
+
+### Disabling a scanner
+
+Remove it from the stage array:
+
+```bash
+aigon config set --global security.mergeGateStages.featureClose '["gitleaks"]'
+```
+
+### ESLint security plugin
+
+For `web` and `api` profiles, `aigon init` recommends installing `eslint-plugin-security` for additional static analysis during development.

@@ -77,9 +77,9 @@ Current shared modules:
   `collectBoardItems`, `displayBoardKanbanView`, `displayBoardListView`, `saveBoardMapping`, `getBoardAction`
 - `lib/feedback.js` (~373 lines): feedback parsing, normalization, similarity, triage helpers
   `normalizeFeedbackMetadata`, `collectFeedbackItems`, `findDuplicateFeedbackCandidates`, `buildFeedbackTriageRecommendation`
-- `lib/git.js` (~386 lines): git helpers — branch/worktree/status plus feature metrics and AI-attribution classification
-  `getCurrentBranch`, `getFeatureGitSignals`, `classifyCommitAttributionRange`, `getFileLineAttribution`
-- `lib/manifest.js` (~413 lines): **state source of truth** — per-feature JSON manifests in `.aigon/state/`, per-agent status files, advisory locking, lazy bootstrap from folder position, event audit trail
+- `lib/git.js` (~700+ lines): git helpers — branch/worktree/status, feature metrics, AI-attribution classification, commit analytics
+  `getCurrentBranch`, `getFeatureGitSignals`, `classifyCommitAttributionRange`, `getFileLineAttribution`, `getCommitAnalytics`, `filterCommitAnalytics`, `buildCommitSeries`
+- `lib/manifest.js` (~413 lines): **state source of truth** — per-feature JSON manifests in `.aigon/state/`, per-agent status files, advisory locking, lazy bootstrap from folder position, event audit trail, `dependsOn` dependency tracking
   `readManifest`, `writeManifest`, `readAgentStatus`, `writeAgentStatus`, `acquireLock`, `releaseLock`
 - `lib/state-machine.js` (~764 lines): spec state transitions, mandatory `requestTransition()` gatekeeper, outbox pattern for crash-safe side effects
   `transition`, `getValidTransitions`, `requestTransition`, `buildStateMachine`
@@ -100,6 +100,15 @@ Current shared modules:
   `readTemplate`, `processTemplate`, `readGenericTemplate`, `formatCommandOutput`, `COMMAND_REGISTRY`
 - `lib/utils.js` (~1,474 lines): shared utilities — hooks, spec CRUD, analytics, version, deploy
   `parseHooksFile`, `parseFrontMatter`, `findFile`, `collectAnalyticsData`, `safeWrite`
+
+**Additional modules:**
+
+- `lib/telemetry.js` (~144 lines): normalized session telemetry — common schema across all agents (agent, model, tokens, cost, turns, duration), records to `.aigon/telemetry/`
+  `writeNormalizedTelemetryRecord`, `captureFeatureTelemetry`
+- `lib/security.js` (~131+ lines): merge gate scanning — runs gitleaks + semgrep at feature-close/submit, severity-aware thresholds, diff-aware scanning, graceful degradation
+  `runSecurityScan`, `parseSemgrepOutput`, `formatSemgrepFindings`
+- `lib/entity.js`: entity pipeline — shared feature/research processing, dependency parsing (`depends_on` frontmatter), DFS cycle detection at prioritise time
+  `parseFrontMatter`, `resolveDependencies`, `detectCycles`
 
 **Thin re-export facades:**
 
@@ -152,7 +161,7 @@ Research follows the same pattern with `r` instead of `f`:
 Components:
 - `{repo}` — repository directory name (e.g., `aigon`, `farline-ai`, `whos-buy-is-it`)
 - `{num}` — zero-padded feature/research ID (e.g., `07`, `140`)
-- `{agent}` — agent short code (`cc`, `gg`, `cx`, `cu`)
+- `{agent}` — agent short code (`cc`, `gg`, `cx`, `cu`, `mv`)
 - `{desc}` — kebab-case feature description from the spec filename
 
 ## Aigon Pro (`@aigon/pro`)
