@@ -3,7 +3,7 @@
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
-- **Shared logic**: `lib/*.js` — 12 modules; see Module Map below
+- **Shared logic**: `lib/*.js` — 14 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **Dashboard**: foreground server — `node aigon-cli.js dashboard`; restart after any `lib/*.js` edit
@@ -57,7 +57,9 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/manifest.js` | 413 | **State source of truth**: per-feature JSON manifests, agent status, locking, lazy bootstrap |
-| `lib/git.js` | 386 | Branch, worktree, status, commit helpers |
+| `lib/git.js` | 700+ | Branch, worktree, status, commit helpers, commit analytics, git attribution |
+| `lib/telemetry.js` | 144 | Normalized session telemetry, cross-agent cost reporting |
+| `lib/security.js` | 131+ | Merge gate scanning (gitleaks + semgrep), severity thresholds, diff-aware |
 
 Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/devserver.js`.
 
@@ -79,6 +81,7 @@ Feature/research state lives in **two layers**:
 - **gg**: `.gemini/commands/aigon/*.toml`, `.gemini/settings.json` (hooks), `.gemini/policies/aigon.toml`
 - **cx**: `~/.codex/prompts/aigon-*.md` (global), `.codex/prompt.md`, `.codex/config.toml`
 - **cu**: `.cursor/commands/aigon-*.md`, `.cursor/cli.json`, `.cursor/hooks.json`, `.cursor/rules/aigon.mdc`
+- **mv**: headless only — no slash commands, settings, or context delivery files. Uses `vibe` CLI with `-p` flag.
 
 **Shared:** `AGENTS.md` (scaffolded on first install only, never overwritten), `docs/agents/{agent}.md` (marker blocks), `docs/development_workflow.md` (full overwrite)
 

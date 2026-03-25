@@ -5,4 +5,5 @@ export default {
   "research-workflow": "Research Workflow",
   "feedback-workflow": "Feedback Workflow",
   dashboard: "Dashboard",
+  "security-scanning": "Security Scanning",
 };
