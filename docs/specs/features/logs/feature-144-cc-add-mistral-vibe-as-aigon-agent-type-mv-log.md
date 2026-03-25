@@ -40,3 +40,24 @@ Agent: cc
 - The implementation correctly handles Mistral Vibe's `-p` headless invocation and respects the spec's requirement for an empty commands array.
 - While `vibe` lacks a slash-command system, the generated documentation provides clear guidance on conventional command usage which the agent can follow.
 
+
+## Code Review (Follow-up)
+
+**Reviewed by**: Gemini CLI
+**Date**: 2026-03-26
+
+### Findings
+- Missing `mv` ports in `PROFILE_PRESETS` for web and api profiles in `lib/config.js`.
+- Hardcoded agent ID lists in `lib/dashboard-server.js` and `lib/commands/feature.js` were missing `mv`.
+- `AGENT_DISPLAY_NAMES` in the dashboard UI (`templates/dashboard/js/actions.js`) was missing `mv`.
+- CLI help examples and agent list in `templates/help.txt` were not updated.
+
+### Fixes Applied
+- Added `mv` ports (3005 and 8005) to `PROFILE_PRESETS` in `lib/config.js`.
+- Updated hardcoded agent lists and regex to include `mv` in `lib/dashboard-server.js` and `lib/commands/feature.js`.
+- Added `mv: 'Mistral Vibe'` to `AGENT_DISPLAY_NAMES` in `templates/dashboard/js/actions.js`.
+- Updated `templates/help.txt` to include Mistral Vibe in examples and the Agents reference section.
+
+### Notes
+- The core implementation is correct; follow-up fixes provide full ecosystem integration.
+- The new agent is now fully integrated into the Aigon ecosystem.
