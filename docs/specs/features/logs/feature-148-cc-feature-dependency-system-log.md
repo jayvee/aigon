@@ -24,3 +24,20 @@ Agent: cc
 - **Iterative DFS over recursive**: avoids stack overflow for large graphs, uses explicit stack with parent tracking for cycle path reconstruction
 - **dependsOn in manifest is undefined when empty**: avoids polluting manifest JSON for features without dependencies
 - **Exported helpers for testing**: buildFeatureIndex, resolveDepRef, detectCycle, rewriteDependsOn are exported from entity.js module for direct unit testing
+
+## Code Review
+
+**Reviewed by**: gg (Gemini)
+**Date**: 2026-03-26
+
+### Findings
+- **Inconsistent state on dependency error**: `entityPrioritise` was moving the spec file from `01-inbox` to `02-backlog` *before* validating dependencies and checking for cycles. If an error occurred (e.g., non-existent dependency or circular reference), the function returned early, leaving the file moved but uncommitted and without a manifest entry.
+
+### Fixes Applied
+- **Reordered operations in `entityPrioritise`**: Moved dependency resolution, validation, and cycle detection logic *before* the `u.moveFile` call. This ensures that the prioritisation process only proceeds if dependencies are valid.
+- **Updated `rewriteDependsOn` call**: Ensured it uses the new path after the file is successfully moved.
+- **Improved `featureIndex` registration**: When resolving dependencies for a new feature, its future path is correctly registered in the index to allow self-reference detection (cycles).
+
+### Notes
+- Implementation of iterative DFS for cycle detection is solid and handles cycle path reconstruction correctly via `parent` tracking.
+- All unit tests in `lib/entity.test.js` pass.
