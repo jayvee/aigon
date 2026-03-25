@@ -2192,6 +2192,55 @@ test('collectAnalyticsData respects cycleTimeExclude flag', () => {
     });
 });
 
+test('collectAnalyticsData falls back to normalized telemetry records for cost/tokens', () => {
+    withTempDir(tmpDir => {
+        const doneDir = path.join(tmpDir, 'docs', 'specs', 'features', '05-done');
+        const logsDir = path.join(tmpDir, 'docs', 'specs', 'features', 'logs');
+        const telemetryDir = path.join(tmpDir, '.aigon', 'telemetry');
+        fs.mkdirSync(doneDir, { recursive: true });
+        fs.mkdirSync(logsDir, { recursive: true });
+        fs.mkdirSync(telemetryDir, { recursive: true });
+
+        const startedAt = '2026-01-01T00:00:00Z';
+        const completedAt = '2026-01-01T01:00:00Z';
+        fs.writeFileSync(path.join(doneDir, 'feature-01-telemetry-fallback.md'), '# Feature 01\n');
+        fs.writeFileSync(path.join(logsDir, 'feature-01-cx-telemetry-fallback-log.md'),
+            `---\nstatus: submitted\nupdated: ${completedAt}\nstartedAt: ${startedAt}\ncompletedAt: ${completedAt}\n---\n\nLog body.`
+        );
+        fs.writeFileSync(path.join(telemetryDir, 'feature-01-cx-session-a.json'), JSON.stringify({
+            schemaVersion: 1,
+            source: 'test',
+            sessionId: 'session-a',
+            featureId: '01',
+            repoPath: tmpDir,
+            agent: 'cx',
+            model: 'gpt-5.3-codex',
+            startAt: startedAt,
+            endAt: new Date().toISOString(),
+            turnCount: 3,
+            toolCalls: 1,
+            tokenUsage: {
+                input: 100,
+                output: 40,
+                thinking: 10,
+                billable: 150
+            },
+            costUsd: 0.4567
+        }, null, 2));
+
+        const analytics = collectAnalyticsData({ repos: [tmpDir], analytics: {} });
+        assert.strictEqual(analytics.features.length, 1, 'one feature in analytics');
+        assert.strictEqual(analytics.features[0].costUsd, 0.4567, 'cost falls back to telemetry record');
+        assert.strictEqual(analytics.features[0].billableTokens, 150, 'tokens fall back to telemetry record');
+        assert.strictEqual(analytics.features[0].hasAadeData, true, 'telemetry fallback counts as AADE data');
+        assert.ok(Array.isArray(analytics.amplification.crossAgentCost30d), 'cross-agent telemetry rollup exists');
+        const cxEntry = analytics.amplification.crossAgentCost30d.find(e => e.agent === 'cx');
+        assert.ok(cxEntry, 'cx appears in cross-agent rollup');
+        assert.strictEqual(cxEntry.sessions, 1, 'session count sourced from normalized telemetry');
+        assert.strictEqual(cxEntry.costUsd, 0.4567, 'cost rollup sourced from normalized telemetry');
+    });
+});
+
 test('collectAnalyticsData parses eval wins from evaluation files', () => {
     withTempDir(tmpDir => {
         const doneDir = path.join(tmpDir, 'docs', 'specs', 'features', '05-done');
