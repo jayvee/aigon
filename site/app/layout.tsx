@@ -25,26 +25,26 @@ const sora = Sora({
 
 export const metadata: Metadata = {
   title: {
-    default: "Aigon | Spec-Driven AI Development & Multi-Agent Orchestration",
+    default: "Aigon | Open-Source AI Agent Orchestration",
     template: "%s | Aigon",
   },
   description:
-    "Aigon is a CLI-first, vendor-independent workflow for research, feature delivery, and feedback loops across Claude, Gemini, Codex, and Cursor.",
+    "Aigon is an open-source, spec-driven orchestration system for AI coding agents — run them head-to-head on the same feature, then score their work so you can ship with confidence.",
   metadataBase: new URL("https://aigon.build"),
   openGraph: {
-    title: "Aigon | Spec-Driven Multi-Agent Orchestration",
+    title: "Aigon | Open-Source AI Agent Orchestration",
     description:
-      "Spec-driven development and multi-agent orchestration — run one agent or orchestrate competing implementations in parallel, then evaluate and merge the best outcome.",
+      "Aigon is an open-source, spec-driven orchestration system for AI coding agents — run them head-to-head on the same feature, then score their work so you can ship with confidence.",
     type: "website",
     url: "https://aigon.build",
   },
   icons: {
     icon: [
-      { url: "/img/aigon-icon-32.svg", type: "image/svg+xml" },
-      { url: "/img/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/img/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/img/aigon-icon.svg", type: "image/svg+xml" },
+      { url: "/img/favicon-192.png", sizes: "192x192", type: "image/png" },
     ],
-    apple: "/img/favicon-32.png",
+    apple: "/img/apple-touch-icon.png",
   },
 };
 
