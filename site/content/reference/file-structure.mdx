@@ -47,6 +47,18 @@ Each pillar uses folder-based status:
 | Prioritised | `feature-{ID}-description.md` | `feature-55-dark-mode.md` |
 | Agent-specific (Fleet) | `feature-{ID}-{agent}-description-log.md` | `feature-55-cc-dark-mode-log.md` |
 
+## Feature dependencies
+
+Feature specs can declare dependencies using `depends_on` in the `## Dependencies` section:
+
+```markdown
+## Dependencies
+- depends_on: dark-mode-foundation
+- depends_on: 148
+```
+
+When you run `aigon feature-prioritise`, dependencies are resolved (names/slugs canonicalized to IDs) and checked for circular references via DFS. Dependent features cannot be started until their dependencies are in `05-done`.
+
 ## State machine
 
 Specs transition through states via the `requestTransition()` gatekeeper. You cannot skip steps — the state machine enforces valid transitions.
@@ -72,6 +84,15 @@ Feature/research state lives in two layers:
 2. **Manifests** (`.aigon/state/feature-{id}.json`) — local reliability layer, gitignored, crash-safe
 
 Agents write status to `.aigon/state/feature-{id}-{agent}.json` in the main repo (not inside worktrees). Run `aigon doctor --fix` to detect and repair desyncs between the two layers.
+
+### Additional `.aigon/` directories
+
+| Directory | Purpose |
+|-----------|---------|
+| `.aigon/state/` | Per-feature manifests and per-agent status files (gitignored) |
+| `.aigon/cache/` | Cached data (e.g., `commits.json` for commit analytics) |
+| `.aigon/telemetry/` | Normalized per-session telemetry records (agent, model, tokens, cost, duration) |
+| `.aigon/config.json` | Project-level configuration |
 
 ## The complete lifecycle loop
 

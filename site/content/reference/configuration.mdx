@@ -45,9 +45,9 @@ Created with `aigon config init --global` at `~/.aigon/config.json`:
   "tmuxApp": "terminal",
   "agents": {
     "cc": { "cli": "claude", "implementFlag": "--permission-mode acceptEdits" },
-    "cu": { "cli": "agent", "implementFlag": "--force" },
     "gg": { "cli": "gemini", "implementFlag": "--yolo" },
-    "cx": { "cli": "codex", "implementFlag": "" }
+    "cx": { "cli": "codex", "implementFlag": "" },
+    "mv": { "cli": "vibe", "implementFlag": "-p" }
   }
 }
 ```
@@ -76,8 +76,10 @@ Created with `aigon config init` at `.aigon/config.json`:
 | `tmuxApp` | Global | Terminal app hosting tmux sessions | `terminal` (default), `iterm2` |
 | `profile` | Project | Project type | `web`, `api`, `ios`, `android`, `library`, `generic` |
 | `appId` | Project | App domain for dev proxy | Auto-detected from `package.json` |
-| `agents.{id}.cli` | Global | CLI command for each agent | `claude`, `gemini`, `codex`, `agent` |
+| `agents.{id}.cli` | Global | CLI command for each agent | `claude`, `gemini`, `codex`, `vibe` |
 | `agents.{id}.implementFlag` | Global | CLI flags for permission prompts | String (empty = manual approval) |
+| `security.enabled` | Global | Enable merge gate security scanning | `true` (default), `false` |
+| `security.mergeGateStages` | Global | Which scanners run at each stage | `{ featureClose: ['gitleaks', 'semgrep'] }` |
 | `fleet.testInstructions` | Project | Custom test instructions for Fleet mode | String |
 | `devProxy.command` | Project | Dev server start command | Default: `npm run dev` |
 | `devProxy.healthCheck` | Project | Path to verify server is up | Default: `/` |
@@ -117,7 +119,7 @@ aigon update                # Regenerate templates after changing profile
 ### Port configuration (web/api profiles)
 
 ```
-PORT=3400 in .env → cc=3401, gg=3402, cx=3403, cu=3404
+PORT=3400 in .env → cc=3401, gg=3402, cx=3403, cu=3404, mv=3405
 ```
 
 Ports are derived from your base PORT using fixed offsets, avoiding clashes when running multiple projects.
