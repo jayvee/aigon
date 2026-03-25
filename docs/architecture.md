@@ -77,8 +77,8 @@ Current shared modules:
   `collectBoardItems`, `displayBoardKanbanView`, `displayBoardListView`, `saveBoardMapping`, `getBoardAction`
 - `lib/feedback.js` (~373 lines): feedback parsing, normalization, similarity, triage helpers
   `normalizeFeedbackMetadata`, `collectFeedbackItems`, `findDuplicateFeedbackCandidates`, `buildFeedbackTriageRecommendation`
-- `lib/git.js` (~386 lines): git helpers — branch, worktree, status, commit
-  `getCurrentBranch`, `getWorktrees`, `getUncommittedChanges`, `commitFiles`
+- `lib/git.js` (~386 lines): git helpers — branch/worktree/status plus feature metrics and AI-attribution classification
+  `getCurrentBranch`, `getFeatureGitSignals`, `classifyCommitAttributionRange`, `getFileLineAttribution`
 - `lib/manifest.js` (~413 lines): **state source of truth** — per-feature JSON manifests in `.aigon/state/`, per-agent status files, advisory locking, lazy bootstrap from folder position, event audit trail
   `readManifest`, `writeManifest`, `readAgentStatus`, `writeAgentStatus`, `acquireLock`, `releaseLock`
 - `lib/state-machine.js` (~764 lines): spec state transitions, mandatory `requestTransition()` gatekeeper, outbox pattern for crash-safe side effects
@@ -92,7 +92,7 @@ Current shared modules:
   `generateCaddyfile`, `reloadCaddy`, `registerDevServer`, `deregisterDevServer`, `reconcileProxyRoutes`, `allocatePort`
 - `lib/dashboard-server.js` (~1,913 lines): HTTP server, polling, WebSocket relay, notifications, action dispatch — reads state from manifests
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
-- `lib/worktree.js` (~1,122 lines): worktree creation, permissions, tmux sessions, terminal launching
+- `lib/worktree.js` (~1,122 lines): worktree creation, permissions, git attribution bootstrap, tmux sessions, terminal launching
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
 - `lib/config.js` (~951 lines): global/project config, profiles, agent CLI config, editor detection
   `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`, `getAgentCliConfig`
