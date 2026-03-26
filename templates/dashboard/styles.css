@@ -555,6 +555,8 @@
     .commit-list-table .commit-hash{font-family:var(--mono);font-size:11px;color:var(--text-tertiary)}
     .commit-list-table .commit-repo{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .commit-list-table .commit-empty{text-align:center;color:var(--text-tertiary);padding:20px 0}
+    .commit-nonfeature td{opacity:.7}
+    .commit-nf-badge{font-size:10px;color:var(--text-tertiary);background:rgba(148,163,184,.15);padding:1px 6px;border-radius:3px;white-space:nowrap}
     .commit-list-table col.col-date{width:90px} .commit-list-table col.col-repo{width:80px}
     .commit-list-table col.col-msg{} .commit-list-table col.col-feat{width:60px}
     .commit-list-table col.col-agent{width:55px} .commit-list-table col.col-files{width:45px}

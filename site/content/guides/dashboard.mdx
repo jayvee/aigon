@@ -65,30 +65,37 @@ High-level metrics at a glance. Uses the global repo sidebar to filter by repo.
 
 ![Reports Summary](/img/aigon-dashboard-reports-summary.png)
 
-- **Features Completed** — total features closed in the selected period
+- **Features Completed** — total features closed in the selected period, with 30-day trend
 - **Cycle Time** — median wall-clock time from feature-start to feature-close
-- **First-Pass Rate** — percentage of features that passed evaluation on the first attempt
-- **Commits** — total commits in the period
-- **Lines Changed** — aggregate lines added and removed
+- **First-Pass Rate** — percentage of features that passed evaluation on the first attempt without rework
+- **Commits** — total commits with feature/non-feature split (e.g., "1314 feature / 686 non-feature")
+- **Lines Changed** — aggregate lines added and removed across all commits
+- **Avg Lines / Commit** — average lines changed per commit
+- **Commits / Feature** — median number of commits per feature (with average as subtitle). Lower values suggest more focused, single-pass implementations
+- **Rework Ratio** — percentage of commits that are fixes or rework. Lower is better — means more work lands correctly on the first pass
 - **Quality & Speed** — detailed cycle time stats (median, mean, max) and average iterations per feature
 - **Agent Leaderboard** — features completed, eval wins, fleet win %, cycle time, and first-pass rate per agent
 
 ### Charts
 
-Three stacked, full-width charts sharing a unified time axis so dates align vertically:
+Stacked, full-width charts sharing a unified time axis so dates align vertically:
+
+![Reports Charts](/img/aigon-dashboard-reports-charts.png)
 
 - **Features Completed** — bar chart of features closed per period
-- **Commits** — bar chart of commit volume per period
-- **Median Cycle Time** — bar chart of median cycle time per period (auto-switches between hours and minutes based on scale)
+- **Commits** — stacked bar chart with two colors: blue for feature-attributed commits and grey for non-feature commits. Shows the ratio of structured (feature) work vs ad-hoc work over time
+- **Median Cycle Time** — bar chart of median cycle time per period. Auto-switches between hours and minutes based on the scale of values in the visible window. Hover tooltip shows the exact value and notes any excluded outliers
+- **Commits per Feature** — median number of commits per feature completed in each period. Tracks whether features are getting more focused (fewer commits) or more complex (more commits) over time
+- **Rework Ratio** — percentage of commits that are fixes (messages starting with `fix:`, `fixup`, or `bugfix`) per period. Lower is better — trending down indicates agents are producing correct code on the first pass
 
-All three charts share a single **Daily / Weekly / Monthly** granularity toggle and synchronized left/right panning. The date axes are aligned across all charts — periods with no data show as zero-height bars rather than being omitted.
+All five charts share a single **Daily / Weekly / Monthly** granularity toggle and synchronized left/right panning via shared arrow controls. The date axes are aligned across all charts — periods with no data show as zero-height bars rather than being omitted, ensuring vertical date alignment.
 
 ### Details
 
 Paginated tables for drilling into individual items:
 
-- **Features** — sortable table with date, repo, feature number, name, agent, cycle time, commits, and lines changed
-- **Commits** — sortable table with date, repo, message, feature, agent, files changed, lines added/removed, and commit hash. Filterable by agent.
+- **Features** — paginated, sortable table with date, repo, feature number, name, agent, cycle time, commits, and lines changed
+- **Commits** — sortable table with date, repo, message, feature, agent, files changed, lines added/removed, and commit hash. Non-feature commits show a "non-feature" badge. Filterable by type (All / Feature only / Non-feature only) and agent
 
 ## Console and Logs
 
