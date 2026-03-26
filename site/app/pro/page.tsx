@@ -78,9 +78,11 @@ export default function ProPage() {
         <div className="mx-auto max-w-3xl text-center">
           <Badge>Coming Soon</Badge>
           <h1 className="mt-6 font-[family-name:var(--font-sora)] text-4xl font-bold leading-tight tracking-tight text-[hsl(0_0%_95%)] md:text-5xl">
-            Deeper insights into your
+            Aigon Pro
             <br />
-            <span className="text-aigon-orange">AI development workflow</span>
+            <span className="text-aigon-orange">
+              deeper insights into your AI development workflow
+            </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-[hsl(0_0%_65%)]">
             Aigon Pro adds agent quality metrics, trend charts, and AI-powered
