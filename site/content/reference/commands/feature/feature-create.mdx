@@ -1,6 +1,6 @@
 ---
 title: "feature-create"
-description: "Create feature name - creates spec in inbox"
+description: "Create a new feature spec in the inbox"
 ---
 
 ## Synopsis
@@ -15,14 +15,50 @@ aigon feature-create <feature-name>
 
 ## Description
 
-Create feature \<name\> - creates spec in inbox
+Creates a new feature spec file in `docs/specs/features/01-inbox/` from the feature template. The agent then helps you flesh out the summary, user stories, acceptance criteria, and technical approach.
 
 ## Usage
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feature-create <feature-name>
+# Slash command (inside an agent session)
+/aigon:feature-create dark-mode
 
 # CLI
-aigon feature-create <feature-name>
+aigon feature-create dark-mode
+```
+
+## What gets created
+
+A Markdown spec file at `docs/specs/features/01-inbox/feature-dark-mode.md` with sections:
+
+- **Summary** — what and why
+- **User Stories** — who benefits and how
+- **Acceptance Criteria** — testable definition of done
+- **Validation** — commands to verify the implementation
+- **Technical Approach** — high-level design
+- **Dependencies** — prerequisites and feature dependencies
+- **Out of Scope** — explicit exclusions
+- **Open Questions** — unresolved decisions
+
+## Feature dependencies
+
+If your feature depends on other features, declare it in the Dependencies section using `depends_on`:
+
+```markdown
+## Dependencies
+- depends_on: dark-mode-foundation
+- depends_on: 148
+```
+
+When you later run `aigon feature-prioritise`, dependencies are resolved to canonical IDs and checked for circular references. Dependent features cannot be started until their dependencies are in `05-done`.
+
+This is especially useful when research produces a chain of related features — each spec declares what it depends on, and Aigon enforces the ordering.
+
+## Next steps
+
+After creating, the spec is in the **inbox**. To move it forward:
+
+```bash
+aigon feature-prioritise dark-mode    # Assigns ID, moves to backlog
+aigon feature-start 42                # Creates workspace, starts agent
 ```

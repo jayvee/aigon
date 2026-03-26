@@ -1,10 +1,24 @@
 ---
 title: "status"
-description: "Reference for aigon status"
+description: "Show the current state of in-progress features"
 ---
 
 ## Synopsis
 
 ```bash
 aigon status [ID]
+```
+
+## Description
+
+Displays the current state of in-progress features — which agents are running, their status, and recent log entries. If an ID is given, shows detailed status for that specific feature.
+
+## Usage
+
+```bash
+# Show all in-progress features
+aigon status
+
+# Show detailed status for feature 42
+aigon status 42
 ```
