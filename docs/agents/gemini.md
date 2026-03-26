@@ -142,4 +142,41 @@ Before running `/aigon:feature-close`, always:
    git push -u origin <current-branch-name>
    ```
 2. **Ask the user** if they want to delete the local branch after merge (the CLI will delete it by default)
+
+## Common Pitfalls — READ THIS FIRST
+
+These are recurring mistakes that derail Gemini sessions. Check yourself against this list before and during every task.
+
+### 1. Working on `main` instead of a feature branch
+**Symptom**: You commit code directly to `main`, polluting the shared branch.
+**Prevention**: ALWAYS run `git branch --show-current` before writing any code. If it returns `main`, STOP. Run `/aigon:feature-start` or switch to the correct feature branch.
+**Recovery**: If you already committed to `main`, tell the user immediately — do not try to fix it yourself.
+
+### 2. Forgetting lifecycle commands
+**Symptom**: Dashboard shows agent as idle when it's actually working, or work is never marked as done.
+**Prevention**: Run these in order, every time:
+1. `aigon agent-status implementing` — before you start work
+2. `aigon agent-status submitted` — after your final commit
+These are NOT optional. They are mandatory signals.
+
+### 3. Modifying files you don't own (research)
+**Symptom**: Research commit includes code changes or other agents' findings.
+**Prevention**: In research mode, you write ONLY to `research-{ID}-gg-findings.md`. Stage only that file: `git add docs/specs/research-topics/logs/research-*-gg-findings.md`. Never use `git add .`.
+
+### 4. Using `git add .` or `git add -A`
+**Symptom**: Unrelated files (`.env.local`, other agents' work, IDE config) get committed.
+**Prevention**: Always stage specific files by path. Run `git status` first to review what changed, then `git add <specific-file>`.
+
+### 5. Running commands you weren't asked to run
+**Symptom**: Running `feature-close`, `research-close`, or `feature-eval` when the user didn't ask.
+**Prevention**: After submitting, STAY in the session and wait. The user decides what happens next — close, eval, or more changes.
+
+### 6. Not reading the spec before implementing
+**Symptom**: Implementation doesn't match acceptance criteria, wrong approach taken.
+**Prevention**: Always read the full spec file in `docs/specs/features/03-in-progress/` before writing a single line of code.
+
+### 7. Ignoring the working directory in worktree mode
+**Symptom**: Editing files in the main repo instead of the worktree, or vice versa.
+**Prevention**: Run `pwd` and verify you're in the correct directory. Worktree paths look like `../project-worktrees/feature-{ID}-gg-{desc}`.
+
 <!-- AIGON_END -->

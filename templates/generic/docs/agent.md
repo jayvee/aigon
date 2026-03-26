@@ -125,4 +125,5 @@ Before running `{{CMD_PREFIX}}feature-close`, always:
    git push -u origin <current-branch-name>
    ```
 2. **Ask the user** if they want to delete the local branch after merge (the CLI will delete it by default)
+{{AGENT_PITFALLS}}
 <!-- AIGON_END -->
