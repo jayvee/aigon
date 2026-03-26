@@ -766,13 +766,13 @@
 
       if (_proActive) {
         html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null, null,
-          'Percentage of features that passed evaluation on the first attempt without needing rework.'));
+          'Percentage of features that passed evaluation on the first attempt without needing rework.', { pro: true }));
         html.push(buildStatCard('Commits / Feature', cpfMedian !== null ? String(cpfMedian) : '—',
           null, cpfAvg !== null ? `avg ${cpfAvg}` : null,
-          'Median number of commits per feature. Lower suggests more focused, single-pass implementations.'));
+          'Median number of commits per feature. Lower suggests more focused, single-pass implementations.', { pro: true }));
         html.push(buildStatCard('Rework Ratio', reworkRatio !== null ? fmtPct(reworkRatio) : '—',
           null, fixCommitCount > 0 ? `${fixCommitCount} fix commits` : null,
-          'Percentage of commits that are fixes or rework (messages starting with fix:, fixup, or bugfix). Lower is better — means more work lands correctly on the first pass.'));
+          'Percentage of commits that are fixes or rework (messages starting with fix:, fixup, or bugfix). Lower is better — means more work lands correctly on the first pass.', { pro: true }));
       } else {
         html.push(buildProGatedStatCard('First-Pass Rate', 'summary-first-pass',
           'Percentage of features that passed evaluation on the first attempt without needing rework.'));
@@ -836,7 +836,8 @@
         html.push('<div class="stats-section-title" style="margin-top:4px">Agent Leaderboard</div>');
         html.push('<div class="stats-block" style="overflow-x:auto">');
         html.push('<table class="stats-leaderboard">');
-        html.push('<thead><tr><th>Agent</th><th>Features</th><th>Eval wins</th><th>Fleet win %</th><th>Cycle time</th><th>First-pass</th></tr></thead>');
+        const proTh = ' <span class="pro-badge-inline">PRO</span>';
+        html.push('<thead><tr><th>Agent</th><th>Features</th><th>Eval wins' + proTh + '</th><th>Fleet win %' + proTh + '</th><th>Cycle time</th><th>First-pass</th></tr></thead>');
         html.push('<tbody>');
 
         allAgentIds
@@ -910,10 +911,11 @@
       html.push('</div>');
 
       // ── Pro charts: Cycle Time, CPF, Rework Ratio ──
+      const proBadgeHtml = '<span class="pro-badge-inline">PRO</span>';
       if (_proActive) {
         html.push('<div class="volume-chart-wrap">');
         html.push('<div class="volume-chart-header">');
-        html.push('<div class="volume-chart-title">Median Cycle Time <span class="stat-info" data-stat-tooltip="Median wall-clock time from feature-start to feature-close per period. Outliers above P95 are excluded. Scale auto-switches between hours and minutes.">?</span></div>');
+        html.push('<div class="volume-chart-title">Median Cycle Time ' + proBadgeHtml + ' <span class="stat-info" data-stat-tooltip="Median wall-clock time from feature-start to feature-close per period. Outliers above P95 are excluded. Scale auto-switches between hours and minutes.">?</span></div>');
         html.push('<span id="ct-nav-controls" style="display:flex;align-items:center;gap:4px">');
         html.push('<button id="ct-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
         html.push('<span id="ct-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
@@ -925,14 +927,14 @@
 
         html.push('<div class="volume-chart-wrap">');
         html.push('<div class="volume-chart-header">');
-        html.push('<div class="volume-chart-title">Commits per Feature <span class="stat-info" data-stat-tooltip="Median number of commits per feature completed in each period. Lower values suggest more focused, single-pass implementations. Trending down means features are getting tighter.">?</span></div>');
+        html.push('<div class="volume-chart-title">Commits per Feature ' + proBadgeHtml + ' <span class="stat-info" data-stat-tooltip="Median number of commits per feature completed in each period. Lower values suggest more focused, single-pass implementations. Trending down means features are getting tighter.">?</span></div>');
         html.push('</div>');
         html.push('<div style="height:160px;position:relative"><canvas id="cpf-chart-canvas"></canvas></div>');
         html.push('</div>');
 
         html.push('<div class="volume-chart-wrap">');
         html.push('<div class="volume-chart-header">');
-        html.push('<div class="volume-chart-title">Rework Ratio <span class="stat-info" data-stat-tooltip="Percentage of commits that are fixes (messages starting with fix:, fixup, or bugfix). Lower is better — means agents produce correct code on the first pass. Trending down indicates improving code quality.">?</span></div>');
+        html.push('<div class="volume-chart-title">Rework Ratio ' + proBadgeHtml + ' <span class="stat-info" data-stat-tooltip="Percentage of commits that are fixes (messages starting with fix:, fixup, or bugfix). Lower is better — means agents produce correct code on the first pass. Trending down indicates improving code quality.">?</span></div>');
         html.push('</div>');
         html.push('<div style="height:160px;position:relative"><canvas id="rework-chart-canvas"></canvas></div>');
         html.push('</div>');
