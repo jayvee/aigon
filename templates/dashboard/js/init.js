@@ -402,6 +402,24 @@
       }
     }
 
+    // ── ?forcePro override ────────────────────────────────────────────────────
+    // ?forcePro=0 simulates free tier; ?forcePro=1 restores server value
+    (function applyForceProParam() {
+      const params = new URLSearchParams(location.search);
+      if (params.has('forcePro')) {
+        const val = params.get('forcePro');
+        if (val === '0' || val === 'false') {
+          if (state.data) state.data.proAvailable = false;
+        }
+        // forcePro=1 is a no-op — just uses the server-provided value
+      }
+    })();
+
+    // Helper: check Pro availability from current state (respects URL override)
+    function isProActive() {
+      return !!(state.data && state.data.proAvailable);
+    }
+
     // ── Init ──────────────────────────────────────────────────────────────────
 
     render();
