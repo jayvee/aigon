@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 288
+lines_removed: 80
+lines_changed: 368
+files_touched: 8
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 192
+output_tokens: 22961
+cache_creation_input_tokens: 547301
+cache_read_input_tokens: 12683179
+thinking_tokens: 0
+total_tokens: 13253633
+billable_tokens: 23153
+cost_usd: 31.0116
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 62.92
+---
 # Implementation Log: Feature 152 - pro-gated-reports
 Agent: cc
 
