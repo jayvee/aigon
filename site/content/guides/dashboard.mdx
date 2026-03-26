@@ -51,17 +51,44 @@ See every agent session across all repos — running, attached, or ended.
 
 ![Monitor view](/img/aigon-dashboard-monitor.png)
 
-## Statistics
+## Reports
 
 Track throughput, cycle time, agent performance, and commit activity across all repos.
 
-![Statistics](/img/aigon-dashboard-statistics.png)
+![Reports](/img/aigon-dashboard-reports.png)
 
-- **Volume** — features completed per period with trend
-- **Cycle Time** — average hours from setup to close
-- **Agent Leaderboard** — wins, speed, and fleet win % per agent
-- **Commits** — commits over time with Daily/Weekly/Monthly toggle, per-commit stats (files changed, lines added/removed), and feature-to-commit linking via branch names
-- **AI Attribution** — commits classified as AI-authored, human-authored, or mixed based on Co-authored-by trailers and agent email conventions
+The Reports tab is organized into three sub-tabs:
+
+### Summary
+
+High-level metrics at a glance. Uses the global repo sidebar to filter by repo.
+
+![Reports Summary](/img/aigon-dashboard-reports-summary.png)
+
+- **Features Completed** — total features closed in the selected period
+- **Cycle Time** — median wall-clock time from feature-start to feature-close
+- **First-Pass Rate** — percentage of features that passed evaluation on the first attempt
+- **Commits** — total commits in the period
+- **Lines Changed** — aggregate lines added and removed
+- **Quality & Speed** — detailed cycle time stats (median, mean, max) and average iterations per feature
+- **Agent Leaderboard** — features completed, eval wins, fleet win %, cycle time, and first-pass rate per agent
+
+### Charts
+
+Three stacked, full-width charts sharing a unified time axis so dates align vertically:
+
+- **Features Completed** — bar chart of features closed per period
+- **Commits** — bar chart of commit volume per period
+- **Median Cycle Time** — bar chart of median cycle time per period (auto-switches between hours and minutes based on scale)
+
+All three charts share a single **Daily / Weekly / Monthly** granularity toggle and synchronized left/right panning. The date axes are aligned across all charts — periods with no data show as zero-height bars rather than being omitted.
+
+### Details
+
+Paginated tables for drilling into individual items:
+
+- **Features** — sortable table with date, repo, feature number, name, agent, cycle time, commits, and lines changed
+- **Commits** — sortable table with date, repo, message, feature, agent, files changed, lines added/removed, and commit hash. Filterable by agent.
 
 ## Console and Logs
 

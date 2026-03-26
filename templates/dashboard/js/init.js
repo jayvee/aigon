@@ -83,7 +83,7 @@
     // ── Main render dispatch ───────────────────────────────────────────────────
 
     function viewUsesRepoSidebar(view) {
-      return view === 'monitor' || view === 'pipeline' || view === 'config';
+      return view === 'monitor' || view === 'pipeline' || view === 'config' || view === 'statistics';
     }
 
     function updateSidebarToggle() {
@@ -283,8 +283,8 @@
         document.getElementById('repo-header').style.display = 'none';
         renderSessions();
       } else if (state.view === 'statistics') {
-        sidebar.style.display = 'none';
-        mobileSelect.style.display = 'none';
+        sidebar.style.display = state.sidebarHidden ? 'none' : '';
+        mobileSelect.style.display = '';
         document.getElementById('settings-view').style.display = 'none';
         document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
@@ -294,6 +294,8 @@
         document.getElementById('logs-view').style.display = 'none';
         document.getElementById('console-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
+        const allRepos = ((state.data || {}).repos || []);
+        renderSidebar(allRepos);
         renderStatistics();
       } else if (state.view === 'insights') {
         sidebar.style.display = 'none';
@@ -403,6 +405,13 @@
     // ── Init ──────────────────────────────────────────────────────────────────
 
     render();
+    // Docs link — detect dev mode (localhost) vs production
+    const docsLink = document.getElementById('docs-link');
+    if (docsLink) {
+      const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.endsWith('.localhost');
+      docsLink.href = isDev ? 'http://localhost:3600/docs' : 'https://aigon.build/docs';
+      docsLink.title = isDev ? 'Open docs (local dev)' : 'Open Aigon docs';
+    }
     document.getElementById('refresh-btn').onclick = requestRefresh;
     document.getElementById('sidebar-toggle-btn').onclick = () => {
       state.sidebarHidden = !state.sidebarHidden;
