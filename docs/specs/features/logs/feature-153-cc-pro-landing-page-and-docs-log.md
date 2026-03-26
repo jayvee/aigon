@@ -26,3 +26,18 @@ Agent: cc
 - **Design approach**: Kept consistent with existing site aesthetic — dark theme, Sora headings, aigon-orange/teal accents, landing-card and landing-image CSS classes. Used the frontend-design skill for guidance.
 - **Screenshots**: Used the three existing screenshots specified in the spec: reports-summary.png, reports-charts.png, statistics.png.
 - **Navigation**: Added to both surfaces — Nextra top-bar (for readers already in docs) and landing page header nav (for first-time visitors).
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-26
+
+### Findings
+- The Pro landing page hero omitted the product name from the main heading, which missed the spec's intended "Aigon Pro" hero framing.
+
+### Fixes Applied
+- `53fa1cfe` — `fix(review): include Aigon Pro in landing page hero`
+
+### Notes
+- Verified the site still builds cleanly with `npm --prefix site run build`.
+- Confirmed the docs navbar link resolves to `/pro` in the built output.
