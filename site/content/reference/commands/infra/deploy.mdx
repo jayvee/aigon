@@ -1,6 +1,6 @@
 ---
 title: "deploy"
-description: "Reference for aigon deploy"
+description: "Run the project's deploy command"
 ---
 
 ## Synopsis
@@ -13,16 +13,37 @@ aigon deploy [--preview]
 
 - `/ad` (slash command) · `aigon ad` (CLI)
 
+## Description
+
+Runs your project's configured deploy command. By default runs the production deploy; use `--preview` for a preview deployment.
+
+## Configuration
+
+Configure deploy commands in `.aigon/config.json`:
+
+```json
+{
+  "commands": {
+    "deploy": "vercel --prod",
+    "preview": "vercel"
+  }
+}
+```
+
+If no config is set, Aigon looks for `deploy` or `preview` scripts in `package.json`.
+
 ## Flags
 
-- `--preview`
+| Flag | Description |
+|------|-------------|
+| `--preview` | Run the preview deploy command instead of production |
 
 ## Usage
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:deploy [--preview]
+# Production deploy
+aigon deploy
 
-# CLI
-aigon deploy [--preview]
+# Preview deploy
+aigon deploy --preview
 ```

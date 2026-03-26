@@ -1,6 +1,6 @@
 ---
 title: "insights"
-description: "Reference for aigon insights"
+description: "View AI workflow insights and coaching (Aigon Pro)"
 ---
 
 ## Synopsis
@@ -13,17 +13,34 @@ aigon insights [--coach] [--refresh]
 
 - `/ai` (slash command) · `aigon ai` (CLI)
 
+## Description
+
+Displays workflow insights — metrics, trends, and recommendations based on your feature history. Requires **Aigon Pro** (`@aigon/pro`).
+
+Without Pro installed, shows a free-tier summary with basic metrics. With Pro, unlocks full insights including trend analysis, agent comparisons, and AI coaching.
+
 ## Flags
 
-- `--coach`
-- `--refresh`
+| Flag | Description |
+|------|-------------|
+| `--coach` | Enable AI-powered coaching recommendations (Pro only) |
+| `--refresh` | Recalculate insights from scratch instead of using cached data |
 
 ## Usage
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:insights [--coach]
+# View insights
+aigon insights
 
-# CLI
-aigon insights [--coach]
+# With AI coaching
+aigon insights --coach
+
+# Force recalculation
+aigon insights --refresh
 ```
+
+## Access
+
+- **Free tier**: Basic metrics (features completed, cycle time, agent wins)
+- **Pro tier**: Full insights dashboard, trend analysis, cross-agent comparisons, AI coaching
+- **Dashboard**: Insights are also available in the dashboard under the "Insights" tab
