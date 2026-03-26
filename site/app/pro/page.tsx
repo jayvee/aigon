@@ -32,7 +32,7 @@ function ScreenshotFrame({
 }) {
   return (
     <figure className="mt-8">
-      <div className="landing-image overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-gray-200 shadow-lg dark:border-white/5 dark:shadow-[0_12px_32px_rgba(0,0,0,0.3)]">
         <img
           src={src}
           alt={alt}
@@ -43,7 +43,7 @@ function ScreenshotFrame({
         />
       </div>
       {caption && (
-        <figcaption className="mt-3 text-center text-sm text-[hsl(0_0%_55%)]">
+        <figcaption className="mt-3 text-center text-sm text-gray-500 dark:text-gray-400">
           {caption}
         </figcaption>
       )}
@@ -59,11 +59,11 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="landing-card rounded-xl p-6">
-      <h3 className="mb-2 font-[family-name:var(--font-sora)] text-lg font-semibold text-[hsl(0_0%_94%)]">
+    <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 dark:border-white/6 dark:bg-gradient-to-br dark:from-aigon-orange/3 dark:to-aigon-teal/2 dark:shadow-[0_8px_24px_rgba(0,0,0,0.2)]">
+      <h3 className="mb-2 font-[family-name:var(--font-sora)] text-lg font-semibold text-gray-900 dark:text-[hsl(0_0%_94%)]">
         {title}
       </h3>
-      <p className="text-sm leading-relaxed text-[hsl(0_0%_65%)]">
+      <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
         {description}
       </p>
     </div>
@@ -72,19 +72,19 @@ function FeatureCard({
 
 export default function ProPage() {
   return (
-    <div className="landing-gradient-dark min-h-screen">
+    <div className="min-h-screen">
       {/* Hero */}
       <section className="px-6 pt-24 pb-16 md:pt-32 md:pb-20">
         <div className="mx-auto max-w-3xl text-center">
           <Badge>Coming Soon</Badge>
-          <h1 className="mt-6 font-[family-name:var(--font-sora)] text-4xl font-bold leading-tight tracking-tight text-[hsl(0_0%_95%)] md:text-5xl">
+          <h1 className="mt-6 font-[family-name:var(--font-sora)] text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-[hsl(0_0%_95%)] md:text-5xl">
             Aigon Pro
             <br />
             <span className="text-aigon-orange">
               deeper insights into your AI development workflow
             </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-[hsl(0_0%_65%)]">
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-600 dark:text-gray-400">
             Aigon Pro adds agent quality metrics, trend charts, and AI-powered
             coaching to your dashboard &mdash; so you can see which agents
             deliver, how your workflow evolves, and where to improve.
@@ -99,10 +99,10 @@ export default function ProPage() {
             <p className="mb-2 text-xs font-medium tracking-widest text-aigon-teal uppercase">
               Agent Quality
             </p>
-            <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-[hsl(0_0%_94%)]">
+            <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-gray-900 dark:text-[hsl(0_0%_94%)]">
               Metrics that matter
             </h2>
-            <p className="mt-3 max-w-2xl text-[hsl(0_0%_60%)]">
+            <p className="mt-3 max-w-2xl text-gray-600 dark:text-gray-400">
               See at a glance how your agents perform. First-pass rate, commits
               per feature, and rework ratio give you a clear picture of code
               quality and efficiency.
@@ -139,10 +139,10 @@ export default function ProPage() {
             <p className="mb-2 text-xs font-medium tracking-widest text-aigon-orange uppercase">
               Trend Charts
             </p>
-            <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-[hsl(0_0%_94%)]">
+            <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-gray-900 dark:text-[hsl(0_0%_94%)]">
               Watch your workflow evolve
             </h2>
-            <p className="mt-3 max-w-2xl text-[hsl(0_0%_60%)]">
+            <p className="mt-3 max-w-2xl text-gray-600 dark:text-gray-400">
               Five stacked charts with synchronized time axes &mdash; features
               completed, commits, cycle time, commits per feature, and rework
               ratio. Toggle daily, weekly, or monthly granularity.
@@ -175,10 +175,10 @@ export default function ProPage() {
             <p className="mb-2 text-xs font-medium tracking-widest text-aigon-teal uppercase">
               AI Insights
             </p>
-            <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-[hsl(0_0%_94%)]">
+            <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-gray-900 dark:text-[hsl(0_0%_94%)]">
               Coaching, not just charts
             </h2>
-            <p className="mt-3 max-w-2xl text-[hsl(0_0%_60%)]">
+            <p className="mt-3 max-w-2xl text-gray-600 dark:text-gray-400">
               Aigon Pro analyses your development patterns and surfaces
               actionable observations &mdash; which agents excel at what, where
               cycle time stalls, and how to get more from your workflow.
@@ -211,18 +211,18 @@ export default function ProPage() {
       {/* Coming Soon Banner */}
       <section className="px-6 py-20 md:py-28">
         <div className="mx-auto max-w-3xl">
-          <div className="relative overflow-hidden rounded-2xl border border-aigon-orange/20 bg-gradient-to-br from-aigon-orange/8 to-aigon-teal/5 px-8 py-14 text-center md:px-16 md:py-20">
+          <div className="relative overflow-hidden rounded-2xl border border-aigon-orange/20 bg-gradient-to-br from-aigon-orange/5 to-aigon-teal/5 px-8 py-14 text-center md:px-16 md:py-20">
             {/* Decorative glow */}
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(213,95,42,0.12),transparent_60%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(213,95,42,0.08),transparent_60%)]" />
 
             <div className="relative">
               <p className="mb-4 text-xs font-medium tracking-widest text-aigon-orange uppercase">
                 Aigon Pro
               </p>
-              <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-[hsl(0_0%_95%)] md:text-4xl">
+              <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-gray-900 dark:text-[hsl(0_0%_95%)] md:text-4xl">
                 Coming soon
               </h2>
-              <p className="mx-auto mt-4 max-w-lg text-[hsl(0_0%_60%)]">
+              <p className="mx-auto mt-4 max-w-lg text-gray-600 dark:text-gray-400">
                 Pro will be available as an optional add-on for teams and
                 individuals who want deeper visibility into their AI development
                 workflow. Aigon itself remains free and open-source.
@@ -230,7 +230,7 @@ export default function ProPage() {
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
                 <a
                   href="https://github.com/jayvee/aigon"
-                  className="inline-flex items-center gap-2 rounded-lg border border-[hsl(0_0%_25%)] bg-[hsl(0_0%_12%)] px-5 py-2.5 text-sm font-medium text-[hsl(0_0%_85%)] transition-colors hover:border-aigon-orange/30 hover:bg-[hsl(0_0%_15%)]"
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-[hsl(0_0%_25%)] dark:bg-[hsl(0_0%_12%)] dark:text-[hsl(0_0%_85%)] dark:hover:border-aigon-orange/30 dark:hover:bg-[hsl(0_0%_15%)]"
                 >
                   Star on GitHub
                 </a>
