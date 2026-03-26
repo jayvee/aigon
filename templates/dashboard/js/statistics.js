@@ -139,6 +139,45 @@
       return `${escHtml(label)} <span class="stat-info" data-stat-tooltip="${escHtml(tooltip)}">?</span>`;
     }
 
+    /**
+     * Build a Pro-gated stat card: blurred fake content with a PRO badge.
+     * The data-pro-slot attribute lets pro-reports.js replace it when Pro activates.
+     */
+    function buildProGatedStatCard(label, slotId, tooltip) {
+      const infoHtml = tooltip ? ` <span class="stat-info" data-stat-tooltip="${escHtml(tooltip)}">?</span>` : '';
+      return `<div class="stat-card pro-gated" data-pro-slot="${escHtml(slotId)}">
+        <span class="pro-badge">PRO</span>
+        <div class="pro-gated-content">
+          <div class="stat-card-label">${escHtml(label)}${infoHtml}</div>
+          <div class="stat-card-value">42%</div>
+          <div class="stat-card-trend" style="color:var(--text-tertiary)">sample data</div>
+        </div>
+      </div>`;
+    }
+
+    /**
+     * Build a Pro-gated chart placeholder: blurred static SVG with overlay.
+     */
+    function buildProGatedChart(title, slotId, tooltipText) {
+      const tooltip = tooltipText ? ` <span class="stat-info" data-stat-tooltip="${escHtml(tooltipText)}">?</span>` : '';
+      const fakeSvg = `<svg viewBox="0 0 400 120" preserveAspectRatio="none" style="width:100%;height:120px">
+        <polyline points="10,100 60,80 120,90 180,50 240,60 300,30 360,45 390,20" fill="none" stroke="var(--text-tertiary)" stroke-width="2" opacity="0.5"/>
+        <polygon points="10,120 10,100 60,80 120,90 180,50 240,60 300,30 360,45 390,20 390,120" fill="var(--text-tertiary)" opacity="0.08"/>
+      </svg>`;
+      return `<div class="volume-chart-wrap pro-gated-chart" data-pro-slot="${escHtml(slotId)}">
+        <div class="pro-gated-content">
+          <div class="volume-chart-header">
+            <div class="volume-chart-title">${escHtml(title)}${tooltip}</div>
+          </div>
+          <div style="height:160px;position:relative;display:flex;align-items:center;justify-content:center">${fakeSvg}</div>
+        </div>
+        <div class="pro-chart-overlay">
+          <span class="pro-badge">PRO</span>
+          <a href="https://aigon.build/pro" target="_blank">Unlock with Aigon Pro</a>
+        </div>
+      </div>`;
+    }
+
     function buildVolumeSeries(features, granularity) {
       const buckets = {};
       let minTs = Infinity, maxTs = -Infinity;

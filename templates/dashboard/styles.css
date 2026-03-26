@@ -575,6 +575,23 @@
     .vol-nav-btn:hover:not(:disabled){color:var(--text-primary);border-color:var(--accent)}
     .vol-nav-btn:disabled{opacity:0.3;cursor:default}
     .volume-chart-empty{color:var(--text-tertiary);font-size:12px;text-align:center;padding:60px 0}
+
+    /* ── Pro-gated placeholders ─────────────────────────────────────────── */
+    .pro-gated{position:relative;overflow:hidden}
+    .pro-gated .pro-gated-content{filter:blur(6px);pointer-events:none;user-select:none}
+    .pro-gated .pro-badge{position:absolute;top:8px;right:10px;font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent,#3b82f6);opacity:.7;z-index:2}
+    .pro-gated .pro-upgrade-cta{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;background:rgba(0,0,0,.02);border-radius:var(--radius)}
+    .pro-gated .pro-upgrade-cta a{font-size:11px;color:var(--accent,#3b82f6);text-decoration:none;opacity:.8;transition:opacity .15s}
+    .pro-gated .pro-upgrade-cta a:hover{opacity:1;text-decoration:underline}
+    .pro-gated-chart{position:relative;overflow:hidden}
+    .pro-gated-chart .pro-gated-content{filter:blur(6px);pointer-events:none;user-select:none}
+    .pro-gated-chart .pro-chart-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;gap:6px}
+    .pro-gated-chart .pro-chart-overlay .pro-badge{position:static;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent,#3b82f6);opacity:.7}
+    .pro-gated-chart .pro-chart-overlay a{font-size:11px;color:var(--accent,#3b82f6);text-decoration:none;opacity:.7}
+    .pro-gated-chart .pro-chart-overlay a:hover{opacity:1;text-decoration:underline}
+    .pro-gated-filters{opacity:.35;pointer-events:none;user-select:none;position:relative}
+    .pro-gated-filters::after{content:'PRO';position:absolute;top:50%;right:8px;transform:translateY(-50%);font-size:8px;font-weight:700;letter-spacing:.06em;color:var(--accent,#3b82f6);opacity:.7}
+
     .logs-view{padding:0 0 28px}
     .logs-toolbar{display:flex;align-items:center;gap:10px;margin:8px 0 14px;flex-wrap:wrap}
     .logs-search{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;color:var(--text-primary);font-size:12px;padding:5px 10px;width:200px;outline:none}
