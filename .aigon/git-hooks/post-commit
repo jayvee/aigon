@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+AGENT_ID="$(git config --get aigon.agentId || true)"
+AGENT_NAME="$(git config --get aigon.agentName || true)"
+AGENT_EMAIL="$(git config --get aigon.agentEmail || true)"
+BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+
+[ -n "$AGENT_ID" ] || exit 0
+[ -n "$AGENT_NAME" ] || AGENT_NAME="$AGENT_ID"
+[ -n "$AGENT_EMAIL" ] || AGENT_EMAIL="$AGENT_ID@aigon.dev"
+
+SHA="$(git rev-parse HEAD 2>/dev/null || true)"
+[ -n "$SHA" ] || exit 0
+
+git notes --ref=refs/notes/aigon-attribution add -f -m "aigon.agent_id=$AGENT_ID
+aigon.agent_name=$AGENT_NAME
+aigon.agent_email=$AGENT_EMAIL
+aigon.branch=$BRANCH
+aigon.authorship=ai-authored" "$SHA" >/dev/null 2>&1 || true
