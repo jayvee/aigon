@@ -14,6 +14,31 @@ If no ID is provided, or the ID doesn't match an existing feature in progress:
 2. If a partial ID or name was given, filter to matches
 3. Present the matching features and ask the user to choose one
 
+## Step 0: Verify your workspace (MANDATORY)
+
+Before doing ANYTHING else, verify you are on the correct branch — **never implement on `main`**.
+
+```bash
+git branch --show-current
+```
+
+**Expected**: A branch named `feature-<ID>-<agent>-<description>` (e.g., `feature-55-gg-add-auth`).
+
+**If the output is `main` or `master`:** STOP. You are on the wrong branch. Do NOT write any code. Instead:
+1. Check if a feature branch already exists: `git branch | grep feature-{{args}}`
+2. If it exists, switch to it: `git checkout feature-{{args}}-gg-*` (use the full branch name from the list)
+3. If it does NOT exist, the workspace was not set up — run `/aigon:feature-start {{args}}` first
+
+Also verify your working directory:
+```bash
+pwd
+```
+
+**Expected for worktree mode**: A path ending in `feature-{{args}}-gg-<description>`
+**Expected for Drive mode**: The main repository path (but on a feature branch, NOT main)
+
+**Do not proceed past this step until you have confirmed you are on a feature branch.**
+
 ## Step 1: Run the CLI command
 
 This command detects whether you're in Drive or Fleet mode and provides guidance.
@@ -85,6 +110,17 @@ aigon agent-status implementing
 Before writing code, create a task for each **Acceptance Criterion** from the spec. This gives the user visibility into implementation progress via the task list.
 
 Then implement the feature according to the spec. Mark tasks as in-progress when you start working on them, and completed when satisfied. If you discover sub-tasks during implementation, add them to the list.
+
+### Gemini-Specific Feature Rules
+
+**You are Gemini (agent ID: `gg`).** Follow these rules exactly:
+
+1. **NEVER work on the `main` branch.** You must be on a branch named `feature-{ID}-gg-{description}`. If `git branch --show-current` returns `main`, STOP and run the start command first.
+2. **Verify your branch before EVERY commit.** Run `git branch --show-current` and confirm it is NOT `main`.
+3. **Do NOT switch branches** during implementation. Stay on your feature branch the entire time.
+4. **Run lifecycle commands in order:** `aigon agent-status implementing` → (do work) → `aigon agent-status submitted`.
+5. **Commit frequently** using conventional commit prefixes (`feat:`, `fix:`, `chore:`).
+6. **Never use `git add .` or `git add -A`** — stage specific files by name to avoid committing unrelated changes.
 
 
 **For worktree modes (Drive worktree or Fleet):** Use relative paths throughout implementation. Maintain the worktree directory as your working directory.

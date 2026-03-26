@@ -24,6 +24,7 @@
     "AGENT_TEAMS_RESEARCH_NOTE": "",
     "AGENT_TEAMS_FEATURE_NOTE": "",
     "AGENT_DEV_SERVER_NOTE": "",
+    "AGENT_PITFALLS": "",
     "PERMISSION_SAVE_NOTE": ""
   },
   "output": {
