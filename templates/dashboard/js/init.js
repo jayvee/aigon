@@ -394,7 +394,7 @@
           }
           if (prev.status !== 'error' && v.status === 'error') showToast('Agent entered error state', null, null, {error:true});
         });
-        state.data = next;
+        state.data = applyForceProOverride(next);
         render();
       } catch (e) {
         state.failures += 1;
@@ -403,25 +403,32 @@
     }
 
     // ── ?forcePro override ────────────────────────────────────────────────────
-    // ?forcePro=0 simulates free tier; ?forcePro=1 restores server value
-    (function applyForceProParam() {
+    function getForceProOverride() {
       const params = new URLSearchParams(location.search);
-      if (params.has('forcePro')) {
-        const val = params.get('forcePro');
-        if (val === '0' || val === 'false') {
-          if (state.data) state.data.proAvailable = false;
-        }
-        // forcePro=1 is a no-op — just uses the server-provided value
-      }
-    })();
+      if (!params.has('forcePro')) return null;
+      const val = params.get('forcePro');
+      if (val === '0' || val === 'false') return false;
+      if (val === '1' || val === 'true') return true;
+      return null;
+    }
+
+    function applyForceProOverride(data) {
+      if (!data) return data;
+      const override = getForceProOverride();
+      if (override === false) data.proAvailable = false;
+      return data;
+    }
 
     // Helper: check Pro availability from current state (respects URL override)
     function isProActive() {
+      const override = getForceProOverride();
+      if (override === false) return false;
       return !!(state.data && state.data.proAvailable);
     }
 
     // ── Init ──────────────────────────────────────────────────────────────────
 
+    applyForceProOverride(state.data);
     render();
     // Docs link — detect dev mode (localhost) vs production
     const docsLink = document.getElementById('docs-link');
