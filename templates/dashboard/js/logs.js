@@ -730,24 +730,25 @@
       html.push(`<div class="stats-tab-content" data-tab="summary" style="display:${activeSubTab === 'summary' ? '' : 'none'}">`);
       html.push('<div class="stats-cards">');
       const trend30 = analytics.volume && analytics.volume.trend30d;
+      const _proActive = typeof isProActive === 'function' ? isProActive() : true;
+
+      // ── Free stat cards ──
       html.push(buildStatCard('Features Completed', String(totalCompleted),
         statsState.period === '30d' && trend30 !== null ? trendIcon(trend30) : null));
       html.push(buildStatCard('Cycle Time', fmtHours(medianCycle), null, medianCycle !== null ? 'median, start to close' : null,
         'Median wall-clock time from feature-start to feature-close. Lower is better.'));
-      const _proActive = typeof isProActive === 'function' ? isProActive() : true;
-      if (_proActive) {
-        html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null, null,
-          'Percentage of features that passed evaluation on the first attempt without needing rework.'));
-      } else {
-        html.push(buildProGatedStatCard('First-Pass Rate', 'summary-first-pass',
-          'Percentage of features that passed evaluation on the first attempt without needing rework.'));
-      }
       const featureCommitCount = filteredCommits.filter(c => c.featureId).length;
       const nonFeatureCommitCount = commitTotal - featureCommitCount;
       html.push(buildStatCard('Commits', String(commitTotal), null,
         `${featureCommitCount} feature / ${nonFeatureCommitCount} non-feature`));
       html.push(buildStatCard('Lines Changed', `+${commitAdded} / -${commitRemoved}`));
       html.push(buildStatCard('Avg Lines / Commit', commitAvgSize !== null ? String(commitAvgSize) : '—'));
+
+      html.push('</div>'); // end free stats-cards grid
+
+      // ── Pro stat cards (grouped with section title) ──
+      html.push('<div class="stats-section-title" style="margin-top:16px">Agent Quality' + (_proActive ? '' : ' <span style="font-size:8px;font-weight:700;letter-spacing:.06em;color:var(--accent,#3b82f6);opacity:.7;vertical-align:super;margin-left:4px">PRO</span>') + '</div>');
+      html.push('<div class="stats-cards">');
       // Commits per feature — median
       const commitsPerFeatureArr = Object.values(featureCommitMap).map(v => v.count).filter(c => c > 0).sort((a, b) => a - b);
       const cpfMedian = commitsPerFeatureArr.length > 0
@@ -758,23 +759,25 @@
       const cpfAvg = commitsPerFeatureArr.length > 0
         ? Math.round(commitsPerFeatureArr.reduce((s, v) => s + v, 0) / commitsPerFeatureArr.length * 10) / 10
         : null;
-      if (_proActive) {
-        html.push(buildStatCard('Commits / Feature', cpfMedian !== null ? String(cpfMedian) : '—',
-          null, cpfAvg !== null ? `avg ${cpfAvg}` : null,
-          'Median number of commits per feature. Lower suggests more focused, single-pass implementations.'));
-      } else {
-        html.push(buildProGatedStatCard('Commits / Feature', 'summary-cpf',
-          'Median number of commits per feature. Lower suggests more focused, single-pass implementations.'));
-      }
       // Rework ratio — fix commits / total commits
       const fixRegex = /^(fix|fixup|bugfix)\b|fix:/i;
       const fixCommitCount = filteredCommits.filter(c => fixRegex.test(c.message || '')).length;
       const reworkRatio = commitTotal > 0 ? fixCommitCount / commitTotal : null;
+
       if (_proActive) {
+        html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null, null,
+          'Percentage of features that passed evaluation on the first attempt without needing rework.'));
+        html.push(buildStatCard('Commits / Feature', cpfMedian !== null ? String(cpfMedian) : '—',
+          null, cpfAvg !== null ? `avg ${cpfAvg}` : null,
+          'Median number of commits per feature. Lower suggests more focused, single-pass implementations.'));
         html.push(buildStatCard('Rework Ratio', reworkRatio !== null ? fmtPct(reworkRatio) : '—',
           null, fixCommitCount > 0 ? `${fixCommitCount} fix commits` : null,
           'Percentage of commits that are fixes or rework (messages starting with fix:, fixup, or bugfix). Lower is better — means more work lands correctly on the first pass.'));
       } else {
+        html.push(buildProGatedStatCard('First-Pass Rate', 'summary-first-pass',
+          'Percentage of features that passed evaluation on the first attempt without needing rework.'));
+        html.push(buildProGatedStatCard('Commits / Feature', 'summary-cpf',
+          'Median number of commits per feature. Lower suggests more focused, single-pass implementations.'));
         html.push(buildProGatedStatCard('Rework Ratio', 'summary-rework',
           'Percentage of commits that are fixes or rework. Lower is better.'));
       }
@@ -941,7 +944,7 @@
           'Median number of commits per feature completed in each period.'));
         html.push(buildProGatedChart('Rework Ratio', 'chart-rework',
           'Percentage of commits that are fixes. Lower is better.'));
-        html.push('<div style="text-align:center;padding:8px 0;font-size:11px;color:var(--text-tertiary)"><a href="https://aigon.build/pro" target="_blank" style="color:var(--accent,#3b82f6);text-decoration:none">Unlock all charts with Aigon Pro</a></div>');
+        html.push('<div style="text-align:center;padding:8px 0;font-size:11px;color:var(--text-tertiary)"><a href="https://aigon.build/pro" target="_blank" style="color:var(--accent,#3b82f6);text-decoration:none">Get Aigon Pro &rarr;</a></div>');
       }
 
       html.push('</div>'); // end charts tab
@@ -1053,9 +1056,9 @@
       {
         const rawVolSeries = buildVolumeSeries(filteredFeatures, statsState.volumeGranularity);
         const rawCommitSeries = buildCommitSeries(filteredCommits, statsState.volumeGranularity);
-        const rawCtSeries = _proActive ? buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity) : { labels: [], data: [] };
-        const rawCpfSeries = _proActive ? buildCommitsPerFeatureSeries(filteredFeatures, featureCommitMap, statsState.volumeGranularity) : { labels: [], data: [] };
-        const rawReworkSeries = _proActive ? buildReworkRatioSeries(filteredCommits, statsState.volumeGranularity) : { labels: [], data: [] };
+        const rawCtSeries = _proActive ? buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity) : [];
+        const rawCpfSeries = _proActive ? buildCommitsPerFeatureSeries(filteredFeatures, featureCommitMap, statsState.volumeGranularity) : [];
+        const rawReworkSeries = _proActive ? buildReworkRatioSeries(filteredCommits, statsState.volumeGranularity) : [];
         const [alignedVol, alignedCommit, alignedCt, alignedCpf, alignedRework] = alignAllSeries(rawVolSeries, rawCommitSeries, rawCtSeries, rawCpfSeries, rawReworkSeries);
         renderVolumeChart(alignedVol, statsState.volumeGranularity);
         renderCommitChart(alignedCommit, statsState.volumeGranularity);

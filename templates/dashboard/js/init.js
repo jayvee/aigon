@@ -9,6 +9,13 @@
       document.getElementById('config-view').style.display = 'none';
       document.getElementById('empty').style.display = 'none';
 
+      // Gate entire Insights view when Pro is not active
+      if (!isProActive()) {
+        c.innerHTML = '<div class="amp-empty" style="padding:40px;text-align:center"><div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Insights requires Aigon Pro</div><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:12px">AI-powered observations, coaching, and quality analytics.</div><a href="https://aigon.build/pro" target="_blank" style="font-size:12px;color:var(--accent,#3b82f6);text-decoration:none">Get Aigon Pro &rarr;</a></div>';
+        c.style.display = '';
+        return;
+      }
+
       // Load analytics data for the amplification section
       if (!statsState.data) {
         c.innerHTML = '<div class="amp-empty" style="padding:20px">Loading insights…</div>';

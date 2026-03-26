@@ -453,7 +453,8 @@
     .stats-subtab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);padding:8px 16px;cursor:pointer;font-size:13px;margin-bottom:-1px;transition:color .12s ease,border-color .12s ease;white-space:nowrap}
     .stats-subtab:hover{color:var(--text-primary)}
     .stats-subtab.active{color:var(--text-primary);border-bottom-color:var(--accent)}
-    .stat-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+    .stat-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:6px;overflow:visible}
+    .stat-card:has(.stat-info:hover){z-index:100}
     .stat-card-label{font-size:11px;color:var(--text-secondary);letter-spacing:.02em}
     .stat-card-value{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1}
     .stat-card-trend{font-size:11px;display:flex;align-items:center;gap:4px}
@@ -577,13 +578,13 @@
     .volume-chart-empty{color:var(--text-tertiary);font-size:12px;text-align:center;padding:60px 0}
 
     /* ── Pro-gated placeholders ─────────────────────────────────────────── */
-    .pro-gated{position:relative;overflow:hidden}
-    .pro-gated .pro-gated-content{filter:blur(6px);pointer-events:none;user-select:none}
+    .pro-gated{position:relative;overflow:visible}
+    .pro-gated .pro-gated-content{filter:blur(6px);pointer-events:none;user-select:none;overflow:hidden}
     .pro-gated .pro-badge{position:absolute;top:8px;right:10px;font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent,#3b82f6);opacity:.7;z-index:2}
     .pro-gated .pro-upgrade-cta{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;background:rgba(0,0,0,.02);border-radius:var(--radius)}
     .pro-gated .pro-upgrade-cta a{font-size:11px;color:var(--accent,#3b82f6);text-decoration:none;opacity:.8;transition:opacity .15s}
     .pro-gated .pro-upgrade-cta a:hover{opacity:1;text-decoration:underline}
-    .pro-gated-chart{position:relative;overflow:hidden}
+    .pro-gated-chart{position:relative;overflow:visible}
     .pro-gated-chart .pro-gated-content{filter:blur(6px);pointer-events:none;user-select:none}
     .pro-gated-chart .pro-chart-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;gap:6px}
     .pro-gated-chart .pro-chart-overlay .pro-badge{position:static;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent,#3b82f6);opacity:.7}
