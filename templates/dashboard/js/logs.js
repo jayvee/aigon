@@ -568,8 +568,8 @@
       return `
         <details class="stats-block amplification-section" open>
           <summary class="amplification-summary">
-            <span>Amplification (AADE)</span>
-            <span class="amplification-count">${withAade.length} features with AI-Assisted Development Effectiveness data</span>
+            <span>Amplification</span>
+            <span class="amplification-count">${withAade.length} features with amplification data</span>
           </summary>
           <div class="amplification-body">
             <div class="stats-cards amp-top-cards">
