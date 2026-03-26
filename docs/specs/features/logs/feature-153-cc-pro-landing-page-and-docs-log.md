@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 314
+lines_removed: 0
+lines_changed: 314
+files_touched: 6
+fix_commit_count: 2
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 389
+output_tokens: 28036
+cache_creation_input_tokens: 406710
+cache_read_input_tokens: 16935719
+thinking_tokens: 0
+total_tokens: 17370854
+billable_tokens: 28425
+cost_usd: 35.1379
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 90.53
+---
 # Implementation Log: Feature 153 - pro-landing-page-and-docs
 Agent: cc
 
