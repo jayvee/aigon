@@ -39,6 +39,12 @@ Full documentation at **[aigon.build/docs](https://aigon.build/docs)**
 - [Guides](https://aigon.build/docs/guides) — Drive, Fleet, Autopilot, Research, Dashboard
 - [CLI Reference](https://aigon.build/docs/reference/commands) — every command documented
 
+## Aigon Pro
+
+Aigon Pro adds agent quality metrics, trend charts, and AI-powered coaching to your dashboard. See which agents deliver, track improvements over time, and get actionable recommendations. [Learn more at aigon.build/pro](https://aigon.build/pro).
+
+Aigon itself remains free and open-source.
+
 ## License
 
 MIT
