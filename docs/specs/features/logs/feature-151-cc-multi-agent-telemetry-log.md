@@ -20,3 +20,21 @@ Extend telemetry from cc-only to all agents using git-based stats as a universal
 - **Eval session fix approach**: Instead of filtering by timestamp or session content, we simply don't look in the main repo's Claude project dir when we know the agent works in a worktree. This is correct because worktree agents get their own Claude project dir under `~/.claude/projects/<worktree-path>`.
 - **Kept `captureFeatureTelemetry` unchanged**: It remains the cc-specific transcript parser. The new `captureAgentTelemetry` wraps it with an agent-type guard.
 - **Fallback records**: Every non-cc agent (or agents with no data) still gets a normalized telemetry record via `writeAgentFallbackSession` so the data pipeline always has at least one record per agent.
+
+## Code Review
+
+**Reviewed by**: gemini-cli
+**Date**: 2026-03-26
+
+### Findings
+- Redundant branch resolution for 'solo' agent in lib/telemetry.js
+- hasWorktree logic in findTranscriptFiles was too aggressive, excluding the main repo dir even in Drive mode for agents with an ID
+- ReferenceError in lib/commands/feature.js for non-cc agents because telemetryData was scoped inside a conditional block
+- Missing fallback session records for cc agents with no transcripts found
+
+### Fixes Applied
+- fix(review): correct hasWorktree logic and solo branch resolution in telemetry (668686b9)
+- fix(review): properly scope telemetryData and handle fallback session recording (017ee277)
+
+### Notes
+- Implementation is otherwise solid and covers all acceptance criteria. Git hooks for attribution and secret blocking are a good addition.
