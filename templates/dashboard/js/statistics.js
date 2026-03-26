@@ -147,16 +147,17 @@
       const infoHtml = tooltip ? ` <span class="stat-info" data-stat-tooltip="${escHtml(tooltip)}">?</span>` : '';
       return `<div class="stat-card pro-gated" data-pro-slot="${escHtml(slotId)}">
         <span class="pro-badge">PRO</span>
+        <div class="stat-card-label">${escHtml(label)}${infoHtml}</div>
         <div class="pro-gated-content">
-          <div class="stat-card-label">${escHtml(label)}${infoHtml}</div>
           <div class="stat-card-value">42%</div>
-          <div class="stat-card-trend" style="color:var(--text-tertiary)">sample data</div>
         </div>
+        <a href="https://aigon.build/pro" target="_blank" style="font-size:10px;color:var(--accent,#3b82f6);text-decoration:none;opacity:.7;margin-top:auto">Get Pro &rarr;</a>
       </div>`;
     }
 
     /**
      * Build a Pro-gated chart placeholder: blurred static SVG with overlay.
+     * Title is outside the blur so users know what they're missing.
      */
     function buildProGatedChart(title, slotId, tooltipText) {
       const tooltip = tooltipText ? ` <span class="stat-info" data-stat-tooltip="${escHtml(tooltipText)}">?</span>` : '';
@@ -165,15 +166,15 @@
         <polygon points="10,120 10,100 60,80 120,90 180,50 240,60 300,30 360,45 390,20 390,120" fill="var(--text-tertiary)" opacity="0.08"/>
       </svg>`;
       return `<div class="volume-chart-wrap pro-gated-chart" data-pro-slot="${escHtml(slotId)}">
-        <div class="pro-gated-content">
-          <div class="volume-chart-header">
-            <div class="volume-chart-title">${escHtml(title)}${tooltip}</div>
-          </div>
+        <div class="volume-chart-header">
+          <div class="volume-chart-title">${escHtml(title)}${tooltip}</div>
+        </div>
+        <div class="pro-gated-content" style="position:relative">
           <div style="height:160px;position:relative;display:flex;align-items:center;justify-content:center">${fakeSvg}</div>
         </div>
         <div class="pro-chart-overlay">
           <span class="pro-badge">PRO</span>
-          <a href="https://aigon.build/pro" target="_blank">Unlock with Aigon Pro</a>
+          <a href="https://aigon.build/pro" target="_blank">Get Aigon Pro &rarr;</a>
         </div>
       </div>`;
     }
