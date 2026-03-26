@@ -126,6 +126,77 @@
       }
     }
 
+    async function requestRepoMainDevServerStart(repoPath, btn) {
+      const token = encodeURIComponent(String(repoPath || '').trim());
+      if (!token) return;
+      const origText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="run-next-spinner"></span>';
+      }
+      try {
+        const res = await fetch('/api/repos/' + token + '/dev-server/start', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' }
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+        if (payload.url) {
+          window.open(payload.url, '_blank', 'noopener,noreferrer');
+        }
+        showToast(payload.message || 'Main dev server ready');
+        await requestRefresh();
+      } catch (e) {
+        showToast('Dev server failed: ' + e.message, null, null, { error: true });
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = origText || '';
+        }
+      }
+    }
+
+    async function requestAgentDevServerPoke(repoPath, featureId, agentId, btn) {
+      const repoToken = encodeURIComponent(String(repoPath || '').trim());
+      const featureToken = encodeURIComponent(String(featureId || '').trim());
+      const agentToken = encodeURIComponent(String(agentId || '').trim());
+      if (!repoToken || !featureToken || !agentToken) return;
+
+      const pendingKey = `dev-poke:${repoPath}:${featureId}:${agentId}`;
+      if (state.pendingActions.has(pendingKey)) return;
+      state.pendingActions.add(pendingKey);
+      const uiKey = `${repoPath}:${featureId}:${agentId}`;
+      state.pendingDevServerPokes.add(uiKey);
+      render();
+
+      const origText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="run-next-spinner"></span>Starting preview…';
+      }
+
+      try {
+        const res = await fetch('/api/repos/' + repoToken + '/features/' + featureToken + '/agents/' + agentToken + '/dev-server/poke', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' }
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+        showToast(payload.message || 'Preview start requested');
+        await requestRefresh();
+      } catch (e) {
+        showToast('Preview start failed: ' + e.message, null, null, { error: true });
+      } finally {
+        state.pendingActions.delete(pendingKey);
+        state.pendingDevServerPokes.delete(uiKey);
+        render();
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = origText || 'Start preview';
+        }
+      }
+    }
+
     // ── Session execution ─────────────────────────────────────────────────────
 
     async function executeNextAction(command, mode, repoPath, btn) {
