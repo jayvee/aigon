@@ -876,37 +876,38 @@
       // ═══ CHARTS TAB ═══
       html.push(`<div class="stats-tab-content" data-tab="charts" style="display:${activeSubTab === 'charts' ? '' : 'none'}">`);
 
+      // Granularity + nav controls (always shown — free charts use them too)
+      html.push('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">');
+      html.push('<div class="volume-granularity-btns">');
+      [['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].forEach(([g,l]) => {
+        const active = statsState.volumeGranularity === g ? ' active' : '';
+        html.push(`<button class="vol-gran-btn${active}" data-gran="${g}">${l}</button>`);
+      });
+      html.push('</div>');
+      html.push('<div style="display:flex;align-items:center;gap:4px">');
+      html.push('<button id="vol-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
+      html.push('<span id="vol-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
+      html.push('<button id="vol-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
+      html.push('</div>');
+      html.push('</div>');
+
+      // ── Free charts: Features Completed + Commits ──
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Features Completed</div>');
+      html.push('</div>');
+      html.push('<div style="height:160px;position:relative"><canvas id="volume-chart-canvas"></canvas></div>');
+      html.push('</div>');
+
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Commits</div>');
+      html.push('</div>');
+      html.push('<div style="height:160px;position:relative"><canvas id="commits-chart-canvas"></canvas></div>');
+      html.push('</div>');
+
+      // ── Pro charts: Cycle Time, CPF, Rework Ratio ──
       if (_proActive) {
-        // Granularity + nav controls
-        html.push('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">');
-        html.push('<div class="volume-granularity-btns">');
-        [['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].forEach(([g,l]) => {
-          const active = statsState.volumeGranularity === g ? ' active' : '';
-          html.push(`<button class="vol-gran-btn${active}" data-gran="${g}">${l}</button>`);
-        });
-        html.push('</div>');
-        html.push('<div style="display:flex;align-items:center;gap:4px">');
-        html.push('<button id="vol-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
-        html.push('<span id="vol-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
-        html.push('<button id="vol-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
-        html.push('</div>');
-        html.push('</div>');
-
-        // Stacked full-width charts — dates align vertically
-        html.push('<div class="volume-chart-wrap">');
-        html.push('<div class="volume-chart-header">');
-        html.push('<div class="volume-chart-title">Features Completed</div>');
-        html.push('</div>');
-        html.push('<div style="height:160px;position:relative"><canvas id="volume-chart-canvas"></canvas></div>');
-        html.push('</div>');
-
-        html.push('<div class="volume-chart-wrap">');
-        html.push('<div class="volume-chart-header">');
-        html.push('<div class="volume-chart-title">Commits</div>');
-        html.push('</div>');
-        html.push('<div style="height:160px;position:relative"><canvas id="commits-chart-canvas"></canvas></div>');
-        html.push('</div>');
-
         html.push('<div class="volume-chart-wrap">');
         html.push('<div class="volume-chart-header">');
         html.push('<div class="volume-chart-title">Median Cycle Time <span class="stat-info" data-stat-tooltip="Median wall-clock time from feature-start to feature-close per period. Outliers above P95 are excluded. Scale auto-switches between hours and minutes.">?</span></div>');
@@ -933,9 +934,7 @@
         html.push('<div style="height:160px;position:relative"><canvas id="rework-chart-canvas"></canvas></div>');
         html.push('</div>');
       } else {
-        // Pro-gated: show blurred SVG placeholders for all 5 charts
-        html.push(buildProGatedChart('Features Completed', 'chart-volume'));
-        html.push(buildProGatedChart('Commits', 'chart-commits'));
+        // Pro-gated: show blurred SVG placeholders for the 3 Pro charts
         html.push(buildProGatedChart('Median Cycle Time', 'chart-cycle-time',
           'Median wall-clock time from feature-start to feature-close per period.'));
         html.push(buildProGatedChart('Commits per Feature', 'chart-cpf',
@@ -1050,19 +1049,21 @@
       // Temporarily show all tabs so Chart.js can measure canvas dimensions
       document.querySelectorAll('.stats-tab-content').forEach(el => { el.style.display = ''; });
 
-      // Render Chart.js charts into canvases (only when Pro is active — canvases exist)
-      if (_proActive) {
+      // Render Chart.js charts — free charts always, Pro charts only when active
+      {
         const rawVolSeries = buildVolumeSeries(filteredFeatures, statsState.volumeGranularity);
         const rawCommitSeries = buildCommitSeries(filteredCommits, statsState.volumeGranularity);
-        const rawCtSeries = buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity);
-        const rawCpfSeries = buildCommitsPerFeatureSeries(filteredFeatures, featureCommitMap, statsState.volumeGranularity);
-        const rawReworkSeries = buildReworkRatioSeries(filteredCommits, statsState.volumeGranularity);
+        const rawCtSeries = _proActive ? buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity) : { labels: [], data: [] };
+        const rawCpfSeries = _proActive ? buildCommitsPerFeatureSeries(filteredFeatures, featureCommitMap, statsState.volumeGranularity) : { labels: [], data: [] };
+        const rawReworkSeries = _proActive ? buildReworkRatioSeries(filteredCommits, statsState.volumeGranularity) : { labels: [], data: [] };
         const [alignedVol, alignedCommit, alignedCt, alignedCpf, alignedRework] = alignAllSeries(rawVolSeries, rawCommitSeries, rawCtSeries, rawCpfSeries, rawReworkSeries);
         renderVolumeChart(alignedVol, statsState.volumeGranularity);
         renderCommitChart(alignedCommit, statsState.volumeGranularity);
-        renderCycleTimeChart(alignedCt, statsState.volumeGranularity);
-        renderCpfChart(alignedCpf, statsState.volumeGranularity);
-        renderReworkChart(alignedRework, statsState.volumeGranularity);
+        if (_proActive) {
+          renderCycleTimeChart(alignedCt, statsState.volumeGranularity);
+          renderCpfChart(alignedCpf, statsState.volumeGranularity);
+          renderReworkChart(alignedRework, statsState.volumeGranularity);
+        }
       }
 
       // Hide inactive tabs now that charts are rendered
@@ -1079,13 +1080,13 @@
           document.querySelectorAll('.stats-tab-content').forEach(el => {
             el.style.display = el.dataset.tab === statsState.subTab ? '' : 'none';
           });
-          // Re-render charts when switching to charts tab (canvas needs to be visible, Pro only)
-          if (statsState.subTab === 'charts' && _proActive) {
+          // Re-render charts when switching to charts tab (canvas needs to be visible)
+          if (statsState.subTab === 'charts') {
             if (statsState.volumeChart) { statsState.volumeChart.resize(); applyVolumeWindow(); }
             if (statsState.commitChart) { statsState.commitChart.resize(); applyCommitWindow(); }
-            if (statsState.cycleTimeChart) { statsState.cycleTimeChart.resize(); applyCycleTimeWindow(); }
-            if (statsState.cpfChart) { statsState.cpfChart.resize(); applyCpfWindow(); }
-            if (statsState.reworkChart) { statsState.reworkChart.resize(); applyReworkWindow(); }
+            if (_proActive && statsState.cycleTimeChart) { statsState.cycleTimeChart.resize(); applyCycleTimeWindow(); }
+            if (_proActive && statsState.cpfChart) { statsState.cpfChart.resize(); applyCpfWindow(); }
+            if (_proActive && statsState.reworkChart) { statsState.reworkChart.resize(); applyReworkWindow(); }
           }
         };
       });
