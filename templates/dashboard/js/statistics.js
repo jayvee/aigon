@@ -3,17 +3,13 @@
     const VOLUME_WINDOW = { daily: 30, weekly: 12, monthly: 6 };
     const LS_KEYS = {
       period: 'aigon.stats.period',
-      repo: 'aigon.stats.repo',
-      gran: 'aigon.stats.gran',
-      commitGran: 'aigon.stats.commit.gran'
+      gran: 'aigon.stats.gran'
     };
 
     function saveStatsPrefs() {
       try {
         localStorage.setItem(LS_KEYS.period, statsState.period);
-        localStorage.setItem(LS_KEYS.repo, statsState.repoFilter);
         localStorage.setItem(LS_KEYS.gran, statsState.volumeGranularity);
-        localStorage.setItem(LS_KEYS.commitGran, statsState.commitGranularity);
       } catch (_) {}
     }
 
@@ -21,21 +17,17 @@
       try {
         return {
           period: localStorage.getItem(LS_KEYS.period) || '30d',
-          repoFilter: localStorage.getItem(LS_KEYS.repo) || 'all',
-          volumeGranularity: localStorage.getItem(LS_KEYS.gran) || 'weekly',
-          commitGranularity: localStorage.getItem(LS_KEYS.commitGran) || 'weekly'
+          volumeGranularity: localStorage.getItem(LS_KEYS.gran) || 'weekly'
         };
       } catch (_) {
-        return { period: '30d', repoFilter: 'all', volumeGranularity: 'weekly', commitGranularity: 'weekly' };
+        return { period: '30d', volumeGranularity: 'weekly' };
       }
     }
 
     const _savedPrefs = loadStatsPrefs();
     const statsState = {
       period: _savedPrefs.period,
-      repoFilter: _savedPrefs.repoFilter,
       volumeGranularity: _savedPrefs.volumeGranularity,
-      commitGranularity: _savedPrefs.commitGranularity,
       volumeWindowEnd: null,
       cycleTimeWindowEnd: null,
       commitWindowEnd: null,
@@ -59,7 +51,8 @@
       featureListPage: 0,
       insightsData: null,
       insightsLoading: false,
-      insightsError: null
+      insightsError: null,
+      subTab: localStorage.getItem('aigon.stats.subtab') || 'summary'
     };
 
     async function loadAnalytics() {
@@ -262,6 +255,22 @@
         }
       }
       return filled;
+    }
+
+    // Align multiple series to the same date axis — union of all dates, zero-filled
+    function alignAllSeries(...seriesArr) {
+      const dateSet = new Set();
+      seriesArr.forEach(s => (s || []).forEach(d => dateSet.add(d.date)));
+      const allDates = [...dateSet].sort();
+      return seriesArr.map(s => {
+        const map = {};
+        (s || []).forEach(d => { map[d.date] = d; });
+        // Build a zero-entry template from the first item's keys
+        const sample = (s || [])[0] || {};
+        const zeroEntry = { date: '' };
+        Object.keys(sample).forEach(k => { if (k !== 'date') zeroEntry[k] = 0; });
+        return allDates.map(date => map[date] ? { ...map[date] } : { ...zeroEntry, date });
+      });
     }
 
     function renderVolumeChart(fullSeries, granularity) {
@@ -493,7 +502,11 @@
             y: {
               beginAtZero: true,
               ticks: { color: '#6b6b76', font: { size: 11 },
-                callback: v => v + 'h'
+                callback: function(v) {
+                  // Dynamic: use minutes when all values < 2h, otherwise hours
+                  const useMin = this.chart && this.chart._aigonUseMinutes;
+                  return useMin ? Math.round(v) + 'm' : v + 'h';
+                }
               },
               grid: { color: 'rgba(255,255,255,0.04)' },
               border: { display: false }
@@ -531,11 +544,16 @@
 
       const chart = statsState.cycleTimeChart;
       if (chart) {
+        const hours = slice.map(d => d.medianHours || 0);
+        const maxHours = Math.max(...hours, 0);
+        const useMinutes = maxHours < 2;
+        chart._aigonUseMinutes = useMinutes;
         chart.data.labels = slice.map(d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(5, 10));
-        chart.data.datasets[0].data = slice.map(d => d.medianHours);
+        chart.data.datasets[0].data = useMinutes ? hours.map(h => Math.round(h * 60)) : hours;
         chart.options.plugins.tooltip.callbacks.label = ctx => {
           const d = slice[ctx.dataIndex];
-          const line = ` Median cycle time: ${ctx.parsed.y}h`;
+          const val = useMinutes ? `${ctx.parsed.y}m` : `${ctx.parsed.y}h`;
+          const line = ` Median cycle time: ${val}`;
           return d && d.outliersExcluded > 0 ? [line, ` (${d.outliersExcluded} outlier${d.outliersExcluded > 1 ? 's' : ''} excluded)`] : line;
         };
         chart.update('none');
@@ -552,19 +570,7 @@
       }
     }
 
-    function panCycleTimeChart(direction) {
-      const series = statsState.cycleTimeSeries || [];
-      const windowSize = VOLUME_WINDOW[statsState.volumeGranularity] || 8;
-      if (!series.length) return;
-      const step = Math.max(1, Math.floor(windowSize / 2));
-      const current = statsState.cycleTimeWindowEnd !== null ? statsState.cycleTimeWindowEnd : series.length - 1;
-      if (direction === 'prev') {
-        statsState.cycleTimeWindowEnd = Math.max(windowSize - 1, current - step);
-      } else {
-        statsState.cycleTimeWindowEnd = Math.min(series.length - 1, current + step);
-      }
-      applyCycleTimeWindow();
-    }
+    // panCycleTimeChart is now handled by panAllCharts below
 
     function applyVolumeWindow() {
       const series = statsState.volumeSeries;
@@ -613,27 +619,17 @@
 
     function applyCommitWindow() {
       const series = statsState.commitSeries;
-      const gran = statsState.commitGranularity;
+      const gran = statsState.volumeGranularity;
       const windowSize = VOLUME_WINDOW[gran] || 8;
       if (!series || !series.length) return;
 
-      const needsNav = series.length > windowSize;
-      const navEl = document.getElementById('commit-nav-controls');
-      if (navEl) navEl.style.visibility = needsNav ? 'visible' : 'hidden';
-
-      let startIdx, endIdx, slice;
-      if (!needsNav) {
-        startIdx = 0;
-        endIdx = series.length - 1;
-        slice = series.slice();
-        statsState.commitWindowEnd = endIdx;
-      } else {
-        if (statsState.commitWindowEnd === null) statsState.commitWindowEnd = series.length - 1;
-        statsState.commitWindowEnd = Math.min(statsState.commitWindowEnd, series.length - 1);
-        endIdx = statsState.commitWindowEnd;
-        startIdx = Math.max(0, endIdx - windowSize + 1);
-        slice = series.slice(startIdx, endIdx + 1);
-      }
+      // Use same window position as volume chart (aligned series)
+      if (statsState.commitWindowEnd === null) statsState.commitWindowEnd = statsState.volumeWindowEnd;
+      const endIdx = statsState.commitWindowEnd !== null
+        ? Math.min(statsState.commitWindowEnd, series.length - 1)
+        : series.length - 1;
+      const startIdx = Math.max(0, endIdx - windowSize + 1);
+      const slice = series.slice(startIdx, endIdx + 1);
 
       const chart = statsState.commitChart;
       if (chart) {
@@ -641,45 +637,32 @@
         chart.data.datasets[0].data = slice.map(d => d.count);
         chart.update('none');
       }
-
-      if (needsNav) {
-        const fmt = d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(0, 10);
-        const rangeEl = document.getElementById('commit-nav-range');
-        if (rangeEl && slice.length) rangeEl.textContent = `${fmt(slice[0])} – ${fmt(slice[slice.length - 1])}`;
-        const btnPrev = document.getElementById('commit-nav-prev');
-        const btnNext = document.getElementById('commit-nav-next');
-        if (btnPrev) btnPrev.disabled = startIdx === 0;
-        if (btnNext) btnNext.disabled = endIdx >= series.length - 1;
-      }
     }
 
-    function panCommitChart(direction) {
-      const series = statsState.commitSeries || [];
-      const windowSize = VOLUME_WINDOW[statsState.commitGranularity] || 8;
-      if (!series.length) return;
-      const step = Math.max(1, Math.floor(windowSize / 2));
-      const current = statsState.commitWindowEnd !== null ? statsState.commitWindowEnd : series.length - 1;
-      if (direction === 'prev') {
-        statsState.commitWindowEnd = Math.max(windowSize - 1, current - step);
-      } else {
-        statsState.commitWindowEnd = Math.min(series.length - 1, current + step);
-      }
-      applyCommitWindow();
-    }
-
-    function panVolumeChart(direction) {
+    // Sync pan across all aligned charts (all three share same date axis)
+    function panAllCharts(direction) {
       const series = statsState.volumeSeries;
+      if (!series || !series.length) return;
       const windowSize = VOLUME_WINDOW[statsState.volumeGranularity] || 8;
-      if (!series.length) return;
       const step = Math.max(1, Math.floor(windowSize / 2));
       const current = statsState.volumeWindowEnd !== null ? statsState.volumeWindowEnd : series.length - 1;
+      let newEnd;
       if (direction === 'prev') {
-        statsState.volumeWindowEnd = Math.max(windowSize - 1, current - step);
+        newEnd = Math.max(windowSize - 1, current - step);
       } else {
-        statsState.volumeWindowEnd = Math.min(series.length - 1, current + step);
+        newEnd = Math.min(series.length - 1, current + step);
       }
+      statsState.volumeWindowEnd = newEnd;
+      statsState.commitWindowEnd = newEnd;
+      statsState.cycleTimeWindowEnd = newEnd;
       applyVolumeWindow();
+      applyCommitWindow();
+      applyCycleTimeWindow();
     }
+
+    function panVolumeChart(direction) { panAllCharts(direction); }
+    function panCommitChart(direction) { panAllCharts(direction); }
+    function panCycleTimeChart(direction) { panAllCharts(direction); }
 
     function filterFeaturesByPeriodAndRepo(features, period, repoFilter) {
       const now = Date.now();

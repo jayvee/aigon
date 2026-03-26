@@ -97,6 +97,7 @@
     .error .dot{background:var(--error);box-shadow:0 0 8px rgba(239,68,68,.45)}
     .btn{background:transparent;border:1px solid var(--border-default);border-radius:8px;color:var(--text-secondary);padding:4px 10px;cursor:pointer;line-height:1;font-size:12px;white-space:nowrap}
     .btn:hover{color:var(--text-primary);border-color:var(--accent)}
+    .docs-link{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;font-size:13px;font-weight:700;border-radius:50%;text-decoration:none}
     .btn:disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
     .btn-primary{background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.45);color:#bdd7ff}
     .btn-primary:hover{background:rgba(59,130,246,.2);border-color:rgba(59,130,246,.7);color:#e2eeff}
@@ -444,9 +445,14 @@
     .stats-select{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);padding:5px 10px;font:inherit;font-size:12px;cursor:pointer;outline:none}
     .stats-select:focus{border-color:var(--accent)}
     .stats-section-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);margin:0 0 10px}
-    .stats-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px}
-    @media(max-width:900px){.stats-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:560px){.stats-cards{grid-template-columns:1fr}}
+    .stats-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
+    @media(max-width:560px){.stats-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .stats-charts-row{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:12px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px}
+    .stats-charts-row .volume-chart-wrap{border:none;padding:8px 4px;margin-bottom:0;background:transparent}
+    .stats-subtabs{display:flex;gap:4px;border-bottom:1px solid var(--border-subtle);padding-bottom:0;margin-bottom:12px}
+    .stats-subtab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);padding:8px 16px;cursor:pointer;font-size:13px;margin-bottom:-1px;transition:color .12s ease,border-color .12s ease;white-space:nowrap}
+    .stats-subtab:hover{color:var(--text-primary)}
+    .stats-subtab.active{color:var(--text-primary);border-bottom-color:var(--accent)}
     .stat-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:6px}
     .stat-card-label{font-size:11px;color:var(--text-secondary);letter-spacing:.02em}
     .stat-card-value{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1}
@@ -539,16 +545,21 @@
     .feat-list-table .fl-ct-high{color:#f87171}
     .feat-exclude-badge{display:inline-block;font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:3px;background:rgba(251,191,36,0.15);color:#fbbf24;margin-left:4px}
     .feat-list-pagination{display:flex;align-items:center;gap:8px;padding:10px 0 2px;font-size:12px;color:var(--text-tertiary)}
-    .commit-list-table{width:100%;border-collapse:collapse;font-size:12px}
+    .commit-list-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
     .commit-list-table th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary);padding:0 8px 8px 0;border-bottom:1px solid var(--border-subtle);cursor:pointer;white-space:nowrap}
     .commit-list-table th:hover{color:var(--text-secondary)}
     .commit-list-table td{padding:7px 8px 7px 0;border-bottom:1px solid var(--border-subtle);color:var(--text-secondary);vertical-align:middle}
     .commit-list-table tr:last-child td{border-bottom:none}
-    .commit-list-table .commit-message{color:var(--text-primary);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .commit-list-table .commit-message{color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .commit-list-table .commit-num{text-align:right}
     .commit-list-table .commit-hash{font-family:var(--mono);font-size:11px;color:var(--text-tertiary)}
-    .commit-list-table .commit-repo{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .commit-list-table .commit-repo{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .commit-list-table .commit-empty{text-align:center;color:var(--text-tertiary);padding:20px 0}
+    .commit-list-table col.col-date{width:90px} .commit-list-table col.col-repo{width:80px}
+    .commit-list-table col.col-msg{} .commit-list-table col.col-feat{width:60px}
+    .commit-list-table col.col-agent{width:55px} .commit-list-table col.col-files{width:45px}
+    .commit-list-table col.col-add{width:60px} .commit-list-table col.col-rem{width:55px}
+    .commit-list-table col.col-hash{width:65px}
     .commit-footnote{margin-top:8px;font-size:11px;color:var(--text-tertiary)}
     .stats-leaderboard .win-rate{font-weight:600;color:var(--accent)}
     .stats-empty-msg{color:var(--text-tertiary);font-size:12px;padding:20px;text-align:center;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius)}
