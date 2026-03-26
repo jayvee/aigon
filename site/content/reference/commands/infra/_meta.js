@@ -5,7 +5,6 @@ export default {
   deploy: "deploy",
   insights: "insights",
   "agent-status": "agent-status",
-  conductor: "conductor",
   "sessions-close": "sessions-close",
   status: "status",
   help: "help",
