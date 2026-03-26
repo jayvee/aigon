@@ -47,12 +47,56 @@ This research should be re-run:
 When re-running, update the Findings section with dated entries rather than overwriting, so we can track the landscape over time.
 
 ## Findings
-<!-- Document discoveries, options evaluated, pros/cons -->
+
+### Agent Participation
+- **cc (Claude Code):** Full findings — comprehensive research covering 9 CLI agents, benchmarks, pricing, context delivery, and role-specific assessment
+- **gg (Gemini CLI):** No findings submitted (empty template)
+
+### Key Findings (from cc, March 2026)
+
+1. **Top 3 current agents have converged:** cc (80.8%), gg (80.6%), cx (80.0%) on SWE-bench Verified — within 0.8%. Model quality is no longer the differentiator; context delivery, tooling, and cost drive the difference.
+
+2. **Two strong new candidates identified:**
+   - **GitHub Copilot CLI** — GA (Feb 2026), multi-model, built-in Fleet parallelism, $10/mo flat, tmux support, `copilot -p --autopilot` headless mode
+   - **Goose (Block)** — Free/OSS, model-agnostic, recipe system for context, `goose run -t` headless mode
+
+3. **Agents deferred:** Cline CLI (too new, Feb 2026), Auggie (proprietary/expensive), Cursor CLI (beta), Aider (no auto-context, unreliable shell)
+
+4. **Not viable:** Windsurf (IDE-only), Devin (cloud-only), SWE-agent (research tool), Mentat (declining), Sweep (archived)
+
+5. **cx model opportunity:** GPT-5.4 available as implementation model upgrade from GPT-5.3-Codex ($1.75 → $2.50/MTok input)
+
+See `docs/specs/research-topics/logs/research-21-cc-findings.md` for full details including pricing tables, context delivery comparison, and benchmark data.
 
 ## Recommendation
-<!-- Summary of recommended approach based on findings -->
+
+### Keep current agents, expand the Fleet with a pluggable registry
+
+The current agents (cc, gg, cx) are all competitive — no replacements needed. The priority is:
+
+1. **Role-specific agent config** — Let each agent declare what it's good at (implement, evaluate, research, review) so Fleet assignments are intentional, not assumed
+2. **Pluggable agent registry** — Remove all hardcoded agent IDs so new agents can be added via a single config file. Include initial configs for Copilot CLI (`gh`) and Goose (`gs`)
+3. **Model config update** — Bump cx from GPT-5.3-Codex to GPT-5.4 for implementation
+
+This approach maximizes Fleet diversity while keeping the system maintainable — one JSON file per agent, no source code changes to add new members.
 
 ## Output
-<!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Link the newly created files below. -->
-- [ ] Feature: role-specific agent assignments (implementation-only, eval-only agents)
-- [ ] Feature: integrate top-scoring new agent (TBD from findings)
+
+### Selected Features
+
+| Feature Name | Description | Priority | Spec |
+|--------------|-------------|----------|------|
+| role-specific-agent-config | Role declarations in agent config (implement, evaluate, research, review) | high | `docs/specs/features/01-inbox/feature-role-specific-agent-config.md` |
+| pluggable-agent-registry | Data-driven agent registry + Copilot CLI and Goose configs | high | `docs/specs/features/01-inbox/feature-pluggable-agent-registry.md` |
+| model-config-update-cx | Update cx implement model to gpt-5.4 | low | `docs/specs/features/01-inbox/feature-model-config-update-cx.md` |
+
+### Feature Dependencies
+
+- pluggable-agent-registry depends on role-specific-agent-config (needs the `roles` field in the config schema)
+
+### Not Selected
+
+- agent-benchmark-tracking: Useful but lower priority — can be added after the registry exists
+- context-delivery-audit: Good idea but better done as part of each agent integration
+- monitor-cline-cli: Monitoring task, not a feature — re-evaluate in Q3 2026
+- monitor-cursor-cli: Monitoring task — re-evaluate when Cursor CLI reaches GA
