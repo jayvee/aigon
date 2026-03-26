@@ -358,7 +358,7 @@ aigon feature-autopilot 07 --auto-submit</code></pre>
             <div class="dashboard-tabs" role="tablist" aria-label="Dashboard views">
               <button class="dashboard-tab is-active" data-view="kanban" role="tab" aria-selected="true" aria-controls="dashboard-panel">Pipeline</button>
               <button class="dashboard-tab" data-view="monitor" role="tab" aria-selected="false" aria-controls="dashboard-panel">Monitor</button>
-              <button class="dashboard-tab" data-view="statistics" role="tab" aria-selected="false" aria-controls="dashboard-panel">Statistics</button>
+              <button class="dashboard-tab" data-view="statistics" role="tab" aria-selected="false" aria-controls="dashboard-panel">Reports</button>
               <button class="dashboard-tab" data-view="logs" role="tab" aria-selected="false" aria-controls="dashboard-panel">Logs</button>
               <button class="dashboard-tab" data-view="console" role="tab" aria-selected="false" aria-controls="dashboard-panel">Console</button>
             </div>
@@ -386,9 +386,9 @@ aigon feature-autopilot 07 --auto-submit</code></pre>
               <p>The monitor tab shows running sessions, attention items, and recent events across all your repositories — everything you need to know at a glance.</p>
             </article>
             <article class="feature-card">
-              <p class="feature-tag">Measure</p>
-              <h3>Throughput, cycle time, agent performance</h3>
-              <p>The statistics tab turns your spec history into metrics. Know which agents ship fastest, how your cycle time trends, and whether your pace is accelerating.</p>
+              <p class="feature-tag">Reports</p>
+              <h3>Track what matters in your AI workflow</h3>
+              <p>Five aligned charts — features completed, commits, cycle time, commits per feature, and rework ratio — show whether your team is shipping faster, writing tighter code, and fixing less. Summary cards, agent leaderboard, and filterable detail tables give you the full picture.</p>
             </article>
             <article class="feature-card feature-card--remote">
               <p class="feature-tag">Remote Access</p>
@@ -413,6 +413,38 @@ aigon feature-autopilot 07 --auto-submit</code></pre>
             </article>
           </div>
 
+        </div>
+      </section>
+
+      <section class="section reveal" id="reports">
+        <div class="container">
+          <div class="section-head" style="text-align:center;max-width:640px;margin:0 auto 2.5rem">
+            <p class="eyebrow">Workflow Intelligence</p>
+            <h2>Know if your AI workflow is actually working</h2>
+            <p style="color:var(--text-muted,#666);margin-top:0.75rem">Five aligned charts track the metrics that matter: are features shipping faster? Are agents producing cleaner code? Is rework going down? Reports gives you the data to answer these questions — across every repo, every agent, every period.</p>
+          </div>
+          <img
+            src="img/aigon-dashboard-reports-charts.png"
+            alt="Aigon Reports — five aligned charts showing features completed, commits, cycle time, commits per feature, and rework ratio"
+            class="landing-image"
+            style="width:100%;border-radius:12px;border:1px solid rgba(0,0,0,0.1)"
+            width="1440"
+            loading="lazy"
+          >
+          <div class="feature-grid" style="margin-top:2rem">
+            <article class="feature-card">
+              <h3>Feature velocity</h3>
+              <p>Features completed and commits over time — stacked to show feature-attributed vs non-feature work.</p>
+            </article>
+            <article class="feature-card">
+              <h3>Cycle time &amp; focus</h3>
+              <p>Median cycle time and commits-per-feature trending over time. See whether features are getting tighter.</p>
+            </article>
+            <article class="feature-card">
+              <h3>Rework ratio</h3>
+              <p>Percentage of fix commits per period. Trending down means agents are landing correct code on the first pass.</p>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -766,7 +798,7 @@ position of the menu bar</code></pre>
         var screenshots = {
           kanban: { src: "img/aigon-dashboard-kanban.png", alt: "Aigon Dashboard Kanban board showing feature cards in inbox, backlog, in-progress, evaluation, and done columns" },
           monitor: { src: "img/aigon-dashboard-monitor.png", alt: "Aigon Dashboard Monitor view showing active agent sessions, attention items, and recent events across repositories" },
-          statistics: { src: "img/aigon-dashboard-reports.png", alt: "Aigon Dashboard Reports tab showing summary cards, activity charts, and detail tables for features and commits" },
+          statistics: { src: "img/aigon-dashboard-reports-charts.png", alt: "Aigon Dashboard Reports tab showing five aligned charts — features completed, commits, cycle time, commits per feature, and rework ratio" },
 
           logs: { src: "img/aigon-dashboard-logs.png", alt: "Aigon Dashboard Logs view showing agent session output and event history" },
           console: { src: "img/aigon-dashboard-console.png", alt: "Aigon Dashboard Console view showing live terminal output from agent sessions" }
