@@ -30,6 +30,8 @@ When feature 144 added Mistral Vibe (`mv`), every one of these needed manual upd
 - [ ] `AGENT_DISPLAY_NAMES` in `actions.js` is populated from the registry (served via API or embedded in page data)
 - [ ] Port offsets (`agentOffsets`) derived from the registry rather than a hardcoded map
 - [ ] `agents.{id}.disabled: true` in global or project config hides the agent from all surfaces
+- [ ] Dashboard agent picker is **per-repo aware** — only shows agents installed in the selected repo (detected via `docs/agents/{id}.md` or agent config dirs like `.claude/`, `.gemini/`)
+- [ ] Dashboard serves installed agents via API endpoint (e.g., `GET /api/agents?repo=/path/to/repo`) so the picker is dynamic
 - [ ] `aigon doctor` lists enabled/disabled agents
 - [ ] Adding a new agent requires only: `templates/agents/{id}.json` with `displayName`, `cli`, `portOffset`
 
