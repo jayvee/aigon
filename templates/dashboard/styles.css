@@ -578,6 +578,7 @@
     .volume-chart-empty{color:var(--text-tertiary);font-size:12px;text-align:center;padding:60px 0}
 
     /* ── Pro-gated placeholders ─────────────────────────────────────────── */
+    .pro-badge-inline{font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent,#3b82f6);opacity:.7;vertical-align:super;margin-left:2px}
     .pro-gated{position:relative;overflow:visible}
     .pro-gated .pro-gated-content{filter:blur(6px);pointer-events:none;user-select:none;overflow:hidden}
     .pro-gated .pro-badge{position:absolute;top:8px;right:10px;font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent,#3b82f6);opacity:.7;z-index:2}

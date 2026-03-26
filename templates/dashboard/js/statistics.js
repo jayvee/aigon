@@ -124,9 +124,12 @@
       </svg>`;
     }
 
-    function buildStatCard(label, value, trendHtml, extra, tooltip) {
+    function buildStatCard(label, value, trendHtml, extra, tooltip, options) {
+      const opts = options || {};
       const infoHtml = tooltip ? ` <span class="stat-info" data-stat-tooltip="${escHtml(tooltip)}">?</span>` : '';
+      const proBadge = opts.pro ? '<span class="pro-badge-inline">PRO</span>' : '';
       return `<div class="stat-card">
+        ${proBadge}
         <div class="stat-card-label">${escHtml(label)}${infoHtml}</div>
         <div class="stat-card-value">${value}</div>
         ${trendHtml ? `<div class="stat-card-trend">${trendHtml}</div>` : ''}
