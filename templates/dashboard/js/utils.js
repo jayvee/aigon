@@ -29,7 +29,13 @@
       const wrap = document.getElementById('toasts');
       const n = document.createElement('div');
       const isError = opts && opts.error;
-      n.className = 'toast' + (isError ? ' toast-error' : '');
+      const isProcessing = opts && opts.processing;
+      n.className = 'toast' + (isError ? ' toast-error' : '') + (isProcessing ? ' toast-processing' : '');
+      if (isProcessing) {
+        const spinner = document.createElement('span');
+        spinner.className = 'toast-spinner';
+        n.appendChild(spinner);
+      }
       const span = document.createElement('span');
       span.textContent = text;
       n.appendChild(span);
@@ -46,8 +52,11 @@
       n.appendChild(dismiss);
       wrap.prepend(n);
       while (wrap.children.length > 5) wrap.removeChild(wrap.lastChild);
-      const timeout = isError ? 20000 : 10000;
-      setTimeout(() => n.remove(), timeout);
+      if (!isProcessing) {
+        const timeout = isError ? 20000 : 10000;
+        setTimeout(() => n.remove(), timeout);
+      }
+      return n;
     }
 
     async function copyText(text){
