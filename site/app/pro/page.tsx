@@ -125,7 +125,7 @@ export default function ProPage() {
           </div>
 
           <ScreenshotFrame
-            src="/img/aigon-dashboard-reports-summary.png"
+            src="/img/summary-pro.png"
             alt="Aigon Pro reports summary — first-pass rate, commits per feature, rework ratio, and agent leaderboard"
             caption="Summary tab — key quality metrics and agent leaderboard at a glance"
           />
@@ -161,7 +161,7 @@ export default function ProPage() {
           </div>
 
           <ScreenshotFrame
-            src="/img/aigon-dashboard-reports-charts.png"
+            src="/img/charts-pro.png"
             alt="Aigon Pro trend charts — cycle time, commits, rework ratio over time"
             caption="Charts tab — five synchronized trend charts with daily, weekly, and monthly views"
           />
