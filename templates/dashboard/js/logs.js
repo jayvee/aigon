@@ -741,7 +741,8 @@
       const nonFeatureCommitCount = commitTotal - featureCommitCount;
       html.push(buildStatCard('Commits', String(commitTotal), null,
         `${featureCommitCount} feature / ${nonFeatureCommitCount} non-feature`));
-      html.push(buildStatCard('Lines Changed', `+${commitAdded} / -${commitRemoved}`));
+      const fmtK = n => n >= 10000 ? Math.round(n / 1000) + 'k' : n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
+      html.push(buildStatCard('Lines Changed', `+${fmtK(commitAdded)} / -${fmtK(commitRemoved)}`));
       html.push(buildStatCard('Avg Lines / Commit', commitAvgSize !== null ? String(commitAvgSize) : '—'));
 
       html.push('</div>'); // end free stats-cards grid
