@@ -13,6 +13,8 @@ The core delivery workflow. A feature moves through: **create → prioritise →
 
 Features support all four [execution modes](/docs/concepts/execution-modes) — Drive, Fleet, Autopilot, and Swarm.
 
+Features can declare **dependencies** on other features using `depends_on` in the spec's Dependencies section. When you prioritise a feature, Aigon resolves dependency references and checks for circular dependencies. Dependent features cannot be started until their dependencies are done.
+
 ### Research
 
 The discovery workflow. Research topics move through: **create → prioritise → start → investigate → evaluate → close**. Research produces findings and recommendations that feed into feature creation.
