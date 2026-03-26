@@ -47,18 +47,6 @@ Each pillar uses folder-based status:
 | Prioritised | `feature-{ID}-description.md` | `feature-55-dark-mode.md` |
 | Agent-specific (Fleet) | `feature-{ID}-{agent}-description-log.md` | `feature-55-cc-dark-mode-log.md` |
 
-## Feature dependencies
-
-Feature specs can declare dependencies using `depends_on` in the `## Dependencies` section:
-
-```markdown
-## Dependencies
-- depends_on: dark-mode-foundation
-- depends_on: 148
-```
-
-When you run `aigon feature-prioritise`, dependencies are resolved (names/slugs canonicalized to IDs) and checked for circular references via DFS. Dependent features cannot be started until their dependencies are in `05-done`.
-
 ## State machine
 
 Specs transition through states via the `requestTransition()` gatekeeper. You cannot skip steps — the state machine enforces valid transitions.
