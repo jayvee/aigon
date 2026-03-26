@@ -45,6 +45,7 @@
       commitSeries: [],
       commitFeatureFilter: 'all',
       commitAgentFilter: 'all',
+      commitTypeFilter: 'all',
       commitSort: { col: 'date', dir: 'desc' },
       featureCommitMap: {},
       filteredFeatures: [],
@@ -74,7 +75,7 @@
       if (statsState.commitsLoading) return;
       statsState.commitsLoading = true;
       try {
-        const endpoint = force ? '/api/commits?force=1' : '/api/commits';
+        const endpoint = force ? '/api/commits?force=1&limit=0' : '/api/commits?limit=0';
         const res = await fetch(endpoint, { cache: 'no-store' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         statsState.commitsData = await res.json();
@@ -220,20 +221,24 @@
         } else {
           key = ts.toISOString().slice(0, 7) + '-01';
         }
-        buckets[key] = (buckets[key] || 0) + 1;
+        if (!buckets[key]) buckets[key] = { count: 0, feature: 0, nonFeature: 0 };
+        buckets[key].count++;
+        buckets[key][c.featureId ? 'feature' : 'nonFeature']++;
       });
 
       if (minTs === Infinity) return [];
       const filled = [];
       const cur = new Date(minTs);
       const end = new Date(maxTs);
+      const zero = { count: 0, feature: 0, nonFeature: 0 };
 
       if (granularity === 'daily') {
         cur.setUTCHours(0, 0, 0, 0);
         end.setUTCHours(0, 0, 0, 0);
         while (cur <= end) {
           const key = cur.toISOString().slice(0, 10);
-          filled.push({ date: key, count: buckets[key] || 0 });
+          const b = buckets[key] || zero;
+          filled.push({ date: key, count: b.count, feature: b.feature, nonFeature: b.nonFeature });
           cur.setUTCDate(cur.getUTCDate() + 1);
         }
       } else if (granularity === 'weekly') {
@@ -242,7 +247,8 @@
         cur.setUTCHours(0, 0, 0, 0);
         while (cur <= end) {
           const key = cur.toISOString().slice(0, 10);
-          filled.push({ date: key, count: buckets[key] || 0 });
+          const b = buckets[key] || zero;
+          filled.push({ date: key, count: b.count, feature: b.feature, nonFeature: b.nonFeature });
           cur.setUTCDate(cur.getUTCDate() + 7);
         }
       } else {
@@ -250,7 +256,8 @@
         end.setUTCDate(1); end.setUTCHours(0, 0, 0, 0);
         while (cur <= end) {
           const key = cur.toISOString().slice(0, 10);
-          filled.push({ date: key, count: buckets[key] || 0 });
+          const b = buckets[key] || zero;
+          filled.push({ date: key, count: b.count, feature: b.feature, nonFeature: b.nonFeature });
           cur.setUTCMonth(cur.getUTCMonth() + 1);
         }
       }
@@ -354,24 +361,37 @@
         type: 'bar',
         data: {
           labels: [],
-          datasets: [{
-            data: [],
-            backgroundColor: 'rgba(244,114,182,0.65)',
-            hoverBackgroundColor: 'rgba(244,114,182,1)',
-            borderRadius: 3,
-            borderSkipped: false
-          }]
+          datasets: [
+            {
+              label: 'Feature',
+              data: [],
+              backgroundColor: 'rgba(59,130,246,0.7)',
+              hoverBackgroundColor: 'rgba(59,130,246,1)',
+              borderRadius: 3,
+              borderSkipped: false
+            },
+            {
+              label: 'Non-feature',
+              data: [],
+              backgroundColor: 'rgba(148,163,184,0.45)',
+              hoverBackgroundColor: 'rgba(148,163,184,0.7)',
+              borderRadius: 3,
+              borderSkipped: false
+            }
+          ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           animation: false,
           plugins: {
-            legend: { display: false },
+            legend: { display: true, position: 'top', align: 'end',
+              labels: { boxWidth: 10, boxHeight: 10, padding: 12, color: '#a0a0a8', font: { size: 11 } }
+            },
             tooltip: {
               callbacks: {
                 title: ctx => granularity === 'weekly' ? ('Week of ' + ctx[0].label) : ctx[0].label,
-                label: ctx => ` ${ctx.parsed.y} commit${ctx.parsed.y !== 1 ? 's' : ''}`
+                label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} commit${ctx.parsed.y !== 1 ? 's' : ''}`
               },
               backgroundColor: '#1a1a1f',
               titleColor: '#ededef',
@@ -383,11 +403,13 @@
           },
           scales: {
             x: {
+              stacked: true,
               grid: { display: false },
               ticks: { color: '#6b6b76', font: { size: 11 } },
               border: { color: 'rgba(255,255,255,0.06)' }
             },
             y: {
+              stacked: true,
               beginAtZero: true,
               ticks: { color: '#6b6b76', font: { size: 11 }, precision: 0 },
               grid: { color: 'rgba(255,255,255,0.04)' },
@@ -445,6 +467,190 @@
         }
         return { date: k, medianHours, count: included.length, outliersExcluded: outliers };
       });
+    }
+
+    function buildCommitsPerFeatureSeries(features, featureCommitMap, granularity) {
+      // For each time bucket, collect commits-per-feature for features completed in that period
+      const buckets = {};
+      features.forEach(f => {
+        const ts = f.completedAt ? new Date(f.completedAt) : null;
+        if (!ts || isNaN(ts)) return;
+        let key;
+        if (granularity === 'daily') {
+          key = ts.toISOString().slice(0, 10);
+        } else if (granularity === 'weekly') {
+          const d = new Date(ts);
+          const dow = d.getUTCDay() || 7;
+          d.setUTCDate(d.getUTCDate() - dow + 1);
+          key = d.toISOString().slice(0, 10);
+        } else {
+          key = ts.toISOString().slice(0, 7) + '-01';
+        }
+        const featureKey = `${f.repoPath || ''}:${String(f.featureNum || '').padStart(2, '0')}`;
+        const cpf = (featureCommitMap[featureKey] || { count: 0 }).count;
+        if (!buckets[key]) buckets[key] = [];
+        buckets[key].push(cpf);
+      });
+      return Object.keys(buckets).sort().map(k => {
+        const arr = buckets[k].sort((a, b) => a - b);
+        const mid = Math.floor(arr.length / 2);
+        const median = arr.length % 2 ? arr[mid] : Math.round((arr[mid - 1] + arr[mid]) / 2 * 10) / 10;
+        return { date: k, medianCpf: median, count: arr.length };
+      });
+    }
+
+    function renderCpfChart(fullSeries, granularity) {
+      statsState.cpfSeries = fullSeries || [];
+      statsState.cpfWindowEnd = null;
+
+      if (statsState.cpfChart) {
+        statsState.cpfChart.destroy();
+        statsState.cpfChart = null;
+      }
+      const canvas = document.getElementById('cpf-chart-canvas');
+      if (!canvas || !fullSeries || fullSeries.length === 0) return;
+
+      statsState.cpfChart = new Chart(canvas, {
+        type: 'bar',
+        data: { labels: [], datasets: [{
+          data: [],
+          backgroundColor: 'rgba(251,191,36,0.7)',
+          hoverBackgroundColor: 'rgba(251,191,36,1)',
+          borderRadius: 3,
+          borderSkipped: false
+        }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: ctx => granularity === 'weekly' ? ('Week of ' + ctx[0].label) : ctx[0].label,
+                label: ctx => ` Median: ${ctx.parsed.y} commits/feature`
+              },
+              backgroundColor: '#1a1a1f', titleColor: '#ededef', bodyColor: '#a0a0a8',
+              borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#6b6b76', font: { size: 11 } }, border: { color: 'rgba(255,255,255,0.06)' } },
+            y: { beginAtZero: true, ticks: { color: '#6b6b76', font: { size: 11 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } }
+          }
+        }
+      });
+      applyCpfWindow();
+    }
+
+    function applyCpfWindow() {
+      const series = statsState.cpfSeries;
+      const gran = statsState.volumeGranularity;
+      const windowSize = VOLUME_WINDOW[gran] || 8;
+      if (!series || !series.length) return;
+
+      if (statsState.cpfWindowEnd === null) statsState.cpfWindowEnd = statsState.volumeWindowEnd;
+      const endIdx = statsState.cpfWindowEnd !== null
+        ? Math.min(statsState.cpfWindowEnd, series.length - 1)
+        : series.length - 1;
+      const startIdx = Math.max(0, endIdx - windowSize + 1);
+      const slice = series.slice(startIdx, endIdx + 1);
+
+      const chart = statsState.cpfChart;
+      if (chart) {
+        chart.data.labels = slice.map(d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(5, 10));
+        chart.data.datasets[0].data = slice.map(d => d.medianCpf || 0);
+        chart.update('none');
+      }
+    }
+
+    function buildReworkRatioSeries(commits, granularity) {
+      const fixRegex = /^(fix|fixup|bugfix)\b|fix:/i;
+      const buckets = {};
+      let minTs = Infinity, maxTs = -Infinity;
+      commits.forEach(c => {
+        const ts = c.date ? new Date(c.date) : null;
+        if (!ts || isNaN(ts)) return;
+        const t = ts.getTime();
+        if (t < minTs) minTs = t;
+        if (t > maxTs) maxTs = t;
+        let key;
+        if (granularity === 'daily') {
+          key = ts.toISOString().slice(0, 10);
+        } else if (granularity === 'weekly') {
+          const d = new Date(ts);
+          const dow = d.getUTCDay() || 7;
+          d.setUTCDate(d.getUTCDate() - dow + 1);
+          key = d.toISOString().slice(0, 10);
+        } else {
+          key = ts.toISOString().slice(0, 7) + '-01';
+        }
+        if (!buckets[key]) buckets[key] = { total: 0, fix: 0 };
+        buckets[key].total++;
+        if (fixRegex.test(c.message || '')) buckets[key].fix++;
+      });
+      if (minTs === Infinity) return [];
+      return Object.keys(buckets).sort().map(k => {
+        const b = buckets[k];
+        const ratio = b.total > 0 ? Math.round(b.fix / b.total * 1000) / 10 : 0;
+        return { date: k, reworkPct: ratio, count: b.total };
+      });
+    }
+
+    function renderReworkChart(fullSeries, granularity) {
+      statsState.reworkSeries = fullSeries || [];
+      statsState.reworkWindowEnd = null;
+      if (statsState.reworkChart) { statsState.reworkChart.destroy(); statsState.reworkChart = null; }
+      const canvas = document.getElementById('rework-chart-canvas');
+      if (!canvas || !fullSeries || fullSeries.length === 0) return;
+      statsState.reworkChart = new Chart(canvas, {
+        type: 'bar',
+        data: { labels: [], datasets: [{
+          data: [],
+          backgroundColor: 'rgba(239,68,68,0.6)',
+          hoverBackgroundColor: 'rgba(239,68,68,0.9)',
+          borderRadius: 3,
+          borderSkipped: false
+        }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: ctx => granularity === 'weekly' ? ('Week of ' + ctx[0].label) : ctx[0].label,
+                label: ctx => ` Rework: ${ctx.parsed.y}%`
+              },
+              backgroundColor: '#1a1a1f', titleColor: '#ededef', bodyColor: '#a0a0a8',
+              borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#6b6b76', font: { size: 11 } }, border: { color: 'rgba(255,255,255,0.06)' } },
+            y: { beginAtZero: true, ticks: { color: '#6b6b76', font: { size: 11 }, callback: v => v + '%' },
+              grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } }
+          }
+        }
+      });
+      applyReworkWindow();
+    }
+
+    function applyReworkWindow() {
+      const series = statsState.reworkSeries;
+      const gran = statsState.volumeGranularity;
+      const windowSize = VOLUME_WINDOW[gran] || 8;
+      if (!series || !series.length) return;
+      if (statsState.reworkWindowEnd === null) statsState.reworkWindowEnd = statsState.volumeWindowEnd;
+      const endIdx = statsState.reworkWindowEnd !== null
+        ? Math.min(statsState.reworkWindowEnd, series.length - 1) : series.length - 1;
+      const startIdx = Math.max(0, endIdx - windowSize + 1);
+      const slice = series.slice(startIdx, endIdx + 1);
+      const chart = statsState.reworkChart;
+      if (chart) {
+        chart.data.labels = slice.map(d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(5, 10));
+        chart.data.datasets[0].data = slice.map(d => d.reworkPct || 0);
+        chart.update('none');
+      }
     }
 
     function renderCycleTimeChart(fullSeries, granularity) {
@@ -634,7 +840,8 @@
       const chart = statsState.commitChart;
       if (chart) {
         chart.data.labels = slice.map(d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(5, 10));
-        chart.data.datasets[0].data = slice.map(d => d.count);
+        chart.data.datasets[0].data = slice.map(d => d.feature || 0);
+        chart.data.datasets[1].data = slice.map(d => d.nonFeature || 0);
         chart.update('none');
       }
     }
@@ -655,9 +862,13 @@
       statsState.volumeWindowEnd = newEnd;
       statsState.commitWindowEnd = newEnd;
       statsState.cycleTimeWindowEnd = newEnd;
+      statsState.cpfWindowEnd = newEnd;
+      statsState.reworkWindowEnd = newEnd;
       applyVolumeWindow();
       applyCommitWindow();
       applyCycleTimeWindow();
+      applyCpfWindow();
+      applyReworkWindow();
     }
 
     function panVolumeChart(direction) { panAllCharts(direction); }

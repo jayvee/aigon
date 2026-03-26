@@ -685,6 +685,9 @@
         statsState.commitAgentFilter = 'all';
       }
       const filteredCommits = repoPeriodCommits.filter(c => {
+        // Type filter (feature / non-feature)
+        if (statsState.commitTypeFilter === 'feature-only' && !c.featureId) return false;
+        if (statsState.commitTypeFilter === 'non-feature-only' && c.featureId) return false;
         if (statsState.commitFeatureFilter === 'unattributed' && c.featureId) return false;
         if (statsState.commitFeatureFilter !== 'all' &&
             statsState.commitFeatureFilter !== 'unattributed' &&
@@ -733,9 +736,32 @@
         'Median wall-clock time from feature-start to feature-close. Lower is better.'));
       html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null, null,
         'Percentage of features that passed evaluation on the first attempt without needing rework.'));
-      html.push(buildStatCard('Commits', String(commitTotal)));
+      const featureCommitCount = filteredCommits.filter(c => c.featureId).length;
+      const nonFeatureCommitCount = commitTotal - featureCommitCount;
+      html.push(buildStatCard('Commits', String(commitTotal), null,
+        `${featureCommitCount} feature / ${nonFeatureCommitCount} non-feature`));
       html.push(buildStatCard('Lines Changed', `+${commitAdded} / -${commitRemoved}`));
       html.push(buildStatCard('Avg Lines / Commit', commitAvgSize !== null ? String(commitAvgSize) : '—'));
+      // Commits per feature — median
+      const commitsPerFeatureArr = Object.values(featureCommitMap).map(v => v.count).filter(c => c > 0).sort((a, b) => a - b);
+      const cpfMedian = commitsPerFeatureArr.length > 0
+        ? (commitsPerFeatureArr.length % 2
+          ? commitsPerFeatureArr[Math.floor(commitsPerFeatureArr.length / 2)]
+          : Math.round((commitsPerFeatureArr[commitsPerFeatureArr.length / 2 - 1] + commitsPerFeatureArr[commitsPerFeatureArr.length / 2]) / 2 * 10) / 10)
+        : null;
+      const cpfAvg = commitsPerFeatureArr.length > 0
+        ? Math.round(commitsPerFeatureArr.reduce((s, v) => s + v, 0) / commitsPerFeatureArr.length * 10) / 10
+        : null;
+      html.push(buildStatCard('Commits / Feature', cpfMedian !== null ? String(cpfMedian) : '—',
+        null, cpfAvg !== null ? `avg ${cpfAvg}` : null,
+        'Median number of commits per feature. Lower suggests more focused, single-pass implementations.'));
+      // Rework ratio — fix commits / total commits
+      const fixRegex = /^(fix|fixup|bugfix)\b|fix:/i;
+      const fixCommitCount = filteredCommits.filter(c => fixRegex.test(c.message || '')).length;
+      const reworkRatio = commitTotal > 0 ? fixCommitCount / commitTotal : null;
+      html.push(buildStatCard('Rework Ratio', reworkRatio !== null ? fmtPct(reworkRatio) : '—',
+        null, fixCommitCount > 0 ? `${fixCommitCount} fix commits` : null,
+        'Percentage of commits that are fixes or rework (messages starting with fix:, fixup, or bugfix). Lower is better — means more work lands correctly on the first pass.'));
       html.push('</div>');
 
       // Quality & Speed stats
@@ -871,6 +897,20 @@
       html.push('<div style="height:160px;position:relative"><canvas id="cycle-time-chart-canvas"></canvas></div>');
       html.push('</div>');
 
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Commits per Feature <span class="stat-info" data-stat-tooltip="Median number of commits per feature completed in each period. Lower values suggest more focused, single-pass implementations. Trending down means features are getting tighter.">?</span></div>');
+      html.push('</div>');
+      html.push('<div style="height:160px;position:relative"><canvas id="cpf-chart-canvas"></canvas></div>');
+      html.push('</div>');
+
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Rework Ratio <span class="stat-info" data-stat-tooltip="Percentage of commits that are fixes (messages starting with fix:, fixup, or bugfix). Lower is better — means agents produce correct code on the first pass. Trending down indicates improving code quality.">?</span></div>');
+      html.push('</div>');
+      html.push('<div style="height:160px;position:relative"><canvas id="rework-chart-canvas"></canvas></div>');
+      html.push('</div>');
+
       html.push('</div>'); // end charts tab
 
       // ═══ DETAILS TAB ═══
@@ -883,6 +923,13 @@
       // Commit table filters
       html.push('<div class="stats-section-title" style="margin-top:16px">Commits</div>');
       html.push('<div class="stats-toolbar" style="margin-top:0">');
+      html.push('<label style="font-size:12px;color:var(--text-secondary)">Type:</label>');
+      html.push('<select class="stats-select" id="commit-type-filter">');
+      const ctf = statsState.commitTypeFilter || 'all';
+      [['all','All'],['feature-only','Feature only'],['non-feature-only','Non-feature only']].forEach(([v,l]) => {
+        html.push(`<option value="${v}"${ctf === v ? ' selected' : ''}>${l}</option>`);
+      });
+      html.push('</select>');
       html.push('<label style="font-size:12px;color:var(--text-secondary)">Agent:</label>');
       html.push('<select class="stats-select" id="commit-agent-filter">');
       html.push(`<option value="all"${statsState.commitAgentFilter === 'all' ? ' selected' : ''}>All</option>`);
@@ -913,14 +960,17 @@
       });
       const commitRows = sortedCommits.slice(0, 200).map(c => {
         const date = c.date ? c.date.slice(0, 10) : '—';
-        const featureLabel = c.featureId ? `#${String(c.featureId).padStart(2, '0')}` : '—';
+        const featureLabel = c.featureId
+          ? `#${String(c.featureId).padStart(2, '0')}`
+          : '<span class="commit-nf-badge">non-feature</span>';
         const hash = c.hash ? c.hash.slice(0, 7) : '—';
         const repo = c.repoPath ? c.repoPath.split('/').pop() : '—';
-        return `<tr>
+        const rowClass = c.featureId ? '' : ' class="commit-nonfeature"';
+        return `<tr${rowClass}>
           <td>${escHtml(date)}</td>
           <td class="commit-repo">${escHtml(repo)}</td>
           <td class="commit-message" title="${escHtml(c.message || '')}">${escHtml(c.message || '')}</td>
-          <td class="commit-num">${escHtml(featureLabel)}</td>
+          <td class="commit-num">${featureLabel}</td>
           <td class="commit-num">${escHtml(c.agent || '—')}</td>
           <td class="commit-num">${escHtml(String(c.filesChanged || 0))}</td>
           <td class="commit-num">${escHtml(String(c.linesAdded || 0))}</td>
@@ -969,10 +1019,14 @@
       const rawVolSeries = buildVolumeSeries(filteredFeatures, statsState.volumeGranularity);
       const rawCommitSeries = buildCommitSeries(filteredCommits, statsState.volumeGranularity);
       const rawCtSeries = buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity);
-      const [alignedVol, alignedCommit, alignedCt] = alignAllSeries(rawVolSeries, rawCommitSeries, rawCtSeries);
+      const rawCpfSeries = buildCommitsPerFeatureSeries(filteredFeatures, featureCommitMap, statsState.volumeGranularity);
+      const rawReworkSeries = buildReworkRatioSeries(filteredCommits, statsState.volumeGranularity);
+      const [alignedVol, alignedCommit, alignedCt, alignedCpf, alignedRework] = alignAllSeries(rawVolSeries, rawCommitSeries, rawCtSeries, rawCpfSeries, rawReworkSeries);
       renderVolumeChart(alignedVol, statsState.volumeGranularity);
       renderCommitChart(alignedCommit, statsState.volumeGranularity);
       renderCycleTimeChart(alignedCt, statsState.volumeGranularity);
+      renderCpfChart(alignedCpf, statsState.volumeGranularity);
+      renderReworkChart(alignedRework, statsState.volumeGranularity);
 
       // Hide inactive tabs now that charts are rendered
       document.querySelectorAll('.stats-tab-content').forEach(el => {
@@ -993,6 +1047,8 @@
             if (statsState.volumeChart) { statsState.volumeChart.resize(); applyVolumeWindow(); }
             if (statsState.commitChart) { statsState.commitChart.resize(); applyCommitWindow(); }
             if (statsState.cycleTimeChart) { statsState.cycleTimeChart.resize(); applyCycleTimeWindow(); }
+            if (statsState.cpfChart) { statsState.cpfChart.resize(); applyCpfWindow(); }
+            if (statsState.reworkChart) { statsState.reworkChart.resize(); applyReworkWindow(); }
           }
         };
       });
@@ -1004,6 +1060,8 @@
         statsState.volumeWindowEnd = null;
         statsState.cycleTimeWindowEnd = null;
         statsState.commitWindowEnd = null;
+        statsState.cpfWindowEnd = null;
+        statsState.reworkWindowEnd = null;
         statsState.featureListPage = 0;
         saveStatsPrefs();
         renderStatistics();
@@ -1034,15 +1092,27 @@
           statsState.volumeWindowEnd = null;
           statsState.cycleTimeWindowEnd = null;
           statsState.commitWindowEnd = null;
+        statsState.cpfWindowEnd = null;
+        statsState.reworkWindowEnd = null;
           saveStatsPrefs();
           renderStatistics();
         };
       });
 
+      const commitTypeSel = document.getElementById('commit-type-filter');
+      if (commitTypeSel) commitTypeSel.onchange = () => {
+        statsState.commitTypeFilter = commitTypeSel.value;
+        statsState.commitWindowEnd = null;
+        statsState.cpfWindowEnd = null;
+        statsState.reworkWindowEnd = null;
+        renderStatistics();
+      };
       const commitAgentSel = document.getElementById('commit-agent-filter');
       if (commitAgentSel) commitAgentSel.onchange = () => {
         statsState.commitAgentFilter = commitAgentSel.value;
         statsState.commitWindowEnd = null;
+        statsState.cpfWindowEnd = null;
+        statsState.reworkWindowEnd = null;
         renderStatistics();
       };
 
