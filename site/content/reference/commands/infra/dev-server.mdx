@@ -1,12 +1,12 @@
 ---
 title: "dev-server"
-description: "Manage dev server - start, stop, logs, list"
+description: "Manage dev servers with automatic port isolation across worktrees"
 ---
 
 ## Synopsis
 
 ```bash
-aigon dev-server
+aigon dev-server <start|stop|logs|list|open|url> [flags]
 ```
 
 ## Shortcuts
@@ -15,14 +15,129 @@ aigon dev-server
 
 ## Description
 
-Manage dev server - start, stop, logs, list
+Manages dev servers with automatic port allocation, so multiple agents can run the same web app on different branches without port conflicts.
 
-## Usage
+**Why not just `npm run dev`?** When you have multiple worktrees (e.g., feature-42-cc and feature-42-gg), each needs its own port. Running `npm run dev` directly uses the default port and causes conflicts. `aigon dev-server start` allocates a unique port per agent and registers it with the local proxy.
+
+## How port isolation works
+
+Each agent gets a fixed offset from your project's base port:
+
+```
+Base PORT = 3400 (from .env or .aigon/config.json)
+
+Main repo:     3400
+cc worktree:   3401
+gg worktree:   3402
+cx worktree:   3403
+cu worktree:   3404
+mv worktree:   3405
+```
+
+When `feature-start` creates a worktree, it writes `PORT=340X` to the worktree's `.env.local`. The dev server reads this automatically.
+
+## Subcommands
+
+### start
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:dev-server
-
-# CLI
-aigon dev-server
+aigon dev-server start [--open]
 ```
+
+Allocates a port, starts the dev server in the background, waits for the health check, and prints the access URL. Use `--open` to also open the URL in your browser.
+
+### stop
+
+```bash
+aigon dev-server stop
+```
+
+Stops the dev server for the current directory.
+
+### logs
+
+```bash
+aigon dev-server logs [-f]
+```
+
+View dev server output. Use `-f` to follow in real time (like `tail -f`).
+
+### list
+
+```bash
+aigon dev-server list
+```
+
+Shows all running dev servers across all repos and worktrees with their ports and URLs.
+
+### open
+
+```bash
+aigon dev-server open
+```
+
+Opens the dev server URL in your default browser.
+
+### url
+
+```bash
+aigon dev-server url
+```
+
+Prints the dev server URL for the current context — useful for passing to browser automation or test scripts.
+
+## Configuration
+
+In `.aigon/config.json`:
+
+```json
+{
+  "devProxy": {
+    "command": "npm run dev",
+    "healthCheck": "/api/health",
+    "basePort": 3000
+  }
+}
+```
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `devProxy.command` | `npm run dev` | Command to start the dev server |
+| `devProxy.healthCheck` | `/` | Path to check for server readiness |
+| `devProxy.basePort` | From `PORT` in `.env` | Base port for allocation |
+
+## Examples
+
+### Viewing a web app across branches
+
+```bash
+# Start dev server on main branch
+aigon dev-server start
+# → http://localhost:3400
+
+# In the cc worktree for feature 42:
+aigon dev-server start
+# → http://localhost:3401
+
+# In the gg worktree for the same feature:
+aigon dev-server start
+# → http://localhost:3402
+
+# See all running servers:
+aigon dev-server list
+# PORT  AGENT  FEATURE  URL
+# 3400  main   —        http://localhost:3400
+# 3401  cc     42       http://localhost:3401
+# 3402  gg     42       http://localhost:3402
+```
+
+### With the local proxy
+
+If you've set up `aigon proxy install`, dev servers get named URLs:
+
+```bash
+aigon dev-server start
+# → http://cc-42.myapp.localhost
+```
+
+This makes it easy to compare implementations side-by-side in browser tabs.

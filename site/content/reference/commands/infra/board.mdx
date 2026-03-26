@@ -1,6 +1,6 @@
 ---
 title: "board"
-description: "Show Kanban board or list view"
+description: "Terminal-based Kanban board showing features, research, and feedback"
 ---
 
 ## Synopsis
@@ -13,28 +13,60 @@ aigon board [--list] [--features] [--research] [--active] [--all] [--inbox] [--b
 
 - `/ab` (slash command) · `aigon ab` (CLI)
 
-## Flags
-
-- `--list`
-- `--features`
-- `--research`
-- `--active`
-- `--all`
-- `--inbox`
-- `--backlog`
-- `--done`
-- `--no-actions`
-
 ## Description
 
-Show Kanban board or list view
+Displays a terminal Kanban board showing features and research across lifecycle stages. This is the text-based equivalent of the [Dashboard Pipeline](/docs/guides/dashboard) — useful when you want a quick overview without opening a browser.
+
+## Views
+
+**Kanban view** (default) — columns for each lifecycle stage:
+
+```
+┌─ INBOX (3) ──────┬─ BACKLOG (2) ─────┬─ IN-PROGRESS (1) ─┬─ DONE (12) ───────┐
+│                   │                   │                    │                   │
+│ dark-mode         │ #42 dark-mode     │ #43 auth-refactor  │ #41 landing-page  │
+│ search-feature    │ #44 api-cache     │   cc ● implementing│ #40 ci-pipeline   │
+│ mobile-nav        │                   │   gg ● submitted   │ #39 test-suite    │
+│                   │                   │                    │                   │
+└───────────────────┴───────────────────┴────────────────────┴───────────────────┘
+```
+
+**List view** (`--list`) — compact table format:
+
+```
+ ID  Feature              Stage         Agent  Status
+ 43  auth-refactor        in-progress   cc     implementing
+ 43  auth-refactor        in-progress   gg     submitted
+ 42  dark-mode            backlog       —      —
+ 44  api-cache            backlog       —      —
+```
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--list` | Show list view instead of Kanban |
+| `--features` | Features only (exclude research) |
+| `--research` | Research only (exclude features) |
+| `--active` | Only in-progress and evaluation stages |
+| `--all` | Include all stages (default excludes done/paused) |
+| `--inbox` | Show inbox items |
+| `--backlog` | Show backlog items |
+| `--done` | Show completed items |
+| `--no-actions` | Hide action hints (cleaner output) |
 
 ## Usage
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:board [--list]
+# Full Kanban board
+aigon board
 
-# CLI
-aigon board [--list]
+# Compact list of active work
+aigon board --list --active
+
+# Just features
+aigon board --features
+
+# Everything including done
+aigon board --all
 ```

@@ -1,10 +1,40 @@
 ---
 title: "agent-status"
-description: "Reference for aigon agent-status"
+description: "Signal the current agent's status to the dashboard"
 ---
 
 ## Synopsis
 
 ```bash
-aigon agent-status <implementing|waiting|submitted>
+aigon agent-status <implementing|waiting|submitted|error>
 ```
+
+## Description
+
+Sets the current agent's status in the Aigon state system. This is called automatically by agent workflows (feature-do, feature-submit) but can be used manually to signal status changes.
+
+The status is written to `.aigon/state/feature-{id}-{agent}.json` in the main repo, where the dashboard reads it to show real-time agent progress.
+
+## Valid statuses
+
+| Status | Meaning |
+|--------|---------|
+| `implementing` | Agent is actively working |
+| `waiting` | Agent needs human input |
+| `submitted` | Agent has finished and committed |
+| `error` | Agent encountered an error |
+
+## Usage
+
+```bash
+# From inside a feature worktree:
+aigon agent-status submitted
+
+# The command auto-detects the feature ID and agent from the branch name
+```
+
+## Notes
+
+- Must be run from a feature branch or worktree — the feature ID and agent are parsed from the branch name
+- Status changes trigger dashboard notifications (if enabled)
+- Typically called by `feature-submit` rather than directly
