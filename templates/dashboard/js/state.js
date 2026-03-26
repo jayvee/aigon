@@ -17,7 +17,8 @@
       settingsRepo: localStorage.getItem(lsKey('settingsRepo')) || '',
       pipelineType: localStorage.getItem(lsKey('pipelineType')) || 'features',
       monitorType: localStorage.getItem(lsKey('monitorType')) || 'all',
-      pendingActions: new Set()
+      pendingActions: new Set(),
+      pendingDevServerPokes: new Set()
     };
 
     function isRepoHidden(repoPath) {

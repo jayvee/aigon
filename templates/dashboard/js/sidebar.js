@@ -27,6 +27,28 @@
         '</span>';
     }
 
+    function buildGlobeIconSvg() {
+      return '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">' +
+        '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"></circle>' +
+        '<path d="M2 8h12M8 2c1.8 1.7 2.8 3.8 2.8 6S9.8 12.3 8 14M8 2C6.2 3.7 5.2 5.8 5.2 8s1 4.3 2.8 6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"></path>' +
+      '</svg>';
+    }
+
+    function buildMainDevServerHtml(repo) {
+      if (!repo || !repo.mainDevServerEligible) return '';
+      const icon = buildGlobeIconSvg();
+      const repoPath = escHtml(repo.path || '');
+      if (repo.mainDevServerRunning && repo.mainDevServerUrl) {
+        const safeUrl = escHtml(repo.mainDevServerUrl);
+        return '<a class="monitor-dev-link repo-dev-link repo-dev-link-running" href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" title="' + safeUrl + '" aria-label="Open main dev server">' +
+          icon +
+        '</a>';
+      }
+      return '<button class="btn repo-dev-link repo-dev-link-idle" type="button" data-main-dev-start="' + repoPath + '" title="Start dev server" aria-label="Start main dev server">' +
+        icon +
+      '</button>';
+    }
+
     async function runAskAgent(repoPath, agentId) {
       const res = await fetch('/api/session/ask', {
         method: 'POST',
@@ -64,6 +86,14 @@
         runAskAgent(btn.dataset.askRepo, btn.dataset.askAgent);
         document.querySelectorAll('.ask-agent-dropdown.open').forEach(d => d.classList.remove('open'));
       }
+    });
+
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-main-dev-start]');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      await requestRepoMainDevServerStart(btn.getAttribute('data-main-dev-start') || '', btn);
     });
 
     // ── Agent picker ──────────────────────────────────────────────────────────
@@ -256,7 +286,7 @@
       header.style.display = '';
       header.innerHTML = '<h2 class="repo-header-name">' + escHtml(repo.displayPath) + '</h2>' +
         '<span class="repo-header-meta">' + escHtml(metaText) + '</span>' +
-        buildAskAgentHtml(repo.path);
+        '<span class="repo-header-actions">' + buildMainDevServerHtml(repo) + buildAskAgentHtml(repo.path) + '</span>';
     }
 
     // Keyboard navigation for sidebar
