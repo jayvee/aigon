@@ -644,19 +644,19 @@
       const repos = [...repoSet];
 
       const html = [];
+      const activeSubTab = statsState.subTab || 'summary';
       html.push('<div class="stats-view">');
 
-      // Toolbar
-      html.push('<div class="stats-toolbar">');
-      html.push('<label style="font-size:12px;color:var(--text-secondary)">Repo:</label>');
-      html.push('<select class="stats-select" id="stats-repo-filter">');
-      html.push(`<option value="all"${statsState.repoFilter === 'all' ? ' selected' : ''}>All repos</option>`);
-      repos.forEach(r => {
-        const display = r.replace(/^\/Users\/[^/]+\//, '~/');
-        const sel = statsState.repoFilter === r ? ' selected' : '';
-        html.push(`<option value="${escHtml(r)}"${sel}>${escHtml(display)}</option>`);
+      // Sub-tab bar
+      html.push('<div class="stats-subtabs">');
+      [['summary','Summary'],['charts','Charts'],['details','Details']].forEach(([id,label]) => {
+        const active = activeSubTab === id ? ' active' : '';
+        html.push(`<button class="stats-subtab${active}" data-subtab="${id}">${label}</button>`);
       });
-      html.push('</select>');
+      html.push('</div>');
+
+      // Toolbar — period filter (always visible)
+      html.push('<div class="stats-toolbar">');
       html.push('<label style="font-size:12px;color:var(--text-secondary)">Period:</label>');
       html.push('<select class="stats-select" id="stats-period-filter">');
       [['7d','Last 7 days'],['30d','Last 30 days'],['90d','Last 90 days'],['all','All time']].forEach(([v,l]) => {
@@ -667,9 +667,9 @@
       html.push('</div>');
 
       // Filter features for the selected period + repo
-      const filteredFeatures = filterFeaturesByPeriodAndRepo(analytics.features || [], statsState.period, statsState.repoFilter);
+      const filteredFeatures = filterFeaturesByPeriodAndRepo(analytics.features || [], statsState.period, state.selectedRepo);
       const allCommits = (statsState.commitsData && statsState.commitsData.commits) || [];
-      const repoPeriodCommits = filterCommitsByPeriodAndRepo(allCommits, statsState.period, statsState.repoFilter);
+      const repoPeriodCommits = filterCommitsByPeriodAndRepo(allCommits, statsState.period, state.selectedRepo);
       const commitFeatureOptions = [...new Set(repoPeriodCommits.map(c => c.featureId).filter(Boolean))]
         .sort((a, b) => Number(a) - Number(b));
       const commitAgentOptions = [...new Set(repoPeriodCommits.map(c => c.agent).filter(Boolean))]
@@ -716,8 +716,15 @@
       const firstPassFeats = filteredFeatures.filter(f => f.firstPassSuccess !== null);
       const firstPassRate = firstPassFeats.length > 0
         ? firstPassFeats.filter(f => f.firstPassSuccess).length / firstPassFeats.length : null;
-      // Volume cards
-      html.push('<div class="stats-section-title">Volume</div>');
+      // Pre-compute commit totals for summary cards
+      const commitTotal = filteredCommits.length;
+      const commitFiles = filteredCommits.reduce((s, c) => s + Number(c.filesChanged || 0), 0);
+      const commitAdded = filteredCommits.reduce((s, c) => s + Number(c.linesAdded || 0), 0);
+      const commitRemoved = filteredCommits.reduce((s, c) => s + Number(c.linesRemoved || 0), 0);
+      const commitAvgSize = commitTotal > 0 ? Math.round(((commitAdded + commitRemoved) / commitTotal) * 10) / 10 : null;
+
+      // ═══ SUMMARY TAB ═══
+      html.push(`<div class="stats-tab-content" data-tab="summary" style="display:${activeSubTab === 'summary' ? '' : 'none'}">`);
       html.push('<div class="stats-cards">');
       const trend30 = analytics.volume && analytics.volume.trend30d;
       html.push(buildStatCard('Features Completed', String(totalCompleted),
@@ -726,30 +733,12 @@
         'Median wall-clock time from feature-start to feature-close. Lower is better.'));
       html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null, null,
         'Percentage of features that passed evaluation on the first attempt without needing rework.'));
+      html.push(buildStatCard('Commits', String(commitTotal)));
+      html.push(buildStatCard('Lines Changed', `+${commitAdded} / -${commitRemoved}`));
+      html.push(buildStatCard('Avg Lines / Commit', commitAvgSize !== null ? String(commitAvgSize) : '—'));
       html.push('</div>');
 
-      // Volume trend line chart
-      html.push('<div class="volume-chart-wrap">');
-      html.push('<div class="volume-chart-header">');
-      html.push('<div class="volume-chart-title">Features Completed Over Time</div>');
-      html.push('<div style="display:flex;align-items:center;gap:8px">');
-      html.push('<span id="vol-nav-controls" style="display:flex;align-items:center;gap:4px">');
-      html.push('<button id="vol-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
-      html.push('<span id="vol-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
-      html.push('<button id="vol-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
-      html.push('</span>');
-      html.push('<div class="volume-granularity-btns" style="margin-left:8px">');
-      [['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].forEach(([g,l]) => {
-        const active = statsState.volumeGranularity === g ? ' active' : '';
-        html.push(`<button class="vol-gran-btn${active}" data-gran="${g}">${l}</button>`);
-      });
-      html.push('</div>');
-      html.push('</div>');
-      html.push('</div>');
-      html.push('<div style="height:220px;position:relative"><canvas id="volume-chart-canvas"></canvas></div>');
-      html.push('</div>');
-
-      // Quality block
+      // Quality & Speed stats
       html.push('<div class="stats-row">');
       const quality = analytics.quality || {};
       const dur = quality.durationHours || {};
@@ -764,27 +753,6 @@
       html.push('</div>');
       html.push('</div>'); // end stats-row
 
-      // Cycle time over time chart
-      html.push('<div class="volume-chart-wrap">');
-      html.push('<div class="volume-chart-header">');
-      html.push('<div class="volume-chart-title">Median Cycle Time Over Time</div>');
-      html.push('<div style="display:flex;align-items:center;gap:8px">');
-      html.push('<span id="ct-nav-controls" style="display:flex;align-items:center;gap:4px">');
-      html.push('<button id="ct-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
-      html.push('<span id="ct-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
-      html.push('<button id="ct-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
-      html.push('</span>');
-      html.push('<div class="volume-granularity-btns" style="margin-left:8px">');
-      [['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].forEach(([g,l]) => {
-        const active = statsState.volumeGranularity === g ? ' active' : '';
-        html.push(`<button class="vol-gran-btn${active}" data-gran="${g}">${l}</button>`);
-      });
-      html.push('</div>');
-      html.push('</div>');
-      html.push('</div>');
-      html.push('<div style="height:220px;position:relative"><canvas id="cycle-time-chart-canvas"></canvas></div>');
-      html.push('</div>');
-
       // Agent leaderboard — computed from filteredFeatures so repo+period filters apply
       const round1 = v => Math.round(v * 10) / 10;
       const leaderAgentMap = {};
@@ -798,10 +766,10 @@
 
       // Filter eval wins by repo
       const evalWinsByRepo = analytics.evalWinsByRepo || [];
-      const filteredEvalWins = statsState.repoFilter === 'all'
+      const filteredEvalWins = state.selectedRepo === 'all'
         ? analytics.evalWins || []
         : (() => {
-            const repoEntries = evalWinsByRepo.filter(e => e.repoPath === statsState.repoFilter);
+            const repoEntries = evalWinsByRepo.filter(e => e.repoPath === state.selectedRepo);
             const agg = {};
             repoEntries.forEach(e => {
               if (!agg[e.agent]) agg[e.agent] = { agent: e.agent, wins: 0, evals: 0 };
@@ -856,25 +824,65 @@
         html.push('<div class="stats-empty-msg">No completed features found. Statistics will appear here once features are closed.</div>');
       }
 
-      // Amplification section
-      // Amplification section moved to Insights tab
+      html.push('</div>'); // end summary tab
+
+      // ═══ CHARTS TAB ═══
+      html.push(`<div class="stats-tab-content" data-tab="charts" style="display:${activeSubTab === 'charts' ? '' : 'none'}">`);
+
+      // Granularity + nav controls
+      html.push('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">');
+      html.push('<div class="volume-granularity-btns">');
+      [['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].forEach(([g,l]) => {
+        const active = statsState.volumeGranularity === g ? ' active' : '';
+        html.push(`<button class="vol-gran-btn${active}" data-gran="${g}">${l}</button>`);
+      });
+      html.push('</div>');
+      html.push('<div style="display:flex;align-items:center;gap:4px">');
+      html.push('<button id="vol-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
+      html.push('<span id="vol-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
+      html.push('<button id="vol-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
+      html.push('</div>');
+      html.push('</div>');
+
+      // Stacked full-width charts — dates align vertically
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Features Completed</div>');
+      html.push('</div>');
+      html.push('<div style="height:160px;position:relative"><canvas id="volume-chart-canvas"></canvas></div>');
+      html.push('</div>');
+
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Commits</div>');
+      html.push('</div>');
+      html.push('<div style="height:160px;position:relative"><canvas id="commits-chart-canvas"></canvas></div>');
+      html.push('</div>');
+
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Median Cycle Time <span class="stat-info" data-stat-tooltip="Median wall-clock time from feature-start to feature-close per period. Outliers above P95 are excluded. Scale auto-switches between hours and minutes.">?</span></div>');
+      html.push('<span id="ct-nav-controls" style="display:flex;align-items:center;gap:4px">');
+      html.push('<button id="ct-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
+      html.push('<span id="ct-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
+      html.push('<button id="ct-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
+      html.push('</span>');
+      html.push('</div>');
+      html.push('<div style="height:160px;position:relative"><canvas id="cycle-time-chart-canvas"></canvas></div>');
+      html.push('</div>');
+
+      html.push('</div>'); // end charts tab
+
+      // ═══ DETAILS TAB ═══
+      html.push(`<div class="stats-tab-content" data-tab="details" style="display:${activeSubTab === 'details' ? '' : 'none'}">`);
 
       // Feature list section (populated after render via renderFeatureList)
       html.push('<div class="stats-section-title" style="margin-top:4px">Features</div>');
       html.push('<div class="stats-block" style="overflow-x:auto"><div id="stats-feature-list"></div></div>');
 
-      // Commit analytics section
+      // Commit table filters
       html.push('<div class="stats-section-title" style="margin-top:16px">Commits</div>');
       html.push('<div class="stats-toolbar" style="margin-top:0">');
-      html.push('<label style="font-size:12px;color:var(--text-secondary)">Feature:</label>');
-      html.push('<select class="stats-select" id="commit-feature-filter">');
-      html.push(`<option value="all"${statsState.commitFeatureFilter === 'all' ? ' selected' : ''}>All</option>`);
-      html.push(`<option value="unattributed"${statsState.commitFeatureFilter === 'unattributed' ? ' selected' : ''}>Unattributed</option>`);
-      commitFeatureOptions.forEach(f => {
-        const v = String(f);
-        html.push(`<option value="${escHtml(v)}"${statsState.commitFeatureFilter === v ? ' selected' : ''}>#${escHtml(v.padStart(2, '0'))}</option>`);
-      });
-      html.push('</select>');
       html.push('<label style="font-size:12px;color:var(--text-secondary)">Agent:</label>');
       html.push('<select class="stats-select" id="commit-agent-filter">');
       html.push(`<option value="all"${statsState.commitAgentFilter === 'all' ? ' selected' : ''}>All</option>`);
@@ -883,39 +891,6 @@
         html.push(`<option value="${escHtml(a)}"${statsState.commitAgentFilter === a ? ' selected' : ''}>${escHtml(a)}</option>`);
       });
       html.push('</select>');
-      html.push('</div>');
-
-      const commitTotal = filteredCommits.length;
-      const commitFiles = filteredCommits.reduce((s, c) => s + Number(c.filesChanged || 0), 0);
-      const commitAdded = filteredCommits.reduce((s, c) => s + Number(c.linesAdded || 0), 0);
-      const commitRemoved = filteredCommits.reduce((s, c) => s + Number(c.linesRemoved || 0), 0);
-      const commitAvgSize = commitTotal > 0 ? Math.round(((commitAdded + commitRemoved) / commitTotal) * 10) / 10 : null;
-
-      html.push('<div class="stats-cards">');
-      html.push(buildStatCard('Commits', String(commitTotal)));
-      html.push(buildStatCard('Files Changed', String(commitFiles)));
-      html.push(buildStatCard('Lines Added / Removed', `+${commitAdded} / -${commitRemoved}`));
-      html.push(buildStatCard('Avg Lines / Commit', commitAvgSize !== null ? String(commitAvgSize) : '—'));
-      html.push('</div>');
-
-      html.push('<div class="volume-chart-wrap">');
-      html.push('<div class="volume-chart-header">');
-      html.push('<div class="volume-chart-title">Commits Over Time</div>');
-      html.push('<div style="display:flex;align-items:center;gap:8px">');
-      html.push('<span id="commit-nav-controls" style="display:flex;align-items:center;gap:4px">');
-      html.push('<button id="commit-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
-      html.push('<span id="commit-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
-      html.push('<button id="commit-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
-      html.push('</span>');
-      html.push('<div class="volume-granularity-btns" style="margin-left:8px">');
-      [['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].forEach(([g,l]) => {
-        const active = statsState.commitGranularity === g ? ' active' : '';
-        html.push(`<button class="commit-gran-btn${active}" data-gran="${g}">${l}</button>`);
-      });
-      html.push('</div>');
-      html.push('</div>');
-      html.push('</div>');
-      html.push('<div style="height:220px;position:relative"><canvas id="commits-chart-canvas"></canvas></div>');
       html.push('</div>');
 
       const commitSort = statsState.commitSort || { col: 'date', dir: 'desc' };
@@ -943,6 +918,7 @@
         const repo = c.repoPath ? c.repoPath.split('/').pop() : '—';
         return `<tr>
           <td>${escHtml(date)}</td>
+          <td class="commit-repo">${escHtml(repo)}</td>
           <td class="commit-message" title="${escHtml(c.message || '')}">${escHtml(c.message || '')}</td>
           <td class="commit-num">${escHtml(featureLabel)}</td>
           <td class="commit-num">${escHtml(c.agent || '—')}</td>
@@ -950,14 +926,15 @@
           <td class="commit-num">${escHtml(String(c.linesAdded || 0))}</td>
           <td class="commit-num">${escHtml(String(c.linesRemoved || 0))}</td>
           <td class="commit-hash" title="${escHtml(c.hash || '')}">${escHtml(hash)}</td>
-          <td class="commit-repo">${escHtml(repo)}</td>
         </tr>`;
       }).join('');
       const sortArrow = (key) => commitSort.col === key ? (commitSort.dir === 'asc' ? ' ↑' : ' ↓') : '';
       html.push('<div class="stats-block" style="overflow-x:auto">');
       html.push('<table class="commit-list-table">');
+      html.push('<colgroup><col class="col-date"><col class="col-repo"><col class="col-msg"><col class="col-feat"><col class="col-agent"><col class="col-files"><col class="col-add"><col class="col-rem"><col class="col-hash"></colgroup>');
       html.push('<thead><tr>');
       html.push(`<th data-commit-sort="date">Date${sortArrow('date')}</th>`);
+      html.push('<th>Repo</th>');
       html.push(`<th data-commit-sort="message">Message${sortArrow('message')}</th>`);
       html.push(`<th data-commit-sort="featureId">Feature${sortArrow('featureId')}</th>`);
       html.push(`<th data-commit-sort="agent">Agent${sortArrow('agent')}</th>`);
@@ -965,7 +942,6 @@
       html.push(`<th data-commit-sort="linesAdded">+Lines${sortArrow('linesAdded')}</th>`);
       html.push(`<th data-commit-sort="linesRemoved">-Lines${sortArrow('linesRemoved')}</th>`);
       html.push('<th>Hash</th>');
-      html.push('<th>Repo</th>');
       html.push('</tr></thead>');
       html.push(`<tbody>${commitRows || '<tr><td colspan="9" class="commit-empty">No commits for the selected filters.</td></tr>'}</tbody>`);
       html.push('</table>');
@@ -974,6 +950,7 @@
       }
       html.push('</div>');
 
+      html.push('</div>'); // end details tab
       html.push('</div>'); // end stats-view
 
       // Store filtered features for pagination (avoids re-rendering charts on page change)
@@ -985,27 +962,42 @@
 
       container.innerHTML = html.join('');
 
-      // Render Chart.js charts into canvases now that they're in the DOM
-      const volSeries = buildVolumeSeries(filteredFeatures, statsState.volumeGranularity);
-      renderVolumeChart(volSeries, statsState.volumeGranularity);
+      // Temporarily show all tabs so Chart.js can measure canvas dimensions
+      document.querySelectorAll('.stats-tab-content').forEach(el => { el.style.display = ''; });
 
-      const ctSeries = buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity);
-      renderCycleTimeChart(ctSeries, statsState.volumeGranularity);
-      const commitSeries = buildCommitSeries(filteredCommits, statsState.commitGranularity);
-      renderCommitChart(commitSeries, statsState.commitGranularity);
+      // Render Chart.js charts into canvases now that they're in the DOM
+      const rawVolSeries = buildVolumeSeries(filteredFeatures, statsState.volumeGranularity);
+      const rawCommitSeries = buildCommitSeries(filteredCommits, statsState.volumeGranularity);
+      const rawCtSeries = buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity);
+      const [alignedVol, alignedCommit, alignedCt] = alignAllSeries(rawVolSeries, rawCommitSeries, rawCtSeries);
+      renderVolumeChart(alignedVol, statsState.volumeGranularity);
+      renderCommitChart(alignedCommit, statsState.volumeGranularity);
+      renderCycleTimeChart(alignedCt, statsState.volumeGranularity);
+
+      // Hide inactive tabs now that charts are rendered
+      document.querySelectorAll('.stats-tab-content').forEach(el => {
+        el.style.display = el.dataset.tab === activeSubTab ? '' : 'none';
+      });
+
+      // Wire up sub-tab switching
+      document.querySelectorAll('.stats-subtab').forEach(btn => {
+        btn.onclick = () => {
+          statsState.subTab = btn.dataset.subtab;
+          localStorage.setItem('aigon.stats.subtab', statsState.subTab);
+          document.querySelectorAll('.stats-subtab').forEach(b => b.classList.toggle('active', b.dataset.subtab === statsState.subTab));
+          document.querySelectorAll('.stats-tab-content').forEach(el => {
+            el.style.display = el.dataset.tab === statsState.subTab ? '' : 'none';
+          });
+          // Re-render charts when switching to charts tab (canvas needs to be visible)
+          if (statsState.subTab === 'charts') {
+            if (statsState.volumeChart) { statsState.volumeChart.resize(); applyVolumeWindow(); }
+            if (statsState.commitChart) { statsState.commitChart.resize(); applyCommitWindow(); }
+            if (statsState.cycleTimeChart) { statsState.cycleTimeChart.resize(); applyCycleTimeWindow(); }
+          }
+        };
+      });
 
       // Wire up controls
-      const repoSel = document.getElementById('stats-repo-filter');
-      if (repoSel) repoSel.onchange = () => {
-        statsState.repoFilter = repoSel.value;
-        statsState.volumeWindowEnd = null;
-        statsState.cycleTimeWindowEnd = null;
-        statsState.commitWindowEnd = null;
-        statsState.featureListPage = 0;
-        saveStatsPrefs();
-        renderStatistics();
-      };
-
       const periodSel = document.getElementById('stats-period-filter');
       if (periodSel) periodSel.onchange = () => {
         statsState.period = periodSel.value;
@@ -1035,32 +1027,18 @@
         renderStatistics();
       };
 
-      // Volume granularity buttons — reset both windows on change
+      // Granularity buttons — reset all chart windows on change
       document.querySelectorAll('.vol-gran-btn').forEach(btn => {
         btn.onclick = () => {
           statsState.volumeGranularity = btn.dataset.gran;
           statsState.volumeWindowEnd = null;
           statsState.cycleTimeWindowEnd = null;
-          saveStatsPrefs();
-          renderStatistics();
-        };
-      });
-
-      document.querySelectorAll('.commit-gran-btn').forEach(btn => {
-        btn.onclick = () => {
-          statsState.commitGranularity = btn.dataset.gran;
           statsState.commitWindowEnd = null;
           saveStatsPrefs();
           renderStatistics();
         };
       });
 
-      const commitFeatureSel = document.getElementById('commit-feature-filter');
-      if (commitFeatureSel) commitFeatureSel.onchange = () => {
-        statsState.commitFeatureFilter = commitFeatureSel.value;
-        statsState.commitWindowEnd = null;
-        renderStatistics();
-      };
       const commitAgentSel = document.getElementById('commit-agent-filter');
       if (commitAgentSel) commitAgentSel.onchange = () => {
         statsState.commitAgentFilter = commitAgentSel.value;
@@ -1088,8 +1066,7 @@
       // Cycle time nav buttons
       document.getElementById('ct-nav-prev')?.addEventListener('click', () => panCycleTimeChart('prev'));
       document.getElementById('ct-nav-next')?.addEventListener('click', () => panCycleTimeChart('next'));
-      document.getElementById('commit-nav-prev')?.addEventListener('click', () => panCommitChart('prev'));
-      document.getElementById('commit-nav-next')?.addEventListener('click', () => panCommitChart('next'));
+      // commit chart nav is synced via panAllCharts from the shared vol-nav buttons
 
 
       // Feature list
