@@ -38,7 +38,13 @@
       const key = action + ':' + (args || []).join(':');
       if (state.pendingActions.has(key)) return;
       state.pendingActions.add(key);
-      if (btn) { btn.disabled = true; btn.textContent = '...'; }
+      const origText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origText);
+      }
+      const label = (action || '').replace(/^(feature|research)-/, '');
+      const processingToast = showToast('Processing ' + label + '…', null, null, { processing: true });
       try {
         const body = { action, args: args || [] };
         if (repoPath) body.repoPath = repoPath;
@@ -70,14 +76,16 @@
         await requestRefresh();
       } catch (e) {
         showToast('Action failed: ' + e.message, null, null, {error:true});
-        if (btn) { btn.disabled = false; btn.textContent = btn._origText || action; }
+        if (btn) { btn.disabled = false; btn.textContent = origText || btn._origText || action; }
       } finally {
+        if (processingToast) processingToast.remove();
         state.pendingActions.delete(key);
       }
     }
 
     async function requestFeatureOpen(featureId, agentId, repoPath, btn, pType, mode) {
-      if (btn) { btn.disabled = true; btn.textContent = '...'; }
+      const origOpen = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origOpen); }
       try {
         const body = { featureId, agentId };
         if (repoPath) body.repoPath = repoPath;
@@ -94,12 +102,13 @@
       } catch (e) {
         showToast('Start agent failed: ' + e.message, null, null, {error:true});
       } finally {
-        if (btn) { btn.disabled = false; btn.textContent = btn._origText || 'Start'; }
+        if (btn) { btn.disabled = false; btn.textContent = origOpen || btn._origText || 'Start'; }
       }
     }
 
     async function requestAgentFlagAction(action, payload, btn) {
-      if (btn) { btn.disabled = true; btn.textContent = '...'; }
+      const origFlag = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origFlag); }
       try {
         const res = await fetch('/api/agent-flag-action', {
           method: 'POST',
@@ -113,7 +122,7 @@
       } catch (e) {
         showToast('Action failed: ' + e.message, null, null, { error: true });
       } finally {
-        if (btn) { btn.disabled = false; btn.textContent = btn._origText || 'Run'; }
+        if (btn) { btn.disabled = false; btn.textContent = origFlag || btn._origText || 'Run'; }
       }
     }
 
