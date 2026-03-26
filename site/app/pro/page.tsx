@@ -201,9 +201,9 @@ export default function ProPage() {
           </div>
 
           <ScreenshotFrame
-            src="/img/aigon-dashboard-statistics.png"
+            src="/img/insights-pro.png"
             alt="Aigon Pro insights — AI-generated observations and coaching"
-            caption="Statistics view — AI-powered observations and coaching recommendations"
+            caption="Insights tab — AI-powered observations, coaching, and amplification analytics"
           />
         </div>
       </section>
