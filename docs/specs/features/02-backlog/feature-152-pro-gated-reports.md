@@ -15,7 +15,9 @@ Move advanced reporting metrics (charts, rework ratio, commits-per-feature, firs
 - [ ] Reports > Summary tab: first-pass rate, commits-per-feature, rework ratio, and eval win rates show blurred placeholders with Pro badge when Pro is unavailable
 - [ ] Reports > Charts tab: all 5 time-series charts show blurred placeholders with a Pro upgrade CTA overlay when Pro is unavailable
 - [ ] Reports > Details tab: commit log filtering by agent/type and granularity controls (daily/weekly/monthly) are Pro-gated
-- [ ] Blurred placeholders use CSS filter blur on realistic-looking dummy/static chart images or SVG shapes (not empty boxes)
+- [ ] Pro chart/metric rendering code lives exclusively in `@aigon/pro`, NOT in the public aigon repo
+- [ ] `/api/analytics` strips Pro-only data fields when Pro is unavailable (defence in depth)
+- [ ] Blurred placeholders use CSS filter blur on static SVG chart shapes (not real data, not empty boxes)
 - [ ] Pro badge + CTA overlay is visually consistent with the existing Insights PRO badge style
 - [ ] `/api/status` response includes a `proAvailable` boolean so the frontend can gate without extra requests
 - [ ] A `?forcePro=0` URL param (or `aigon config set forcePro false`) overrides the Pro check for demo/testing, even when @aigon/pro is installed
@@ -31,21 +33,30 @@ node aigon-cli.test.js
 
 ## Technical Approach
 
+### Code Protection Strategy
+Pro chart/metric rendering code must NOT be in the public aigon repo. Follow the same pattern as `amplification.js`:
+- **Extract** all Pro rendering code (charts, rework ratio, CPF, first-pass rate, eval wins) from `logs.js` into a new module in `@aigon/pro` (e.g. `pro-reports.js`)
+- **Serve** via the existing `/js/*.js` static handler in dashboard-server.js (same as `amplification.js` — checks `isProAvailable()`, reads from `getPro().dashboardDir`)
+- **Public `logs.js`** only contains: free metric rendering + blur placeholder + dynamic `<script>` loader for `pro-reports.js`
+- **`/api/analytics`** gates Pro data at the API level: when `!isProAvailable()`, strip chart series, rework, CPF, eval wins from the response. Belt-and-suspenders — even if someone loads the JS, the data isn't there.
+- After this feature ships, audit git history for any Pro rendering logic that was previously in `logs.js` and ensure it's removed from the public repo (force-push if needed, or verify it was never committed with Pro logic)
+
 ### Backend
 - Add `proAvailable: isProAvailable()` to the `/api/status` response payload in `collectDashboardStatusData()` (dashboard-server.js)
 - Add `forcePro` config key to `lib/config.js` (project-level `.aigon/config.json`), checked by `isProAvailable()` override in `lib/pro.js`
-- `/api/analytics` continues returning all data regardless — gating is purely frontend
+- `/api/analytics` returns **reduced data** when Pro unavailable: strip `amplification`, chart `series` arrays, `evalWins`, `autonomy.firstPassSuccessRate`, `quality.reworkRatio`, `quality.commitsPerFeature`
+- Add `/js/pro-reports.js` static route (same pattern as `/js/amplification.js`)
 
 ### Frontend
 - In `logs.js` `renderStatistics()`, check `state.data.proAvailable` before rendering:
   - **Free metrics** (always rendered): completed counts, trend %, cycle time stats, agent leaderboard
-  - **Pro metrics** (gated): first-pass rate card, CPF card, rework ratio card, eval win rates, all 5 charts, granularity controls, advanced detail filters
-- New CSS class `.pro-gated` wrapping a blurred container + absolute-positioned overlay with Pro badge and CTA text
-- Blurred content: render the actual chart/metric HTML but wrap in a `filter: blur(6px)` container with `pointer-events: none`, overlaid with a semi-transparent card containing the Pro badge and "Available with Aigon Pro" text
+  - **Pro metrics** (gated): show blur placeholders, dynamically load `pro-reports.js` from `@aigon/pro` which renders the actual charts/metrics into the placeholder containers
+- New CSS class `.pro-gated` wrapping a blurred placeholder + absolute-positioned overlay with Pro badge and CTA text
+- Blur placeholders: static SVG chart shapes (not actual data) with `filter: blur(6px)` and `pointer-events: none`, overlaid with Pro badge
 - `?forcePro=0` URL param: parsed in `init.js`, overrides `state.data.proAvailable` in the Alpine store
 
 ### Visual Design
-- Blur overlay: `backdrop-filter: blur(6px)` or `filter: blur(6px)` on the content, with a centered overlay card
+- Blur overlay: `filter: blur(6px)` on static SVG placeholder shapes, with a centered overlay card
 - Pro badge: reuse existing `<sup>PRO</sup>` styling from the Insights tab
 - CTA: simple text "Available with Aigon Pro" with a subtle border, no external links (Pro is installed via npm)
 
@@ -63,6 +74,8 @@ node aigon-cli.test.js
 
 ## Related
 - `lib/pro.js` — Pro availability check
-- `templates/dashboard/js/logs.js` — Reports tab rendering (renderStatistics)
+- `templates/dashboard/js/logs.js` — Reports tab rendering (renderStatistics) — Pro code to be extracted
 - `templates/dashboard/js/init.js` — Insights tab rendering (already Pro-gated)
 - `templates/dashboard/index.html` — Tab layout with existing PRO badge on Insights
+- `lib/dashboard-server.js:3128` — existing `/js/amplification.js` Pro static file pattern to follow
+- `~/src/aigon-pro` — private repo where Pro rendering code lives
