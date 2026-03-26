@@ -23,7 +23,7 @@
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const next = await res.json();
         state.failures = 0;
-        state.data = next;
+        state.data = applyForceProOverride(next);
         render();
       } catch (e) {
         state.failures += 1;
