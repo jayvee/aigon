@@ -734,8 +734,14 @@
         statsState.period === '30d' && trend30 !== null ? trendIcon(trend30) : null));
       html.push(buildStatCard('Cycle Time', fmtHours(medianCycle), null, medianCycle !== null ? 'median, start to close' : null,
         'Median wall-clock time from feature-start to feature-close. Lower is better.'));
-      html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null, null,
-        'Percentage of features that passed evaluation on the first attempt without needing rework.'));
+      const _proActive = typeof isProActive === 'function' ? isProActive() : true;
+      if (_proActive) {
+        html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null, null,
+          'Percentage of features that passed evaluation on the first attempt without needing rework.'));
+      } else {
+        html.push(buildProGatedStatCard('First-Pass Rate', 'summary-first-pass',
+          'Percentage of features that passed evaluation on the first attempt without needing rework.'));
+      }
       const featureCommitCount = filteredCommits.filter(c => c.featureId).length;
       const nonFeatureCommitCount = commitTotal - featureCommitCount;
       html.push(buildStatCard('Commits', String(commitTotal), null,
@@ -752,16 +758,26 @@
       const cpfAvg = commitsPerFeatureArr.length > 0
         ? Math.round(commitsPerFeatureArr.reduce((s, v) => s + v, 0) / commitsPerFeatureArr.length * 10) / 10
         : null;
-      html.push(buildStatCard('Commits / Feature', cpfMedian !== null ? String(cpfMedian) : '—',
-        null, cpfAvg !== null ? `avg ${cpfAvg}` : null,
-        'Median number of commits per feature. Lower suggests more focused, single-pass implementations.'));
+      if (_proActive) {
+        html.push(buildStatCard('Commits / Feature', cpfMedian !== null ? String(cpfMedian) : '—',
+          null, cpfAvg !== null ? `avg ${cpfAvg}` : null,
+          'Median number of commits per feature. Lower suggests more focused, single-pass implementations.'));
+      } else {
+        html.push(buildProGatedStatCard('Commits / Feature', 'summary-cpf',
+          'Median number of commits per feature. Lower suggests more focused, single-pass implementations.'));
+      }
       // Rework ratio — fix commits / total commits
       const fixRegex = /^(fix|fixup|bugfix)\b|fix:/i;
       const fixCommitCount = filteredCommits.filter(c => fixRegex.test(c.message || '')).length;
       const reworkRatio = commitTotal > 0 ? fixCommitCount / commitTotal : null;
-      html.push(buildStatCard('Rework Ratio', reworkRatio !== null ? fmtPct(reworkRatio) : '—',
-        null, fixCommitCount > 0 ? `${fixCommitCount} fix commits` : null,
-        'Percentage of commits that are fixes or rework (messages starting with fix:, fixup, or bugfix). Lower is better — means more work lands correctly on the first pass.'));
+      if (_proActive) {
+        html.push(buildStatCard('Rework Ratio', reworkRatio !== null ? fmtPct(reworkRatio) : '—',
+          null, fixCommitCount > 0 ? `${fixCommitCount} fix commits` : null,
+          'Percentage of commits that are fixes or rework (messages starting with fix:, fixup, or bugfix). Lower is better — means more work lands correctly on the first pass.'));
+      } else {
+        html.push(buildProGatedStatCard('Rework Ratio', 'summary-rework',
+          'Percentage of commits that are fixes or rework. Lower is better.'));
+      }
       html.push('</div>');
 
       // Quality & Speed stats
@@ -836,8 +852,13 @@
             html.push('<tr>');
             html.push(`<td><span class="agent-mono">${escHtml(agentId)}</span></td>`);
             html.push(`<td>${d.completed}</td>`);
-            html.push(`<td>${ev ? ev.wins : '—'}</td>`);
-            html.push(`<td>${winShare !== null ? `<span class="win-rate">${fmtPct(winShare)}</span>` : '—'}</td>`);
+            if (_proActive) {
+              html.push(`<td>${ev ? ev.wins : '—'}</td>`);
+              html.push(`<td>${winShare !== null ? `<span class="win-rate">${fmtPct(winShare)}</span>` : '—'}</td>`);
+            } else {
+              html.push('<td style="color:var(--accent,#3b82f6);font-size:8px;font-weight:700;letter-spacing:.06em;opacity:.6">PRO</td>');
+              html.push('<td style="color:var(--accent,#3b82f6);font-size:8px;font-weight:700;letter-spacing:.06em;opacity:.6">PRO</td>');
+            }
             html.push(`<td>${fmtHours(avgCycle)}</td>`);
             html.push(`<td>${fmtPct(fpRate)}</td>`);
             html.push('</tr>');
@@ -855,61 +876,74 @@
       // ═══ CHARTS TAB ═══
       html.push(`<div class="stats-tab-content" data-tab="charts" style="display:${activeSubTab === 'charts' ? '' : 'none'}">`);
 
-      // Granularity + nav controls
-      html.push('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">');
-      html.push('<div class="volume-granularity-btns">');
-      [['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].forEach(([g,l]) => {
-        const active = statsState.volumeGranularity === g ? ' active' : '';
-        html.push(`<button class="vol-gran-btn${active}" data-gran="${g}">${l}</button>`);
-      });
-      html.push('</div>');
-      html.push('<div style="display:flex;align-items:center;gap:4px">');
-      html.push('<button id="vol-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
-      html.push('<span id="vol-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
-      html.push('<button id="vol-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
-      html.push('</div>');
-      html.push('</div>');
+      if (_proActive) {
+        // Granularity + nav controls
+        html.push('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">');
+        html.push('<div class="volume-granularity-btns">');
+        [['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].forEach(([g,l]) => {
+          const active = statsState.volumeGranularity === g ? ' active' : '';
+          html.push(`<button class="vol-gran-btn${active}" data-gran="${g}">${l}</button>`);
+        });
+        html.push('</div>');
+        html.push('<div style="display:flex;align-items:center;gap:4px">');
+        html.push('<button id="vol-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
+        html.push('<span id="vol-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
+        html.push('<button id="vol-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
+        html.push('</div>');
+        html.push('</div>');
 
-      // Stacked full-width charts — dates align vertically
-      html.push('<div class="volume-chart-wrap">');
-      html.push('<div class="volume-chart-header">');
-      html.push('<div class="volume-chart-title">Features Completed</div>');
-      html.push('</div>');
-      html.push('<div style="height:160px;position:relative"><canvas id="volume-chart-canvas"></canvas></div>');
-      html.push('</div>');
+        // Stacked full-width charts — dates align vertically
+        html.push('<div class="volume-chart-wrap">');
+        html.push('<div class="volume-chart-header">');
+        html.push('<div class="volume-chart-title">Features Completed</div>');
+        html.push('</div>');
+        html.push('<div style="height:160px;position:relative"><canvas id="volume-chart-canvas"></canvas></div>');
+        html.push('</div>');
 
-      html.push('<div class="volume-chart-wrap">');
-      html.push('<div class="volume-chart-header">');
-      html.push('<div class="volume-chart-title">Commits</div>');
-      html.push('</div>');
-      html.push('<div style="height:160px;position:relative"><canvas id="commits-chart-canvas"></canvas></div>');
-      html.push('</div>');
+        html.push('<div class="volume-chart-wrap">');
+        html.push('<div class="volume-chart-header">');
+        html.push('<div class="volume-chart-title">Commits</div>');
+        html.push('</div>');
+        html.push('<div style="height:160px;position:relative"><canvas id="commits-chart-canvas"></canvas></div>');
+        html.push('</div>');
 
-      html.push('<div class="volume-chart-wrap">');
-      html.push('<div class="volume-chart-header">');
-      html.push('<div class="volume-chart-title">Median Cycle Time <span class="stat-info" data-stat-tooltip="Median wall-clock time from feature-start to feature-close per period. Outliers above P95 are excluded. Scale auto-switches between hours and minutes.">?</span></div>');
-      html.push('<span id="ct-nav-controls" style="display:flex;align-items:center;gap:4px">');
-      html.push('<button id="ct-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
-      html.push('<span id="ct-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
-      html.push('<button id="ct-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
-      html.push('</span>');
-      html.push('</div>');
-      html.push('<div style="height:160px;position:relative"><canvas id="cycle-time-chart-canvas"></canvas></div>');
-      html.push('</div>');
+        html.push('<div class="volume-chart-wrap">');
+        html.push('<div class="volume-chart-header">');
+        html.push('<div class="volume-chart-title">Median Cycle Time <span class="stat-info" data-stat-tooltip="Median wall-clock time from feature-start to feature-close per period. Outliers above P95 are excluded. Scale auto-switches between hours and minutes.">?</span></div>');
+        html.push('<span id="ct-nav-controls" style="display:flex;align-items:center;gap:4px">');
+        html.push('<button id="ct-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
+        html.push('<span id="ct-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
+        html.push('<button id="ct-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
+        html.push('</span>');
+        html.push('</div>');
+        html.push('<div style="height:160px;position:relative"><canvas id="cycle-time-chart-canvas"></canvas></div>');
+        html.push('</div>');
 
-      html.push('<div class="volume-chart-wrap">');
-      html.push('<div class="volume-chart-header">');
-      html.push('<div class="volume-chart-title">Commits per Feature <span class="stat-info" data-stat-tooltip="Median number of commits per feature completed in each period. Lower values suggest more focused, single-pass implementations. Trending down means features are getting tighter.">?</span></div>');
-      html.push('</div>');
-      html.push('<div style="height:160px;position:relative"><canvas id="cpf-chart-canvas"></canvas></div>');
-      html.push('</div>');
+        html.push('<div class="volume-chart-wrap">');
+        html.push('<div class="volume-chart-header">');
+        html.push('<div class="volume-chart-title">Commits per Feature <span class="stat-info" data-stat-tooltip="Median number of commits per feature completed in each period. Lower values suggest more focused, single-pass implementations. Trending down means features are getting tighter.">?</span></div>');
+        html.push('</div>');
+        html.push('<div style="height:160px;position:relative"><canvas id="cpf-chart-canvas"></canvas></div>');
+        html.push('</div>');
 
-      html.push('<div class="volume-chart-wrap">');
-      html.push('<div class="volume-chart-header">');
-      html.push('<div class="volume-chart-title">Rework Ratio <span class="stat-info" data-stat-tooltip="Percentage of commits that are fixes (messages starting with fix:, fixup, or bugfix). Lower is better — means agents produce correct code on the first pass. Trending down indicates improving code quality.">?</span></div>');
-      html.push('</div>');
-      html.push('<div style="height:160px;position:relative"><canvas id="rework-chart-canvas"></canvas></div>');
-      html.push('</div>');
+        html.push('<div class="volume-chart-wrap">');
+        html.push('<div class="volume-chart-header">');
+        html.push('<div class="volume-chart-title">Rework Ratio <span class="stat-info" data-stat-tooltip="Percentage of commits that are fixes (messages starting with fix:, fixup, or bugfix). Lower is better — means agents produce correct code on the first pass. Trending down indicates improving code quality.">?</span></div>');
+        html.push('</div>');
+        html.push('<div style="height:160px;position:relative"><canvas id="rework-chart-canvas"></canvas></div>');
+        html.push('</div>');
+      } else {
+        // Pro-gated: show blurred SVG placeholders for all 5 charts
+        html.push(buildProGatedChart('Features Completed', 'chart-volume'));
+        html.push(buildProGatedChart('Commits', 'chart-commits'));
+        html.push(buildProGatedChart('Median Cycle Time', 'chart-cycle-time',
+          'Median wall-clock time from feature-start to feature-close per period.'));
+        html.push(buildProGatedChart('Commits per Feature', 'chart-cpf',
+          'Median number of commits per feature completed in each period.'));
+        html.push(buildProGatedChart('Rework Ratio', 'chart-rework',
+          'Percentage of commits that are fixes. Lower is better.'));
+        html.push('<div style="text-align:center;padding:8px 0;font-size:11px;color:var(--text-tertiary)"><a href="https://aigon.build/pro" target="_blank" style="color:var(--accent,#3b82f6);text-decoration:none">Unlock all charts with Aigon Pro</a></div>');
+      }
 
       html.push('</div>'); // end charts tab
 
@@ -920,9 +954,10 @@
       html.push('<div class="stats-section-title" style="margin-top:4px">Features</div>');
       html.push('<div class="stats-block" style="overflow-x:auto"><div id="stats-feature-list"></div></div>');
 
-      // Commit table filters
+      // Commit table filters (Pro-gated: type + agent filters)
       html.push('<div class="stats-section-title" style="margin-top:16px">Commits</div>');
-      html.push('<div class="stats-toolbar" style="margin-top:0">');
+      const filterGatedClass = _proActive ? '' : ' pro-gated-filters';
+      html.push(`<div class="stats-toolbar${filterGatedClass}" style="margin-top:0">`);
       html.push('<label style="font-size:12px;color:var(--text-secondary)">Type:</label>');
       html.push('<select class="stats-select" id="commit-type-filter">');
       const ctf = statsState.commitTypeFilter || 'all';
@@ -1015,18 +1050,20 @@
       // Temporarily show all tabs so Chart.js can measure canvas dimensions
       document.querySelectorAll('.stats-tab-content').forEach(el => { el.style.display = ''; });
 
-      // Render Chart.js charts into canvases now that they're in the DOM
-      const rawVolSeries = buildVolumeSeries(filteredFeatures, statsState.volumeGranularity);
-      const rawCommitSeries = buildCommitSeries(filteredCommits, statsState.volumeGranularity);
-      const rawCtSeries = buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity);
-      const rawCpfSeries = buildCommitsPerFeatureSeries(filteredFeatures, featureCommitMap, statsState.volumeGranularity);
-      const rawReworkSeries = buildReworkRatioSeries(filteredCommits, statsState.volumeGranularity);
-      const [alignedVol, alignedCommit, alignedCt, alignedCpf, alignedRework] = alignAllSeries(rawVolSeries, rawCommitSeries, rawCtSeries, rawCpfSeries, rawReworkSeries);
-      renderVolumeChart(alignedVol, statsState.volumeGranularity);
-      renderCommitChart(alignedCommit, statsState.volumeGranularity);
-      renderCycleTimeChart(alignedCt, statsState.volumeGranularity);
-      renderCpfChart(alignedCpf, statsState.volumeGranularity);
-      renderReworkChart(alignedRework, statsState.volumeGranularity);
+      // Render Chart.js charts into canvases (only when Pro is active — canvases exist)
+      if (_proActive) {
+        const rawVolSeries = buildVolumeSeries(filteredFeatures, statsState.volumeGranularity);
+        const rawCommitSeries = buildCommitSeries(filteredCommits, statsState.volumeGranularity);
+        const rawCtSeries = buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity);
+        const rawCpfSeries = buildCommitsPerFeatureSeries(filteredFeatures, featureCommitMap, statsState.volumeGranularity);
+        const rawReworkSeries = buildReworkRatioSeries(filteredCommits, statsState.volumeGranularity);
+        const [alignedVol, alignedCommit, alignedCt, alignedCpf, alignedRework] = alignAllSeries(rawVolSeries, rawCommitSeries, rawCtSeries, rawCpfSeries, rawReworkSeries);
+        renderVolumeChart(alignedVol, statsState.volumeGranularity);
+        renderCommitChart(alignedCommit, statsState.volumeGranularity);
+        renderCycleTimeChart(alignedCt, statsState.volumeGranularity);
+        renderCpfChart(alignedCpf, statsState.volumeGranularity);
+        renderReworkChart(alignedRework, statsState.volumeGranularity);
+      }
 
       // Hide inactive tabs now that charts are rendered
       document.querySelectorAll('.stats-tab-content').forEach(el => {
@@ -1042,8 +1079,8 @@
           document.querySelectorAll('.stats-tab-content').forEach(el => {
             el.style.display = el.dataset.tab === statsState.subTab ? '' : 'none';
           });
-          // Re-render charts when switching to charts tab (canvas needs to be visible)
-          if (statsState.subTab === 'charts') {
+          // Re-render charts when switching to charts tab (canvas needs to be visible, Pro only)
+          if (statsState.subTab === 'charts' && _proActive) {
             if (statsState.volumeChart) { statsState.volumeChart.resize(); applyVolumeWindow(); }
             if (statsState.commitChart) { statsState.commitChart.resize(); applyCommitWindow(); }
             if (statsState.cycleTimeChart) { statsState.cycleTimeChart.resize(); applyCycleTimeWindow(); }
@@ -1141,4 +1178,19 @@
 
       // Feature list
       renderFeatureList();
+
+      // Load pro-reports.js when Pro is active — replaces data-pro-slot placeholders
+      if (_proActive && !window._proReportsLoaded) {
+        const script = document.createElement('script');
+        script.src = '/js/pro-reports.js';
+        script.onload = () => {
+          window._proReportsLoaded = true;
+          if (typeof window.renderProReports === 'function') {
+            window.renderProReports(container, statsState.data);
+          }
+        };
+        document.head.appendChild(script);
+      } else if (_proActive && typeof window.renderProReports === 'function') {
+        window.renderProReports(container, statsState.data);
+      }
     }
