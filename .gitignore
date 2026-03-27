@@ -17,6 +17,7 @@ test-results/
 .aigon/locks/
 .aigon/worktree.json
 .aigon/.board-map.json
+.aigon/cache/
 next-env.d.ts
 
 # Temp

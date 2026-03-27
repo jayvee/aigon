@@ -6,5 +6,6 @@
         "implement": "opus"
       }
     }
-  }
+  },
+  "forcePro": true
 }
