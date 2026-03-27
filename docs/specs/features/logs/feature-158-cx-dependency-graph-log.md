@@ -27,3 +27,23 @@ Agent: cx
   - A feature gets a graph if it has upstream dependencies or downstream dependents.
   - Features with no graph participation have no section.
 - Implemented full-graph refresh per trigger to keep all affected connected specs in sync when stages or dependencies change.
+
+## Code Review
+
+**Reviewed by**: cc (Claude Opus 4.6)
+**Date**: 2026-03-28
+
+### Findings
+- SVG marker ID `dep-arrow` was hardcoded — duplicate IDs cause arrow rendering failures when multiple graphs are in the same HTML document
+- SVG text elements had no `font-family` — would render in browser default serif, not matching the dashboard's sans-serif UI
+- `featureId` was unescaped in the SVG `aria-label` attribute (low risk since IDs are numeric, but defense-in-depth)
+
+### Fixes Applied
+- `fix(review): use unique SVG marker IDs and add font-family` — marker IDs now scoped per feature (`dep-arrow-{id}`), added `system-ui` font stack to SVG root, escaped `aria-label`
+
+### Notes
+- Implementation chose inline SVG over Mermaid (spec suggested either) — valid decision, avoids external dependency and works in raw markdown viewers
+- All three trigger points (prioritise, start, close) are correctly wired
+- `refreshFeatureDependencyGraphs` rebuilds the reverse graph for each feature — acceptable for typical project sizes but could be optimized if feature count grows large
+- `feature-start` graph refresh only runs when `movedFromBacklog` is true — features restarted while already in-progress won't get a graph refresh (minor edge case)
+- Agent left all work uncommitted — committed as part of review
