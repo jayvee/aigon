@@ -39,3 +39,17 @@ Reuse existing dev-server infrastructure (port allocation, proxy registration, p
 - **API data sharing**: No explicit data sharing mechanism needed. Each preview instance runs its own `pollStatus()` loop, reading the same manifests and repos from the filesystem. This is stateless and safe — identical to how the main dashboard works.
 - **Cleanup via serverId pattern matching**: Rather than maintaining a separate registry of preview dashboards, cleanup matches the `{agent}-{featureId}` pattern from `deriveServerIdFromBranch()`. This is consistent with how worktree identifiers are already derived.
 - **No auto-start**: Previews are manual (`--preview` flag). Auto-start on worktree creation is explicitly out of scope per the spec.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-27
+
+### Findings
+- `aigon dashboard --preview` failed when run from a nested directory inside the feature worktree because preview validation and template routing used `process.cwd()` instead of the repo root.
+
+### Fixes Applied
+- `fix(review): resolve dashboard preview root from git repo`
+
+### Notes
+- Verified preview startup from the worktree root and confirmed it registered a dedicated dashboard instance and served templates from the worktree path.
