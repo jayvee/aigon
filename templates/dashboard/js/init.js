@@ -18,7 +18,7 @@
 
       // Load analytics data for the amplification section
       if (!statsState.data) {
-        c.innerHTML = '<div class="amp-empty" style="padding:20px">Loading insights…</div>';
+        c.innerHTML = '<div class="amp-empty" style="padding:20px"><span class="toast-spinner"></span>Loading insights…</div>';
         await loadAnalytics();
       }
 
@@ -41,7 +41,7 @@
       var payload = statsState.insightsData;
 
       if (statsState.insightsLoading) {
-        insightsHtml = '<div class="amp-empty">Loading insights…</div>';
+        insightsHtml = '<div class="amp-empty"><span class="toast-spinner"></span>Loading insights…</div>';
       } else if (statsState.insightsError) {
         insightsHtml = '<div class="amp-empty">Failed to load insights: ' + escHtml(statsState.insightsError) + '</div>';
       } else if (!payload || !payload.report) {
@@ -82,6 +82,9 @@
       var refreshBtn = document.getElementById('amp-insights-refresh-btn');
       if (refreshBtn) refreshBtn.onclick = async function() {
         refreshBtn.disabled = true;
+        refreshBtn.innerHTML = '<span class="run-next-spinner"></span>Refreshing…';
+        var body = document.querySelector('.amp-insights-body');
+        if (body) body.innerHTML = '<div class="amp-empty"><span class="toast-spinner"></span>Generating insights…</div>';
         await loadInsights(true);
         renderInsights();
       };
@@ -90,7 +93,7 @@
     // ── Main render dispatch ───────────────────────────────────────────────────
 
     function viewUsesRepoSidebar(view) {
-      return view === 'monitor' || view === 'pipeline' || view === 'config' || view === 'statistics';
+      return view === 'monitor' || view === 'pipeline' || view === 'sessions' || view === 'config' || view === 'statistics';
     }
 
     function updateSidebarToggle() {
@@ -109,11 +112,13 @@
 
       let sessions = [];
       let orphanCount = 0;
+      let registeredRepos = [];
       try {
         const res = await fetch('/api/sessions');
         const data = await res.json();
         sessions = data.sessions || [];
         orphanCount = data.orphanCount || 0;
+        registeredRepos = data.repos || [];
       } catch (e) {
         container.innerHTML = '<div class="empty">Failed to load sessions: ' + escHtml(e.message) + '</div>';
         return;
@@ -121,11 +126,14 @@
 
       container.innerHTML = '';
 
+      // Use the shared sidebar repo selector
+      let selectedSessionRepo = state.selectedRepo || 'all';
+
       // Toolbar
       const toolbar = document.createElement('div');
       toolbar.className = 'sessions-toolbar';
       toolbar.innerHTML = '<strong style="font-size:15px;font-weight:600;letter-spacing:-.01em">Tmux Sessions</strong>' +
-        '<span style="font-size:12px;color:var(--text-tertiary)">' + sessions.length + ' session' + (sessions.length === 1 ? '' : 's') + '</span>' +
+        '<span style="font-size:12px;color:var(--text-tertiary)" id="sessions-count-label">' + sessions.length + ' session' + (sessions.length === 1 ? '' : 's') + '</span>' +
         (orphanCount > 0 ? '<button class="btn btn-warn" id="sessions-kill-orphans-btn" style="font-size:11px;padding:4px 10px">Kill ' + orphanCount + ' Orphan' + (orphanCount === 1 ? '' : 's') + '</button>' : '') +
         '<button class="btn" id="sessions-tile-btn" style="margin-left:auto" title="Arrange all iTerm2 windows into a grid">⊞ Tile Windows</button>' +
         '<button class="btn" id="sessions-refresh-btn">↺ Refresh</button>';
@@ -152,21 +160,17 @@
         };
       }
 
-      if (sessions.length === 0) {
-        container.innerHTML += '<div class="empty">No tmux sessions running.</div>';
-        return;
-      }
-
-      // Group: dashboard, orphaned, agent
-      const dashSessions = sessions.filter(s => s.name.startsWith('aigon-dash-'));
-      const orphanSessions = sessions.filter(s => !s.name.startsWith('aigon-dash-') && s.orphan);
-      const agentSessions = sessions.filter(s => !s.name.startsWith('aigon-dash-') && !s.orphan);
-
       function entityBadge(s) {
         if (!s.entityType) return '';
         const label = s.entityType + s.entityId;
         const cls = s.entityType === 'f' ? 'feature' : 'research';
         return '<span class="session-entity-badge ' + cls + '">' + escHtml(label) + '</span>';
+      }
+
+      function repoBadge(s) {
+        if (!s.repoPath) return '';
+        const name = s.repoPath.split('/').pop();
+        return '<span class="session-entity-badge" style="background:var(--bg-surface);color:var(--text-secondary)">' + escHtml(name) + '</span>';
       }
 
       function statusBadge(s) {
@@ -184,7 +188,7 @@
         return '';
       }
 
-      function renderGroup(title, items, opts) {
+      function renderGroup(target, title, items, opts) {
         if (items.length === 0) return;
         const group = document.createElement('div');
         group.className = 'sessions-group';
@@ -198,6 +202,7 @@
           row.innerHTML =
             '<span class="session-name" title="' + escHtml(s.name) + '">' + escHtml(s.name) + '</span>' +
             entityBadge(s) +
+            (selectedSessionRepo === 'all' ? repoBadge(s) : '') +
             statusBadge(s) +
             '<span class="session-meta">' + age + '</span>' +
             '<span style="display:flex;gap:5px">' +
@@ -236,12 +241,50 @@
           };
           group.appendChild(row);
         });
-        container.appendChild(group);
+        target.appendChild(group);
       }
 
-      renderGroup('Dashboard Sessions', dashSessions);
-      renderGroup('Orphaned Sessions', orphanSessions, { orphan: true });
-      renderGroup('Agent Sessions', agentSessions);
+      function renderSessionGroups() {
+        // Remove existing groups (keep toolbar)
+        container.querySelectorAll('.sessions-group, .empty').forEach(el => el.remove());
+
+        const filtered = selectedSessionRepo === 'all'
+          ? sessions
+          : sessions.filter(s => s.repoPath === selectedSessionRepo || s.name.startsWith('aigon-dash'));
+        const dashFiltered = filtered.filter(s => s.name.startsWith('aigon-dash'));
+        const orphanFiltered = filtered.filter(s => !s.name.startsWith('aigon-dash') && s.orphan);
+        const agentFiltered = filtered.filter(s => !s.name.startsWith('aigon-dash') && !s.orphan);
+        // Unlinked sessions (no repo) — only show in "all" view
+        const unlinkedSessions = selectedSessionRepo === 'all'
+          ? sessions.filter(s => !s.repoPath && !s.name.startsWith('aigon-dash') && !s.orphan)
+          : [];
+
+        const countLabel = document.getElementById('sessions-count-label');
+        if (countLabel) {
+          const total = filtered.length;
+          countLabel.textContent = total + ' session' + (total === 1 ? '' : 's');
+        }
+
+        if (filtered.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.textContent = 'No sessions for this repo.';
+          container.appendChild(empty);
+          return;
+        }
+
+        renderGroup(container, 'Agent Sessions', agentFiltered);
+        renderGroup(container, 'Orphaned Sessions', orphanFiltered, { orphan: true });
+        if (unlinkedSessions.length > 0) renderGroup(container, 'Unlinked Sessions', unlinkedSessions);
+        renderGroup(container, 'Dashboard Sessions', dashFiltered);
+      }
+
+      if (sessions.length === 0) {
+        container.innerHTML += '<div class="empty">No tmux sessions running.</div>';
+        return;
+      }
+
+      renderSessionGroups();
     }
 
     function render() {
