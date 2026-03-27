@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 140
+lines_removed: 8
+lines_changed: 148
+files_touched: 5
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 135
+output_tokens: 13831
+cache_creation_input_tokens: 517029
+cache_read_input_tokens: 7072665
+thinking_tokens: 0
+total_tokens: 7603660
+billable_tokens: 13966
+cost_usd: 21.3426
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 94.36
+---
 # Implementation Log: Feature 157 - research-findings-peek-panel
 Agent: cc
 
