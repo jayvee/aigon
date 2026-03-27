@@ -39,8 +39,31 @@ Roo Code (https://roocode.com/) is a VS Code extension for AI-powered coding tha
 <!-- Document discoveries, options evaluated, pros/cons -->
 
 ## Recommendation
-<!-- Summary of recommended approach based on findings -->
+
+All three agents agree: Aigon should NOT try to clone Roo Code. Roo wins as a vertically integrated IDE+cloud agent suite; Aigon's lane is **agent-agnostic workflow control plane** built on git, worktrees, specs, and explicit evaluation.
+
+**Adopt selectively from Roo Code's strengths:**
+1. **Workflow modes** — Roo's custom modes with tool/file restrictions are more expressive than Aigon's profiles. Add reusable role definitions with capability restrictions, model preferences, and `whenToUse` metadata.
+2. **Cost analytics** — Users running multiple agents care deeply about spend. Extend existing telemetry into a dashboard panel with per-feature and per-agent breakdowns.
+3. **Safe checkpoints** — Roo's shadow-git checkpoints reduce risk during long agent runs. Aigon is already git-native, so lightweight checkpoint/undo around agent edits is a natural fit.
+
+**Do NOT adopt:** Roo's sequential-only orchestrator (Aigon's Fleet is superior), cloud-hosted agents (different product model), or vendor-locked IDE extension approach.
+
+**Lean into Aigon's advantages:** True parallel execution, Arena evaluation, multi-CLI support, spec-driven lifecycle, and transparent repo-local workflow state.
 
 ## Output
-<!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Link the newly created files below. -->
-- [ ] Feature:
+
+### Selected Features
+
+| Feature Name | Description | Priority | Spec |
+|---|---|---|---|
+| workflow-modes | Reusable agent roles with role definitions, tool/file restrictions, model preferences, and whenToUse metadata | high | `docs/specs/features/01-inbox/feature-workflow-modes.md` |
+| cost-tracking-dashboard | Aggregate per-agent cost/token analytics in the dashboard with per-feature and per-session breakdowns | high | `docs/specs/features/01-inbox/feature-cost-tracking-dashboard.md` |
+| safe-checkpoints | Lightweight checkpoints/undo around agent-driven edits for safer experimentation | medium | `docs/specs/features/01-inbox/feature-safe-checkpoints.md` |
+| roocode-comparison-pages | Add Roo Code to Aigon's comparison pages on the docs site and website | medium | `docs/specs/features/01-inbox/feature-roocode-comparison-pages.md` |
+
+### Not Selected
+- **mcp-registry** (#1): Valuable but large scope; revisit after workflow-modes establishes the role abstraction layer
+- **semantic-codebase-search** (#4): Depends on MCP infrastructure; defer until mcp-registry is built
+- **reviewer-ux-improvements** (#5): Aigon already has the workflow primitives; packaging can happen incrementally without a dedicated feature
+- **role-marketplace** (#7): Low priority; needs workflow-modes first and a critical mass of community roles
