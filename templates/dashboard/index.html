@@ -91,7 +91,7 @@
                         <template x-for="agent in sortedAgents(feature.agents)" :key="agent.id">
                           <div class="row" :class="[agent.status, 'agent-' + agent.id]">
                             <span class="agent" x-text="agentDisplayName(agent)"></span>
-                            <span x-html="buildAgentStatusHtml(agent, { showDevLink: true })"></span>
+                            <span x-html="buildAgentStatusSpan(agent, { showDevLink: true })"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
@@ -116,7 +116,7 @@
                         <template x-for="agent in sortedAgents(item.agents)" :key="agent.id">
                           <div class="row" :class="[agent.status, 'agent-' + agent.id]">
                             <span class="agent" x-text="AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
-                            <span x-html="buildAgentStatusHtml(agent, { showDevLink: true })"></span>
+                            <span x-html="buildAgentStatusSpan(agent, { showDevLink: true })"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
@@ -140,7 +140,7 @@
                         <template x-for="agent in sortedAgents(item.agents || [])" :key="agent.id">
                           <div class="row" :class="[agent.status, 'agent-' + agent.id]">
                             <span class="agent" x-text="AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
-                            <span x-html="buildAgentStatusHtml(agent, { showDevLink: true })"></span>
+                            <span x-html="buildAgentStatusSpan(agent, { showDevLink: true })"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
