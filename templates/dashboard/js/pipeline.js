@@ -311,7 +311,7 @@
       }
       return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
         '<div class="kcard-agent-header">' +
-          '<span class="kcard-agent-name" title="' + escHtml(displayName) + '">' + escHtml(shortName) + '</span>' +
+          '<span class="kcard-agent-name" title="' + escHtml(displayName) + '">' + escHtml(displayName) + '</span>' +
           devSlot +
         '</div>' +
         '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span></div>' +
