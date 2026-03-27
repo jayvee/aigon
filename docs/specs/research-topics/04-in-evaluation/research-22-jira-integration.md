@@ -43,11 +43,53 @@ Enterprise teams typically use project management tools like Jira or Linear as t
 - Linear API: https://developers.linear.app/docs
 
 ## Findings
-<!-- Document discoveries, options evaluated, pros/cons -->
+
+See agent findings in `docs/specs/research-topics/logs/`:
+- `research-22-cc-findings.md` — Claude: deepest API reference, MCP ecosystem survey, phased MVP proposal
+- `research-22-gg-findings.md` — Gemini: Jira-as-SOT framing, enterprise-first import workflow, service account auth
+- `research-22-cx-findings.md` — Codex: field-ownership bidirectional model, category-based status mapping, webhook-first conflict handling
+
+**Consensus across all agents:**
+1. Status mapping should be category-based (Jira status categories), not hardcoded status names
+2. MVP should be import-first + one-way outbound sync (no bidirectional in v1)
+3. Generic adapter interface with Jira first, Linear second
+4. Logs stay local; trackers get compact milestone comments with links
+5. API token auth for MVP; OAuth later
+6. Hook into `requestTransition` for outbound sync
+7. MCP servers exist but aren't suitable as the sync backbone — use direct API adapters
+8. Linear is simpler (GraphQL, no transition constraints, markdown-native) and should come second
+
+**Key divergence:** Source of truth strategy — CC recommends Aigon-as-SOT, GG recommends Jira-as-SOT, CX proposes field-ownership split (tracker owns planning fields, Aigon owns execution artifacts). The field-ownership model is the most nuanced and was adopted for the conflict handling feature.
 
 ## Recommendation
-<!-- Summary of recommended approach based on findings -->
+
+**Build in four layers, starting with Aigon-as-SOT one-way push:**
+
+1. **Foundation** — Generic adapter interface, Jira Cloud adapter, config commands, import/link commands
+2. **Lifecycle sync** — Outbound status push via `requestTransition`, milestone comments, `--jira` create flag
+3. **Linear adapter** — Same interface, simpler implementation (GraphQL, no transition discovery, markdown comments)
+4. **Webhook + conflict handling** — Inbound sync with field-ownership model, conflict detection and dashboard resolution UI
+
+Start with API tokens for auth. Avoid bidirectional content sync. Use MCP servers only as optional agent convenience, not as the integration backbone.
 
 ## Output
-<!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Link the newly created files below. -->
-- [ ] Feature:
+
+### Selected Features
+
+| Feature Name | Description | Priority | Spec |
+|--------------|-------------|----------|------|
+| jira-integration-foundation | Adapter interface + Jira Cloud adapter + config + import/link | high | `docs/specs/features/01-inbox/feature-jira-integration-foundation.md` |
+| jira-lifecycle-sync | Outbound status push + milestone comments + `--jira` create | high | `docs/specs/features/01-inbox/feature-jira-lifecycle-sync.md` |
+| linear-adapter | Linear GraphQL adapter using `@linear/sdk` | medium | `docs/specs/features/01-inbox/feature-linear-adapter.md` |
+| tracker-webhook-conflict | Webhook ingestion + field-ownership conflict resolution | medium | `docs/specs/features/01-inbox/feature-tracker-webhook-conflict.md` |
+
+### Feature Dependencies
+- jira-lifecycle-sync depends on jira-integration-foundation
+- linear-adapter depends on jira-integration-foundation (for the adapter interface)
+- tracker-webhook-conflict depends on jira-lifecycle-sync
+
+### Not Selected
+- `jira-fleet-subtasks` (low priority — labels/comments sufficient for Fleet mode per CX's recommendation)
+- `aigon-mcp-server` (low priority — separate concern, not part of issue tracker integration)
+- `mcp-tracker-operations` (low priority — MCP as optional convenience, not sync backbone)
+- `jira-bidirectional-sync` (subsumed by tracker-webhook-conflict with field-ownership model)
