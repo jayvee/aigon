@@ -74,6 +74,7 @@
                 <div class="repo-h" x-on:click.stop="toggleCollapse(repo.path)">
                   <strong x-text="repo.name || repo.displayPath"></strong>
                   <span x-html="repoSummaryText(repo)"></span>
+                  <span x-html="buildMainDevServerHtml(repo)" x-on:click.stop></span>
                   <span x-html="buildAskAgentHtml(repo.path)" x-on:click.stop="handleAskClick($event)"></span>
                 </div>
                 <div class="repo-b" x-show="!isCollapsed(repo.path)">
@@ -180,6 +181,7 @@
               <div x-show="$store.dashboard.selectedRepo === 'all' && visibleRepos.length > 1"
                    style="display:flex;align-items:center;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin:10px 0 6px;font-weight:600">
                 <span x-text="repo.displayPath || repo.name"></span>
+                <span x-html="buildMainDevServerHtml(repo)" style="text-transform:none;letter-spacing:0;font-weight:400" x-on:click.stop></span>
                 <span x-html="buildAskAgentHtml(repo.path)" style="text-transform:none;letter-spacing:0;font-weight:400"></span>
               </div>
               <div class="kanban" :style="'--kanban-cols:' + currentStages.length">

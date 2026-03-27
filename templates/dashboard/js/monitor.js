@@ -134,6 +134,7 @@
           return '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
         },
         buildAskAgentHtml(repoPath) { return buildAskAgentHtml(repoPath); },
+        buildMainDevServerHtml(repo) { return buildMainDevServerHtml(repo); },
         handleAskClick(e) {
           const btn = e.target.closest('[data-ask-run]');
           if (btn) { runAskAgent(btn.dataset.askRepo, btn.dataset.askRun); return; }
