@@ -296,6 +296,10 @@
         actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="reopen-agent"' + attrs + '>Re-open</button>';
         actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="view-work"' + attrs + '>View</button>';
       }
+      // "View Findings" button for research agents with a findings file
+      if (pipelineType === 'research' && agent.findingsPath) {
+        actionsHtml += '<button class="btn btn-secondary kcard-view-findings-btn" data-findings-path="' + escHtml(agent.findingsPath) + '" data-findings-agent="' + escHtml(agent.id) + '" data-findings-id="' + escHtml(feature.id) + '">Findings</button>';
+      }
       if (primaryActions.length > 0) {
         const va = primaryActions[0];
         const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
@@ -540,6 +544,18 @@
           const evalMatch = sessionName.match(/eval-(\w+)$/);
           const evalAgentId = evalMatch ? evalMatch[1] : 'cc';
           await requestFeatureOpen(feature.id, evalAgentId, repoPath, btn, pipelineType, 'eval');
+        };
+      });
+
+      // Wire "View Findings" buttons for research agents
+      card.querySelectorAll('.kcard-view-findings-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const findingsPath = btn.getAttribute('data-findings-path');
+          const agentId = btn.getAttribute('data-findings-agent');
+          const featureId = btn.getAttribute('data-findings-id');
+          const agentName = AGENT_DISPLAY_NAMES[agentId] || agentId;
+          openDrawer(findingsPath, 'R#' + featureId + ' ' + agentName + ' Findings', feature.stage, repoPath);
         };
       });
 
