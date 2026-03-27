@@ -252,16 +252,25 @@
       } else {
         icon = '○'; label = 'Not started'; cls = 'status-idle';
       }
-      const devServerLink = opts.showDevLink ? buildDevServerLinkHtml(agent.devServerUrl) : '';
+      return { icon, label, cls, devServerUrl: agent.devServerUrl };
+    }
+
+    function buildAgentStatusSpan(agent, options) {
+      const s = buildAgentStatusHtml(agent, options);
+      const opts = options || {};
+      const devServerLink = opts.showDevLink ? buildDevServerLinkHtml(s.devServerUrl) : '';
       const devSlot = opts.showDevLink ? '<span class="kcard-dev-slot">' + devServerLink + '</span>' : '';
-      return '<span class="kcard-agent-status ' + cls + '">' + icon + ' ' + label + '</span>' + devSlot;
+      return '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span>' + devSlot;
     }
 
     // AGENT_ACTION_LABELS moved to actions.js (shared between monitor + pipeline)
 
     function buildAgentSectionHtml(agent, agentValidActions, feature, repoPath, pipelineType) {
+      const shortName = AGENT_SHORT_NAMES[agent.id] || agent.id.toUpperCase();
       const displayName = AGENT_DISPLAY_NAMES[agent.id] || agent.id;
-      const statusHtml = buildAgentStatusHtml(agent, { showDevLink: true });
+      const s = buildAgentStatusHtml(agent, { showDevLink: true });
+      const devServerLink = buildDevServerLinkHtml(s.devServerUrl);
+      const devSlot = devServerLink ? '<span class="kcard-dev-slot">' + devServerLink + '</span>' : '';
       const primaryActions = agentValidActions.filter(va => va.action !== 'feature-stop' && va.action !== 'research-stop');
       const overflowActions = agentValidActions.filter(va => va.action === 'feature-stop' || va.action === 'research-stop');
       let actionsHtml = '';
@@ -283,9 +292,9 @@
           ' data-flag-id="' + escHtml(feature.id) + '"' +
           ' data-flag-agent="' + escHtml(agent.id) + '"' +
           ' data-flag-repo="' + escHtml(repoPath || '') + '"';
-        actionsHtml += '<button class="btn btn-primary kcard-flag-btn" data-flag-action="mark-submitted"' + attrs + '>Mark Submitted</button>';
-        actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="reopen-agent"' + attrs + '>Re-open Agent</button>';
-        actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="view-work"' + attrs + '>View Work</button>';
+        actionsHtml += '<button class="btn btn-primary kcard-flag-btn" data-flag-action="mark-submitted"' + attrs + '>Submit</button>';
+        actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="reopen-agent"' + attrs + '>Re-open</button>';
+        actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="view-work"' + attrs + '>View</button>';
       }
       if (primaryActions.length > 0) {
         const va = primaryActions[0];
@@ -301,7 +310,11 @@
         actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
       }
       return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
-        '<div class="kcard-agent-header"><span class="kcard-agent-name">' + escHtml(displayName) + '</span>' + statusHtml + '</div>' +
+        '<div class="kcard-agent-header">' +
+          '<span class="kcard-agent-name" title="' + escHtml(displayName) + '">' + escHtml(shortName) + '</span>' +
+          devSlot +
+        '</div>' +
+        '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span></div>' +
         (actionsHtml ? '<div class="kcard-agent-actions">' + actionsHtml + '</div>' : '') +
         '</div>';
     }
@@ -359,8 +372,8 @@
           const evalSess = feature.evalSession;
           const evalAgent = AGENT_DISPLAY_NAMES[evalSess.agent] || evalSess.agent;
           innerHtml += '<div class="kcard-agent agent-eval">' +
-            '<div class="kcard-agent-header"><span class="kcard-agent-name">Evaluate</span>' +
-            '<span class="kcard-agent-status status-implementing">● ' + escHtml(evalAgent) + '</span></div>' +
+            '<div class="kcard-agent-header"><span class="kcard-agent-name">Eval</span></div>' +
+            '<div class="kcard-agent-status-row"><span class="kcard-agent-status status-implementing">● ' + escHtml(evalAgent) + '</span></div>' +
             '<div class="kcard-agent-actions">' +
             '<button class="btn btn-secondary kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">View</button>' +
             '</div></div>';
@@ -373,9 +386,12 @@
       } else if (isSoloDriveBranch) {
         // Drive mode (branch): same visual structure as agent sections but labeled "Drive"
         const soloAgent = agents[0];
-        const statusHtml = buildAgentStatusHtml(soloAgent, { showDevLink: true });
+        const soloStatus = buildAgentStatusHtml(soloAgent, { showDevLink: true });
+        const soloDevLink = buildDevServerLinkHtml(soloStatus.devServerUrl);
+        const soloDevSlot = soloDevLink ? '<span class="kcard-dev-slot">' + soloDevLink + '</span>' : '';
         innerHtml += '<div class="kcard-agent agent-solo">' +
-          '<div class="kcard-agent-header"><span class="kcard-agent-name">Drive</span>' + statusHtml + '</div>' +
+          '<div class="kcard-agent-header"><span class="kcard-agent-name">Drive</span>' + soloDevSlot + '</div>' +
+          '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + soloStatus.cls + '">' + soloStatus.icon + ' ' + soloStatus.label + '</span></div>' +
           '</div>';
         // Card-level actions (close, review — no session controls)
         const soloCardActionsHtml = buildFeatureActions(feature, repoPath, pipelineType);
