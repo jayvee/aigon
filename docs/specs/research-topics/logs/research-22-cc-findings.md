@@ -191,30 +191,64 @@ When someone moves a Jira issue while Aigon is mid-implementation:
 
 ### 9. Existing MCP Servers
 
-*(Findings from MCP research agent — to be updated)*
+The MCP ecosystem for Jira and Linear is surprisingly mature. Both Atlassian and Linear now offer official remote MCP servers, and strong community alternatives exist.
 
-**Atlassian MCP Server** (`atlassian/mcp-atlassian`):
-- Official open-source MCP server from Atlassian
-- Python-based, version 0.21.0
-- Supports both Jira and Confluence
-- Operations: read issues, create issues, search via JQL, add comments
-- Auth: API tokens
-- Maturity: actively maintained, 500+ stars
+#### Jira MCP Servers
 
-**Linear MCP**: Community servers exist but are less mature than Atlassian's.
+**sooperset/mcp-atlassian** (Community Leader — 4,747 stars, MIT)
+- https://github.com/sooperset/mcp-atlassian
+- Python-based (`pip install mcp-atlassian`, v0.21.0), runs via `uvx`
+- **72 tools** across Jira and Confluence, including:
+  - Read: JQL search, get issue, get transitions, boards, sprints, fields, changelogs
+  - Write: create/update/delete issues (+ batch), transition issues, add/edit comments, manage sprints, create versions
+  - Watchers, Service Desk queues, attachments
+- Auth: API tokens (Cloud), PAT (Server/DC), OAuth 2.0
+- Supports both Jira Cloud AND Server/Data Center (v8.14+)
+- Actively maintained (last push 2026-03-02), 1,038 forks
 
-**Trade-offs of MCP vs direct API:**
+**atlassian/atlassian-mcp-server** (Official — 503 stars, Apache 2.0)
+- https://github.com/atlassian/atlassian-mcp-server
+- **Remote/cloud-hosted** at `https://mcp.atlassian.com/v1/mcp` — not a local server
+- Auth: OAuth 2.1 (browser flow) or admin-enabled scoped API tokens
+- Covers Jira, Confluence, and Compass
+- Enterprise-grade: audit logging, Atlassian Cloud permissions
+- Cloud-only (no Server/DC). Requires `mcp-remote` proxy for local clients.
+
+**Other notable**: aashari/mcp-server-atlassian-jira (60 stars, TypeScript/npm), nguyenvanduocit/jira-mcp (85 stars, Go, workflow transitions)
+
+#### Linear MCP Servers
+
+**Official Linear Remote MCP** (First-party)
+- Hosted at `https://mcp.linear.app/sse`
+- Announced: https://linear.app/changelog/2025-05-01-mcp
+- Auth: OAuth via Linear's auth flow
+- All community servers (jerhadf/linear-mcp-server, 346 stars) have deprecated in favor of this
+- The canonical choice for production Linear integration
+
+**tacticlaunch/mcp-linear** (Active Community — 134 stars, MIT)
+- https://github.com/tacticlaunch/mcp-linear (`@tacticlaunch/mcp-linear` on npm)
+- TypeScript, 35+ tools: issues, comments, projects, cycles, initiatives
+- Auth: Linear API token via env var
+- Most comprehensive community server still actively maintained
+
+#### MCP vs Direct API: Trade-off Analysis
 
 | Factor | MCP Approach | Direct API |
 |---|---|---|
 | Development speed | Faster — reuse existing tools | Slower — build from scratch |
-| Feature coverage | Limited to what MCP server exposes | Full API access |
+| Feature coverage | Good (72 tools for Jira) but not 100% | Full API access |
 | Maintenance | Depends on MCP server maintainer | Self-maintained |
 | Customization | Low — stuck with tool signatures | High — full control |
-| Real-time sync | No webhook support in MCP | Full webhook/polling support |
-| CLI integration | Awkward — MCP is designed for AI agents, not CLI tools | Natural fit for `lib/adapters/` |
+| Real-time sync | **No webhook support** — MCP is request/response only | Full webhook/polling support |
+| CLI integration | Extra process (stdio/HTTP), serialization overhead | Direct HTTP calls, natural for `lib/adapters/` |
+| Auth complexity | Offloaded to MCP server | Must handle yourself |
+| Official backing | Both Atlassian and Linear offer first-party remote MCP | N/A |
 
-**Recommendation**: **Do not use MCP for the core integration.** MCP servers are designed for AI agent interactions, not for programmatic CLI-to-API sync. They lack webhook support, have incomplete coverage, and add an unnecessary layer. However, Aigon could **expose its own MCP server** so that AI agents (Claude Code, etc.) can interact with Aigon features — this is a separate, complementary feature.
+**Hybrid recommendation**: For the core Aigon CLI integration, **build direct API adapters** (`lib/adapters/jira.js`, `lib/adapters/linear.js`). MCP servers are designed for AI agent interactions, not programmatic CLI-to-API sync. They lack webhook support, add process overhead, and create a dependency on external maintainers.
+
+However, consider a **complementary MCP strategy**:
+1. **Consume MCP for AI agent context**: When Aigon agents (Claude Code, Gemini CLI) research or implement features, they could connect to the official Jira/Linear MCP servers to read issue context directly.
+2. **Expose Aigon's own MCP server**: Let AI agents interact with Aigon's feature/research board via MCP tools — this is a separate, high-value feature.
 
 ### 10. Minimal Viable Integration (MVP)
 
