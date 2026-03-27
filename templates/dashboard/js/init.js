@@ -332,6 +332,8 @@
         document.getElementById('logs-view').style.display = 'none';
         document.getElementById('console-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
+        const allRepos = ((state.data || {}).repos || []);
+        renderSidebar(allRepos);
         // Re-filter if sessions already loaded, otherwise fetch
         if (_sessionsFilterFn) { _sessionsFilterFn(); } else { renderSessions(); }
       } else if (state.view === 'statistics') {
