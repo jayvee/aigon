@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 223
+lines_removed: 13
+lines_changed: 236
+files_touched: 6
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 212
+output_tokens: 23295
+cache_creation_input_tokens: 643795
+cache_read_input_tokens: 13617353
+thinking_tokens: 0
+total_tokens: 14284655
+billable_tokens: 23507
+cost_usd: 34.2475
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 99.61
+---
 # Implementation Log: Feature 156 - dashboard-worktree-preview
 Agent: cc
 
