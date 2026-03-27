@@ -294,9 +294,9 @@
           ' data-flag-repo="' + escHtml(repoPath || '') + '"';
         actionsHtml += '<button class="btn btn-primary kcard-flag-btn" data-flag-action="mark-submitted"' + attrs + '>Submit</button>';
         actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="reopen-agent"' + attrs + '>Re-open</button>';
-        actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="view-work"' + attrs + '>View</button>';
+        actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="view-work"' + attrs + '>Open</button>';
       }
-      // "View" button for research agents with reviewable findings
+      // "Peek" button for research agents with reviewable findings
       if (pipelineType === 'research' && agent.findingsPath) {
         actionsHtml += '<button class="btn btn-secondary kcard-view-findings-btn" data-findings-path="' + escHtml(agent.findingsPath) + '" data-findings-agent="' + escHtml(agent.id) + '" data-findings-id="' + escHtml(feature.id) + '">View</button>';
       }
@@ -379,7 +379,7 @@
             '<div class="kcard-agent-header"><span class="kcard-agent-name">Eval</span></div>' +
             '<div class="kcard-agent-status-row"><span class="kcard-agent-status status-implementing">● ' + escHtml(evalAgent) + '</span></div>' +
             '<div class="kcard-agent-actions">' +
-            '<button class="btn btn-secondary kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">View</button>' +
+            '<button class="btn btn-secondary kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open</button>' +
             '</div></div>';
         }
         // Card-level actions (non-per-agent: close, eval, review, etc.)

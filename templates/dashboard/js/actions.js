@@ -9,13 +9,13 @@ const AGENT_SHORT_NAMES = { cc: 'CC', gg: 'GG', cx: 'CX', cu: 'CU', mv: 'MV', so
 
 // Remap state machine action labels to clean button text
 const AGENT_ACTION_LABELS = {
-  'feature-attach':  'View',
-  'feature-focus':   'View',
+  'feature-attach':  'Open',
+  'feature-focus':   'Open',
   'feature-open':    (va, feature) => {
     const agent = (feature.agents || []).find(a => a.id === va.agentId);
     return (agent && agent.status === 'implementing') ? 'Restart' : 'Start';
   },
-  'research-attach': 'View',
+  'research-attach': 'Open',
   'research-open':   (va, feature) => {
     const agent = (feature.agents || []).find(a => a.id === va.agentId);
     return (agent && agent.status === 'implementing') ? 'Restart' : 'Start';

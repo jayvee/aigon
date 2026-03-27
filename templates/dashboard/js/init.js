@@ -204,7 +204,7 @@
             statusBadge(s) +
             '<span class="session-meta">' + age + '</span>' +
             '<span style="display:flex;gap:5px">' +
-              '<button class="btn btn-primary" style="font-size:11px;padding:3px 8px" data-session="' + escHtml(s.name) + '">View</button>' +
+              '<button class="btn btn-primary" style="font-size:11px;padding:3px 8px" data-session="' + escHtml(s.name) + '">Open</button>' +
               '<button class="btn" style="font-size:11px;padding:3px 8px" data-peek="' + escHtml(s.name) + '">Peek</button>' +
               '<button class="btn btn-warn" style="font-size:11px;padding:3px 8px" data-kill="' + escHtml(s.name) + '">Kill</button>' +
             '</span>';
