@@ -5,6 +5,7 @@
 
 // Display name mapping (moved from pipeline.js for shared access)
 const AGENT_DISPLAY_NAMES = { cc: 'Claude Code', gg: 'Gemini', cx: 'Codex', cu: 'Cursor', mv: 'Mistral Vibe', solo: 'Agent' };
+const AGENT_SHORT_NAMES = { cc: 'CC', gg: 'GG', cx: 'CX', cu: 'CU', mv: 'MV', solo: 'Drive' };
 
 // Remap state machine action labels to clean button text
 const AGENT_ACTION_LABELS = {
