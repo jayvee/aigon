@@ -4,7 +4,21 @@ const { test, expect } = require('@playwright/test');
 const mockFeatures = [
   { id: '1', name: 'feature-one', stage: 'inbox', agents: [], validActions: [{ type: 'transition', action: 'feature-prioritise', to: 'backlog', label: 'Prioritise' }] },
   { id: '2', name: 'feature-two', stage: 'backlog', agents: [], validActions: [] },
-  { id: '3', name: 'feature-three', stage: 'in-progress', agents: [{ id: 'cc', status: 'implementing', updatedAt: new Date().toISOString() }], validActions: [] },
+  {
+    id: '3',
+    name: 'feature-three',
+    stage: 'in-progress',
+    agents: [{
+      id: 'cc',
+      status: 'submitted',
+      updatedAt: new Date().toISOString(),
+      worktreePath: '/repo-worktrees/feature-3-cc-feature-three',
+      devServerEligible: true,
+      devServerPokeEligible: true,
+      devServerUrl: null
+    }],
+    validActions: []
+  },
   { id: '4', name: 'feature-four', stage: 'in-evaluation', agents: [], validActions: [] },
   { id: '5', name: 'feature-five', stage: 'done', agents: [], validActions: [] },
   { id: '6', name: 'feature-six', stage: 'done', agents: [], validActions: [] },
@@ -20,6 +34,9 @@ const mockStatus = {
       research: [],
       feedback: [],
       doneTotal: 2,
+      mainDevServerEligible: true,
+      mainDevServerRunning: false,
+      mainDevServerUrl: null
     }
   ],
   summary: { implementing: 1, waiting: 0, submitted: 0, error: 0 },
@@ -204,5 +221,65 @@ test.describe('Pipeline view', () => {
 
     await expect(page.locator('#create-modal')).toBeVisible();
     await expect(page.locator('#create-modal-error')).toContainText('Feature already exists');
+  });
+
+  test('repo header dev-server globe starts main dev server via API', async ({ page }) => {
+    let startCalled = false;
+    const statusData = {
+      ...mockStatus,
+      generatedAt: new Date().toISOString(),
+    };
+
+    await page.addInitScript(() => {
+      window.__lastOpened = null;
+      window.open = function(url) {
+        window.__lastOpened = url;
+        return null;
+      };
+    });
+
+    await page.route('**/api/**', route => route.fulfill({ json: {} }));
+    await page.route('**/api/status', route => route.fulfill({ json: statusData }));
+    await page.route('**/api/refresh', route => route.fulfill({ json: statusData }));
+    await page.route('**/api/repos/**/dev-server/start', route => {
+      startCalled = true;
+      route.fulfill({ status: 200, json: { ok: true, url: 'http://repo.localhost', message: 'Started main dev server at http://repo.localhost' } });
+    });
+
+    await page.goto('/');
+    await page.click('#tab-pipeline');
+    await page.waitForSelector('.kanban', { timeout: 10000 });
+    await page.locator('.sidebar-item').nth(1).click();
+    const globeBtn = page.locator('#repo-header .repo-dev-link-idle').first();
+    await expect(globeBtn).toBeVisible();
+    await globeBtn.click();
+
+    await expect.poll(() => startCalled).toBe(true);
+  });
+
+  test('start preview button pokes worktree dev server via API', async ({ page }) => {
+    let pokePath = null;
+    const statusData = {
+      ...mockStatus,
+      generatedAt: new Date().toISOString(),
+    };
+
+    await page.route('**/api/**', route => route.fulfill({ json: {} }));
+    await page.route('**/api/status', route => route.fulfill({ json: statusData }));
+    await page.route('**/api/refresh', route => route.fulfill({ json: statusData }));
+    await page.route('**/api/repos/%2Frepo/features/3/agents/cc/dev-server/poke', route => {
+      pokePath = route.request().url();
+      route.fulfill({ status: 200, json: { ok: true, mode: 'send-keys', message: 'Sent dev-server start' } });
+    });
+
+    await page.goto('/');
+    await page.click('#tab-pipeline');
+    await page.waitForSelector('.kanban', { timeout: 10000 });
+
+    const pokeBtn = page.locator('.kcard-dev-poke-btn:has-text("Start preview")').first();
+    await expect(pokeBtn).toBeVisible();
+    await pokeBtn.click();
+
+    await expect.poll(() => pokePath).toContain('/api/repos/%2Frepo/features/3/agents/cc/dev-server/poke');
   });
 });

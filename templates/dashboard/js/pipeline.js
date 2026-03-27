@@ -266,6 +266,18 @@
       const overflowActions = agentValidActions.filter(va => va.action === 'feature-stop' || va.action === 'research-stop');
       let actionsHtml = '';
       const entityType = pipelineType === 'research' ? 'research' : 'feature';
+      const pokeStateKey = `${repoPath || ''}:${feature.id}:${agent.id}`;
+      const pokePending = state.pendingDevServerPokes && state.pendingDevServerPokes.has(pokeStateKey);
+      if (agent.devServerPokeEligible && !agent.devServerUrl) {
+        const pendingLabel = '<span class="run-next-spinner"></span>Starting preview…';
+        const attrs = ' data-dev-poke="1"' +
+          ' data-repo-path="' + escHtml(repoPath || '') + '"' +
+          ' data-feature-id="' + escHtml(feature.id) + '"' +
+          ' data-agent-id="' + escHtml(agent.id) + '"';
+        actionsHtml += '<button class="btn btn-secondary kcard-dev-poke-btn' + (pokePending ? ' is-pending' : '') + '"' + attrs + (pokePending ? ' disabled' : '') + '>' +
+          (pokePending ? pendingLabel : 'Start preview') +
+          '</button>';
+      }
       if (agent.flags && agent.flags.sessionEnded) {
         const attrs = ' data-flag-entity="' + escHtml(entityType) + '"' +
           ' data-flag-id="' + escHtml(feature.id) + '"' +
@@ -490,6 +502,16 @@
           const agentId = btn.getAttribute('data-flag-agent');
           const targetRepoPath = btn.getAttribute('data-flag-repo') || repoPath;
           await requestAgentFlagAction(action, { entityType, id, agentId, repoPath: targetRepoPath }, btn);
+        };
+      });
+
+      card.querySelectorAll('[data-dev-poke="1"]').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const targetRepoPath = btn.getAttribute('data-repo-path') || repoPath || '';
+          const targetFeatureId = btn.getAttribute('data-feature-id') || feature.id;
+          const targetAgentId = btn.getAttribute('data-agent-id') || '';
+          await requestAgentDevServerPoke(targetRepoPath, targetFeatureId, targetAgentId, btn);
         };
       });
 
