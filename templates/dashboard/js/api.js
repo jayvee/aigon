@@ -134,12 +134,14 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="run-next-spinner"></span>';
       }
+      const processingToast = showToast('Starting dev server…', null, null, { processing: true });
       try {
         const res = await fetch('/api/repos/' + token + '/dev-server/start', {
           method: 'POST',
           headers: { 'content-type': 'application/json' }
         });
         const payload = await res.json().catch(() => ({}));
+        if (processingToast) processingToast.remove();
         if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
         if (payload.url) {
           window.open(payload.url, '_blank', 'noopener,noreferrer');
@@ -147,6 +149,7 @@
         showToast(payload.message || 'Main dev server ready');
         await requestRefresh();
       } catch (e) {
+        if (processingToast) processingToast.remove();
         showToast('Dev server failed: ' + e.message, null, null, { error: true });
       } finally {
         if (btn) {
@@ -174,6 +177,7 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="run-next-spinner"></span>Starting preview…';
       }
+      const processingToast = showToast('Starting preview…', null, null, { processing: true });
 
       try {
         const res = await fetch('/api/repos/' + repoToken + '/features/' + featureToken + '/agents/' + agentToken + '/dev-server/poke', {
@@ -181,10 +185,12 @@
           headers: { 'content-type': 'application/json' }
         });
         const payload = await res.json().catch(() => ({}));
+        if (processingToast) processingToast.remove();
         if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
         showToast(payload.message || 'Preview start requested');
         await requestRefresh();
       } catch (e) {
+        if (processingToast) processingToast.remove();
         showToast('Preview start failed: ' + e.message, null, null, { error: true });
       } finally {
         state.pendingActions.delete(pendingKey);
