@@ -106,28 +106,26 @@
       btn.classList.toggle('is-hidden', !!state.sidebarHidden);
     }
 
+    // Stored reference so render() can re-filter without re-fetching
+    let _sessionsFilterFn = null;
+
     async function renderSessions() {
       const container = document.getElementById('sessions-view');
       container.innerHTML = '<div style="padding:12px 0;color:var(--text-tertiary);font-size:12px">Loading sessions…</div>';
 
       let sessions = [];
       let orphanCount = 0;
-      let registeredRepos = [];
       try {
         const res = await fetch('/api/sessions');
         const data = await res.json();
         sessions = data.sessions || [];
         orphanCount = data.orphanCount || 0;
-        registeredRepos = data.repos || [];
       } catch (e) {
         container.innerHTML = '<div class="empty">Failed to load sessions: ' + escHtml(e.message) + '</div>';
         return;
       }
 
       container.innerHTML = '';
-
-      // Use the shared sidebar repo selector
-      let selectedSessionRepo = state.selectedRepo || 'all';
 
       // Toolbar
       const toolbar = document.createElement('div');
@@ -202,7 +200,7 @@
           row.innerHTML =
             '<span class="session-name" title="' + escHtml(s.name) + '">' + escHtml(s.name) + '</span>' +
             entityBadge(s) +
-            (selectedSessionRepo === 'all' ? repoBadge(s) : '') +
+            ((state.selectedRepo || 'all') === 'all' ? repoBadge(s) : '') +
             statusBadge(s) +
             '<span class="session-meta">' + age + '</span>' +
             '<span style="display:flex;gap:5px">' +
@@ -244,18 +242,21 @@
         target.appendChild(group);
       }
 
+      _sessionsFilterFn = renderSessionGroups;
       function renderSessionGroups() {
         // Remove existing groups (keep toolbar)
         container.querySelectorAll('.sessions-group, .empty').forEach(el => el.remove());
 
-        const filtered = selectedSessionRepo === 'all'
+        // Read from shared sidebar repo selector
+        const repoFilter = state.selectedRepo || 'all';
+        const filtered = repoFilter === 'all'
           ? sessions
-          : sessions.filter(s => s.repoPath === selectedSessionRepo || s.name.startsWith('aigon-dash'));
+          : sessions.filter(s => s.repoPath === repoFilter || s.name.startsWith('aigon-dash'));
         const dashFiltered = filtered.filter(s => s.name.startsWith('aigon-dash'));
         const orphanFiltered = filtered.filter(s => !s.name.startsWith('aigon-dash') && s.orphan);
         const agentFiltered = filtered.filter(s => !s.name.startsWith('aigon-dash') && !s.orphan);
         // Unlinked sessions (no repo) — only show in "all" view
-        const unlinkedSessions = selectedSessionRepo === 'all'
+        const unlinkedSessions = repoFilter === 'all'
           ? sessions.filter(s => !s.repoPath && !s.name.startsWith('aigon-dash') && !s.orphan)
           : [];
 
@@ -320,8 +321,8 @@
         renderRepoHeader(selectedRepoData);
         renderConfigView();
       } else if (state.view === 'sessions') {
-        sidebar.style.display = 'none';
-        mobileSelect.style.display = 'none';
+        sidebar.style.display = state.sidebarHidden ? 'none' : '';
+        mobileSelect.style.display = '';
         document.getElementById('settings-view').style.display = 'none';
         document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
@@ -331,7 +332,8 @@
         document.getElementById('logs-view').style.display = 'none';
         document.getElementById('console-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
-        renderSessions();
+        // Re-filter if sessions already loaded, otherwise fetch
+        if (_sessionsFilterFn) { _sessionsFilterFn(); } else { renderSessions(); }
       } else if (state.view === 'statistics') {
         sidebar.style.display = state.sidebarHidden ? 'none' : '';
         mobileSelect.style.display = '';
