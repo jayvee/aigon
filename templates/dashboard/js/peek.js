@@ -1,7 +1,9 @@
     // ── Peek panel — streaming tmux session output viewer ───────────────────
 
     const peekState = {
+      mode: 'session',
       sessionName: null,
+      findingsPath: null,
       offset: 0,
       poller: null,
       userScrolled: false,
@@ -16,25 +18,57 @@
                 .replace(/[\x00-\x08\x0b\x0e-\x1f\x7f]/g, ''); // control chars (keep \t \n \r)
     }
 
-    function openPeekPanel(sessionName) {
-      closePeekPanel(); // clean up any previous peek
+    function setPeekMode(mode) {
+      const output = document.getElementById('peek-output');
+      const inputForm = document.getElementById('peek-input-form');
+      const statusDot = document.getElementById('peek-status-dot');
+      peekState.mode = mode;
+      if (mode === 'file') {
+        output.style.whiteSpace = 'normal';
+        output.style.wordBreak = 'normal';
+        output.style.fontFamily = 'inherit';
+        inputForm.style.display = 'none';
+        statusDot.className = 'panel-status-dot';
+      } else {
+        output.style.whiteSpace = 'pre-wrap';
+        output.style.wordBreak = 'break-all';
+        output.style.fontFamily = 'var(--mono)';
+        inputForm.style.display = 'flex';
+      }
+    }
 
-      peekState.sessionName = sessionName;
-      peekState.offset = 0;
-      peekState.userScrolled = false;
+    function setPeekOutputHtml(html) {
+      const output = document.getElementById('peek-output');
+      output.innerHTML = html;
+      output.scrollTop = 0;
+    }
 
-      document.getElementById('peek-title').textContent = 'Peek — ' + sessionName;
-      document.getElementById('peek-session-name').textContent = sessionName;
-      document.getElementById('peek-bytes').textContent = '';
-      document.getElementById('peek-output').textContent = '';
-      document.getElementById('peek-input').value = '';
-
+    function showPeekPanel() {
       const overlay = document.getElementById('peek-panel-overlay');
       const panel = document.getElementById('peek-panel');
       overlay.style.display = '';
       overlay.classList.add('open');
       panel.classList.add('open');
       document.body.style.overflow = 'hidden';
+    }
+
+    function openPeekPanel(sessionName) {
+      closePeekPanel(); // clean up any previous peek
+
+      peekState.mode = 'session';
+      peekState.sessionName = sessionName;
+      peekState.findingsPath = null;
+      peekState.offset = 0;
+      peekState.userScrolled = false;
+
+      setPeekMode('session');
+      document.getElementById('peek-title').textContent = 'Peek — ' + sessionName;
+      document.getElementById('peek-session-name').textContent = sessionName;
+      document.getElementById('peek-bytes').textContent = '';
+      document.getElementById('peek-output').textContent = '';
+      document.getElementById('peek-input').value = '';
+
+      showPeekPanel();
 
       // Track user scroll — pause auto-scroll when user scrolls up
       const output = document.getElementById('peek-output');
@@ -48,8 +82,43 @@
       peekState.poller = setInterval(pollPeek, 1500);
     }
 
+    async function openResearchFindingsPeek(findingsPath, title) {
+      closePeekPanel();
+
+      peekState.sessionName = null;
+      peekState.findingsPath = findingsPath;
+      peekState.offset = 0;
+      peekState.userScrolled = false;
+
+      setPeekMode('file');
+      document.getElementById('peek-title').textContent = 'Peek — ' + title;
+      document.getElementById('peek-session-name').textContent = title;
+      document.getElementById('peek-bytes').textContent = '';
+      setPeekOutputHtml('<span style="color:var(--text-tertiary)">Loading…</span>');
+
+      showPeekPanel();
+
+      try {
+        const res = await fetch('/api/spec?path=' + encodeURIComponent(findingsPath), { cache: 'no-store' });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          setPeekOutputHtml('<p>No findings file found</p>');
+          return;
+        }
+        const content = data.content || '';
+        if (typeof marked !== 'undefined') {
+          setPeekOutputHtml(marked.parse(content));
+          document.getElementById('peek-output').querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.disabled = true; });
+        } else {
+          document.getElementById('peek-output').textContent = content;
+        }
+      } catch (_) {
+        setPeekOutputHtml('<p>No findings file found</p>');
+      }
+    }
+
     async function pollPeek() {
-      if (!peekState.sessionName) return;
+      if (peekState.mode !== 'session' || !peekState.sessionName) return;
       try {
         const url = '/api/session-peek?name=' + encodeURIComponent(peekState.sessionName) + '&since=' + peekState.offset;
         const res = await fetch(url, { cache: 'no-store' });
@@ -102,7 +171,9 @@
 
       // No cleanup needed — capture-pane is stateless (no pipe-pane to stop)
 
+      peekState.mode = 'session';
       peekState.sessionName = null;
+      peekState.findingsPath = null;
       peekState.offset = 0;
 
       const overlay = document.getElementById('peek-panel-overlay');
@@ -129,7 +200,7 @@
       e.preventDefault();
       var input = document.getElementById('peek-input');
       var text = input.value;
-      if (!text || !peekState.sessionName) return;
+      if (!text || peekState.mode !== 'session' || !peekState.sessionName) return;
       input.value = '';
       try {
         var resp = await fetch('/api/session-input', {

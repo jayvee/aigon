@@ -120,7 +120,7 @@
                             <span x-html="buildAgentStatusSpan(agent, { showDevLink: true })"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
-                              <button x-show="!!agent.findingsPath" class="btn" x-on:click.stop="openDrawer(agent.findingsPath, 'R#' + item.id + ' ' + (AGENT_DISPLAY_NAMES[agent.id] || agent.id) + ' Findings', item.stage, repo.path)">Findings</button>
+                              <button x-show="!!agent.findingsPath" class="btn" x-on:click.stop="openResearchFindingsPeek(agent.findingsPath, 'R#' + item.id + ' ' + (AGENT_DISPLAY_NAMES[agent.id] || agent.id) + ' Findings')">View</button>
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
                               <span x-html="buildAgentOverflowHtml(agent, item, repo.path)"></span>
                             </span>
