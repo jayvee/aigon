@@ -63,6 +63,12 @@ The fact that a review happened, who did it, and the cycle count is stored in th
 - [ ] While a review is in-progress, `feature-close` is blocked (or warns)
 - [ ] After review-complete, the user can close, start another review, or re-open the implementing agent
 
+### Outbox events
+- [ ] `REVIEW-STARTED` event emitted when `feature-review` spawns the review agent (source: `cli/feature-review`, includes review agent ID)
+- [ ] `REVIEW-COMPLETE` event emitted when the review agent signals `review-complete` (source: `agent-status/review-complete`)
+- [ ] Events appear in the feature's Events timeline in the dashboard spec drawer
+- [ ] Events include the reviewing agent ID so insights can correlate reviewer ↔ outcome
+
 ### Metadata capture
 - [ ] Manifest stores review history: `{ agent, startedAt, completedAt, cycle }`
 - [ ] Review history persists across multiple cycles (array, not overwritten)
