@@ -128,6 +128,47 @@ The Aigon workflow is state-as-location. Task state is represented by file locat
 
 Core rule: use the CLI to move specs between states. Do not rename or move spec files manually.
 
+### Workflow-Core (`lib/workflow-core/`)
+
+An event-sourced workflow engine imported from the Aigon Next prototype. It is **foundational only** — existing commands still use `lib/state-machine.js` + `lib/manifest.js`. The workflow-core provides the new architecture that commands will incrementally migrate to.
+
+**Module layout:**
+
+| File | Purpose |
+|------|---------|
+| `types.js` | Enum constants (LifecycleState, AgentStatus, FeatureMode, etc.) and factory helpers |
+| `paths.js` | Path computation for `.aigon/workflows/` state files |
+| `event-store.js` | Append-only JSONL event persistence |
+| `snapshot-store.js` | JSON snapshot read/write |
+| `lock.js` | Exclusive file-based locking (not advisory) |
+| `projector.js` | Event replay — rebuilds FeatureContext from event stream |
+| `machine.js` | XState state machine defining valid lifecycle transitions |
+| `actions.js` | Action derivation via `snapshot.can()` — machine is single source of truth |
+| `effects.js` | Pluggable effect runner + default feature effect implementations |
+| `engine.js` | Full orchestration: command dispatch, event persistence, effect execution |
+| `index.js` | Barrel export — `require('./workflow-core')` for all public API |
+
+**Key differences from current system:**
+
+| Aspect | Current (`lib/state-machine.js` + `lib/manifest.js`) | Workflow-Core (`lib/workflow-core/`) |
+|--------|-------------------------------------------------------|--------------------------------------|
+| State authority | Folder location + manifest JSON | Event log + projected snapshot |
+| Action source | Manual guards + dashboard heuristics | XState machine + `snapshot.can()` |
+| Lock model | Advisory (PID-based) | Exclusive file creation (`wx` flag) |
+| Effects | Implicit (baked into commands) | Explicit, durable, resumable lifecycle |
+| Dependency | None | `xstate` npm package |
+
+**Migration plan:**
+1. *(This feature)* Import core as isolated, tested module
+2. Wire dashboard read model to `deriveAvailableActions()`
+3. Migrate `feature-start` / `feature-close` to use engine
+4. Full cutover — remove `lib/manifest.js` + `lib/state-machine.js`
+
+**State files** (gitignored, under `.aigon/workflows/`):
+- `.aigon/workflows/features/{id}/events.jsonl` — immutable event log
+- `.aigon/workflows/features/{id}/snapshot.json` — derived snapshot
+- `.aigon/workflows/features/{id}/lock` — transient lock file
+
 ## Where To Make Changes
 
 - Add or change a CLI command:
