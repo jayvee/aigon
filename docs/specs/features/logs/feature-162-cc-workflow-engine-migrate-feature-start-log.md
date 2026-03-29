@@ -47,3 +47,19 @@ Follow the established bridge pattern from `lib/workflow-close.js`:
 - **Handler made async**: The feature-start handler was synchronous but the engine API is async. The CLI dispatcher at `aigon-cli.js:33-39` already handles async handlers by catching Promise rejections. This is safe — feature-close already uses async.
 - **Worktree creation stays in handler**: The engine handles state and lightweight effects (spec move, log creation). Worktree creation, tmux sessions, and terminal opening are operational concerns that remain in the handler — they're too complex and environment-dependent to wrap as engine effects at this stage.
 - **Legacy manifest with empty pending**: When the engine is active, the legacy manifest is written with `pending: []` since the engine owns effect tracking. This ensures agent status files continue to work without confusing the legacy outbox replay mechanism.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-30
+
+### Findings
+- Re-running `feature-start` for an engine-started feature could overwrite the legacy manifest with only the currently requested agents, dropping previously tracked agents from the compatibility layer even though the workflow-core snapshot still retained them.
+
+### Fixes Applied
+- Preserved the workflow-core agent set on rerun instead of rewriting the legacy manifest from the current CLI args.
+- Added a regression test covering the workflow-core rerun path and manifest preservation.
+
+### Notes
+- Targeted verification passed: `node --check lib/commands/feature.js`, `node --check aigon-cli.test.js`, and `node lib/workflow-start.test.js`.
+- `node aigon-cli.test.js` still has unrelated pre-existing failures in research eval, insights, model override, and stage-order assertions.
