@@ -63,6 +63,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/workflow-core/` | ~1500 | **Aigon Next engine import**: event-sourced workflow with XState machine, action derivation, effect lifecycle |
 | `lib/workflow-close.js` | ~280 | **Bridge**: routes `feature-close` through workflow-core engine behind `workflow.closeEngine` flag |
 | `lib/workflow-start.js` | ~290 | **Bridge**: routes `feature-start` through workflow-core engine behind `workflow.startEngine` flag |
+| `lib/workflow-eval.js` | ~300 | **Bridge**: routes `feature-eval` through workflow-core engine behind `workflow.evalEngine` flag |
 | `lib/workflow-snapshot-adapter.js` | ~260 | **Read adapter**: maps workflow-core snapshots to dashboard/board data formats; side-effect free |
 
 Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/devserver.js`.
@@ -88,6 +89,8 @@ A new event-sourced engine lives in `lib/workflow-core/`. The `feature-close` co
 The `feature-close` command is the first write-side migration (behind `workflow.closeEngine` flag). Enable via `.aigon/config.json` `{ "workflow": { "closeEngine": true } }` or `AIGON_WORKFLOW_CLOSE_ENGINE=1`. See `docs/architecture.md` § "Workflow-Close Bridge" for details.
 
 The `feature-start` command is the second migration (behind `workflow.startEngine` flag). Unlike close, no bootstrap-from-legacy is needed — start creates engine state from scratch. Enable via `.aigon/config.json` `{ "workflow": { "startEngine": true } }` or `AIGON_WORKFLOW_START_ENGINE=1`. The engine handles spec move and log creation as durable effects; a legacy manifest is still written for backward compatibility with agent status files.
+
+The `feature-eval` command is the third migration (behind `workflow.evalEngine` flag). When a feature has engine state (from the migrated `feature-start`), eval transitions through `engine.requestFeatureEval()` with XState `allAgentsReady` guard enforcement. Legacy features without engine state continue through the old `requestTransition` path. Enable via `.aigon/config.json` `{ "workflow": { "evalEngine": true } }` or `AIGON_WORKFLOW_EVAL_ENGINE=1`. The bridge synthesizes `signal.agent_ready` events from legacy manifest status files to handle the transition period.
 
 ## Install Architecture
 `aigon install-agent` writes **only aigon-owned files** — it never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).
