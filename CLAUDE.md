@@ -62,6 +62,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/security.js` | 131+ | Merge gate scanning (gitleaks + semgrep), severity thresholds, diff-aware |
 | `lib/workflow-core/` | ~1500 | **Aigon Next engine import**: event-sourced workflow with XState machine, action derivation, effect lifecycle |
 | `lib/workflow-close.js` | ~280 | **Bridge**: routes `feature-close` through workflow-core engine behind `workflow.closeEngine` flag |
+| `lib/workflow-snapshot-adapter.js` | ~260 | **Read adapter**: maps workflow-core snapshots to dashboard/board data formats; side-effect free |
 
 Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/devserver.js`.
 
