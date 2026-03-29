@@ -15,6 +15,7 @@ test-results/
 # Aigon runtime files (never committed)
 .aigon/state/
 .aigon/locks/
+.aigon/workflows/
 .aigon/worktree.json
 .aigon/.board-map.json
 .aigon/cache/

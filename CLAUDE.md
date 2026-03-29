@@ -60,11 +60,12 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/git.js` | 700+ | Branch, worktree, status, commit helpers, commit analytics, git attribution |
 | `lib/telemetry.js` | 144 | Normalized session telemetry, cross-agent cost reporting |
 | `lib/security.js` | 131+ | Merge gate scanning (gitleaks + semgrep), severity thresholds, diff-aware |
+| `lib/workflow-core/` | ~1500 | **Aigon Next engine import**: event-sourced workflow with XState machine, action derivation, effect lifecycle (foundational — not yet wired to commands) |
 
 Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/devserver.js`.
 
 ## State Architecture
-Feature/research state lives in **two layers**:
+Feature/research state lives in **two layers** (current system):
 1. **Folders** (`docs/specs/features/0N-*/`) — shared ground truth, committed to git
 2. **Manifests** (`.aigon/state/feature-{id}.json`) — local reliability layer, gitignored, crash-safe
 
@@ -72,6 +73,16 @@ Feature/research state lives in **two layers**:
 - Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 - All transitions go through `requestTransition()` — no bypassing the state machine
 - Run `aigon doctor --fix` to detect and repair desyncs
+
+### Workflow-Core (Aigon Next engine — foundational, not yet active)
+A new event-sourced engine lives in `lib/workflow-core/`. It is imported but **not wired to existing commands yet**. It provides:
+- **Event log** (`.aigon/workflows/features/{id}/events.jsonl`) — append-only, immutable
+- **Snapshot** (`.aigon/workflows/features/{id}/snapshot.json`) — derived from events
+- **XState machine** — validates lifecycle transitions; `snapshot.can()` for action derivation
+- **Effect lifecycle** — durable, resumable side effects (requested → claimed → succeeded/failed)
+- **Exclusive file locking** — prevents concurrent modification
+
+Future features will incrementally migrate commands from the current manifest/state-machine system to the workflow-core engine. See `docs/architecture.md` § "Workflow-Core" for details.
 
 ## Install Architecture
 `aigon install-agent` writes **only aigon-owned files** — it never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).
