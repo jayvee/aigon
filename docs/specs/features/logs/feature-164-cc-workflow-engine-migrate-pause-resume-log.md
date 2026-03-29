@@ -35,3 +35,21 @@ Migrate feature-pause and feature-resume to route through the workflow-core engi
 - **Single bridge module**: Combined pause and resume into one `workflow-pause.js` file since they share the effect executor and state helper, and are conceptually paired.
 - **Resume moves to in-progress (not backlog)**: The engine transition `paused → implementing` maps to the `03-in-progress` folder. The legacy path moves to `02-backlog` for historical reasons, but the engine path uses the semantically correct destination.
 - **Single feature flag**: Both pause and resume share the `workflow.pauseEngine` flag since they're always used together.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-30
+
+### Findings
+- `feature-pause` and `feature-resume` treated engine-backed features as already complete once the lifecycle state flipped to `paused` or `implementing`, even if the spec-move effect was still pending. That broke the durability goal in the spec: rerunning the command after an interrupted effect would not resume execution.
+
+### Fixes Applied
+- Added pending-effect retry handling to `runWorkflowPause()` and `runWorkflowResume()`, so interrupted pause/resume operations resume their move effect instead of returning early.
+- Updated the CLI handlers to retry from either side of the spec move and to honor `--reclaim` for pause/resume, matching the operator guidance in busy responses.
+- Added regression tests covering interrupted pause and interrupted resume recovery.
+
+### Notes
+- `node --check lib/commands/feature.js` passed.
+- `node lib/workflow-pause.test.js` passed.
+- `npm test` still has pre-existing failures on this branch outside the reviewed change set.
