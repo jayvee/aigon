@@ -13,14 +13,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .replace(/\.mdx$/, "");
 
     const url = slug === "index"
-      ? "https://aigon.build/docs"
-      : `https://aigon.build/docs/${slug}`;
+      ? "https://www.aigon.build/docs"
+      : `https://www.aigon.build/docs/${slug}`;
 
     return { url, lastModified: new Date() };
   });
 
   // Add the landing page
-  pages.unshift({ url: "https://aigon.build", lastModified: new Date() });
+  pages.unshift({ url: "https://www.aigon.build", lastModified: new Date() });
 
   return pages;
 }

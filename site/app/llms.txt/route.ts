@@ -36,7 +36,7 @@ export async function GET() {
     "",
     "## Docs",
     "",
-    ...pages.map((page) => `- [${page.title}](https://aigon.build${page.path})`),
+    ...pages.map((page) => `- [${page.title}](https://www.aigon.build${page.path})`),
   ];
 
   return new Response(lines.join("\n"), {
