@@ -159,10 +159,31 @@ An event-sourced workflow engine imported from the Aigon Next prototype. It is *
 | Dependency | None | `xstate` npm package |
 
 **Migration plan:**
-1. *(This feature)* Import core as isolated, tested module
+1. ~~Import core as isolated, tested module~~ *(done)*
 2. Wire dashboard read model to `deriveAvailableActions()`
-3. Migrate `feature-start` / `feature-close` to use engine
-4. Full cutover — remove `lib/manifest.js` + `lib/state-machine.js`
+3. ~~Migrate `feature-close` to use engine~~ *(done — behind `workflow.closeEngine` flag)*
+4. Migrate `feature-start` to use engine
+5. Full cutover — remove `lib/manifest.js` + `lib/state-machine.js`
+
+### Workflow-Close Bridge (`lib/workflow-close.js`)
+
+Bridges `feature-close` with the workflow-core engine behind a feature flag. This is the first write-side migration.
+
+**Enable:** set `workflow.closeEngine: true` in `.aigon/config.json` or `AIGON_WORKFLOW_CLOSE_ENGINE=1` env var.
+
+**How it works:**
+1. Bootstraps workflow-core state by synthesizing events from the existing manifest (started → agent_ready → eval → winner.selected → ready_for_review)
+2. Emits `feature.close_requested` + custom effect events
+3. Runs effects through the engine's claim/reclaim lifecycle
+4. Also updates legacy manifest for backward compatibility
+
+**Key behavior:**
+- **Resume:** If close is interrupted after merge but before effects complete, re-running `feature-close` detects the `closing` state and resumes from where it left off
+- **Blocked retry:** If another process is already executing effects (healthy claim), the operator sees a clear message: "Close effects are already being executed by another process"
+- **Reclaim:** Use `--reclaim` flag to force immediate reclaim of stale effects
+- **Fallback:** When the flag is off, the legacy `requestTransition` + `moveFile` + `completePendingOp` path remains unchanged
+
+**Effect IDs use `bridge.` prefix** (e.g. `bridge.move_spec_to_done`) to avoid the engine's `materializePendingEffects` overwriting payloads with `.aigon/workflows/` paths. The bridge operates on the real `docs/specs/features/` paths.
 
 **State files** (gitignored, under `.aigon/workflows/`):
 - `.aigon/workflows/features/{id}/events.jsonl` — immutable event log
