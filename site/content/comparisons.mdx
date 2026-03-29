@@ -1,6 +1,6 @@
 ---
 title: Comparisons
-description: How Aigon compares to Cursor, Copilot Workspace, Kiro, and other AI development tools.
+description: How Aigon compares to Cursor, OpenCode, Kiro, and other AI development tools.
 ---
 
 Aigon is a CLI-first, vendor-independent workflow orchestrator — it manages specs, agents, and evaluations while letting you choose which AI models do the actual coding.
@@ -95,6 +95,37 @@ Aigon is a CLI-first, vendor-independent workflow orchestrator — it manages sp
 
 - **Choose GSD when:** You want wave-based execution with automatic dependency ordering
 - **Choose Aigon when:** You need a full Kanban lifecycle across many features and multi-vendor Fleet
+
+### OpenCode
+
+**Open-source AI coding agent with 75+ model support, TUI, desktop app, and 132k GitHub stars.**
+
+- **Philosophy:** Model-agnostic terminal agent — maximum provider flexibility, zero vendor lock-in
+- **Pricing:** Free and open source (MIT). Revenue via OpenCode Zen (curated model hosting, $10/mo or pay-as-you-go)
+- **Choose OpenCode when:** You want a single-agent terminal coding assistant with broad model choice, local model support, and zero-friction onboarding
+- **Choose Aigon when:** You need multi-agent orchestration, structured spec lifecycle, parallel worktree agents, or built-in evaluation
+
+#### Side-by-side
+
+| Dimension | Aigon | OpenCode |
+|---|:---:|:---:|
+| Multi-agent orchestration | ● Fleet mode with parallel worktree agents | ○ Single-agent sessions only |
+| Model flexibility | ◐ Per-agent model via CLI config | ● 75+ models, 10+ providers, switch mid-session |
+| Local models (Ollama) | ○ Not yet | ● Built-in |
+| Spec lifecycle | ● Kanban with state machine enforcement | ○ Purely conversational sessions |
+| Research workflows | ● Parallel agents with synthesis | ○ None |
+| Evaluation/review | ● Built-in review step with different agent | ○ None |
+| Work item tracking | ● Features, research, feedback with specs | ○ Flat session list in SQLite |
+| Dashboard | ● Web-based: kanban, telemetry, multi-agent status | ◐ TUI sidebar with session info and diffs |
+| Git integration | ● Worktree isolation, branch management, commit analytics | ◐ LLM-driven via bash — no built-in workflow |
+| MCP support | ● Via underlying agent CLIs | ● First-class with local and remote servers |
+| Plugin system | ○ Slash commands and hooks | ● npm-based plugins with custom tools |
+| IDE integration | ○ CLI-only | ◐ Desktop app (Tauri) + IDE extension |
+| Enterprise features | ◐ AADE tier planned | ○ None |
+| Security track record | ● Delegates to battle-tested agent CLIs | ◐ CVE-2026-22812 (CVSS 8.8 RCE), privacy concerns |
+| Community | ◐ Growing | ● 132k stars, 650k MAU, 828 contributors |
+
+**Key insight:** OpenCode and Aigon are complementary, not directly competitive. OpenCode is a *coding assistant* — it helps you write code interactively. Aigon is a *workflow orchestrator* — it manages the feature lifecycle across multiple agents. You can use OpenCode as an implementation tool within an Aigon-managed workflow.
 
 ### OpenSpec
 
