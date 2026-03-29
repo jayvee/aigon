@@ -35,3 +35,26 @@ them from the CLI commands.
   that `startFeature` creates agents with status 'running'.
 - **timeoutMs=0 edge case**: Fixed truthiness check to `!== undefined` to support
   0ms timeout in tests.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-30
+
+### Findings
+- The dashboard detail API did not expose workflow-core signal events, so the
+  Events tab still rendered from `manifest.events` and stayed empty for engine
+  features.
+
+### Fixes Applied
+- Added unified detail payload events that prefer workflow-core signal events
+  for engine-backed features.
+- Updated the detail tabs to render and compute stats from the unified event
+  list, including `agentId` display for signal events.
+- Added a regression test covering workflow-core event delivery in
+  `buildDetailPayload()`.
+
+### Notes
+- Targeted verification passed: `node --check lib/dashboard-server.js`,
+  `node --check templates/dashboard/js/detail-tabs.js`,
+  `node lib/dashboard-server.test.js`, and `node lib/workflow-signals.test.js`.
