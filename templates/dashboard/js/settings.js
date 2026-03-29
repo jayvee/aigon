@@ -107,150 +107,211 @@
       if (globalOnly) {
         section.innerHTML = '<h3>Global Defaults</h3><p>Editing <code>' + escHtml(settingsData.globalConfigPath || '~/.aigon/config.json') + '</code>. These defaults apply across repos unless a repo overrides them.</p>';
       } else {
-        section.innerHTML = '<h3>Repo Overrides</h3><p>Editing overrides for <strong>' + escHtml(projectName) + '</strong> in <code>' + escHtml(settingsData.projectConfigPath || '.aigon/config.json') + '</code>. Global defaults from <code>' + escHtml(settingsData.globalConfigPath || '~/.aigon/config.json') + '</code> are shown as inherited context.</p>';
+        section.innerHTML = '<h3>Repo Overrides</h3><p>Editing overrides for <strong>' + escHtml(projectName) + '</strong> in <code>' + escHtml(settingsData.projectConfigPath || '.aigon/config.json') + '</code>.</p>';
       }
 
-      const explainer = document.createElement('div');
-      explainer.className = 'settings-config-explainer';
-      explainer.innerHTML = globalOnly
-        ? '<div><span class="settings-config-colhead">Global defaults</span><span class="settings-config-colcopy">The baseline Aigon will use across repos. Values come from built-in defaults plus any overrides in <code>' + escHtml(settingsData.globalConfigPath || '~/.aigon/config.json') + '</code>.</span></div>'
-        : '<div><span class="settings-config-colhead">Inherited global defaults</span><span class="settings-config-colcopy">Read-only baseline for this repo, resolved from built-in defaults plus <code>' + escHtml(settingsData.globalConfigPath || '~/.aigon/config.json') + '</code>.</span></div>' +
-          '<div><span class="settings-config-colhead">Repo override</span><span class="settings-config-colcopy">Applies only to <code>' + escHtml(projectName) + '</code>.</span></div>';
-      section.appendChild(explainer);
-
-      const rows = document.createElement('div');
-      rows.className = 'settings-config-rows';
       const settings = settingsData.settings || [];
+      const ungrouped = settings.filter(d => !d.group);
+      const grouped = settings.filter(d => !!d.group);
 
-      settings.forEach(def => {
-        const row = document.createElement('div');
-        row.className = 'settings-config-row';
+      // Helper: create a text input wired to save on change
+      function makeInput(def, scope, value, disabled) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'settings-input settings-input-compact';
+        input.placeholder = 'Unset';
+        input.dataset.settingsKey = def.key;
+        input.dataset.settingsScope = scope;
+        const draftKey = settingsDraftKey(scope, def.key);
+        const draftValue = Object.prototype.hasOwnProperty.call(settingsUiState.drafts, draftKey) ? settingsUiState.drafts[draftKey] : value;
+        writeSettingsInputValue(def.type, input, draftValue);
+        input.disabled = !!disabled;
+        input.oninput = () => { settingsUiState.drafts[draftKey] = input.value; };
+        input.onchange = async () => {
+          try {
+            settingsUiState.drafts[draftKey] = input.value;
+            await updateDashboardSetting(scope, def.key, input.value, repoPath);
+            delete settingsUiState.drafts[draftKey];
+            showToast('Updated ' + def.label.toLowerCase() + ' model');
+            render();
+          } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); render(); }
+        };
+        return input;
+      }
 
-        const labelCol = document.createElement('div');
-        labelCol.className = 'settings-config-label';
-        labelCol.innerHTML = '<div class="settings-config-name-row"><div class="settings-config-name">' + escHtml(def.label) + '</div>' +
-          (def.description ? '<button type="button" class="settings-help" aria-label="' + escHtml(def.label + ' help') + '" data-settings-tooltip="' + escHtml(def.description) + '">?</button>' : '') +
-          '</div>' +
-          '<div class="settings-config-key">' + escHtml(def.key) + '</div>';
-
-        const sourceBadge = document.createElement('span');
-        sourceBadge.className = 'settings-source-badge source-' + escHtml(def.source || 'default');
-        sourceBadge.textContent = def.source || 'default';
-        labelCol.appendChild(sourceBadge);
-
-        const controls = document.createElement('div');
-        controls.className = 'settings-config-controls';
-
-        function renderValueText(value) {
-          return value == null ? 'Unset' : JSON.stringify(value);
-        }
-
-        function renderInput(scope, value, disabledBySource) {
-          const wrap = document.createElement('div');
-          wrap.className = 'settings-config-input-wrap';
-          const scopeLabel = document.createElement('div');
-          scopeLabel.className = 'settings-config-scope';
-          scopeLabel.textContent = scope === 'global' ? (globalOnly ? 'Global default' : 'Inherited global default') : 'Project override';
-          const inputSlot = document.createElement('div');
-          inputSlot.className = 'settings-config-input';
-
-          let input;
+      // ── General settings (table layout) ──
+      if (ungrouped.length > 0) {
+        // Helper: create a control element for a setting def + scope
+        function makeGeneralControl(def, scope, value, disabled) {
           if (def.type === 'boolean') {
-            const sw = document.createElement('label');
-            sw.className = 'toggle-switch';
-            input = document.createElement('input');
-            input.type = 'checkbox';
-            input.checked = !!value;
-            const track = document.createElement('span');
-            track.className = 'toggle-track';
-            sw.appendChild(input);
-            sw.appendChild(track);
-            inputSlot.appendChild(sw);
+            const sw = document.createElement('label'); sw.className = 'toggle-switch';
+            const input = document.createElement('input'); input.type = 'checkbox'; input.checked = !!value;
+            input.dataset.settingsKey = def.key; input.dataset.settingsScope = scope;
+            const draftKey = settingsDraftKey(scope, def.key);
+            const draftValue = Object.prototype.hasOwnProperty.call(settingsUiState.drafts, draftKey) ? settingsUiState.drafts[draftKey] : value;
+            if (draftValue != null) input.checked = !!draftValue;
+            input.disabled = !!disabled;
+            input.onchange = async () => {
+              try {
+                const nextValue = !!input.checked;
+                settingsUiState.drafts[draftKey] = nextValue;
+                await updateDashboardSetting(scope, def.key, nextValue, repoPath);
+                delete settingsUiState.drafts[draftKey];
+                showToast('Updated ' + def.label); render();
+              } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); render(); }
+            };
+            const track = document.createElement('span'); track.className = 'toggle-track';
+            sw.appendChild(input); sw.appendChild(track); return sw;
           } else if (def.type === 'enum') {
-            input = document.createElement('select');
-            input.className = 'settings-select';
-            (def.options || []).forEach(opt => {
-              const el = document.createElement('option');
-              el.value = opt;
-              el.textContent = opt;
-              input.appendChild(el);
-            });
-            input.value = value == null ? '' : String(value);
-            inputSlot.appendChild(input);
+            const input = document.createElement('select'); input.className = 'settings-select settings-input-compact';
+            const emptyOpt = document.createElement('option'); emptyOpt.value = ''; emptyOpt.textContent = ''; input.appendChild(emptyOpt);
+            (def.options || []).forEach(opt => { const el = document.createElement('option'); el.value = opt; el.textContent = opt; input.appendChild(el); });
+            input.dataset.settingsKey = def.key; input.dataset.settingsScope = scope;
+            const draftKey = settingsDraftKey(scope, def.key);
+            const draftValue = Object.prototype.hasOwnProperty.call(settingsUiState.drafts, draftKey) ? settingsUiState.drafts[draftKey] : value;
+            input.value = draftValue == null ? '' : String(draftValue);
+            input.disabled = !!disabled;
+            input.onchange = async () => {
+              try {
+                settingsUiState.drafts[draftKey] = input.value;
+                await updateDashboardSetting(scope, def.key, input.value, repoPath);
+                delete settingsUiState.drafts[draftKey];
+                showToast('Updated ' + def.label); render();
+              } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); render(); }
+            };
+            return input;
           } else {
-            input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'settings-input';
-            input.placeholder = 'Unset';
-            inputSlot.appendChild(input);
+            return makeInput(def, scope, value, disabled);
           }
-
-          input.dataset.settingsKey = def.key;
-          input.dataset.settingsScope = scope;
-          const draftKey = settingsDraftKey(scope, def.key);
-          const draftValue = Object.prototype.hasOwnProperty.call(settingsUiState.drafts, draftKey)
-            ? settingsUiState.drafts[draftKey]
-            : value;
-          writeSettingsInputValue(def.type, input, draftValue);
-
-          const syncDraft = () => {
-            settingsUiState.drafts[draftKey] = readSettingsInputValue(def.type, input);
-          };
-          if (def.type === 'boolean') input.onchange = syncDraft;
-          else input.oninput = syncDraft;
-
-          input.disabled = !!disabledBySource;
-          input.onchange = async () => {
-            try {
-              let nextValue;
-              if (def.type === 'boolean') nextValue = !!input.checked;
-              else nextValue = input.value;
-              settingsUiState.drafts[draftKey] = nextValue;
-              await updateDashboardSetting(scope, def.key, nextValue, repoPath);
-              delete settingsUiState.drafts[draftKey];
-              showToast('Updated ' + def.key + ' (' + scope + ')');
-              render();
-            } catch (e) {
-              showToast('Update failed: ' + e.message, null, null, { error: true });
-              render();
-            }
-          };
-
-          wrap.appendChild(scopeLabel);
-          wrap.appendChild(inputSlot);
-          const hint = document.createElement('div');
-          hint.className = 'settings-config-hint';
-          if (scope === 'global' && def.globalOverrideValue == null && def.builtInValue != null) {
-            hint.innerHTML = 'Using built-in default <code>' + escHtml(renderValueText(def.builtInValue)) + '</code>';
-          } else {
-            hint.innerHTML = '&nbsp;';
-            hint.setAttribute('aria-hidden', 'true');
-            hint.classList.add('settings-config-hint-empty');
-          }
-          wrap.appendChild(hint);
-          return wrap;
         }
 
-        if (globalOnly) {
-          controls.classList.add('settings-config-controls-single');
-          controls.appendChild(renderInput('global', def.globalValue, false));
-        } else {
-          controls.appendChild(renderInput('global', def.globalValue, true));
-          controls.appendChild(renderInput('project', def.projectValue, false));
-        }
+        const card = document.createElement('div');
+        card.className = 'agent-model-card';
+        const header = document.createElement('div');
+        header.className = 'agent-model-header';
+        header.textContent = 'General';
+        card.appendChild(header);
 
-        const effective = document.createElement('div');
-        effective.className = 'settings-effective';
-        effective.innerHTML = '<span class="settings-effective-label">Effective</span><code>' + escHtml(JSON.stringify(def.effectiveValue)) + '</code>';
+        const table = document.createElement('table');
+        table.className = 'agent-model-table';
+        let headHtml = '<thead><tr><th>Setting</th><th>Default</th>';
+        if (!globalOnly) headHtml += '<th>Override</th>';
+        headHtml += '<th>Effective</th></tr></thead>';
+        table.innerHTML = headHtml;
 
-        row.appendChild(labelCol);
-        row.appendChild(controls);
-        row.appendChild(effective);
-        rows.appendChild(row);
-      });
+        const tbody = document.createElement('tbody');
+        ungrouped.forEach(def => {
+          const tr = document.createElement('tr');
 
-      section.appendChild(rows);
+          const tdName = document.createElement('td');
+          tdName.className = 'agent-model-task';
+          tdName.innerHTML = escHtml(def.label) +
+            (def.description ? ' <button type="button" class="settings-help settings-help-inline" data-settings-tooltip="' + escHtml(def.description) + '">?</button>' : '');
+          tr.appendChild(tdName);
+
+          const tdGlobal = document.createElement('td');
+          tdGlobal.appendChild(makeGeneralControl(def, 'global', def.globalValue, !globalOnly));
+          tr.appendChild(tdGlobal);
+
+          if (!globalOnly) {
+            const tdProject = document.createElement('td');
+            tdProject.appendChild(makeGeneralControl(def, 'project', def.projectValue, false));
+            tr.appendChild(tdProject);
+          }
+
+          const tdEff = document.createElement('td');
+          tdEff.className = 'agent-model-effective';
+          const effCode = document.createElement('code');
+          effCode.textContent = def.effectiveValue != null ? JSON.stringify(def.effectiveValue) : 'unset';
+          tdEff.appendChild(effCode);
+          tr.appendChild(tdEff);
+
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        card.appendChild(table);
+        section.appendChild(card);
+      }
+
       area.appendChild(section);
+
+      // ── Grouped agent model settings ──
+      if (grouped.length > 0) {
+        const agentSection = document.createElement('div');
+        agentSection.className = 'settings-section';
+        agentSection.innerHTML = '<h3>Agent Models</h3><p>Model used for each task type. ' + (globalOnly ? 'Set global defaults here.' : 'Project overrides take precedence over global defaults.') + '</p>';
+
+        // Collect groups in order
+        const groupOrder = []; const groupMap = {};
+        grouped.forEach(def => {
+          if (!groupMap[def.group]) { groupMap[def.group] = { label: def.groupLabel || def.group, defs: [] }; groupOrder.push(def.group); }
+          groupMap[def.group].defs.push(def);
+        });
+
+        const grid = document.createElement('div');
+        grid.className = 'agent-model-grid';
+
+        groupOrder.forEach(groupKey => {
+          const g = groupMap[groupKey];
+          const card = document.createElement('div');
+          card.className = 'agent-model-card';
+
+          const header = document.createElement('div');
+          header.className = 'agent-model-header';
+          header.textContent = g.label;
+          card.appendChild(header);
+
+          const table = document.createElement('table');
+          table.className = 'agent-model-table';
+
+          // Table header
+          let headHtml = '<thead><tr><th>Task</th><th>Default</th>';
+          if (!globalOnly) headHtml += '<th>Override</th>';
+          headHtml += '<th>Effective</th></tr></thead>';
+          table.innerHTML = headHtml;
+
+          const tbody = document.createElement('tbody');
+          g.defs.forEach(def => {
+            const tr = document.createElement('tr');
+
+            // Task name cell
+            const tdTask = document.createElement('td');
+            tdTask.className = 'agent-model-task';
+            tdTask.textContent = def.label;
+            tr.appendChild(tdTask);
+
+            // Global default cell
+            const tdGlobal = document.createElement('td');
+            const globalInput = makeInput(def, 'global', def.globalValue, !globalOnly);
+            tdGlobal.appendChild(globalInput);
+            tr.appendChild(tdGlobal);
+
+            // Project override cell (if not globalOnly)
+            if (!globalOnly) {
+              const tdProject = document.createElement('td');
+              const projectInput = makeInput(def, 'project', def.projectValue, false);
+              tdProject.appendChild(projectInput);
+              tr.appendChild(tdProject);
+            }
+
+            // Effective value cell
+            const tdEff = document.createElement('td');
+            tdEff.className = 'agent-model-effective';
+            const effCode = document.createElement('code');
+            effCode.textContent = def.effectiveValue != null ? def.effectiveValue : 'unset';
+            tdEff.appendChild(effCode);
+            tr.appendChild(tdEff);
+
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody);
+          card.appendChild(table);
+          grid.appendChild(card);
+        });
+
+        agentSection.appendChild(grid);
+        area.appendChild(agentSection);
+      }
 
       const rawSection = document.createElement('div');
       rawSection.className = 'settings-section';

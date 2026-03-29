@@ -119,28 +119,43 @@
         events.forEach(ev => {
           const key = String(ev.type || ev.status || '').trim().toLowerCase();
           if (!key) return;
-          byType[key] = ev.ts || ev.timestamp || null;
+          byType[key] = ev.at || ev.ts || ev.timestamp || null;
         });
-        const createdTs = manifest.createdAt || byType.created || byType['feature-created'];
-        const startedTs = byType.started || byType['feature-started'] || byType['research-started'];
-        const submittedTs = byType.submitted || byType['all-submitted'] || byType['feature-submitted'] || byType['research-submitted'];
-        const evaluatedTs = byType.evaluated || byType.closed || byType['feature-evaluated'] || byType['research-evaluated'];
+        const firstEventTs = events.length > 0 ? (events[0].at || events[0].ts || events[0].timestamp || null) : null;
+        const createdTs = manifest.createdAt || byType.created || byType['feature-created'] || byType['transition:feature-create'] || byType['transition:research-create'] || byType['transition:feature-prioritise'] || byType['transition:research-prioritise'] || byType.bootstrapped || firstEventTs;
+        const startedTs = byType.started || byType['feature-started'] || byType['research-started'] || byType['transition:feature-start'] || byType['transition:research-start'];
+        // Fallback: derive submit time from agent status files if no manifest event
+        let agentSubmitTs = null;
+        if (!byType.submitted && !byType['all-submitted'] && !byType['feature-submitted'] && !byType['transition:feature-submit']) {
+          const agentFiles = payload.agentFiles || {};
+          Object.values(agentFiles).forEach(af => {
+            if (af && af.status === 'submitted' && af.updatedAt) {
+              if (!agentSubmitTs || af.updatedAt < agentSubmitTs) agentSubmitTs = af.updatedAt;
+            }
+          });
+        }
+        const submittedTs = byType.submitted || byType['all-submitted'] || byType['feature-submitted'] || byType['research-submitted'] || byType['transition:feature-submit'] || byType['transition:research-submit'] || agentSubmitTs;
+        const reviewedTs = byType['feature-review'] || byType['research-review'] || byType['transition:feature-review'] || byType['transition:research-review'];
+        const evaluatedTs = byType.evaluated || byType.closed || byType['feature-evaluated'] || byType['research-evaluated'] || byType['transition:feature-eval'] || byType['transition:feature-close'] || byType['transition:research-eval'] || byType['transition:research-close'];
 
         const created = createdTs ? new Date(createdTs) : null;
         const started = startedTs ? new Date(startedTs) : null;
         const submitted = submittedTs ? new Date(submittedTs) : null;
+        const reviewed = reviewedTs ? new Date(reviewedTs) : null;
         const evaluated = evaluatedTs ? new Date(evaluatedTs) : null;
+        const lastMilestone = evaluated || reviewed || submitted || started;
 
         return {
           timeToStart: created && started ? (started - created) : NaN,
           timeToSubmit: started && submitted ? (submitted - started) : NaN,
-          timeToEvaluate: submitted && evaluated ? (evaluated - submitted) : NaN,
-          totalLifecycle: created && (evaluated || submitted || started) ? ((evaluated || submitted || started) - created) : NaN,
+          timeToEvaluate: submitted && (evaluated || reviewed) ? ((evaluated || reviewed) - submitted) : NaN,
+          totalLifecycle: created && lastMilestone ? (lastMilestone - created) : NaN,
           agentCount: Array.isArray(manifest.agents) ? manifest.agents.length : Object.keys(payload.agentFiles || {}).length,
           winner: manifest.winner || manifest.winningAgent || 'n/a',
           createdAt: createdTs || null,
           startedAt: startedTs || null,
           submittedAt: submittedTs || null,
+          reviewedAt: reviewedTs || null,
           evaluatedAt: evaluatedTs || null
         };
       }
@@ -152,7 +167,7 @@
           return;
         }
         const rows = events.map(ev => {
-          const ts = ev.ts || ev.timestamp || '';
+          const ts = ev.at || ev.ts || ev.timestamp || '';
           const kind = ev.type || ev.status || 'event';
           const actor = ev.actor || ev.agent || 'system';
           const summary = ev.message || ev.detail || '';
@@ -201,10 +216,10 @@
       function renderStats(payload) {
         const stats = computeStats(payload);
         const rows = [
-          ['Time to start', formatDuration(stats.timeToStart)],
-          ['Time to submit', formatDuration(stats.timeToSubmit)],
-          ['Time to evaluate', formatDuration(stats.timeToEvaluate)],
-          ['Total lifecycle', formatDuration(stats.totalLifecycle)],
+          ['Time to start', formatDuration(stats.timeToStart), 'How long the feature sat in the backlog before an agent began working on it'],
+          ['Time to submit', formatDuration(stats.timeToSubmit), 'How long the agent(s) spent implementing before submitting code'],
+          ['Time to evaluate', formatDuration(stats.timeToEvaluate), 'How long between submission and evaluation/close'],
+          ['Total lifecycle', formatDuration(stats.totalLifecycle), 'Wall-clock time from the earliest recorded event to close'],
           ['Agent count', String(stats.agentCount || 0)],
           ['Winner', String(stats.winner || 'n/a')]
         ];
@@ -212,11 +227,12 @@
           ['Created', stats.createdAt ? formatIso(stats.createdAt) : 'n/a'],
           ['Started', stats.startedAt ? formatIso(stats.startedAt) : 'n/a'],
           ['Submitted', stats.submittedAt ? formatIso(stats.submittedAt) : 'n/a'],
+          stats.reviewedAt ? ['Reviewed', formatIso(stats.reviewedAt)] : null,
           ['Evaluated', stats.evaluatedAt ? formatIso(stats.evaluatedAt) : 'n/a']
-        ];
+        ].filter(Boolean);
         detailEl.innerHTML =
           '<div class="stats-grid">' +
-            rows.map(([k, v]) => '<div class="stats-row"><div class="stats-key">' + escHtml(k) + '</div><div class="stats-val">' + escHtml(v) + '</div></div>').join('') +
+            rows.map(([k, v, tip]) => '<div class="stats-row"><div class="stats-key">' + escHtml(k) + (tip ? ' <span class="stats-tip" data-tip="' + escHtml(tip) + '">?</span>' : '') + '</div><div class="stats-val">' + escHtml(v) + '</div></div>').join('') +
           '</div>' +
           '<div class="stats-events">' +
             timelineRows.map(([k, v]) => '<div class="stats-row"><div class="stats-key">' + escHtml(k) + '</div><div class="stats-val">' + escHtml(v) + '</div></div>').join('') +
