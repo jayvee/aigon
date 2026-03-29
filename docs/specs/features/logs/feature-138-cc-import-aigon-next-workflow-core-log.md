@@ -1,3 +1,26 @@
+---
+commit_count: 3
+lines_added: 2372
+lines_removed: 4
+lines_changed: 2376
+files_touched: 18
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 1748
+output_tokens: 32061
+cache_creation_input_tokens: 434943
+cache_read_input_tokens: 10581657
+thinking_tokens: 0
+total_tokens: 11050409
+billable_tokens: 33809
+cost_usd: 26.4585
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 14.23
+---
 # Implementation Log: Feature 138 - import-aigon-next-workflow-core
 Agent: cc
 
