@@ -697,13 +697,13 @@
               break;
             case 'feature-start':
             case 'research-start': {
-              const agents = await showAgentPicker(featureId, featureName);
+              const agents = await showAgentPicker(featureId, featureName, { repoPath: effectiveRepo, taskType: 'implement', action: transition.action });
               if (!agents) return;
               await requestAction(pipelineCommand(dragPType, 'start'), [featureId, ...agents], effectiveRepo);
               break;
             }
             case 'feature-eval': {
-              const agents = await showAgentPicker(featureId, featureName, { single: true, title: 'Select evaluator agent', submitLabel: 'Evaluate' });
+              const agents = await showAgentPicker(featureId, featureName, { single: true, title: 'Select evaluator agent', submitLabel: 'Evaluate', repoPath: effectiveRepo, taskType: 'evaluate', action: transition.action });
               if (!agents || agents.length === 0) return;
               const evalAgent = agents[0];
               await requestAction(pipelineCommand(dragPType, 'eval'), [featureId], effectiveRepo);
@@ -711,7 +711,7 @@
               break;
             }
             case 'feature-close': {
-              const picked = await showAgentPicker(featureId, featureName, { single: true, title: 'Pick winner to merge', submitLabel: 'Close & Merge', preselect: dragWinnerAgent });
+              const picked = await showAgentPicker(featureId, featureName, { single: true, title: 'Pick winner to merge', submitLabel: 'Close & Merge', preselect: dragWinnerAgent, repoPath: effectiveRepo, taskType: 'evaluate', action: transition.action });
               if (!picked || picked.length === 0) return;
               await requestAction(pipelineCommand(dragPType, 'close'), [featureId, picked[0]], effectiveRepo);
               break;
