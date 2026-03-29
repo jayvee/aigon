@@ -1,3 +1,26 @@
+---
+commit_count: 3
+lines_added: 836
+lines_removed: 3
+lines_changed: 839
+files_touched: 6
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 343
+output_tokens: 24334
+cache_creation_input_tokens: 538489
+cache_read_input_tokens: 12955860
+thinking_tokens: 0
+total_tokens: 13519026
+billable_tokens: 24677
+cost_usd: 31.3607
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 29.41
+---
 # Implementation Log: Feature 139 - dashboard-read-from-workflow-snapshots
 Agent: cc
 
