@@ -50,3 +50,19 @@ Migrate feature-eval to use the workflow-core engine following the established b
 - **Idempotent spec move**: Even when the engine handles the spec move via effects, the legacy `moveFile()` call is kept in the command handler as a no-op safety net. This ensures the spec ends up in the right place regardless of which path ran.
 
 - **No bootstrap-from-legacy needed**: Unlike workflow-close (which needed to synthesize all prior events), workflow-eval only needs engine state if the feature was started via the engine. Features without engine state simply use the legacy path.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-30
+
+### Findings
+- `runWorkflowEval()` could leave engine-started features stuck in `evaluating` with no pending effects if the process exited after `feature.eval_requested` was persisted but before the bridge's `effect.requested` events were written. A rerun then treated the feature as complete and skipped the spec move/eval-stub work entirely.
+
+### Fixes Applied
+- Added recovery logic in `lib/workflow-eval.js` to backfill missing eval effects when a rerun finds an `evaluating` feature with no pending effects.
+- Added a regression test covering the interrupted transition window.
+
+### Notes
+- Focused validation passed: `node --check lib/commands/feature.js` and `node lib/workflow-eval.test.js`.
+- `npm test` still reports broader suite failures in this worktree; they did not isolate cleanly to this review fix.
