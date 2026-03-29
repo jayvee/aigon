@@ -6,7 +6,7 @@
     "aigon": "./aigon-cli.js"
   },
   "scripts": {
-    "test": "node aigon-cli.test.js && node lib/manifest.test.js && node lib/workflow-core/workflow-core.test.js && node lib/workflow-close.test.js && node lib/workflow-start.test.js && node lib/workflow-eval.test.js && npx playwright test --config tests/dashboard/playwright.config.js --reporter=list",
+    "test": "node aigon-cli.test.js && node lib/manifest.test.js && node lib/workflow-core/workflow-core.test.js && node lib/workflow-close.test.js && node lib/workflow-start.test.js && node lib/workflow-eval.test.js && node lib/workflow-signals.test.js && npx playwright test --config tests/dashboard/playwright.config.js --reporter=list",
     "test:dashboard": "npx playwright test --config tests/dashboard/playwright.config.js --reporter=list",
     "test:e2e": "node test/e2e.test.js",
     "test:e2e:mock-solo": "node test/e2e-mock-solo.test.js",

@@ -114,7 +114,9 @@
 
       function computeStats(payload) {
         const manifest = payload.manifest || {};
-        const events = Array.isArray(manifest.events) ? manifest.events : [];
+        const events = Array.isArray(payload.events)
+          ? payload.events
+          : (Array.isArray(manifest.events) ? manifest.events : []);
         const byType = {};
         events.forEach(ev => {
           const key = String(ev.type || ev.status || '').trim().toLowerCase();
@@ -161,7 +163,9 @@
       }
 
       function renderEvents(payload) {
-        const events = Array.isArray(payload.manifest && payload.manifest.events) ? payload.manifest.events : [];
+        const events = Array.isArray(payload.events)
+          ? payload.events
+          : (Array.isArray(payload.manifest && payload.manifest.events) ? payload.manifest.events : []);
         if (events.length === 0) {
           detailEl.innerHTML = '<div class="drawer-empty">No events recorded.</div>';
           return;
@@ -169,7 +173,7 @@
         const rows = events.map(ev => {
           const ts = ev.at || ev.ts || ev.timestamp || '';
           const kind = ev.type || ev.status || 'event';
-          const actor = ev.actor || ev.agent || 'system';
+          const actor = ev.actor || ev.agent || ev.agentId || 'system';
           const summary = ev.message || ev.detail || '';
           return '<li class="timeline-item">' +
             '<div class="timeline-time">' + escHtml(formatIso(ts)) + '</div>' +
