@@ -140,4 +140,5 @@ Before running `/aigon:feature-close`, always:
    git push -u origin <current-branch-name>
    ```
 2. **Ask the user** if they want to delete the local branch after merge (the CLI will delete it by default)
+
 <!-- AIGON_END -->
