@@ -59,8 +59,34 @@ OpenCode is gaining adoption among engineers in company environments as a termin
 <!-- Document discoveries, options evaluated, pros/cons -->
 
 ## Recommendation
-<!-- Summary of recommended approach based on findings -->
+
+OpenCode's explosive growth (132k stars, 650k MAU) validates the market for CLI-first AI coding tools. However, OpenCode and Aigon are **fundamentally different products**:
+
+- **OpenCode is a coding assistant** — interactive sessions with model flexibility
+- **Aigon is a development workflow orchestrator** — feature lifecycles across multiple agents with structured quality gates
+
+**Strategic recommendations:**
+1. **Don't compete on model breadth.** OpenCode's 75+ model support is solved. Aigon's value is orchestration.
+2. **Double down on orchestration.** Fleet mode, worktree isolation, state machine lifecycle are architectural moats.
+3. **Adopt selectively:** model-role-assignment, local model support, session cost visibility, and a lightweight TUI for quick interactions.
+4. **Position clearly.** "If you need a smart code editor, use OpenCode. If you need to manage a development workflow with multiple agents, quality gates, and project-level visibility, use Aigon."
+5. **Learn from their mistakes.** CVE-2026-22812 and privacy leaks show the cost of moving fast without security review. Aigon's delegation to battle-tested agent CLIs is safer.
 
 ## Output
-<!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Link the newly created files below. -->
-- [ ] Feature:
+
+### Selected Features
+
+| Feature Name | Description | Priority | Spec |
+|--------------|-------------|----------|------|
+| model-role-assignment | Configure different models for different agent roles (impl, eval, plan) within Fleet mode | high | `docs/specs/features/01-inbox/feature-model-role-assignment.md` |
+| local-model-support | Support Ollama and OpenAI-compatible local model endpoints as agent backends | medium | `docs/specs/features/01-inbox/feature-local-model-support.md` |
+| session-cost-dashboard | Display per-session and per-agent cost breakdowns in the Aigon dashboard | medium | `docs/specs/features/01-inbox/feature-session-cost-dashboard.md` |
+| lightweight-tui-mode | Terminal-based UI for core Aigon workflows as alternative to web dashboard | medium | `docs/specs/features/01-inbox/feature-lightweight-tui-mode.md` |
+
+### Feature Dependencies
+- No hard dependencies between selected features
+
+### Not Selected
+- `context-compaction-awareness` — Low priority; agent CLIs handle their own context management
+- `plugin-system` — Medium priority but large scope; defer to a later research cycle
+- `opencode-agent-backend` — Low priority; depends on local-model-support and unclear demand
