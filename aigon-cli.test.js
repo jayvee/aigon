@@ -2916,6 +2916,72 @@ test('feature-start merges new agents into existing agent list', () => {
     });
 });
 
+test('feature-start preserves existing engine agents on workflow-core rerun', () => {
+    withTempDir(tempDir => {
+        const stateDir = path.join(tempDir, '.aigon', 'state');
+        const configDir = path.join(tempDir, '.aigon');
+        const specDir = path.join(tempDir, 'docs', 'specs', 'features', '03-in-progress');
+        const homeDir = path.join(tempDir, 'home');
+        const binDir = path.join(tempDir, 'bin');
+        fs.mkdirSync(stateDir, { recursive: true });
+        fs.mkdirSync(specDir, { recursive: true });
+        fs.mkdirSync(homeDir, { recursive: true });
+        fs.mkdirSync(binDir, { recursive: true });
+
+        fs.writeFileSync(path.join(configDir, 'config.json'), JSON.stringify({
+            workflow: { startEngine: true },
+            backgroundAgents: false,
+        }, null, 2));
+
+        fs.writeFileSync(path.join(specDir, 'feature-994-test-engine-rerun.md'), '# Test');
+        fs.writeFileSync(path.join(stateDir, 'feature-994.json'), JSON.stringify({
+            id: '994',
+            type: 'feature',
+            stage: 'in-progress',
+            name: 'test-engine-rerun',
+            agents: ['cc', 'gg'],
+            pending: [],
+            events: [],
+        }));
+
+        const tmuxPath = path.join(binDir, 'tmux');
+        fs.writeFileSync(tmuxPath, '#!/bin/sh\nexit 0\n');
+        fs.chmodSync(tmuxPath, 0o755);
+
+        const { execSync } = require('child_process');
+        execSync('git init -b main && git config user.name "Aigon Test" && git config user.email "test@example.com" && git add -A && git commit -m "init"', { cwd: tempDir, stdio: 'pipe' });
+        execFileSync(process.execPath, ['-e', `
+            const wf = require(${JSON.stringify(path.resolve('lib/workflow-core'))});
+            (async () => {
+              await wf.startFeature(${JSON.stringify(tempDir)}, '994', 'fleet', ['cc', 'gg']);
+            })().catch((error) => {
+              console.error(error);
+              process.exit(1);
+            });
+        `], { cwd: tempDir, encoding: 'utf8' });
+
+        const env = {
+            ...process.env,
+            HOME: homeDir,
+            PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
+        };
+
+        const result = spawnSync(process.execPath, [path.resolve('aigon-cli.js'), 'feature-start', '994', 'cc', '--background'], {
+            cwd: tempDir,
+            env,
+            encoding: 'utf8',
+            stdio: ['pipe', 'pipe', 'pipe'],
+        });
+
+        const output = (result.stdout || '') + (result.stderr || '');
+        assert.strictEqual(result.status, 0, 'engine rerun should succeed: ' + output);
+        assert.ok(output.includes('preserving existing engine agents'), 'should report engine agent preservation: ' + output);
+
+        const updated = JSON.parse(fs.readFileSync(path.join(stateDir, 'feature-994.json'), 'utf8'));
+        assert.deepStrictEqual(updated.agents, ['cc', 'gg'], 'engine rerun should preserve manifest agents: ' + JSON.stringify(updated.agents));
+    });
+});
+
 // ---------------------------------------------------------------------------
 // Dashboard Action Dispatch Tests
 // ---------------------------------------------------------------------------
