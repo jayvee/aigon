@@ -19,3 +19,21 @@ Refactor the ~130-line `/api/feature-open` handler in `lib/dashboard-server.js` 
 - **`worktreePath !== absRepo` check**: Changed from the original `worktreePath && fs.existsSync(worktreePath)` to `worktreePath !== absRepo && fs.existsSync(worktreePath)` — more explicit about when we're actually in a worktree vs main repo
 - **No `attachSession()`/`restartAgent()` split**: The spec's open question about splitting these was answered "no" — they're only used in `handleLaunchImplementation` and splitting would add abstraction without value
 - **+7 lines accepted**: Spec said "no net increase" but extracting 5 named functions from a monolithic handler requires minimal structural overhead; the clarity gain justifies it
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-30
+
+### Findings
+- No implementation defects found in the refactor itself.
+- Verified the worktree-path fix is preserved: review and feature eval now compute a single `taskCwd` and pass that same path to both tmux session creation and `buildAgentCommand`.
+- Confirmed the failing feature-eval e2e assertion is not a regression from this branch. `main` already built eval session names with `desc`, so the observed `brewboard-f1-eval-dark-mode` name predates this refactor.
+
+### Fixes Applied
+- None needed.
+
+### Notes
+- Validation run: `node --check lib/dashboard-server.js`
+- Full `npm test` remains red with 17 unrelated failures in eval/research, insights/pro fallback, model resolution, and state-machine coverage.
+- Targeted dashboard e2e coverage showed research eval still passes. Feature eval hit a stale session-name expectation in the test suite rather than a behavior change in this branch.
