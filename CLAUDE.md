@@ -65,7 +65,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/workflow-start.js` | ~290 | **Bridge**: routes `feature-start` through workflow-core engine behind `workflow.startEngine` flag |
 | `lib/workflow-eval.js` | ~300 | **Bridge**: routes `feature-eval` through workflow-core engine behind `workflow.evalEngine` flag |
 | `lib/workflow-pause.js` | ~300 | **Bridge**: routes `feature-pause` and `feature-resume` through workflow-core engine behind `workflow.pauseEngine` flag |
-| `lib/workflow-snapshot-adapter.js` | ~260 | **Read adapter**: maps workflow-core snapshots to dashboard/board data formats; side-effect free |
+| `lib/workflow-snapshot-adapter.js` | ~310 | **Read adapter**: maps workflow-core snapshots to dashboard/board data formats; event log reading; side-effect free |
+| `lib/workflow-heartbeat.js` | ~120 | **Heartbeat**: agent liveness signals, configurable timeout, expired heartbeat sweep |
 
 Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/devserver.js`.
 
@@ -74,7 +75,8 @@ Feature/research state lives in **two layers** (current system):
 1. **Folders** (`docs/specs/features/0N-*/`) — shared ground truth, committed to git
 2. **Manifests** (`.aigon/state/feature-{id}.json`) — local reliability layer, gitignored, crash-safe
 
-- Agents write status to `.aigon/state/feature-{id}-{agent}.json` in main repo, not inside worktrees
+- Agents write status to `.aigon/state/feature-{id}-{agent}.json` in main repo, not inside worktrees (legacy)
+- Agents also emit engine signals (`signal.agent_ready`, `signal.agent_failed`, etc.) when engine state exists — both paths coexist for backward compat
 - Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 - All transitions go through `requestTransition()` — no bypassing the state machine
 - Run `aigon doctor --fix` to detect and repair desyncs
