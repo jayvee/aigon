@@ -101,11 +101,38 @@
     let pickerResolve = null;
     let pickerSingleMode = false;
 
+    function fetchAgentModels(repoPath) {
+      const params = new URLSearchParams();
+      if (repoPath) params.set('repoPath', repoPath);
+      else params.set('globalOnly', '1');
+      const query = params.toString();
+      return fetch('/api/settings?' + query, { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => {
+          const agentModelMap = {};
+          const agents = (data && data.effective && data.effective.agents) || {};
+          Object.entries(agents).forEach(([id, cfg]) => {
+            agentModelMap[id] = (cfg && cfg.models) || {};
+          });
+          return agentModelMap;
+        })
+        .catch(() => ({}));
+    }
+
+    function pickerTaskType(opts) {
+      if (opts.taskType === 'research' || opts.taskType === 'implement' || opts.taskType === 'evaluate') return opts.taskType;
+      const action = String(opts.action || opts.sessionTask || '').toLowerCase();
+      if (action === 'feature-review' || action === 'review') return 'implement';
+      if (action.includes('eval')) return 'evaluate';
+      return 'implement';
+    }
+
     function showAgentPicker(featureId, featureName, options) {
       const opts = options || {};
       pickerSingleMode = !!opts.single;
       const implAgents = opts.implementingAgents || [];
-      return new Promise((resolve) => {
+      const taskType = pickerTaskType(opts);
+      return fetchAgentModels(opts.repoPath).then(models => new Promise((resolve) => {
         pickerResolve = resolve;
         document.getElementById('agent-picker-title').textContent = opts.title || 'Select Agents';
         document.getElementById('agent-picker-desc').textContent = '#' + featureId + ' ' + featureName;
@@ -126,11 +153,25 @@
             badge.textContent = 'implemented';
             row.querySelector('.agent-check-hint').before(badge);
           }
+          // Show model name for this task type
+          let modelEl = row.querySelector('.agent-check-model');
+          const modelName = (models[cb.value] && models[cb.value][taskType]) || '';
+          if (modelName) {
+            if (!modelEl) {
+              modelEl = document.createElement('span');
+              modelEl.className = 'agent-check-model';
+              const hint = row.querySelector('.agent-check-hint');
+              if (hint) hint.after(modelEl); else row.appendChild(modelEl);
+            }
+            modelEl.textContent = modelName;
+          } else if (modelEl) {
+            modelEl.remove();
+          }
         });
         document.getElementById('agent-picker-submit').textContent = opts.submitLabel || 'Start';
         document.getElementById('agent-picker').style.display = 'flex';
         document.getElementById('agent-picker-submit').focus();
-      });
+      }));
     }
 
     function hideAgentPicker(result) {

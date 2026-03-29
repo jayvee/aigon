@@ -184,13 +184,13 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       break;
     case 'feature-start':
     case 'research-start': {
-      const agents = await showAgentPicker(id, feature.name);
+      const agents = await showAgentPicker(id, feature.name, { repoPath, taskType: 'implement', action: va.action });
       if (!agents) return;
       await requestAction(pCmd('start'), [id, ...agents], repoPath, btn);
       break;
     }
     case 'feature-autopilot': {
-      const agents = await showAgentPicker(id, feature.name, { title: 'Select Autopilot Agents', submitLabel: 'Autopilot' });
+      const agents = await showAgentPicker(id, feature.name, { title: 'Select Autopilot Agents', submitLabel: 'Autopilot', repoPath, taskType: 'implement', action: va.action });
       if (!agents) return;
       if (agents.length < 2) { showToast('Select at least 2 agents for autopilot'); return; }
       await requestAction('feature-autopilot', [id, ...agents], repoPath, btn);
@@ -198,7 +198,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     }
     case 'feature-eval': {
       const implAgents = (feature.agents || []).map(a => a.id);
-      const evalAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose evaluation agent', submitLabel: 'Run Evaluation', implementingAgents: implAgents });
+      const evalAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose evaluation agent', submitLabel: 'Run Evaluation', implementingAgents: implAgents, repoPath, taskType: 'evaluate', action: va.action });
       if (!evalAgent || evalAgent.length === 0) return;
       if (feature.stage !== 'in-evaluation') {
         await requestAction('feature-eval', [id, '--setup-only'], repoPath, btn);
@@ -208,7 +208,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     }
     case 'research-eval': {
       const researchAgents = (feature.agents || []).map(a => a.id);
-      const synthAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose evaluation agent', submitLabel: 'Run Evaluation', implementingAgents: researchAgents });
+      const synthAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose evaluation agent', submitLabel: 'Run Evaluation', implementingAgents: researchAgents, repoPath, taskType: 'evaluate', action: va.action });
       if (!synthAgent || synthAgent.length === 0) return;
       if (feature.stage !== 'in-evaluation') {
         await requestAction('research-eval', [id, '--setup-only'], repoPath, btn);
@@ -218,7 +218,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     }
     case 'feature-review': {
       const implAgentsR = (feature.agents || []).map(a => a.id);
-      const reviewAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose review agent', submitLabel: 'Run Review', implementingAgents: implAgentsR });
+      const reviewAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose review agent', submitLabel: 'Run Review', implementingAgents: implAgentsR, repoPath, taskType: 'implement', action: va.action });
       if (!reviewAgent || reviewAgent.length === 0) return;
       await requestFeatureOpen(id, reviewAgent[0], repoPath, null, pipelineType, 'review');
       break;
@@ -235,7 +235,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
         showCloseModal(feature, repoPath, pipelineType);
       } else if (feature.stage === 'in-evaluation') {
         // Solo eval — pick winner via agent picker
-        const picked = await showAgentPicker(id, feature.name, { single: true, title: 'Pick winner to merge', submitLabel: 'Close & Merge', preselect: feature.winnerAgent });
+        const picked = await showAgentPicker(id, feature.name, { single: true, title: 'Pick winner to merge', submitLabel: 'Close & Merge', preselect: feature.winnerAgent, repoPath, taskType: 'evaluate', action: va.action });
         if (!picked || picked.length === 0) return;
         await requestAction('feature-close', [id, picked[0]], repoPath, btn);
       } else {
@@ -256,7 +256,10 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
           single: true,
           title: 'Choose agent for ' + actionLabel,
           submitLabel: actionLabel,
-          implementingAgents: implAgents
+          implementingAgents: implAgents,
+          repoPath,
+          taskType: va.action.includes('eval') ? 'evaluate' : 'implement',
+          action: va.action
         });
         if (!picked || picked.length === 0) return;
         await requestFeatureOpen(id, picked[0], repoPath, null, pipelineType, va.action.split('-').pop());
