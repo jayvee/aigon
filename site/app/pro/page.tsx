@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     description:
       "Agent quality metrics, trend charts, and AI-powered coaching for AI-assisted development.",
     type: "website",
-    url: "https://aigon.build/pro",
+    url: "https://www.aigon.build/pro",
   },
 };
 

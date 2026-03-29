@@ -30,13 +30,13 @@ export const metadata: Metadata = {
   },
   description:
     "Aigon is an open-source, spec-driven orchestration system for AI coding agents — run them head-to-head on the same feature, then score their work so you can ship with confidence.",
-  metadataBase: new URL("https://aigon.build"),
+  metadataBase: new URL("https://www.aigon.build"),
   openGraph: {
     title: "Aigon | Open-Source AI Agent Orchestration",
     description:
       "Aigon is an open-source, spec-driven orchestration system for AI coding agents — run them head-to-head on the same feature, then score their work so you can ship with confidence.",
     type: "website",
-    url: "https://aigon.build",
+    url: "https://www.aigon.build",
   },
   icons: {
     icon: [

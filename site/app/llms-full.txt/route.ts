@@ -32,7 +32,7 @@ export async function GET() {
   const contentDir = join(process.cwd(), "content");
   const pages = await getMdxFiles(contentDir);
   const sections = pages.map((page) => {
-    return `# ${page.title}\n\nURL: https://aigon.build${page.path}\n${page.description ? `\n${page.description}\n` : ""}`;
+    return `# ${page.title}\n\nURL: https://www.aigon.build${page.path}\n${page.description ? `\n${page.description}\n` : ""}`;
   });
 
   const content = [
