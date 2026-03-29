@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 911
+lines_removed: 12
+lines_changed: 923
+files_touched: 13
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 728
+output_tokens: 33284
+cache_creation_input_tokens: 669541
+cache_read_input_tokens: 18542121
+thinking_tokens: 0
+total_tokens: 19245674
+billable_tokens: 34012
+cost_usd: 42.8743
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 36.85
+---
 # Implementation Log: Feature 166 - workflow-engine-agent-signals
 Agent: cc
 
