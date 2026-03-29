@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 134
+lines_removed: 88
+lines_changed: 222
+files_touched: 2
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 403
+output_tokens: 17264
+cache_creation_input_tokens: 229869
+cache_read_input_tokens: 5578604
+thinking_tokens: 0
+total_tokens: 5826140
+billable_tokens: 17667
+cost_usd: 13.9788
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 79.58
+---
 # Implementation Log: Feature 165 - refactor-feature-open-into-distinct-launch-handlers
 Agent: cc
 
