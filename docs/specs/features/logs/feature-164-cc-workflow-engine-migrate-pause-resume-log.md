@@ -1,3 +1,26 @@
+---
+commit_count: 0
+lines_added: 0
+lines_removed: 0
+lines_changed: 0
+files_touched: 0
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 311
+output_tokens: 23923
+cache_creation_input_tokens: 517275
+cache_read_input_tokens: 9281475
+thinking_tokens: 0
+total_tokens: 9822984
+billable_tokens: 24234
+cost_usd: 25.42
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 164 - workflow-engine-migrate-pause-resume
 Agent: cc
 
