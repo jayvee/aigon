@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 1125
+lines_removed: 15
+lines_changed: 1140
+files_touched: 6
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 194
+output_tokens: 25407
+cache_creation_input_tokens: 700241
+cache_read_input_tokens: 12986306
+thinking_tokens: 0
+total_tokens: 13712148
+billable_tokens: 25601
+cost_usd: 34.5174
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 22.46
+---
 # Implementation Log: Feature 163 - workflow-engine-migrate-feature-eval
 Agent: cc
 
