@@ -144,7 +144,7 @@ Core rule: use the CLI to move specs between states. Do not rename or move spec 
 
 ### Workflow-Core Engine (`lib/workflow-core/`)
 
-The workflow-core engine is the sole lifecycle authority for features. All feature lifecycle commands (`feature-start`, `feature-close`, `feature-eval`, `feature-pause`, `feature-resume`) route through this engine.
+The workflow-core engine is the sole lifecycle authority for features and research. Feature lifecycle commands (`feature-start`, `feature-close`, `feature-eval`, `feature-pause`, `feature-resume`) and research lifecycle commands (`research-start`, `research-eval`, `research-close`) route through this engine.
 
 **Module layout:**
 
@@ -186,7 +186,8 @@ The post-cutover system is easier to reason about if you separate lifecycle trut
 | Feature lifecycle (`implementing`, `evaluating`, `ready_for_review`, `closing`, `done`, `paused`) | `lib/workflow-core/` snapshot + event log | Sole write path for feature lifecycle |
 | Feature spec folder location | Engine effects (`move_spec`) | User-visible reflection of engine state |
 | Feature agent runtime status (`running`, `waiting`, `ready`, `lost`, etc.) | Engine signals plus per-agent status files in `.aigon/state/feature-{id}-{agent}.json` | Session/runtime metadata, not the lifecycle authority |
-| Research / feedback lifecycle | Spec folder location + command logic | Research and feedback do not use workflow-core |
+| Research lifecycle (`backlog`, `implementing`, `evaluating`, `closing`, `done`) | `lib/workflow-core/` snapshot + event log | Sole write path for research lifecycle |
+| Feedback lifecycle | Spec folder location + command logic | Feedback does not use workflow-core |
 
 Important distinction: `.aigon/state/` still exists after the cutover, but it is no longer the coordinator manifest system that decides feature lifecycle.
 
@@ -194,10 +195,10 @@ Important distinction: `.aigon/state/` still exists after the cutover, but it is
 
 Feature writes go through the engine, but the read side is still mixed:
 
-- `lib/workflow-snapshot-adapter.js` is the preferred feature read adapter for feature lifecycle/actions when a workflow snapshot exists.
+- `lib/workflow-snapshot-adapter.js` is the preferred feature/research read adapter for lifecycle/actions when a workflow snapshot exists.
 - `lib/feature-spec-resolver.js` is the preferred active-feature spec lookup. Consumers should not hardcode `03-in-progress` / `04-in-evaluation` probes for active features.
 - `aigon feature-list` and `aigon feature-spec` are the preferred CLI query surfaces for active features. Do not use `board` output as a data API.
-- `lib/workflow-read-model.js` now provides the shared feature dashboard read state (snapshot-backed when available) and also provides derived action suggestions for research, feedback, and feature fallback paths via `lib/state-queries.js`.
+- `lib/workflow-read-model.js` provides shared dashboard read state (snapshot-backed for feature/research when available) and also provides derived action suggestions for feedback and legacy fallback paths via `lib/state-queries.js`.
 - `lib/dashboard-status-collector.js` now owns the AIGON server's dashboard-facing repo/entity reads, including compatibility behavior for older repos that may not have a complete workflow snapshot yet.
 - `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, and action dispatch.
 
@@ -390,8 +391,8 @@ node -c lib/<module>.js         # Quick syntax check for a module
 
 There are currently two read-side paths:
 
-- `lib/workflow-snapshot-adapter.js`: maps workflow-core snapshots into dashboard/board-friendly shapes for features. This is the preferred feature read path.
-- `lib/workflow-read-model.js`: shared read model used by dashboard collectors/detail payloads for features (snapshot-backed first), and derives recommended actions from `lib/state-queries.js` for research/feedback plus feature fallback cases.
+- `lib/workflow-snapshot-adapter.js`: maps workflow-core snapshots into dashboard/board-friendly shapes for features and research. This is the preferred workflow read path.
+- `lib/workflow-read-model.js`: shared read model used by dashboard collectors/detail payloads for features/research (snapshot-backed first), and derives recommended actions from `lib/state-queries.js` for feedback plus legacy fallback cases.
 - `lib/action-command-mapper.js`: keeps command strings aligned between those two read paths so UI surfaces do not drift.
 - `lib/dashboard-status-helpers.js`: keeps session/worktree/status heuristics aligned between dashboard reads and command flows.
 
