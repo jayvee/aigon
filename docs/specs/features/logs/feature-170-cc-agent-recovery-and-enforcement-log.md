@@ -45,3 +45,18 @@ Implement compensating transactions (auto-restart, drop, force-ready) with confi
 - `templates/agents/cc.json` — Stop hook configuration
 - `templates/agents/gg.json` — AfterAgent hook configuration
 - `lib/workflow-signals.test.js` — 12 new tests
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-30
+
+### Findings
+- `recovery.autoRestart: false` left agents stuck in `lost`/`failed` because `sweepAgentRecovery()` returned early instead of escalating them to `needs_attention`, which blocked the intended manual `drop-agent` / `force-agent-ready` recovery path.
+
+### Fixes Applied
+- `fix(review): escalate lost agents when auto-restart is disabled`
+
+### Notes
+- Verified with `node lib/workflow-signals.test.js` (`39 passed, 0 failed`).
+- `npm test` is currently red in unrelated existing areas, including research eval, insights, and model-resolution tests.
