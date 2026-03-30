@@ -1,132 +1,164 @@
 # Feature: aigon-supervisor
 
-## Name
+## Architecture
 
-**Supervisor**. Not daemon, not orchestrator, not sweep. The Supervisor.
+One process: `aigon dashboard start`. Two modules inside it with strict separation.
 
-## What It Is
+```
+One process (managed by launchd/systemd, auto-restarts on crash)
+┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│  ┌──────────────────┐     ┌──────────────────┐          │
+│  │  HTTP module      │     │  Supervisor module│          │
+│  │                   │     │                   │          │
+│  │  Serves UI        │     │  Polls tmux       │          │
+│  │  Handles API      │     │  Checks heartbeats│          │
+│  │  Reads snapshots  │     │  Emits signals    │          │
+│  │                   │     │  Sends notifs     │          │
+│  │  NEVER mutates    │     │  ONLY emits       │          │
+│  │  engine state     │     │  signal events    │          │
+│  └────────┬──────────┘     └────────┬──────────┘          │
+│           │                         │                    │
+│           │  Never call each other  │                    │
+│           ▼                         ▼                    │
+│  ┌─────────────────────────────────────────────────┐     │
+│  │  Engine (files on disk: events.jsonl, snapshot)  │     │
+│  └─────────────────────────────────────────────────┘     │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
 
-A separate background process that watches agent sessions and reports problems to the workflow engine. It runs alongside the dashboard but is not part of it. The dashboard is read-only. The supervisor is observe-and-signal-only.
+The HTTP module never imports the supervisor module. The supervisor module never imports the HTTP module. They share a process for operational simplicity (one thing to install, one thing to keep alive), not because they need each other.
 
-## What It Does (exhaustive list)
+## Module responsibilities
 
-1. **Detects dead sessions** — polls tmux session liveness every 30 seconds. If an agent's tmux session no longer exists and the engine still thinks it's `running`, emits `signal.session_lost`.
+### HTTP module (`lib/dashboard-server.js` — refactored)
 
-2. **Detects expired heartbeats** — checks heartbeat file timestamps. If an agent hasn't heartbeated in 2 minutes and the engine thinks it's `running`, emits `signal.heartbeat_expired`.
+- Serves dashboard HTML/JS/CSS
+- Handles API requests (read snapshots, proxy user actions to CLI)
+- Pushes status updates via WebSocket
+- Reads engine snapshots from disk
+- **Never** polls tmux, checks heartbeats, classifies orphans, kills sessions, emits signals, or sends notifications
 
-3. **Sends notifications** — when a problem is detected or an agent submits, sends macOS/Linux desktop notifications.
+### Supervisor module (`lib/supervisor.js` — new, under 300 lines)
 
-4. **Keeps itself alive** — auto-restarts on crash via launchd (macOS) or systemd (Linux).
+Does four things:
 
-That's it. Four responsibilities.
+1. **Detects dead sessions** — polls tmux session liveness every 30 seconds. If an agent's session is dead and the engine thinks it's `running`, emits `signal.session_lost`.
+2. **Detects expired heartbeats** — checks heartbeat file timestamps. If an agent hasn't heartbeated in 2 minutes, emits `signal.heartbeat_expired`.
+3. **Sends notifications** — macOS/Linux desktop notifications when problems are detected or agents submit.
+4. **Nothing else.**
 
-## What It Does NOT Do
+### What the supervisor does NOT do
 
-- **Never kills tmux sessions** — only the user or `aigon sessions-close` kills sessions
-- **Never restarts agents** — only the user can restart (via dashboard button or CLI)
-- **Never moves spec files** — only CLI commands move specs
-- **Never writes agent status files** — only agents write their own status
-- **Never makes decisions** — it observes and reports to the engine via signals. The engine's XState machine decides what transitions are valid.
-- **Never reads or writes manifests** — manifests are deleted in the cutover (feature 171)
+- Never kills tmux sessions
+- Never restarts agents
+- Never moves spec files
+- Never writes agent status files
+- Never makes decisions — it observes and reports via signals. The engine's XState machine decides validity.
 
-## How It Mutates State
+### How the supervisor mutates state
 
-The supervisor writes exactly one type of thing: **engine signal events** via `engine.emitSignal()`. These are append-only events in `events.jsonl`. The engine's guards prevent invalid signals (dedup, terminal state checks from feature 168).
+One way only: `engine.emitSignal()` — append-only events in `events.jsonl`. Two signal types:
+- `signal.session_lost`
+- `signal.heartbeat_expired`
 
-The signal types it can emit:
-- `signal.session_lost` — tmux session for agent X is dead
-- `signal.heartbeat_expired` — agent X hasn't heartbeated in >2 minutes
-
-That's it. Two signal types. Both are observations, not decisions.
+Engine guards (feature 168) prevent duplicates and signals to terminal states.
 
 ## Acceptance Criteria
 
-- [ ] `aigon supervisor start` launches the supervisor as a background process
-- [ ] `aigon supervisor stop` stops it cleanly
-- [ ] `aigon supervisor status` shows: running/stopped, uptime, last sweep time, problems detected
+- [ ] `aigon dashboard start` launches one process containing both HTTP and supervisor modules
+- [ ] `aigon dashboard stop` stops both cleanly
+- [ ] `aigon dashboard status` shows: running/stopped, uptime, last supervisor sweep time
 - [ ] Supervisor polls tmux sessions every 30 seconds
 - [ ] Supervisor checks heartbeat timestamps every 30 seconds
-- [ ] When a dead session is detected: emits `signal.session_lost` to the engine, sends notification
-- [ ] When an expired heartbeat is detected: emits `signal.heartbeat_expired` to the engine, sends notification
+- [ ] Dead session detected → `signal.session_lost` emitted, notification sent
+- [ ] Expired heartbeat detected → `signal.heartbeat_expired` emitted, notification sent
 - [ ] Supervisor never kills a tmux session
 - [ ] Supervisor never restarts an agent
 - [ ] Supervisor never moves files
-- [ ] Supervisor auto-restarts on crash (launchd plist on macOS, systemd unit on Linux)
-- [ ] Supervisor is idempotent — running two sweeps with no state change produces no new events
-- [ ] Dashboard does not contain any supervision logic — all moved to supervisor
-- [ ] Orphan classification and killing logic removed from dashboard entirely
+- [ ] Supervisor is idempotent — two sweeps with no state change produce no new events
+- [ ] Process auto-restarts on crash (launchd plist on macOS, systemd unit on Linux)
+- [ ] All orphan classification/killing logic removed from dashboard-server.js
+- [ ] All notification logic moved from dashboard polling to supervisor module
+- [ ] HTTP module and supervisor module have zero imports of each other
 
 ## Validation
 
 ```bash
+node --check lib/dashboard-server.js
 node --check lib/supervisor.js
 npm test
 ```
 
 ## Technical Approach
 
-### One file: `lib/supervisor.js`
+### Step 1: Create `lib/supervisor.js`
 
-Not a module tree. Not a framework. One file, under 300 lines.
+Under 300 lines. Single exported function `startSupervisorLoop()` that runs on a 30-second interval.
 
-```
-aigon supervisor start
-  → spawns: node aigon-cli.js supervisor run (detached)
-  → writes PID to ~/.aigon/supervisor.pid
-  → registers launchd/systemd for auto-restart
+```js
+function startSupervisorLoop(config) {
+  setInterval(() => sweep(config), 30000);
+}
 
-aigon supervisor run (the actual loop)
-  every 30 seconds:
-    for each repo in config.repos:
-      snapshots = readAllFeatureSnapshots(repo)
-      for each snapshot where stage is active:
-        for each agent:
-          if agent.status == 'running':
-            if !tmuxSessionExists(sessionName):
-              engine.emitSignal(repo, id, 'signal.session_lost', agent)
-              notify('Session lost: F{id} {agent}')
-            elif heartbeatExpired(agent):
-              engine.emitSignal(repo, id, 'signal.heartbeat_expired', agent)
-              notify('Heartbeat expired: F{id} {agent}')
-
-aigon supervisor stop
-  → reads PID from ~/.aigon/supervisor.pid
-  → sends SIGTERM
-  → unloads launchd/systemd
+function sweep(config) {
+  for (const repo of config.repos) {
+    const snapshots = readAllFeatureSnapshots(repo);
+    for (const snap of snapshots) {
+      for (const agent of snap.agents) {
+        if (agent.status !== 'running') continue;
+        if (!tmuxSessionExists(agent.sessionName)) {
+          engine.emitSignal(repo, snap.id, 'signal.session_lost', agent.id);
+          notify(`Session lost: F${snap.id} ${agent.id}`);
+        } else if (heartbeatExpired(agent)) {
+          engine.emitSignal(repo, snap.id, 'signal.heartbeat_expired', agent.id);
+          notify(`Heartbeat expired: F${snap.id} ${agent.id}`);
+        }
+      }
+    }
+  }
+}
 ```
 
-### Dashboard cleanup
+### Step 2: Integrate into dashboard process
 
-Remove from `lib/dashboard-server.js`:
+In `lib/dashboard-server.js`, at startup:
+```js
+const { startSupervisorLoop } = require('./supervisor');
+startSupervisorLoop(globalConfig);
+```
+
+That's the only integration point. One line.
+
+### Step 3: Strip mutation logic from dashboard
+
+Delete from `lib/dashboard-server.js`:
 - `classifyOrphanReason()` — deleted
-- `getEnrichedSessions()` orphan classification — deleted
+- `getEnrichedSessions()` orphan logic — deleted
 - `/api/sessions/cleanup` endpoint — deleted
-- All notification logic that depends on polling — moved to supervisor
-- Any code that kills tmux sessions based on state inference — deleted
+- All notification code from polling loop — moved to supervisor
+- Any code that kills tmux sessions — deleted
 
-### Relationship to other components
+### Step 4: Auto-restart via launchd/systemd
 
-```
-CLI commands ──────→ Engine (mutates state)
-Supervisor ────────→ Engine (emits signals only)
-Dashboard ─────────→ Engine snapshots (reads only)
-Dashboard buttons ─→ CLI commands (user-initiated mutations)
-```
+`aigon dashboard start --persistent`:
+- macOS: writes `~/Library/LaunchAgents/com.aigon.dashboard.plist` with `KeepAlive: true`
+- Linux: writes `~/.config/systemd/user/aigon-dashboard.service` with `Restart=on-failure`
 
 ## Dependencies
 
-- depends_on: workflow-engine-full-cutover (feature 171 — must land first, cleans up legacy)
+- depends_on: workflow-engine-full-cutover (feature 171)
 
 ## Out of Scope
 
-- Auto-restart of dead agents (user decides via dashboard button → CLI command)
-- Auto-drop of failed agents (user decides)
-- Research workflow supervision (features only for now)
-- Remote/distributed supervision
+- Auto-restart of dead agents (user decides via dashboard button → CLI)
+- Research workflow supervision
+- Projector/machine merge (separate follow-up)
 
 ## Related
 
-- Feature 171 (full cutover) — prerequisite, removes legacy state
-- Feature 168 (signal guards) — engine dedup prevents supervisor from creating duplicate signals
-- Feature 167 (orchestrator sweep) — superseded by this feature. 167 should be closed/cancelled.
-- Feature dashboard-auto-restart — the supervisor replaces this need (supervisor manages its own lifecycle via launchd/systemd)
+- Feature 171 (full cutover) — prerequisite
+- Feature 168 (signal guards) — prevents duplicate signals from supervisor
+- Feature 167 (orchestrator sweep) — **superseded by this feature, cancel it**
+- Feature dashboard-auto-restart — **superseded by this feature, cancel it**
