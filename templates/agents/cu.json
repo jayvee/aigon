@@ -64,6 +64,11 @@
       "path": ".cursor/rules/aigon.mdc"
     }
   },
+  "signals": {
+    "shellTrap": true,
+    "heartbeatSidecar": true,
+    "cliHooks": null
+  },
   "commands": [
     "feature-create",
     "feature-now",
