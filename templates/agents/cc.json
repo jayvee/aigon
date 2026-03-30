@@ -95,6 +95,14 @@
       }
     }
   },
+  "signals": {
+    "shellTrap": true,
+    "heartbeatSidecar": true,
+    "cliHooks": {
+      "heartbeatTouch": "PostToolUse",
+      "exitEnforcement": "Stop"
+    }
+  },
   "commands": [
     "feature-create",
     "feature-now",
