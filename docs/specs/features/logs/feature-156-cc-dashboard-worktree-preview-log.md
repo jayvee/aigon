@@ -26,7 +26,7 @@ Agent: cc
 
 ## Plan
 
-Reuse existing dev-server infrastructure (port allocation, proxy registration, process lifecycle) to support preview dashboard instances from worktrees. The dashboard server already runs on dynamic ports for worktrees — the missing piece was serving templates from the worktree instead of the npm-linked install.
+Reuse existing dev-server infrastructure (port allocation, proxy registration, process lifecycle) to support preview dashboard instances from worktrees. The AIGON server already runs on dynamic ports for worktrees — the missing piece was serving templates from the worktree instead of the npm-linked install.
 
 ## Progress
 
@@ -48,7 +48,7 @@ Reuse existing dev-server infrastructure (port allocation, proxy registration, p
    - Updated worktree info message to suggest `--preview` instead of generic message
 
 3. **`lib/commands/feature.js`**
-   - `sessions-close` now kills preview dashboard processes for the feature ID
+   - `sessions-close` now kills preview AIGON server processes for the feature ID
    - Matches serverId pattern `{agent}-{featureId}` (e.g., `cc-156`, `gg-156`)
    - Sends SIGTERM to matching PIDs and deregisters from proxy registry
 

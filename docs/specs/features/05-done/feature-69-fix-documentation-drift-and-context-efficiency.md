@@ -48,7 +48,7 @@ Agent instruction files have drifted significantly from the current codebase: st
 // Editor / agent detection         ~11
 // Config & profiles                ~223
 // Port / proxy / dev-server        ~576
-// Radar daemon & registry          ~1112
+// AIGON server & registry          ~1112
 // Dashboard status collection      ~1187
 // Dashboard HTML builder           ~1720
 // Analytics & completion series    ~5611

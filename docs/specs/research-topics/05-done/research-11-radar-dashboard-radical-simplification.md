@@ -44,7 +44,7 @@ Any replacement architecture must make this dev loop work as a first-class conce
 
 ### In Scope
 
-- The radar daemon, its HTTP server, WebSocket relay, and all supporting infrastructure (PID files, Caddy, dnsmasq, registry)
+- The AIGON server, its HTTP server, WebSocket relay, and all supporting infrastructure (PID files, Caddy, dnsmasq, registry)
 - The dashboard HTML/JS/CSS (`templates/dashboard/index.html`)
 - The dev loop: running production radar (main) and dev radar (worktree) simultaneously without conflict
 - Multi-instance behaviour (main repo + worktrees) as a first-class requirement
@@ -79,7 +79,7 @@ Instead of a single daemon, each worktree runs its own radar on an auto-allocate
 Both surfaces duplicate functionality from the terminal CLI and dashboard. The menubar requires a separate Electron-style process. The VS Code extension was intentionally read-only. Neither is actively maintained. The research should evaluate whether retiring them simplifies the overall system meaningfully.
 
 **On the WebSocket terminal relay:**
-The current implementation creates a tmux session and relays I/O over WebSocket. It fails when the tmux session dies before the WebSocket connects, when the session name conflicts, and when the radar daemon is restarted mid-session. An alternative: the dashboard triggers agent sessions via `aigon worktree-open` (which already works reliably in the terminal), and the dashboard simply shows status rather than hosting a terminal.
+The current implementation creates a tmux session and relays I/O over WebSocket. It fails when the tmux session dies before the WebSocket connects, when the session name conflicts, and when the AIGON server is restarted mid-session. An alternative: the dashboard triggers agent sessions via `aigon worktree-open` (which already works reliably in the terminal), and the dashboard simply shows status rather than hosting a terminal.
 
 ## Findings
 

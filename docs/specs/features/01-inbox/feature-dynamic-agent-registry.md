@@ -73,7 +73,7 @@ Add to each `templates/agents/{id}.json`:
 ### Dashboard dynamic picker
 
 Replace the hardcoded `<label>` elements in `index.html` with a server-rendered or API-driven list. Options:
-1. Dashboard server injects the agent list into the HTML at serve time (simplest)
+1. AIGON server injects the agent list into the HTML at serve time (simplest)
 2. Dashboard fetches `/api/agents` and builds the picker dynamically
 
 ### Port offset derivation

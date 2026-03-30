@@ -2,7 +2,7 @@
 
 ## Summary
 
-Replace the current radar daemon+proxy+relay stack with a simple foreground HTTP server. This eliminates: the daemon/PID model, Caddy reverse proxy, dnsmasq, the WebSocket terminal relay, the menubar SwiftBar plugin, and the VS Code extension. The command `aigon radar` is renamed `aigon dashboard`. The dashboard retains all interactive operator functionality (monitor, pipeline board, spec drawer, operator actions, analytics, logs) — only the fragile infrastructure underneath it is replaced. The dev loop constraint is solved first-class: production (main, port 4100) and development (worktree, auto-allocated port) instances run simultaneously without conflict.
+Replace the current AIGON server+proxy+relay stack with a simple foreground HTTP server. This eliminates: the daemon/PID model, Caddy reverse proxy, dnsmasq, the WebSocket terminal relay, the menubar SwiftBar plugin, and the VS Code extension. The command `aigon radar` is renamed `aigon dashboard`. The dashboard retains all interactive operator functionality (monitor, pipeline board, spec drawer, operator actions, analytics, logs) — only the fragile infrastructure underneath it is replaced. The dev loop constraint is solved first-class: production (main, port 4100) and development (worktree, auto-allocated port) instances run simultaneously without conflict.
 
 ## User Stories
 

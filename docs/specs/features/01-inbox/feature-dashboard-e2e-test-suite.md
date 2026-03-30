@@ -97,7 +97,7 @@ npm test -- --e2e
 
 ### Layer 1: Server API tests (no browser needed)
 
-Test the dashboard server's HTTP endpoints directly:
+Test the AIGON server's HTTP endpoints directly:
 - `POST /api/dispatch` with various actions → verify correct CLI commands are built
 - `POST /api/feature-open` with various modes → verify correct tmux commands
 - `GET /api/status` → verify research/feature state is reported correctly
@@ -135,7 +135,7 @@ For every action that should create a tmux session, assert:
 
 - Playwright (for browser tests)
 - brewboard-seed repo (test fixture)
-- Dashboard server (must be running during tests)
+- AIGON server (must be running during tests)
 - tmux (must be available)
 
 ## Out of Scope

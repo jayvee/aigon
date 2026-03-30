@@ -35,7 +35,7 @@ In the `feature-eval` command handler, before starting the evaluation flow, scan
 ## Out of Scope
 
 - Auto-waiting for agents to finish
-- Integration with radar daemon for live status
+- Integration with AIGON server for live status
 
 ## Related
 

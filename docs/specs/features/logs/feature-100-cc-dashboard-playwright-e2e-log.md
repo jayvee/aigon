@@ -27,7 +27,7 @@ mock server) so state transitions are tested end-to-end. The test infrastructure
   temp `.aigon/config.json` so the server sees the fixture repo, not the user's real repos.
 - `mock-bin/tmux` (already in codebase) is prepended to `PATH` so `feature-setup`
   creates git worktrees but doesn't try to open real terminal sessions.
-- `GEMINI_CLI=1` is set on the dashboard process so `feature-eval` runs in
+- `GEMINI_CLI=1` is set on the AIGON server process so `feature-eval` runs in
   eval-setup mode without launching a real Gemini CLI.
 - Tests use `page.evaluate(() => fetch('/api/refresh', ...))` to force immediate
   status updates rather than waiting for the 10s poll cycle.

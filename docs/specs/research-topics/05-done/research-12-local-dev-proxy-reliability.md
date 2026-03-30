@@ -40,7 +40,7 @@ silently fell back to localhost, and showed no explanation. Users saw localhost 
 indication why the named URL didn't appear.
 
 ### 3. Dashboard self-detection loop
-When `dev-server start` pre-registers the process PID before spawning, the dashboard process
+When `dev-server start` pre-registers the process PID before spawning, the AIGON server process
 would see its own PID in the registry, call `isProcessAlive(own-pid) === true`, and conclude
 a server was already running — then exit immediately. Fixed by adding `existing.pid !== process.pid`
 guard, but the fundamental issue is our registration lifecycle logic is fragile.

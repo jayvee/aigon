@@ -95,4 +95,4 @@ Replace the scrollable 2-column repo grid with a master-detail layout: narrow si
 - **Debounced undo snapshots** (500ms) rather than per-keystroke: prevents hundreds of undo steps for a paragraph of typing.
 - **Activity-based repo sorting** rather than config order: repos with implementing agents surface first, matching the user's attention priority.
 - **Sidebar badge excludes done items**: shows work remaining, not total history.
-- **Radar daemon required restart** to pick up code changes: the old daemon was running stale code that didn't collect inbox/backlog/done stages. This was the root cause of the empty Pipeline columns the user reported.
+- **AIGON server required restart** to pick up code changes: the old daemon was running stale code that didn't collect inbox/backlog/done stages. This was the root cause of the empty Pipeline columns the user reported.

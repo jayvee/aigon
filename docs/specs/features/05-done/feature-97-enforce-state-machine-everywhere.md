@@ -21,7 +21,7 @@ The state machine (`lib/state-machine.js`) defines stages, transitions, guards, 
 - [ ] If conductor needs to detect "all submitted", it imports and calls from state-machine, not inline logic
 - [ ] Remove duplicate eval file parsing (lines 540-557) — use same source as dashboard-server
 
-### Dashboard server — eval status (dashboard-server.js)
+### AIGON server — eval status (dashboard-server.js)
 - [ ] Eval status badge (`evalStatus`) derived from state machine context, not hardcoded `stage === 'in-evaluation'` check (line 363)
 - [ ] Eval file parsing happens once, in one place, and feeds into state machine context
 
@@ -67,7 +67,7 @@ Add to `lib/state-machine.js`:
 
 ### Phase 2: Fix notifications (dashboard-server.js + infra.js)
 - Replace inline checks with `stateMachine.shouldNotify('feature', stage, smContext, 'all-submitted')`
-- Remove conductor daemon's parallel notification tracking — let dashboard-server be the single notification authority
+- Remove conductor daemon's parallel notification tracking — let the AIGON server notification path be the single notification authority
 - If conductor still needs awareness, it reads from dashboard, not reimplements
 
 ### Phase 3: Fix frontend (pipeline.js, monitor.js)

@@ -44,7 +44,7 @@ Agent: cx
   - `node -c lib/worktree.js` ✅
   - focused new tests in `aigon-cli.test.js` ✅
   - full `npm test` has 5 unrelated pre-existing failures in this worktree.
-- Restarted dashboard process per repo rule after `lib/*.js` edit.
+- Restarted AIGON server process per repo rule after `lib/*.js` edit.
 
 ## Decisions
 - Kept `.env*.local` enforcement scoped to setup command flows to avoid broad side-effects in unrelated modules.

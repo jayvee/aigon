@@ -2,7 +2,7 @@
 
 ## Summary
 
-The dashboard process dies and stays dead when it encounters uncaught exceptions (primarily EPIPE cascades from disconnected clients and double-header writes). Users must manually run `aigon dashboard restart` repeatedly. The dashboard should automatically restart after crashes, using a platform-appropriate process supervisor. This is a prerequisite for the orchestrator sweep (feature 167), which needs a persistent process to run periodic agent health checks.
+The AIGON server process dies and stays dead when it encounters uncaught exceptions (primarily EPIPE cascades from disconnected clients and double-header writes). Users must manually run `aigon server restart` repeatedly. The AIGON server should automatically restart after crashes, using a platform-appropriate process supervisor. This is a prerequisite for the orchestrator sweep (feature 167), which needs a persistent process to run periodic agent health checks.
 
 ## User Stories
 
@@ -13,11 +13,11 @@ The dashboard process dies and stays dead when it encounters uncaught exceptions
 
 ## Acceptance Criteria
 
-- [ ] `aigon dashboard start` optionally registers a platform supervisor (launchd on macOS, systemd on Linux) that auto-restarts the dashboard on crash
+- [ ] `aigon server start` optionally registers a platform supervisor (launchd on macOS, systemd on Linux) that auto-restarts the AIGON server on crash
 - [ ] Supervisor restarts the dashboard within 5 seconds of a crash
-- [ ] Backoff: if the dashboard crashes 5+ times in 60 seconds, the supervisor stops retrying and logs the failure
-- [ ] `aigon dashboard stop` cleanly unloads the supervisor
-- [ ] `aigon dashboard status` shows: running/stopped, uptime, restart count, supervisor type
+- [ ] Backoff: if the AIGON server crashes 5+ times in 60 seconds, the supervisor stops retrying and logs the failure
+- [ ] `aigon server stop` cleanly unloads the supervisor
+- [ ] `aigon server status` shows: running/stopped, uptime, restart count, supervisor type
 - [ ] Works without a supervisor too — `aigon dashboard start` without `--persistent` works exactly as today (foreground process)
 - [ ] Cross-platform: macOS (launchd plist) and Linux (systemd unit or simple watchdog loop)
 - [ ] Dashboard log captures restart events with timestamps
@@ -67,6 +67,6 @@ Option A for `--persistent` mode (explicit opt-in), Option B as the default fall
 
 ## Related
 
-- Feature 167 (orchestrator sweep) — needs a persistent dashboard process
+- Feature 167 (orchestrator sweep) — needs a persistent AIGON server process
 - Feature 32 (conductor daemon) — original daemon feature, now superseded by dashboard
 - Dashboard crash logs: `~/.aigon/dashboard.log`

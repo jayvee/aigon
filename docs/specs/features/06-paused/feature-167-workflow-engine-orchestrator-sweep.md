@@ -13,7 +13,7 @@ Implement the orchestrator sweep — a periodic process (run by the dashboard or
 
 ## Acceptance Criteria
 
-- [ ] Orchestrator sweep runs periodically (configurable interval, default 30s) from the dashboard process
+- [ ] Orchestrator sweep runs periodically (configurable interval, default 30s) from the AIGON server process
 - [ ] Sweep reads all engine snapshots, checks tmux session state, compares heartbeat timestamps
 - [ ] For each detected problem, sweep injects the appropriate signal: `signal.session_lost`, `signal.heartbeat_expired`
 - [ ] Dashboard exposes recovery actions derived from XState `snapshot.can()`: restart, drop, force-ready
@@ -112,7 +112,7 @@ No sweep code changes are needed when adding new agents.
 
 - ~~Should auto-recovery be on by default, or opt-in?~~ **Resolved**: On by default, max 2 retries (research-27)
 - What notification should fire when the orchestrator detects and recovers from a problem?
-- ~~Should the sweep run as part of the dashboard process, or as a separate `aigon orchestrate` command?~~ **Resolved**: Part of the dashboard polling loop (research-27)
+- ~~Should the sweep run as part of the AIGON server process, or as a separate `aigon orchestrate` command?~~ **Resolved**: Part of the dashboard polling loop (research-27)
 
 ## Related
 

@@ -24,7 +24,7 @@ Split `templates/dashboard/index.html` (4,057 lines — 451 CSS, 300 HTML, 3,301
   - `templates/dashboard/js/logs.js` — Logs view with pagination
   - `templates/dashboard/js/init.js` — polling, event setup, init
 - [ ] `index.html` reduced to ~300 lines (HTML structure + script/link tags)
-- [ ] Dashboard server serves JS/CSS files from `templates/dashboard/` (already serves assets)
+- [ ] AIGON server serves JS/CSS files from `templates/dashboard/` (already serves assets)
 - [ ] No functionality changes — all views work identically
 - [ ] All existing Playwright dashboard tests pass
 - [ ] README/GUIDE/dashboard.md updated to reference new file structure
@@ -43,7 +43,7 @@ curl -s http://127.0.0.1:4100/ | grep -q 'styles.css' && echo "CSS linked"
 ## Technical Approach
 
 ### How the dashboard serves files
-The dashboard server already serves static files from `templates/dashboard/assets/` for icons. Extend this to serve `templates/dashboard/js/*.js` and `templates/dashboard/styles.css`.
+The AIGON server already serves static files from `templates/dashboard/assets/` for icons. Extend this to serve `templates/dashboard/js/*.js` and `templates/dashboard/styles.css`.
 
 ### Module pattern
 Since there's no build step, use simple `<script>` tags (not ES modules) to keep it zero-config. Each JS file attaches its functions to a shared namespace or the global scope (as they do now). Load order matters:
@@ -69,7 +69,7 @@ Move the `<style>` block contents to `styles.css`. Replace with `<link rel="styl
 - Rewriting any view logic (that's feature 90)
 - Adding a build step (webpack, vite, etc.)
 - Changing the Alpine.js architecture
-- Splitting the backend dashboard server code (already done in feature 86)
+- Splitting the backend AIGON server code (already done in feature 86)
 
 ## Open Questions
 - Should we use `<script>` tags or ES modules (`import/export`)?

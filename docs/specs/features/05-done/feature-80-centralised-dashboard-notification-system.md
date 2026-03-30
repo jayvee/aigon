@@ -2,7 +2,7 @@
 
 ## Summary
 
-Replace the scattered notification code (raw `osascript` calls in shared.js, `sendMacNotification()` in utils.js, Claude Code notification hooks) with a single notification system owned by the dashboard process. All notification events are routed through one function, persisted to a log, and delivered via macOS notifications when the dashboard is running. The user can configure notification preferences (which event types, enable/disable) from the Settings view in the dashboard. Notifications only fire while the dashboard is running — this is an explicit design choice, not a limitation.
+Replace the scattered notification code (raw `osascript` calls in shared.js, `sendMacNotification()` in utils.js, Claude Code notification hooks) with a single notification system owned by the AIGON server process. All notification events are routed through one function, persisted to a log, and delivered via macOS notifications when the dashboard is running. The user can configure notification preferences (which event types, enable/disable) from the Settings view in the dashboard. Notifications only fire while the dashboard is running — this is an explicit design choice, not a limitation.
 
 ## User Stories
 
@@ -24,7 +24,7 @@ Replace the scattered notification code (raw `osascript` calls in shared.js, `se
 
 ### Phase 2: Central notification system in the dashboard
 
-- [ ] New function `emitNotification(type, message, meta)` in the dashboard server code that:
+- [ ] New function `emitNotification(type, message, meta)` in the AIGON server code that:
   - Checks user's notification preferences (from global config) before firing
   - Calls `sendMacNotification()` if the notification type is enabled
   - Appends the event to an in-memory ring buffer (max 100 events) for the dashboard UI

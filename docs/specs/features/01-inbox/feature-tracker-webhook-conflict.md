@@ -13,7 +13,7 @@ Add inbound sync from external issue trackers via webhooks (or polling fallback)
 
 ## Acceptance Criteria
 
-- [ ] Webhook receiver endpoint (via dashboard server or standalone) accepts Jira webhook events (issue_updated) and Linear webhook events
+- [ ] Webhook receiver endpoint (via AIGON server or standalone) accepts Jira webhook events (issue_updated) and Linear webhook events
 - [ ] Jira webhook signature verification (or manual registration guidance, since API token auth can't register webhooks programmatically)
 - [ ] Linear webhook HMAC-SHA256 signature verification
 - [ ] Field ownership model: tracker owns title/assignee/priority/labels/due dates; Aigon owns specs/logs/evaluation/agent status
@@ -32,7 +32,7 @@ node -c aigon-cli.js
 ## Technical Approach
 
 - Ownership-aware reconciliation (CX's model): split fields into tracker-owned vs Aigon-owned, only conflict on shared lifecycle state
-- Webhook endpoint on dashboard server (existing HTTP infrastructure), new route for each tracker
+- Webhook endpoint on AIGON server (existing HTTP infrastructure), new route for each tracker
 - Polling fallback: `aigon tracker-sync` command + optional cron-style periodic check
 - Conflict state stored in manifest: `{ sync: { status: "conflicted", externalStatus: "On Hold", aigonStage: "in-progress", detectedAt: "..." } }`
 - Resolution: `aigon tracker-resolve <feature-id> --accept-external | --keep-aigon | --force-sync`
@@ -48,7 +48,7 @@ node -c aigon-cli.js
 
 ## Open Questions
 
-- Should webhook receiver be part of the dashboard server or a separate process?
+- Should webhook receiver be part of the AIGON server or a separate process?
 - For teams without webhook access (firewalls), what polling interval is reasonable? (5 min? 15 min?)
 - Should Jira OAuth be required for this feature (webhook registration) or support manual webhook setup via admin UI?
 

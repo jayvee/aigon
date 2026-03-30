@@ -44,7 +44,7 @@ Implementation log is thorough, documenting design iteration, decisions, and the
 - [x] Input validation where needed
 - [x] No hardcoded secrets or credentials
 
-Static asset handler uses `path.join(ROOT_DIR, reqPath)` which could theoretically allow path traversal, but `reqPath.startsWith('/assets/')` limits the scope and `isFile()` check prevents directory listing. Acceptable risk for a local-only dashboard server.
+Static asset handler uses `path.join(ROOT_DIR, reqPath)` which could theoretically allow path traversal, but `reqPath.startsWith('/assets/')` limits the scope and `isFile()` check prevents directory listing. Acceptable risk for a local-only AIGON server.
 
 ## Review Notes
 

@@ -6,7 +6,7 @@
 - **Shared logic**: `lib/*.js` — 12 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
-- **Dashboard**: foreground server — `node aigon-cli.js dashboard`; restart after any `lib/*.js` edit
+- **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
 - **Tests**: `npm test` · syntax: `node -c aigon-cli.js` · `node -c lib/utils.js`
 - **Version bumps**: after every commit — `npm version patch|minor|major && git push --tags`
 
@@ -45,8 +45,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | Module | ~Lines | Owns |
 |--------|--------|------|
 | `lib/commands/feature.js` | 2403 | All `feature-*` handlers, `sessions-close` |
-| `lib/commands/infra.js` | 1893 | dashboard, board, config, proxy-setup, dev-server |
-| `lib/dashboard-server.js` | 1785 | HTTP server, WebSocket relay, polling, action dispatch |
+| `lib/commands/infra.js` | 1893 | server, dashboard compatibility commands, board, config, proxy-setup, dev-server |
+| `lib/dashboard-server.js` | 1785 | AIGON server HTTP/UI module: dashboard UI, API, WebSocket relay, polling, action dispatch |
 | `lib/utils.js` | 1464 | YAML parsers, spec CRUD, hooks, version, analytics |
 | `lib/worktree.js` | 1111 | Worktree creation, tmux sessions, terminal launch |
 | `lib/commands/setup.js` | 959 | init, install-agent, check-version, update, doctor |
@@ -88,7 +88,7 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit
-4. **Restart after backend edits** — after changing any `lib/*.js`, restart `node aigon-cli.js dashboard`
+4. **Restart after backend edits** — after changing any `lib/*.js`, restart `aigon server restart`
 5. **Don't move spec files manually** — always use `aigon` CLI commands to transition state
 
 ## Common Agent Mistakes

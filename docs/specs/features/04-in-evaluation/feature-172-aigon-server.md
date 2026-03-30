@@ -2,14 +2,14 @@
 
 ## Architecture
 
-One process: `aigon server start`. Two modules inside it with strict separation.
+One process: `aigon server start`. The AIGON server contains two internal modules with strict separation.
 
 ```
 One process (managed by launchd/systemd, auto-restarts on crash)
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
 │  ┌──────────────────┐     ┌──────────────────┐          │
-│  │  HTTP module      │     │  Supervisor module│          │
+│  │  HTTP/UI module   │     │  Runtime module   │          │
 │  │                   │     │                   │          │
 │  │  Serves UI        │     │  Polls tmux       │          │
 │  │  Handles API      │     │  Checks heartbeats│          │
@@ -28,11 +28,11 @@ One process (managed by launchd/systemd, auto-restarts on crash)
 └─────────────────────────────────────────────────────────┘
 ```
 
-The HTTP module never imports the supervisor module. The supervisor module never imports the HTTP module. They share a process for operational simplicity (one thing to install, one thing to keep alive), not because they need each other.
+The HTTP/UI module never imports the runtime module. The runtime module never imports the HTTP/UI module. They share one AIGON server process for operational simplicity, not because they need each other.
 
 ## Module responsibilities
 
-### HTTP module (`lib/dashboard-server.js` — refactored)
+### HTTP/UI module (`lib/dashboard-server.js` — refactored)
 
 - Serves dashboard HTML/JS/CSS
 - Handles API requests (read snapshots, proxy user actions to CLI)
@@ -40,7 +40,7 @@ The HTTP module never imports the supervisor module. The supervisor module never
 - Reads engine snapshots from disk
 - **Never** polls tmux, checks heartbeats, classifies orphans, kills sessions, emits signals, or sends notifications
 
-### Supervisor module (`lib/supervisor.js` — new, under 300 lines)
+### Runtime supervision module (`lib/supervisor.js` — new, under 300 lines)
 
 Does four things:
 
@@ -49,7 +49,7 @@ Does four things:
 3. **Sends notifications** — macOS/Linux desktop notifications when problems are detected or agents submit.
 4. **Nothing else.**
 
-### What the supervisor does NOT do
+### What the runtime supervision module does NOT do
 
 - Never kills tmux sessions
 - Never restarts agents
@@ -67,7 +67,7 @@ Engine guards (feature 168) prevent duplicates and signals to terminal states.
 
 ## Acceptance Criteria
 
-- [ ] `aigon server start` launches one process containing both HTTP and supervisor modules
+- [ ] `aigon server start` launches one AIGON server process containing both HTTP/UI and runtime modules
 - [ ] `aigon server stop` stops both cleanly
 - [ ] `aigon server status` shows: running/stopped, uptime, last supervisor sweep time
 - [ ] Supervisor polls tmux sessions every 30 seconds
@@ -80,8 +80,8 @@ Engine guards (feature 168) prevent duplicates and signals to terminal states.
 - [ ] Supervisor is idempotent — two sweeps with no state change produce no new events
 - [ ] Process auto-restarts on crash (launchd plist on macOS, systemd unit on Linux)
 - [ ] All orphan classification/killing logic removed from dashboard-server.js
-- [ ] All notification logic moved from dashboard polling to supervisor module
-- [ ] HTTP module and supervisor module have zero imports of each other
+- [ ] All notification logic moved out of dashboard polling and into the AIGON server's runtime supervision module
+- [ ] HTTP/UI module and runtime supervision module have zero imports of each other
 
 ## Validation
 
@@ -121,7 +121,7 @@ function sweep(config) {
 }
 ```
 
-### Step 2: Integrate into dashboard process
+### Step 2: Integrate into the AIGON server process
 
 In `lib/dashboard-server.js`, at startup:
 ```js
@@ -131,7 +131,7 @@ startSupervisorLoop(globalConfig);
 
 That's the only integration point. One line.
 
-### Step 3: Strip mutation logic from dashboard
+### Step 3: Strip runtime supervision logic from the dashboard HTTP/UI module
 
 Delete from `lib/dashboard-server.js`:
 - `classifyOrphanReason()` — deleted
@@ -144,7 +144,7 @@ Delete from `lib/dashboard-server.js`:
 
 `aigon server start --persistent`:
 - macOS: writes `~/Library/LaunchAgents/com.aigon.dashboard.plist` with `KeepAlive: true`
-- Linux: writes `~/.config/systemd/user/aigon-dashboard.service` with `Restart=on-failure`
+- Linux: writes `~/.config/systemd/user/aigon-server.service` with `Restart=on-failure`
 
 ## Dependencies
 
@@ -152,7 +152,7 @@ Delete from `lib/dashboard-server.js`:
 
 ## Out of Scope
 
-- Auto-restart of dead agents (user decides via dashboard button → CLI)
+- Auto-restart of dead agents (user decides via dashboard UI button → CLI)
 - Research workflow supervision
 - Projector/machine merge (separate follow-up)
 

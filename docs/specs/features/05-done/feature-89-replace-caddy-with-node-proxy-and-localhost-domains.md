@@ -1,7 +1,7 @@
 # Feature: replace-caddy-with-node-proxy-and-localhost-domains
 
 ## Summary
-Replace the unreliable Caddy + dnsmasq + /etc/resolver proxy stack with a Node.js built-in reverse proxy in the dashboard process, using `.localhost` domains (RFC 6761 — automatic OS-level resolution, zero DNS configuration). This eliminates 3 external dependencies, removes ~600 lines of proxy/reconciliation code, and gives stable named URLs like `http://aigon.localhost` and `http://cc-85.aigon.localhost` that survive sleep/wake without route loss.
+Replace the unreliable Caddy + dnsmasq + /etc/resolver proxy stack with a Node.js built-in reverse proxy in the AIGON server process, using `.localhost` domains (RFC 6761 — automatic OS-level resolution, zero DNS configuration). This eliminates 3 external dependencies, removes ~600 lines of proxy/reconciliation code, and gives stable named URLs like `http://aigon.localhost` and `http://cc-85.aigon.localhost` that survive sleep/wake without route loss.
 
 ## User Stories
 - [ ] As a user, I want `aigon dashboard` to give me a named URL I can use in my browser without configuring Caddy or dnsmasq

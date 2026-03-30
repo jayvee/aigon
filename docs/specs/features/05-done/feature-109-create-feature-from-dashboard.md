@@ -47,7 +47,7 @@ node --check lib/commands/feature.js
 5. On error: show error message in the modal (don't close it), let the user fix and retry
 
 **Backend (`lib/commands/feature.js` — `feature-create`)**:
-- Already exists and works — no changes needed. The `POST /api/action` -> `feature-create` path already works via the dashboard server's generic action dispatcher.
+- Already exists and works — no changes needed. The `POST /api/action` -> `feature-create` path already works via the AIGON server's generic action dispatcher.
 
 **Modal HTML (`templates/dashboard/index.html`)**:
 - Add a modal similar to the existing close-modal and agent-picker patterns
