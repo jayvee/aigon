@@ -2,29 +2,34 @@
 
 ## Summary
 
-Migrate research topics to the same workflow engine that features use. Research currently manages state through folder placement (01-inbox, 02-backlog, 03-in-progress, 05-done) with 15+ folder-scanning code paths in `lib/commands/research.js`. Features have already moved to workflow-core with event-sourced state and snapshot reads. Research should reuse the same engine, machine, and read paths — not duplicate them.
+Migrate research topics onto the workflow-core engine so research lifecycle writes stop depending on folder probing and `moveFile()` transitions. Features already moved to engine-owned lifecycle state with snapshot-backed reads. Research should follow the same architectural direction: engine-owned state, projected folder moves, and shared read-side helpers.
 
-The goal is zero duplication: one engine, one machine definition system, one read path, one snapshot adapter. Research is a simpler lifecycle than features (no eval, no fleet, no winner selection), so this is subtraction from the feature model, not addition.
+This should continue the simplification of the codebase only if it is done as subtraction. The target is not "feature workflow, duplicated for research". The target is one workflow engine with entity-specific lifecycle rules, thin research command wiring, and materially less folder-driven lifecycle code in `lib/commands/research.js` and `lib/entity.js`.
 
 ## User Stories
 
 - [ ] As an aigon user, research topics show correct state and actions in the dashboard driven by the engine, just like features
 - [ ] As an aigon user, `aigon research-start`, `research-close`, and `research-eval` work through the engine with the same reliability as feature commands
 - [ ] As an aigon maintainer, I can read one engine codebase that handles both features and research — not two separate state systems
+- [ ] As an aigon maintainer, I can delete legacy research folder-transition code rather than preserving it behind compatibility layers
 
 ## Acceptance Criteria
 
 - [ ] Research lifecycle managed by workflow-core engine (events.jsonl + snapshot.json in `.aigon/workflows/research/{id}/`)
-- [ ] Research commands (`research-start`, `research-close`, `research-eval`, `research-pause`, `research-resume`) call engine methods directly — no folder-based state transitions
+- [ ] Research lifecycle authority is the engine snapshot/event log. Spec folder location is projection only, not the source of truth for active research state
+- [ ] Research commands (`research-start`, `research-close`, `research-eval`, and any supported pause/resume flow) dispatch through workflow-core or a thin research workflow service over workflow-core primitives; they do not perform lifecycle transitions by directly probing `02-backlog`, `03-in-progress`, or `04-in-evaluation`
 - [ ] Folder moves (inbox → backlog → in-progress → done) are projections of engine state, not the source of truth
-- [ ] The XState machine is parameterised or extended to handle both feature and research lifecycles — NOT a separate machine
-- [ ] `deriveAvailableActions()` works for both entity types with the same code path
-- [ ] `snapshotToDashboardActions()` works for both entity types — no separate research adapter
+- [ ] Workflow-core supports research by reusing the same engine infrastructure, persistence model, and action-derivation pattern used for features. A research-specific lifecycle definition is acceptable; a second bespoke engine is not
+- [ ] `deriveAvailableActions()` and machine construction are generalised through one rule-definition pattern shared by feature and research lifecycles
+- [ ] `workflow-snapshot-adapter.js` is generalised into a shared workflow snapshot/read adapter, or replaced with an equivalent shared adapter that works for both features and research
 - [ ] Dashboard shows research topics with correct engine-derived actions (start, eval, close, pause)
-- [ ] `feature-workflow-rules.js` is renamed/generalised to `workflow-rules.js` covering both entity types, or research rules are added alongside feature rules in the same module
-- [ ] `lib/commands/research.js` folder-scanning code is deleted (target: remove 200+ lines of folder probing)
+- [ ] `feature-workflow-rules.js` is renamed/generalised to a shared workflow-rules module, or replaced with a shared rule-definition module that both feature and research lifecycle code consume
+- [ ] `lib/commands/research.js` direct folder-scanning and lifecycle-transition code is materially reduced or deleted
+- [ ] `lib/entity.js` no longer owns research lifecycle transitions via `findFile()` / `moveFile()` for start, eval, and close
 - [ ] Net code deletion: more lines removed than added
 - [ ] Research and feature use the same snapshot adapter, action mapper, and spec resolver — no duplication
+- [ ] No new long-lived compatibility path is added that lets research workflow semantics drift between engine state and folder state
+- [ ] No in-flight research migration/bootstrap path is added for legacy active research topics; pre-engine research can be restarted or re-run instead
 - [ ] `docs/architecture.md` updated to document the unified engine covering both features and research
 - [ ] `CLAUDE.md` and `AGENTS.md` updated to reflect research uses the engine
 - [ ] All existing research tests pass or are updated
@@ -49,40 +54,53 @@ node aigon-cli.js research-list --active --json
 | Eval | Compares implementations (fleet) or skipped (solo) | Synthesises findings, recommends features |
 | Agents | Implement independently | Research independently, findings are merged |
 
-### Step 1: Generalise the engine
+Research is simpler than features. That means the migration should share infrastructure, not force research to inherit feature-only concepts like winner selection or review state.
 
-The workflow-core engine is currently feature-specific (`featureMachine`, `feature.started`, etc.). Generalise:
+### Step 1: Generalise workflow-core around entity lifecycle definitions
 
-- Rename `feature-workflow-rules.js` → `workflow-rules.js` (or add research rules alongside)
-- Add research lifecycle states to the rules: `backlog`, `in-progress`, `evaluating`, `done`, `paused`
-- Research machine events: `research.started`, `research.eval_requested`, `research.closed`, `research.paused`, `research.resumed`
-- Research has no `reviewing`, `ready_for_review`, or `closing` states — simpler subset
-- The XState machine should be parameterised by entity type, not duplicated
+The engine is currently feature-shaped (`featureMachine`, feature action kinds, feature rules). Generalise the engine around lifecycle definitions:
 
-### Step 2: Wire research commands to engine
+- Move `feature-workflow-rules.js` toward a shared workflow-rules module or equivalent shared definition layer
+- Add research lifecycle rules, event names, and manual actions without duplicating engine persistence, locks, projector, or effect orchestration
+- Generalise machine/action construction so feature and research lifecycles are generated from the same pattern
+- Keep research lifecycle smaller than feature lifecycle. Do not add feature-only states to research just for symmetry
 
-Replace folder-based transitions in `lib/commands/research.js`:
+### Step 2: Migrate research write paths first
+
+Replace folder-based lifecycle transitions in research command flows:
 
 | Current | Engine replacement |
 |---------|-------------------|
-| `moveSpec('01-inbox', '02-backlog')` | `engine.prioritiseResearch(id)` (or reuse feature pattern) |
+| `moveSpec('01-inbox', '02-backlog')` | `engine.prioritiseResearch(id)` or equivalent workflow-core write path |
 | `moveSpec('02-backlog', '03-in-progress')` | `engine.startResearch(id, { agents })` |
-| `findFile(PATHS.research, id, ['03-in-progress'])` | `readResearchSnapshot(repoPath, id)` |
-| `moveSpec('03-in-progress', '05-done')` | `engine.closeResearch(id)` |
+| `findFile(PATHS.research, id, ['03-in-progress', '04-in-evaluation'])` | `readResearchSnapshot(repoPath, id)` |
+| `moveSpec('03-in-progress'/'04-in-evaluation', '05-done')` | `engine.closeResearch(id)` |
 
-### Step 3: Extend snapshot adapter
+The first deletion target is write-side lifecycle ownership. `lib/entity.js` should stop being the research lifecycle state machine.
 
-`snapshotToDashboardActions()` already takes `entityType` as first parameter. Add research action mappings to the same function — no separate adapter.
+### Step 3: Unify the read path with the engine
 
-### Step 4: Delete folder-scanning code
+- Extend the snapshot/read adapter so research snapshots produce dashboard and board actions through the same presenter path as features
+- Make `workflow-read-model.js` prefer research snapshots once they exist, instead of relying on research-only stage heuristics in `state-queries.js`
+- Keep presentation code thin: shared adapter + shared action mapper, not research-specific dashboard logic
 
-Remove the 15+ folder-scanning references in `research.js`. Replace `findFile()` calls with snapshot/spec-resolver reads.
+### Step 4: Delete legacy research lifecycle code
 
-### Step 5: Update docs
+- Remove research lifecycle transitions from `lib/entity.js` where they are implemented through `findFile()` / `moveFile()`
+- Delete direct active-state folder probing from `lib/commands/research.js`
+- Reduce or eliminate any duplicate research action tables that exist only because research is not yet snapshot-backed
+- Do not add compatibility code for pre-engine in-progress research items. If a research item is mid-flight on the old path, the supported resolution is to restart or re-run it on the new engine path
+
+### Step 5: Update docs and prove subtraction
 
 - `docs/architecture.md` — document unified engine for features and research
 - `CLAUDE.md` — update module map and state architecture section
 - `AGENTS.md` — update module descriptions
+- Capture before/after deletion in the implementation log or PR notes:
+  - lines added
+  - lines deleted
+  - modules simplified or removed
+  - legacy folder-read paths deleted
 
 ## Dependencies
 
@@ -94,11 +112,14 @@ Remove the 15+ folder-scanning references in `research.js`. Replace `findFile()`
 - Changing how research findings are written or structured
 - Changing the research evaluation process
 - Dashboard UI redesign for research
+- Preserving legacy in-flight research workflow behavior during migration
+- Bootstrapping old research items into workflow-core from folder state
 
 ## Open Questions
 
-- Should `research-eval` transition to a separate `evaluating` state, or go straight to `done`? (Currently it moves to in-evaluation then close moves to done — keep this two-step for consistency with features)
-- Should research support pause/resume? (Features do — research should too for consistency)
+- Should research keep a separate `evaluating` lifecycle state, or should synthesis be modelled as an effect inside `in-progress` with a direct close to `done`?
+- Should research support pause/resume in the engine from day one, or should the first migration scope focus on backlog → in-progress → evaluating → done only?
+- After research writes move to workflow-core, can parts of `lib/entity.js` be deleted entirely rather than made more generic?
 
 ## Related
 
