@@ -125,7 +125,7 @@ Research and feedback entities use simpler filesystem-based transitions (spec fo
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit
-4. **Restart after backend edits** — after changing any `lib/*.js`, restart `node aigon-cli.js dashboard`
+4. **Restart after backend edits** — after changing any `lib/*.js`, restart `aigon server restart`
 5. **Don't move spec files manually** — always use `aigon` CLI commands to transition state
 6. **Update docs when you change architecture** — if your changes add modules, change repo structure, introduce new patterns, or affect how agents should work, update `CLAUDE.md`, `docs/architecture.md`, and/or `AGENTS.md` in the same PR. Documentation is not a follow-up task — it ships with the code.
 7. **Use the frontend-design skill for ALL visual work** — see below.
