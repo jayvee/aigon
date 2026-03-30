@@ -42,9 +42,10 @@ Test overrides: `createAllCommands({ getCurrentBranch: () => 'mock-branch' })`.
 
 - **Feature lifecycle authority**: `lib/workflow-core/` and `.aigon/workflows/features/{id}/`
 - **Feature runtime / agent status files**: `.aigon/state/feature-{id}-{agent}.json`
-- **Research / feedback lifecycle authority**: spec folder location plus command logic
-- **Preferred feature read path**: `lib/workflow-snapshot-adapter.js` (actions/lifecycle) via `lib/workflow-read-model.js` (shared feature dashboard state)
-- **Fallback / non-feature read path**: `lib/workflow-read-model.js` + `lib/state-queries.js`
+- **Research lifecycle authority**: `lib/workflow-core/` and `.aigon/workflows/research/{id}/`
+- **Feedback lifecycle authority**: spec folder location plus command logic
+- **Preferred read path (feature + research)**: `lib/workflow-snapshot-adapter.js` via `lib/workflow-read-model.js`
+- **Fallback read path (feedback + legacy items)**: `lib/workflow-read-model.js` + `lib/state-queries.js`
 
 Important: after feature 171, features no longer use the old coordinator manifest system as the lifecycle source of truth. Folder position is the visible outcome; the engine is the authority that moves the spec.
 
@@ -62,8 +63,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/commands/setup.js` | 959 | init, install-agent, check-version, update, doctor |
 | `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
-| `lib/workflow-core/` | ~2500 | **Workflow engine**: event-sourced state, XState machine, effects, locking — sole authority for feature lifecycle |
-| `lib/workflow-snapshot-adapter.js` | ~310 | Read adapter: maps engine snapshots to dashboard/board formats |
+| `lib/workflow-core/` | ~2500 | **Workflow engine**: event-sourced state, XState machine, effects, locking — sole authority for feature + research lifecycle |
+| `lib/workflow-snapshot-adapter.js` | ~310 | Shared read adapter: maps feature/research engine snapshots to dashboard/board formats |
 | `lib/feature-spec-resolver.js` | ~140 | Canonical feature spec lookup; shields consumers from folder guessing and placeholder specs |
 | `lib/state-queries.js` | ~200 | Pure read-side query helpers used by research/feedback and feature fallback paths |
 | `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting for workflow and snapshot read paths |

@@ -64,8 +64,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/git.js` | 700+ | Branch, worktree, status, commit helpers, commit analytics, git attribution |
 | `lib/telemetry.js` | 144 | Normalized session telemetry, cross-agent cost reporting |
 | `lib/security.js` | 131+ | Merge gate scanning (gitleaks + semgrep), severity thresholds, diff-aware |
-| `lib/workflow-core/` | ~1500 | **Workflow engine**: event-sourced state with XState machine, action derivation, effect lifecycle |
-| `lib/workflow-snapshot-adapter.js` | ~310 | **Read adapter**: maps workflow-core snapshots to dashboard/board data formats; event log reading; side-effect free |
+| `lib/workflow-core/` | ~1500 | **Workflow engine**: event-sourced state with XState machine, action derivation, effect lifecycle for features + research |
+| `lib/workflow-snapshot-adapter.js` | ~310 | **Shared read adapter**: maps workflow-core snapshots (feature + research) to dashboard/board data formats; event log reading; side-effect free |
 | `lib/workflow-heartbeat.js` | ~125 | **Heartbeat**: agent liveness signals, configurable timeout (120s default), expired heartbeat sweep |
 | `lib/supervisor.js` | ~276 | **Server monitoring module**: observes agent liveness (tmux + heartbeat), emits signals, sends notifications. Never kills/restarts/moves. |
 | `lib/supervisor-service.js` | ~175 | **Server auto-restart**: launchd (macOS) / systemd (Linux) for `aigon server start --persistent` |
@@ -74,7 +74,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/devserver.js`.
 
 ## State Architecture
-Feature lifecycle state is managed by the **workflow-core engine** (`lib/workflow-core/`):
+Feature and research lifecycle state are managed by the **workflow-core engine** (`lib/workflow-core/`):
 
 - **Event log** (`.aigon/workflows/features/{id}/events.jsonl`) — append-only, immutable
 - **Snapshot** (`.aigon/workflows/features/{id}/snapshot.json`) — derived from events
@@ -88,9 +88,9 @@ Supporting state:
 - **Shell trap signals**: `buildAgentCommand()` wraps all agent commands with a bash `trap EXIT` handler that fires `agent-status submitted` (exit 0) or `agent-status error` (non-zero). A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. Controlled by `signals` block in `templates/agents/*.json`.
 - Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 
-The dashboard UI uses `lib/state-queries.js` for action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths, and `lib/dashboard-status-collector.js` to keep repo/entity status assembly out of the HTTP server module.
+The dashboard UI uses `lib/state-queries.js` for fallback action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths, and `lib/dashboard-status-collector.js` to keep repo/entity status assembly out of the HTTP server module.
 
-Research and feedback entities use simpler filesystem-based transitions (spec folder moves) without the workflow engine.
+Research lifecycle is also managed by the workflow-core engine (`.aigon/workflows/research/{id}/`). Feedback entities still use simpler filesystem-based transitions (spec folder moves) without the workflow engine.
 
 ## Install Architecture
 `aigon install-agent` writes **only aigon-owned files** — it never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).
