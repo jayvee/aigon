@@ -91,6 +91,18 @@
               }
             ]
           }
+        ],
+        "Stop": [
+          {
+            "matcher": ".*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "aigon check-agent-submitted",
+                "timeout": 5
+              }
+            ]
+          }
         ]
       }
     }
