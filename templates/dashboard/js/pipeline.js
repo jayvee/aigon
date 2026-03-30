@@ -341,17 +341,10 @@
       const hasAgentSections = agents.length > 0 && !isSoloDriveBranch;
 
       const reviews = feature.reviewSessions || [];
-      let reviewBadgeHtml = '';
-      if (reviews.length > 0) {
-        const anyRunning = reviews.some(r => r.running);
-        const agentNames = reviews.map(r => r.agent).join(', ');
-        reviewBadgeHtml = '<span class="review-badge' + (anyRunning ? ' review-running' : '') + '">' +
-          (anyRunning ? '● reviewing' : '✓ reviewed') + ' (' + escHtml(agentNames) + ')</span>';
-      }
 
       let innerHtml =
         (feature.id ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + reviewBadgeHtml + '</div>';
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>';
 
       if (hasAgentSections) {
         // New agent section layout: one visual block per agent
@@ -382,6 +375,20 @@
             '<button class="btn btn-secondary kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open</button>' +
             '</div></div>';
         }
+        // Review section — dedicated block between agents and actions
+        if (reviews.length > 0) {
+          reviews.forEach(r => {
+            const reviewerName = AGENT_DISPLAY_NAMES[r.agent] || r.agent;
+            const statusIcon = r.running ? '●' : '✓';
+            const statusLabel = r.running ? 'Reviewing' : 'Review complete';
+            const statusCls = r.running ? 'status-reviewing' : 'status-review-done';
+            innerHtml += '<div class="kcard-agent agent-review">' +
+              '<div class="kcard-agent-header"><span class="kcard-agent-name">Review</span></div>' +
+              '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + statusCls + '">' + statusIcon + ' ' + escHtml(reviewerName) + ' — ' + statusLabel + '</span></div>' +
+              (r.running ? '<div class="kcard-agent-actions"><button class="btn btn-secondary kcard-review-open" data-review-session="' + escHtml(r.session) + '">Open</button></div>' : '') +
+              '</div>';
+          });
+        }
         // Card-level actions (non-per-agent: close, eval, review, etc.)
         const cardActionsHtml = buildFeatureActions(feature, repoPath, pipelineType);
         if (cardActionsHtml) {
@@ -397,6 +404,20 @@
           '<div class="kcard-agent-header"><span class="kcard-agent-name">Drive</span>' + soloDevSlot + '</div>' +
           '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + soloStatus.cls + '">' + soloStatus.icon + ' ' + soloStatus.label + '</span></div>' +
           '</div>';
+        // Review section for solo mode
+        if (reviews.length > 0) {
+          reviews.forEach(r => {
+            const reviewerName = AGENT_DISPLAY_NAMES[r.agent] || r.agent;
+            const statusIcon = r.running ? '●' : '✓';
+            const statusLabel = r.running ? 'Reviewing' : 'Review complete';
+            const statusCls = r.running ? 'status-reviewing' : 'status-review-done';
+            innerHtml += '<div class="kcard-agent agent-review">' +
+              '<div class="kcard-agent-header"><span class="kcard-agent-name">Review</span></div>' +
+              '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + statusCls + '">' + statusIcon + ' ' + escHtml(reviewerName) + ' — ' + statusLabel + '</span></div>' +
+              (r.running ? '<div class="kcard-agent-actions"><button class="btn btn-secondary kcard-review-open" data-review-session="' + escHtml(r.session) + '">Open</button></div>' : '') +
+              '</div>';
+          });
+        }
         // Card-level actions (close, review — no session controls)
         const soloCardActionsHtml = buildFeatureActions(feature, repoPath, pipelineType);
         if (soloCardActionsHtml) {
