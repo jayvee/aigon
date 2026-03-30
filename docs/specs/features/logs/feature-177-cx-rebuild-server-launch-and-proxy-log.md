@@ -1,3 +1,16 @@
+---
+commit_count: 5
+lines_added: 198
+lines_removed: 44
+lines_changed: 242
+files_touched: 9
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cx-cli"
+---
 # Implementation Log: Feature 177 - rebuild-server-launch-and-proxy
 Agent: cx
 
