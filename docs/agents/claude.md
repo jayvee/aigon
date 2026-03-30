@@ -63,7 +63,7 @@ These are CLI commands you run directly — not slash commands, not auto-invoked
 
 ## Critical Rules
 
-1. **Read the spec first**: Always check `./docs/specs/features/03-in-progress/` before coding
+1. **Read the spec first**: Always resolve the active feature spec with `aigon feature-spec <ID>` before coding
 2. **Work in isolation**: Drive mode uses branches, Fleet mode uses worktrees
 3. **Conventional commits**: Use `feat:`, `fix:`, `chore:` prefixes
 4. **Complete properly**: Use `/aigon:feature-close <ID>` for Drive, `/aigon:feature-close <ID> cc` for Fleet
@@ -74,7 +74,7 @@ These are CLI commands you run directly — not slash commands, not auto-invoked
 
 1. Run `/aigon:feature-start <ID>` to create branch and move spec
 2. Run `/aigon:feature-do <ID>` to begin implementation
-3. Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
+3. Read the spec path returned by `aigon feature-spec <ID>`
 4. Implement the feature according to the spec
 5. Test your changes and wait for user confirmation
 6. Commit using conventional commits (`feat:`, `fix:`, `chore:`)
@@ -87,7 +87,7 @@ These are CLI commands you run directly — not slash commands, not auto-invoked
 2. **STOP** - Tell the user to open the worktree in a separate session
 3. In the worktree session:
    - Run `/aigon:feature-do <ID>`
-   - Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
+   - Read the spec path returned by `aigon feature-spec <ID>`
    - Implement the feature
    - The `feature-do` command handles commit, log, and signaling completion — stay in the session for user review
 4. Return to main repo for evaluation: `/aigon:feature-eval <ID>`
