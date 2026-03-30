@@ -62,7 +62,7 @@ const {
   WorkflowEffectStatus,
   createAgentState,
   createWorkflowEffect,
-} = require('./types');
+} = require('../../lib/../lib/workflow-core/types');
 
 const {
   getFeatureRoot,
@@ -70,16 +70,16 @@ const {
   getSnapshotPath,
   getLockPath,
   getSpecPath,
-} = require('./paths');
+} = require('../../lib/../lib/workflow-core/paths');
 
-const { readEvents, appendEvent } = require('./event-store');
-const { readSnapshot, writeSnapshot } = require('./snapshot-store');
-const { withFeatureLock, tryWithFeatureLock } = require('./lock');
-const { projectContext } = require('./projector');
-const { deriveAvailableActions } = require('./actions');
-const { featureMachine } = require('./machine');
-const engine = require('./engine');
-const researchEngine = require('./research-engine');
+const { readEvents, appendEvent } = require('../../lib/../lib/workflow-core/event-store');
+const { readSnapshot, writeSnapshot } = require('../../lib/../lib/workflow-core/snapshot-store');
+const { withFeatureLock, tryWithFeatureLock } = require('../../lib/../lib/workflow-core/lock');
+const { projectContext } = require('../../lib/../lib/workflow-core/projector');
+const { deriveAvailableActions } = require('../../lib/../lib/workflow-core/actions');
+const { featureMachine } = require('../../lib/../lib/workflow-core/machine');
+const engine = require('../../lib/../lib/workflow-core/engine');
+const researchEngine = require('../../lib/../lib/workflow-core/research-engine');
 
 // ===========================================================================
 // types.js

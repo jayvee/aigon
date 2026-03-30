@@ -62,17 +62,17 @@ function cleanTmpDir(dir) {
 // Imports
 // ---------------------------------------------------------------------------
 
-const engine = require('./workflow-core/engine');
-const { projectContext } = require('./workflow-core/projector');
-const { readEvents } = require('./workflow-core/event-store');
-const { getEventsPath, getSnapshotPath } = require('./workflow-core/paths');
+const engine = require('../../lib/workflow-core/engine');
+const { projectContext } = require('../../lib/workflow-core/projector');
+const { readEvents } = require('../../lib/workflow-core/event-store');
+const { getEventsPath, getSnapshotPath } = require('../../lib/workflow-core/paths');
 const {
   readFeatureSnapshotSync,
   snapshotAgentStatuses,
   readFeatureEventsSync,
   filterAgentSignalEvents,
   AGENT_STATUS_TO_DASHBOARD,
-} = require('./workflow-snapshot-adapter');
+} = require('../../lib/workflow-snapshot-adapter');
 const {
   DEFAULT_HEARTBEAT_INTERVAL_MS,
   DEFAULT_HEARTBEAT_TIMEOUT_MS,
@@ -80,8 +80,8 @@ const {
   emitHeartbeat,
   sweepExpiredHeartbeats,
   sweepAgentRecovery,
-} = require('./workflow-heartbeat');
-const { getRecoveryConfig } = require('./config');
+} = require('../../lib/workflow-heartbeat');
+const { getRecoveryConfig } = require('../../lib/config');
 
 // ===========================================================================
 // Signal emission via engine

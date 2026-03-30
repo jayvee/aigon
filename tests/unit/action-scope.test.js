@@ -7,7 +7,7 @@
  */
 
 const assert = require('assert');
-const { ACTION_SCOPES, buildActionContext, assertActionAllowed, getActionScope } = require('./action-scope');
+const { ACTION_SCOPES, buildActionContext, assertActionAllowed, getActionScope } = require('../../lib/action-scope');
 
 let passed = 0;
 let failed = 0;
