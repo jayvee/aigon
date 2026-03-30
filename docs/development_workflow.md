@@ -56,17 +56,18 @@ docs/specs/
 
 ## Key Rules
 
-1. **Spec-Driven**: Never write code without a spec in `features/03-in-progress/`
+1. **Spec-Driven**: Never write code without resolving the active feature spec via `aigon feature-spec <ID>`
 2. **Work in isolation**: Solo mode uses branches, arena mode uses worktrees
 3. **Implementation Logs**: Document implementation decisions in `logs/` before completing
-4. **Feature lifecycle is engine-backed**: feature commands update workflow-core state, which then moves the spec as a side effect
+4. **Feature lifecycle is engine-backed**: feature commands update workflow-core state, which then moves the visible spec as a side effect
 
 ## Feature State Model
 
 For features, there are two relevant layers:
 
-- The visible stage is still the spec folder under `docs/specs/features/`.
 - The authoritative lifecycle state lives in `.aigon/workflows/features/{id}/` and is managed by `lib/workflow-core/`.
+- The visible stage is still the spec folder under `docs/specs/features/`, but that folder is a projection of workflow state, not the authority.
+- Active feature discovery should use `aigon feature-list --active` or workflow snapshot reads, not folder probes.
 
 Use the CLI to transition features. Do not manually move feature specs between folders.
 
@@ -74,7 +75,7 @@ Use the CLI to transition features. Do not manually move feature specs between f
 
 1. Run `aigon feature-start <ID>` to create branch and move spec to in-progress
 2. Run `aigon feature-do <ID>` to begin implementation (add `--ralph` for autonomous retry loop)
-3. Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
+3. Read the spec path returned by `aigon feature-spec <ID>`
 4. Implement the feature according to the spec
 5. Test your changes and wait for user confirmation
 6. Commit using conventional commits (`feat:`, `fix:`, `chore:`)
@@ -87,7 +88,7 @@ Use the CLI to transition features. Do not manually move feature specs between f
 2. **STOP** - Tell the user to open each worktree in a separate session
 3. In each worktree session:
    - Run `aigon feature-do <ID>`
-   - Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
+   - Read the spec path returned by `aigon feature-spec <ID>`
    - Implement the feature
    - Commit your changes
    - Update the implementation log
