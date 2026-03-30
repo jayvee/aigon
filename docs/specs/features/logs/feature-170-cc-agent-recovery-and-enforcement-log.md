@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 521
+lines_removed: 6
+lines_changed: 527
+files_touched: 13
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 8148
+output_tokens: 27902
+cache_creation_input_tokens: 968863
+cache_read_input_tokens: 18546998
+thinking_tokens: 0
+total_tokens: 19551911
+billable_tokens: 36050
+cost_usd: 48.2015
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 68.41
+---
 # Implementation Log: Feature 170 - agent-recovery-and-enforcement
 Agent: cc
 
