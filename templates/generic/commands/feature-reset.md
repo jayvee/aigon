@@ -12,7 +12,7 @@ aigon feature-reset {{ARG1_SYNTAX}}
 ## Argument Resolution
 
 If no ID is provided, or the ID doesn't match an existing feature:
-1. List all files in `./docs/specs/features/03-in-progress/`, `./docs/specs/features/04-in-evaluation/`, and `./docs/specs/features/05-done/` matching `feature-*.md`
+1. Run `aigon feature-list --all`
 2. If a partial ID or name was given, filter to matches
 3. Present the matching features and ask the user to choose one
 
