@@ -11,7 +11,11 @@
     "implementPrompt": "/aigon-feature-do {featureId}",
     "evalPrompt": "/aigon-feature-eval {featureId}",
     "reviewPrompt": "/aigon-feature-review {featureId}",
-    "models": {}
+    "models": {
+      "research": "composer-2",
+      "implement": "composer-2",
+      "evaluate": "composer-2"
+    }
   },
   "placeholders": {
     "AGENT_ID": "cu",
@@ -22,7 +26,7 @@
     "CMD_PREFIX": "/aigon-",
     "AGENT_TEAMS_RESEARCH_NOTE": "",
     "AGENT_TEAMS_FEATURE_NOTE": "",
-    "AGENT_DEV_SERVER_NOTE": "",
+    "AGENT_DEV_SERVER_NOTE": "\n> **CRITICAL — Cursor dev server rules:**\n>\n> **NEVER run `npm run dev`, `next dev`, or any dev command directly.** Running dev commands directly bypasses port allocation and will cause port conflicts.\n>\n> Always use `aigon dev-server start` which allocates a unique port and registers with the proxy.\n> Check your URL with `aigon dev-server url`.\n",
     "AGENT_PITFALLS": "",
     "PERMISSION_SAVE_NOTE": ""
   },
@@ -54,6 +58,10 @@
             {
               "command": "aigon check-version",
               "timeout": 30
+            },
+            {
+              "command": "aigon project-context",
+              "timeout": 10
             }
           ]
         }
