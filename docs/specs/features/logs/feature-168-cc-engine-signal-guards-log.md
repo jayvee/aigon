@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 228
+lines_removed: 13
+lines_changed: 241
+files_touched: 3
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 151
+output_tokens: 9363
+cache_creation_input_tokens: 371401
+cache_read_input_tokens: 4540124
+thinking_tokens: 0
+total_tokens: 4921039
+billable_tokens: 9514
+cost_usd: 14.4784
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 39.48
+---
 # Implementation Log: Feature 168 - engine-signal-guards
 Agent: cc
 
