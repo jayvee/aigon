@@ -32,9 +32,12 @@ function validActionBtnClass(action, priority) {
 // Which transitions should render as buttons (not just drag targets)
 const TRANSITIONS_AS_BUTTONS = [
   'feature-prioritise', 'research-prioritise',
+  'feature-start', 'research-start',
+  'feature-eval', 'research-eval',
+  'feature-review',
   'feature-close', 'research-close',
+  'feature-pause', 'feature-resume',
   'feedback-triage',
-  'research-start'
 ];
 
 /**
