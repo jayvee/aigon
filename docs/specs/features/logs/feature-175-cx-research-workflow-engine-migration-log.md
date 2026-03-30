@@ -37,6 +37,11 @@ Agent: cx
   - `docs/generated/workflow/*.svg`
 - Restarted AIGON server:
   - `aigon server restart`
+- Review follow-up (strict no-bootstrap):
+  - Updated `research-eval --force` tests to assert hard failure when no research engine events exist
+  - Restored active feature visibility fallback in dashboard collector for `03-in-progress`/`04-in-evaluation` specs (without reintroducing legacy agent inference bloat)
+  - Removed additional unused imports/command wiring in `lib/commands/research.js`
+  - Refactored `lib/workflow-core/research-engine.js` with shared research path helper to reduce repeated path lookups
 
 ## Decisions
 - Kept feature engine behavior intact and added research support through the same workflow-core primitives (paths, projector, machine/action derivation, snapshots).
