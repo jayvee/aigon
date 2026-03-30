@@ -33,7 +33,7 @@ Validated with Playwright screenshot confirming the icon renders in the dashboar
 
 ## Decisions
 
-**Dashboard server uses global binary by default** — when running `aigon radar start`, the globally installed binary serves the old template. Had to use `node aigon-cli.js radar start` from the worktree to pick up the modified template and asset handler. This is a known limitation of worktree development with a globally installed CLI.
+**AIGON server uses global binary by default** — when running `aigon radar start`, the globally installed binary serves the old template. Had to use `node aigon-cli.js radar start` from the worktree to pick up the modified template and asset handler. This is a known limitation of worktree development with a globally installed CLI.
 
 **Static asset handler added to `lib/utils.js`** — the dashboard HTTP server had no mechanism to serve static files. Added a `/assets/` route handler that serves files from `ROOT_DIR/assets/` with appropriate MIME types and a 1-day cache header. This is the minimal change needed; a more general static file server was not warranted.
 

@@ -15,7 +15,7 @@ Add a "Console" tab to the dashboard that shows a live, scrollable log of every 
 
 ### Server-side: in-memory event buffer + API
 
-- [ ] New in-memory ring buffer in the dashboard server (max 200 entries) that captures every action/event with: `{ timestamp, type, action, args, repoPath, command, exitCode, ok, stdout, stderr, duration }`
+- [ ] New in-memory ring buffer in the AIGON server (max 200 entries) that captures every action/event with: `{ timestamp, type, action, args, repoPath, command, exitCode, ok, stdout, stderr, duration }`
 - [ ] Event types: `action` (user-triggered via /api/action), `poll` (status poll cycle — only logged when something changes), `error` (server-side errors), `session` (session run via /api/session/run)
 - [ ] Every `/api/action` call appends to the buffer with the full `runRadarInteractiveAction` result including stdout and stderr (not truncated)
 - [ ] Every `/api/session/run` call appends to the buffer
@@ -147,7 +147,7 @@ This requires the `/api/action` response to include stdout/stderr in successful 
 
 ### Work order
 
-1. Add `consoleBuffer` and `logToConsole()` to the dashboard server + `/api/console` endpoint
+1. Add `consoleBuffer` and `logToConsole()` to the AIGON server + `/api/console` endpoint
 2. Instrument `/api/action` and `/api/session/run` to log to buffer
 3. Add Console tab UI (button, container, render function, display toggle)
 4. Add entry rendering with expand/collapse

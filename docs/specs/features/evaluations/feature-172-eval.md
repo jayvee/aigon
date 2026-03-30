@@ -33,17 +33,17 @@ See: `./docs/specs/features/04-in-evaluation/feature-172-aigon-server.md`
 #### cc (Claude)
 - Strengths:
   - **Comprehensive test suite** — 15 tests including source-code invariant checks (verifies zero imports between modules, no tmux kill calls, no file moves)
-  - **Clean dependency injection** — supervisor functions passed via `serverOptions` to dashboard, avoiding new orchestration files
+  - **Clean dependency injection** — runtime supervision functions passed via `serverOptions` to the AIGON server HTTP/UI module, avoiding new orchestration files
   - **Separate service installer** — `supervisor-service.js` (192 lines) cleanly isolates launchd/systemd logic
   - supervisor.js at 276 lines — under budget, well-documented
 - Weaknesses:
-  - DI through dashboard's `serverOptions` is slightly indirect — function passing through options is harder to trace than an explicit composition root
-  - Dashboard still retains some notification logic (agent-waiting, all-submitted) alongside supervisor's liveness notifications — split responsibility for notifications
+  - DI through the AIGON server HTTP/UI module's `serverOptions` is slightly indirect — function passing through options is harder to trace than an explicit composition root
+  - The dashboard path still retains some notification logic (agent-waiting, all-submitted) alongside the runtime supervision logic — split responsibility for notifications
 
 #### cx (Codex)
 - Strengths:
   - **Leaner supervisor** — 190 lines vs cc's 276, more focused
-  - **Explicit orchestrator** — new `aigon-server.js` (262 lines) acts as a clear composition root that wires dashboard + supervisor, architecturally cleaner than injection
+  - **Explicit orchestrator** — new `aigon-server.js` (262 lines) acts as a clear composition root that wires the AIGON server HTTP/UI and runtime modules, architecturally cleaner than injection
   - **More aggressive dashboard cleanup** — removed 107 lines vs cc's 71, including orphan UI button from dashboard JS
   - **Explicit process management** — PID file, SIGTERM→SIGKILL escalation, detached process spawning with state tracking in `~/.aigon/server/state.json`
 - Weaknesses:
@@ -57,4 +57,4 @@ See: `./docs/specs/features/04-in-evaluation/feature-172-aigon-server.md`
 
 CC wins on the strength of its test coverage (15 tests vs 4) and spec-aligned architecture. Both implementations meet all 14 acceptance criteria, but cc's comprehensive test suite — including invariant checks that verify module separation at the source level — provides significantly more confidence for ongoing maintenance. The 4-test suite in cx would not catch regressions in module boundaries.
 
-**Cross-pollination:** Before merging, consider adopting from cx: the more aggressive dashboard cleanup (cx removed the orphan cleanup button from the dashboard JS templates, removing ~15 lines from `templates/dashboard/js/init.js` that cc left in place). Also worth noting cx's explicit PID file + state file pattern in `~/.aigon/server/` — if cc doesn't already track server state for `aigon server status`, cx's approach to process lifecycle tracking is cleaner.
+**Cross-pollination:** Before merging, consider adopting from cx: the more aggressive dashboard UI cleanup (cx removed the orphan cleanup button from the dashboard JS templates, removing ~15 lines from `templates/dashboard/js/init.js` that cc left in place). Also worth noting cx's explicit PID file + state file pattern in `~/.aigon/server/` — if cc doesn't already track server state for `aigon server status`, cx's approach to process lifecycle tracking is cleaner.

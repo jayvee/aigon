@@ -7,7 +7,7 @@ The `/api/feature-open` handler in `lib/dashboard-server.js` is a single ~130-li
 ## User Stories
 
 - [ ] As a user launching a review from the dashboard, I expect the agent to always run in the correct worktree, regardless of which agent I pick
-- [ ] As a developer reading the dashboard server code, I can understand each launch operation independently without tracing shared variables through branching logic
+- [ ] As a developer reading the AIGON server code, I can understand each launch operation independently without tracing shared variables through branching logic
 - [ ] As a developer adding a new launch mode (e.g., a future "debug" mode), I can add a new handler without risk of breaking existing modes
 
 ## Acceptance Criteria

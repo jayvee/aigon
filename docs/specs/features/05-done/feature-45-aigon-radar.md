@@ -6,7 +6,7 @@ Once you start using aigon on multiple repositories with multiple features in pa
 
 ## User Stories
 
-- [ ] As a user running agents across multiple repos, I want a single background service that tracks all agent activity, so I don't have to start separate daemons and dashboard servers.
+- [ ] As a user running agents across multiple repos, I want a single AIGON server process that tracks all agent activity, so I don't have to start separate daemons and UI-serving processes.
 - [ ] As a user, I want a clean HTTP API for all monitoring data, so that the menubar plugin, web dashboard, VS Code extension, and future native apps all consume the same source of truth.
 - [ ] As a user, I want `aigon radar start` to give me everything (daemon + web dashboard + API) in one process, so setup is simple and there's only one thing to manage.
 - [ ] As a user transitioning from `conductor`/`dashboard`, I want the old commands to keep working with deprecation warnings, so nothing breaks when I upgrade.
@@ -26,7 +26,7 @@ Once you start using aigon on multiple repositories with multiple features in pa
 - [ ] The menubar plugin (`menubar-render`) calls Radar's HTTP API instead of reading log files directly
 - [ ] Running `aigon conductor start` prints a deprecation notice and delegates to `aigon radar start`
 - [ ] Running `aigon dashboard` prints a deprecation notice and delegates to `aigon radar open`
-- [ ] All four current data-reading code paths converge on one: the Radar service's internal `collectStatus()` function
+- [ ] All four current data-reading code paths converge on one: the AIGON server's internal `collectStatus()` function
 
 ## Validation
 
@@ -48,7 +48,7 @@ The word "conductor" is currently overloaded:
 
 ```
                      ┌──────────────────────────┐
-                     │      Radar Service        │
+                     │       AIGON Server        │
                      │  (single Node.js process)  │
                      │                            │
                      │  ┌──────────┐ ┌─────────┐ │
@@ -86,8 +86,8 @@ The poller and HTTP server share a single `collectStatus()` function that replac
 ### Command structure
 
 ```
-aigon radar start [--port N]    # Start the Radar service (default port 4321)
-aigon radar stop                # Stop the Radar service
+aigon radar start [--port N]    # Start the AIGON server (default port 4321)
+aigon radar stop                # Stop the AIGON server
 aigon radar status              # Show service state + agent summary
 aigon radar install             # Install launchd plist for auto-start on login
 aigon radar uninstall           # Remove launchd plist
@@ -218,8 +218,8 @@ The deprecation message format:
 
 ## Supersedes
 
-- Feature: conductor-daemon (feature-32) — daemon functionality absorbed into Radar service
-- Feature: conductor-web-dashboard (feature-41) — dashboard functionality absorbed into Radar service
+- Feature: conductor-daemon (feature-32) — daemon functionality absorbed into AIGON server
+- Feature: conductor-web-dashboard (feature-41) — dashboard functionality absorbed into AIGON server
 - Feature: conduct-daemon-integration (inbox) — the integration goals are achieved by Radar's unified architecture
 
 ## Related

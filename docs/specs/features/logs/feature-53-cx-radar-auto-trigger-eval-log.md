@@ -10,7 +10,7 @@ autonomyRatio: 0.00
 Agent: cx
 
 ## Plan
-- Inspect radar daemon polling path and existing "all submitted" transition logic.
+- Inspect AIGON server polling path and existing "all submitted" transition logic.
 - Add auto-eval trigger from radar with duplicate tmux guard and config gate.
 - Add unit tests for new auto-eval config/session helper logic.
 - Run test suite.

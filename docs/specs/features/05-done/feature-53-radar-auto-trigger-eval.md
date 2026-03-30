@@ -2,7 +2,7 @@
 
 ## Summary
 
-When the radar daemon detects that all Fleet agents have submitted for a feature, it should automatically launch `aigon feature-eval <ID>` in a new tmux session. Currently radar sends a macOS notification but the user must manually run the eval command. This closes the loop on fully autonomous Fleet execution.
+When the AIGON server detects that all Fleet agents have submitted for a feature, it should automatically launch `aigon feature-eval <ID>` in a new tmux session. Currently radar sends a macOS notification but the user must manually run the eval command. This closes the loop on fully autonomous Fleet execution.
 
 ## User Stories
 
@@ -24,7 +24,7 @@ Extend the `pollStatus()` function in `runRadarServiceDaemon()` to detect the al
 
 ## Dependencies
 
-- Radar daemon (already exists)
+- AIGON server (already exists)
 
 ## Out of Scope
 

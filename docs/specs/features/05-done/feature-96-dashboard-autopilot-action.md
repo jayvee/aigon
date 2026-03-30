@@ -44,7 +44,7 @@ Add a new action entry in `FEATURE_ACTIONS`:
 ```
 And a similar entry for `stage: 'in-progress'` with a guard that checks no agents are currently running.
 
-### 2. Dashboard server (`lib/dashboard-server.js`)
+### 2. AIGON server (`lib/dashboard-server.js`)
 In `getFeatureActions()`:
 - Add `'feature-autopilot'` to `ACTION_REASONS` map: `'Run parallel agents in autopilot mode'`
 - Add a case in the switch to build the command: `aigon feature-autopilot ${id} ${agents}`

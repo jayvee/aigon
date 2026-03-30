@@ -19,7 +19,7 @@ Improve tmux session interaction from the dashboard. Currently clicking Attach j
 
 ### (b) Peek mode — streaming session output with simple input
 - [ ] Sessions panel shows a "Peek" button that opens a streaming output view for that session
-- [ ] Server uses `tmux pipe-pane -t <session>` to stream output to a file/pipe, tailed by the dashboard server
+- [ ] Server uses `tmux pipe-pane -t <session>` to stream output to a file/pipe, tailed by the AIGON server
 - [ ] Output relayed to frontend via polling (`GET /api/session-peek?name=<session>&since=<offset>`) — incremental reads, not full capture each time
 - [ ] Fallback: `tmux capture-pane -t <session> -p -S -50` if pipe-pane setup fails
 - [ ] Rendered in a monospace scrolling container with ANSI stripping (or basic ANSI-to-HTML)

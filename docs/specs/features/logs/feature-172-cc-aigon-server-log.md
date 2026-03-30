@@ -26,7 +26,7 @@ Agent: cc
 
 ## Plan
 
-Split the dashboard process into two modules: HTTP (read-only) and supervisor (observe-only signals). Add `aigon server` CLI command with start/stop/status subcommands and system service installation.
+Split the AIGON server process into two modules: HTTP (read-only) and supervisor (observe-only signals). Add `aigon server` CLI command with start/stop/status subcommands and system service installation.
 
 ## Progress
 
@@ -34,7 +34,7 @@ Split the dashboard process into two modules: HTTP (read-only) and supervisor (o
 
 2. Created `lib/supervisor-service.js` — installs launchd plist (macOS) or systemd user unit (Linux) for auto-restart via `aigon server start --persistent`.
 
-3. Added `server` command to `lib/commands/infra.js` — delegates to dashboard for start/stop, adds `status` subcommand that fetches supervisor health from the running server's `/api/supervisor/status` endpoint.
+3. Added `server` command to `lib/commands/infra.js` — delegates start/stop to the AIGON server path, adds `status` subcommand that fetches runtime health from the running server's `/api/supervisor/status` endpoint.
 
 4. Stripped mutation logic from `lib/dashboard-server.js`:
    - Removed `/api/sessions/cleanup` endpoint (killed orphan tmux sessions)
@@ -47,10 +47,10 @@ Split the dashboard process into two modules: HTTP (read-only) and supervisor (o
 
 ## Decisions
 
-- **Zero-import via injection**: The spec's architecture diagram shows HTTP and supervisor sharing a process but never calling each other. Rather than having dashboard-server.js `require('./supervisor')` directly, infra.js injects the functions via `serverOptions`. This satisfies the acceptance criterion while keeping the one-line integration simple.
+- **Zero-import via injection**: The spec's architecture diagram shows the HTTP/UI and runtime supervision modules sharing a process but never calling each other. Rather than having dashboard-server.js `require('./supervisor')` directly, infra.js injects the functions via `serverOptions`. This satisfies the acceptance criterion while keeping the one-line integration simple.
 
 - **Self-contained tmux check**: Supervisor has its own `tmuxSessionAlive()` instead of importing from worktree.js, keeping its dependency footprint minimal.
 
-- **Notification kept in both**: Dashboard's `emitNotification()` still handles status-change notifications (agent-waiting, all-submitted) since those are read-only observations from the poll loop. Supervisor handles only the liveness-related notifications (session lost, heartbeat expired).
+- **Notification kept in both**: The dashboard HTTP/UI path still handles status-change notifications (agent-waiting, all-submitted) since those are read-only observations from the poll loop. The runtime supervision path handles only the liveness-related notifications (session lost, heartbeat expired).
 
 - **8 insights test failures**: Pre-existing — caused by `@aigon/pro` not being npm-linked in the worktree. Not related to this feature.

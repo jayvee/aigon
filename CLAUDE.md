@@ -6,7 +6,7 @@
 - **Shared logic**: `lib/*.js` — 12 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
-- **Dashboard**: foreground server — `node aigon-cli.js dashboard`; restart after any `lib/*.js` edit
+- **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
 - **Tests**: `npm test` · syntax: `node -c aigon-cli.js` · `node -c lib/utils.js`
 - **Version bumps**: after every commit — `npm version patch|minor|major && git push --tags`
 - **Seed reset**: `aigon seed-reset ~/src/<repo> --force` — resets seed repos (brewboard, trailhead) to initial state. Use `--dry-run` to preview. Handles tmux, worktrees, branches, state, git history.
@@ -45,8 +45,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | Module | ~Lines | Owns |
 |--------|--------|------|
 | `lib/commands/feature.js` | 2490 | All `feature-*` handlers, `sessions-close` |
-| `lib/dashboard-server.js` | ~1850 | HTTP server, WebSocket relay, polling, reads manifests for state. Never mutates engine state. |
-| `lib/commands/infra.js` | ~1460 | dashboard, server, board, config, proxy-setup, dev-server |
+| `lib/dashboard-server.js` | ~1850 | AIGON server HTTP/UI module: dashboard UI, API, WebSocket relay, polling, snapshot reads. Never mutates engine state. |
+| `lib/commands/infra.js` | ~1460 | server, dashboard compatibility commands, board, config, proxy-setup, dev-server |
 | `lib/utils.js` | 1474 | Spec CRUD, hooks, version, analytics |
 | `lib/commands/setup.js` | 1212 | init, install-agent, check-version, update, doctor + state reconciliation |
 | `lib/worktree.js` | 1200+ | Worktree creation, tmux sessions, terminal launch, shell trap signal wrapper |
@@ -83,7 +83,7 @@ Supporting state:
 - **Shell trap signals**: `buildAgentCommand()` wraps all agent commands with a bash `trap EXIT` handler that fires `agent-status submitted` (exit 0) or `agent-status error` (non-zero). A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. Controlled by `signals` block in `templates/agents/*.json`.
 - Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 
-Dashboard UI queries use `lib/state-queries.js` for action/transition derivation (pure functions, no I/O) and `lib/workflow-snapshot-adapter.js` to read engine snapshots.
+The dashboard UI uses `lib/state-queries.js` for action/transition derivation (pure functions, no I/O) and `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server.
 
 Research and feedback entities use simpler filesystem-based transitions (spec folder moves) without the workflow engine.
 

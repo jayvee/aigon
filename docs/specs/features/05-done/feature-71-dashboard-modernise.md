@@ -6,7 +6,7 @@ After the infrastructure rebuild, the dashboard HTML is a single 3,600+ line fil
 
 ## User Stories
 
-- [ ] As an agent modifying the monitor view, I can run Playwright tests and get a pass/fail signal without starting a real dashboard server or having live feature data
+- [ ] As an agent modifying the monitor view, I can run Playwright tests and get a pass/fail signal without starting a real AIGON server or having live feature data
 - [ ] As an agent adding a new dashboard section, I can follow the Alpine.js pattern rather than writing another 100-line imperative render function
 - [ ] As a developer reviewing a dashboard change, the diff shows declarative HTML attributes rather than JS string concatenation
 - [ ] As a user, the dashboard behaves identically before and after — this is a refactor, not a feature change
@@ -33,7 +33,7 @@ After the infrastructure rebuild, the dashboard HTML is a single 3,600+ line fil
   - `pipeline.spec.js` — renders pipeline board with mocked data, verifies drag-drop updates call correct API endpoint
   - `actions.spec.js` — clicking an action button POSTs to `/api/action` with correct payload
   - `analytics.spec.js` — renders stats cards and chart with mocked analytics data
-- [ ] All tests use `page.route()` to intercept `/api/status` and `/api/action` — no real dashboard server required
+- [ ] All tests use `page.route()` to intercept `/api/status` and `/api/action` — no real AIGON server required
 - [ ] Tests run in headless mode by default (`playwright test --reporter=list`)
 - [ ] `npm test` runs both existing tests and Playwright dashboard tests
 - [ ] Tests pass reliably with no flakiness on `main` after this feature lands

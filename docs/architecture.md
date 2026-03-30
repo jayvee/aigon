@@ -34,7 +34,7 @@ Current command families:
 | `lib/commands/feature.js` | All `feature-*` handlers, `sessions-close` |
 | `lib/commands/research.js` | All `research-*` handlers |
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
-| `lib/commands/infra.js` | `conductor`, `dashboard`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile` |
+| `lib/commands/infra.js` | `server`, `dashboard` (compatibility alias), `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile` |
 | `lib/commands/setup.js` | `init`, `install-agent`, `check-version`, `update`, `project-context`, `doctor` |
 | `lib/commands/misc.js` | `agent-status`, `status`, `deploy`, `next`, `help` |
 
@@ -89,7 +89,7 @@ Current shared modules:
 
 - `lib/proxy.js` (~711 lines): Caddy management, port allocation, dev-proxy registry, route reconciliation
   `generateCaddyfile`, `reloadCaddy`, `registerDevServer`, `deregisterDevServer`, `reconcileProxyRoutes`, `allocatePort`
-- `lib/dashboard-server.js` (~1,913 lines): HTTP server, polling, WebSocket relay, notifications, action dispatch — reads state from engine snapshots
+- `lib/dashboard-server.js` (~1,913 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, and action dispatch from engine snapshots
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
 - `lib/worktree.js` (~1,122 lines): worktree creation, permissions, git attribution bootstrap, tmux sessions, terminal launching
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
@@ -184,9 +184,9 @@ Important distinction: `.aigon/state/` still exists after the cutover, but it is
 
 Feature writes go through the engine, but the read side is still mixed:
 
-- `lib/workflow-snapshot-adapter.js` is the preferred feature read adapter for dashboard and board consumers when a workflow snapshot exists.
+- `lib/workflow-snapshot-adapter.js` is the preferred feature read adapter for the AIGON server's dashboard and board consumers when a workflow snapshot exists.
 - `lib/workflow-read-model.js` and `lib/state-queries.js` still provide derived action suggestions for research, feedback, and feature fallback paths.
-- `lib/dashboard-server.js` still carries compatibility logic for agent discovery and older repos that may not have a complete workflow snapshot yet.
+- `lib/dashboard-server.js` still carries compatibility logic for the AIGON server's dashboard-facing reads, agent discovery, and older repos that may not have a complete workflow snapshot yet.
 
 So the architecture after Feature 171 is:
 
@@ -242,7 +242,7 @@ Aigon has a **free/pro split**. Commercial AADE (Amplification) features live in
 |---|---|---|
 | **Repo** | `github.com/jayvee/aigon` (public) | `github.com/jayvee/aigon-pro` (private) |
 | **Package** | `aigon` | `@aigon/pro` |
-| **Contains** | CLI, workflow engine, dashboard, free-tier features | Insights engine, amplification dashboard, AI coaching |
+| **Contains** | CLI, workflow engine, AIGON server, dashboard UI, free-tier features | Insights engine, amplification dashboard, AI coaching |
 | **Data collection** | Yes — `getFeatureGitSignals()` in `lib/git.js` collects metrics | No — uses data collected by the free tier |
 | **Analysis/insights** | Rule-based basics only | Full insights, trends, AI coaching |
 
@@ -289,12 +289,12 @@ Features are always tracked in the **aigon** repo (specs, logs, board). When a f
 - Avoid circular dependencies between `lib/*.js` modules.
 - Treat `templates/` as source-of-truth for generated agent docs and prompts.
 - Project-specific agent instructions belong in `AGENTS.md` and/or `CLAUDE.md` (user-owned, never overwritten by aigon). `docs/aigon-project.md` provides committed defaults used when scaffolding `AGENTS.md` on first install.
-- The dashboard is a foreground HTTP server. It registers with the proxy registry (`~/.aigon/dev-proxy/servers.json`) on start and deregisters on shutdown, giving it named URLs (`aigon.localhost`, `cc-71.aigon.localhost`) via the aigon-proxy daemon.
+- The AIGON server is the foreground HTTP process. It serves the dashboard UI, registers with the proxy registry (`~/.aigon/dev-proxy/servers.json`) on start, and deregisters on shutdown, giving it named URLs (`aigon.localhost`, `cc-71.aigon.localhost`) via the aigon-proxy daemon.
 - The proxy (`lib/aigon-proxy.js`) is a ~100-line Node.js reverse proxy that reads `servers.json` and routes by Host header. Installed as a system daemon on port 80 via `aigon proxy install`.
 
 ## Remote Access
 
-The dashboard binds to `0.0.0.0` by default, making it accessible from any device on the local network.
+The AIGON server binds to `0.0.0.0` by default, making the dashboard UI accessible from any device on the local network.
 
 - **Same WiFi (phone/tablet):** open `http://<mac-ip>:4100` in a browser. Find your Mac's IP with `ipconfig getifaddr en0`.
 - **Outside the LAN (cellular, travel):** install [Tailscale](https://tailscale.com/) (free) on both devices, then use `http://<tailscale-ip>:4100`.

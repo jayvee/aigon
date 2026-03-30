@@ -69,7 +69,7 @@ The state machine (`lib/state-machine.js`) already computes `validActions` with 
 
 - State machine (`lib/state-machine.js`) — already well-structured
 - Dashboard template (`templates/dashboard/index.html`)
-- Dashboard server (`lib/dashboard.js`) — should need no changes
+- AIGON server (`lib/dashboard.js`) — should need no changes
 
 ## Out of Scope
 

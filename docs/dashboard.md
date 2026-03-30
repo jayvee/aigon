@@ -1,21 +1,21 @@
-# Dashboard Architecture
+# Dashboard On The AIGON Server
 
-Quick reference for agents working on the Aigon dashboard.
+Quick reference for agents working on the Aigon dashboard UI and the AIGON server that serves it.
 
 ## Overview
 
-The dashboard is a single-page web app served by a foreground HTTP server. It's a Node.js HTTP server (`runDashboardServer()` in `lib/dashboard-server.js`) that polls workflow state every 10 seconds, serves the dashboard HTML, exposes a JSON API, and sends macOS notifications when agent status changes.
+The dashboard is a single-page web app. It is served by the AIGON server, a foreground Node.js process whose HTTP/UI module lives in `lib/dashboard-server.js`. The dashboard is the interface; the AIGON server is the process that serves the HTML, exposes the JSON API, polls workflow state every 10 seconds, and runs the runtime concerns around it.
 
 ## Starting & Stopping
 
 | Command | What it does |
 |---------|-------------|
-| `aigon server start` | Start the server (serves dashboard UI + runs supervisor) |
+| `aigon server start` | Start the AIGON server (serves dashboard UI + API) |
 | `aigon server stop` | Stop the server |
 | `aigon server restart` | Restart the server |
-| `aigon server status` | Show server health, uptime, supervisor status |
+| `aigon server status` | Show server health and uptime |
 
-The server runs as a foreground process. Each worktree gets its own port and, when aigon-proxy is running, a named URL (e.g. `http://cc-73.aigon.localhost`).
+The AIGON server runs as a foreground process. Each worktree gets its own port and, when aigon-proxy is running, a named URL (e.g. `http://cc-73.aigon.localhost`).
 
 ## Dev Proxy Stack
 
@@ -40,23 +40,23 @@ aigon proxy install  # Optional: install launchd plist for auto-start on boot
 
 | File | Purpose |
 |------|---------|
-| `~/.aigon/dev-proxy/servers.json` | Registry of all servers (dashboard + dev-servers) |
+| `~/.aigon/dev-proxy/servers.json` | Registry of AIGON server instances and dev servers |
 | `~/.aigon/dev-proxy/proxy.pid` | PID of the running aigon-proxy daemon |
-| `~/.aigon/dashboard.log` | Dashboard log |
+| `~/.aigon/dashboard.log` | AIGON server log for dashboard/UI traffic |
 
 ### Ports
 
 | Service | Port | URL |
 |---------|------|-----|
-| Main dashboard | 4100 (default) | `http://aigon.localhost` |
+| Main AIGON server instance | 4100 (default) | `http://aigon.localhost` |
 | Worktree instances | 4101–4199 (dynamic) | `http://{agent}-{id}.aigon.localhost` |
 
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `aigon.localhost` returns 404 | Dashboard not registered or proxy not running | `aigon proxy start`, then restart dashboard |
-| Dead worktree instances in status | Old worktree dashboard instances not cleaned up | `aigon dev-server gc` |
+| `aigon.localhost` returns 404 | AIGON server not registered or proxy not running | `aigon proxy start`, then restart the server |
+| Dead worktree instances in status | Old AIGON server worktree instances not cleaned up | `aigon dev-server gc` |
 | `aigon.localhost` not resolving | Rare: OS doesn't handle `.localhost` wildcard | Use `http://localhost:4080` directly |
 | Dashboard shows wrong data | Config parse error or stale registry | Check `~/.aigon/dashboard.log` for `[*] Warning:` lines |
 
@@ -83,8 +83,8 @@ tail -50 ~/.aigon/dashboard.log
 
 | File | Purpose |
 |------|---------|
-| `~/.aigon/dev-proxy/servers.json` | Registry of all live servers + embedded port allocations (`_portRegistry` key) |
-| `~/.aigon/dashboard.log` | Dashboard log (warnings, startup messages, notifications) |
+| `~/.aigon/dev-proxy/servers.json` | Registry of all live AIGON server instances + embedded port allocations (`_portRegistry` key) |
+| `~/.aigon/dashboard.log` | AIGON server log (warnings, startup messages, notifications) |
 
 > **Note:** Port allocation data was previously stored in `~/.aigon/ports.json`. As of v2.50, it is merged into `servers.json` under the `_portRegistry` key. The legacy file is migrated and removed automatically on first access.
 
@@ -92,7 +92,7 @@ tail -50 ~/.aigon/dashboard.log
 
 | File | Role |
 |------|------|
-| `lib/dashboard-server.js` | HTTP server, polling, WebSocket relay, notifications, action dispatch, dashboard HTML builder |
+| `lib/dashboard-server.js` | AIGON server HTTP/UI module: polling, WebSocket relay, notifications, action dispatch, dashboard HTML builder |
 | `lib/proxy.js` | Port allocation, registry management, dev server registration, aigon-proxy integration |
 | `lib/aigon-proxy.js` | Standalone proxy daemon — routes by Host header, handles WebSocket upgrades |
 | `lib/config.js` | Global/project config, profiles, agent CLI config |
@@ -100,14 +100,14 @@ tail -50 ~/.aigon/dashboard.log
 | `lib/dashboard.js` | Thin re-exporter for backward compatibility |
 | `templates/dashboard/index.html` | Entire SPA — HTML, CSS, and JS in one file |
 | `lib/workflow-core/` | Workflow engine — sole authority for feature lifecycle state |
-| `lib/state-queries.js` | Pure action/transition derivation from engine state — controls dashboard behavior |
-| `lib/workflow-snapshot-adapter.js` | Maps engine snapshots to dashboard display formats |
+| `lib/state-queries.js` | Pure action/transition derivation from engine state — used by the AIGON server to drive dashboard behavior |
+| `lib/workflow-snapshot-adapter.js` | Maps engine snapshots to dashboard display formats served by the AIGON server |
 
 ### Key functions in `lib/dashboard-server.js`
 
 | Function | Purpose |
 |----------|---------|
-| `runDashboardServer(port)` | Main HTTP server |
+| `runDashboardServer(port)` | Start the AIGON server HTTP/UI module |
 | `collectDashboardStatusData()` | Scans specs, logs, worktrees, tmux for status |
 | `runDashboardInteractiveAction()` | Executes actions triggered from dashboard UI |
 | `buildDashboardHtml(initialData, instanceName)` | Renders the SPA HTML |
@@ -127,7 +127,7 @@ tail -50 ~/.aigon/dashboard.log
 
 ```
 ┌─────────────┐  poll /api/status   ┌──────────────────┐  reads files   ┌─────────────────┐
-│  Browser     │ ◄──── every 10s ──►│  Dashboard HTTP   │ ◄────────────► │  docs/specs/     │
+│  Browser     │ ◄──── every 10s ──►│  AIGON server     │ ◄────────────► │  docs/specs/     │
 │  (SPA)       │                    │  Server           │                │  (workflow state)│
 │              │  POST /api/action  │                   │  spawns CLI    │                  │
 │              │ ──────────────────►│                   │ ──────────────►│  aigon <command> │
@@ -137,7 +137,7 @@ tail -50 ~/.aigon/dashboard.log
 └─────────────┘                    └───────────────────┘                └─────────────────┘
 ```
 
-**Server-side polling**: The server polls `collectDashboardStatusData()` every **10 seconds**, scanning spec files, log files, and worktree directories across all registered repos. It also detects tmux sessions for agent status.
+**Server-side polling**: The AIGON server polls `collectDashboardStatusData()` every **10 seconds**, scanning spec files, log files, and worktree directories across all registered repos. It also detects tmux sessions for agent status.
 
 **Client-side polling**: The browser fetches `GET /api/status` every **10 seconds** and re-renders the active view.
 
@@ -177,11 +177,11 @@ Both Monitor and Pipeline have a type toggle to filter by: All, Features, Resear
 
 ## Notifications
 
-The server sends macOS notifications (`osascript`) when:
+The AIGON server sends macOS notifications (`osascript`) when:
 - An agent signals implementation complete (`submitted` status)
 - All agents on a feature are done (triggers auto-eval if enabled)
 - All research agents are done (ready for synthesis)
 
 ## Auto-Eval
 
-When enabled in global config, the server automatically spawns `aigon feature-eval <id>` in a detached tmux session when all fleet agents on a feature reach `submitted` status.
+When enabled in global config, the AIGON server automatically spawns `aigon feature-eval <id>` in a detached tmux session when all fleet agents on a feature reach `submitted` status.

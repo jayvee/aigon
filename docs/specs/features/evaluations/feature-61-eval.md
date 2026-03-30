@@ -65,7 +65,7 @@ Spec compliance breakdown:
 
 ### Strengths
 
-1. **Pragmatic single-process decision** — The spec envisioned separate service + dashboard processes, but the implementation correctly identified this as unnecessary complexity. The registry format preserves the nested structure for future flexibility while using a single process today.
+1. **Pragmatic single-process decision** — The spec envisioned separate services, but the implementation correctly identified this as unnecessary complexity. The registry format preserves the nested structure for future flexibility while using a single AIGON server process today.
 
 2. **`__filename` bug fix** — Caught a real latent bug where spawning the daemon from `shared.js` would crash. This would have affected all future radar startup paths.
 

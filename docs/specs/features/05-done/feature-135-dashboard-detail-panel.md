@@ -67,7 +67,7 @@ node -c lib/dashboard-server.js
 
 ## Dependencies
 - Existing spec drawer (`templates/dashboard/js/spec-drawer.js`)
-- Existing dashboard server (`lib/dashboard-server.js`)
+- Existing AIGON server (`lib/dashboard-server.js`)
 - Manifest module (`lib/manifest.js`)
 - `marked.js` already loaded for markdown rendering
 
@@ -83,5 +83,5 @@ node -c lib/dashboard-server.js
 
 ## Related
 - Coordinator manifests: `lib/manifest.js`
-- Dashboard server status collection: `lib/dashboard-server.js` lines 629-760
+- AIGON server status collection: `lib/dashboard-server.js` lines 629-760
 - Spec drawer: `templates/dashboard/js/spec-drawer.js`

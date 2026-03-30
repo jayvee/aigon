@@ -165,7 +165,7 @@ function assertFrontmatterField(cwd, file, key, value) { ... }
 
 ## Out of Scope
 
-- Testing the Radar daemon or dashboard HTML (complex subprocess lifecycle)
+- Testing the AIGON server or dashboard HTML (complex subprocess lifecycle)
 - Testing `dev-server start` (requires a real port and process)
 - Testing autonomous loop (`feature-do --autonomous`) end-to-end — that spawns an agent CLI; a dry-run smoke test is sufficient
 - Performance benchmarks

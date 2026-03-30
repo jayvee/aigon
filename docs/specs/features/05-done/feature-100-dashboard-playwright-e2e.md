@@ -1,7 +1,7 @@
 # Feature: dashboard-playwright-e2e
 
 ## Summary
-Add Playwright e2e tests that drive the dashboard through complete feature lifecycles using mock agents. Unlike the existing static dashboard tests (which mock API responses and verify rendering), these tests run a **real dashboard server** backed by a seed repo with real specs, and use `MockAgent` to simulate agent work with realistic timing. This catches the integration bugs and state desync issues that have made the dashboard flaky.
+Add Playwright e2e tests that drive the dashboard through complete feature lifecycles using mock agents. Unlike the existing static dashboard tests (which mock API responses and verify rendering), these tests run a **real AIGON server** backed by a seed repo with real specs, and use `MockAgent` to simulate agent work with realistic timing. This catches the integration bugs and state desync issues that have made the dashboard flaky.
 
 ## User Stories
 - [ ] As a developer, I can run `npm run test:dashboard:e2e` and verify the full solo worktree lifecycle works through the dashboard UI (~60s)
@@ -11,7 +11,7 @@ Add Playwright e2e tests that drive the dashboard through complete feature lifec
 ## Acceptance Criteria
 
 ### Test Infrastructure
-- [ ] New Playwright config: `tests/dashboard-e2e/playwright.config.js` — starts a real dashboard server on a test port (e.g., 4119) backed by a temp fixture repo
+- [ ] New Playwright config: `tests/dashboard-e2e/playwright.config.js` — starts a real AIGON server on a test port (e.g., 4119) backed by a temp fixture repo
 - [ ] Server setup: starts `aigon dashboard` pointed at the fixture repo (not a static server — real `lib/dashboard-server.js`)
 - [ ] Fixture setup: copies a seed repo to temp dir, initializes with `aigon init`, pre-seeds a feature in inbox
 - [ ] `MockAgent` integration: imports from `test/mock-agent.js` to simulate agent work in worktrees
@@ -59,10 +59,10 @@ npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter
 
 ## Technical Approach
 
-### Real Dashboard Server (not static)
+### Real AIGON Server (not static)
 The existing tests in `tests/dashboard/` use a minimal static server that serves the HTML and mocks all API calls via `page.route()`. That's good for UI rendering tests but doesn't catch integration bugs.
 
-These new tests start a **real dashboard server** (`lib/dashboard-server.js`) pointed at a fixture repo. The dashboard reads real specs, worktrees, and log files — so state transitions are tested end-to-end.
+These new tests start a **real AIGON server** (`lib/dashboard-server.js`) pointed at a fixture repo. The dashboard reads real specs, worktrees, and log files — so state transitions are tested end-to-end.
 
 ```js
 // tests/dashboard-e2e/setup.js
@@ -94,7 +94,7 @@ tests/
     monitor.spec.js
     ...
   dashboard-e2e/                  # New lifecycle tests
-    playwright.config.js          # Real dashboard server, fixture setup
+    playwright.config.js          # Real AIGON server, fixture setup
     setup.js                      # Fixture + dashboard lifecycle helpers
     solo-lifecycle.spec.js        # Solo worktree happy path
     fleet-lifecycle.spec.js       # Fleet with eval happy path
@@ -110,7 +110,7 @@ tests/
 - `test/mock-agent.js` — MockAgent class (from feature 98)
 - `tests/dashboard/` — existing Playwright setup (patterns to follow)
 - `@playwright/test` — already in devDependencies
-- Real dashboard server (`lib/dashboard-server.js`)
+- Real AIGON server (`lib/dashboard-server.js`)
 - Fixture repos from `test/setup-fixture.js`
 
 ## Out of Scope

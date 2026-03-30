@@ -116,7 +116,7 @@ For GG, the `AfterAgent` hook with `decision: "deny"` + feedback text is the str
 
 **Layer 3: Polling supervisor (catches remaining 5%)**
 
-The dashboard server already polls agent status every 10 seconds and checks tmux session liveness. Adding a "stale implementing" detector:
+The AIGON server already polls agent status every 10 seconds and checks tmux session liveness. Adding a "stale implementing" detector:
 - If tmux session is gone AND agent status is still "implementing" AND last status update was >5 minutes ago → auto-transition to "error" or "needs-attention" state.
 
 This is a safety net for all failure modes including machine crash.

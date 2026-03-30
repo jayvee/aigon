@@ -46,7 +46,7 @@ Extend the existing dev-proxy infrastructure (feature 12) so that Radar instance
 
 ## Decisions
 
-### Single process per instance (not separate service + dashboard)
+### Single process per instance (not separate runtime and UI processes)
 The current Radar architecture is a single Node process serving both the API and dashboard HTML on one port. The spec described separate service and dashboard ports, but that would require splitting the daemon into two processes — unnecessary complexity since they're the same server. Instead, each entry in the registry stores matching `service.port` and `dashboard.port` values (same port, same PID) which keeps the registry format compatible with the spec while using one process.
 
 ### Fixed `__filename` spawn bug

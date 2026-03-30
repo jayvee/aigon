@@ -4,7 +4,7 @@
 Split `lib/utils.js` (6,500 lines, 198 functions, 217 exports) into focused domain modules. Each module owns its functions, constants, and state — making changes local, tests targeted, and dependencies explicit. This is the foundational refactor that enables all future simplification.
 
 ## User Stories
-- [ ] As a developer, I want to change proxy logic without scrolling past 1,200 lines of dashboard server code
+- [ ] As a developer, I want to change proxy logic without scrolling past 1,200 lines of AIGON server code
 - [ ] As a developer, I want each module to have clear boundaries so I know where to add new functionality
 - [ ] As a contributor, I want architecture docs that match the actual module structure
 

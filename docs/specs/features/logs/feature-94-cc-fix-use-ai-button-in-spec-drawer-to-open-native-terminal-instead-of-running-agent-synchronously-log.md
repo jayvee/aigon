@@ -34,6 +34,6 @@ Implemented the "Use AI" button in the spec drawer to open a native terminal ses
 ## Testing
 
 - User tested via the worktree dashboard at `http://cc-94.aigon.localhost` (port 4175)
-- Initial `/api/spec` error ("No route found") was a stale dashboard process on the main repo — resolved by restarting
+- Initial `/api/spec` error ("No route found") was a stale AIGON server process on the main repo — resolved by restarting
 - Proxy memory was outdated (referenced Caddy/dnsmasq) — corrected: proxy is a Node.js daemon using RFC 6761 `.localhost` domains; no DNS config needed
 - Worktree dashboard must be started to register itself in `~/.aigon/dev-proxy/servers.json` before the proxy URL works

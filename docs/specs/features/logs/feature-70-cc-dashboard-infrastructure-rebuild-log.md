@@ -13,7 +13,7 @@ Agent: cc
 
 ## Plan
 
-Replace the radar daemon+proxy+relay stack with a simple foreground HTTP server. The plan followed 6 ordered steps (each leaving the system runnable):
+Replace the AIGON server+proxy+relay stack with a simple foreground HTTP server. The plan followed 6 ordered steps (each leaving the system runnable):
 
 1. Rename radar→dashboard constants and functions in `lib/utils.js`
 2. Add port-per-instance (deterministic hash 4101–4199) and discovery files (`~/.aigon/instances/`)

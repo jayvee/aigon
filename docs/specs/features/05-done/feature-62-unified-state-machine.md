@@ -390,7 +390,7 @@ Each phase is independently shippable and testable.
 
 ## Dependencies
 
-- Feature 45: Radar service (provides `/api/status` response structure)
+- Feature 45: AIGON server (provides `/api/status` response structure)
 - Feature 55: Interactive API (provides `POST /api/action` — will be refactored to validate via state machine)
 - Feature 57: Dashboard Pipeline view (consumes stage/action data — will read from `validActions`)
 
