@@ -22,7 +22,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const agentStatus = require('../lib/agent-status');
+const agentStatus = require('../../lib/agent-status');
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));

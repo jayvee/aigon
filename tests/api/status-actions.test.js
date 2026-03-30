@@ -99,6 +99,7 @@ function writeSpec(repoPath, featureId, name) {
 let server = null;
 let repoPath = null;
 let origGlobalConfig = null;
+let globalConfigExisted = false;
 
 async function setup() {
     repoPath = makeTempRepo();
@@ -123,6 +124,7 @@ async function setup() {
 
     // Temporarily override global config to point at our temp repo
     origGlobalConfig = null;
+    globalConfigExisted = fs.existsSync(GLOBAL_CONFIG_PATH);
     try { origGlobalConfig = fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf8'); } catch (_) {}
     fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
     fs.writeFileSync(GLOBAL_CONFIG_PATH, JSON.stringify({ repos: [repoPath] }));
@@ -142,6 +144,8 @@ async function teardown() {
     // Restore global config
     if (origGlobalConfig !== null) {
         fs.writeFileSync(GLOBAL_CONFIG_PATH, origGlobalConfig);
+    } else if (!globalConfigExisted && fs.existsSync(GLOBAL_CONFIG_PATH)) {
+        fs.rmSync(GLOBAL_CONFIG_PATH, { force: true });
     }
     if (repoPath) {
         fs.rmSync(repoPath, { recursive: true, force: true });
