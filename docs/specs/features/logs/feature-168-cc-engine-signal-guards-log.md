@@ -25,3 +25,18 @@ Both checks happen inside the file lock (TOCTOU prevention).
 - **Heartbeat signals are not deduped** — they have no target status, so they pass through (unless in a terminal state). This is correct: heartbeats are idempotent updates to `lastHeartbeatAt`.
 - **`agent-started` and `agent-waiting` are not deduped** — these don't have a fixed target status (started preserves ready status, waiting is transient). Only signals with a clear "already in target state" pattern are deduped.
 - **Return existing snapshot on skip** — when a signal is discarded, the current snapshot is returned (same API shape as a successful append).
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-30
+
+### Findings
+- No issues found.
+
+### Fixes Applied
+- None needed.
+
+### Notes
+- Reviewed the `emitSignal()` lock-and-check path in [lib/workflow-core/engine.js](/Users/jviner/src/aigon-worktrees/feature-168-cc-engine-signal-guards/lib/workflow-core/engine.js) and the new coverage in [lib/workflow-core/workflow-core.test.js](/Users/jviner/src/aigon-worktrees/feature-168-cc-engine-signal-guards/lib/workflow-core/workflow-core.test.js).
+- Verified with `node lib/workflow-core/workflow-core.test.js` in the feature worktree: 50 passed, 0 failed.
