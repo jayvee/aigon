@@ -90,7 +90,7 @@ Supporting state:
 
 The dashboard UI uses `lib/state-queries.js` for fallback action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths, and `lib/dashboard-status-collector.js` to keep repo/entity status assembly out of the HTTP server module.
 
-Research and feedback entities use simpler filesystem-based transitions (spec folder moves) without the workflow engine.
+Research lifecycle is also managed by the workflow-core engine (`.aigon/workflows/research/{id}/`). Feedback entities still use simpler filesystem-based transitions (spec folder moves) without the workflow engine.
 
 ## Install Architecture
 `aigon install-agent` writes **only aigon-owned files** — it never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).
