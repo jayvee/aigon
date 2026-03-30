@@ -1,3 +1,26 @@
+---
+commit_count: 3
+lines_added: 32
+lines_removed: 35
+lines_changed: 67
+files_touched: 3
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 165
+output_tokens: 13156
+cache_creation_input_tokens: 341108
+cache_read_input_tokens: 8453140
+thinking_tokens: 0
+total_tokens: 8807569
+billable_tokens: 13321
+cost_usd: 20.0647
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 198.82
+---
 # Implementation Log: Feature 176 - remove-redundant-spec-move-commits
 Agent: cc
 
