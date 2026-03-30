@@ -30,7 +30,7 @@ function test(description, fn) {
 // --- Module exports ---
 console.log('# security.js — exports');
 
-const security = require('./security');
+const security = require('../../lib/security');
 
 test('exports runSecurityScan function', () => {
     assert.strictEqual(typeof security.runSecurityScan, 'function');
@@ -128,7 +128,7 @@ test('createScanSnapshot uses HEAD for committed files and index for staged file
 // --- Config schema ---
 console.log('\n# config.js — security config schema');
 
-const config = require('./config');
+const config = require('../../lib/config');
 
 test('DEFAULT_SECURITY_CONFIG has mergeGateStages', () => {
     const sec = config.DEFAULT_SECURITY_CONFIG;
@@ -164,7 +164,7 @@ test('mergeSecurityConfig deep-merges mergeGateStages', () => {
     // new stage preserved
     assert.deepStrictEqual(result.mergeGateStages.newStage, ['scanner-x']);
     // defaults preserved for unmentioned stages
-    assert.deepStrictEqual(result.mergeGateStages.featureSubmit, ['gitleaks', 'semgrep']);
+    assert.deepStrictEqual(result.mergeGateStages.featureSubmit, ['gitleaks']);
 });
 
 test('mergeSecurityConfig deep-merges scannerDefs', () => {
@@ -220,7 +220,7 @@ console.log('\n# cc.json — supported hook configuration');
 
 test('cc.json template does not include unsupported PostCommit hook', () => {
     const ccTemplate = JSON.parse(fs.readFileSync(
-        path.join(__dirname, '..', 'templates', 'agents', 'cc.json'), 'utf8'
+        path.join(__dirname, '../..', 'templates', 'agents', 'cc.json'), 'utf8'
     ));
     const hooks = ccTemplate.extras.settings.hooks;
     assert.ok(!hooks.PostCommit, 'cc.json should not include unsupported PostCommit hook');
@@ -228,7 +228,7 @@ test('cc.json template does not include unsupported PostCommit hook', () => {
 
 test('cc.json template still includes supported session hooks', () => {
     const ccTemplate = JSON.parse(fs.readFileSync(
-        path.join(__dirname, '..', 'templates', 'agents', 'cc.json'), 'utf8'
+        path.join(__dirname, '../..', 'templates', 'agents', 'cc.json'), 'utf8'
     ));
     const hooks = ccTemplate.extras.settings.hooks;
     assert.ok(Array.isArray(hooks.SessionStart), 'SessionStart hook missing from cc.json');
@@ -239,7 +239,7 @@ test('cc.json template still includes supported session hooks', () => {
 console.log('\n# misc.js — security-scan-commit command');
 
 test('security-scan-commit command is registered in misc commands', () => {
-    const { createMiscCommands } = require('./commands/misc');
+    const { createMiscCommands } = require('../../lib/commands/misc');
     const cmds = createMiscCommands();
     assert.ok(typeof cmds['security-scan-commit'] === 'function',
         'security-scan-commit should be a registered command');
@@ -366,10 +366,12 @@ test('DEFAULT_SECURITY_CONFIG includes semgrep in featureClose stage', () => {
         'featureClose should include semgrep');
 });
 
-test('DEFAULT_SECURITY_CONFIG includes semgrep in featureSubmit stage', () => {
+test('DEFAULT_SECURITY_CONFIG includes gitleaks (not semgrep) in featureSubmit stage', () => {
     const sec = config.DEFAULT_SECURITY_CONFIG;
-    assert.ok(sec.mergeGateStages.featureSubmit.includes('semgrep'),
-        'featureSubmit should include semgrep');
+    assert.ok(sec.mergeGateStages.featureSubmit.includes('gitleaks'),
+        'featureSubmit should include gitleaks');
+    assert.ok(!sec.mergeGateStages.featureSubmit.includes('semgrep'),
+        'featureSubmit should not include semgrep (only featureClose does)');
 });
 
 test('DEFAULT_SECURITY_CONFIG does not include semgrep in researchClose', () => {

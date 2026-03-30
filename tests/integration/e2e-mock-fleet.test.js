@@ -5,8 +5,8 @@
  * Exercises: feature-create → prioritise → setup (cc + gg) →
  *            parallel mock-do → eval → close (winner: cc) → cleanup
  *
- * Run: node test/e2e-mock-fleet.test.js
- * Or:  npm run test:e2e:mock-fleet
+ * Run: node tests/integration/e2e-mock-fleet.test.js
+ * Or:  npm run test:integration:mock-fleet
  *
  * Separate from main e2e suite due to timing (~35s dominated by mock agent pauses).
  *
@@ -26,7 +26,7 @@ const os = require('os');
 const { spawnSync } = require('child_process');
 const { MockAgent } = require('./mock-agent');
 
-const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
+const CLI_PATH = path.join(__dirname, '../..', 'aigon-cli.js');
 const FIXTURES_DIR = path.join(os.homedir(), 'src');
 const MOCK_BIN_DIR = path.join(__dirname, 'mock-bin');
 

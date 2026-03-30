@@ -9,7 +9,7 @@ const { execSync } = require('child_process');
 const {
     classifyCommitAttributionRange,
     getFileLineAttribution,
-} = require('./git');
+} = require('../../lib/git');
 
 let passed = 0;
 let failed = 0;

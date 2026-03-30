@@ -16,7 +16,7 @@ const {
     resolveDepRef,
     detectCycle,
     rewriteDependsOn,
-} = require('./entity');
+} = require('../../lib/entity');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,7 +57,7 @@ const PATHS_CONFIG = (root) => ({
 });
 
 // Minimal utils mock for buildDependencyGraph and rewriteDependsOn
-const { parseFrontMatter, modifySpecFile } = require('./utils');
+const { parseFrontMatter, modifySpecFile } = require('../../lib/utils');
 const mockUtils = { parseFrontMatter, modifySpecFile };
 
 // ---------------------------------------------------------------------------

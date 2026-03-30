@@ -4,8 +4,8 @@
  *
  * Exercises: feature-create → prioritise → setup (cc) → mock-do → close
  *
- * Run: node test/e2e-mock-solo.test.js
- * Or:  npm run test:e2e:mock-solo
+ * Run: node tests/integration/e2e-mock-solo.test.js
+ * Or:  npm run test:integration:mock-solo
  *
  * Separate from main e2e suite due to timing (~30s dominated by mock agent pauses).
  */
@@ -18,7 +18,7 @@ const os = require('os');
 const { spawnSync } = require('child_process');
 const { MockAgent } = require('./mock-agent');
 
-const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
+const CLI_PATH = path.join(__dirname, '../..', 'aigon-cli.js');
 const FIXTURES_DIR = path.join(os.homedir(), 'src');
 const MOCK_BIN_DIR = path.join(__dirname, 'mock-bin');
 

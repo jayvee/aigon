@@ -7,7 +7,7 @@
  */
 
 const assert = require('assert');
-const templates = require('./templates');
+const templates = require('../../lib/templates');
 
 let passed = 0;
 let failed = 0;

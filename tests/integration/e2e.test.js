@@ -2,11 +2,11 @@
 /**
  * End-to-end tests for the Aigon CLI.
  *
- * Runs with: node test/e2e.test.js
- * Or:        npm run test:e2e
+ * Runs with: node tests/integration/e2e.test.js
+ * Or:        npm run test:integration
  *
- * Filter groups:    npm run test:e2e -- --grep feedback
- * Reset fixtures:   rm -rf test/fixtures && node test/setup-fixture.js
+ * Filter groups:    npm run test:integration -- --grep feedback
+ * Reset fixtures:   npm run fixture:reset && npm run fixture:seed
  *
  * Each top-level group gets a fresh copy of the fixture repo in a temp dir.
  * Tests make real commits, create real branches, and change real files.
@@ -20,7 +20,7 @@ const path = require('path');
 const os = require('os');
 const { spawnSync, execFileSync } = require('child_process');
 
-const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
+const CLI_PATH = path.join(__dirname, '../..', 'aigon-cli.js');
 const FIXTURES_DIR = path.join(os.homedir(), 'src');
 const MOCK_BIN_DIR = path.join(__dirname, 'mock-bin');
 

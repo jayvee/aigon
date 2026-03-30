@@ -7,7 +7,7 @@
  */
 
 const assert = require('assert');
-const config = require('./config');
+const config = require('../../lib/config');
 
 let passed = 0;
 let failed = 0;
