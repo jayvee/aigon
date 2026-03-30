@@ -19,6 +19,23 @@ If no ID is provided, or the ID doesn't match an existing topic in progress:
 
 This command is the research equivalent of `feature-do`: it is the main work step after `research-start`.
 
+## Step 0: Verify your workspace (MANDATORY)
+
+Before doing ANYTHING else, verify your environment:
+
+```bash
+pwd
+git branch --show-current
+```
+
+**Research agents work in the main repository on the current branch.** This is normal — research does not require branch isolation because you are only writing findings files, not modifying code.
+
+**CRITICAL RULES for research:**
+- You MUST NOT modify any source code files (`.js`, `.ts`, `.py`, `.json`, etc.)
+- You MUST NOT modify other agents' findings files
+- You MUST ONLY write to YOUR findings file: `docs/specs/research-topics/logs/research-{ID}-cc-findings.md`
+- You MUST NOT run `git checkout`, `git branch`, or create new branches — stay where you are
+
 ## Required Lifecycle Step
 
 Before starting active research, run:
@@ -73,18 +90,25 @@ For complex research topics with multiple questions, consider creating an agent 
 
 **If findings file exists (worktree/Fleet mode):**
 
-1. **Commit your findings file:**
+1. **Verify you only modified your findings file:**
    ```bash
-   git add docs/specs/research-topics/logs/
+   git diff --name-only
+   git diff --cached --name-only
+   ```
+   The ONLY file that should appear is `docs/specs/research-topics/logs/research-{ID}-cc-findings.md`. If you see any other files, run `git checkout -- <file>` to discard those changes before committing.
+
+2. **Commit your findings file (and ONLY your findings file):**
+   ```bash
+   git add docs/specs/research-topics/logs/research-*-cc-findings.md
    git commit -m "docs: research findings for cc"
    ```
 
-2. **Signal completion** so the dashboard knows you're done:
+3. **Signal completion** so the dashboard knows you're done:
    ```bash
    aigon agent-status submitted
    ```
 
-3. **STAY in the session.** The user may want to review your findings and ask follow-up questions. Do NOT run `aigon research-close` — the user will decide whether to evaluate or close next, just like feature work.
+4. **STAY in the session.** The user may want to review your findings and ask follow-up questions. Do NOT run `aigon research-close` — the user will decide whether to evaluate or close next, just like feature work.
 
 **If Drive mode (no findings file):**
 - Run `aigon research-close {{args}}` when the research pass is complete and ready to close

@@ -49,9 +49,9 @@ docs/specs/
 | `aigon feature-create <name>` | Create a new feature spec |
 | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
 | `aigon feature-start <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
-| `aigon feature-do <ID> [--ralph]` | Implement feature; `--ralph` runs autonomous retry loop ([Ralph technique](https://ghuntley.com/ralph/)) |
+| `aigon feature-implement <ID> [--ralph]` | Implement feature; `--ralph` runs autonomous retry loop ([Ralph technique](https://ghuntley.com/ralph/)) |
 | `aigon feature-eval <ID>` | Create evaluation (code review for solo, comparison for arena) |
-| `aigon feature-close <ID> [agent]` | Merge and complete (specify agent in arena mode) |
+| `aigon feature-done <ID> [agent]` | Merge and complete (specify agent in arena mode) |
 | `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
 ## Key Rules
@@ -59,7 +59,7 @@ docs/specs/
 1. **Spec-Driven**: Never write code without resolving the active feature spec via `aigon feature-spec <ID>`
 2. **Work in isolation**: Solo mode uses branches, arena mode uses worktrees
 3. **Implementation Logs**: Document implementation decisions in `logs/` before completing
-4. **Feature lifecycle is engine-backed**: feature commands update workflow-core state, which then moves the visible spec as a side effect
+4. **Feature lifecycle is engine-backed**: workflow-core is the authority for features, and visible spec folders are a projection of that state
 
 ## Feature State Model
 
@@ -67,39 +67,37 @@ For features, there are two relevant layers:
 
 - The authoritative lifecycle state lives in `.aigon/workflows/features/{id}/` and is managed by `lib/workflow-core/`.
 - The visible stage is still the spec folder under `docs/specs/features/`, but that folder is a projection of workflow state, not the authority.
-- Active feature discovery should use `aigon feature-list --active` or workflow snapshot reads, not folder probes.
-
-Use the CLI to transition features. Do not manually move feature specs between folders.
+- Active feature discovery should use `{{CMD_PREFIX}}feature-list --active` or workflow snapshot reads, not folder probes.
 
 ## Solo Mode Workflow
 
 1. Run `aigon feature-start <ID>` to create branch and move spec to in-progress
-2. Run `aigon feature-do <ID>` to begin implementation (add `--ralph` for autonomous retry loop)
+2. Run `aigon feature-implement <ID>` to begin implementation (add `--ralph` for autonomous retry loop)
 3. Read the spec path returned by `aigon feature-spec <ID>`
 4. Implement the feature according to the spec
 5. Test your changes and wait for user confirmation
 6. Commit using conventional commits (`feat:`, `fix:`, `chore:`)
 7. Update the implementation log in `./docs/specs/features/logs/`
-8. **STOP** - Wait for user to approve before running `aigon feature-close <ID>`
+8. **STOP** - Wait for user to approve before running `aigon feature-done <ID>`
 
 ## Arena Mode Workflow
 
 1. Run `aigon feature-start <ID> cc gg cx cu` to create worktrees for each agent
 2. **STOP** - Tell the user to open each worktree in a separate session
 3. In each worktree session:
-   - Run `aigon feature-do <ID>`
+   - Run `aigon feature-implement <ID>`
    - Read the spec path returned by `aigon feature-spec <ID>`
    - Implement the feature
    - Commit your changes
    - Update the implementation log
-   - **STOP** - Do NOT run `feature-close` from worktree
+   - **STOP** - Do NOT run `feature-done` from worktree
 4. Return to main repo for evaluation: `aigon feature-eval <ID>`
-5. Merge winner: `aigon feature-close <ID> cc`
+5. Merge winner: `aigon feature-done <ID> cc`
 6. Clean up losers: `aigon feature-cleanup <ID> --push` (to save branches) or `aigon feature-cleanup <ID>` (to delete)
 
 ## Before Completing a Feature
 
-Before running `feature-close`, always:
+Before running `feature-done`, always:
 
 1. **Push the branch to origin** to save your work remotely:
    ```bash

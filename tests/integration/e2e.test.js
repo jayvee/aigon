@@ -125,6 +125,15 @@ function runGit(args, cwd) {
     return result.stdout ? result.stdout.trim() : '';
 }
 
+function runGitWithStderr(args, cwd) {
+    const result = spawnSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' });
+    return {
+        stdout: result.stdout ? result.stdout.trim() : '',
+        stderr: result.stderr ? result.stderr.trim() : '',
+        exitCode: result.status,
+    };
+}
+
 // ─── assertion helpers ────────────────────────────────────────────────────────
 
 function assertExitCode(result, expected, context = '') {
@@ -420,6 +429,36 @@ group('feature lifecycle', () => {
         });
     });
 
+    test('feature-close does not absorb unrelated paused feature moves into its final commit', () => {
+        withFixture('brewboard', (cwd, home) => {
+            let r = runAigon(['feature-start', '1'], { cwd, home });
+            assertExitCode(r, 0);
+            r = runAigon(['feature-start', '2'], { cwd, home });
+            assertExitCode(r, 0);
+
+            r = runAigon(['feature-pause', '2'], { cwd, home });
+            assertExitCode(r, 0);
+            assertDirContainsFile(cwd, 'docs/specs/features/06-paused', f => f.includes('brewery-import'));
+
+            spawnSync('git', ['checkout', 'feature-01-dark-mode'], { cwd });
+            fs.writeFileSync(path.join(cwd, 'src', 'app', 'dark-mode.tsx'), '// dark mode\n');
+            spawnSync('git', ['add', '-A'], { cwd });
+            spawnSync('git', ['commit', '-m', 'feat: implement dark mode'], { cwd });
+            spawnSync('git', ['checkout', 'main'], { cwd });
+
+            r = runAigon(['feature-close', '1'], { cwd, home });
+            if (r.exitCode !== 0 && !r.stderr.includes('push') && !r.stdout.includes('push')) {
+                throw new Error(`feature-close failed: ${r.stderr.slice(0, 300)}\nstdout: ${r.stdout.slice(0, 300)}`);
+            }
+
+            const show = runGitWithStderr(['show', '--name-only', '--format=', 'HEAD'], cwd);
+            const changedFiles = `${show.stdout}\n${show.stderr}`;
+            if (changedFiles.includes('feature-02-brewery-import')) {
+                throw new Error(`feature-close commit should not include paused feature 02, got:\n${changedFiles}`);
+            }
+        });
+    });
+
     test('feature-cleanup removes worktrees and branches', () => {
         withFixture('brewboard', (cwd, home) => {
             // Set up a drive branch first (cleanup works on branches too)
@@ -500,6 +539,23 @@ group('research lifecycle', () => {
             const r = runAigon(['research-close', '2', '--complete'], { cwd, home });
             assertExitCode(r, 0);
             assertDirContainsFile(cwd, 'docs/specs/research-topics/04-done', f => f.includes('offline-sync') || f.includes('research'));
+        });
+    });
+
+    test('research-close does not absorb an unrelated research-start move into its final commit', () => {
+        withFixture('brewboard', (cwd, home) => {
+            let r = runAigon(['research-start', '1'], { cwd, home });
+            assertExitCode(r, 0);
+            assertDirContainsFile(cwd, 'docs/specs/research-topics/03-in-progress', f => f.includes('beer-filtering-ux'));
+
+            r = runAigon(['research-close', '2'], { cwd, home });
+            assertExitCode(r, 0);
+
+            const show = runGitWithStderr(['show', '--name-only', '--format=', 'HEAD'], cwd);
+            const changedFiles = `${show.stdout}\n${show.stderr}`;
+            if (changedFiles.includes('research-01-beer-filtering-ux')) {
+                throw new Error(`research-close commit should not include started research 01, got:\n${changedFiles}`);
+            }
         });
     });
 });

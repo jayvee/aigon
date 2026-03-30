@@ -517,7 +517,32 @@
       "Edit(/Users/jviner/src/aigon-worktrees/feature-155-cx-pipeline-card-layout-redesign/**)",
       "Write(/Users/jviner/src/aigon-worktrees/feature-155-cx-pipeline-card-layout-redesign/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-155-cx-pipeline-card-layout-redesign:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-155-cx-pipeline-card-layout-redesign:*)"
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-155-cx-pipeline-card-layout-redesign:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-174-cx-workflow-read-path-simplification/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-174-cx-workflow-read-path-simplification/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-174-cx-workflow-read-path-simplification/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-174-cx-workflow-read-path-simplification:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-174-cx-workflow-read-path-simplification:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-175-cx-research-workflow-engine-migration/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-175-cx-research-workflow-engine-migration/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-175-cx-research-workflow-engine-migration/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-175-cx-research-workflow-engine-migration:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-175-cx-research-workflow-engine-migration:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-173-cc-rationalise-test-suites/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-173-cc-rationalise-test-suites/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-173-cc-rationalise-test-suites/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-173-cc-rationalise-test-suites:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-173-cc-rationalise-test-suites:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-177-cx-rebuild-server-launch-and-proxy/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-177-cx-rebuild-server-launch-and-proxy/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-177-cx-rebuild-server-launch-and-proxy/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-177-cx-rebuild-server-launch-and-proxy:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-177-cx-rebuild-server-launch-and-proxy:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-176-cc-remove-redundant-spec-move-commits/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-176-cc-remove-redundant-spec-move-commits/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-176-cc-remove-redundant-spec-move-commits/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-176-cc-remove-redundant-spec-move-commits:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-176-cc-remove-redundant-spec-move-commits:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
@@ -558,6 +583,18 @@
             "type": "command",
             "command": "/Users/jviner/.local/state/fnm_multishells/7365_1774154010918/bin/aigon capture-session-telemetry",
             "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jviner/.local/state/fnm_multishells/39746_1774779694101/bin/aigon check-agent-submitted",
+            "timeout": 5
           }
         ]
       }
