@@ -97,7 +97,9 @@ tail -50 ~/.aigon/dashboard.log
 | `lib/worktree.js` | Worktree management, tmux sessions, terminal launching |
 | `lib/dashboard.js` | Thin re-exporter for backward compatibility |
 | `templates/dashboard/index.html` | Entire SPA — HTML, CSS, and JS in one file |
-| `lib/state-machine.js` | Defines action modes (`terminal`, `fire-and-forget`, `agent`) that control dashboard behavior |
+| `lib/workflow-core/` | Workflow engine — sole authority for feature lifecycle state |
+| `lib/state-queries.js` | Pure action/transition derivation from engine state — controls dashboard behavior |
+| `lib/workflow-snapshot-adapter.js` | Maps engine snapshots to dashboard display formats |
 
 ### Key functions in `lib/dashboard-server.js`
 

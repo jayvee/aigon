@@ -52,8 +52,10 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/commands/setup.js` | 959 | init, install-agent, check-version, update, doctor |
 | `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
-| `lib/state-machine.js` | 602 | Spec state transitions (inbox → done) |
-| `lib/workflow-read-model.js` | 100 | Shared read-side workflow state/action derivation for dashboard and board |
+| `lib/workflow-core/` | ~2500 | **Workflow engine**: event-sourced state, XState machine, effects, locking — sole authority for feature lifecycle |
+| `lib/workflow-snapshot-adapter.js` | ~310 | Read adapter: maps engine snapshots to dashboard/board formats |
+| `lib/state-queries.js` | ~200 | Pure functions for action/transition derivation from engine state |
+| `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/feature-{id}-{agent}.json`) |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | 899 | Branch/worktree/status helpers, feature git signals, AI attribution classification |
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
