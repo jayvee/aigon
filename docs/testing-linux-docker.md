@@ -18,7 +18,7 @@ docker compose -f docker-compose.linux-test.yml up -d
 This creates an Ubuntu 24.04 container with Node 22, Git, tmux, and a non-root `dev` user (password: `dev`).
 
 **Exposed ports:**
-- 4100-4210: dashboard + dev servers
+- 4100-4210: aigon server + dev servers
 - 3000-3010: default dev server ports
 
 ## Shell into the container

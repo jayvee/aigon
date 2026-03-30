@@ -3,7 +3,7 @@
 > **Do this first, before writing any code:**
 > ```bash
 > aigon server start  # start the worktree's AIGON server instance
-> aigon radar open    # opens http://localhost:420x in your browser
+> aigon server open    # opens http://localhost:420x in your browser
 > ```
 > Keep that tab open. **Reload it after every change.** The template is read fresh on every request — no restart needed.
 
@@ -36,7 +36,7 @@ Use the URL printed — not the main app's port 4100.
 ### 2. Open the dashboard
 
 ```bash
-aigon radar open
+aigon server open
 ```
 
 This opens the dashboard URL in your browser. If the proxy is configured, you'll get a subdomain URL like `http://cc-66.aigon.test`.
@@ -58,7 +58,7 @@ This stops the worktree's instance without affecting the main AIGON server insta
 | Context | Port | URL |
 |---------|------|-----|
 | Main repo | 4100 (fixed) | `http://127.0.0.1:4100` or `http://aigon.test` |
-| Worktree | 4201+ (dynamic) | printed on `aigon radar start` |
+| Worktree | 4201+ (dynamic) | printed on `aigon server start` |
 
 ## Checking What's Running
 
