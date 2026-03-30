@@ -3,7 +3,7 @@
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
-- **Shared logic**: `lib/*.js` — 14 modules; see Module Map below
+- **Shared logic**: `lib/*.js` — 12 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **Dashboard**: foreground server — `node aigon-cli.js dashboard`; restart after any `lib/*.js` edit
@@ -23,7 +23,6 @@ function buildCtx(overrides = {}) {
         board:      { ...board, ...overrides },    // lib/board.js
         feedback:   { ...feedbackLib, ...overrides },
         validation: { ...validation, ...overrides },
-        stateMachine,
     };
 }
 
@@ -53,18 +52,14 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/worktree.js` | 1200+ | Worktree creation, tmux sessions, terminal launch, shell trap signal wrapper |
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
 | `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
-| `lib/state-machine.js` | 764 | Spec state transitions, `requestTransition()` gatekeeper, outbox |
+| `lib/state-queries.js` | ~250 | Read-only UI helpers: stage definitions, transition/action tables, guard functions — pure, no I/O |
+| `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/{prefix}-{id}-{agent}.json`), atomic writes |
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
-| `lib/manifest.js` | 413 | **State source of truth**: per-feature JSON manifests, agent status, locking, lazy bootstrap |
 | `lib/git.js` | 700+ | Branch, worktree, status, commit helpers, commit analytics, git attribution |
 | `lib/telemetry.js` | 144 | Normalized session telemetry, cross-agent cost reporting |
 | `lib/security.js` | 131+ | Merge gate scanning (gitleaks + semgrep), severity thresholds, diff-aware |
-| `lib/workflow-core/` | ~1500 | **Aigon Next engine import**: event-sourced workflow with XState machine, action derivation, effect lifecycle |
-| `lib/workflow-close.js` | ~280 | **Bridge**: routes `feature-close` through workflow-core engine behind `workflow.closeEngine` flag |
-| `lib/workflow-start.js` | ~290 | **Bridge**: routes `feature-start` through workflow-core engine behind `workflow.startEngine` flag |
-| `lib/workflow-eval.js` | ~300 | **Bridge**: routes `feature-eval` through workflow-core engine behind `workflow.evalEngine` flag |
-| `lib/workflow-pause.js` | ~300 | **Bridge**: routes `feature-pause` and `feature-resume` through workflow-core engine behind `workflow.pauseEngine` flag |
+| `lib/workflow-core/` | ~1500 | **Workflow engine**: event-sourced state with XState machine, action derivation, effect lifecycle |
 | `lib/workflow-snapshot-adapter.js` | ~310 | **Read adapter**: maps workflow-core snapshots to dashboard/board data formats; event log reading; side-effect free |
 | `lib/workflow-heartbeat.js` | ~125 | **Heartbeat**: agent liveness signals, configurable timeout (120s default), expired heartbeat sweep |
 | `lib/shell-trap.test.js` | ~190 | Tests for shell trap signal infrastructure |
@@ -72,32 +67,23 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/devserver.js`.
 
 ## State Architecture
-Feature/research state lives in **two layers** (current system):
-1. **Folders** (`docs/specs/features/0N-*/`) — shared ground truth, committed to git
-2. **Manifests** (`.aigon/state/feature-{id}.json`) — local reliability layer, gitignored, crash-safe
+Feature lifecycle state is managed by the **workflow-core engine** (`lib/workflow-core/`):
 
-- Agents write status to `.aigon/state/feature-{id}-{agent}.json` in main repo, not inside worktrees (legacy)
-- Agents also emit engine signals (`signal.agent_ready`, `signal.agent_failed`, etc.) when engine state exists — both paths coexist for backward compat
-- **Shell trap signals**: `buildAgentCommand()` wraps all agent commands with a bash `trap EXIT` handler that fires `agent-status submitted` (exit 0) or `agent-status error` (non-zero). A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. This is universal across all agents — controlled by `signals` block in `templates/agents/*.json`.
-- Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
-- All transitions go through `requestTransition()` — no bypassing the state machine
-- Run `aigon doctor --fix` to detect and repair desyncs
-
-### Workflow-Core (Aigon Next engine — partially active)
-A new event-sourced engine lives in `lib/workflow-core/`. The `feature-close` command is the first to use it (behind the `workflow.closeEngine` flag). It provides:
 - **Event log** (`.aigon/workflows/features/{id}/events.jsonl`) — append-only, immutable
 - **Snapshot** (`.aigon/workflows/features/{id}/snapshot.json`) — derived from events
 - **XState machine** — validates lifecycle transitions; `snapshot.can()` for action derivation
 - **Effect lifecycle** — durable, resumable side effects (requested → claimed → succeeded/failed)
 - **Exclusive file locking** — prevents concurrent modification
 
-The `feature-close` command is the first write-side migration (behind `workflow.closeEngine` flag). Enable via `.aigon/config.json` `{ "workflow": { "closeEngine": true } }` or `AIGON_WORKFLOW_CLOSE_ENGINE=1`. See `docs/architecture.md` § "Workflow-Close Bridge" for details.
+Supporting state:
+- **Folders** (`docs/specs/features/0N-*/`) — shared ground truth, committed to git
+- **Agent status files** (`.aigon/state/feature-{id}-{agent}.json`) — per-agent metadata, managed by `lib/agent-status.js`
+- **Shell trap signals**: `buildAgentCommand()` wraps all agent commands with a bash `trap EXIT` handler that fires `agent-status submitted` (exit 0) or `agent-status error` (non-zero). A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. Controlled by `signals` block in `templates/agents/*.json`.
+- Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 
-The `feature-start` command is the second migration (behind `workflow.startEngine` flag). Unlike close, no bootstrap-from-legacy is needed — start creates engine state from scratch. Enable via `.aigon/config.json` `{ "workflow": { "startEngine": true } }` or `AIGON_WORKFLOW_START_ENGINE=1`. The engine handles spec move and log creation as durable effects; a legacy manifest is still written for backward compatibility with agent status files.
+Dashboard UI queries use `lib/state-queries.js` for action/transition derivation (pure functions, no I/O) and `lib/workflow-snapshot-adapter.js` to read engine snapshots.
 
-The `feature-eval` command is the third migration (behind `workflow.evalEngine` flag). When a feature has engine state (from the migrated `feature-start`), eval transitions through `engine.requestFeatureEval()` with XState `allAgentsReady` guard enforcement. Legacy features without engine state continue through the old `requestTransition` path. Enable via `.aigon/config.json` `{ "workflow": { "evalEngine": true } }` or `AIGON_WORKFLOW_EVAL_ENGINE=1`. The bridge synthesizes `signal.agent_ready` events from legacy manifest status files to handle the transition period.
-
-The `feature-pause` and `feature-resume` commands are the fourth migration (behind `workflow.pauseEngine` flag). Enable via `.aigon/config.json` `{ "workflow": { "pauseEngine": true } }` or `AIGON_WORKFLOW_PAUSE_ENGINE=1`. When engine state exists for a feature, pause/resume route through the engine with durable spec-move effects. When no engine state exists, they fall back to the legacy state machine path.
+Research and feedback entities use simpler filesystem-based transitions (spec folder moves) without the workflow engine.
 
 ## Install Architecture
 `aigon install-agent` writes **only aigon-owned files** — it never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).
