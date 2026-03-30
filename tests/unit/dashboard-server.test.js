@@ -10,6 +10,11 @@ const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+
+// Never let this test touch the real ~/.aigon config.
+const TEST_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-dashboard-server-home-'));
+process.env.HOME = TEST_HOME;
+
 const dashboard = require('../../lib/dashboard-server');
 const engine = require('../../lib/workflow-core/engine');
 const { GLOBAL_CONFIG_DIR, GLOBAL_CONFIG_PATH } = require('../../lib/config');

@@ -15,6 +15,14 @@ const os = require('os');
 const { execFileSync } = require('child_process');
 const { spawnSync } = require('child_process');
 
+// Never let this test touch the real ~/.aigon config.
+const TEST_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-cli-unit-home-'));
+process.env.HOME = TEST_HOME;
+process.env.GIT_AUTHOR_NAME = process.env.GIT_AUTHOR_NAME || 'Aigon Test';
+process.env.GIT_AUTHOR_EMAIL = process.env.GIT_AUTHOR_EMAIL || 'test@aigon.test';
+process.env.GIT_COMMITTER_NAME = process.env.GIT_COMMITTER_NAME || process.env.GIT_AUTHOR_NAME;
+process.env.GIT_COMMITTER_EMAIL = process.env.GIT_COMMITTER_EMAIL || process.env.GIT_AUTHOR_EMAIL;
+
 const { COMMAND_ALIASES, PROVIDER_FAMILIES } = require('../../lib/constants');
 const { createFeatureCommands } = require('../../lib/commands/feature');
 const { createResearchCommands } = require('../../lib/commands/research');
