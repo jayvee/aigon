@@ -134,6 +134,14 @@
       }
     }
   },
+  "signals": {
+    "shellTrap": true,
+    "heartbeatSidecar": true,
+    "cliHooks": {
+      "heartbeatTouch": "AfterAgent",
+      "exitEnforcement": null
+    }
+  },
   "commands": [
     "feature-create",
     "feature-now",

@@ -50,7 +50,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/commands/infra.js` | 1858 | dashboard, board, config, proxy-setup, dev-server |
 | `lib/utils.js` | 1474 | Spec CRUD, hooks, version, analytics |
 | `lib/commands/setup.js` | 1212 | init, install-agent, check-version, update, doctor + state reconciliation |
-| `lib/worktree.js` | 1122 | Worktree creation, tmux sessions, terminal launch |
+| `lib/worktree.js` | 1200+ | Worktree creation, tmux sessions, terminal launch, shell trap signal wrapper |
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
 | `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
 | `lib/state-machine.js` | 764 | Spec state transitions, `requestTransition()` gatekeeper, outbox |
@@ -66,7 +66,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/workflow-eval.js` | ~300 | **Bridge**: routes `feature-eval` through workflow-core engine behind `workflow.evalEngine` flag |
 | `lib/workflow-pause.js` | ~300 | **Bridge**: routes `feature-pause` and `feature-resume` through workflow-core engine behind `workflow.pauseEngine` flag |
 | `lib/workflow-snapshot-adapter.js` | ~310 | **Read adapter**: maps workflow-core snapshots to dashboard/board data formats; event log reading; side-effect free |
-| `lib/workflow-heartbeat.js` | ~120 | **Heartbeat**: agent liveness signals, configurable timeout, expired heartbeat sweep |
+| `lib/workflow-heartbeat.js` | ~125 | **Heartbeat**: agent liveness signals, configurable timeout (120s default), expired heartbeat sweep |
+| `lib/shell-trap.test.js` | ~190 | Tests for shell trap signal infrastructure |
 
 Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/devserver.js`.
 
@@ -77,6 +78,7 @@ Feature/research state lives in **two layers** (current system):
 
 - Agents write status to `.aigon/state/feature-{id}-{agent}.json` in main repo, not inside worktrees (legacy)
 - Agents also emit engine signals (`signal.agent_ready`, `signal.agent_failed`, etc.) when engine state exists — both paths coexist for backward compat
+- **Shell trap signals**: `buildAgentCommand()` wraps all agent commands with a bash `trap EXIT` handler that fires `agent-status submitted` (exit 0) or `agent-status error` (non-zero). A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. This is universal across all agents — controlled by `signals` block in `templates/agents/*.json`.
 - Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 - All transitions go through `requestTransition()` — no bypassing the state machine
 - Run `aigon doctor --fix` to detect and repair desyncs

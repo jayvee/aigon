@@ -55,6 +55,11 @@
       "path": ".codex/config.toml"
     }
   },
+  "signals": {
+    "shellTrap": true,
+    "heartbeatSidecar": true,
+    "cliHooks": null
+  },
   "commands": [
     "feature-create",
     "feature-now",
