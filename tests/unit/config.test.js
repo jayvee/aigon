@@ -7,6 +7,13 @@
  */
 
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+
+const TEST_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-config-test-home-'));
+process.env.HOME = TEST_HOME;
+
 const config = require('../../lib/config');
 
 let passed = 0;
@@ -31,7 +38,8 @@ test('exports path constants', () => {
     const required = [
         'ROOT_DIR', 'CLI_ENTRY_PATH', 'TEMPLATES_ROOT', 'CLAUDE_SETTINGS_PATH',
         'HOOKS_FILE_PATH', 'PROJECT_CONFIG_PATH', 'GLOBAL_CONFIG_DIR',
-        'GLOBAL_CONFIG_PATH', 'SPECS_ROOT',
+        'GLOBAL_CONFIG_PATH', 'GLOBAL_CONFIG_BACKUP_DIR',
+        'GLOBAL_CONFIG_BACKUP_LATEST_PATH', 'SPECS_ROOT',
     ];
     for (const k of required) {
         assert.ok(typeof config[k] === 'string', `missing string constant: ${k}`);
@@ -58,7 +66,7 @@ test('exports required functions', () => {
         'detectActiveAgentSession', 'printAgentContextWarning',
         'normalizeMode', 'isSameProviderFamily',
         'loadGlobalConfig', 'loadProfilePresetStrings', 'loadProjectConfig',
-        'saveProjectConfig', 'saveGlobalConfig', 'resolveConfigKeyAlias',
+        'saveProjectConfig', 'saveGlobalConfig', 'safeBackupGlobalConfig', 'resolveConfigKeyAlias',
         'getNestedValue', 'setNestedValue', 'parseConfigScope',
         'getConfigValueWithProvenance', 'getEffectiveConfig',
         'readBasePort', 'showPortSummary',
@@ -76,7 +84,6 @@ test('exports required functions', () => {
 console.log('# config.js — smoke tests');
 
 test('ROOT_DIR points to a real directory', () => {
-    const fs = require('fs');
     assert.ok(fs.existsSync(config.ROOT_DIR));
 });
 
@@ -128,6 +135,27 @@ test('readBasePort returns object with port number', () => {
     assert.ok(result !== null && typeof result === 'object');
     assert.ok(typeof result.port === 'number');
     assert.ok(result.port > 0);
+});
+
+test('saveGlobalConfig creates a recoverable backup of the previous file', () => {
+    fs.mkdirSync(config.GLOBAL_CONFIG_DIR, { recursive: true });
+    fs.writeFileSync(config.GLOBAL_CONFIG_PATH, JSON.stringify({ terminal: 'warp', repos: ['/tmp/old'] }, null, 2) + '\n');
+
+    config.saveGlobalConfig({ terminal: 'tmux', tmuxApp: 'iterm2', repos: ['/tmp/new'] });
+
+    assert.ok(fs.existsSync(config.GLOBAL_CONFIG_BACKUP_LATEST_PATH), 'latest backup should exist');
+    const latest = JSON.parse(fs.readFileSync(config.GLOBAL_CONFIG_BACKUP_LATEST_PATH, 'utf8'));
+    assert.strictEqual(latest.terminal, 'warp');
+    assert.deepStrictEqual(latest.repos, ['/tmp/old']);
+
+    const backups = fs.readdirSync(config.GLOBAL_CONFIG_BACKUP_DIR)
+        .filter(name => name.startsWith('config.') && name.endsWith('.json'));
+    assert.ok(backups.length >= 2, 'should create latest and dated backups');
+
+    const current = JSON.parse(fs.readFileSync(config.GLOBAL_CONFIG_PATH, 'utf8'));
+    assert.strictEqual(current.terminal, 'tmux');
+    assert.strictEqual(current.tmuxApp, 'iterm2');
+    assert.deepStrictEqual(current.repos, ['/tmp/new']);
 });
 
 // --- Summary ---
