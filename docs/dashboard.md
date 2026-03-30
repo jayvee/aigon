@@ -10,10 +10,12 @@ The dashboard is a single-page web app served by a foreground HTTP server. It's 
 
 | Command | What it does |
 |---------|-------------|
-| `aigon dashboard` | Starts the dashboard (foreground, port 4100) |
-| `node aigon-cli.js dashboard` | Same, explicit invocation |
+| `aigon server start` | Start the server (serves dashboard UI + runs supervisor) |
+| `aigon server stop` | Stop the server |
+| `aigon server restart` | Restart the server |
+| `aigon server status` | Show server health, uptime, supervisor status |
 
-The dashboard runs as a **foreground process** — Ctrl+C or `aigon dev-server stop` to stop it. Each worktree gets its own port and, when aigon-proxy is running, a named URL (e.g. `http://cc-73.aigon.localhost`).
+The server runs as a foreground process. Each worktree gets its own port and, when aigon-proxy is running, a named URL (e.g. `http://cc-73.aigon.localhost`).
 
 ## Dev Proxy Stack
 
