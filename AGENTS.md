@@ -3,7 +3,7 @@
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
-- **Shared logic**: `lib/*.js` — 13 modules; see Module Map below
+- **Shared logic**: `lib/*.js` — 14 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
@@ -64,6 +64,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/workflow-core/` | ~2500 | **Workflow engine**: event-sourced state, XState machine, effects, locking — sole authority for feature lifecycle |
 | `lib/workflow-snapshot-adapter.js` | ~310 | Read adapter: maps engine snapshots to dashboard/board formats |
 | `lib/state-queries.js` | ~200 | Pure read-side query helpers used by research/feedback and feature fallback paths |
+| `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting for workflow and snapshot read paths |
 | `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/feature-{id}-{agent}.json`) |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | 899 | Branch/worktree/status helpers, feature git signals, AI attribution classification |

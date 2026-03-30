@@ -82,6 +82,8 @@ Current shared modules:
   `readAgentStatus`, `writeAgentStatus`, `writeAgentStatusAt`, `agentStatusPath`, `getStateDir`, `getLocksDir`
 - `lib/state-queries.js` (~250 lines): read-only UI helpers — stage definitions, transition/action tables, guard functions. Pure module, no I/O.
   `getValidTransitions`, `getAvailableActions`, `getSessionAction`, `getRecommendedActions`, `isActionValid`, `shouldNotify`
+- `lib/action-command-mapper.js` (~75 lines): shared command formatting for dashboard and board consumers so snapshot reads and fallback reads emit the same CLI actions
+  `formatDashboardActionCommand`, `formatBoardActionCommand`
 - `lib/validation.js` (~1,045 lines): Ralph/autonomous loop and smart validation helpers
   `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`, `runFeatureValidateCommand`
 
@@ -379,5 +381,6 @@ There are currently two read-side paths:
 
 - `lib/workflow-snapshot-adapter.js`: maps workflow-core snapshots into dashboard/board-friendly shapes for features. This is the preferred feature read path.
 - `lib/workflow-read-model.js`: derives recommended actions from `lib/state-queries.js` for research/feedback and for feature fallback cases where a workflow snapshot is unavailable.
+- `lib/action-command-mapper.js`: keeps command strings aligned between those two read paths so UI surfaces do not drift.
 
 If you are changing feature lifecycle behavior, update the engine first. Then check whether snapshot consumers and fallback read-model consumers still present the same behavior.

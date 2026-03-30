@@ -3,7 +3,7 @@
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
-- **Shared logic**: `lib/*.js` — 12 modules; see Module Map below
+- **Shared logic**: `lib/*.js` — 13 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
@@ -53,6 +53,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
 | `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
 | `lib/state-queries.js` | ~250 | Read-only UI helpers: stage definitions, transition/action tables, guard functions — pure, no I/O |
+| `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting used by workflow read paths |
 | `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/{prefix}-{id}-{agent}.json`), atomic writes |
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
@@ -83,7 +84,7 @@ Supporting state:
 - **Shell trap signals**: `buildAgentCommand()` wraps all agent commands with a bash `trap EXIT` handler that fires `agent-status submitted` (exit 0) or `agent-status error` (non-zero). A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. Controlled by `signals` block in `templates/agents/*.json`.
 - Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 
-The dashboard UI uses `lib/state-queries.js` for action/transition derivation (pure functions, no I/O) and `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server.
+The dashboard UI uses `lib/state-queries.js` for action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, and `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths.
 
 Research and feedback entities use simpler filesystem-based transitions (spec folder moves) without the workflow engine.
 
