@@ -14,6 +14,11 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const http = require('http');
+
+// Never let this test touch the real ~/.aigon config.
+const TEST_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-status-actions-home-'));
+process.env.HOME = TEST_HOME;
+
 const engine = require('../../lib/workflow-core/engine');
 const { runDashboardServer } = require('../../lib/dashboard-server');
 const { GLOBAL_CONFIG_DIR, GLOBAL_CONFIG_PATH } = require('../../lib/config');
