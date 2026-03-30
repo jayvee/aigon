@@ -56,7 +56,7 @@ docs/specs/
 
 ## Key Rules
 
-1. **Spec-Driven**: Never write code without a spec in `features/03-in-progress/`
+1. **Spec-Driven**: Never write code without resolving the active feature spec via `aigon feature-spec <ID>`
 2. **Work in isolation**: Solo mode uses branches, arena mode uses worktrees
 3. **Implementation Logs**: Document implementation decisions in `logs/` before completing
 4. **State-as-Location**: A task's status is determined by which folder it's in
@@ -65,7 +65,7 @@ docs/specs/
 
 1. Run `aigon feature-start <ID>` to create branch and move spec to in-progress
 2. Run `aigon feature-implement <ID>` to begin implementation (add `--ralph` for autonomous retry loop)
-3. Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
+3. Read the spec path returned by `aigon feature-spec <ID>`
 4. Implement the feature according to the spec
 5. Test your changes and wait for user confirmation
 6. Commit using conventional commits (`feat:`, `fix:`, `chore:`)
@@ -78,7 +78,7 @@ docs/specs/
 2. **STOP** - Tell the user to open each worktree in a separate session
 3. In each worktree session:
    - Run `aigon feature-implement <ID>`
-   - Read the spec in `./docs/specs/features/03-in-progress/feature-<ID>-*.md`
+   - Read the spec path returned by `aigon feature-spec <ID>`
    - Implement the feature
    - Commit your changes
    - Update the implementation log

@@ -82,6 +82,8 @@ Current shared modules:
   `readAgentStatus`, `writeAgentStatus`, `writeAgentStatusAt`, `agentStatusPath`, `getStateDir`, `getLocksDir`
 - `lib/state-queries.js` (~250 lines): read-only UI helpers — stage definitions, transition/action tables, guard functions. Pure module, no I/O.
   `getValidTransitions`, `getAvailableActions`, `getSessionAction`, `getRecommendedActions`, `isActionValid`, `shouldNotify`
+- `lib/feature-spec-resolver.js` (~140 lines): canonical active-feature spec lookup so consumers stop guessing from visible folders
+  `resolveFeatureSpec`, `listVisibleFeatureSpecs`, `isPlaceholderSpecPath`
 - `lib/action-command-mapper.js` (~75 lines): shared command formatting for dashboard and board consumers so snapshot reads and fallback reads emit the same CLI actions
   `formatDashboardActionCommand`, `formatBoardActionCommand`
 - `lib/dashboard-status-helpers.js` (~200 lines): shared dashboard status helpers so tmux detection, worktree lookup, and stale-session heuristics are not buried in the HTTP server module
@@ -193,6 +195,7 @@ Important distinction: `.aigon/state/` still exists after the cutover, but it is
 Feature writes go through the engine, but the read side is still mixed:
 
 - `lib/workflow-snapshot-adapter.js` is the preferred feature read adapter for the AIGON server's dashboard and board consumers when a workflow snapshot exists.
+- `lib/feature-spec-resolver.js` is the preferred active-feature spec lookup. Consumers should not hardcode `03-in-progress` / `04-in-evaluation` probes for active features.
 - `lib/workflow-read-model.js` and `lib/state-queries.js` still provide derived action suggestions for research, feedback, and feature fallback paths.
 - `lib/dashboard-status-collector.js` now owns the AIGON server's dashboard-facing repo/entity reads, including compatibility behavior for older repos that may not have a complete workflow snapshot yet.
 - `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, and action dispatch.

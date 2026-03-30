@@ -10,6 +10,8 @@
 | `{{CMD_PREFIX}}feature-prioritise <name>` | Assign ID and move to backlog |
 | `{{CMD_PREFIX}}feature-start <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
 | `{{CMD_PREFIX}}feature-do <ID> [--autonomous]` | Do feature work; `--autonomous` enables the autonomous retry loop |
+| `{{CMD_PREFIX}}feature-spec <ID> [--json]` | Resolve the canonical visible spec path for a feature |
+| `{{CMD_PREFIX}}feature-list [--active] [--all] [--json]` | Query feature records without going through the board UI |
 | `{{CMD_PREFIX}}feature-submit` | Commit changes, write log, signal done for evaluation |
 | `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `{{CMD_PREFIX}}feature-review <ID>` | Code review with fixes by a different agent |
