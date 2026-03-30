@@ -1,3 +1,26 @@
+---
+commit_count: 0
+lines_added: 0
+lines_removed: 0
+lines_changed: 0
+files_touched: 0
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 635
+output_tokens: 52834
+cache_creation_input_tokens: 527954
+cache_read_input_tokens: 35638900
+thinking_tokens: 0
+total_tokens: 36220323
+billable_tokens: 53469
+cost_usd: 67.3296
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 173 - rationalise-test-suites
 Agent: cc
 
