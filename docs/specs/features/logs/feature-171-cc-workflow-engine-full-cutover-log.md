@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 834
+lines_removed: 6642
+lines_changed: 7476
+files_touched: 31
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 851
+output_tokens: 75249
+cache_creation_input_tokens: 1236886
+cache_read_input_tokens: 42169060
+thinking_tokens: 0
+total_tokens: 43482046
+billable_tokens: 76100
+cost_usd: 92.1016
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 10.18
+---
 # Implementation Log: Feature 171 - workflow-engine-full-cutover
 Agent: cc
 
