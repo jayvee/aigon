@@ -60,3 +60,4 @@ Target: ~2,600 net lines deleted.
 
 ### Notes
 - Verified with a direct runtime repro in a temporary git repo: a Fleet feature with two non-ready agents now transitions to `evaluating` and writes `docs/specs/features/evaluations/feature-51-eval.md` when invoked with `feature-eval 51 --force`.
+- Remaining branch-level test failures appear to be separate from this fix: research eval tests still assume legacy status/setup behavior, Pro insights tests run without `@aigon/pro`, and research agent command tests expect the pre-shell-wrapper output format.
