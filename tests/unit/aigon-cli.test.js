@@ -15,21 +15,21 @@ const os = require('os');
 const { execFileSync } = require('child_process');
 const { spawnSync } = require('child_process');
 
-const { COMMAND_ALIASES, PROVIDER_FAMILIES } = require('./lib/constants');
-const { createFeatureCommands } = require('./lib/commands/feature');
-const { createResearchCommands } = require('./lib/commands/research');
-const { createFeedbackCommands } = require('./lib/commands/feedback');
-const setupCommandsModule = require('./lib/commands/setup');
+const { COMMAND_ALIASES, PROVIDER_FAMILIES } = require('../../lib/constants');
+const { createFeatureCommands } = require('../../lib/commands/feature');
+const { createResearchCommands } = require('../../lib/commands/research');
+const { createFeedbackCommands } = require('../../lib/commands/feedback');
+const setupCommandsModule = require('../../lib/commands/setup');
 const { createSetupCommands } = setupCommandsModule;
-const { createMiscCommands } = require('./lib/commands/misc');
-const { isProAvailable, getPro } = require('./lib/pro');
+const { createMiscCommands } = require('../../lib/commands/misc');
+const { isProAvailable, getPro } = require('../../lib/pro');
 const insightsLib = isProAvailable() ? getPro().insights : null;
 const {
     buildIncompleteSubmissionReconnectCommand,
     createAllCommands,
     collectIncompleteFeatureEvalAgents,
     collectIncompleteResearchSynthesisAgents,
-} = require('./lib/commands/shared');
+} = require('../../lib/commands/shared');
 const {
     DASHBOARD_INTERACTIVE_ACTIONS,
     resolveDashboardActionRepoPath,
@@ -38,15 +38,15 @@ const {
     collectDashboardStatusData,
     inferDashboardNextCommand,
     inferDashboardNextActions
-} = require('./lib/dashboard');
-const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('./lib/worktree');
-const { isSameProviderFamily, getProfilePlaceholders, gcDevServers, validateRegistry, loadProxyRegistry, saveProxyRegistry, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, getDevProxyUrl, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, collectAnalyticsData } = require('./lib/utils');
-const workflowReadModel = require('./lib/workflow-read-model');
-const board = require('./lib/board');
-const { mergeSecurityConfig } = require('./lib/config');
-const { getFeatureGitSignals } = require('./lib/git');
-const { tryOrDefault, classifyError } = require('./lib/errors');
-const { detectDashboardContext } = require('./lib/devserver');
+} = require('../../lib/dashboard');
+const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('../../lib/worktree');
+const { isSameProviderFamily, getProfilePlaceholders, gcDevServers, validateRegistry, loadProxyRegistry, saveProxyRegistry, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, getDevProxyUrl, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, collectAnalyticsData } = require('../../lib/utils');
+const workflowReadModel = require('../../lib/workflow-read-model');
+const board = require('../../lib/board');
+const { mergeSecurityConfig } = require('../../lib/config');
+const { getFeatureGitSignals } = require('../../lib/git');
+const { tryOrDefault, classifyError } = require('../../lib/errors');
+const { detectDashboardContext } = require('../../lib/devserver');
 
 let passed = 0;
 let failed = 0;
@@ -360,7 +360,7 @@ test('parseDashboardActionRequest normalizes args and repo', () => {
 test('buildDashboardActionCommandArgs builds CLI invocation args', () => {
     assert.deepStrictEqual(
         buildDashboardActionCommandArgs('feature-eval', ['55', '--agent=cx']),
-        [path.join(__dirname, 'aigon-cli.js'), 'feature-eval', '55', '--agent=cx']
+        [path.join(__dirname, '../../aigon-cli.js'), 'feature-eval', '55', '--agent=cx']
     );
 });
 test('DASHBOARD_INTERACTIVE_ACTIONS does not include worktree-open (removed, use feature-open)', () => {
@@ -611,7 +611,7 @@ test('collectDashboardStatusData does not mutate research agent status files dur
 
 console.log('\nFeature Eval Completion Check');
 test('collectIncompleteFeatureEvalAgents returns incomplete fleet agents from manifest', () => {
-    const { writeAgentStatus, agentStatusPath } = require('./lib/agent-status');
+    const { writeAgentStatus, agentStatusPath } = require('../../lib/agent-status');
     // Write manifest state for testing
     writeAgentStatus('51', 'cc', { status: 'implementing' });
     try {
@@ -626,7 +626,7 @@ test('collectIncompleteFeatureEvalAgents returns incomplete fleet agents from ma
     }
 });
 test('collectIncompleteFeatureEvalAgents returns unknown when no manifest state exists', () => {
-    const { agentStatusPath } = require('./lib/agent-status');
+    const { agentStatusPath } = require('../../lib/agent-status');
     // Ensure no state file exists
     try { fs.unlinkSync(agentStatusPath('51', 'cc')); } catch (e) {}
 
@@ -638,7 +638,7 @@ test('collectIncompleteFeatureEvalAgents returns unknown when no manifest state 
     assert.deepStrictEqual(incomplete, [{ agent: 'cc', name: 'Claude', status: 'unknown' }]);
 });
 test('collectIncompleteResearchSynthesisAgents returns unfinished research agents from manifest', () => withTempDir(tempDir => {
-    const { writeAgentStatus, agentStatusPath } = require('./lib/agent-status');
+    const { writeAgentStatus, agentStatusPath } = require('../../lib/agent-status');
     const logsDir = path.join(tempDir, 'docs/specs/research-topics/logs');
     fs.mkdirSync(logsDir, { recursive: true });
     // Still need findings files for agent discovery
@@ -844,7 +844,7 @@ test('feature-open --all falls back from warp to tmux on Linux', () => {
 
 console.log('\nConfig Models Resolution');
 function runCliInDir(cwd, args, env = {}) {
-    const cliPath = path.join(__dirname, 'aigon-cli.js');
+    const cliPath = path.join(__dirname, '../../aigon-cli.js');
     const result = spawnSync(process.execPath, [cliPath, ...args], {
         cwd,
         env: { ...process.env, ...env },
@@ -1096,7 +1096,7 @@ test('install-agent sets core.hooksPath to .githooks', () => withTempDir(tempDir
     runGit(['config', 'user.name', 'Aigon Test'], tempDir);
     runGit(['config', 'user.email', 'test@example.com'], tempDir);
 
-    const cliPath = path.join(__dirname, 'aigon-cli.js');
+    const cliPath = path.join(__dirname, '../../aigon-cli.js');
     const result = spawnSync(process.execPath, [cliPath, 'install-agent', 'cc'], {
         cwd: tempDir,
         encoding: 'utf8',
@@ -1127,7 +1127,7 @@ test('doctor reports Cursor using the configured agent binary', () => withTempDi
         fs.writeFileSync(file, content, { mode: 0o755 });
     }
 
-    const cliPath = path.join(__dirname, 'aigon-cli.js');
+    const cliPath = path.join(__dirname, '../../aigon-cli.js');
     const result = spawnSync(process.execPath, [cliPath, 'doctor'], {
         cwd: tempDir,
         env: { ...process.env, PATH: binDir },
@@ -1144,7 +1144,7 @@ test('config init writes project security schema defaults', () => withTempDir(te
     runGit(['config', 'user.name', 'Aigon Test'], tempDir);
     runGit(['config', 'user.email', 'test@example.com'], tempDir);
 
-    const cliPath = path.join(__dirname, 'aigon-cli.js');
+    const cliPath = path.join(__dirname, '../../aigon-cli.js');
     const result = spawnSync(process.execPath, [cliPath, 'config', 'init'], {
         cwd: tempDir,
         encoding: 'utf8',
@@ -1314,7 +1314,7 @@ test('reconcileProxyRoutes is idempotent — second call adds and removes nothin
 
 console.log('\nEntrypoint');
 test('aigon-cli.js stays under 200 lines', () => {
-    const lineCount = fs.readFileSync(path.join(__dirname, 'aigon-cli.js'), 'utf8').trimEnd().split('\n').length;
+    const lineCount = fs.readFileSync(path.join(__dirname, '../../aigon-cli.js'), 'utf8').trimEnd().split('\n').length;
     assert.ok(lineCount < 200, `expected < 200 lines, got ${lineCount}`);
 });
 
@@ -1334,7 +1334,7 @@ const {
     shouldNotify,
     allAgentsSubmitted,
     isFleet,
-} = require('./lib/state-queries');
+} = require('../../lib/state-queries');
 
 console.log('\n--- state machine ---');
 
@@ -2045,12 +2045,12 @@ test('validateRegistry skips _portRegistry key', () => withTempDir(tempDir => {
 // ── loadPortRegistry / savePortRegistry merged into servers.json ──────────────
 
 test('savePortRegistry stores in ports.json', () => withTempDir(tempDir => {
-    const { PORT_REGISTRY_PATH } = require('./lib/proxy');
+    const { PORT_REGISTRY_PATH } = require('../../lib/proxy');
     const realRegistry = fs.existsSync(PORT_REGISTRY_PATH) ? fs.readFileSync(PORT_REGISTRY_PATH, 'utf8') : null;
     fs.mkdirSync(path.dirname(PORT_REGISTRY_PATH), { recursive: true });
     if (fs.existsSync(PORT_REGISTRY_PATH)) fs.unlinkSync(PORT_REGISTRY_PATH);
 
-    const { savePortRegistry, loadPortRegistry } = require('./lib/utils');
+    const { savePortRegistry, loadPortRegistry } = require('../../lib/utils');
     savePortRegistry({ 'my-app': { basePort: 3000, path: '/tmp/my-app' } });
 
     const loaded = loadPortRegistry();
@@ -2070,7 +2070,7 @@ test('savePortRegistry stores in ports.json', () => withTempDir(tempDir => {
 console.log('\nState Reconciliation — doctor checks');
 
 test('organizeLogFiles is no longer exported from utils', () => {
-    const utils = require('./lib/utils');
+    const utils = require('../../lib/utils');
     assert.strictEqual(utils.organizeLogFiles, undefined, 'organizeLogFiles should be removed');
 });
 
@@ -2151,7 +2151,7 @@ test('dashboard log collection reads from flat logs/ directory', () => withTempD
 console.log('\nBranch Guard — assertOnDefaultBranch');
 
 test('assertOnDefaultBranch passes when on main', () => {
-    const { assertOnDefaultBranch } = require('./lib/git');
+    const { assertOnDefaultBranch } = require('../../lib/git');
     // We're running tests on main, so this should not throw
     const currentBranch = require('child_process').execSync('git branch --show-current', { encoding: 'utf8' }).trim();
     if (currentBranch === 'main' || currentBranch === 'master') {
@@ -2169,8 +2169,8 @@ test('assertOnDefaultBranch throws when on wrong branch', () => {
         const origCwd = process.cwd();
         process.chdir(tempDir);
         // Clear cache so git module picks up new cwd
-        delete require.cache[require.resolve('./lib/git')];
-        const freshGit = require('./lib/git');
+        delete require.cache[require.resolve('../../lib/git')];
+        const freshGit = require('../../lib/git');
 
         let threw = false;
         try { freshGit.assertOnDefaultBranch(); } catch (e) {
@@ -2180,7 +2180,7 @@ test('assertOnDefaultBranch throws when on wrong branch', () => {
         assert.ok(threw, 'should have thrown on wrong branch');
 
         process.chdir(origCwd);
-        delete require.cache[require.resolve('./lib/git')];
+        delete require.cache[require.resolve('../../lib/git')];
     });
 });
 
@@ -2238,8 +2238,8 @@ test('runDashboardInteractiveAction fails feature-start when agents not register
         fs.writeFileSync(path.join(stateDir, 'feature-994.json'), JSON.stringify(manifestData));
 
         try {
-            delete require.cache[require.resolve('./lib/dashboard-server')];
-            const dashServer = require('./lib/dashboard-server');
+            delete require.cache[require.resolve('../../lib/dashboard-server')];
+            const dashServer = require('../../lib/dashboard-server');
             const result = dashServer.runDashboardInteractiveAction({
                 action: 'feature-start',
                 args: ['994', 'cc', 'gg'],
@@ -2252,14 +2252,14 @@ test('runDashboardInteractiveAction fails feature-start when agents not register
                 'should explain missing agents: ' + JSON.stringify(result));
         } finally {
             childProcess.spawnSync = originalSpawnSync;
-            delete require.cache[require.resolve('./lib/dashboard-server')];
+            delete require.cache[require.resolve('../../lib/dashboard-server')];
         }
     });
 });
 
 test('parseDashboardActionRequest validates feature-start args', () => {
-    delete require.cache[require.resolve('./lib/dashboard-server')];
-    const dashServer = require('./lib/dashboard-server');
+    delete require.cache[require.resolve('../../lib/dashboard-server')];
+    const dashServer = require('../../lib/dashboard-server');
 
     // Valid feature-start with agents
     const valid = dashServer.parseDashboardActionRequest({ action: 'feature-start', args: ['42', 'cc', 'gg'] });

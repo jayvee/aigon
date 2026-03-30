@@ -13,8 +13,8 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const adapter = require('./workflow-snapshot-adapter');
-const { LifecycleState, AgentStatus, ManualActionKind } = require('./workflow-core/types');
+const adapter = require('../../lib/workflow-snapshot-adapter');
+const { LifecycleState, AgentStatus, ManualActionKind } = require('../../lib/workflow-core/types');
 
 let passed = 0;
 let failed = 0;

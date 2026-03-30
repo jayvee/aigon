@@ -5,8 +5,8 @@ const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const engine = require('./workflow-core/engine');
-const resolver = require('./feature-spec-resolver');
+const engine = require('../../lib/workflow-core/engine');
+const resolver = require('../../lib/feature-spec-resolver');
 
 let passed = 0;
 let failed = 0;

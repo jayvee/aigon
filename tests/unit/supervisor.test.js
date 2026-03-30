@@ -75,7 +75,7 @@ const {
   stopSupervisorLoop,
   getSupervisorStatus,
   SWEEP_INTERVAL_MS,
-} = require('./supervisor');
+} = require('../../lib/supervisor');
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -179,31 +179,31 @@ test('SWEEP_INTERVAL_MS is 30 seconds', () => {
 // -- Module isolation --
 
 test('supervisor.js does not import dashboard-server.js', () => {
-  const src = fs.readFileSync(path.join(__dirname, 'supervisor.js'), 'utf8');
+  const src = fs.readFileSync(path.join(__dirname, '../../lib/supervisor.js'), 'utf8');
   assert.strictEqual(src.includes("require('./dashboard-server')"), false);
   assert.strictEqual(src.includes("require('./dashboard')"), false);
   assert.strictEqual(src.includes('require("./dashboard-server")'), false);
 });
 
 test('dashboard-server.js does not import supervisor.js', () => {
-  const src = fs.readFileSync(path.join(__dirname, 'dashboard-server.js'), 'utf8');
+  const src = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-server.js'), 'utf8');
   assert.strictEqual(src.includes("require('./supervisor')"), false);
   assert.strictEqual(src.includes('require("./supervisor")'), false);
 });
 
 test('supervisor.js never kills tmux sessions', () => {
-  const src = fs.readFileSync(path.join(__dirname, 'supervisor.js'), 'utf8');
+  const src = fs.readFileSync(path.join(__dirname, '../../lib/supervisor.js'), 'utf8');
   assert.strictEqual(src.includes('kill-session'), false);
   assert.strictEqual(src.includes('kill-server'), false);
 });
 
 test('supervisor.js never writes agent status files', () => {
-  const src = fs.readFileSync(path.join(__dirname, 'supervisor.js'), 'utf8');
+  const src = fs.readFileSync(path.join(__dirname, '../../lib/supervisor.js'), 'utf8');
   assert.strictEqual(src.includes('writeAgentStatus'), false);
 });
 
 test('supervisor.js never moves spec files', () => {
-  const src = fs.readFileSync(path.join(__dirname, 'supervisor.js'), 'utf8');
+  const src = fs.readFileSync(path.join(__dirname, '../../lib/supervisor.js'), 'utf8');
   assert.strictEqual(src.includes('renameSync'), false);
   assert.strictEqual(src.includes('moveSpec'), false);
 });

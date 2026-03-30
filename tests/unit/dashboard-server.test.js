@@ -10,9 +10,9 @@ const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const dashboard = require('./dashboard-server');
-const engine = require('./workflow-core/engine');
-const { GLOBAL_CONFIG_DIR, GLOBAL_CONFIG_PATH } = require('./config');
+const dashboard = require('../../lib/dashboard-server');
+const engine = require('../../lib/workflow-core/engine');
+const { GLOBAL_CONFIG_DIR, GLOBAL_CONFIG_PATH } = require('../../lib/config');
 
 let passed = 0;
 let failed = 0;
@@ -320,7 +320,7 @@ test('verifyFeatureStartRegistration falls back to manifest when no snapshot exi
     }
 });
 
-testAsync('collectDashboardStatusData does not treat folder-only active features as live workflow features', async () => {
+testAsync('collectDashboardStatusData includes folder-only active features with fallback actions', async () => {
     const repo = makeTempRepo();
     try {
         fs.writeFileSync(
@@ -337,10 +337,11 @@ testAsync('collectDashboardStatusData does not treat folder-only active features
         );
 
         const status = withGlobalRepoConfig([repo], () => dashboard.collectDashboardStatusData());
-        const feature = status.repos[0].features.find(item => item.id === '02');
-        assert.strictEqual(feature, undefined);
         const allFeature = status.repos[0].allFeatures.find(item => item.id === '02');
-        assert.strictEqual(allFeature, undefined);
+        // Folder-only features are now included (post-cutover behavior)
+        assert.ok(allFeature, 'folder-only feature should appear in allFeatures');
+        assert.strictEqual(allFeature.name, 'legacy-check');
+        assert.strictEqual(allFeature.stage, 'in-progress');
     } finally {
         fs.rmSync(repo, { recursive: true, force: true });
     }
