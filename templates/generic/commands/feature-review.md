@@ -12,26 +12,28 @@ If no ID is provided, or the ID doesn't match an existing feature:
 2. If a partial ID or name was given, filter to matches
 3. Present the matching features and ask the user to choose one
 
-## Step 1: Locate the feature branch/worktree
+## Step 1: Verify you are on the feature branch
 
-**CRITICAL: You must work on the feature branch, NEVER on main.** Committing to main will cause merge conflicts when the feature is closed.
-
-Find the implementation to review:
+**CRITICAL: You MUST be on the feature branch, NEVER on main.** Run this check FIRST, before doing anything else:
 
 ```bash
-# Check for worktrees first
-git worktree list | grep "feature-{{ARG1_SYNTAX}}"
-
-# If no worktree, check for branch
-git branch --list "feature-{{ARG1_SYNTAX}}-*"
+BRANCH=$(git branch --show-current)
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+  echo "FATAL: You are on $BRANCH. Reviews must run on the feature branch."
+  echo "Looking for worktree..."
+  git worktree list | grep "feature-{{ARG1_SYNTAX}}"
+  echo "If a worktree exists, cd into it. DO NOT continue on $BRANCH."
+  exit 1
+fi
+echo "OK: On branch $BRANCH"
 ```
 
-- **Worktree found**: `cd` into the worktree directory and work there
-- **Branch only**: Switch to the feature branch (`git checkout feature-{{ARG1_SYNTAX}}-*`)
+**If the above check fails, STOP IMMEDIATELY. Do not make any changes. Do not commit.**
 
-**Verify you are NOT on main before making any changes:**
+If you are on main, find and `cd` into the worktree:
 ```bash
-git branch --show-current    # Must NOT be 'main' or 'master'
+WORKTREE=$(git worktree list | grep "feature-{{ARG1_SYNTAX}}" | awk '{print $1}')
+cd "$WORKTREE" || { echo "No worktree found — cannot proceed"; exit 1; }
 ```
 
 ## Step 2: Read the spec
