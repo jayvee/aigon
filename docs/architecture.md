@@ -86,6 +86,8 @@ Current shared modules:
   `formatDashboardActionCommand`, `formatBoardActionCommand`
 - `lib/dashboard-status-helpers.js` (~200 lines): shared dashboard status helpers so tmux detection, worktree lookup, and stale-session heuristics are not buried in the HTTP server module
   `safeTmuxSessionExists`, `resolveFeatureWorktreePath`, `normalizeDashboardStatus`, `maybeFlagEndedSession`
+- `lib/dashboard-status-collector.js` (~830 lines): shared AIGON server read-side collector so repo/entity status assembly is separated from HTTP transport and notification code
+  `collectDashboardStatusData`
 - `lib/server-runtime.js` (~90 lines): shared AIGON server lifecycle helpers extracted from infra command wiring
   `launchDashboardServer`, `stopDashboardProcess`
 - `lib/validation.js` (~1,045 lines): Ralph/autonomous loop and smart validation helpers
@@ -95,7 +97,7 @@ Current shared modules:
 
 - `lib/proxy.js` (~711 lines): Caddy management, port allocation, dev-proxy registry, route reconciliation
   `generateCaddyfile`, `reloadCaddy`, `registerDevServer`, `deregisterDevServer`, `reconcileProxyRoutes`, `allocatePort`
-- `lib/dashboard-server.js` (~1,913 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, and action dispatch from engine snapshots
+- `lib/dashboard-server.js` (~2,660 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, and action dispatch from engine snapshots
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
 - `lib/worktree.js` (~1,122 lines): worktree creation, permissions, git attribution bootstrap, tmux sessions, terminal launching
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
@@ -192,7 +194,8 @@ Feature writes go through the engine, but the read side is still mixed:
 
 - `lib/workflow-snapshot-adapter.js` is the preferred feature read adapter for the AIGON server's dashboard and board consumers when a workflow snapshot exists.
 - `lib/workflow-read-model.js` and `lib/state-queries.js` still provide derived action suggestions for research, feedback, and feature fallback paths.
-- `lib/dashboard-server.js` still carries compatibility logic for the AIGON server's dashboard-facing reads, agent discovery, and older repos that may not have a complete workflow snapshot yet.
+- `lib/dashboard-status-collector.js` now owns the AIGON server's dashboard-facing repo/entity reads, including compatibility behavior for older repos that may not have a complete workflow snapshot yet.
+- `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, and action dispatch.
 
 So the architecture after Feature 171 is:
 
