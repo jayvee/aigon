@@ -7,8 +7,8 @@ Implement a feature. Works in Drive mode (branch), Drive mode (worktree) (parall
 
 ## Argument Resolution
 
-If no ID is provided, or the ID doesn't match an existing feature in progress:
-1. List all files in `./docs/specs/features/03-in-progress/` matching `feature-*.md`
+If no ID is provided, or the ID doesn't match an existing active feature:
+1. Run `aigon feature-list --active`
 2. If a partial ID or name was given, filter to matches
 3. Present the matching features and ask the user to choose one
 
@@ -63,14 +63,19 @@ The command will:
 **If the CLI fails with "Could not find feature in in-progress"** and you're in a worktree: the spec move was likely not committed before the worktree was created. Fix by running these commands from the worktree:
 ```bash
 # Bring the spec into this worktree from the main branch
-git checkout main -- docs/specs/features/03-in-progress/
+SPEC_PATH=$(aigon feature-spec {{ARG1_SYNTAX}})
+git checkout main -- "$SPEC_PATH"
 git commit -m "chore: sync spec to worktree branch"
 ```
 Then re-run `{{CMD_PREFIX}}feature-do {{ARG1_SYNTAX}}`.
 
 ## Step 2: Read the spec
 
-Read the spec in `./docs/specs/features/03-in-progress/feature-{{ARG1_SYNTAX}}-*.md`
+Read the exact spec path returned by:
+
+```bash
+aigon feature-spec {{ARG1_SYNTAX}}
+```
 
 ## Step 2.5: Consider Plan Mode
 

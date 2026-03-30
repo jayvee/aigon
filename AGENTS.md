@@ -64,6 +64,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
 | `lib/workflow-core/` | ~2500 | **Workflow engine**: event-sourced state, XState machine, effects, locking — sole authority for feature lifecycle |
 | `lib/workflow-snapshot-adapter.js` | ~310 | Read adapter: maps engine snapshots to dashboard/board formats |
+| `lib/feature-spec-resolver.js` | ~140 | Canonical feature spec lookup; shields consumers from folder guessing and placeholder specs |
 | `lib/state-queries.js` | ~200 | Pure read-side query helpers used by research/feedback and feature fallback paths |
 | `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting for workflow and snapshot read paths |
 | `lib/dashboard-status-helpers.js` | ~200 | Shared dashboard status helpers: tmux/session detection, worktree lookup, status normalization, stale-session heuristics |
@@ -128,5 +129,5 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 1. `AGENTS.md` (this file) — quick orientation
 2. `docs/architecture.md` — full module docs, ctx details, design rules, naming conventions
 3. `docs/development_workflow.md` — feature/research lifecycle
-4. Active spec: `docs/specs/features/03-in-progress/feature-NNN-*.md`
+4. Active feature spec: `aigon feature-spec <ID>`
 5. Agent-specific notes: `docs/agents/{id}.md`

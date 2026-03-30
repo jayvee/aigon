@@ -54,6 +54,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
 | `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
 | `lib/state-queries.js` | ~250 | Read-only UI helpers: stage definitions, transition/action tables, guard functions — pure, no I/O |
+| `lib/feature-spec-resolver.js` | ~140 | Canonical feature spec lookup for active features; avoids consumer-specific folder guessing |
 | `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting used by workflow read paths |
 | `lib/dashboard-status-helpers.js` | ~200 | Shared dashboard status helpers: tmux/session detection, worktree lookup, status normalization, stale-session heuristics |
 | `lib/server-runtime.js` | ~90 | Shared AIGON server lifecycle helpers for start/restart/stop orchestration |
@@ -162,5 +163,5 @@ Never hand-write CSS or guess at Tailwind classes for visual design. The fronten
 1. `AGENTS.md` (this file) — quick orientation
 2. `docs/architecture.md` — full module docs, ctx details, design rules, naming conventions
 3. `docs/development_workflow.md` — feature/research lifecycle
-4. Active spec: `docs/specs/features/03-in-progress/feature-NNN-*.md`
+4. Active feature spec: `aigon feature-spec <ID>`
 5. Agent-specific notes: `docs/agents/{id}.md`
