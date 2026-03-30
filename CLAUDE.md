@@ -3,7 +3,7 @@
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
-- **Shared logic**: `lib/*.js` — 15 modules; see Module Map below
+- **Shared logic**: `lib/*.js` — 16 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
@@ -45,7 +45,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | Module | ~Lines | Owns |
 |--------|--------|------|
 | `lib/commands/feature.js` | 2490 | All `feature-*` handlers, `sessions-close` |
-| `lib/dashboard-server.js` | ~1850 | AIGON server HTTP/UI module: dashboard UI, API, WebSocket relay, polling, snapshot reads. Never mutates engine state. |
+| `lib/dashboard-server.js` | ~2660 | AIGON server HTTP/UI module: dashboard UI, API, WebSocket relay, polling, HTTP action dispatch. Never mutates engine state directly. |
+| `lib/dashboard-status-collector.js` | ~830 | AIGON server read-side collector: assembles repo, feature, research, feedback, summary, and compatibility status payloads |
 | `lib/commands/infra.js` | ~1460 | `aigon server` command, board, config, proxy-setup, dev-server |
 | `lib/utils.js` | 1474 | Spec CRUD, hooks, version, analytics |
 | `lib/commands/setup.js` | 1212 | init, install-agent, check-version, update, doctor + state reconciliation |
@@ -86,7 +87,7 @@ Supporting state:
 - **Shell trap signals**: `buildAgentCommand()` wraps all agent commands with a bash `trap EXIT` handler that fires `agent-status submitted` (exit 0) or `agent-status error` (non-zero). A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. Controlled by `signals` block in `templates/agents/*.json`.
 - Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 
-The dashboard UI uses `lib/state-queries.js` for action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, and `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths.
+The dashboard UI uses `lib/state-queries.js` for action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths, and `lib/dashboard-status-collector.js` to keep repo/entity status assembly out of the HTTP server module.
 
 Research and feedback entities use simpler filesystem-based transitions (spec folder moves) without the workflow engine.
 
