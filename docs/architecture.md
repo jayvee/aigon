@@ -130,7 +130,7 @@ Current shared modules:
 The Aigon workflow now has two layers:
 
 - Spec location under `docs/specs/` remains the user-visible workflow stage.
-- For **features only**, the authoritative lifecycle state lives in the workflow engine under `.aigon/workflows/`.
+- For **features and research**, the authoritative lifecycle state lives in the workflow engine under `.aigon/workflows/`.
 
 That means "state-as-location" is still true at the UX level, but feature commands no longer mutate workflow by directly treating folder position as the only source of truth. The engine owns the lifecycle and moves the spec as a side effect.
 
@@ -159,7 +159,8 @@ The workflow-core engine is the sole lifecycle authority for features and resear
 | `machine.js` | XState state machine defining valid lifecycle transitions |
 | `actions.js` | Action derivation via `snapshot.can()` — machine is single source of truth |
 | `effects.js` | Pluggable effect runner + default feature effect implementations |
-| `engine.js` | Full orchestration: command dispatch, event persistence, effect execution |
+| `engine.js` | Full orchestration: command dispatch, event persistence, effect execution for feature + research |
+| `migration.js` | Explicit pre-cutover migration helpers (idempotent lifecycle backfill to workflow-core) |
 | `index.js` | Barrel export for all public API |
 
 **Key properties:**
@@ -208,9 +209,9 @@ So the architecture after Feature 171 is:
 2. Feature lifecycle reads: prefer workflow snapshots.
 3. Agent/session reads: still combine snapshot data, `.aigon/state/` files, tmux state, and some compatibility fallbacks.
 
-**Bootstrap for pre-cutover features:** Features started before the engine existed have no event log. When `feature-close` encounters this, it synthesizes events (started → agent_ready × N → eval_requested → winner.selected) to bootstrap engine state before closing.
+**Migration for pre-cutover entities:** Features or research topics started before workflow-core may have no event log. Commands now call explicit migration helpers to initialize lifecycle history before normal engine operations continue.
 
-**Compatibility note:** `feature-eval` and `feature-close` still contain bootstrap/signal-synthesis paths for pre-cutover features. New features should stay on the normal engine path; older in-flight features may still hit those compatibility branches.
+**Compatibility note:** Migration is isolated in workflow-core migration helpers. Normal lifecycle commands use the standard engine path for new entities.
 
 ## Where To Make Changes
 

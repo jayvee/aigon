@@ -79,7 +79,6 @@ const { projectContext } = require('../../lib/../lib/workflow-core/projector');
 const { deriveAvailableActions } = require('../../lib/../lib/workflow-core/actions');
 const { featureMachine } = require('../../lib/../lib/workflow-core/machine');
 const engine = require('../../lib/../lib/workflow-core/engine');
-const researchEngine = require('../../lib/../lib/workflow-core/research-engine');
 
 // ===========================================================================
 // types.js
@@ -577,7 +576,7 @@ testAsync('listEvents returns full event history', async () => {
   }
 });
 
-test('research engine start/eval/close projects spec folders', () => {
+testAsync('research engine start/eval/close projects spec folders', async () => {
   const tmp = makeTmpDir();
   try {
     const backlog = path.join(tmp, 'docs', 'specs', 'research-topics', '02-backlog');
@@ -592,15 +591,15 @@ test('research engine start/eval/close projects spec folders', () => {
     const fileName = 'research-07-workflow-migration.md';
     fs.writeFileSync(path.join(backlog, fileName), '# Research 07\n');
 
-    const started = researchEngine.startResearchSync(tmp, '07', 'fleet', ['cc', 'gg']);
+    const started = await engine.startResearch(tmp, '07', 'fleet', ['cc', 'gg']);
     assert.strictEqual(started.lifecycle, 'implementing');
     assert.ok(fs.existsSync(path.join(inProgress, fileName)));
 
-    const evaluating = researchEngine.requestResearchEvalSync(tmp, '07');
+    const evaluating = await engine.requestResearchEval(tmp, '07');
     assert.strictEqual(evaluating.lifecycle, 'evaluating');
     assert.ok(fs.existsSync(path.join(inEval, fileName)));
 
-    const closed = researchEngine.closeResearchSync(tmp, '07');
+    const closed = await engine.closeResearch(tmp, '07');
     assert.strictEqual(closed.lifecycle, 'done');
     assert.ok(fs.existsSync(path.join(done, fileName)));
   } finally {
