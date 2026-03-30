@@ -17,6 +17,49 @@ The current sources of truth are:
 - Feature/research/feedback dashboard rules and fallback logic: `lib/state-queries.js`
 - Feature dashboard snapshot/fallback selection: `lib/workflow-read-model.js`
 
+## Generated Diagrams
+
+Generated SVGs live in `docs/generated/workflow/`:
+- `feature-engine.svg`
+- `feature-readside.svg`
+- `research-readside.svg`
+- `feedback-readside.svg`
+
+Regenerate them with:
+
+```bash
+node scripts/generate-workflow-diagrams.js
+```
+
+Check they are current with:
+
+```bash
+node scripts/generate-workflow-diagrams.js --check
+```
+
+The repo also exposes:
+
+```bash
+node aigon-cli.js workflow-rules
+node aigon-cli.js workflow-rules --json
+```
+
+### Feature Engine Diagram
+
+![Feature engine state flow](./generated/workflow/feature-engine.svg)
+
+### Feature Read-Side Diagram
+
+![Feature read-side flow](./generated/workflow/feature-readside.svg)
+
+### Research Read-Side Diagram
+
+![Research read-side flow](./generated/workflow/research-readside.svg)
+
+### Feedback Read-Side Diagram
+
+![Feedback read-side flow](./generated/workflow/feedback-readside.svg)
+
 ## Feature Workflow
 
 ### Feature Lifecycle Authority
