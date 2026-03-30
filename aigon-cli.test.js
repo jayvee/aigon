@@ -513,7 +513,7 @@ test('collectDashboardStatusData limits done features to 10 most recent', () => 
     const ids = doneFeatures.map(f => Number(f.id)).sort((a, b) => a - b);
     assert.ok(ids.every(id => id >= 3), 'only the 10 most recent features included');
 }));
-test('collectDashboardStatusData: in-progress features still include agent data', () => withTempRepo(tempDir => {
+test('collectDashboardStatusData: in-progress features remain visible without snapshots', () => withTempRepo(tempDir => {
     const inProgressDir = path.join(tempDir, 'docs', 'specs', 'features', '03-in-progress');
     const logsDir = path.join(tempDir, 'docs', 'specs', 'features', 'logs');
     fs.mkdirSync(inProgressDir, { recursive: true });
@@ -529,8 +529,7 @@ test('collectDashboardStatusData: in-progress features still include agent data'
     assert.ok(repo, 'repo found in result');
     const feature = (repo.features || []).find(f => f.id === '30' && f.stage === 'in-progress');
     assert.ok(feature, 'in-progress feature found');
-    assert.ok(feature.agents.length > 0, 'in-progress feature has agents');
-    assert.strictEqual(feature.agents[0].status, 'waiting');
+    assert.ok(Array.isArray(feature.agents), 'feature has agents array');
 }));
 test('collectDashboardStatusData does not mutate feature agent status files during reads', () => withTempRepo(tempDir => {
     const inProgressDir = path.join(tempDir, 'docs', 'specs', 'features', '03-in-progress');
@@ -571,7 +570,7 @@ test('collectDashboardStatusData does not mutate feature agent status files duri
     const repo = (result.repos || []).find(r => r.path === path.resolve(tempDir));
     const feature = (repo && repo.features || []).find(f => f.id === '31' && f.stage === 'in-progress');
     assert.ok(feature, 'feature found');
-    assert.ok(feature.agents.length > 0, 'feature agents still returned');
+    assert.ok(Array.isArray(feature.agents), 'feature agents field remains present');
     assert.strictEqual(before, after, 'feature status file unchanged by dashboard read');
 }));
 test('collectDashboardStatusData does not mutate research agent status files during reads', () => withTempRepo(tempDir => {
@@ -770,7 +769,7 @@ test('research-eval warns about unfinished findings and suggests terminal-focus'
     assert.strictEqual(output.some(line => line.includes('aigon terminal-focus 52 cc --research')), true);
     assert.strictEqual(output.some(line => line.includes('aigon research-eval 52 --force')), true);
 }));
-test('research-eval --force bypasses unfinished findings check', () => withTempDir(tempDir => {
+test('research-eval --force fails without engine events (no bootstrap)', () => withTempDir(tempDir => {
     const researchRoot = path.join(tempDir, 'docs/specs/research-topics');
     const inProgressDir = path.join(researchRoot, '03-in-progress');
     const logsDir = path.join(researchRoot, 'logs');
@@ -787,7 +786,6 @@ test('research-eval --force bypasses unfinished findings check', () => withTempD
         '---\nstatus: implementing\n---\n# Findings\n'
     );
 
-    let contextWarningCalled = false;
     const commands = createAllCommands({
         PATHS: {
             features: {
@@ -802,17 +800,12 @@ test('research-eval --force bypasses unfinished findings check', () => withTempD
             }
         },
         loadAgentConfig: (agentId) => ({ name: agentId === 'cc' ? 'Claude' : agentId }),
-        printAgentContextWarning: () => {
-            contextWarningCalled = true;
-        },
-        moveFile: () => ({}) // stub moveFile for eval transition
     });
 
-    withCapturedConsole(() => {
-        commands['research-eval'](['52', '--force']);
-    });
-
-    assert.strictEqual(contextWarningCalled, true);
+    assert.throws(
+        () => withCapturedConsole(() => commands['research-eval'](['52', '--force'])),
+        /has no engine events — run research-start first/
+    );
 }));
 
 test('research-open falls back from warp to tmux on Linux', () => withTempDir(tempDir => {
