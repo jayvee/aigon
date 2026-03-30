@@ -34,7 +34,7 @@ Current command families:
 | `lib/commands/feature.js` | All `feature-*` handlers, `sessions-close` |
 | `lib/commands/research.js` | All `research-*` handlers |
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
-| `lib/commands/infra.js` | `server`, `dashboard` (compatibility alias), `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile` |
+| `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile` |
 | `lib/commands/setup.js` | `init`, `install-agent`, `check-version`, `update`, `project-context`, `doctor` |
 | `lib/commands/misc.js` | `agent-status`, `status`, `deploy`, `next`, `help` |
 
@@ -290,7 +290,7 @@ Features are always tracked in the **aigon** repo (specs, logs, board). When a f
 - Treat `templates/` as source-of-truth for generated agent docs and prompts.
 - Project-specific agent instructions belong in `AGENTS.md` and/or `CLAUDE.md` (user-owned, never overwritten by aigon). `docs/aigon-project.md` provides committed defaults used when scaffolding `AGENTS.md` on first install.
 - The AIGON server is the foreground HTTP process. It serves the dashboard UI, registers with the proxy registry (`~/.aigon/dev-proxy/servers.json`) on start, and deregisters on shutdown, giving it named URLs (`aigon.localhost`, `cc-71.aigon.localhost`) via the aigon-proxy daemon.
-- The proxy (`lib/aigon-proxy.js`) is a ~100-line Node.js reverse proxy that reads `servers.json` and routes by Host header. Installed as a system daemon on port 80 via `aigon proxy install`.
+- The proxy (`lib/aigon-proxy.js`) is a ~100-line Node.js reverse proxy that reads `servers.json` and routes by Host header. Installed on port 80 via `aigon proxy install`.
 
 ## Remote Access
 
