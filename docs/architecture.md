@@ -194,10 +194,10 @@ Important distinction: `.aigon/state/` still exists after the cutover, but it is
 
 Feature writes go through the engine, but the read side is still mixed:
 
-- `lib/workflow-snapshot-adapter.js` is the preferred feature read adapter for the AIGON server's dashboard and board consumers when a workflow snapshot exists.
+- `lib/workflow-snapshot-adapter.js` is the preferred feature read adapter for feature lifecycle/actions when a workflow snapshot exists.
 - `lib/feature-spec-resolver.js` is the preferred active-feature spec lookup. Consumers should not hardcode `03-in-progress` / `04-in-evaluation` probes for active features.
 - `aigon feature-list` and `aigon feature-spec` are the preferred CLI query surfaces for active features. Do not use `board` output as a data API.
-- `lib/workflow-read-model.js` and `lib/state-queries.js` still provide derived action suggestions for research, feedback, and feature fallback paths.
+- `lib/workflow-read-model.js` now provides the shared feature dashboard read state (snapshot-backed when available) and also provides derived action suggestions for research, feedback, and feature fallback paths via `lib/state-queries.js`.
 - `lib/dashboard-status-collector.js` now owns the AIGON server's dashboard-facing repo/entity reads, including compatibility behavior for older repos that may not have a complete workflow snapshot yet.
 - `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, and action dispatch.
 
@@ -391,7 +391,7 @@ node -c lib/<module>.js         # Quick syntax check for a module
 There are currently two read-side paths:
 
 - `lib/workflow-snapshot-adapter.js`: maps workflow-core snapshots into dashboard/board-friendly shapes for features. This is the preferred feature read path.
-- `lib/workflow-read-model.js`: derives recommended actions from `lib/state-queries.js` for research/feedback and for feature fallback cases where a workflow snapshot is unavailable.
+- `lib/workflow-read-model.js`: shared read model used by dashboard collectors/detail payloads for features (snapshot-backed first), and derives recommended actions from `lib/state-queries.js` for research/feedback plus feature fallback cases.
 - `lib/action-command-mapper.js`: keeps command strings aligned between those two read paths so UI surfaces do not drift.
 - `lib/dashboard-status-helpers.js`: keeps session/worktree/status heuristics aligned between dashboard reads and command flows.
 

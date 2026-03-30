@@ -43,7 +43,7 @@ Test overrides: `createAllCommands({ getCurrentBranch: () => 'mock-branch' })`.
 - **Feature lifecycle authority**: `lib/workflow-core/` and `.aigon/workflows/features/{id}/`
 - **Feature runtime / agent status files**: `.aigon/state/feature-{id}-{agent}.json`
 - **Research / feedback lifecycle authority**: spec folder location plus command logic
-- **Preferred feature read path**: `lib/workflow-snapshot-adapter.js`
+- **Preferred feature read path**: `lib/workflow-snapshot-adapter.js` (actions/lifecycle) via `lib/workflow-read-model.js` (shared feature dashboard state)
 - **Fallback / non-feature read path**: `lib/workflow-read-model.js` + `lib/state-queries.js`
 
 Important: after feature 171, features no longer use the old coordinator manifest system as the lifecycle source of truth. Folder position is the visible outcome; the engine is the authority that moves the spec.
