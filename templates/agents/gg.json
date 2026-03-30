@@ -130,6 +130,18 @@
               }
             ]
           }
+        ],
+        "AfterAgent": [
+          {
+            "matcher": ".*",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "aigon check-agent-signal",
+                "timeout": 5
+              }
+            ]
+          }
         ]
       }
     }
