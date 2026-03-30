@@ -7,7 +7,7 @@
  */
 
 const assert = require('assert');
-const worktree = require('./worktree');
+const worktree = require('../../lib/worktree');
 
 let passed = 0;
 let failed = 0;

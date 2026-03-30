@@ -24,7 +24,7 @@ const {
     captureFeatureTelemetry,
     writeNormalizedTelemetryRecord,
     writeAgentFallbackSession,
-} = require('./telemetry');
+} = require('../../lib/telemetry');
 
 let passed = 0;
 let failed = 0;

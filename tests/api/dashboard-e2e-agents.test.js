@@ -5,12 +5,12 @@
  * Launches real agents in tmux sessions and waits for them to complete.
  * This suite makes real LLM API calls — agents will actually run and generate code/findings.
  *
- * Run:  node --test test/dashboard-e2e-agents.test.js
- * Or:   npm run test:dashboard:agents
+ * Run:  node --test tests/api/dashboard-e2e-agents.test.js
+ * Or:   npm run test:api:agents
  *
  * Run a single flow:
- *   node --test --test-name-pattern 'Feature Flow' test/dashboard-e2e-agents.test.js
- *   node --test --test-name-pattern 'Research Flow' test/dashboard-e2e-agents.test.js
+ *   node --test --test-name-pattern 'Feature Flow' tests/api/dashboard-e2e-agents.test.js
+ *   node --test --test-name-pattern 'Research Flow' tests/api/dashboard-e2e-agents.test.js
  *
  * Prerequisites:
  *   - tmux installed
@@ -33,7 +33,7 @@ const { spawn, spawnSync } = require('child_process');
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
-const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
+const CLI_PATH = path.join(__dirname, '../..', 'aigon-cli.js');
 const DASHBOARD_PORT = 4198;
 const DASHBOARD_URL = `http://127.0.0.1:${DASHBOARD_PORT}`;
 const BREWBOARD_PATH = path.join(process.env.HOME, 'src', 'brewboard');

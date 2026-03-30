@@ -6,8 +6,8 @@
  * Catches the string-handoff bugs (session names, mode values, endpoint bodies)
  * that have repeatedly broken the dashboard without needing Playwright.
  *
- * Run:  node --test test/dashboard-e2e.test.js
- * Or:   node test/dashboard-e2e.test.js
+ * Run:  node --test tests/api/dashboard-e2e.test.js
+ * Or:   node tests/api/dashboard-e2e.test.js
  *
  * Prerequisites:
  *   - tmux installed
@@ -26,7 +26,7 @@ const { spawn, spawnSync, execSync } = require('child_process');
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
-const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
+const CLI_PATH = path.join(__dirname, '../..', 'aigon-cli.js');
 const DASHBOARD_PORT = 4199;
 const DASHBOARD_URL = `http://127.0.0.1:${DASHBOARD_PORT}`;
 const BREWBOARD_PATH = path.join(process.env.HOME, 'src', 'brewboard');

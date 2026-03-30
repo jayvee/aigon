@@ -42,13 +42,13 @@ const {
   buildAgentCommand,
   buildRawAgentCommand,
   getAgentSignalCapabilities,
-} = require('./worktree');
+} = require('../../lib/worktree');
 
 const {
   DEFAULT_HEARTBEAT_INTERVAL_MS,
   DEFAULT_HEARTBEAT_TIMEOUT_MS,
   getHeartbeatConfig,
-} = require('./workflow-heartbeat');
+} = require('../../lib/workflow-heartbeat');
 
 // ===========================================================================
 // getAgentSignalCapabilities

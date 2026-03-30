@@ -7,7 +7,7 @@
  */
 
 const assert = require('assert');
-const proxy = require('./proxy');
+const proxy = require('../../lib/proxy');
 
 let passed = 0;
 let failed = 0;

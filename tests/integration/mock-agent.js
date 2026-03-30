@@ -22,7 +22,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const manifest = require('../lib/manifest');
+const agentStatus = require('../../lib/agent-status');
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -91,8 +91,8 @@ class MockAgent {
         await sleep(this.delays.submitted);
         if (this._abort) return;
 
-        // Write agent status to manifest — matches real agent-status behavior
-        manifest.writeAgentStatus(this.featureId, this.agentId, {
+        // Write agent status — matches real agent-status behavior
+        agentStatus.writeAgentStatus(this.featureId, this.agentId, {
             status: 'submitted',
             worktreePath: this.worktreePath,
         });

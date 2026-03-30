@@ -2,8 +2,8 @@
 /**
  * Dashboard E2E Research Tests — Full research agent lifecycle.
  *
- * Run:  node --test test/dashboard-e2e-research.test.js
- * Or:   npm run test:research
+ * Run:  node --test tests/api/dashboard-e2e-research.test.js
+ * Or:   npm run test:api:research
  */
 
 'use strict';
@@ -15,7 +15,7 @@ const path = require('path');
 const http = require('http');
 const { spawn, spawnSync } = require('child_process');
 
-const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
+const CLI_PATH = path.join(__dirname, '../..', 'aigon-cli.js');
 const DASHBOARD_PORT = 4197;
 const DASHBOARD_URL = `http://127.0.0.1:${DASHBOARD_PORT}`;
 const BREWBOARD_PATH = path.join(process.env.HOME, 'src', 'brewboard');
