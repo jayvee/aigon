@@ -46,3 +46,17 @@ Target: ~2,600 net lines deleted.
 3. **Research/feedback keep simple filesystem transitions** — only features use the workflow engine. Research and feedback entities use direct spec file moves without any state tracking beyond filesystem location.
 
 4. **No backward compat** — removed all feature flags (workflow.closeEngine, startEngine, evalEngine, pauseEngine). The engine is now the only path.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-03-30
+
+### Findings
+- `feature-eval --force` no longer bypassed unfinished agent status after the workflow-core cutover. The command attempted the engine eval transition before honoring the flag, so Fleet reviews with unfinished agents were blocked despite `--force`.
+
+### Fixes Applied
+- Restored `--force` compatibility in `lib/commands/feature.js` by signaling all non-ready agents as ready before requesting the eval transition.
+
+### Notes
+- Verified with a direct runtime repro in a temporary git repo: a Fleet feature with two non-ready agents now transitions to `evaluating` and writes `docs/specs/features/evaluations/feature-51-eval.md` when invoked with `feature-eval 51 --force`.
