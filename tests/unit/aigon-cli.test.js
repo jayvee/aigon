@@ -725,7 +725,7 @@ test('research-eval warns about unfinished findings and suggests terminal-focus'
     assert.strictEqual(output.some(line => line.includes('aigon terminal-focus 52 cc --research')), true);
     assert.strictEqual(output.some(line => line.includes('aigon research-eval 52 --force')), true);
 }));
-test('research-eval --force fails without engine events (no bootstrap)', () => withTempDir(tempDir => {
+test('research-eval --force does not throw when migration backfills missing engine state', () => withTempDir(tempDir => {
     const researchRoot = path.join(tempDir, 'docs/specs/research-topics');
     const inProgressDir = path.join(researchRoot, '03-in-progress');
     const logsDir = path.join(researchRoot, 'logs');
@@ -758,9 +758,8 @@ test('research-eval --force fails without engine events (no bootstrap)', () => w
         loadAgentConfig: (agentId) => ({ name: agentId === 'cc' ? 'Claude' : agentId }),
     });
 
-    assert.throws(
-        () => withCapturedConsole(() => commands['research-eval'](['52', '--force'])),
-        /has no engine events — run research-start first/
+    assert.doesNotThrow(
+        () => commands['research-eval'](['52', '--force'])
     );
 }));
 
