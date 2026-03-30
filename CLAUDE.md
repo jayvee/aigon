@@ -45,8 +45,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | Module | ~Lines | Owns |
 |--------|--------|------|
 | `lib/commands/feature.js` | 2490 | All `feature-*` handlers, `sessions-close` |
-| `lib/dashboard-server.js` | 1913 | HTTP server, WebSocket relay, polling, reads manifests for state |
-| `lib/commands/infra.js` | 1858 | dashboard, board, config, proxy-setup, dev-server |
+| `lib/dashboard-server.js` | ~1850 | HTTP server, WebSocket relay, polling, reads manifests for state. Never mutates engine state. |
+| `lib/commands/infra.js` | ~1460 | dashboard, server, board, config, proxy-setup, dev-server |
 | `lib/utils.js` | 1474 | Spec CRUD, hooks, version, analytics |
 | `lib/commands/setup.js` | 1212 | init, install-agent, check-version, update, doctor + state reconciliation |
 | `lib/worktree.js` | 1200+ | Worktree creation, tmux sessions, terminal launch, shell trap signal wrapper |
@@ -62,6 +62,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/workflow-core/` | ~1500 | **Workflow engine**: event-sourced state with XState machine, action derivation, effect lifecycle |
 | `lib/workflow-snapshot-adapter.js` | ~310 | **Read adapter**: maps workflow-core snapshots to dashboard/board data formats; event log reading; side-effect free |
 | `lib/workflow-heartbeat.js` | ~125 | **Heartbeat**: agent liveness signals, configurable timeout (120s default), expired heartbeat sweep |
+| `lib/supervisor.js` | ~276 | **Supervisor**: observes agent liveness (tmux + heartbeat), emits signals, sends notifications. Never kills/restarts/moves. |
+| `lib/supervisor-service.js` | ~175 | **Service installer**: launchd (macOS) / systemd (Linux) auto-restart for `aigon server start --persistent` |
 | `lib/shell-trap.test.js` | ~190 | Tests for shell trap signal infrastructure |
 
 Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/devserver.js`.
