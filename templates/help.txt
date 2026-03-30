@@ -112,7 +112,7 @@ Examples:
   aigon feature-autopilot 42 cc gg cx cu mv            # Arena conductor: setup + spawn + monitor + eval
   aigon feature-autopilot status 42              # Check conductor status
   aigon feature-autopilot stop 42                # Stop all agents
-  aigon dashboard                      # Start live dashboard
+  aigon server start                   # Start AIGON server (dashboard UI + API)
   aigon feature-open 55 cc             # Open feature worktree and start Claude
   aigon feature-open 55 --all          # Open all Fleet agents side-by-side
   aigon feature-open 100 101 102       # Open features side-by-side (parallel)
