@@ -15,7 +15,7 @@ The dashboard is a single-page web app. It is served by the AIGON server, a fore
 | `aigon server restart` | Restart the server |
 | `aigon server status` | Show server health and uptime |
 
-The AIGON server runs as a foreground process. Each worktree gets its own port and, when aigon-proxy is running, a named URL (e.g. `http://cc-73.aigon.localhost`).
+The AIGON server runs as a foreground process with a fixed identity and URL: `http://aigon.localhost` (or `http://localhost:4100` when proxy is unavailable), regardless of the current working directory.
 
 ## Dev Proxy Stack
 
@@ -49,7 +49,7 @@ aigon proxy install  # Optional: install launchd plist for auto-start on boot
 | Service | Port | URL |
 |---------|------|-----|
 | Main AIGON server instance | 4100 (default) | `http://aigon.localhost` |
-| Worktree instances | 4101–4199 (dynamic) | `http://{agent}-{id}.aigon.localhost` |
+| Preview dashboard instances (`aigon dashboard --preview`) | 4101–4199 (dynamic) | `http://{agent}-{id}.aigon-preview.localhost` |
 
 ## Troubleshooting
 

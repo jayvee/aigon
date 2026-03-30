@@ -103,7 +103,7 @@ tmux attach -t brewboard-f2-gg-brewery-import
 **Important:** Use `nohup` to prevent the dashboard from getting suspended by shell job control.
 
 ```bash
-nohup aigon dashboard > /dev/null 2>&1 &
+nohup aigon server start > /dev/null 2>&1 &
 aigon dashboard add ~/src/brewboard
 ```
 
@@ -162,7 +162,7 @@ Gemini CLI can't open a browser inside the container. When you run `gemini`, it 
 | Gemini trust dialog on worktrees | Fixed in aigon (pre-seeds `~/.gemini/trustedFolders.json`) |
 | Dashboard "View" button can't open tmux | Use `docker exec -it aigon-linux tmux attach -t <session>` from Mac |
 | Dev server ports not accessible | Restart container after updating docker-compose port mapping |
-| `aigon dashboard &` gets suspended | Use `nohup aigon dashboard > /dev/null 2>&1 &` or `docker exec -d` |
+| `aigon server start &` gets suspended | Use `nohup aigon server start > /dev/null 2>&1 &` or `docker exec -d` |
 | Chrome not available on arm64 Linux | Use Playwright's bundled Chromium for headless testing |
 
 ## Teardown
