@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 481
+lines_removed: 14
+lines_changed: 495
+files_touched: 11
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 567
+output_tokens: 26198
+cache_creation_input_tokens: 755479
+cache_read_input_tokens: 11589565
+thinking_tokens: 0
+total_tokens: 12371809
+billable_tokens: 26765
+cost_usd: 33.5229
+sessions: 2
+model: "claude-opus-4-6"
+tokens_per_line_changed: 54.07
+---
 # Implementation Log: Feature 169 - shell-trap-signal-infrastructure
 Agent: cc
 
