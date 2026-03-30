@@ -6,7 +6,7 @@
     "aigon": "./aigon-cli.js"
   },
   "scripts": {
-    "test": "node aigon-cli.test.js && node lib/workflow-core/workflow-core.test.js && node lib/workflow-signals.test.js && node lib/shell-trap.test.js && npx playwright test --config tests/dashboard/playwright.config.js --reporter=list",
+    "test": "node scripts/generate-workflow-diagrams.js --check && node aigon-cli.test.js && node lib/workflow-core/workflow-core.test.js && node lib/workflow-signals.test.js && node lib/shell-trap.test.js && npx playwright test --config tests/dashboard/playwright.config.js --reporter=list",
     "test:dashboard": "npx playwright test --config tests/dashboard/playwright.config.js --reporter=list",
     "test:e2e": "node test/e2e.test.js",
     "test:e2e:mock-solo": "node test/e2e-mock-solo.test.js",
@@ -18,7 +18,9 @@
     "test:dashboard:agents:research": "node --test test/dashboard-e2e-research.test.js",
     "test:all": "node aigon-cli.test.js && node test/e2e.test.js",
     "fixture:seed": "node test/setup-fixture.js",
-    "fixture:reset": "node test/reset-fixture.js"
+    "fixture:reset": "node test/reset-fixture.js",
+    "workflow:diagrams": "node scripts/generate-workflow-diagrams.js",
+    "workflow:diagrams:check": "node scripts/generate-workflow-diagrams.js --check"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2"
