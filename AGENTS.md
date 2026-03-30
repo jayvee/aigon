@@ -22,7 +22,6 @@ function buildCtx(overrides = {}) {
         board:      { ...board, ...overrides },    // lib/board.js
         feedback:   { ...feedbackLib, ...overrides },
         validation: { ...validation, ...overrides },
-        stateMachine,
     };
 }
 
@@ -39,6 +38,16 @@ module.exports = function featureCommands(ctx) {
 
 Test overrides: `createAllCommands({ getCurrentBranch: () => 'mock-branch' })`.
 
+## Workflow State At A Glance
+
+- **Feature lifecycle authority**: `lib/workflow-core/` and `.aigon/workflows/features/{id}/`
+- **Feature runtime / agent status files**: `.aigon/state/feature-{id}-{agent}.json`
+- **Research / feedback lifecycle authority**: spec folder location plus command logic
+- **Preferred feature read path**: `lib/workflow-snapshot-adapter.js`
+- **Fallback / non-feature read path**: `lib/workflow-read-model.js` + `lib/state-queries.js`
+
+Important: after feature 171, features no longer use the old coordinator manifest system as the lifecycle source of truth. Folder position is the visible outcome; the engine is the authority that moves the spec.
+
 ## Module Map
 Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 
@@ -54,7 +63,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
 | `lib/workflow-core/` | ~2500 | **Workflow engine**: event-sourced state, XState machine, effects, locking — sole authority for feature lifecycle |
 | `lib/workflow-snapshot-adapter.js` | ~310 | Read adapter: maps engine snapshots to dashboard/board formats |
-| `lib/state-queries.js` | ~200 | Pure functions for action/transition derivation from engine state |
+| `lib/state-queries.js` | ~200 | Pure read-side query helpers used by research/feedback and feature fallback paths |
 | `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/feature-{id}-{agent}.json`) |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | 899 | Branch/worktree/status helpers, feature git signals, AI attribution classification |

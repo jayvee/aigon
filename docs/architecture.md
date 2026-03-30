@@ -117,7 +117,12 @@ Current shared modules:
 
 ## Workflow State
 
-The Aigon workflow is state-as-location. Task state is represented by file location under `docs/specs/`.
+The Aigon workflow now has two layers:
+
+- Spec location under `docs/specs/` remains the user-visible workflow stage.
+- For **features only**, the authoritative lifecycle state lives in the workflow engine under `.aigon/workflows/`.
+
+That means "state-as-location" is still true at the UX level, but feature commands no longer mutate workflow by directly treating folder position as the only source of truth. The engine owns the lifecycle and moves the spec as a side effect.
 
 - `docs/specs/features/01-inbox` to `06-paused`
 - `docs/specs/research-topics/01-inbox` to `06-paused`
@@ -129,7 +134,7 @@ Core rule: use the CLI to move specs between states. Do not rename or move spec 
 
 ### Workflow-Core Engine (`lib/workflow-core/`)
 
-The sole state management system for features. All feature lifecycle commands (`feature-start`, `feature-close`, `feature-eval`, `feature-pause`, `feature-resume`) route through this engine.
+The workflow-core engine is the sole lifecycle authority for features. All feature lifecycle commands (`feature-start`, `feature-close`, `feature-eval`, `feature-pause`, `feature-resume`) route through this engine.
 
 **Module layout:**
 
@@ -162,7 +167,36 @@ The sole state management system for features. All feature lifecycle commands (`
 - `.aigon/workflows/features/{id}/snapshot.json` — derived snapshot
 - `.aigon/workflows/features/{id}/lock` — transient lock file
 
+### Workflow Authority Split
+
+The post-cutover system is easier to reason about if you separate lifecycle truth from runtime/session metadata:
+
+| Concern | Authority | Notes |
+|--------|-----------|-------|
+| Feature lifecycle (`implementing`, `evaluating`, `ready_for_review`, `closing`, `done`, `paused`) | `lib/workflow-core/` snapshot + event log | Sole write path for feature lifecycle |
+| Feature spec folder location | Engine effects (`move_spec`) | User-visible reflection of engine state |
+| Feature agent runtime status (`running`, `waiting`, `ready`, `lost`, etc.) | Engine signals plus per-agent status files in `.aigon/state/feature-{id}-{agent}.json` | Session/runtime metadata, not the lifecycle authority |
+| Research / feedback lifecycle | Spec folder location + command logic | Research and feedback do not use workflow-core |
+
+Important distinction: `.aigon/state/` still exists after the cutover, but it is no longer the coordinator manifest system that decides feature lifecycle.
+
+### Read-Side Consumers
+
+Feature writes go through the engine, but the read side is still mixed:
+
+- `lib/workflow-snapshot-adapter.js` is the preferred feature read adapter for dashboard and board consumers when a workflow snapshot exists.
+- `lib/workflow-read-model.js` and `lib/state-queries.js` still provide derived action suggestions for research, feedback, and feature fallback paths.
+- `lib/dashboard-server.js` still carries compatibility logic for agent discovery and older repos that may not have a complete workflow snapshot yet.
+
+So the architecture after Feature 171 is:
+
+1. Feature lifecycle writes: engine only.
+2. Feature lifecycle reads: prefer workflow snapshots.
+3. Agent/session reads: still combine snapshot data, `.aigon/state/` files, tmux state, and some compatibility fallbacks.
+
 **Bootstrap for pre-cutover features:** Features started before the engine existed have no event log. When `feature-close` encounters this, it synthesizes events (started → agent_ready × N → eval_requested → winner.selected) to bootstrap engine state before closing.
+
+**Compatibility note:** `feature-eval` and `feature-close` still contain bootstrap/signal-synthesis paths for pre-cutover features. New features should stay on the normal engine path; older in-flight features may still hit those compatibility branches.
 
 ## Where To Make Changes
 
@@ -330,7 +364,7 @@ All three must pass for `npm test` to succeed.
 ### Quick reference
 
 ```bash
-npm test                        # Unit + manifest + dashboard UI (the default suite)
+npm test                        # Unit + workflow-core + dashboard UI (the default suite)
 npm run test:e2e:mock-solo      # Solo Drive lifecycle with mock agent
 npm run test:e2e:mock-fleet     # Fleet lifecycle with mock agents
 npm run test:e2e                # Full CLI E2E with real git repos
@@ -339,6 +373,11 @@ npm run test:dashboard:e2e      # Dashboard E2E lifecycle tests
 node -c aigon-cli.js            # Quick syntax check (no tests)
 node -c lib/<module>.js         # Quick syntax check for a module
 ```
-### Workflow Read Model
+### Read Models
 
-`lib/workflow-read-model.js` centralizes read-side workflow derivation used by consumers such as the dashboard and board. It builds a `StateContext` from discovered agents, asks `lib/state-queries.js` for valid and recommended actions, and formats consumer-facing action suggestions without mutating workflow state.
+There are currently two read-side paths:
+
+- `lib/workflow-snapshot-adapter.js`: maps workflow-core snapshots into dashboard/board-friendly shapes for features. This is the preferred feature read path.
+- `lib/workflow-read-model.js`: derives recommended actions from `lib/state-queries.js` for research/feedback and for feature fallback cases where a workflow snapshot is unavailable.
+
+If you are changing feature lifecycle behavior, update the engine first. Then check whether snapshot consumers and fallback read-model consumers still present the same behavior.
