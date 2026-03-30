@@ -5,6 +5,17 @@
       "models": {
         "implement": "opus"
       }
+    },
+    "cu": {
+      "research": {
+        "model": "composer-2"
+      },
+      "implement": {
+        "model": "composer-2"
+      },
+      "evaluate": {
+        "model": "composer-2"
+      }
     }
   },
   "forcePro": true
