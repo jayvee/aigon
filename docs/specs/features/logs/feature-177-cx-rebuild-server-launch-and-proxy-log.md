@@ -42,3 +42,20 @@ Agent: cx
 - Test run status:
   - `npm test` failed in this worktree due to missing dependency: `Cannot find module 'xstate'` (environment issue unrelated to this feature).
   - `node tests/unit/proxy.test.js` passed (`44 passed, 0 failed`).
+
+## Code Review
+
+**Reviewed by**: cc (Claude Opus 4.6)
+**Date**: 2026-03-31
+
+### Findings
+- `server restart` path stopped the process but did not call `deregisterDevServer()` before relaunching. If `launchDashboardServer` failed (e.g., port conflict), the stale registry entry with the dead PID would persist. The `stop` path correctly deregistered but `restart` did not.
+
+### Fixes Applied
+- `fix(review): deregister stale proxy entry on server restart` — added `deregisterDevServer(SERVER_APP_ID, '')` to the restart path, matching the stop path behavior.
+
+### Notes
+- Implementation is solid overall. The fixed app ID approach cleanly solves the cwd-derived identity problem.
+- The `dashboard` → `server` alias correctly preserves `--preview` mode while forwarding lifecycle commands.
+- `supervisor-service.js` rewrite properly resolves the working directory from the CLI location instead of `os.homedir()`.
+- All syntax checks pass. Proxy unit tests pass (44/44).
