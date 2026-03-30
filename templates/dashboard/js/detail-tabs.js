@@ -125,7 +125,7 @@
         });
         const firstEventTs = events.length > 0 ? (events[0].at || events[0].ts || events[0].timestamp || null) : null;
         const createdTs = manifest.createdAt || byType.created || byType['feature-created'] || byType['transition:feature-create'] || byType['transition:research-create'] || byType['transition:feature-prioritise'] || byType['transition:research-prioritise'] || byType.bootstrapped || firstEventTs;
-        const startedTs = byType.started || byType['feature-started'] || byType['research-started'] || byType['transition:feature-start'] || byType['transition:research-start'];
+        const startedTs = byType.started || byType['feature-started'] || byType['research-started'] || byType['transition:feature-start'] || byType['transition:research-start'] || byType['signal.agent_started'];
         // Fallback: derive submit time from agent status files if no manifest event
         let agentSubmitTs = null;
         if (!byType.submitted && !byType['all-submitted'] && !byType['feature-submitted'] && !byType['transition:feature-submit']) {
@@ -136,9 +136,9 @@
             }
           });
         }
-        const submittedTs = byType.submitted || byType['all-submitted'] || byType['feature-submitted'] || byType['research-submitted'] || byType['transition:feature-submit'] || byType['transition:research-submit'] || agentSubmitTs;
-        const reviewedTs = byType['feature-review'] || byType['research-review'] || byType['transition:feature-review'] || byType['transition:research-review'];
-        const evaluatedTs = byType.evaluated || byType.closed || byType['feature-evaluated'] || byType['research-evaluated'] || byType['transition:feature-eval'] || byType['transition:feature-close'] || byType['transition:research-eval'] || byType['transition:research-close'];
+        const submittedTs = byType.submitted || byType['all-submitted'] || byType['feature-submitted'] || byType['research-submitted'] || byType['transition:feature-submit'] || byType['transition:research-submit'] || byType['signal.agent_ready'] || agentSubmitTs;
+        const reviewedTs = byType['review.completed'] || byType['feature-review'] || byType['research-review'] || byType['transition:feature-review'] || byType['transition:research-review'];
+        const evaluatedTs = byType['eval.completed'] || byType.evaluated || byType.closed || byType['feature-evaluated'] || byType['research-evaluated'] || byType['transition:feature-eval'] || byType['transition:feature-close'] || byType['transition:research-eval'] || byType['transition:research-close'];
 
         const created = createdTs ? new Date(createdTs) : null;
         const started = startedTs ? new Date(startedTs) : null;
@@ -153,7 +153,7 @@
           timeToEvaluate: submitted && (evaluated || reviewed) ? ((evaluated || reviewed) - submitted) : NaN,
           totalLifecycle: created && lastMilestone ? (lastMilestone - created) : NaN,
           agentCount: Array.isArray(manifest.agents) ? manifest.agents.length : Object.keys(payload.agentFiles || {}).length,
-          winner: manifest.winner || manifest.winningAgent || 'n/a',
+          winner: manifest.winner || manifest.winningAgent || manifest.winnerAgentId || 'n/a',
           createdAt: createdTs || null,
           startedAt: startedTs || null,
           submittedAt: submittedTs || null,

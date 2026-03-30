@@ -56,6 +56,12 @@ Examine all changes made on this branch:
 git diff main...HEAD
 ```
 
+Signal review start immediately:
+
+```bash
+aigon agent-status reviewing
+```
+
 Enter **Code Review Mode** with these constraints:
 
 ### You MAY fix:
@@ -127,9 +133,14 @@ git commit -m "docs(review): add review notes to implementation log"
 
 After completing the review:
 
-1. Tell the user: "Code review complete. [N] fix(es) committed." (or "Code review complete. No fixes needed.")
-2. Show a summary of what was reviewed and any fixes made
-3. **STOP and WAIT** for the user to:
+1. Signal review completion:
+   ```bash
+   aigon agent-status review-complete
+   ```
+
+2. Tell the user: "Code review complete. [N] fix(es) committed." (or "Code review complete. No fixes needed.")
+3. Show a summary of what was reviewed and any fixes made
+4. **STOP and WAIT** for the user to:
    - Review your changes: `git log --oneline main..HEAD`
    - Inspect review commits: `git show <commit>`
    - Decide next steps
