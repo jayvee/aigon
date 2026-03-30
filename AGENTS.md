@@ -3,7 +3,7 @@
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
-- **Shared logic**: `lib/*.js` — 16 modules; see Module Map below
+- **Shared logic**: `lib/*.js` — 17 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
@@ -55,7 +55,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 |--------|--------|------|
 | `lib/commands/feature.js` | 2403 | All `feature-*` handlers, `sessions-close` |
 | `lib/commands/infra.js` | 1893 | `aigon server` command, board, config, proxy-setup, dev-server |
-| `lib/dashboard-server.js` | 1785 | AIGON server HTTP module: serves dashboard UI, API, WebSocket relay, polling |
+| `lib/dashboard-server.js` | ~2660 | AIGON server HTTP module: serves dashboard UI, API, WebSocket relay, polling |
+| `lib/dashboard-status-collector.js` | ~830 | Repo/entity read-side assembly for the AIGON server: feature, research, feedback, summary, and compatibility reads |
 | `lib/utils.js` | 1464 | YAML parsers, spec CRUD, hooks, version, analytics |
 | `lib/worktree.js` | 1510 | Worktree creation, tmux sessions, terminal launch, agent git-attribution setup |
 | `lib/commands/setup.js` | 959 | init, install-agent, check-version, update, doctor |
@@ -63,6 +64,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
 | `lib/workflow-core/` | ~2500 | **Workflow engine**: event-sourced state, XState machine, effects, locking — sole authority for feature lifecycle |
 | `lib/workflow-snapshot-adapter.js` | ~310 | Read adapter: maps engine snapshots to dashboard/board formats |
+| `lib/feature-spec-resolver.js` | ~140 | Canonical feature spec lookup; shields consumers from folder guessing and placeholder specs |
 | `lib/state-queries.js` | ~200 | Pure read-side query helpers used by research/feedback and feature fallback paths |
 | `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting for workflow and snapshot read paths |
 | `lib/dashboard-status-helpers.js` | ~200 | Shared dashboard status helpers: tmux/session detection, worktree lookup, status normalization, stale-session heuristics |
@@ -127,5 +129,5 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 1. `AGENTS.md` (this file) — quick orientation
 2. `docs/architecture.md` — full module docs, ctx details, design rules, naming conventions
 3. `docs/development_workflow.md` — feature/research lifecycle
-4. Active spec: `docs/specs/features/03-in-progress/feature-NNN-*.md`
+4. Active feature spec: `aigon feature-spec <ID>`
 5. Agent-specific notes: `docs/agents/{id}.md`

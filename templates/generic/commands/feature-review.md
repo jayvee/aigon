@@ -8,7 +8,7 @@ Perform a code review on another agent's implementation, making targeted fixes w
 ## Argument Resolution
 
 If no ID is provided, or the ID doesn't match an existing feature:
-1. List all files in `./docs/specs/features/03-in-progress/` and `./docs/specs/features/04-in-evaluation/` matching `feature-*.md`
+1. Run `aigon feature-list --active`
 2. If a partial ID or name was given, filter to matches
 3. Present the matching features and ask the user to choose one
 
@@ -40,7 +40,10 @@ cd "$WORKTREE" || { echo "No worktree found — cannot proceed"; exit 1; }
 
 Read the feature spec to understand what was supposed to be built:
 
-- Location: `./docs/specs/features/03-in-progress/feature-{{ARG1_SYNTAX}}-*.md` or `./docs/specs/features/04-in-evaluation/feature-{{ARG1_SYNTAX}}-*.md`
+```bash
+SPEC_PATH=$(aigon feature-spec {{ARG1_SYNTAX}})
+cat "$SPEC_PATH"
+```
 
 ## Step 3: Read the implementation log
 
@@ -54,6 +57,12 @@ Examine all changes made on this branch:
 
 ```bash
 git diff main...HEAD
+```
+
+Signal review start immediately:
+
+```bash
+aigon agent-status reviewing
 ```
 
 Enter **Code Review Mode** with these constraints:
@@ -127,9 +136,14 @@ git commit -m "docs(review): add review notes to implementation log"
 
 After completing the review:
 
-1. Tell the user: "Code review complete. [N] fix(es) committed." (or "Code review complete. No fixes needed.")
-2. Show a summary of what was reviewed and any fixes made
-3. **STOP and WAIT** for the user to:
+1. Signal review completion:
+   ```bash
+   aigon agent-status review-complete
+   ```
+
+2. Tell the user: "Code review complete. [N] fix(es) committed." (or "Code review complete. No fixes needed.")
+3. Show a summary of what was reviewed and any fixes made
+4. **STOP and WAIT** for the user to:
    - Review your changes: `git log --oneline main..HEAD`
    - Inspect review commits: `git show <commit>`
    - Decide next steps

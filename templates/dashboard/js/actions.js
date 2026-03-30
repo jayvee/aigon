@@ -13,7 +13,9 @@ const AGENT_ACTION_LABELS = {
   'feature-focus':   'Open',
   'feature-open':    (va, feature) => {
     const agent = (feature.agents || []).find(a => a.id === va.agentId);
-    return (agent && agent.status === 'implementing') ? 'Restart' : 'Start';
+    if (agent && agent.status === 'implementing') return 'Restart';
+    if (agent && agent.status === 'submitted') return 'Open';
+    return va.label || 'Start';
   },
   'research-attach': 'Open',
   'research-open':   (va, feature) => {
@@ -69,11 +71,10 @@ function buildFeatureActions(feature, repoPath, pipelineType) {
     return va.type === 'transition' && TRANSITIONS_AS_BUTTONS.includes(va.action);
   });
 
-  // Deduplicate: same action name → keep 'action' type over 'transition'
+  // Deduplicate while preserving server-provided order.
   const seen = new Set();
   const deduped = [];
-  const sorted = [...buttonsToRender.filter(v => v.type === 'action'), ...buttonsToRender.filter(v => v.type === 'transition')];
-  for (const va of sorted) {
+  for (const va of buttonsToRender) {
     const key = va.action + (va.agentId || '');
     if (!seen.has(key)) { seen.add(key); deduped.push(va); }
   }
