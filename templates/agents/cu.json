@@ -11,11 +11,7 @@
     "implementPrompt": "/aigon-feature-do {featureId}",
     "evalPrompt": "/aigon-feature-eval {featureId}",
     "reviewPrompt": "/aigon-feature-review {featureId}",
-    "models": {
-      "research": "composer-2",
-      "implement": "composer-2",
-      "evaluate": "composer-2"
-    }
+    "models": {}
   },
   "placeholders": {
     "AGENT_ID": "cu",
