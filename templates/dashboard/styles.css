@@ -73,9 +73,9 @@
     .eval-badge.pick-winner{color:#86efac}
     .eval-badge.pick-winner::before{background:#22c55e}
     .kcard-winner{font-size:11px;color:#86efac;font-weight:600;margin-left:4px;flex-shrink:0}
-    .review-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:1px 6px;border-radius:999px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:#fbbf24;margin-left:6px;flex-shrink:0;vertical-align:middle}
-    .review-badge.review-running{animation:pulse-review 2s ease-in-out infinite}
-    @keyframes pulse-review{0%,100%{opacity:1}50%{opacity:.5}}
+    .agent-review{border-left-color:#fbbf24}
+    .kcard-agent-status.status-reviewing{color:#fbbf24}
+    .kcard-agent-status.status-review-done{color:#86efac}
     .kcard-eval-btn{font-size:11px;padding:2px 8px;margin-top:4px;width:100%}
     /* eval-badge inside a card title (monitor view) keeps pill styling for inline use */
     .card-h .eval-badge{padding:2px 8px;border-radius:999px;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35)}
