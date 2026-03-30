@@ -1,8 +1,8 @@
-# Feature: aigon-supervisor
+# Feature: aigon-server
 
 ## Architecture
 
-One process: `aigon dashboard start`. Two modules inside it with strict separation.
+One process: `aigon server start`. Two modules inside it with strict separation.
 
 ```
 One process (managed by launchd/systemd, auto-restarts on crash)
@@ -67,9 +67,9 @@ Engine guards (feature 168) prevent duplicates and signals to terminal states.
 
 ## Acceptance Criteria
 
-- [ ] `aigon dashboard start` launches one process containing both HTTP and supervisor modules
-- [ ] `aigon dashboard stop` stops both cleanly
-- [ ] `aigon dashboard status` shows: running/stopped, uptime, last supervisor sweep time
+- [ ] `aigon server start` launches one process containing both HTTP and supervisor modules
+- [ ] `aigon server stop` stops both cleanly
+- [ ] `aigon server status` shows: running/stopped, uptime, last supervisor sweep time
 - [ ] Supervisor polls tmux sessions every 30 seconds
 - [ ] Supervisor checks heartbeat timestamps every 30 seconds
 - [ ] Dead session detected → `signal.session_lost` emitted, notification sent
@@ -142,7 +142,7 @@ Delete from `lib/dashboard-server.js`:
 
 ### Step 4: Auto-restart via launchd/systemd
 
-`aigon dashboard start --persistent`:
+`aigon server start --persistent`:
 - macOS: writes `~/Library/LaunchAgents/com.aigon.dashboard.plist` with `KeepAlive: true`
 - Linux: writes `~/.config/systemd/user/aigon-dashboard.service` with `Restart=on-failure`
 
