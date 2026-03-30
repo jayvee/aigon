@@ -51,7 +51,6 @@ function buildCtx(overrides = {}) {
         board:      { ...board, ...overrides },
         feedback:   { ...feedbackLib, ...overrides },
         validation: { ...validation, ...overrides },
-        stateMachine,
     };
 }
 
@@ -79,10 +78,10 @@ Current shared modules:
   `normalizeFeedbackMetadata`, `collectFeedbackItems`, `findDuplicateFeedbackCandidates`, `buildFeedbackTriageRecommendation`
 - `lib/git.js` (~700+ lines): git helpers — branch/worktree/status, feature metrics, AI-attribution classification, commit analytics
   `getCurrentBranch`, `getFeatureGitSignals`, `classifyCommitAttributionRange`, `getFileLineAttribution`, `getCommitAnalytics`, `filterCommitAnalytics`, `buildCommitSeries`
-- `lib/manifest.js` (~413 lines): **state source of truth** — per-feature JSON manifests in `.aigon/state/`, per-agent status files, advisory locking, lazy bootstrap from folder position, event audit trail, `dependsOn` dependency tracking
-  `readManifest`, `writeManifest`, `readAgentStatus`, `writeAgentStatus`, `acquireLock`, `releaseLock`
-- `lib/state-machine.js` (~764 lines): spec state transitions, mandatory `requestTransition()` gatekeeper, outbox pattern for crash-safe side effects
-  `transition`, `getValidTransitions`, `requestTransition`, `buildStateMachine`
+- `lib/agent-status.js` (~130 lines): per-agent status file I/O in `.aigon/state/`, atomic JSON writes, candidate ID resolution
+  `readAgentStatus`, `writeAgentStatus`, `writeAgentStatusAt`, `agentStatusPath`, `getStateDir`, `getLocksDir`
+- `lib/state-queries.js` (~250 lines): read-only UI helpers — stage definitions, transition/action tables, guard functions. Pure module, no I/O.
+  `getValidTransitions`, `getAvailableActions`, `getSessionAction`, `getRecommendedActions`, `isActionValid`, `shouldNotify`
 - `lib/validation.js` (~1,045 lines): Ralph/autonomous loop and smart validation helpers
   `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`, `runFeatureValidateCommand`
 
@@ -90,7 +89,7 @@ Current shared modules:
 
 - `lib/proxy.js` (~711 lines): Caddy management, port allocation, dev-proxy registry, route reconciliation
   `generateCaddyfile`, `reloadCaddy`, `registerDevServer`, `deregisterDevServer`, `reconcileProxyRoutes`, `allocatePort`
-- `lib/dashboard-server.js` (~1,913 lines): HTTP server, polling, WebSocket relay, notifications, action dispatch — reads state from manifests
+- `lib/dashboard-server.js` (~1,913 lines): HTTP server, polling, WebSocket relay, notifications, action dispatch — reads state from engine snapshots
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
 - `lib/worktree.js` (~1,122 lines): worktree creation, permissions, git attribution bootstrap, tmux sessions, terminal launching
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
@@ -128,9 +127,9 @@ The Aigon workflow is state-as-location. Task state is represented by file locat
 
 Core rule: use the CLI to move specs between states. Do not rename or move spec files manually.
 
-### Workflow-Core (`lib/workflow-core/`)
+### Workflow-Core Engine (`lib/workflow-core/`)
 
-An event-sourced workflow engine imported from the Aigon Next prototype. It is **foundational only** — existing commands still use `lib/state-machine.js` + `lib/manifest.js`. The workflow-core provides the new architecture that commands will incrementally migrate to.
+The sole state management system for features. All feature lifecycle commands (`feature-start`, `feature-close`, `feature-eval`, `feature-pause`, `feature-resume`) route through this engine.
 
 **Module layout:**
 
@@ -140,55 +139,30 @@ An event-sourced workflow engine imported from the Aigon Next prototype. It is *
 | `paths.js` | Path computation for `.aigon/workflows/` state files |
 | `event-store.js` | Append-only JSONL event persistence |
 | `snapshot-store.js` | JSON snapshot read/write |
-| `lock.js` | Exclusive file-based locking (not advisory) |
+| `lock.js` | Exclusive file-based locking |
 | `projector.js` | Event replay — rebuilds FeatureContext from event stream |
 | `machine.js` | XState state machine defining valid lifecycle transitions |
 | `actions.js` | Action derivation via `snapshot.can()` — machine is single source of truth |
 | `effects.js` | Pluggable effect runner + default feature effect implementations |
 | `engine.js` | Full orchestration: command dispatch, event persistence, effect execution |
-| `index.js` | Barrel export — `require('./workflow-core')` for all public API |
+| `index.js` | Barrel export for all public API |
 
-**Key differences from current system:**
+**Key properties:**
 
-| Aspect | Current (`lib/state-machine.js` + `lib/manifest.js`) | Workflow-Core (`lib/workflow-core/`) |
-|--------|-------------------------------------------------------|--------------------------------------|
-| State authority | Folder location + manifest JSON | Event log + projected snapshot |
-| Action source | Manual guards + dashboard heuristics | XState machine + `snapshot.can()` |
-| Lock model | Advisory (PID-based) | Exclusive file creation (`wx` flag) |
-| Effects | Implicit (baked into commands) | Explicit, durable, resumable lifecycle |
-| Dependency | None | `xstate` npm package |
-
-**Migration plan:**
-1. ~~Import core as isolated, tested module~~ *(done)*
-2. Wire dashboard read model to `deriveAvailableActions()`
-3. ~~Migrate `feature-close` to use engine~~ *(done — behind `workflow.closeEngine` flag)*
-4. Migrate `feature-start` to use engine
-5. Full cutover — remove `lib/manifest.js` + `lib/state-machine.js`
-
-### Workflow-Close Bridge (`lib/workflow-close.js`)
-
-Bridges `feature-close` with the workflow-core engine behind a feature flag. This is the first write-side migration.
-
-**Enable:** set `workflow.closeEngine: true` in `.aigon/config.json` or `AIGON_WORKFLOW_CLOSE_ENGINE=1` env var.
-
-**How it works:**
-1. Bootstraps workflow-core state by synthesizing events from the existing manifest (started → agent_ready → eval → winner.selected → ready_for_review)
-2. Emits `feature.close_requested` + custom effect events
-3. Runs effects through the engine's claim/reclaim lifecycle
-4. Also updates legacy manifest for backward compatibility
-
-**Key behavior:**
-- **Resume:** If close is interrupted after merge but before effects complete, re-running `feature-close` detects the `closing` state and resumes from where it left off
-- **Blocked retry:** If another process is already executing effects (healthy claim), the operator sees a clear message: "Close effects are already being executed by another process"
-- **Reclaim:** Use `--reclaim` flag to force immediate reclaim of stale effects
-- **Fallback:** When the flag is off, the legacy `requestTransition` + `moveFile` + `completePendingOp` path remains unchanged
-
-**Effect IDs use `bridge.` prefix** (e.g. `bridge.move_spec_to_done`) to avoid the engine's `materializePendingEffects` overwriting payloads with `.aigon/workflows/` paths. The bridge operates on the real `docs/specs/features/` paths.
+| Aspect | How it works |
+|--------|-------------|
+| State authority | Event log + projected snapshot |
+| Action source | XState machine + `snapshot.can()` |
+| Lock model | Exclusive file creation (`wx` flag) |
+| Effects | Explicit, durable, resumable lifecycle (requested → claimed → succeeded/failed) |
+| Dependency | `xstate` npm package |
 
 **State files** (gitignored, under `.aigon/workflows/`):
 - `.aigon/workflows/features/{id}/events.jsonl` — immutable event log
 - `.aigon/workflows/features/{id}/snapshot.json` — derived snapshot
 - `.aigon/workflows/features/{id}/lock` — transient lock file
+
+**Bootstrap for pre-cutover features:** Features started before the engine existed have no event log. When `feature-close` encounters this, it synthesizes events (started → agent_ready × N → eval_requested → winner.selected) to bootstrap engine state before closing.
 
 ## Where To Make Changes
 
@@ -312,7 +286,7 @@ Aigon has five test layers, each serving a different purpose:
 | Layer | Command | Framework | What it tests |
 |-------|---------|-----------|---------------|
 | **Unit tests** | `node aigon-cli.test.js` | Custom `test()` | Core logic: parsing, state machine, dashboard data, command routing, analytics |
-| **Module tests** | `node lib/<name>.test.js` | Custom `test()` | Individual modules: manifest, config, proxy, worktree, templates, dashboard-server |
+| **Module tests** | `node lib/<name>.test.js` | Custom `test()` | Individual modules: workflow-core, workflow-signals, shell-trap, config, proxy, worktree, templates, dashboard-server |
 | **Dashboard UI** | `npm run test:dashboard` | Playwright | Dashboard HTML rendering with mocked API data (monitor, pipeline, actions, analytics) |
 | **Mock E2E** | `npm run test:e2e:mock-solo` / `mock-fleet` | Custom runner | Full feature lifecycle with mock agents — no AI tokens burned |
 | **CLI E2E** | `npm run test:e2e` | Custom runner | Real git operations on fixture repos in `~/src/` |
@@ -322,9 +296,11 @@ There is also a **Dashboard E2E** layer (`npm run test:dashboard:e2e`) that runs
 ### What `npm test` runs
 
 ```
-node aigon-cli.test.js        # Unit tests (~170 tests)
-node lib/manifest.test.js     # Manifest module tests (~26 tests)
-npx playwright test ...       # Dashboard UI tests (~30 tests)
+node aigon-cli.test.js                          # Unit tests (~195 tests)
+node lib/workflow-core/workflow-core.test.js     # Workflow engine tests (~50 tests)
+node lib/workflow-signals.test.js               # Signal/heartbeat tests (~39 tests)
+node lib/shell-trap.test.js                     # Shell trap tests (~24 tests)
+npx playwright test ...                         # Dashboard UI tests (~30 tests)
 ```
 
 All three must pass for `npm test` to succeed.
@@ -365,4 +341,4 @@ node -c lib/<module>.js         # Quick syntax check for a module
 ```
 ### Workflow Read Model
 
-`lib/workflow-read-model.js` centralizes read-side workflow derivation used by consumers such as the dashboard and board. It builds a `StateContext` from discovered agents, asks `lib/state-machine.js` for valid and recommended actions, and formats consumer-facing action suggestions without mutating workflow state.
+`lib/workflow-read-model.js` centralizes read-side workflow derivation used by consumers such as the dashboard and board. It builds a `StateContext` from discovered agents, asks `lib/state-queries.js` for valid and recommended actions, and formats consumer-facing action suggestions without mutating workflow state.

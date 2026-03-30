@@ -16,7 +16,6 @@ const { execFileSync } = require('child_process');
 const { spawnSync } = require('child_process');
 
 const { COMMAND_ALIASES, PROVIDER_FAMILIES } = require('./lib/constants');
-const manifestModule = require('./lib/manifest');
 const { createFeatureCommands } = require('./lib/commands/feature');
 const { createResearchCommands } = require('./lib/commands/research');
 const { createFeedbackCommands } = require('./lib/commands/feedback');
@@ -613,7 +612,7 @@ test('collectDashboardStatusData does not mutate research agent status files dur
 
 console.log('\nFeature Eval Completion Check');
 test('collectIncompleteFeatureEvalAgents returns incomplete fleet agents from manifest', () => {
-    const { writeAgentStatus, agentStatusPath } = require('./lib/manifest');
+    const { writeAgentStatus, agentStatusPath } = require('./lib/agent-status');
     // Write manifest state for testing
     writeAgentStatus('51', 'cc', { status: 'implementing' });
     try {
@@ -628,7 +627,7 @@ test('collectIncompleteFeatureEvalAgents returns incomplete fleet agents from ma
     }
 });
 test('collectIncompleteFeatureEvalAgents returns unknown when no manifest state exists', () => {
-    const { agentStatusPath } = require('./lib/manifest');
+    const { agentStatusPath } = require('./lib/agent-status');
     // Ensure no state file exists
     try { fs.unlinkSync(agentStatusPath('51', 'cc')); } catch (e) {}
 
@@ -640,14 +639,14 @@ test('collectIncompleteFeatureEvalAgents returns unknown when no manifest state 
     assert.deepStrictEqual(incomplete, [{ agent: 'cc', name: 'Claude', status: 'unknown' }]);
 });
 test('collectIncompleteResearchSynthesisAgents returns unfinished research agents from manifest', () => withTempDir(tempDir => {
-    const { writeAgentStatus, agentStatusPath } = require('./lib/manifest');
+    const { writeAgentStatus, agentStatusPath } = require('./lib/agent-status');
     const logsDir = path.join(tempDir, 'docs/specs/research-topics/logs');
     fs.mkdirSync(logsDir, { recursive: true });
     // Still need findings files for agent discovery
     fs.writeFileSync(path.join(logsDir, 'research-52-cc-findings.md'), '# Findings\n');
     fs.writeFileSync(path.join(logsDir, 'research-52-gg-findings.md'), '# Findings\n');
 
-    // Write manifest state
+    // Write agent status state
     writeAgentStatus('52', 'cc', { status: 'waiting' });
     writeAgentStatus('52', 'gg', { status: 'submitted' });
     try {
@@ -714,17 +713,12 @@ test('feature-eval --force bypasses the completion warning and creates the evalu
         runGit: () => {}
     });
 
-    // Set up manifest for feature 51 as in-progress so requestTransition succeeds.
-    withCleanManifest('51', () => {
-        manifestModule.writeManifest('51', { id: '51', type: 'feature', name: 'eval-agent-completion-check', stage: 'in-progress', agents: [], pending: [] });
-
-        const { output } = withCapturedConsole(() => {
-            commands['feature-eval'](['51', '--force']);
-        });
-
-        assert.strictEqual(fs.existsSync(path.join(evaluationsDir, 'feature-51-eval.md')), true);
-        assert.strictEqual(output.some(line => line.includes('not yet submitted')), false);
+    const { output } = withCapturedConsole(() => {
+        commands['feature-eval'](['51', '--force']);
     });
+
+    assert.strictEqual(fs.existsSync(path.join(evaluationsDir, 'feature-51-eval.md')), true);
+    assert.strictEqual(output.some(line => line.includes('not yet submitted')), false);
 }));
 test('research reconnect command uses terminal-focus with --research', () => {
     assert.strictEqual(
@@ -1559,16 +1553,13 @@ const {
     shouldNotify,
     allAgentsSubmitted,
     isFleet,
-    TRANSITION_DEFS,
-    requestTransition,
-    completePendingOp,
-} = require('./lib/state-machine');
+} = require('./lib/state-queries');
 
 console.log('\n--- state machine ---');
 
 // Stage definitions
 test('FEATURE_STAGES has correct ordered stages', () => {
-    assert.deepStrictEqual(FEATURE_STAGES, ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done']);
+    assert.deepStrictEqual(FEATURE_STAGES, ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done', 'paused']);
 });
 
 test('RESEARCH_STAGES has correct ordered stages', () => {
@@ -1689,8 +1680,8 @@ test('research in-progress → in-evaluation blocked when not all submitted', ()
         agentStatuses: { cc: 'implementing' }
     });
     assert.ok(!transitions.some(t => t.action === 'research-eval'));
-    // research-close from in-progress is always available (skip eval)
-    assert.ok(transitions.some(t => t.action === 'research-close'));
+    // research-pause from in-progress is always available
+    assert.ok(transitions.some(t => t.action === 'research-pause'));
 });
 
 test('research in-progress → in-evaluation available when all submitted', () => {
@@ -1892,175 +1883,6 @@ test('isActionValid returns false for unknown entity type', () => {
     assert.strictEqual(isActionValid('foo-bar', 'unknown', 'inbox', {}), false);
 });
 
-// ── requestTransition / completePendingOp (outbox pattern) ───────────────────
-
-console.log('\n--- requestTransition / completePendingOp ---');
-
-// Helper: save/restore manifest state around tests to avoid polluting real state
-function withCleanManifest(featureId, fn) {
-    const filePath = manifestModule.coordinatorPath(featureId);
-    const lockPath = manifestModule.lockPath(featureId);
-    const hadFile = fs.existsSync(filePath);
-    const original = hadFile ? fs.readFileSync(filePath, 'utf8') : null;
-    // Ensure clean start for this test ID
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    if (fs.existsSync(lockPath)) fs.unlinkSync(lockPath);
-    try {
-        fn();
-    } finally {
-        if (original !== null) {
-            fs.writeFileSync(filePath, original);
-        } else if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-        if (fs.existsSync(lockPath)) fs.unlinkSync(lockPath);
-    }
-}
-
-// TRANSITION_DEFS structure
-test('TRANSITION_DEFS has entries for all core feature actions', () => {
-    assert.ok(TRANSITION_DEFS['feature-prioritise'], 'has feature-prioritise');
-    assert.ok(TRANSITION_DEFS['feature-start'], 'has feature-start');
-    assert.ok(TRANSITION_DEFS['feature-eval'], 'has feature-eval');
-    assert.ok(TRANSITION_DEFS['feature-close'], 'has feature-close');
-});
-
-test('TRANSITION_DEFS feature-start sideEffects returns move-spec for drive mode', () => {
-    const effects = TRANSITION_DEFS['feature-start'].sideEffects({ agents: [] });
-    assert.ok(effects.includes('move-spec'), 'includes move-spec');
-    assert.ok(effects.includes('init-log'), 'includes init-log for drive mode');
-});
-
-test('TRANSITION_DEFS feature-start sideEffects returns worktree ops for fleet mode', () => {
-    const effects = TRANSITION_DEFS['feature-start'].sideEffects({ agents: ['cc', 'gg'] });
-    assert.ok(effects.includes('move-spec'), 'includes move-spec');
-    assert.ok(effects.includes('create-worktree-cc'), 'includes create-worktree-cc');
-    assert.ok(effects.includes('init-log-cc'), 'includes init-log-cc');
-    assert.ok(effects.includes('create-worktree-gg'), 'includes create-worktree-gg');
-    assert.ok(effects.includes('init-log-gg'), 'includes init-log-gg');
-});
-
-test('TRANSITION_DEFS feature-close accepts in-evaluation and in-progress as sources', () => {
-    assert.ok(TRANSITION_DEFS['feature-close'].from.includes('in-evaluation'), 'from in-evaluation');
-    assert.ok(TRANSITION_DEFS['feature-close'].from.includes('in-progress'), 'from in-progress');
-    assert.strictEqual(TRANSITION_DEFS['feature-close'].to, 'done');
-});
-
-// requestTransition — valid transitions
-test('requestTransition advances stage from backlog to in-progress for feature-start', () => {
-    withCleanManifest('9999', () => {
-        // Bootstrap a manifest with stage 'backlog'
-        manifestModule.writeManifest('9999', { id: '9999', type: 'feature', name: 'test-feature', stage: 'backlog', agents: [], pending: [] });
-        const pending = requestTransition('9999', 'feature-start', { agents: ['cc'] });
-        assert.ok(Array.isArray(pending), 'returns array');
-        assert.ok(pending.includes('move-spec'), 'pending includes move-spec');
-        assert.ok(pending.includes('create-worktree-cc'), 'pending includes create-worktree-cc');
-        const m = manifestModule.readManifest('9999');
-        assert.strictEqual(m.stage, 'in-progress', 'stage advanced to in-progress');
-        assert.deepStrictEqual(m.pending, pending, 'manifest.pending matches returned list');
-    });
-});
-
-test('requestTransition advances stage from in-progress to in-evaluation for feature-eval', () => {
-    withCleanManifest('9998', () => {
-        manifestModule.writeManifest('9998', { id: '9998', type: 'feature', name: 'test-feature', stage: 'in-progress', agents: [], pending: [] });
-        const pending = requestTransition('9998', 'feature-eval', {});
-        assert.deepStrictEqual(pending, ['move-spec']);
-        const m = manifestModule.readManifest('9998');
-        assert.strictEqual(m.stage, 'in-evaluation');
-    });
-});
-
-test('requestTransition advances stage from in-evaluation to done for feature-close', () => {
-    withCleanManifest('9997', () => {
-        manifestModule.writeManifest('9997', { id: '9997', type: 'feature', name: 'test-feature', stage: 'in-evaluation', agents: [], pending: [] });
-        const pending = requestTransition('9997', 'feature-close', {});
-        assert.deepStrictEqual(pending, ['move-spec']);
-        const m = manifestModule.readManifest('9997');
-        assert.strictEqual(m.stage, 'done');
-    });
-});
-
-test('requestTransition advances stage from in-progress to done for feature-close (solo)', () => {
-    withCleanManifest('9996', () => {
-        manifestModule.writeManifest('9996', { id: '9996', type: 'feature', name: 'test-feature', stage: 'in-progress', agents: [], pending: [] });
-        const pending = requestTransition('9996', 'feature-close', {});
-        assert.deepStrictEqual(pending, ['move-spec']);
-        const m = manifestModule.readManifest('9996');
-        assert.strictEqual(m.stage, 'done');
-    });
-});
-
-// requestTransition — invalid transitions
-test('requestTransition throws for invalid transition (wrong source stage)', () => {
-    withCleanManifest('9995', () => {
-        manifestModule.writeManifest('9995', { id: '9995', type: 'feature', name: 'test-feature', stage: 'inbox', agents: [], pending: [] });
-        assert.throws(
-            () => requestTransition('9995', 'feature-close', {}),
-            (err) => err.message.includes('Invalid transition') && err.message.includes('inbox'),
-            'throws with clear message mentioning invalid stage'
-        );
-    });
-});
-
-test('requestTransition throws for unknown action', () => {
-    withCleanManifest('9994', () => {
-        manifestModule.writeManifest('9994', { id: '9994', type: 'feature', name: 'test-feature', stage: 'backlog', agents: [], pending: [] });
-        assert.throws(
-            () => requestTransition('9994', 'feature-unknown', {}),
-            (err) => err.message.includes('Unknown action'),
-            'throws for unknown action'
-        );
-    });
-});
-
-test('requestTransition throws when manifest is missing', () => {
-    withCleanManifest('9989', () => {
-        assert.throws(
-            () => requestTransition('9989', 'feature-start', {}),
-            (err) => err.message.includes('Manifest not found'),
-            'throws for missing manifest'
-        );
-    });
-});
-
-// completePendingOp
-test('completePendingOp removes first occurrence of op from pending', () => {
-    withCleanManifest('9993', () => {
-        manifestModule.writeManifest('9993', { id: '9993', type: 'feature', name: 'test', stage: 'in-progress', agents: [], pending: ['move-spec', 'create-worktree-cc', 'init-log-cc'] });
-        completePendingOp('9993', 'move-spec');
-        const m = manifestModule.readManifest('9993');
-        assert.deepStrictEqual(m.pending, ['create-worktree-cc', 'init-log-cc']);
-    });
-});
-
-test('completePendingOp is a no-op when op is not in pending', () => {
-    withCleanManifest('9992', () => {
-        manifestModule.writeManifest('9992', { id: '9992', type: 'feature', name: 'test', stage: 'in-progress', agents: [], pending: ['create-worktree-cc'] });
-        completePendingOp('9992', 'move-spec'); // not in list
-        const m = manifestModule.readManifest('9992');
-        assert.deepStrictEqual(m.pending, ['create-worktree-cc'], 'pending unchanged');
-    });
-});
-
-test('completePendingOp removes only first occurrence when op appears twice', () => {
-    withCleanManifest('9991', () => {
-        manifestModule.writeManifest('9991', { id: '9991', type: 'feature', name: 'test', stage: 'in-progress', agents: [], pending: ['move-spec', 'move-spec'] });
-        completePendingOp('9991', 'move-spec');
-        const m = manifestModule.readManifest('9991');
-        assert.deepStrictEqual(m.pending, ['move-spec'], 'only first occurrence removed');
-    });
-});
-
-test('pending is empty after completing all ops', () => {
-    withCleanManifest('9990', () => {
-        manifestModule.writeManifest('9990', { id: '9990', type: 'feature', name: 'test', stage: 'in-progress', agents: [], pending: ['move-spec'] });
-        completePendingOp('9990', 'move-spec');
-        const m = manifestModule.readManifest('9990');
-        assert.deepStrictEqual(m.pending, []);
-    });
-});
-
 // Transition labels
 test('feature transitions have string labels', () => {
     const transitions = getValidTransitions('feature', 'inbox', {});
@@ -2085,7 +1907,6 @@ test('getAvailableActions expands per-agent actions for each agent in fleet', ()
 
 // parseLogFrontmatterFull tests removed — function is now internal to utils.js
 // (used only by collectAnalyticsData for legacy frontmatter fallback).
-// Agent status reads/writes now use lib/manifest.js exclusively.
 
 console.log('\ncollectAnalyticsData');
 
@@ -2472,17 +2293,6 @@ test('organizeLogFiles is no longer exported from utils', () => {
     assert.strictEqual(utils.organizeLogFiles, undefined, 'organizeLogFiles should be removed');
 });
 
-test('manifest writeManifest supports winner field', () => {
-    const testId = 'test-reconcile-99998';
-    try {
-        const m = manifestModule.readManifest(testId);
-        manifestModule.writeManifest(testId, { winner: 'cc' }, { type: 'winner-recorded', actor: 'test' });
-        const updated = manifestModule.readManifest(testId);
-        assert.strictEqual(updated.winner, 'cc', 'winner should be set to cc');
-    } finally {
-        try { fs.unlinkSync(manifestModule.coordinatorPath(testId)); } catch (e) { /* ok */ }
-    }
-});
 
 test('dead-agent check: detects agent status files for done features', () => withTempDir(tempDir => {
     // Create a fake state dir with a done feature and agent status
@@ -2501,56 +2311,6 @@ test('dead-agent check: detects agent status files for done features', () => wit
     const agentFiles = fs.readdirSync(stateDir).filter(f => /^feature-99990-[a-z]+\.json$/.test(f));
     assert.strictEqual(agentFiles.length, 1, 'should have 1 agent status file');
 }));
-
-test('stale-pending check: identifies pending ops older than 1 hour', () => {
-    const testId = 'test-reconcile-99997';
-    try {
-        // Create manifest with stale pending op (event from 2 hours ago)
-        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-        const data = {
-            id: testId, type: 'feature', name: 'test', stage: 'in-progress',
-            specPath: null, agents: [], winner: null,
-            pending: ['move-spec'],
-            events: [{ type: 'transition', at: twoHoursAgo, actor: 'test' }]
-        };
-        const coordPath = manifestModule.coordinatorPath(testId);
-        const dir = path.dirname(coordPath);
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        fs.writeFileSync(coordPath, JSON.stringify(data, null, 2));
-
-        const m = manifestModule.readManifest(testId);
-        assert.deepStrictEqual(m.pending, ['move-spec'], 'should have stale pending op');
-
-        const lastEvent = m.events[m.events.length - 1];
-        const ageMs = Date.now() - new Date(lastEvent.at).getTime();
-        assert.ok(ageMs > 60 * 60 * 1000, 'pending op should be older than 1 hour');
-    } finally {
-        try { fs.unlinkSync(manifestModule.coordinatorPath(testId)); } catch (e) { /* ok */ }
-    }
-});
-
-test('stage-mismatch: manifest stage can be corrected to match folder', () => {
-    const testId = 'test-reconcile-99996';
-    try {
-        // Create manifest with wrong stage
-        const data = {
-            id: testId, type: 'feature', name: 'test', stage: 'backlog',
-            specPath: null, agents: [], winner: null, pending: [],
-            events: [{ type: 'bootstrapped', at: new Date().toISOString(), actor: 'test' }]
-        };
-        const coordPath = manifestModule.coordinatorPath(testId);
-        const dir = path.dirname(coordPath);
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        fs.writeFileSync(coordPath, JSON.stringify(data, null, 2));
-
-        // Fix it
-        manifestModule.writeManifest(testId, { stage: 'in-progress' }, { type: 'reconcile-stage', actor: 'doctor' });
-        const fixed = manifestModule.readManifest(testId);
-        assert.strictEqual(fixed.stage, 'in-progress', 'stage should be corrected');
-    } finally {
-        try { fs.unlinkSync(manifestModule.coordinatorPath(testId)); } catch (e) { /* ok */ }
-    }
-});
 
 test('log migration: files can be moved from selected/ to flat logs/', () => withTempDir(tempDir => {
     const logsRoot = path.join(tempDir, 'logs');
@@ -2692,327 +2452,10 @@ test('feature-close rejects wrong branch via subprocess', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Manifest Read/Write Separation Tests
-// ---------------------------------------------------------------------------
-
-console.log('\nManifest — explicit read/write contract');
-
-test('readManifest returns null for unknown feature and does not persist', () => {
-    withTempDir(tempDir => {
-        const stateDir = path.join(tempDir, '.aigon', 'state');
-        fs.mkdirSync(stateDir, { recursive: true });
-
-        const origCwd = process.cwd();
-        process.chdir(tempDir);
-        delete require.cache[require.resolve('./lib/manifest')];
-        const freshManifest = require('./lib/manifest');
-
-        const result = freshManifest.readManifest('999');
-        assert.strictEqual(result, null, 'missing coordinator manifest should return null');
-
-        const manifestFile = path.join(stateDir, 'feature-999.json');
-        assert.ok(!fs.existsSync(manifestFile), 'readManifest should NOT persist the file');
-
-        process.chdir(origCwd);
-        delete require.cache[require.resolve('./lib/manifest')];
-    });
-});
-
-test('writeManifest creates and persists manifest file', () => {
-    withTempDir(tempDir => {
-        const stateDir = path.join(tempDir, '.aigon', 'state');
-        fs.mkdirSync(stateDir, { recursive: true });
-
-        const origCwd = process.cwd();
-        process.chdir(tempDir);
-        delete require.cache[require.resolve('./lib/manifest')];
-        const freshManifest = require('./lib/manifest');
-
-        const result = freshManifest.writeManifest('998', {
-            id: '998',
-            type: 'feature',
-            name: 'explicit-create',
-            stage: 'backlog',
-            specPath: null,
-            agents: [],
-            winner: null,
-            pending: [],
-        }, { type: 'transition:feature-prioritise', actor: 'test' });
-        assert.strictEqual(result.stage, 'backlog');
-
-        const manifestFile = path.join(stateDir, 'feature-998.json');
-        assert.ok(fs.existsSync(manifestFile), 'writeManifest should persist the file');
-
-        process.chdir(origCwd);
-        delete require.cache[require.resolve('./lib/manifest')];
-    });
-});
-
-test('readManifest returns persisted manifest when file exists', () => {
-    withTempDir(tempDir => {
-        const stateDir = path.join(tempDir, '.aigon', 'state');
-        fs.mkdirSync(stateDir, { recursive: true });
-        const manifestData = { id: '997', type: 'feature', stage: 'in-progress', agents: ['cc', 'cx'], pending: [], events: [] };
-        fs.writeFileSync(path.join(stateDir, 'feature-997.json'), JSON.stringify(manifestData));
-
-        const origCwd = process.cwd();
-        process.chdir(tempDir);
-        delete require.cache[require.resolve('./lib/manifest')];
-        const freshManifest = require('./lib/manifest');
-
-        const result = freshManifest.readManifest('997');
-        assert.strictEqual(result.stage, 'in-progress');
-        assert.deepStrictEqual(result.agents, ['cc', 'cx']);
-
-        process.chdir(origCwd);
-        delete require.cache[require.resolve('./lib/manifest')];
-    });
-});
-
-test('feature-prioritise/start/close cycle is stable across repeated runs with dashboard-style manifest reads', () => {
-    withTempDir(tempDir => {
-        const runCli = (args) => spawnSync(process.execPath, [path.resolve('aigon-cli.js'), ...args], {
-            cwd: tempDir,
-            encoding: 'utf8',
-            stdio: ['pipe', 'pipe', 'pipe'],
-        });
-
-        const combinedOutput = (result) => `${result.stdout || ''}${result.stderr || ''}`;
-        const assertCliOk = (result, label) => {
-            if (result.status !== 0) {
-                throw new Error(`${label} failed (exit=${result.status}): ${combinedOutput(result).slice(0, 600)}`);
-            }
-        };
-
-        runGit(['init'], tempDir);
-        runGit(['config', 'user.name', 'Aigon Test'], tempDir);
-        runGit(['config', 'user.email', 'test@example.com'], tempDir);
-        const defaultBranch = 'master';
-
-        const initResult = runCli(['init']);
-        assertCliOk(initResult, 'aigon init');
-        runGit(['checkout', '-B', 'master'], tempDir);
-
-        const stateDir = path.join(tempDir, '.aigon', 'state');
-        fs.mkdirSync(stateDir, { recursive: true });
-        fs.writeFileSync(path.join(stateDir, 'feature-01.json'), JSON.stringify({
-            id: '01',
-            type: 'feature',
-            name: 'stale',
-            stage: 'done',
-            agents: [],
-            winner: null,
-            pending: [],
-            events: [],
-        }, null, 2));
-
-        for (let i = 0; i < 5; i++) {
-            const slug = `manifest-cycle-${i}`;
-            assertCliOk(runCli(['feature-create', slug]), `feature-create ${slug}`);
-
-            const prioritiseResult = runCli(['feature-prioritise', slug]);
-            assertCliOk(prioritiseResult, `feature-prioritise ${slug}`);
-            const match = combinedOutput(prioritiseResult).match(/Assigned ID:\s*(\d+)/);
-            if (!match) throw new Error(`Could not parse assigned ID: ${combinedOutput(prioritiseResult).slice(0, 400)}`);
-            const unpaddedId = String(parseInt(match[1], 10));
-
-            const origCwd = process.cwd();
-            process.chdir(tempDir);
-            delete require.cache[require.resolve('./lib/manifest')];
-            const freshManifest = require('./lib/manifest');
-            for (let poll = 0; poll < 5; poll++) freshManifest.readManifest(unpaddedId);
-            const afterPoll = freshManifest.readManifest(unpaddedId);
-            process.chdir(origCwd);
-            delete require.cache[require.resolve('./lib/manifest')];
-
-            assert.strictEqual(afterPoll.stage, 'backlog', 'prioritise should always persist backlog stage');
-            assert.deepStrictEqual(afterPoll.pending, [], 'prioritise should clear stale pending operations');
-
-            const startResult = runCli(['feature-start', unpaddedId]);
-            const startOutput = combinedOutput(startResult);
-            assertCliOk(startResult, `feature-start ${unpaddedId}`);
-            assert.ok(!startOutput.includes('Invalid transition'), `feature-start should not hit invalid transition: ${startOutput.slice(0, 400)}`);
-
-            runGit(['commit', '--allow-empty', '-m', `test: cycle ${i}`], tempDir);
-            runGit(['checkout', defaultBranch], tempDir);
-
-            const closeResult = runCli(['feature-close', unpaddedId]);
-            const closeOutput = combinedOutput(closeResult);
-            if (closeResult.status !== 0 && !closeOutput.includes('push')) {
-                throw new Error(`feature-close ${unpaddedId} failed: ${closeOutput.slice(0, 500)}`);
-            }
-        }
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Feature-start agent registration test
-// ---------------------------------------------------------------------------
-
-console.log('\nFeature-start — agent backfill');
-
-test('feature-start backfills agents when feature already in-progress with no agents', () => {
-    withTempDir(tempDir => {
-        const stateDir = path.join(tempDir, '.aigon', 'state');
-        fs.mkdirSync(stateDir, { recursive: true });
-
-        // Create a manifest that's in-progress but has no agents (simulates the race condition)
-        const manifestData = { id: '996', type: 'feature', stage: 'in-progress', name: 'test-backfill', agents: [], pending: [], events: [] };
-        fs.writeFileSync(path.join(stateDir, 'feature-996.json'), JSON.stringify(manifestData));
-
-        // Create spec in in-progress folder
-        const specDir = path.join(tempDir, 'docs', 'specs', 'features', '03-in-progress');
-        fs.mkdirSync(specDir, { recursive: true });
-        fs.writeFileSync(path.join(specDir, 'feature-996-test-backfill.md'), '# Test');
-
-        // Init a git repo on main so branch detection works
-        const { execSync } = require('child_process');
-        execSync('git init -b main && git add -A && git commit -m "init"', { cwd: tempDir, stdio: 'pipe' });
-
-        // Run feature-start via subprocess — it should backfill agents
-        const result = spawnSync(process.execPath, [path.resolve('aigon-cli.js'), 'feature-start', '996', 'cc', 'cx'], {
-            cwd: tempDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe']
-        });
-        const output = (result.stdout || '') + (result.stderr || '');
-        assert.ok(output.includes('Registered agents') || output.includes('cc, cx'),
-            'should backfill agents: ' + output);
-
-        // Read the manifest and check agents were backfilled
-        const updated = JSON.parse(fs.readFileSync(path.join(stateDir, 'feature-996.json'), 'utf8'));
-        assert.deepStrictEqual(updated.agents, ['cc', 'cx'], 'agents should be backfilled: ' + JSON.stringify(updated.agents));
-    });
-});
-
-test('feature-start merges new agents into existing agent list', () => {
-    withTempDir(tempDir => {
-        const stateDir = path.join(tempDir, '.aigon', 'state');
-        fs.mkdirSync(stateDir, { recursive: true });
-
-        // Create a manifest that's in-progress with existing agents
-        const manifestData = { id: '995', type: 'feature', stage: 'in-progress', name: 'test-merge', agents: ['cc'], pending: [], events: [] };
-        fs.writeFileSync(path.join(stateDir, 'feature-995.json'), JSON.stringify(manifestData));
-
-        // Create spec in in-progress folder
-        const specDir = path.join(tempDir, 'docs', 'specs', 'features', '03-in-progress');
-        fs.mkdirSync(specDir, { recursive: true });
-        fs.writeFileSync(path.join(specDir, 'feature-995-test-merge.md'), '# Test');
-
-        const { execSync } = require('child_process');
-        execSync('git init -b main && git add -A && git commit -m "init"', { cwd: tempDir, stdio: 'pipe' });
-
-        // Run feature-start with existing agent (cc) + new agent (gg)
-        const result = spawnSync(process.execPath, [path.resolve('aigon-cli.js'), 'feature-start', '995', 'cc', 'gg'], {
-            cwd: tempDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe']
-        });
-        const output = (result.stdout || '') + (result.stderr || '');
-        assert.ok(output.includes('Registered agents') || output.includes('cc') || output.includes('gg'),
-            'should merge agents: ' + output);
-
-        // Read the manifest and check agents were merged (not replaced)
-        const updated = JSON.parse(fs.readFileSync(path.join(stateDir, 'feature-995.json'), 'utf8'));
-        assert.ok(updated.agents.includes('cc'), 'should keep existing agent cc: ' + JSON.stringify(updated.agents));
-        assert.ok(updated.agents.includes('gg'), 'should add new agent gg: ' + JSON.stringify(updated.agents));
-        assert.strictEqual(updated.agents.length, 2, 'should have exactly 2 agents (no duplicates): ' + JSON.stringify(updated.agents));
-    });
-});
-
-test('feature-start preserves existing engine agents on workflow-core rerun', () => {
-    withTempDir(tempDir => {
-        const stateDir = path.join(tempDir, '.aigon', 'state');
-        const configDir = path.join(tempDir, '.aigon');
-        const specDir = path.join(tempDir, 'docs', 'specs', 'features', '03-in-progress');
-        const homeDir = path.join(tempDir, 'home');
-        const binDir = path.join(tempDir, 'bin');
-        fs.mkdirSync(stateDir, { recursive: true });
-        fs.mkdirSync(specDir, { recursive: true });
-        fs.mkdirSync(homeDir, { recursive: true });
-        fs.mkdirSync(binDir, { recursive: true });
-
-        fs.writeFileSync(path.join(configDir, 'config.json'), JSON.stringify({
-            workflow: { startEngine: true },
-            backgroundAgents: false,
-        }, null, 2));
-
-        fs.writeFileSync(path.join(specDir, 'feature-994-test-engine-rerun.md'), '# Test');
-        fs.writeFileSync(path.join(stateDir, 'feature-994.json'), JSON.stringify({
-            id: '994',
-            type: 'feature',
-            stage: 'in-progress',
-            name: 'test-engine-rerun',
-            agents: ['cc', 'gg'],
-            pending: [],
-            events: [],
-        }));
-
-        const tmuxPath = path.join(binDir, 'tmux');
-        fs.writeFileSync(tmuxPath, '#!/bin/sh\nexit 0\n');
-        fs.chmodSync(tmuxPath, 0o755);
-
-        const { execSync } = require('child_process');
-        execSync('git init -b main && git config user.name "Aigon Test" && git config user.email "test@example.com" && git add -A && git commit -m "init"', { cwd: tempDir, stdio: 'pipe' });
-        execFileSync(process.execPath, ['-e', `
-            const wf = require(${JSON.stringify(path.resolve('lib/workflow-core'))});
-            (async () => {
-              await wf.startFeature(${JSON.stringify(tempDir)}, '994', 'fleet', ['cc', 'gg']);
-            })().catch((error) => {
-              console.error(error);
-              process.exit(1);
-            });
-        `], { cwd: tempDir, encoding: 'utf8' });
-
-        const env = {
-            ...process.env,
-            HOME: homeDir,
-            PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
-        };
-
-        const result = spawnSync(process.execPath, [path.resolve('aigon-cli.js'), 'feature-start', '994', 'cc', '--background'], {
-            cwd: tempDir,
-            env,
-            encoding: 'utf8',
-            stdio: ['pipe', 'pipe', 'pipe'],
-        });
-
-        const output = (result.stdout || '') + (result.stderr || '');
-        assert.strictEqual(result.status, 0, 'engine rerun should succeed: ' + output);
-        assert.ok(output.includes('preserving existing engine agents'), 'should report engine agent preservation: ' + output);
-
-        const updated = JSON.parse(fs.readFileSync(path.join(stateDir, 'feature-994.json'), 'utf8'));
-        assert.deepStrictEqual(updated.agents, ['cc', 'gg'], 'engine rerun should preserve manifest agents: ' + JSON.stringify(updated.agents));
-    });
-});
-
-// ---------------------------------------------------------------------------
 // Dashboard Action Dispatch Tests
 // ---------------------------------------------------------------------------
 
 console.log('\nDashboard — action dispatch verification');
-
-test('runDashboardInteractiveAction fails feature-start when manifest is missing after CLI success', () => {
-    withTempDir(tempDir => {
-        const childProcess = require('child_process');
-        const originalSpawnSync = childProcess.spawnSync;
-        childProcess.spawnSync = () => ({ status: 0, stdout: 'ok\n', stderr: '' });
-
-        try {
-            delete require.cache[require.resolve('./lib/dashboard-server')];
-            const dashServer = require('./lib/dashboard-server');
-            const result = dashServer.runDashboardInteractiveAction({
-                action: 'feature-start',
-                args: ['993', 'cc', 'gg'],
-                repoPath: tempDir
-            });
-
-            assert.strictEqual(result.ok, false, 'missing manifest should fail verification');
-            assert.strictEqual(result.status, 422, 'missing manifest should return unprocessable status');
-            assert.ok(String(result.error).includes('without creating manifest'),
-                'should explain missing manifest: ' + JSON.stringify(result));
-        } finally {
-            childProcess.spawnSync = originalSpawnSync;
-            delete require.cache[require.resolve('./lib/dashboard-server')];
-        }
-    });
-});
 
 test('runDashboardInteractiveAction fails feature-start when agents not registered', () => {
     withTempDir(tempDir => {
