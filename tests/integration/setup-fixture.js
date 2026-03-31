@@ -4,7 +4,6 @@
  *
  * Creates realistic project repos in ~/src/:
  *   - brewboard/     — a SaaS app for tracking craft beer collections
- *   - brewboard-api/ — the REST API backend
  *   - trailhead/     — a personal iOS hiking app
  *
  * Each repo is a real git repo with:
@@ -156,10 +155,9 @@ function featureDoneContent(id, title, summary) {
 }
 
 
-// Ports: brewboard=4200, brewboard-api=4210, trailhead=4220 (well clear of 3000-range dev servers and 4100-range dashboards)
+// Ports: brewboard=4200, trailhead=4220 (well clear of 3000-range dev servers and 4100-range dashboards)
 const FIXTURE_PORTS = {
     brewboard: 4200,
-    'brewboard-api': 4210,
     trailhead: 4220,
 };
 
@@ -529,155 +527,6 @@ export default config;
     console.log('  ✓ brewboard/ created');
 }
 
-// ─── brewboard-api fixture ────────────────────────────────────────────────────
-
-function createBrewboardApi(repoDir) {
-    console.log('  Creating brewboard-api/ ...');
-    fs.mkdirSync(repoDir, { recursive: true });
-    initGitRepo(repoDir);
-
-    // Project files
-    write(path.join(repoDir, 'package.json'), JSON.stringify({
-        name: 'brewboard-api',
-        version: '0.1.0',
-        description: 'REST API for BrewBoard — craft beer tracking platform',
-        main: 'src/index.js',
-        scripts: {
-            start: 'node src/index.js',
-            dev: 'nodemon src/index.js',
-            test: 'jest'
-        },
-        dependencies: {
-            express: '^4.18.0',
-            pg: '^8.11.0',
-            zod: '^3.22.0'
-        }
-    }, null, 2));
-
-    write(path.join(repoDir, 'README.md'), '# BrewBoard API\n\nREST API backend for the BrewBoard craft beer tracking platform.\n\nEndpoints: `/beers`, `/breweries`, `/users`, `/ratings`\n');
-    write(path.join(repoDir, '.gitignore'), 'node_modules/\n.env\n.env.local\n');
-
-    write(path.join(repoDir, 'src', 'index.js'), `const express = require('express');\nconst app = express();\napp.use(express.json());\napp.get('/health', (req, res) => res.json({ status: 'ok' }));\napp.use('/api/beers', require('./routes/beers'));\nconst server = app.listen(3001, () => console.log('BrewBoard API running on :3001'));\nprocess.on('SIGTERM', () => server.close());\nprocess.on('SIGINT', () => server.close());\n`);
-    write(path.join(repoDir, 'src', 'routes', 'beers.js'), `const express = require('express');\nconst router = express.Router();\nrouter.get('/', async (req, res) => { res.json([]); });\nrouter.get('/:id', async (req, res) => { res.json(null); });\nmodule.exports = router;\n`);
-    write(path.join(repoDir, 'src', 'db', 'schema.sql'), `CREATE TABLE beers (\n  id SERIAL PRIMARY KEY,\n  name TEXT NOT NULL,\n  style TEXT,\n  abv NUMERIC(4,2),\n  brewery_id INT REFERENCES breweries(id)\n);\n`);
-
-    commit(repoDir, 'feat: initial BrewBoard API project setup');
-
-    // Initialize aigon
-    runAigon(['init'], repoDir);
-    writeFixtureConfig(repoDir);
-    writeSeedAgentsMd(repoDir);
-    runAigon(['install-agent', 'cc'], repoDir);
-    commit(repoDir, 'chore: initialize aigon spec structure');
-
-    // ── features/01-inbox ────────────────────────────────────────────────────
-    const inboxDir = path.join(repoDir, 'docs', 'specs', 'features', '01-inbox');
-
-    write(path.join(inboxDir, 'feature-rate-limiting.md'),
-        featureInboxContent('Rate Limiting',
-            'Add a simple in-memory rate limiter middleware.',
-            ['Create `src/middleware/rate-limit.js` exporting an Express middleware',
-             'Track requests per IP in a Map with timestamps',
-             'Return 429 if more than 100 requests per minute from same IP'],
-            'In-memory Map keyed by IP. One file, one middleware function.'));
-
-    write(path.join(inboxDir, 'feature-api-versioning.md'),
-        featureInboxContent('API Versioning',
-            'Add a version prefix helper for routes.',
-            ['Create `src/lib/versioned-router.js` exporting `function versionedRouter(version, router)` that prefixes all routes with `/v{version}`',
-             'Add a `Deprecation` header to responses when version < latest'],
-            'Wrapper around Express router. One file.'));
-
-    // ── features/02-backlog ──────────────────────────────────────────────────
-    const backlogDir = path.join(repoDir, 'docs', 'specs', 'features', '02-backlog');
-
-    write(path.join(backlogDir, 'feature-01-webhook-events.md'),
-        featureBacklogContent('01', 'Webhook Events',
-            'Add a webhook emitter utility.',
-            ['Create `src/lib/webhook-emitter.js` exporting `async function emitWebhook(event, payload, webhookUrl)`',
-             'POST JSON payload to the URL with `Content-Type: application/json`',
-             'Return `{ success: boolean, statusCode: number }`'],
-            'Single fetch() call wrapped in try/catch. One file.'));
-
-    write(path.join(backlogDir, 'feature-02-graphql-endpoint.md'),
-        featureBacklogContent('02', 'GraphQL Endpoint',
-            'Add a minimal GraphQL schema for beers.',
-            ['Create `src/graphql/schema.js` with a simple type definition: `type Beer { id: ID!, name: String!, style: String, abv: Float }`',
-             'Add a `Query { beers: [Beer], beer(id: ID!): Beer }` root query',
-             'Export the schema as a string constant'],
-            'Just the schema string. No resolver implementation needed — schema only.'));
-
-    // ── features/02-backlog (continued) ─────────────────────────────────────
-    write(path.join(backlogDir, 'feature-03-full-text-search.md'),
-        featureBacklogContent('03', 'Full-Text Search',
-            'Add a search query builder function.',
-            ['Create `src/lib/search-query.js` exporting `function buildSearchQuery(term, types)` that returns a SQL string',
-             'Use `to_tsquery` for the term and filter by types array',
-             'Return empty results SQL if term is empty (not an error)'],
-            'String template to build a SQL query. One file, one function.'));
-
-    write(path.join(backlogDir, 'feature-04-image-uploads.md'),
-        featureBacklogContent('04', 'Image Uploads',
-            'Add a file validation utility for image uploads.',
-            ['Create `src/lib/validate-image.js` exporting `function validateImage(file)` that checks file type and size',
-             'Accept only jpeg, png, webp with max size 5MB',
-             'Return `{ valid: boolean, error?: string }`'],
-            'Check mimetype against allowlist and size against max. One file, one function.'));
-
-    // ── features/05-done ─────────────────────────────────────────────────────
-    const doneDir = path.join(repoDir, 'docs', 'specs', 'features', '05-done');
-
-    write(path.join(doneDir, 'feature-05-auth-jwt.md'),
-        featureDoneContent('05', 'JWT Authentication', 'Stateless JWT authentication with RS256 signing. Access tokens expire in 15 minutes; refresh tokens expire in 30 days.'));
-
-    write(path.join(doneDir, 'feature-06-pagination.md'),
-        featureDoneContent('06', 'Pagination', 'Cursor-based pagination for all list endpoints. Returns `next_cursor` and `has_more` alongside data.'));
-
-    // No feature logs — logs are created by feature-start, not pre-seeded
-
-    // ── research-topics (nothing in-progress without a running session) ──────
-    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '01-inbox', 'research-event-sourcing.md'),
-        researchContent('Event Sourcing', 'Should the API switch to event sourcing for the ratings and check-in history? Evaluate EventStore vs Kafka vs Postgres WAL.'));
-
-    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-01-database-sharding.md'),
-        researchContent('Database Sharding', 'At 10M beer ratings, will a single Postgres instance hold up? Research read replicas, Citus extension, and PlanetScale Vitess.'));
-
-    write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-02-observability-stack.md'),
-        researchContent('Observability Stack', 'Compare OpenTelemetry + Grafana vs Datadog vs Honeycomb for distributed tracing across API, workers, and DB.'));
-
-    // ── feedback (realistic API consumer reports) ──────────────────────────
-    write(path.join(repoDir, 'docs', 'specs', 'feedback', '01-inbox', 'feedback-01-missing-cors.md'),
-        feedbackContent(1, 'CORS headers missing on /ratings endpoint',
-            'Reported by the Brewboard web frontend team:\n\n"The mobile-web app can\'t call GET /api/v1/ratings from brewboard.app. Every other endpoint returns Access-Control-Allow-Origin but /ratings returns a naked response. We\'re getting CORS errors in production for all rating-related features."',
-            'inbox', 'bug', 'high',
-            '- `curl -I https://api.brewboard.app/api/v1/ratings` — no CORS headers in response\n- `curl -I https://api.brewboard.app/api/v1/beers` — has `Access-Control-Allow-Origin: *`\n- The ratings router was added in PR #87 and the CORS middleware wasn\'t applied to the new route group\n- Affects: all web clients calling the ratings API',
-            'Blocking the web team from shipping the new rating UI. Currently working around it with a proxy, but that adds latency and another failure point.'));
-
-    write(path.join(repoDir, 'docs', 'specs', 'feedback', '01-inbox', 'feedback-02-slow-joins.md'),
-        feedbackContent(2, 'GET /beers/:id takes 800ms for power users',
-            'Flagged by ops monitoring (PagerDuty alert #4421):\n\np99 latency on the beer detail endpoint spiked to 800ms after user @cellar_tracker_pro hit 500 ratings. The JOIN on the ratings table is doing a sequential scan.',
-            'inbox', 'performance', 'high',
-            '- `EXPLAIN ANALYZE` shows seq scan on ratings table (no index on beer_id)\n- Users with <50 ratings: 12ms avg\n- Users with 500+ ratings: 780ms avg\n- Fix: `CREATE INDEX idx_ratings_beer_id ON ratings(beer_id)`\n- 6 users currently have 500+ ratings, growing by ~2/week',
-            'Directly affects API SLA. Our target is p99 < 200ms. Three Pro users have complained about slow beer pages in the last week.'));
-
-    write(path.join(repoDir, 'docs', 'specs', 'feedback', '02-triaged', 'feedback-03-500-on-empty-search.md'),
-        feedbackContent(3, 'Search returns 500 when query param is empty',
-            'From Sentry alert (issue #BREW-342):\n\n`GET /api/v1/search?q=` crashes with `error: syntax error at or near ")"`. The SQL query builder doesn\'t handle empty string — it generates `WHERE name ILIKE \'%%\'` which somehow breaks on our Postgres 15 with the full-text search extension.',
-            'triaged', 'bug', 'medium',
-            '- Sentry: 47 occurrences in last 7 days\n- Stack trace points to `src/routes/search.ts:34`\n- Repro: `curl https://api.brewboard.app/api/v1/search?q=`\n- Expected: 400 Bad Request or empty `{ results: [] }`\n- The search bar on mobile sends an empty query on focus (before user types)',
-            '47 errors/week in Sentry. Users see a generic "Something went wrong" page. Mobile web is the main trigger — the search bar fires on focus.'));
-
-    write(path.join(repoDir, 'docs', 'specs', 'feedback', '03-actionable', 'feedback-04-openapi-docs.md'),
-        feedbackContent(4, 'Please publish an OpenAPI spec',
-            'Requested by 3 integration partners and our own mobile team:\n\n@taproom_integrations: "We\'re building a POS integration with Brewboard. Without an OpenAPI spec, our devs are reverse-engineering your API from the web app\'s network tab. An auto-generated TypeScript client would save us weeks."\n\nOur iOS developer: "I\'m hand-writing Codable structs by reading the API source code. A spec would let me use swagger-codegen."',
-            'actionable', 'feature-request', 'medium',
-            '- 3 partner requests in Q1 (TapRoom POS, BeerMenus, CellarHQ)\n- Our own mobile team wants it for code generation\n- Could use `@asteasolutions/zod-to-openapi` since routes already use Zod schemas\n- Estimated: 2-3 days to add decorators + serve at /api/docs',
-            'Partner integrations are a growth channel. Each delayed integration is potential revenue lost. Also unblocks our own mobile development.'));
-
-    // ── final commit ─────────────────────────────────────────────────────────
-    commit(repoDir, 'chore: seed aigon specs with initial feature/research/feedback items');
-    console.log('  ✓ brewboard-api/ created');
-}
 
 // ─── trailhead fixture ────────────────────────────────────────────────────────
 
@@ -942,15 +791,14 @@ function cleanupFixtureArtifacts(repoNames) {
 
 function main() {
     const brewboardDir = path.join(FIXTURES_DIR, 'brewboard');
-    const apiDir = path.join(FIXTURES_DIR, 'brewboard-api');
     const trailheadDir = path.join(FIXTURES_DIR, 'trailhead');
-    const repoNames = ['brewboard', 'brewboard-api', 'trailhead'];
+    const repoNames = ['brewboard', 'trailhead'];
 
     // Clean up tmux sessions, worktrees, and dev servers first
     cleanupFixtureArtifacts(repoNames);
 
     // Clean existing fixture repos before regenerating
-    for (const dir of [brewboardDir, apiDir, trailheadDir]) {
+    for (const dir of [brewboardDir, trailheadDir]) {
         if (fs.existsSync(dir)) {
             console.log(`  Removing existing ${path.basename(dir)}/...`);
             fs.rmSync(dir, { recursive: true, force: true });
@@ -965,7 +813,6 @@ function main() {
 
     try {
         createBrewboard(brewboardDir);
-        createBrewboardApi(apiDir);
         createTrailhead(trailheadDir);
 
         // Add GitHub remotes and push seed state
@@ -979,7 +826,6 @@ function main() {
 
         console.log(`\nFixtures ready in ${FIXTURES_DIR}/`);
         console.log('  brewboard/     — web SaaS (features, research, feedback seeded)');
-        console.log('  brewboard-api/ — REST API backend (features, research, feedback seeded)');
         console.log('  trailhead/     — personal iOS hiking app in Swift (features, research, feedback seeded)');
     } catch (err) {
         console.error('Fixture generation failed:', err.message);
