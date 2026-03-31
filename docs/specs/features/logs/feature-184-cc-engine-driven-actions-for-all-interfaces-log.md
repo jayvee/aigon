@@ -41,3 +41,22 @@ Explored 10+ files across supervisor, workflow-core, action derivation, snapshot
 - `tests/unit/engine-driven-actions.test.js` — 15 new tests
 - `tests/unit/supervisor.test.js` — 6 new tests
 - `tests/unit/workflow-snapshot-adapter.test.js` — updated 6 tests for new behavior
+
+## Code Review
+
+**Reviewed by**: cu (Cursor / inline `--no-launch`)
+
+**Date**: 2026-03-31
+
+### Findings
+
+- Implementation matches the feature intent: supervisor emits heartbeat signals to the engine (with research sweep), `OPEN_SESSION` is engine-derived with bypass-machine guards, dashboard uses `renderActionButtons` with no `buildFeatureActions` string in `actions.js`, and `npm test` plus the spec’s shell validation all pass.
+- **Spec gap (not blocking)**: Acceptance calls for `tmuxSession` on each action object from `deriveAvailableActions()` / API metadata. Today `command` is attached in `mapSnapshotActionToDashboard`, but `tmuxSession` is not populated on those objects (session naming stays implicit in `terminal-attach` / server-side resolution). Consider a follow-up if external UIs need the raw session name without recomputing it.
+
+### Fixes Applied
+
+- `fix(review): align supervisor module banner with heartbeat signal behavior` — updated the file header so it no longer claims observe-only / `session_lost` behavior that the implementation does not perform.
+
+### Notes
+
+- `aigon feature-review 184 --no-launch` only validates worktree context; extra flags are currently ignored by the CLI handler (harmless).
