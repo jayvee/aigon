@@ -32,6 +32,21 @@ All 5 acceptance criteria completed. 11 files changed, 64 insertions, 310 deleti
 - lib/ before: 30072, after: 30068 (-4 net)
 - Commit stats: +64 / -310
 
+## Code Review
+
+**Reviewed by**: cu  
+**Date**: 2026-03-31
+
+### Findings
+- `classifyOrphanReason` claimed to use the engine snapshot but only compared spec-folder stages; `closing` never appears as a folder stage, so sessions during engine `closing` were not classified as orphaned.
+- Implementation log file counts vs full branch diff (agent install sync) are understated — informational only.
+
+### Fixes Applied
+- `fix(review): classify tmux orphans via engine snapshot lifecycle` — read `readWorkflowSnapshotSync` for feature/research and treat `lifecycle` `done` / `closing` as terminal; fall back to folder `done` when no snapshot exists.
+
+### Notes
+- All spec validation greps and `npm test` pass on the branch after the fix.
+
 ## Decisions
 
 - `entitySubmit` is synchronous but `emitSignal` is async — used fire-and-forget with `.catch()` since the status file write is the synchronous fallback
