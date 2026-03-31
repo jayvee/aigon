@@ -70,7 +70,10 @@ function writeSnapshot(repoPath, featureId, snapshot) {
 
 const {
   readAllFeatureSnapshots,
+  readAllResearchSnapshots,
   expectedSessionName,
+  expectedResearchSessionName,
+  sweepEntity,
   startSupervisorLoop,
   stopSupervisorLoop,
   getSupervisorStatus,
@@ -100,9 +103,9 @@ test('readAllFeatureSnapshots reads snapshot files', () => {
 
   const results = readAllFeatureSnapshots(tmp);
   assert.strictEqual(results.length, 2);
-  const ids = results.map(r => r.featureId).sort();
+  const ids = results.map(r => r.entityId).sort();
   assert.deepStrictEqual(ids, ['01', '02']);
-  const s1 = results.find(r => r.featureId === '01');
+  const s1 = results.find(r => r.entityId === '01');
   assert.strictEqual(s1.snapshot.lifecycle, 'implementing');
 });
 
@@ -118,7 +121,7 @@ test('readAllFeatureSnapshots skips entries without snapshot.json', () => {
 
   const results = readAllFeatureSnapshots(tmp);
   assert.strictEqual(results.length, 1);
-  assert.strictEqual(results[0].featureId, '04');
+  assert.strictEqual(results[0].entityId, '04');
 });
 
 test('readAllFeatureSnapshots skips corrupted snapshots', () => {
@@ -131,7 +134,7 @@ test('readAllFeatureSnapshots skips corrupted snapshots', () => {
 
   const results = readAllFeatureSnapshots(tmp);
   assert.strictEqual(results.length, 1);
-  assert.strictEqual(results[0].featureId, '06');
+  assert.strictEqual(results[0].entityId, '06');
 });
 
 // -- expectedSessionName --
@@ -206,6 +209,49 @@ test('supervisor.js never moves spec files', () => {
   const src = fs.readFileSync(path.join(__dirname, '../../lib/supervisor.js'), 'utf8');
   assert.strictEqual(src.includes('renameSync'), false);
   assert.strictEqual(src.includes('moveSpec'), false);
+});
+
+// -- readAllResearchSnapshots --
+
+function writeResearchSnapshot(repoPath, researchId, snapshot) {
+  const dir = path.join(repoPath, '.aigon', 'workflows', 'research', researchId);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'snapshot.json'), JSON.stringify(snapshot));
+}
+
+test('readAllResearchSnapshots reads research snapshots', () => {
+  const tmp = mkTmp();
+  writeResearchSnapshot(tmp, '10', { lifecycle: 'implementing', agents: { cc: { status: 'running' } } });
+  const results = readAllResearchSnapshots(tmp);
+  assert.strictEqual(results.length, 1);
+  assert.strictEqual(results[0].entityId, '10');
+});
+
+test('readAllResearchSnapshots returns empty for missing directory', () => {
+  const tmp = mkTmp();
+  const results = readAllResearchSnapshots(tmp);
+  assert.deepStrictEqual(results, []);
+});
+
+// -- expectedResearchSessionName --
+
+test('expectedResearchSessionName builds correct format', () => {
+  assert.strictEqual(expectedResearchSessionName('/Users/dev/myrepo', '01', 'cc'), 'myrepo-r1-cc');
+  assert.strictEqual(expectedResearchSessionName('/Users/dev/myrepo', '05', 'gg'), 'myrepo-r5-gg');
+});
+
+// -- supervisor.js emits signals --
+
+test('supervisor.js calls emitSignal (not just logging)', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../lib/supervisor.js'), 'utf8');
+  assert.ok(src.includes('workflowEngine.emitSignal'), 'supervisor must call workflowEngine.emitSignal');
+  assert.ok(src.includes("'heartbeat'"), 'supervisor must emit heartbeat signals');
+  assert.ok(src.includes("'heartbeat-expired'"), 'supervisor must emit heartbeat-expired signals');
+});
+
+test('supervisor.js passes entityType to emitSignal for research', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../lib/supervisor.js'), 'utf8');
+  assert.ok(src.includes('entityType'), 'supervisor must pass entityType option');
 });
 
 // ---------------------------------------------------------------------------

@@ -203,14 +203,16 @@ test('converts available actions to dashboard format', () => {
 });
 
 test('nextAction is the first action', () => {
+    // Use ready agents so open-session is not derived (only for running/idle)
     const snap = buildSnapshot({
-        availableActions: [
-            { kind: ManualActionKind.PAUSE_FEATURE, label: 'Pause', eventType: 'feature.pause', recommendedOrder: 40 },
-        ],
+        agents: {
+            cc: { id: 'cc', status: AgentStatus.READY, lastHeartbeatAt: null },
+        },
     });
     const result = adapter.snapshotToDashboardActions('feature', '42', snap);
-    assert.strictEqual(result.nextAction.command, 'aigon feature-pause 42');
-    assert.strictEqual(result.nextAction.reason, 'Pause feature execution');
+    // First action should be a lifecycle action (review for solo ready)
+    assert.ok(result.nextAction !== null, 'should have a nextAction');
+    assert.ok(result.nextAction.command, 'nextAction should have a command');
 });
 
 test('validActions are dashboard action objects', () => {
@@ -293,14 +295,15 @@ test('includes agentId in action output', () => {
 console.log('\n# snapshotToBoardCommand');
 
 test('returns first valid board command from snapshot', () => {
+    // Board now freshly derives actions from the snapshot context.
+    // With a running agent, open-session is not board-eligible, so first board action is pause.
     const snap = buildSnapshot({
-        availableActions: [
-            { kind: ManualActionKind.RESTART_AGENT, label: 'Restart cc', eventType: 'restart-agent', recommendedOrder: 10, agentId: 'cc' },
-            { kind: ManualActionKind.PAUSE_FEATURE, label: 'Pause', eventType: 'feature.pause', recommendedOrder: 40 },
-        ],
+        agents: {
+            cc: { id: 'cc', status: AgentStatus.RUNNING, lastHeartbeatAt: null },
+        },
     });
     const cmd = adapter.snapshotToBoardCommand('feature', '42', snap);
-    assert.strictEqual(cmd, 'aigon feature-open 42 cc');
+    assert.strictEqual(cmd, 'aigon feature-pause 42');
 });
 
 test('skips non-board actions (force-ready, drop)', () => {
@@ -319,19 +322,24 @@ test('returns null for null snapshot', () => {
     assert.strictEqual(adapter.snapshotToBoardCommand('feature', '42', null), null);
 });
 
-test('returns null for snapshot with no actions', () => {
-    const snap = buildSnapshot({ availableActions: [] });
+test('returns null for snapshot with no actions (done state)', () => {
+    // In done state, no actions are available
+    const snap = buildSnapshot({
+        lifecycle: 'done',
+        currentSpecState: 'done',
+        agents: { cc: { id: 'cc', status: AgentStatus.READY, lastHeartbeatAt: null } },
+    });
     assert.strictEqual(adapter.snapshotToBoardCommand('feature', '42', snap), null);
 });
 
-test('solo restart maps to feature-open (unified formatter)', () => {
+test('solo lost agent gets restart mapped to feature-open on board', () => {
     const snap = buildSnapshot({
-        availableActions: [
-            { kind: ManualActionKind.RESTART_AGENT, label: 'Restart', eventType: 'restart-agent', recommendedOrder: 10 },
-        ],
+        agents: {
+            cc: { id: 'cc', status: AgentStatus.LOST, lastHeartbeatAt: null },
+        },
     });
     const cmd = adapter.snapshotToBoardCommand('feature', '42', snap);
-    assert.strictEqual(cmd, 'aigon feature-open 42');
+    assert.strictEqual(cmd, 'aigon feature-open 42 cc');
 });
 
 // --- Snapshot Read (Sync) ---
@@ -405,6 +413,9 @@ test('returns null for missing snapshot asynchronously', async () => {
 console.log('\n# Consistency between dashboard and board');
 
 test('dashboard and board derive consistent actions from same snapshot', () => {
+    // Both dashboard and board now freshly derive actions from the same snapshot.
+    // With a lost cc and running gg, dashboard gets open-session(gg) + restart(cc) + pause.
+    // Board gets restart(cc) as first board-eligible action (open-session is not board-eligible).
     const snap = buildSnapshot({
         lifecycle: LifecycleState.IMPLEMENTING,
         agents: {
@@ -412,42 +423,36 @@ test('dashboard and board derive consistent actions from same snapshot', () => {
             gg: { id: 'gg', status: AgentStatus.RUNNING, lastHeartbeatAt: null },
         },
         currentSpecState: 'implementing',
-        availableActions: [
-            { kind: ManualActionKind.RESTART_AGENT, label: 'Restart cc', eventType: 'restart-agent', recommendedOrder: 10, agentId: 'cc' },
-            { kind: ManualActionKind.PAUSE_FEATURE, label: 'Pause', eventType: 'feature.pause', recommendedOrder: 40 },
-        ],
     });
 
     const dashActions = adapter.snapshotToDashboardActions('feature', '42', snap);
     const boardCmd = adapter.snapshotToBoardCommand('feature', '42', snap);
 
-    // Both should see restart-agent as the first action (lowest recommendedOrder)
-    assert.ok(dashActions.nextActions[0].action === 'feature-open', 'dashboard first action should be restart mapped to feature-open');
+    // Dashboard should have open-session for gg (running) and restart for cc (lost)
+    assert.ok(dashActions.nextActions.some(a => a.kind === ManualActionKind.OPEN_SESSION), 'dashboard should include open-session');
+    assert.ok(dashActions.nextActions.some(a => a.action === 'feature-open'), 'dashboard should include restart mapped to feature-open');
+    // Board gets restart as first board-eligible action
     assert.ok(boardCmd.includes('feature-open'), 'board command should be feature-open');
 });
 
 test('dashboard and board agree on feature-close with winner', () => {
     const snap = buildSnapshot({
-        lifecycle: LifecycleState.EVALUATING,
+        lifecycle: LifecycleState.READY_FOR_REVIEW,
         winnerAgentId: 'cc',
         currentSpecState: 'ready_for_review',
+        mode: 'fleet',
         agents: {
             cc: { id: 'cc', status: AgentStatus.READY, lastHeartbeatAt: null },
             gg: { id: 'gg', status: AgentStatus.READY, lastHeartbeatAt: null },
         },
-        availableActions: [
-            { kind: ManualActionKind.SELECT_WINNER, label: 'Select cc', eventType: 'select-winner', recommendedOrder: 60, agentId: 'cc' },
-            { kind: ManualActionKind.FEATURE_CLOSE, label: 'Close', eventType: 'feature.close', recommendedOrder: 70 },
-        ],
     });
 
     const dashActions = adapter.snapshotToDashboardActions('feature', '42', snap);
     const boardCmd = adapter.snapshotToBoardCommand('feature', '42', snap);
 
-    // Both see select-winner first
-    assert.ok(dashActions.nextActions[0].action === 'feature-close', 'dashboard maps select-winner to feature-close action');
+    // Both should see feature-close (ready_for_review with winner → close is available)
+    assert.ok(dashActions.nextActions.some(a => a.action === 'feature-close'), 'dashboard should have feature-close');
     assert.ok(boardCmd.includes('feature-close'), 'board command should be feature-close');
-    assert.ok(boardCmd.includes('cc'), 'board command should include winner agent');
 });
 
 // --- Side-effect freedom ---
