@@ -50,7 +50,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/commands/infra.js` | ~1460 | `aigon server` command, board, config, proxy-setup, dev-server |
 | `lib/utils.js` | 1474 | Spec CRUD, hooks, version, analytics |
 | `lib/commands/setup.js` | 1212 | init, install-agent, check-version, update, doctor + state reconciliation |
-| `lib/worktree.js` | 1200+ | Worktree creation, tmux sessions, terminal launch, shell trap signal wrapper |
+| `lib/terminal-adapters.js` | ~200 | Terminal adapter table: detect/launch/split per terminal (Warp, iTerm2, kitty, gnome-terminal, xterm, Terminal.app), tiling, Warp window close |
+| `lib/worktree.js` | 1300 | Worktree creation, tmux sessions, shell trap signal wrapper (terminal dispatch delegated to terminal-adapters.js) |
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
 | `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
 | `lib/state-queries.js` | ~250 | Read-only UI helpers: stage definitions, transition/action tables, guard functions — pure, no I/O |
