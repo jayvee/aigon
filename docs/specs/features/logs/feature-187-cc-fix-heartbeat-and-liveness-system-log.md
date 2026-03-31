@@ -23,3 +23,21 @@ Redesign heartbeat/liveness as a display-only system. The engine should never tr
 - **Tmux trumps heartbeat**: if tmux session is alive, agent is always considered alive regardless of heartbeat age.
 - **Desktop notifications remain**: supervisor still sends macOS/Linux notifications when an agent transitions to dead, but never changes engine state.
 - **Used `agent-failed` instead of `session-lost`** in recovery tests since session-lost no longer produces a recoverable state.
+
+## Code Review
+
+**Reviewed by**: cu (Cursor)
+**Date**: 2026-04-01
+
+### Findings
+
+- Implementation matches the display-only design: supervisor no longer emits engine signals; `session_lost` / `heartbeat_expired` only record timestamps; dashboard gets liveness via `getAgentLiveness` and pipeline dots.
+- `tests/unit/shell-trap.test.js` used `!cmd.includes('heartbeat-')`, which false-fails when the tmux session name includes a branch slug such as `fix-heartbeat-and-liveness-system` (substring `heartbeat-`). Assert the actual heartbeat file token for the test IDs instead.
+
+### Fixes Applied
+
+- `fix(review): tighten shell-trap raw-command assertion for heartbeat path` — use `heartbeat-01-cc` instead of generic `heartbeat-` substring.
+
+### Notes
+
+- Spec checkboxes for new dashboard actions (“Mark as lost”) may still be open; this branch focuses on engine/supervisor/display overlay.

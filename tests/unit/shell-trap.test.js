@@ -177,7 +177,9 @@ console.log('\n\ud83d\udd27 buildRawAgentCommand preserves original behavior');
 test('buildRawAgentCommand does not include trap handler or heartbeat', () => {
   const cmd = buildRawAgentCommand({ agent: 'cc', featureId: '01', desc: 'test' });
   assert.ok(!cmd.includes('trap _aigon_cleanup'), 'raw command should not include trap handler');
-  assert.ok(!cmd.includes('heartbeat-'), 'raw command should not include heartbeat file');
+  // Match the real heartbeat file token, not the substring "heartbeat-" (branch names like
+  // fix-heartbeat-and-liveness-system appear in --name and would false-fail a loose check).
+  assert.ok(!cmd.includes('heartbeat-01-cc'), 'raw command should not include heartbeat file path');
   assert.ok(!cmd.includes('_aigon_cleanup'), 'raw command should not include cleanup function');
 });
 
