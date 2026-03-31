@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "source": "feature-close-fallback",
+  "sessionId": "feature-154-cx-1774571590754",
+  "featureId": "154",
+  "repoPath": "/Users/jviner/src/aigon",
+  "agent": "cx",
+  "model": "cx-cli",
+  "startAt": "2026-03-27T00:33:10.754Z",
+  "endAt": "2026-03-27T00:33:10.754Z",
+  "turnCount": 0,
+  "toolCalls": 0,
+  "tokenUsage": {
+    "input": 0,
+    "output": 0,
+    "cacheReadInput": 0,
+    "cacheCreationInput": 0,
+    "thinking": 0,
+    "total": 0,
+    "billable": 0
+  },
+  "costUsd": 0
+}
