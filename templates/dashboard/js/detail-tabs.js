@@ -8,7 +8,7 @@
       const getDrawerState = opts.getDrawerState;
       const onToggleSpecView = opts.onToggleSpecView || (() => {});
 
-      const TAB_ORDER = ['spec', 'events', 'agents', 'stats', 'control'];
+      const TAB_ORDER = ['spec', 'status', 'events', 'agents', 'stats', 'control'];
       const state = {
         active: 'spec',
         loading: false,
@@ -243,6 +243,109 @@
           '</div>';
       }
 
+      async function fetchDeepStatus() {
+        const drawer = getDrawerState();
+        const parsed = parseEntityFromSpecPath(drawer.path, drawer.type);
+        if (!parsed.id) throw new Error('This item has no numeric ID yet.');
+        const q = new URLSearchParams();
+        if (drawer.repoPath) q.set('repoPath', drawer.repoPath);
+        if (parsed.type === 'research') q.set('type', 'research');
+        const res = await fetch(`/api/feature-status/${parsed.id}?${q.toString()}`, { cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+        return data;
+      }
+
+      function formatUptime(seconds) {
+        if (!Number.isFinite(seconds) || seconds < 0) return 'n/a';
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        if (h) return h + 'h ' + m + 'm';
+        if (m) return m + 'm ' + s + 's';
+        return s + 's';
+      }
+
+      function statusIndicator(alive) {
+        const cls = alive ? 'status-alive' : 'status-dead';
+        const label = alive ? 'Alive' : 'Dead';
+        return '<span class="status-dot ' + cls + '"></span> ' + escHtml(label);
+      }
+
+      function statusSection(title, rows) {
+        const body = rows
+          .filter(r => r)
+          .map(([k, v]) => '<div class="stats-row"><div class="stats-key">' + escHtml(k) + '</div><div class="stats-val">' + (v || 'n/a') + '</div></div>')
+          .join('');
+        return '<div class="deep-status-section"><h4 class="deep-status-heading">' + escHtml(title) + '</h4>' + body + '</div>';
+      }
+
+      function renderStatus(data) {
+        const s = data.session || {};
+        const p = data.progress || {};
+        const c = data.cost || {};
+        const sp = data.spec || {};
+
+        const sessionHtml = statusSection('Session', [
+          ['Status', statusIndicator(s.tmuxAlive)],
+          ['Session name', s.sessionName ? escHtml(s.sessionName) : 'n/a'],
+          ['Uptime', formatUptime(s.uptimeSeconds)],
+          s.pid ? ['PID', escHtml(String(s.pid))] : null,
+        ]);
+
+        const progressHtml = statusSection('Progress', [
+          ['Commits', escHtml(String(p.commitCount || 0))],
+          ['Last commit', p.lastCommitAt ? escHtml(formatIso(p.lastCommitAt)) : 'n/a'],
+          ['Last message', p.lastCommitMessage ? escHtml(p.lastCommitMessage) : 'n/a'],
+          ['Files changed', escHtml(String(p.filesChanged || 0))],
+          ['Lines', '+' + (p.linesAdded || 0) + ' / -' + (p.linesRemoved || 0)],
+        ]);
+
+        const costHtml = statusSection('Cost', [
+          ['Input tokens', escHtml(String(c.inputTokens || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ','))],
+          ['Output tokens', escHtml(String(c.outputTokens || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ','))],
+          ['Estimated cost', c.estimatedUsd ? '$' + escHtml(String(c.estimatedUsd)) : 'n/a'],
+          ['Model', c.model ? escHtml(c.model) : 'n/a'],
+          ['Sessions', escHtml(String(c.sessions || 0))],
+        ]);
+
+        const criteriaLabel = sp.criteriaTotal
+          ? escHtml(sp.criteriaDone + '/' + sp.criteriaTotal)
+          : 'n/a';
+        const specHtml = statusSection('Spec', [
+          ['Criteria', criteriaLabel],
+          ['Spec path', sp.specPath ? '<span class="mono">' + escHtml(sp.specPath) + '</span>' : 'n/a'],
+          ['Log path', sp.logPath ? '<span class="mono">' + escHtml(sp.logPath) + '</span>' : 'n/a'],
+        ]);
+
+        // Multi-agent sessions
+        let agentSessionsHtml = '';
+        const agentSessions = data.agentSessions || {};
+        const agentIds = Object.keys(agentSessions);
+        if (agentIds.length > 1) {
+          const rows = agentIds.map(id => {
+            const as = agentSessions[id] || {};
+            return [escHtml(id), statusIndicator(as.tmuxAlive) + (as.uptimeSeconds != null ? ' · ' + formatUptime(as.uptimeSeconds) : '')];
+          });
+          agentSessionsHtml = statusSection('Agent Sessions', rows);
+        }
+
+        const metaHtml = statusSection('Identity', [
+          ['ID', escHtml(String(data.id || ''))],
+          ['Name', escHtml(data.name || '')],
+          ['Lifecycle', escHtml(data.lifecycle || 'unknown')],
+          ['Mode', escHtml(data.mode || 'unknown')],
+          ['Primary agent', escHtml(data.primaryAgent || 'none')],
+          data.worktreePath ? ['Worktree', '<span class="mono">' + escHtml(data.worktreePath) + '</span>'] : null,
+        ]);
+
+        detailEl.innerHTML =
+          '<div class="deep-status-grid">' +
+            sessionHtml + progressHtml + costHtml + specHtml + agentSessionsHtml + metaHtml +
+          '</div>' +
+          '<div class="deep-status-footer">Collected ' + escHtml(formatIso(data.collectedAt)) + '</div>';
+      }
+
       function buildControlBlock(id, label, raw) {
         return '<section class="control-block">' +
           '<div class="control-header">' +
@@ -275,13 +378,19 @@
         detailEl.innerHTML = '<div class="drawer-empty">Loading…</div>';
         try {
           state.loading = true;
-          const payload = await fetchDetailPayload();
-          state.loadedTabs[tab] = true;
-          if (tab === 'events') renderEvents(payload);
-          else if (tab === 'agents') renderAgents(payload);
-          else if (tab === 'stats') renderStats(payload);
-          else if (tab === 'control') renderControl(payload);
-          else detailEl.innerHTML = '<div class="drawer-empty">Unknown tab.</div>';
+          if (tab === 'status') {
+            const deepStatus = await fetchDeepStatus();
+            state.loadedTabs[tab] = true;
+            renderStatus(deepStatus);
+          } else {
+            const payload = await fetchDetailPayload();
+            state.loadedTabs[tab] = true;
+            if (tab === 'events') renderEvents(payload);
+            else if (tab === 'agents') renderAgents(payload);
+            else if (tab === 'stats') renderStats(payload);
+            else if (tab === 'control') renderControl(payload);
+            else detailEl.innerHTML = '<div class="drawer-empty">Unknown tab.</div>';
+          }
         } catch (e) {
           detailEl.innerHTML = '<div class="drawer-empty drawer-empty-error">' + escHtml(e.message || 'Failed to load detail data') + '</div>';
         } finally {

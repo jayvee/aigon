@@ -53,6 +53,7 @@ Feature Commands (Drive, Fleet, Autopilot, Swarm):
   feature-start <ID> [agents...]    Start Drive (branch) or Fleet (worktrees)
   feature-do <ID> [--agent=<id>] [--autonomous]  Do the work on a feature; launches agent from shell, shows instructions inside agent session
   feature-spec <ID> [--json]        Resolve the canonical visible spec path for a feature
+  feature-status <ID> [--json]      Show deep status: session, progress, cost, spec criteria
   feature-list [--active] [--all] [--json]
                                     Query feature records without using the board renderer
   feature-submit                    (agent-only) Commit changes, write log, signal done
