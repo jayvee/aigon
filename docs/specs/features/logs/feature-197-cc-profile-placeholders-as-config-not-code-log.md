@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 627
+lines_removed: 510
+lines_changed: 1137
+files_touched: 11
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 254
+output_tokens: 34198
+cache_creation_input_tokens: 329052
+cache_read_input_tokens: 7165375
+thinking_tokens: 0
+total_tokens: 7528879
+billable_tokens: 34452
+cost_usd: 19.4864
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 30.3
+---
 # Implementation Log: Feature 197 - profile-placeholders-as-config-not-code
 Agent: cc
 
