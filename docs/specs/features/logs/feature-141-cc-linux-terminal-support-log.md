@@ -9,17 +9,6 @@ fix_commit_ratio: 0.2
 rework_thrashing: false
 rework_fix_cascade: false
 rework_scope_creep: false
-input_tokens: 240766
-output_tokens: 4081235
-cache_creation_input_tokens: 77099581
-cache_read_input_tokens: 3480140216
-thinking_tokens: 0
-total_tokens: 3561561798
-billable_tokens: 4322001
-cost_usd: 6537.0629
-sessions: 203
-model: "claude-opus-4-6"
-tokens_per_line_changed: 9254.82
 ---
 # Implementation Log: Feature 141 - linux-terminal-support
 Agent: cc

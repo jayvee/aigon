@@ -9,17 +9,6 @@ fix_commit_ratio: 0
 rework_thrashing: false
 rework_fix_cascade: false
 rework_scope_creep: true
-input_tokens: 238463
-output_tokens: 3946843
-cache_creation_input_tokens: 71613360
-cache_read_input_tokens: 3269847628
-thinking_tokens: 0
-total_tokens: 3345646294
-billable_tokens: 4185306
-cost_usd: 6108.6435
-sessions: 200
-model: "claude-opus-4-6"
-tokens_per_line_changed: 8158.49
 ---
 # Implementation Log: Feature 134 - unified-pipeline-stages
 Agent: cc

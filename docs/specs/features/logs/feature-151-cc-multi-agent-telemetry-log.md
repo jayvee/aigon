@@ -9,17 +9,6 @@ fix_commit_ratio: 0.333
 rework_thrashing: false
 rework_fix_cascade: false
 rework_scope_creep: false
-input_tokens: 213115
-output_tokens: 4380623
-cache_creation_input_tokens: 79687138
-cache_read_input_tokens: 3715358153
-thinking_tokens: 0
-total_tokens: 3799639029
-billable_tokens: 4593738
-cost_usd: 6988.1172
-sessions: 208
-model: "claude-opus-4-6"
-tokens_per_line_changed: 11484.35
 ---
 # Implementation Log: Feature 151 - multi-agent-telemetry
 Agent: cc

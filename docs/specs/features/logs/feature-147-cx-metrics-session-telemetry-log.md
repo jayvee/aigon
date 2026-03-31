@@ -9,17 +9,6 @@ fix_commit_ratio: 0.167
 rework_thrashing: false
 rework_fix_cascade: false
 rework_scope_creep: true
-input_tokens: 211619
-output_tokens: 4230867
-cache_creation_input_tokens: 78211398
-cache_read_input_tokens: 3587087732
-thinking_tokens: 0
-total_tokens: 3669741616
-billable_tokens: 4442486
-cost_usd: 6756.7872
-sessions: 206
-model: "claude-opus-4-6"
-tokens_per_line_changed: 10028.19
 ---
 # Implementation Log: Feature 147 - metrics-session-telemetry
 Agent: cx

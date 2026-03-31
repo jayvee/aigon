@@ -9,17 +9,6 @@ fix_commit_ratio: 0.5
 rework_thrashing: false
 rework_fix_cascade: true
 rework_scope_creep: true
-input_tokens: 210595
-output_tokens: 4223340
-cache_creation_input_tokens: 78102478
-cache_read_input_tokens: 3581837456
-thinking_tokens: 0
-total_tokens: 3664373869
-billable_tokens: 4433935
-cost_usd: 6746.2896
-sessions: 204
-model: "claude-opus-4-6"
-tokens_per_line_changed: 14878.98
 ---
 # Implementation Log: Feature 144 - add-mistral-vibe-as-aigon-agent-type-mv
 Agent: cc

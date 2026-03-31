@@ -9,17 +9,6 @@ fix_commit_ratio: 0.4
 rework_thrashing: false
 rework_fix_cascade: false
 rework_scope_creep: true
-input_tokens: 211696
-output_tokens: 4244441
-cache_creation_input_tokens: 78271573
-cache_read_input_tokens: 3592220439
-thinking_tokens: 0
-total_tokens: 3674948149
-billable_tokens: 4456137
-cost_usd: 6766.6337
-sessions: 206
-model: "claude-opus-4-6"
-tokens_per_line_changed: 7617.33
 ---
 # Implementation Log: Feature 146 - metrics-git-attribution
 Agent: cx
