@@ -1,3 +1,26 @@
+---
+commit_count: 3
+lines_added: 370
+lines_removed: 48
+lines_changed: 418
+files_touched: 12
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 5144
+output_tokens: 32145
+cache_creation_input_tokens: 424215
+cache_read_input_tokens: 10239588
+thinking_tokens: 0
+total_tokens: 10701092
+billable_tokens: 37289
+cost_usd: 25.8014
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 89.21
+---
 # Implementation Log: Feature 190 - centralise-all-ui-actions-into-engine-action-registry
 Agent: cc
 
