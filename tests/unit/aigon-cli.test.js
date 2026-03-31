@@ -71,6 +71,18 @@ function test(description, fn) {
     }
 }
 
+async function testAsync(description, fn) {
+    try {
+        await fn();
+        console.log(`  ✓ ${description}`);
+        passed++;
+    } catch (err) {
+        console.error(`  ✗ ${description}`);
+        console.error(`    ${err.message}`);
+        failed++;
+    }
+}
+
 function withTempDir(fn) {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-test-'));
     try {
@@ -725,44 +737,46 @@ test('research-eval warns about unfinished findings and suggests terminal-focus'
     assert.strictEqual(output.some(line => line.includes('aigon terminal-focus 52 cc --research')), true);
     assert.strictEqual(output.some(line => line.includes('aigon research-eval 52 --force')), true);
 }));
-test('research-eval --force fails without engine events (no bootstrap)', () => withTempDir(tempDir => {
-    const researchRoot = path.join(tempDir, 'docs/specs/research-topics');
-    const inProgressDir = path.join(researchRoot, '03-in-progress');
-    const logsDir = path.join(researchRoot, 'logs');
+testAsync('research-eval --force does not throw when migration backfills missing engine state', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-test-'));
+    try {
+        const researchRoot = path.join(tempDir, 'docs/specs/research-topics');
+        const inProgressDir = path.join(researchRoot, '03-in-progress');
+        const logsDir = path.join(researchRoot, 'logs');
 
-    fs.mkdirSync(inProgressDir, { recursive: true });
-    fs.mkdirSync(logsDir, { recursive: true });
+        fs.mkdirSync(inProgressDir, { recursive: true });
+        fs.mkdirSync(logsDir, { recursive: true });
 
-    fs.writeFileSync(
-        path.join(inProgressDir, 'research-52-eval-agent-completion-check.md'),
-        '# Research 52\n'
-    );
-    fs.writeFileSync(
-        path.join(logsDir, 'research-52-cc-findings.md'),
-        '---\nstatus: implementing\n---\n# Findings\n'
-    );
+        fs.writeFileSync(
+            path.join(inProgressDir, 'research-52-eval-agent-completion-check.md'),
+            '# Research 52\n'
+        );
+        fs.writeFileSync(
+            path.join(logsDir, 'research-52-cc-findings.md'),
+            '---\nstatus: implementing\n---\n# Findings\n'
+        );
 
-    const commands = createAllCommands({
-        PATHS: {
-            features: {
-                root: path.join(tempDir, 'docs/specs/features'),
-                prefix: 'feature',
-                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused']
+        const commands = createAllCommands({
+            PATHS: {
+                features: {
+                    root: path.join(tempDir, 'docs/specs/features'),
+                    prefix: 'feature',
+                    folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused']
+                },
+                research: {
+                    root: researchRoot,
+                    prefix: 'research',
+                    folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused']
+                }
             },
-            research: {
-                root: researchRoot,
-                prefix: 'research',
-                folders: ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused']
-            }
-        },
-        loadAgentConfig: (agentId) => ({ name: agentId === 'cc' ? 'Claude' : agentId }),
-    });
+            loadAgentConfig: (agentId) => ({ name: agentId === 'cc' ? 'Claude' : agentId }),
+        });
 
-    assert.throws(
-        () => withCapturedConsole(() => commands['research-eval'](['52', '--force'])),
-        /has no engine events — run research-start first/
-    );
-}));
+        await commands['research-eval'](['52', '--force']);
+    } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+});
 
 test('research-open falls back from warp to tmux on Linux', () => withTempDir(tempDir => {
     const researchRoot = path.join(tempDir, 'docs/specs/research-topics');
@@ -2284,11 +2298,14 @@ test('parseDashboardActionRequest validates feature-start args', () => {
     assert.strictEqual(badArgs.ok, false, 'should reject non-array args');
 });
 
-console.log('');
-if (failed === 0) {
-    console.log(`Passed: ${passed}`);
-    process.exit(0);
-}
+// Wait for async tests to complete before reporting
+setTimeout(() => {
+    console.log('');
+    if (failed === 0) {
+        console.log(`Passed: ${passed}`);
+        process.exit(0);
+    }
 
-console.error(`Failed: ${failed} of ${passed + failed}`);
-process.exit(1);
+    console.error(`Failed: ${failed} of ${passed + failed}`);
+    process.exit(1);
+}, 2000);
