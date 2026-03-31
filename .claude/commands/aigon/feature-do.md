@@ -187,6 +187,14 @@ If your changes affect any of the following, update the relevant docs **before c
 
 Documentation ships with the code, not as a follow-up.
 
+## Step 4.8: Run `npm test` before submitting
+
+**You MUST run `npm test` and verify all tests pass before committing.** This runs the unit and integration test suites. Fix any failures before proceeding — do not commit code that breaks existing tests.
+
+```bash
+npm test
+```
+
 ## Step 5: Commit your implementation
 
 **IMPORTANT: You MUST commit before proceeding.**

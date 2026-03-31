@@ -26,7 +26,9 @@
 <!-- High-level approach, key decisions, constraints, non-functional requirements -->
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites -->
+<!-- Other features, external services, or prerequisites.
+     For Aigon feature dependencies use: depends_on: feature-name-slug
+     This enables ordering enforcement — dependent features can't start until deps are done. -->
 -
 
 ## Out of Scope

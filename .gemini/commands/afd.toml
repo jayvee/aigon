@@ -9,8 +9,8 @@ Implement a feature. Works in Drive mode (branch), Drive mode (worktree) (parall
 
 ## Argument Resolution
 
-If no ID is provided, or the ID doesn't match an existing feature in progress:
-1. List all files in `./docs/specs/features/03-in-progress/` matching `feature-*.md`
+If no ID is provided, or the ID doesn't match an existing active feature:
+1. Run `aigon feature-list --active`
 2. If a partial ID or name was given, filter to matches
 3. Present the matching features and ask the user to choose one
 
@@ -65,14 +65,19 @@ The command will:
 **If the CLI fails with "Could not find feature in in-progress"** and you're in a worktree: the spec move was likely not committed before the worktree was created. Fix by running these commands from the worktree:
 ```bash
 # Bring the spec into this worktree from the main branch
-git checkout main -- docs/specs/features/03-in-progress/
+SPEC_PATH=$(aigon feature-spec {{args}})
+git checkout main -- "$SPEC_PATH"
 git commit -m "chore: sync spec to worktree branch"
 ```
 Then re-run `/aigon:feature-do {{args}}`.
 
 ## Step 2: Read the spec
 
-Read the spec in `./docs/specs/features/03-in-progress/feature-{{args}}-*.md`
+Read the exact spec path returned by:
+
+```bash
+aigon feature-spec {{args}}
+```
 
 ## Step 2.5: Consider Plan Mode
 
@@ -157,7 +162,7 @@ fi
 
 The **dev server** runs a local development server of this project's source code (e.g. Next.js, Vite, etc.) so you can verify your changes work correctly — either by running automated tests against it or by providing the user a URL for manual review.
 
-**IMPORTANT:** `aigon dev-server start` starts the **project's** dev server (e.g. `npm run dev`) with managed port allocation. It is NOT `aigon dashboard` — the dashboard is Aigon's centralised management UI across all repositories and has nothing to do with previewing project changes. Never run `aigon dashboard` to test your work.
+**IMPORTANT:** `aigon dev-server start` starts the **project's** dev server (e.g. `npm run dev`) with managed port allocation. It is NOT `aigon server` — the AIGON server is the centralised management UI across all repositories and has nothing to do with previewing project changes. Never run `aigon server` to test your work.
 
 ### Drive Mode (branch)
 - Start the dev server: `aigon dev-server start` (NEVER run `npm run dev` or `next dev` directly — it bypasses port allocation and causes port conflicts)
@@ -187,6 +192,14 @@ If your changes affect any of the following, update the relevant docs **before c
 - **Cross-repo changes (e.g., `@aigon/pro`)** → note what changed in both repos
 
 Documentation ships with the code, not as a follow-up.
+
+## Step 4.8: Run `npm test` before submitting
+
+**You MUST run `npm test` and verify all tests pass before committing.** This runs the unit and integration test suites. Fix any failures before proceeding — do not commit code that breaks existing tests.
+
+```bash
+npm test
+```
 
 ## Step 5: Commit your implementation
 
