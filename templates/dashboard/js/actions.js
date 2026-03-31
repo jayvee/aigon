@@ -33,10 +33,13 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   const validActions = feature.validActions || [];
   if (validActions.length === 0) return '';
 
-  // Filter: all non-per-agent actions render as buttons (engine controls what's available)
+  // Filter: non-per-agent, non-infra/view actions render as card-level buttons
+  // Per-agent actions are handled by buildAgentSectionHtml.
+  // Infra/view actions are rendered inline in agent sections or special UI elements.
   const evalRunning = feature.evalSession && feature.evalSession.running;
   const buttonsToRender = validActions.filter(va => {
     if (va.agentId) return false; // per-agent actions handled by buildAgentSectionHtml
+    if (va.category === 'infra' || va.category === 'view') return false; // infra/view handled separately
     // Hide eval/review actions when eval session is already running
     if (evalRunning && (va.action === 'feature-eval' || va.action === 'research-eval' || va.action === 'feature-review')) return false;
     return true;

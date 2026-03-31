@@ -170,7 +170,7 @@ The workflow-core engine is the sole lifecycle authority for features and resear
 | Aspect | How it works |
 |--------|-------------|
 | State authority | Event log + projected snapshot |
-| Action source | XState machine + `snapshot.can()` |
+| Action source | XState machine + `snapshot.can()` for workflow; bypass guards for infra/view |
 | Lock model | Exclusive file creation (`wx` flag) |
 | Effects | Explicit, durable, resumable lifecycle (requested → claimed → succeeded/failed) |
 | Dependency | `xstate` npm package |
@@ -193,6 +193,46 @@ The post-cutover system is easier to reason about if you separate lifecycle trut
 | Feedback lifecycle | Spec folder location + command logic | Feedback does not use workflow-core |
 
 Important distinction: `.aigon/state/` still exists after the cutover, but it is no longer the coordinator manifest system that decides feature lifecycle.
+
+### Unified Action Registry
+
+All user-facing actions — workflow transitions and infrastructure operations — are defined in central candidate lists with consistent shape, eligibility guards, and metadata. Any UI surface (dashboard, board, macOS app) can discover available actions from the API without reimplementing eligibility logic.
+
+**Two kinds of candidates:**
+
+| Kind | Source | Guard mechanism | Examples |
+|------|--------|----------------|----------|
+| Workflow | `FEATURE_ACTION_CANDIDATES` / `RESEARCH_ACTION_CANDIDATES` | XState `snapshot.can()` or `bypassMachine` guards | start, pause, eval, close, open-session |
+| Infra/View | `FEATURE_INFRA_CANDIDATES` / `RESEARCH_INFRA_CANDIDATES` | `bypassMachine` guards on enriched context | dev-server-poke, mark-submitted, view-findings, view-eval |
+
+**Action categories** (`ActionCategory` enum in `types.js`):
+- `lifecycle` — workflow transitions (start, pause, close, eval)
+- `session` — terminal session management (open-session)
+- `agent-control` — per-agent controls (restart, force-ready, drop)
+- `infra` — infrastructure operations (dev server, flags)
+- `view` — read-only viewing (findings, eval results); `clientOnly: true`
+
+**How infra data reaches guards:**
+1. `dashboard-status-collector.js` builds agent rows with infra fields (`devServerPokeEligible`, `flags`, `findingsPath`, etc.)
+2. `workflow-read-model.js` enriches the workflow snapshot context with this infra data via `enrichSnapshotWithInfraData()`
+3. `deriveAvailableActions()` evaluates all candidates (workflow + infra) against the enriched context
+4. `/api/status` returns all valid actions in `validActions`
+
+**Action shape in API response:**
+```js
+{
+  action: 'dev-server-poke',   // Action identifier
+  kind: 'dev-server-poke',     // ManualActionKind
+  label: 'Start preview',      // User-facing label
+  agentId: 'cc',               // null for feature-level actions
+  category: 'infra',           // ActionCategory
+  scope: 'per-agent',          // per-agent | per-feature | per-repo
+  metadata: { apiEndpoint: 'dev-server/poke' },
+  clientOnly: false,           // true = UI-only, no API call needed
+}
+```
+
+**Rule:** Never add action buttons or eligibility logic in dashboard frontend files. All actions must be defined in the central action registry. Frontend files contain only rendering and dispatch logic.
 
 ### Read-Side Consumers
 
