@@ -181,7 +181,7 @@ function writeFixtureConfig(repoDir) {
         // Seed repos are for workflow testing, not production code quality.
         // Keep agent instructions lightweight so features complete quickly.
         instructions: {
-            testing: 'skip',
+            rigor: 'light',
         },
     };
     const aigonDir = path.join(repoDir, '.aigon');
