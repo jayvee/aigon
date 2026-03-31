@@ -372,7 +372,7 @@ All three must pass for `npm test` to succeed.
 
 ### Test utilities
 
-- `test/setup-fixture.js` — generates realistic fixture repos (brewboard, brewboard-api, trailhead) with known feature/research/feedback IDs
+- `test/setup-fixture.js` — generates realistic fixture repos (brewboard, trailhead) with known feature/research/feedback IDs
 - `test/mock-agent.js` — `MockAgent` class that simulates agent work in a worktree (writes code, commits, updates status) with configurable delays
 - `tests/dashboard/server.js` — minimal HTTP server that serves the dashboard HTML at `:4109` for Playwright tests
 
