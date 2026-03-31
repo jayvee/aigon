@@ -52,7 +52,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/commands/setup.js` | 1212 | init, install-agent, check-version, update, doctor + state reconciliation |
 | `lib/worktree.js` | 1200+ | Worktree creation, tmux sessions, terminal launch, shell trap signal wrapper |
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
-| `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
+| `lib/config.js` | ~950 | Global/project config, agent CLI config (profiles delegated to profile-placeholders.js) |
+| `lib/profile-placeholders.js` | ~500 | Profile presets (from `templates/profiles.json`), detection, instruction directive resolvers, `getProfilePlaceholders()` |
 | `lib/state-queries.js` | ~250 | Read-only UI helpers: stage definitions, transition/action tables, guard functions — pure, no I/O |
 | `lib/feature-spec-resolver.js` | ~140 | Canonical feature spec lookup for active features; avoids consumer-specific folder guessing |
 | `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting used by workflow read paths |
