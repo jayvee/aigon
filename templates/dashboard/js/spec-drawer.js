@@ -1,10 +1,9 @@
     // ── Spec drawer ──────────────────────────────────────────────────────────
 
     const drawerState = {
-      path: null, content: '', savedContent: '', mode: 'read', dirty: false,
+      path: null, content: '',
       title: '', stage: '', type: 'feature', repoPath: null,
-      fontSize: Number(localStorage.getItem(lsKey('drawerFontSize')) || '13'),
-      undoStack: [], redoStack: []
+      fontSize: Number(localStorage.getItem(lsKey('drawerFontSize')) || '13')
     };
     const drawerOverlay = document.getElementById('drawer-overlay');
     const drawerEl = document.getElementById('spec-drawer');
@@ -12,14 +11,9 @@
     const drawerStage = document.getElementById('drawer-stage');
     const drawerTabs = document.getElementById('drawer-tabs');
     const drawerPreview = document.getElementById('drawer-preview');
-    const drawerEditor = document.getElementById('drawer-editor');
     const drawerDetailContent = document.getElementById('drawer-detail-content');
-    const drawerSaveBtn = document.getElementById('drawer-save');
     const drawerSaveStatus = document.getElementById('drawer-save-status');
-    const drawerUndoBtn = document.getElementById('drawer-undo');
-    const drawerRedoBtn = document.getElementById('drawer-redo');
     const drawerFontSizeLabel = document.getElementById('drawer-font-size');
-    const drawerModeToggle = drawerEl.querySelector('.drawer-mode-toggle');
 
     const drawerDetailTabs = (typeof createDrawerDetailTabs === 'function')
       ? createDrawerDetailTabs({
@@ -30,21 +24,11 @@
         onToggleSpecView: (showSpec) => {
           if (showSpec) {
             drawerDetailContent.style.display = 'none';
-            if (drawerState.mode === 'edit') {
-              drawerPreview.style.display = 'none';
-              drawerEditor.style.display = '';
-            } else {
-              drawerEditor.style.display = 'none';
-              drawerPreview.style.display = '';
-            }
+            drawerPreview.style.display = '';
           } else {
             drawerPreview.style.display = 'none';
-            drawerEditor.style.display = 'none';
             drawerDetailContent.style.display = '';
-            if (drawerState.mode !== 'read') drawerState.mode = 'read';
           }
-          updateDrawerModeButtons();
-          updateDrawerButtons();
         }
       })
       : null;
@@ -56,7 +40,6 @@
     function applyDrawerFontSize() {
       const sz = drawerState.fontSize + 'px';
       drawerPreview.style.fontSize = sz;
-      drawerEditor.style.fontSize = sz;
       drawerFontSizeLabel.textContent = drawerState.fontSize;
       localStorage.setItem(lsKey('drawerFontSize'), String(drawerState.fontSize));
     }
@@ -116,23 +99,6 @@
       }
     }
 
-    function updateDrawerButtons() {
-      const canEditSpec = isSpecTabActive();
-      drawerSaveBtn.disabled = !canEditSpec || !drawerState.dirty;
-      drawerUndoBtn.disabled = !canEditSpec || drawerState.undoStack.length === 0;
-      drawerRedoBtn.disabled = !canEditSpec || drawerState.redoStack.length === 0;
-    }
-
-    function pushUndo() {
-      const current = drawerEditor.value;
-      const last = drawerState.undoStack[drawerState.undoStack.length - 1];
-      if (last === current) return;
-      drawerState.undoStack.push(current);
-      if (drawerState.undoStack.length > 100) drawerState.undoStack.shift();
-      drawerState.redoStack = [];
-      updateDrawerButtons();
-    }
-
     function specTypeFromPath(specPath) {
       if (!specPath) return 'feature';
       if (specPath.includes('/research/')) return 'research';
@@ -148,22 +114,14 @@
       drawerState.stage = stage;
       drawerState.type = specTypeFromPath(specPath);
       drawerState.repoPath = repoPath || null;
-      drawerState.mode = 'read';
-      drawerState.dirty = false;
-      drawerState.undoStack = [];
-      drawerState.redoStack = [];
       drawerTitle.textContent = title;
       drawerStage.textContent = stage;
       drawerPreview.innerHTML = '<span style="color:var(--text-tertiary)">Loading…</span>';
-      drawerEditor.value = '';
       drawerDetailContent.innerHTML = '';
       drawerDetailContent.style.display = 'none';
-      drawerEditor.style.display = 'none';
       drawerPreview.style.display = '';
       drawerSaveStatus.textContent = '';
       if (drawerDetailTabs) drawerDetailTabs.reset();
-      updateDrawerModeButtons();
-      updateDrawerButtons();
       applyDrawerFontSize();
       drawerOverlay.classList.add('open');
       drawerEl.classList.add('open');
@@ -178,15 +136,12 @@
         .then(data => {
           if (data.error) { drawerPreview.textContent = 'Error: ' + data.error; return; }
           drawerState.content = data.content;
-          drawerState.savedContent = data.content;
-          drawerEditor.value = data.content;
           renderMarkdownPreview(data.content);
         })
         .catch(e => { drawerPreview.textContent = 'Failed to load: ' + e.message; });
     }
 
     function closeDrawer() {
-      if (drawerState.dirty && !confirm('You have unsaved changes. Discard?')) return;
       drawerOverlay.classList.remove('open');
       drawerEl.classList.remove('open');
       document.body.classList.remove('split-view');
@@ -195,7 +150,6 @@
         document.body.style.overflow = '';
       }
       drawerState.path = null;
-      drawerState.dirty = false;
       if (drawerDetailTabs) drawerDetailTabs.reset();
       // Refit terminal after spec drawer closes (terminal panel goes back to right side)
       setTimeout(() => { if (termState.fitAddon) try { termState.fitAddon.fit(); } catch (e) {} }, 300);
@@ -206,57 +160,6 @@
       const basename = drawerState.path.split('/').pop().replace(/\.md$/, '');
       copyText(basename).then(() => showToast('Copied: ' + basename));
     };
-
-    function setDrawerMode(mode) {
-      if (!isSpecTabActive()) return;
-      drawerState.mode = mode;
-      updateDrawerModeButtons();
-      if (mode === 'read') {
-        drawerEditor.style.display = 'none';
-        drawerPreview.style.display = '';
-        drawerState.content = drawerEditor.value;
-        renderMarkdownPreview(drawerState.content);
-      } else {
-        drawerEditor.value = drawerState.content;
-        drawerPreview.style.display = 'none';
-        drawerEditor.style.display = '';
-        drawerEditor.focus();
-      }
-    }
-
-    function updateDrawerModeButtons() {
-      const showModeToggle = isSpecTabActive();
-      if (drawerModeToggle) drawerModeToggle.style.display = showModeToggle ? '' : 'none';
-      drawerEl.querySelectorAll('.drawer-mode-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.mode === drawerState.mode);
-      });
-    }
-
-    async function saveDrawer() {
-      if (!drawerState.dirty) return;
-      drawerSaveBtn.disabled = true;
-      drawerSaveStatus.textContent = 'Saving…';
-      try {
-        const content = drawerState.mode === 'edit' ? drawerEditor.value : drawerState.content;
-        const res = await fetch('/api/spec', {
-          method: 'PUT',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ path: drawerState.path, content })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed');
-        drawerState.content = content;
-        drawerState.savedContent = content;
-        drawerState.dirty = false;
-        drawerSaveStatus.textContent = 'Saved';
-        renderMarkdownPreview(drawerState.content);
-        updateDrawerButtons();
-      } catch (e) {
-        drawerSaveStatus.textContent = 'Error: ' + e.message;
-      } finally {
-        drawerSaveBtn.disabled = !drawerState.dirty;
-      }
-    }
 
     async function launchAiSession() {
       if (!drawerState.path) { showToast('No spec loaded'); return; }
@@ -285,51 +188,6 @@
     drawerOverlay.onclick = closeDrawer;
     document.getElementById('drawer-close').onclick = closeDrawer;
     document.getElementById('drawer-use-ai').onclick = launchAiSession;
-    drawerEl.querySelectorAll('.drawer-mode-btn').forEach(btn => {
-      btn.onclick = () => setDrawerMode(btn.dataset.mode);
-    });
-
-    // Track edits for dirty state — use a debounced undo snapshot
-    let undoTimer = null;
-    drawerEditor.addEventListener('input', () => {
-      drawerState.dirty = drawerEditor.value !== drawerState.savedContent;
-      drawerSaveStatus.textContent = '';
-      updateDrawerButtons();
-      // Snapshot for undo after 500ms pause in typing
-      clearTimeout(undoTimer);
-      undoTimer = setTimeout(() => pushUndo(), 500);
-    });
-
-    // Before first edit in a session, snapshot the original
-    drawerEditor.addEventListener('focus', () => {
-      if (drawerState.undoStack.length === 0 && drawerEditor.value) {
-        drawerState.undoStack.push(drawerEditor.value);
-      }
-    });
-
-    drawerSaveBtn.onclick = saveDrawer;
-
-    drawerUndoBtn.onclick = () => {
-      if (drawerState.undoStack.length === 0) return;
-      drawerState.redoStack.push(drawerEditor.value);
-      const prev = drawerState.undoStack.pop();
-      drawerEditor.value = prev;
-      drawerState.content = prev;
-      drawerState.dirty = prev !== drawerState.savedContent;
-      drawerSaveStatus.textContent = '';
-      updateDrawerButtons();
-    };
-
-    drawerRedoBtn.onclick = () => {
-      if (drawerState.redoStack.length === 0) return;
-      drawerState.undoStack.push(drawerEditor.value);
-      const next = drawerState.redoStack.pop();
-      drawerEditor.value = next;
-      drawerState.content = next;
-      drawerState.dirty = next !== drawerState.savedContent;
-      drawerSaveStatus.textContent = '';
-      updateDrawerButtons();
-    };
 
     // Font size controls
     document.getElementById('drawer-font-down').onclick = () => {
@@ -343,7 +201,6 @@
 
     document.getElementById('drawer-refresh').onclick = async () => {
       if (!drawerState.path) return;
-      if (drawerState.dirty && !confirm('You have unsaved changes. Reload and discard them?')) return;
       const btn = document.getElementById('drawer-refresh');
       btn.classList.remove('stale');
       termState.specContentHash = null; // reset so next poll re-baselines
@@ -355,12 +212,8 @@
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         drawerState.content = data.content;
-        drawerState.savedContent = data.content;
-        drawerState.dirty = false;
-        drawerEditor.value = data.content;
         renderMarkdownPreview(data.content);
         if (drawerDetailTabs) drawerDetailTabs.onDrawerRefresh();
-        updateDrawerButtons();
         drawerSaveStatus.textContent = 'Refreshed';
         setTimeout(() => { if (drawerSaveStatus.textContent === 'Refreshed') drawerSaveStatus.textContent = ''; }, 2000);
         requestAnimationFrame(() => { document.getElementById('drawer-body').scrollTop = scrollTop; });
@@ -396,20 +249,6 @@
     document.addEventListener('keydown', (e) => {
       if (!drawerEl.classList.contains('open')) return;
       if (e.key === 'Escape') { closeDrawer(); return; }
-      // Cmd+S to save
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        if (!isSpecTabActive()) return;
-        e.preventDefault();
-        saveDrawer();
-        return;
-      }
-      // Cmd+Shift+E to toggle read/edit mode
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'e') {
-        if (!isSpecTabActive()) return;
-        e.preventDefault();
-        setDrawerMode(drawerState.mode === 'read' ? 'edit' : 'read');
-        return;
-      }
       // Cmd+Shift+F to toggle fullscreen
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'f') {
         e.preventDefault();
@@ -420,7 +259,7 @@
     // Close drawer when the page regains focus from another tab
     // Prevents the drawer from appearing to "pop out" when returning to the dashboard
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && drawerEl.classList.contains('open') && !drawerState.dirty) {
+      if (!document.hidden && drawerEl.classList.contains('open')) {
         closeDrawer();
       }
     });
