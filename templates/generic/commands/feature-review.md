@@ -18,23 +18,18 @@ If no ID is provided, or the ID doesn't match an existing feature:
 
 ```bash
 BRANCH=$(git branch --show-current)
-if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
-  echo "FATAL: You are on $BRANCH. Reviews must run on the feature branch."
-  echo "Looking for worktree..."
-  git worktree list | grep "feature-{{ARG1_SYNTAX}}"
-  echo "If a worktree exists, cd into it. DO NOT continue on $BRANCH."
-  exit 1
-fi
-echo "OK: On branch $BRANCH"
+FEATURE_BRANCH=$(git branch --list 'feature-{{ARG1_SYNTAX}}-*' | head -1 | tr -d ' *')
+echo "Current branch: $BRANCH"
+echo "Feature branch: $FEATURE_BRANCH"
 ```
 
-**If the above check fails, STOP IMMEDIATELY. Do not make any changes. Do not commit.**
+**If you are on the feature branch**, review files directly.
 
-If you are on main, find and `cd` into the worktree:
-```bash
-WORKTREE=$(git worktree list | grep "feature-{{ARG1_SYNTAX}}" | awk '{print $1}')
-cd "$WORKTREE" || { echo "No worktree found — cannot proceed"; exit 1; }
-```
+**If you are on main** (e.g. you cannot cd into the worktree), review using git commands:
+- `git diff main...$FEATURE_BRANCH` to see the diff
+- `git show $FEATURE_BRANCH:path/to/file` to read files from the branch
+- `git log main..$FEATURE_BRANCH --oneline` to see commits
+- Do NOT try to cd into the worktree directory — review from main using git.
 
 ## Step 2: Read the spec
 
