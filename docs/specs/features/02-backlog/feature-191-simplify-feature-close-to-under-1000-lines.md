@@ -20,6 +20,8 @@
 - [ ] Total `lib/commands/feature.js` is under 3,000 lines
 
 ### Reliability
+- [ ] Feature-close works regardless of what branch the main repo is on — auto-checkouts main as first step, never fails because a reviewer left the repo on a stale branch (e.g. `review-fixes`). This applies to all repos, not just aigon.
+- [ ] All dashboard actions that dispatch CLI commands handle the repo being on any branch — the action-scope pre-check auto-recovers instead of blocking
 - [ ] Settings file reset happens before stash (existing fix preserved)
 - [ ] Spec move recovery happens if commit fails (existing fix preserved)
 - [ ] Engine close with agent-ready signal is handled in one place
