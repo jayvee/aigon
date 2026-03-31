@@ -1,3 +1,26 @@
+---
+commit_count: 0
+lines_added: 0
+lines_removed: 0
+lines_changed: 0
+files_touched: 0
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 111
+output_tokens: 13970
+cache_creation_input_tokens: 256367
+cache_read_input_tokens: 5382847
+thinking_tokens: 0
+total_tokens: 5653295
+billable_tokens: 14081
+cost_usd: 13.9306
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 181 - configurable-instruction-directives-phase-2-ceremony-steps
 Agent: cc
 

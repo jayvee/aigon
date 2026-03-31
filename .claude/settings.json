@@ -577,22 +577,7 @@
       "Edit(/Users/jviner/src/aigon-worktrees/feature-173-cx-rationalise-test-suites/**)",
       "Write(/Users/jviner/src/aigon-worktrees/feature-173-cx-rationalise-test-suites/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-173-cx-rationalise-test-suites:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-173-cx-rationalise-test-suites:*)",
-      "Read(/Users/jviner/src/aigon-worktrees/feature-181-cc-configurable-instruction-directives-phase-2-ceremony-steps/**)",
-      "Edit(/Users/jviner/src/aigon-worktrees/feature-181-cc-configurable-instruction-directives-phase-2-ceremony-steps/**)",
-      "Write(/Users/jviner/src/aigon-worktrees/feature-181-cc-configurable-instruction-directives-phase-2-ceremony-steps/**)",
-      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-181-cc-configurable-instruction-directives-phase-2-ceremony-steps:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-181-cc-configurable-instruction-directives-phase-2-ceremony-steps:*)",
-      "Read(/Users/jviner/src/aigon-worktrees/feature-182-cc-engine-cleanup-remove-legacy-bypasses/**)",
-      "Edit(/Users/jviner/src/aigon-worktrees/feature-182-cc-engine-cleanup-remove-legacy-bypasses/**)",
-      "Write(/Users/jviner/src/aigon-worktrees/feature-182-cc-engine-cleanup-remove-legacy-bypasses/**)",
-      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-182-cc-engine-cleanup-remove-legacy-bypasses:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-182-cc-engine-cleanup-remove-legacy-bypasses:*)",
-      "Read(/Users/jviner/src/aigon-worktrees/feature-183-cc-introduce-cmux/**)",
-      "Edit(/Users/jviner/src/aigon-worktrees/feature-183-cc-introduce-cmux/**)",
-      "Write(/Users/jviner/src/aigon-worktrees/feature-183-cc-introduce-cmux/**)",
-      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-183-cc-introduce-cmux:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-183-cc-introduce-cmux:*)"
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-173-cx-rationalise-test-suites:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
@@ -633,18 +618,6 @@
             "type": "command",
             "command": "/Users/jviner/.local/state/fnm_multishells/7365_1774154010918/bin/aigon capture-session-telemetry",
             "timeout": 30
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/jviner/.local/state/fnm_multishells/55802_1774936958876/bin/aigon check-agent-submitted",
-            "timeout": 5
           }
         ]
       }
