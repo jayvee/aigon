@@ -18,5 +18,6 @@
       }
     }
   },
-  "forcePro": true
+  "forcePro": true,
+  "worktreeSetup": "npm install"
 }
