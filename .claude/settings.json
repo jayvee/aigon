@@ -577,7 +577,14 @@
       "Edit(/Users/jviner/src/aigon-worktrees/feature-173-cx-rationalise-test-suites/**)",
       "Write(/Users/jviner/src/aigon-worktrees/feature-173-cx-rationalise-test-suites/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-173-cx-rationalise-test-suites:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-173-cx-rationalise-test-suites:*)"
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-173-cx-rationalise-test-suites:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-189-cc-seed-reset-rewrite/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-189-cc-seed-reset-rewrite/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-189-cc-seed-reset-rewrite/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-189-cc-seed-reset-rewrite:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-189-cc-seed-reset-rewrite:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",

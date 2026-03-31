@@ -154,7 +154,7 @@ The user or original implementing agent should then:
 ## Tips
 
 - **Use a different model**: For best results, the reviewing agent should be a different model than the implementer (e.g., Claude implements → Codex reviews)
-- **Check tests**: Run the test suite if available to catch regressions
+- **Do NOT run tests**: The implementing agent runs tests. Review is code review only.
 - **Review commit history**: Use `git log --oneline main..HEAD` to see all implementation commits before reviewing
 
 ## Prompt Suggestion
