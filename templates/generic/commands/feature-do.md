@@ -123,17 +123,7 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 
 > **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for dependency commands.
 
-## Step 3.8: Write tests for your implementation
-
-**You MUST write tests for any new functionality you implement.** This is not optional. Test coverage is a key evaluation criterion in Fleet mode and a merge requirement.
-
-- **Write unit tests** for new modules, functions, resolvers, and utilities
-- **Write integration tests** for new UI components (render tests, interaction tests)
-- **Add test cases** to existing test files when extending existing modules
-- **Follow existing test patterns** — look at nearby `*.test.js`, `*.test.jsx`, or `*.test.ts` files for conventions (test runner, assertion style, mocking approach)
-- **Run the test suite** to verify all tests pass (both new and existing)
-
-> **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for test commands and conventions.
+{{TESTING_WRITE_SECTION}}
 
 ## Step 4: Test your changes
 
@@ -152,7 +142,7 @@ The **dev server** runs a local development server of this project's source code
 {{AGENT_DEV_SERVER_NOTE}}
 > **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for test commands.
 
-{{PLAYWRIGHT_VERIFICATION}}
+{{TESTING_PLAYWRIGHT_SECTION}}
 
 {{MANUAL_TESTING_GUIDANCE}}
 
@@ -167,13 +157,7 @@ If your changes affect any of the following, update the relevant docs **before c
 
 Documentation ships with the code, not as a follow-up.
 
-## Step 4.8: Run `npm test` before submitting
-
-**You MUST run `npm test` and verify all tests pass before committing.** This runs the unit and integration test suites. Fix any failures before proceeding — do not commit code that breaks existing tests.
-
-```bash
-npm test
-```
+{{TESTING_RUN_SECTION}}
 
 ## Step 5: Commit your implementation
 
