@@ -1,0 +1,125 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Aigon Aigon Dashboard" [level=1] [ref=e4]:
+        - img "Aigon" [ref=e5]
+        - text: Aigon Dashboard
+      - generic [ref=e6]:
+        - generic [ref=e9]: Connected
+        - generic [ref=e10]: Updated just now
+        - button "Notifications" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+        - button "Refresh" [ref=e15] [cursor=pointer]
+        - link "?" [ref=e16] [cursor=pointer]:
+          - /url: http://localhost:3600/docs
+    - navigation "Dashboard views" [ref=e17]:
+      - button "Monitor" [ref=e18] [cursor=pointer]
+      - button "Pipeline" [ref=e19] [cursor=pointer]
+      - button "Sessions" [ref=e20] [cursor=pointer]
+      - button "Reports" [ref=e21] [cursor=pointer]
+      - button "InsightsPRO" [ref=e22] [cursor=pointer]:
+        - text: Insights
+        - superscript [ref=e23]: PRO
+      - button "Logs" [ref=e24] [cursor=pointer]
+      - button "Console" [ref=e25] [cursor=pointer]
+      - button "Settings" [ref=e26] [cursor=pointer]
+      - button "Config" [ref=e27] [cursor=pointer]
+    - generic [ref=e28]:
+      - button "Hide sidebar" [ref=e29] [cursor=pointer]:
+        - img [ref=e30]
+      - listbox "Repository selector" [ref=e31]:
+        - option "All Repos" [selected] [ref=e33] [cursor=pointer]:
+          - generic [ref=e34]: All Repos
+        - option "aigon 23" [ref=e35] [cursor=pointer]:
+          - generic [ref=e36]: aigon
+          - generic [ref=e38]: "23"
+      - generic [ref=e40]:
+        - generic [ref=e42]:
+          - button "All" [ref=e43] [cursor=pointer]
+          - button "Features" [ref=e44] [cursor=pointer]
+          - button "Research" [ref=e45] [cursor=pointer]
+          - button "Feedback" [ref=e46] [cursor=pointer]
+        - generic "Agent status summary" [ref=e47]:
+          - button "All" [ref=e48] [cursor=pointer]
+          - button "0 implementing" [ref=e49] [cursor=pointer]
+          - button "0 waiting" [ref=e50] [cursor=pointer]
+          - button "10 submitted" [ref=e51] [cursor=pointer]
+          - button "0 error" [ref=e52] [cursor=pointer]
+        - generic [ref=e54]:
+          - generic [ref=e55] [cursor=pointer]:
+            - strong [ref=e56]: aigon
+            - generic [ref=e57]: ▾
+            - generic [ref=e59]:
+              - button "Ask cc" [ref=e60]
+              - button "▾" [ref=e61]
+          - generic [ref=e62]:
+            - article [ref=e63] [cursor=pointer]:
+              - generic [ref=e64]:
+                - generic [ref=e65]: "#179 single-source-of-truth-for-agent-status"
+                - generic [ref=e67]:
+                  - button "Close feature" [ref=e68]
+                  - button "⋯" [ref=e70]
+              - generic [ref=e72]:
+                - generic [ref=e73]: Claude Code
+                - generic [ref=e74]: ✓ Submitted
+                - generic [ref=e75]: 6m ago
+            - article [ref=e76] [cursor=pointer]:
+              - generic [ref=e77]:
+                - generic [ref=e78]: "#180 configurable-instruction-directives"
+                - generic [ref=e80]:
+                  - button "Close feature" [ref=e81]
+                  - button "⋯" [ref=e83]
+              - generic [ref=e85]:
+                - generic [ref=e86]: Claude Code
+                - generic [ref=e87]: ✓ Submitted
+                - generic [ref=e88]: 12s ago
+  - dialog "Notifications" [ref=e89]:
+    - generic [ref=e90]:
+      - generic [ref=e91]: Notifications
+      - button "Close notifications" [ref=e92] [cursor=pointer]: ×
+    - generic [ref=e94]: No notifications yet
+  - dialog "Peek" [ref=e95]:
+    - generic [ref=e96]:
+      - generic [ref=e98]: Peek
+      - generic [ref=e99]:
+        - button "⤢" [ref=e100] [cursor=pointer]
+        - button "Close" [ref=e101] [cursor=pointer]
+    - generic [ref=e104]:
+      - textbox "Send command…" [ref=e105]
+      - button "Send" [ref=e106] [cursor=pointer]
+  - dialog "Terminal" [ref=e107]:
+    - generic [ref=e108]:
+      - generic [ref=e110]: Terminal
+      - generic [ref=e111]:
+        - button "⤢" [ref=e112] [cursor=pointer]
+        - button "Stop" [ref=e113] [cursor=pointer]
+        - button "Detach (keep session running)" [ref=e114] [cursor=pointer]: Detach
+    - generic [ref=e117]: 0s
+  - dialog [ref=e118]:
+    - generic [ref=e119]:
+      - button "Copy filename for CLI" [ref=e120] [cursor=pointer]:
+        - img [ref=e121]
+      - generic [ref=e125]:
+        - generic [ref=e126]:
+          - button "Read" [ref=e127] [cursor=pointer]
+          - button "Edit" [ref=e128] [cursor=pointer]
+        - button "↺ Refresh" [ref=e129] [cursor=pointer]
+        - button "Use AI" [ref=e130] [cursor=pointer]
+        - button "Open in Editor" [ref=e131] [cursor=pointer]
+        - button "⤢" [ref=e132] [cursor=pointer]
+        - button "Close" [ref=e133] [cursor=pointer]: ×
+    - tablist "Spec details" [ref=e134]:
+      - tab "Spec" [selected] [ref=e135] [cursor=pointer]
+      - tab "Events" [ref=e136] [cursor=pointer]
+      - tab "Agents" [ref=e137] [cursor=pointer]
+      - tab "Stats" [ref=e138] [cursor=pointer]
+      - tab "Control" [ref=e139] [cursor=pointer]
+    - generic [ref=e141]:
+      - generic [ref=e142]:
+        - button "Save" [disabled]
+        - button "Undo" [disabled]
+        - button "Redo" [disabled]
+      - generic [ref=e143]:
+        - button "A−" [ref=e144] [cursor=pointer]
+        - generic [ref=e145]: "13"
+        - button "A+" [ref=e146] [cursor=pointer]

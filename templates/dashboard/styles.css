@@ -178,6 +178,10 @@
     .kcard-agent-status.status-submitted{color:#86EFAC}
     .kcard-agent-status.status-ended,.kcard-agent-status.status-idle{color:var(--text-tertiary)}
     .kcard-agent-status.status-flagged{color:#FB923C}
+    .liveness-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle;flex-shrink:0}
+    .liveness-dot.liveness-alive{background:#4ADE80;box-shadow:0 0 3px rgba(74,222,128,.5)}
+    .liveness-dot.liveness-stale{background:#FCD34D;box-shadow:0 0 3px rgba(252,211,77,.5)}
+    .liveness-dot.liveness-dead{background:#F87171;box-shadow:0 0 3px rgba(248,113,113,.5)}
     .kcard-dev-slot{display:inline-flex;width:20px;flex-shrink:0;justify-content:center;margin-left:auto}
     .monitor-dev-link{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;color:var(--text-secondary);border:1px solid var(--border-subtle);border-radius:999px;text-decoration:none;opacity:.86;transition:opacity .12s ease,border-color .12s ease,color .12s ease}
     .monitor-dev-link svg{width:11px;height:11px;display:block}

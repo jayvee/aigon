@@ -255,12 +255,32 @@
       return { icon, label, cls, devServerUrl: agent.devServerUrl };
     }
 
+    function buildLivenessIndicator(agent) {
+      const liveness = agent.liveness;
+      if (!liveness) return '';
+      const lastSeenAt = agent.lastSeenAt;
+      let dot, tip;
+      if (liveness === 'alive') {
+        dot = 'liveness-alive'; tip = 'Heartbeat: active';
+      } else if (liveness === 'stale') {
+        const ago = agent.heartbeatAgeMs ? Math.round(agent.heartbeatAgeMs / 1000) + 's ago' : 'stale';
+        dot = 'liveness-stale'; tip = 'Heartbeat: ' + ago;
+      } else if (liveness === 'dead') {
+        const ago = agent.heartbeatAgeMs ? Math.round(agent.heartbeatAgeMs / 1000) + 's ago' : 'no signal';
+        dot = 'liveness-dead'; tip = 'Heartbeat: ' + ago;
+      } else {
+        return '';
+      }
+      return '<span class="liveness-dot ' + dot + '" title="' + tip + '"></span>';
+    }
+
     function buildAgentStatusSpan(agent, options) {
       const s = buildAgentStatusHtml(agent, options);
       const opts = options || {};
       const devServerLink = opts.showDevLink ? buildDevServerLinkHtml(s.devServerUrl) : '';
       const devSlot = opts.showDevLink ? '<span class="kcard-dev-slot">' + devServerLink + '</span>' : '';
-      return '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span>' + devSlot;
+      const livenessDot = buildLivenessIndicator(agent);
+      return livenessDot + '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span>' + devSlot;
     }
 
     // Agent-specific action label overrides (keyed by action name)
@@ -319,7 +339,7 @@
           '<span class="kcard-agent-name" title="' + escHtml(displayName) + '">' + escHtml(displayName) + '</span>' +
           devSlot +
         '</div>' +
-        '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span></div>' +
+        '<div class="kcard-agent-status-row">' + buildLivenessIndicator(agent) + '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span></div>' +
         (actionsHtml ? '<div class="kcard-agent-actions">' + actionsHtml + '</div>' : '') +
         '</div>';
     }
