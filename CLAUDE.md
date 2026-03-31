@@ -66,8 +66,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/security.js` | 131+ | Merge gate scanning (gitleaks + semgrep), severity thresholds, diff-aware |
 | `lib/workflow-core/` | ~1500 | **Workflow engine**: event-sourced state with XState machine, action derivation, effect lifecycle for features + research |
 | `lib/workflow-snapshot-adapter.js` | ~310 | **Shared read adapter**: maps workflow-core snapshots (feature + research) to dashboard/board data formats; event log reading; side-effect free |
-| `lib/workflow-heartbeat.js` | ~125 | **Heartbeat**: agent liveness signals, configurable timeout (120s default), expired heartbeat sweep |
-| `lib/supervisor.js` | ~276 | **Server monitoring module**: observes agent liveness (tmux + heartbeat), emits signals, sends notifications. Never kills/restarts/moves. |
+| `lib/workflow-heartbeat.js` | ~160 | **Heartbeat**: display-only liveness computation (alive/stale/dead), heartbeat file reading, configurable thresholds. Never changes engine state. |
+| `lib/supervisor.js` | ~330 | **Server monitoring module**: observe-only — computes agent liveness (tmux + heartbeat files), stores in-memory for dashboard display, sends desktop notifications. Never emits engine signals or changes state. |
 | `lib/supervisor-service.js` | ~175 | **Server auto-restart**: launchd (macOS) / systemd (Linux) for `aigon server start --persistent` |
 | `lib/shell-trap.test.js` | ~190 | Tests for shell trap signal infrastructure |
 
@@ -86,6 +86,7 @@ Supporting state:
 - **Folders** (`docs/specs/features/0N-*/`) — shared ground truth, committed to git
 - **Agent status files** (`.aigon/state/feature-{id}-{agent}.json`) — per-agent metadata, managed by `lib/agent-status.js`
 - **Shell trap signals**: `buildAgentCommand()` wraps all agent commands with a bash `trap EXIT` handler that fires `agent-status submitted` (exit 0) or `agent-status error` (non-zero). A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. Controlled by `signals` block in `templates/agents/*.json`.
+- **Heartbeat is display-only**: heartbeat data (file touches + engine `lastHeartbeatAt`) is used for dashboard liveness indicators (green=alive, yellow=stale, red=dead) but NEVER triggers engine state transitions. The supervisor computes liveness and stores it in memory; the dashboard reads it via `getAgentLiveness()`. Users manually mark agents as lost/failed — the system never does this automatically.
 - Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 
 The dashboard UI uses `lib/state-queries.js` for fallback action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths, and `lib/dashboard-status-collector.js` to keep repo/entity status assembly out of the HTTP server module.
