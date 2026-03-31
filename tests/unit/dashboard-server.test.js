@@ -91,8 +91,6 @@ test('exports required functions', () => {
         'parseSimpleFrontMatter',
         'normalizeDashboardStatus',
         'parseFeatureSpecFileName',
-        'inferDashboardNextCommand',
-        'inferDashboardNextActions',
         'safeTmuxSessionExists',
         'collectDashboardStatusData',
         'escapeForHtmlScript',
@@ -163,16 +161,6 @@ test('escapeAppleScriptString escapes quotes', () => {
 test('readConductorReposFromGlobalConfig returns array', () => {
     const repos = dashboard.readConductorReposFromGlobalConfig();
     assert.ok(Array.isArray(repos));
-});
-
-test('inferDashboardNextCommand returns string or null', () => {
-    const result = dashboard.inferDashboardNextCommand('42', ['cc'], 'implementing');
-    assert.ok(result === null || typeof result === 'string');
-});
-
-test('inferDashboardNextActions returns array', () => {
-    const result = dashboard.inferDashboardNextActions('42', ['cc'], 'implementing');
-    assert.ok(Array.isArray(result));
 });
 
 test('resolveDashboardActionRepoPath returns object with repoPath', () => {
