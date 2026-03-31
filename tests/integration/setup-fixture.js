@@ -80,13 +80,14 @@ function getGitHubUser() {
 }
 
 function addGitHubRemote(repoDir, repoName, ghUser) {
-    const remoteUrl = `https://github.com/${ghUser}/${repoName}.git`;
+    // Push to <name>-seed repos — seed-reset clones from these, not the bare repo names
+    const remoteUrl = `https://github.com/${ghUser}/${repoName}-seed.git`;
     try {
         // Create repo if it doesn't exist (ignore error if it already exists)
-        execSync(`gh repo create ${repoName} --private --description "Aigon seed repo" 2>/dev/null || true`, { stdio: 'pipe' });
+        execSync(`gh repo create ${repoName}-seed --private --description "Aigon seed repo" 2>/dev/null || true`, { stdio: 'pipe' });
         runGit(['remote', 'add', 'origin', remoteUrl], repoDir);
         execSync('git push --force -u origin main', { cwd: repoDir, stdio: 'pipe' });
-        console.log(`  ✓ Pushed ${repoName} to ${remoteUrl}`);
+        console.log(`  ✓ Pushed ${repoName} to ${remoteUrl} (seed repo)`);
     } catch (e) {
         console.log(`  ⚠️  Could not push ${repoName} to GitHub: ${e.message}`);
     }
