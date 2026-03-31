@@ -1,44 +1,41 @@
-# Feature: Data-Driven Terminal Detection
+# Feature: data-driven-terminal-detection
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+worktree.js (1,852 lines) has ~500 lines of terminal detection and dispatch as nested if/else chains covering iTerm2, Warp, tmux, cmux, and Linux terminals. Replace with a terminal capability table in `lib/terminal-adapters.js`: each terminal is a config object `{ name, detect(), launch(), split(), focus() }`. The detection/dispatch code in worktree.js becomes a 30-line loop that finds the first matching adapter and calls its methods.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As a maintainer, I want to add support for a new terminal by writing a 15-line adapter object
+- [ ] As a contributor, I want terminal logic isolated so I can test iTerm2 detection without loading worktree code
+- [ ] As a user on Linux, I want terminal detection to work reliably because each terminal's logic is self-contained
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] `lib/terminal-adapters.js` exists: adapter table + adapter objects (<200 lines)
+- [ ] Each adapter is a plain object: `{ name, detect(env), launch(cmd, opts), split(cmd, opts) }`
+- [ ] `lib/worktree.js` under 1,200 lines (from 1,852)
+- [ ] Adapter selection in worktree.js is a loop: `adapters.find(a => a.detect(env))` (<30 lines)
+- [ ] All terminal launch paths produce identical behavior — pure refactor
+- [ ] tmux session management stays in worktree.js (it's worktree logic, not terminal logic)
 
 ## Validation
-<!-- Optional: commands Ralph runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+wc -l lib/terminal-adapters.js     # expect < 200
+wc -l lib/worktree.js              # expect < 1200
+node --check lib/terminal-adapters.js
+node --check lib/worktree.js
+npm test
 ```
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+- Catalog every terminal detection branch in worktree.js (grep for `TERM_PROGRAM`, `WARP`, `iTerm`, `tmux`)
+- Define adapter interface: detect(env) returns bool, launch(cmd, opts) opens terminal, split(cmd, opts) splits pane
+- Extract each terminal's if/else block into an adapter object
+- Order adapters by specificity (Warp before generic, tmux before plain terminal)
+- Replace worktree.js detection code with `const adapter = adapters.find(a => a.detect(process.env))`
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- None — pure internal refactor
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
-
-## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
-
-## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research:
+- Adding new terminal support (that's the payoff, not this feature)
+- Changing tmux session naming or worktree layout
+- Modifying the shell trap signal infrastructure
