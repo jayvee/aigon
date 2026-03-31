@@ -9,7 +9,7 @@ aigon feature-autopilot <args> [agents...]
 ## Argument Resolution
 
 If no ID is provided, or the ID doesn't match an existing feature in backlog or in-progress:
-1. List all files in `./docs/specs/features/02-backlog/` and `03-in-progress/` matching `feature-*.md`
+1. Run `aigon feature-list`
 2. If a partial ID or name was given, filter to matches
 3. Present the matching features and ask the user to choose one
 

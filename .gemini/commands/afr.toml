@@ -10,37 +10,42 @@ Perform a code review on another agent's implementation, making targeted fixes w
 ## Argument Resolution
 
 If no ID is provided, or the ID doesn't match an existing feature:
-1. List all files in `./docs/specs/features/03-in-progress/` and `./docs/specs/features/04-in-evaluation/` matching `feature-*.md`
+1. Run `aigon feature-list --active`
 2. If a partial ID or name was given, filter to matches
 3. Present the matching features and ask the user to choose one
 
-## Step 1: Locate the feature branch/worktree
+## Step 1: Verify you are on the feature branch
 
-**CRITICAL: You must work on the feature branch, NEVER on main.** Committing to main will cause merge conflicts when the feature is closed.
-
-Find the implementation to review:
+**CRITICAL: You MUST be on the feature branch, NEVER on main.** Run this check FIRST, before doing anything else:
 
 ```bash
-# Check for worktrees first
-git worktree list | grep "feature-{{args}}"
-
-# If no worktree, check for branch
-git branch --list "feature-{{args}}-*"
+BRANCH=$(git branch --show-current)
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+  echo "FATAL: You are on $BRANCH. Reviews must run on the feature branch."
+  echo "Looking for worktree..."
+  git worktree list | grep "feature-{{args}}"
+  echo "If a worktree exists, cd into it. DO NOT continue on $BRANCH."
+  exit 1
+fi
+echo "OK: On branch $BRANCH"
 ```
 
-- **Worktree found**: `cd` into the worktree directory and work there
-- **Branch only**: Switch to the feature branch (`git checkout feature-{{args}}-*`)
+**If the above check fails, STOP IMMEDIATELY. Do not make any changes. Do not commit.**
 
-**Verify you are NOT on main before making any changes:**
+If you are on main, find and `cd` into the worktree:
 ```bash
-git branch --show-current    # Must NOT be 'main' or 'master'
+WORKTREE=$(git worktree list | grep "feature-{{args}}" | awk '{print $1}')
+cd "$WORKTREE" || { echo "No worktree found — cannot proceed"; exit 1; }
 ```
 
 ## Step 2: Read the spec
 
 Read the feature spec to understand what was supposed to be built:
 
-- Location: `./docs/specs/features/03-in-progress/feature-{{args}}-*.md` or `./docs/specs/features/04-in-evaluation/feature-{{args}}-*.md`
+```bash
+SPEC_PATH=$(aigon feature-spec {{args}})
+cat "$SPEC_PATH"
+```
 
 ## Step 3: Read the implementation log
 
@@ -54,6 +59,12 @@ Examine all changes made on this branch:
 
 ```bash
 git diff main...HEAD
+```
+
+Signal review start immediately:
+
+```bash
+aigon agent-status reviewing
 ```
 
 Enter **Code Review Mode** with these constraints:
@@ -127,9 +138,14 @@ git commit -m "docs(review): add review notes to implementation log"
 
 After completing the review:
 
-1. Tell the user: "Code review complete. [N] fix(es) committed." (or "Code review complete. No fixes needed.")
-2. Show a summary of what was reviewed and any fixes made
-3. **STOP and WAIT** for the user to:
+1. Signal review completion:
+   ```bash
+   aigon agent-status review-complete
+   ```
+
+2. Tell the user: "Code review complete. [N] fix(es) committed." (or "Code review complete. No fixes needed.")
+3. Show a summary of what was reviewed and any fixes made
+4. **STOP and WAIT** for the user to:
    - Review your changes: `git log --oneline main..HEAD`
    - Inspect review commits: `git show <commit>`
    - Decide next steps

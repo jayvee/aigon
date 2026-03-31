@@ -1,12 +1,28 @@
 ---
-description: Aigon workflow context
+description: Aigon workflow context — read this before every task
 globs:
 alwaysApply: true
 ---
 ## Aigon
 
-This project uses the Aigon development workflow.
+This project uses the Aigon development workflow. Read these docs before starting any work:
 
-- Agent-specific notes: `docs/agents/*.md`
-- Architecture overview: `docs/architecture.md`
-- Development workflow: `docs/development_workflow.md`
+- **Agent instructions**: `AGENTS.md` — codebase orientation, module map, coding rules
+- **Architecture**: `docs/architecture.md` — full module docs, state management, testing
+- **Development workflow**: `docs/development_workflow.md` — feature/research lifecycle
+- **Agent-specific notes**: `docs/agents/cursor.md`
+
+## Key Rules
+
+1. **Never commit to main** — always work on the feature branch or in the worktree
+2. **Use `aigon` CLI for all state transitions** — never move spec files manually
+3. **Use `aigon dev-server start` for dev servers** — never run `npm run dev` directly (bypasses port allocation)
+4. **Signal when done** — run `aigon agent-status submitted` when implementation is complete
+5. **Read the spec first** — run `aigon feature-spec <ID>` to find and read the feature spec before coding
+6. **Run tests before submitting** — run `npm test` to verify your changes
+
+## Dev Server
+
+**NEVER run `npm run dev`, `next dev`, or any dev command directly.** Use `aigon dev-server start` which handles port allocation and proxy registration.
+
+If you need to check your dev server URL: `aigon dev-server url`

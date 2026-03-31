@@ -621,6 +621,18 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/opt/homebrew/bin/aigon check-agent-submitted",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }
