@@ -58,6 +58,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/profile-placeholders.js` | ~500 | Profile presets (from `templates/profiles.json`), detection, instruction directive resolvers, `getProfilePlaceholders()` |
 | `lib/state-queries.js` | ~250 | Read-only UI helpers: stage definitions, transition/action tables, guard functions — pure, no I/O |
 | `lib/feature-spec-resolver.js` | ~140 | Canonical feature spec lookup for active features; avoids consumer-specific folder guessing |
+| `lib/feature-status.js` | ~230 | Deep feature status collector: `collectFeatureDeepStatus()` — session, progress, cost, spec data on demand |
 | `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting used by workflow read paths |
 | `lib/dashboard-status-helpers.js` | ~200 | Shared dashboard status helpers: tmux/session detection, worktree lookup, status normalization, stale-session heuristics |
 | `lib/server-runtime.js` | ~90 | Shared AIGON server lifecycle helpers for start/restart/stop orchestration |
