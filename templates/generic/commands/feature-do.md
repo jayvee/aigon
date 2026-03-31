@@ -53,7 +53,7 @@ The command will detect your mode (Drive/worktree/Fleet) and display the spec lo
 
 ## Step 2: Read the spec
 
-Read the exact spec path returned by:
+The spec content was printed inline by the `feature-do` command above. If it was not (e.g., you ran `feature-start` separately), read the spec at:
 
 ```bash
 aigon feature-spec {{ARG1_SYNTAX}}
@@ -61,43 +61,42 @@ aigon feature-spec {{ARG1_SYNTAX}}
 
 {{PLAN_MODE_SECTION}}
 
-## Step 3: Implement and break into tasks from acceptance criteria
+## Step 3: Implement
 
 **Signal that you are starting implementation (you MUST run this shell command — do NOT write .aigon/state/ files directly):**
 ```bash
 aigon agent-status implementing
 ```
 
-Before writing code, create a task for each **Acceptance Criterion** from the spec. This gives the user visibility into implementation progress via the task list.
+**TIME BUDGET: Complete implementation in under 10 minutes.**
+- Start coding within 60 seconds. The spec IS your plan.
+- Read ONLY the files listed in the spec's Technical Approach / Key Files section. Do not explore broadly.
+- Do not create test files unless the spec explicitly requires them.
+- Commit first, validate after. Fix issues in follow-up commits.
 
-Then implement the feature according to the spec. Mark tasks as in-progress when you start working on them, and completed when satisfied.
-{{AGENT_TEAMS_FEATURE_NOTE}}
-
-**For worktree modes (Drive worktree or Fleet):** Use relative paths throughout implementation. Maintain the worktree directory as your working directory.
+Work through the acceptance criteria in order. For worktree modes, use relative paths and maintain the worktree directory as your working directory.
 
 ## Step 3.5: Install dependencies (worktree only)
 
 {{WORKTREE_DEP_CHECK}}
 
-> **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for dependency commands.
+## Step 4: Commit your implementation
+
+Stage and commit your code changes using conventional commits (`feat:`, `fix:`, `chore:`). Verify with `git log --oneline -1`.
 
 {{TESTING_WRITE_SECTION}}
+
+{{TESTING_RUN_SECTION}}
 
 {{TESTING_STEPS_SECTION}}
 
 {{DOCUMENTATION_SECTION}}
 
-{{TESTING_RUN_SECTION}}
-
-## Step 5: Commit your implementation
-
-Stage and commit your code changes using conventional commits (`feat:`, `fix:`, `chore:`). Verify with `git log --oneline -1`.
-
 {{LOGGING_SECTION}}
 
 {{DEV_SERVER_SECTION}}
 
-## Step 7: Signal completion
+## Step 5: Signal completion
 
 **THIS IS THE FINAL STEP. YOU MUST COMPLETE IT. DO NOT SKIP THIS STEP.**
 
