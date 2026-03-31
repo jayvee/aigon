@@ -1,3 +1,16 @@
+---
+commit_count: 5
+lines_added: 816
+lines_removed: 295
+lines_changed: 1111
+files_touched: 14
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cx-cli"
+---
 # Implementation Log: Feature 178 - unified-workflow-engine
 Agent: cx
 
