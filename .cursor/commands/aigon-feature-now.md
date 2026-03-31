@@ -104,30 +104,7 @@ Continue from **Step 4: Implement** below.
 
 ---
 
-## Step 3.5: Consider Plan Mode
-
-Before implementing, **consider using plan mode** for non-trivial features:
-
-**Use plan mode when**:
-- The feature is architecturally significant
-- Multiple implementation approaches exist
-- The spec acceptance criteria are complex or touch many components
-- You need to explore the codebase more thoroughly to understand integration points
-- Architectural decisions required (patterns, libraries, structure)
-
-**Skip plan mode for**:
-- Simple, straightforward features with one obvious approach
-- Single-file changes
-- Features with very specific implementation details already provided
-- Quick bug fixes or small enhancements
-
-**In plan mode, you should**:
-- Explore the codebase to understand existing architecture and patterns
-- Design your implementation approach
-- Identify all files that need changes
-- Consider trade-offs between different approaches
-- Present your plan for user approval before proceeding
-- Exit plan mode when your plan is approved
+**Skip plan mode — implement directly.**
 
 ## Step 4: Implement
 
@@ -135,27 +112,11 @@ Create tasks from the acceptance criteria to give the user visibility into progr
 
 Implement the feature according to the spec. Commit with conventional commits (`feat:`, `fix:`, `chore:`).
 
-## Step 3.8: Write tests for your implementation
 
-**You MUST write tests for any new functionality you implement.** This is not optional. Test coverage is a key evaluation criterion in Fleet mode and a merge requirement.
-
-- **Write unit tests** for new modules, functions, resolvers, and utilities
-- **Write integration tests** for new UI components (render tests, interaction tests)
-- **Add test cases** to existing test files when extending existing modules
-- **Follow existing test patterns** — look at nearby `*.test.js`, `*.test.jsx`, or `*.test.ts` files for conventions (test runner, assertion style, mocking approach)
-- **Run the test suite** to verify all tests pass (both new and existing)
-
-> **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for test commands and conventions.
 
 ## Step 5: Test
 
-## Step 4.8: Run `npm test` before submitting
 
-**You MUST run `npm test` and verify all tests pass before committing.** This runs the unit and integration test suites. Fix any failures before proceeding — do not commit code that breaks existing tests.
-
-```bash
-npm test
-```
 
 ### Before stopping: prepare a manual testing checklist
 
@@ -166,16 +127,19 @@ Generate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria an
 aigon agent-status submitted
 ```
 
-## Step 6: Update the implementation log
+## Step 6: Update and commit the log
 
-Find the log at `./docs/specs/features/logs/feature-*-log.md`
+Find your implementation log:
+- Drive mode (branch): `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md`
+- Worktree mode: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-<agent>-*-log.md`
 
-Update with:
+Update it with:
 - Key decisions made during implementation
-- Summary of the approach
-- Any issues encountered and resolutions
+- Summary of the conversation between you and the user
+- Any issues encountered and how they were resolved
+- Your approach and rationale (for Fleet mode, helps evaluator compare)
 
-Commit the log file.
+**Then commit the log file.**
 
 ## Step 7: STOP — Implementation complete
 
