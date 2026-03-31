@@ -34,7 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/jviner/.local/state/fnm_multishells/55802_1774936958876/bin/aigon check-agent-signal",
+            "command": "/opt/homebrew/bin/aigon check-agent-signal",
             "timeout": 5
           }
         ]
