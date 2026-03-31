@@ -397,9 +397,36 @@
     /* Responsive: sidebar collapses to dropdown */
     @media (max-width: 1024px){
       .repo-sidebar{display:none}
+      .sidebar-toggle-btn{display:none}
       .repo-select-mobile{display:block}
       .detail-area{padding-left:0}
       .spec-drawer{width:100vw}
+    }
+    /* Mobile phone */
+    @media (max-width: 600px){
+      .wrap{padding:0 8px}
+      .top{padding:10px 0 6px;gap:8px}
+      h1{font-size:18px;gap:6px}
+      h1 img{width:22px;height:22px}
+      .meta{gap:6px;font-size:12px;flex-wrap:wrap}
+      .view-tabs{gap:0}
+      .view-tab{padding:7px 10px;font-size:12px}
+      .detail-area{padding:0 4px 20px 4px;overflow-x:hidden}
+      .repo-header-bar{flex-wrap:wrap;gap:6px 10px;padding:8px 0}
+      .repo-header-name{font-size:15px;width:100%;overflow:hidden;text-overflow:ellipsis}
+      .repo-header-meta{font-size:12px}
+      .repo-header-actions{margin-left:0}
+      .pipeline-toolbar{flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+      .kanban{grid-template-columns:1fr!important;gap:8px;overflow-x:hidden}
+      .kanban-col{border-radius:8px}
+      .col-body{padding:6px}
+      .kcard{padding:8px}
+      .summary{gap:6px}
+      .summary .s{padding:8px 10px;font-size:11px}
+      .repo-select-mobile{margin-bottom:4px}
+      .modal-backdrop{padding:12px}
+      .modal-box{max-width:none;padding:16px}
+      .create-modal-box{max-width:none}
     }
     /* Run next split button */
     .run-next-group{position:relative;display:inline-flex;flex-shrink:0}

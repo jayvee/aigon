@@ -45,29 +45,11 @@ This command detects whether you're in Drive or Fleet mode and provides guidance
 aigon feature-do {{ARG1_SYNTAX}}
 ```
 
-To run in **Autopilot mode** — autonomous retry loop where a fresh agent session is spawned each iteration until validation passes:
+{{AUTONOMOUS_SECTION}}
 
-```bash
-aigon feature-do {{ARG1_SYNTAX}} --autonomous
-```
+The command will detect your mode (Drive/worktree/Fleet) and display the spec location.
 
-Optional flags: `--max-iterations=N` (default 5) · `--agent=<id>` · `--dry-run`
-
-> **What is autonomous mode?** The autonomous technique runs an agent in a loop: implement → validate → if fail, repeat with fresh context until success or max iterations. Named after the [original pattern by Geoffrey Huntley](https://ghuntley.com/ralph/) and [similar implementations](https://github.com/minicodemonkey/chief) that treat autonomous iteration as the primary dev loop. Add a `## Validation` section to your feature spec to define feature-specific checks alongside project-level validation.
-
-The command will:
-- Detect your mode: Drive (branch), Drive worktree, or Fleet
-- Display the spec location and log file
-- Show implementation steps
-
-**If the CLI fails with "Could not find feature in in-progress"** and you're in a worktree: the spec move was likely not committed before the worktree was created. Fix by running these commands from the worktree:
-```bash
-# Bring the spec into this worktree from the main branch
-SPEC_PATH=$(aigon feature-spec {{ARG1_SYNTAX}})
-git checkout main -- "$SPEC_PATH"
-git commit -m "chore: sync spec to worktree branch"
-```
-Then re-run `{{CMD_PREFIX}}feature-do {{ARG1_SYNTAX}}`.
+{{TROUBLESHOOTING_SECTION}}
 
 ## Step 2: Read the spec
 
@@ -88,7 +70,7 @@ aigon agent-status implementing
 
 Before writing code, create a task for each **Acceptance Criterion** from the spec. This gives the user visibility into implementation progress via the task list.
 
-Then implement the feature according to the spec. Mark tasks as in-progress when you start working on them, and completed when satisfied. If you discover sub-tasks during implementation, add them to the list.
+Then implement the feature according to the spec. Mark tasks as in-progress when you start working on them, and completed when satisfied.
 {{AGENT_TEAMS_FEATURE_NOTE}}
 
 **For worktree modes (Drive worktree or Fleet):** Use relative paths throughout implementation. Maintain the worktree directory as your working directory.
@@ -101,26 +83,7 @@ Then implement the feature according to the spec. Mark tasks as in-progress when
 
 {{TESTING_WRITE_SECTION}}
 
-## Step 4: Test your changes
-
-The **dev server** runs a local development server of this project's source code (e.g. Next.js, Vite, etc.) so you can verify your changes work correctly — either by running automated tests against it or by providing the user a URL for manual review.
-
-**IMPORTANT:** `aigon dev-server start` starts the **project's** dev server (e.g. `npm run dev`) with managed port allocation. It is NOT `aigon server` — the AIGON server is the centralised management UI across all repositories and has nothing to do with previewing project changes. Never run `aigon server` to test your work.
-
-### Drive Mode (branch)
-- Start the dev server: `aigon dev-server start` (NEVER run `npm run dev` or `next dev` directly — it bypasses port allocation and causes port conflicts)
-- Use the URL printed by the command to access the app
-- Run the full test suite and verify all tests pass
-- Ask the user to verify
-
-### Worktree Mode (Drive worktree or Fleet)
-{{WORKTREE_TEST_INSTRUCTIONS}}
-{{AGENT_DEV_SERVER_NOTE}}
-> **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for test commands.
-
-{{TESTING_PLAYWRIGHT_SECTION}}
-
-{{MANUAL_TESTING_GUIDANCE}}
+{{TESTING_STEPS_SECTION}}
 
 {{DOCUMENTATION_SECTION}}
 
@@ -128,20 +91,7 @@ The **dev server** runs a local development server of this project's source code
 
 ## Step 5: Commit your implementation
 
-**IMPORTANT: You MUST commit before proceeding.**
-
-**Before committing, verify your working directory:**
-```bash
-pwd
-```
-
-Expected output:
-- Drive mode (branch): Main repository path
-- Worktree mode: `.../feature-{{ARG1_SYNTAX}}-<agent>-<description>`
-
-**Now commit your changes:**
-1. Stage and commit your code changes using conventional commits (`feat:`, `fix:`, `chore:`)
-2. Verify the commit was successful by running `git log --oneline -1`
+Stage and commit your code changes using conventional commits (`feat:`, `fix:`, `chore:`). Verify with `git log --oneline -1`.
 
 {{LOGGING_SECTION}}
 
@@ -157,19 +107,8 @@ After committing your code, run this command **immediately**:
 aigon agent-status submitted
 ```
 
-This signals to the dashboard that your work is done. **You must run this command before doing anything else.**
+This signals to the dashboard that your work is done.
 
-Then tell the user:
+Then tell the user: "Implementation complete — ready for review."
 
-> "Implementation submitted. You can review my changes, ask for modifications, or close the feature when ready."
-
-**STAY in the session.** The user may want to review your work and ask for changes. If they do, make the changes, commit, and say "Changes committed." Do NOT run or suggest `feature-close` — that's the user's decision.
-Then tell the user:
-
-> "Implementation complete — code is on the branch, ready for review. You can ask me to make changes, or run `/aigon:feature-close <ID>` when satisfied."
-
-**STAY in the session.** The user may review and request changes. If they do, make the changes and commit. No need to re-run agent-status.
-
-## Prompt Suggestion
-
-End your final response with a brief summary of what was implemented (files changed, approach taken). Do NOT suggest a slash command — the user decides what to do next.
+**STAY in the session.** The user may request changes. If they do, make the changes, commit, and say "Changes committed." Do NOT run or suggest `feature-close` — that's the user's decision. End with a brief summary of what was implemented.
