@@ -1294,9 +1294,6 @@ const {
     getValidTransitions,
     getAvailableActions,
     getSessionAction,
-    getRecommendedActions,
-    isActionValid,
-    shouldNotify,
     allAgentsSubmitted,
     isFleet,
 } = require('../../lib/state-queries');
@@ -1342,104 +1339,15 @@ test('isFleet returns true for two real agents', () => {
     assert.strictEqual(isFleet({ agents: ['cc', 'gg'] }), true);
 });
 
-// shouldNotify
-test('shouldNotify returns false for solo feature all-submitted', () => {
-    const ctx = { agents: ['solo'], agentStatuses: { solo: 'submitted' }, tmuxSessionStates: {} };
-    assert.strictEqual(shouldNotify('feature', 'in-progress', ctx, 'all-submitted'), false);
+// getValidTransitions — feature/research now return empty (action derivation moved to workflow-core engine)
+test('feature transitions return empty (delegated to engine)', () => {
+    assert.strictEqual(getValidTransitions('feature', 'inbox', {}).length, 0);
+    assert.strictEqual(getValidTransitions('feature', 'in-progress', { agents: ['cc', 'gg'], agentStatuses: { cc: 'submitted', gg: 'submitted' } }).length, 0);
 });
 
-test('shouldNotify returns true for fleet feature all-submitted in in-progress', () => {
-    const ctx = { agents: ['cc', 'gg'], agentStatuses: { cc: 'submitted', gg: 'submitted' }, tmuxSessionStates: {} };
-    assert.strictEqual(shouldNotify('feature', 'in-progress', ctx, 'all-submitted'), true);
-});
-
-test('shouldNotify returns false for fleet feature not all submitted', () => {
-    const ctx = { agents: ['cc', 'gg'], agentStatuses: { cc: 'implementing', gg: 'submitted' }, tmuxSessionStates: {} };
-    assert.strictEqual(shouldNotify('feature', 'in-progress', ctx, 'all-submitted'), false);
-});
-
-test('shouldNotify returns false for fleet feature already in-evaluation', () => {
-    const ctx = { agents: ['cc', 'gg'], agentStatuses: { cc: 'submitted', gg: 'submitted' }, tmuxSessionStates: {} };
-    // feature-eval action is only in in-progress stage, not in-evaluation
-    assert.strictEqual(shouldNotify('feature', 'in-evaluation', ctx, 'all-submitted'), false);
-});
-
-test('shouldNotify returns true for research all-submitted', () => {
-    const ctx = { agents: ['cc', 'gg'], agentStatuses: { cc: 'submitted', gg: 'submitted' }, tmuxSessionStates: {} };
-    assert.strictEqual(shouldNotify('research', 'in-progress', ctx, 'all-submitted'), true);
-});
-
-test('shouldNotify returns false for research not all submitted', () => {
-    const ctx = { agents: ['cc', 'gg'], agentStatuses: { cc: 'implementing', gg: 'submitted' }, tmuxSessionStates: {} };
-    assert.strictEqual(shouldNotify('research', 'in-progress', ctx, 'all-submitted'), false);
-});
-
-test('shouldNotify returns false for unknown notification type', () => {
-    const ctx = { agents: ['cc', 'gg'], agentStatuses: { cc: 'submitted', gg: 'submitted' }, tmuxSessionStates: {} };
-    assert.strictEqual(shouldNotify('feature', 'in-progress', ctx, 'unknown-type'), false);
-});
-
-// getValidTransitions — features
-test('feature inbox → backlog transition always available', () => {
-    const transitions = getValidTransitions('feature', 'inbox', {});
-    assert.ok(transitions.some(t => t.action === 'feature-prioritise' && t.to === 'backlog'));
-});
-
-test('feature backlog → in-progress transition always available', () => {
-    const transitions = getValidTransitions('feature', 'backlog', {});
-    assert.ok(transitions.some(t => t.action === 'feature-start' && t.to === 'in-progress'));
-});
-
-test('feature in-progress → in-evaluation blocked when not all submitted', () => {
-    const transitions = getValidTransitions('feature', 'in-progress', {
-        agentStatuses: { cc: 'implementing' }
-    });
-    assert.ok(!transitions.some(t => t.action === 'feature-eval'));
-});
-
-test('feature in-progress → in-evaluation allowed when all submitted (fleet)', () => {
-    const transitions = getValidTransitions('feature', 'in-progress', {
-        agents: ['cc', 'gg'],
-        agentStatuses: { cc: 'submitted', gg: 'submitted' }
-    });
-    assert.ok(transitions.some(t => t.action === 'feature-eval' && t.to === 'in-evaluation'));
-});
-
-test('feature in-evaluation → done transition always available', () => {
-    const transitions = getValidTransitions('feature', 'in-evaluation', {});
-    assert.ok(transitions.some(t => t.action === 'feature-close' && t.to === 'done'));
-});
-
-test('feature in done stage has no transitions', () => {
-    const transitions = getValidTransitions('feature', 'done', {});
-    assert.strictEqual(transitions.length, 0);
-});
-
-// getValidTransitions — research
-test('research inbox → backlog transition available', () => {
-    const transitions = getValidTransitions('research', 'inbox', {});
-    assert.ok(transitions.some(t => t.action === 'research-prioritise'));
-});
-
-test('research in-progress → in-evaluation blocked when not all submitted', () => {
-    const transitions = getValidTransitions('research', 'in-progress', {
-        agentStatuses: { cc: 'implementing' }
-    });
-    assert.ok(!transitions.some(t => t.action === 'research-eval'));
-    // research-pause from in-progress is always available
-    assert.ok(transitions.some(t => t.action === 'research-pause'));
-});
-
-test('research in-progress → in-evaluation available when all submitted', () => {
-    const transitions = getValidTransitions('research', 'in-progress', {
-        agentStatuses: { cc: 'submitted' }
-    });
-    assert.ok(transitions.some(t => t.action === 'research-eval'));
-});
-
-test('research in-evaluation → done always available', () => {
-    const transitions = getValidTransitions('research', 'in-evaluation', {});
-    assert.ok(transitions.some(t => t.action === 'research-close'));
+test('research transitions return empty (delegated to engine)', () => {
+    assert.strictEqual(getValidTransitions('research', 'inbox', {}).length, 0);
+    assert.strictEqual(getValidTransitions('research', 'in-progress', { agentStatuses: { cc: 'submitted' } }).length, 0);
 });
 
 // getValidTransitions — feedback
@@ -1458,90 +1366,12 @@ test('feedback triaged → duplicate transition available', () => {
     assert.ok(transitions.some(t => t.to === 'duplicate'));
 });
 
-// getAvailableActions — in-progress per-agent actions
-test('getAvailableActions returns feature-open for idle agent in in-progress', () => {
+// getAvailableActions — feature/research now return empty (delegated to engine)
+test('getAvailableActions returns empty for feature (delegated to engine)', () => {
     const actions = getAvailableActions('feature', 'in-progress', {
-        agents: ['cc'],
-        agentStatuses: { cc: 'idle' },
-        tmuxSessionStates: { cc: 'none' }
+        agents: ['cc'], agentStatuses: { cc: 'idle' }, tmuxSessionStates: { cc: 'none' }
     });
-    assert.ok(actions.some(a => a.action === 'feature-open' && a.agentId === 'cc'));
-});
-
-test('getAvailableActions returns Restart label for error agent', () => {
-    const actions = getAvailableActions('feature', 'in-progress', {
-        agents: ['cc'],
-        agentStatuses: { cc: 'error' },
-        tmuxSessionStates: { cc: 'none' }
-    });
-    const openAction = actions.find(a => a.action === 'feature-open' && a.agentId === 'cc');
-    assert.ok(openAction, 'should have feature-open action');
-    assert.strictEqual(openAction.label, 'Restart cc');
-});
-
-test('getAvailableActions returns feature-attach for implementing agent with running session', () => {
-    const actions = getAvailableActions('feature', 'in-progress', {
-        agents: ['cc'],
-        agentStatuses: { cc: 'implementing' },
-        tmuxSessionStates: { cc: 'running' }
-    });
-    assert.ok(actions.some(a => a.action === 'feature-attach' && a.agentId === 'cc'));
-});
-
-test('getAvailableActions returns feature-focus (high priority) for waiting agent', () => {
-    const actions = getAvailableActions('feature', 'in-progress', {
-        agents: ['cc'],
-        agentStatuses: { cc: 'waiting' },
-        tmuxSessionStates: { cc: 'running' }
-    });
-    const focusAction = actions.find(a => a.action === 'feature-focus' && a.agentId === 'cc');
-    assert.ok(focusAction, 'should have feature-focus');
-    assert.strictEqual(focusAction.priority, 'high');
-});
-
-test('getAvailableActions returns feature-stop for implementing agent', () => {
-    const actions = getAvailableActions('feature', 'in-progress', {
-        agents: ['cc'],
-        agentStatuses: { cc: 'implementing' },
-        tmuxSessionStates: {}
-    });
-    assert.ok(actions.some(a => a.action === 'feature-stop' && a.agentId === 'cc'));
-});
-
-test('getAvailableActions returns feature-close and feature-review for solo submitted', () => {
-    const actions = getAvailableActions('feature', 'in-progress', {
-        agents: ['cc'],
-        agentStatuses: { cc: 'submitted' },
-        tmuxSessionStates: {}
-    });
-    assert.ok(actions.some(a => a.action === 'feature-close' && !a.agentId));
-    assert.ok(actions.some(a => a.action === 'feature-review' && !a.agentId));
-});
-
-test('getAvailableActions returns feature-eval for fleet all submitted', () => {
-    const actions = getAvailableActions('feature', 'in-progress', {
-        agents: ['cc', 'gg'],
-        agentStatuses: { cc: 'submitted', gg: 'submitted' },
-        tmuxSessionStates: {}
-    });
-    assert.ok(actions.some(a => a.action === 'feature-eval' && !a.agentId));
-});
-
-test('getAvailableActions in-evaluation solo returns feature-review', () => {
-    const actions = getAvailableActions('feature', 'in-evaluation', {
-        agents: ['cc'],
-        agentStatuses: { cc: 'submitted' }
-    });
-    assert.ok(actions.some(a => a.action === 'feature-review'));
-    assert.ok(!actions.some(a => a.action === 'feature-eval' && a.type === 'action'));
-});
-
-test('getAvailableActions in-evaluation fleet returns feature-eval action', () => {
-    const actions = getAvailableActions('feature', 'in-evaluation', {
-        agents: ['cc', 'gg'],
-        agentStatuses: { cc: 'submitted', gg: 'submitted' }
-    });
-    assert.ok(actions.some(a => a.action === 'feature-eval' && a.type === 'action'));
+    assert.strictEqual(actions.length, 0);
 });
 
 // getSessionAction
@@ -1575,78 +1405,6 @@ test('getSessionAction returns send-keys when session running but agent submitte
 test('getSessionAction returns send-keys when session running but agent errored', () => {
     const result = getSessionAction('cc', { tmuxSessionStates: { cc: 'running' }, agentStatuses: { cc: 'error' } });
     assert.strictEqual(result.action, 'send-keys');
-});
-
-// getRecommendedActions — high priority first
-test('getRecommendedActions puts high-priority actions first', () => {
-    const actions = getRecommendedActions('feature', 'in-progress', {
-        agents: ['cc'],
-        agentStatuses: { cc: 'waiting' },
-        tmuxSessionStates: { cc: 'running' }
-    });
-    assert.ok(actions.length > 0, 'should have actions');
-    // feature-focus is high priority
-    assert.strictEqual(actions[0].action, 'feature-focus');
-    assert.strictEqual(actions[0].priority, 'high');
-});
-
-test('getRecommendedActions returns fleet-eval as high priority when all submitted', () => {
-    const actions = getRecommendedActions('feature', 'in-progress', {
-        agents: ['cc', 'gg'],
-        agentStatuses: { cc: 'submitted', gg: 'submitted' },
-        tmuxSessionStates: {}
-    });
-    const first = actions[0];
-    assert.ok(first, 'should have at least one action');
-    assert.strictEqual(first.action, 'feature-eval');
-});
-
-// isActionValid
-test('isActionValid returns true for valid transition', () => {
-    assert.strictEqual(isActionValid('feature-prioritise', 'feature', 'inbox', {}), true);
-});
-
-test('isActionValid returns false for invalid transition from stage', () => {
-    assert.strictEqual(isActionValid('feature-close', 'feature', 'inbox', {}), false);
-});
-
-test('isActionValid returns true for in-state action matching context', () => {
-    assert.strictEqual(isActionValid('feature-open', 'feature', 'in-progress', {
-        agents: ['cc'],
-        agentStatuses: { cc: 'idle' }
-    }), true);
-});
-
-test('isActionValid returns false when context blocks action', () => {
-    // feature-eval in-progress requires all agents submitted
-    assert.strictEqual(isActionValid('feature-eval', 'feature', 'in-progress', {
-        agents: ['cc'],
-        agentStatuses: { cc: 'implementing' }
-    }), false);
-});
-
-test('isActionValid returns false for unknown entity type', () => {
-    assert.strictEqual(isActionValid('foo-bar', 'unknown', 'inbox', {}), false);
-});
-
-// Transition labels
-test('feature transitions have string labels', () => {
-    const transitions = getValidTransitions('feature', 'inbox', {});
-    transitions.forEach(t => {
-        assert.strictEqual(typeof t.label, 'string', `label should be string, got ${typeof t.label}`);
-    });
-});
-
-// Per-agent expansion for fleet
-test('getAvailableActions expands per-agent actions for each agent in fleet', () => {
-    const actions = getAvailableActions('feature', 'in-progress', {
-        agents: ['cc', 'gg'],
-        agentStatuses: { cc: 'idle', gg: 'idle' },
-        tmuxSessionStates: {}
-    });
-    const openActions = actions.filter(a => a.action === 'feature-open');
-    assert.ok(openActions.some(a => a.agentId === 'cc'), 'should have open for cc');
-    assert.ok(openActions.some(a => a.agentId === 'gg'), 'should have open for gg');
 });
 
 // ── Analytics / Statistics tests ──────────────────────────────────────────────
