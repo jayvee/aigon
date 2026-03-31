@@ -72,6 +72,7 @@ test('exports required functions', () => {
         'readBasePort', 'showPortSummary',
         'readConductorReposFromGlobalConfig',
         'detectProjectProfile', 'getActiveProfile', 'getProfilePlaceholders',
+        'resolveTestingPlaceholders', 'computeInstructionsConfigHash',
         'getAgentCliConfig', 'parseCliFlagTokens', 'getAgentLaunchFlagTokens',
         'getModelProvenance',
     ];
@@ -156,6 +157,93 @@ test('saveGlobalConfig creates a recoverable backup of the previous file', () =>
     assert.strictEqual(current.terminal, 'tmux');
     assert.strictEqual(current.tmuxApp, 'iterm2');
     assert.deepStrictEqual(current.repos, ['/tmp/new']);
+});
+
+// --- resolveTestingPlaceholders ---
+console.log('# config.js — resolveTestingPlaceholders');
+
+test('exports resolveTestingPlaceholders function', () => {
+    assert.ok(typeof config.resolveTestingPlaceholders === 'function');
+});
+
+test('resolveTestingPlaceholders "full" returns all sections', () => {
+    const result = config.resolveTestingPlaceholders('full', false, '');
+    assert.ok(result.TESTING_WRITE_SECTION.includes('MUST write tests'));
+    assert.ok(result.TESTING_RUN_SECTION.includes('npm test'));
+    assert.strictEqual(result.TESTING_PLAYWRIGHT_SECTION, '');
+});
+
+test('resolveTestingPlaceholders "full" with playwright returns playwright section', () => {
+    const playwrightContent = '## Playwright verification\nRun playwright tests.';
+    const result = config.resolveTestingPlaceholders('full', true, playwrightContent);
+    assert.ok(result.TESTING_WRITE_SECTION.includes('MUST write tests'));
+    assert.ok(result.TESTING_RUN_SECTION.includes('npm test'));
+    assert.strictEqual(result.TESTING_PLAYWRIGHT_SECTION, playwrightContent);
+});
+
+test('resolveTestingPlaceholders "minimal" returns run-only instruction', () => {
+    const result = config.resolveTestingPlaceholders('minimal', true, 'playwright stuff');
+    assert.ok(result.TESTING_WRITE_SECTION.includes('Do not write new tests'));
+    assert.strictEqual(result.TESTING_PLAYWRIGHT_SECTION, '');
+    assert.strictEqual(result.TESTING_RUN_SECTION, '');
+});
+
+test('resolveTestingPlaceholders "skip" returns all empty', () => {
+    const result = config.resolveTestingPlaceholders('skip', true, 'playwright stuff');
+    assert.strictEqual(result.TESTING_WRITE_SECTION, '');
+    assert.strictEqual(result.TESTING_PLAYWRIGHT_SECTION, '');
+    assert.strictEqual(result.TESTING_RUN_SECTION, '');
+});
+
+// --- computeInstructionsConfigHash ---
+console.log('# config.js — computeInstructionsConfigHash');
+
+test('exports computeInstructionsConfigHash function', () => {
+    assert.ok(typeof config.computeInstructionsConfigHash === 'function');
+});
+
+test('computeInstructionsConfigHash returns 64-char hex string', () => {
+    const hash = config.computeInstructionsConfigHash({});
+    assert.ok(typeof hash === 'string');
+    assert.strictEqual(hash.length, 64);
+    assert.ok(/^[0-9a-f]+$/.test(hash));
+});
+
+test('computeInstructionsConfigHash is stable for same input', () => {
+    const cfg = { instructions: { testing: 'skip' }, profile: 'web' };
+    const hash1 = config.computeInstructionsConfigHash(cfg);
+    const hash2 = config.computeInstructionsConfigHash(cfg);
+    assert.strictEqual(hash1, hash2);
+});
+
+test('computeInstructionsConfigHash differs for different instructions', () => {
+    const hash1 = config.computeInstructionsConfigHash({ instructions: { testing: 'full' } });
+    const hash2 = config.computeInstructionsConfigHash({ instructions: { testing: 'skip' } });
+    assert.notStrictEqual(hash1, hash2);
+});
+
+test('computeInstructionsConfigHash ignores unrelated fields', () => {
+    const hash1 = config.computeInstructionsConfigHash({ instructions: { testing: 'full' }, unrelated: 'foo' });
+    const hash2 = config.computeInstructionsConfigHash({ instructions: { testing: 'full' }, unrelated: 'bar' });
+    assert.strictEqual(hash1, hash2);
+});
+
+test('computeInstructionsConfigHash includes profile in hash', () => {
+    const hash1 = config.computeInstructionsConfigHash({ profile: 'web' });
+    const hash2 = config.computeInstructionsConfigHash({ profile: 'api' });
+    assert.notStrictEqual(hash1, hash2);
+});
+
+test('computeInstructionsConfigHash includes verification in hash', () => {
+    const hash1 = config.computeInstructionsConfigHash({ verification: { playwright: { enabled: true } } });
+    const hash2 = config.computeInstructionsConfigHash({ verification: { playwright: { enabled: false } } });
+    assert.notStrictEqual(hash1, hash2);
+});
+
+test('computeInstructionsConfigHash empty config matches no-instructions config', () => {
+    const hash1 = config.computeInstructionsConfigHash({});
+    const hash2 = config.computeInstructionsConfigHash({ instructions: {} });
+    assert.strictEqual(hash1, hash2);
 });
 
 // --- Summary ---

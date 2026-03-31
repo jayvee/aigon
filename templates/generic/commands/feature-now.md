@@ -136,19 +136,11 @@ Create tasks from the acceptance criteria to give the user visibility into progr
 
 Implement the feature according to the spec. Commit with conventional commits (`feat:`, `fix:`, `chore:`).
 
-## Step 4.8: Write tests for your implementation
-
-**You MUST write tests for any new functionality you implement.** This is not optional.
-
-- **Write unit tests** for new modules, functions, resolvers, and utilities
-- **Write integration tests** for new UI components (render tests, interaction tests)
-- **Add test cases** to existing test files when extending existing modules
-- **Follow existing test patterns** — look at nearby `*.test.js`, `*.test.jsx`, or `*.test.ts` files for conventions
-- **Run the test suite** to verify all tests pass (both new and existing)
+{{TESTING_WRITE_SECTION}}
 
 ## Step 5: Test
 
-- Run the full test suite and verify all tests pass
+{{TESTING_RUN_SECTION}}
 
 {{MANUAL_TESTING_GUIDANCE}}
 
