@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 152
+lines_removed: 625
+lines_changed: 777
+files_touched: 16
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 419
+output_tokens: 36447
+cache_creation_input_tokens: 713635
+cache_read_input_tokens: 25498585
+thinking_tokens: 0
+total_tokens: 26249086
+billable_tokens: 36866
+cost_usd: 54.3683
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 47.45
+---
 # Implementation Log: Feature 179 - single-source-of-truth-for-agent-status
 Agent: cc
 
