@@ -120,9 +120,9 @@
     }
 
     function pickerTaskType(opts) {
-      if (opts.taskType === 'research' || opts.taskType === 'implement' || opts.taskType === 'evaluate') return opts.taskType;
+      if (opts.taskType === 'research' || opts.taskType === 'implement' || opts.taskType === 'evaluate' || opts.taskType === 'review') return opts.taskType;
       const action = String(opts.action || opts.sessionTask || '').toLowerCase();
-      if (action === 'feature-review' || action === 'review') return 'implement';
+      if (action === 'feature-review' || action === 'review') return 'review';
       if (action.includes('eval')) return 'evaluate';
       return 'implement';
     }
