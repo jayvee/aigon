@@ -21,3 +21,18 @@ Extract ~450 lines of profile/instruction directive code from lib/config.js into
 - `lib/config.js`: 1,438 → 947 lines
 - `getProfilePlaceholders()`: 75 → 27 lines
 - All 13 tests pass, all syntax checks pass
+
+## Code Review
+
+**Reviewed by**: cu (Composer)
+**Date**: 2026-04-01
+
+### Findings
+- `TESTING_STEPS_SECTION` did not match `main`: `templates/sections/testing-steps.md` used paragraph breaks (`\n\n`), while the old `lib/config.js` builder used `[...].filter(Boolean).join('\n')`, which drops empty entries and yields single newlines between blocks. That violated the spec acceptance criterion “All placeholder values identical before and after.”
+
+### Fixes Applied
+- `fix(review): match TESTING_STEPS_SECTION newlines to pre-refactor output` — denser `testing-steps.md` so `getProfilePlaceholders()` output matches `main` byte-for-byte (verified with JSON dumps).
+
+### Notes
+- `getProfilePlaceholders()` is implemented in `lib/profile-placeholders.js` and re-exported from `config.js`; the spec line “in config.js” is satisfied in spirit.
+- `wc -l lib/config.js` is 947 (< 1000). `npm test` passes after the fix.
