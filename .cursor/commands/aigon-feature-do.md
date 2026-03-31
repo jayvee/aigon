@@ -6,10 +6,35 @@ Implement a feature. Works in Drive mode (branch), Drive mode (worktree) (parall
 
 ## Argument Resolution
 
-If no ID is provided, or the ID doesn't match an existing feature in progress:
-1. List all files in `./docs/specs/features/03-in-progress/` matching `feature-*.md`
+If no ID is provided, or the ID doesn't match an existing active feature:
+1. Run `aigon feature-list --active`
 2. If a partial ID or name was given, filter to matches
 3. Present the matching features and ask the user to choose one
+
+## Step 0: Verify your workspace (MANDATORY)
+
+Before doing ANYTHING else, verify you are on the correct branch — **never implement on `main`**.
+
+```bash
+git branch --show-current
+```
+
+**Expected**: A branch named `feature-<ID>-<agent>-<description>` (e.g., `feature-55-gg-add-auth`).
+
+**If the output is `main` or `master`:** STOP. You are on the wrong branch. Do NOT write any code. Instead:
+1. Check if a feature branch already exists: `git branch | grep feature-<name>`
+2. If it exists, switch to it: `git checkout feature-<name>-cu-*` (use the full branch name from the list)
+3. If it does NOT exist, the workspace was not set up — run `/aigon-feature-start <name>` first
+
+Also verify your working directory:
+```bash
+pwd
+```
+
+**Expected for worktree mode**: A path ending in `feature-<name>-cu-<description>`
+**Expected for Drive mode**: The main repository path (but on a feature branch, NOT main)
+
+**Do not proceed past this step until you have confirmed you are on a feature branch.**
 
 ## Step 1: Run the CLI command
 
@@ -37,14 +62,19 @@ The command will:
 **If the CLI fails with "Could not find feature in in-progress"** and you're in a worktree: the spec move was likely not committed before the worktree was created. Fix by running these commands from the worktree:
 ```bash
 # Bring the spec into this worktree from the main branch
-git checkout main -- docs/specs/features/03-in-progress/
+SPEC_PATH=$(aigon feature-spec <name>)
+git checkout main -- "$SPEC_PATH"
 git commit -m "chore: sync spec to worktree branch"
 ```
 Then re-run `/aigon-feature-do <name>`.
 
 ## Step 2: Read the spec
 
-Read the spec in `./docs/specs/features/03-in-progress/feature-<name>-*.md`
+Read the exact spec path returned by:
+
+```bash
+aigon feature-spec <name>
+```
 
 ## Step 2.5: Consider Plan Mode
 
@@ -118,7 +148,7 @@ fi
 
 The **dev server** runs a local development server of this project's source code (e.g. Next.js, Vite, etc.) so you can verify your changes work correctly — either by running automated tests against it or by providing the user a URL for manual review.
 
-**IMPORTANT:** `aigon dev-server start` starts the **project's** dev server (e.g. `npm run dev`) with managed port allocation. It is NOT `aigon dashboard` — the dashboard is Aigon's centralised management UI across all repositories and has nothing to do with previewing project changes. Never run `aigon dashboard` to test your work.
+**IMPORTANT:** `aigon dev-server start` starts the **project's** dev server (e.g. `npm run dev`) with managed port allocation. It is NOT `aigon server` — the AIGON server is the centralised management UI across all repositories and has nothing to do with previewing project changes. Never run `aigon server` to test your work.
 
 ### Drive Mode (branch)
 - Start the dev server: `aigon dev-server start` (NEVER run `npm run dev` or `next dev` directly — it bypasses port allocation and causes port conflicts)
@@ -129,6 +159,13 @@ The **dev server** runs a local development server of this project's source code
 ### Worktree Mode (Drive worktree or Fleet)
 - Run the test suite to verify changes
 - Ask the user to verify
+
+> **CRITICAL — Cursor dev server rules:**
+>
+> **NEVER run `npm run dev`, `next dev`, or any dev command directly.** Running dev commands directly bypasses port allocation and will cause port conflicts.
+>
+> Always use `aigon dev-server start` which allocates a unique port and registers with the proxy.
+> Check your URL with `aigon dev-server url`.
 
 > **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for test commands.
 
@@ -148,6 +185,14 @@ If your changes affect any of the following, update the relevant docs **before c
 - **Cross-repo changes (e.g., `@aigon/pro`)** → note what changed in both repos
 
 Documentation ships with the code, not as a follow-up.
+
+## Step 4.8: Run `npm test` before submitting
+
+**You MUST run `npm test` and verify all tests pass before committing.** This runs the unit and integration test suites. Fix any failures before proceeding — do not commit code that breaks existing tests.
+
+```bash
+npm test
+```
 
 ## Step 5: Commit your implementation
 

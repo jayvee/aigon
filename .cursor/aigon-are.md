@@ -87,12 +87,20 @@ Wait for user response before proceeding.
 aigon feature-create "feature-name"
 ```
 
-After creating each feature, add a research origin backlink to the new feature spec:
+After creating each feature:
 
+1. Add a research origin backlink to the new feature spec:
 ```markdown
 ## Related
 - Research: #{ID} {research-name}
 ```
+
+2. If this feature depends on another feature from this research, add `depends_on` to the **Dependencies** section:
+```markdown
+## Dependencies
+- depends_on: feature-name-it-depends-on
+```
+This enables Aigon's dependency system to enforce ordering — dependent features cannot be started until their dependencies are done.
 
 ## Step 5: Update Main Research Doc
 
@@ -112,8 +120,9 @@ Once user confirms, update the main research document:
 | feature-name | Description | high | `aigon feature-create "feature-name"` |
 
 ### Feature Dependencies
-<!-- If any features have dependencies, list them here -->
-- feature-b depends on feature-a
+<!-- List dependency chains so features can be prioritised in order -->
+<!-- Each feature spec should have depends_on in its Dependencies section -->
+- feature-b depends on feature-a (feature-b spec has `depends_on: feature-a`)
 
 ### Not Selected
 <!-- Features discussed but not selected, for reference -->
