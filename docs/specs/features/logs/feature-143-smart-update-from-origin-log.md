@@ -9,17 +9,6 @@ fix_commit_ratio: 0.333
 rework_thrashing: false
 rework_fix_cascade: false
 rework_scope_creep: false
-input_tokens: 241543
-output_tokens: 4152949
-cache_creation_input_tokens: 77195906
-cache_read_input_tokens: 3543933775
-thinking_tokens: 0
-total_tokens: 3625524173
-billable_tokens: 4394492
-cost_usd: 6639.9496
-sessions: 204
-model: "claude-opus-4-6"
-tokens_per_line_changed: 33291.61
 ---
 # Implementation Log: Feature 143 - smart-update-from-origin
 

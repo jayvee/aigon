@@ -9,17 +9,6 @@ fix_commit_ratio: 0.2
 rework_thrashing: false
 rework_fix_cascade: false
 rework_scope_creep: true
-input_tokens: 210887
-output_tokens: 4226622
-cache_creation_input_tokens: 77988831
-cache_read_input_tokens: 3580716619
-thinking_tokens: 0
-total_tokens: 3663142959
-billable_tokens: 4437509
-cost_usd: 6742.728
-sessions: 204
-model: "claude-opus-4-6"
-tokens_per_line_changed: 12360.75
 ---
 # Implementation Log: Feature 149 - security-scan-sast
 Agent: cc

@@ -9,16 +9,6 @@ fix_commit_ratio: 0.5
 rework_thrashing: false
 rework_fix_cascade: false
 rework_scope_creep: false
-input_tokens: 229777
-output_tokens: 3653010
-cache_creation_input_tokens: 66506762
-cache_read_input_tokens: 2764165479
-thinking_tokens: 0
-total_tokens: 2834555028
-cost_usd: null
-sessions: 189
-model: "claude-opus-4-6"
-tokens_per_line_changed: null
 ---
 # Implementation Log: Feature 131 - manifest-rebuild
 Agent: cx
