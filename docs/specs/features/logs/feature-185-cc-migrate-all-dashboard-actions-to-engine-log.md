@@ -43,3 +43,25 @@ Moved OPEN_SESSION label logic to be status-aware at the engine level (Restart v
 7. `lib/action-command-mapper.js` — research-stop command mapping
 8. `lib/dashboard-server.js` — feature-autopilot, feature-stop, research-stop in DASHBOARD_INTERACTIVE_ACTIONS
 9. `templates/dashboard/js/actions.js` — removed AGENT_ACTION_LABELS, TRANSITIONS_AS_BUTTONS; renderActionButtons uses engine labels/metadata
+
+## Code Review
+
+**Reviewed by**: cu (Cursor, `--no-launch` inline review)
+
+**Date**: 2026-03-31
+
+### Findings
+
+- **Tests**: `npm test` passes (18 unit suites + integration); spec validation `node -c` targets are satisfied by the changed modules.
+- **Synthetic context**: `createSyntheticContext()` correctly maps dashboard stages to `currentSpecState` for pre-engine rows; `snapshotToDashboardActions(..., null, stage)` enables backlog/inbox actions when no workflow snapshot exists yet.
+- **`requiresInput`**: Flows from candidates → `deriveAvailableActions` → `mapSnapshotActionToDashboard` for agent-picker actions (`feature-start`, `feature-autopilot`).
+- **Spec vs this change set**: The feature spec still lists Phase 2/3 items (dev-server poke, session-ended Submit/Re-open, view findings / view review / open eval as engine actions, stripping `monitor.js` / `pipeline.js` beyond existing `validActions` usage). This branch delivers lifecycle/session-control migration and dashboard rendering simplification called out in the log; the spec checkboxes remain partly aspirational. Consider a short follow-up spec note or a second PR for the remaining bullets so the doc matches shipped scope.
+
+### Fixes Applied
+
+- None — no defects found in the reviewed diff; behavior is covered by existing tests including dashboard action consistency.
+
+### Notes
+
+- `renderActionButtons` now treats every non–per-agent `validActions` entry as a button (except eval-session hiding). That assumes the engine only emits rows that should be clickable; consistent with “engine is source of truth.”
+- `aigon feature-review 185 --no-launch` validated worktree path from main repo; handler ignores `--no-launch` (harmless).
