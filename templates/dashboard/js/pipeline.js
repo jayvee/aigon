@@ -286,41 +286,49 @@
     // Agent-specific action label overrides (keyed by action name)
     const AGENT_ACTION_LABELS = {};
 
+    // Actions rendered from API — do not add action eligibility logic here.
+    // All actions (workflow + infra) are derived server-side via the action registry.
     function buildAgentSectionHtml(agent, agentValidActions, feature, repoPath, pipelineType) {
-      const shortName = AGENT_SHORT_NAMES[agent.id] || agent.id.toUpperCase();
       const displayName = AGENT_DISPLAY_NAMES[agent.id] || agent.id;
       const s = buildAgentStatusHtml(agent, { showDevLink: true });
       const devServerLink = buildDevServerLinkHtml(s.devServerUrl);
       const devSlot = devServerLink ? '<span class="kcard-dev-slot">' + devServerLink + '</span>' : '';
-      const primaryActions = agentValidActions.filter(va => va.action !== 'feature-stop' && va.action !== 'research-stop');
-      const overflowActions = agentValidActions.filter(va => va.action === 'feature-stop' || va.action === 'research-stop');
-      let actionsHtml = '';
       const entityType = pipelineType === 'research' ? 'research' : 'feature';
+
+      // Partition actions: infra actions first, then workflow primary, then overflow (stop)
+      const infraActions = agentValidActions.filter(va => va.category === 'infra' || va.category === 'view');
+      const workflowActions = agentValidActions.filter(va => va.category !== 'infra' && va.category !== 'view');
+      const primaryActions = workflowActions.filter(va => va.action !== 'feature-stop' && va.action !== 'research-stop');
+      const overflowActions = workflowActions.filter(va => va.action === 'feature-stop' || va.action === 'research-stop');
+      let actionsHtml = '';
+
+      // Render infra actions from validActions (server-driven eligibility)
       const pokeStateKey = `${repoPath || ''}:${feature.id}:${agent.id}`;
       const pokePending = state.pendingDevServerPokes && state.pendingDevServerPokes.has(pokeStateKey);
-      if (agent.devServerPokeEligible && !agent.devServerUrl) {
-        const pendingLabel = '<span class="run-next-spinner"></span>Starting preview…';
-        const attrs = ' data-dev-poke="1"' +
-          ' data-repo-path="' + escHtml(repoPath || '') + '"' +
-          ' data-feature-id="' + escHtml(feature.id) + '"' +
-          ' data-agent-id="' + escHtml(agent.id) + '"';
-        actionsHtml += '<button class="btn btn-secondary kcard-dev-poke-btn' + (pokePending ? ' is-pending' : '') + '"' + attrs + (pokePending ? ' disabled' : '') + '>' +
-          (pokePending ? pendingLabel : 'Start preview') +
-          '</button>';
-      }
-      if (agent.flags && agent.flags.sessionEnded) {
-        const attrs = ' data-flag-entity="' + escHtml(entityType) + '"' +
-          ' data-flag-id="' + escHtml(feature.id) + '"' +
-          ' data-flag-agent="' + escHtml(agent.id) + '"' +
-          ' data-flag-repo="' + escHtml(repoPath || '') + '"';
-        actionsHtml += '<button class="btn btn-primary kcard-flag-btn" data-flag-action="mark-submitted"' + attrs + '>Submit</button>';
-        actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="reopen-agent"' + attrs + '>Re-open</button>';
-        actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="view-work"' + attrs + '>Open</button>';
-      }
-      // "Peek" button for research agents with reviewable findings
-      if (pipelineType === 'research' && agent.findingsPath) {
-        actionsHtml += '<button class="btn btn-secondary kcard-view-findings-btn" data-findings-path="' + escHtml(agent.findingsPath) + '" data-findings-agent="' + escHtml(agent.id) + '" data-findings-id="' + escHtml(feature.id) + '">View</button>';
-      }
+      infraActions.forEach(va => {
+        if (va.action === 'dev-server-poke') {
+          const pendingLabel = '<span class="run-next-spinner"></span>Starting preview…';
+          const attrs = ' data-dev-poke="1"' +
+            ' data-repo-path="' + escHtml(repoPath || '') + '"' +
+            ' data-feature-id="' + escHtml(feature.id) + '"' +
+            ' data-agent-id="' + escHtml(agent.id) + '"';
+          actionsHtml += '<button class="btn btn-secondary kcard-dev-poke-btn' + (pokePending ? ' is-pending' : '') + '"' + attrs + (pokePending ? ' disabled' : '') + '>' +
+            (pokePending ? pendingLabel : escHtml(va.label)) +
+            '</button>';
+        } else if (va.action === 'mark-submitted' || va.action === 'reopen-agent' || va.action === 'view-work') {
+          const flagAction = (va.metadata && va.metadata.flagAction) || va.action;
+          const attrs = ' data-flag-entity="' + escHtml(entityType) + '"' +
+            ' data-flag-id="' + escHtml(feature.id) + '"' +
+            ' data-flag-agent="' + escHtml(agent.id) + '"' +
+            ' data-flag-repo="' + escHtml(repoPath || '') + '"';
+          const btnCls = va.action === 'mark-submitted' ? 'btn btn-primary kcard-flag-btn' : 'btn btn-secondary kcard-flag-btn';
+          actionsHtml += '<button class="' + btnCls + '" data-flag-action="' + escHtml(flagAction) + '"' + attrs + '>' + escHtml(va.label) + '</button>';
+        } else if (va.action === 'view-findings') {
+          actionsHtml += '<button class="btn btn-secondary kcard-view-findings-btn" data-findings-path="' + escHtml(agent.findingsPath || '') + '" data-findings-agent="' + escHtml(agent.id) + '" data-findings-id="' + escHtml(feature.id) + '">' + escHtml(va.label) + '</button>';
+        }
+      });
+
+      // Render workflow actions
       if (primaryActions.length > 0) {
         const va = primaryActions[0];
         const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
@@ -376,17 +384,20 @@
             evalStatusRow += '<span class="kcard-winner">Winner: ' + escHtml(feature.winnerAgent) + '</span>';
           }
           innerHtml += '<div class="kcard-status">' + evalStatusRow + '</div>';
-          if (feature.evalPath) {
+          // View Eval button — rendered from validActions (view-eval action)
+          const viewEvalAction = validActions.find(va => va.action === 'view-eval' && !va.agentId);
+          if (viewEvalAction) {
             innerHtml += '<button class="btn btn-secondary kcard-eval-btn" data-view-eval>View Eval</button>';
           }
         }
-        // Agent sections
+        // Agent sections — actions rendered from API (no hardcoded eligibility logic)
         agents.forEach(agent => {
           const agentActions = validActions.filter(va => va.agentId === agent.id);
           innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType);
         });
-        // Eval session row (research in-evaluation)
-        if (feature.evalSession && feature.evalSession.running) {
+        // Eval session row — rendered from validActions (open-eval-session action)
+        const openEvalAction = validActions.find(va => va.action === 'open-eval-session' && !va.agentId);
+        if (openEvalAction && feature.evalSession && feature.evalSession.running) {
           const evalSess = feature.evalSession;
           const evalAgent = AGENT_DISPLAY_NAMES[evalSess.agent] || evalSess.agent;
           innerHtml += '<div class="kcard-agent agent-eval">' +
@@ -455,7 +466,9 @@
             evalStatusRow += '<span class="kcard-winner">Winner: ' + escHtml(feature.winnerAgent) + '</span>';
           }
           evalStatusHtml = '<div class="kcard-status">' + evalStatusRow + '</div>';
-          if (feature.evalPath) {
+          // View Eval button — rendered from validActions
+          const legacyViewEval = validActions.find(va => va.action === 'view-eval' && !va.agentId);
+          if (legacyViewEval) {
             evalStatusHtml += '<button class="btn btn-secondary kcard-eval-btn" data-view-eval>View Eval</button>';
           }
         }

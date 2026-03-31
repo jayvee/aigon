@@ -66,7 +66,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/git.js` | 700+ | Branch, worktree, status, commit helpers, commit analytics, git attribution |
 | `lib/telemetry.js` | 144 | Normalized session telemetry, cross-agent cost reporting |
 | `lib/security.js` | 131+ | Merge gate scanning (gitleaks + semgrep), severity thresholds, diff-aware |
-| `lib/workflow-core/` | ~1500 | **Workflow engine**: event-sourced state with XState machine, action derivation, effect lifecycle for features + research |
+| `lib/workflow-core/` | ~1500 | **Workflow engine**: event-sourced state with XState machine, action derivation (workflow + infra), effect lifecycle for features + research |
 | `lib/workflow-snapshot-adapter.js` | ~310 | **Shared read adapter**: maps workflow-core snapshots (feature + research) to dashboard/board data formats; event log reading; side-effect free |
 | `lib/workflow-heartbeat.js` | ~160 | **Heartbeat**: display-only liveness computation (alive/stale/dead), heartbeat file reading, configurable thresholds. Never changes engine state. |
 | `lib/supervisor.js` | ~330 | **Server monitoring module**: observe-only — computes agent liveness (tmux + heartbeat files), stores in-memory for dashboard display, sends desktop notifications. Never emits engine signals or changes state. |
@@ -129,7 +129,7 @@ Research lifecycle is also managed by the workflow-core engine (`.aigon/workflow
 - **Agent prompts or install content** → `templates/`; run `aigon install-agent cc` after
 - **Workflow state changes** → update command module AND affected templates together
 
-## Seven Rules Before Editing
+## Eight Rules Before Editing
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit
@@ -137,6 +137,7 @@ Research lifecycle is also managed by the workflow-core engine (`.aigon/workflow
 5. **Don't move spec files manually** — always use `aigon` CLI commands to transition state
 6. **Update docs when you change architecture** — if your changes add modules, change repo structure, introduce new patterns, or affect how agents should work, update `CLAUDE.md`, `docs/architecture.md`, and/or `AGENTS.md` in the same PR. Documentation is not a follow-up task — it ships with the code.
 7. **Use the frontend-design skill for ALL visual work** — see below.
+8. **Never add action buttons or eligibility logic in dashboard frontend files** — all actions (workflow AND infra) must be defined in the central action registry (`lib/feature-workflow-rules.js` / `lib/research-workflow-rules.js`). The frontend renders actions from the `validActions` API response only.
 
 ## Frontend & Visual Design Rules
 **MANDATORY: Always invoke `Skill(frontend-design)` before editing any visual component.**
