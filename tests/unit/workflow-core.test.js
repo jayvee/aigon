@@ -337,15 +337,19 @@ test('projectContext handles agent dropped', () => {
   assert.strictEqual(ctx.agents.gg, undefined);
 });
 
-test('projectContext handles session lost / heartbeat expired', () => {
+test('projectContext handles session lost / heartbeat expired as display-only', () => {
   const events = [
     { type: 'feature.started', featureId: '1', mode: 'fleet', agents: ['cc', 'gg'], at: '2026-01-01T00:00:00Z' },
     { type: 'signal.session_lost', agentId: 'cc', at: '2026-01-01T01:00:00Z' },
     { type: 'signal.heartbeat_expired', agentId: 'gg', at: '2026-01-01T01:00:00Z' },
   ];
   const ctx = projectContext(events);
-  assert.strictEqual(ctx.agents.cc.status, 'lost');
-  assert.strictEqual(ctx.agents.gg.status, 'lost');
+  // Status should NOT change to 'lost' — liveness is display-only
+  assert.strictEqual(ctx.agents.cc.status, 'running');
+  assert.strictEqual(ctx.agents.gg.status, 'running');
+  // But timestamps should be recorded
+  assert.strictEqual(ctx.agents.cc.lastHeartbeatExpiredAt, '2026-01-01T01:00:00Z');
+  assert.strictEqual(ctx.agents.gg.lastHeartbeatExpiredAt, '2026-01-01T01:00:00Z');
 });
 
 // ===========================================================================
@@ -645,20 +649,22 @@ test('isSignalRedundant returns true when feature is closing', () => {
   assert.strictEqual(engine.isSignalRedundant(snapshot, 'signal.heartbeat', 'cc'), true);
 });
 
-test('isSignalRedundant returns true for duplicate session-lost', () => {
+test('isSignalRedundant returns false for session-lost (display-only, never redundant)', () => {
   const snapshot = {
     currentSpecState: 'implementing',
-    agents: { cc: { id: 'cc', status: 'lost', lastHeartbeatAt: null } },
+    agents: { cc: { id: 'cc', status: 'running', lastHeartbeatAt: null } },
   };
-  assert.strictEqual(engine.isSignalRedundant(snapshot, 'signal.session_lost', 'cc'), true);
+  // session_lost no longer has a target status — it always records timestamps
+  assert.strictEqual(engine.isSignalRedundant(snapshot, 'signal.session_lost', 'cc'), false);
 });
 
-test('isSignalRedundant returns true for duplicate heartbeat-expired', () => {
+test('isSignalRedundant returns false for heartbeat-expired (display-only, never redundant)', () => {
   const snapshot = {
     currentSpecState: 'implementing',
-    agents: { cc: { id: 'cc', status: 'lost', lastHeartbeatAt: null } },
+    agents: { cc: { id: 'cc', status: 'running', lastHeartbeatAt: null } },
   };
-  assert.strictEqual(engine.isSignalRedundant(snapshot, 'signal.heartbeat_expired', 'cc'), true);
+  // heartbeat_expired no longer has a target status — it always records timestamps
+  assert.strictEqual(engine.isSignalRedundant(snapshot, 'signal.heartbeat_expired', 'cc'), false);
 });
 
 test('isSignalRedundant returns true for duplicate agent-failed', () => {

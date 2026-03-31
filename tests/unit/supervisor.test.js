@@ -240,18 +240,24 @@ test('expectedResearchSessionName builds correct format', () => {
   assert.strictEqual(expectedResearchSessionName('/Users/dev/myrepo', '05', 'gg'), 'myrepo-r5-gg');
 });
 
-// -- supervisor.js emits signals --
+// -- supervisor.js is observe-only (no engine mutations) --
 
-test('supervisor.js calls emitSignal (not just logging)', () => {
+test('supervisor.js does NOT call emitSignal (observe-only)', () => {
   const src = fs.readFileSync(path.join(__dirname, '../../lib/supervisor.js'), 'utf8');
-  assert.ok(src.includes('workflowEngine.emitSignal'), 'supervisor must call workflowEngine.emitSignal');
-  assert.ok(src.includes("'heartbeat'"), 'supervisor must emit heartbeat signals');
-  assert.ok(src.includes("'heartbeat-expired'"), 'supervisor must emit heartbeat-expired signals');
+  assert.ok(!src.includes('workflowEngine.emitSignal'), 'supervisor must NOT call workflowEngine.emitSignal — it is observe-only');
+  assert.ok(!src.includes("require('./workflow-core/engine')"), 'supervisor must NOT import the workflow engine');
 });
 
-test('supervisor.js passes entityType to emitSignal for research', () => {
+test('supervisor.js computes liveness via computeAgentLiveness', () => {
   const src = fs.readFileSync(path.join(__dirname, '../../lib/supervisor.js'), 'utf8');
-  assert.ok(src.includes('entityType'), 'supervisor must pass entityType option');
+  assert.ok(src.includes('computeAgentLiveness'), 'supervisor must use computeAgentLiveness for display-only liveness');
+  assert.ok(src.includes('livenessData'), 'supervisor must store liveness data in memory');
+});
+
+test('supervisor.js exports getAgentLiveness for dashboard', () => {
+  const supervisor = require('../../lib/supervisor');
+  assert.strictEqual(typeof supervisor.getAgentLiveness, 'function', 'must export getAgentLiveness');
+  assert.strictEqual(typeof supervisor.getAllLivenessData, 'function', 'must export getAllLivenessData');
 });
 
 // ---------------------------------------------------------------------------

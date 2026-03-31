@@ -76,10 +76,11 @@ const {
 const {
   DEFAULT_HEARTBEAT_INTERVAL_MS,
   DEFAULT_HEARTBEAT_TIMEOUT_MS,
+  DEFAULT_HEARTBEAT_DEAD_MS,
+  LIVENESS,
   getHeartbeatConfig,
   emitHeartbeat,
-  sweepExpiredHeartbeats,
-  sweepAgentRecovery,
+  computeAgentLiveness,
 } = require('../../lib/workflow-heartbeat');
 const { getRecoveryConfig } = require('../../lib/config');
 
@@ -117,14 +118,16 @@ testAsync('emitSignal agent-failed sets agent status to failed', async () => {
   }
 });
 
-testAsync('emitSignal session-lost sets agent status to lost', async () => {
+testAsync('emitSignal session-lost records timestamp without changing status', async () => {
   const tmp = makeTmpDir();
   try {
     await engine.startFeature(tmp, '03', 'fleet', ['cc', 'gg']);
     await engine.emitSignal(tmp, '03', 'agent-started', 'cc');
     await engine.emitSignal(tmp, '03', 'session-lost', 'cc');
     const snapshot = await engine.showFeature(tmp, '03');
-    assert.strictEqual(snapshot.agents.cc.status, 'lost');
+    // Status should NOT change to 'lost' — liveness is display-only
+    assert.strictEqual(snapshot.agents.cc.status, 'running');
+    assert.ok(snapshot.agents.cc.lastHeartbeatExpiredAt, 'Should record lastHeartbeatExpiredAt');
     assert.strictEqual(snapshot.agents.gg.status, 'running'); // Unaffected
   } finally {
     cleanTmpDir(tmp);
@@ -173,14 +176,16 @@ testAsync('emitSignal heartbeat updates lastHeartbeatAt without changing status'
   }
 });
 
-testAsync('emitSignal heartbeat-expired sets agent status to lost', async () => {
+testAsync('emitSignal heartbeat-expired records timestamp without changing status', async () => {
   const tmp = makeTmpDir();
   try {
     await engine.startFeature(tmp, '07', 'fleet', ['cc', 'gg']);
     await engine.emitSignal(tmp, '07', 'agent-started', 'cc');
     await engine.emitSignal(tmp, '07', 'heartbeat-expired', 'cc');
     const snapshot = await engine.showFeature(tmp, '07');
-    assert.strictEqual(snapshot.agents.cc.status, 'lost');
+    // Status should NOT change to 'lost' — liveness is display-only
+    assert.strictEqual(snapshot.agents.cc.status, 'running');
+    assert.ok(snapshot.agents.cc.lastHeartbeatExpiredAt, 'Should record lastHeartbeatExpiredAt');
   } finally {
     cleanTmpDir(tmp);
   }
@@ -240,13 +245,13 @@ testAsync('allAgentsReady guard blocks eval when not all agents are ready', asyn
   }
 });
 
-testAsync('agentRecoverable guard allows restart of lost agent', async () => {
+testAsync('agentRecoverable guard allows restart of failed agent (was lost)', async () => {
   const tmp = makeTmpDir();
   try {
     await engine.startFeature(tmp, '12', 'fleet', ['cc', 'gg']);
-    await engine.emitSignal(tmp, '12', 'session-lost', 'cc');
+    await engine.emitSignal(tmp, '12', 'agent-failed', 'cc');
     const snapshot = await engine.showFeature(tmp, '12');
-    assert.strictEqual(snapshot.agents.cc.status, 'lost');
+    assert.strictEqual(snapshot.agents.cc.status, 'failed');
 
     // Restart should work
     await engine.restartAgent(tmp, '12', 'cc');
@@ -271,11 +276,11 @@ testAsync('agentRecoverable guard allows restart of failed agent', async () => {
   }
 });
 
-testAsync('agentDroppable guard allows dropping lost agent in fleet', async () => {
+testAsync('agentDroppable guard allows dropping failed agent in fleet', async () => {
   const tmp = makeTmpDir();
   try {
     await engine.startFeature(tmp, '14', 'fleet', ['cc', 'gg']);
-    await engine.emitSignal(tmp, '14', 'session-lost', 'gg');
+    await engine.emitSignal(tmp, '14', 'agent-failed', 'gg');
 
     await engine.dropAgent(tmp, '14', 'gg');
     const after = await engine.showFeature(tmp, '14');
@@ -353,17 +358,18 @@ testAsync('snapshotAgentStatuses maps engine status to dashboard status', async 
   }
 });
 
-testAsync('snapshotAgentStatuses maps failed/lost to error', async () => {
+testAsync('snapshotAgentStatuses maps failed to error', async () => {
   const tmp = makeTmpDir();
   try {
     await engine.startFeature(tmp, '31', 'fleet', ['cc', 'gg']);
     await engine.emitSignal(tmp, '31', 'agent-failed', 'cc');
+    // session-lost no longer changes status — gg stays running
     await engine.emitSignal(tmp, '31', 'session-lost', 'gg');
 
     const snapshot = readFeatureSnapshotSync(tmp, '31');
     const statuses = snapshotAgentStatuses(snapshot);
-    assert.strictEqual(statuses.cc, 'error'); // failed → error
-    assert.strictEqual(statuses.gg, 'error'); // lost → error
+    assert.strictEqual(statuses.cc, 'error');         // failed → error
+    assert.strictEqual(statuses.gg, 'implementing');  // running → implementing (session-lost is display-only)
   } finally {
     cleanTmpDir(tmp);
   }
@@ -446,68 +452,89 @@ testAsync('emitHeartbeat updates agent lastHeartbeatAt', async () => {
   }
 });
 
-testAsync('sweepExpiredHeartbeats detects expired agent', async () => {
-  const tmp = makeTmpDir();
-  try {
-    await engine.startFeature(tmp, '41', 'fleet', ['cc', 'gg']);
-    await engine.emitSignal(tmp, '41', 'agent-started', 'cc');
-    await engine.emitSignal(tmp, '41', 'agent-started', 'gg');
+// ===========================================================================
+// computeAgentLiveness (display-only liveness computation)
+// ===========================================================================
 
-    // Sweep with 0ms timeout — everything is expired
-    const expired = await sweepExpiredHeartbeats(tmp, '41', { timeoutMs: 0 });
-    assert.ok(expired.length === 2, `Expected 2 expired, got ${expired.length}`);
-    assert.ok(expired.includes('cc'));
-    assert.ok(expired.includes('gg'));
+console.log('\n💓 computeAgentLiveness');
 
-    const snapshot = await engine.showFeature(tmp, '41');
-    assert.strictEqual(snapshot.agents.cc.status, 'lost');
-    assert.strictEqual(snapshot.agents.gg.status, 'lost');
-  } finally {
-    cleanTmpDir(tmp);
-  }
+test('computeAgentLiveness returns alive when heartbeat is fresh', () => {
+  const config = { timeoutMs: 120000, deadMs: 300000 };
+  const result = computeAgentLiveness({
+    heartbeatFileMs: Date.now() - 10000, // 10s ago
+    lastHeartbeatAt: null,
+    tmuxAlive: false,
+    config,
+  });
+  assert.strictEqual(result.liveness, LIVENESS.ALIVE);
+  assert.ok(result.lastSeenAt);
+  assert.ok(result.heartbeatAgeMs < 120000);
 });
 
-testAsync('sweepExpiredHeartbeats skips ready agents', async () => {
-  const tmp = makeTmpDir();
-  try {
-    await engine.startFeature(tmp, '42', 'fleet', ['cc', 'gg']);
-    await engine.emitSignal(tmp, '42', 'agent-ready', 'cc');
-    await engine.emitSignal(tmp, '42', 'agent-started', 'gg');
-
-    // Sweep with 0ms timeout — only gg should be expired (cc is ready)
-    const expired = await sweepExpiredHeartbeats(tmp, '42', { timeoutMs: 0 });
-    assert.ok(expired.length === 1, `Expected 1 expired, got ${expired.length}`);
-    assert.strictEqual(expired[0], 'gg');
-
-    const snapshot = await engine.showFeature(tmp, '42');
-    assert.strictEqual(snapshot.agents.cc.status, 'ready'); // Unchanged
-    assert.strictEqual(snapshot.agents.gg.status, 'lost');  // Expired
-  } finally {
-    cleanTmpDir(tmp);
-  }
+test('computeAgentLiveness returns stale when past timeout but within dead', () => {
+  const config = { timeoutMs: 120000, deadMs: 300000 };
+  const result = computeAgentLiveness({
+    heartbeatFileMs: Date.now() - 180000, // 3 min ago
+    lastHeartbeatAt: null,
+    tmuxAlive: false,
+    config,
+  });
+  assert.strictEqual(result.liveness, LIVENESS.STALE);
 });
 
-testAsync('sweepExpiredHeartbeats returns empty for non-engine features', async () => {
-  const expired = await sweepExpiredHeartbeats('/nonexistent', '99', { timeoutMs: 0 });
-  assert.deepStrictEqual(expired, []);
+test('computeAgentLiveness returns dead when past dead threshold', () => {
+  const config = { timeoutMs: 120000, deadMs: 300000 };
+  const result = computeAgentLiveness({
+    heartbeatFileMs: Date.now() - 400000, // 6+ min ago
+    lastHeartbeatAt: null,
+    tmuxAlive: false,
+    config,
+  });
+  assert.strictEqual(result.liveness, LIVENESS.DEAD);
 });
 
-testAsync('sweepExpiredHeartbeats with recent heartbeat does not expire', async () => {
-  const tmp = makeTmpDir();
-  try {
-    await engine.startFeature(tmp, '43', 'solo_worktree', ['cc']);
-    await engine.emitSignal(tmp, '43', 'agent-started', 'cc');
-    await emitHeartbeat(tmp, '43', 'cc');
+test('computeAgentLiveness returns alive when tmux is alive regardless of heartbeat', () => {
+  const config = { timeoutMs: 120000, deadMs: 300000 };
+  const result = computeAgentLiveness({
+    heartbeatFileMs: Date.now() - 400000, // way past dead
+    lastHeartbeatAt: null,
+    tmuxAlive: true, // but tmux is alive
+    config,
+  });
+  assert.strictEqual(result.liveness, LIVENESS.ALIVE);
+});
 
-    // Sweep with very high timeout — nothing should expire
-    const expired = await sweepExpiredHeartbeats(tmp, '43', { timeoutMs: 999999999 });
-    assert.deepStrictEqual(expired, []);
+test('computeAgentLiveness returns unknown when no heartbeat and no tmux', () => {
+  const config = { timeoutMs: 120000, deadMs: 300000 };
+  const result = computeAgentLiveness({
+    heartbeatFileMs: null,
+    lastHeartbeatAt: null,
+    tmuxAlive: false,
+    config,
+  });
+  assert.strictEqual(result.liveness, LIVENESS.UNKNOWN);
+  assert.strictEqual(result.lastSeenAt, null);
+});
 
-    const snapshot = await engine.showFeature(tmp, '43');
-    assert.strictEqual(snapshot.agents.cc.status, 'running');
-  } finally {
-    cleanTmpDir(tmp);
-  }
+test('computeAgentLiveness uses most recent of file and engine timestamps', () => {
+  const config = { timeoutMs: 120000, deadMs: 300000 };
+  const recentEngine = new Date(Date.now() - 5000).toISOString(); // 5s ago
+  const oldFile = Date.now() - 200000; // 3+ min ago
+  const result = computeAgentLiveness({
+    heartbeatFileMs: oldFile,
+    lastHeartbeatAt: recentEngine,
+    tmuxAlive: false,
+    config,
+  });
+  // Should use the more recent engine timestamp
+  assert.strictEqual(result.liveness, LIVENESS.ALIVE);
+});
+
+test('LIVENESS constants are correct', () => {
+  assert.strictEqual(LIVENESS.ALIVE, 'alive');
+  assert.strictEqual(LIVENESS.STALE, 'stale');
+  assert.strictEqual(LIVENESS.DEAD, 'dead');
+  assert.strictEqual(LIVENESS.UNKNOWN, 'unknown');
 });
 
 // ===========================================================================
@@ -536,14 +563,14 @@ testAsync('restartAgent increments restartCount in projector', async () => {
   const tmp = makeTmpDir();
   try {
     await engine.startFeature(tmp, '50', 'fleet', ['cc', 'gg']);
-    await engine.emitSignal(tmp, '50', 'session-lost', 'cc');
+    await engine.emitSignal(tmp, '50', 'agent-failed', 'cc');
 
     await engine.restartAgent(tmp, '50', 'cc');
     let snapshot = await engine.showFeature(tmp, '50');
     assert.strictEqual(snapshot.agents.cc.status, 'running');
     assert.strictEqual(snapshot.agents.cc.restartCount, 1);
 
-    // Lose and restart again
+    // Fail and restart again
     await engine.emitSignal(tmp, '50', 'agent-failed', 'cc');
     await engine.restartAgent(tmp, '50', 'cc');
     snapshot = await engine.showFeature(tmp, '50');
@@ -557,7 +584,7 @@ testAsync('escalateAgent transitions agent to needs_attention', async () => {
   const tmp = makeTmpDir();
   try {
     await engine.startFeature(tmp, '51', 'fleet', ['cc', 'gg']);
-    await engine.emitSignal(tmp, '51', 'session-lost', 'cc');
+    await engine.emitSignal(tmp, '51', 'agent-failed', 'cc');
 
     await engine.escalateAgent(tmp, '51', 'cc');
     const snapshot = await engine.showFeature(tmp, '51');
@@ -571,7 +598,7 @@ testAsync('needs_attention agent can be force-readied', async () => {
   const tmp = makeTmpDir();
   try {
     await engine.startFeature(tmp, '52', 'fleet', ['cc', 'gg']);
-    await engine.emitSignal(tmp, '52', 'session-lost', 'cc');
+    await engine.emitSignal(tmp, '52', 'agent-failed', 'cc');
     await engine.escalateAgent(tmp, '52', 'cc');
 
     await engine.forceAgentReady(tmp, '52', 'cc');
@@ -586,77 +613,12 @@ testAsync('needs_attention agent can be dropped', async () => {
   const tmp = makeTmpDir();
   try {
     await engine.startFeature(tmp, '53', 'fleet', ['cc', 'gg']);
-    await engine.emitSignal(tmp, '53', 'session-lost', 'cc');
+    await engine.emitSignal(tmp, '53', 'agent-failed', 'cc');
     await engine.escalateAgent(tmp, '53', 'cc');
 
     await engine.dropAgent(tmp, '53', 'cc');
     const snapshot = await engine.showFeature(tmp, '53');
     assert.strictEqual(snapshot.agents.cc, undefined);
-  } finally {
-    cleanTmpDir(tmp);
-  }
-});
-
-testAsync('sweepAgentRecovery auto-restarts lost agent under max retries', async () => {
-  const tmp = makeTmpDir();
-  try {
-    await engine.startFeature(tmp, '54', 'fleet', ['cc', 'gg']);
-    await engine.emitSignal(tmp, '54', 'session-lost', 'cc');
-
-    const result = await sweepAgentRecovery(tmp, '54', {
-      recoveryConfig: { autoRestart: true, maxRetries: 2 },
-    });
-    assert.deepStrictEqual(result.restarted, ['cc']);
-    assert.deepStrictEqual(result.escalated, []);
-
-    const snapshot = await engine.showFeature(tmp, '54');
-    assert.strictEqual(snapshot.agents.cc.status, 'running');
-    assert.strictEqual(snapshot.agents.cc.restartCount, 1);
-  } finally {
-    cleanTmpDir(tmp);
-  }
-});
-
-testAsync('sweepAgentRecovery escalates after max retries exhausted', async () => {
-  const tmp = makeTmpDir();
-  try {
-    await engine.startFeature(tmp, '55', 'fleet', ['cc', 'gg']);
-
-    // Simulate 2 prior restarts
-    await engine.emitSignal(tmp, '55', 'session-lost', 'cc');
-    await engine.restartAgent(tmp, '55', 'cc');
-    await engine.emitSignal(tmp, '55', 'session-lost', 'cc');
-    await engine.restartAgent(tmp, '55', 'cc');
-    await engine.emitSignal(tmp, '55', 'session-lost', 'cc');
-
-    // Now sweep — should escalate, not restart
-    const result = await sweepAgentRecovery(tmp, '55', {
-      recoveryConfig: { autoRestart: true, maxRetries: 2 },
-    });
-    assert.deepStrictEqual(result.restarted, []);
-    assert.deepStrictEqual(result.escalated, ['cc']);
-
-    const snapshot = await engine.showFeature(tmp, '55');
-    assert.strictEqual(snapshot.agents.cc.status, 'needs_attention');
-  } finally {
-    cleanTmpDir(tmp);
-  }
-});
-
-testAsync('sweepAgentRecovery escalates immediately when autoRestart is disabled', async () => {
-  const tmp = makeTmpDir();
-  try {
-    await engine.startFeature(tmp, '56', 'fleet', ['cc', 'gg']);
-    await engine.emitSignal(tmp, '56', 'session-lost', 'cc');
-
-    const result = await sweepAgentRecovery(tmp, '56', {
-      recoveryConfig: { autoRestart: false, maxRetries: 2 },
-    });
-    assert.deepStrictEqual(result.restarted, []);
-    assert.deepStrictEqual(result.escalated, ['cc']);
-
-    const snapshot = await engine.showFeature(tmp, '56');
-    assert.strictEqual(snapshot.agents.cc.status, 'needs_attention');
   } finally {
     cleanTmpDir(tmp);
   }
