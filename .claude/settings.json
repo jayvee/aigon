@@ -542,7 +542,22 @@
       "Edit(/Users/jviner/src/aigon-worktrees/feature-176-cc-remove-redundant-spec-move-commits/**)",
       "Write(/Users/jviner/src/aigon-worktrees/feature-176-cc-remove-redundant-spec-move-commits/**)",
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-176-cc-remove-redundant-spec-move-commits:*)",
-      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-176-cc-remove-redundant-spec-move-commits:*)"
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-176-cc-remove-redundant-spec-move-commits:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-178-cx-unified-workflow-engine/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-178-cx-unified-workflow-engine/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-178-cx-unified-workflow-engine/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-178-cx-unified-workflow-engine:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-178-cx-unified-workflow-engine:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-179-cc-single-source-of-truth-for-agent-status/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-179-cc-single-source-of-truth-for-agent-status/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-179-cc-single-source-of-truth-for-agent-status/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-179-cc-single-source-of-truth-for-agent-status:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-179-cc-single-source-of-truth-for-agent-status:*)",
+      "Read(/Users/jviner/src/aigon-worktrees/feature-180-cc-configurable-instruction-directives/**)",
+      "Edit(/Users/jviner/src/aigon-worktrees/feature-180-cc-configurable-instruction-directives/**)",
+      "Write(/Users/jviner/src/aigon-worktrees/feature-180-cc-configurable-instruction-directives/**)",
+      "Bash(cd /Users/jviner/src/aigon-worktrees/feature-180-cc-configurable-instruction-directives:*)",
+      "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-180-cc-configurable-instruction-directives:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
