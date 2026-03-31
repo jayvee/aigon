@@ -44,12 +44,9 @@ const {
     parseDashboardActionRequest,
     buildDashboardActionCommandArgs,
     collectDashboardStatusData,
-    inferDashboardNextCommand,
-    inferDashboardNextActions
 } = require('../../lib/dashboard');
 const { buildTmuxSessionName, buildResearchTmuxSessionName, matchTmuxSessionByEntityId, shellQuote, toUnpaddedId } = require('../../lib/worktree');
 const { isSameProviderFamily, getProfilePlaceholders, gcDevServers, validateRegistry, loadProxyRegistry, saveProxyRegistry, reconcileProxyRoutes, isProxyAvailable, proxyDiagnostics, getDevProxyUrl, DASHBOARD_DEFAULT_PORT, DASHBOARD_DYNAMIC_PORT_START, DASHBOARD_DYNAMIC_PORT_END, DEV_PROXY_REGISTRY, collectAnalyticsData } = require('../../lib/utils');
-const workflowReadModel = require('../../lib/workflow-read-model');
 const board = require('../../lib/board');
 const { mergeSecurityConfig } = require('../../lib/config');
 const { getFeatureGitSignals } = require('../../lib/git');
@@ -406,62 +403,8 @@ test('parseDashboardActionRequest rejects truly unsupported actions', () => {
     assert.strictEqual(parsed.status, 400);
 });
 
-// inferDashboardNextActions — state machine integration
-console.log('\n--- inferDashboardNextActions (state machine) ---');
-test('inferDashboardNextActions returns feature-open for not-started fleet agents', () => {
-    const agents = [
-        { id: 'cc', status: 'implementing', tmuxRunning: false, tmuxSession: null },
-        { id: 'gg', status: 'implementing', tmuxRunning: false, tmuxSession: null }
-    ];
-    const actions = inferDashboardNextActions('62', agents, 'in-progress');
-    assert.ok(Array.isArray(actions), 'should return an array');
-    const hasOpen = actions.some(a => a.command && a.command.includes('feature-open'));
-    assert.ok(hasOpen, 'should include feature-open command for not-started agents');
-});
-test('inferDashboardNextActions returns focus for waiting agent', () => {
-    const agents = [{ id: 'cc', status: 'waiting', tmuxRunning: true, tmuxSession: 'aigon-62-cc' }];
-    const actions = inferDashboardNextActions('62', agents, 'in-progress');
-    const hasFocus = actions.some(a => a.command && a.command.includes('terminal-focus'));
-    assert.ok(hasFocus, 'should include terminal-focus for waiting agent');
-});
-test('inferDashboardNextActions returns eval for fleet all submitted', () => {
-    const agents = [
-        { id: 'cc', status: 'submitted', tmuxRunning: false, tmuxSession: null },
-        { id: 'gg', status: 'submitted', tmuxRunning: false, tmuxSession: null }
-    ];
-    const actions = inferDashboardNextActions('62', agents, 'in-progress');
-    const hasEval = actions.some(a => a.command && a.command.includes('afe') || a.command && a.command.includes('feature-eval'));
-    assert.ok(hasEval, 'should include eval command when fleet all submitted');
-});
-test('inferDashboardNextCommand returns first recommended action', () => {
-    const agents = [{ id: 'cc', status: 'waiting', tmuxRunning: true, tmuxSession: 'aigon-62-cc' }];
-    const result = inferDashboardNextCommand('62', agents, 'in-progress');
-    assert.ok(result && result.command, 'should return a command object');
-    assert.ok(typeof result.reason === 'string', 'should include a reason');
-});
-test('inferDashboardNextActions returns empty for empty agents', () => {
-    const actions = inferDashboardNextActions('62', [], 'in-progress');
-    assert.deepStrictEqual(actions, []);
-});
-test('workflow read model returns valid and recommended actions for research', () => {
-    const model = workflowReadModel.getWorkflowReadModel('research', '62', 'in-progress', [
-        { id: 'cc', status: 'submitted', tmuxRunning: false, tmuxSession: null },
-        { id: 'gg', status: 'submitted', tmuxRunning: false, tmuxSession: null }
-    ]);
-    assert.ok(model.validActions.some(a => a.action === 'research-eval'), 'valid actions include research-eval');
-    assert.ok(model.recommendedActions.some(a => a.action === 'research-eval'), 'recommended actions include research-eval');
-});
-test('board action uses shared read model for submitted research fleet', () => withTempRepo(tempDir => {
-    const stateDir = path.join(tempDir, '.aigon', 'state');
-    fs.mkdirSync(stateDir, { recursive: true });
-    fs.writeFileSync(path.join(stateDir, 'research-77.json'), JSON.stringify({ id: '77', agents: ['cc', 'gg'] }, null, 2));
-    fs.writeFileSync(path.join(stateDir, 'research-77-cc.json'), JSON.stringify({ status: 'submitted' }, null, 2));
-    fs.writeFileSync(path.join(stateDir, 'research-77-gg.json'), JSON.stringify({ status: 'submitted' }, null, 2));
-    const action = board.getBoardAction('research', '03-in-progress', { id: '77', name: 'shared-model-test' }, {
-        '77': [{ agent: 'cc', type: 'research' }, { agent: 'gg', type: 'research' }]
-    }, 'main', tempDir);
-    assert.strictEqual(action, 'aigon research-eval 77');
-}));
+// Legacy inferDashboardNextActions/inferDashboardNextCommand tests removed —
+// action derivation now handled exclusively by workflow-core engine snapshots.
 
 console.log('\nPipeline Stage Data Collection');
 

@@ -324,14 +324,14 @@ test('returns null for snapshot with no actions', () => {
     assert.strictEqual(adapter.snapshotToBoardCommand('feature', '42', snap), null);
 });
 
-test('solo restart maps to feature-do', () => {
+test('solo restart maps to feature-open (unified formatter)', () => {
     const snap = buildSnapshot({
         availableActions: [
             { kind: ManualActionKind.RESTART_AGENT, label: 'Restart', eventType: 'restart-agent', recommendedOrder: 10 },
         ],
     });
     const cmd = adapter.snapshotToBoardCommand('feature', '42', snap);
-    assert.strictEqual(cmd, 'aigon feature-do 42');
+    assert.strictEqual(cmd, 'aigon feature-open 42');
 });
 
 // --- Snapshot Read (Sync) ---
