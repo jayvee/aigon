@@ -105,30 +105,7 @@ Continue from **Step 4: Implement** below.
 
 ---
 
-## Step 3.5: Consider Plan Mode
-
-Before implementing, **consider using plan mode** for non-trivial features:
-
-**Use plan mode when**:
-- The feature is architecturally significant
-- Multiple implementation approaches exist
-- The spec acceptance criteria are complex or touch many components
-- You need to explore the codebase more thoroughly to understand integration points
-- Architectural decisions required (patterns, libraries, structure)
-
-**Skip plan mode for**:
-- Simple, straightforward features with one obvious approach
-- Single-file changes
-- Features with very specific implementation details already provided
-- Quick bug fixes or small enhancements
-
-**In plan mode, you should**:
-- Explore the codebase to understand existing architecture and patterns
-- Design your implementation approach
-- Identify all files that need changes
-- Consider trade-offs between different approaches
-- Present your plan for user approval before proceeding
-- Exit plan mode when your plan is approved
+{{PLAN_MODE_SECTION}}
 
 ## Step 4: Implement
 
@@ -149,16 +126,7 @@ Implement the feature according to the spec. Commit with conventional commits (`
 aigon agent-status submitted
 ```
 
-## Step 6: Update the implementation log
-
-Find the log at `./docs/specs/features/logs/feature-*-log.md`
-
-Update with:
-- Key decisions made during implementation
-- Summary of the approach
-- Any issues encountered and resolutions
-
-Commit the log file.
+{{LOGGING_SECTION}}
 
 ## Step 7: STOP — Implementation complete
 

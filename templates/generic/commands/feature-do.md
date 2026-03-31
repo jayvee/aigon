@@ -77,31 +77,7 @@ Read the exact spec path returned by:
 aigon feature-spec {{ARG1_SYNTAX}}
 ```
 
-## Step 2.5: Consider Plan Mode
-
-For non-trivial features, **use plan mode** before implementation to explore the codebase and design your approach:
-
-**Use plan mode when**:
-- Feature touches 3+ files
-- Architectural decisions required (choosing between patterns, libraries, approaches)
-- Multiple valid implementation approaches exist
-- Complex acceptance criteria requiring coordination across components
-- Unclear how to integrate with existing codebase
-
-**Skip plan mode for**:
-- **Worktree or Fleet mode** — there is no interactive user to approve plans; implement directly
-- Single-file changes with obvious implementation
-- Clear, detailed specifications with one straightforward approach
-- Simple bug fixes or small tweaks
-- Very specific user instructions with implementation details provided
-
-**In plan mode, you should**:
-- Explore the codebase thoroughly (Glob, Grep, Read existing files)
-- Understand existing patterns and conventions
-- Design your implementation approach
-- Identify files that need changes
-- Present your plan for user approval
-- Exit plan mode when ready to implement
+{{PLAN_MODE_SECTION}}
 
 ## Step 3: Implement and break into tasks from acceptance criteria
 
@@ -146,16 +122,7 @@ The **dev server** runs a local development server of this project's source code
 
 {{MANUAL_TESTING_GUIDANCE}}
 
-## Step 4.5: Update documentation if needed
-
-If your changes affect any of the following, update the relevant docs **before committing**:
-
-- **New modules or files** → update Module Map in `CLAUDE.md` and `docs/architecture.md`
-- **New repo structure or external dependencies** → update `docs/architecture.md`
-- **New patterns or conventions agents should follow** → update `CLAUDE.md` and/or `AGENTS.md`
-- **Cross-repo changes (e.g., `@aigon/pro`)** → note what changed in both repos
-
-Documentation ships with the code, not as a follow-up.
+{{DOCUMENTATION_SECTION}}
 
 {{TESTING_RUN_SECTION}}
 
@@ -176,31 +143,15 @@ Expected output:
 1. Stage and commit your code changes using conventional commits (`feat:`, `fix:`, `chore:`)
 2. Verify the commit was successful by running `git log --oneline -1`
 
-## Step 6: Update and commit the log
+{{LOGGING_SECTION}}
 
-Find your implementation log:
-- Drive mode (branch): `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md`
-- Worktree mode: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-<agent>-*-log.md`
-
-Update it with:
-- Key decisions made during implementation
-- Summary of the conversation between you and the user
-- Any issues encountered and how they were resolved
-- Your approach and rationale (for Fleet mode, helps evaluator compare)
-
-**Then commit the log file.**
-
-## Step 6.5: Start the dev server
-
-**You MUST start the dev server before signalling completion.** The evaluator and user need a running preview of your implementation.
-
-Start the dev server and leave it running.
+{{DEV_SERVER_SECTION}}
 
 ## Step 7: Signal completion
 
 **THIS IS THE FINAL STEP. YOU MUST COMPLETE IT. DO NOT SKIP THIS STEP.**
 
-After committing your code (Step 5), log (Step 6), and starting the dev server (Step 6.5), run this command **immediately**:
+After committing your code, run this command **immediately**:
 
 ```bash
 aigon agent-status submitted
