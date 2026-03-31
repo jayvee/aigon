@@ -34,9 +34,11 @@ test('exports required functions', () => {
         'buildTmuxSessionName', 'buildResearchTmuxSessionName',
         'matchTmuxSessionByEntityId', 'assertTmuxAvailable',
         'tmuxSessionExists', 'createDetachedTmuxSession', 'isTmuxSessionAttached',
-        'shellQuote', 'detectLinuxTerminal', 'openTerminalAppWithCommand',
-        'ensureTmuxSessionForWorktree', 'openInWarpSplitPanes', 'closeWarpWindow',
-        'openSingleWorktree',
+        'shellQuote', 'detectLinuxTerminal',
+        'isCmuxAvailable', 'isCmuxRunning', 'cmuxSetStatus', 'cmuxNotify', 'cmuxSetProgress',
+        'openTerminalAppWithCommand',
+        'ensureTmuxSessionForWorktree', 'openInWarpSplitPanes', 'openInCmuxSplitPanes',
+        'closeWarpWindow', 'openSingleWorktree',
         'addWorktreePermissions', 'removeWorktreePermissions',
         'presetWorktreeTrust', 'removeWorktreeTrust', 'presetCodexTrust',
         'setupWorktreeEnvironment', 'ensureAgentSessions',
@@ -133,6 +135,36 @@ test('closeWarpWindow returns false on Linux', () => {
     if (process.platform === 'linux') {
         assert.strictEqual(worktree.closeWarpWindow('test'), false);
     }
+});
+
+// --- cmux support ---
+console.log('# worktree.js — cmux support');
+
+test('isCmuxAvailable returns boolean', () => {
+    const result = worktree.isCmuxAvailable();
+    assert.ok(typeof result === 'boolean');
+});
+
+test('isCmuxRunning returns boolean', () => {
+    const result = worktree.isCmuxRunning();
+    assert.ok(typeof result === 'boolean');
+});
+
+test('cmuxSetStatus does not throw (opportunistic)', () => {
+    // cmux helpers are best-effort — they should never throw even when cmux is not installed
+    worktree.cmuxSetStatus('stage', 'implementing', { icon: 'hammer', color: 'yellow' });
+});
+
+test('cmuxNotify does not throw (opportunistic)', () => {
+    worktree.cmuxNotify('Test title', 'Test body');
+});
+
+test('cmuxSetProgress does not throw (opportunistic)', () => {
+    worktree.cmuxSetProgress(0.5);
+});
+
+test('openInCmuxSplitPanes is a function', () => {
+    assert.ok(typeof worktree.openInCmuxSplitPanes === 'function');
 });
 
 // --- Summary ---
