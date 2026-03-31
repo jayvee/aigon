@@ -12,9 +12,9 @@
     "evalPrompt": "/aigon:feature-eval {featureId}",
     "reviewPrompt": "/aigon:feature-review {featureId}",
     "models": {
-      "research": "gemini-2.5-pro",
-      "implement": "gemini-2.5-flash",
-      "evaluate": "gemini-2.5-pro"
+      "research": "gemini-3.1-pro",
+      "implement": "gemini-3.1-flash",
+      "evaluate": "gemini-3.1-pro"
     }
   },
   "placeholders": {
