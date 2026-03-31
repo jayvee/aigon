@@ -40,7 +40,7 @@ function copyDir(src, dest) {
 function ensureFixtures() {
     if (!fs.existsSync(path.join(FIXTURES_DIR, 'brewboard'))) {
         console.log('[e2e-setup] Fixtures missing — generating...');
-        const result = spawnSync(process.execPath, [path.join(ROOT, 'test', 'setup-fixture.js')], {
+        const result = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'setup-fixture.js')], {
             encoding: 'utf8',
             stdio: 'inherit',
         });
