@@ -1,3 +1,26 @@
+---
+commit_count: 3
+lines_added: 237
+lines_removed: 36
+lines_changed: 273
+files_touched: 6
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 384
+output_tokens: 23955
+cache_creation_input_tokens: 470101
+cache_read_input_tokens: 15889241
+thinking_tokens: 0
+total_tokens: 16383681
+billable_tokens: 24339
+cost_usd: 34.4506
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 89.15
+---
 # Implementation Log: Feature 180 - configurable-instruction-directives
 Agent: cc
 
