@@ -2,46 +2,52 @@
 
 ## Summary
 
-The workflow engine currently only knows about lifecycle actions (pause, resume, eval, close, restart-agent). UI-convenience actions like "open tmux session", "attach to agent", and "view review session" are computed by the dashboard frontend in `actions.js`, making them invisible to any other interface (CLI board, terminal UI, slash commands, API consumers). This feature moves all action computation into the engine so that any interface gets a complete, UI-agnostic action list and can render its own flavour.
+Two problems need solving together:
+
+**1. Actions are incomplete.** The workflow engine only knows about lifecycle actions (pause, resume, eval, close, restart-agent). UI-convenience actions like "open tmux session" and "attach to agent" are computed by the dashboard frontend, making them invisible to the CLI board, terminal UI, slash commands, or any other interface.
+
+**2. Agent liveness is broken.** The heartbeat sidecar touches a file every 30 seconds, but nothing bridges that file to the engine. The supervisor was neutered (observation-only, no signal emission). So agents go to `lost` status within 2-3 minutes of starting, even when they're actively running. This makes the dashboard show "Not started" / "Restart agent" for healthy agents, and hides the "Open" action that should be shown.
+
+Both problems stem from the same root cause: the engine doesn't know about operational state (sessions, liveness) — only lifecycle state (implementing, evaluating, done). This feature makes the engine aware of both.
 
 ## User Stories
 
-- [ ] As a user viewing the dashboard, I want to see an "Open" button for any running agent so I can attach to its tmux session
+- [ ] As a user, I want running agents to stay "Running" on the dashboard instead of going "lost" after 2 minutes
+- [ ] As a user, I want to see an "Open" button for any running agent so I can attach to its tmux session
 - [ ] As a developer building a terminal UI, I want to get all available actions from the engine API without reimplementing dashboard logic
-- [ ] As a user running `aigon board`, I want to see the same actions available as on the dashboard
 - [ ] As a user, I want actions to be consistent regardless of which interface I use
 
 ## Acceptance Criteria
 
+### Agent liveness works
+- [ ] The supervisor (or heartbeat sweep) reads heartbeat files and emits `signal.heartbeat` events to the engine for agents with fresh file timestamps
+- [ ] Running agents stay in `running` status as long as their heartbeat file is being touched
+- [ ] Agents only go to `lost` when the heartbeat file stops being touched (agent actually died)
+- [ ] The supervisor loop is no longer neutered — it emits signals based on heartbeat file freshness
+
 ### Engine knows about all action types
-- [ ] `FEATURE_ACTION_CANDIDATES` in `feature-workflow-rules.js` includes: `open-session` (per-agent, available when agent has a tmux session and is running/implementing)
-- [ ] `RESEARCH_ACTION_CANDIDATES` in `research-workflow-rules.js` includes the equivalent
-- [ ] The XState machine allows these actions in the appropriate states (implementing, evaluating, reviewing)
-- [ ] `deriveAvailableActions()` returns these actions with enough context for any UI to render them
+- [ ] `FEATURE_ACTION_CANDIDATES` includes: `open-session` (per-agent, when agent is running and has a tmux session)
+- [ ] `RESEARCH_ACTION_CANDIDATES` includes the equivalent
+- [ ] `deriveAvailableActions()` returns session actions with enough metadata for any UI
 
 ### Actions carry UI-agnostic metadata
-- [ ] Each action in `availableActions` includes:
-  - `kind` — machine-readable identifier (e.g. `open-session`, `pause-feature`, `feature-close`)
+- [ ] Each action includes:
+  - `kind` — machine-readable identifier (e.g. `open-session`, `pause-feature`)
   - `label` — human-readable default label
-  - `agentId` — which agent this applies to (null for entity-level actions)
-  - `category` — one of: `lifecycle`, `agent-control`, `session` — so UIs can group/filter
-  - `command` — the aigon CLI command string (e.g. `aigon feature-open 182 cc`)
-  - `tmuxSession` — for session actions, the tmux session name (so a terminal UI can run `tmux attach`, a dashboard can render a button, etc.)
-- [ ] Command string formatting happens in the engine layer (not per-UI)
+  - `agentId` — which agent (null for entity-level actions)
+  - `category` — `lifecycle` | `agent-control` | `session`
+  - `command` — aigon CLI command string
+  - `tmuxSession` — for session actions, the tmux session name
+- [ ] Command string formatting happens in the engine layer, not per-UI
 
 ### Dashboard renders engine actions only
-- [ ] Dashboard `actions.js` no longer computes its own action list — it renders `availableActions` from the API response
-- [ ] "Open" / "Attach" buttons come from engine `open-session` actions, not frontend logic
-- [ ] Review session links come from engine actions, not frontend computation
-- [ ] The dashboard can still apply UI-specific rendering (button styles, modals) but cannot add or remove actions
+- [ ] Dashboard renders `availableActions` from the API — no frontend action computation
+- [ ] "Open" / "Attach" buttons come from engine `open-session` actions
+- [ ] `buildFeatureActions()` frontend derivation logic is deleted or reduced to pure rendering
 
 ### Other interfaces get the same actions
-- [ ] `aigon board` renders actions from the engine (same source as dashboard)
-- [ ] The `/api/status` and `/api/detail` endpoints return the full action list with metadata
-
-### Frontend action computation removed
-- [ ] `buildFeatureActions()` in `templates/dashboard/js/actions.js` is deleted or reduced to pure rendering logic (no action derivation)
-- [ ] No action-related `if/else` or guard logic remains in the frontend — all guards are in the XState machine
+- [ ] `aigon board` renders actions from the engine
+- [ ] `/api/status` and `/api/detail` return the full action list with metadata
 
 ## Validation
 
@@ -49,21 +55,14 @@ The workflow engine currently only knows about lifecycle actions (pause, resume,
 node -c aigon-cli.js
 node -c lib/workflow-core/actions.js
 node -c lib/feature-workflow-rules.js
-node -c lib/research-workflow-rules.js
+node -c lib/supervisor.js
+node -c lib/workflow-heartbeat.js
 
-# Engine must return open-session actions for running agents
-node -e "
-const wf = require('./lib/workflow-core');
-const s = wf.showFeatureSync ? wf.showFeatureSync(process.cwd(), '182') : null;
-// If 182 exists and has a running agent, availableActions must include open-session
-if (s && s.agents) {
-  const hasOpen = s.availableActions.some(a => a.kind === 'open-session');
-  if (!hasOpen) { console.error('FAIL: no open-session action for running feature'); process.exit(1); }
-  console.log('PASS: open-session action present');
-} else {
-  console.log('SKIP: no active feature to test');
-}
-"
+# Supervisor must emit signals (not just log)
+grep -q 'emitSignal\|emitResearchSignal' lib/supervisor.js || { echo "FAIL: supervisor must emit signals"; exit 1; }
+
+# Engine must know about open-session
+grep -q 'OPEN_SESSION\|open.session' lib/feature-workflow-rules.js || { echo "FAIL: engine must know about open-session action"; exit 1; }
 
 # Dashboard must not compute its own actions
 if grep -q 'buildFeatureActions' templates/dashboard/js/actions.js 2>/dev/null; then
@@ -74,51 +73,39 @@ fi
 
 ## Technical Approach
 
-### 1. Add session actions to action candidates
+### 1. Fix the heartbeat bridge (supervisor → engine)
 
-In `feature-workflow-rules.js`, add to `FEATURE_ACTION_CANDIDATES`:
+The supervisor already runs every 30 seconds and checks heartbeat files. It was neutered after it broke working features. The fix:
 
-```js
-{
-    kind: ManualActionKind.OPEN_SESSION,
-    label: ({ agentId }) => `Open ${agentId}`,
-    eventType: 'noop.open-session',  // not a state transition — informational only
-    modeFilter: null,
-    perAgent: true,
-    recommendedOrder: 10,  // high priority — users want quick access
-}
-```
+- Read each agent's heartbeat file timestamp
+- If fresh (within 2x the heartbeat interval): emit `signal.heartbeat` to the engine
+- If stale (beyond timeout): emit `signal.heartbeat_expired`
+- Add a guard: only emit if the agent's current engine status would actually change (prevents the old bug of re-emitting redundant signals)
 
-### 2. Handle non-transitional actions in the machine
+The `isSignalRedundant()` function in `engine.js` already handles this — the supervisor just needs to call it before emitting.
 
-The XState machine needs to allow `noop.*` events without transitioning. Add a wildcard or explicit handler in the implementing/evaluating/reviewing states that accepts `noop.*` events — these are "always valid" informational actions that don't change state.
+### 2. Add session actions to action candidates
 
-Alternatively, bypass `snapshot.can()` for noop actions in `deriveAvailableActions()` — check them with a simple guard function instead (e.g., "agent exists and has status running or implementing").
+In `feature-workflow-rules.js`, add `OPEN_SESSION` to `FEATURE_ACTION_CANDIDATES`. These are not state transitions — they're informational. Handle them in `deriveAvailableActions()` with a simple guard (agent exists, status is running/implementing, tmux session name is computable) instead of routing through XState.
 
 ### 3. Enrich action output with metadata
 
-In `deriveAvailableActions()`, add `category`, `command`, and `tmuxSession` fields:
-
-- `category`: derived from the action kind prefix (`pause/resume/close/eval` → `lifecycle`, `restart/drop/force` → `agent-control`, `open-session` → `session`)
-- `command`: formatted using the unified `formatActionCommand()` from `action-command-mapper.js`
-- `tmuxSession`: for `open-session` actions, compute the tmux session name from the entity ID and agent ID using the existing naming convention
+Add `category`, `command`, and `tmuxSession` fields to the action objects returned by `deriveAvailableActions()`.
 
 ### 4. Strip frontend action derivation
 
-The dashboard frontend should:
-1. Read `availableActions` from the API response
-2. Group by `category` for rendering (lifecycle actions as buttons, session actions as links, agent-control in overflow)
-3. Apply UI-specific styling only — no guard logic, no action filtering, no promotion/demotion
+Dashboard reads `availableActions` from API, groups by `category`, renders. No guard logic, no action filtering.
 
 ### Key files to modify:
 
+- `lib/supervisor.js` — re-enable signal emission with redundancy guard
+- `lib/workflow-heartbeat.js` — ensure sweep is called by supervisor
 - `lib/feature-workflow-rules.js` — add OPEN_SESSION to candidates
 - `lib/research-workflow-rules.js` — same
-- `lib/workflow-core/types.js` — add OPEN_SESSION to ManualActionKind enum
-- `lib/workflow-core/actions.js` — enrich output with category/command/tmuxSession, handle noop actions
-- `lib/action-command-mapper.js` — ensure formatActionCommand handles open-session
-- `lib/workflow-snapshot-adapter.js` — pass through enriched actions
-- `templates/dashboard/js/actions.js` — strip derivation, render engine actions only
+- `lib/workflow-core/types.js` — add OPEN_SESSION to ManualActionKind
+- `lib/workflow-core/actions.js` — enrich output, handle non-transition actions
+- `lib/action-command-mapper.js` — handle open-session
+- `templates/dashboard/js/actions.js` — strip derivation, render engine actions
 
 ## Dependencies
 
@@ -127,13 +114,14 @@ The dashboard frontend should:
 
 ## Out of Scope
 
-- Building a new terminal UI (just ensure the data is there for one)
+- Building a new terminal UI (just ensure the data is there)
 - Feedback entity actions (stays on state-queries)
-- Changing which lifecycle transitions are valid (pure consolidation + addition of session actions)
+- Changing lifecycle transitions (pure consolidation + session actions + liveness fix)
 
 ## Open Questions
 
-- Should `noop` actions go through XState at all, or should `deriveAvailableActions()` have a separate "always available if guard passes" path? XState purists would say everything goes through the machine, but noop actions by definition don't transition state.
+- Should `open-session` actions bypass XState entirely (simple guard function) or go through the machine as noop events?
+- Should the supervisor emit signals directly or write to a queue that the engine processes?
 
 ## Related
 
