@@ -1,3 +1,26 @@
+---
+commit_count: 3
+lines_added: 520
+lines_removed: 9
+lines_changed: 529
+files_touched: 10
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 17952
+output_tokens: 22633
+cache_creation_input_tokens: 264089
+cache_read_input_tokens: 10251954
+thinking_tokens: 0
+total_tokens: 10556628
+billable_tokens: 40585
+cost_usd: 22.2964
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 76.72
+---
 # Implementation Log: Feature 199 - feature-status-panel-deep-status-on-demand
 Agent: cc
 
