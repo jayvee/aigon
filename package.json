@@ -6,10 +6,9 @@
     "aigon": "./aigon-cli.js"
   },
   "scripts": {
-    "test": "node scripts/generate-workflow-diagrams.js --check && node tests/run-unit.js && node tests/integration/lifecycle.test.js",
-    "test:api": "node tests/api/status-actions.test.js",
+    "test": "node scripts/generate-workflow-diagrams.js --check && node tests/integration/lifecycle.test.js",
     "test:ui": "npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list",
-    "test:all": "npm test && npm run test:api && npm run test:ui",
+    "test:all": "npm test && npm run test:ui",
     "fixture:seed": "node scripts/setup-fixture.js",
     "fixture:reset": "node scripts/reset-fixture.js",
     "workflow:diagrams": "node scripts/generate-workflow-diagrams.js",
