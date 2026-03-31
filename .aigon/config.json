@@ -1,5 +1,9 @@
 {
   "tier": "pro",
+  "instructions": {
+    "testing": "skip",
+    "planMode": "never"
+  },
   "agents": {
     "cc": {
       "models": {
