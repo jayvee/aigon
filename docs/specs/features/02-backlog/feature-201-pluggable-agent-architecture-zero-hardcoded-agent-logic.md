@@ -50,6 +50,9 @@ Every agent (cc, gg, cx, cu, mv) has its logic spread across multiple files:
     "key": "path",
     "value": "TRUST_FOLDER"
   },
+  "worktreeEnv": {
+    "GEMINI_CLI_IDE_WORKSPACE_PATH": "{worktreePath}"
+  },
   "git": {
     "emailPattern": "gg@aigon.dev"
   }
@@ -65,6 +68,8 @@ Every agent (cc, gg, cx, cu, mv) has its logic spread across multiple files:
 - [ ] `AI_AGENT_IDS` and `KNOWN_AGENT_IDS` in `git.js` are generated from templates
 - [ ] `agentOffsets` in `profile-placeholders.js` is generated from templates
 - [ ] Trust setup is a single function: `ensureAgentTrust(agentId, paths)` that reads trust config from the agent's JSON
+- [ ] Worktree env overrides are a single function: `getWorktreeEnvExports(agentId, worktreePath)` that reads `worktreeEnv` from the agent's JSON and returns shell export statements — no hardcoded `GEMINI_CLI_IDE_WORKSPACE_PATH` in `worktree.js`
+- [ ] The hardcoded `export GEMINI_CLI_IDE_WORKSPACE_PATH` in `buildRawAgentCommand()` is replaced by the generic `worktreeEnv` handler
 
 ### Discovery is automatic
 - [ ] Available agents are discovered by scanning `templates/agents/*.json` at startup
