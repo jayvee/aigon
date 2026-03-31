@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 207
+lines_removed: 45
+lines_changed: 252
+files_touched: 10
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 323
+output_tokens: 37191
+cache_creation_input_tokens: 947340
+cache_read_input_tokens: 21126399
+thinking_tokens: 0
+total_tokens: 22111253
+billable_tokens: 37514
+cost_usd: 52.2464
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 148.87
+---
 # Implementation Log: Feature 185 - migrate-all-dashboard-actions-to-engine
 Agent: cc
 
