@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 834
+lines_removed: 175
+lines_changed: 1009
+files_touched: 53
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 180
+output_tokens: 22485
+cache_creation_input_tokens: 428373
+cache_read_input_tokens: 13064330
+thinking_tokens: 0
+total_tokens: 13515368
+billable_tokens: 22665
+cost_usd: 29.3176
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 22.46
+---
 # Implementation Log: Feature 183 - introduce-cmux
 Agent: cc
 
