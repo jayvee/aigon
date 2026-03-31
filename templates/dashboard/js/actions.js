@@ -9,6 +9,7 @@ const AGENT_SHORT_NAMES = { cc: 'CC', gg: 'GG', cx: 'CX', cu: 'CU', mv: 'MV', so
 
 // Remap state machine action labels to clean button text
 const AGENT_ACTION_LABELS = {
+  'open-session':    'Open',
   'feature-attach':  'Open',
   'feature-focus':   'Open',
   'feature-open':    (va, feature) => {
@@ -57,7 +58,7 @@ const TRANSITIONS_AS_BUTTONS = [
  * @param {string} pipelineType - 'features', 'research', or 'feedback'
  * @returns {string} HTML string with data-va-action and data-agent attributes
  */
-function buildFeatureActions(feature, repoPath, pipelineType) {
+function renderActionButtons(feature, repoPath, pipelineType) {
   const validActions = feature.validActions || [];
   if (validActions.length === 0) return '';
 
@@ -179,6 +180,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
   }
 
   switch (va.action) {
+    case 'open-session':
     case 'feature-open':
     case 'feature-attach':
     case 'feature-focus':

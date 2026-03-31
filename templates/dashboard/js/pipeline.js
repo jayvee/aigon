@@ -390,7 +390,7 @@
           });
         }
         // Card-level actions (non-per-agent: close, eval, review, etc.)
-        const cardActionsHtml = buildFeatureActions(feature, repoPath, pipelineType);
+        const cardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
         if (cardActionsHtml) {
           innerHtml += '<div class="kcard-transitions">' + cardActionsHtml + '</div>';
         }
@@ -419,14 +419,14 @@
           });
         }
         // Card-level actions (close, review — no session controls)
-        const soloCardActionsHtml = buildFeatureActions(feature, repoPath, pipelineType);
+        const soloCardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
         if (soloCardActionsHtml) {
           innerHtml += '<div class="kcard-transitions">' + soloCardActionsHtml + '</div>';
         }
       } else {
         // Legacy layout for cards without active agents (inbox, backlog, done, research, feedback)
         const agentBadgesHtml = buildAgentBadgesHtml(agents);
-        const actionsHtml = buildFeatureActions(feature, repoPath, pipelineType);
+        const actionsHtml = renderActionButtons(feature, repoPath, pipelineType);
         let evalStatusHtml = '';
         if (feature.evalStatus) {
           let evalStatusRow = '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>';
