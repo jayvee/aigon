@@ -7,41 +7,12 @@
 const AGENT_DISPLAY_NAMES = { cc: 'Claude Code', gg: 'Gemini', cx: 'Codex', cu: 'Cursor', mv: 'Mistral Vibe', solo: 'Agent' };
 const AGENT_SHORT_NAMES = { cc: 'CC', gg: 'GG', cx: 'CX', cu: 'CU', mv: 'MV', solo: 'Drive' };
 
-// Remap state machine action labels to clean button text
-const AGENT_ACTION_LABELS = {
-  'open-session':    'Open',
-  'feature-attach':  'Open',
-  'feature-focus':   'Open',
-  'feature-open':    (va, feature) => {
-    const agent = (feature.agents || []).find(a => a.id === va.agentId);
-    if (agent && agent.status === 'implementing') return 'Restart';
-    if (agent && agent.status === 'submitted') return 'Open';
-    return va.label || 'Start';
-  },
-  'research-attach': 'Open',
-  'research-open':   (va, feature) => {
-    const agent = (feature.agents || []).find(a => a.id === va.agentId);
-    return (agent && agent.status === 'implementing') ? 'Restart' : 'Start';
-  }
-};
-
 // Maps action + priority to button CSS class
 function validActionBtnClass(action, priority) {
   if (priority === 'high') return 'btn btn-primary';
   if (action === 'feature-stop' || action === 'research-stop') return 'btn btn-danger';
   return 'btn btn-secondary';
 }
-
-// Which transitions should render as buttons (not just drag targets)
-const TRANSITIONS_AS_BUTTONS = [
-  'feature-prioritise', 'research-prioritise',
-  'feature-start', 'research-start',
-  'feature-eval', 'research-eval',
-  'feature-review',
-  'feature-close', 'research-close',
-  'feature-pause', 'feature-resume',
-  'feedback-triage',
-];
 
 /**
  * Builds unified action button HTML from validActions.
@@ -62,14 +33,13 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   const validActions = feature.validActions || [];
   if (validActions.length === 0) return '';
 
-  // Filter: actions as buttons, plus specific transitions that need buttons
+  // Filter: all non-per-agent actions render as buttons (engine controls what's available)
   const evalRunning = feature.evalSession && feature.evalSession.running;
   const buttonsToRender = validActions.filter(va => {
     if (va.agentId) return false; // per-agent actions handled by buildAgentSectionHtml
     // Hide eval/review actions when eval session is already running
     if (evalRunning && (va.action === 'feature-eval' || va.action === 'research-eval' || va.action === 'feature-review')) return false;
-    if (va.type === 'action') return true;
-    return va.type === 'transition' && TRANSITIONS_AS_BUTTONS.includes(va.action);
+    return true;
   });
 
   // Deduplicate while preserving server-provided order.
@@ -118,9 +88,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     if (evalPickWinner && va.action === 'feature-close') {
       return 'Close & Merge ' + (AGENT_DISPLAY_NAMES[feature.winnerAgent] || feature.winnerAgent);
     }
-    const override = AGENT_ACTION_LABELS[va.action];
-    if (typeof override === 'function') return override(va, feature);
-    return override || va.label;
+    return va.label;
   }
 
   function renderBtn(va, cls) {
