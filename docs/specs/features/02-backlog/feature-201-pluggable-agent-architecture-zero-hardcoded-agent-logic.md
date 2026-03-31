@@ -71,6 +71,16 @@ Every agent (cc, gg, cx, cu, mv) has its logic spread across multiple files:
 - [ ] Worktree env overrides are a single function: `getWorktreeEnvExports(agentId, worktreePath)` that reads `worktreeEnv` from the agent's JSON and returns shell export statements — no hardcoded `GEMINI_CLI_IDE_WORKSPACE_PATH` in `worktree.js`
 - [ ] The hardcoded `export GEMINI_CLI_IDE_WORKSPACE_PATH` in `buildRawAgentCommand()` is replaced by the generic `worktreeEnv` handler
 
+### Model defaults — single source of truth (absorbs feature 200)
+- [ ] `templates/agents/*.json` is the single source of truth for default model names per agent
+- [ ] `lib/config.js` `DEFAULT_GLOBAL_CONFIG` reads models from templates at require-time — no hardcoded model name strings (`'opus'`, `'sonnet'`, `'gemini-2.5-pro'`, etc.) in config.js
+- [ ] `~/.aigon/config.json` only stores **user overrides**, not copies of defaults. If a model value matches the template default, it is not written to the user config
+- [ ] `loadGlobalConfig()` strips stale default copies from `~/.aigon/config.json` on load — if a value matches the template default, remove it (it's not an override)
+- [ ] The dashboard config screen Default column reads from templates, Override column from user config, Effective column shows the merge
+- [ ] Adding a new task type (e.g. `review`) to a template appears automatically in the config screen without code changes
+- [ ] No model name strings hardcoded anywhere in `lib/config.js`
+- [ ] **The three-copies bug from today never happens again**: changing a model in the template is the only step needed — code defaults and user config inherit automatically
+
 ### Discovery is automatic
 - [ ] Available agents are discovered by scanning `templates/agents/*.json` at startup
 - [ ] The dashboard config screen shows all discovered agents
