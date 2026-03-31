@@ -37,11 +37,11 @@
     // ── Monitor view — Alpine component ──────────────────────────────────────
 
     // Helper: builds unified action buttons for a feature card (used via x-html).
-    // Delegates to the shared buildFeatureActions() from actions.js, wrapping in
+    // Delegates to the shared renderActionButtons() from actions.js, wrapping in
     // a container with data-repo for event delegation.
     function buildMonitorActionHtml(feature, repoPath) {
       const pipelineType = feature.stage ? 'features' : 'features';
-      const html = buildFeatureActions(feature, repoPath, pipelineType);
+      const html = renderActionButtons(feature, repoPath, pipelineType);
       if (!html) return '';
       return '<span class="monitor-actions" data-repo="' + escHtml(repoPath) + '" data-feature-id="' + escHtml(feature.id) + '">' + html + '</span>';
     }
@@ -183,7 +183,7 @@
             if (text) copyText(text).then(ok => showToast(ok ? 'Copied: ' + text : 'Copy failed'));
             return;
           }
-          // Unified validAction buttons (from buildFeatureActions)
+          // Unified validAction buttons (from renderActionButtons)
           if (btn.classList.contains('kcard-va-btn')) {
             e.stopPropagation();
             const container = btn.closest('.monitor-actions');
