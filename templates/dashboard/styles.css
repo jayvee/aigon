@@ -316,9 +316,6 @@
     .drawer-copy-name:hover{opacity:1;background:var(--bg-elevated)}
     .drawer-stage{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--bg-elevated);color:var(--text-secondary);white-space:nowrap}
     .drawer-actions{display:flex;gap:6px;align-items:center}
-    .drawer-mode-toggle{display:flex;border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden}
-    .drawer-mode-btn{padding:4px 10px;font-size:11px;background:none;border:none;color:var(--text-secondary);cursor:pointer}
-    .drawer-mode-btn.active{background:var(--accent);color:#fff}
     .drawer-tabs{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--border-subtle);background:var(--bg-elevated);flex-shrink:0}
     .drawer-tab{padding:5px 10px;font-size:11px;font-weight:600;border:1px solid var(--border-subtle);border-radius:7px;background:transparent;color:var(--text-secondary);cursor:pointer}
     .drawer-tab:hover{color:var(--text-primary);border-color:var(--border-default)}

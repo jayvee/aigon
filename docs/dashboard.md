@@ -170,7 +170,6 @@ Both Monitor and Pipeline have a type toggle to filter by: All, Features, Resear
 | POST | `/api/repos/remove` | Unregister a repo |
 | POST | `/api/spec/create` | Create a new spec in inbox |
 | GET | `/api/spec?path=...` | Read a spec file |
-| PUT | `/api/spec` | Write/update a spec file |
 | POST | `/api/open-in-editor` | Open file in default editor |
 | WS | `/ws/terminal?session=NAME` | WebSocket terminal relay to tmux session |
 | GET | `/api/action-log` | Recent action log entries |
