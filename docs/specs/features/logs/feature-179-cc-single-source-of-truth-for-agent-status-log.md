@@ -36,3 +36,11 @@ mutations that bypass engine, clean up and validate.
 - **Used sync snapshot reads in research.js**: Research command handlers are sync arrow
   functions, so used `readWorkflowSnapshotSync` instead of async `showResearchOrNull`.
 - **Net result**: -339 lines (446 removed, 107 added) across 10 files.
+
+## Follow-up Fix
+- Removed the spec drawer's dead edit/save path after the dashboard stopped exposing
+  `PUT /api/spec`. The drawer is now explicitly read-only and sends users to
+  `Open in Editor` for changes, which matches the feature's "editor/CLI only" rule.
+- Updated `docs/dashboard.md` to stop documenting `PUT /api/spec`.
+- Updated `docs/architecture.md` to describe `formatActionCommand()` as the shared
+  command formatter instead of the old dual-formatter names.

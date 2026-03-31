@@ -84,8 +84,8 @@ Current shared modules:
   `getValidTransitions`, `getAvailableActions`, `getSessionAction`, `getRecommendedActions`, `isActionValid`, `shouldNotify`
 - `lib/feature-spec-resolver.js` (~140 lines): canonical active-feature spec lookup so consumers stop guessing from visible folders
   `resolveFeatureSpec`, `listVisibleFeatureSpecs`, `isPlaceholderSpecPath`
-- `lib/action-command-mapper.js` (~75 lines): shared command formatting for dashboard and board consumers so snapshot reads and fallback reads emit the same CLI actions
-  `formatDashboardActionCommand`, `formatBoardActionCommand`
+- `lib/action-command-mapper.js` (~75 lines): shared command formatting for dashboard and board consumers so snapshot reads emit the same CLI actions
+  `formatActionCommand`
 - `lib/dashboard-status-helpers.js` (~200 lines): shared dashboard status helpers so tmux detection, worktree lookup, and stale-session heuristics are not buried in the HTTP server module
   `safeTmuxSessionExists`, `resolveFeatureWorktreePath`, `normalizeDashboardStatus`, `maybeFlagEndedSession`
 - `lib/dashboard-status-collector.js` (~830 lines): shared AIGON server read-side collector so repo/entity status assembly is separated from HTTP transport and notification code
