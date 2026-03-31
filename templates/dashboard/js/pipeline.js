@@ -263,7 +263,8 @@
       return '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span>' + devSlot;
     }
 
-    // AGENT_ACTION_LABELS moved to actions.js (shared between monitor + pipeline)
+    // Agent-specific action label overrides (keyed by action name)
+    const AGENT_ACTION_LABELS = {};
 
     function buildAgentSectionHtml(agent, agentValidActions, feature, repoPath, pipelineType) {
       const shortName = AGENT_SHORT_NAMES[agent.id] || agent.id.toUpperCase();

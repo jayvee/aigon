@@ -307,7 +307,7 @@
         renderSettings();
       } else if (state.view === 'config') {
         sidebar.style.display = state.sidebarHidden ? 'none' : '';
-        mobileSelect.style.display = state.sidebarHidden ? 'none' : '';
+        mobileSelect.style.display = '';
         document.getElementById('settings-view').style.display = 'none';
         document.getElementById('config-view').style.display = '';
         document.getElementById('sessions-view').style.display = 'none';
@@ -393,7 +393,7 @@
       } else {
         // monitor or pipeline — Alpine components handle the view content
         sidebar.style.display = state.sidebarHidden ? 'none' : '';
-        mobileSelect.style.display = state.sidebarHidden ? 'none' : '';
+        mobileSelect.style.display = '';
         document.getElementById('settings-view').style.display = 'none';
         document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
