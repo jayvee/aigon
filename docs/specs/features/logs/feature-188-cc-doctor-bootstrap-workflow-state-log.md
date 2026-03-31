@@ -1,3 +1,26 @@
+---
+commit_count: 3
+lines_added: 177
+lines_removed: 0
+lines_changed: 177
+files_touched: 2
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 120
+output_tokens: 10641
+cache_creation_input_tokens: 272098
+cache_read_input_tokens: 5417187
+thinking_tokens: 0
+total_tokens: 5700046
+billable_tokens: 10761
+cost_usd: 14.0275
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 60.8
+---
 # Implementation Log: Feature 188 - doctor-bootstrap-workflow-state
 Agent: cc
 
