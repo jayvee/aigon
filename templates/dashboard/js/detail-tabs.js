@@ -163,9 +163,14 @@
       }
 
       function renderEvents(payload) {
-        const events = Array.isArray(payload.events)
+        const rawEvents = Array.isArray(payload.events)
           ? payload.events
           : (Array.isArray(payload.manifest && payload.manifest.events) ? payload.manifest.events : []);
+        // Filter out heartbeat noise — only show lifecycle and problem events
+        const events = rawEvents.filter(ev => {
+          const type = (ev.type || '').toLowerCase();
+          return type !== 'signal.heartbeat';
+        });
         if (events.length === 0) {
           detailEl.innerHTML = '<div class="drawer-empty">No events recorded.</div>';
           return;
