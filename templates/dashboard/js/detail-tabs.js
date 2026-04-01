@@ -151,7 +151,8 @@
         const lastMilestone = evaluated || reviewed || submitted || started;
 
         return {
-          timeToStart: created && started ? (started - created) : NaN,
+          // 0ms means feature was started immediately on creation (no backlog wait) — show as NaN/—
+          timeToStart: created && started && (started - created) > 0 ? (started - created) : NaN,
           timeToSubmit: started && submitted ? (submitted - started) : NaN,
           timeToEvaluate: submitted && (evaluated || reviewed) ? ((evaluated || reviewed) - submitted) : NaN,
           totalLifecycle: created && lastMilestone ? (lastMilestone - created) : NaN,
