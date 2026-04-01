@@ -106,14 +106,16 @@
       return 'feature';
     }
 
-    function openDrawer(specPath, title, stage, repoPath) {
+    function openDrawer(specPath, title, stage, repoPath, options) {
       if (!specPath) return;
+      const opts = options || {};
       console.trace('openDrawer called:', title, specPath);
       drawerState.path = specPath;
       drawerState.title = title;
       drawerState.stage = stage;
       drawerState.type = specTypeFromPath(specPath);
       drawerState.repoPath = repoPath || null;
+      drawerState._initialTab = opts.initialTab || null;
       drawerTitle.textContent = title;
       drawerStage.textContent = stage;
       drawerPreview.innerHTML = '<span style="color:var(--text-tertiary)">Loading…</span>';

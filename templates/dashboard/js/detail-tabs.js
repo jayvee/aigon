@@ -46,7 +46,10 @@
         state.loadedTabs = {};
         detailEl.innerHTML = '';
         setWideMode(false);
-        switchTab('spec');
+        // If drawer was opened with an initial tab (e.g. from peek button), use it
+        const initialTab = (typeof drawerState !== 'undefined' && drawerState._initialTab) || 'spec';
+        if (drawerState && drawerState._initialTab) drawerState._initialTab = null;
+        switchTab(initialTab);
       }
 
       function parseEntityFromSpecPath(specPath, fallbackType) {
