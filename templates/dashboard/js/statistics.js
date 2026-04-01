@@ -109,16 +109,36 @@
       return `<span class="${cls}">${arrow} ${Math.abs(pct)}%</span>`;
     }
 
+    function fmtTickVal(v) {
+      if (v >= 1000000) return (v / 1000000).toFixed(1) + 'M';
+      if (v >= 1000) return (v / 1000).toFixed(v >= 10000 ? 0 : 1) + 'K';
+      if (v >= 1) return v % 1 === 0 ? String(v) : v.toFixed(2);
+      if (v > 0) return v.toFixed(2);
+      return '0';
+    }
+
     function buildSparklineSvg(points, color) {
       if (!points || points.length < 2) return '';
       const vals = points.map(p => (p.count !== undefined ? p.count : p.score) || 0);
       const maxVal = Math.max(...vals, 1);
-      const w = 400, h = 40, pad = 2;
-      const xs = vals.map((_, i) => pad + (i / (vals.length - 1)) * (w - pad * 2));
-      const ys = vals.map(v => h - pad - ((v / maxVal) * (h - pad * 2)));
+      const minVal = Math.min(...vals);
+      const labelLeft = 45, labelBottom = 16, pad = 4;
+      const w = 400, h = 80;
+      const plotLeft = labelLeft, plotRight = w - pad;
+      const plotTop = pad, plotBottom = h - labelBottom;
+      const xs = vals.map((_, i) => plotLeft + (i / (vals.length - 1)) * (plotRight - plotLeft));
+      const ys = vals.map(v => plotBottom - ((v - 0) / (maxVal || 1)) * (plotBottom - plotTop));
       const pts = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
-      const fillPts = `${xs[0]},${h} ${pts} ${xs[xs.length - 1]},${h}`;
-      return `<svg class="sparkline-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      const fillPts = `${xs[0]},${plotBottom} ${pts} ${xs[xs.length - 1]},${plotBottom}`;
+      const firstDay = points[0].day ? points[0].day.slice(5) : '';
+      const lastDay = points[points.length - 1].day ? points[points.length - 1].day.slice(5) : '';
+      return `<svg class="sparkline-svg" viewBox="0 0 ${w} ${h}">
+        <line x1="${plotLeft}" y1="${plotTop}" x2="${plotLeft}" y2="${plotBottom}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <line x1="${plotLeft}" y1="${plotBottom}" x2="${plotRight}" y2="${plotBottom}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <text x="${plotLeft - 4}" y="${plotTop + 4}" text-anchor="end" fill="#999" font-size="9">${fmtTickVal(maxVal)}</text>
+        <text x="${plotLeft - 4}" y="${plotBottom}" text-anchor="end" fill="#999" font-size="9">${fmtTickVal(minVal)}</text>
+        <text x="${plotLeft}" y="${h - 2}" text-anchor="start" fill="#999" font-size="9">${firstDay}</text>
+        <text x="${plotRight}" y="${h - 2}" text-anchor="end" fill="#999" font-size="9">${lastDay}</text>
         <polygon points="${fillPts}" fill="${color}" opacity="0.15"/>
         <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2"/>
       </svg>`;

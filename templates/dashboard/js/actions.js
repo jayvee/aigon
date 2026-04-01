@@ -37,13 +37,20 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   // Per-agent actions are handled by buildAgentSectionHtml.
   // Infra/view actions are rendered inline in agent sections or special UI elements.
   const evalRunning = feature.evalSession && feature.evalSession.running;
+  // Collapse select-winner actions into a single "Close" button
+  const hasSelectWinner = validActions.some(va => va.action === 'select-winner');
   const buttonsToRender = validActions.filter(va => {
+    if (va.action === 'select-winner') return false; // collapsed into close button below
     if (va.agentId) return false; // per-agent actions handled by buildAgentSectionHtml
     if (va.category === 'infra' || va.category === 'view') return false; // infra/view handled separately
     // Hide eval/review actions when eval session is already running
     if (evalRunning && (va.action === 'feature-eval' || va.action === 'research-eval' || va.action === 'feature-review')) return false;
     return true;
   });
+  // Inject a synthetic close action when select-winner is available
+  if (hasSelectWinner) {
+    buttonsToRender.push({ action: 'feature-close', label: 'Close', priority: 'high' });
+  }
 
   // Deduplicate while preserving server-provided order.
   const seen = new Set();
@@ -87,7 +94,9 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   }
 
   function actionLabel(va) {
-    // Special eval close label
+    if (va.action === 'feature-close' && hasSelectWinner) {
+      return 'Close';
+    }
     if (evalPickWinner && va.action === 'feature-close') {
       return 'Close & Merge ' + (AGENT_DISPLAY_NAMES[feature.winnerAgent] || feature.winnerAgent);
     }
@@ -203,6 +212,9 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     case 'feature-prioritise':
     case 'research-prioritise':
       await requestAction(pCmd('prioritise'), [feature.name], repoPath, btn);
+      break;
+    case 'select-winner':
+      await requestAction('feature-close', [id, agentId], repoPath, btn);
       break;
     case 'feature-close': {
       // Fleet features with multiple agents → show close modal with winner + adoption

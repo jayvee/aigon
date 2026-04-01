@@ -79,6 +79,9 @@
         '<div class="amp-insights-body">' + insightsHtml + '</div>' +
         '</div>';
 
+      // Init Chart.js token charts after DOM is ready
+      if (typeof initAmpTokenCharts === 'function') initAmpTokenCharts();
+
       var refreshBtn = document.getElementById('amp-insights-refresh-btn');
       if (refreshBtn) refreshBtn.onclick = async function() {
         refreshBtn.disabled = true;

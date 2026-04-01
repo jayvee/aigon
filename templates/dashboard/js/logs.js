@@ -404,6 +404,7 @@
         const desc = escHtml(f.desc || '');
         const featureKey = `${f.repoPath || ''}:${String(f.featureNum || '').padStart(2, '0')}`;
         const commitStats = statsState.featureCommitMap[featureKey] || { count: 0, linesChanged: 0 };
+        const tokStr = f.billableTokens ? Number(f.billableTokens).toLocaleString() : '—';
         return `<tr>
           <td>${escHtml(date)}</td>
           <td>${escHtml(repo)}</td>
@@ -413,6 +414,7 @@
           <td${ctClass}>${ctStr}</td>
           <td>${escHtml(String(commitStats.count || 0))}</td>
           <td>${escHtml(String(commitStats.linesChanged || 0))}</td>
+          <td>${tokStr}</td>
         </tr>`;
       }).join('');
 
@@ -425,7 +427,7 @@
 
       el.innerHTML = `
         <table class="feat-list-table">
-          <thead><tr><th>Date</th><th>Repo</th><th>#</th><th>Feature</th><th>Agent</th><th>Cycle Time</th><th>Commits</th><th>Δ Lines</th></tr></thead>
+          <thead><tr><th>Date</th><th>Repo</th><th>#</th><th>Feature</th><th>Agent</th><th>Cycle Time</th><th>Commits</th><th>Δ Lines</th><th>Tokens</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
         ${pagination}`;
@@ -560,10 +562,13 @@
         ? `<span class="amp-autonomy-pill ${autonomyDerived.cls}" style="font-size:10px">${escHtml(autonomyDerived.label)}</span>`
         : '';
 
-      const withTokens = filteredFeatures.filter(f => f.billableTokens !== null && f.billableTokens !== undefined);
-      const avgTokensPerFeature = withTokens.length > 0
-        ? Math.round(withTokens.reduce((s, f) => s + f.billableTokens, 0) / withTokens.length)
-        : null;
+      const withTokens = filteredFeatures.filter(f => f.billableTokens !== null && f.billableTokens !== undefined && f.billableTokens > 0);
+      const medianTokensPerFeature = (() => {
+        if (withTokens.length === 0) return null;
+        const sorted = withTokens.map(f => f.billableTokens).sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+        return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+      })();
 
       return `
         <details class="stats-block amplification-section" open>
@@ -573,29 +578,28 @@
           </summary>
           <div class="amplification-body">
             <div class="stats-cards amp-top-cards">
-              ${buildStatCard('Active Time Ratio', autonomyScoreDisplay, autonomyLabelHtml, withAutonomy.length > 0 ? `${withAutonomy.length} features` : 'No autonomy data',
-                'Percentage of wall-clock time the agent spent actively working vs waiting for human input. Calculated as 1 − (wait time / total time). 100% means the agent never paused for human intervention. Note: Drive mode features without waiting events always show 100%.')}
               ${buildStatCard('First-Pass Rate (No Rework)', fmtPct(firstPassNoRework), null, withReworkSignals.length > 0 ? `${withReworkSignals.length} features` : 'No rework signal data',
                 'Percentage of features completed without triggering any rework flags. Rework flags include: thrashing (repeated back-and-forth edits), fix cascades (one fix causing another), and scope creep (implementation exceeding spec). Higher is better — it means the agent got it right the first time.')}
               ${buildStatCard('Rework Rate', fmtPct(reworkRate), null, withReworkSignals.length > 0 ? `${withReworkSignals.length} features` : 'No rework signal data',
                 'Percentage of features that triggered at least one rework flag (thrashing, fix cascade, or scope creep). This is the inverse of First-Pass Rate. Lower is better — high rework suggests specs need more detail or features should be scoped smaller.')}
-              ${buildStatCard('Avg Cost / Feature', withCost.length ? fmtUsd(withCost.reduce((s, f) => s + f.costUsd, 0) / withCost.length) : '—', null,
+              ${buildStatCard('Median Cost / Feature', (() => {
+                if (withCost.length === 0) return '—';
+                const sorted = withCost.map(f => f.costUsd).sort((a, b) => a - b);
+                const mid = Math.floor(sorted.length / 2);
+                return fmtUsd(sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2);
+              })(), null,
                 withCost.length > 0 ? `${withCost.length} features with cost data` : 'Awaiting telemetry adapters',
-                'Estimated AI compute cost per feature at API list prices. For plan/subscription users this is indicative only — your actual cost depends on your plan. Calculated from input, output, cache read, and cache write tokens at published per-token rates.')}
-              ${buildStatCard('Avg Tokens / Feature', avgTokensPerFeature !== null ? avgTokensPerFeature.toLocaleString() : '—', null,
+                'Median AI compute cost per feature at API list prices. Uses median instead of average to avoid skew from multi-session outliers. For plan/subscription users this is indicative only — your actual cost depends on your plan.')}
+              ${buildStatCard('Median Tokens / Feature', medianTokensPerFeature !== null ? medianTokensPerFeature.toLocaleString() : '—', null,
                 withTokens.length > 0 ? `${withTokens.length} features with token data` : 'Awaiting telemetry adapters',
-                'Average billable tokens (input + output + thinking) consumed per feature. Does not include cache tokens. Useful for comparing feature complexity and agent efficiency across your project history.')}
+                'Median billable tokens (input + output + thinking) consumed per feature. Uses median instead of average to avoid skew from multi-session outliers. Features with zero tokens are excluded.')}
             </div>
             <div class="stats-row amp-trend-row">
               <div class="stats-block">
-                <div class="stats-block-title">Active Time Ratio Trend</div>
+                <div class="stats-block-title">First-Pass Rate Trend</div>
                 <div class="amp-spark-grid">
                   <div class="amp-spark-card">
                     <div class="amp-spark-title">Weekly</div>
-                    <div class="sparkline-wrap amp-spark-wrap">${autonomySpark}</div>
-                  </div>
-                  <div class="amp-spark-card">
-                    <div class="amp-spark-title">First-Pass Rate (Weekly)</div>
                     <div class="sparkline-wrap amp-spark-wrap">${fpSpark}</div>
                   </div>
                 </div>
@@ -615,8 +619,111 @@
               </div>
             </div>
           </div>
+          ${(() => {
+            const withBillableTokens = filteredFeatures.filter(f => f.billableTokens != null && f.billableTokens > 0);
+            if (withBillableTokens.length < 2) return '';
+            const tokenVals = withBillableTokens.map(f => f.billableTokens).sort((a, b) => a - b);
+            const tokenSum = tokenVals.reduce((s, v) => s + v, 0);
+            const tokenMean = Math.round(tokenSum / tokenVals.length);
+            const tokenMid = Math.floor(tokenVals.length / 2);
+            const tokenMedian = tokenVals.length % 2 ? tokenVals[tokenMid] : Math.round((tokenVals[tokenMid - 1] + tokenVals[tokenMid]) / 2);
+            const tokenP90 = tokenVals[Math.floor(tokenVals.length * 0.9)];
+            const tokenMax = tokenVals[tokenVals.length - 1];
+
+            // Top consumers
+            const topFeatures = withBillableTokens.slice().sort((a, b) => b.billableTokens - a.billableTokens).slice(0, 8);
+            const topRows = topFeatures.map(f => {
+              const pct = Math.round(f.billableTokens / tokenSum * 100);
+              return '<tr>' +
+                '<td>' + escHtml(String(f.featureNum || '')) + '</td>' +
+                '<td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(f.desc || '') + '">' + escHtml(f.desc || '') + '</td>' +
+                '<td>' + escHtml(f.winnerAgent || '—') + '</td>' +
+                '<td>' + f.billableTokens.toLocaleString() + ' <span style="color:var(--text-tertiary)">(' + pct + '%)</span></td>' +
+                '<td>' + fmtUsd(f.costUsd) + '</td>' +
+                '</tr>';
+            }).join('');
+
+            // Store data for Chart.js init after DOM render
+            window._ampTokenChartData = { withBillableTokens, tokenVals, tokenMedian };
+
+            return '<div class="stats-section-title" style="margin-top:16px">Token Analytics</div>' +
+              '<div class="stats-cards amp-top-cards">' +
+                buildStatCard('Mean', tokenMean.toLocaleString(), null, withBillableTokens.length + ' features', 'Average billable tokens per feature. Compare with median to see skew.') +
+                buildStatCard('Median', tokenMedian.toLocaleString(), null, 'typical feature', 'Half of features use fewer tokens than this.') +
+                buildStatCard('P90', tokenP90.toLocaleString(), null, '90th percentile', '90% of features use fewer tokens than this.') +
+                buildStatCard('Max', tokenMax.toLocaleString(), null, 'single feature', 'Highest token spend in this period.') +
+              '</div>' +
+              '<div class="stats-row" style="gap:16px">' +
+                '<div class="stats-block" style="flex:1.2"><div class="stats-block-title">Token Distribution</div>' +
+                  '<div style="position:relative;height:240px"><canvas id="amp-token-histogram"></canvas></div></div>' +
+                '<div class="stats-block" style="flex:1"><div class="stats-block-title">Tokens per Feature Over Time</div>' +
+                  '<div style="position:relative;height:240px"><canvas id="amp-token-timeline"></canvas></div></div>' +
+              '</div>' +
+              '<div class="stats-block"><div class="stats-block-title">Top Token Consumers</div>' +
+                '<table class="feat-list-table" style="font-size:12px"><thead><tr><th>#</th><th>Feature</th><th>Agent</th><th>Tokens</th><th>Cost</th></tr></thead>' +
+                '<tbody>' + topRows + '</tbody></table></div>';
+          })()}
         </details>
       `;
+    }
+
+    function initAmpTokenCharts() {
+      const data = window._ampTokenChartData;
+      if (!data || typeof Chart === 'undefined') return;
+      const { withBillableTokens, tokenVals, tokenMedian } = data;
+
+      // Histogram
+      const histCanvas = document.getElementById('amp-token-histogram');
+      if (histCanvas) {
+        const edges = [0, 1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000, Infinity];
+        const labels = ['<1K', '1-5K', '5-10K', '10-25K', '25-50K', '50-100K', '100-250K', '250-500K', '500K-1M', '1-2.5M', '2.5-5M', '5M+'];
+        const counts = new Array(labels.length).fill(0);
+        tokenVals.forEach(v => { for (let i = 0; i < edges.length - 1; i++) { if (v >= edges[i] && v < edges[i + 1]) { counts[i]++; break; } } });
+        const first = counts.findIndex(c => c > 0);
+        const last = counts.length - 1 - [...counts].reverse().findIndex(c => c > 0);
+        const s = Math.max(0, first), e = Math.min(counts.length, last + 2);
+        new Chart(histCanvas, {
+          type: 'bar',
+          data: {
+            labels: labels.slice(s, e),
+            datasets: [{ data: counts.slice(s, e),
+              backgroundColor: edges.slice(s, e).map(v => v >= 1000000 ? 'rgba(239,68,68,0.7)' : v >= 100000 ? 'rgba(245,158,11,0.7)' : 'rgba(34,197,94,0.7)'),
+              borderColor: edges.slice(s, e).map(v => v >= 1000000 ? 'rgb(239,68,68)' : v >= 100000 ? 'rgb(245,158,11)' : 'rgb(34,197,94)'),
+              borderWidth: 1 }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw + ' feature' + (ctx.raw !== 1 ? 's' : '') } } },
+            scales: { x: { ticks: { color: '#999', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: '#999', stepSize: 1, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.06)' } } }
+          }
+        });
+      }
+
+      // Timeline scatter
+      const timeCanvas = document.getElementById('amp-token-timeline');
+      if (timeCanvas) {
+        const pts = withBillableTokens.filter(f => f.completedAt).map(f => ({ x: new Date(f.completedAt).getTime(), y: f.billableTokens, label: '#' + f.featureNum + ' ' + f.desc })).sort((a, b) => a.x - b.x);
+        if (pts.length > 0) {
+          new Chart(timeCanvas, {
+            type: 'scatter',
+            data: {
+              datasets: [
+                { data: pts, backgroundColor: pts.map(p => p.y >= 1000000 ? 'rgba(239,68,68,0.8)' : p.y >= 100000 ? 'rgba(245,158,11,0.8)' : 'rgba(34,197,94,0.8)'), pointRadius: 5, pointHoverRadius: 7 },
+                { type: 'line', data: [{ x: pts[0].x, y: tokenMedian }, { x: pts[pts.length - 1].x, y: tokenMedian }], borderColor: 'rgba(99,102,241,0.6)', borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false }
+              ]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.datasetIndex === 1 ? 'Median: ' + tokenMedian.toLocaleString() : ctx.raw.label + ': ' + ctx.raw.y.toLocaleString() + ' tokens' } } },
+              scales: {
+                x: { type: 'time', time: { unit: 'day', tooltipFormat: 'MMM d' }, ticks: { color: '#999', font: { size: 10 }, maxTicksLimit: 8 }, grid: { display: false } },
+                y: { type: 'logarithmic', ticks: { color: '#999', font: { size: 10 }, callback: v => v >= 1000000 ? (v/1000000)+'M' : v >= 1000 ? (v/1000)+'K' : v }, grid: { color: 'rgba(255,255,255,0.06)' } }
+              }
+            }
+          });
+        }
+      }
+      delete window._ampTokenChartData;
     }
 
     async function renderStatistics() {
