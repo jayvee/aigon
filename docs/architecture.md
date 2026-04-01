@@ -80,7 +80,7 @@ Current shared modules:
   `getCurrentBranch`, `getFeatureGitSignals`, `classifyCommitAttributionRange`, `getFileLineAttribution`, `getCommitAnalytics`, `filterCommitAnalytics`, `buildCommitSeries`
 - `lib/agent-status.js` (~130 lines): per-agent status file I/O in `.aigon/state/`, atomic JSON writes, candidate ID resolution
   `readAgentStatus`, `writeAgentStatus`, `writeAgentStatusAt`, `agentStatusPath`, `getStateDir`, `getLocksDir`
-- `lib/state-queries.js` (~250 lines): read-only UI helpers — stage definitions, transition/action tables, guard functions. Pure module, no I/O.
+- `lib/state-queries.js` (~250 lines): read-only UI helpers — feedback action/transition derivation (pure, no I/O). Feature/research constants retained for diagram generation only; action derivation for features/research lives in workflow-core.
   `getValidTransitions`, `getAvailableActions`, `getSessionAction`, `getRecommendedActions`, `isActionValid`, `shouldNotify`
 - `lib/feature-spec-resolver.js` (~140 lines): canonical active-feature spec lookup so consumers stop guessing from visible folders
   `resolveFeatureSpec`, `listVisibleFeatureSpecs`, `isPlaceholderSpecPath`
@@ -241,7 +241,7 @@ Feature writes go through the engine, but the read side is still mixed:
 - `lib/workflow-snapshot-adapter.js` is the preferred feature/research read adapter for lifecycle/actions when a workflow snapshot exists.
 - `lib/feature-spec-resolver.js` is the preferred active-feature spec lookup. Consumers should not hardcode `03-in-progress` / `04-in-evaluation` probes for active features.
 - `aigon feature-list` and `aigon feature-spec` are the preferred CLI query surfaces for active features. Do not use `board` output as a data API.
-- `lib/workflow-read-model.js` provides shared dashboard read state (snapshot-backed for feature/research when available) and also provides derived action suggestions for feedback and legacy fallback paths via `lib/state-queries.js`.
+- `lib/workflow-read-model.js` provides shared dashboard read state (snapshot-backed for features/research) and derives recommended actions for feedback via `lib/state-queries.js`.
 - `lib/dashboard-status-collector.js` now owns the AIGON server's dashboard-facing repo/entity reads, including compatibility behavior for older repos that may not have a complete workflow snapshot yet.
 - `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, and action dispatch.
 
@@ -435,7 +435,7 @@ node -c lib/<module>.js         # Quick syntax check for a module
 There are currently two read-side paths:
 
 - `lib/workflow-snapshot-adapter.js`: maps workflow-core snapshots into dashboard/board-friendly shapes for features and research. This is the preferred workflow read path.
-- `lib/workflow-read-model.js`: shared read model used by dashboard collectors/detail payloads for features/research (snapshot-backed first), and derives recommended actions from `lib/state-queries.js` for feedback plus legacy fallback cases.
+- `lib/workflow-read-model.js`: shared read model used by dashboard collectors/detail payloads for features/research (snapshot-backed), and derives recommended actions from `lib/state-queries.js` for feedback.
 - `lib/action-command-mapper.js`: keeps command strings aligned between those two read paths so UI surfaces do not drift.
 - `lib/dashboard-status-helpers.js`: keeps session/worktree/status heuristics aligned between dashboard reads and command flows.
 

@@ -100,7 +100,7 @@ tail -50 ~/.aigon/dashboard.log
 | `lib/dashboard.js` | Thin re-exporter for backward compatibility |
 | `templates/dashboard/index.html` | Entire SPA — HTML, CSS, and JS in one file |
 | `lib/workflow-core/` | Workflow engine — sole authority for feature lifecycle state |
-| `lib/state-queries.js` | Pure action/transition derivation from engine state — used by the AIGON server to drive dashboard behavior |
+| `lib/state-queries.js` | Pure action/transition derivation for feedback entities — used by the AIGON server for feedback dashboard behavior. Feature/research actions come from workflow-core exclusively |
 | `lib/workflow-snapshot-adapter.js` | Maps engine snapshots to dashboard display formats served by the AIGON server |
 
 ### Key functions in `lib/dashboard-server.js`

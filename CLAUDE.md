@@ -57,7 +57,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
 | `lib/config.js` | ~950 | Global/project config, agent CLI config (profiles delegated to profile-placeholders.js) |
 | `lib/profile-placeholders.js` | ~500 | Profile presets (from `templates/profiles.json`), detection, instruction directive resolvers, `getProfilePlaceholders()` |
-| `lib/state-queries.js` | ~250 | Read-only UI helpers: stage definitions, transition/action tables, guard functions — pure, no I/O |
+| `lib/state-queries.js` | ~250 | Read-only UI helpers: feedback action/transition derivation — pure, no I/O. Feature/research constants retained for diagrams only |
 | `lib/feature-spec-resolver.js` | ~140 | Canonical feature spec lookup for active features; avoids consumer-specific folder guessing |
 | `lib/feature-status.js` | ~230 | Deep feature status collector: `collectFeatureDeepStatus()` — session, progress, cost, spec data on demand |
 | `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting used by workflow read paths |
@@ -91,10 +91,10 @@ Supporting state:
 - **Folders** (`docs/specs/features/0N-*/`) — shared ground truth, committed to git
 - **Agent status files** (`.aigon/state/feature-{id}-{agent}.json`) — per-agent metadata, managed by `lib/agent-status.js`
 - **Shell trap signals**: `buildAgentCommand()` wraps all agent commands with a bash `trap EXIT` handler that fires `agent-status submitted` (exit 0) or `agent-status error` (non-zero). A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. Controlled by `signals` block in `templates/agents/*.json`.
-- **Heartbeat is display-only**: heartbeat data (file touches + engine `lastHeartbeatAt`) is used for dashboard liveness indicators (green=alive, yellow=stale, red=dead) but NEVER triggers engine state transitions. The supervisor computes liveness and stores it in memory; the dashboard reads it via `getAgentLiveness()`. Users manually mark agents as lost/failed — the system never does this automatically.
+- **Heartbeat is display-only**: heartbeat files exist for agent liveness tracking but card status uses tmux session checks directly. Heartbeat data NEVER triggers engine state transitions. The supervisor computes liveness and stores it in memory; the dashboard reads it via `getAgentLiveness()`. Users manually mark agents as lost/failed — the system never does this automatically.
 - Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 
-The dashboard UI uses `lib/state-queries.js` for fallback action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths, and `lib/dashboard-status-collector.js` to keep repo/entity status assembly out of the HTTP server module.
+The dashboard UI uses `lib/state-queries.js` for feedback action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths, and `lib/dashboard-status-collector.js` to keep repo/entity status assembly out of the HTTP server module.
 
 Research lifecycle is also managed by the workflow-core engine (`.aigon/workflows/research/{id}/`). Feedback entities still use simpler filesystem-based transitions (spec folder moves) without the workflow engine.
 
@@ -106,7 +106,6 @@ Research lifecycle is also managed by the workflow-core engine (`.aigon/workflow
 - **gg**: `.gemini/commands/aigon/*.toml`, `.gemini/settings.json` (hooks), `.gemini/policies/aigon.toml`
 - **cx**: `~/.codex/prompts/aigon-*.md` (global), `.codex/prompt.md`, `.codex/config.toml`
 - **cu**: `.cursor/commands/aigon-*.md`, `.cursor/cli.json`, `.cursor/hooks.json`, `.cursor/rules/aigon.mdc`
-- **mv**: headless only — no slash commands, settings, or context delivery files. Uses `vibe` CLI with `-p` flag.
 
 **Shared:** `AGENTS.md` (scaffolded on first install only, never overwritten), `docs/agents/{agent}.md` (marker blocks), `docs/development_workflow.md` (full overwrite)
 
