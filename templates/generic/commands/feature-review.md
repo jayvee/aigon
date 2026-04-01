@@ -30,6 +30,10 @@ echo "Feature branch: $FEATURE_BRANCH"
 - `git show $FEATURE_BRANCH:path/to/file` to read files from the branch
 - `git log main..$FEATURE_BRANCH --oneline` to see commits
 - Do NOT try to cd into the worktree directory — review from main using git.
+- **IMPORTANT: All commits (fixes + log updates) must go to the WORKTREE, not main.**
+  Find the worktree path: `WORKTREE=$(git worktree list | grep "feature-{{ARG1_SYNTAX}}" | awk '{print $1}')`
+  Then commit using: `git -C "$WORKTREE" add . && git -C "$WORKTREE" commit -m "fix(review): ..."`
+  Never commit review changes to main — they will cause merge conflicts on feature-close.
 
 ## Step 2: Read the spec
 
@@ -85,11 +89,13 @@ Enter **Code Review Mode** with these constraints:
 
 For each issue found:
 
-1. Make the minimal fix
-2. Commit with `fix(review):` prefix:
+1. Make the minimal fix in the worktree (use `git -C "$WORKTREE"` if you're on main)
+2. Commit to the **feature branch** with `fix(review):` prefix:
    ```bash
-   git add <files>
-   git commit -m "fix(review): <description of fix>"
+   # If in the worktree:
+   git add <files> && git commit -m "fix(review): <description of fix>"
+   # If on main:
+   git -C "$WORKTREE" add <files> && git -C "$WORKTREE" commit -m "fix(review): <description of fix>"
    ```
 
 Examples:
