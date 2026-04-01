@@ -331,9 +331,14 @@
         ).join('');
         actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
       }
+      // Peek button — only shown when agent has a tmux session
+      const peekBtn = agent.tmuxSession
+        ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(agent.tmuxSession) + '" title="Peek at session output">👁</button>'
+        : '';
       return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
         '<div class="kcard-agent-header">' +
           '<span class="kcard-agent-name" title="' + escHtml(displayName) + '">' + escHtml(displayName) + '</span>' +
+          peekBtn +
           devSlot +
         '</div>' +
         '<div class="kcard-agent-status-row">' + buildLivenessIndicator(agent) + '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span></div>' +
@@ -393,8 +398,11 @@
           const evalStatusCls = evalRunning ? 'status-running' : 'status-ended';
           const evalStatusIcon = evalRunning ? '●' : '○';
           const evalStatusLabel = evalRunning ? escHtml(evalAgent) : escHtml(evalAgent) + ' — ended';
+          const evalPeekBtn = evalSess.session
+            ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(evalSess.session) + '" title="Peek at session output">👁</button>'
+            : '';
           innerHtml += '<div class="kcard-agent agent-eval">' +
-            '<div class="kcard-agent-header"><span class="kcard-agent-name">Eval</span></div>' +
+            '<div class="kcard-agent-header"><span class="kcard-agent-name">Eval</span>' + evalPeekBtn + '</div>' +
             '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + evalStatusCls + '">' + evalStatusIcon + ' ' + evalStatusLabel + '</span></div>' +
             '<div class="kcard-agent-actions">' +
             '<button class="btn btn-secondary kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open</button>' +
@@ -407,8 +415,11 @@
             const statusIcon = r.running ? '●' : '✓';
             const statusLabel = r.running ? 'Reviewing' : 'Review complete';
             const statusCls = r.running ? 'status-reviewing' : 'status-review-done';
+            const reviewPeekBtn = r.session
+              ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(r.session) + '" title="Peek at session output">👁</button>'
+              : '';
             innerHtml += '<div class="kcard-agent agent-review">' +
-              '<div class="kcard-agent-header"><span class="kcard-agent-name">Review</span></div>' +
+              '<div class="kcard-agent-header"><span class="kcard-agent-name">Review</span>' + reviewPeekBtn + '</div>' +
               '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + statusCls + '">' + statusIcon + ' ' + escHtml(reviewerName) + ' — ' + statusLabel + '</span></div>' +
               (r.running ? '<div class="kcard-agent-actions"><button class="btn btn-secondary kcard-review-open" data-review-session="' + escHtml(r.session) + '">Open</button></div>' : '') +
               '</div>';
@@ -436,8 +447,11 @@
             const statusIcon = r.running ? '●' : '✓';
             const statusLabel = r.running ? 'Reviewing' : 'Review complete';
             const statusCls = r.running ? 'status-reviewing' : 'status-review-done';
+            const soloPeekBtn = r.session
+              ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(r.session) + '" title="Peek at session output">👁</button>'
+              : '';
             innerHtml += '<div class="kcard-agent agent-review">' +
-              '<div class="kcard-agent-header"><span class="kcard-agent-name">Review</span></div>' +
+              '<div class="kcard-agent-header"><span class="kcard-agent-name">Review</span>' + soloPeekBtn + '</div>' +
               '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + statusCls + '">' + statusIcon + ' ' + escHtml(reviewerName) + ' — ' + statusLabel + '</span></div>' +
               (r.running ? '<div class="kcard-agent-actions"><button class="btn btn-secondary kcard-review-open" data-review-session="' + escHtml(r.session) + '">Open</button></div>' : '') +
               '</div>';
@@ -604,6 +618,74 @@
           const featureId = btn.getAttribute('data-findings-id');
           const agentName = AGENT_DISPLAY_NAMES[agentId] || agentId;
           openResearchFindingsPeek(findingsPath, 'R#' + featureId + ' ' + agentName + ' Findings');
+        };
+      });
+
+      // Wire inline peek buttons on agent/review/eval rows
+      card.querySelectorAll('.kcard-peek-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const sessionName = btn.getAttribute('data-peek-session');
+          if (!sessionName) return;
+          const agentBlock = btn.closest('.kcard-agent');
+          if (!agentBlock) return;
+
+          // Toggle — if already open, close it
+          const existing = agentBlock.querySelector('.kcard-inline-peek');
+          if (existing) {
+            if (existing._peekPoller) clearInterval(existing._peekPoller);
+            existing.remove();
+            btn.classList.remove('active');
+            return;
+          }
+
+          btn.classList.add('active');
+
+          // Build inline peek panel
+          const panel = document.createElement('div');
+          panel.className = 'kcard-inline-peek';
+          panel.innerHTML =
+            '<div class="kcard-inline-peek-header">' +
+              '<span><span class="peek-alive-dot"></span><span class="peek-session-name">' + escHtml(sessionName) + '</span></span>' +
+              '<span class="peek-updated"></span>' +
+            '</div>' +
+            '<div class="kcard-inline-peek-output">Loading…</div>';
+          agentBlock.appendChild(panel);
+
+          // Fetch and display session output
+          function fetchPeek() {
+            fetch('/api/session-peek?name=' + encodeURIComponent(sessionName), { cache: 'no-store' })
+              .then(function(res) { return res.json(); })
+              .then(function(data) {
+                var output = panel.querySelector('.kcard-inline-peek-output');
+                var dot = panel.querySelector('.peek-alive-dot');
+                var updated = panel.querySelector('.peek-updated');
+                if (data.error || data.alive === false) {
+                  output.textContent = 'Session not running';
+                  output.className = 'kcard-inline-peek-output no-session';
+                  dot.className = 'peek-alive-dot dead';
+                  if (panel._peekPoller) { clearInterval(panel._peekPoller); panel._peekPoller = null; }
+                  return;
+                }
+                var text = (data.output || '').replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '').replace(/\x1b\][^\x07]*\x07/g, '').replace(/[\x00-\x08\x0b\x0e-\x1f\x7f]/g, '');
+                // Show last 20 lines
+                var lines = text.split('\n');
+                if (lines.length > 20) lines = lines.slice(-20);
+                output.textContent = lines.join('\n');
+                output.className = 'kcard-inline-peek-output';
+                dot.className = 'peek-alive-dot alive';
+                updated.textContent = new Date().toLocaleTimeString();
+                // Auto-scroll to bottom
+                panel.scrollTop = panel.scrollHeight;
+              })
+              .catch(function() {
+                var output = panel.querySelector('.kcard-inline-peek-output');
+                if (output) output.textContent = 'Failed to fetch session';
+              });
+          }
+
+          fetchPeek();
+          panel._peekPoller = setInterval(fetchPeek, 5000);
         };
       });
 
