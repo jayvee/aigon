@@ -31,3 +31,24 @@ Mirror the existing feature-review pattern across all layers: workflow engine, s
 - Research review uses `getEventsPathForEntity` and `getEntityRoot` instead of feature-specific path functions
 - The `research-review` command validates all agents submitted before allowing review (with `--force` override)
 - Dashboard `handleLaunchReview` now supports both feature and research entities via `isResearch` flag
+
+## Code Review
+
+**Reviewed by**: cu  
+**Date**: 2026-04-01
+
+### Findings
+
+- `LIFECYCLE_TO_RESEARCH_DIR` omitted `reviewing`, so `getSpecStateDirForEntity` could resolve the wrong docs folder for research in the reviewing lifecycle (features already map `reviewing` → `03-in-progress`).
+- Research payloads from `collectResearch` did not include `reviewSessions` / `reviewStatus` / `reviewState`, so the dashboard never received review UI data despite `getResearchDashboardState` computing it.
+- Integration test `fleet: evaluating state shows close actions with agent options` expected `feature-close` before a winner was selected; the engine correctly exposes only `select-winner` in that state (verified on main).
+
+### Fixes Applied
+
+- `fix(review): add reviewing lifecycle to research spec dir map`
+- `fix(review): expose research review fields in dashboard status collector`
+- `test: align fleet evaluating assertion with select-winner-only phase`
+
+### Notes
+
+- `aigon feature-review` does not parse `--no-launch`; it only validates worktree context. No code change required for that flag (slash-command convention only).
