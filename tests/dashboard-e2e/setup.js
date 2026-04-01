@@ -18,7 +18,7 @@ const { spawnSync, spawn } = require('child_process');
 const ROOT = path.join(__dirname, '..', '..');
 const CLI_PATH = path.join(ROOT, 'aigon-cli.js');
 const FIXTURES_DIR = path.join(os.homedir(), 'src');
-const MOCK_BIN_DIR = path.join(ROOT, 'test', 'mock-bin');
+const MOCK_BIN_DIR = path.join(ROOT, 'tests', 'integration', 'mock-bin');
 
 /** Shared context file path — tests read this to locate fixture dirs */
 const CTX_FILE = path.join(os.tmpdir(), 'aigon-dashboard-e2e-ctx.json');
