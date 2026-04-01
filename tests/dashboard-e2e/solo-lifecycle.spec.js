@@ -18,7 +18,7 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { MockAgent } = require('../../test/mock-agent');
+const { MockAgent } = require('../integration/mock-agent');
 
 const CTX_FILE = path.join(os.tmpdir(), 'aigon-dashboard-e2e-ctx.json');
 
