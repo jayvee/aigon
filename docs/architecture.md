@@ -146,7 +146,19 @@ Core rule: use the CLI to move specs between states. Do not rename or move spec 
 
 ### Workflow-Core Engine (`lib/workflow-core/`)
 
-The workflow-core engine is the sole lifecycle authority for features and research. Feature lifecycle commands (`feature-start`, `feature-close`, `feature-eval`, `feature-pause`, `feature-resume`) and research lifecycle commands (`research-start`, `research-eval`, `research-close`) route through this engine.
+The workflow-core engine is the sole lifecycle authority for features and research. It uses **event sourcing** — the event log is the source of truth, and all other state is derived from it.
+
+### Event Sourcing Glossary
+
+| Term | Aigon equivalent | Description |
+|------|------------------|-------------|
+| **Event log** | `events.jsonl` | Append-only file. Source of truth. Every state change is recorded as an event (`feature.started`, `signal.agent_ready`, `feature.closed`, etc.). Never edited, never deleted. |
+| **Projector** | `projector.js` `projectContext()` | Replays all events from the log and rebuilds the current state. Deterministic — same events always produce the same state. |
+| **Snapshot** | `snapshot.json` | Cached result of running the projector. Performance optimisation so the dashboard doesn't replay events on every poll. **Disposable** — can be deleted and rebuilt from events at any time. |
+| **Aggregate** | Feature or research entity | The domain object that owns the events and enforces business rules (valid lifecycle transitions via XState machine). |
+| **Read model** | Dashboard status collector | Read-optimised view shaped for the UI. Reads from snapshots, enriches with live data (tmux, dev server). |
+
+**Key invariant:** The projector must be able to rebuild any snapshot from `events.jsonl` alone. If a snapshot is deleted, `showFeature()` / `showResearch()` replays the events and recreates it. If the projector can't handle an event type, the system is broken.
 
 **Module layout:**
 
