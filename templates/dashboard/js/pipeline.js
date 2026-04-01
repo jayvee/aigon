@@ -661,7 +661,15 @@
       const items = repo[pType] || [];
       const byStage = {};
       items.forEach(f => { if (!byStage[f.stage]) byStage[f.stage] = []; byStage[f.stage].push(f); });
-      const cards = byStage[stage] || [];
+      const unsorted = byStage[stage] || [];
+      // Sort: done = most recently updated first; all others = by ID ascending
+      const cards = stage === 'done'
+        ? unsorted.slice().sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
+        : unsorted.slice().sort((a, b) => {
+            const aNum = parseInt(a.id, 10) || 0;
+            const bNum = parseInt(b.id, 10) || 0;
+            return aNum - bNum || (a.name || '').localeCompare(b.name || '');
+          });
 
       colBody.innerHTML = '';
       if (cards.length === 0) {
