@@ -674,7 +674,14 @@
                 output.textContent = lines.join('\n');
                 output.className = 'kcard-inline-peek-output';
                 dot.className = 'peek-alive-dot alive';
-                updated.textContent = new Date().toLocaleTimeString();
+                if (data.uptime || data.lastActivity) {
+                  var parts = [];
+                  if (data.uptime) parts.push('Up ' + data.uptime);
+                  if (data.lastActivity) parts.push('Last active ' + data.lastActivity);
+                  updated.textContent = parts.join(' · ');
+                } else {
+                  updated.textContent = 'Updated ' + new Date().toLocaleTimeString();
+                }
                 // Auto-scroll to bottom
                 panel.scrollTop = panel.scrollHeight;
               })
