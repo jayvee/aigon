@@ -63,7 +63,8 @@
         try { payload = JSON.parse(rawText); } catch (_) { payload = { error: rawText }; }
         if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status + (rawText ? ': ' + rawText.slice(0, 120) : '')));
         const exitFailed = payload.exitCode !== undefined && payload.exitCode !== 0;
-        const stderrError = !exitFailed && payload.stderr && /^fatal:|^error:|❌/m.test(String(payload.stderr));
+        const stderrStr = String(payload.stderr || '');
+        const stderrError = !exitFailed && stderrStr && /^fatal:|❌/m.test(stderrStr) && !/failed to push some refs/i.test(stderrStr);
         if (exitFailed) {
           showToast('Action failed (exit ' + payload.exitCode + ') — check Console', 'Console', () => { state.view = 'console'; localStorage.setItem(lsKey('view'), 'console'); render(); }, { error: true });
         } else if (payload.agentWarning) {
