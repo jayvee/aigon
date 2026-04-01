@@ -97,10 +97,12 @@ class MockAgent {
             worktreePath: this.worktreePath,
         });
 
-        execSync('git add . && git commit -m "chore: submit"', {
-            cwd: this.worktreePath,
-            stdio: 'pipe',
-        });
+        try {
+            execSync('git add . && git commit -m "chore: submit" --allow-empty', {
+                cwd: this.worktreePath,
+                stdio: 'pipe',
+            });
+        } catch (_) { /* nothing to commit is fine */ }
     }
 }
 
