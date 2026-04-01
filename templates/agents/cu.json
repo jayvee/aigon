@@ -10,7 +10,11 @@
   "portOffset": 4,
   "defaultFleetAgent": false,
   "installHint": "Download from https://cursor.com",
-  "trust": null,
+  "trust": {
+    "type": "vscode-settings-array",
+    "path": "~/Library/Application Support/Cursor/User/settings.json",
+    "key": "security.workspace.trust.folders"
+  },
   "worktreeEnv": {},
   "git": {
     "hasEmailAttribution": true
