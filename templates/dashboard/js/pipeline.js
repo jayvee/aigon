@@ -257,22 +257,10 @@
     }
 
     function buildLivenessIndicator(agent) {
-      const liveness = agent.liveness;
-      if (!liveness) return '';
-      const lastSeenAt = agent.lastSeenAt;
-      let dot, tip;
-      if (liveness === 'alive') {
-        dot = 'liveness-alive'; tip = 'Heartbeat: active';
-      } else if (liveness === 'stale') {
-        const ago = agent.heartbeatAgeMs ? Math.round(agent.heartbeatAgeMs / 1000) + 's ago' : 'stale';
-        dot = 'liveness-stale'; tip = 'Heartbeat: ' + ago;
-      } else if (liveness === 'dead') {
-        const ago = agent.heartbeatAgeMs ? Math.round(agent.heartbeatAgeMs / 1000) + 's ago' : 'no signal';
-        dot = 'liveness-dead'; tip = 'Heartbeat: ' + ago;
-      } else {
-        return '';
-      }
-      return '<span class="liveness-dot ' + dot + '" title="' + tip + '"></span>';
+      // Liveness is now determined by tmux session check (tmuxRunning field).
+      // The heartbeat-based liveness dots were redundant and often wrong.
+      // The card status (Running/Not started) already reflects tmux state.
+      return '';
     }
 
     function buildAgentStatusSpan(agent, options) {
@@ -401,9 +389,13 @@
         if (openEvalAction && feature.evalSession && feature.evalSession.running) {
           const evalSess = feature.evalSession;
           const evalAgent = AGENT_DISPLAY_NAMES[evalSess.agent] || evalSess.agent;
+          const evalRunning = evalSess.running;
+          const evalStatusCls = evalRunning ? 'status-running' : 'status-ended';
+          const evalStatusIcon = evalRunning ? '●' : '○';
+          const evalStatusLabel = evalRunning ? escHtml(evalAgent) : escHtml(evalAgent) + ' — ended';
           innerHtml += '<div class="kcard-agent agent-eval">' +
             '<div class="kcard-agent-header"><span class="kcard-agent-name">Eval</span></div>' +
-            '<div class="kcard-agent-status-row"><span class="kcard-agent-status status-implementing">● ' + escHtml(evalAgent) + '</span></div>' +
+            '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + evalStatusCls + '">' + evalStatusIcon + ' ' + evalStatusLabel + '</span></div>' +
             '<div class="kcard-agent-actions">' +
             '<button class="btn btn-secondary kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open</button>' +
             '</div></div>';
