@@ -624,13 +624,13 @@
         };
       });
 
-      // Wire peek buttons — open the spec drawer's Status tab
+      // Wire peek buttons — open the peek panel (same as Sessions tab peek)
       card.querySelectorAll('.kcard-peek-btn').forEach(btn => {
         btn.onclick = (e) => {
           e.stopPropagation();
-          if (feature.specPath && typeof openDrawer === 'function') {
-            const displayName = (feature.id ? '#' + feature.id + ' ' : '') + feature.name;
-            openDrawer(feature.specPath, displayName, feature.stage, repoPath, { initialTab: 'status' });
+          const sessionName = btn.getAttribute('data-peek-session');
+          if (sessionName && typeof openPeekPanel === 'function') {
+            openPeekPanel(sessionName);
           }
         };
       });
