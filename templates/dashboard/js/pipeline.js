@@ -479,25 +479,26 @@
         }
       } else {
         // Legacy layout for cards without active agents (inbox, backlog, done, research, feedback)
-        const agentBadgesHtml = buildAgentBadgesHtml(agents);
-        const actionsHtml = renderActionButtons(feature, repoPath, pipelineType);
-        let evalStatusHtml = '';
-        if (feature.evalStatus) {
-          let evalStatusRow = '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>';
-          if (feature.evalStatus === 'pick winner' && feature.winnerAgent) {
-            evalStatusRow += '<span class="kcard-winner">Winner: ' + escHtml(feature.winnerAgent) + '</span>';
+        if (!isDone) {
+          const agentBadgesHtml = buildAgentBadgesHtml(agents);
+          const actionsHtml = renderActionButtons(feature, repoPath, pipelineType);
+          let evalStatusHtml = '';
+          if (feature.evalStatus) {
+            let evalStatusRow = '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>';
+            if (feature.evalStatus === 'pick winner' && feature.winnerAgent) {
+              evalStatusRow += '<span class="kcard-winner">Winner: ' + escHtml(feature.winnerAgent) + '</span>';
+            }
+            evalStatusHtml = '<div class="kcard-status">' + evalStatusRow + '</div>';
+            const legacyViewEval = validActions.find(va => va.action === 'view-eval' && !va.agentId);
+            if (legacyViewEval) {
+              evalStatusHtml += '<button class="btn btn-secondary kcard-eval-btn" data-view-eval>View Eval</button>';
+            }
           }
-          evalStatusHtml = '<div class="kcard-status">' + evalStatusRow + '</div>';
-          // View Eval button — rendered from validActions
-          const legacyViewEval = validActions.find(va => va.action === 'view-eval' && !va.agentId);
-          if (legacyViewEval) {
-            evalStatusHtml += '<button class="btn btn-secondary kcard-eval-btn" data-view-eval>View Eval</button>';
-          }
+          innerHtml +=
+            (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
+            evalStatusHtml +
+            (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
         }
-        innerHtml +=
-          (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
-          evalStatusHtml +
-          (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
       }
 
       card.innerHTML = innerHtml;
