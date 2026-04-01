@@ -5,6 +5,24 @@
     "claude",
     "cc"
   ],
+  "displayName": "Claude Code",
+  "providerFamily": "anthropic",
+  "portOffset": 1,
+  "defaultFleetAgent": true,
+  "installHint": "brew install claude  (or: npm i -g @anthropic-ai/claude-code)",
+  "trust": {
+    "type": "claude-json",
+    "path": "~/.claude.json",
+    "projectKey": "hasTrustDialogAccepted"
+  },
+  "worktreeEnv": {},
+  "git": {
+    "hasEmailAttribution": true
+  },
+  "capabilities": {
+    "supportsModelFlag": true,
+    "transcriptTelemetry": true
+  },
   "cli": {
     "command": "claude",
     "implementFlag": "--permission-mode acceptEdits",

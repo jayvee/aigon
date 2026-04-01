@@ -5,6 +5,30 @@
     "gemini",
     "gg"
   ],
+  "displayName": "Gemini",
+  "providerFamily": "google",
+  "portOffset": 2,
+  "defaultFleetAgent": true,
+  "installHint": "npm i -g @google/gemini-cli",
+  "trust": {
+    "type": "json-kv",
+    "path": "~/.gemini/trustedFolders.json",
+    "value": "TRUST_FOLDER",
+    "parentValue": "TRUST_PARENT"
+  },
+  "worktreeEnv": {
+    "GEMINI_CLI_IDE_WORKSPACE_PATH": "{worktreePath}"
+  },
+  "legacy": {
+    "rootFile": "GEMINI.md"
+  },
+  "git": {
+    "hasEmailAttribution": true
+  },
+  "capabilities": {
+    "supportsModelFlag": true,
+    "transcriptTelemetry": false
+  },
   "cli": {
     "command": "gemini",
     "implementFlag": "--yolo",
