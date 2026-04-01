@@ -359,9 +359,11 @@
 
       const agents = feature.agents || [];
       const validActions = feature.validActions || [];
+      // Done cards are clean — just ID and name, no agent sections, no actions
+      const isDone = feature.stage === 'done';
       // Drive mode (branch): solo agent with no tmux session — skip agent sections
       const isSoloDriveBranch = agents.length === 1 && agents[0].id === 'solo' && !agents[0].tmuxSession;
-      const hasAgentSections = agents.length > 0 && !isSoloDriveBranch;
+      const hasAgentSections = !isDone && agents.length > 0 && !isSoloDriveBranch;
 
       const reviews = feature.reviewSessions || [];
 
@@ -370,47 +372,57 @@
         '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>';
 
       if (hasAgentSections) {
-        // New agent section layout: one visual block per agent
-        // Eval status badge (for in-evaluation cards)
-        if (feature.evalStatus) {
-          let evalStatusRow = '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>';
-          if (feature.evalStatus === 'pick winner' && feature.winnerAgent) {
-            // Show "Recommended" until user confirms via select-winner; show "Winner" once confirmed
-            const hasSelectWinner = validActions.some(va => va.action === 'select-winner');
-            const winnerLabel = hasSelectWinner ? 'Recommended' : 'Winner';
-            evalStatusRow += '<span class="kcard-winner">' + winnerLabel + ': ' + escHtml(feature.winnerAgent) + '</span>';
-          }
-          innerHtml += '<div class="kcard-status">' + evalStatusRow + '</div>';
-          // View Eval button — rendered from validActions (view-eval action)
-          const viewEvalAction = validActions.find(va => va.action === 'view-eval' && !va.agentId);
-          if (viewEvalAction) {
-            innerHtml += '<button class="btn btn-secondary kcard-eval-btn" data-view-eval>View Eval</button>';
-          }
-        }
-        // Agent sections — actions rendered from API (no hardcoded eligibility logic)
+        // --- Evaluation verdict layout (pick-winner state) ---
+        // Agent sections — same layout as in-progress (filter out select-winner from per-agent actions)
         agents.forEach(agent => {
-          const agentActions = validActions.filter(va => va.agentId === agent.id);
+          const agentActions = validActions.filter(va => va.agentId === agent.id && va.action !== 'select-winner');
           innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType);
         });
-        // Eval session row — rendered from validActions (open-eval-session action)
-        const openEvalAction = validActions.find(va => va.action === 'open-eval-session' && !va.agentId);
-        if (openEvalAction && feature.evalSession && feature.evalSession.running) {
+
+        // Evaluation section — consolidated eval status, session, and close action
+        if (feature.evalStatus || (feature.evalSession && feature.evalSession.running)) {
+          const recommended = feature.winnerAgent;
+          const recommendedDisplay = recommended ? (AGENT_DISPLAY_NAMES[recommended] || recommended) : null;
+          const viewEvalAction = validActions.find(va => va.action === 'view-eval' && !va.agentId);
+          const openEvalAction = validActions.find(va => va.action === 'open-eval-session' && !va.agentId);
           const evalSess = feature.evalSession;
-          const evalAgent = AGENT_DISPLAY_NAMES[evalSess.agent] || evalSess.agent || 'Eval';
-          const evalRunning = evalSess.running;
-          const evalStatusCls = evalRunning ? 'status-running' : 'status-ended';
-          const evalStatusIcon = evalRunning ? '●' : '○';
-          const evalStatusLabel = evalRunning ? escHtml(evalAgent) : escHtml(evalAgent) + ' — ended';
-          const evalPeekBtn = evalSess.session
-            ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(evalSess.session) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
-            : '';
-          innerHtml += '<div class="kcard-agent agent-eval">' +
-            '<div class="kcard-agent-header"><span class="kcard-agent-name">Eval</span>' + evalPeekBtn + '</div>' +
-            '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + evalStatusCls + '">' + evalStatusIcon + ' ' + evalStatusLabel + '</span></div>' +
-            '<div class="kcard-agent-actions">' +
-            '<button class="btn btn-secondary kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open</button>' +
-            '</div></div>';
+          const evalRunning = evalSess && evalSess.running;
+
+          innerHtml += '<div class="kcard-eval-section">';
+          innerHtml += '<div class="kcard-eval-section-header">';
+          innerHtml += '<span class="kcard-eval-section-title">Evaluation</span>';
+          if (evalRunning) {
+            const evalPeekBtn = evalSess.session
+              ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(evalSess.session) + '" title="Peek at eval session"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
+              : '';
+            innerHtml += evalPeekBtn;
+            if (openEvalAction) {
+              innerHtml += '<button class="btn btn-secondary btn-xs kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open</button>';
+            }
+          }
+          innerHtml += '</div>';
+
+          // Status + winner recommendation
+          if (feature.evalStatus === 'pick winner') {
+            innerHtml += '<div class="kcard-eval-detail">' +
+              (recommendedDisplay
+                ? 'Winner: <strong>' + escHtml(recommendedDisplay) + '</strong>'
+                : 'Ready to pick winner') +
+              '</div>';
+          } else if (feature.evalStatus) {
+            innerHtml += '<div class="kcard-eval-detail">' +
+              '<span class="eval-badge">' + escHtml(feature.evalStatus) + '</span>' +
+              '</div>';
+          }
+
+          // View report link
+          if (viewEvalAction) {
+            innerHtml += '<button class="kcard-verdict-link" data-view-eval>View report</button>';
+          }
+
+          innerHtml += '</div>';
         }
+
         // Review section — dedicated block between agents and actions
         if (reviews.length > 0) {
           reviews.forEach(r => {
@@ -568,7 +580,8 @@
       card.querySelectorAll('.kcard-va-btn').forEach(btn => {
         const vaAction = btn.getAttribute('data-va-action');
         const vaAgentId = btn.getAttribute('data-agent') || null;
-        const va = (feature.validActions || []).find(a => a.action === vaAction && (a.agentId || null) === vaAgentId);
+        const va = (feature.validActions || []).find(a => a.action === vaAction && (a.agentId || null) === vaAgentId)
+          || (vaAction === 'feature-close' ? { action: 'feature-close', label: 'Close' } : null);
         if (!va) return;
         btn._origText = btn.textContent;
         btn.onclick = async (e) => {
