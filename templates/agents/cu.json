@@ -11,9 +11,10 @@
   "defaultFleetAgent": false,
   "installHint": "Download from https://cursor.com",
   "trust": {
-    "type": "vscode-settings-array",
+    "type": "vscode-settings-bool",
     "path": "~/Library/Application Support/Cursor/User/settings.json",
-    "key": "security.workspace.trust.folders"
+    "key": "security.workspace.trust.enabled",
+    "value": false
   },
   "worktreeEnv": {},
   "git": {
