@@ -239,10 +239,11 @@
       const drive = isSoloDrive(agent);
       const endedFlag = !!(agent.flags && agent.flags.sessionEnded);
       let icon, label, cls;
-      if (status === 'implementing' && endedFlag) {
-        icon = '◐'; label = 'Finished (unconfirmed)'; cls = 'status-flagged';
-      } else if (status === 'implementing' && (tmuxRunning || drive)) {
+      // tmux alive is the ground truth — override engine status if session is running
+      if (tmuxRunning && status !== 'submitted' && status !== 'waiting') {
         icon = '●'; label = drive ? 'Implementing' : 'Running'; cls = 'status-running';
+      } else if (status === 'implementing' && endedFlag) {
+        icon = '◐'; label = 'Finished (unconfirmed)'; cls = 'status-flagged';
       } else if (status === 'implementing' && !tmuxRunning) {
         icon = '○'; label = 'Session ended'; cls = 'status-ended';
       } else if (status === 'waiting') {
