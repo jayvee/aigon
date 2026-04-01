@@ -36,10 +36,10 @@
     "evalPrompt": "/aigon:feature-eval {featureId}",
     "reviewPrompt": "/aigon:feature-review {featureId}",
     "models": {
-      "research": "gemini-2.5-pro",
-      "implement": "gemini-2.5-pro",
-      "evaluate": "gemini-2.5-pro",
-      "review": "gemini-2.5-pro"
+      "research": "gemini-2.5-flash",
+      "implement": "gemini-2.5-flash",
+      "evaluate": "gemini-2.5-flash",
+      "review": "gemini-2.5-flash"
     }
   },
   "placeholders": {
