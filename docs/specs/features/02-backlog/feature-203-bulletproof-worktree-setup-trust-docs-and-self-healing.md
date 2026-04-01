@@ -2,121 +2,151 @@
 
 ## Summary
 
-A new aigon user runs `aigon init` on their project, then `feature-start 1 cc`. A mysterious `myproject-worktrees/` directory appears next to their project. Claude Code asks "Do you trust this folder?" The user has no idea what's happening. This feature makes the worktree experience seamless: `aigon init` sets everything up, every agent launch verifies trust, and the docs explain what's happening before the user encounters it.
+Move worktrees from `../{reponame}-worktrees/` (sibling directory, unique to aigon, surprises users) to `~/.aigon/worktrees/{reponame}/` (home directory, matches Cursor and Codex conventions). Make the setup seamless: `aigon init` creates the directory and trusts it for all agents, every agent launch self-heals trust, and docs explain the concept before users encounter it.
 
-## The Problem (what happened today)
+## Context: Industry Research
 
-An agent launched in brewboard hit the Claude Code trust prompt because:
-1. The worktree path wasn't pre-trusted
-2. The `cd` into the worktree may have failed, landing in `$HOME`
-3. No self-healing — once trust is lost, every launch fails until manually fixed
-4. The getting started docs never mention worktrees or the sibling directory
+| Tool | Worktree Location |
+|------|------------------|
+| Claude Code | `<repo>/.claude/worktrees/` (inside repo dotfolder) |
+| Cursor | `~/.cursor/worktrees/<repo>/` (home directory) |
+| Codex | `~/.codex/worktrees/` (home directory) |
+| Aigon (current) | `../{reponame}-worktrees/` (sibling — nobody else does this) |
+
+**Decision: `~/.aigon/worktrees/{reponame}/`** — home directory approach, matching Cursor and Codex. Reasons:
+- Zero risk of agents scanning worktree files (completely outside repo tree)
+- No gitignore complexity
+- No surprise sibling directories cluttering `~/src/`
+- Self-contained under `~/.aigon/` alongside global config and backups
+- If repo is renamed, old worktrees remain but `aigon doctor` can detect and clean up
+
+## The Problems This Solves
+
+1. **Trust prompts on every launch** — agents don't trust the sibling worktree directory
+2. **Mysterious sibling directories** — `brewboard-worktrees/` appearing next to `brewboard/` with no explanation
+3. **No setup during init** — worktree directory created ad-hoc on first `feature-start`
+4. **No self-healing** — once trust is lost, every launch fails until manually fixed
+5. **Global config wipeout** — added `saveGlobalConfig()` guard (done), but also need auto-restore on corrupt load
 
 ## User Stories
 
-- [ ] As a new user running `aigon init`, I want to be told that a worktrees directory will be created next to my project and have it set up automatically
-- [ ] As a user, I want agents to never show trust prompts — trust should be automatic and self-healing
-- [ ] As a user reading the install docs, I want to understand the worktree folder before I encounter it
+- [ ] As a new user, I want `aigon init` to tell me where worktrees will be stored and set everything up
+- [ ] As a user, I want agents to never show trust prompts
+- [ ] As a user who renames their repo, I want `aigon doctor` to detect orphaned worktrees and clean up
 
 ## Acceptance Criteria
 
+### Move worktrees to ~/.aigon/worktrees/{reponame}/
+- [ ] `getWorktreeBase()` returns `~/.aigon/worktrees/{reponame}` instead of `../{reponame}-worktrees`
+- [ ] `feature-start` creates worktrees under the new location
+- [ ] `feature-close` removes worktrees from the new location
+- [ ] Existing sibling worktrees still work (backward compatible detection)
+- [ ] Migration: `aigon doctor --fix` moves existing sibling worktrees to the new location
+
 ### aigon init handles worktree setup
-- [ ] `aigon init` creates the `../{reponame}-worktrees/` directory
-- [ ] `aigon init` tells the user: "Worktrees will be created in ../{reponame}-worktrees/ for parallel agent development"
-- [ ] `aigon init` pre-trusts the worktrees directory for all installed agents (Claude, Gemini, Codex)
-- [ ] If the worktrees directory already exists, init skips creation but still verifies trust
+- [ ] `aigon init` creates `~/.aigon/worktrees/{reponame}/` directory
+- [ ] `aigon init` tells the user: "Worktrees: ~/.aigon/worktrees/{reponame}/"
+- [ ] `aigon init` pre-trusts the directory for all installed agents
 
 ### Self-healing trust on every launch
-- [ ] `buildAgentCommand()` shell wrapper verifies the cwd is correct before launching the agent CLI
-- [ ] If the agent has a `trust` config (from 201's agent registry), the launch wrapper calls `ensureAgentTrust()` for the worktree path
-- [ ] If trust fails, the launch logs a clear error message instead of showing an interactive prompt
-- [ ] Trust verification happens in the shell trap wrapper, not in Node.js — so it works even if the server process has a stale cwd
+- [ ] `buildAgentCommand()` shell wrapper calls `aigon trust-worktree "$(pwd)"` before launching
+- [ ] New command `aigon trust-worktree <path>` calls `ensureAgentTrust()` for all installed agents — idempotent, fast
+- [ ] If trust fails, clear error message instead of interactive prompt
+
+### Global config protection
+- [ ] `saveGlobalConfig()` refuses to write empty/corrupt configs (done ✓)
+- [ ] `loadGlobalConfig()` detects empty/corrupt config and auto-restores from `config.latest.json`
+- [ ] New command `aigon config restore` lists backups and restores selected one
 
 ### Documentation
-- [ ] Getting started docs explain: "Aigon creates a `{project}-worktrees/` folder next to your project for parallel agent development. This is where feature branches are checked out when you use worktree mode."
-- [ ] Installation docs mention worktrees as a prerequisite concept
-- [ ] `aigon doctor` checks that the worktrees directory exists and is trusted
+- [ ] Getting started docs explain worktrees: "Aigon stores working copies in ~/.aigon/worktrees/{project}/ when you use parallel agent development"
+- [ ] `aigon doctor` checks worktree directory exists and is trusted
 
 ### Cleanup
 - [ ] `aigon doctor --fix` prunes worktrees for completed features
-- [ ] `feature-close` removes the worktree (already does this, verify it's reliable)
+- [ ] `aigon doctor --fix` detects repo renames (worktree dir doesn't match any registered repo) and offers cleanup
 
 ## Validation
 
 ```bash
 node -c aigon-cli.js
+node -c lib/worktree.js
 
-# Init creates the worktrees directory
-cd /tmp && mkdir test-repo && cd test-repo && git init && aigon init
-ls ../test-repo-worktrees/ && echo "PASS: worktrees dir created" || echo "FAIL"
-rm -rf /tmp/test-repo /tmp/test-repo-worktrees
-
-# Trust is set after init
+# Worktree base is under ~/.aigon/
 node -e "
-const registry = require('./lib/agent-registry');
-// Verify ensureAgentTrust function exists and is callable
-console.log(typeof registry.ensureAgentTrust === 'function' ? 'PASS' : 'FAIL');
+const { getWorktreeBase } = require('./lib/worktree');
+const base = getWorktreeBase();
+if (!base.includes('.aigon/worktrees')) { console.error('FAIL:', base); process.exit(1); }
+console.log('PASS:', base);
 "
 ```
 
 ## Technical Approach
 
-### 1. Extend `aigon init`
+### 1. Change `getWorktreeBase()`
 
-After creating `docs/specs/` structure, also:
-- `mkdir -p ../{reponame}-worktrees`
-- Call `ensureAgentTrust(agentId, [worktreeBasePath])` for each installed agent
-- Print: "📂 Worktree directory: ../{reponame}-worktrees/"
+```js
+function getWorktreeBase() {
+    const repoName = path.basename(process.cwd());
+    return path.join(os.homedir(), '.aigon', 'worktrees', repoName);
+}
+```
 
-### 2. Self-healing in shell wrapper
+### 2. Backward compatibility
 
-In `buildAgentCommand()`, add a trust verification step before the agent CLI launch:
+On `feature-start`, check both new and old locations. On `feature-close`, clean from wherever the worktree actually is. `findWorktrees()` scans both locations during the transition period.
 
+### 3. Extend `aigon init`
+
+```js
+// After creating docs/specs/ structure:
+const wtBase = getWorktreeBase();
+fs.mkdirSync(wtBase, { recursive: true });
+ensureAgentTrust(wtBase);
+console.log(`📂 Worktrees: ${wtBase}`);
+```
+
+### 4. Self-healing shell wrapper
+
+Add to `buildAgentCommand()` before the agent CLI launch:
 ```bash
-# Verify we're in the right directory
-if [ ! -d ".git" ] && [ ! -f ".git" ]; then
-  echo "ERROR: Not in a git repository. Expected to be in worktree."
-  exit 1
-fi
-# Re-trust on every launch (idempotent, fast)
 aigon trust-worktree "$(pwd)" 2>/dev/null || true
 ```
 
-### 3. New command: `aigon trust-worktree <path>`
+### 5. Config auto-restore
 
-Small command that calls `ensureAgentTrust()` for all installed agents. Called by the shell wrapper. Idempotent — safe to call on every launch.
-
-### 4. Doctor integration
-
-`aigon doctor` adds a check:
-- Worktrees directory exists
-- Worktrees directory is trusted for all installed agents
-- No stale worktrees for completed features
+In `loadGlobalConfig()`:
+```js
+if (configExists) {
+    const raw = fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf8').trim();
+    if (!raw || raw === '{}' || raw === 'null') {
+        // Corrupt — try restore
+        if (fs.existsSync(GLOBAL_CONFIG_BACKUP_LATEST_PATH)) {
+            fs.copyFileSync(GLOBAL_CONFIG_BACKUP_LATEST_PATH, GLOBAL_CONFIG_PATH);
+            console.warn('⚠️  Global config was corrupt — restored from backup');
+        }
+    }
+}
+```
 
 ### Key files:
-- `lib/commands/setup.js` — extend init
-- `lib/worktree.js` — add trust verification to shell wrapper
-- `lib/commands/misc.js` — add trust-worktree command
-- `docs/getting-started.md` or equivalent — document worktrees
-- `lib/commands/setup.js` — extend doctor
+- `lib/worktree.js` — change `getWorktreeBase()`
+- `lib/commands/setup.js` — extend init, add trust-worktree command, add config restore
+- `lib/config.js` — add auto-restore on corrupt load
+- `docs/getting-started.md` — document worktrees
 
 ## Dependencies
 
-- depends_on: pluggable-agent-architecture (201, done — provides ensureAgentTrust)
+- depends_on: pluggable-agent-architecture (201, done)
 
 ## Out of Scope
 
-- Moving worktrees inside the project (keep sibling convention)
-- Making worktree location user-configurable (can add later)
+- Making worktree location user-configurable (can add later if needed)
 - Worktree-level `.env` management (separate concern)
-
-## Open Questions
-
-- Should `aigon init` create the worktrees directory even if the user might never use worktree mode? (Recommend: yes — it's one empty directory, and discovering it later is worse than knowing about it upfront)
-- Should the self-healing trust run on every launch or only when the agent detects a trust problem? (Recommend: every launch — it's idempotent and fast, and prevents the problem entirely)
+- Changing how git worktrees work internally
 
 ## Related
 
-- Feature 201: Pluggable Agent Architecture (provides the trust mechanism)
-- Research 28: Gemini CLI Worktree Sandbox (related but different — Gemini's sandbox is a CLI limitation, not a trust issue)
-- The trust prompt bug on brewboard f07 that triggered this feature
+- Feature 201: Pluggable Agent Architecture (provides ensureAgentTrust)
+- Research 28: Gemini CLI Worktree Sandbox (Gemini's sandbox is a separate issue)
+- The trust prompt bug on brewboard f07 that triggered this investigation
