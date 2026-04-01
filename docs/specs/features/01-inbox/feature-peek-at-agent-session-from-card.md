@@ -14,7 +14,9 @@ Add a "Peek" button to each agent row on a feature card that shows the last N li
 
 ### Peek button on card
 - [ ] Each agent row on an in-progress card shows a "Peek" button (eye icon or similar)
-- [ ] Clicking Peek expands an inline panel below the agent row showing the last 15-20 lines of the tmux session
+- [ ] Each review session row also shows a "Peek" button
+- [ ] Each eval session row also shows a "Peek" button
+- [ ] Clicking Peek expands an inline panel below the row showing the last 15-20 lines of the tmux session
 - [ ] Clicking Peek again (or a close button) collapses the panel
 - [ ] The panel auto-refreshes every 5 seconds while open
 - [ ] If the tmux session doesn't exist, show "Session not running"
@@ -67,7 +69,6 @@ Add a small eye icon button to `buildAgentSectionHtml()`. On click, fetch `/api/
 
 - Full terminal emulator in the dashboard (this is plain text peek, not interactive)
 - Sending input to the agent session
-- Peek for research agents (add later if useful)
 - Historical session output (only live/current)
 
 ## Open Questions
