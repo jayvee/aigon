@@ -22,7 +22,7 @@ Created a persistent `stats.json` record per feature that accumulates throughout
 - `feature-close`: calls `snapshotFinalStats()` between telemetry and engine state transition (Phase 6.5)
 
 ### `lib/commands/misc.js`
-- `agent-status`: updates `lastActivityAt` in stats.json on every status signal
+- `agent-status`: updates `lastActivityAt` in stats.json on every status signal (including `reviewing` / `review-complete`, which return early after the review store update)
 
 ### `templates/dashboard/js/detail-tabs.js`
 - `statusIndicator()` now accepts session object, renders "Completed" with green dot for done features
@@ -38,3 +38,19 @@ Created a persistent `stats.json` record per feature that accumulates throughout
 - Atomic writes: uses temp file + rename pattern (same as agent-status.js) to prevent corruption
 - Cost data at close: re-reads telemetry files directly rather than relying on what recordCloseTelemetry computed, to ensure stats.json is self-contained
 - Live overlay strategy: for in-progress features, live git data takes precedence only if it has commits (avoids showing stale stats record when worktree is active)
+
+## Code Review
+
+**Reviewed by**: cu (Cursor agent)
+**Date**: 2026-04-01
+
+### Findings
+- `agent-status reviewing` / `review-complete` returned before the `lastActivityAt` stats update, so those signals did not match the spec (“every status signal”).
+
+### Fixes Applied
+- `fix(review): update stats lastActivityAt for review agent-status signals` — `lib/commands/misc.js`
+
+### Notes
+- `node -c` on touched modules and `npm test` (13 integration tests) pass after the fix.
+- `stats.json` field names use `commitCount` (not the spec sketch’s `commits`); dashboard progress already expects `commitCount`.
+- `lastActivityAt` is written but not yet read in the Status tab UI (future enhancement).
