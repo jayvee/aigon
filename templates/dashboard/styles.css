@@ -769,6 +769,18 @@
     .toggle-switch input:checked + .toggle-track{background:var(--accent)}
     .toggle-switch input:checked + .toggle-track::after{transform:translateX(16px)}
     .toggle-switch input:disabled + .toggle-track{opacity:.4;cursor:default}
+    /* Inline peek panel on agent cards */
+    .kcard-inline-peek{max-height:200px;overflow-y:auto;background:var(--bg-deep,#0d1117);border:1px solid var(--border-subtle);border-radius:6px;margin-top:6px;font-family:var(--mono);font-size:11px;line-height:1.45;color:var(--text-secondary);position:relative}
+    .kcard-inline-peek-header{display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:var(--bg-surface);border-bottom:1px solid var(--border-subtle);font-size:10px;color:var(--text-tertiary);position:sticky;top:0;z-index:1}
+    .kcard-inline-peek-header .peek-session-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+    .kcard-inline-peek-header .peek-alive-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:4px;flex-shrink:0}
+    .kcard-inline-peek-header .peek-alive-dot.alive{background:#3fb950}
+    .kcard-inline-peek-header .peek-alive-dot.dead{background:var(--text-tertiary)}
+    .kcard-inline-peek-output{padding:6px 8px;white-space:pre-wrap;word-break:break-all;min-height:40px}
+    .kcard-inline-peek-output.no-session{color:var(--text-tertiary);font-style:italic;font-family:inherit;white-space:normal}
+    .kcard-peek-btn{background:none;border:none;cursor:pointer;padding:2px 5px;font-size:13px;color:var(--text-tertiary);border-radius:4px;line-height:1;opacity:.7;transition:opacity .15s}
+    .kcard-peek-btn:hover{opacity:1;background:var(--bg-surface)}
+    .kcard-peek-btn.active{opacity:1;color:var(--accent)}
     @media (max-width: 760px){
       .settings-config-explainer{grid-template-columns:1fr}
       .settings-config-row{grid-template-columns:1fr}
