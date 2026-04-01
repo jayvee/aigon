@@ -192,7 +192,7 @@ testAsync('fleet: eval → select winner → close', async () => {
     }
 });
 
-testAsync('fleet: evaluating state shows close actions with agent options', async () => {
+testAsync('fleet: evaluating state shows select-winner actions before a winner is chosen', async () => {
     const repo = makeTempRepo();
     try {
         writeSpec(repo, '02', 'fleet-test');
@@ -202,9 +202,9 @@ testAsync('fleet: evaluating state shows close actions with agent options', asyn
         const snap = await engine.requestFeatureEval(repo, '02');
         const actions = getActions(snap, '02');
 
-        // Should have close-with-winner actions
-        const closeActions = actions.validActions.filter(a => a.action === 'feature-close');
-        assert.ok(closeActions.length > 0, 'evaluating state should have close actions');
+        // Before a winner is selected, fleet eval only offers per-agent select-winner
+        const pickActions = actions.validActions.filter(a => a.action === 'select-winner');
+        assert.ok(pickActions.length > 0, 'evaluating state should have select-winner actions before a winner is chosen');
     } finally {
         fs.rmSync(repo, { recursive: true, force: true });
     }
