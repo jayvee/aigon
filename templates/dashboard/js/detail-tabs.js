@@ -274,7 +274,10 @@
         return s + 's';
       }
 
-      function statusIndicator(alive) {
+      function statusIndicator(alive, session) {
+        if (session && session.completed) {
+          return '<span class="status-dot status-completed"></span> Completed';
+        }
         const cls = alive ? 'status-alive' : 'status-dead';
         const label = alive ? 'Alive' : 'Dead';
         return '<span class="status-dot ' + cls + '"></span> ' + escHtml(label);
@@ -294,12 +297,19 @@
         const c = data.cost || {};
         const sp = data.spec || {};
 
-        const sessionHtml = statusSection('Session', [
-          ['Status', statusIndicator(s.tmuxAlive)],
-          ['Session name', s.sessionName ? escHtml(s.sessionName) : 'n/a'],
-          ['Uptime', formatUptime(s.uptimeSeconds)],
-          s.pid ? ['PID', escHtml(String(s.pid))] : null,
-        ]);
+        const sessionRows = s.completed
+          ? [
+              ['Status', statusIndicator(false, s)],
+              s.completedAt ? ['Completed at', escHtml(formatIso(s.completedAt))] : null,
+              s.durationMs != null ? ['Duration', formatUptime(Math.floor(s.durationMs / 1000))] : null,
+            ]
+          : [
+              ['Status', statusIndicator(s.tmuxAlive)],
+              ['Session name', s.sessionName ? escHtml(s.sessionName) : 'n/a'],
+              ['Uptime', formatUptime(s.uptimeSeconds)],
+              s.pid ? ['PID', escHtml(String(s.pid))] : null,
+            ];
+        const sessionHtml = statusSection('Session', sessionRows);
 
         const progressHtml = statusSection('Progress', [
           ['Commits', escHtml(String(p.commitCount || 0))],
