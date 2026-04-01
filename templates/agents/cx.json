@@ -5,6 +5,27 @@
     "codex",
     "cx"
   ],
+  "displayName": "Codex",
+  "providerFamily": "openai",
+  "portOffset": 3,
+  "defaultFleetAgent": false,
+  "installHint": "npm i -g @openai/codex",
+  "trust": {
+    "type": "toml-project",
+    "path": "~/.codex/config.toml",
+    "trustLevel": "trusted"
+  },
+  "worktreeEnv": {},
+  "legacy": {
+    "promptFile": ".codex/prompt.md"
+  },
+  "git": {
+    "hasEmailAttribution": true
+  },
+  "capabilities": {
+    "supportsModelFlag": true,
+    "transcriptTelemetry": false
+  },
   "cli": {
     "command": "codex",
     "implementFlag": "",

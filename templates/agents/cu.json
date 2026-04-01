@@ -5,6 +5,24 @@
     "cursor",
     "cu"
   ],
+  "displayName": "Cursor",
+  "providerFamily": "varies",
+  "portOffset": 4,
+  "defaultFleetAgent": false,
+  "installHint": "Download from https://cursor.com",
+  "trust": null,
+  "worktreeEnv": {},
+  "git": {
+    "hasEmailAttribution": true
+  },
+  "capabilities": {
+    "supportsModelFlag": false,
+    "transcriptTelemetry": false
+  },
+  "legacy": {
+    "rootFile": null,
+    "promptFile": null
+  },
   "cli": {
     "command": "agent",
     "implementFlag": "--force",

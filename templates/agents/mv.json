@@ -6,6 +6,20 @@
     "mistral",
     "vibe"
   ],
+  "displayName": "Mistral Vibe",
+  "providerFamily": null,
+  "portOffset": 5,
+  "defaultFleetAgent": false,
+  "installHint": "pip install mistral-vibe",
+  "trust": null,
+  "worktreeEnv": {},
+  "git": {
+    "hasEmailAttribution": true
+  },
+  "capabilities": {
+    "supportsModelFlag": false,
+    "transcriptTelemetry": false
+  },
   "cli": {
     "command": "vibe",
     "implementFlag": "-p",
