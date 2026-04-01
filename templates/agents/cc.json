@@ -32,7 +32,8 @@
     "models": {
       "research": "opus",
       "implement": "sonnet",
-      "evaluate": "opus"
+      "evaluate": "opus",
+      "review": "opus"
     }
   },
   "placeholders": {

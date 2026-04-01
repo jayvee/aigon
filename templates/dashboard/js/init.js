@@ -217,7 +217,7 @@
             try {
               const res = await fetch('/api/session/view', {
                 method: 'POST', headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ sessionName: s.name })
+                body: JSON.stringify({ sessionName: s.name, repoPath: s.repoPath || null })
               });
               const payload = await res.json().catch(() => ({}));
               if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));

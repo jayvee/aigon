@@ -31,6 +31,7 @@
 | `/aigon:research-open <ID>` | Re-open or attach Fleet research sessions when needed |
 | `/aigon:research-do <ID>` | Conduct research (write findings) |
 | `/aigon:research-submit [ID] [agent]` | Signal research findings are complete |
+| `/aigon:research-review <ID>` | Review research findings with a different agent |
 | `/aigon:research-eval <ID>` | Synthesize findings before close |
 | `/aigon:research-close <ID>` | Complete research topic |
 
@@ -63,10 +64,10 @@ These are CLI commands you run directly — not slash commands, not auto-invoked
 
 ## Critical Rules
 
-1. **Read the spec first**: Always resolve the active feature spec with `aigon feature-spec <ID>` before coding
-2. **Work in isolation**: Drive mode uses branches, Fleet mode uses worktrees
-3. **Conventional commits**: Use `feat:`, `fix:`, `chore:` prefixes
-4. **Complete properly**: Use `/aigon:feature-close <ID>` for Drive, `/aigon:feature-close <ID> gg` for Fleet
+1. **Read the active spec first**: Use `aigon feature-spec <ID>` for features and `aigon research-spec <ID>` for research
+2. **Use the correct workspace model**: Feature Drive uses a branch, Feature Fleet uses worktrees, Research usually runs in the main repo unless explicitly launched as parallel sessions
+3. **Use conventional commits when you commit**: Prefer `feat:`, `fix:`, `chore:`, or `docs:` as appropriate
+4. **Complete with the matching command**: Use the `feature-*` or `research-*` close/review/eval command for the entity you are working on
 5. **Follow project instructions**: Check `AGENTS.md` for shared project build, test, and dependency commands
 6. **Orient to the codebase first**: Read `docs/architecture.md` before making structural CLI changes
 
@@ -96,24 +97,26 @@ These are CLI commands you run directly — not slash commands, not auto-invoked
 
 ## Research Workflow
 
-Research follows the same lifecycle shape as features: `start -> do -> submit -> eval -> close`.
+Research follows the same lifecycle shape as features: `start -> do -> submit -> review/eval -> close`.
 
 ### Drive Mode
 
 1. Run `/aigon:research-start <ID>` to move the topic to in-progress
 2. Run `/aigon:research-do <ID>` to conduct the research
 3. Write findings directly in the main research document
-4. Run `aigon agent-status submitted` when your research pass is complete
-5. Run `/aigon:research-close <ID>` when ready to finish
+4. Optionally run `/aigon:research-review <ID>` for a second-agent review pass
+5. Run `aigon agent-status submitted` when your research pass is complete
+6. Run `/aigon:research-close <ID>` when ready to finish
 
 ### Fleet Mode
 
 1. Run `/aigon:research-start <ID> cc cx gg cu` to prepare and launch parallel research
 2. In each agent session, run `/aigon:research-do <ID>`
 3. Each agent writes only to its own findings file and signals completion
-4. Return to the main repo for synthesis: `/aigon:research-eval <ID>`
-5. Finish the topic: `/aigon:research-close <ID>`
-6. Use `/aigon:research-open <ID>` only to re-open or attach Fleet research sessions after setup
+4. Optionally run `/aigon:research-review <ID>` for a separate review pass
+5. Return to the main repo for synthesis: `/aigon:research-eval <ID>`
+6. Finish the topic: `/aigon:research-close <ID>`
+7. Use `/aigon:research-open <ID>` only to re-open or attach Fleet research sessions after setup
 
 
 ## Saving Permissions
@@ -147,10 +150,12 @@ Before running `/aigon:feature-close`, always:
 
 These are recurring mistakes that derail Gemini sessions. Check yourself against this list before and during every task.
 
-### 1. Working on `main` instead of a feature branch
-**Symptom**: You commit code directly to `main`, polluting the shared branch.
-**Prevention**: ALWAYS run `git branch --show-current` before writing any code. If it returns `main`, STOP. Run `/aigon:feature-start` or switch to the correct feature branch.
-**Recovery**: If you already committed to `main`, tell the user immediately — do not try to fix it yourself.
+### 1. Using the wrong workspace for the task
+**Symptom**: You commit feature work to `main`, or you treat a research session like a feature branch task.
+**Prevention**: Check both `pwd` and `git branch --show-current` before you start.
+- For feature work, do NOT work on `main`; use the feature branch or worktree created by Aigon.
+- For research work, staying on `main` is normal unless Aigon launched a separate session.
+**Recovery**: If you worked in the wrong place, tell the user immediately — do not try to hide it.
 
 ### 2. Forgetting lifecycle commands
 **Symptom**: Dashboard shows agent as idle when it's actually working, or work is never marked as done.
@@ -168,15 +173,17 @@ These are NOT optional. They are mandatory signals.
 **Prevention**: Always stage specific files by path. Run `git status` first to review what changed, then `git add <specific-file>`.
 
 ### 5. Running commands you weren't asked to run
-**Symptom**: Running `feature-close`, `research-close`, or `feature-eval` when the user didn't ask.
-**Prevention**: After submitting, STAY in the session and wait. The user decides what happens next — close, eval, or more changes.
+**Symptom**: Running `feature-close`, `research-close`, `feature-eval`, or `research-eval` when the user didn't ask.
+**Prevention**: After submitting, STAY in the session and wait. The user decides what happens next — close, eval, review, or more changes.
 
-### 6. Not reading the spec before implementing
-**Symptom**: Implementation doesn't match acceptance criteria, wrong approach taken.
-**Prevention**: Always resolve the active spec with `aigon feature-spec <ID>` before writing a single line of code.
+### 6. Not reading the active spec first
+**Symptom**: The work doesn't match the actual task, or you pull the wrong CLI context.
+**Prevention**: Resolve the matching spec before changing anything:
+- Features: `aigon feature-spec <ID>`
+- Research: `aigon research-spec <ID>`
 
 ### 7. Ignoring the working directory in worktree mode
 **Symptom**: Editing files in the main repo instead of the worktree, or vice versa.
-**Prevention**: Run `pwd` and verify you're in the correct directory. Worktree paths look like `../project-worktrees/feature-{ID}-gg-{desc}`.
+**Prevention**: Run `pwd` and verify you're in the correct directory. Aigon-created worktrees and session directories must match the task you are handling.
 
 <!-- AIGON_END -->

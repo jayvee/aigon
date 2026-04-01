@@ -35,7 +35,8 @@
     "models": {
       "research": "gpt-5.2",
       "implement": "gpt-5.3-codex",
-      "evaluate": "gpt-5.4"
+      "evaluate": "gpt-5.4",
+      "review": "gpt-5.4"
     }
   },
   "placeholders": {
@@ -102,6 +103,7 @@
     "research-open",
     "research-do",
     "research-submit",
+    "research-review",
     "research-eval",
     "research-close",
     "research-autopilot",

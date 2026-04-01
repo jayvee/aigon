@@ -159,6 +159,30 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     return prefix + '-' + action;
   }
 
+  function getLaunchMode(action) {
+    if (action === 'feature-eval' || action === 'research-eval') return 'eval';
+    if (action === 'feature-review' || action === 'research-review') return 'review';
+    return 'do';
+  }
+
+  async function launchAgentAction(action, options) {
+    const implAgents = (feature.agents || []).map(a => a.id);
+    const picked = await showAgentPicker(id, feature.name, {
+      single: true,
+      title: options.title,
+      submitLabel: options.submitLabel,
+      implementingAgents: implAgents,
+      repoPath,
+      taskType: options.taskType,
+      action
+    });
+    if (!picked || picked.length === 0) return;
+    if (options.setupAction && feature.stage !== 'in-evaluation') {
+      await requestAction(options.setupAction, [id, '--setup-only'], repoPath, btn);
+    }
+    await requestFeatureOpen(id, picked[0], repoPath, null, pipelineType, getLaunchMode(action));
+  }
+
   switch (va.action) {
     case 'open-session':
     case 'feature-open':
@@ -183,30 +207,21 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       break;
     }
     case 'feature-eval': {
-      const implAgents = (feature.agents || []).map(a => a.id);
-      const evalAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose evaluation agent', submitLabel: 'Run Evaluation', implementingAgents: implAgents, repoPath, taskType: 'evaluate', action: va.action });
-      if (!evalAgent || evalAgent.length === 0) return;
-      if (feature.stage !== 'in-evaluation') {
-        await requestAction('feature-eval', [id, '--setup-only'], repoPath, btn);
-      }
-      await requestFeatureOpen(id, evalAgent[0], repoPath, null, pipelineType, 'eval');
+      await launchAgentAction(va.action, {
+        title: 'Choose evaluation agent',
+        submitLabel: 'Run Evaluation',
+        taskType: 'evaluate',
+        setupAction: 'feature-eval'
+      });
       break;
     }
     case 'research-eval': {
-      const researchAgents = (feature.agents || []).map(a => a.id);
-      const synthAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose evaluation agent', submitLabel: 'Run Evaluation', implementingAgents: researchAgents, repoPath, taskType: 'evaluate', action: va.action });
-      if (!synthAgent || synthAgent.length === 0) return;
-      if (feature.stage !== 'in-evaluation') {
-        await requestAction('research-eval', [id, '--setup-only'], repoPath, btn);
-      }
-      await requestFeatureOpen(id, synthAgent[0], repoPath, null, pipelineType, 'eval');
-      break;
-    }
-    case 'feature-review': {
-      const implAgentsR = (feature.agents || []).map(a => a.id);
-      const reviewAgent = await showAgentPicker(id, feature.name, { single: true, title: 'Choose review agent', submitLabel: 'Run Review', implementingAgents: implAgentsR, repoPath, taskType: 'implement', action: va.action });
-      if (!reviewAgent || reviewAgent.length === 0) return;
-      await requestFeatureOpen(id, reviewAgent[0], repoPath, null, pipelineType, 'review');
+      await launchAgentAction(va.action, {
+        title: 'Choose evaluation agent',
+        submitLabel: 'Run Evaluation',
+        taskType: 'evaluate',
+        setupAction: 'research-eval'
+      });
       break;
     }
     case 'feature-prioritise':
@@ -239,19 +254,12 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     default:
       // Generic handler: agent-mode actions get agent picker + terminal session
       if (va.mode === 'agent') {
-        const implAgents = (feature.agents || []).map(a => a.id);
         const actionLabel = va.label || va.action.split('-').pop();
-        const picked = await showAgentPicker(id, feature.name, {
-          single: true,
+        await launchAgentAction(va.action, {
           title: 'Choose agent for ' + actionLabel,
           submitLabel: actionLabel,
-          implementingAgents: implAgents,
-          repoPath,
-          taskType: va.action.includes('eval') ? 'evaluate' : 'implement',
-          action: va.action
+          taskType: getLaunchMode(va.action) === 'eval' ? 'evaluate' : getLaunchMode(va.action)
         });
-        if (!picked || picked.length === 0) return;
-        await requestFeatureOpen(id, picked[0], repoPath, null, pipelineType, va.action.split('-').pop());
       } else {
         await requestAction(va.action, [id, ...(agentId ? [agentId] : [])], repoPath, btn);
       }
