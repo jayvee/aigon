@@ -375,7 +375,10 @@
         if (feature.evalStatus) {
           let evalStatusRow = '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>';
           if (feature.evalStatus === 'pick winner' && feature.winnerAgent) {
-            evalStatusRow += '<span class="kcard-winner">Winner: ' + escHtml(feature.winnerAgent) + '</span>';
+            // Show "Recommended" until user confirms via select-winner; show "Winner" once confirmed
+            const hasSelectWinner = validActions.some(va => va.action === 'select-winner');
+            const winnerLabel = hasSelectWinner ? 'Recommended' : 'Winner';
+            evalStatusRow += '<span class="kcard-winner">' + winnerLabel + ': ' + escHtml(feature.winnerAgent) + '</span>';
           }
           innerHtml += '<div class="kcard-status">' + evalStatusRow + '</div>';
           // View Eval button — rendered from validActions (view-eval action)
@@ -393,7 +396,7 @@
         const openEvalAction = validActions.find(va => va.action === 'open-eval-session' && !va.agentId);
         if (openEvalAction && feature.evalSession && feature.evalSession.running) {
           const evalSess = feature.evalSession;
-          const evalAgent = AGENT_DISPLAY_NAMES[evalSess.agent] || evalSess.agent;
+          const evalAgent = AGENT_DISPLAY_NAMES[evalSess.agent] || evalSess.agent || 'Eval';
           const evalRunning = evalSess.running;
           const evalStatusCls = evalRunning ? 'status-running' : 'status-ended';
           const evalStatusIcon = evalRunning ? '●' : '○';
@@ -625,10 +628,9 @@
       card.querySelectorAll('.kcard-peek-btn').forEach(btn => {
         btn.onclick = (e) => {
           e.stopPropagation();
-          const featureId = card.dataset.featureId;
-          const repoPath = card.dataset.repoPath;
-          if (featureId && typeof openSpecDrawer === 'function') {
-            openSpecDrawer(featureId, repoPath, 'status');
+          if (feature.specPath && typeof openDrawer === 'function') {
+            const displayName = (feature.id ? '#' + feature.id + ' ' : '') + feature.name;
+            openDrawer(feature.specPath, displayName, feature.stage, repoPath, { initialTab: 'status' });
           }
         };
       });
