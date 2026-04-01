@@ -17,23 +17,22 @@ If no ID is provided, or the ID doesn't match an existing feature:
 
 ```bash
 BRANCH=$(git branch --show-current)
-if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
-  echo "FATAL: You are on $BRANCH. Reviews must run on the feature branch."
-  echo "Looking for worktree..."
-  git worktree list | grep "feature-<name>"
-  echo "If a worktree exists, cd into it. DO NOT continue on $BRANCH."
-  exit 1
-fi
-echo "OK: On branch $BRANCH"
+FEATURE_BRANCH=$(git branch --list 'feature-<name>-*' | head -1 | tr -d ' *')
+echo "Current branch: $BRANCH"
+echo "Feature branch: $FEATURE_BRANCH"
 ```
 
-**If the above check fails, STOP IMMEDIATELY. Do not make any changes. Do not commit.**
+**If you are on the feature branch**, review files directly.
 
-If you are on main, find and `cd` into the worktree:
-```bash
-WORKTREE=$(git worktree list | grep "feature-<name>" | awk '{print $1}')
-cd "$WORKTREE" || { echo "No worktree found — cannot proceed"; exit 1; }
-```
+**If you are on main** (e.g. you cannot cd into the worktree), review using git commands:
+- `git diff main...$FEATURE_BRANCH` to see the diff
+- `git show $FEATURE_BRANCH:path/to/file` to read files from the branch
+- `git log main..$FEATURE_BRANCH --oneline` to see commits
+- Do NOT try to cd into the worktree directory — review from main using git.
+- **IMPORTANT: All commits (fixes + log updates) must go to the WORKTREE, not main.**
+  Find the worktree path: `WORKTREE=$(git worktree list | grep "feature-<name>" | awk '{print $1}')`
+  Then commit using: `git -C "$WORKTREE" add . && git -C "$WORKTREE" commit -m "fix(review): ..."`
+  Never commit review changes to main — they will cause merge conflicts on feature-close.
 
 ## Step 2: Read the spec
 
@@ -89,11 +88,13 @@ Enter **Code Review Mode** with these constraints:
 
 For each issue found:
 
-1. Make the minimal fix
-2. Commit with `fix(review):` prefix:
+1. Make the minimal fix in the worktree (use `git -C "$WORKTREE"` if you're on main)
+2. Commit to the **feature branch** with `fix(review):` prefix:
    ```bash
-   git add <files>
-   git commit -m "fix(review): <description of fix>"
+   # If in the worktree:
+   git add <files> && git commit -m "fix(review): <description of fix>"
+   # If on main:
+   git -C "$WORKTREE" add <files> && git -C "$WORKTREE" commit -m "fix(review): <description of fix>"
    ```
 
 Examples:
@@ -133,14 +134,14 @@ git commit -m "docs(review): add review notes to implementation log"
 
 **CRITICAL: Do NOT run `aigon feature-close` or `aigon feature-eval`.**
 
-After completing the review:
+**THIS IS MANDATORY. YOU MUST RUN THIS COMMAND BEFORE REPORTING TO THE USER.**
 
-1. Signal review completion:
-   ```bash
-   aigon agent-status review-complete
-   ```
+After completing the review, run this command **immediately**:
+```bash
+aigon agent-status review-complete
+```
 
-2. Tell the user: "Code review complete. [N] fix(es) committed." (or "Code review complete. No fixes needed.")
+Then tell the user: "Code review complete. [N] fix(es) committed." (or "Code review complete. No fixes needed.")
 3. Show a summary of what was reviewed and any fixes made
 4. **STOP and WAIT** for the user to:
    - Review your changes: `git log --oneline main..HEAD`

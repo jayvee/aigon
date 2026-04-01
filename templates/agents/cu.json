@@ -29,7 +29,9 @@
     "implementPrompt": "/aigon-feature-do {featureId}",
     "evalPrompt": "/aigon-feature-eval {featureId}",
     "reviewPrompt": "/aigon-feature-review {featureId}",
-    "models": {}
+    "models": {
+      "review": "composer-2"
+    }
   },
   "placeholders": {
     "AGENT_ID": "cu",
@@ -112,6 +114,7 @@
     "research-open",
     "research-do",
     "research-submit",
+    "research-review",
     "research-eval",
     "research-close",
     "research-autopilot",

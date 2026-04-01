@@ -110,9 +110,14 @@
         .then(r => r.json())
         .then(data => {
           const agentModelMap = {};
-          const agents = (data && data.effective && data.effective.agents) || {};
-          Object.entries(agents).forEach(([id, cfg]) => {
-            agentModelMap[id] = (cfg && cfg.models) || {};
+          const settings = (data && data.settings) || [];
+          settings.forEach(def => {
+            const m = String(def.key || '').match(/^agents\.(\w+)\.(research|implement|evaluate|review)\.model$/);
+            if (!m) return;
+            const agentId = m[1];
+            const taskType = m[2];
+            if (!agentModelMap[agentId]) agentModelMap[agentId] = {};
+            if (def.effectiveValue) agentModelMap[agentId][taskType] = def.effectiveValue;
           });
           return agentModelMap;
         })
@@ -122,7 +127,7 @@
     function pickerTaskType(opts) {
       if (opts.taskType === 'research' || opts.taskType === 'implement' || opts.taskType === 'evaluate' || opts.taskType === 'review') return opts.taskType;
       const action = String(opts.action || opts.sessionTask || '').toLowerCase();
-      if (action === 'feature-review' || action === 'review') return 'review';
+      if (action.includes('review')) return 'review';
       if (action.includes('eval')) return 'evaluate';
       return 'implement';
     }

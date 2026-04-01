@@ -31,6 +31,7 @@
 | `/prompts:aigon-research-open <ID>` | Re-open or attach Fleet research sessions when needed |
 | `/prompts:aigon-research-do <ID>` | Conduct research (write findings) |
 | `/prompts:aigon-research-submit [ID] [agent]` | Signal research findings are complete |
+| `/prompts:aigon-research-review <ID>` | Review research findings with a different agent |
 | `/prompts:aigon-research-eval <ID>` | Synthesize findings before close |
 | `/prompts:aigon-research-close <ID>` | Complete research topic |
 
@@ -63,10 +64,10 @@ These are CLI commands you run directly — not slash commands, not auto-invoked
 
 ## Critical Rules
 
-1. **Read the spec first**: Always resolve the active feature spec with `aigon feature-spec <ID>` before coding
-2. **Work in isolation**: Drive mode uses branches, Fleet mode uses worktrees
-3. **Conventional commits**: Use `feat:`, `fix:`, `chore:` prefixes
-4. **Complete properly**: Use `/prompts:aigon-feature-close <ID>` for Drive, `/prompts:aigon-feature-close <ID> cx` for Fleet
+1. **Read the active spec first**: Use `aigon feature-spec <ID>` for features and `aigon research-spec <ID>` for research
+2. **Use the correct workspace model**: Feature Drive uses a branch, Feature Fleet uses worktrees, Research usually runs in the main repo unless explicitly launched as parallel sessions
+3. **Use conventional commits when you commit**: Prefer `feat:`, `fix:`, `chore:`, or `docs:` as appropriate
+4. **Complete with the matching command**: Use the `feature-*` or `research-*` close/review/eval command for the entity you are working on
 5. **Follow project instructions**: Check `AGENTS.md` for shared project build, test, and dependency commands
 6. **Orient to the codebase first**: Read `docs/architecture.md` before making structural CLI changes
 
@@ -96,24 +97,26 @@ These are CLI commands you run directly — not slash commands, not auto-invoked
 
 ## Research Workflow
 
-Research follows the same lifecycle shape as features: `start -> do -> submit -> eval -> close`.
+Research follows the same lifecycle shape as features: `start -> do -> submit -> review/eval -> close`.
 
 ### Drive Mode
 
 1. Run `/prompts:aigon-research-start <ID>` to move the topic to in-progress
 2. Run `/prompts:aigon-research-do <ID>` to conduct the research
 3. Write findings directly in the main research document
-4. Run `aigon agent-status submitted` when your research pass is complete
-5. Run `/prompts:aigon-research-close <ID>` when ready to finish
+4. Optionally run `/prompts:aigon-research-review <ID>` for a second-agent review pass
+5. Run `aigon agent-status submitted` when your research pass is complete
+6. Run `/prompts:aigon-research-close <ID>` when ready to finish
 
 ### Fleet Mode
 
 1. Run `/prompts:aigon-research-start <ID> cc cx gg cu` to prepare and launch parallel research
 2. In each agent session, run `/prompts:aigon-research-do <ID>`
 3. Each agent writes only to its own findings file and signals completion
-4. Return to the main repo for synthesis: `/prompts:aigon-research-eval <ID>`
-5. Finish the topic: `/prompts:aigon-research-close <ID>`
-6. Use `/prompts:aigon-research-open <ID>` only to re-open or attach Fleet research sessions after setup
+4. Optionally run `/prompts:aigon-research-review <ID>` for a separate review pass
+5. Return to the main repo for synthesis: `/prompts:aigon-research-eval <ID>`
+6. Finish the topic: `/prompts:aigon-research-close <ID>`
+7. Use `/prompts:aigon-research-open <ID>` only to re-open or attach Fleet research sessions after setup
 
 
 ## Before Completing a Feature

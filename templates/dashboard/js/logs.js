@@ -369,7 +369,17 @@
       try {
         const endpoint = refresh ? '/api/insights/refresh' : '/api/insights';
         const method = refresh ? 'POST' : 'GET';
-        const res = await fetch(endpoint, { method, cache: 'no-store' });
+        const repoPath = state.selectedRepo && state.selectedRepo !== 'all' ? state.selectedRepo : '';
+        const url = refresh ? endpoint : (repoPath ? endpoint + '?repoPath=' + encodeURIComponent(repoPath) : endpoint);
+        const fetchOptions = refresh
+          ? {
+              method,
+              cache: 'no-store',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ repoPath: repoPath || null })
+            }
+          : { method, cache: 'no-store' };
+        const res = await fetch(url, fetchOptions);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         statsState.insightsData = await res.json();
       } catch (e) {

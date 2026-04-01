@@ -88,7 +88,8 @@ aigon agent-status implementing
 - Start coding within 60 seconds. The spec IS your plan.
 - Read ONLY the files listed in the spec's Technical Approach / Key Files section. Do not explore broadly.
 - Do not create test files unless the spec explicitly requires them.
-- Commit first, validate after. Fix issues in follow-up commits.
+- **COMMIT EARLY AND OFTEN.** After every meaningful change (edited a file, deleted a file, moved code), run `git add -A && git commit -m "wip: <what you just did>"`. Never have more than 2 minutes of uncommitted work. If your session dies, committed work survives. Uncommitted work is lost forever.
+- Validate after committing, not before. Fix issues in follow-up commits.
 
 Work through the acceptance criteria in order. For worktree modes, use relative paths and maintain the worktree directory as your working directory.
 

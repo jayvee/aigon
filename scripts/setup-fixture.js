@@ -67,7 +67,7 @@ function initGitRepo(dir) {
 
 function commit(cwd, message) {
     runGit(['add', '-A'], cwd);
-    runGit(['commit', '-m', message, '--allow-empty'], cwd);
+    runGit(['commit', '-m', message, '--allow-empty', '--no-verify'], cwd);
 }
 
 function getGitHubUser() {
@@ -166,14 +166,21 @@ function writeFixtureConfig(repoDir) {
     const repoName = path.basename(repoDir);
     const port = FIXTURE_PORTS[repoName] || 4200;
 
-    // Use production-grade models so workflow testing is realistic.
-    // Cheap models skip process steps (e.g. writing status files directly
-    // instead of running `aigon agent-status`), giving false negatives.
+    // Use lighter models in seed repos to keep demo cycles fast.
     const config = {
         agents: {
             cc: { models: {} },
             gg: { models: {} },
-            cx: { models: {} },
+            cx: {
+                research: { model: 'gpt-5.1-codex-mini' },
+                implement: { model: 'gpt-5.1-codex-mini' },
+                evaluate: { model: 'gpt-5.1-codex-mini' },
+            },
+            cu: {
+                research: { model: 'composer-1.5' },
+                implement: { model: 'composer-1.5' },
+                evaluate: { model: 'composer-1.5' },
+            },
         },
         devProxy: {
             basePort: port,
@@ -193,7 +200,7 @@ function writeFixtureConfig(repoDir) {
 }
 
 function researchContent(title, summary) {
-    return `# Research: ${title}\n\n## Summary\n\n${summary}\n\n## Questions\n\n- [ ] What are the main trade-offs?\n- [ ] What do competitors do?\n\n## Findings\n\nTBD\n`;
+    return `# Research: ${title}\n\n## Summary\n\n${summary}\n\n## Questions\n\n- [ ] Which option should we choose right now?\n\n## Findings\n\nTBD\n`;
 }
 
 function feedbackContent(id, title, summary, status, type = 'bug', severity = 'medium', evidence = '', impact = '') {
@@ -483,13 +490,13 @@ export default config;
 
     // ── research-topics (all in backlog or done — nothing in-progress without a session) ─
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '01-inbox', 'research-payment-providers.md'),
-        researchContent('Payment Providers', 'Evaluate Stripe vs Paddle vs Lemon Squeezy for handling subscriptions, VAT, and international currencies.'));
+        researchContent('Payment Providers', 'Pick between Stripe and Paddle for launch. Focus on setup speed and monthly cost.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-01-caching-strategy.md'),
-        researchContent('Caching Strategy', 'Research Redis vs in-memory vs CDN edge caching for the beer catalogue. Consider cold-start times and invalidation complexity.'));
+        researchContent('Caching Strategy', 'Choose one cache approach for launch: in-memory or Redis. Keep recommendation to local dev + small prod traffic.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-02-offline-sync.md'),
-        researchContent('Offline Sync', 'Evaluate approaches for offline support: service workers + IndexedDB, vs a dedicated sync library like PowerSync or ElectricSQL.'));
+        researchContent('Offline Sync', 'Pick an MVP offline strategy for read-only viewing: basic service worker cache or no offline in v1.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '04-done', 'research-03-auth-providers.md'),
         researchContent('Auth Providers', 'Compared Clerk, Auth0, and NextAuth. Decision: Clerk for its DX and Vercel integration.'));
@@ -694,10 +701,10 @@ final class HikeTests: XCTestCase {
         researchContent('Live Activities for Active Hikes', 'Can we use ActivityKit Live Activities to show real-time hike stats on the Dynamic Island and Lock Screen during an active session?'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-01-route-planning.md'),
-        researchContent('Route Planning APIs', 'Evaluate MapKit routing vs OpenRouteService vs Komoot API for suggesting hiking routes based on difficulty, length, and starting point.'));
+        researchContent('Route Planning APIs', 'Choose one route source for MVP suggestions: MapKit only or OpenRouteService.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-02-battery-usage.md'),
-        researchContent('GPS Battery Optimisation', 'Background GPS tracking drains the battery fast. Research CLLocationManager accuracy modes, significant-change API, and deferred location updates as power-saving strategies.'));
+        researchContent('GPS Battery Optimisation', 'Pick one battery-safe tracking mode for MVP hikes and note expected accuracy trade-off.'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '04-done', 'research-03-map-sdk-choice.md'),
         researchContent('MapKit vs Google Maps vs Mapbox', 'Compared three mapping SDKs for offline tile support and SwiftUI integration. Decision: MapKit — native APIs, no extra SDK weight, offline tile overlay available.'));
