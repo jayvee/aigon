@@ -129,14 +129,14 @@ git commit -m "docs(review): add review notes to implementation log"
 
 **CRITICAL: Do NOT run `aigon feature-close` or `aigon feature-eval`.**
 
-After completing the review:
+**THIS IS MANDATORY. YOU MUST RUN THIS COMMAND BEFORE REPORTING TO THE USER.**
 
-1. Signal review completion:
-   ```bash
-   aigon agent-status review-complete
-   ```
+After completing the review, run this command **immediately**:
+```bash
+aigon agent-status review-complete
+```
 
-2. Tell the user: "Code review complete. [N] fix(es) committed." (or "Code review complete. No fixes needed.")
+Then tell the user: "Code review complete. [N] fix(es) committed." (or "Code review complete. No fixes needed.")
 3. Show a summary of what was reviewed and any fixes made
 4. **STOP and WAIT** for the user to:
    - Review your changes: `git log --oneline main..HEAD`
