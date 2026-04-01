@@ -44,6 +44,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 
 | Module | ~Lines | Owns |
 |--------|--------|------|
+| `lib/agent-registry.js` | ~280 | **Agent registry**: scans `templates/agents/*.json`, provides lookup maps (display names, port offsets, provider families, trust, worktree env, capabilities). All agent-specific data is data-driven — zero hardcoded agent logic in `lib/` |
 | `lib/commands/feature.js` | ~2860 | All `feature-*` handlers, `sessions-close` |
 | `lib/feature-close.js` | ~740 | Feature-close phases: target resolution, merge, telemetry, engine close, cleanup |
 | `lib/dashboard-server.js` | ~2660 | AIGON server HTTP/UI module: dashboard UI, API, WebSocket relay, polling, HTTP action dispatch. Never mutates engine state directly. |
