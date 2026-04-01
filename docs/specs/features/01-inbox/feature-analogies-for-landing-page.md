@@ -85,8 +85,8 @@ Add to the existing `<script>` block at the bottom of `home.html`:
 - Modifying any React/Nextra pages
 
 ## Open Questions
-- Should the carousel randomise the starting slide per visitor (simple A/B test) or always start with slide 1? Randomising would give cleaner data on which analogy performs best regardless of position bias.
-- GA4 measurement ID — does the user already have one, or should we create one?
+- ~~Should the carousel randomise the starting slide per visitor?~~ **Yes** — randomise the starting slide on each page load to eliminate position bias. Store the starting index in the `analogy_impression` event as `start_position` so we can control for it in analysis.
+- ~~GA4 measurement ID?~~ **Not yet** — implement with placeholder `G-XXXXXXXXXX`. Add a comment in the gtag snippet so it's easy to find and replace once the property is created.
 
 ## Related
 - Landing page: `site/public/home.html`
