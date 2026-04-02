@@ -80,7 +80,6 @@ Install at least one agent CLI to use Aigon:
 | Claude Code | `claude` | `brew install claude-code` or `npm i -g @anthropic-ai/claude-code` |
 | Gemini CLI | `gemini` | `npm i -g @google/gemini-cli` |
 | Codex CLI | `codex` | `npm i -g @openai/codex` |
-| Mistral Vibe | `vibe` | `pip install mistral-vibe` (requires `MISTRAL_API_KEY`) |
 | Cursor | `agent` | [cursor.com](https://cursor.com) (desktop app) |
 
 > **Linux:** prefix `npm i -g` commands with `sudo` (e.g., `sudo npm i -g @google/gemini-cli`).
@@ -155,7 +154,6 @@ aigon install-agent cc gg          # Claude Code + Gemini CLI
 | `cc` | Claude Code | `/aigon:` |
 | `gg` | Gemini CLI | `/aigon:` |
 | `cx` | Codex CLI | `/prompts:aigon-` |
-| `mv` | Mistral Vibe | _(headless)_ |
 | `cu` | Cursor | `/aigon-` |
 
 Install only the agents you have access to. You can add more later with `aigon install-agent`.
@@ -292,10 +290,6 @@ aigon update
 ```
 
 > If the dashboard is running, `aigon update` will restart it automatically to pick up the changes.
-
-## Linux-specific setup
-
-For terminal emulator configuration, headless/SSH usage, and other Linux-specific details, see the [Linux install guide](/docs/linux-install).
 
 ## What's next
 
