@@ -28,6 +28,14 @@
       rel="stylesheet"
     >
     <link rel="stylesheet" href="css/style.css">
+    <!-- GA4: replace G-XXXXXXXXXX with your Measurement ID when the property is ready -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag("js", new Date());
+      gtag("config", "G-XXXXXXXXXX");
+    </script>
     <script>document.documentElement.classList.add("js");</script>
     <script src="https://cdn.jsdelivr.net/gh/atteggiani/animated-terminal@3.1/animated-terminal.min.js" integrity="sha384-pfRSzGXki+KHbYQXxdzKAPq1mEePzK9XVvpClstR/l/Zzk4OYo8ASzzgqPbFSc0Q" crossorigin="anonymous" defer></script>
   </head>
@@ -61,10 +69,42 @@
         <div class="container hero-grid">
           <div class="hero-copy">
             <p class="eyebrow">Spec-driven development · Multi-agent orchestration</p>
-            <h1>Spec-driven AI development.<br>Orchestrate any agent — or all of them at once.</h1>
-            <p class="hero-summary">
-              Aigon captures the full product lifecycle — research, feature delivery, and user feedback — in specs and logs committed directly to your repository. Run one agent with tight control, or orchestrate competing implementations in parallel — then evaluate and merge the best outcome.
-            </p>
+            <div
+              class="analogy-carousel"
+              role="region"
+              aria-label="Aigon explained"
+              aria-roledescription="carousel"
+            >
+              <div class="analogy-slides">
+                <div class="analogy-slide is-active" data-analogy="copilot">
+                  <h1>Aigon—where Trello meets GitHub Copilot... but you choose your agents.</h1>
+                  <p class="hero-summary">
+                    You bring your own API keys and models, run multiple agents in parallel, and use LLMs to judge and refine each task—on your terms.
+                  </p>
+                </div>
+                <div class="analogy-slide" data-analogy="cursor">
+                  <h1>Aigon—where Trello meets Cursor... but you're in full control.</h1>
+                  <p class="hero-summary">
+                    You bring your own model subscriptions and run tasks through multiple agents in parallel, comparing and refining outcomes.
+                  </p>
+                </div>
+                <div class="analogy-slide" data-analogy="claude_code">
+                  <h1>Aigon—if Trello and Claude Code had a baby, but that baby comes with a whole family of agents:</h1>
+                  <p class="hero-summary">
+                    You can stick with Claude Code as the star sibling, or bring in more brothers, sisters, and cousins—Aigon coordinates them all, making your workflow a true family effort.
+                  </p>
+                </div>
+              </div>
+              <div class="analogy-nav" role="group" aria-label="Analogy navigation">
+                <button type="button" class="analogy-arrow analogy-prev" aria-label="Previous analogy">&#8249;</button>
+                <div class="analogy-dots">
+                  <button type="button" class="analogy-dot is-active" data-index="0" aria-label="Analogy 1"></button>
+                  <button type="button" class="analogy-dot" data-index="1" aria-label="Analogy 2"></button>
+                  <button type="button" class="analogy-dot" data-index="2" aria-label="Analogy 3"></button>
+                </div>
+                <button type="button" class="analogy-arrow analogy-next" aria-label="Next analogy">&#8250;</button>
+              </div>
+            </div>
             <div class="hero-actions">
               <a href="#docs" class="button">Start in 5 minutes</a>
               <a href="#workflow" class="button button-ghost">How it works</a>
@@ -794,6 +834,139 @@ position of the menu bar</code></pre>
     </footer>
 
     <script>
+      // Hero analogy carousel — GA4: analogy_impression, analogy_click
+      (function () {
+        var carousel = document.querySelector(".analogy-carousel");
+        if (!carousel || !carousel.querySelectorAll(".analogy-slide").length) return;
+
+        var slides = carousel.querySelectorAll(".analogy-slide");
+        var dots = carousel.querySelectorAll(".analogy-dot");
+        var prevBtn = carousel.querySelector(".analogy-prev");
+        var nextBtn = carousel.querySelector(".analogy-next");
+        var n = slides.length;
+        var startPosition = Math.floor(Math.random() * n);
+        var current = 0;
+        var hovering = false;
+        var resumeAt = 0;
+        var AUTO_MS = 7000;
+        var IDLE_MS = 10000;
+
+        function canAuto() {
+          return !hovering && Date.now() >= resumeAt;
+        }
+
+        function bumpIdle() {
+          resumeAt = Date.now() + IDLE_MS;
+        }
+
+        function gtagEvent(name, params) {
+          if (typeof window.gtag === "function") {
+            window.gtag("event", name, params);
+          }
+        }
+
+        function setAria(index) {
+          slides.forEach(function (slide, i) {
+            var on = i === index;
+            slide.classList.toggle("is-active", on);
+            slide.setAttribute("aria-hidden", on ? "false" : "true");
+          });
+          dots.forEach(function (dot, i) {
+            var on = i === index;
+            dot.classList.toggle("is-active", on);
+            if (on) dot.setAttribute("aria-current", "true");
+            else dot.removeAttribute("aria-current");
+          });
+        }
+
+        function impression(index, trigger) {
+          var slide = slides[index];
+          if (!slide) return;
+          var name = slide.getAttribute("data-analogy") || "";
+          gtagEvent("analogy_impression", {
+            analogy_name: name,
+            trigger: trigger,
+            start_position: startPosition
+          });
+        }
+
+        function goTo(index, trigger) {
+          index = ((index % n) + n) % n;
+          if (index === current) return;
+          current = index;
+          setAria(current);
+          impression(current, trigger);
+        }
+
+        function emitNavigate(destIndex, direction) {
+          destIndex = ((destIndex % n) + n) % n;
+          var slide = slides[destIndex];
+          var an = slide ? slide.getAttribute("data-analogy") : "";
+          gtagEvent("analogy_click", { analogy_name: an, direction: direction });
+          bumpIdle();
+          goTo(destIndex, "manual");
+        }
+
+        function tickAuto() {
+          if (!canAuto()) return;
+          goTo(current + 1, "auto");
+        }
+
+        slides.forEach(function (s) { s.classList.remove("is-active"); });
+        dots.forEach(function (d) { d.classList.remove("is-active"); });
+        current = startPosition;
+        setAria(current);
+        impression(current, "auto");
+        carousel.classList.add("is-ready");
+
+        window.setInterval(tickAuto, AUTO_MS);
+
+        carousel.addEventListener("mouseenter", function () { hovering = true; });
+        carousel.addEventListener("mouseleave", function () {
+          hovering = false;
+          bumpIdle();
+        });
+        carousel.addEventListener("focusin", function () { hovering = true; });
+        carousel.addEventListener("focusout", function () {
+          window.setTimeout(function () {
+            if (!carousel.contains(document.activeElement)) hovering = false;
+          }, 0);
+        });
+
+        dots.forEach(function (dot) {
+          dot.addEventListener("click", function () {
+            var idx = parseInt(dot.getAttribute("data-index"), 10);
+            if (idx === current) return;
+            emitNavigate(idx, "dot");
+          });
+        });
+
+        if (prevBtn) {
+          prevBtn.addEventListener("click", function () {
+            emitNavigate(current - 1, "prev");
+          });
+        }
+        if (nextBtn) {
+          nextBtn.addEventListener("click", function () {
+            emitNavigate(current + 1, "next");
+          });
+        }
+
+        var touchStartX = null;
+        carousel.addEventListener("touchstart", function (e) {
+          touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        carousel.addEventListener("touchend", function (e) {
+          if (touchStartX == null) return;
+          var endX = e.changedTouches[0].screenX;
+          var d = endX - touchStartX;
+          touchStartX = null;
+          if (Math.abs(d) < 50) return;
+          if (d < 0) emitNavigate(current + 1, "next");
+          else emitNavigate(current - 1, "prev");
+        }, { passive: true });
+      })();
+
       // Dashboard screenshot tab switching
       (function () {
         var screenshots = {

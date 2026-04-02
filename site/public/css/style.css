@@ -250,6 +250,134 @@ a {
   font-size: clamp(1rem, 1.6vw, 1.2rem);
 }
 
+/* ── Hero analogy carousel ─────────────────────────────────── */
+
+.analogy-carousel {
+  position: relative;
+  margin-top: 0.35rem;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.analogy-carousel.is-ready {
+  opacity: 1;
+}
+
+.analogy-slides {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin: 0;
+}
+
+.analogy-slide {
+  grid-area: 1 / 1;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0.5s;
+  pointer-events: none;
+  max-width: 54rem;
+}
+
+.analogy-slide.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.analogy-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.analogy-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.analogy-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--line);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.analogy-dot:hover,
+.analogy-dot:focus-visible {
+  background: rgba(213, 95, 42, 0.45);
+  outline: none;
+}
+
+.analogy-dot.is-active {
+  background: var(--accent);
+  transform: scale(1.2);
+}
+
+.analogy-dot:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+.analogy-arrow {
+  font-family: "Sora", sans-serif;
+  font-size: 1.35rem;
+  line-height: 1;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.85);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.analogy-arrow:hover,
+.analogy-arrow:focus-visible {
+  border-color: var(--accent);
+  color: var(--text);
+  outline: none;
+}
+
+.analogy-arrow:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+@media (max-width: 540px) {
+  .analogy-nav {
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .analogy-arrow {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .analogy-dot {
+    width: 0.65rem;
+    height: 0.65rem;
+    margin: 0.35rem;
+  }
+}
+
 .hero-actions {
   margin-top: 1.55rem;
   display: flex;
