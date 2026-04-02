@@ -2,7 +2,9 @@
 
 ## Summary
 
-The docs site and landing page are missing coverage of several recently shipped features: cross-agent telemetry (CC, GG, CX parsers), the activity breakdown field (implement/evaluate/review), token usage charts by activity/agent/model, the Amplification dashboard (Pro tier analytics), and reliability/merge-gate improvements. This feature audits every gap, writes the missing guides and reference pages, refreshes outdated screenshots, and captures new screenshots (via Playwright where possible, with manual instructions otherwise).
+The docs site and landing page are missing coverage of several recently shipped features: cross-agent telemetry (CC, GG, CX parsers), the activity breakdown field (implement/evaluate/review), token usage charts by activity/agent/model, the Amplification dashboard (Pro tier analytics), and reliability/merge-gate improvements. This feature audits every gap and writes all missing guides and reference pages. It also establishes a graceful screenshot pattern so the docs go live immediately and screenshots can be dropped in later without any code changes.
+
+**Two-phase delivery:** Phase 1 (content + scaffold) ships to production; Phase 2 (screenshots) is filled in over time by running the Playwright script and copying crops into `site/public/img/`.
 
 ## User Stories
 
@@ -10,106 +12,160 @@ The docs site and landing page are missing coverage of several recently shipped 
 - [ ] As a developer running Fleet mode, I can read a "Telemetry & Analytics" guide that explains what data is collected, how to read the Reports tab, and how to interpret the activity breakdown (implement vs. evaluate vs. review).
 - [ ] As a Pro subscriber, I can find a dedicated guide to the Amplification dashboard that explains quality metrics, trend charts, and AI coaching insights — without digging through the generic dashboard guide.
 - [ ] As a team lead, I can find a concepts page on reliability that covers merge gates, worktree isolation, and audit logs.
-- [ ] As a reader of any docs page with a screenshot, the screenshot reflects the current UI (no stale "Radar" references, correct chart layouts, correct tab labels).
+- [ ] As a reader of a docs page where a screenshot hasn't been taken yet, I see a clearly-labelled placeholder (not a broken image) that tells me what the screenshot will show.
+- [ ] As the author, once I've cropped a screenshot and placed it in `site/public/img/`, the placeholder automatically disappears with no code change required.
 
 ## Acceptance Criteria
 
-### New documentation pages
-- [ ] `site/content/guides/telemetry.mdx` — "Telemetry & Analytics" guide covering: what is collected, activity field values, per-agent cost attribution, how to read the Reports tab, free-tier vs. Pro boundaries
-- [ ] `site/content/guides/amplification.mdx` — "Amplification Dashboard" guide (Pro) covering: quality metrics leaderboard (first-pass rate, commits/feature, rework ratio), trend charts, AI insights & coaching, cost optimization view
-- [ ] `site/content/concepts/reliability.mdx` — "Reliability & Safety" concepts page covering: worktree isolation, merge gate scanning (gitleaks + semgrep), severity thresholds, audit logs, recovery from failed evaluations
-- [ ] All new pages are linked in the Nextra `_meta` navigation files so they appear in the sidebar
+### Phase 1: Content (ships immediately, no images needed)
 
-### Updated existing pages
-- [ ] `site/content/guides/dashboard.mdx` — Pro section updated to link to the new Amplification guide; token chart screenshots added; activity breakdown explained
-- [ ] `site/content/getting-started.mdx` — references Reports tab so users know it exists from day one
-- [ ] `site/public/home.html` (landing page) — adds a bullet or card in the dashboard section mentioning "cost & token visibility across all agents" and links to the Telemetry guide
+**New documentation pages**
+- [ ] `site/content/guides/telemetry.mdx` — "Telemetry & Analytics" guide: what is collected, activity field values (implement/evaluate/review), per-agent cost attribution, how to read the Reports tab, free-tier vs. Pro boundaries
+- [ ] `site/content/guides/amplification.mdx` — "Amplification Dashboard" guide (Pro): quality metrics leaderboard (first-pass rate, commits/feature, rework ratio), trend charts, AI insights & coaching, cost optimization view
+- [ ] `site/content/concepts/reliability.mdx` — "Reliability & Safety" concepts page: worktree isolation, merge gate scanning (gitleaks + semgrep), severity thresholds, audit logs, recovery from failed evaluations
+- [ ] All new pages wired into Nextra `_meta` navigation so they appear in the sidebar
 
-### Screenshots — existing to refresh
-- [ ] `aigon-dashboard-reports.png` — retake to show current Reports tab (verify tab label, layout)
-- [ ] `aigon-dashboard-reports-summary.png` — retake to show current Summary sub-tab with up-to-date metric cards
-- [ ] `aigon-dashboard-reports-charts.png` — retake to show current Charts sub-tab (5 synchronized charts including Tokens Used)
+**Updated existing pages**
+- [ ] `site/content/guides/dashboard.mdx` — Pro section links to Amplification guide; activity breakdown explained
+- [ ] `site/content/getting-started.mdx` — mentions Reports tab so users know it exists from day one
+- [ ] `site/public/home.html` (landing page) — one additional bullet in the dashboard capabilities list: "cost & token visibility across all agents" with a link to the Telemetry guide
 
-### Screenshots — new captures needed
-- [ ] `aigon-dashboard-reports-activity.png` — Charts tab zoomed on the "Token Activity" time-series chart (introduced feature 209), showing activity-type colour coding
-- [ ] `aigon-dashboard-reports-agent-breakdown.png` — Charts tab showing the per-agent cost attribution view
-- [ ] `aigon-amplification-metrics.png` — Amplification/Pro quality metrics leaderboard (agent rows, first-pass rate column highlighted)
-- [ ] `aigon-amplification-charts.png` — Amplification trend charts panel (cycle time, rework, cost-per-feature over time)
-- [ ] `aigon-amplification-insights.png` — Amplification AI insights / coaching card
+**Screenshot component**
+- [ ] `site/components/Screenshot.tsx` — server component that:
+  - Accepts `src`, `alt`, and optional `caption` props
+  - At build time, checks whether `public/${src}` exists using `fs.existsSync`
+  - If the file **exists**: renders a standard `<figure>` with `<img>` and optional `<figcaption>`
+  - If the file **does not exist**: renders a styled placeholder `<div>` (dashed border, neutral background) containing the `alt` text and a small label "Screenshot coming soon" — no broken image icon, no build error
+- [ ] All screenshot slots in new and updated MDX pages use `<Screenshot>` instead of bare `<img>` or `next/image`
+- [ ] Site builds cleanly (`npm run build`) with zero images present in `site/public/img/` for the new slots
 
-### Playwright automation
-- [ ] `site/scripts/take-screenshots.js` (new) — Playwright script that:
-  1. Opens `http://localhost:4100` (the running Aigon dashboard)
-  2. For each screenshot target: navigates to the correct tab/sub-tab, waits for data to load, takes a full-viewport screenshot to `site/public/img/raw/` (staging area — NOT the final `img/` path)
-  3. Prints a checklist of what was captured and what needs manual cropping/polish before moving to `site/public/img/`
-- [ ] Script exits 0 if the dashboard is reachable, exits 1 with a helpful message if not (so CI doesn't silently swallow it)
-- [ ] README block in the script header explains manual steps for BrewBoard scenario (see Technical Approach)
+**Stale reference cleanup**
+- [ ] Audit all MDX pages for references to `aigon-radar-dashboard.png` — update or remove any found
+
+### Phase 2: Screenshots (filled in over time, no code changes needed)
+
+Each item below is a screenshot target. Once the image is cropped and placed at the listed path, the `<Screenshot>` component automatically shows it. No MDX edit required.
+
+**Existing screenshots to retake**
+- [ ] `site/public/img/aigon-dashboard-reports.png` — current Reports tab (verify tab label and layout)
+- [ ] `site/public/img/aigon-dashboard-reports-summary.png` — current Summary sub-tab with up-to-date metric cards
+- [ ] `site/public/img/aigon-dashboard-reports-charts.png` — current Charts sub-tab (5 synchronized charts including Tokens Used)
+
+**New screenshots**
+- [ ] `site/public/img/aigon-dashboard-reports-activity.png` — Charts tab, Token Activity time-series chart (feature 209), activity-type colour coding visible
+- [ ] `site/public/img/aigon-dashboard-reports-agent-breakdown.png` — Charts tab, per-agent cost attribution view
+- [ ] `site/public/img/aigon-amplification-metrics.png` — Amplification quality metrics leaderboard
+- [ ] `site/public/img/aigon-amplification-charts.png` — Amplification trend charts (cycle time, rework, cost-per-feature)
+- [ ] `site/public/img/aigon-amplification-insights.png` — Amplification AI insights / coaching card
+
+**Playwright capture script**
+- [ ] `site/scripts/take-screenshots.js` — headless Playwright script that:
+  1. Navigates to each target URL/tab at `http://localhost:4100`
+  2. Waits for the relevant chart/panel to be visible
+  3. Saves full-viewport screenshots to `site/public/img/raw/` (staging area — not the final path)
+  4. Prints a checklist: captured files + manual steps (crop, polish, move to `site/public/img/`)
+  5. Exits 0 if dashboard is reachable; exits 1 with a clear message if not
+- [ ] Script header contains the full BrewBoard setup sequence (see Technical Approach)
 
 ## Validation
 
 ```bash
-# Docs site builds without errors
-cd site && npm run build 2>&1 | tail -20
-# All new MDX files pass Next.js build
-node -e "console.log('validation placeholder')"
+# Site builds with zero new image files present (proves graceful degradation)
+cd site && npm run build 2>&1 | tail -30
 ```
 
 ## Technical Approach
 
-### Content strategy
-Each new guide follows the existing pattern in `site/content/guides/`: intro callout (what the feature does), prerequisites, step-by-step walkthrough with annotated screenshots, reference table, and a "Next steps" link.
+### Screenshot component (`site/components/Screenshot.tsx`)
 
-### Screenshot workflow
-Two-stage process:
-1. **Raw capture**: Playwright writes to `site/public/img/raw/` — full viewport, no cropping.
-2. **Final polish** (manual): User crops, adjusts contrast, and moves approved files to `site/public/img/`. MDX pages reference `img/` paths only.
+This is a Next.js App Router **server component** — `fs` is safe to use here because the check happens at SSG/build time, not in the browser.
 
-**Why BrewBoard for screenshots**: The Aigon dashboard only shows meaningful data when a project with completed features is loaded. BrewBoard (seed project at `~/src/brewboard`) is the canonical test fixture with enough history to make Reports, Charts, and Amplification panels look realistic. The Playwright script should run against `aigon server start` pointed at the BrewBoard worktree, not an empty project.
+```tsx
+// Rough shape — agent fills in styling details
+import fs from 'fs'
+import path from 'path'
 
-**BrewBoard setup instructions (embed in script header and in the spec)**:
+interface Props {
+  src: string   // e.g. "/img/aigon-dashboard-reports.png"
+  alt: string
+  caption?: string
+}
+
+export function Screenshot({ src, alt, caption }: Props) {
+  const filePath = path.join(process.cwd(), 'public', src)
+  const exists = fs.existsSync(filePath)
+
+  if (!exists) {
+    return (
+      <div className="screenshot-placeholder">
+        <span className="label">Screenshot coming soon</span>
+        <span className="desc">{alt}</span>
+      </div>
+    )
+  }
+
+  return (
+    <figure>
+      <img src={src} alt={alt} />
+      {caption && <figcaption>{caption}</figcaption>}
+    </figure>
+  )
+}
 ```
-1. cd ~/src/brewboard
-2. aigon seed-reset ~/src/brewboard --force   # restores to initial state with completed features
-3. aigon server start                          # starts dashboard at http://localhost:4100
-4. node site/scripts/take-screenshots.js      # captures all targets to site/public/img/raw/
+
+Styling for `.screenshot-placeholder`: dashed border, muted background (matches Nextra's neutral palette), readable at both light and dark mode. Keep it unobtrusive — informative, not alarming.
+
+### BrewBoard screenshot setup
+
+The Aigon dashboard only shows meaningful data when a project with completed features is loaded. BrewBoard (`~/src/brewboard`) is the canonical test fixture.
+
 ```
-If `aigon seed-reset` cannot generate enough history for Amplification charts (requires Pro), capture a static mock or annotate the screenshot placeholder with a TODO comment in the MDX.
+# Run before taking screenshots:
+cd ~/src/brewboard
+aigon seed-reset ~/src/brewboard --force   # restores seed state with completed features
+aigon server start                          # dashboard at http://localhost:4100
+node /path/to/aigon/site/scripts/take-screenshots.js
+```
+
+Raw captures land in `site/public/img/raw/`. Crop in Preview/Figma/your tool of choice, then move finished files to `site/public/img/` with the exact filename the `<Screenshot>` component expects.
+
+**Amplification screenshots**: require Pro to be active. If Pro isn't available in the dev environment, leave those slots as placeholders (the component handles this gracefully) and add a `<!-- TODO: requires Pro license -->` comment in the MDX.
 
 ### Navigation wiring
-- `site/content/guides/_meta.ts` — add `"telemetry"` and `"amplification"` entries
-- `site/content/concepts/_meta.ts` — add `"reliability"` entry
-- Order: telemetry after dashboard guide; amplification last (Pro-gated); reliability after evaluation concept
 
-### Stale screenshots
-Any screenshot file currently referencing "Radar" in name or content should be identified and either removed or replaced. Specifically audit: `aigon-radar-dashboard.png` — check if any MDX page references it and update the reference to the correct file.
+- `site/content/guides/_meta.ts`: add `"telemetry"` after `"dashboard"`, add `"amplification"` as last entry (Pro-gated)
+- `site/content/concepts/_meta.ts`: add `"reliability"` after `"evaluation"`
 
 ### Landing page change
-Minimal: one additional bullet in the existing dashboard capabilities list. Do not redesign the landing page layout (out of scope). Use `Skill(frontend-design)` if any CSS is touched.
+
+One bullet added to the existing dashboard capabilities list. No layout or CSS changes. If any CSS is touched, invoke `Skill(frontend-design)` first.
+
+### Content strategy
+
+Each new guide follows the existing pattern in `site/content/guides/`: brief intro callout, prerequisites (if any), section-by-section walkthrough with `<Screenshot>` components, reference table, and a "Next steps" link. Write full prose — do not use placeholder text; the content ships immediately.
 
 ## Dependencies
 
-- Aigon dashboard must be running locally (port 4100) to take screenshots
-- BrewBoard seed project at `~/src/brewboard` with `aigon seed-reset` applied
-- `@playwright/test` already available or installable (`npm install -D @playwright/test` in site/)
-- Pro subscription or mock Pro state to capture Amplification screenshots (if not available, document with TODO placeholders)
+- `fs` (Node built-in) — no new npm deps for the Screenshot component
+- `@playwright/test` for the screenshot script — install with `npm install -D @playwright/test` inside `site/` if not already present (dev dependency only)
+- BrewBoard seed project at `~/src/brewboard` for Phase 2 screenshot capture
+- Pro subscription (or mock state) for Amplification screenshots; placeholders are acceptable if unavailable
 
 ## Out of Scope
 
 - Redesigning the landing page layout or hero section
-- Adding new docs content about features not yet shipped (e.g., feature 210 dependency enforcement)
+- Adding docs for features not yet shipped (e.g., feature 210 dependency enforcement)
 - Automated screenshot diffing in CI
 - Translating docs to other languages
 - Updating the comparisons matrix (separate feature)
 
 ## Open Questions
 
-- Is a Pro license available in the dev environment to capture real Amplification screenshots, or do we need to use a mock/stub state? If mocking, what's the correct way to force Pro mode for screenshot purposes?
-- Should the Amplification guide live under `/docs/guides/` or under `/pro/` (the existing Pro landing page)? Currently `/pro/` is a Next.js page, not an MDX route — linking from the guides sidebar may require a cross-link rather than a sidebar entry.
-- Are there any other recently shipped features (beyond telemetry, activity breakdown, Amplification) that need docs coverage in this batch?
+- Should the Amplification guide live in `/docs/guides/` or link from the existing `/pro` page? Currently `/pro/` is a standalone Next.js page, not an MDX route — linking from the guides sidebar may use a cross-link rather than a sidebar entry.
+- Is there a way to force Pro mode locally for screenshot capture without a live subscription?
 
 ## Related
 
-- Research: n/a
 - Features: 207 (Gemini & Codex telemetry), 208 (activity breakdown), 209 (token activity time series), 202 (agent-attributed token analytics)
 - Pro page: `site/app/pro/page.tsx`
 - Dashboard guide: `site/content/guides/dashboard.mdx`
