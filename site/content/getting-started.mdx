@@ -252,10 +252,11 @@ tmux attach -t brewboard-f2-gg-brewery-import
 
 ### 3. Watch the dashboard
 
-While the agent works, start the dashboard:
+While the agent works, start the dashboard and register the repo:
 
 ```bash
 aigon server start
+aigon server add ~/src/brewboard
 ```
 
 Then open [http://localhost:4100](http://localhost:4100) in your browser. You'll see the feature in the Pipeline view with the agent status updating in real-time.
