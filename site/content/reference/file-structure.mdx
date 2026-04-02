@@ -21,18 +21,27 @@ All workflow state lives in `docs/specs/`, organised into three areas:
 
 ### Lifecycle folders (Kanban)
 
-Each pillar uses folder-based status:
+**Features & Research**
 
 | Folder | Purpose |
 |--------|---------|
 | `01-inbox/` | New, unprioritised items |
-| `02-backlog/` | Prioritised, ready to start |
-| `02-triaged/` | Classified and validated (feedback only) |
+| `02-backlog/` | Prioritised, assigned an ID |
 | `03-in-progress/` | Currently being worked on |
-| `03-actionable/` | Ready to promote (feedback only) |
-| `04-in-evaluation/` | Completed, being reviewed |
-| `05-done/` | Finished and merged |
+| `04-in-evaluation/` | Submitted, pending evaluation (Fleet) |
+| `05-done/` | Merged and complete |
 | `06-paused/` | Temporarily on hold |
+
+**Feedback**
+
+| Folder | Purpose |
+|--------|---------|
+| `01-inbox/` | New, unreviewed feedback |
+| `02-triaged/` | Classified and validated |
+| `03-actionable/` | Ready to promote to a feature or research topic |
+| `04-done/` | Resolved |
+| `05-wont-fix/` | Acknowledged, not actioned |
+| `06-duplicate/` | Duplicate of an existing item |
 
 ### Supporting files
 
