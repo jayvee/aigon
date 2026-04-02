@@ -584,7 +584,12 @@
       "Bash(cd /Users/jviner/src/aigon-worktrees/feature-189-cc-seed-reset-rewrite:*)",
       "Bash(git -C /Users/jviner/src/aigon-worktrees/feature-189-cc-seed-reset-rewrite:*)",
       "Bash(node:*)",
-      "Bash(npm:*)"
+      "Bash(npm:*)",
+      "Read(/Users/jviner/.aigon/worktrees/aigon/feature-207-cc-telemetry-for-gemini-and-codex-agents/**)",
+      "Edit(/Users/jviner/.aigon/worktrees/aigon/feature-207-cc-telemetry-for-gemini-and-codex-agents/**)",
+      "Write(/Users/jviner/.aigon/worktrees/aigon/feature-207-cc-telemetry-for-gemini-and-codex-agents/**)",
+      "Bash(cd /Users/jviner/.aigon/worktrees/aigon/feature-207-cc-telemetry-for-gemini-and-codex-agents:*)",
+      "Bash(git -C /Users/jviner/.aigon/worktrees/aigon/feature-207-cc-telemetry-for-gemini-and-codex-agents:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
