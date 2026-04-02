@@ -1,3 +1,26 @@
+---
+commit_count: 7
+lines_added: 585
+lines_removed: 54
+lines_changed: 639
+files_touched: 11
+fix_commit_count: 1
+fix_commit_ratio: 0.143
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 255
+output_tokens: 24998
+cache_creation_input_tokens: 265311
+cache_read_input_tokens: 6652028
+thinking_tokens: 0
+total_tokens: 6942592
+billable_tokens: 25253
+cost_usd: 16.8313
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: 39.52
+---
 # Implementation Log: Feature 207 - telemetry-for-gemini-and-codex-agents
 Agent: cc
 
