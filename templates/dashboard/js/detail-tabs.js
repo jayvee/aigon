@@ -320,13 +320,27 @@
           ['Lines', '+' + (p.linesAdded || 0) + ' / -' + (p.linesRemoved || 0)],
         ]);
 
-        const costHtml = statusSection('Cost', [
-          ['Input tokens', escHtml(String(c.inputTokens || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ','))],
-          ['Output tokens', escHtml(String(c.outputTokens || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ','))],
+        const fmt = n => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        const byAgent = c.byAgent || {};
+        const costAgentIds = Object.keys(byAgent);
+        const costRows = [
+          ['Input tokens', fmt(c.inputTokens)],
+          ['Output tokens', fmt(c.outputTokens)],
           ['Estimated cost', c.estimatedUsd ? '$' + escHtml(String(c.estimatedUsd)) : 'n/a'],
           ['Model', c.model ? escHtml(c.model) : 'n/a'],
           ['Sessions', escHtml(String(c.sessions || 0))],
-        ]);
+        ];
+        if (costAgentIds.length > 1) {
+          costAgentIds.forEach(id => {
+            const a = byAgent[id];
+            const agentCost = a.costUsd ? '$' + Math.round(a.costUsd * 10000) / 10000 : 'n/a';
+            costRows.push([
+              id.toUpperCase(),
+              escHtml(a.model || id) + ' · ' + fmt(a.inputTokens) + '+' + fmt(a.outputTokens) + ' tok · ' + agentCost,
+            ]);
+          });
+        }
+        const costHtml = statusSection('Cost', costRows);
 
         const criteriaLabel = sp.criteriaTotal
           ? escHtml(sp.criteriaDone + '/' + sp.criteriaTotal)
