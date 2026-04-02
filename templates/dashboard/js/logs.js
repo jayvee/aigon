@@ -1057,6 +1057,12 @@
         html.push('<div style="height:160px;position:relative"><canvas id="rework-chart-canvas"></canvas></div>');
         html.push('</div>');
 
+        html.push('<div class="volume-chart-wrap">');
+        html.push('<div class="volume-chart-header">');
+        html.push('<div class="volume-chart-title">Tokens Used ' + proBadgeHtml + ' <span class="stat-info" data-stat-tooltip="Total billable tokens consumed per period. Correlate with Features Completed above to see token efficiency trends.">?</span></div>');
+        html.push('</div>');
+        html.push('<div style="height:160px;position:relative"><canvas id="token-chart-canvas"></canvas></div>');
+        html.push('</div>');
       } else {
         // Pro-gated: show blurred SVG placeholders for the 3 Pro charts
         html.push(buildProGatedChart('Median Cycle Time', 'chart-cycle-time',
@@ -1065,6 +1071,8 @@
           'Median number of commits per feature completed in each period.'));
         html.push(buildProGatedChart('Rework Ratio', 'chart-rework',
           'Percentage of commits that are fixes. Lower is better.'));
+        html.push(buildProGatedChart('Tokens Used', 'chart-tokens',
+          'Total billable tokens consumed per period. Compare with Features Completed to track token efficiency.'));
         html.push('<div style="text-align:center;padding:8px 0;font-size:11px;color:var(--text-tertiary)"><a href="https://aigon.build/pro" target="_blank" style="color:var(--accent,#3b82f6);text-decoration:none">Get Aigon Pro &rarr;</a></div>');
       }
 
@@ -1180,13 +1188,15 @@
         const rawCtSeries = _proActive ? buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity) : [];
         const rawCpfSeries = _proActive ? buildCommitsPerFeatureSeries(filteredFeatures, featureCommitMap, statsState.volumeGranularity) : [];
         const rawReworkSeries = _proActive ? buildReworkRatioSeries(filteredCommits, statsState.volumeGranularity) : [];
-        const [alignedVol, alignedCommit, alignedCt, alignedCpf, alignedRework] = alignAllSeries(rawVolSeries, rawCommitSeries, rawCtSeries, rawCpfSeries, rawReworkSeries);
+        const rawTokenSeries = _proActive ? buildTokenSeries(filteredFeatures, statsState.volumeGranularity) : [];
+        const [alignedVol, alignedCommit, alignedCt, alignedCpf, alignedRework, alignedToken] = alignAllSeries(rawVolSeries, rawCommitSeries, rawCtSeries, rawCpfSeries, rawReworkSeries, rawTokenSeries);
         renderVolumeChart(alignedVol, statsState.volumeGranularity);
         renderCommitChart(alignedCommit, statsState.volumeGranularity);
         if (_proActive) {
           renderCycleTimeChart(alignedCt, statsState.volumeGranularity);
           renderCpfChart(alignedCpf, statsState.volumeGranularity);
           renderReworkChart(alignedRework, statsState.volumeGranularity);
+          renderTokenChart(alignedToken, statsState.volumeGranularity);
         }
       }
 
@@ -1211,6 +1221,7 @@
             if (_proActive && statsState.cycleTimeChart) { statsState.cycleTimeChart.resize(); applyCycleTimeWindow(); }
             if (_proActive && statsState.cpfChart) { statsState.cpfChart.resize(); applyCpfWindow(); }
             if (_proActive && statsState.reworkChart) { statsState.reworkChart.resize(); applyReworkWindow(); }
+            if (_proActive && statsState.tokenChart) { statsState.tokenChart.resize(); applyTokenWindow(); }
           }
         };
       });
@@ -1224,6 +1235,7 @@
         statsState.commitWindowEnd = null;
         statsState.cpfWindowEnd = null;
         statsState.reworkWindowEnd = null;
+        statsState.tokenWindowEnd = null;
         statsState.featureListPage = 0;
         saveStatsPrefs();
         renderStatistics();
@@ -1256,6 +1268,7 @@
           statsState.commitWindowEnd = null;
         statsState.cpfWindowEnd = null;
         statsState.reworkWindowEnd = null;
+        statsState.tokenWindowEnd = null;
           saveStatsPrefs();
           renderStatistics();
         };
