@@ -67,7 +67,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | 700+ | Branch, worktree, status, commit helpers, commit analytics, git attribution |
-| `lib/telemetry.js` | 144 | Normalized session telemetry, cross-agent cost reporting |
+| `lib/telemetry.js` | ~1100 | Normalized session telemetry, cross-agent cost reporting. Parsers for CC (JSONL transcripts), GG (`~/.gemini/tmp/` session JSON), CX (`~/.codex/sessions/` JSONL matched by cwd). CU marked as no-telemetry. Pricing table covers Claude, Gemini, and GPT-5 models |
 | `lib/security.js` | 131+ | Merge gate scanning (gitleaks + semgrep), severity thresholds, diff-aware |
 | `lib/workflow-core/` | ~1500 | **Workflow engine**: event-sourced state with XState machine, action derivation (workflow + infra), effect lifecycle for features + research |
 | `lib/workflow-snapshot-adapter.js` | ~310 | **Shared read adapter**: maps workflow-core snapshots (feature + research) to dashboard/board data formats; event log reading; side-effect free |
