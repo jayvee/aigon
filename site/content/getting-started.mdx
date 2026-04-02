@@ -115,15 +115,15 @@ aigon config init --global
 
 Then set your terminal. Pick the one you use:
 
-**Warp** (recommended — supports side-by-side split panes):
-```bash
-aigon config set --global terminal warp
-```
-
-**iTerm2** (agents run in tmux sessions opened in iTerm2):
+**iTerm2** (recommended — agents run in tabs within a single window):
 ```bash
 aigon config set --global terminal tmux
 aigon config set --global tmuxApp iterm2
+```
+
+**Warp** (agents run in side-by-side split panes):
+```bash
+aigon config set --global terminal warp
 ```
 
 **Terminal.app** (macOS built-in — agents run in tmux sessions):
