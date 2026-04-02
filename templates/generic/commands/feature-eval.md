@@ -51,7 +51,7 @@ aigon feature-spec {{ARG1_SYNTAX}}
 Review the single implementation:
 
 1. Read the implementation log: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md`
-2. Review the code changes: `git diff main...feature-{{ARG1_SYNTAX}}-*`
+2. Review the code changes: `git diff main..feature-{{ARG1_SYNTAX}}-*`
 3. Check if the implementation meets the spec requirements
 4. Verify code quality, testing, documentation, security
 
@@ -62,7 +62,7 @@ Review each agent's implementation:
 1. For each agent worktree listed:
    - Read implementation log from the worktree (e.g., `../feature-{{ARG1_SYNTAX}}-cc-*/docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-cc-*-log.md`)
    - **Examine the actual code changes** in each worktree
-   - Run `git diff main...HEAD` in each worktree to see all changes
+   - Run `git diff main..HEAD` in each worktree to see all changes
    - Check spec compliance
 
 2. **Worktree locations:** `../feature-{{ARG1_SYNTAX}}-<agent>-*`
