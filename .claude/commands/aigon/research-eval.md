@@ -22,7 +22,15 @@ claude --model sonnet
 /aigon-research-eval 05
 ```
 
-## Step 1: Read All Findings
+## Step 1: Run the CLI command
+
+IMPORTANT: You MUST run this command first. It transitions the engine state to evaluating and moves the spec to the evaluation folder.
+
+```bash
+aigon research-eval {{args}}
+```
+
+## Step 2: Read All Findings
 
 Find and read ALL findings files:
 ```
@@ -36,7 +44,7 @@ docs/specs/research-topics/04-in-evaluation/research-{ID}-*.md
 
 (If not found in `04-in-evaluation/`, check `03-in-progress/`.)
 
-## Step 2: Synthesize Findings
+## Step 3: Synthesize Findings
 
 Present to the user:
 
@@ -46,7 +54,7 @@ What all agents agree on.
 ### Divergent Views
 Where agents disagree and why - be specific about which agent said what.
 
-## Step 3: Consolidate Features
+## Step 4: Consolidate Features
 
 Extract the `## Suggested Features` table from each agent's findings file.
 
@@ -73,7 +81,7 @@ Extract the `## Suggested Features` table from each agent's findings file.
 - `Unique to [Agent]` - Only one agent suggested
 - `Merged` - Combined similar suggestions from multiple agents
 
-## Step 4: Get User Approval and Create Features
+## Step 5: Get User Approval and Create Features
 
 Ask the user:
 
@@ -106,7 +114,7 @@ After creating each feature:
 ```
 This enables Aigon's dependency system to enforce ordering — dependent features cannot be started until their dependencies are done.
 
-## Step 5: Update Main Research Doc
+## Step 6: Update Main Research Doc
 
 Once user confirms, update the main research document:
 
@@ -133,7 +141,7 @@ Once user confirms, update the main research document:
 - other-feature: Reason not selected
 ```
 
-## Step 6: Signal completion
+## Step 7: Signal completion
 
 **THIS IS THE FINAL STEP. YOU MUST COMPLETE IT. DO NOT SKIP THIS STEP.**
 
