@@ -7,5 +7,5 @@ export default {
   dashboard: "Dashboard",
   telemetry: "Telemetry & Analytics",
   "security-scanning": "Security Scanning",
-  amplification: "Amplification Dashboard",
+  amplification: "Insights (Amplification)",
 };

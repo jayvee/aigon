@@ -99,19 +99,24 @@ Paginated tables for drilling into individual items:
 
 ### Activity breakdown
 
-Each telemetry record includes an `activity` field — `implement`, `evaluate`, or `review` — so you can see where tokens are being spent. The Token Activity chart in the Charts sub-tab visualizes this breakdown over time with colour-coded bars.
+Each telemetry record includes an `activity` field — `implement`, `evaluate`, or `review` — so you can see where tokens are being spent. With Pro, the Insights tab's Token Usage by Activity chart visualizes this breakdown over time.
 
 For details on what is collected, how cost is computed, and how to interpret activity data, see the [Telemetry & Analytics guide](/docs/guides/telemetry).
 
 ### Pro Features
 
-The Reports tab includes additional capabilities with [Aigon Pro](/pro):
+The Reports tab includes additional Pro-gated charts and cards with [Aigon Pro](/pro):
 
-- **Agent Quality Metrics** — first-pass rate, commits per feature, and rework ratio give you a clear picture of which agents produce correct code on the first attempt
-- **Trend Charts** — five synchronized charts (features completed, commits, cycle time, CPF, rework ratio) with daily/weekly/monthly granularity so you can track improvements over time
-- **AI Insights** — AI-generated observations about your workflow patterns, plus actionable coaching recommendations
+- **Additional charts** — Median Cycle Time, Commits per Feature, Rework Ratio, and Tokens Used unlock alongside the free Features Completed and Commits charts
+- **Additional summary cards** — Commits/Feature and Rework Ratio cards in the Summary sub-tab
 
-These Pro features build on the same data the free Reports tab already collects — Pro adds deeper analysis and AI-powered interpretation. See the [Amplification Dashboard guide](/docs/guides/amplification) for a full walkthrough.
+Pro also adds the **Insights tab** (labeled "Insights PRO" in the dashboard) with:
+
+- **Quality metrics** — First-Pass Rate (No Rework), Median Cost/Feature, Median Tokens/Line Changed
+- **Token analytics** — distribution histograms, per-agent breakdowns, activity-level token tracking
+- **AI coaching** — AI-generated observations and actionable recommendations
+
+These Pro features build on the same data the free Reports tab already collects — Pro adds deeper analysis and AI-powered interpretation. See the [Insights guide](/docs/guides/amplification) for a full walkthrough.
 
 ## Console and Logs
 

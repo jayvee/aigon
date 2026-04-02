@@ -137,9 +137,9 @@ Agent sessions emit a heartbeat every 30 seconds (a file touch in `.aigon/state/
 
 | Status | Meaning |
 |--------|---------|
-| **Alive** | Heartbeat received within the last 60 seconds |
-| **Stale** | No heartbeat for 60-120 seconds — agent may be thinking or stuck |
-| **Dead** | No heartbeat for 120+ seconds — session likely ended |
+| **Alive** | Heartbeat received within the last 2 minutes (120 seconds) |
+| **Stale** | No heartbeat for 2-5 minutes — agent may be thinking or stuck |
+| **Dead** | No heartbeat for 5+ minutes (300 seconds) — session likely ended |
 
 Heartbeat is **display-only** — it never triggers automatic state changes. If an agent dies, you decide what to do: restart it, mark it as failed, or close the feature with another agent's work.
 
