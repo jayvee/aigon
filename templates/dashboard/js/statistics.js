@@ -839,142 +839,6 @@
       }
     }
 
-    function buildTokenSeries(features, granularity) {
-      const buckets = {};
-      let minTs = Infinity, maxTs = -Infinity;
-
-      features.forEach(f => {
-        if (!f.billableTokens || f.billableTokens <= 0) return;
-        const ts = f.completedAt ? new Date(f.completedAt) : null;
-        if (!ts || isNaN(ts)) return;
-        const t = ts.getTime();
-        if (t < minTs) minTs = t;
-        if (t > maxTs) maxTs = t;
-        let key;
-        if (granularity === 'daily') {
-          key = ts.toISOString().slice(0, 10);
-        } else if (granularity === 'weekly') {
-          const d = new Date(ts);
-          const dow = d.getUTCDay() || 7;
-          d.setUTCDate(d.getUTCDate() - dow + 1);
-          key = d.toISOString().slice(0, 10);
-        } else {
-          key = ts.toISOString().slice(0, 7) + '-01';
-        }
-        buckets[key] = (buckets[key] || 0) + f.billableTokens;
-      });
-
-      if (minTs === Infinity) return [];
-
-      const filled = [];
-      const cur = new Date(minTs);
-      const end = new Date(maxTs);
-
-      if (granularity === 'daily') {
-        cur.setUTCHours(0, 0, 0, 0); end.setUTCHours(0, 0, 0, 0);
-        while (cur <= end) {
-          const key = cur.toISOString().slice(0, 10);
-          filled.push({ date: key, tokens: buckets[key] || 0 });
-          cur.setUTCDate(cur.getUTCDate() + 1);
-        }
-      } else if (granularity === 'weekly') {
-        const dow = cur.getUTCDay() || 7;
-        cur.setUTCDate(cur.getUTCDate() - dow + 1); cur.setUTCHours(0, 0, 0, 0);
-        while (cur <= end) {
-          const key = cur.toISOString().slice(0, 10);
-          filled.push({ date: key, tokens: buckets[key] || 0 });
-          cur.setUTCDate(cur.getUTCDate() + 7);
-        }
-      } else {
-        cur.setUTCDate(1); cur.setUTCHours(0, 0, 0, 0);
-        end.setUTCDate(1); end.setUTCHours(0, 0, 0, 0);
-        while (cur <= end) {
-          const key = cur.toISOString().slice(0, 10);
-          filled.push({ date: key, tokens: buckets[key] || 0 });
-          cur.setUTCMonth(cur.getUTCMonth() + 1);
-        }
-      }
-      return filled;
-    }
-
-    function renderTokenChart(fullSeries, granularity) {
-      statsState.tokenSeries = fullSeries || [];
-      statsState.tokenWindowEnd = null;
-
-      if (statsState.tokenChart) { statsState.tokenChart.destroy(); statsState.tokenChart = null; }
-      const canvas = document.getElementById('token-chart-canvas');
-      if (!canvas || !fullSeries || fullSeries.length === 0) return;
-
-      statsState.tokenChart = new Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels: [],
-          datasets: [{
-            data: [],
-            backgroundColor: 'rgba(139,92,246,0.7)',
-            hoverBackgroundColor: 'rgba(139,92,246,1)',
-            borderRadius: 3,
-            borderSkipped: false
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                title: ctx => granularity === 'weekly' ? ('Week of ' + ctx[0].label) : ctx[0].label,
-                label: ctx => ` ${fmtTickVal(ctx.parsed.y)} tokens`
-              },
-              backgroundColor: '#1a1a1f',
-              titleColor: '#ededef',
-              bodyColor: '#a0a0a8',
-              borderColor: 'rgba(255,255,255,0.1)',
-              borderWidth: 1,
-              padding: 10
-            }
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: { color: '#6b6b76', font: { size: 11 } },
-              border: { color: 'rgba(255,255,255,0.06)' }
-            },
-            y: {
-              beginAtZero: true,
-              ticks: { color: '#6b6b76', font: { size: 11 }, callback: v => fmtTickVal(v) },
-              grid: { color: 'rgba(255,255,255,0.04)' },
-              border: { display: false }
-            }
-          }
-        }
-      });
-      applyTokenWindow();
-    }
-
-    function applyTokenWindow() {
-      const series = statsState.tokenSeries;
-      const gran = statsState.volumeGranularity;
-      const windowSize = VOLUME_WINDOW[gran] || 8;
-      if (!series || !series.length) return;
-
-      if (statsState.tokenWindowEnd === null) statsState.tokenWindowEnd = statsState.volumeWindowEnd;
-      const endIdx = statsState.tokenWindowEnd !== null
-        ? Math.min(statsState.tokenWindowEnd, series.length - 1)
-        : series.length - 1;
-      const startIdx = Math.max(0, endIdx - windowSize + 1);
-      const slice = series.slice(startIdx, endIdx + 1);
-
-      const chart = statsState.tokenChart;
-      if (chart) {
-        chart.data.labels = slice.map(d => gran === 'monthly' ? d.date.slice(0, 7) : d.date.slice(5, 10));
-        chart.data.datasets[0].data = slice.map(d => d.tokens || 0);
-        chart.update('none');
-      }
-    }
-
     // panCycleTimeChart is now handled by panAllCharts below
 
     function applyVolumeWindow() {
@@ -1063,13 +927,11 @@
       statsState.cycleTimeWindowEnd = newEnd;
       statsState.cpfWindowEnd = newEnd;
       statsState.reworkWindowEnd = newEnd;
-      statsState.tokenWindowEnd = newEnd;
       applyVolumeWindow();
       applyCommitWindow();
       applyCycleTimeWindow();
       applyCpfWindow();
       applyReworkWindow();
-      applyTokenWindow();
     }
 
     function panVolumeChart(direction) { panAllCharts(direction); }
