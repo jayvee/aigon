@@ -5,5 +5,7 @@ export default {
   "research-workflow": "Research Workflow",
   "feedback-workflow": "Feedback Workflow",
   dashboard: "Dashboard",
+  telemetry: "Telemetry & Analytics",
   "security-scanning": "Security Scanning",
+  amplification: "Amplification Dashboard",
 };
