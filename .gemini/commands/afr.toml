@@ -28,7 +28,7 @@ echo "Feature branch: $FEATURE_BRANCH"
 **If you are on the feature branch**, review files directly.
 
 **If you are on main** (e.g. you cannot cd into the worktree), review using git commands:
-- `git diff main...$FEATURE_BRANCH` to see the diff
+- `git diff main..$FEATURE_BRANCH` to see the diff (two dots — only changes from this branch)
 - `git show $FEATURE_BRANCH:path/to/file` to read files from the branch
 - `git log main..$FEATURE_BRANCH --oneline` to see commits
 - Do NOT try to cd into the worktree directory — review from main using git.
@@ -57,7 +57,7 @@ Read the implementing agent's log to understand their approach and decisions:
 Examine all changes made on this branch:
 
 ```bash
-git diff main...HEAD
+git diff main..HEAD
 ```
 
 Signal review start immediately:
