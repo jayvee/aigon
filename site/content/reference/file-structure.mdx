@@ -13,11 +13,43 @@ Aigon stores all workflow state as files in your repository. Features, research 
 
 ## Directory layout
 
-All workflow state lives in `docs/specs/`, organised into three areas:
-
-- **`features/`** — Implementation specs with acceptance criteria (the delivery pipeline)
-- **`research-topics/`** — Investigations exploring technical possibilities (the discovery pipeline)
-- **`feedback/`** — User input, bugs, and improvement ideas (the triage pipeline)
+```
+your-repo/
+├── .aigon/               # Local runtime state (gitignored)
+├── .claude/              # Claude Code config + aigon commands
+├── .codex/               # Codex config + aigon prompts
+├── .cursor/              # Cursor config + aigon commands
+├── .gemini/              # Gemini CLI config + aigon commands
+├── .githooks/            # Git hooks (merge gate scanning)
+├── docs/
+│   ├── agents/           # Per-agent orientation notes
+│   └── specs/
+│       ├── features/     # Delivery pipeline
+│       │   ├── 01-inbox/
+│       │   ├── 02-backlog/
+│       │   ├── 03-in-progress/
+│       │   ├── 04-in-evaluation/
+│       │   ├── 05-done/
+│       │   ├── 06-paused/
+│       │   ├── evaluations/
+│       │   └── logs/
+│       ├── research-topics/  # Discovery pipeline
+│       │   ├── 01-inbox/
+│       │   ├── 02-backlog/
+│       │   ├── 03-in-progress/
+│       │   ├── 04-in-evaluation/
+│       │   ├── 05-done/
+│       │   ├── 06-paused/
+│       │   └── logs/
+│       └── feedback/     # Triage pipeline
+│           ├── 01-inbox/
+│           ├── 02-triaged/
+│           ├── 03-actionable/
+│           ├── 04-done/
+│           ├── 05-wont-fix/
+│           └── 06-duplicate/
+└── AGENTS.md             # Shared agent orientation (all agents read this)
+```
 
 ### Lifecycle folders (Kanban)
 
@@ -73,23 +105,21 @@ flowchart LR
 
 All transitions go through the CLI — never move spec files manually.
 
-## Manifests (local reliability layer)
+## The `.aigon/` directory
 
-Feature/research state lives in two layers:
+Local runtime state lives in `.aigon/` (gitignored). Spec folders in `docs/specs/` are the committed, human-readable view; `.aigon/` is the engine underneath.
 
-1. **Folders** (`docs/specs/features/03-in-progress/`) — shared ground truth, committed to Git
-2. **Manifests** (`.aigon/state/feature-{id}.json`) — local reliability layer, gitignored, crash-safe
-
-Agents write status to `.aigon/state/feature-{id}-{agent}.json` in the main repo (not inside worktrees). Run `aigon doctor --fix` to detect and repair desyncs between the two layers.
-
-### Additional `.aigon/` directories
-
-| Directory | Purpose |
-|-----------|---------|
-| `.aigon/state/` | Per-feature manifests and per-agent status files (gitignored) |
-| `.aigon/cache/` | Cached data (e.g., `commits.json` for commit analytics) |
-| `.aigon/telemetry/` | Normalized per-session telemetry records (agent, model, tokens, cost, duration) |
+| Path | Purpose |
+|------|---------|
 | `.aigon/config.json` | Project-level configuration |
+| `.aigon/state/feature-{id}.json` | Per-feature status (created by CLI) |
+| `.aigon/state/feature-{id}-{agent}.json` | Per-agent status files (heartbeat, session metadata) |
+| `.aigon/workflows/features/{id}/events.jsonl` | Append-only workflow event log |
+| `.aigon/workflows/features/{id}/snapshot.json` | Derived workflow snapshot |
+| `.aigon/telemetry/` | Normalised per-session telemetry records (agent, model, tokens, cost, duration) |
+| `.aigon/cache/` | Cached data (e.g. `commits.json` for commit analytics) |
+
+Run `aigon doctor --fix` to detect and repair desyncs between spec folders and engine state.
 
 ## The complete lifecycle loop
 

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import fs from "fs";
+import path from "path";
 
 export const metadata: Metadata = {
   title: "Aigon Pro — Deeper Insights Into Your AI Development Workflow",
@@ -30,18 +32,32 @@ function ScreenshotFrame({
   alt: string;
   caption?: string;
 }) {
+  const filePath = path.join(process.cwd(), "public", src);
+  const exists = fs.existsSync(filePath);
+
   return (
     <figure className="mt-8">
-      <div className="overflow-hidden rounded-xl border border-gray-200 shadow-lg dark:border-white/5 dark:shadow-[0_12px_32px_rgba(0,0,0,0.3)]">
-        <img
-          src={src}
-          alt={alt}
-          width={1200}
-          height={632}
-          loading="lazy"
-          className="w-full"
-        />
-      </div>
+      {exists ? (
+        <div className="overflow-hidden rounded-xl border border-gray-200 shadow-lg dark:border-white/5 dark:shadow-[0_12px_32px_rgba(0,0,0,0.3)]">
+          <img
+            src={src}
+            alt={alt}
+            width={1200}
+            height={632}
+            loading="lazy"
+            className="w-full"
+          />
+        </div>
+      ) : (
+        <div className="flex min-h-[220px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center dark:border-white/10 dark:bg-white/3">
+          <span className="text-xs font-medium tracking-widest text-gray-400 uppercase dark:text-gray-500">
+            Screenshot coming soon
+          </span>
+          <span className="max-w-sm text-sm text-gray-500 dark:text-gray-400">
+            {alt}
+          </span>
+        </div>
+      )}
       {caption && (
         <figcaption className="mt-3 text-center text-sm text-gray-500 dark:text-gray-400">
           {caption}
@@ -164,6 +180,46 @@ export default function ProPage() {
             src="/img/charts-pro.png"
             alt="Aigon Pro trend charts — cycle time, commits, rework ratio over time"
             caption="Charts tab — five synchronized trend charts with daily, weekly, and monthly views"
+          />
+        </div>
+      </section>
+
+      {/* Cost & Token Visibility */}
+      <section className="px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-6">
+            <p className="mb-2 text-xs font-medium tracking-widest text-aigon-orange uppercase">
+              Cost Visibility
+            </p>
+            <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-gray-900 dark:text-[hsl(0_0%_94%)]">
+              See exactly where your spend goes
+            </h2>
+            <p className="mt-3 max-w-2xl text-gray-600 dark:text-gray-400">
+              Token usage and cost tracked across every agent &mdash; broken
+              down by phase, attributed per agent, and trended over time. No
+              more guessing which features or workflows are expensive.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            <FeatureCard
+              title="Per-Agent Attribution"
+              description="See which agents consume the most tokens and cost the most per feature. Make informed decisions about when to use which agent."
+            />
+            <FeatureCard
+              title="Activity Breakdown"
+              description="Costs split by implement, evaluate, and review phases. Understand where tokens are actually being spent across your workflow."
+            />
+            <FeatureCard
+              title="Cost per Feature"
+              description="Track spend per feature over time. Spot expensive workflows before they compound — and measure the impact of process changes."
+            />
+          </div>
+
+          <ScreenshotFrame
+            src="/img/aigon-dashboard-reports-activity.png"
+            alt="Aigon Pro cost visibility — token usage by agent and activity type, cost per feature trend"
+            caption="Token activity chart — usage broken down by agent and phase (implement, evaluate, review)"
           />
         </div>
       </section>
