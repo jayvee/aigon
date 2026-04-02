@@ -391,17 +391,22 @@
           innerHtml += '<div class="kcard-eval-section">';
           innerHtml += '<div class="kcard-eval-section-header">';
           innerHtml += '<span class="kcard-eval-section-title">Evaluation</span>';
-          // Actions in the header row — co-located so intent is clear
           if (evalRunning && evalSess.session) {
             innerHtml += '<button class="kcard-peek-btn" data-peek-session="' + escHtml(evalSess.session) + '" title="Peek at live eval output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>';
-            if (openEvalAction) {
-              innerHtml += '<button class="btn btn-secondary btn-xs kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open eval</button>';
-            }
-          }
-          if (viewEvalAction) {
-            innerHtml += '<button class="btn btn-secondary btn-xs kcard-verdict-btn" data-view-eval>View report</button>';
           }
           innerHtml += '</div>';
+          // Action buttons on their own row so they always have full width
+          const hasEvalActions = (evalRunning && evalSess.session && openEvalAction) || viewEvalAction;
+          if (hasEvalActions) {
+            innerHtml += '<div class="kcard-eval-actions">';
+            if (evalRunning && evalSess.session && openEvalAction) {
+              innerHtml += '<button class="btn btn-secondary btn-xs kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open eval</button>';
+            }
+            if (viewEvalAction) {
+              innerHtml += '<button class="btn btn-secondary btn-xs kcard-verdict-btn" data-view-eval>View report</button>';
+            }
+            innerHtml += '</div>';
+          }
 
           // Status + winner recommendation
           if (feature.evalStatus === 'pick winner') {
