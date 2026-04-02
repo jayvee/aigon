@@ -97,6 +97,12 @@ Paginated tables for drilling into individual items:
 - **Features** — paginated, sortable table with date, repo, feature number, name, agent, cycle time, commits, and lines changed
 - **Commits** — sortable table with date, repo, message, feature, agent, files changed, lines added/removed, and commit hash. Non-feature commits show a "non-feature" badge. Filterable by type (All / Feature only / Non-feature only) and agent
 
+### Activity breakdown
+
+Each telemetry record includes an `activity` field — `implement`, `evaluate`, or `review` — so you can see where tokens are being spent. The Token Activity chart in the Charts sub-tab visualizes this breakdown over time with colour-coded bars.
+
+For details on what is collected, how cost is computed, and how to interpret activity data, see the [Telemetry & Analytics guide](/docs/guides/telemetry).
+
 ### Pro Features
 
 The Reports tab includes additional capabilities with [Aigon Pro](/pro):
@@ -105,7 +111,7 @@ The Reports tab includes additional capabilities with [Aigon Pro](/pro):
 - **Trend Charts** — five synchronized charts (features completed, commits, cycle time, CPF, rework ratio) with daily/weekly/monthly granularity so you can track improvements over time
 - **AI Insights** — AI-generated observations about your workflow patterns, plus actionable coaching recommendations
 
-These Pro features build on the same data the free Reports tab already collects — Pro adds deeper analysis and AI-powered interpretation.
+These Pro features build on the same data the free Reports tab already collects — Pro adds deeper analysis and AI-powered interpretation. See the [Amplification Dashboard guide](/docs/guides/amplification) for a full walkthrough.
 
 ## Console and Logs
 
