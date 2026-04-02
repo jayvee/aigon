@@ -228,6 +228,7 @@
 
       function renderStats(payload) {
         const stats = computeStats(payload);
+        const c = (payload.deepStatus && payload.deepStatus.cost) || {};
         const rows = [
           ['Time to start', formatDuration(stats.timeToStart), 'How long the feature sat in the backlog before an agent began working on it'],
           ['Time to submit', formatDuration(stats.timeToSubmit), 'How long the agent(s) spent implementing before submitting code'],
@@ -243,13 +244,36 @@
           stats.reviewedAt ? ['Reviewed', formatIso(stats.reviewedAt)] : null,
           ['Evaluated', stats.evaluatedAt ? formatIso(stats.evaluatedAt) : 'n/a']
         ].filter(Boolean);
+
+        // Cost section
+        let costHtml = '';
+        if (c.sessions > 0 || c.inputTokens > 0) {
+          const fmt = n => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+          const byAgent = c.byAgent || {};
+          const costAgentIds = Object.keys(byAgent);
+          let costRows = '<div class="stats-row"><div class="stats-key">Input tokens</div><div class="stats-val">' + fmt(c.inputTokens) + '</div></div>' +
+            '<div class="stats-row"><div class="stats-key">Output tokens</div><div class="stats-val">' + fmt(c.outputTokens) + '</div></div>' +
+            '<div class="stats-row"><div class="stats-key">Estimated cost</div><div class="stats-val">' + (c.estimatedUsd ? '$' + escHtml(String(c.estimatedUsd)) : 'n/a') + '</div></div>' +
+            '<div class="stats-row"><div class="stats-key">Model</div><div class="stats-val">' + (c.model ? escHtml(c.model) : 'n/a') + '</div></div>' +
+            '<div class="stats-row"><div class="stats-key">Sessions</div><div class="stats-val">' + escHtml(String(c.sessions || 0)) + '</div></div>';
+          if (costAgentIds.length > 1) {
+            costAgentIds.forEach(id => {
+              const a = byAgent[id];
+              const agentCost = a.costUsd ? '$' + Math.round(a.costUsd * 10000) / 10000 : 'n/a';
+              costRows += '<div class="stats-row"><div class="stats-key">' + escHtml(id.toUpperCase()) + '</div><div class="stats-val">' + escHtml(a.model || id) + ' · ' + fmt(a.inputTokens) + '+' + fmt(a.outputTokens) + ' tok · ' + agentCost + '</div></div>';
+            });
+          }
+          costHtml = '<h5 class="stats-section-heading">Cost</h5><div class="stats-grid">' + costRows + '</div>';
+        }
+
         detailEl.innerHTML =
           '<div class="stats-grid">' +
             rows.map(([k, v, tip]) => '<div class="stats-row"><div class="stats-key">' + escHtml(k) + (tip ? ' <span class="stats-tip" data-tip="' + escHtml(tip) + '">?</span>' : '') + '</div><div class="stats-val">' + escHtml(v) + '</div></div>').join('') +
           '</div>' +
           '<div class="stats-events">' +
             timelineRows.map(([k, v]) => '<div class="stats-row"><div class="stats-key">' + escHtml(k) + '</div><div class="stats-val">' + escHtml(v) + '</div></div>').join('') +
-          '</div>';
+          '</div>' +
+          costHtml;
       }
 
       async function fetchDeepStatus() {
@@ -295,7 +319,6 @@
       function renderStatus(data) {
         const s = data.session || {};
         const p = data.progress || {};
-        const c = data.cost || {};
         const sp = data.spec || {};
 
         const sessionRows = s.completed
@@ -320,27 +343,7 @@
           ['Lines', '+' + (p.linesAdded || 0) + ' / -' + (p.linesRemoved || 0)],
         ]);
 
-        const fmt = n => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        const byAgent = c.byAgent || {};
-        const costAgentIds = Object.keys(byAgent);
-        const costRows = [
-          ['Input tokens', fmt(c.inputTokens)],
-          ['Output tokens', fmt(c.outputTokens)],
-          ['Estimated cost', c.estimatedUsd ? '$' + escHtml(String(c.estimatedUsd)) : 'n/a'],
-          ['Model', c.model ? escHtml(c.model) : 'n/a'],
-          ['Sessions', escHtml(String(c.sessions || 0))],
-        ];
-        if (costAgentIds.length > 1) {
-          costAgentIds.forEach(id => {
-            const a = byAgent[id];
-            const agentCost = a.costUsd ? '$' + Math.round(a.costUsd * 10000) / 10000 : 'n/a';
-            costRows.push([
-              id.toUpperCase(),
-              escHtml(a.model || id) + ' · ' + fmt(a.inputTokens) + '+' + fmt(a.outputTokens) + ' tok · ' + agentCost,
-            ]);
-          });
-        }
-        const costHtml = statusSection('Cost', costRows);
+        const costHtml = '';
 
         const criteriaLabel = sp.criteriaTotal
           ? escHtml(sp.criteriaDone + '/' + sp.criteriaTotal)
@@ -417,6 +420,9 @@
             renderStatus(deepStatus);
           } else {
             const payload = await fetchDetailPayload();
+            if (tab === 'stats') {
+              try { payload.deepStatus = await fetchDeepStatus(); } catch (_) {}
+            }
             state.loadedTabs[tab] = true;
             if (tab === 'events') renderEvents(payload);
             else if (tab === 'agents') renderAgents(payload);
