@@ -54,7 +54,7 @@ aigon feature-spec {{args}}
 Review the single implementation:
 
 1. Read the implementation log: `./docs/specs/features/logs/feature-{{args}}-*-log.md`
-2. Review the code changes: `git diff main...feature-{{args}}-*`
+2. Review the code changes: `git diff main..feature-{{args}}-*`
 3. Check if the implementation meets the spec requirements
 4. Verify code quality, testing, documentation, security
 
@@ -65,7 +65,7 @@ Review each agent's implementation:
 1. For each agent worktree listed:
    - Read implementation log from the worktree (e.g., `../feature-{{args}}-cc-*/docs/specs/features/logs/feature-{{args}}-cc-*-log.md`)
    - **Examine the actual code changes** in each worktree
-   - Run `git diff main...HEAD` in each worktree to see all changes
+   - Run `git diff main..HEAD` in each worktree to see all changes
    - Check spec compliance
 
 2. **Worktree locations:** `../feature-{{args}}-<agent>-*`
