@@ -391,14 +391,15 @@
           innerHtml += '<div class="kcard-eval-section">';
           innerHtml += '<div class="kcard-eval-section-header">';
           innerHtml += '<span class="kcard-eval-section-title">Evaluation</span>';
-          if (evalRunning) {
-            const evalPeekBtn = evalSess.session
-              ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(evalSess.session) + '" title="Peek at eval session"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
-              : '';
-            innerHtml += evalPeekBtn;
+          // Actions in the header row — co-located so intent is clear
+          if (evalRunning && evalSess.session) {
+            innerHtml += '<button class="kcard-peek-btn" data-peek-session="' + escHtml(evalSess.session) + '" title="Peek at live eval output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>';
             if (openEvalAction) {
-              innerHtml += '<button class="btn btn-secondary btn-xs kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open</button>';
+              innerHtml += '<button class="btn btn-secondary btn-xs kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open eval</button>';
             }
+          }
+          if (viewEvalAction) {
+            innerHtml += '<button class="btn btn-secondary btn-xs kcard-verdict-btn" data-view-eval>View report</button>';
           }
           innerHtml += '</div>';
 
@@ -413,11 +414,6 @@
             innerHtml += '<div class="kcard-eval-detail">' +
               '<span class="eval-badge">' + escHtml(feature.evalStatus) + '</span>' +
               '</div>';
-          }
-
-          // View report link
-          if (viewEvalAction) {
-            innerHtml += '<button class="kcard-verdict-link" data-view-eval>View report</button>';
           }
 
           innerHtml += '</div>';
