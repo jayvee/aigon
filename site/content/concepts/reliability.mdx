@@ -1,0 +1,150 @@
+---
+title: Reliability & Safety
+description: Worktree isolation, merge gates, audit logs, and recovery from failures.
+---
+
+Aigon is designed so that agent-produced code never reaches your main branch without passing through safety checks. This page covers the mechanisms that make multi-agent development reliable.
+
+## Worktree isolation
+
+Every feature runs in its own Git worktree — a full, independent checkout of your repository. This provides several guarantees:
+
+- **No cross-contamination**: agents cannot overwrite each other's work, even in Fleet mode where multiple agents implement the same feature simultaneously
+- **Clean rollback**: if an agent produces bad output, delete the worktree — main is untouched
+- **Independent dependencies**: each worktree has its own `node_modules`, build artifacts, and dev server port
+
+```bash
+# Aigon creates worktrees automatically during feature-start:
+aigon feature-start 42 cc gg
+# → Creates .aigon/worktrees/feature-42-cc-dark-mode/
+# → Creates .aigon/worktrees/feature-42-gg-dark-mode/
+```
+
+Worktrees are cleaned up automatically during `feature-close`.
+
+## Merge gate scanning
+
+When you close or submit a feature, Aigon runs security scanners against the changed files before merging:
+
+### gitleaks
+
+Detects hardcoded secrets — API keys, tokens, passwords, private keys. Any finding blocks the merge.
+
+### Semgrep
+
+Static analysis for security vulnerabilities (OWASP patterns, injection risks, unsafe deserialization). High-severity findings block the merge; medium-severity findings produce warnings.
+
+| Scanner | Blocks on | Warns on | Not installed |
+|---------|-----------|----------|---------------|
+| gitleaks | Any finding | — | Skipped with warning |
+| Semgrep | High severity | Medium severity | Skipped with warning |
+
+Both scanners run in **diff-aware mode** — they only scan files changed in the feature branch, not the entire repository. This keeps scans fast even in large codebases.
+
+If a scanner binary is not installed, Aigon skips it gracefully and logs a warning. Install both for full protection:
+
+```bash
+brew install gitleaks
+brew install semgrep        # or: pip install semgrep
+```
+
+See the [Security Scanning guide](/docs/guides/security-scanning) for configuration details.
+
+## Severity thresholds
+
+Merge gate behaviour is configurable per stage:
+
+```json
+{
+  "security": {
+    "mergeGateStages": {
+      "featureClose": ["gitleaks", "semgrep"],
+      "featureSubmit": ["gitleaks", "semgrep"],
+      "researchClose": ["gitleaks"]
+    }
+  }
+}
+```
+
+Research close runs only gitleaks by default — research branches typically contain notes and findings rather than production code, so full SAST is unnecessary.
+
+## Audit logs
+
+Every feature lifecycle event is recorded in an append-only event log:
+
+```
+.aigon/workflows/features/{id}/events.jsonl
+```
+
+Each line is a timestamped JSON event:
+
+```json
+{"type": "FEATURE_STARTED", "timestamp": "2026-03-15T10:30:00Z", "agent": "cc", "payload": {...}}
+{"type": "AGENT_SUBMITTED", "timestamp": "2026-03-15T11:45:00Z", "agent": "cc", "payload": {...}}
+{"type": "FEATURE_CLOSED", "timestamp": "2026-03-15T12:00:00Z", "winner": "cc", "payload": {...}}
+```
+
+Event logs are immutable — Aigon only appends, never modifies or deletes entries. The current state snapshot (`.aigon/workflows/features/{id}/snapshot.json`) is always derivable from the event log.
+
+This gives you a complete history of:
+- When each agent started and submitted
+- Which agent won evaluation (Fleet mode)
+- Security scan results at merge time
+- Any errors or failures during the lifecycle
+
+## Recovery from failures
+
+### Agent session dies mid-implementation
+
+Committed work survives in the worktree. Restart the agent:
+
+```bash
+aigon feature-start 42 cc    # Re-launches in the existing worktree
+```
+
+The agent picks up where it left off — the spec and all committed code are still there.
+
+### Evaluation fails
+
+If `feature-eval` crashes or produces an unusable result:
+
+1. The feature stays in `in-progress` — nothing is lost
+2. Re-run evaluation: `aigon feature-eval 42`
+3. Optionally use a different evaluator agent for a fresh perspective
+
+### Security scan blocks merge
+
+If `feature-close` is blocked by a security finding:
+
+1. Read the scan output to identify the issue
+2. Fix the finding in the feature branch
+3. Commit the fix
+4. Re-run `aigon feature-close` — scanners will re-check
+
+### Worktree in a bad state
+
+If a worktree becomes corrupted or has unresolvable conflicts:
+
+```bash
+# Remove and recreate
+git worktree remove .aigon/worktrees/feature-42-cc-dark-mode --force
+aigon feature-start 42 cc    # Creates a fresh worktree
+```
+
+## Heartbeat monitoring
+
+Agent sessions emit a heartbeat every 30 seconds (a file touch in `.aigon/state/`). The dashboard uses this to display agent liveness:
+
+| Status | Meaning |
+|--------|---------|
+| **Alive** | Heartbeat received within the last 2 minutes (120 seconds) |
+| **Stale** | No heartbeat for 2-5 minutes — agent may be thinking or stuck |
+| **Dead** | No heartbeat for 5+ minutes (300 seconds) — session likely ended |
+
+Heartbeat is **display-only** — it never triggers automatic state changes. If an agent dies, you decide what to do: restart it, mark it as failed, or close the feature with another agent's work.
+
+## Next steps
+
+- **[Security Scanning](/docs/guides/security-scanning)** — detailed scanner configuration
+- **[Fleet Mode](/docs/guides/fleet-mode)** — how isolation enables safe parallel development
+- **[Evaluation](/docs/concepts/evaluation)** — comparing implementations after agents submit
