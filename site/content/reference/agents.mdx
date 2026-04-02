@@ -12,16 +12,13 @@ Aigon supports multiple AI coding agents, with more being added over time. Each 
 | `cc` | Claude Code | `/aigon:` | `claude` |
 | `gg` | Gemini CLI | `/aigon:` | `gemini` |
 | `cx` | Codex CLI | `/prompts:aigon-` | `codex` |
-| `mv` | Mistral Vibe | _(none — headless only)_ | `vibe` |
 | `cu` | Cursor | `/aigon-` | `agent` |
-
-> **Mistral Vibe** runs headless via the `-p` flag — no slash commands or interactive UI. It uses the Devstral 2 model and requires `MISTRAL_API_KEY` to be set. Install with `pip install mistral-vibe`.
 
 ## Installing agents
 
 ```bash
 aigon install-agent cc gg          # Install Claude + Gemini
-aigon install-agent cx mv          # Add Codex + Mistral Vibe later
+aigon install-agent cx             # Add Codex later
 ```
 
 Install only the agents you have access to. You can add more at any time.
@@ -37,7 +34,6 @@ Install only the agents you have access to. You can add more at any time.
 | **cc** | `.claude/commands/aigon/*.md` | `.claude/settings.json` | `.claude/skills/aigon/SKILL.md` + SessionStart hook |
 | **gg** | `.gemini/commands/aigon/*.toml` | `.gemini/settings.json` | SessionStart hook |
 | **cx** | `~/.codex/prompts/aigon-*.md` (global) | `.codex/config.toml` | `.codex/prompt.md` |
-| **mv** | _(none — headless)_ | _(none)_ | `docs/agents/mistral-vibe.md` |
 
 ### Shared files (all agents)
 
