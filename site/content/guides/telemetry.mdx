@@ -31,11 +31,7 @@ Each agent CLI writes transcripts in a different format. Aigon includes a parser
 | **Codex CLI** (cx) | `~/.codex/sessions/` | JSONL matched by working directory |
 | **Cursor** (cu) | — | No telemetry — Cursor does not expose session data |
 
-Parsers run automatically during `feature-close` and `feature-submit`. You can also trigger collection manually:
-
-```bash
-aigon telemetry collect
-```
+Parsers run automatically during `feature-close` and `feature-submit` — no manual step is needed.
 
 ## Activity breakdown
 
@@ -80,29 +76,39 @@ The Summary sub-tab shows aggregate metrics. Look for:
 
 ### Charts
 
-The Charts sub-tab includes five synchronized time-series charts. The telemetry-relevant ones are:
+The Charts sub-tab includes time-series charts with a daily/weekly/monthly granularity toggle and synchronized panning. Two charts are available on the free tier:
 
-- **Tokens Used** — total token consumption over time, broken down by activity type (implement, evaluate, review)
-- **Cost by Agent** — stacked area chart showing per-agent spend
+- **Features Completed** — bar chart of features closed per period
+- **Commits** — stacked bar chart (feature vs. non-feature commits)
 
-<Screenshot src="/img/aigon-dashboard-reports-activity.png" alt="Token Activity time-series chart with activity-type colour coding" />
+With [Aigon Pro](/pro), four additional charts unlock:
 
-<Screenshot src="/img/aigon-dashboard-reports-agent-breakdown.png" alt="Per-agent cost attribution chart" />
+- **Median Cycle Time** — bar chart of median cycle time per period
+- **Commits per Feature** — median commits per feature completed
+- **Rework Ratio** — percentage of fix commits per period
+- **Tokens Used** — total billable tokens consumed per period
 
-All charts share a daily/weekly/monthly granularity toggle and synchronized panning.
+<Screenshot src="/img/aigon-dashboard-reports-charts.png" alt="Reports Charts sub-tab showing synchronized time-series charts" />
+
+The Pro **Insights tab** adds even deeper token analytics — per-agent cost breakdowns, token efficiency trends, and token usage by activity type. See the [Insights guide](/docs/guides/amplification) for details.
 
 ## Free tier vs. Pro
 
-The free Reports tab gives you full access to:
-- All five charts (features, commits, cycle time, CPF, rework ratio)
-- Summary metric cards
-- Agent leaderboard
+The free Reports tab gives you:
+- Two charts (Features Completed, Commits)
+- Summary metric cards (features completed, commits, lines changed)
 - Detail tables (features and commits)
 
-[Aigon Pro](/pro) adds the **Amplification Dashboard** with deeper analytics:
-- Quality metrics leaderboard (first-pass rate, rework ratio trends)
+[Aigon Pro](/pro) adds to the Reports tab:
+- Four additional charts (Cycle Time, CPF, Rework Ratio, Tokens Used)
+- Additional summary cards (Commits/Feature, Rework Ratio)
+- Agent leaderboard
+
+Pro also adds the **Insights tab** with amplification analytics:
+- First-pass rate, median cost/feature, token efficiency metrics
+- Cost and token-efficiency sparkline trends
+- Token analytics (distribution, per-agent breakdown, activity breakdown)
 - AI-generated insights and coaching recommendations
-- Cost optimization suggestions
 
 See the [Amplification Dashboard guide](/docs/guides/amplification) for details.
 
@@ -112,7 +118,7 @@ See the [Amplification Dashboard guide](/docs/guides/amplification) for details.
 
 1. Make sure you've closed at least one feature — telemetry is collected during `feature-close`
 2. Check that transcript files exist for your agent (see the parser table above)
-3. Run `aigon telemetry collect` manually to force collection
+3. Verify the agent session ran long enough to generate transcript data
 
 **Cost showing as $0?**
 
@@ -121,5 +127,5 @@ The model ID in the transcript may not match the pricing table. Aigon falls back
 ## Next steps
 
 - **[Dashboard guide](/docs/guides/dashboard)** — full walkthrough of all dashboard tabs
-- **[Amplification Dashboard](/docs/guides/amplification)** — Pro-tier quality analytics
+- **[Insights (Amplification)](/docs/guides/amplification)** — Pro-tier quality and token analytics
 - **[Fleet Mode](/docs/guides/fleet-mode)** — multi-agent workflows that generate the most telemetry data

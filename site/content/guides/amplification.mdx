@@ -1,49 +1,50 @@
 ---
-title: Amplification Dashboard
-description: Pro-tier quality metrics, trend charts, and AI coaching insights.
+title: Insights (Amplification)
+description: Pro-tier quality metrics, token analytics, and AI coaching in the Insights tab.
 ---
 
-The Amplification Dashboard is part of [Aigon Pro](/pro). It builds on the telemetry data that the free Reports tab already collects, adding deeper quality analysis, trend tracking, and AI-powered coaching to help you get more value from your multi-agent workflow.
+The **Insights** tab in the dashboard is part of [Aigon Pro](/pro). It builds on the telemetry data that the free Reports tab already collects, adding quality metrics, token analytics, efficiency trends, and AI-powered coaching.
 
 > **Prerequisite:** Aigon Pro must be installed and linked. See the [Pro page](/pro) for setup instructions.
 
-## Quality metrics leaderboard
+## Overview metrics
 
-The leaderboard ranks agents by code quality, not just throughput. Each agent gets a row with these metrics:
+Three headline cards give you a quick read on quality and efficiency:
 
 | Metric | What it measures | Better is... |
 |--------|-----------------|--------------|
-| **First-pass rate** | % of features that passed evaluation on the first attempt | Higher |
-| **Commits per feature** | Median commits needed to complete a feature | Lower |
-| **Rework ratio** | % of commits that are fixes (`fix:`, `fixup`, `bugfix`) | Lower |
-| **Cycle time** | Median wall-clock time from start to close | Lower |
-| **Win rate** | % of Fleet evaluations won (Fleet mode only) | Higher |
+| **First-Pass Rate (No Rework)** | % of features completed without triggering rework flags (thrashing, fix cascades, scope creep) | Higher |
+| **Median Cost / Feature** | Median AI compute cost per feature at API list prices | Lower |
+| **Median Tokens / Line Changed** | Median billable tokens per line of code changed | Lower |
 
-Use the leaderboard to decide which agents to assign to which roles. An agent with a high first-pass rate but slow cycle time might be better as an evaluator than an implementer.
+<Screenshot src="/img/aigon-amplification-metrics.png" alt="Insights overview cards showing first-pass rate, median cost, and token efficiency" />
 
-<Screenshot src="/img/aigon-amplification-metrics.png" alt="Amplification quality metrics leaderboard showing agent rankings" />
+## Trends
 
-## Trend charts
+Two sparkline trend panels show 7-day and 30-day direction:
 
-Three time-series charts track whether your workflow is improving:
-
-- **Cycle Time Trend** — is development getting faster or slower?
-- **Rework Trend** — are agents producing cleaner code over time?
 - **Cost per Feature** — is each feature getting cheaper to deliver?
+- **Tokens per Line Changed** — are agents getting more efficient with tokens?
 
-Charts share a daily/weekly/monthly granularity toggle. Hover for exact values.
+<Screenshot src="/img/aigon-amplification-charts.png" alt="Sparkline trends for cost per feature and tokens per line changed" />
 
-<Screenshot src="/img/aigon-amplification-charts.png" alt="Amplification trend charts showing cycle time, rework, and cost-per-feature over time" />
+## Token analytics
+
+When features have billable token data, the Insights tab shows a full token analytics section:
+
+- **Summary cards** — mean, median, P90, and max tokens per feature
+- **Token Distribution** — histogram showing how token spend is distributed across features
+- **Tokens per Feature Over Time** — scatter plot showing token spend trends
+- **Token Usage by Agent Over Time** — stacked bar chart with daily/weekly bucketing
+- **Token Usage by Activity & Agent** — stacked area chart breaking down implement vs. evaluate vs. review tokens
+
+### Agent Efficiency table
+
+A per-agent breakdown showing features completed, median tokens, median cost, and median tokens per line changed. Use this to compare agent efficiency and decide role assignments.
 
 ## AI insights & coaching
 
-The insights panel analyses your recent workflow data and surfaces:
-
-- **Observations** — patterns the AI has detected (e.g. "Gemini's rework ratio has increased 40% over the last two weeks")
-- **Recommendations** — actionable suggestions (e.g. "Consider using Claude for evaluation instead of implementation — its first-pass rate is 15% higher when reviewing code")
-- **Cost optimization** — opportunities to reduce spend without sacrificing quality (e.g. "Switching implementation to Sonnet from Opus would save ~$12/feature with no measurable quality drop based on your last 20 features")
-
-Insights are regenerated each time you open the Amplification tab, using your latest telemetry data.
+The insights panel analyses your recent workflow data and surfaces observations and actionable recommendations about your workflow patterns, agent performance, and cost optimisation opportunities.
 
 <Screenshot src="/img/aigon-amplification-insights.png" alt="AI insights card showing workflow observations and coaching recommendations" />
 
@@ -51,10 +52,10 @@ Insights are regenerated each time you open the Amplification tab, using your la
 
 ```
 Agent sessions → Telemetry parsers → .aigon/telemetry/ → Reports tab (free)
-                                                        ↘ Amplification (Pro)
+                                                        ↘ Insights tab (Pro)
 ```
 
-Amplification reads the same normalized telemetry that the free Reports tab uses. No additional data collection is required — if Reports shows data, Amplification can analyse it.
+The Insights tab reads the same normalized telemetry that the free Reports tab uses. No additional data collection is required — if Reports shows data, Insights can analyse it.
 
 ## Setting up Pro
 
@@ -75,19 +76,19 @@ aigon doctor
 
 Look for the "Aigon Pro" line in the output.
 
-3. Restart the dashboard to load the Amplification tab:
+3. Restart the dashboard to load the Insights tab:
 
 ```bash
 aigon server restart
 ```
 
-## When Amplification is most useful
+## When Insights is most useful
 
-Amplification shines when you have enough data to spot trends:
+The Insights tab shines when you have enough data to spot trends:
 
-- **After 10+ features** — the leaderboard becomes statistically meaningful
-- **With 2+ agents** — comparisons between agents reveal strengths and weaknesses
-- **Over time** — trend charts need at least 2-3 weeks of data to show direction
+- **After 10+ features** — metrics become statistically meaningful
+- **With 2+ agents** — the Agent Efficiency table reveals comparative strengths
+- **Over time** — sparkline trends need at least a week of data to show direction
 
 For new projects with few features, the free Reports tab provides everything you need.
 
