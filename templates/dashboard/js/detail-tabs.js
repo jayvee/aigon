@@ -260,7 +260,9 @@
             costAgentIds.forEach(id => {
               const a = byAgent[id];
               const agentCost = a.costUsd ? '$' + Math.round(a.costUsd * 10000) / 10000 : 'n/a';
-              costRows += '<div class="stats-row"><div class="stats-key">' + escHtml(id.toUpperCase()) + '</div><div class="stats-val">' + escHtml(a.model || id) + ' · ' + fmt(a.inputTokens) + '+' + fmt(a.outputTokens) + ' tok · ' + agentCost + '</div></div>';
+              const displayAgent = a.agent ? a.agent.toUpperCase() : id.toUpperCase();
+              const activityLabel = a.activity ? ' · ' + escHtml(a.activity) : '';
+              costRows += '<div class="stats-row"><div class="stats-key">' + escHtml(displayAgent) + '</div><div class="stats-val">' + escHtml(a.model || id) + activityLabel + ' · ' + fmt(a.inputTokens) + '+' + fmt(a.outputTokens) + ' tok · ' + agentCost + '</div></div>';
             });
           }
           costHtml = '<h5 class="stats-section-heading">Cost</h5><div class="stats-grid">' + costRows + '</div>';
