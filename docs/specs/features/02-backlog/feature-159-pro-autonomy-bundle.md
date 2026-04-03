@@ -2,7 +2,7 @@
 
 ## Summary
 
-Define the Aigon Pro package as a coherent bundle: autonomous orchestration (autopilot, batch, auto-eval) + AADE Insights + telemetry/cost reporting + future coaching layers. Document the gating boundaries, "amplification" framing ("You drive, Aigon navigates. With Pro, Aigon drives while you sleep."), and ensure the free/Pro split is clearly communicated in CLI help, dashboard, and docs. This is the product definition feature — it shapes how Pro is presented, not how it's enforced.
+Define the Aigon Pro package as a coherent bundle: autonomous orchestration (`feature-autonomous-start`, `research-autopilot`) + AADE Insights + telemetry/cost reporting + future coaching layers. Document the gating boundaries, amplification framing ("You drive, Aigon navigates. With Pro, Aigon drives while you sleep."), and ensure the free/Pro split is clearly communicated in CLI help, dashboard, and docs. This is the product definition feature — it shapes how Pro is presented, not how it's enforced.
 
 ## User Stories
 
@@ -12,7 +12,7 @@ Define the Aigon Pro package as a coherent bundle: autonomous orchestration (aut
 
 ## Acceptance Criteria
 
-- [ ] Pro bundle definition documented: autonomous orchestration + AADE Insights + telemetry
+- [ ] Pro bundle definition documented: `feature-autonomous-start` + `research-autopilot` + AADE Insights + telemetry
 - [ ] Free tier documented: Drive mode, manual Fleet, dashboard, interactive eval/review
 - [ ] CLI help output marks Pro-only commands with a `[Pro]` suffix
 - [ ] Dashboard includes a Pro section explaining the bundle with amplification framing
@@ -27,7 +27,7 @@ node --check aigon-cli.js
 
 ## Technical Approach
 
-- Add `[Pro]` markers to command help text for gated commands
+- Add `[Pro]` markers to command help text for gated commands (`feature-autonomous-start`, `research-autopilot`)
 - Dashboard Pro section: single card/panel explaining the bundle, not scattered CTAs
 - Framing guide: write copy guidelines for all Pro-facing text (CLI, dashboard, docs)
 - Bundle manifest in `@aigon/pro` package defining included capabilities
@@ -42,10 +42,11 @@ node --check aigon-cli.js
 - Enterprise tier features (SSO, audit logs, team management)
 - Implementation of individual bundle components (each has its own feature)
 
-## Open Questions
+## Notes
 
-- Should the docs site have a dedicated Pro page, or just inline markers?
-- Is "Amplification" the user-facing label, or "Pro"?
+- Docs site has a dedicated Pro page at `/docs/pro` — content should align with bundle definition
+- User-facing label is "Pro" (not "Amplification"); amplification is internal/marketing framing only
+- `feature-autopilot` has been removed — all autonomous orchestration now goes through `feature-autonomous-start`
 
 ## Related
 

@@ -16,13 +16,23 @@ AutoConductor spawns (auto tmux session)
         ↓
 Agents implement in parallel
         ↓ all submitted
-Solo mode → feature-close (done)
-Fleet mode → feature-eval → exit, print next step (pick winner)
+Solo mode  → feature-close              → done ✅
+Fleet mode → feature-eval (autonomous) → feature-close (winner) → done ✅
 ```
 
 The AutoConductor is deliberately lightweight — it is not a lifecycle authority. It holds no orchestration state. If it dies, the feature continues normally and can be completed manually.
 
 ## Starting autonomously
+
+### From the dashboard
+
+Click **Start Autonomously** on any backlog or in-progress feature card. A modal lets you choose:
+
+- **Implementation agents** — which agents implement in parallel
+- **Evaluator agent** — which agent runs the evaluation (Fleet only)
+- **Stop after** — where autonomy ends (defaults to **close** for fully hands-off execution)
+
+{/* SCREENSHOT: Start Autonomously modal — show agent checkboxes, evaluator selector, stop-after dropdown set to "close" */}
 
 ### From the CLI
 
@@ -30,49 +40,43 @@ The AutoConductor is deliberately lightweight — it is not a lifecycle authorit
 # Solo — one agent, fully hands-off through close
 aigon feature-autonomous-start 42 cc
 
-# Fleet — two agents, stop after eval (then pick winner manually)
-aigon feature-autonomous-start 42 cc gg --eval-agent=gg --stop-after=eval
+# Fleet — two agents, auto-eval and auto-close (fully hands-off)
+aigon feature-autonomous-start 42 cc gg --eval-agent=cc
+
+# Fleet — stop after eval (pick winner manually)
+aigon feature-autonomous-start 42 cc gg --eval-agent=cc --stop-after=eval
 
 # Stop early — just implement, then hand back control
 aigon feature-autonomous-start 42 cc --stop-after=implement
 ```
-
-### From the dashboard
-
-Click **Start Autonomously** on any backlog feature card. A modal lets you choose:
-
-- **Implementation agents** — which agents implement in parallel
-- **Evaluator agent** — which agent runs the evaluation (Fleet only)
-- **Stop after** — where autonomy ends
-
-{/* TODO: add screenshot of the Start Autonomously modal once feature-214 ships */}
 
 ## Modes
 
 | Mode | Agents | What AutoConductor does |
 |------|--------|------------------------|
 | **Solo** | 1 | Waits for agent to submit → invokes `feature-close` → done |
-| **Fleet** | 2+ | Waits for all agents to submit → invokes `feature-eval` → exits with next-step instructions |
+| **Fleet (close)** | 2+ | Waits for all agents to submit → spawns eval agent (autonomous) → eval agent picks winner and closes → done |
+| **Fleet (eval)** | 2+ | Waits for all agents to submit → spawns eval agent → exits with next-step instructions |
 
 Solo mode has no evaluation stage — the single agent is the winner by default and the feature closes automatically.
 
-Fleet mode stops after evaluation in v1. Selecting the winner and closing is still a manual step:
+Fleet mode with `--stop-after=close` (the default) spawns the evaluator in **autonomous mode**: the eval agent scores both implementations, picks the winner, and runs `feature-close` automatically — no user input needed.
 
-```bash
-aigon feature-close 42 cc       # after eval, pick the winner
-```
+Fleet mode with `--stop-after=eval` stops after the evaluator starts, letting you review the evaluation and pick the winner manually.
 
 ## `--stop-after` options
 
 | Value | Behaviour |
 |-------|-----------|
-| `close` | Default. Fully hands-off in solo mode. Fleet falls back to `eval` (no auto-close in v1) |
-| `eval` | Stop after evaluation — return control before winner selection |
+| `close` | **Default.** Fully hands-off in both solo and Fleet modes. Eval agent auto-picks winner and closes. |
+| `eval` | Stop after evaluation starts — return control for manual winner selection |
 | `implement` | Stop after all agents submit — skip eval entirely |
 
 ## Monitoring
 
-While the AutoConductor is running, the dashboard shows a **Running autonomously** badge on the feature card. When it finishes or is killed, the badge disappears.
+While the AutoConductor is running, the dashboard shows a **Running autonomously** badge on the feature card. Click the eye icon to peek at the AutoConductor session output in real-time.
+
+{/* SCREENSHOT: Dashboard pipeline card showing "Running autonomously" badge and peek button */}
 
 To watch the AutoConductor log directly:
 
@@ -83,6 +87,8 @@ aigon feature-autonomous-start status 42
 # Attach to the AutoConductor output
 tmux attach -t <repo>-f42-auto
 ```
+
+{/* SCREENSHOT: AutoConductor tmux session showing poll log output — state transitions, eval trigger, close */}
 
 ## Resilience
 

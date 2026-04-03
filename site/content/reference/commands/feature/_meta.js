@@ -10,7 +10,7 @@ export default {
   "feature-review": "feature-review",
   "feature-close": "feature-close",
   "feature-cleanup": "feature-cleanup",
-  "feature-autopilot": "feature-autopilot",
+  "feature-autonomous-start": "feature-autonomous-start",
   "feature-validate": "feature-validate",
   "feature-reset": "feature-reset",
 };

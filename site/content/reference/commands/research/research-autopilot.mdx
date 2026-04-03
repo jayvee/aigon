@@ -1,12 +1,14 @@
 ---
 title: "research-autopilot"
-description: "Research autopilot ID [agents...] - Fleet setup + spawn + monitor + evaluate"
+description: "Research autopilot — Fleet setup, spawn, monitor, and evaluate hands-off"
 ---
 
 ## Synopsis
 
 ```bash
-aigon research-autopilot <research-id> [agents...] | status [research-id] | stop [research-id]
+aigon research-autopilot <research-id> [agents...] [--eval-agent=<agent>]
+aigon research-autopilot status <research-id>
+aigon research-autopilot stop <research-id>
 ```
 
 ## Shortcuts
@@ -15,14 +17,37 @@ aigon research-autopilot <research-id> [agents...] | status [research-id] | stop
 
 ## Description
 
-Research autopilot \<ID\> [agents...] - Fleet setup + spawn + monitor + evaluate
+Runs a full research cycle hands-off: starts all agents, waits for findings, then spawns an evaluator to synthesise results and recommend features. The equivalent of running `research-start` + `research-eval` automatically.
 
 ## Usage
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:research-autopilot <research-id>
+# Fleet research — two agents, auto-eval when done
+aigon research-autopilot 23 cc gg --eval-agent=cc
 
-# CLI
-aigon research-autopilot <research-id>
+# Check AutoConductor status
+aigon research-autopilot status 23
+
+# Stop the AutoConductor (agents continue independently)
+aigon research-autopilot stop 23
 ```
+
+### From the dashboard
+
+Click **Research Autopilot** on any backlog research card.
+
+{/* SCREENSHOT: Research autopilot running — show research card with "Running autonomously" badge */}
+
+## What it does
+
+1. Calls `research-start` to set up agent worktrees and launch all agents
+2. Polls workflow state every 30 seconds
+3. When all agents signal `submitted`, spawns the evaluator
+4. Evaluator synthesises findings and recommends features
+5. AutoConductor exits with a summary
+
+## Related
+
+- [`research-start`](/docs/reference/commands/research/research-start) — manual research setup
+- [`research-eval`](/docs/reference/commands/research/research-eval) — manual evaluation
+- [Research Workflow guide](/docs/guides/research-workflow)

@@ -44,10 +44,10 @@ node -c lib/pro.js
 - Billing infrastructure or payment processing
 - Setting the specific trial limits (that's a product decision at launch time)
 
-## Open Questions
+## Notes
 
-- What's the right trial allowance number? (Research suggests 3-5 runs/month)
-- Should metering ship with the gate or be added later only if conversion is weak?
+- Deprioritised: ship `pro-autonomy-gate` first and add metering only if conversion data shows it's needed
+- "Autonomous run" = one invocation of `feature-autonomous-start` or `research-autopilot`, not per-poll
 
 ## Related
 

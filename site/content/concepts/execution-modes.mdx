@@ -34,20 +34,23 @@ Aigon uses four modes across two axes: number of agents and level of autonomy. A
 
 ## Autopilot
 
-**One agent, hands-off.** The agent retries in a loop until validation passes or the iteration budget runs out. Each iteration spawns a fresh agent session.
+**One agent, hands-off.** The AutoConductor monitors the feature and triggers each stage automatically. The agent implements, then the feature closes — no intervention needed.
 
-- Best for: well-scoped features with clear validation checks
-- Workspace: branch or worktree
-- Slash command: `/aigon:feature-do 07 --autonomous`
-- CLI: `aigon feature-do 07 --autonomous`
+- Best for: well-scoped features with clear acceptance criteria
+- Workspace: worktree
+- CLI: `aigon feature-autonomous-start 07 cc`
+
+{/* SCREENSHOT: AutoConductor session for solo mode — show poll log with "solo → triggering feature-close" */}
 
 ## Swarm
 
-**Multiple agents, hands-off.** Fleet + Autopilot — multiple agents compete, each running autonomously.
+**Multiple agents, hands-off.** Fleet + AutoConductor — multiple agents compete, each in their own worktree. The AutoConductor triggers eval and auto-closes the winner.
 
 - Best for: maximum coverage with minimal supervision
 - Workspace: one worktree per agent
-- CLI: `aigon feature-start 07 cc gg --autonomous --auto-submit`
+- CLI: `aigon feature-autonomous-start 07 cc gg`
+
+{/* SCREENSHOT: Dashboard showing Swarm run — multiple agents in fleet with auto badge visible */}
 
 ## Mode selection guide
 
@@ -55,8 +58,8 @@ Aigon uses four modes across two axes: number of agents and level of autonomy. A
 |-----------|------|-----|
 | Routine feature, clear spec | Drive | Fast, simple |
 | Critical feature, need best approach | Fleet | Compare implementations |
-| Well-defined with good test coverage | Autopilot | Hands-off with validation |
-| Important + well-defined | Swarm | Multiple autonomous agents |
+| Well-defined, want hands-off | Autopilot | Solo agent runs to close |
+| Important + well-defined, want best | Swarm | Multiple agents, auto-eval and close |
 | Exploring a technical question | Research (Drive or Fleet) | Investigation before building |
 
 ## Command surfaces
@@ -67,8 +70,8 @@ Each mode works with both CLI and slash commands:
 |------|-------------|-----------------|
 | Drive | Fully supported | Fully supported |
 | Fleet | Strong for orchestration | Strong for per-agent execution |
-| Autopilot | Primary entry point | Supported in-session |
-| Swarm | Primary entry point | Limited (agents run autonomously) |
+| Autopilot | Primary entry point | Limited (runs via CLI only) |
+| Swarm | Primary entry point | Limited (runs via CLI only) |
 
 ## Agent status tracking
 
