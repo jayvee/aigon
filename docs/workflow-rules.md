@@ -262,7 +262,7 @@ From `in-progress`:
 - `feature-eval`
   Fleet only
   Shown when all agents are submitted
-- `feature-autopilot`
+- `feature-autonomous-start`
   Shown when no tmux sessions are running
 
 From `in-evaluation`:
@@ -275,7 +275,7 @@ From `in-evaluation`:
 From `backlog`:
 - `feature-start`
   Requires input: `agentPicker`
-- `feature-autopilot`
+- `feature-autonomous-start`
   Requires input: `agentPicker`
 
 ## Research Workflow

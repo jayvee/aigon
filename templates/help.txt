@@ -32,10 +32,10 @@ Modes:
   🐝 Swarm      Multiple agents run autonomously in parallel
 
 Conductor:
-  conduct <ID> [agents...]          Start arena: setup, spawn autonomous loops, monitor, eval
-  conduct status [ID]               Show status of running conductor sessions
-  feature-autopilot stop <ID>       Stop all agents for a feature (reuses sessions-close)
-  feature-autopilot attach <ID> <agent> Attach to an agent's tmux session
+  feature-autonomous-start <ID> <agents...>
+                                    Start AutoConductor (tmux auto session) and return immediately
+  feature-autonomous-start status <ID>
+                                    Show AutoConductor tmux liveness + workflow state
   dashboard                         Start the live dashboard (foreground HTTP server)
 
 Feature Open:
@@ -46,7 +46,7 @@ Feature Open:
                                     Open multiple features side-by-side
   sessions-close <ID>               Kill all agent sessions for a feature/research ID and close Warp/tmux sessions
 
-Feature Commands (Drive, Fleet, Autopilot, Swarm):
+Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-create <name>             Create feature spec in inbox
   feature-now <name>                Fast-track: inbox match → prioritise + setup + implement; or create new + implement
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
@@ -62,9 +62,8 @@ Feature Commands (Drive, Fleet, Autopilot, Swarm):
   feature-review <ID>               Code review with fixes by a different agent
   feature-close <ID> [agent]        Merge and complete feature
   feature-cleanup <ID>              Clean up Fleet worktrees and branches
-  feature-autopilot <ID> [agents...] Fleet autopilot: setup + spawn + monitor + eval
-  feature-autopilot stop <ID>       Stop all agents for a feature (reuses sessions-close)
-  feature-autopilot attach <ID> <agent> Attach to an agent's tmux session
+  feature-autonomous-start <ID> <agents...> [--eval-agent=<id>] [--stop-after=implement|eval|close]
+                                    Start autonomous execution in dedicated auto tmux session
 
 Research Commands:
   research-create <name>            Create research topic in inbox
@@ -110,9 +109,10 @@ Examples:
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
   aigon feature-start 55               # Drive mode (creates branch)
   aigon feature-start 55 cc gg cx cu mv      # Fleet mode (creates worktrees)
-  aigon feature-autopilot 42 cc gg cx cu mv            # Arena conductor: setup + spawn + monitor + eval
-  aigon feature-autopilot status 42              # Check conductor status
-  aigon feature-autopilot stop 42                # Stop all agents
+  aigon feature-autonomous-start 42 cc            # Solo autonomous flow (implement -> close)
+  aigon feature-autonomous-start 42 cc gg --eval-agent=gg --stop-after=eval
+                                                   # Fleet autonomous flow (implement -> eval)
+  aigon feature-autonomous-start status 42         # Check conductor status
   aigon server start                   # Start AIGON server (dashboard UI + API)
   aigon feature-open 55 cc             # Open feature worktree and start Claude
   aigon feature-open 55 --all          # Open all Fleet agents side-by-side
