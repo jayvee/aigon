@@ -2,33 +2,35 @@
 
 ## Summary
 
-Replace the current vague `feature-autopilot` model with a clearer, stage-based automation system attached directly to each feature. Instead of a long-running CLI loop that tries to own implementation and optionally eval, each feature gets an adjacent automation profile file that declares which stages are automated, skipped, or manual, and which agent(s) are assigned to those stages. The AIGON server becomes the orchestration owner for advancing the feature through those stages using workflow-core state as authority. This makes dashboard and CLI behavior consistent, allows explicit evaluator selection, and includes `deploy` as a first-class stage from the start.
+Replace the current vague `feature-autopilot` model with a clearer, stage-based autonomous execution system attached directly to each feature. User-facing UX should talk about starting a feature autonomously, not configuring "automation." Internally, each feature gets an adjacent profile file that declares which stages are autonomous, skipped, or manual, and which agent(s) are assigned to those stages. The AIGON server becomes the orchestration owner for advancing the feature through those stages using workflow-core state as authority. This makes dashboard and CLI behavior consistent, allows explicit evaluator selection, and includes `deploy` as a first-class stage from the start.
 
 ## User Stories
 
-- [ ] As a developer running a feature from the dashboard or CLI, I can choose which stages are automated instead of relying on an ambiguous "autopilot" label.
+- [ ] As a developer running a feature from the dashboard or CLI, I can choose how far a feature runs autonomously instead of relying on an ambiguous "autopilot" label.
 - [ ] As a user starting automated implementation, I can explicitly choose the implementation agents and the evaluator agent, rather than hoping the system picks one implicitly.
 - [ ] As a maintainer, I have one durable place to read and write feature automation policy, instead of splitting orchestration state across CLI processes, tmux sessions, and dashboard assumptions.
 - [ ] As a team using AIGON server, I can restart the server and still have feature automation resume correctly from feature state, without depending on one previously launched `feature-autopilot` process still being alive.
 
 ## Acceptance Criteria
 
-- [ ] Each feature can have an adjacent automation profile file, stored alongside feature workflow state rather than as a separate top-level entity
-- [ ] The automation profile supports these stages from day one: `implement`, `review`, `eval`, `close`, `deploy`
+- [ ] Each feature can have an adjacent autonomous execution profile file, stored alongside feature workflow state rather than as a separate top-level entity
+- [ ] The autonomous execution profile supports these stages from day one: `implement`, `review`, `eval`, `close`, `deploy`
 - [ ] Each stage supports explicit mode settings that at minimum include `manual`, `auto`, and `skip`
 - [ ] The `implement` stage supports multiple agents
 - [ ] The `eval` stage supports an explicitly selected single evaluator agent
 - [ ] The `deploy` stage is part of the automation model even when the current repo has no deploy command configured
-- [ ] The AIGON server reads the feature automation profile and advances automated stages based on workflow-core state and guards
+- [ ] The AIGON server reads the feature's autonomous execution profile and advances autonomous stages based on workflow-core state and guards
 - [ ] The server never forces invalid workflow transitions; it only invokes allowed commands when workflow-core indicates prerequisites are satisfied
-- [ ] Dashboard-triggered automation and CLI-triggered automation use the same underlying feature automation profile and orchestration path
-- [ ] A user can start feature automation from the dashboard by configuring automation stages instead of a bare "Run Autopilot" action
-- [ ] A user can start feature automation from the CLI while explicitly setting implementation agents and evaluator agent
+- [ ] Dashboard-triggered autonomous runs and CLI-triggered autonomous runs use the same underlying feature profile and orchestration path
+- [ ] A user can start a backlog feature from the dashboard with a primary action labeled `Start Autonomously`
+- [ ] Starting a feature autonomously opens a UI that makes stage boundaries explicit, including who implements, who evaluates, and where autonomy stops
+- [ ] A user can start a feature autonomously from the CLI while explicitly setting implementation agents and evaluator agent
 - [ ] If automated implementation completes and `eval` is set to `auto`, the server triggers feature evaluation without requiring a human to manually run `feature-eval`
 - [ ] If `close` is set to `manual`, the automation run stops cleanly after eval and surfaces that the feature is ready for human close/adopt
 - [ ] If `deploy` is set to `auto`, deployment only runs after workflow prerequisites for closing are satisfied
-- [ ] Existing `feature-autopilot` users have a compatibility path: either the command writes a feature automation profile and hands off to the server, or the dashboard action is renamed while the CLI command remains as a compatibility wrapper
-- [ ] The dashboard UI no longer implies that "autopilot" means fully autonomous merge/close unless that stage is explicitly configured for automation
+- [ ] Existing `feature-autopilot` users have a compatibility path: either the command writes a feature profile and hands off to the server, or the dashboard action is renamed while the CLI command remains as a compatibility wrapper
+- [ ] The dashboard UI no longer implies that "autopilot" means fully autonomous merge/close unless that stage is explicitly configured for autonomous execution
+- [ ] The preferred user-facing CLI naming shifts away from `autopilot` toward `autonomous`, while preserving a compatibility path for existing scripts
 
 ## Validation
 
@@ -50,18 +52,18 @@ Manual validation:
   - `deploy: manual`
 - Confirm the feature advances through implementation and evaluation without a human invoking `feature-eval`
 - Confirm the feature stops after evaluation in a clear "ready to close" state
-- Confirm a server restart during automation does not lose the automation plan
+- Confirm a server restart during autonomous execution does not lose the feature's execution plan
 - Confirm a second feature can use a different automation profile without global config changes
 
 ## Technical Approach
 
-### 1. Replace "autopilot" with a feature automation profile
+### 1. Replace "autopilot" with a feature-level autonomous execution profile
 
-Store automation as adjacent metadata for each feature, for example:
+Store autonomous execution settings as adjacent metadata for each feature, for example:
 
 ` .aigon/workflows/features/<id>/automation.json `
 
-This avoids introducing a new top-level "run" entity while still giving the server a durable place to read and write orchestration policy.
+This avoids introducing a new top-level "run" entity while still giving the server a durable place to read and write stage policy.
 
 Suggested shape:
 
@@ -96,7 +98,7 @@ Suggested shape:
 
 ### 2. Make the server the orchestration owner
 
-Move long-lived automation monitoring out of a single `feature-autopilot` CLI process and into the AIGON server. The server should:
+Move long-lived autonomous execution monitoring out of a single `feature-autopilot` CLI process and into the AIGON server. The server should:
 
 - read workflow-core feature state
 - read the adjacent automation profile
@@ -104,28 +106,49 @@ Move long-lived automation monitoring out of a single `feature-autopilot` CLI pr
 - invoke the matching command only when workflow-core state permits it
 - persist status/errors back into the automation profile or related feature-local metadata
 
-This makes automation resumable across server restarts and keeps dashboard and CLI behavior aligned.
+This makes autonomous execution resumable across server restarts and keeps dashboard and CLI behavior aligned.
 
-### 3. Reframe the UX around Automation, not Autopilot
+### 3. Reframe the UX around Autonomous Start, not Autopilot
 
-The current "Run Autopilot" label is misleading because users reasonably expect it to go end-to-end. The product should shift to an "Automation" concept where users configure stages.
+The current "Run Autopilot" label is misleading because users reasonably expect it to go end-to-end, and "automation" sounds like workflow-rule authoring rather than running a feature autonomously. The product should shift to an "Autonomous" concept where the user starts a feature autonomously and chooses how far down the pipeline that run should go.
 
 Dashboard direction:
 
-- Replace or evolve "Run Autopilot" into an "Automation" action
-- Present a modal that configures per-stage behavior
+- Replace or evolve "Run Autopilot" into `Start Autonomously`
+- Present a modal titled `Start Feature Autonomously`
+- Make the main control about where autonomy stops, rather than exposing internal implementation jargon
 - Allow explicit evaluator selection
-- Make it obvious where automation stops when later stages remain manual
+- Make it obvious where autonomous execution stops when later stages remain manual
+
+Recommended dashboard wording:
+
+- Backlog action: `Start Autonomously`
+- Modal title: `Start Feature Autonomously`
+- Stage section: `Autonomous stages`
+- Stop selector: `Stop after`
+- Status copy: `Running autonomously`
 
 CLI direction:
 
 - Keep `feature-autopilot` initially as a compatibility wrapper if needed
-- Add or evolve toward a clearer CLI such as `feature-automation` or equivalent flags on `feature-autopilot`
-- Allow explicit evaluator selection and stage modes in CLI input
+- Introduce a clearer primary CLI such as `feature-autonomous-start`
+- Allow explicit evaluator selection and a clear stop boundary in CLI input
+
+Recommended CLI wording:
+
+- Primary command: `aigon feature-autonomous-start <feature-id> <implement-agents...> --eval-agent=<agent> --stop-after=<stage>`
+- Compatibility command: `aigon feature-autopilot ...` writes the same adjacent profile and hands off to the server
+
+The key CLI model should be:
+
+- start this feature autonomously
+- choose who implements it
+- choose who evaluates it
+- choose where autonomy stops
 
 ### 4. Keep workflow-core authoritative
 
-The automation profile is orchestration metadata, not lifecycle authority. It must never directly rewrite feature stage. It can only request valid commands when workflow-core says the feature is ready.
+The autonomous execution profile is orchestration metadata, not lifecycle authority. It must never directly rewrite feature stage. It can only request valid commands when workflow-core says the feature is ready.
 
 This means:
 
@@ -161,7 +184,7 @@ Even if deploy automation is initially thin, `deploy` should be part of the mode
 
 - Should `review` remain a distinct stage in the automation profile if the current feature workflow does not yet model it cleanly end-to-end?
 - Should `deploy:auto` be allowed when `close` remains manual, or should deploy require `close:auto` as a policy rule?
-- Should the compatibility CLI remain named `feature-autopilot`, or should the user-facing CLI move to `feature-automation` immediately?
+- Should the primary CLI be `feature-autonomous-start`, or should Aigon use a shorter spelling such as `feature-auto-start`?
 
 ## Related
 
