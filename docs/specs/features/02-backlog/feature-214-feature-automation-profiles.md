@@ -32,7 +32,6 @@ Replace the current vague `feature-autopilot` model with a clearer autonomous ex
 
 ### Controller session behaviour
 
-- [ ] The controller session (`auto` role) touches `.aigon/state/heartbeat-{featureId}-auto` every 30s — reusing the existing heartbeat infrastructure
 - [ ] The controller polls the workflow-core engine snapshot every 30s to determine when each stage is complete
 - [ ] When `--stop-after=implement`: the controller exits after all implementation agents are ready and prints the next manual step
 - [ ] **Solo mode** (`--stop-after=close`, one agent): controller waits for agent to submit, then invokes `aigon feature-close <id>` — no eval stage, winner is auto-selected by the engine
@@ -44,9 +43,9 @@ Replace the current vague `feature-autopilot` model with a clearer autonomous ex
 
 ### Dashboard UX
 
-- [ ] The dashboard reads the existing heartbeat file for the `auto` role to determine if a monitor session is alive — no new API or file format
-- [ ] A feature with a live `auto` heartbeat shows a `Running autonomously` indicator
-- [ ] A feature whose `auto` heartbeat has gone stale shows a `Autonomous run may have stopped` warning
+- [ ] The dashboard checks tmux session existence for the `auto` role session (`{repo}-f{id}-auto-{desc}`) — same mechanism used for all other sessions, no new infrastructure
+- [ ] A feature with a live `auto` tmux session shows a `Running autonomously` indicator
+- [ ] A feature with no `auto` tmux session shows no indicator (controller finished or was never started)
 - [ ] Backlog features surface a `Start Autonomously` primary action
 - [ ] Clicking `Start Autonomously` opens a modal with: implementation agent multi-select, evaluator agent select, and `Stop after` selector
 - [ ] The dashboard action POSTs to the server which spawns `aigon feature-autonomous-start <id> ...` as a child process and returns immediately — the server does not monitor or orchestrate further
@@ -70,7 +69,7 @@ Manual validation:
 - **Solo end-to-end**: `aigon feature-autonomous-start <id> cc` — confirm controller triggers `feature-close` automatically after agent submits, feature reaches done state with zero intervention
 - **Fleet to eval**: `aigon feature-autonomous-start <id> cc gg --eval-agent=gg --stop-after=eval` — confirm `feature-eval` is triggered automatically, controller exits cleanly with next-step instructions
 - **Controller resilience**: kill the controller session mid-run and confirm the feature can still be finished manually
-- **Dashboard liveness**: confirm `Running autonomously` indicator while heartbeat is fresh, stale warning after killing controller
+- **Dashboard liveness**: confirm `Running autonomously` indicator while `auto` tmux session is alive, indicator gone after killing controller
 - **Removal**: confirm `aigon feature-autopilot` returns "command not found" or a clear "use feature-autonomous-start" error
 - **No interference**: a non-automated feature running in parallel is unaffected
 
@@ -99,13 +98,9 @@ The controller is deliberately lightweight:
 - it does not persist orchestration metadata
 - if it stops, the feature simply degrades to manual mode
 
-### 2. Heartbeat
+### 2. Dashboard liveness display
 
-The controller touches `.aigon/state/heartbeat-{featureId}-auto` every 30s. The dashboard reads it the same way it reads agent heartbeats — via `lib/workflow-heartbeat.js`. No new infrastructure needed.
-
-### 3. Dashboard liveness display
-
-Extend the existing heartbeat liveness check in `lib/dashboard-status-helpers.js` to also check for the `auto` heartbeat file. Show the `Running autonomously` indicator if it is fresh (within 2x the 30s touch interval = 60s threshold).
+Extend `lib/dashboard-status-helpers.js` to check for an `auto` role tmux session alongside existing agent session checks. Uses `matchTmuxSessionByEntityId` with the `auto` role — same path as all other session liveness checks. No heartbeat file, no new infrastructure.
 
 ### 4. Dashboard action
 
@@ -136,9 +131,8 @@ Fleet `--stop-after=close` requires a future `aigon feature-select-winner <id> <
 
 - Feature 213 — `auto` tmux session role (must land first)
 - `lib/commands/feature.js` — `feature-autonomous-start` command, remove `feature-autopilot` handler, controller loop
-- `lib/worktree.js` — `buildTmuxSessionName` with `role: 'auto'`, heartbeat file path
-- `lib/workflow-heartbeat.js` — existing heartbeat reading (no changes, just reuse)
-- `lib/dashboard-status-helpers.js` — extend heartbeat check for `auto` role
+- `lib/worktree.js` — `buildTmuxSessionName` with `role: 'auto'`
+- `lib/dashboard-status-helpers.js` — extend tmux session check for `auto` role
 - `lib/dashboard-server.js` — new `/api/features/:id/run` spawn endpoint, `Start Autonomously` action dispatch
 - `lib/action-command-mapper.js` — `Start Autonomously` action wiring
 - `templates/dashboard/js/actions.js` — dashboard action definition
