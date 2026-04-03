@@ -12,8 +12,9 @@ Replace the current vague `feature-autopilot` model with a clearer autonomous ex
 
 ## User Stories
 
-- [ ] As a developer, I can start a feature autonomously from the CLI by choosing implementation agents, an evaluator, and where autonomy stops — without manually supervising each stage transition.
-- [ ] As a developer, I can start a feature autonomously from the dashboard with the same explicit choices.
+- [ ] As a developer running a solo feature, I can start it autonomously and walk away — the controller handles implementation and close without me touching anything.
+- [ ] As a developer running a Fleet feature, I can start it autonomously and walk away until after eval — the controller handles implementation and eval, then I pick the winner and close.
+- [ ] As a developer, I can start a feature autonomously from the dashboard with the same explicit choices as the CLI.
 - [ ] As a user, I can see on the dashboard whether the autonomous controller is active or may have stopped, without the server needing to own orchestration state.
 - [ ] As a maintainer, the controller is just another tmux session — if it crashes, the feature falls back to normal manual workflow instead of entering a broken intermediate state.
 
@@ -21,9 +22,9 @@ Replace the current vague `feature-autopilot` model with a clearer autonomous ex
 
 ### CLI: `aigon feature-autonomous-start`
 
-- [ ] `aigon feature-autonomous-start <id> <agents...> [--eval-agent=<agent>] [--stop-after=implement|eval]` is the primary command
-- [ ] `--stop-after` defaults to `eval` (safe default: no automatic close or deploy)
-- [ ] `--eval-agent` defaults to the first implementation agent if not specified
+- [ ] `aigon feature-autonomous-start <id> <agents...> [--eval-agent=<agent>] [--stop-after=implement|eval|close]` is the primary command
+- [ ] `--stop-after` defaults to `close` — the genuinely useful default; users who want to pause before closing pass `--stop-after=eval` explicitly
+- [ ] `--eval-agent` is only relevant for Fleet mode (2+ agents); ignored in solo mode which has no eval stage
 - [ ] The command calls `feature-start` if worktrees do not already exist
 - [ ] The command spawns a dedicated controller tmux session named `{repo}-f{id}-auto(-desc)` (per feature-213 naming convention) and exits immediately
 - [ ] `aigon feature-autonomous-start status <id>` prints whether the `auto` tmux session is alive and the current workflow-core state
@@ -33,10 +34,10 @@ Replace the current vague `feature-autopilot` model with a clearer autonomous ex
 
 - [ ] The controller session (`auto` role) touches `.aigon/state/heartbeat-{featureId}-auto` every 30s — reusing the existing heartbeat infrastructure
 - [ ] The controller polls the workflow-core engine snapshot every 30s to determine when each stage is complete
-- [ ] When all implementation agents are ready per the engine snapshot, the controller invokes `aigon feature-eval <id> --agent=<eval-agent>`
-- [ ] The controller waits for `currentSpecState === evaluating` in the engine snapshot before logging "evaluation started"
-- [ ] When `--stop-after=implement`, the controller exits after all implementation agents are ready and prints the next manual step
-- [ ] When `--stop-after=eval`, the controller triggers eval, waits for completion, prints the next manual step (`aigon feature-close <id>`), and exits cleanly
+- [ ] When `--stop-after=implement`: the controller exits after all implementation agents are ready and prints the next manual step
+- [ ] **Solo mode** (`--stop-after=close`, one agent): controller waits for agent to submit, then invokes `aigon feature-close <id>` — no eval stage, winner is auto-selected by the engine
+- [ ] **Fleet mode** (`--stop-after=eval`, 2+ agents): controller waits for all agents to submit, invokes `aigon feature-eval <id> --agent=<eval-agent>`, waits for `currentSpecState === evaluating`, then exits and prints next manual step (winner selection + close)
+- [ ] **Fleet mode** (`--stop-after=close`, 2+ agents): not supported in v1 — controller falls back to `--stop-after=eval` behaviour and logs a clear message explaining that Fleet close requires manual winner selection; a future `feature-select-winner` CLI command will enable this path
 - [ ] If a stage command fails, the controller logs the error clearly and exits — it does not retry
 - [ ] If the controller session dies for any reason, implementation and eval sessions continue normally and the feature can be completed manually
 - [ ] The controller session output is readable via `tmux attach -t {repo}-f{id}-auto-{desc}`
@@ -66,15 +67,12 @@ npm test
 ```
 
 Manual validation:
-- Run `aigon feature-autonomous-start <id> cc gg --eval-agent=gg --stop-after=eval`
-- Confirm `{repo}-f{id}-auto-{desc}` tmux session is created and exits after spawning agents
-- Attach to controller session and confirm it logs progress as agents complete
-- Confirm `feature-eval` is triggered automatically when both agents are ready per engine snapshot
-- Confirm controller exits cleanly after eval with next-step instructions
-- Kill the controller session mid-run and confirm the feature can still be finished manually
-- Confirm dashboard shows `Running autonomously` while heartbeat is fresh
-- Confirm `aigon feature-autopilot <id> cc gg` works via the compatibility wrapper
-- Confirm a non-automated feature running in parallel is unaffected
+- **Solo end-to-end**: `aigon feature-autonomous-start <id> cc` — confirm controller triggers `feature-close` automatically after agent submits, feature reaches done state with zero intervention
+- **Fleet to eval**: `aigon feature-autonomous-start <id> cc gg --eval-agent=gg --stop-after=eval` — confirm `feature-eval` is triggered automatically, controller exits cleanly with next-step instructions
+- **Controller resilience**: kill the controller session mid-run and confirm the feature can still be finished manually
+- **Dashboard liveness**: confirm `Running autonomously` indicator while heartbeat is fresh, stale warning after killing controller
+- **Compat wrapper**: `aigon feature-autopilot <id> cc gg` still works, stops at eval
+- **No interference**: a non-automated feature running in parallel is unaffected
 
 ## Technical Approach
 
@@ -120,12 +118,15 @@ The server does nothing further. The child process is fully independent.
 
 ### 5. `--stop-after` stages
 
-| Stage | What the monitor does when reached |
-|---|---|
-| `implement` | Exits after all agents submit — does not trigger eval |
-| `eval` | Triggers eval, waits for completion, then exits (default) |
+| Stage | Solo (1 agent) | Fleet (2+ agents) |
+|---|---|---|
+| `implement` | Exit after agent submits, print next step | Exit after all agents submit, print next step |
+| `eval` | n/a — solo has no eval stage; treated as `close` | Trigger eval, wait for completion, exit and print next step |
+| `close` | Trigger `feature-close` after agent submits ✅ end-to-end | Not supported in v1 — falls back to `eval` with explanatory message |
 
-Only `implement` and `eval` are supported in v1. `close` and `deploy` remain future stages but are not exposed as valid inputs until they are implemented.
+Default is `close`. This means solo mode is fully hands-off by default. Fleet mode goes as far as eval by default, which is the furthest it can go without manual winner selection.
+
+Fleet `--stop-after=close` requires a future `aigon feature-select-winner <id> <agent>` CLI command that lets the eval agent record the winner in the engine snapshot. Once that exists, the controller can check `snapshot.winnerAgentId` and proceed to close.
 
 ### 6. Compatibility wrapper
 
@@ -134,7 +135,7 @@ Only `implement` and `eval` are supported in v1. `close` and `deploy` remain fut
 // → aigon feature-autonomous-start <id> <agents...> --stop-after=eval
 ```
 
-No behaviour change for existing autopilot users.
+Compat wrapper preserves existing autopilot behaviour (stops at eval). Users who want the full solo close path use `feature-autonomous-start` directly.
 
 ## Dependencies
 
@@ -153,7 +154,8 @@ No behaviour change for existing autopilot users.
 
 - Server orchestration of autonomous stages
 - `automation.json` or any new persistent file format
-- `close: auto` and `deploy: auto`
+- Fleet `--stop-after=close` (requires `feature-select-winner` CLI command — separate feature)
+- `deploy: auto`
 - `review: auto`
 - Research autonomous execution
 - Automatic retry on failure
@@ -161,6 +163,14 @@ No behaviour change for existing autopilot users.
 ## Open Questions
 
 - Should the `status` subcommand remain under `feature-autonomous-start status <id>`, or should it be a separate `feature-autonomous-status <id>` command for clarity?
+
+## Future: Fleet end-to-end close
+
+Fleet `--stop-after=close` is blocked on a `aigon feature-select-winner <id> <agent>` CLI command that emits `winner.selected` into the engine. Once that exists:
+- The eval agent prompt is updated to call it as its final step
+- The controller checks `snapshot.winnerAgentId !== null` after eval completes
+- If set, controller proceeds to `feature-close`
+- Fleet mode becomes fully hands-off end-to-end
 
 ## Related
 
