@@ -333,6 +333,11 @@
       const data = state.data || {};
       document.getElementById('updated-text').textContent = 'Updated ' + relTime(data.generatedAt || new Date().toISOString());
 
+      // Preserve add-repo input state across re-renders (poll cycle destroys DOM)
+      const existingInput = document.querySelector('.add-repo-input');
+      const inputWasFocused = existingInput && document.activeElement === existingInput;
+      const inputValue = existingInput ? existingInput.value : '';
+
       const reposRoot = document.getElementById('settings-view');
       const empty = document.getElementById('empty');
       reposRoot.className = '';
@@ -438,6 +443,8 @@
 
       addBtn.onclick = addRepo;
       input.onkeydown = (e) => { if (e.key === 'Enter') addRepo(); };
+      if (inputValue) input.value = inputValue;
+      if (inputWasFocused) requestAnimationFrame(() => { input.focus(); input.setSelectionRange(input.value.length, input.value.length); });
       form.appendChild(input);
       form.appendChild(addBtn);
       section.appendChild(form);

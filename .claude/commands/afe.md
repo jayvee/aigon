@@ -126,22 +126,9 @@ After the tables, document:
 - **Strengths & Weaknesses** for each agent (use `####` agent headings with bullet lists)
 - **Recommendation** — which agent wins and why (1-2 sentences)
 
-## Step 5: Present evaluation and close
+## Step 5: Present evaluation and STOP
 
-### Autonomous Mode (`--autonomous` flag)
-
-If `--autonomous` was passed in the CLI command, skip all user interaction and:
-
-1. Pick the winning implementation based on your evaluation scores (highest total wins; break ties by code quality)
-2. Document your choice in the evaluation file under a `## Winner` heading: `Winner: <agent>` (e.g., `Winner: cc`)
-3. Run close automatically — **from the main repo, not a worktree**:
-   ```bash
-   aigon feature-close {{args}} <winning-agent>
-   ```
-4. State which implementation you chose and why
-5. **Do NOT ask the user for input** — the AutoConductor expects autonomous completion
-
-### Drive Mode (interactive)
+### Drive Mode
 
 After completing the evaluation:
 
@@ -159,13 +146,13 @@ Once the user approves, tell them to run:
 /aigon:feature-close {{args}}
 ```
 
-### Fleet Mode (interactive)
+### Fleet Mode
 
 After completing the evaluation:
 
 1. Present a summary of your comparison to the user
 2. Show the scores/comparison
-3. State your recommendation clearly (e.g., "Merge cc's implementation")
+3. State your recommendation clearly — update `**Winner:**` in the eval file with the winning agent code (e.g., `**Winner:** cc (Claude) — rationale`)
 4. **Explicitly address cross-pollination:** After naming the winner, you MUST state one of:
    - **If there are aspects worth adopting:** "Before merging, consider adopting from `<agent>`: `<specific aspect>`" — be concrete about what to take and from which implementation.
    - **If there is nothing worth adopting:** "The other implementations don't have particular features or aspects worth adopting beyond what the winner already provides."
