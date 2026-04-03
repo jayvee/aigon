@@ -2,9 +2,9 @@
 
 ## Summary
 
-Replace the current vague `feature-autopilot` model with a clearer, stage-based autonomous execution system. The user-facing concept shifts from "autopilot" to "start autonomously" — you choose who implements, who evaluates, and where autonomy stops. Internally, a dedicated `feature-run` CLI command spawns a long-running monitor process in its own tmux session (role: `auto`) that drives the feature through configured stages using workflow-core state as the only authority. The AIGON server stays completely read-only — it displays liveness via the existing heartbeat infrastructure. No new files, no new servers, no new write paths.
+Replace the current vague `feature-autopilot` model with a clearer autonomous execution system. The user-facing concept shifts from "autopilot" to "start autonomously" — you choose who implements, who evaluates, and where autonomy stops. Internally, a dedicated controller tmux session (role: `auto`) observes workflow-core state and launches the next valid stage command when prerequisites are satisfied. The controller is not a source of truth: workflow-core remains authoritative, and implementation/eval sessions remain normal tmux work sessions. If the controller dies, the feature degrades cleanly into normal manual mode with no special recovery state required. The AIGON server remains a launcher and read-side surface only. No new persistent metadata files are introduced in this version.
 
-**Architecture**: Option A — standalone tmux-based monitor process. The server is not involved in orchestration.
+**Architecture**: standalone tmux-based controller session. The server is not the orchestrator.
 
 **Prerequisites**:
 - Feature 212 (fix autopilot to use workflow-core engine) — ✅ Done
@@ -12,32 +12,34 @@ Replace the current vague `feature-autopilot` model with a clearer, stage-based 
 
 ## User Stories
 
-- [ ] As a developer, I can start a feature autonomously from the CLI by choosing implementation agents, an evaluator, and where autonomy stops — without managing a long-running terminal session.
+- [ ] As a developer, I can start a feature autonomously from the CLI by choosing implementation agents, an evaluator, and where autonomy stops — without manually supervising each stage transition.
 - [ ] As a developer, I can start a feature autonomously from the dashboard with the same explicit choices.
-- [ ] As a user, I can see on the dashboard whether the autonomous run is active, completed, or has stopped — without the server needing to own any orchestration state.
-- [ ] As a maintainer, the server remains read-only and the autonomous monitor is just another tmux session — if it crashes, I restart it with the same command.
+- [ ] As a user, I can see on the dashboard whether the autonomous controller is active or may have stopped, without the server needing to own orchestration state.
+- [ ] As a maintainer, the controller is just another tmux session — if it crashes, the feature falls back to normal manual workflow instead of entering a broken intermediate state.
 
 ## Acceptance Criteria
 
-### CLI: `aigon feature-run`
+### CLI: `aigon feature-autonomous-start`
 
-- [ ] `aigon feature-run <id> <agents...> [--eval-agent=<agent>] [--stop-after=implement|eval|close|deploy]` is the primary command
+- [ ] `aigon feature-autonomous-start <id> <agents...> [--eval-agent=<agent>] [--stop-after=implement|eval]` is the primary command
 - [ ] `--stop-after` defaults to `eval` (safe default: no automatic close or deploy)
 - [ ] `--eval-agent` defaults to the first implementation agent if not specified
 - [ ] The command calls `feature-start` if worktrees do not already exist
-- [ ] The command spawns a dedicated monitor tmux session named `{repo}-f{id}-auto(-desc)` (per feature-213 naming convention) and exits immediately — no blocking terminal
-- [ ] `aigon feature-run <id> status` prints whether the `auto` tmux session is alive and the current workflow-core state
-- [ ] `aigon feature-autopilot` is retained as a compatibility wrapper that maps its arguments to `feature-run` with `--stop-after=eval`
+- [ ] The command spawns a dedicated controller tmux session named `{repo}-f{id}-auto(-desc)` (per feature-213 naming convention) and exits immediately
+- [ ] `aigon feature-autonomous-start status <id>` prints whether the `auto` tmux session is alive and the current workflow-core state
+- [ ] `aigon feature-autopilot` is retained as a compatibility wrapper that maps its arguments to `feature-autonomous-start` with `--stop-after=eval`
 
-### Monitor session behaviour
+### Controller session behaviour
 
-- [ ] The monitor session (`auto` role) touches `.aigon/state/heartbeat-{featureId}-auto` every 30s — reusing the existing heartbeat infrastructure
-- [ ] The monitor polls the workflow-core engine snapshot every 30s to determine when each stage is complete
-- [ ] When all agents are ready per the engine snapshot, the monitor invokes `aigon feature-eval <id> --agent=<eval-agent>`
-- [ ] The monitor waits for `currentSpecState === evaluating` in the engine snapshot before logging "evaluation started"
-- [ ] When `--stop-after=eval` and evaluation is complete, the monitor prints the next manual step (`aigon feature-close <id>`) and exits cleanly
-- [ ] If a stage command fails, the monitor logs the error clearly and exits — it does not retry
-- [ ] The monitor session output is readable via `tmux attach -t {repo}-f{id}-auto-{desc}`
+- [ ] The controller session (`auto` role) touches `.aigon/state/heartbeat-{featureId}-auto` every 30s — reusing the existing heartbeat infrastructure
+- [ ] The controller polls the workflow-core engine snapshot every 30s to determine when each stage is complete
+- [ ] When all implementation agents are ready per the engine snapshot, the controller invokes `aigon feature-eval <id> --agent=<eval-agent>`
+- [ ] The controller waits for `currentSpecState === evaluating` in the engine snapshot before logging "evaluation started"
+- [ ] When `--stop-after=implement`, the controller exits after all implementation agents are ready and prints the next manual step
+- [ ] When `--stop-after=eval`, the controller triggers eval, waits for completion, prints the next manual step (`aigon feature-close <id>`), and exits cleanly
+- [ ] If a stage command fails, the controller logs the error clearly and exits — it does not retry
+- [ ] If the controller session dies for any reason, implementation and eval sessions continue normally and the feature can be completed manually
+- [ ] The controller session output is readable via `tmux attach -t {repo}-f{id}-auto-{desc}`
 
 ### Dashboard UX
 
@@ -46,14 +48,8 @@ Replace the current vague `feature-autopilot` model with a clearer, stage-based 
 - [ ] A feature whose `auto` heartbeat has gone stale shows a `Autonomous run may have stopped` warning
 - [ ] Backlog features surface a `Start Autonomously` primary action
 - [ ] Clicking `Start Autonomously` opens a modal with: implementation agent multi-select, evaluator agent select, and `Stop after` selector
-- [ ] The dashboard action POSTs to the server which spawns `aigon feature-run <id> ...` as a child process and returns immediately — the server does not monitor or orchestrate further
+- [ ] The dashboard action POSTs to the server which spawns `aigon feature-autonomous-start <id> ...` as a child process and returns immediately — the server does not monitor or orchestrate further
 - [ ] The dashboard no longer implies "autopilot" means fully autonomous merge/close
-
-### Server stays read-only
-
-- [ ] The server does not poll automation state or invoke any stage commands
-- [ ] The server only reads the heartbeat file to display liveness (same as agent heartbeats today)
-- [ ] No new server poll loops, no new endpoints beyond the one that spawns `feature-run`
 
 ### Regression safety
 
@@ -70,20 +66,21 @@ npm test
 ```
 
 Manual validation:
-- Run `aigon feature-run <id> cc gg --eval-agent=gg --stop-after=eval`
+- Run `aigon feature-autonomous-start <id> cc gg --eval-agent=gg --stop-after=eval`
 - Confirm `{repo}-f{id}-auto-{desc}` tmux session is created and exits after spawning agents
-- Attach to monitor session and confirm it logs progress as agents complete
+- Attach to controller session and confirm it logs progress as agents complete
 - Confirm `feature-eval` is triggered automatically when both agents are ready per engine snapshot
-- Confirm monitor exits cleanly after eval with next-step instructions
+- Confirm controller exits cleanly after eval with next-step instructions
+- Kill the controller session mid-run and confirm the feature can still be finished manually
 - Confirm dashboard shows `Running autonomously` while heartbeat is fresh
 - Confirm `aigon feature-autopilot <id> cc gg` works via the compatibility wrapper
 - Confirm a non-automated feature running in parallel is unaffected
 
 ## Technical Approach
 
-### 1. Monitor session
+### 1. Controller session
 
-`feature-run` spawns a single dedicated tmux session with role `auto` (per feature-213). The session runs a monitor loop:
+`feature-autonomous-start` spawns a single dedicated tmux session with role `auto` (per feature-213). The session runs a controller loop:
 
 ```
 while true:
@@ -95,11 +92,18 @@ while true:
   sleep 30
 ```
 
-The monitor uses `buildTmuxSessionName(id, null, { role: 'auto', desc })` — no agent argument since `auto` sessions are agent-less.
+The controller uses `buildTmuxSessionName(id, null, { role: 'auto', desc })` — no agent argument since `auto` sessions are agent-less.
+
+The controller is deliberately lightweight:
+
+- it does not become lifecycle authority
+- it does not own agent session state
+- it does not persist orchestration metadata
+- if it stops, the feature simply degrades to manual mode
 
 ### 2. Heartbeat
 
-The monitor touches `.aigon/state/heartbeat-{featureId}-auto` every 30s. The dashboard reads it the same way it reads agent heartbeats — via `lib/workflow-heartbeat.js`. No new infrastructure needed.
+The controller touches `.aigon/state/heartbeat-{featureId}-auto` every 30s. The dashboard reads it the same way it reads agent heartbeats — via `lib/workflow-heartbeat.js`. No new infrastructure needed.
 
 ### 3. Dashboard liveness display
 
@@ -109,7 +113,7 @@ Extend the existing heartbeat liveness check in `lib/dashboard-status-helpers.js
 
 The `Start Autonomously` action POSTs to a new lightweight endpoint (e.g. `POST /api/features/:id/run`) which:
 - Validates the request (agents, eval-agent, stop-after)
-- Spawns `aigon feature-run <id> <agents> --eval-agent=<agent> --stop-after=<stage>` as a child process
+- Spawns `aigon feature-autonomous-start <id> <agents> --eval-agent=<agent> --stop-after=<stage>` as a child process
 - Returns `{ started: true }` immediately
 
 The server does nothing further. The child process is fully independent.
@@ -120,16 +124,14 @@ The server does nothing further. The child process is fully independent.
 |---|---|
 | `implement` | Exits after all agents submit — does not trigger eval |
 | `eval` | Triggers eval, waits for completion, then exits (default) |
-| `close` | Triggers eval then close — out of scope for now, logs warning |
-| `deploy` | Out of scope, logs warning |
 
-`close` and `deploy` are accepted as valid inputs but print a clear "not yet supported" message and behave as `eval` for now.
+Only `implement` and `eval` are supported in v1. `close` and `deploy` remain future stages but are not exposed as valid inputs until they are implemented.
 
 ### 6. Compatibility wrapper
 
 ```js
 // aigon feature-autopilot <id> <agents...>
-// → aigon feature-run <id> <agents...> --stop-after=eval
+// → aigon feature-autonomous-start <id> <agents...> --stop-after=eval
 ```
 
 No behaviour change for existing autopilot users.
@@ -137,7 +139,7 @@ No behaviour change for existing autopilot users.
 ## Dependencies
 
 - Feature 213 — `auto` tmux session role (must land first)
-- `lib/commands/feature.js` — `feature-run` command, `feature-autopilot` wrapper, monitor loop
+- `lib/commands/feature.js` — `feature-autonomous-start` command, `feature-autopilot` wrapper, controller loop
 - `lib/worktree.js` — `buildTmuxSessionName` with `role: 'auto'`, heartbeat file path
 - `lib/workflow-heartbeat.js` — existing heartbeat reading (no changes, just reuse)
 - `lib/dashboard-status-helpers.js` — extend heartbeat check for `auto` role
@@ -149,16 +151,16 @@ No behaviour change for existing autopilot users.
 
 ## Out of Scope
 
-- Server orchestration of any kind
+- Server orchestration of autonomous stages
 - `automation.json` or any new persistent file format
-- `close: auto` and `deploy: auto` (modelled but not implemented)
+- `close: auto` and `deploy: auto`
 - `review: auto`
 - Research autonomous execution
 - Automatic retry on failure
 
 ## Open Questions
 
-- None — architecture settled in design discussion
+- Should the `status` subcommand remain under `feature-autonomous-start status <id>`, or should it be a separate `feature-autonomous-status <id>` command for clarity?
 
 ## Related
 
