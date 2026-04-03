@@ -40,9 +40,10 @@ If the branch is `main` (or `master`), skip to **Path D: Main branch**.
 > You have uncommitted changes on feature branch `<branch>`.
 >
 > **Suggested next step:**
-> `{{CMD_PREFIX}}feature-submit`
+> Commit your changes, update your feature log, then run:
+> `aigon agent-status submitted`
 >
-> This will commit your changes, write the implementation log, and signal readiness for review.
+> Implementation is only complete after `aigon agent-status submitted` succeeds.
 
 ---
 
@@ -57,7 +58,7 @@ If the branch is `main` (or `master`), skip to **Path D: Main branch**.
 >
 > **Suggested next steps:**
 >
-> 1. `{{CMD_PREFIX}}feature-submit` — if you have committed code ready for review
+> 1. `aigon agent-status submitted` — if your implementation and log updates are complete
 > 2. `{{CMD_PREFIX}}feature-do <ID>` — if you haven't started implementing yet
 
 ---
