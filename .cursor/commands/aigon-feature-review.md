@@ -124,10 +124,15 @@ Add a review section to the implementation log:
 - <any observations for the user>
 ```
 
-Commit the log update:
+Commit the log update. Use the same path as Step 5 — if you're in the worktree commit directly, if you're on main use `git -C`:
 ```bash
+# If in the worktree:
 git add docs/specs/features/logs/feature-<name>-*-log.md
 git commit -m "docs(review): add review notes to implementation log"
+# If on main:
+WORKTREE=$(git worktree list | grep "feature-<name>" | awk '{print $1}')
+git -C "$WORKTREE" add docs/specs/features/logs/feature-<name>-*-log.md
+git -C "$WORKTREE" commit -m "docs(review): add review notes to implementation log"
 ```
 
 ## Step 7: STOP - Review complete

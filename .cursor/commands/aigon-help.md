@@ -16,7 +16,7 @@
 | `/aigon-feature-review <ID>` | Code review with fixes by a different agent |
 | `/aigon-feature-close <ID> [agent]` | Merge and complete feature |
 | `/aigon-feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
-| `/aigon-feature-autopilot <ID> [agents...]` | Fleet autopilot: setup + spawn agents + monitor + eval |
+| `/aigon-feature-autonomous-start <ID> <agents...>` | Start autonomous feature flow with explicit stop-after control |
 | `/aigon-feature-open [ID] [agent]` | Open feature worktree in terminal and start agent |
 
 ## Research (unified for Drive and Fleet modes)
@@ -80,9 +80,9 @@ All commands have top-level short aliases prefixed with `a` (for aigon):
 | `/afe` | feature-eval | `/are` | research-eval |
 | `/afr` | feature-review | `/arcl` | research-close |
 | `/afcl` | feature-close | `/arap` | research-autopilot |
-| `/afap` | feature-autopilot | `/afbc` | feedback-create |
-| `/ab` | board | `/afbl` | feedback-list |
-| `/ads` | dev-server | `/afbt` | feedback-triage |
-| `/an` | next | `/ah` | help |
+| `/ab` | board | `/afbc` | feedback-create |
+| `/afbl` | feedback-list | `/afbt` | feedback-triage |
+| `/ads` | dev-server | `/an` | next |
+| `/ah` | help |  |  |
 
 Run `aigon help` in terminal for full CLI reference.

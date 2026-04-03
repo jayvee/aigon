@@ -126,9 +126,22 @@ After the tables, document:
 - **Strengths & Weaknesses** for each agent (use `####` agent headings with bullet lists)
 - **Recommendation** — which agent wins and why (1-2 sentences)
 
-## Step 5: Present evaluation and STOP
+## Step 5: Present evaluation and close
 
-### Drive Mode
+### Autonomous Mode (`--autonomous` flag)
+
+If `--autonomous` was passed in the CLI command, skip all user interaction and:
+
+1. Pick the winning implementation based on your evaluation scores (highest total wins; break ties by code quality)
+2. Document your choice in the evaluation file under a `## Winner` heading: `Winner: <agent>` (e.g., `Winner: cc`)
+3. Run close automatically — **from the main repo, not a worktree**:
+   ```bash
+   aigon feature-close {{args}} <winning-agent>
+   ```
+4. State which implementation you chose and why
+5. **Do NOT ask the user for input** — the AutoConductor expects autonomous completion
+
+### Drive Mode (interactive)
 
 After completing the evaluation:
 
@@ -146,7 +159,7 @@ Once the user approves, tell them to run:
 /aigon:feature-close {{args}}
 ```
 
-### Fleet Mode
+### Fleet Mode (interactive)
 
 After completing the evaluation:
 
