@@ -1,90 +1,112 @@
 ---
-title: Autopilot Mode
-description: Autonomous retry loop until validation passes.
+title: Autonomous Mode
+description: Hands-off feature execution with the AutoConductor — implement, evaluate, and close without intervention.
 ---
 
-Autopilot mode runs an agent in a loop — implement, validate, retry — until all checks pass or the iteration budget runs out. A fresh agent session is spawned each iteration to avoid context rot.
-
-## When to use
-
-- The scope is well-defined with clear acceptance criteria
-- The feature spec has a `## Validation` section with executable checks
-- You want hands-off execution
-
-## Modes
-
-| Mode | Agents | Command |
-|------|--------|---------|
-| **Autopilot** | Single agent | `feature-do 07 --autonomous` |
-| **Swarm** | Multiple agents | `feature-start 07 cc gg --autonomous --auto-submit` |
-
-Swarm is Fleet + Autopilot — multiple agents compete, each running autonomously.
+Autonomous mode lets you start a feature and walk away. The **AutoConductor** — a dedicated background session — watches workflow state and triggers the next stage automatically. When it finishes (or stops), the feature falls back to normal manual workflow.
 
 ## How it works
 
+The AutoConductor is a dedicated `auto` tmux session that polls the workflow-core engine every 30 seconds. When a stage completes, it invokes the next command automatically.
+
 ```
-Iteration 1:  spawn agent → implement → run validation
-                                          ↓ fail
-Iteration 2:  spawn fresh agent → read previous attempt → fix → validate
-                                          ↓ fail
-Iteration 3:  spawn fresh agent → read attempts 1-2 → fix → validate
-                                          ↓ pass ✓
-Done — agent signals submitted
+feature-autonomous-start
+        ↓
+AutoConductor spawns (auto tmux session)
+        ↓
+Agents implement in parallel
+        ↓ all submitted
+Solo mode → feature-close (done)
+Fleet mode → feature-eval → exit, print next step (pick winner)
 ```
 
-Each iteration gets a fresh context window but can see the history of previous attempts.
+The AutoConductor is deliberately lightweight — it is not a lifecycle authority. It holds no orchestration state. If it dies, the feature continues normally and can be completed manually.
 
-## Workflow
+## Starting autonomously
 
-### Single agent (Autopilot)
+### From the CLI
 
 ```bash
-# Create and set up the feature first
-/aigon:feature-create fix-pagination
-# → Describe the bug: pagination shows wrong page count after filtering...
-/aigon:feature-prioritise fix-pagination
-/aigon:feature-start 42
+# Solo — one agent, fully hands-off through close
+aigon feature-autonomous-start 42 cc
 
-# Run autonomously (max 5 iterations by default)
-aigon feature-do 42 --autonomous
+# Fleet — two agents, stop after eval (then pick winner manually)
+aigon feature-autonomous-start 42 cc gg --eval-agent=gg --stop-after=eval
 
-# Or with options
-aigon feature-do 42 --autonomous --max-iterations=3 --agent=cx
+# Stop early — just implement, then hand back control
+aigon feature-autonomous-start 42 cc --stop-after=implement
 ```
 
-### Multiple agents (Swarm)
+### From the dashboard
+
+Click **Start Autonomously** on any backlog feature card. A modal lets you choose:
+
+- **Implementation agents** — which agents implement in parallel
+- **Evaluator agent** — which agent runs the evaluation (Fleet only)
+- **Stop after** — where autonomy ends
+
+{/* TODO: add screenshot of the Start Autonomously modal once feature-214 ships */}
+
+## Modes
+
+| Mode | Agents | What AutoConductor does |
+|------|--------|------------------------|
+| **Solo** | 1 | Waits for agent to submit → invokes `feature-close` → done |
+| **Fleet** | 2+ | Waits for all agents to submit → invokes `feature-eval` → exits with next-step instructions |
+
+Solo mode has no evaluation stage — the single agent is the winner by default and the feature closes automatically.
+
+Fleet mode stops after evaluation in v1. Selecting the winner and closing is still a manual step:
 
 ```bash
-# Set up Fleet with autonomous mode
-aigon feature-start 42 cc gg cx --autonomous --auto-submit
-
-# Or use the autopilot command for full orchestration
-aigon feature-autopilot 42 cc gg cx
+aigon feature-close 42 cc       # after eval, pick the winner
 ```
 
-The `feature-autopilot` command handles setup, spawning, monitoring, and evaluation in one step.
+## `--stop-after` options
 
-## Writing validation checks
+| Value | Behaviour |
+|-------|-----------|
+| `close` | Default. Fully hands-off in solo mode. Fleet falls back to `eval` (no auto-close in v1) |
+| `eval` | Stop after evaluation — return control before winner selection |
+| `implement` | Stop after all agents submit — skip eval entirely |
 
-Add a `## Validation` section to your feature spec:
+## Monitoring
 
-```markdown
-## Validation
+While the AutoConductor is running, the dashboard shows a **Running autonomously** badge on the feature card. When it finishes or is killed, the badge disappears.
 
-\`\`\`bash
-cd site && npm run build && echo "Build OK"
-npm test
-\`\`\`
+To watch the AutoConductor log directly:
+
+```bash
+# Check whether the auto session is alive and the current engine state
+aigon feature-autonomous-start status 42
+
+# Attach to the AutoConductor output
+tmux attach -t <repo>-f42-auto
 ```
 
-Each command must exit 0 for validation to pass. The agent runs these after each implementation attempt.
+## Resilience
 
-## Flags
+If the AutoConductor session dies mid-run, implementation and eval sessions continue unaffected. Complete the feature manually:
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--autonomous` | off | Enable autonomous retry loop |
-| `--max-iterations=N` | 5 | Maximum retry attempts |
-| `--auto-submit` | off | Auto-signal submitted on success (for Swarm) |
-| `--agent=<id>` | cc | Which agent to use |
-| `--dry-run` | off | Show what would run without executing |
+```bash
+aigon feature-eval 42             # if agents haven't been evaluated yet
+aigon feature-close 42 cc         # merge the winner
+```
+
+No recovery state to clean up — the feature is just in whatever stage it was in when the AutoConductor stopped.
+
+## When to use
+
+Autonomous mode works best when:
+
+- The spec has clear, machine-verifiable acceptance criteria
+- You trust the agent to implement without mid-stream decisions
+- You want parallel Fleet runs without babysitting
+
+For features that need ongoing direction or spec refinement, stick with manual Drive mode and check in as the agent works.
+
+## Next steps
+
+- **[Drive Mode](/docs/guides/drive-mode)** — single agent, full control
+- **[Fleet Mode](/docs/guides/fleet-mode)** — multiple agents competing in parallel
+- **[Dashboard](/docs/guides/dashboard)** — monitor autonomous runs in real-time
