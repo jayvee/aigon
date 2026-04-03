@@ -279,6 +279,7 @@ let closeModalPipelineType = null;
 let autonomousModalFeature = null;
 let autonomousModalRepoPath = null;
 let autonomousModalBtn = null;
+let autonomousModalModels = null;
 
 const AUTONOMOUS_AGENT_IDS = ['cc', 'cx', 'gg', 'mv', 'cu'];
 
@@ -397,10 +398,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Autonomous modal logic ────────────────────────────────────────────────
 
-function showAutonomousModal(feature, repoPath, btn) {
+async function showAutonomousModal(feature, repoPath, btn) {
   autonomousModalFeature = feature;
   autonomousModalRepoPath = repoPath;
   autonomousModalBtn = btn || null;
+  autonomousModalModels = await fetchAgentModels(repoPath).catch(() => ({}));
 
   const desc = document.getElementById('autonomous-modal-desc');
   const checks = document.getElementById('autonomous-agent-checks');
@@ -412,10 +414,12 @@ function showAutonomousModal(feature, repoPath, btn) {
   desc.textContent = '#' + feature.id + ' ' + feature.name;
   checks.innerHTML = AUTONOMOUS_AGENT_IDS.map(agentId => {
     const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
+    const modelName = (autonomousModalModels && autonomousModalModels[agentId] && autonomousModalModels[agentId].implement) || '';
     return '<label class="agent-check-row">' +
       '<input type="checkbox" value="' + escHtml(agentId) + '"' + (agentId === 'cc' ? ' checked' : '') + '>' +
       '<span class="agent-check-label">' + escHtml(agentId) + '</span>' +
       '<span class="agent-check-hint">' + escHtml(displayName) + '</span>' +
+      (modelName ? '<span class="agent-check-model">' + escHtml(modelName) + '</span>' : '') +
       '</label>';
   }).join('');
 
@@ -430,6 +434,7 @@ function hideAutonomousModal() {
   autonomousModalFeature = null;
   autonomousModalRepoPath = null;
   autonomousModalBtn = null;
+  autonomousModalModels = null;
 }
 
 function updateAutonomousEvalOptions() {
@@ -440,7 +445,9 @@ function updateAutonomousEvalOptions() {
   evalSelect.disabled = false;
   evalSelect.innerHTML = AUTONOMOUS_AGENT_IDS.map(agentId => {
     const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
-    return '<option value="' + escHtml(agentId) + '">' + escHtml(agentId + ' · ' + displayName) + '</option>';
+    const modelName = (autonomousModalModels && autonomousModalModels[agentId] && autonomousModalModels[agentId].evaluate) || '';
+    const label = modelName ? (agentId + ' · ' + displayName + ' · ' + modelName) : (agentId + ' · ' + displayName);
+    return '<option value="' + escHtml(agentId) + '">' + escHtml(label) + '</option>';
   }).join('');
 
   if (previousValue && AUTONOMOUS_AGENT_IDS.includes(previousValue)) {
