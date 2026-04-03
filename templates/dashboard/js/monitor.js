@@ -108,7 +108,10 @@
         relTimeProxy(iso) { return relTime(iso); },
         featureTitle(feature) {
           const evalBadge = feature.stage === 'in-evaluation' ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus || 'evaluating') + '</span>' : '';
-          return (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + evalBadge;
+          const autoBadge = feature.autonomousSession && feature.autonomousSession.running
+            ? '<span class="autonomous-badge">Running autonomously</span>'
+            : '';
+          return (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + autoBadge + evalBadge;
         },
         researchTitle(item) {
           const readyToEval = (item.validActions || []).some(a => a.action === 'research-eval');
@@ -232,4 +235,3 @@
         }
       };
     }
-

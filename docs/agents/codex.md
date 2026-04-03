@@ -19,7 +19,7 @@
 | `/prompts:aigon-feature-review <ID>` | Code review with fixes by a different agent |
 | `/prompts:aigon-feature-submit` | (you must run this) Commit changes, write log, signal implementation complete |
 | `/prompts:aigon-feature-close <ID> [agent]` | Merge and complete feature |
-| `/prompts:aigon-feature-autopilot <ID> [agents...]` | Fleet autopilot: setup + spawn + monitor + eval |
+| `/prompts:aigon-feature-autonomous-start <ID> <agents...>` | Start autonomous feature flow with explicit stop-after control |
 | `/prompts:aigon-feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
 
 ### Research Commands (unified for Drive and Fleet modes)
