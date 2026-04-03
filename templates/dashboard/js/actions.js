@@ -199,6 +199,10 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await requestAction(pCmd('start'), [id, ...agents], repoPath, btn);
       break;
     }
+    case 'feature-autonomous-start': {
+      showAutonomousModal(feature, repoPath, btn);
+      break;
+    }
     case 'feature-autopilot': {
       const agents = await showAgentPicker(id, feature.name, { title: 'Select Autopilot Agents', submitLabel: 'Autopilot', repoPath, taskType: 'implement', action: va.action });
       if (!agents) return;
@@ -272,6 +276,11 @@ let closeModalResolve = null;
 let closeModalFeature = null;
 let closeModalRepoPath = null;
 let closeModalPipelineType = null;
+let autonomousModalFeature = null;
+let autonomousModalRepoPath = null;
+let autonomousModalBtn = null;
+
+const AUTONOMOUS_AGENT_IDS = ['cc', 'cx', 'gg', 'mv', 'cu'];
 
 function showCloseModal(feature, repoPath, pipelineType) {
   closeModalFeature = feature;
@@ -383,5 +392,96 @@ document.addEventListener('DOMContentLoaded', () => {
   // Re-render adoption checkboxes when winner changes
   modal.addEventListener('change', (e) => {
     if (e.target.name === 'close-winner') updateAdoptionCheckboxes();
+  });
+});
+
+// ── Autonomous modal logic ────────────────────────────────────────────────
+
+function showAutonomousModal(feature, repoPath, btn) {
+  autonomousModalFeature = feature;
+  autonomousModalRepoPath = repoPath;
+  autonomousModalBtn = btn || null;
+
+  const desc = document.getElementById('autonomous-modal-desc');
+  const checks = document.getElementById('autonomous-agent-checks');
+  const evalSelect = document.getElementById('autonomous-eval-agent');
+  const stopAfter = document.getElementById('autonomous-stop-after');
+  const modal = document.getElementById('autonomous-modal');
+  if (!desc || !checks || !evalSelect || !stopAfter || !modal) return;
+
+  desc.textContent = '#' + feature.id + ' ' + feature.name;
+  checks.innerHTML = AUTONOMOUS_AGENT_IDS.map(agentId => {
+    const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
+    return '<label class="agent-check-row">' +
+      '<input type="checkbox" value="' + escHtml(agentId) + '"' + (agentId === 'cc' ? ' checked' : '') + '>' +
+      '<span class="agent-check-label">' + escHtml(agentId) + '</span>' +
+      '<span class="agent-check-hint">' + escHtml(displayName) + '</span>' +
+      '</label>';
+  }).join('');
+
+  stopAfter.value = 'eval';
+  updateAutonomousEvalOptions();
+  modal.style.display = 'flex';
+}
+
+function hideAutonomousModal() {
+  const modal = document.getElementById('autonomous-modal');
+  if (modal) modal.style.display = 'none';
+  autonomousModalFeature = null;
+  autonomousModalRepoPath = null;
+  autonomousModalBtn = null;
+}
+
+function updateAutonomousEvalOptions() {
+  const evalSelect = document.getElementById('autonomous-eval-agent');
+  if (!evalSelect) return;
+  const previousValue = String(evalSelect.value || '').trim();
+
+  evalSelect.disabled = false;
+  evalSelect.innerHTML = AUTONOMOUS_AGENT_IDS.map(agentId => {
+    const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
+    return '<option value="' + escHtml(agentId) + '">' + escHtml(agentId + ' · ' + displayName) + '</option>';
+  }).join('');
+
+  if (previousValue && AUTONOMOUS_AGENT_IDS.includes(previousValue)) {
+    evalSelect.value = previousValue;
+  }
+}
+
+async function submitAutonomousModal() {
+  if (!autonomousModalFeature) return;
+  const selectedAgents = [...document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]:checked')].map(cb => cb.value);
+  if (selectedAgents.length === 0) {
+    showToast('Select at least one implementation agent', null, null, { error: true });
+    return;
+  }
+
+  const evalSelect = document.getElementById('autonomous-eval-agent');
+  const stopAfter = document.getElementById('autonomous-stop-after');
+  const evalAgent = evalSelect && !evalSelect.disabled ? String(evalSelect.value || '').trim() : '';
+  const stopValue = stopAfter ? String(stopAfter.value || 'eval').trim() : 'eval';
+
+  const featureId = autonomousModalFeature.id;
+  const repoPath = autonomousModalRepoPath;
+  const btn = autonomousModalBtn;
+  hideAutonomousModal();
+  await requestFeatureAutonomousRun(featureId, {
+    agents: selectedAgents,
+    evalAgent,
+    stopAfter: stopValue
+  }, repoPath, btn);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('autonomous-modal');
+  if (!modal) return;
+
+  document.getElementById('autonomous-modal-cancel').onclick = () => hideAutonomousModal();
+  modal.onclick = (e) => { if (e.target === e.currentTarget) hideAutonomousModal(); };
+  document.getElementById('autonomous-modal-submit').onclick = () => submitAutonomousModal();
+  modal.addEventListener('change', (e) => {
+    if (e.target && e.target.closest('#autonomous-agent-checks')) {
+      updateAutonomousEvalOptions();
+    }
   });
 });
