@@ -51,11 +51,15 @@ See every agent session across all repos — running, attached, or ended.
 
 ![Monitor view](/img/aigon-dashboard-monitor.png)
 
+Hover over any session card to peek at live agent output without leaving the dashboard.
+
+![Session peek](/img/new-session-peek.png)
+
 ## Reports
 
 Track throughput, cycle time, agent performance, and commit activity across all repos.
 
-![Reports](/img/aigon-dashboard-reports.png)
+![Reports](/img/new-reports.png)
 
 The Reports tab is organized into three sub-tabs:
 
@@ -75,6 +79,8 @@ High-level metrics at a glance. Uses the global repo sidebar to filter by repo.
 - **Rework Ratio** — percentage of commits that are fixes or rework. Lower is better — means more work lands correctly on the first pass
 - **Quality & Speed** — detailed cycle time stats (median, mean, max) and average iterations per feature
 - **Agent Leaderboard** — features completed, eval wins, fleet win %, cycle time, and first-pass rate per agent
+
+![Feature stats breakdown](/img/new-feature-stats.png)
 
 ### Charts
 
@@ -97,6 +103,8 @@ Paginated tables for drilling into individual items:
 - **Features** — paginated, sortable table with date, repo, feature number, name, agent, cycle time, commits, and lines changed
 - **Commits** — sortable table with date, repo, message, feature, agent, files changed, lines added/removed, and commit hash. Non-feature commits show a "non-feature" badge. Filterable by type (All / Feature only / Non-feature only) and agent
 
+![Details report](/img/new-details-report.png)
+
 ### Activity breakdown
 
 Each telemetry record includes an `activity` field — `implement`, `evaluate`, or `review` — so you can see where tokens are being spent. With Pro, the Insights tab's Token Usage by Activity chart visualizes this breakdown over time.
@@ -116,6 +124,8 @@ Pro also adds the **Insights tab** (labeled "Insights PRO" in the dashboard) wit
 - **Token analytics** — distribution histograms, per-agent breakdowns, activity-level token tracking
 - **AI coaching** — AI-generated observations and actionable recommendations
 
+![Use AI insights](/img/aigon-dashboard-use-ai.png)
+
 These Pro features build on the same data the free Reports tab already collects — Pro adds deeper analysis and AI-powered interpretation. See the [Insights guide](/docs/guides/amplification) for a full walkthrough.
 
 ## Console and Logs
@@ -125,6 +135,12 @@ View live agent output and command history.
 ![Console](/img/aigon-dashboard-console.png)
 
 ![Logs](/img/aigon-dashboard-logs.png)
+
+## Statistics
+
+The Statistics view gives a quick at-a-glance summary of activity across all registered repos.
+
+![Statistics](/img/aigon-dashboard-statistics.png)
 
 ## Managing repos
 
@@ -147,6 +163,10 @@ aigon dashboard open           # Open in browser
 ## Remote access
 
 The dashboard binds to `0.0.0.0` by default, making it accessible from any device on the local network.
+
+<div className="max-w-sm mx-auto">
+  <img src="/img/aigon-dashboard-mobile.png" alt="Dashboard on mobile" className="rounded-xl landing-image" />
+</div>
 
 <div className="max-w-sm mx-auto">
   <img src="/img/aigon-dashboard-mobile-peak.png" alt="Dashboard on mobile" className="rounded-xl landing-image" />
