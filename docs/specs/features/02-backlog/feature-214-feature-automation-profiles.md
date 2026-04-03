@@ -28,7 +28,7 @@ Replace the current vague `feature-autopilot` model with a clearer autonomous ex
 - [ ] The command calls `feature-start` if worktrees do not already exist
 - [ ] The command spawns a dedicated controller tmux session named `{repo}-f{id}-auto(-desc)` (per feature-213 naming convention) and exits immediately
 - [ ] `aigon feature-autonomous-start status <id>` prints whether the `auto` tmux session is alive and the current workflow-core state
-- [ ] `aigon feature-autopilot` is retained as a compatibility wrapper that maps its arguments to `feature-autonomous-start` with `--stop-after=eval`
+- [ ] `aigon feature-autopilot` is removed — users should use `feature-autonomous-start` directly
 
 ### Controller session behaviour
 
@@ -71,7 +71,7 @@ Manual validation:
 - **Fleet to eval**: `aigon feature-autonomous-start <id> cc gg --eval-agent=gg --stop-after=eval` — confirm `feature-eval` is triggered automatically, controller exits cleanly with next-step instructions
 - **Controller resilience**: kill the controller session mid-run and confirm the feature can still be finished manually
 - **Dashboard liveness**: confirm `Running autonomously` indicator while heartbeat is fresh, stale warning after killing controller
-- **Compat wrapper**: `aigon feature-autopilot <id> cc gg` still works, stops at eval
+- **Removal**: confirm `aigon feature-autopilot` returns "command not found" or a clear "use feature-autonomous-start" error
 - **No interference**: a non-automated feature running in parallel is unaffected
 
 ## Technical Approach
@@ -128,19 +128,14 @@ Default is `close`. This means solo mode is fully hands-off by default. Fleet mo
 
 Fleet `--stop-after=close` requires a future `aigon feature-select-winner <id> <agent>` CLI command that lets the eval agent record the winner in the engine snapshot. Once that exists, the controller can check `snapshot.winnerAgentId` and proceed to close.
 
-### 6. Compatibility wrapper
+### 6. Remove `feature-autopilot`
 
-```js
-// aigon feature-autopilot <id> <agents...>
-// → aigon feature-autonomous-start <id> <agents...> --stop-after=eval
-```
-
-Compat wrapper preserves existing autopilot behaviour (stops at eval). Users who want the full solo close path use `feature-autonomous-start` directly.
+`feature-autopilot` is removed entirely — the command handler, any skill shortcuts (`afap`), and all references in docs and templates. `feature-autonomous-start` is the replacement. No compatibility wrapper.
 
 ## Dependencies
 
 - Feature 213 — `auto` tmux session role (must land first)
-- `lib/commands/feature.js` — `feature-autonomous-start` command, `feature-autopilot` wrapper, controller loop
+- `lib/commands/feature.js` — `feature-autonomous-start` command, remove `feature-autopilot` handler, controller loop
 - `lib/worktree.js` — `buildTmuxSessionName` with `role: 'auto'`, heartbeat file path
 - `lib/workflow-heartbeat.js` — existing heartbeat reading (no changes, just reuse)
 - `lib/dashboard-status-helpers.js` — extend heartbeat check for `auto` role
