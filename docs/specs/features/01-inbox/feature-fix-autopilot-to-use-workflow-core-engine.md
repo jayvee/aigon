@@ -2,7 +2,7 @@
 
 ## Summary
 
-`feature-autopilot` and `research-autopilot` were never updated after the workflow-core engine was unified. Feature autopilot still monitors legacy `.aigon/state/` files instead of engine snapshots, and both autopilot types trigger eval/close by calling CLI commands directly rather than emitting engine state-transition events. This means `allAgentsReady` guards are never checked, orchestrated effect lifecycle (spec moves, eval template creation) never runs, and the engine state diverges from reality. This feature migrates both autopilot implementations to be fully engine-native.
+`feature-autopilot` and `research-autopilot` were never fully updated after the workflow-core engine was unified. `research-autopilot` already monitors engine snapshots, but `feature-autopilot` still depends on legacy `.aigon/state/` files and spawns autonomous sessions through a raw `feature-do --autonomous` command instead of the wrapped agent launcher. That bypass means feature autopilot can miss shell-trap signalling, main-repo routing, and engine-ready transitions. This feature makes both autopilot implementations engine-native, with the workflow snapshot as the primary source of truth and autonomous agents signaling the main repo workflow state reliably.
 
 ## User Stories
 
@@ -15,27 +15,35 @@
 ### Feature autopilot: migrate to engine snapshot monitoring
 
 - [ ] `feature-autopilot` monitor loop reads from `readWorkflowSnapshotSync()` (engine snapshot at `.aigon/workflows/features/{id}/snapshot.json`) instead of `readAgentStatus()` (legacy `.aigon/state/feature-{id}-{agent}.json`)
-- [ ] Readiness check uses `snapshot.context.agents[agent].status === 'ready'` instead of `agentState.status === 'submitted'`
+- [ ] Readiness check uses `snapshot.agents[agent].status === 'ready'` instead of `agentState.status === 'submitted'`
 - [ ] If no agent entries exist in the snapshot yet (engine not yet initialised), autopilot handles gracefully (retry, don't crash)
+- [ ] `feature-autopilot status` also uses workflow snapshots as the primary source and only falls back to legacy `.aigon/state/` status files when no engine snapshot exists
 
-### Both autopilots: emit engine events for state transitions
+### Feature autopilot: align autonomous spawn path with engine signaling
 
-- [ ] When all agents are ready, `feature-autopilot` emits a `feature.eval` or `feature.review` engine event (via `selfCommands['feature-eval']` or equivalent engine-aware method) rather than calling the CLI command directly as a fire-and-forget
-- [ ] When all agents are ready, `research-autopilot` emits a `research.eval` engine event rather than calling CLI directly
+- [ ] `feature-autopilot` spawns autonomous agent sessions through the same wrapped launcher path used by `feature-start` / `buildAgentCommand()` so shell traps, heartbeat, and main-repo routing are active in autopilot mode
+- [ ] A successful autonomous feature session updates the main repo workflow snapshot so the corresponding engine agent status becomes `ready` without requiring `feature-eval` to synthesize readiness from legacy `.aigon/state/` files
+- [ ] Feature autopilot no longer depends on local worktree-only status writes to detect completion
+
+### Both autopilots: trigger eval through the engine-backed command path
+
+- [ ] When all agents are ready per the engine snapshot, `feature-autopilot` invokes the existing engine-aware `feature-eval` command path rather than any legacy direct file/state manipulation
+- [ ] When all agents are ready per the engine snapshot, `research-autopilot` invokes the existing engine-aware `research-eval` command path
 - [ ] After emitting the eval event, autopilot waits for the engine snapshot to confirm the transition (e.g. `snapshot.currentSpecState === 'evaluating'`) before printing "evaluation started" and exiting
 - [ ] If the `allAgentsReady` guard fails (agents not all ready per engine), autopilot logs a clear error and does not proceed to eval
 
 ### Ralph auto-submit signal path
 
-- [ ] Verify that Ralph's auto-submit code path (in `lib/validation.js`) calls `aigon agent-status submitted` (the CLI command that writes `.aigon/state/` AND emits the engine signal) rather than writing the state file directly
-- [ ] If it writes directly, fix it to go through the CLI command or call `writeAgentStatus` + `emitSignal` consistently
+- [ ] Ralph's auto-submit code path (in `lib/validation.js`) routes completion through the same main-repo signaling path as `aigon agent-status submitted`, rather than only writing a local status file
+- [ ] If Ralph retains a direct write path, it must also emit the corresponding engine-ready signal to the main repo consistently
 
 ### Regression safety
 
 - [ ] `node -c lib/commands/feature.js` passes
 - [ ] `node -c lib/commands/research.js` passes (or wherever research-autopilot lives)
 - [ ] `npm test` passes
-- [ ] Manual smoke test: `aigon feature-autopilot <id> cc` on a test feature completes without hanging in the monitor loop
+- [ ] Manual smoke test: `aigon feature-autopilot <id> cc gg` on a test feature completes without hanging in the monitor loop
+- [ ] Manual smoke test: `aigon research-autopilot <id> cc gg` on a test research topic completes without hanging in the monitor loop
 
 ## Validation
 
@@ -58,13 +66,24 @@ if (agentState?.status === 'submitted') { ... }
 
 // FIXED:
 const snap = readWorkflowSnapshotSync(mainRepo, featureNum);
-const agentCtx = snap?.context?.agents?.[agent];
+const agentCtx = snap?.agents?.[agent];
 if (agentCtx?.status === 'ready') { ... }
 ```
 
 Mirror the pattern already working in research-autopilot (lines 754–767 in `lib/commands/research.js` or equivalent).
 
-### Engine event emission for eval transition
+### Feature autopilot spawn path fix
+
+`feature-autopilot` should not spawn raw tmux commands like:
+
+```js
+// CURRENT (broken):
+aigon feature-do <id> --autonomous --auto-submit --agent=<agent>
+```
+
+in a way that bypasses the wrapped `buildAgentCommand()` launcher. The feature autopilot path should reuse the same shell-trap and heartbeat wrapper used by `feature-start` so autonomous sessions report status back to the main repo workflow consistently.
+
+### Engine-backed eval transition
 
 Instead of:
 ```js
@@ -79,19 +98,19 @@ await selfCommands['feature-eval']([featureNum]);  // this already calls engine 
 // Then poll snapshot until currentSpecState === 'evaluating'
 ```
 
-**Key investigation needed**: verify whether `feature-eval` and `research-eval` already emit engine events internally or if they bypass the engine. If they already go through the engine, the fix is mainly the monitoring source. If they bypass, both the CLI command and the autopilot caller need updating.
+`feature-eval` and `research-eval` are already expected to be the engine-aware transition path. The autopilot fix is to invoke those commands only after engine-observed readiness, and to treat the resulting workflow snapshot transition as the confirmation of success.
 
 ### Ralph signal path audit
 
-In `lib/validation.js`, locate the auto-submit section (~line 611) and verify:
+In `lib/validation.js`, locate the auto-submit section (~line 611) and replace the local-only completion shortcut:
 ```js
 writeAgentStatus(featureNum, agentId, {status: 'submitted'});
 ```
-This must also emit the engine signal `agent-ready`. Either:
-- Replace with a call to `aigon agent-status submitted` (which handles both), or
-- Explicitly call `wf.emitSignal(mainRepo, featureNum, 'agent-ready', agentId)` after `writeAgentStatus`
+This must update the main repo workflow state, not just a local status file. Either:
+- Replace with a call to `aigon agent-status submitted` (which handles both the legacy write and engine signal), or
+- Explicitly call `wf.emitSignal(mainRepo, featureNum, 'agent-ready', agentId)` after a main-repo-directed status write
 
-### Shell trap (no change needed)
+### Shell trap
 
 The shell trap in `buildAgentCommand()` already calls `aigon agent-status submitted`, which triggers both the legacy write and the engine signal. This path is correct and should not be changed.
 
@@ -100,18 +119,17 @@ The shell trap in `buildAgentCommand()` already calls `aigon agent-status submit
 - `lib/workflow-core/` — engine snapshot reading (`readWorkflowSnapshotSync`)
 - `lib/commands/feature.js` — feature autopilot monitor loop (~line 2497)
 - `lib/commands/research.js` (or wherever research-autopilot lives) — research eval trigger
+- `lib/worktree.js` — wrapped agent launcher / shell trap path
 - `lib/validation.js` — Ralph auto-submit signal path (~line 611)
 
 ## Out of Scope
 
-- Changing how autopilot spawns agents (worktree creation, tmux sessions — these work correctly)
 - Adding new autopilot subcommands or flags
 - Changing the eval or review logic itself (only the trigger path)
 - Automated retries on agent failure (separate feature)
 
 ## Open Questions
 
-- Does `feature-eval` CLI command already emit a `feature.eval` engine event internally, or does it bypass the engine? This determines whether the eval trigger fix is in autopilot or inside `feature-eval` itself.
 - Should autopilot poll indefinitely waiting for the engine eval transition, or time out with a clear error message?
 
 ## Related
