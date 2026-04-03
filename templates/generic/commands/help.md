@@ -12,7 +12,6 @@
 | `{{CMD_PREFIX}}feature-do <ID> [--autonomous]` | Do feature work; `--autonomous` enables the autonomous retry loop |
 | `{{CMD_PREFIX}}feature-spec <ID> [--json]` | Resolve the canonical visible spec path for a feature |
 | `{{CMD_PREFIX}}feature-list [--active] [--all] [--json]` | Query feature records without going through the board UI |
-| `{{CMD_PREFIX}}feature-submit` | Commit changes, write log, signal done for evaluation |
 | `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `{{CMD_PREFIX}}feature-review <ID>` | Code review with fixes by a different agent |
 | `{{CMD_PREFIX}}feature-close <ID> [agent]` | Merge and complete feature |
@@ -77,7 +76,6 @@ All commands have top-level short aliases prefixed with `a` (for aigon):
 | `/afp` | feature-prioritise | `/ars` | research-start |
 | `/afs` | feature-start | `/aro` | research-open |
 | `/afd` | feature-do | `/ard` | research-do |
-| `/afsb` | feature-submit | `/arsb` | research-submit |
 | `/afe` | feature-eval | `/are` | research-eval |
 | `/afr` | feature-review | `/arcl` | research-close |
 | `/afcl` | feature-close | `/arap` | research-autopilot |
@@ -85,5 +83,6 @@ All commands have top-level short aliases prefixed with `a` (for aigon):
 | `/afbl` | feedback-list | `/afbt` | feedback-triage |
 | `/ads` | dev-server | `/an` | next |
 | `/ah` | help |  |  |
+|  |  | `/arsb` | research-submit |
 
 Run `aigon help` in terminal for full CLI reference.
