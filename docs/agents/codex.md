@@ -17,7 +17,6 @@
 | `/prompts:aigon-feature-do <ID> [--autonomous]` | Implement feature; `--autonomous` runs iterative retry loop |
 | `/prompts:aigon-feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `/prompts:aigon-feature-review <ID>` | Code review with fixes by a different agent |
-| `/prompts:aigon-feature-submit` | (you must run this) Commit changes, write log, signal implementation complete |
 | `/prompts:aigon-feature-close <ID> [agent]` | Merge and complete feature |
 | `/prompts:aigon-feature-autonomous-start <ID> <agents...>` | Start autonomous feature flow with explicit stop-after control |
 | `/prompts:aigon-feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
