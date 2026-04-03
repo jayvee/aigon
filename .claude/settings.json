@@ -589,7 +589,12 @@
       "Edit(/Users/jviner/.aigon/worktrees/aigon/feature-207-cc-telemetry-for-gemini-and-codex-agents/**)",
       "Write(/Users/jviner/.aigon/worktrees/aigon/feature-207-cc-telemetry-for-gemini-and-codex-agents/**)",
       "Bash(cd /Users/jviner/.aigon/worktrees/aigon/feature-207-cc-telemetry-for-gemini-and-codex-agents:*)",
-      "Bash(git -C /Users/jviner/.aigon/worktrees/aigon/feature-207-cc-telemetry-for-gemini-and-codex-agents:*)"
+      "Bash(git -C /Users/jviner/.aigon/worktrees/aigon/feature-207-cc-telemetry-for-gemini-and-codex-agents:*)",
+      "Read(/Users/jviner/.aigon/worktrees/aigon/feature-215-cx-codex-reliable-autonomous-submission/**)",
+      "Edit(/Users/jviner/.aigon/worktrees/aigon/feature-215-cx-codex-reliable-autonomous-submission/**)",
+      "Write(/Users/jviner/.aigon/worktrees/aigon/feature-215-cx-codex-reliable-autonomous-submission/**)",
+      "Bash(cd /Users/jviner/.aigon/worktrees/aigon/feature-215-cx-codex-reliable-autonomous-submission:*)",
+      "Bash(git -C /Users/jviner/.aigon/worktrees/aigon/feature-215-cx-codex-reliable-autonomous-submission:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",

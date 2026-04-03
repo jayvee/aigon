@@ -362,6 +362,9 @@
       const autonomousBadge = feature.autonomousSession && feature.autonomousSession.running
         ? '<span class="autonomous-badge">Running autonomously</span>'
         : '';
+      const autonomousPeekBtn = feature.autonomousSession && feature.autonomousSession.sessionName
+        ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(feature.autonomousSession.sessionName) + '" title="Peek at autonomous controller output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
+        : '';
       // Done cards are clean — just ID and name, no agent sections, no actions
       const isDone = feature.stage === 'done';
       // Drive mode (branch): solo agent with no tmux session — skip agent sections
@@ -372,7 +375,7 @@
 
       let innerHtml =
         (feature.id ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + autonomousBadge + '</div>';
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + autonomousBadge + autonomousPeekBtn + '</div>';
 
       if (hasAgentSections) {
         // --- Evaluation verdict layout (pick-winner state) ---
