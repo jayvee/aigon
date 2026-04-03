@@ -82,7 +82,6 @@ All commands have top-level short aliases prefixed with `a` (for aigon):
 | `/ab` | board | `/afbc` | feedback-create |
 | `/afbl` | feedback-list | `/afbt` | feedback-triage |
 | `/ads` | dev-server | `/an` | next |
-| `/ah` | help |  |  |
-|  |  | `/arsb` | research-submit |
+| `/ah` | help | `/arsb` | research-submit |
 
 Run `aigon help` in terminal for full CLI reference.
