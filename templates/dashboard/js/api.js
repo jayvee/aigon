@@ -84,6 +84,45 @@
       }
     }
 
+    async function requestFeatureAutonomousRun(featureId, options, repoPath, btn) {
+      const opts = options || {};
+      const agents = Array.isArray(opts.agents) ? opts.agents : [];
+      const stopAfter = opts.stopAfter || 'close';
+      const evalAgent = opts.evalAgent || '';
+      if (!featureId || agents.length === 0) {
+        showToast('Start autonomously failed: missing feature or agents', null, null, { error: true });
+        return;
+      }
+      const origText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origText);
+      }
+      const processingToast = showToast('Starting autonomous run…', null, null, { processing: true });
+      try {
+        const body = { agents, stopAfter };
+        if (repoPath) body.repoPath = repoPath;
+        if (evalAgent) body.evalAgent = evalAgent;
+        const res = await fetch('/api/features/' + encodeURIComponent(String(featureId)) + '/run', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+        showToast('Autonomous run started');
+        await requestRefresh();
+      } catch (e) {
+        showToast('Start autonomously failed: ' + e.message, null, null, { error: true });
+      } finally {
+        if (processingToast) processingToast.remove();
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = origText || 'Start autonomously';
+        }
+      }
+    }
+
     async function requestFeatureOpen(featureId, agentId, repoPath, btn, pType, mode) {
       const origOpen = btn ? btn.textContent : '';
       if (btn) { btn.disabled = true; btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origOpen); }
