@@ -28,6 +28,10 @@
       return prefix + '-' + action;
     }
 
+    function pipelineColumnKey(repoPath, pipelineType, stage) {
+      return [repoPath || '', pipelineType || 'features', stage || ''].join('::');
+    }
+
     function slugifyFeatureName(value) {
       const text = String(value || '').trim().toLowerCase();
       const slug = text.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -359,11 +363,15 @@
 
       const agents = feature.agents || [];
       const validActions = feature.validActions || [];
-      const autonomousBadge = feature.autonomousSession && feature.autonomousSession.running
-        ? '<span class="autonomous-badge">Running autonomously</span>'
-        : '';
+      const autonomousRunning = !!(feature.autonomousSession && feature.autonomousSession.running);
       const autonomousPeekBtn = feature.autonomousSession && feature.autonomousSession.sessionName
         ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(feature.autonomousSession.sessionName) + '" title="Peek at autonomous controller output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
+        : '';
+      const autonomousControllerRow = autonomousRunning
+        ? '<div class="kcard-agent agent-review">' +
+          '<div class="kcard-agent-header"><span class="kcard-agent-name">Autonomous</span>' + autonomousPeekBtn + '</div>' +
+          '<div class="kcard-agent-status-row"><span class="kcard-agent-status status-running">● Running autonomously</span></div>' +
+          '</div>'
         : '';
       // Done cards are clean — just ID and name, no agent sections, no actions
       const isDone = feature.stage === 'done';
@@ -373,9 +381,12 @@
 
       const reviews = feature.reviewSessions || [];
 
+      const hasNumericId = /^\d+$/.test(String(feature.id || ''));
+
       let innerHtml =
-        (feature.id ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + autonomousBadge + autonomousPeekBtn + '</div>';
+        (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>' +
+        autonomousControllerRow;
 
       if (hasAgentSections) {
         // --- Evaluation verdict layout (pick-winner state) ---
@@ -673,9 +684,21 @@
       const cards = stage === 'done'
         ? unsorted.slice().sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
         : unsorted.slice().sort((a, b) => {
-            const aNum = parseInt(a.id, 10) || 0;
-            const bNum = parseInt(b.id, 10) || 0;
-            return aNum - bNum || (a.name || '').localeCompare(b.name || '');
+            const aHasNumericId = /^\d+$/.test(String(a.id || ''));
+            const bHasNumericId = /^\d+$/.test(String(b.id || ''));
+            const aNum = aHasNumericId ? parseInt(a.id, 10) : null;
+            const bNum = bHasNumericId ? parseInt(b.id, 10) : null;
+
+            if (aHasNumericId && bHasNumericId) {
+              return aNum - bNum || (a.name || '').localeCompare(b.name || '');
+            }
+
+            if (!aHasNumericId && !bHasNumericId) {
+              return (b.createdAt || b.updatedAt || '').localeCompare(a.createdAt || a.updatedAt || '')
+                || (a.name || '').localeCompare(b.name || '');
+            }
+
+            return aHasNumericId ? -1 : 1;
           });
 
       colBody.innerHTML = '';
@@ -688,11 +711,14 @@
       }
       const DONE_CAP = 6;
       const OVERFLOW_CAP = 8;
+      const expandedColumns = state.expandedPipelineColumns || {};
+      const columnKey = pipelineColumnKey(repo.path, pType, stage);
+      const isExpanded = !!expandedColumns[columnKey];
       const shouldCapOverflow = (stage === 'backlog' || stage === 'inbox') && cards.length > OVERFLOW_CAP;
       const displayCards = (stage === 'done' && cards.length > DONE_CAP) ? cards.slice(0, DONE_CAP)
-        : shouldCapOverflow ? cards.slice(0, OVERFLOW_CAP) : cards;
+        : (shouldCapOverflow && !isExpanded) ? cards.slice(0, OVERFLOW_CAP) : cards;
       displayCards.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType)));
-      if (shouldCapOverflow) {
+      if (shouldCapOverflow && !isExpanded) {
         const hiddenCards = cards.slice(OVERFLOW_CAP);
         const hiddenContainer = document.createElement('div');
         hiddenContainer.style.display = 'none';
@@ -703,9 +729,11 @@
         moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
         moreBtn.textContent = (cards.length - OVERFLOW_CAP) + ' more …';
         moreBtn.onclick = () => {
-          hiddenContainer.style.display = '';
-          moreBtn.remove();
-          // Buttons are already wired per-card inside buildKanbanCard() via closure
+          const next = { ...(state.expandedPipelineColumns || {}) };
+          next[columnKey] = true;
+          state.expandedPipelineColumns = next;
+          localStorage.setItem(lsKey('expandedPipelineColumns'), JSON.stringify(next));
+          render();
         };
         colBody.appendChild(moreBtn);
       }

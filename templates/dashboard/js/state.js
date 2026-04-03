@@ -17,6 +17,7 @@
       settingsRepo: localStorage.getItem(lsKey('settingsRepo')) || '',
       pipelineType: localStorage.getItem(lsKey('pipelineType')) || 'features',
       monitorType: localStorage.getItem(lsKey('monitorType')) || 'all',
+      expandedPipelineColumns: JSON.parse(localStorage.getItem(lsKey('expandedPipelineColumns')) || '{}'),
       pendingActions: new Set(),
       pendingDevServerPokes: new Set()
     };
