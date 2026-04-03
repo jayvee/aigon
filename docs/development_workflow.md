@@ -50,6 +50,7 @@ docs/specs/
 | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
 | `aigon feature-start <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
 | `aigon feature-implement <ID> [--ralph]` | Implement feature; `--ralph` runs autonomous retry loop ([Ralph technique](https://ghuntley.com/ralph/)) |
+| `aigon feature-autonomous-start <ID> <agents...> [--eval-agent=<agent>] [--stop-after=implement|eval|close]` | Start autonomous orchestration in a dedicated `auto` tmux session |
 | `aigon feature-eval <ID>` | Create evaluation (code review for solo, comparison for arena) |
 | `aigon feature-done <ID> [agent]` | Merge and complete (specify agent in arena mode) |
 | `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |

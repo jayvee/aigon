@@ -258,6 +258,33 @@
       </div>
     </div>
   </div>
+  <!-- Start autonomously modal -->
+  <div id="autonomous-modal" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="autonomous-modal-title">
+    <div class="modal-box">
+      <h3 id="autonomous-modal-title">Start Autonomously</h3>
+      <p class="modal-desc" id="autonomous-modal-desc"></p>
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Implementation agents</label>
+        <div class="agent-checks" id="autonomous-agent-checks"></div>
+      </div>
+      <div id="autonomous-eval-wrap" style="margin-bottom:12px">
+        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Evaluator</label>
+        <select id="autonomous-eval-agent" class="create-input" style="padding:8px 10px"></select>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Stop after</label>
+        <select id="autonomous-stop-after" class="create-input" style="padding:8px 10px">
+          <option value="close">close (default)</option>
+          <option value="eval">eval</option>
+          <option value="implement">implement</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="autonomous-modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="autonomous-modal-submit">Start Autonomously</button>
+      </div>
+    </div>
+  </div>
   <!-- Create feature modal -->
   <div id="create-modal" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
     <div class="modal-box create-modal-box">

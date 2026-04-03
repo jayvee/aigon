@@ -19,7 +19,7 @@
 | `{{CMD_PREFIX}}feature-review <ID>` | Code review with fixes by a different agent |
 | `{{CMD_PREFIX}}feature-submit` | (you must run this) Commit changes, write log, signal implementation complete |
 | `{{CMD_PREFIX}}feature-close <ID> [agent]` | Merge and complete feature |
-| `{{CMD_PREFIX}}feature-autopilot <ID> [agents...]` | Fleet autopilot: setup + spawn + monitor + eval |
+| `{{CMD_PREFIX}}feature-autonomous-start <ID> <agents...>` | Start autonomous feature flow with explicit stop-after control |
 | `{{CMD_PREFIX}}feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
 
 ### Research Commands (unified for Drive and Fleet modes)

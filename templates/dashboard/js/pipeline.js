@@ -359,6 +359,9 @@
 
       const agents = feature.agents || [];
       const validActions = feature.validActions || [];
+      const autonomousBadge = feature.autonomousSession && feature.autonomousSession.running
+        ? '<span class="autonomous-badge">Running autonomously</span>'
+        : '';
       // Done cards are clean — just ID and name, no agent sections, no actions
       const isDone = feature.stage === 'done';
       // Drive mode (branch): solo agent with no tmux session — skip agent sections
@@ -369,7 +372,7 @@
 
       let innerHtml =
         (feature.id ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>';
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + autonomousBadge + '</div>';
 
       if (hasAgentSections) {
         // --- Evaluation verdict layout (pick-winner state) ---
