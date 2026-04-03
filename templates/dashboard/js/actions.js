@@ -423,7 +423,7 @@ async function showAutonomousModal(feature, repoPath, btn) {
       '</label>';
   }).join('');
 
-  stopAfter.value = 'eval';
+  stopAfter.value = 'close';
   updateAutonomousEvalOptions();
   modal.style.display = 'flex';
 }
@@ -466,7 +466,7 @@ async function submitAutonomousModal() {
   const evalSelect = document.getElementById('autonomous-eval-agent');
   const stopAfter = document.getElementById('autonomous-stop-after');
   const evalAgent = evalSelect && !evalSelect.disabled ? String(evalSelect.value || '').trim() : '';
-  const stopValue = stopAfter ? String(stopAfter.value || 'eval').trim() : 'eval';
+  const stopValue = stopAfter ? String(stopAfter.value || 'close').trim() : 'close';
 
   const featureId = autonomousModalFeature.id;
   const repoPath = autonomousModalRepoPath;
