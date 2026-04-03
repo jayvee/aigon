@@ -1,28 +1,16 @@
 ---
-title: "feature-autopilot"
-description: "Feature autopilot ID [agents...] - Fleet setup + spawn + monitor + eval"
+title: "feature-autopilot (removed)"
+description: "Removed — use feature-autonomous-start instead"
 ---
 
-## Synopsis
+`feature-autopilot` has been removed. Use [`feature-autonomous-start`](/docs/reference/commands/feature/feature-autonomous-start) instead.
 
 ```bash
-aigon feature-autopilot <feature-id> [agents...] | status [feature-id] | stop [feature-id] | attach <feature-id> <agent>
+# Before (no longer works)
+aigon feature-autopilot 42 cc gg
+
+# After
+aigon feature-autonomous-start 42 cc gg
 ```
 
-## Shortcuts
-
-- `/afap` (slash command) · `aigon afap` (CLI)
-
-## Description
-
-Feature autopilot \<ID\> [agents...] - Fleet setup + spawn + monitor + eval
-
-## Usage
-
-```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feature-autopilot <feature-id>
-
-# CLI
-aigon feature-autopilot <feature-id>
-```
+See the [Autonomous Mode guide](/docs/guides/autopilot-mode) for full documentation.
