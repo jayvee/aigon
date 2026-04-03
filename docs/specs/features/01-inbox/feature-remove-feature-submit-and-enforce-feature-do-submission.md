@@ -2,7 +2,7 @@
 
 ## Summary
 
-`feature-submit` is currently in a broken half-state: it still appears in prompt docs, command metadata, and agent-facing instructions, but it is not implemented as a real CLI handler. This causes agents, especially Codex, to confuse prompt names with executable CLI commands and invent `aigon feature-submit` as a shell command. At the same time, `feature-do` already intends to own the full implementation flow, including the final `aigon agent-status submitted` signal. This feature removes `feature-submit` from code and docs, and tightens `feature-do` so agents cannot truthfully claim completion until the submission signal has succeeded.
+`feature-submit` is currently in a broken half-state: it still appears in prompt docs, command metadata, and agent-facing instructions, but it is not implemented as a real CLI handler. This causes agents, especially Codex, to confuse prompt names with executable CLI commands and invent `aigon feature-submit` as a shell command. At the same time, `feature-do` already intends to own the full implementation flow, including the final `aigon agent-status submitted` signal. This feature removes `feature-submit` from code and docs completely, and tightens `feature-do` so agents cannot truthfully claim completion until the submission signal has succeeded.
 
 ## User Stories
 
@@ -14,63 +14,92 @@
 
 - [ ] All agent-facing docs, templates, and help text stop presenting `feature-submit` as a normal feature workflow command
 - [ ] `feature-submit` is removed from command metadata, prompt-install outputs, and other command lists where it appears as if it were a supported command
+- [ ] `templates/generic/commands/feature-submit.md` is deleted (not tombstoned — complete removal so it is never installed to agent command dirs)
+- [ ] `'feature-submit'` entry removed from `lib/templates.js` COMMAND_REGISTRY (including the `afsb` alias)
+- [ ] `'feature-submit'` entry removed from `lib/action-scope.js`
+- [ ] All four agent JSON configs (`templates/agents/cc.json`, `cx.json`, `gg.json`, `cu.json`) no longer reference `feature-submit`
 - [ ] `feature-do` explicitly states that implementation is not complete until `aigon agent-status submitted` exits successfully
 - [ ] `feature-do` explicitly tells the agent not to say "done", "complete", or "ready for review" before `aigon agent-status submitted` succeeds
 - [ ] `feature-do` explicitly tells the agent not to improvise with `feature-submit`, `feature-close`, or other substitute commands if `aigon agent-status submitted` fails
 - [ ] `feature-do` explicitly tells the agent to report the exact error and stop for user guidance if the submit signal fails
-- [ ] Codex-specific installed docs/prompts no longer say the agent "must run" `feature-submit` as the standard completion step after `feature-do`
+- [ ] All five agent docs (`docs/agents/codex.md`, `claude.md`, `gemini.md`, `cursor.md`, `mistral-vibe.md`) no longer reference `feature-submit` as a workflow step
 - [ ] `next`/help text and other workflow guidance point users to `feature-do` + `aigon agent-status submitted` instead of `feature-submit`
 - [ ] `research-submit` remains intact; this feature only removes `feature-submit`
+- [ ] Post-cleanup grep returns zero matches for `feature-submit` across all agent-visible surfaces (see Validation)
 
 ## Validation
 
 ```bash
 node -c lib/templates.js
+node -c lib/action-scope.js
 node -c lib/commands/setup.js
 node -c lib/commands/misc.js
 npm test
+
+# Must return zero matches — any output means something was missed:
+grep -r "feature-submit" templates/ docs/agents/ lib/templates.js lib/action-scope.js && echo "FAIL: references remain" || echo "PASS: clean"
 ```
 
 ## Technical Approach
 
-Update the prompt/docs layer and command metadata together so the workflow contract is internally consistent.
+Update the prompt/docs layer, command metadata, and agent configs together so the workflow contract is internally consistent. Decision: remove `feature-submit` completely from all agent-visible surfaces — keeping it as a "legacy artifact" is dangerous because agents will continue to invoke it as a real command.
 
-### 1. Remove `feature-submit` from the public model
+### 1. Delete `feature-submit` template and registry entries
 
-Clean up:
-- `templates/generic/docs/agent.md`
-- `docs/agents/codex.md` and the generated agent docs/templates that inherit from the generic agent doc
-- `templates/generic/commands/help.md`
-- `templates/help.txt`
-- `templates/generic/commands/next.md`
-- `lib/templates.js`
-- any agent config or install surface that lists `feature-submit` as an available command
+- **Delete** `templates/generic/commands/feature-submit.md` — complete removal so it is never copied to `.claude/commands/`, `.gemini/commands/`, etc. during `install-agent`
+- **Remove** `'feature-submit': { aliases: ['afsb'] }` from `lib/templates.js` COMMAND_REGISTRY
+- **Remove** `'feature-submit': { scope: 'feature-local' }` from `lib/action-scope.js`
 
-The goal is that agents no longer see `feature-submit` advertised as a standard feature workflow step unless there is a real executable command behind it.
+### 2. Clean agent JSON configs (all four)
 
-### 2. Make `feature-do` the canonical completion contract
+Remove any `feature-submit` references from:
+- `templates/agents/cc.json`
+- `templates/agents/cx.json`
+- `templates/agents/gg.json`
+- `templates/agents/cu.json`
 
-Strengthen `templates/generic/commands/feature-do.md` so the final section clearly says:
+### 3. Clean agent docs (all five)
+
+Remove `feature-submit` as a workflow step from:
+- `docs/agents/codex.md`
+- `docs/agents/claude.md`
+- `docs/agents/gemini.md`
+- `docs/agents/cursor.md`
+- `docs/agents/mistral-vibe.md`
+
+Replace any mention with the canonical path: implement via `feature-do`, signal completion with `aigon agent-status submitted`.
+
+### 4. Clean shared templates
+
+- `templates/generic/docs/agent.md` — remove `feature-submit` from command listing
+- `templates/generic/commands/help.md` — remove from command table
+- `templates/help.txt` — remove from help text
+- `templates/generic/commands/next.md` — replace `feature-submit` guidance with `aigon agent-status submitted`
+
+### 5. Make `feature-do` the canonical completion contract
+
+Strengthen `templates/generic/commands/feature-do.md` so the final section clearly states as hard workflow rules (not suggestions):
 - your work is not complete until `aigon agent-status submitted` succeeds
 - do not claim completion before that command succeeds
-- if the command fails, report the exact error and stop
-- do not improvise with `feature-submit` or `feature-close`
+- if the command fails, report the exact error and stop — do not retry with `feature-submit`, `feature-close`, or any other command
+- do not say "done", "complete", or "ready for review" until the signal succeeds
 
-This should be written as a hard workflow rule, not a soft suggestion.
+### 6. Keep submit semantics in the implemented CLI path
 
-### 3. Keep submit semantics in the implemented CLI path
-
-The actual implemented submit signal today is `aigon agent-status submitted` in `lib/commands/misc.js`. This feature does not replace that mechanism; it aligns prompts and docs around it.
+The actual implemented submit signal today is `aigon agent-status submitted` in `lib/commands/misc.js`. This feature does not replace that mechanism; it aligns all prompts, docs, and configs around it.
 
 ## Dependencies
 
+- `templates/generic/commands/feature-submit.md` — delete
 - `templates/generic/commands/feature-do.md`
 - `templates/generic/docs/agent.md`
 - `templates/generic/commands/help.md`
 - `templates/generic/commands/next.md`
 - `templates/help.txt`
-- `templates/agents/cx.json`
-- `lib/templates.js`
+- `templates/agents/cc.json`, `cx.json`, `gg.json`, `cu.json`
+- `docs/agents/codex.md`, `claude.md`, `gemini.md`, `cursor.md`, `mistral-vibe.md`
+- `lib/templates.js` — remove COMMAND_REGISTRY entry + `afsb` alias
+- `lib/action-scope.js` — remove scope entry
 
 ## Out of Scope
 
@@ -81,12 +110,11 @@ The actual implemented submit signal today is `aigon agent-status submitted` in 
 
 ## Open Questions
 
-- Should `feature-submit` be removed completely from every leftover reference, or kept only as a clearly marked legacy/manual prompt artifact?
 - Should `feature-do` include a short final self-checklist before the agent responds to the user?
 
 ## Related
 
-- Feature: fix-autopilot-to-use-workflow-core-engine
+- Feature: fix-autopilot-to-use-workflow-core-engine (autopilot also relies on `agent-status submitted` signal)
 - `templates/generic/commands/feature-do.md`
 - `templates/generic/docs/agent.md`
 - `docs/agents/codex.md`
