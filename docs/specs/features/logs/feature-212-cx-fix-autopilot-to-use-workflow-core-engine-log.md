@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 214
+lines_removed: 51
+lines_changed: 265
+files_touched: 5
+fix_commit_count: 2
+fix_commit_ratio: 0.4
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 3443506
+output_tokens: 13096
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 2967808
+thinking_tokens: 4838
+total_tokens: 3456602
+billable_tokens: 3461440
+cost_usd: 7.5853
+sessions: 1
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 212 - fix-autopilot-to-use-workflow-core-engine
 Agent: cx
 
