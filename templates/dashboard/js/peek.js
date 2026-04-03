@@ -119,6 +119,7 @@
 
     async function pollPeek() {
       if (peekState.mode !== 'session' || !peekState.sessionName) return;
+      if (hasActivePeekSelection()) return;
       try {
         const url = '/api/session-peek?name=' + encodeURIComponent(peekState.sessionName) + '&since=' + peekState.offset;
         const res = await fetch(url, { cache: 'no-store' });
@@ -154,6 +155,16 @@
       if (!peekState.userScrolled) {
         output.scrollTop = output.scrollHeight;
       }
+    }
+
+    function hasActivePeekSelection() {
+      const output = document.getElementById('peek-output');
+      const selection = window.getSelection ? window.getSelection() : null;
+      if (!output || !selection || selection.rangeCount === 0 || selection.isCollapsed) return false;
+      const range = selection.getRangeAt(0);
+      const common = range.commonAncestorContainer;
+      const node = common && common.nodeType === Node.TEXT_NODE ? common.parentNode : common;
+      return !!(node && output.contains(node));
     }
 
     function formatBytes(bytes) {
