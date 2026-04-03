@@ -33,3 +33,22 @@ Agent: cx
 ## Decisions
 - Kept a legacy status fallback only when workflow snapshots are absent to preserve behavior for pre-engine entities while making engine snapshots the primary source.
 - Added an explicit eval-transition confirmation wait with timeout to prevent autopilot from claiming success before workflow-core state actually moves to `evaluating`.
+
+## Code Review
+
+**Reviewed by**: cc (Opus)
+**Date**: 2026-04-03
+
+### Findings
+- Snapshot read (`readWorkflowSnapshotSync`) was called inside the `existingWorktrees.forEach()` spawn loop, re-reading the same file on every iteration instead of once before the loop.
+
+### Fixes Applied
+- `fix(review): hoist snapshot read outside spawn forEach loop` — moved snapshot read before the forEach, eliminating redundant file reads per agent.
+
+### Notes
+- Implementation is clean and well-structured. All acceptance criteria are addressed.
+- The `rawCommand` escape hatch in `buildRawAgentCommand()` is a reasonable approach to reuse the shell-trap wrapper for internal CLI commands.
+- Legacy fallback strategy (only when no snapshot exists) is sound and preserves backward compatibility.
+- Research.js uses repeated inline `require('../workflow-snapshot-adapter')` calls (readSnapSync, readSnapSync2, etc.) — consistent with the file's existing pattern but worth consolidating in a future cleanup.
+- Ralph auto-submit change from `writeAgentStatus()` to `execSync('aigon agent-status submitted')` correctly routes through the engine signal path.
+- All changed files pass syntax checks.
