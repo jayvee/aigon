@@ -249,23 +249,71 @@
         let costHtml = '';
         if (c.sessions > 0 || c.inputTokens > 0) {
           const fmt = n => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+          const freshInputTokens = Math.max(0, Number(c.freshInputTokens != null ? c.freshInputTokens : ((c.inputTokens || 0) - (c.cachedInputTokens || 0))));
           const byAgent = c.byAgent || {};
           const costAgentIds = Object.keys(byAgent);
-          let costRows = '<div class="stats-row"><div class="stats-key">Input tokens</div><div class="stats-val">' + fmt(c.inputTokens) + '</div></div>' +
+          let costRows = '<div class="stats-row"><div class="stats-key">Input reported</div><div class="stats-val">' + fmt(c.inputTokens) + '</div></div>' +
+            '<div class="stats-row"><div class="stats-key">Input approx uncached</div><div class="stats-val">' + fmt(freshInputTokens) + '</div></div>' +
+            '<div class="stats-row"><div class="stats-key">Input cached</div><div class="stats-val">' + fmt(c.cachedInputTokens) + '</div></div>' +
             '<div class="stats-row"><div class="stats-key">Output tokens</div><div class="stats-val">' + fmt(c.outputTokens) + '</div></div>' +
+            '<div class="stats-row"><div class="stats-key">Reasoning tokens</div><div class="stats-val">' + fmt(c.thinkingTokens) + '</div></div>' +
+            '<div class="stats-row"><div class="stats-key">Billable tokens</div><div class="stats-val">' + fmt(c.billableTokens) + '</div></div>' +
+            '<div class="stats-row"><div class="stats-key">Observed total</div><div class="stats-val">' + fmt(c.totalTokens) + '</div></div>' +
             '<div class="stats-row"><div class="stats-key">Estimated cost</div><div class="stats-val">' + (c.estimatedUsd ? '$' + escHtml(String(c.estimatedUsd)) : 'n/a') + '</div></div>' +
             '<div class="stats-row"><div class="stats-key">Model</div><div class="stats-val">' + (c.model ? escHtml(c.model) : 'n/a') + '</div></div>' +
             '<div class="stats-row"><div class="stats-key">Sessions</div><div class="stats-val">' + escHtml(String(c.sessions || 0)) + '</div></div>';
+          let agentTableHtml = '';
           if (costAgentIds.length > 1) {
+            const activityOrder = { implement: 0, review: 1, evaluate: 2, eval: 2, other: 3 };
+            const grouped = {};
             costAgentIds.forEach(id => {
               const a = byAgent[id];
-              const agentCost = a.costUsd ? '$' + Math.round(a.costUsd * 10000) / 10000 : 'n/a';
-              const displayAgent = a.agent ? a.agent.toUpperCase() : id.toUpperCase();
-              const activityLabel = a.activity ? ' · ' + escHtml(a.activity) : '';
-              costRows += '<div class="stats-row"><div class="stats-key">' + escHtml(displayAgent) + '</div><div class="stats-val">' + escHtml(a.model || id) + activityLabel + ' · ' + fmt(a.inputTokens) + '+' + fmt(a.outputTokens) + ' tok · ' + agentCost + '</div></div>';
+              const activityKey = String(a.activity || 'other').toLowerCase();
+              if (!grouped[activityKey]) grouped[activityKey] = [];
+              grouped[activityKey].push(a);
             });
+            const orderedActivities = Object.keys(grouped).sort((a, b) => {
+              const ar = Object.prototype.hasOwnProperty.call(activityOrder, a) ? activityOrder[a] : activityOrder.other;
+              const br = Object.prototype.hasOwnProperty.call(activityOrder, b) ? activityOrder[b] : activityOrder.other;
+              return ar - br || a.localeCompare(b);
+            });
+            const activityLabel = activity => {
+              if (activity === 'implement') return 'Implement';
+              if (activity === 'review') return 'Review';
+              if (activity === 'evaluate' || activity === 'eval') return 'Evaluate';
+              return activity.charAt(0).toUpperCase() + activity.slice(1);
+            };
+            const tables = orderedActivities.map(activity => {
+              const rows = grouped[activity]
+                .slice()
+                .sort((a, b) => String(a.agent || '').localeCompare(String(b.agent || '')))
+                .map(a => {
+                  const agentCost = a.costUsd ? '$' + Math.round(a.costUsd * 10000) / 10000 : 'n/a';
+                  const displayAgent = a.agent ? a.agent.toUpperCase() : 'UNKNOWN';
+                  return '<tr>' +
+                    '<td><span class="agent-mono">' + escHtml(displayAgent) + '</span></td>' +
+                    '<td>' + escHtml(a.model || '') + '</td>' +
+                    '<td>' + fmt(a.inputTokens) + '</td>' +
+                    '<td>' + fmt(a.freshInputTokens) + '</td>' +
+                    '<td>' + fmt(a.cachedInputTokens) + '</td>' +
+                    '<td>' + fmt(a.outputTokens) + '</td>' +
+                    '<td>' + fmt(a.totalTokens) + '</td>' +
+                    '<td>' + escHtml(agentCost) + '</td>' +
+                    '</tr>';
+                }).join('');
+              return '<div class="stats-agent-cost-block">' +
+                '<h6 class="stats-subsection-heading">By Activity: ' + escHtml(activityLabel(activity)) + '</h6>' +
+                '<table class="stats-token-table">' +
+                '<thead><tr>' +
+                '<th>Agent</th><th>Model</th><th>Input</th><th>Approx uncached</th><th>Cached</th><th>Output</th><th>Total</th><th>Cost</th>' +
+                '</tr></thead>' +
+                '<tbody>' + rows + '</tbody>' +
+                '</table>' +
+                '</div>';
+            }).join('');
+            agentTableHtml = '<div class="stats-agent-cost-wrap">' + tables + '</div>';
           }
-          costHtml = '<h5 class="stats-section-heading">Cost</h5><div class="stats-grid">' + costRows + '</div>';
+          costHtml = '<h5 class="stats-section-heading">Cost</h5><div class="stats-grid">' + costRows + '</div>' + agentTableHtml;
         }
 
         detailEl.innerHTML =
