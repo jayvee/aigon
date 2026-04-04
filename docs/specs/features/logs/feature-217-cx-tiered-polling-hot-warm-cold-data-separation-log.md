@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 146
+lines_removed: 13
+lines_changed: 159
+files_touched: 3
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 725819
+output_tokens: 7451
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 662656
+thinking_tokens: 2520
+total_tokens: 733270
+billable_tokens: 735790
+cost_usd: 1.6438
+sessions: 1
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 217 - tiered-polling-hot-warm-cold-data-separation
 Agent: cx
 
