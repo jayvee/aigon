@@ -14,6 +14,12 @@ aigon server start --persistent        # One-time: install as system service
 aigon server add ~/src/my-project      # Register a repo with the server
 ```
 
+Then open [http://localhost:4100](http://localhost:4100) in your browser.
+
+> **Persistent mode** installs the server as a launchd agent (macOS) or systemd user service (Linux). It starts on login, survives terminal closes, and auto-restarts on crash. See the [server command reference](/docs/reference/commands/infra/server) for details.
+>
+> You only need to run `aigon server start --persistent` once — after that the server is always available.
+
 The dashboard polls registered repos every 30 seconds and fires macOS notifications when agents reach `waiting` or when all agents submit.
 
 ## Dashboard and CLI: two views, same workflow
@@ -150,14 +156,20 @@ aigon server list                       # See registered repos
 aigon server remove ~/src/old-project   # Unregister a repo
 ```
 
-## Dashboard commands
+## Server commands
 
 ```bash
-aigon server start             # Start the service
-aigon server restart           # Stop and restart
-aigon server status            # Check health + see waiting agents
-aigon server open              # Open in browser
+aigon server start --persistent   # Install as system service (recommended, one-time)
+aigon server start                # Start in foreground (alternative)
+aigon server restart              # Restart (e.g. after aigon update)
+aigon server status               # Check health, PID, uptime
+aigon server stop                 # Stop the server
+aigon server open                 # Open in browser
 ```
+
+### When to restart
+
+The server auto-restarts on crash and after `aigon update`. You only need to manually restart if you're developing Aigon itself and editing `lib/*.js` files. Config changes and new repo registrations are picked up automatically without a restart.
 
 ## Remote access
 
