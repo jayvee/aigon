@@ -271,11 +271,16 @@
         <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Evaluator</label>
         <select id="autonomous-eval-agent" class="create-input" style="padding:8px 10px"></select>
       </div>
+      <div id="autonomous-review-wrap" style="margin-bottom:12px;display:none">
+        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Reviewer</label>
+        <select id="autonomous-review-agent" class="create-input" style="padding:8px 10px"></select>
+      </div>
       <div style="margin-bottom:12px">
         <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Stop after</label>
         <select id="autonomous-stop-after" class="create-input" style="padding:8px 10px">
           <option value="close">close (default)</option>
           <option value="eval">eval</option>
+          <option value="review">review</option>
           <option value="implement">implement</option>
         </select>
       </div>

@@ -89,6 +89,7 @@
       const agents = Array.isArray(opts.agents) ? opts.agents : [];
       const stopAfter = opts.stopAfter || 'close';
       const evalAgent = opts.evalAgent || '';
+      const reviewAgent = opts.reviewAgent || '';
       if (!featureId || agents.length === 0) {
         showToast('Start autonomously failed: missing feature or agents', null, null, { error: true });
         return;
@@ -103,6 +104,7 @@
         const body = { agents, stopAfter };
         if (repoPath) body.repoPath = repoPath;
         if (evalAgent) body.evalAgent = evalAgent;
+        if (reviewAgent) body.reviewAgent = reviewAgent;
         const res = await fetch('/api/features/' + encodeURIComponent(String(featureId)) + '/run', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
