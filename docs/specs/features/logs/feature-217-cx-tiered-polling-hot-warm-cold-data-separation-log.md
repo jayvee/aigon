@@ -25,3 +25,23 @@ Agent: cx
 - Cold tier stores full done metadata (`total`, `all`, `recent`) so `doneTotal` and recent-done behavior remain unchanged.
 - Warm tier only caches lower-churn directories to avoid touching hot-path agent/session status behavior.
 - `clearTierCache` supports both targeted clear (`repoPath`) and full clear (no arg).
+
+## Code Review
+
+**Reviewed by**: cc (Claude Code Opus)
+**Date**: 2026-04-04
+
+### Findings
+1. **Merge conflict with main** (fixed): The feature branch was created before commit 7ec7bc67 landed on main, which changed the stop-after=review hint text in `lib/commands/feature.js`. Without syncing, merging the feature branch would silently revert that fix.
+2. **Minor: `safeStat` overlaps with `safeStatMtimeMs`**: The new `safeStat()` function returns a full stat object but is only ever used for `.mtimeMs`. The existing `safeStatMtimeMs()` does the same thing more directly. Not a bug — consistent with the spec's prescribed approach — but a small duplication to note.
+
+### Fixes Applied
+- `fix(review): sync feature.js with main to prevent merge conflict` — updated the stop-after=review hint line to match main's 7ec7bc67
+
+### Notes
+- The tiered polling implementation is clean and follows the spec precisely
+- All three entity types (features, research, feedback) correctly use cold-tier caching for done dirs
+- Warm tier correctly applied to feature inbox/backlog/paused only
+- Hot tier (in-progress, in-evaluation, tmux, heartbeats) correctly left unchanged
+- API response shape is preserved — no frontend changes needed
+- Cache initialization uses `null` for mtimes, ensuring first poll always performs a full collection
