@@ -408,6 +408,15 @@
     .stats-tip{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--border-subtle);font-size:9px;font-weight:600;color:var(--text-tertiary);cursor:help;text-transform:none;letter-spacing:0;flex-shrink:0;position:relative}
     .stats-tip:hover::after{content:attr(data-tip);position:absolute;left:calc(100% + 6px);top:50%;transform:translateY(-50%);background:#1e1e24;color:#d6d6db;border:1px solid var(--border-subtle);border-radius:6px;padding:6px 10px;font-size:11px;font-weight:400;white-space:nowrap;z-index:100;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.4)}
     .stats-val{font-size:13px;font-weight:600;color:var(--text-primary)}
+    .stats-subsection-heading{margin:14px 0 8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary)}
+    .stats-agent-cost-wrap{margin-top:12px;padding:12px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-elevated);overflow-x:auto}
+    .stats-agent-cost-block + .stats-agent-cost-block{margin-top:16px}
+    .stats-token-table{width:100%;border-collapse:collapse;font-size:12px}
+    .stats-token-table th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary);padding:0 12px 8px 0;border-bottom:1px solid var(--border-subtle);white-space:nowrap}
+    .stats-token-table td{padding:8px 12px 8px 0;border-bottom:1px solid var(--border-subtle);color:var(--text-secondary);vertical-align:top}
+    .stats-token-table td:nth-child(n+3),.stats-token-table th:nth-child(n+3){text-align:right}
+    .stats-token-table tr:last-child td{border-bottom:none}
+    .stats-token-table td:first-child,.stats-token-table td:nth-child(2){color:var(--text-primary)}
     .deep-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 0}
     .deep-status-section{padding:12px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-elevated)}
     .deep-status-heading{margin:0 0 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
@@ -514,6 +523,7 @@
     @media(max-width:920px){
       .agent-detail-grid-wrap{grid-template-columns:1fr}
       .stats-grid,.stats-events{grid-template-columns:1fr}
+      .stats-token-table{min-width:760px}
       .timeline-item{grid-template-columns:1fr}
       .timeline-dot{display:none}
     }
