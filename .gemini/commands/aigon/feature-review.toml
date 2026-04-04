@@ -138,7 +138,17 @@ git -C "$WORKTREE" add docs/specs/features/logs/feature-{{args}}-*-log.md
 git -C "$WORKTREE" commit -m "docs(review): add review notes to implementation log"
 ```
 
-## Step 7: STOP - Review complete
+## Step 7: Mandatory completion order
+
+Before you report anything to the user, complete these in this order:
+
+1. Commit every code fix to the feature branch with `fix(review): ...`
+2. Update the implementation log and commit it with `docs(review): ...`
+3. Signal review completion with `aigon agent-status review-complete`
+
+Do not skip step 2 even when no code fixes were needed. The review log entry is the audit trail for the autonomous controller and the dashboard.
+
+## Step 8: STOP - Review complete
 
 **CRITICAL: Do NOT run `aigon feature-close` or `aigon feature-eval`.**
 

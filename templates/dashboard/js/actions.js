@@ -407,9 +407,10 @@ async function showAutonomousModal(feature, repoPath, btn) {
   const desc = document.getElementById('autonomous-modal-desc');
   const checks = document.getElementById('autonomous-agent-checks');
   const evalSelect = document.getElementById('autonomous-eval-agent');
+  const reviewSelect = document.getElementById('autonomous-review-agent');
   const stopAfter = document.getElementById('autonomous-stop-after');
   const modal = document.getElementById('autonomous-modal');
-  if (!desc || !checks || !evalSelect || !stopAfter || !modal) return;
+  if (!desc || !checks || !evalSelect || !reviewSelect || !stopAfter || !modal) return;
 
   desc.textContent = '#' + feature.id + ' ' + feature.name;
   checks.innerHTML = AUTONOMOUS_AGENT_IDS.map(agentId => {
@@ -424,7 +425,7 @@ async function showAutonomousModal(feature, repoPath, btn) {
   }).join('');
 
   stopAfter.value = 'close';
-  updateAutonomousEvalOptions();
+  updateAutonomousModeControls();
   modal.style.display = 'flex';
 }
 
@@ -437,22 +438,94 @@ function hideAutonomousModal() {
   autonomousModalModels = null;
 }
 
+function buildAutonomousAgentOptions(taskType, options) {
+  const opts = options || {};
+  const includeNone = !!opts.includeNone;
+  const noneLabel = opts.noneLabel || 'none';
+  const selectedAgents = Array.isArray(opts.selectedAgents) ? opts.selectedAgents : [];
+  const rows = [];
+  if (includeNone) rows.push('<option value="">' + escHtml(noneLabel) + '</option>');
+  AUTONOMOUS_AGENT_IDS.forEach(agentId => {
+    const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
+    const modelName = (autonomousModalModels && autonomousModalModels[agentId] && autonomousModalModels[agentId][taskType]) || '';
+    const sameAsImplementer = selectedAgents.includes(agentId);
+    const suffix = sameAsImplementer ? ' · implementing' : '';
+    const label = modelName
+      ? (agentId + ' · ' + displayName + ' · ' + modelName + suffix)
+      : (agentId + ' · ' + displayName + suffix);
+    rows.push('<option value="' + escHtml(agentId) + '">' + escHtml(label) + '</option>');
+  });
+  return rows.join('');
+}
+
 function updateAutonomousEvalOptions() {
   const evalSelect = document.getElementById('autonomous-eval-agent');
   if (!evalSelect) return;
   const previousValue = String(evalSelect.value || '').trim();
 
   evalSelect.disabled = false;
-  evalSelect.innerHTML = AUTONOMOUS_AGENT_IDS.map(agentId => {
-    const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
-    const modelName = (autonomousModalModels && autonomousModalModels[agentId] && autonomousModalModels[agentId].evaluate) || '';
-    const label = modelName ? (agentId + ' · ' + displayName + ' · ' + modelName) : (agentId + ' · ' + displayName);
-    return '<option value="' + escHtml(agentId) + '">' + escHtml(label) + '</option>';
-  }).join('');
+  evalSelect.innerHTML = buildAutonomousAgentOptions('evaluate');
 
   if (previousValue && AUTONOMOUS_AGENT_IDS.includes(previousValue)) {
     evalSelect.value = previousValue;
   }
+}
+
+function updateAutonomousReviewOptions() {
+  const reviewSelect = document.getElementById('autonomous-review-agent');
+  if (!reviewSelect) return;
+  const previousValue = String(reviewSelect.value || '').trim();
+  const selectedAgents = [...document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]:checked')].map(cb => cb.value);
+
+  reviewSelect.disabled = false;
+  reviewSelect.innerHTML = buildAutonomousAgentOptions('review', {
+    includeNone: true,
+    noneLabel: 'none',
+    selectedAgents
+  });
+
+  if (previousValue && AUTONOMOUS_AGENT_IDS.includes(previousValue)) {
+    reviewSelect.value = previousValue;
+    return;
+  }
+  reviewSelect.value = AUTONOMOUS_AGENT_IDS.find(agentId => !selectedAgents.includes(agentId)) || '';
+}
+
+function updateAutonomousModeControls() {
+  const selectedAgents = [...document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]:checked')].map(cb => cb.value);
+  const isSolo = selectedAgents.length === 1;
+  const evalWrap = document.getElementById('autonomous-eval-wrap');
+  const reviewWrap = document.getElementById('autonomous-review-wrap');
+  const evalSelect = document.getElementById('autonomous-eval-agent');
+  const reviewSelect = document.getElementById('autonomous-review-agent');
+  const stopAfter = document.getElementById('autonomous-stop-after');
+  if (!evalWrap || !reviewWrap || !evalSelect || !reviewSelect || !stopAfter) return;
+
+  const previousStop = String(stopAfter.value || 'close').trim();
+  evalWrap.style.display = isSolo ? 'none' : '';
+  reviewWrap.style.display = isSolo ? '' : 'none';
+  evalSelect.disabled = isSolo;
+  reviewSelect.disabled = !isSolo;
+
+  updateAutonomousEvalOptions();
+  updateAutonomousReviewOptions();
+
+  const stopOptions = isSolo
+    ? [
+        { value: 'close', label: 'close (default)' },
+        { value: 'review', label: 'review' },
+        { value: 'implement', label: 'implement' }
+      ]
+    : [
+        { value: 'close', label: 'close (default)' },
+        { value: 'eval', label: 'eval' },
+        { value: 'implement', label: 'implement' }
+      ];
+
+  stopAfter.innerHTML = stopOptions.map(opt => (
+    '<option value="' + escHtml(opt.value) + '">' + escHtml(opt.label) + '</option>'
+  )).join('');
+  stopAfter.value = stopOptions.some(opt => opt.value === previousStop) ? previousStop : 'close';
 }
 
 async function submitAutonomousModal() {
@@ -464,9 +537,15 @@ async function submitAutonomousModal() {
   }
 
   const evalSelect = document.getElementById('autonomous-eval-agent');
+  const reviewSelect = document.getElementById('autonomous-review-agent');
   const stopAfter = document.getElementById('autonomous-stop-after');
   const evalAgent = evalSelect && !evalSelect.disabled ? String(evalSelect.value || '').trim() : '';
+  const reviewAgent = reviewSelect && !reviewSelect.disabled ? String(reviewSelect.value || '').trim() : '';
   const stopValue = stopAfter ? String(stopAfter.value || 'close').trim() : 'close';
+  if (stopValue === 'review' && !reviewAgent) {
+    showToast('Select a reviewer to stop after review', null, null, { error: true });
+    return;
+  }
 
   const featureId = autonomousModalFeature.id;
   const repoPath = autonomousModalRepoPath;
@@ -475,6 +554,7 @@ async function submitAutonomousModal() {
   await requestFeatureAutonomousRun(featureId, {
     agents: selectedAgents,
     evalAgent,
+    reviewAgent,
     stopAfter: stopValue
   }, repoPath, btn);
 }
@@ -488,7 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('autonomous-modal-submit').onclick = () => submitAutonomousModal();
   modal.addEventListener('change', (e) => {
     if (e.target && e.target.closest('#autonomous-agent-checks')) {
-      updateAutonomousEvalOptions();
+      updateAutonomousModeControls();
     }
   });
 });
