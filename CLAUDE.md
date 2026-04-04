@@ -45,8 +45,9 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | Module | ~Lines | Owns |
 |--------|--------|------|
 | `lib/agent-registry.js` | ~280 | **Agent registry**: scans `templates/agents/*.json`, provides lookup maps (display names, port offsets, provider families, trust, worktree env, capabilities). All agent-specific data is data-driven — zero hardcoded agent logic in `lib/` |
-| `lib/commands/feature.js` | ~2860 | All `feature-*` handlers, `sessions-close` |
+| `lib/commands/feature.js` | ~2860 | All `feature-*` handlers, `sessions-close`, `feature-autonomous-start` (AutoConductor launcher + `__run-loop`) |
 | `lib/feature-close.js` | ~740 | Feature-close phases: target resolution, merge, telemetry, engine close, cleanup |
+| `lib/feature-review-state.js` | ~220 | Review lifecycle state per feature: `review-state.json` (current + history), `markReviewingSync`, `completeReviewSync`, `reconcileReviewState`. Written by `agent-status` commands; read by AutoConductor `__run-loop` to confirm review completion. |
 | `lib/dashboard-server.js` | ~2660 | AIGON server HTTP/UI module: dashboard UI, API, WebSocket relay, polling, HTTP action dispatch. Never mutates engine state directly. |
 | `lib/dashboard-status-collector.js` | ~830 | AIGON server read-side collector: assembles repo, feature, research, feedback, summary, and compatibility status payloads |
 | `lib/commands/infra.js` | ~1460 | `aigon server` command, board, config, proxy-setup, dev-server |
@@ -90,7 +91,9 @@ Feature and research lifecycle state are managed by the **workflow-core engine**
 Supporting state:
 - **Folders** (`docs/specs/features/0N-*/`) — shared ground truth, committed to git
 - **Agent status files** (`.aigon/state/feature-{id}-{agent}.json`) — per-agent metadata, managed by `lib/agent-status.js`
-- **Shell trap signals**: `buildAgentCommand()` wraps all agent commands with a bash `trap EXIT` handler that fires `agent-status submitted` (exit 0) or `agent-status error` (non-zero). A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. Controlled by `signals` block in `templates/agents/*.json`.
+- **Shell trap signals**: `buildAgentCommand()` wraps all agent commands with a bash `trap EXIT` handler that fires `agent-status submitted` (exit 0, implementation sessions) or `agent-status review-complete` (exit 0, review sessions) or `agent-status error` (non-zero). Task type is passed to `buildAgentCommand` as `'do'`, `'review'`, or `'evaluate'`; the trap selects the correct signal. A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. Controlled by `signals` block in `templates/agents/*.json`.
+- **Review state**: `lib/feature-review-state.js` — per-feature `review-state.json` at `.aigon/workflows/features/{id}/review-state.json`. Tracks `current` (in-progress review) and `history[]` (completed reviews). Written by `agent-status reviewing` and `agent-status review-complete` via `lib/commands/misc.js`. AutoConductor reads this to confirm review completion before triggering `feature-close`.
+- **AutoConductor** (`feature-autonomous-start __run-loop`): detached tmux session named `<repo>-f<id>-auto`. Solo mode: polls for allReady → spawns review session (if `--review-agent`) → waits for `review-complete` signal → calls `feature-close`. Fleet mode: polls for allReady → spawns eval session → polls eval file for `**Winner:**` → calls `feature-close <winner>`. Kills own tmux session on completion so the dashboard badge clears.
 - **Heartbeat is display-only**: heartbeat files exist for agent liveness tracking but card status uses tmux session checks directly. Heartbeat data NEVER triggers engine state transitions. The supervisor computes liveness and stores it in memory; the dashboard reads it via `getAgentLiveness()`. Users manually mark agents as lost/failed — the system never does this automatically.
 - Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 

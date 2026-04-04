@@ -34,23 +34,33 @@ Aigon uses four modes across two axes: number of agents and level of autonomy. A
 
 ## Autopilot
 
-**One agent, hands-off.** The AutoConductor monitors the feature and triggers each stage automatically. The agent implements, then the feature closes — no intervention needed.
+**One agent, hands-off.** The AutoConductor monitors the feature and triggers each stage automatically. The agent implements; optionally a second agent reviews; then the feature closes — no intervention needed.
 
 - Best for: well-scoped features with clear acceptance criteria
-- Workspace: worktree
+- Workspace: worktree (implementing agent) + optional review session (reviewer agent)
 - CLI: `aigon feature-autonomous-start 07 cc`
+- CLI (with review): `aigon feature-autonomous-start 07 cc --review-agent=gg`
 
-{/* SCREENSHOT: AutoConductor session for solo mode — show poll log with "solo → triggering feature-close" */}
+```
+implement → [review] → close
+```
+
+{/* SCREENSHOT: AutoConductor session for solo mode — poll log showing implement → review → close */}
 
 ## Swarm
 
-**Multiple agents, hands-off.** Fleet + AutoConductor — multiple agents compete, each in their own worktree. The AutoConductor triggers eval and auto-closes the winner.
+**Multiple agents, hands-off.** Fleet + AutoConductor — multiple agents compete in parallel worktrees. A designated evaluator compares implementations, writes the winner, and the feature closes automatically.
 
 - Best for: maximum coverage with minimal supervision
 - Workspace: one worktree per agent
 - CLI: `aigon feature-autonomous-start 07 cc gg`
+- CLI (explicit evaluator): `aigon feature-autonomous-start 07 cc gg --eval-agent=cc`
 
-{/* SCREENSHOT: Dashboard showing Swarm run — multiple agents in fleet with auto badge visible */}
+```
+implement (parallel) → evaluate → close
+```
+
+{/* SCREENSHOT: Dashboard showing Swarm run — multiple agents submitted, evaluator running, auto badge visible */}
 
 ## Mode selection guide
 
@@ -58,7 +68,8 @@ Aigon uses four modes across two axes: number of agents and level of autonomy. A
 |-----------|------|-----|
 | Routine feature, clear spec | Drive | Fast, simple |
 | Critical feature, need best approach | Fleet | Compare implementations |
-| Well-defined, want hands-off | Autopilot | Solo agent runs to close |
+| Well-defined, want hands-off | Autopilot (solo) | Agent runs to close |
+| Well-defined, want hands-off + second opinion | Autopilot (solo + reviewer) | Implement then review before close |
 | Important + well-defined, want best | Swarm | Multiple agents, auto-eval and close |
 | Exploring a technical question | Research (Drive or Fleet) | Investigation before building |
 
