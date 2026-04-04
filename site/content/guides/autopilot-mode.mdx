@@ -1,109 +1,179 @@
 ---
 title: Autonomous Mode
-description: Hands-off feature execution with the AutoConductor — implement, evaluate, and close without intervention.
+description: Hands-off feature execution with the AutoConductor — implement, review, evaluate, and close without intervention.
 ---
 
-Autonomous mode lets you start a feature and walk away. The **AutoConductor** — a dedicated background session — watches workflow state and triggers the next stage automatically. When it finishes (or stops), the feature falls back to normal manual workflow.
+Autonomous mode lets you start a feature and walk away. The **AutoConductor** — a dedicated background tmux session — watches workflow state and triggers the next stage automatically.
 
 ## How it works
 
-The AutoConductor is a dedicated `auto` tmux session that polls the workflow-core engine every 30 seconds. When a stage completes, it invokes the next command automatically.
+The AutoConductor polls the workflow-core engine every 30 seconds. When a stage completes, it invokes the next command automatically, then kills itself cleanly when done.
+
+It is deliberately lightweight — it holds no orchestration state. If it dies, the feature continues normally and can be completed manually.
+
+## Two autonomous modes
+
+Autonomous mode behaves differently depending on how many implementation agents you provide:
+
+### Solo + reviewer (one agent)
+
+One agent implements in an isolated worktree. Optionally, a second agent reviews the implementation before the feature closes.
 
 ```
-feature-autonomous-start
-        ↓
+feature-autonomous-start 42 cc [--review-agent=gg]
+         ↓
 AutoConductor spawns (auto tmux session)
-        ↓
-Agents implement in parallel
-        ↓ all submitted
-Solo mode → feature-close (done)
-Fleet mode → feature-eval → exit, print next step (pick winner)
+         ↓
+cc implements in worktree
+         ↓ submits
+[gg reviews — optional]
+         ↓ review-complete signal
+feature-close → done ✅
 ```
 
-The AutoConductor is deliberately lightweight — it is not a lifecycle authority. It holds no orchestration state. If it dies, the feature continues normally and can be completed manually.
+{/* SCREENSHOT: AutoConductor solo+review poll log — state=implementing → reviewing → closing */}
+
+Without `--review-agent`, the feature closes immediately after the implementation agent submits.
+
+### Fleet + evaluator (multiple agents)
+
+Multiple agents compete in parallel worktrees on the same spec. When all submit, a designated evaluator agent compares implementations and picks a winner.
+
+```
+feature-autonomous-start 42 cc gg [--eval-agent=cc]
+         ↓
+AutoConductor spawns (auto tmux session)
+         ↓
+cc and gg implement in parallel worktrees
+         ↓ both submit
+cc evaluates — writes **Winner:** to eval file
+         ↓
+feature-close <winner> → done ✅
+```
+
+{/* SCREENSHOT: Dashboard showing Fleet autonomous run — two agents submitted, evaluator running, auto badge visible */}
+
+The evaluator reads both implementations and writes `**Winner:** <agent>` to the eval file. The AutoConductor parses this and calls `feature-close` directly — no LLM relay, no manual step.
+
+---
 
 ## Starting autonomously
+
+### From the dashboard
+
+Click **Start Autonomously** on any backlog feature card. The modal adapts to the number of agents you select:
+
+- **One agent selected** → shows a **Reviewer** picker and offers `stop-after: review` or `close`
+- **Multiple agents selected** → shows an **Evaluator** picker and offers `stop-after: eval` or `close`
+
+{/* SCREENSHOT: Start Autonomously modal — solo mode showing reviewer picker with stop-after options */}
+
+{/* SCREENSHOT: Start Autonomously modal — fleet mode showing evaluator picker with stop-after options */}
 
 ### From the CLI
 
 ```bash
-# Solo — one agent, fully hands-off through close
+# Solo — implement then close, no review
 aigon feature-autonomous-start 42 cc
 
-# Fleet — two agents, stop after eval (then pick winner manually)
-aigon feature-autonomous-start 42 cc gg --eval-agent=gg --stop-after=eval
+# Solo + review — implement, review with gg, then close
+aigon feature-autonomous-start 42 cc --review-agent=gg
 
-# Stop early — just implement, then hand back control
+# Solo + review — stop after review starts (review manually, close when ready)
+aigon feature-autonomous-start 42 cc --review-agent=gg --stop-after=review
+
+# Fleet — two agents, auto eval and close
+aigon feature-autonomous-start 42 cc gg --eval-agent=cc
+
+# Fleet — stop after eval (pick winner manually)
+aigon feature-autonomous-start 42 cc gg --eval-agent=cc --stop-after=eval
+
+# Stop after implement only
 aigon feature-autonomous-start 42 cc --stop-after=implement
 ```
 
-### From the dashboard
-
-Click **Start Autonomously** on any backlog feature card. A modal lets you choose:
-
-- **Implementation agents** — which agents implement in parallel
-- **Evaluator agent** — which agent runs the evaluation (Fleet only)
-- **Stop after** — where autonomy ends
-
-{/* TODO: add screenshot of the Start Autonomously modal once feature-214 ships */}
-
-## Modes
-
-| Mode | Agents | What AutoConductor does |
-|------|--------|------------------------|
-| **Solo** | 1 | Waits for agent to submit → invokes `feature-close` → done |
-| **Fleet** | 2+ | Waits for all agents to submit → invokes `feature-eval` → exits with next-step instructions |
-
-Solo mode has no evaluation stage — the single agent is the winner by default and the feature closes automatically.
-
-Fleet mode stops after evaluation in v1. Selecting the winner and closing is still a manual step:
-
-```bash
-aigon feature-close 42 cc       # after eval, pick the winner
-```
+---
 
 ## `--stop-after` options
 
+The stop-after value controls where autonomy ends. Available values differ by mode:
+
+### Solo mode
+
 | Value | Behaviour |
 |-------|-----------|
-| `close` | Default. Fully hands-off in solo mode. Fleet falls back to `eval` (no auto-close in v1) |
-| `eval` | Stop after evaluation — return control before winner selection |
-| `implement` | Stop after all agents submit — skip eval entirely |
+| `implement` | Stop after the agent submits — hand back control |
+| `review` | Stop when the review session starts — wait for it manually, then close |
+| `close` | **Default.** Implement → review (if set) → close automatically |
+
+### Fleet mode
+
+| Value | Behaviour |
+|-------|-----------|
+| `implement` | Stop after all agents submit — skip eval |
+| `eval` | Stop after evaluation starts — pick winner and close manually |
+| `close` | **Default.** Implement → eval → auto-close the winner |
+
+---
 
 ## Monitoring
 
-While the AutoConductor is running, the dashboard shows a **Running autonomously** badge on the feature card. When it finishes or is killed, the badge disappears.
-
-To watch the AutoConductor log directly:
+While the AutoConductor is running, the dashboard shows a **Running autonomously** badge on the feature card.
 
 ```bash
-# Check whether the auto session is alive and the current engine state
+# Check AutoConductor status and current workflow state
 aigon feature-autonomous-start status 42
 
-# Attach to the AutoConductor output
+# Attach to watch the poll log live
 tmux attach -t <repo>-f42-auto
 ```
 
-## Resilience
+{/* SCREENSHOT: AutoConductor tmux session showing poll log — state transitions, review/eval trigger, close */}
 
-If the AutoConductor session dies mid-run, implementation and eval sessions continue unaffected. Complete the feature manually:
+Poll log output shows exactly what the AutoConductor sees on each cycle:
 
-```bash
-aigon feature-eval 42             # if agents haven't been evaluated yet
-aigon feature-close 42 cc         # merge the winner
+```
+[09:15:17] state=implementing agents=[cc=running] allReady=false ...
+[09:16:47] state=implementing agents=[cc=ready] allReady=true ...
+🚀 Spawning review session: brewboard-f42-review-gg-...
+✅ Started review session: brewboard-f42-review-gg-...
+  [review-start 1/10] running=true
+✅ Review started. Waiting for review agent to complete...
+  [review-close 1/120] reviewCompleted=false reviewState=in-progress
+  [review-close 2/120] reviewCompleted=true reviewState=idle
+✅ Review completion signaled. Proceeding to close.
+🚀 Triggering: aigon feature-close 42
+✅ Feature closed. AutoConductor finished.
 ```
 
-No recovery state to clean up — the feature is just in whatever stage it was in when the AutoConductor stopped.
+---
+
+## Resilience
+
+If the AutoConductor dies mid-run, implementation, review, and eval sessions continue unaffected. Complete the feature manually from wherever it stopped:
+
+```bash
+aigon feature-review 42               # if review hasn't run
+aigon feature-eval 42                 # if Fleet agents haven't been evaluated
+aigon feature-close 42 cc             # merge (pass winning agent for Fleet)
+```
+
+No recovery state to clean up — the feature is in whatever stage it was when the AutoConductor stopped.
+
+---
 
 ## When to use
 
-Autonomous mode works best when:
+| Situation | Recommended |
+|-----------|-------------|
+| Routine feature, clear spec | Solo (`cc`) |
+| Important feature, want a second opinion | Solo + reviewer (`cc --review-agent=gg`) |
+| Critical feature, want best implementation | Fleet + eval (`cc gg --eval-agent=cc`) |
+| Maximum coverage, minimal supervision | Fleet + eval + close (`cc gg`, default stop) |
 
-- The spec has clear, machine-verifiable acceptance criteria
-- You trust the agent to implement without mid-stream decisions
-- You want parallel Fleet runs without babysitting
+For features that need ongoing direction or spec refinement mid-stream, stick with manual Drive mode.
 
-For features that need ongoing direction or spec refinement, stick with manual Drive mode and check in as the agent works.
+---
 
 ## Next steps
 
