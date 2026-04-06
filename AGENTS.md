@@ -62,7 +62,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/worktree.js` | 1510 | Worktree creation, tmux sessions, terminal launch, agent git-attribution setup |
 | `lib/commands/setup.js` | 959 | init, install-agent, check-version, update, doctor |
 | `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
-| `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
+| `lib/validation.js` | 1045 | Iterate (Autopilot) loop, acceptance-criteria parsing |
 | `lib/workflow-core/` | ~2500 | **Workflow engine**: event-sourced state, XState machine, effects, locking — sole authority for feature + research lifecycle |
 | `lib/workflow-core/migration.js` | ~120 | Explicit migration helpers for pre-cutover feature/research lifecycle backfill |
 | `lib/workflow-snapshot-adapter.js` | ~310 | Shared read adapter: maps feature/research engine snapshots to dashboard/board formats |
@@ -121,7 +121,7 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 6. **Update docs when you change architecture** — if your changes add modules, change repo structure, introduce new patterns, or affect how agents should work, update `AGENTS.md`, `docs/architecture.md`, and/or `CLAUDE.md` in the same PR. Documentation is not a follow-up task — it ships with the code.
 
 ## Common Agent Mistakes
-- **Inventing args**: adding `cc` or `--autonomous` to a plain command → causes wrong mode (Drive vs Fleet)
+- **Inventing args**: adding `cc` or `--iterate` to a plain command → causes wrong mode (Drive vs Fleet)
 - **Breaking dashboard visually**: passing syntax check but not verifying the rendered UI → ships broken tabs
 - **Complexity for simplicity**: responding to "simplify" with smarter/more code instead of removing code
 - **`.env.local` blocking flow**: treating it as uncommitted changes → blocks `feature-close`

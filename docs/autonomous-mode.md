@@ -1,15 +1,15 @@
-# Autonomous Mode: Implementation Loops
+# Iterate Mode: Implementation Loops
 
-Autonomous mode is Aigon's autonomous retry loop for feature implementation. Instead of writing code once and hoping it works, autonomous mode runs an agent in a loop — implement, validate, repeat — until your tests go green.
+Iterate mode is Aigon's Autopilot retry loop for feature implementation. Instead of writing code once and hoping it works, iterate mode runs an agent in a loop — implement, validate, repeat — until your tests go green.
 
-Named after [the original pattern by Geoffrey Huntley](https://ghuntley.com/ralph/) and similar implementations like [chief](https://github.com/minicodemonkey/chief) that treat autonomous iteration as the primary development loop.
+Inspired by [the original pattern by Geoffrey Huntley](https://ghuntley.com/ralph/) and similar implementations like [chief](https://github.com/minicodemonkey/chief) that treat iterative agent loops as the primary development loop.
 
 ---
 
 ## How it works
 
 ```
-aigon feature-do <ID> --autonomous
+aigon feature-do <ID> --iterate
 ```
 
 Each iteration:
@@ -20,7 +20,7 @@ Each iteration:
 5. **Loop or stop** — if everything passes, done; if not, start the next iteration with failure context baked into the prompt
 
 ```
-🔁 Autonomous Loop: Feature 36 - spot-count-badge
+🔁 Iterate Loop: Feature 36 - spot-count-badge
    Agent: cc
    Iterations: 1..4
    Validation: npm run build
@@ -45,14 +45,14 @@ Each iteration:
    [Project] npm run build   ✅
    [Feature] npx playwright test tests/feature-36.spec.ts   ✅
 
-✅ Autonomous loop succeeded on iteration 2.
+✅ Iterate loop succeeded on iteration 2.
 ```
 
 ---
 
 ## Validation stack
 
-Autonomous mode runs two tiers of validation after each agent iteration:
+Iterate mode runs two tiers of validation after each agent iteration:
 
 ### 1. Project-level validation
 
@@ -60,7 +60,7 @@ Configured in `.aigon/config.json`:
 
 ```json
 {
-  "ralph": {
+  "iterate": {
     "validationCommand": "npm run build"
   }
 }
@@ -68,7 +68,7 @@ Configured in `.aigon/config.json`:
 
 This is your fast safety net — runs on every iteration. Use TypeScript compilation, a build step, or a broad test suite. It stops the loop early if the agent breaks something fundamental.
 
-If no `validationCommand` is set, autonomous mode uses profile-aware defaults:
+If no `validationCommand` is set, iterate mode uses profile-aware defaults:
 
 | Profile | Default commands |
 |---------|-----------------|
@@ -106,22 +106,22 @@ npm run type-check || exit 2
 
 ## The TDD pattern (most loops)
 
-The most effective autonomous mode setup is **write a failing test first**, then let autonomous mode iterate until it passes. This is the same discipline as TDD, but the loop runs itself.
+The most effective iterate mode setup is **write a failing test first**, then let iterate mode loop until it passes. This is the same discipline as TDD, but the loop runs itself.
 
 ```
-write spec → write failing test → run autonomous mode → tests go green
+write spec → write failing test → run iterate mode → tests go green
 ```
 
 **Step 1**: Write the feature spec with clear acceptance criteria.
 
 **Step 2**: Write a test file that will **fail** before the feature is implemented. Put it in `## Validation`.
 
-**Step 3**: Run autonomous mode:
+**Step 3**: Run iterate mode:
 ```bash
-aigon feature-do 36 --autonomous --max-iterations=4
+aigon feature-do 36 --iterate --max-iterations=4
 ```
 
-The agent reads the test, implements code to make it pass, commits, and autonomous mode runs the test. If it still fails, the error output becomes context for the next iteration.
+The agent reads the test, implements code to make it pass, commits, and iterate mode runs the test. If it still fails, the error output becomes context for the next iteration.
 
 ### What drives multiple iterations
 
@@ -139,20 +139,20 @@ The agent reads the test, implements code to make it pass, commits, and autonomo
 - Validation is only `npm run build`
 - Feature is pure logic with no edge cases
 
-If you find autonomous mode always succeeds in one iteration, your validation isn't strict enough or your spec is too prescriptive.
+If you find iterate mode always succeeds in one iteration, your validation isn't strict enough or your spec is too prescriptive.
 
 ---
 
 ## Smart Validation (Feature 17)
 
-After your validation commands pass, autonomous mode evaluates each acceptance criterion from your spec:
+After your validation commands pass, iterate mode evaluates each acceptance criterion from your spec:
 
 - **Objective criteria** (mentions tests, build, lint, type-check) — automatically marked as passed when commands pass
 - **Subjective criteria** (code quality, pattern adherence, UX) — evaluated via a single LLM call against the git diff and implementation log
 
 Results are logged in the progress file and fed back to the next iteration's prompt if anything fails. Checkboxes in the spec are updated as criteria are verified.
 
-Run Smart Validation standalone (outside autonomous mode):
+Run Smart Validation standalone (outside iterate mode):
 
 ```bash
 aigon feature-validate 36
@@ -165,7 +165,7 @@ aigon feature-validate 36 --no-update  # evaluate without writing checkboxes
 ## Options
 
 ```bash
-aigon feature-do <ID> --autonomous [options]
+aigon feature-do <ID> --iterate [options]
 
 --max-iterations=N    Max loop iterations (default: 5, or set in .aigon/config.json)
 --agent=<id>          Which agent CLI to use: cc, gg, cx, cu (default: cc)
@@ -176,7 +176,7 @@ Set project defaults in `.aigon/config.json`:
 
 ```json
 {
-  "ralph": {
+  "iterate": {
     "validationCommand": "npm run build",
     "maxIterations": 4
   }
@@ -187,13 +187,13 @@ Set project defaults in `.aigon/config.json`:
 
 ## Progress file
 
-Autonomous mode writes a progress log after each iteration:
+Iterate mode writes a progress log after each iteration:
 
 ```
-docs/specs/features/logs/feature-36-autonomous-progress.md
+docs/specs/features/logs/feature-36-ralph-progress.md
 ```
 
-Each entry records: iteration number, status, agent, validation result, criteria pass/fail, files changed, and commits made. If autonomous mode is interrupted (`Ctrl+C`), re-running the same command **resumes from where it left off** using this file.
+Each entry records: iteration number, status, agent, validation result, criteria pass/fail, files changed, and commits made. If iterate mode is interrupted (`Ctrl+C`), re-running the same command **resumes from where it left off** using this file.
 
 ---
 
@@ -223,24 +223,24 @@ The `## Validation` section should test **this feature only** — not the whole 
 
 ### Pre-start the dev server for Playwright
 
-If your Playwright config has `webServer` with `reuseExistingServer: true`, start the dev server before running autonomous mode:
+If your Playwright config has `webServer` with `reuseExistingServer: true`, start the dev server before running iterate mode:
 
 ```bash
 # Terminal 1
 npm run dev
 
 # Terminal 2
-aigon feature-do 36 --autonomous
+aigon feature-do 36 --iterate
 ```
 
 Each validation reuses the running server instead of cold-starting it — much faster.
 
 ### Use `--dry-run` to preview
 
-Before running autonomous mode for real, check what would execute:
+Before running iterate mode for real, check what would execute:
 
 ```bash
-aigon feature-do 36 --autonomous --dry-run
+aigon feature-do 36 --iterate --dry-run
 ```
 
 Shows the full prompt, validation commands, and criteria list without touching the codebase.
@@ -254,7 +254,7 @@ Shows the full prompt, validation commands, and criteria list without touching t
 ```json
 {
   "profile": "web",
-  "ralph": {
+  "iterate": {
     "validationCommand": "npm run build",
     "maxIterations": 4
   }
@@ -279,14 +279,16 @@ Feature spec `## Acceptance Criteria`:
 Run:
 
 ```bash
-aigon feature-do 36 --autonomous --max-iterations=4
+aigon feature-do 36 --iterate --max-iterations=4
 ```
 
 Expected: 2–3 iterations. Iteration 1 typically fails on missing `data-testid` or wrong test selector. Iteration 2 fixes it. Iteration 3 (if needed) cleans up edge cases.
 
 ## History
 
-Autonomous mode was originally called "Ralph mode", named after the
+Iterate mode was originally called "Ralph mode" and then "autonomous mode", named after the
 [Ralph pattern by Geoffrey Huntley](https://ghuntley.com/ralph/) and
 [similar implementations](https://github.com/minicodemonkey/chief)
-that treat autonomous iteration as the primary development loop.
+that treat iterative agent loops as the primary development loop. The flag was renamed
+to `--iterate` on 2026-04-07 to disambiguate it from `feature-autonomous-start` (the
+unattended multi-step orchestrator).

@@ -7,15 +7,15 @@ Running `aigon feature-do` with no arguments shows a confusing agent-context war
 ## User Stories
 
 - [ ] As a user running `aigon feature-do` with no args, I see clear usage help without a misleading warning
-- [ ] As a user in a plain terminal, I understand that `--agent` launches an agent and `--autonomous` runs the Autopilot loop — both work without an existing agent session
+- [ ] As a user in a plain terminal, I understand that `--agent` launches an agent and `--iterate` runs the Autopilot loop — both work without an existing agent session
 - [ ] As a user inside an agent session, I understand that running without flags shows instructions for the agent to follow
 
 ## Acceptance Criteria
 
 - [ ] `aigon feature-do` (no args, no agent session) shows usage text without the agent-context warning
 - [ ] `aigon feature-do <ID>` (no agent session) still shows the warning with clear guidance
-- [ ] Usage text clearly explains the three invocation modes: (1) from agent session (instructions mode), (2) `--agent` from shell (launch mode), (3) `--autonomous` from shell (Autopilot mode)
-- [ ] `printAgentContextWarning` only fires when an ID is provided but no `--agent` or `--autonomous` flag is set
+- [ ] Usage text clearly explains the three invocation modes: (1) from agent session (instructions mode), (2) `--agent` from shell (launch mode), (3) `--iterate` from shell (Autopilot mode)
+- [ ] `printAgentContextWarning` only fires when an ID is provided but no `--agent` or `--iterate` flag is set
 
 ## Validation
 
@@ -29,7 +29,7 @@ node --check aigon-cli.js
 2. Restructure the usage text to clearly show three invocation patterns:
    - Inside agent: `/aigon:feature-do <ID>` (instructions mode)
    - From shell: `aigon feature-do <ID> --agent=cc` (launch mode)
-   - Autopilot: `aigon feature-do <ID> --autonomous` (Autopilot mode)
+   - Autopilot: `aigon feature-do <ID> --iterate` (Autopilot mode)
 3. Consider suppressing the warning entirely when `--agent` is passed (the user clearly intends to launch)
 
 ## Dependencies

@@ -52,7 +52,7 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-now <name>                Fast-track: inbox match → prioritise + setup + implement; or create new + implement
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
   feature-start <ID> [agents...]    Start Drive (branch) or Fleet (worktrees)
-  feature-do <ID> [--agent=<id>] [--autonomous]  Do the work on a feature; launches agent from shell ( --autonomous [Pro] )
+  feature-do <ID> [--agent=<id>] [--iterate]  Do the work on a feature; launches agent from shell (--iterate runs Autopilot retry loop)
   feature-spec <ID> [--json]        Resolve the canonical visible spec path for a feature
   feature-status <ID> [--json]      Show deep status: session, progress, cost, spec criteria
   feature-list [--active] [--all] [--json]
@@ -121,8 +121,8 @@ Examples:
   aigon sessions-close 55              # Kill all Fleet agents + tmux sessions + close Warp tab
   aigon feature-do 55             # Launch default agent (cc) from plain shell
   aigon feature-do 55 --agent=cx  # Launch Codex from plain shell
-  aigon feature-do 55 --autonomous               # Run Autopilot loop
-  aigon feature-do 55 --autonomous --max-iterations=8 --agent=cx  # Autopilot with options
+  aigon feature-do 55 --iterate               # Run Autopilot loop
+  aigon feature-do 55 --iterate --max-iterations=8 --agent=cx  # Autopilot with options
   aigon feature-validate 55            # Evaluate acceptance criteria (smart validation)
   aigon feature-validate 55 --dry-run  # Show what would be checked without running
   aigon feature-eval 55                # Evaluate implementations
