@@ -119,3 +119,17 @@ back-and-forth. I read the spec, confirmed the existing code in
 `server-runtime.js`, `supervisor.js`, `supervisor-service.js`, `infra.js`, and
 `setup.js`, and implemented the four ACs in the order the spec recommended.
 No mid-flight scope changes or pushback.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-06
+
+### Findings
+- `waitForServerHealthy()` treated any HTTP 4xx as success, which could let `aigon update` report a healthy restart even when `/api/supervisor/status` was missing or another process was answering on the configured port.
+
+### Fixes Applied
+- `0905fd6b` — `fix(review): tighten update restart health probe`
+
+### Notes
+- Review scope was limited to spec compliance and correctness of the additive reliability changes. No broader refactors were made.
