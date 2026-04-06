@@ -22,23 +22,9 @@
 'use strict';
 
 const assert = require('assert');
+const { test, report } = require('../_helpers');
 
 const PRO_PATH = require.resolve('../../lib/pro.js');
-
-let passed = 0;
-let failed = 0;
-
-function test(description, fn) {
-    try {
-        fn();
-        console.log(`  ✓ ${description}`);
-        passed++;
-    } catch (err) {
-        console.error(`  ✗ ${description}`);
-        console.error(`    ${err.stack || err.message}`);
-        failed++;
-    }
-}
 
 /** Reload lib/pro.js fresh so its top-level @aigon/pro require runs again. */
 function reloadPro() {
@@ -94,5 +80,4 @@ test('isProAvailable never reads project config (static source check)', () => {
     assert.ok(!/require\(['"]\.\/config['"]\)/.test(src), 'lib/pro.js must not require ./config');
 });
 
-console.log(`\n${passed} passed, ${failed} failed\n`);
-process.exit(failed > 0 ? 1 : 0);
+report();
