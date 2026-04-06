@@ -143,6 +143,7 @@
     "feature-submit",
     "feature-eval",
     "feature-review",
+    "feature-review-check",
     "feature-close",
     "feature-cleanup",
     "feature-autonomous-start",

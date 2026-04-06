@@ -169,6 +169,7 @@ Then tell the user: "Code review complete. [N] fix(es) committed." (or "Code rev
 
 The user or original implementing agent should then:
 - Review the fix commits
+- In the implementer's session, run `feature-review-check {{args}}` (slash command for cc/gg/cu/mv, skill `$aigon-feature-review-check` for codex) so the implementer reads the review and decides accept/challenge/modify
 - Run `/aigon:feature-close {{args}}` when ready to merge
 
 ## Tips
@@ -179,6 +180,6 @@ The user or original implementing agent should then:
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID. The implementer should run this in their own session (slash command for cc/gg/cu/mv, skill `$aigon-feature-review-check <ID>` for codex):
 
-`/aigon:feature-close <ID>`
+`/aigon:feature-review-check <ID>`
