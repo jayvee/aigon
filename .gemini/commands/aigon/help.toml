@@ -16,6 +16,7 @@ prompt = """
 | `/aigon:feature-list [--active] [--all] [--json]` | Query feature records without going through the board UI |
 | `/aigon:feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `/aigon:feature-review <ID>` | Code review with fixes by a different agent |
+| `/aigon:feature-review-check [ID]` | Implementer-side: read the review and decide accept/challenge/modify (infers ID from worktree branch) |
 | `/aigon:feature-close <ID> [agent]` | Merge and complete feature |
 | `/aigon:feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
 | `/aigon:feature-autonomous-start <ID> <agents...>` | Start autonomous feature flow with explicit stop-after control |
@@ -80,6 +81,7 @@ All commands have top-level short aliases prefixed with `a` (for aigon):
 | `/afd` | feature-do | `/ard` | research-do |
 | `/afe` | feature-eval | `/are` | research-eval |
 | `/afr` | feature-review | `/arcl` | research-close |
+| `/afrc` | feature-review-check | | (codex: `$aigon-feature-review-check`) |
 | `/afcl` | feature-close | `/arap` | research-autopilot |
 | `/ab` | board | `/afbc` | feedback-create |
 | `/afbl` | feedback-list | `/afbt` | feedback-triage |
