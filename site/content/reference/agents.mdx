@@ -11,7 +11,7 @@ Aigon supports multiple AI coding agents, with more being added over time. Each 
 |------|-------|-------------|-------------|
 | `cc` | Claude Code | `/aigon:` | `claude` |
 | `gg` | Gemini CLI | `/aigon:` | `gemini` |
-| `cx` | Codex CLI | `/prompts:aigon-` | `codex` |
+| `cx` | Codex CLI | `$aigon-` (skill) | `codex` |
 | `cu` | Cursor | `/aigon-` | `agent` |
 
 ## Installing agents
@@ -33,7 +33,7 @@ Install only the agents you have access to. You can add more at any time.
 |-------|---------------|----------|-----------------|
 | **cc** | `.claude/commands/aigon/*.md` | `.claude/settings.json` | `.claude/skills/aigon/SKILL.md` + SessionStart hook |
 | **gg** | `.gemini/commands/aigon/*.toml` | `.gemini/settings.json` | SessionStart hook |
-| **cx** | `~/.codex/prompts/aigon-*.md` (global) | `.codex/config.toml` | `.codex/prompt.md` |
+| **cx** | `.agents/skills/aigon-*/SKILL.md` (project) | `.codex/config.toml` | `.agents/skills/` (per-skill `description:` is the entry point) |
 
 ### Shared files (all agents)
 
@@ -49,7 +49,7 @@ Instead of injecting into user-owned files, Aigon delivers context through each 
 
 - **Claude Code / Gemini CLI**: A `SessionStart` hook runs `aigon project-context`, which prints doc pointers to stdout. The agent ingests this as conversation context.
 - **Cursor**: `.cursor/rules/aigon.mdc` with `alwaysApply: true`
-- **Codex**: `.codex/prompt.md` with marker blocks
+- **Codex**: per-skill `description:` fields under `.agents/skills/aigon-*/SKILL.md` — Codex selects skills implicitly or via explicit `$aigon-feature-do <id>` mentions
 
 ## Updating
 

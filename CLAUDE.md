@@ -65,7 +65,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/dashboard-status-helpers.js` | ~200 | Shared dashboard status helpers: tmux/session detection, worktree lookup, status normalization, stale-session heuristics |
 | `lib/server-runtime.js` | ~90 | Shared AIGON server lifecycle helpers for start/restart/stop orchestration |
 | `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/{prefix}-{id}-{agent}.json`), atomic writes |
-| `lib/agent-prompt-resolver.js` | ~140 | Resolves the launch prompt for an agent + verb. Default path passes through `cliConfig.<verb>Prompt` (cc/gg/cu slash commands). cx path inlines the canonical `templates/generic/commands/feature-<verb>.md` body (frontmatter stripped, `$ARGUMENTS`/`$1` substituted) so codex never depends on broken `~/.codex/prompts/` discovery. |
+| `lib/agent-prompt-resolver.js` | ~140 | Resolves the launch prompt for an agent + verb. Default path passes through `cliConfig.<verb>Prompt` (cc/gg/cu slash commands). cx path inlines the canonical `templates/generic/commands/feature-<verb>.md` body (frontmatter stripped, `$ARGUMENTS`/`$1` substituted) so codex launches never depend on skill / prompt discovery. |
 | `lib/pro.js` | ~25 | **Pro gate**: lazy-require `@aigon/pro` with `forcePro` config override. `isProAvailable()` / `getPro()`. Only `lib/pro-bridge.js` calls these — never add new call sites. |
 | `lib/pro-bridge.js` | ~180 | **Pro extension point**: in-process route registry. `initialize({ helpers })` invites `@aigon/pro` to `register(api)` at startup; `dispatchProRoute(method, path, req, res)` routes incoming requests. Plugin route registration is the current shape (Option B); future event bus / anti-corruption layers will live here too. |
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
@@ -110,7 +110,7 @@ Research lifecycle is also managed by the workflow-core engine (`.aigon/workflow
 **Per-agent outputs:**
 - **cc**: `.claude/commands/aigon/*.md`, `.claude/settings.json` (permissions + hooks), `.claude/skills/aigon/SKILL.md`
 - **gg**: `.gemini/commands/aigon/*.toml`, `.gemini/settings.json` (hooks), `.gemini/policies/aigon.toml`
-- **cx**: `~/.codex/prompts/aigon-*.md` (global), `.codex/prompt.md`, `.codex/config.toml`
+- **cx**: `.agents/skills/aigon-*/SKILL.md` (project-local), `.codex/config.toml`
 - **cu**: `.cursor/commands/aigon-*.md`, `.cursor/cli.json`, `.cursor/hooks.json`, `.cursor/rules/aigon.mdc`
 
 **Shared:** `AGENTS.md` (scaffolded on first install only, never overwritten), `docs/agents/{agent}.md` (marker blocks), `docs/development_workflow.md` (full overwrite)
