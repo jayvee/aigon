@@ -43,6 +43,20 @@ directly to codex as the initial prompt argument.
   no longer relies on that discovery working.
 
 ## Decisions
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-06
+
+### Findings
+- Architecture docs were incomplete for this change: `lib/agent-prompt-resolver.js` and the new cx inline-prompt launch path were added, but only `CLAUDE.md` was updated. Repo rules require architecture-facing docs to ship with module/pattern changes.
+
+### Fixes Applied
+- Updated `AGENTS.md` and `docs/architecture.md` to document `lib/agent-prompt-resolver.js` and the cx inline prompt-resolution path.
+
+### Notes
+- No additional functional issues found in the prompt resolver, feature launch wiring, or worktree launch path during this review.
 - **Why a separate module instead of inlining in `lib/commands/feature.js`:**
   the resolver is consumed from both `lib/commands/feature.js` (CLI launch
   path) and `lib/worktree.js` (tmux/dashboard launch path). A standalone
