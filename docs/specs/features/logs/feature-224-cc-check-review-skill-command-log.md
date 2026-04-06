@@ -41,3 +41,18 @@ Pure template + registry change. No new CLI verb, no engine work.
 7. `node aigon-cli.js install-agent cx` → verify `.agents/skills/aigon-feature-review-check/SKILL.md` exists with valid YAML frontmatter (`name: aigon-feature-review-check`, `description:` populated from the template marker). Confirm there is **no** `aigon-afrc` skill directory.
 8. Open `templates/generic/commands/feature-review.md` → confirm Step 8 mentions running `feature-review-check <ID>` in the implementer's session, and the prompt suggestion line at the bottom is `{{CMD_PREFIX}}feature-review-check <ID>`.
 9. `node -c aigon-cli.js` and `npm test` both pass.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-06
+
+### Findings
+- The new prompts treated agent-specific argument syntax tokens (`{{args}}`, `$1`, `<name>`) as if they were runtime values. That makes the implementer-side instructions read as though the agent should reason about the placeholder itself rather than "use the explicit ID if one was passed," and the reviewer handoff text could surface the literal placeholder instead of the resolved feature ID.
+
+### Fixes Applied
+- `3c56df15` — `fix(review): clarify explicit-id handoff in review prompts`
+
+### Notes
+- I reviewed the canonical template/registry/help wiring and regenerated the tracked command artifacts after the prompt fix.
+- I did not run tests as part of review; the implementation log already records the implementer’s validation run.
