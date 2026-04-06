@@ -10,19 +10,24 @@ Add a prompting-shortcut (`feature-review-check`) that the **implementation agen
 No new Aigon CLI verb, no state, no engine signals. One template file + registry entry and the install loop does the rest.
 
 ## User Stories
-- [ ] As the user, I can type `/afrc` in a cc/gg/cu/mv implementation session instead of re-typing "check the changes made by the reviewer — details in the last commit and log" every time.
-- [ ] As the user, I can type `$aigon-feature-review-check <id>` in a codex implementation session (post-223) to get the same behavior — no copy-paste from templates, no second terminal.
+- [ ] As the user, I can type `/afrc` (no ID) in a cc/gg/cu/mv implementation session inside the feature worktree — the agent infers the feature from the current branch, no arg required.
+- [ ] As the user, I can type `$aigon-feature-review-check` (no ID) in a codex implementation session inside the feature worktree (post-223) and get the same inference behavior.
+- [ ] As the user, I can still pass an explicit ID (`/afrc 230`) when I want to — useful if I'm somehow not in the worktree or want to double-check a specific feature.
 - [ ] As the implementing agent, the prompt gives me a clear, consistent instruction: read review commits, read review log entry, then decide accept/challenge/modify and act accordingly.
 - [ ] As an aigon maintainer, I maintain one canonical template under `templates/generic/commands/` — the install pipeline handles the cc/gg/cu/mv vs cx (skill) format differences.
 
 ## Acceptance Criteria
 - [ ] New template file `templates/generic/commands/feature-review-check.md` exists, containing the agent-facing prompt with a `<!-- description: ... -->` marker (so the cx skill-md install path in feature 223 can extract it into YAML frontmatter).
 - [ ] The template instructs the agent to:
-  1. Find the reviewer's commits: `git log --oneline --grep='^fix(review)\|^docs(review)' main..HEAD`
-  2. Read the cumulative diff of those commits.
-  3. Read the `## Code Review` section appended to `docs/specs/features/logs/feature-<ID>-*-log.md`.
-  4. Decide one of: **accept** (no action), **challenge** (explain disagreement to the user and stop), **modify** (make follow-up commits with `fix(post-review):` prefix, then stop).
-  5. Report the decision and a brief summary back to the user.
+  1. **Resolve the feature ID.** If `$ARGUMENTS` / `$1` is empty, infer it from the current branch: `git branch --show-current` → parse `feature-<slug>-<agent>` → resolve slug/ID via `aigon feature-list --active` (or `aigon feature-spec` with the slug). If the branch is `main` or doesn't match the feature pattern, stop and tell the user "Run this in the feature worktree or pass an explicit ID."
+  2. Find the reviewer's commits: `git log --oneline --grep='^fix(review)\|^docs(review)' main..HEAD`
+  3. Read the cumulative diff of those commits.
+  4. Read the `## Code Review` section appended to `docs/specs/features/logs/feature-<ID>-*-log.md`.
+  5. Decide one of: **accept** (no action), **challenge** (explain disagreement to the user and stop), **modify** (make follow-up commits with `fix(post-review):` prefix, then stop).
+  6. Report the decision and a brief summary back to the user.
+- [ ] The template's argument-resolution step works in the expected primary case: user runs `/afrc` (or `$aigon-feature-review-check`) with no argument from inside the feature worktree, the agent infers the ID from `feature-<slug>-<agent>` branch name, no prompt to the user.
+- [ ] Explicit ID still works: `/afrc 230` short-circuits branch inference and uses the given ID.
+- [ ] Graceful failure when ID cannot be inferred: current branch is `main` or unrelated → agent prints a one-line "can't infer ID, pass one explicitly or cd into the worktree" message and stops. Does NOT guess.
 - [ ] Template registered in the command registry (`lib/templates.js` COMMAND_REGISTRY or equivalent) so `aigon install-agent <agent>` picks it up for every agent family.
 - [ ] `aigon install-agent cc` regenerates `.claude/commands/aigon/feature-review-check.md` cleanly.
 - [ ] `aigon install-agent gg` regenerates `.gemini/commands/aigon/feature-review-check.toml` cleanly.
@@ -56,11 +61,27 @@ npm test
 **Template content outline** (for the spec, not final prose):
 
 ```markdown
-<!-- description: Check the review just done on feature <ID> and decide accept/challenge/modify -->
+<!-- description: Check the review just done on the current feature worktree and decide accept/challenge/modify -->
 # aigon-feature-review-check
 
 A reviewing agent has just committed fixes (or notes) on this feature branch.
 Your job is to check what the reviewer did, then decide how to respond.
+
+## Step 0: Resolve the feature ID
+If an argument was passed (`{{ARG1_SYNTAX}}` is non-empty), use it as the
+feature ID and skip to Step 1.
+
+Otherwise, infer the ID from the current branch (primary path — you're running
+in the implementation worktree):
+```bash
+BRANCH=$(git branch --show-current)
+# Expect: feature-<slug>-<agent> — e.g. feature-check-review-skill-command-cc
+```
+Parse the `<slug>` out of the branch name and resolve it to a feature ID via
+`aigon feature-list --active` (match on slug). If the branch is `main` or
+doesn't match the `feature-*` pattern, STOP and tell the user:
+"Can't infer feature ID — run this inside the feature worktree, or pass an
+explicit ID (e.g. `feature-review-check 230`)." Do not guess.
 
 ## Step 1: Find the review commits
 Run: `git log --oneline --grep='^fix(review)\|^docs(review)' main..HEAD`
@@ -69,7 +90,7 @@ Run: `git log --oneline --grep='^fix(review)\|^docs(review)' main..HEAD`
 For each review commit, run `git show <sha>` and understand the change.
 
 ## Step 3: Read the review notes
-Open `docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md` and read the
+Open `docs/specs/features/logs/feature-<resolved-id>-*-log.md` and read the
 `## Code Review` section.
 
 ## Step 4: Decide
@@ -105,6 +126,7 @@ Do NOT run `feature-close`. The user decides when to close.
 - Should the template instruct the agent to run `git log main..HEAD` unfiltered (to also see its own pre-review commits for context)? Leaning **yes** — one extra line, useful context.
 - Should `--modify` follow-up commits use `fix(post-review):` or just `fix:`? Leaning `fix(post-review):` to keep the audit trail clear alongside `fix(review):`.
 - Is `afrc` the right shortcut? `afr` is already `feature-review`; `afrc` reads as "feature-review-check". Alternative: `afrk` (feature-review-check-k? no). Sticking with `afrc`.
+- Branch-parsing approach: regex `^feature-(.+)-(cc|gg|cx|cu|mv)$` is the simplest. An alternative is a new helper in `lib/git.js` (`getFeatureIdFromCurrentBranch()`) that the template calls via an aigon CLI subcommand — but that reintroduces CLI code the spec is trying to avoid. Sticking with inline branch parsing in the template.
 
 ## Related
 - Research:
