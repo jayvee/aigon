@@ -11,4 +11,4 @@ The site runs at **http://localhost:3600** with docs at **/docs**.
 
 **Do NOT** use `aigon dev-server start` — it conflicts with the dashboard proxy.
 
-The dashboard runs separately at http://aigon.localhost via `aigon dashboard`.
+The dashboard runs separately at http://localhost:4100 via `aigon server`.

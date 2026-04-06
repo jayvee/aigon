@@ -69,7 +69,7 @@
         },
         get emptyMessage() {
           const s = Alpine.store('dashboard');
-          if (this.visibleRepos.length === 0) return s.selectedRepo === 'all' ? 'No repos registered. Run: aigon dashboard add' : 'No data for selected repo.';
+          if (this.visibleRepos.length === 0) return s.selectedRepo === 'all' ? 'No repos registered. Run: aigon server add' : 'No data for selected repo.';
           const hasItems = this.visibleRepos.some(r => this.getFeatures(r).length > 0 || this.getResearch(r).length > 0 || this.getFeedback(r).length > 0);
           if (hasItems) return '';
           return s.filter === 'all' ? 'No items in progress.' : 'No items match filter: ' + s.filter;

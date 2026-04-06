@@ -1,0 +1,112 @@
+---
+title: "server"
+description: "Start and manage the Aigon server — dashboard UI, agent supervisor, and WebSocket relay"
+---
+
+## Synopsis
+
+```bash
+aigon server <start|stop|restart|status|add|remove|list>
+```
+
+## Description
+
+The Aigon server is the combined process that runs the dashboard UI, the agent supervisor loop, and the WebSocket relay for real-time status updates. It listens on port 4100.
+
+## Subcommands
+
+### Server lifecycle
+
+```bash
+aigon server start                # Start the server in the foreground
+aigon server start --persistent   # Install as a system service (recommended)
+aigon server restart              # Stop and restart
+aigon server stop                 # Stop the server
+aigon server status               # Show server health, PID, uptime, supervisor status
+```
+
+### Repo management
+
+```bash
+aigon server add [path]           # Register a repo (default: current directory)
+aigon server remove [path]        # Unregister a repo
+aigon server list                 # Show registered repos
+```
+
+## Persistent mode (recommended)
+
+```bash
+aigon server start --persistent
+```
+
+Installs the server as a system service that:
+
+- **Starts on login** — `RunAtLoad: true` (macOS) / `WantedBy=default.target` (Linux)
+- **Auto-restarts on crash** — `KeepAlive: true` (macOS) / `Restart=on-failure` (Linux)
+- **Survives terminal closes and reboots** — managed by launchd/systemd, not your shell
+
+| Platform | Service manager | Service location |
+|----------|----------------|------------------|
+| macOS | launchd | `~/Library/LaunchAgents/com.aigon.server.plist` |
+| Linux | systemd (user) | `~/.config/systemd/user/aigon-server.service` |
+
+Logs are written to `~/.aigon/logs/server-stdout.log` and `~/.aigon/logs/server-stderr.log`.
+
+### When does the server restart?
+
+| Scenario | What happens |
+|----------|-------------|
+| Process crashes | launchd/systemd restarts it automatically |
+| Mac/Linux reboots | Starts on login |
+| `aigon update` | Kills and respawns the server to pick up code changes |
+| You edit `lib/*.js` (Aigon development) | Run `aigon server restart` manually |
+| Config changes (`.aigon/config.json`) | No restart needed — config is read on each request |
+| New repo registered (`aigon server add`) | No restart needed — picked up on next poll |
+
+### Uninstall the service
+
+**macOS:**
+```bash
+launchctl unload ~/Library/LaunchAgents/com.aigon.server.plist
+rm ~/Library/LaunchAgents/com.aigon.server.plist
+```
+
+**Linux:**
+```bash
+systemctl --user disable --now aigon-server
+rm ~/.config/systemd/user/aigon-server.service
+```
+
+## Port and URL
+
+The server always runs on port **4100**. This is not currently configurable.
+
+- **Direct URL**: `http://localhost:4100`
+- **Remote access**: The server binds to `0.0.0.0`, so it's accessible from any device on your local network at `http://<your-ip>:4100`
+- **Pretty URL**: `http://aigon.localhost` — requires `aigon proxy install`, which sets up a local Caddy reverse proxy on port 80. This is optional; the direct URL always works.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| Dashboard not loading | Run `aigon server status` to check if the process is running |
+| Port 4100 in use | Check what's using it: `lsof -i :4100`. Stop the other process or stop the aigon server with `aigon server stop` |
+| Server running but stale UI | Run `aigon server restart` to pick up code changes |
+| Persistent service not starting on login | Verify the plist exists: `ls ~/Library/LaunchAgents/com.aigon.server.plist` and check logs: `cat ~/.aigon/logs/server-stderr.log` |
+| `aigon update` didn't restart server | The persistent service auto-recovers — launchd detects the process died and relaunches it |
+| Server shows wrong repos | Run `aigon server list` to verify registered repos. Add missing ones with `aigon server add` |
+
+## Examples
+
+```bash
+# Recommended: install as persistent service
+aigon server start --persistent
+aigon server add ~/src/my-project
+# Open http://localhost:4100
+
+# Check health
+aigon server status
+
+# Restart after an aigon update
+aigon server restart
+```

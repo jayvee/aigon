@@ -248,8 +248,8 @@ tmux attach -t brewboard-f2-gg-brewery-import
 While the agent works, start the dashboard and register the repo:
 
 ```bash
-aigon server start
-aigon server add ~/src/brewboard
+aigon server start --persistent        # One-time: install as system service
+aigon server add ~/src/brewboard       # Register the seed repo
 ```
 
 Then open [http://localhost:4100](http://localhost:4100) in your browser. You'll see the feature in the Pipeline view with the agent status updating in real-time.
@@ -267,7 +267,7 @@ aigon feature-close 02
 1. `aigon init` — creates `docs/specs/` directories, rebuilds manifests for existing features
 2. `aigon install-agent` — writes agent config files, warns if the agent CLI isn't in your PATH
 3. `aigon feature-start` — moves spec to in-progress, creates worktree, starts agent in tmux
-4. `aigon dashboard` — web UI at localhost:4100 showing pipeline, agent status, sessions. The **Reports tab** tracks token usage, cost, and throughput across agents — check it after your first feature to see telemetry in action
+4. `aigon server` — web UI at localhost:4100 showing pipeline, agent status, sessions. The **Reports tab** tracks token usage, cost, and throughput across agents — check it after your first feature to see telemetry in action
 5. `aigon feature-close` — merges the feature branch to main, moves spec to done, cleans up
 
 If anything goes wrong, run `aigon doctor` to diagnose the issue.

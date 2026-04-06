@@ -777,7 +777,7 @@
         get visibleRepos() { return getVisibleRepos(Alpine.store('dashboard').data || { repos: [] }); },
         get emptyMessage() {
           return (Alpine.store('dashboard').selectedRepo === 'all')
-            ? 'No repos registered. Run: aigon dashboard add'
+            ? 'No repos registered. Run: aigon server add'
             : 'No data for selected repo.';
         },
         setPipelineType(t) { Alpine.store('dashboard').pipelineType = t; localStorage.setItem(lsKey('pipelineType'), t); },

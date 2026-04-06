@@ -49,7 +49,7 @@ aigon proxy install  # Optional: install launchd plist for auto-start on boot
 | Service | Port | URL |
 |---------|------|-----|
 | Main AIGON server instance | 4100 (default) | `http://aigon.localhost` |
-| Preview dashboard instances (`aigon dashboard --preview`) | 4101–4199 (dynamic) | `http://{agent}-{id}.aigon-preview.localhost` |
+| Preview dashboard instances (`aigon server start --preview`) | 4101–4199 (dynamic) | `http://{agent}-{id}.aigon-preview.localhost` |
 
 ## Troubleshooting
 
