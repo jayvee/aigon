@@ -321,7 +321,7 @@ Aigon has a **free/pro split**. Commercial AADE (Amplification) features live in
 
 There are exactly **two** files in aigon that may import `@aigon/pro`:
 
-1. **`lib/pro.js`** — lazy-require gate. Exposes `isProAvailable()` and `getPro()`. Respects the `forcePro` config override so Pro can be simulated as absent for testing.
+1. **`lib/pro.js`** — lazy-require gate. Exposes `isProAvailable()` and `getPro()`. Respects the `AIGON_FORCE_PRO` **environment variable** (`false`/`0` simulates the free tier even when `@aigon/pro` is installed) so Pro can be simulated as absent for testing. Pro availability is a property of the **aigon install**, not of any individual repo — `lib/pro.js` must NOT read project config (`.aigon/config.json`). A per-repo `forcePro` flag produced an incoherence bug where the dashboard top nav and a subprocess spawned with a different `cwd` disagreed about Pro state in the same session.
 2. **`lib/pro-bridge.js`** — the **single Pro extension point**. Holds an in-process route registry and invites `@aigon/pro` to subscribe at server startup. Open-source modules never call `getPro()` for new features — they extend the bridge instead.
 
 ```js

@@ -152,6 +152,11 @@ class MockAgent {
                     AIGON_ENTITY_ID: this.featureId,
                     AIGON_AGENT_ID: this.agentId,
                     AIGON_PROJECT_PATH: this.repoPath,
+                    // Pro state is global (process env), not project-scoped.
+                    // MockAgent runs outside the dashboard's process tree so
+                    // it must opt in explicitly — otherwise Pro-gated paths
+                    // hit the OSS gate during tests.
+                    AIGON_FORCE_PRO: 'true',
                     ...GIT_SAFE_ENV,
                 },
             });
