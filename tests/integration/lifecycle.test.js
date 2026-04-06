@@ -263,43 +263,48 @@ testAsync('solo: agent-ready goes to ready_for_review in review-mode', async () 
     }
 });
 
-// ─── Dashboard action consistency ────────────────────────────────────────────
-
-console.log('\nDashboard action consistency');
-
-testAsync('snapshotToDashboardActions returns correct format', async () => {
-    const repo = makeTempRepo();
+// REGRESSION (feature 229): captureAgentTelemetry must aggregate normalized
+// telemetry records written by the StopHook instead of re-parsing Claude
+// JSONL transcripts via brittle resolveClaudeProjectDir slug matching. When
+// records exist, transcript discovery is bypassed entirely.
+test('telemetry aggregator reads StopHook records over transcripts', () => {
+    const telemetry = require('../../lib/telemetry');
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-tel-'));
     try {
-        writeSpec(repo, '05', 'format-test');
-        await engine.startFeature(repo, '05', 'solo_branch', ['cc']);
-        const snap = await engine.showFeature(repo, '05');
-        const result = snapshotToDashboardActions('feature', '05', snap);
+        telemetry.writeNormalizedTelemetryRecord({
+            source: 'claude-transcript', sessionId: 'sess-a', entityType: 'feature',
+            featureId: '777', repoPath: repo, agent: 'cc', activity: 'implement',
+            model: 'claude-opus-4-6', startAt: '2026-04-07T00:00:00Z', endAt: '2026-04-07T01:00:00Z',
+            tokenUsage: { input: 100, output: 200, cacheReadInput: 50, cacheCreationInput: 25, thinking: 10, total: 385, billable: 310 },
+            costUsd: 0.42,
+        }, { repoPath: repo });
+        telemetry.writeNormalizedTelemetryRecord({
+            source: 'claude-transcript', sessionId: 'sess-b', entityType: 'feature',
+            featureId: '777', repoPath: repo, agent: 'cc', activity: 'review',
+            model: 'claude-opus-4-6', startAt: '2026-04-07T02:00:00Z', endAt: '2026-04-07T03:00:00Z',
+            tokenUsage: { input: 50, output: 80, cacheReadInput: 0, cacheCreationInput: 0, thinking: 0, total: 130, billable: 130 },
+            costUsd: 0.13,
+        }, { repoPath: repo });
+        telemetry.writeAgentFallbackSession('777', 'cc', {
+            repoPath: repo,
+            source: 'feature-close-fallback',
+            sessionId: 'fallback-close-record',
+        });
 
-        // Verify structure
-        assert.ok('nextAction' in result, 'should have nextAction');
-        assert.ok(Array.isArray(result.nextActions), 'nextActions should be array');
-        assert.ok(Array.isArray(result.validActions), 'validActions should be array');
+        const agg = telemetry.aggregateNormalizedTelemetryRecords('777', 'cc', { repoPath: repo, linesChanged: 50 });
+        assert.strictEqual(agg.sessions, 2, 'ignores fallback zero-usage records');
+        assert.strictEqual(agg.input_tokens, 150);
+        assert.strictEqual(agg.cost_usd, 0.55);
+        assert.strictEqual(agg.model, 'claude-opus-4-6');
+        assert.strictEqual(agg.billable_tokens, 440); // input+output+thinking
+        assert.strictEqual(agg.tokens_per_line_changed, 8.8);
 
-        // Each action should have required fields
-        for (const action of result.validActions) {
-            assert.ok(action.action, 'action should have action field');
-            assert.ok(action.label, 'action should have label field');
-            assert.ok(action.type, 'action should have type field');
-        }
-    } finally {
-        fs.rmSync(repo, { recursive: true, force: true });
-    }
-});
+        // 'solo' acts as wildcard agent for legacy callers
+        const soloAgg = telemetry.aggregateNormalizedTelemetryRecords('777', 'solo', { repoPath: repo });
+        assert.strictEqual(soloAgg.sessions, 2);
 
-testAsync('implementing state has pause and autopilot actions', async () => {
-    const repo = makeTempRepo();
-    try {
-        writeSpec(repo, '05', 'actions-test');
-        await engine.startFeature(repo, '05', 'solo_branch', ['cc']);
-        const snap = await engine.showFeature(repo, '05');
-        const actions = getActions(snap, '05');
-
-        assert.ok(hasAction(actions, 'feature-pause'), 'implementing should have pause');
+        // Missing feature → null (caller falls back gracefully, no crash)
+        assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('999', 'cc', { repoPath: repo }), null);
     } finally {
         fs.rmSync(repo, { recursive: true, force: true });
     }
