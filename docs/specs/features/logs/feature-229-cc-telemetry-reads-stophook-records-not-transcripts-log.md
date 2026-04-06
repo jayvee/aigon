@@ -64,3 +64,17 @@ StopHook record writing.
 - Spot-checked against a real telemetry record:
   `aggregateNormalizedTelemetryRecords('160', 'cc')` returned the same
   cost ($5.5307) that the record file holds.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-07
+
+### Findings
+- Aggregation included zero-usage `feature-close-fallback` records in the session total whenever at least one real StopHook record existed, which inflated per-agent session counts on later close runs.
+
+### Fixes Applied
+- `cb2e025f` — `fix(review): ignore fallback telemetry sessions in aggregation`
+
+### Notes
+- Added regression coverage for the mixed real-record plus fallback-record case so the session total stays tied to real StopHook telemetry only.
