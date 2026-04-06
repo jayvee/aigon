@@ -174,7 +174,7 @@
         <div class="pro-gated-content">
           <div class="stat-card-value">42%</div>
         </div>
-        <div style="font-size:10px;color:var(--text-tertiary);opacity:.7;margin-top:auto">Pro — coming later</div>
+        <div style="font-size:10px;color:var(--text-tertiary);opacity:.7;margin-top:auto">Pro — coming later. Free alternative: aigon board, aigon commits</div>
       </div>`;
     }
 
@@ -197,7 +197,7 @@
         </div>
         <div class="pro-chart-overlay">
           <span class="pro-badge">PRO</span>
-          <span style="color:var(--text-tertiary);font-size:12px">Coming later</span>
+          <span style="color:var(--text-tertiary);font-size:12px">Coming later. Free alternative: aigon board, aigon commits</span>
         </div>
       </div>`;
     }
