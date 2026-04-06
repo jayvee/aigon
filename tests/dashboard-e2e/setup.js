@@ -140,6 +140,10 @@ module.exports = async function globalSetup() {
         AIGON_TEST_MODE: '1',
         // GEMINI_CLI=1 makes feature-eval run in eval-setup mode (no agent launch)
         GEMINI_CLI: '1',
+        // Force Pro availability for the whole dashboard process tree so the
+        // top nav and every subprocess (including autonomous-start) agree on
+        // Pro state. Inherited by spawned children automatically.
+        AIGON_FORCE_PRO: 'true',
         // Scrub git config and supply author identity — see GIT_SAFE_ENV above.
         ...GIT_SAFE_ENV,
     };
