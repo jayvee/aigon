@@ -255,14 +255,21 @@
         if (costAgentIds.length > 0) {
           const fmt = n => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
           const fmtCost = n => '$' + (Math.round(Number(n) * 10000) / 10000);
+          let totalInputTokens = 0;
+          let totalOutputTokens = 0;
           let totalCostUsd = 0;
           let anyReal = false;
           const rowsHtml = costAgentIds.map(id => {
             const a = costByAgent[id] || {};
             const hasReal = a.hasRealData === true;
-            if (hasReal) { anyReal = true; totalCostUsd += Number(a.costUsd) || 0; }
+            if (hasReal) {
+              anyReal = true;
+              totalInputTokens += Number(a.inputTokens) || 0;
+              totalOutputTokens += Number(a.outputTokens) || 0;
+              totalCostUsd += Number(a.costUsd) || 0;
+            }
             const displayAgent = (a.agent || id).toUpperCase();
-            const modelCell = hasReal ? escHtml(a.model || '—') : '<span class="cost-na">n/a</span>';
+            const modelCell = escHtml(a.model || '—');
             const inputCell = hasReal ? fmt(a.inputTokens) : '<span class="cost-na">n/a</span>';
             const outputCell = hasReal ? fmt(a.outputTokens) : '<span class="cost-na">n/a</span>';
             const costCell = hasReal ? escHtml(fmtCost(a.costUsd || 0)) : '<span class="cost-na">n/a</span>';
@@ -275,7 +282,13 @@
               '</tr>';
           }).join('');
           const totalRow = anyReal
-            ? '<tr class="cost-total-row"><td colspan="4"><strong>Total</strong></td><td><strong>' + escHtml(fmtCost(totalCostUsd)) + '</strong></td></tr>'
+            ? '<tr class="cost-total-row">' +
+              '<td><strong>Total</strong></td>' +
+              '<td></td>' +
+              '<td><strong>' + fmt(totalInputTokens) + '</strong></td>' +
+              '<td><strong>' + fmt(totalOutputTokens) + '</strong></td>' +
+              '<td><strong>' + escHtml(fmtCost(totalCostUsd)) + '</strong></td>' +
+              '</tr>'
             : '';
           costHtml = '<h5 class="stats-section-heading">Cost by Agent</h5>' +
             '<table class="stats-token-table">' +
