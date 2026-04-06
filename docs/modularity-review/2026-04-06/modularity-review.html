@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modularity Review</title>
+<style>
+  :root {
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+    --max-width: 820px;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fa;
+    --bg-tertiary: #eef1f5;
+    --text: #1a1a1a;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --border: #e2e8f0;
+    --accent: #2b6cb0;
+    --accent-light: #ebf4ff;
+    --severity-critical: #c53030;
+    --severity-critical-bg: #fff5f5;
+    --severity-significant: #c05621;
+    --severity-significant-bg: #fffaf0;
+    --severity-minor: #2b6cb0;
+    --severity-minor-bg: #ebf8ff;
+    --table-stripe: #f7fafc;
+    --link: #2b6cb0;
+    --link-hover: #1a4971;
+    --shadow: rgba(0, 0, 0, 0.06);
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #1a1a1a;
+    --bg-secondary: #242424;
+    --bg-tertiary: #2e2e2e;
+    --text: #e2e2e2;
+    --text-secondary: #a0a0a0;
+    --text-muted: #717171;
+    --border: #333333;
+    --accent: #b0b0b0;
+    --accent-light: #2a2a2a;
+    --severity-critical: #fc8181;
+    --severity-critical-bg: #2d1b1b;
+    --severity-significant: #f6ad55;
+    --severity-significant-bg: #2d2415;
+    --severity-minor: #a0a0a0;
+    --severity-minor-bg: #282828;
+    --table-stripe: #222222;
+    --link: #e0c97f;
+    --link-hover: #f0dca0;
+    --shadow: rgba(0, 0, 0, 0.2);
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    margin: 0;
+    padding: 2rem 1.5rem;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  .container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  /* Theme toggle */
+  .theme-toggle {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--text);
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    z-index: 100;
+  }
+
+  .theme-toggle:hover {
+    background: var(--bg-tertiary);
+  }
+
+  /* Typography */
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.5rem 0;
+    color: var(--text);
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 2.5rem 0 1rem 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.8rem 0 0.6rem 0;
+    color: var(--text);
+  }
+
+  p {
+    margin: 0 0 1rem 0;
+    color: var(--text-secondary);
+  }
+
+  a {
+    color: var(--link);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+  }
+
+  a:hover {
+    color: var(--link-hover);
+    border-bottom-color: var(--link-hover);
+  }
+
+  /* Metadata */
+  .meta {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .meta strong {
+    color: var(--text-secondary);
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.9rem;
+  }
+
+  th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  td {
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+
+  tr:nth-child(even) td {
+    background: var(--table-stripe);
+  }
+
+  /* Severity badges */
+  .severity {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.15rem 0.6rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .severity-critical {
+    color: var(--severity-critical);
+    background: var(--severity-critical-bg);
+  }
+
+  .severity-significant {
+    color: var(--severity-significant);
+    background: var(--severity-significant-bg);
+  }
+
+  .severity-minor {
+    color: var(--severity-minor);
+    background: var(--severity-minor-bg);
+  }
+
+  /* Issue cards */
+  .issue {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    margin: 1.5rem 0;
+    box-shadow: 0 1px 3px var(--shadow);
+  }
+
+  .issue h2 {
+    margin-top: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .issue h3 {
+    font-size: 1rem;
+  }
+
+  .issue-meta {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+  }
+
+  /* Lists */
+  ul, ol {
+    padding-left: 1.5rem;
+    color: var(--text-secondary);
+  }
+
+  li {
+    margin-bottom: 0.35rem;
+  }
+
+  /* Code */
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--bg-tertiary);
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+  }
+
+  /* Horizontal rule */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 3rem 0 1.5rem 0;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .footer a {
+    color: var(--text-muted);
+    border-bottom-color: var(--border);
+  }
+
+  .footer a:hover {
+    color: var(--link);
+  }
+
+  /* Print */
+  @media print {
+    .theme-toggle { display: none; }
+    body { padding: 0; }
+    .issue { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+  <span id="theme-icon"></span>
+</button>
+
+<div class="container">
+<h1>Modularity Review</h1>
+
+<div class="meta">
+<strong>Scope</strong>: Aigon — entire codebase (<code>lib/</code>, <code>lib/commands/</code>, <code>lib/workflow-core/</code>, <code>aigon-cli.js</code>)<br>
+<strong>Date</strong>: 2026-04-06
+</div>
+
+<h2>Executive Summary</h2>
+
+<p>Aigon is an open-source CLI for orchestrating AI coding agents (Claude Code, Gemini, Codex) across feature/research lifecycles, with worktree isolation, tmux session management, and a dashboard server. The core workflow engine (<code>lib/workflow-core/</code>) is well-encapsulated and event-sourced, command handlers are cleanly grouped by domain, and the project shows real care about <a href="https://coupling.dev/posts/core-concepts/modularity/">modularity</a> — the <a href="https://coupling.dev/posts/core-concepts/coupling/"><code>ctx</code> dependency-injection pattern</a>, the central action registry, and the read-side adapter for dashboard data are all sound design choices.</p>
+
+<p>The codebase is <strong>healthy overall</strong>, but three integrations are starting to show <a href="https://coupling.dev/posts/core-concepts/balance/">unbalanced coupling</a> that will become painful as the project's strategic focus shifts toward the commercial Pro tier (<code>@aigon/pro</code>): (1) <code>dashboard-server.js</code> reads agent state files directly from disk, bypassing the module that owns the schema; (2) <code>entity.js</code> mixes shared lifecycle helpers with feature-specific dependency-graph logic — a low-cohesion bundle; and (3) <code>utils.js</code> is a 1,910-line facade that aggregates 6 sub-modules alongside 40 inline "orphan" functions, increasing the cognitive cost of change in spec-handling and CLI-parsing code paths. None of these are urgent today, but each will compound as Pro features add new read paths, new state fields, and new dashboard integration points.</p>
+
+<h2>Coupling Overview</h2>
+
+<table>
+<thead>
+<tr>
+<th>Integration</th>
+<th><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Strength</a></th>
+<th><a href="https://coupling.dev/posts/dimensions-of-coupling/distance/">Distance</a></th>
+<th><a href="https://coupling.dev/posts/dimensions-of-coupling/volatility/">Volatility</a></th>
+<th><a href="https://coupling.dev/posts/core-concepts/balance/">Balanced?</a></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>commands/*</code> → <code>workflow-core/</code> engine</td>
+<td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Functional</a> (engine API)</td>
+<td>Low (same process, neighbor module)</td>
+<td>High (core domain — lifecycle is the product)</td>
+<td>✅ Balanced — high strength is justified by the engine being the single authority</td>
+</tr>
+<tr>
+<td><code>dashboard-server.js</code> → <code>.aigon/state/*.json</code> (direct fs reads)</td>
+<td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Intrusive</a> (knows file naming, JSON schema, location)</td>
+<td>Low (same process)</td>
+<td>High (state schema evolves with Pro insights, liveness signals)</td>
+<td>❌ <strong>Unbalanced</strong> — see Issue 1</td>
+</tr>
+<tr>
+<td><code>commands/feature.js</code> ↔ <code>entity.js</code> (dependency-graph functions)</td>
+<td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Functional</a> (7 graph helpers used only by features)</td>
+<td>Low (same lib/)</td>
+<td>Moderate (graph semantics will evolve with insights)</td>
+<td>❌ <strong>Low cohesion</strong> — see Issue 2</td>
+</tr>
+<tr>
+<td>All commands → <code>lib/utils.js</code> (re-export hub + 40 orphan helpers)</td>
+<td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Model</a> (consumers depend on aggregated symbol surface)</td>
+<td>Low (same lib/)</td>
+<td>Mixed — spec/CLI helpers are volatile, re-exports are stable</td>
+<td>❌ <strong>Low cohesion</strong> — see Issue 3</td>
+</tr>
+<tr>
+<td><code>dashboard-server.js</code> → CLI subprocess (<code>spawnSync('aigon …')</code>) for mutations</td>
+<td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Contract</a> (CLI args as published interface)</td>
+<td>High (separate process)</td>
+<td>High (commands evolve frequently)</td>
+<td>✅ Balanced — intentional decoupling, dashboard never mutates engine state in-process</td>
+</tr>
+<tr>
+<td><code>lib/pro.js</code> → <code>@aigon/pro</code> (commercial tier)</td>
+<td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Contract</a> (lazy require + <code>isProAvailable()</code> gate)</td>
+<td>High (separate npm package, separate repo)</td>
+<td>High (strategic focus — Pro tier is next priority)</td>
+<td>⚠️ Balanced today, fragile tomorrow — see Issue 4</td>
+</tr>
+<tr>
+<td><code>commands/feature.js</code> → <code>lib/feature-close.js</code> (callback injection for <code>persistAndRunEffects</code>)</td>
+<td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Functional</a> with circular-dep workaround</td>
+<td>Low (sibling files)</td>
+<td>Moderate</td>
+<td>⚠️ Minor — workaround signals an awkward seam</td>
+</tr>
+<tr>
+<td><code>workflow-core/</code> internal modules (engine, projector, machine, lock)</td>
+<td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Functional</a></td>
+<td>Low (same directory, single bounded context)</td>
+<td>High (core)</td>
+<td>✅ Balanced — cohesive bounded context, internal coupling is appropriate</td>
+</tr>
+<tr>
+<td><code>lib/git.js</code>, <code>lib/terminal-adapters.js</code>, <code>lib/security.js</code> → consumers</td>
+<td><a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">Contract</a> (narrow function APIs)</td>
+<td>Low</td>
+<td>Low (<a href="https://coupling.dev/posts/dimensions-of-coupling/volatility/">generic subdomain</a>)</td>
+<td>✅ Balanced — generic helpers, low volatility absorbs any imbalance</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<div class="issue">
+<h2>Issue 1: Dashboard server reads agent state files directly, bypassing the schema owner</h2>
+
+<div class="issue-meta">
+<strong>Integration</strong>: <code>lib/dashboard-server.js</code> → <code>.aigon/state/feature-{id}-{agent}.json</code> (and <code>docs/specs/features/logs/</code>, <code>docs/specs/features/{stage}/</code>)<br>
+<strong>Severity</strong>: <span class="severity severity-significant">Significant</span>
+</div>
+
+<h3>Knowledge Leakage</h3>
+
+<p><code>lib/agent-status.js</code> is the declared owner of the per-agent state file format — it exports <code>readAgentStatus</code>, <code>writeAgentStatus</code>, <code>agentStatusPath</code>, and uses an atomic write pattern to keep concurrent reads safe. Yet <code>dashboard-server.js</code> performs 67 direct <code>fs.readFileSync</code> / <code>fs.readdirSync</code> calls against <code>.aigon/state/</code>, log directories, and spec folders. To do this it has to know:</p>
+
+<ul>
+<li>The file naming convention (<code>feature-{id}-{agent}.json</code>, <code>heartbeat-feature-{id}-{agent}</code>)</li>
+<li>The JSON schema of each agent status file (it destructures <code>lastSubmittedAt</code>, <code>status</code>, <code>tokens</code>, etc.)</li>
+<li>The storage location relative to <code>repoPath</code></li>
+<li>The discovery glob (which prefixes count, how to enumerate by entity ID)</li>
+</ul>
+
+<p>This is <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">intrusive coupling</a>: the dashboard treats the state directory as a private implementation detail of the engine, but reads it as if the schema were a <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">published contract</a>. The same pattern applies to log files (<code>docs/specs/features/logs/feature-{id}-{agent}-*-log.md</code>) and evaluation files — the dashboard knows the naming conventions of artifacts that other modules produce.</p>
+
+<h3>Complexity Impact</h3>
+
+<p>Because dashboard-server.js knows file-format details, every change to how agent status is recorded requires touching two unrelated modules. The CLAUDE.md rule "Restart after backend edits" exists partly because these schema dependencies are implicit — there's no compile-time check that the dashboard is in sync with the writer. When you add a new field to agent status, the dashboard silently keeps reading the old shape until you remember to update it.</p>
+
+<p><a href="https://coupling.dev/posts/core-concepts/complexity/">Cognitive load</a> is also higher than it needs to be: a developer reading <code>dashboard-server.js</code> has to mentally track which directories it pokes at, which file formats it parses inline, and which it delegates. The 3,111-line module has 67 fs operations interleaved with HTTP route handlers, making it hard to see where the read boundaries are.</p>
+
+<h3>Cascading Changes</h3>
+
+<p>Concrete scenarios where this will hurt as Pro grows:</p>
+
+<ul>
+<li><strong>Pro insights need a richer agent status schema</strong> (e.g., <code>lastInsightTimestamp</code>, <code>confidenceScore</code>, <code>attentionFlags</code>). Adding these fields to <code>agent-status.js</code> is one line; updating every <code>fs.readFileSync</code> parser site in dashboard-server.js is many.</li>
+<li><strong>Liveness/heartbeat representation changes</strong> (already imminent — heartbeat is currently a touch-file, but a JSON sidecar with metadata would be more useful). Two modules need to change in lockstep.</li>
+<li><strong>Multi-process safety</strong>: <code>agent-status.js</code> uses temp-file + rename for atomic writes. The dashboard's direct reads can race with concurrent writers; if it ever uses <code>JSON.parse</code> on a partial write, it crashes the route handler.</li>
+<li><strong>Schema migration</strong>: when an old field is renamed, every direct reader needs to be updated; a centralized accessor could handle the migration in one place.</li>
+</ul>
+
+<h3>Recommended Improvement</h3>
+
+<p>Introduce a thin <strong>read-side facade</strong> that owns all "what does the engine know about this entity?" queries. The pieces are mostly in place:</p>
+
+<ol>
+<li>Move every direct <code>.aigon/state/</code> and log-file read out of <code>dashboard-server.js</code> into either <code>lib/agent-status.js</code> (status reads) or <code>lib/dashboard-status-collector.js</code> (already the declared aggregator). Expose <code>getAgentStatusForDashboard(repoPath, entityId)</code> and <code>getEntityArtifacts(repoPath, entityId)</code> and have the route handlers call those.</li>
+<li>Replace the 67 <code>fs.*</code> calls in <code>dashboard-server.js</code> with calls into <code>agent-status.js</code>, <code>feature-spec-resolver.js</code>, and <code>dashboard-status-collector.js</code>. The destination modules already exist; this is a relocation, not new code.</li>
+<li>Once the moves are done, add a comment marker in <code>dashboard-server.js</code> ("no direct fs reads of engine state — use the collector") to keep the boundary visible.</li>
+</ol>
+
+<p><strong>Trade-off</strong>: A small amount of indirection and a few new functions in <code>agent-status.js</code> / <code>dashboard-status-collector.js</code>. The cost is one extra hop per read; the benefit is that schema changes touch one file instead of two, and the dashboard's role becomes "HTTP transport over the read model" rather than "HTTP transport that also knows where the engine puts its files." This aligns with the CLAUDE.md rule "Dashboard must be read-only" — currently the dashboard is read-only with respect to <em>mutations</em>, but it still reaches into engine internals for <em>reads</em>. Closing that gap makes the rule actually enforceable.</p>
+</div>
+
+<div class="issue">
+<h2>Issue 2: <code>entity.js</code> bundles shared lifecycle helpers with feature-only dependency-graph logic</h2>
+
+<div class="issue-meta">
+<strong>Integration</strong>: <code>lib/entity.js</code> ↔ <code>lib/commands/feature.js</code> (and <code>lib/dashboard-server.js</code>, <code>lib/feature-close.js</code>)<br>
+<strong>Severity</strong>: <span class="severity severity-significant">Significant</span>
+</div>
+
+<h3>Knowledge Leakage</h3>
+
+<p><code>lib/entity.js</code> is documented as "the unified pipeline for features and research" — and ~30% of it is exactly that: <code>entityCreate</code>, <code>entityPrioritise</code>, <code>entitySubmit</code>, <code>entityCloseFinalize</code>, <code>createFleetSessions</code>. These are genuinely shared between <code>commands/feature.js</code> and <code>commands/research.js</code>, and parameterized by <code>FEATURE_DEF</code> / <code>RESEARCH_DEF</code>. That part is well-designed.</p>
+
+<p>The other ~70% (about 600 of the 869 lines) is feature-specific dependency-graph code: <code>buildFeatureIndex</code>, <code>resolveDepRef</code>, <code>buildDependencyGraph</code>, <code>detectCycle</code>, <code>rewriteDependsOn</code>, <code>buildFeatureDependencySvg</code>, <code>refreshFeatureDependencyGraphs</code>. None of these are called from <code>commands/research.js</code>. Their consumers are exclusively <code>commands/feature.js</code>, <code>feature-close.js</code>, and <code>dashboard-server.js</code>. This is <a href="https://coupling.dev/posts/core-concepts/balance/">low cohesion</a>: unrelated concerns sharing a module by accident of history rather than by design.</p>
+
+<h3>Complexity Impact</h3>
+
+<p>Three concrete consequences:</p>
+
+<ol>
+<li><strong>Misleading API surface.</strong> A new contributor reading <code>entity.js</code> exports sees <code>buildFeatureDependencySvg</code> next to <code>entityCreate</code> and reasonably assumes both are part of a shared abstraction. When they later realize the SVG builder is feature-only, they have to revise their mental model. This is exactly the <a href="https://coupling.dev/posts/core-concepts/complexity/">cognitive overload</a> the <a href="https://coupling.dev/posts/core-concepts/balance/">Balanced Coupling</a> model warns about.</li>
+<li><strong>Test surface confusion.</strong> Changes to dependency-graph rendering trigger reviews of "the shared entity module," which raises the perceived blast radius unnecessarily. Reviewers think they need to consider research impact when they don't.</li>
+<li><strong>The 869-line file mixes two paradigms.</strong> Lifecycle functions take <code>(def, name, ctx)</code> and are polymorphic across entity types. Graph functions take <code>(paths, utils, featureIndex)</code> and are feature-specific. The mental gear-shifting between them inflates the time it takes to navigate the file.</li>
+</ol>
+
+<h3>Cascading Changes</h3>
+
+<p>Concrete scenarios:</p>
+
+<ul>
+<li><strong>Pro insights will want richer dependency graphs</strong> — predictive blockers, ML-suggested ordering, time-weighted visualizations. All of that change pressure lands on <code>entity.js</code>, but the volatility belongs to feature-only code, not the shared lifecycle code.</li>
+<li><strong>A future research dependency model</strong> (e.g., research-topic chains) would have to either reuse the feature graph functions (forcing them to become polymorphic, expanding the "shared" surface further) or duplicate them. Today there's no clear path because graph code lives in a module that already claims to be "shared."</li>
+<li><strong>Extracting feature-specific code becomes harder over time</strong> as more files import from <code>entity.js</code> for the graph helpers. <code>dashboard-server.js</code> already destructures three of them at line 49.</li>
+</ul>
+
+<h3>Recommended Improvement</h3>
+
+<p>Split <code>entity.js</code> along the cohesion line that already exists in the code:</p>
+
+<ol>
+<li>Keep <code>lib/entity.js</code> for genuinely shared lifecycle functions: <code>FEATURE_DEF</code>, <code>RESEARCH_DEF</code>, <code>getEntityDef</code>, <code>entityCreate</code>, <code>entityPrioritise</code>, <code>entitySubmit</code>, <code>entityCloseFinalize</code>, <code>createFleetSessions</code>. Target ~250 lines.</li>
+<li>Create <code>lib/feature-dependencies.js</code> for the graph code: <code>buildFeatureIndex</code>, <code>resolveDepRef</code>, <code>buildDependencyGraph</code>, <code>detectCycle</code>, <code>rewriteDependsOn</code>, <code>buildFeatureDependencySvg</code>, <code>refreshFeatureDependencyGraphs</code>. Target ~600 lines.</li>
+<li>Update the four importers (<code>commands/feature.js</code>, <code>feature-close.js</code>, <code>dashboard-server.js</code>, <code>entity.js</code> itself for the prioritise flow that uses <code>buildDependencyGraph</code> internally).</li>
+</ol>
+
+<p><strong>Trade-off</strong>: Three to four import-statement changes and one new file. The cost is trivially small; the benefit is that the boundary between "shared lifecycle" and "feature-specific graph logic" becomes visible in the file structure, the cognitive load of <code>entity.js</code> drops by ~70%, and Pro-driven changes to the graph logic stop touching a file labeled "shared." This is a <a href="https://coupling.dev/posts/core-concepts/balance/">low-cohesion fix</a> — the code itself doesn't need to change, just its location.</p>
+</div>
+
+<div class="issue">
+<h2>Issue 3: <code>lib/utils.js</code> mixes a re-export facade with 40 inline orphan helpers</h2>
+
+<div class="issue-meta">
+<strong>Integration</strong>: All commands → <code>lib/utils.js</code> (17 direct consumers, 212+ exported symbols)<br>
+<strong>Severity</strong>: <span class="severity severity-significant">Significant</span>
+</div>
+
+<h3>Knowledge Leakage</h3>
+
+<p><code>lib/utils.js</code> plays three structurally different roles in the same file:</p>
+
+<ol>
+<li><strong>Re-export aggregator</strong> for 6 sub-modules (<code>config</code>, <code>proxy</code>, <code>templates</code>, <code>worktree</code>, <code>dashboard-server</code>, <code>git</code>, <code>state-queries</code>) — about 177 of its 212 exports come through here.</li>
+<li><strong>Inline orphan helper module</strong> for 40 functions that are <em>only</em> defined in <code>utils.js</code>: spec CRUD (<code>createSpecFile</code>, <code>findFile</code>, <code>moveFile</code>, <code>modifySpecFile</code>, <code>getNextId</code>), CLI/YAML parsing (<code>parseCliOptions</code>, <code>parseFrontMatter</code>, <code>serializeYamlScalar</code>, <code>slugify</code>), hooks (<code>parseHooksFile</code>, <code>executeHook</code>), analytics (<code>collectAnalyticsData</code>, <code>buildCompletionSeries</code>), version checking (<code>getAigonVersion</code>, <code>compareVersions</code>), and feedback constants.</li>
+<li><strong>De-facto shared namespace</strong> that consumers like <code>commands/feature.js</code> (73 symbols), <code>commands/infra.js</code> (72), <code>dashboard-server.js</code> (68), and <code>commands/setup.js</code> (52) treat as "the standard library."</li>
+</ol>
+
+<p>The leaked knowledge isn't a single schema or rule — it's the <em>organizing principle</em>. Consumers can't tell from an import whether <code>findFile</code> is implemented in utils.js or re-exported from somewhere else, whether <code>loadProjectConfig</code> will hit the disk or the cache, whether <code>parseFrontMatter</code> is the same parser used by <code>feedback.js</code> (it is, indirectly). This is <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">model coupling</a>: the consumers depend on a derived, aggregated view of multiple lower-level modules.</p>
+
+<h3>Complexity Impact</h3>
+
+<p>The most concrete cost shows up when reading or modifying spec-handling code. <code>commands/feature.js</code> calls <code>u.findFile</code>, <code>u.createSpecFile</code>, <code>u.moveFile</code>, <code>u.parseFrontMatter</code>, <code>u.modifySpecFile</code> — every spec operation routes through <code>utils.js</code>. To understand any of these you have to first locate them in a 1,910-line file, then mentally separate them from the unrelated re-exports surrounding them. The "distance to definition" is artificially long.</p>
+
+<p>There's also a <a href="https://coupling.dev/posts/core-concepts/balance/">false-cohesion trap</a>: because everything imports from <code>utils.js</code>, it <em>looks</em> like there's a single shared surface, but the underlying code lives in 7+ different files plus 40 orphans. When something feels wrong with <code>parseFrontMatter</code>, the search starts in the wrong place.</p>
+
+<h3>Cascading Changes</h3>
+
+<p>Concrete scenarios:</p>
+
+<ul>
+<li><strong>Pro insights need new analytics fields.</strong> <code>collectAnalyticsData</code> lives in <code>utils.js</code>. Today, changing it ripples to <code>setup.js</code>, <code>dashboard-server.js</code>, and <code>dashboard.js</code> — three consumers that share no other concerns. If analytics had its own module, the change blast radius would be bounded.</li>
+<li><strong>Spec format evolves</strong> (e.g., new YAML front-matter fields for Pro features). <code>parseFrontMatter</code> is consumed by 7 files. Today they all import via <code>utils.js</code>; if a future change splits front-matter handling into structured types, every consumer's import path has to be revisited.</li>
+<li><strong>A new contributor wants to understand "how does aigon manage spec files"</strong> and ends up reading 1,910 lines of utils.js because the spec functions are scattered between feedback constants, version-check functions, and re-exports from 6 unrelated modules.</li>
+<li><strong>Backward-compat shims grow.</strong> As sub-modules evolve, <code>utils.js</code> becomes the place to add backward-compatibility shims — and it already has some. Each shim is invisible coupling that future readers have to discover.</li>
+</ul>
+
+<h3>Recommended Improvement</h3>
+
+<p>Don't try to dissolve <code>utils.js</code> in one move. Instead, extract the orphans into focused modules over time, then thin <code>utils.js</code> into a pure facade for <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">contract coupling</a>:</p>
+
+<ol>
+<li><strong><code>lib/specs.js</code></strong> — <code>createSpecFile</code>, <code>findFile</code>, <code>findUnprioritizedFile</code>, <code>moveFile</code>, <code>modifySpecFile</code>, <code>getNextId</code>, <code>printSpecInfo</code>, <code>printError</code>, <code>printNextSteps</code>. This is the highest-value extraction: spec handling is volatile (Pro will add fields), and the consumers (<code>feature.js</code>, <code>validation.js</code>, <code>commands/feedback.js</code>) are the most coupling-sensitive.</li>
+<li><strong><code>lib/yaml-parsing.js</code></strong> — <code>parseFrontMatter</code>, <code>serializeYamlScalar</code>, <code>parseYamlScalar</code>, <code>splitInlineYamlArray</code>, <code>stripInlineYamlComment</code>, <code>parseCliOptions</code>, <code>getOptionValue</code>, <code>getOptionValues</code>, <code>parseNumericArray</code>, <code>slugify</code>, <code>escapeRegex</code>, <code>extractMarkdownSection</code>. These are pure functions with low coupling between themselves; perfect candidates for a small, stable module.</li>
+<li><strong><code>lib/analytics.js</code></strong> — <code>collectAnalyticsData</code>, <code>buildCompletionSeries</code>, <code>buildWeeklyAutonomyTrend</code>. Three consumers, all in the dashboard/setup/insights area. Pro will want to add to this module; giving it a clear home now means Pro's analytics extensions can extend a real boundary instead of growing utils.js further.</li>
+<li><strong>Leave <code>utils.js</code> as a re-export facade only.</strong> Keep the 17 existing consumers working by re-exporting from the new modules — no breaking changes. New code can import from the focused modules directly.</li>
+</ol>
+
+<p><strong>Trade-off</strong>: Three new files and ~3 days of focused work to relocate functions and update tests. The cost is real but bounded; the benefit compounds because every future Pro feature touching spec or analytics code now has a sensible home, and the 1,910-line file stops growing. The <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">contract coupling</a> of "import from utils" stays available for backward compatibility, while new code can target <a href="https://coupling.dev/posts/core-concepts/modularity/">smaller, more cohesive boundaries</a>.</p>
+</div>
+
+<div class="issue">
+<h2>Issue 4: <code>lib/pro.js</code> integration is balanced today, but the strategic direction will stress it</h2>
+
+<div class="issue-meta">
+<strong>Integration</strong>: <code>lib/pro.js</code> → <code>@aigon/pro</code> (commercial tier) → consumed by <code>dashboard-server.js</code>, <code>commands/misc.js</code>, <code>dashboard-status-collector.js</code><br>
+<strong>Severity</strong>: <span class="severity severity-minor">Minor (anticipatory)</span>
+</div>
+
+<h3>Knowledge Leakage</h3>
+
+<p>The current Pro integration is exemplary <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">contract coupling</a>: a 24-line <code>lib/pro.js</code> that lazy-requires <code>@aigon/pro</code>, exposes <code>isProAvailable()</code> and <code>getPro()</code>, and lets every consumer gracefully degrade when Pro isn't installed. Today there's exactly one Pro-gated route in the dashboard (<code>GET /api/insights</code>) plus a couple of references in <code>commands/misc.js</code> and <code>dashboard-status-collector.js</code>. The <code>forcePro</code> config override even lets you simulate the free tier when Pro is installed, which is a great testability lever.</p>
+
+<p>The risk is not in the current code — it's in the trajectory. The user has identified the Pro tier as the next strategic priority. Pro features (insights, amplification dashboard, AI coaching) will need to:</p>
+
+<ul>
+<li>Read more data from the workflow engine (snapshot fields, event log, telemetry)</li>
+<li>Hook into more dashboard routes (<code>/api/insights/*</code>, <code>/api/coaching/*</code>, <code>/api/amplification/*</code>)</li>
+<li>Subscribe to lifecycle events (when a feature closes, run insights generation)</li>
+<li>Possibly add new entity types or new lifecycle stages</li>
+</ul>
+
+<p>If each new Pro hook is added the same way as today — <code>if (!isProAvailable()) return; getPro().something(...)</code> — the <code>getPro()</code> calls will scatter across the codebase, and the <a href="https://coupling.dev/posts/dimensions-of-coupling/volatility/">volatility</a> of the Pro API surface will start cascading through unrelated modules. That's the moment the integration becomes <a href="https://coupling.dev/posts/core-concepts/balance/">unbalanced</a>.</p>
+
+<h3>Complexity Impact</h3>
+
+<p>Today the Pro surface is 4 call sites; that's well within working-memory limits. As it grows past ~10–15 call sites, the cognitive cost of "where does Pro touch this codebase?" starts to exceed the <a href="https://coupling.dev/posts/core-concepts/complexity/">4±1 working-memory budget</a>. A change to the Pro API would force a hunt across the open-source repo to find all the gates. This is solvable now, painful later.</p>
+
+<h3>Cascading Changes</h3>
+
+<p>Concrete scenarios that will arrive as Pro grows:</p>
+
+<ul>
+<li><strong>A Pro insights feature wants to read closed-feature telemetry on every close.</strong> Naively, that means a <code>getPro()?.insights.onFeatureClosed(...)</code> call inside <code>feature-close.js</code>. Now <code>feature-close.js</code> knows about Pro, and any change to the Pro hook signature touches both repos.</li>
+<li><strong>A Pro coaching feature wants to inject suggestions into the dashboard's spec view.</strong> Naively, that means a Pro check in the <code>/api/spec</code> route. Now the dashboard read paths have conditional logic based on tier.</li>
+<li><strong>A Pro feature wants to schedule background work.</strong> Where does the scheduler hook live? If it's in <code>lib/pro.js</code>, that file balloons; if it's in the consumer, the gating logic gets duplicated.</li>
+</ul>
+
+<h3>Recommended Improvement</h3>
+
+<p>Introduce a <strong>single Pro extension point</strong> before the proliferation begins. A few concrete shapes that would work:</p>
+
+<ol>
+<li><strong>Event-bus pattern</strong>: have the engine emit lifecycle events (<code>feature.closed</code>, <code>research.submitted</code>) onto an in-process emitter. <code>lib/pro.js</code> (or a thin <code>lib/pro-bridge.js</code>) subscribes if Pro is installed; the open-source code never references Pro directly. This is the cleanest <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">contract</a> — Pro becomes a subscriber, not a caller.</li>
+<li><strong>Plugin route registration</strong>: let <code>@aigon/pro</code> register its own routes on the dashboard server at startup, instead of having <code>dashboard-server.js</code> know about insights specifically. The dashboard exposes <code>app.registerProRoutes(router)</code> once; Pro fills in <code>/api/insights/*</code>, <code>/api/coaching/*</code>, etc. without the open-source repo needing to know what Pro will add next.</li>
+<li><strong>Anti-corruption layer for reads</strong>: if Pro needs richer reads, those read functions live in <code>dashboard-status-collector.js</code> (which already aggregates engine data) and Pro consumes them. Pro never reaches into <code>.aigon/state/</code> directly.</li>
+</ol>
+
+<p>The work is small <em>now</em> (one Pro hook, one consumer); it gets harder every time a new Pro feature ships against the current pattern. Doing this <em>before</em> the next Pro feature lands costs a few hours; doing it after costs a refactor across both repos.</p>
+
+<p><strong>Trade-off</strong>: A small amount of upfront design (event names, registration API). The benefit is that Pro's <a href="https://coupling.dev/posts/dimensions-of-coupling/volatility/">volatility</a> — which is high by definition because it's the active commercial focus — stays bounded behind a single seam, and the open-source codebase doesn't accumulate <code>getPro()?.…</code> calls in unrelated files. This is a textbook case for <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">reducing strength via a published contract</a> before the strength starts to climb on its own.</p>
+</div>
+
+<hr>
+
+<h2>Notes on Other Integrations Considered</h2>
+
+<p>A few patterns surfaced during analysis but were deliberately <em>not</em> flagged as issues:</p>
+
+<ul>
+<li><strong><code>dashboard-server.js</code> mutates state via CLI subprocess (<code>spawnSync('aigon …')</code>)</strong>, not direct engine calls. This looks heavy-handed but is a deliberate isolation boundary — the dashboard genuinely never holds engine locks, which is the right call for a read-mostly HTTP server. The latency cost is justified by the reliability benefit. ✅ Keep as is.</li>
+<li><strong><code>workflow-core/</code> internal coupling</strong> (engine ↔ projector ↔ machine ↔ event-store ↔ lock) is high, but these are all parts of the same <a href="https://coupling.dev/posts/related-topics/domain-driven-design/">bounded context</a> and the <a href="https://coupling.dev/posts/dimensions-of-coupling/distance/">distance is minimal</a>. High strength inside a cohesive module is exactly what you want. ✅ Healthy.</li>
+<li><strong><code>feature-close.js</code> receives <code>persistAndRunEffects</code> as a callback</strong> to avoid a circular require with <code>commands/feature.js</code>. This is a code smell — it suggests the module boundaries aren't quite right around the close flow — but the workaround is contained, the module is well-phased, and fixing it would touch both files for marginal benefit. ⚠️ Note for future cleanup, not a current issue.</li>
+<li><strong><code>feedback.js</code> uses folder-based state transitions</strong> instead of the workflow-core engine. This is a second state-management paradigm in the same codebase, which is worth knowing, but feedback is a <a href="https://coupling.dev/posts/dimensions-of-coupling/volatility/">supporting subdomain</a> with low <a href="https://coupling.dev/posts/dimensions-of-coupling/volatility/">volatility</a> — promoting it to the engine would be effort without payoff. ✅ Acceptable as is.</li>
+<li><strong><code>commands/feature.js</code> is 3,251 lines with 15 handlers.</strong> The size is striking, but the user reports no pain working with it, the handlers cluster naturally by lifecycle phase, and several are thin delegators (<code>feature-validate</code>, <code>feature-review</code>, <code>feature-now</code>). Splitting it would be aesthetic, not load-bearing. ✅ Acceptable; revisit only if specific handlers start changing together unexpectedly.</li>
+</ul>
+
+<h2>Summary of Recommendations</h2>
+
+<ol>
+<li><strong>Move <code>dashboard-server.js</code>'s direct fs reads</strong> of <code>.aigon/state/</code> and log files into <code>agent-status.js</code> and <code>dashboard-status-collector.js</code>. (Issue 1)</li>
+<li><strong>Extract the dependency-graph functions</strong> out of <code>entity.js</code> into a new <code>lib/feature-dependencies.js</code>. (Issue 2)</li>
+<li><strong>Extract spec CRUD, YAML parsing, and analytics</strong> out of <code>utils.js</code> into <code>lib/specs.js</code>, <code>lib/yaml-parsing.js</code>, and <code>lib/analytics.js</code>. Keep <code>utils.js</code> as a re-export facade for backward compatibility. (Issue 3)</li>
+<li><strong>Define a single Pro extension point</strong> (event bus or plugin route registration) before the next Pro feature ships. (Issue 4)</li>
+</ol>
+
+<p>None of these are urgent. All four become easier to do <em>now</em> than they will be after the next round of Pro features lands.</p>
+
+<div class="footer">
+This analysis was performed using the <a href="https://coupling.dev">Balanced Coupling</a> model by <a href="https://vladikk.com">Vlad Khononov</a>.
+</div>
+
+</div>
+
+<script>
+  function getDefaultTheme() {
+    const hour = new Date().getHours();
+    return (hour >= 7 && hour < 19) ? 'light' : 'dark';
+  }
+
+  function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('modularity-review-theme', theme);
+    document.getElementById('theme-icon').textContent = theme === 'light' ? '☾' : '☀';
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    setTheme(current === 'light' ? 'dark' : 'light');
+  }
+
+  const saved = localStorage.getItem('modularity-review-theme');
+  setTheme(saved || getDefaultTheme());
+</script>
+</body>
+</html>
