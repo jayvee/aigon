@@ -86,6 +86,22 @@ test('missing feature id returns an empty object, not an error', () => {
     assert.deepStrictEqual(out, {});
 });
 
+// REGRESSION: prevents partially-written Fleet features from hiding agents with
+// missing log files. The payload still needs a null-content entry so the Agent
+// Log tab can show the empty state without dropping that agent from the picker.
+test('expected agent entries are preserved when a Fleet log is missing', () => {
+    const dir = makeTempLogsDir();
+    fs.writeFileSync(path.join(dir, 'feature-08-cc-social-sharing-log.md'), '# cc log\n');
+    const out = collectAgentLogs([dir], 8, {
+        cc: path.join(dir, 'feature-08-cc-social-sharing-log.md'),
+        gg: path.join(dir, 'feature-08-gg-social-sharing-log.md'),
+    });
+    assert.deepStrictEqual(Object.keys(out).sort(), ['cc', 'gg']);
+    assert.ok(out.cc.content.includes('cc log'));
+    assert.strictEqual(out.gg.content, null);
+    assert.ok(out.gg.path.endsWith('feature-08-gg-social-sharing-log.md'));
+});
+
 test('non-existent dirs are skipped silently', () => {
     const out = collectAgentLogs(['/nonexistent/path/aigon/test'], 1);
     assert.deepStrictEqual(out, {});
