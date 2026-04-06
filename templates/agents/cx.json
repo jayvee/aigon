@@ -45,7 +45,7 @@
     "AGENT_TITLE": "Codex Configuration",
     "ARG_SYNTAX": "$ARGUMENTS",
     "ARG1_SYNTAX": "$1",
-    "CMD_PREFIX": "/prompts:aigon-",
+    "CMD_PREFIX": "$aigon-",
     "AGENT_TEAMS_RESEARCH_NOTE": "",
     "AGENT_TEAMS_FEATURE_NOTE": "",
     "PERMISSION_SAVE_NOTE": "",
@@ -53,15 +53,16 @@
     "AGENT_DEV_SERVER_NOTE": "\n> **CRITICAL \u2014 Codex dev server rules:**\n>\n> **NEVER run `npm run dev`, `next dev`, or any dev command directly.** Running dev commands directly bypasses port allocation and will cause port conflicts.\n>\n> The PORT is already set in `.env.local` by the worktree setup. If you must start a dev server, use `aigon dev-server start`.\n>\n> Because Codex kills background processes when shell commands exit, use `--register-only` mode:\n>\n> 1. Run `aigon dev-server start --register-only` \u2014 allocates your agent's port and writes it to `.env.local`\n> 2. Read the allocated port: `grep ^PORT= .env.local`\n> 3. Start the server in a **persistent terminal session** using `/terminal`: `PORT=<the-port> npm run dev`\n> 4. Get your app URL: `aigon dev-server url`\n> 5. Use that URL for all testing\n"
   },
   "output": {
-    "format": "markdown",
-    "commandDir": "~/.codex/prompts",
+    "format": "skill-md",
+    "commandDir": ".agents/skills",
     "commandFilePrefix": "aigon-",
-    "commandFileExtension": ".md",
+    "commandFileExtension": "",
+    "skillFileName": "SKILL.md",
     "frontmatter": [
-      "description",
-      "args"
+      "name",
+      "description"
     ],
-    "global": true
+    "global": false
   },
   "rootFile": null,
   "supportsAgentsMd": true,
@@ -69,7 +70,7 @@
   "templatePath": "generic/docs/agent.md",
   "extras": {
     "prompt": {
-      "enabled": true,
+      "enabled": false,
       "path": ".codex/prompt.md"
     },
     "config": {

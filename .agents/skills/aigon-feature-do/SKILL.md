@@ -1,0 +1,186 @@
+---
+name: aigon-feature-do
+description: Do feature <ID> - works in both Drive and Fleet modes
+---
+
+# aigon-feature-do
+
+Implement a feature. Works in Drive mode (branch), Drive mode (worktree) (parallel development), and Fleet mode (competition).
+
+**IMPORTANT:** Run `$aigon-feature-start <ID>` first to prepare your workspace.
+
+## Argument Resolution
+
+If no ID is provided, or the ID doesn't match an existing active feature:
+1. Run `aigon feature-list --active`
+2. If a partial ID or name was given, filter to matches
+3. Present the matching features and ask the user to choose one
+
+## Step 0: Verify your workspace (MANDATORY)
+
+Before doing ANYTHING else, verify you are on the correct branch — **never implement on `main`**.
+
+```bash
+git branch --show-current
+```
+
+**Expected**: A branch named `feature-<ID>-<agent>-<description>` (e.g., `feature-55-gg-add-auth`).
+
+**If the output is `main` or `master`:** STOP. You are on the wrong branch. Do NOT write any code. Instead:
+1. Check if a feature branch already exists: `git branch | grep feature-$1`
+2. If it exists, switch to it: `git checkout feature-$1-cx-*` (use the full branch name from the list)
+3. If it does NOT exist, the workspace was not set up — run `$aigon-feature-start $1` first
+
+Also verify your working directory:
+```bash
+pwd
+```
+
+**Expected for worktree mode**: A path ending in `feature-$1-cx-<description>`
+**Expected for Drive mode**: The main repository path (but on a feature branch, NOT main)
+
+**Do not proceed past this step until you have confirmed you are on a feature branch.**
+
+## Step 1: Run the CLI command
+
+This command detects whether you're in Drive or Fleet mode and provides guidance.
+
+```bash
+aigon feature-do $1
+```
+
+To run in **Autopilot mode** — autonomous retry loop where a fresh agent session is spawned each iteration until validation passes:
+
+```bash
+aigon feature-do {{ARG1_SYNTAX}} --autonomous
+```
+
+Optional flags: `--max-iterations=N` (default 5) · `--agent=<id>` · `--dry-run`
+
+> **What is autonomous mode?** The autonomous technique runs an agent in a loop: implement → validate → if fail, repeat with fresh context until success or max iterations. Add a `## Validation` section to your feature spec to define feature-specific checks alongside project-level validation.
+
+The command will detect your mode (Drive/worktree/Fleet) and display the spec location.
+
+**If the CLI fails with "Could not find feature in in-progress"** and you're in a worktree: the spec move was likely not committed before the worktree was created. Fix by running these commands from the worktree:
+```bash
+SPEC_PATH=$(aigon feature-spec {{ARG1_SYNTAX}})
+git checkout main -- "$SPEC_PATH"
+git commit -m "chore: sync spec to worktree branch"
+```
+
+## Step 2: Read the spec
+
+The spec content was printed inline by the `feature-do` command above. If it was not (e.g., you ran `feature-start` separately), read the spec at:
+
+```bash
+aigon feature-spec $1
+```
+
+**Skip plan mode — implement directly.**
+
+## Step 3: Implement
+
+**Signal that you are starting implementation (you MUST run this shell command — do NOT write .aigon/state/ files directly):**
+```bash
+aigon agent-status implementing
+```
+
+**TIME BUDGET: Complete implementation in under 10 minutes.**
+- Start coding within 60 seconds. The spec IS your plan.
+- Read ONLY the files listed in the spec's Technical Approach / Key Files section. Do not explore broadly.
+- Do not create test files unless the spec explicitly requires them.
+- **COMMIT EARLY AND OFTEN.** After every meaningful change (edited a file, deleted a file, moved code), run `git add -A && git commit -m "wip: <what you just did>"`. Never have more than 2 minutes of uncommitted work. If your session dies, committed work survives. Uncommitted work is lost forever.
+- Validate after committing, not before. Fix issues in follow-up commits.
+
+Work through the acceptance criteria in order. For worktree modes, use relative paths and maintain the worktree directory as your working directory.
+
+## Step 3.5: Install dependencies (worktree only)
+
+**Worktrees do not share dependencies with the main repo.** Before running or testing, check if dependencies need to be installed:
+
+```bash
+# Detect and install dependencies
+if [ -f "Cargo.toml" ]; then cargo build
+elif [ -f "go.mod" ]; then go mod download
+elif [ -f "requirements.txt" ]; then pip install -r requirements.txt
+elif [ -f "pyproject.toml" ]; then pip install -e .
+elif [ -f "package.json" ]; then npm install
+fi
+```
+
+## Step 4: Commit your implementation
+
+Stage and commit your code changes using conventional commits (`feat:`, `fix:`, `chore:`). Verify with `git log --oneline -1`.
+
+
+
+
+
+## Step 4: Test your changes
+The **dev server** runs a local development server of this project's source code (e.g. Next.js, Vite, etc.) so you can verify your changes work correctly.
+**IMPORTANT:** `aigon dev-server start` starts the **project's** dev server (e.g. `npm run dev`) with managed port allocation. Never run `aigon server` to test your work.
+### Drive Mode (branch)
+- Start the dev server: `aigon dev-server start`
+- Use the URL printed by the command to access the app
+- Run the full test suite and verify all tests pass
+- Ask the user to verify
+### Worktree Mode (Drive worktree or Fleet)
+- Run the test suite to verify changes
+- Ask the user to verify
+> **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for test commands.
+### Before stopping: prepare a manual testing checklist
+
+Generate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria and write a numbered list of concrete, human-executable steps to verify each criterion. Present the checklist in your response before stopping.
+
+## Step 4.5: Update documentation if needed
+
+If your changes affect any of the following, update the relevant docs **before committing**:
+
+- **New modules or files** → update Module Map in `CLAUDE.md` and `docs/architecture.md`
+- **New repo structure or external dependencies** → update `docs/architecture.md`
+- **New patterns or conventions agents should follow** → update `CLAUDE.md` and/or `AGENTS.md`
+- **Cross-repo changes (e.g., `@aigon/pro`)** → note what changed in both repos
+
+Documentation ships with the code, not as a follow-up.
+
+## Step 6: Update and commit the log
+
+Find your implementation log:
+- Drive mode (branch): `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md`
+- Worktree mode: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-<agent>-*-log.md`
+
+Update it with:
+- Key decisions made during implementation
+- Summary of the conversation between you and the user
+- Any issues encountered and how they were resolved
+- Your approach and rationale (for Fleet mode, helps evaluator compare)
+
+**Then commit the log file.**
+
+## Step 6.5: Start the dev server
+
+**You MUST start the dev server before signalling completion.** The evaluator and user need a running preview of your implementation.
+
+Start the dev server and leave it running.
+
+## Step 5: Signal completion
+
+**THIS IS THE FINAL STEP. YOU MUST COMPLETE IT. DO NOT SKIP THIS STEP.**
+
+After committing your code, run this command **immediately**:
+
+```bash
+aigon agent-status submitted
+```
+
+This command **must exit successfully** before you can claim the feature is complete.
+
+Hard rules:
+- Implementation is **not** complete until `aigon agent-status submitted` succeeds
+- Do **not** say "done", "complete", or "ready for review" before it succeeds
+- If it fails, report the exact error output and stop for user guidance
+- Do **not** improvise with `feature-submit`, `feature-close`, or substitute commands
+
+After it succeeds, tell the user: "Implementation complete — ready for review."
+
+**STAY in the session.** The user may request changes. If they do, make the changes, commit, and say "Changes committed." Do NOT run or suggest `feature-close` — that's the user's decision. End with a brief summary of what was implemented.

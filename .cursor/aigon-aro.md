@@ -40,7 +40,7 @@ aigon research-open 05
 This opens Warp with 3 panes:
 - **Pane 1 (cc)**: `claude --permission-mode acceptEdits "/aigon:research-do 05"`
 - **Pane 2 (gg)**: `gemini --yolo "/aigon:research-do 05"`
-- **Pane 3 (cx)**: `codex --full-auto "/prompts:aigon-research-do 05"`
+- **Pane 3 (cx)**: `codex --full-auto` (aigon inlines the `research-do` prompt body at launch; `$aigon-research-do` is also available as a Skill mention inside Codex)
 
 ## Error Cases
 

@@ -15,9 +15,10 @@ Aigon stores all workflow state as files in your repository. Features, research 
 
 ```
 your-repo/
+├── .agents/              # Codex Skills (.agents/skills/aigon-*/SKILL.md)
 ├── .aigon/               # Local runtime state (gitignored)
 ├── .claude/              # Claude Code config + aigon commands
-├── .codex/               # Codex config + aigon prompts
+├── .codex/               # Codex config (config.toml only)
 ├── .cursor/              # Cursor config + aigon commands
 ├── .gemini/              # Gemini CLI config + aigon commands
 ├── .githooks/            # Git hooks (merge gate scanning)
