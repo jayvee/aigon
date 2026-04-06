@@ -29,9 +29,9 @@
   "cli": {
     "command": "codex",
     "implementFlag": "",
-    "implementPrompt": "/prompts:aigon-feature-do {featureId}",
-    "evalPrompt": "/prompts:aigon-feature-eval {featureId}",
-    "reviewPrompt": "/prompts:aigon-feature-review {featureId}",
+    "implementPrompt": "feature-do",
+    "evalPrompt": "feature-eval",
+    "reviewPrompt": "feature-review",
     "models": {
       "research": "gpt-5.2",
       "implement": "gpt-5.3-codex",
