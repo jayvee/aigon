@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 415
+lines_removed: 23
+lines_changed: 438
+files_touched: 10
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 108
+output_tokens: 28335
+cache_creation_input_tokens: 344701
+cache_read_input_tokens: 7085911
+thinking_tokens: 0
+total_tokens: 7459055
+billable_tokens: 28443
+cost_usd: 19.2188
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 218 - cx-inline-prompt-body
 Agent: cc
 
