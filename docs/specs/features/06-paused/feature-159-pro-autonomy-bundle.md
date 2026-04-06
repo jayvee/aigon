@@ -44,7 +44,7 @@ node --check aigon-cli.js
 
 ## Notes
 
-- Docs site has a dedicated Pro page at `/docs/pro` — content should align with bundle definition
+- Docs site has a dedicated Pro page at `/pro` (Next.js route at `site/app/pro/page.tsx`) — content should align with bundle definition
 - User-facing label is "Pro" (not "Amplification"); amplification is internal/marketing framing only
 - `feature-autopilot` has been removed — all autonomous orchestration now goes through `feature-autonomous-start`
 
