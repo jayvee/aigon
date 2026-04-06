@@ -2,25 +2,26 @@
 
 ## Summary
 
-Add an Aigon command (`feature-review-check`) that the original implementing agent runs after a reviewer has submitted fixes. It surfaces everything the reviewer changed — the `fix(review):` commits, the diff those commits introduced, and the "## Code Review" section appended to the implementation log — so the implementer can quickly understand and respond to review feedback without the user having to type the same prompt every time.
+Add a prompting-shortcut slash command (`/aigon:feature-review-check`) that the **implementation agent** runs inside its own session after a reviewer finishes. The command expands to a pre-written prompt telling the agent to read the reviewer's commits and log entry, then decide whether to **accept**, **challenge**, or **modify** the review. It's a prompt template, not a new CLI command — no Aigon code, no state, no engine signals.
 
 ## User Stories
-- [ ] As the implementing agent, after a reviewer finishes, I can run one command to see exactly what the reviewer changed and why, without asking the user for pointers.
-- [ ] As the user, I don't have to manually tell the implementation agent "check the changes made by the reviewer - with details in the last commit and the log" — I just run a slash command.
-- [ ] As the implementing agent, I can use the output to decide whether to accept the review, push back, or make follow-up changes before `feature-close`.
+- [ ] As the user, I can type `/afrc` in the implementation agent's session instead of re-typing "check the changes made by the reviewer — details in the last commit and log" every time.
+- [ ] As the implementing agent, the slash command gives me a clear, consistent instruction: read review commits, read review log entry, then decide accept/challenge/modify and act accordingly.
+- [ ] As the user, the shortcut works across cc/gg/cx/cu/mv because it goes through the standard `install-agent` pipeline.
 
 ## Acceptance Criteria
-- [ ] New command `aigon feature-review-check <ID>` exists and is wired up in `lib/commands/feature.js` + `lib/constants.js` COMMAND_REGISTRY.
-- [ ] New template `templates/generic/commands/feature-review-check.md` drives the slash command for cc/gg/cx/cu/mv; `aigon install-agent <agent>` regenerates working copies.
-- [ ] Running the command prints (in order):
-  - The list of review commits on the feature branch: `git log --oneline --grep='^fix(review)\|^docs(review)' main..HEAD`
-  - The cumulative diff of those commits: `git diff <first-review-commit>^..HEAD -- .` (falls back to showing each commit individually if non-contiguous)
-  - The "## Code Review" section extracted from `docs/specs/features/logs/feature-<ID>-*-log.md`
-- [ ] Works from both the feature worktree and from main (auto-resolves worktree path like `feature-review` does).
-- [ ] If no review commits or no `## Code Review` section exists, exits 0 with a clear "No review found for feature <ID>" message (not an error).
-- [ ] The `feature-review` template's Step 8 "next command" suggestion is updated to suggest `feature-review-check <ID>` for the *implementer*, keeping `feature-close` as the final step.
-- [ ] Shortcut registered: `afrc` (feature-review-check) in help + skill list, consistent with existing `afr` / `afc` naming.
-- [ ] `node -c aigon-cli.js` + existing tests pass.
+- [ ] New template file `templates/generic/commands/feature-review-check.md` exists, containing the agent-facing prompt (no CLI invocation required).
+- [ ] The template instructs the agent to:
+  1. Find the reviewer's commits: `git log --oneline --grep='^fix(review)\|^docs(review)' main..HEAD`
+  2. Read the cumulative diff of those commits.
+  3. Read the `## Code Review` section appended to `docs/specs/features/logs/feature-<ID>-*-log.md`.
+  4. Decide one of: **accept** (no action), **challenge** (explain disagreement to the user and stop), **modify** (make follow-up commits, then stop).
+  5. Report the decision and a brief summary back to the user.
+- [ ] Template registered in the command registry so `aigon install-agent <agent>` generates working copies for cc/gg/cx/cu/mv.
+- [ ] Shortcut registered: `afrc` → `feature-review-check`, consistent with existing `afr`/`afc` naming. Added to `help.md` and the skill shortcut list.
+- [ ] `feature-review.md` Step 8 updated so the reviewing agent's "next command" suggestion points the user at `/aigon:feature-review-check <ID>` for the implementer (keeping `feature-close` as the final step after the implementer decides).
+- [ ] Running `aigon install-agent cc` regenerates `.claude/commands/aigon/feature-review-check.md` cleanly.
+- [ ] `node -c aigon-cli.js` passes; existing tests pass.
 
 ## Validation
 ```bash
@@ -30,38 +31,69 @@ npm test
 
 ## Technical Approach
 
-**Command, not a skill.** Skills in Aigon (e.g., `frontend-design`) are heavyweight design processes. What the user is describing is a scripted lookup — exactly what Aigon slash commands are for. A slash command also benefits every agent family (cc/gg/cx/cu/mv) via the existing install pipeline, whereas skills are Claude-Code-only.
+**This is a prompt template, not code.** The feature ships as a single markdown template under `templates/generic/commands/` plus registry/help updates. No handler in `lib/commands/feature.js`, no new CLI verb, no engine integration.
 
-**Implementation shape** (mirrors `feature-review`):
-1. `lib/commands/feature.js` — add `feature-review-check` handler:
-   - Resolve feature ID via existing helpers (same argument resolution as `feature-review`).
-   - Resolve worktree path via `git worktree list` + `feature-<id>-*` pattern.
-   - Run the three git/log reads against the worktree using `git -C`.
-   - Print a single human-readable report to stdout; no state mutation.
-2. `lib/constants.js` — register in COMMAND_REGISTRY so `install-agent` picks it up.
-3. `templates/generic/commands/feature-review-check.md` — thin wrapper that calls `aigon feature-review-check {{ARG1_SYNTAX}}` and instructs the agent to act on the output (decide: accept / counter / extend).
-4. `templates/generic/commands/feature-review.md` — update Step 8 prompt suggestion so the reviewing agent hands off cleanly.
-5. `templates/generic/commands/help.md` + skill shortcut registration — add `afrc`.
+**Files touched:**
+1. `templates/generic/commands/feature-review-check.md` — **new**. The full agent-facing prompt. Uses existing `{{ARG1_SYNTAX}}` / `{{CMD_PREFIX}}` placeholders the install pipeline already handles.
+2. `lib/templates.js` (COMMAND_REGISTRY) or `lib/constants.js` — **one-line addition** registering the new template so `install-agent` picks it up for every agent family.
+3. `templates/generic/commands/help.md` — add `afrc` to the shortcut list.
+4. Any skill/shortcut definition file consumed by `install-agent` for cc — add `afrc` entry (mirrors how `afr` is defined).
+5. `templates/generic/commands/feature-review.md` — update Step 8 prompt suggestion so the reviewing agent, on completion, tells the user to run `/aigon:feature-review-check <ID>` in the implementer's session before `/aigon:feature-close`.
 
-**Extracting the "## Code Review" section**: use the same markdown-section-slicing pattern already in `lib/utils.js` (spec section parsing). If more than one log file exists (multiple implementer agents in Fleet mode), iterate all of them.
+**Template content outline** (for the spec, not final prose):
 
-**Read-only**: this command never mutates state, never signals the workflow engine, never closes anything. It's a reporting command, same category as `feature-spec` / `feature-list`.
+```markdown
+<!-- description: Check the review just done on feature <ID> and decide accept/challenge/modify -->
+# aigon-feature-review-check
+
+A reviewing agent has just committed fixes (or notes) on this feature branch.
+Your job is to check what the reviewer did, then decide how to respond.
+
+## Step 1: Find the review commits
+Run: `git log --oneline --grep='^fix(review)\|^docs(review)' main..HEAD`
+
+## Step 2: Read the diff
+For each review commit, run `git show <sha>` and understand the change.
+
+## Step 3: Read the review notes
+Open `docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md` and read the
+`## Code Review` section.
+
+## Step 4: Decide
+Pick ONE:
+- **Accept** — the review is correct. Do nothing. Tell the user "Review accepted."
+- **Challenge** — you disagree with one or more fixes. STOP, explain your
+  reasoning to the user, and wait for their decision. Do NOT revert commits.
+- **Modify** — the review is mostly right but needs follow-up changes. Make
+  minimal edits, commit with `fix(post-review): ...`, then tell the user.
+
+## Step 5: Report
+Tell the user:
+- Which option you chose
+- One-line summary per review commit
+- Any open questions
+
+Do NOT run `feature-close`. The user decides when to close.
+```
+
+**Why this is a command, not a Claude skill:** skills are Claude-Code-only and heavyweight. Slash commands install into every agent family via the existing pipeline and are the right tool for lightweight prompting shortcuts like this one. This matches the pattern of every other `feature-*` command in `templates/generic/commands/`.
 
 ## Dependencies
-- None. Uses existing `lib/commands/feature.js`, `lib/constants.js`, install pipeline, and worktree helpers.
+- None. Uses the existing `install-agent` template pipeline and registry.
 
 ## Out of Scope
-- Automatically acting on review feedback (applying/reverting reviewer commits).
-- Any dashboard UI — this is a CLI-only command surfaced via slash command.
-- A general "diff since last agent handoff" command — scope is specifically post-review handoff to the implementer.
-- Turning this into a Claude skill — slash command is sufficient and cross-agent.
+- Any new `aigon` CLI verb or `lib/commands/feature.js` handler.
+- Any workflow-engine signal (e.g., "review-acknowledged") — this is purely a prompting shortcut.
+- A Claude skill version — slash command is sufficient and cross-agent.
+- Automatic accept/reject logic — the agent decides, the user confirms.
+- Dashboard UI changes.
 
 ## Open Questions
-- Should the command also signal the workflow engine (e.g., `review-acknowledged`)? Default answer: **no** — keep it pure reporting so it's safe to run multiple times and from any state.
-- Should output be machine-readable (JSON) for the dashboard? Default answer: **no** — human-readable for agent consumption; revisit if the dashboard grows a "review summary" panel.
-- Should `feature-close` warn if `feature-review-check` hasn't been run after a review exists? Probably not — don't add friction to a flow the user already finds smooth.
+- Should the template instruct the agent to run `git log main..HEAD` unfiltered (to also see its own pre-review commits for context)? Leaning **yes** — one extra line, useful context.
+- Should `--modify` follow-up commits use `fix(post-review):` or just `fix:`? Leaning `fix(post-review):` to keep the audit trail clear alongside `fix(review):`.
+- Is `afrc` the right shortcut? `afr` is already `feature-review`; `afrc` reads as "feature-review-check". Alternative: `afrk` (feature-review-check-k? no). Sticking with `afrc`.
 
 ## Related
 - Research:
-- Related command: `feature-review` (the command this one complements)
-- Related spec: feature 221/222 (pro-autonomy-gate) — autonomous flow already handles review-complete → close, but this command is for the manual Drive-mode case where the user wants the implementer to look at review changes.
+- Related command: `feature-review` (this command is the implementer-side counterpart to the reviewer-side `feature-review`)
+- Related feedback: "Never break the solo worktree review flow" — this feature extends that flow without mutating it
