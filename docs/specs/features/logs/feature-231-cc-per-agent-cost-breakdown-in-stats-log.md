@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 216
+lines_removed: 115
+lines_changed: 331
+files_touched: 5
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 127
+output_tokens: 34420
+cache_creation_input_tokens: 168360
+cache_read_input_tokens: 8619010
+thinking_tokens: 0
+total_tokens: 8821917
+billable_tokens: 34547
+cost_usd: 18.6687
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 231 - per-agent-cost-breakdown-in-stats
 Agent: cc
 
