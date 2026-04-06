@@ -8,12 +8,14 @@
       const getDrawerState = opts.getDrawerState;
       const onToggleSpecView = opts.onToggleSpecView || (() => {});
 
-      const TAB_ORDER = ['spec', 'status', 'events', 'agents', 'stats', 'control'];
+      const TAB_ORDER = ['spec', 'status', 'events', 'agents', 'stats', 'log', 'control'];
       const state = {
         active: 'spec',
         loading: false,
         payload: null,
-        loadedTabs: {}
+        loadedTabs: {},
+        // Selected agent within the Agent Log tab (Fleet picker state)
+        logSelectedAgent: null
       };
 
       function setWideMode(enabled) {
@@ -44,6 +46,7 @@
         state.loading = false;
         state.payload = null;
         state.loadedTabs = {};
+        state.logSelectedAgent = null;
         detailEl.innerHTML = '';
         setWideMode(false);
         // If drawer was opened with an initial tab (e.g. from peek button), use it
@@ -442,6 +445,44 @@
         '</section>';
       }
 
+      function renderLog(payload) {
+        const logs = (payload && payload.agentLogs) || {};
+        const ids = Object.keys(logs).sort();
+        if (ids.length === 0) {
+          detailEl.innerHTML = '<div class="drawer-empty">No agent log written yet.</div>';
+          return;
+        }
+        // Default the picker to the first agent (or keep prior selection if still present)
+        if (!state.logSelectedAgent || !logs[state.logSelectedAgent]) {
+          state.logSelectedAgent = ids[0];
+        }
+        const renderBody = () => {
+          const entry = logs[state.logSelectedAgent] || {};
+          const bodyHtml = entry.content
+            ? marked.parse(entry.content)
+            : '<div class="drawer-empty">No agent log written yet.</div>';
+          const pickerHtml = ids.length > 1
+            ? '<div class="log-picker">' + ids.map(id =>
+                '<button type="button" class="log-picker-btn' + (id === state.logSelectedAgent ? ' active' : '') + '" data-log-agent="' + escHtml(id) + '">' + escHtml(id.toUpperCase()) + '</button>'
+              ).join('') + '</div>'
+            : '';
+          const pathHtml = entry.path
+            ? '<div class="log-path mono">' + escHtml(entry.path) + '</div>'
+            : '';
+          detailEl.innerHTML = pickerHtml + pathHtml + '<div class="markdown-body log-body">' + bodyHtml + '</div>';
+        };
+        renderBody();
+        // Wire picker clicks (Fleet only). Re-renders the body without re-fetching.
+        if (ids.length > 1) {
+          detailEl.querySelectorAll('.log-picker-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              state.logSelectedAgent = btn.dataset.logAgent;
+              renderBody();
+            });
+          });
+        }
+      }
+
       function renderControl(payload) {
         const manifestRaw = payload.rawManifest || JSON.stringify(payload.manifest || {}, null, 2);
         const files = payload.agentFiles || {};
@@ -477,6 +518,7 @@
             if (tab === 'events') renderEvents(payload);
             else if (tab === 'agents') renderAgents(payload);
             else if (tab === 'stats') renderStats(payload);
+            else if (tab === 'log') renderLog(payload);
             else if (tab === 'control') renderControl(payload);
             else detailEl.innerHTML = '<div class="drawer-empty">Unknown tab.</div>';
           }
