@@ -417,6 +417,8 @@
     .stats-token-table td:nth-child(n+3),.stats-token-table th:nth-child(n+3){text-align:right}
     .stats-token-table tr:last-child td{border-bottom:none}
     .stats-token-table td:first-child,.stats-token-table td:nth-child(2){color:var(--text-primary)}
+    .stats-token-table .cost-na{color:var(--text-tertiary);font-style:italic}
+    .stats-token-table .cost-total-row td{border-top:1px solid var(--border-subtle);border-bottom:none;color:var(--text-primary)}
     .deep-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 0}
     .deep-status-section{padding:12px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-elevated)}
     .deep-status-heading{margin:0 0 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
