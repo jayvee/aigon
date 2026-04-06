@@ -22,6 +22,5 @@
       }
     }
   },
-  "forcePro": true,
   "worktreeSetup": "npm install"
 }

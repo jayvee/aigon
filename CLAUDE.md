@@ -66,7 +66,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/server-runtime.js` | ~90 | Shared AIGON server lifecycle helpers for start/restart/stop orchestration |
 | `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/{prefix}-{id}-{agent}.json`), atomic writes |
 | `lib/agent-prompt-resolver.js` | ~140 | Resolves the launch prompt for an agent + verb. Default path passes through `cliConfig.<verb>Prompt` (cc/gg/cu slash commands). cx path inlines the canonical `templates/generic/commands/feature-<verb>.md` body (frontmatter stripped, `$ARGUMENTS`/`$1` substituted) so codex launches never depend on skill / prompt discovery. |
-| `lib/pro.js` | ~25 | **Pro gate**: lazy-require `@aigon/pro` with `forcePro` config override. `isProAvailable()` / `getPro()`. Only `lib/pro-bridge.js` calls these — never add new call sites. |
+| `lib/pro.js` | ~25 | **Pro gate**: lazy-require `@aigon/pro` with `AIGON_FORCE_PRO` env override (`false`/`0` simulates free tier; never read project config). `isProAvailable()` / `getPro()`. Only `lib/pro-bridge.js` calls these — never add new call sites. |
 | `lib/pro-bridge.js` | ~180 | **Pro extension point**: in-process route registry. `initialize({ helpers })` invites `@aigon/pro` to `register(api)` at startup; `dispatchProRoute(method, path, req, res)` routes incoming requests. Plugin route registration is the current shape (Option B); future event bus / anti-corruption layers will live here too. |
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
