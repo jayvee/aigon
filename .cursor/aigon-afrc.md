@@ -4,7 +4,7 @@ A reviewing agent has just committed fixes (or notes) on this feature branch. Yo
 
 ## Step 0: Resolve the feature ID
 
-If `<name>` is non-empty, use it as the feature ID and skip to Step 1.
+If the user already passed an explicit feature ID as the command argument, use that ID and skip to Step 1.
 
 Otherwise — the primary path — infer the ID from the current branch. You should be running this inside the implementation worktree:
 

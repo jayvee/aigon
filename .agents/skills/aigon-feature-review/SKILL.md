@@ -170,7 +170,7 @@ Then tell the user: "Code review complete. [N] fix(es) committed." (or "Code rev
 
 The user or original implementing agent should then:
 - Review the fix commits
-- In the implementer's session, run `feature-review-check $1` (slash command for cc/gg/cu/mv, skill `$aigon-feature-review-check` for codex) so the implementer reads the review and decides accept/challenge/modify
+- In the implementer's session, run `feature-review-check <ID>` (slash command for cc/gg/cu/mv, skill `$aigon-feature-review-check <ID>` for codex) so the implementer reads the review and decides accept/challenge/modify
 - Run `$aigon-feature-close $1` when ready to merge
 
 ## Tips
