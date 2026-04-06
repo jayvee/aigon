@@ -319,15 +319,40 @@ Aigon has a **free/pro split**. Commercial AADE (Amplification) features live in
 
 ### How the integration works
 
-`lib/pro.js` is the single integration point:
+There are exactly **two** files in aigon that may import `@aigon/pro`:
+
+1. **`lib/pro.js`** — lazy-require gate. Exposes `isProAvailable()` and `getPro()`. Respects the `forcePro` config override so Pro can be simulated as absent for testing.
+2. **`lib/pro-bridge.js`** — the **single Pro extension point**. Holds an in-process route registry and invites `@aigon/pro` to subscribe at server startup. Open-source modules never call `getPro()` for new features — they extend the bridge instead.
 
 ```js
+// lib/pro.js — gate
 let pro = null;
 try { pro = require('@aigon/pro'); } catch { /* free tier */ }
-module.exports = { isProAvailable: () => !!pro, getPro: () => pro };
+module.exports = { isProAvailable, getPro: () => pro };
 ```
 
 When `@aigon/pro` is installed (via `npm link` during development), Pro features light up. When absent, the CLI gracefully degrades — dashboard shows "Upgrade to Pro" placeholders, `aigon insights` shows a free-tier message.
+
+### Pro extension contract (`lib/pro-bridge.js`)
+
+Pro is a **subscriber**, not a caller. At server startup, `dashboard-server.js` calls `proBridge.initialize({ helpers })` exactly once. The bridge then invokes `pro.register(api)` if `@aigon/pro` exposes a `register()` function.
+
+`api` is the stable contract surface:
+
+| Field | Description |
+|---|---|
+| `api.registerRoute(method, path, handler)` | Register an HTTP route. `handler(req, res, ctx)` receives `ctx.url` (parsed) and `ctx.readJsonBody()` (Promise). |
+| `api.helpers.loadProjectConfig` | Read project-level `.aigon/config.json`. |
+| `api.helpers.resolveRequestedRepoPath(raw)` | Sanitize and resolve a repo path against the configured repos. Returns `{ ok, repoPath }` or `{ ok: false, status, error }`. |
+| `api.helpers.sendJson(res, status, payload)` | Standard JSON response helper. |
+
+Open-source `dashboard-server.js` then calls `proBridge.dispatchProRoute(method, path, req, res)` once per request. If a Pro route matches, the bridge handles it; otherwise it falls through. The dashboard server has **zero knowledge** of which paths Pro owns, except for a single `/api/insights*` prefix check that returns the upgrade payload when Pro is absent.
+
+**Adding new helpers** is backward-compatible. **Removing or changing existing helpers** is a breaking change requiring a coordinated version bump on both `aigon` and `@aigon/pro`. Pro declares its compatible aigon range as a peer-dep.
+
+**Future extension shapes** (event bus for lifecycle hooks, anti-corruption read layer for engine state) will live in `lib/pro-bridge.js` so there is exactly one place that knows about Pro. The current shape is **plugin route registration** (Option B from feature 219).
+
+**Pro side** — `~/src/aigon-pro/index.js` exports `register(api)` that calls `api.registerRoute(...)` for each Pro endpoint (`/api/insights`, `/api/insights/refresh`, etc.). It never imports anything from aigon directly — every dependency comes through `api.helpers`.
 
 ### Cross-repo development
 
