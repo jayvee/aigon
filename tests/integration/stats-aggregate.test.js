@@ -14,6 +14,8 @@ a.strictEqual(ag.version, sa.CACHE_VERSION); a.strictEqual(ag.totals.features, 2
 a.strictEqual(Math.round(ag.totals.cost * 100) / 100, 6.75); a.strictEqual(ag.totals.commits, 11);
 a.strictEqual(ag.fastestFeature.entityId, '100'); a.strictEqual(ag.mostExpensive.entityId, '101');
 a.strictEqual(ag.perAgent.cc.cost, 1); a.strictEqual(ag.perAgent.cx.cost, 0.5); a.strictEqual(ag.perAgent.gg.cost, 5);
+a.strictEqual(ag.perAgent.cc.commits, 2); a.strictEqual(ag.perAgent.cx.commits, 1);
+a.strictEqual(ag.perAgent.cc.linesAdded, 33); a.strictEqual(ag.perAgent.cx.linesAdded, 17);
 a.ok(fs.existsSync(sa.cachePath(tmp)));
 a.strictEqual(sa.collectAggregateStats(tmp).generatedAt, ag.generatedAt, 'second read is cached');
 a.notStrictEqual(sa.rebuildAggregate(tmp).generatedAt, ag.generatedAt, 'force rebuilds');
