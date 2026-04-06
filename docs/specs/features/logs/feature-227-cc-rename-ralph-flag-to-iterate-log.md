@@ -86,3 +86,17 @@ flag and rewrite to `--iterate` / "iterate loop". Skip historical specs in
   - `node aigon-cli.js feature-do 1 --autonomous` → `❌ --autonomous/--ralph
     was renamed to --iterate on 2026-04-07.` + hint, exit 1.
   - `node aigon-cli.js feature-do 999 --ralph` → same hint, exit 1.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-07
+
+### Findings
+- The rename sweep missed four user-facing references outside historical records: `docs/specs/templates/feature-template.md`, `templates/specs/feature-template.md`, `docs/aigon-project.md`, and `docs/architecture.md` still said "Ralph/autonomous" after the feature renamed the flag to `--iterate`.
+
+### Fixes Applied
+- `1a104199` — `fix(review): complete iterate rename sweep in docs and templates`
+
+### Notes
+- No code-path or behavior issues found in the `feature-do` flag handling itself during review; the only issue was incomplete doc/template coverage against AC3.
