@@ -72,6 +72,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/dashboard-status-helpers.js` | ~200 | Shared dashboard status helpers: tmux/session detection, worktree lookup, status normalization, stale-session heuristics |
 | `lib/server-runtime.js` | ~90 | Shared AIGON server lifecycle helpers for start/restart/stop orchestration |
 | `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/feature-{id}-{agent}.json`) |
+| `lib/agent-prompt-resolver.js` | ~140 | Shared feature prompt resolution for agent launches. Default path preserves configured slash commands; cx reads the canonical `templates/generic/commands/feature-*.md` prompt body, strips metadata, and substitutes feature args inline so Codex no longer depends on `/prompts:` discovery. |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | 899 | Branch/worktree/status helpers, feature git signals, AI attribution classification |
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
