@@ -138,7 +138,7 @@ Research lifecycle is also managed by the workflow-core engine (`.aigon/workflow
 - **Agent prompts or install content** → `templates/`; run `aigon install-agent cc` after
 - **Workflow state changes** → update command module AND affected templates together
 
-## Eight Rules Before Editing
+## Rules Before Editing
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit
@@ -147,6 +147,58 @@ Research lifecycle is also managed by the workflow-core engine (`.aigon/workflow
 6. **Update docs when you change architecture** — if your changes add modules, change repo structure, introduce new patterns, or affect how agents should work, update `CLAUDE.md`, `docs/architecture.md`, and/or `AGENTS.md` in the same PR. Documentation is not a follow-up task — it ships with the code.
 7. **Use the frontend-design skill for ALL visual work** — see below.
 8. **Never add action buttons or eligibility logic in dashboard frontend files** — all actions (workflow AND infra) must be defined in the central action registry (`lib/feature-workflow-rules.js` / `lib/research-workflow-rules.js`). The frontend renders actions from the `validActions` API response only.
+
+## Testing Discipline (non-negotiable)
+
+### Rule T1 — run the test suite before pushing
+
+Before any `git push` of a feature branch to `origin`, run:
+
+```bash
+npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh
+```
+
+All three must pass. If any fail:
+- If the failure is a real bug, fix the code.
+- If the failure is test rot from an unrelated change, fix the test in the same push and note it in the commit message.
+- Do NOT push with a failing suite. Do NOT skip hooks with `--no-verify`.
+- If you genuinely cannot get the suite green, stop and ask the user.
+
+This applies to `feature-submit`, `feature-close`, and any direct `git push`. Running the suite ONLY when the user asks is not sufficient — test rot compounds silently otherwise.
+
+### Rule T2 — new code ships with a test
+
+If a feature adds a new module, a new exported function with non-trivial logic, or fixes a bug — a test for that code ships in the same commit. Exceptions: pure config, pure docs, pure template edits, system-integration code (launchd, signals, sockets) that is impractical to unit-test. If you think something is an exception, say so in the commit message.
+
+Every new test must include a one-line comment naming the specific regression it prevents:
+
+```js
+// REGRESSION: prevents the cx /prompts: bug where custom prompts stopped
+// being discovered after codex 0.117 (see feature 218)
+```
+
+Tests without this comment do not pull their weight.
+
+### Rule T3 — test suite hard ceiling
+
+Total LOC in `tests/` must stay ≤ **2,000**. Enforced by `scripts/check-test-budget.sh`. Pre-push will block if the suite exceeds the ceiling.
+
+When adding a new test, first check whether an older test can be deleted:
+- Does an integration test now cover what this unit test covered?
+- Has the code this test exercises been deleted or rewritten?
+- Does another test duplicate this one's regression coverage?
+
+If any answer is yes, delete the older test in the same commit.
+
+**Forbidden patterns** (auto-reject in review):
+- Snapshot tests
+- Tests where mock setup > assertion count
+- Tests for trivial getters, identity functions, or pass-through wrappers
+- Tests that assert on private implementation details instead of behavior
+
+**Escape valve**: if you hit the 2,000 ceiling, genuinely need to add a new test, and can't find anything to delete — stop and ask the user to grant a one-time bump. Do not raise the ceiling silently.
+
+Prior history (for context): the test suite has been carpet-bombed twice from 14,026 → 2,423 → 1,231 lines because tests accumulated without a deletion discipline. The hard ceiling exists to prevent a third time.
 
 ## Frontend & Visual Design Rules
 **MANDATORY: Always invoke `Skill(frontend-design)` before editing any visual component.**

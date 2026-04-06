@@ -22,7 +22,26 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const agentStatus = require('../../lib/agent-status');
+
+const CLI_PATH = path.join(__dirname, '..', '..', 'aigon-cli.js');
+
+// Env scrubbed of git credential helpers so macOS doesn't open a
+// "Keychain Not Found" dialog when git runs under a fake HOME. Every
+// git / aigon invocation from MockAgent goes through this.
+//
+// GIT_CONFIG_GLOBAL=/dev/null ALSO wipes user.name/user.email, so we
+// re-supply them via GIT_AUTHOR_* / GIT_COMMITTER_* — otherwise
+// `git commit` fails with "empty ident".
+const GIT_SAFE_ENV = {
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_CONFIG_SYSTEM: '/dev/null',
+    GIT_TERMINAL_PROMPT: '0',
+    GIT_ASKPASS: '/usr/bin/true',
+    GIT_AUTHOR_NAME: 'Aigon Test',
+    GIT_AUTHOR_EMAIL: 'test@aigon.test',
+    GIT_COMMITTER_NAME: 'Aigon Test',
+    GIT_COMMITTER_EMAIL: 'test@aigon.test',
+};
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -39,7 +58,7 @@ class MockAgent {
      * @param {number} [opts.delays.implementing=15000] - Time spent implementing
      * @param {number} [opts.delays.submitted=10000]    - Time before marking submitted
      */
-    constructor({ featureId, agentId, desc, repoPath, delays = {} }) {
+    constructor({ featureId, agentId, desc, repoPath, worktreeBase, delays = {} }) {
         this.featureId = featureId;
         this.agentId = agentId;
         this.desc = desc;
@@ -47,9 +66,12 @@ class MockAgent {
         this.delays = { implementing: 15000, submitted: 10000, ...delays };
         this._abort = false;
 
-        // Worktree lives at <repoParent>/<repoName>-worktrees/feature-<id>-<agent>-<desc>
-        const repoName = path.basename(repoPath);
-        const worktreeBase = path.join(path.dirname(repoPath), `${repoName}-worktrees`);
+        // Worktree base is supplied by the test (usually ctx.worktreeBase from
+        // tests/dashboard-e2e/setup.js). aigon v2.51+ uses ~/.aigon/worktrees/{repoName}/,
+        // so callers must pass the explicit base rather than having MockAgent guess.
+        if (!worktreeBase) {
+            throw new Error('MockAgent: worktreeBase is required (see tests/dashboard-e2e/setup.js for the expected value)');
+        }
         this.worktreePath = path.join(worktreeBase, `feature-${featureId}-${agentId}-${desc}`);
 
         // Log file path within the worktree (created by feature-start via setupWorktreeEnvironment)
@@ -74,33 +96,74 @@ class MockAgent {
         await sleep(this.delays.implementing);
         if (this._abort) return;
 
-        // Write agent-specific dummy code. Different filenames per agent prevents merge conflicts
-        // when cc and gg both commit to their own worktrees.
-        const dummyFile = path.join(this.worktreePath, `mock-${this.agentId}-implementation.js`);
+        // Write agent-specific dummy code. Filename includes BOTH agent id
+        // AND feature id so successive tests (fleet → solo) don't collide
+        // on the same path in the shared fixture repo. Without the feature
+        // id, fleet's merged `mock-cc-implementation.js` lives on main and
+        // solo's worktree starts with the file already present, making
+        // `git add .` a no-op and breaking the test.
+        const dummyFile = path.join(
+            this.worktreePath,
+            `mock-${this.agentId}-f${this.featureId}-implementation.js`
+        );
         fs.writeFileSync(
             dummyFile,
-            `// Mock implementation by agent ${this.agentId}\nmodule.exports = { agent: '${this.agentId}' };\n`
+            `// Mock implementation by agent ${this.agentId} for feature ${this.featureId}\nmodule.exports = { agent: '${this.agentId}', feature: '${this.featureId}' };\n`
         );
 
-        execSync('git add . && git commit -m "feat: mock implementation"', {
-            cwd: this.worktreePath,
-            stdio: 'pipe',
-        });
+        try {
+            execSync('git add . && git commit -m "feat: mock implementation"', {
+                cwd: this.worktreePath,
+                stdio: 'pipe',
+                env: { ...process.env, ...GIT_SAFE_ENV },
+            });
+        } catch (err) {
+            // Surface the actual git error so test failures are diagnosable
+            const stdout = err.stdout ? err.stdout.toString() : '';
+            const stderr = err.stderr ? err.stderr.toString() : '';
+            throw new Error(`MockAgent commit failed in ${this.worktreePath}\n--- stdout ---\n${stdout}\n--- stderr ---\n${stderr}`);
+        }
 
         // Phase 2: Simulate final review / polish before submitting
         await sleep(this.delays.submitted);
         if (this._abort) return;
 
-        // Write agent status — matches real agent-status behavior
-        agentStatus.writeAgentStatus(this.featureId, this.agentId, {
-            status: 'submitted',
-            worktreePath: this.worktreePath,
-        });
+        // Invoke the real CLI `agent-status submitted` so we exercise the
+        // full submission path: legacy status file write + engine signal
+        // emission. Bypassing this (e.g. calling writeAgentStatus directly)
+        // causes silent test rot when the signal contract changes.
+        //
+        // REGRESSION: prevents the "MockAgent wrote status file but skipped
+        // wf.emitSignal()" bug where the dashboard snapshot never picked up
+        // the submitted state and the e2e tests failed silently for weeks.
+        try {
+            execSync(`node ${JSON.stringify(CLI_PATH)} agent-status submitted`, {
+                cwd: this.worktreePath,
+                stdio: 'pipe',
+                env: {
+                    ...process.env,
+                    AIGON_TEST_MODE: '1',
+                    // Real agent sessions get these from `buildAgentCommand`'s
+                    // exported env. MockAgent runs outside the tmux session so
+                    // it must set them explicitly — otherwise the CLI falls
+                    // back to parsing tmux session names and collapses Fleet
+                    // agents (cc + gg) into a single `solo` identity.
+                    AIGON_ENTITY_TYPE: 'feature',
+                    AIGON_ENTITY_ID: this.featureId,
+                    AIGON_AGENT_ID: this.agentId,
+                    AIGON_PROJECT_PATH: this.repoPath,
+                    ...GIT_SAFE_ENV,
+                },
+            });
+        } catch (e) {
+            throw new Error(`MockAgent failed to submit via CLI: ${e.message}`);
+        }
 
         try {
             execSync('git add . && git commit -m "chore: submit" --allow-empty', {
                 cwd: this.worktreePath,
                 stdio: 'pipe',
+                env: { ...process.env, ...GIT_SAFE_ENV },
             });
         } catch (_) { /* nothing to commit is fine */ }
     }
