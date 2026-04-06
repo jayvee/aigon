@@ -56,4 +56,18 @@ phase chain in `lib/commands/feature.js` so the new logic lives entirely in
 - Two UI tests appeared to fail on the first run because a parallel
   Playwright run from the feature-229 worktree was contending on port
   4119. Re-running after that worker finished produced 8/8 green.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-07
+
+### Findings
+- `restartServerIfLibChanged()` read `git diff` output from `runGit()`, but `lib/git.js`'s `run()` is side-effect only and does not return stdout. In production this meant the changed-file list was always empty, so the new restart phase never triggered.
+
+### Fixes Applied
+- `30a44f33` `fix(review): capture lib diff output for server restart`
+
+### Notes
+- Adjusted the integration test to match the real dependency contract by injecting a read-oriented changed-files helper instead of a write-only git runner.
 </content>
