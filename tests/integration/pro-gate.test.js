@@ -122,6 +122,17 @@ test('AIGON_FORCE_PRO=true returns true when @aigon/pro is installed', () => {
     });
 });
 
+test('AIGON_FORCE_PRO="1" same as true', () => {
+    const pro = reloadPro({ proInstalled: true });
+    withEnv('1', () => {
+        assert.strictEqual(pro.isProAvailable(), true);
+    });
+    const proMissing = reloadPro({ proInstalled: false });
+    withEnv('1', () => {
+        assert.strictEqual(proMissing.isProAvailable(), false);
+    });
+});
+
 test('AIGON_FORCE_PRO unset falls back to package availability (installed)', () => {
     const pro = reloadPro({ proInstalled: true });
     withEnv(undefined, () => {
