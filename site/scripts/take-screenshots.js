@@ -19,7 +19,8 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const DASHBOARD_URL = 'http://localhost:4100';
+const { getConfiguredServerPort } = require('../../lib/config');
+const DASHBOARD_URL = `http://localhost:${getConfiguredServerPort()}`;
 const OUTPUT_DIR = path.join(__dirname, '..', 'public', 'img', 'raw');
 
 const TARGETS = [
