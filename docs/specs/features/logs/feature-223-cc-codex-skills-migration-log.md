@@ -124,3 +124,17 @@ artifacts.
    discovery).
 6. Confirm `.codex/prompt.md` is gone and that nothing in the repo
    re-creates it on subsequent installs.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-06
+
+### Findings
+- `install-agent` migrated Codex output to `.agents/skills/`, but its git-status checks and suggested `git add` command still only watched `.claude/`, `.cursor/`, `.codex/`, and `.gemini/`. That made a Codex-only install look unchanged in some flows and omitted the new skill files from the staged-path guidance.
+
+### Fixes Applied
+- `192f251d` — `fix(review): track codex skills in install status paths`
+
+### Notes
+- No other review-blocking issues found in the branch diff. The remaining migration code and docs updates were consistent with the feature spec from a code review perspective.
