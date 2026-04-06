@@ -43,6 +43,7 @@ Installs the server as a system service that:
 
 - **Starts on login** — `RunAtLoad: true` (macOS) / `WantedBy=default.target` (Linux)
 - **Auto-restarts on crash** — `KeepAlive: true` (macOS) / `Restart=on-failure` (Linux)
+- **Throttles crash loops** — minimum 10s between respawns (`ThrottleInterval=10` on launchd, `RestartSec=10` on systemd). On Linux, systemd also gives up after 5 rapid crashes within 60s (`StartLimitBurst=5`, `StartLimitIntervalSec=60`) so a broken startup doesn't pin a CPU core
 - **Survives terminal closes and reboots** — managed by launchd/systemd, not your shell
 
 | Platform | Service manager | Service location |
@@ -93,7 +94,9 @@ The server always runs on port **4100**. This is not currently configurable.
 | Port 4100 in use | Check what's using it: `lsof -i :4100`. Stop the other process or stop the aigon server with `aigon server stop` |
 | Server running but stale UI | Run `aigon server restart` to pick up code changes |
 | Persistent service not starting on login | Verify the plist exists: `ls ~/Library/LaunchAgents/com.aigon.server.plist` and check logs: `cat ~/.aigon/logs/server-stderr.log` |
-| `aigon update` didn't restart server | The persistent service auto-recovers — launchd detects the process died and relaunches it |
+| `aigon update` didn't restart server | The persistent service auto-recovers — launchd detects the process died and relaunches it. `aigon update` now also polls the server after restart and prints `✅ Server restarted and responding on port <N>` or `⚠️` if it didn't respond within 5s |
+| Service crash-looping after a bad edit | Both launchd and systemd now wait 10s between respawns. On Linux, systemd will stop trying after 5 rapid crashes within 60s — fix the issue, then `systemctl --user reset-failed aigon-server && systemctl --user start aigon-server`. After upgrading aigon, re-run `aigon server start --persistent` to pick up the new throttle settings (existing installs are not auto-rewritten) |
+| Supervisor sweep stale | `aigon server status` now shows `Supervisor: running 🟢 healthy` / `🟡 stale` / `🔴 dead` based on how recently the supervisor loop completed a sweep. If it's stale or dead, restart the server with `aigon server restart` |
 | Server shows wrong repos | Run `aigon server list` to verify registered repos. Add missing ones with `aigon server add` |
 
 ## Examples
