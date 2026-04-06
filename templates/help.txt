@@ -32,9 +32,9 @@ Modes:
   🐝 Swarm      Multiple agents run autonomously in parallel
 
 Conductor:
-  feature-autonomous-start <ID> <agents...>
+  feature-autonomous-start <ID> <agents...>                [Pro]
                                     Start AutoConductor (tmux auto session) and return immediately
-  feature-autonomous-start status <ID>
+  feature-autonomous-start status <ID>                     [Pro]
                                     Show AutoConductor tmux liveness + workflow state
   server start [--persistent]       Start the AIGON server (dashboard UI + supervisor)
   server add [path]                 Register a repo with the server
@@ -52,7 +52,7 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-now <name>                Fast-track: inbox match → prioritise + setup + implement; or create new + implement
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
   feature-start <ID> [agents...]    Start Drive (branch) or Fleet (worktrees)
-  feature-do <ID> [--agent=<id>] [--autonomous]  Do the work on a feature; launches agent from shell, shows instructions inside agent session
+  feature-do <ID> [--agent=<id>] [--autonomous]  Do the work on a feature; launches agent from shell ( --autonomous [Pro] )
   feature-spec <ID> [--json]        Resolve the canonical visible spec path for a feature
   feature-status <ID> [--json]      Show deep status: session, progress, cost, spec criteria
   feature-list [--active] [--all] [--json]
@@ -63,7 +63,7 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-review <ID>               Code review with fixes by a different agent
   feature-close <ID> [agent]        Merge and complete feature
   feature-cleanup <ID>              Clean up Fleet worktrees and branches
-  feature-autonomous-start <ID> <agents...> [--eval-agent=<id>] [--stop-after=implement|eval|close]
+  feature-autonomous-start <ID> <agents...> [--eval-agent=<id>] [--stop-after=implement|eval|close]   [Pro]
                                     Start autonomous execution in dedicated auto tmux session
 
 Research Commands:
@@ -75,7 +75,7 @@ Research Commands:
   research-submit [ID] [agent]      (agent-only) Signal research findings complete
   research-eval <ID>                Evaluate Fleet findings and recommend features
   research-close <ID>               Complete research (in-evaluation → done)
-  research-autopilot <ID> [agents...] Fleet autopilot: setup + spawn + monitor + evaluate
+  research-autopilot <ID> [agents...] Fleet autopilot: setup + spawn + monitor + evaluate    [Pro]
 
 Feedback:
   feedback-create <title>           Create feedback doc in inbox (assigns next ID)
@@ -85,7 +85,7 @@ Feedback:
 Deploy:
   deploy                            Run the configured deploy command (production)
   deploy --preview                  Run the configured preview command (staging)
-  insights [--coach] [--refresh]    Requires Aigon Pro
+  insights [--coach] [--refresh]    AADE Insights    [Pro]
 
 Visualization:
   board                             Show Kanban board view of features and research
@@ -174,5 +174,7 @@ Agents:
   gg (gemini)   - Gemini CLI
   cx (codex)    - OpenAI Codex
   mv (vibe)     - Mistral Vibe
+
+Pro features are currently in development. Commands marked [Pro] will be enabled when Pro launches.
 
 Documentation: https://aigon.build/docs
