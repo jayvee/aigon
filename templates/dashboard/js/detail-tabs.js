@@ -248,75 +248,53 @@
           ['Evaluated', stats.evaluatedAt ? formatIso(stats.evaluatedAt) : 'n/a']
         ].filter(Boolean);
 
-        // Cost section
+        // Cost section: per-agent breakdown table
         let costHtml = '';
-        if (c.sessions > 0 || c.inputTokens > 0) {
+        const costByAgent = c.costByAgent || {};
+        const costAgentIds = Object.keys(costByAgent).sort();
+        if (costAgentIds.length > 0) {
           const fmt = n => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-          const freshInputTokens = Math.max(0, Number(c.freshInputTokens != null ? c.freshInputTokens : ((c.inputTokens || 0) - (c.cachedInputTokens || 0))));
-          const byAgent = c.byAgent || {};
-          const costAgentIds = Object.keys(byAgent);
-          let costRows = '<div class="stats-row"><div class="stats-key">Input reported</div><div class="stats-val">' + fmt(c.inputTokens) + '</div></div>' +
-            '<div class="stats-row"><div class="stats-key">Input approx uncached</div><div class="stats-val">' + fmt(freshInputTokens) + '</div></div>' +
-            '<div class="stats-row"><div class="stats-key">Input cached</div><div class="stats-val">' + fmt(c.cachedInputTokens) + '</div></div>' +
-            '<div class="stats-row"><div class="stats-key">Output tokens</div><div class="stats-val">' + fmt(c.outputTokens) + '</div></div>' +
-            '<div class="stats-row"><div class="stats-key">Reasoning tokens</div><div class="stats-val">' + fmt(c.thinkingTokens) + '</div></div>' +
-            '<div class="stats-row"><div class="stats-key">Billable tokens</div><div class="stats-val">' + fmt(c.billableTokens) + '</div></div>' +
-            '<div class="stats-row"><div class="stats-key">Observed total</div><div class="stats-val">' + fmt(c.totalTokens) + '</div></div>' +
-            '<div class="stats-row"><div class="stats-key">Estimated cost</div><div class="stats-val">' + (c.estimatedUsd ? '$' + escHtml(String(c.estimatedUsd)) : 'n/a') + '</div></div>' +
-            '<div class="stats-row"><div class="stats-key">Model</div><div class="stats-val">' + (c.model ? escHtml(c.model) : 'n/a') + '</div></div>' +
-            '<div class="stats-row"><div class="stats-key">Sessions</div><div class="stats-val">' + escHtml(String(c.sessions || 0)) + '</div></div>';
-          let agentTableHtml = '';
-          if (costAgentIds.length > 1) {
-            const activityOrder = { implement: 0, review: 1, evaluate: 2, eval: 2, other: 3 };
-            const grouped = {};
-            costAgentIds.forEach(id => {
-              const a = byAgent[id];
-              const activityKey = String(a.activity || 'other').toLowerCase();
-              if (!grouped[activityKey]) grouped[activityKey] = [];
-              grouped[activityKey].push(a);
-            });
-            const orderedActivities = Object.keys(grouped).sort((a, b) => {
-              const ar = Object.prototype.hasOwnProperty.call(activityOrder, a) ? activityOrder[a] : activityOrder.other;
-              const br = Object.prototype.hasOwnProperty.call(activityOrder, b) ? activityOrder[b] : activityOrder.other;
-              return ar - br || a.localeCompare(b);
-            });
-            const activityLabel = activity => {
-              if (activity === 'implement') return 'Implement';
-              if (activity === 'review') return 'Review';
-              if (activity === 'evaluate' || activity === 'eval') return 'Evaluate';
-              return activity.charAt(0).toUpperCase() + activity.slice(1);
-            };
-            const tables = orderedActivities.map(activity => {
-              const rows = grouped[activity]
-                .slice()
-                .sort((a, b) => String(a.agent || '').localeCompare(String(b.agent || '')))
-                .map(a => {
-                  const agentCost = a.costUsd ? '$' + Math.round(a.costUsd * 10000) / 10000 : 'n/a';
-                  const displayAgent = a.agent ? a.agent.toUpperCase() : 'UNKNOWN';
-                  return '<tr>' +
-                    '<td><span class="agent-mono">' + escHtml(displayAgent) + '</span></td>' +
-                    '<td>' + escHtml(a.model || '') + '</td>' +
-                    '<td>' + fmt(a.inputTokens) + '</td>' +
-                    '<td>' + fmt(a.freshInputTokens) + '</td>' +
-                    '<td>' + fmt(a.cachedInputTokens) + '</td>' +
-                    '<td>' + fmt(a.outputTokens) + '</td>' +
-                    '<td>' + fmt(a.totalTokens) + '</td>' +
-                    '<td>' + escHtml(agentCost) + '</td>' +
-                    '</tr>';
-                }).join('');
-              return '<div class="stats-agent-cost-block">' +
-                '<h6 class="stats-subsection-heading">By Activity: ' + escHtml(activityLabel(activity)) + '</h6>' +
-                '<table class="stats-token-table">' +
-                '<thead><tr>' +
-                '<th>Agent</th><th>Model</th><th>Input</th><th>Approx uncached</th><th>Cached</th><th>Output</th><th>Total</th><th>Cost</th>' +
-                '</tr></thead>' +
-                '<tbody>' + rows + '</tbody>' +
-                '</table>' +
-                '</div>';
-            }).join('');
-            agentTableHtml = '<div class="stats-agent-cost-wrap">' + tables + '</div>';
-          }
-          costHtml = '<h5 class="stats-section-heading">Cost</h5><div class="stats-grid">' + costRows + '</div>' + agentTableHtml;
+          const fmtCost = n => '$' + (Math.round(Number(n) * 10000) / 10000);
+          let totalInputTokens = 0;
+          let totalOutputTokens = 0;
+          let totalCostUsd = 0;
+          let anyReal = false;
+          const rowsHtml = costAgentIds.map(id => {
+            const a = costByAgent[id] || {};
+            const hasReal = a.hasRealData === true;
+            if (hasReal) {
+              anyReal = true;
+              totalInputTokens += Number(a.inputTokens) || 0;
+              totalOutputTokens += Number(a.outputTokens) || 0;
+              totalCostUsd += Number(a.costUsd) || 0;
+            }
+            const displayAgent = (a.agent || id).toUpperCase();
+            const modelCell = escHtml(a.model || '—');
+            const inputCell = hasReal ? fmt(a.inputTokens) : '<span class="cost-na">n/a</span>';
+            const outputCell = hasReal ? fmt(a.outputTokens) : '<span class="cost-na">n/a</span>';
+            const costCell = hasReal ? escHtml(fmtCost(a.costUsd || 0)) : '<span class="cost-na">n/a</span>';
+            return '<tr>' +
+              '<td><span class="agent-mono">' + escHtml(displayAgent) + '</span></td>' +
+              '<td>' + modelCell + '</td>' +
+              '<td>' + inputCell + '</td>' +
+              '<td>' + outputCell + '</td>' +
+              '<td>' + costCell + '</td>' +
+              '</tr>';
+          }).join('');
+          const totalRow = anyReal
+            ? '<tr class="cost-total-row">' +
+              '<td><strong>Total</strong></td>' +
+              '<td></td>' +
+              '<td><strong>' + fmt(totalInputTokens) + '</strong></td>' +
+              '<td><strong>' + fmt(totalOutputTokens) + '</strong></td>' +
+              '<td><strong>' + escHtml(fmtCost(totalCostUsd)) + '</strong></td>' +
+              '</tr>'
+            : '';
+          costHtml = '<h5 class="stats-section-heading">Cost by Agent</h5>' +
+            '<table class="stats-token-table">' +
+            '<thead><tr><th>Agent</th><th>Model</th><th>Input Tokens</th><th>Output Tokens</th><th>Estimated Cost</th></tr></thead>' +
+            '<tbody>' + rowsHtml + totalRow + '</tbody>' +
+            '</table>';
         }
 
         detailEl.innerHTML =
