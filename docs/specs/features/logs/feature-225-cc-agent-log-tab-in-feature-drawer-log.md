@@ -113,3 +113,17 @@ it through the same `marked.parse()` pipeline that the Spec tab uses.
 - `templates/dashboard/js/detail-tabs.js` — `renderLog` + dispatch + reset
 - `tests/integration/agent-log-collector.test.js` — new unit test
 - `package.json` — adds the new test to `npm test`
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-06
+
+### Findings
+- Fleet features dropped agents from `payload.agentLogs` when that agent had not written a log yet, so the Agent Log picker could not show the required empty state for partially-written implementations.
+
+### Fixes Applied
+- `4bc7ef8c` — `fix(review): preserve missing fleet agent logs in detail payload`
+
+### Notes
+- Review was otherwise targeted and left the rendering approach, API shape, and test wiring intact.
