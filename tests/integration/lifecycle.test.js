@@ -285,9 +285,14 @@ test('telemetry aggregator reads StopHook records over transcripts', () => {
             tokenUsage: { input: 50, output: 80, cacheReadInput: 0, cacheCreationInput: 0, thinking: 0, total: 130, billable: 130 },
             costUsd: 0.13,
         }, { repoPath: repo });
+        telemetry.writeAgentFallbackSession('777', 'cc', {
+            repoPath: repo,
+            source: 'feature-close-fallback',
+            sessionId: 'fallback-close-record',
+        });
 
         const agg = telemetry.aggregateNormalizedTelemetryRecords('777', 'cc', { repoPath: repo, linesChanged: 50 });
-        assert.strictEqual(agg.sessions, 2, 'aggregates both sessions');
+        assert.strictEqual(agg.sessions, 2, 'ignores fallback zero-usage records');
         assert.strictEqual(agg.input_tokens, 150);
         assert.strictEqual(agg.cost_usd, 0.55);
         assert.strictEqual(agg.model, 'claude-opus-4-6');
