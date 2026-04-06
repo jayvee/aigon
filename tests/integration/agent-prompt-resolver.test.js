@@ -14,22 +14,8 @@
 'use strict';
 
 const assert = require('assert');
+const { test, report } = require('../_helpers');
 const { resolveAgentPromptBody, resolveCxPromptBody } = require('../../lib/agent-prompt-resolver');
-
-let passed = 0;
-let failed = 0;
-
-function test(description, fn) {
-    try {
-        fn();
-        console.log(`  ✓ ${description}`);
-        passed++;
-    } catch (err) {
-        console.error(`  ✗ ${description}`);
-        console.error(`    ${err.message}`);
-        failed++;
-    }
-}
 
 console.log('\n── agent-prompt-resolver ─────────────────────────────────');
 
@@ -121,5 +107,4 @@ test('unknown verb throws', () => {
     }, /unknown verb/);
 });
 
-console.log(`\n${passed} passed, ${failed} failed\n`);
-process.exit(failed > 0 ? 1 : 0);
+report();
