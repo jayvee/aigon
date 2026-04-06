@@ -52,7 +52,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/worktree.js` | 1111 | Worktree creation, tmux sessions, terminal launch |
 | `lib/commands/setup.js` | 959 | init, install-agent, check-version, update, doctor |
 | `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
-| `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
+| `lib/validation.js` | 1045 | Iterate (Autopilot) loop, acceptance-criteria parsing |
 | `lib/state-machine.js` | 602 | Spec state transitions (inbox → done) |
 | `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting for workflow read paths |
 | `lib/dashboard-status-helpers.js` | ~200 | Shared dashboard status helpers: tmux/session detection, worktree lookup, status normalization, stale-session heuristics |

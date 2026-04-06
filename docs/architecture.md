@@ -94,7 +94,7 @@ Current shared modules:
   `collectDashboardStatusData`
 - `lib/server-runtime.js` (~90 lines): shared AIGON server lifecycle helpers extracted from infra command wiring
   `launchDashboardServer`, `stopDashboardProcess`
-- `lib/validation.js` (~1,045 lines): Ralph/autonomous loop and smart validation helpers
+- `lib/validation.js` (~1,045 lines): Iterate (Autopilot) loop and smart validation helpers
   `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`, `runFeatureValidateCommand`
 
 **Domain modules** (logic lives in the module itself):
