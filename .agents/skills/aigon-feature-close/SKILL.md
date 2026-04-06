@@ -1,0 +1,206 @@
+---
+name: aigon-feature-close
+description: Close feature <ID> [agent] [--adopt] - merges branch, cleans up, optionally adopts from losers
+---
+
+# aigon-feature-close
+
+Complete a feature by merging the implementation and cleaning up.
+
+## Argument Resolution
+
+If no ID is provided, or the ID doesn't match an existing feature:
+1. Run `aigon feature-list --active`
+2. If a partial ID or name was given, filter to matches
+3. Present the matching features and ask the user to choose one
+
+## Usage
+
+### Drive mode (branch or worktree)
+If you used `feature-start $1` or `feature-start $1 <agent>`:
+```bash
+aigon feature-close $1
+```
+The command auto-detects whether the feature uses a branch or a Drive worktree.
+
+### Fleet mode
+If you used `feature-start $1 cc gg cx cu`:
+```bash
+aigon feature-close $1 <winning-agent>
+```
+
+Example: `aigon feature-close $1 cc` to merge Claude's implementation
+
+### Fleet mode with adoption
+Merge the winner and print diffs from losing agents for selective adoption:
+```bash
+aigon feature-close $1 <winning-agent> --adopt <agents...|all>
+```
+
+Examples:
+- `aigon feature-close $1 cc --adopt gg cu` — adopt from specific agents
+- `aigon feature-close $1 cc --adopt all` — adopt from all losing agents
+
+## What happens
+
+### Drive Mode
+
+1. If on the feature branch with uncommitted changes, auto-commits them (`feat: implementation for feature <ID>`)
+2. Pushes the feature branch to origin (to save work remotely)
+3. Switches to main/master branch
+4. Merges the feature branch with `--no-ff`
+5. Moves spec to `05-done/`
+6. Moves implementation log to `logs/selected/`
+7. Deletes the local feature branch
+8. Commits the spec and log moves
+
+### Fleet Mode (without --adopt)
+
+1. Pushes the winning agent's branch to origin
+2. Switches to main/master branch
+3. Merges the winning agent's branch with `--no-ff`
+4. Moves spec to `05-done/`
+5. Organizes logs:
+   - Winning agent's log → `logs/selected/`
+   - Other agents' logs → `logs/alternatives/`
+6. Removes the winning agent's worktree
+7. Deletes the winning agent's local branch
+8. Commits the changes
+9. Shows cleanup options for remaining worktrees/branches
+
+### Fleet Mode with Adoption
+
+**CRITICAL SEQUENCING: When `--adopt` is used, do NOT delete any worktrees or branches for the adopted-from agents until adoption is complete.** The adopted agents' worktrees must remain accessible so you can read their code and cherry-pick changes.
+
+**Phase 1 — Merge the winner (handled by CLI):**
+
+1. Push the winning agent's branch to origin
+2. Switch to main/master branch
+3. Merge the winning agent's branch with `--no-ff`
+4. Move spec to `05-done/`, organize logs, commit
+5. Remove only the **winning agent's** worktree and branch (its code is now on main)
+6. **KEEP all adopted-from agents' worktrees and branches alive**
+7. Print the raw diffs from each adopted agent
+
+**Phase 2 — Review and categorize (your job):**
+
+After the CLI prints the adoption diffs, you must systematically review them. For each adopted agent:
+
+1. Read the evaluation's cross-pollination recommendations in `docs/specs/features/evaluations/`
+2. **Read the actual source files** from the adopted agent's worktree — do NOT rely only on diffs. Navigate to the worktree directory and read the files to understand context.
+3. Categorize each change into one of these types:
+   - **Tests** — new test cases, edge case coverage, test utilities
+   - **Error handling** — try/catch blocks, validation, guard clauses, null checks
+   - **Documentation** — comments, docstrings, README additions
+   - **Edge cases** — boundary handling, defensive code the winner missed
+   - **Other additive** — utility functions, constants, accessibility improvements, performance optimizations
+
+4. For each change, decide: **adopt** or **skip**. Skip if it:
+   - Conflicts with the winner's architecture or design decisions
+   - Duplicates logic already present in the winner
+   - Depends on code structure the winner didn't use
+   - Would require significant refactoring to integrate
+
+**Phase 3 — Apply adoptions:**
+
+For each accepted change:
+
+1. **Adapt** it to fit the winner's code on main:
+   - Adjust file paths if the winner organized code differently
+   - Update import paths to match the winner's module structure
+   - Rename variables/functions to match the winner's naming conventions
+   - Merge test cases into the winner's existing test files rather than creating parallel files
+2. **Apply** the adapted change to the working tree on main
+3. If a change cannot be cleanly adapted, skip it and note why
+
+**Phase 4 — Verify:**
+
+After all adoptions are applied, run the project's test suite. If tests fail:
+- Diagnose whether the failure is caused by an adopted change
+- Fix the adaptation or revert that specific adoption
+- Re-run tests until green
+- If no adoptions can be made to pass, revert all and note what was attempted
+
+**Phase 5 — Commit (one commit per adopted agent):**
+
+For each agent you adopted from, create a separate commit:
+
+```bash
+git commit -m "feat: adopt improvements from <agent> for feature <ID>
+
+Adopted:
+- <what was taken and why>
+
+Skipped:
+- <what was skipped and why>"
+```
+
+**Phase 6 — Cleanup:**
+
+After all adoption commits are verified, clean up the adopted agents' worktrees:
+
+```
+$aigon-feature-cleanup $1
+```
+
+### Cleanup after Fleet
+
+After merging the winner (and completing adoption if applicable), clean up remaining worktrees:
+
+```
+$aigon-feature-cleanup $1         # Delete locally
+$aigon-feature-cleanup $1 --push  # Push to remote first
+```
+
+Use `--push` if you want to preserve the alternative implementations on the remote repository.
+
+## Important Notes
+
+- **Drive worktree**: The agent is auto-detected — no need to specify it
+- **Fleet mode**: The agent parameter is REQUIRED (e.g., `cc`, `gg`, `cx`, `cu`)
+- **`--adopt`**: Only available in Fleet mode — requires a winning agent
+- **Do NOT run from a worktree**: Always run from the main repository
+- The command uses `--no-ff` merge to preserve feature history
+- Alternative implementations are preserved in `logs/alternatives/` for future reference
+- **Drive mode auto-commit**: If you run `feature-close` while on the feature branch with uncommitted changes, the CLI auto-commits them before proceeding. This is the drive-mode equivalent of `feature-submit`.
+
+## Update Documentation
+
+After merging (and adoption if applicable), check whether the feature's changes require updates to project documentation.
+
+1. Review the merged diff to understand what changed
+2. Search the repo for existing documentation — look for `README.md`, architecture docs, API docs, design docs, guides, wikis, or any markdown files that describe the areas you just changed
+3. Update any docs that reference affected areas — for example:
+   - New public APIs or commands → update relevant reference docs
+   - Changed behaviour or workflows → update guides or architecture docs
+   - New config options or environment variables → document where appropriate
+   - Removed or renamed features → remove stale references
+4. Skip this step entirely if the feature was a purely internal refactor with no user-facing or architectural changes
+
+If updates are needed, commit them as a separate commit:
+```bash
+git commit -m "docs: update documentation for feature <ID>"
+```
+
+If no docs need updating, skip this step.
+
+## Suggest Next Action
+
+After the command completes, check the pipeline and suggest the most useful next step:
+
+1. If `--adopt` was used, the adoption should already be complete (Phase 2–6 above). If there are remaining non-adopted worktrees, suggest cleanup:
+   `$aigon-feature-cleanup <ID>`
+
+2. If the feature used **Fleet mode** (without `--adopt`) and has remaining worktrees, suggest cleanup:
+   `$aigon-feature-cleanup <ID>`
+
+3. Otherwise, check the pipeline:
+   - List files in `./docs/specs/features/02-backlog/` matching `feature-*.md`
+   - If features exist in **backlog**: suggest setting up the next one — `$aigon-feature-start <next-ID>`
+   - If backlog is empty, list files in `./docs/specs/features/01-inbox/` matching `feature-*.md`
+   - If features exist in **inbox**: suggest prioritising — `$aigon-feature-prioritise`
+   - If both are empty: let the user know the pipeline is clear
+
+## Prompt Suggestion
+
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID/name from the pipeline check above.

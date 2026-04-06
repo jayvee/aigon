@@ -1,0 +1,71 @@
+---
+name: aigon-research-open
+description: Open all Fleet research agents side-by-side in terminal
+---
+
+# aigon-research-open
+
+Open all Fleet research agents side-by-side in Warp terminal, each pre-loaded with the research-do command.
+
+## Usage
+
+```bash
+$aigon-research-open <research-id>
+```
+
+- `$aigon-research-open 05` — opens all Fleet agents side-by-side for research 05
+
+## When to Use
+
+This command is for **Fleet mode research only**. It opens multiple terminal panes (one per agent) so you can run parallel research.
+
+**Prerequisites:**
+- Research must be set up in Fleet mode: `aigon research-start <ID> cc gg cx`
+- Findings files must exist in `docs/specs/research-topics/logs/`
+
+## What It Does
+
+1. Detects which agents are set up by scanning findings files
+2. Opens Warp terminal with horizontal split panes (one per agent)
+3. Each pane is pre-loaded with the agent CLI and `$aigon-research-do <ID>` command
+4. All panes use the main repository directory (not separate worktrees)
+
+## Example
+
+After running:
+```bash
+aigon research-start 05 cc gg cx
+```
+
+You can open all agents side-by-side:
+```bash
+aigon research-open 05
+```
+
+This opens Warp with 3 panes:
+- **Pane 1 (cc)**: `claude --permission-mode acceptEdits "/aigon:research-do 05"`
+- **Pane 2 (gg)**: `gemini --yolo "/aigon:research-do 05"`
+- **Pane 3 (cx)**: `codex --full-auto` (aigon inlines the `research-do` prompt body at launch; `$aigon-research-do` is also available as a Skill mention inside Codex)
+
+## Error Cases
+
+- **Not in Fleet mode**: Shows error with instructions to run `research-start` with agents
+- **Research not found**: Shows error if research ID doesn't exist or isn't in progress
+- **Agent not configured**: Lists which agents need to be installed
+
+## Step 1: Run the CLI command
+
+**Always run this command** — do NOT skip it or try to detect the terminal yourself. The CLI reads the user's terminal preference from `~/.aigon/config.json` and handles everything:
+
+```bash
+aigon research-open $ARGUMENTS
+```
+
+## Step 2: Confirm to user
+
+Tell the user:
+- Which agents are being opened
+- That each pane will have the research-do command pre-loaded
+- That they should run the command in each pane to start research
+
+ARGUMENTS: $ARGUMENTS

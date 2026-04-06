@@ -1,0 +1,95 @@
+---
+name: aigon-feature-start
+description: Start feature <ID> [agents...] - create workspace and begin implementation
+---
+
+# aigon-feature-start
+
+Prepare your workspace to implement a feature in either Drive or Fleet mode.
+
+**CRITICAL:** You MUST use the CLI command below to perform setup. Do NOT manually move spec files, create branches, or create worktrees — the CLI handles committing the spec move before creating worktrees, which is essential for worktree modes.
+
+## Argument Resolution
+
+If no ID is provided, or the ID doesn't match an existing feature in the backlog:
+1. List all files in `./docs/specs/features/02-backlog/` matching `feature-*.md`
+2. If a partial ID or name was given, filter to matches
+3. Present the matching features and ask the user to choose one
+
+## Step 1: Run the CLI command
+
+**CRITICAL: Run EXACTLY the arguments the user provided. Do NOT add agents that weren't specified.** The mode is determined by what the user passes — if they only pass a feature ID, that means Drive mode (branch). Do not assume worktree mode based on prior conversation context.
+
+```bash
+# Drive mode (creates branch in current repo) — user passes only an ID
+aigon feature-start $1
+
+# Drive worktree mode (creates worktree for parallel development) — user passes ID + agent
+aigon feature-start $1 <agent>
+
+# Fleet mode (multiple agents compete in separate worktrees) — user passes ID + 2+ agents
+aigon feature-start $1 <agent1> <agent2> [agent3...]
+```
+
+The mode is determined automatically based on what the user provides:
+- **No agents**: Drive mode - creates a git branch in the current repo
+- **1 agent**: Drive worktree mode - creates a worktree for parallel development
+- **2+ agents**: Fleet mode - creates worktrees for each agent to compete
+
+The CLI will:
+- Move the spec from `02-backlog` to `03-in-progress`
+- **Commit the spec move** (so worktrees inherit it)
+- Create branch or worktree(s)
+- Create implementation log(s)
+
+
+**If the CLI reports any errors or warnings about committing the spec move, resolve them before proceeding.** Worktrees branch from HEAD — if the spec move isn't committed, the worktree won't have the spec in `03-in-progress` and `feature-do` will fail.
+
+## Step 2: Confirm setup and next steps
+
+`feature-start` creates the workspace AND opens agent terminals automatically. The agents are already running — there is no separate "open" step.
+
+### Drive Mode (branch)
+
+After the CLI completes, the agent is running `feature-do` in your current terminal. Wait for implementation to complete, then:
+```bash
+$aigon-feature-close <ID>
+```
+
+### Drive Worktree Mode
+
+After the CLI completes, the agent terminal is already open and implementing. Wait for it to submit, then close from the main repo:
+```bash
+$aigon-feature-close <ID>
+```
+
+### Fleet Mode (competition)
+
+After the CLI completes, all agent terminals are already open and implementing. Wait for all agents to submit, then evaluate:
+```bash
+$aigon-feature-eval <ID>
+```
+
+### Re-opening a crashed/ended session
+
+If an agent session dies, use `feature-open` to re-attach:
+```bash
+$aigon-feature-open <ID>          # Re-open a Drive worktree agent
+$aigon-feature-open <ID> cc       # Re-open a specific Fleet agent
+```
+
+## Important Notes
+
+- **Drive mode**: You'll work in your current repository on the feature branch
+- **Drive worktree mode**: You'll work in an isolated worktree — ideal for parallel development of multiple features
+- **Fleet mode**: Multiple agents compete on the same feature in their own worktrees
+- Worktrees are created in `../<repo>-worktrees/` to keep them grouped with the project
+- Agents start automatically — no need to run `feature-open` after `feature-start`
+
+## Prompt Suggestion
+
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID and choose based on mode:
+
+- **Drive mode (branch):** `$aigon-feature-close <ID>`
+- **Drive worktree:** `$aigon-feature-close <ID>`
+- **Fleet:** `$aigon-feature-eval <ID>`

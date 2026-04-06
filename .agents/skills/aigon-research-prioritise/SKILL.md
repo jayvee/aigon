@@ -1,0 +1,29 @@
+---
+name: aigon-research-prioritise
+description: Prioritise research <name> - assigns ID, moves to backlog
+---
+
+# aigon-research-prioritise
+
+Run this command followed by the research topic name.
+
+```bash
+aigon research-prioritise $ARGUMENTS
+```
+
+## Argument Resolution
+
+If no name is provided, or the name doesn't match an existing topic in the inbox:
+1. List all files in `./docs/specs/research-topics/01-inbox/` matching `research-*.md`
+2. If a partial name was given, filter to files containing that text
+3. Present the matching topics and ask the user to choose one
+
+This assigns an ID to the research topic and moves it from `01-inbox/` to `02-backlog/`.
+
+Next step: Run `$aigon-research-start <ID>` (Drive) or `$aigon-research-start <ID> cc gg` (Fleet) to begin.
+
+## Prompt Suggestion
+
+End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID assigned by the CLI:
+
+`$aigon-research-start <ID>`
