@@ -2,7 +2,7 @@
 
 ## Summary
 
-Add `aigon feature-ship <name-or-id>` — a single command that runs the full autonomous pipeline from inbox/backlog all the way through to deployment: prioritise (if needed) → setup → implement --ralph --auto-submit → feature-close → deploy.
+Add `aigon feature-ship <name-or-id>` — a single command that runs the full autonomous pipeline from inbox/backlog all the way through to deployment: prioritise (if needed) → setup → implement --iterate --auto-submit → feature-close → deploy.
 
 ## User Stories
 
@@ -33,7 +33,7 @@ Add `'feature-ship'` to the commands object in `aigon-cli.js`:
 1. Resolve input: numeric arg → backlog ID, string → find in inbox via `findFile()`
 2. If inbox name: run `feature-prioritise` logic to assign ID, move to backlog
 3. Run `feature-setup` logic (solo mode)
-4. Spawn `aigon feature-do <ID> --ralph --auto-submit` as a child process with `spawnSync(..., { stdio: 'inherit', shell: true })` — Ralph manages its own complex output; cleaner to shell out than inline
+4. Spawn `aigon feature-do <ID> --iterate --auto-submit` as a child process with `spawnSync(..., { stdio: 'inherit', shell: true })` — Ralph manages its own complex output; cleaner to shell out than inline
 5. Check exit code — non-zero → stop with failure message
 6. Run `feature-close` logic inline
 7. Call `runDeployCommand()` if `commands.deploy` is configured in `.aigon/config.json`
@@ -47,7 +47,7 @@ Add to help output under Feature Commands
 
 - `resolveDeployCommand()` / `runDeployCommand()` — feature 36
 - `feature-prioritise`, `feature-setup`, `feature-close` existing logic
-- `feature-do --ralph --auto-submit` — features 35
+- `feature-do --iterate --auto-submit` — features 35
 
 ## Out of Scope
 

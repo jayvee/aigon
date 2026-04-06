@@ -49,7 +49,7 @@ docs/specs/
 | `aigon feature-create <name>` | Create a new feature spec |
 | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
 | `aigon feature-start <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
-| `aigon feature-implement <ID> [--ralph]` | Implement feature; `--ralph` runs autonomous retry loop ([Ralph technique](https://ghuntley.com/ralph/)) |
+| `aigon feature-implement <ID> [--iterate]` | Implement feature; `--iterate` runs Autopilot retry loop |
 | `aigon feature-eval <ID>` | Create evaluation (code review for solo, comparison for arena) |
 | `aigon feature-done <ID> [agent]` | Merge and complete (specify agent in arena mode) |
 | `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |
@@ -72,7 +72,7 @@ For features, there are two relevant layers:
 ## Solo Mode Workflow
 
 1. Run `aigon feature-start <ID>` to create branch and move spec to in-progress
-2. Run `aigon feature-implement <ID>` to begin implementation (add `--ralph` for autonomous retry loop)
+2. Run `aigon feature-implement <ID>` to begin implementation (add `--iterate` for Autopilot retry loop)
 3. Read the spec path returned by `aigon feature-spec <ID>`
 4. Implement the feature according to the spec
 5. Test your changes and wait for user confirmation

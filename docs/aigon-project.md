@@ -96,7 +96,7 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 5. **Don't move spec files manually** — always use `aigon` CLI commands to transition state
 
 ## Common Agent Mistakes
-- **Inventing args**: adding `cc` or `--autonomous` to a plain command → causes wrong mode (Drive vs Fleet)
+- **Inventing args**: adding `cc` or `--iterate` to a plain command → causes wrong mode (Drive vs Fleet)
 - **Breaking dashboard visually**: passing syntax check but not verifying the rendered UI → ships broken tabs
 - **Complexity for simplicity**: responding to "simplify" with smarter/more code instead of removing code
 - **`.env.local` blocking flow**: treating it as uncommitted changes → blocks `feature-close`
