@@ -331,7 +331,7 @@ try { pro = require('@aigon/pro'); } catch { /* free tier */ }
 module.exports = { isProAvailable, getPro: () => pro };
 ```
 
-When `@aigon/pro` is installed (via `npm link` during development), Pro features light up. When absent, the CLI gracefully degrades — dashboard shows "Upgrade to Pro" placeholders, `aigon insights` shows a free-tier message.
+When `@aigon/pro` is installed (via `npm link` during development), Pro features light up. When absent, the CLI gracefully degrades — dashboard shows "Pro — coming later" placeholders, `aigon insights` shows a free-tier message. Gate messages must never imply a purchase flow exists; Pro is in development and not yet available for purchase (see feature 159 — honest gate messaging).
 
 ### Pro extension contract (`lib/pro-bridge.js`)
 

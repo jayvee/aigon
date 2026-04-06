@@ -1073,7 +1073,7 @@
           'Percentage of commits that are fixes. Lower is better.'));
         html.push(buildProGatedChart('Tokens Used', 'chart-tokens',
           'Total billable tokens consumed per period. Compare with Features Completed to track token efficiency.'));
-        html.push('<div style="text-align:center;padding:8px 0;font-size:11px;color:var(--text-tertiary)"><a href="https://aigon.build/pro" target="_blank" style="color:var(--accent,#3b82f6);text-decoration:none">Get Aigon Pro &rarr;</a></div>');
+        html.push('<div style="text-align:center;padding:8px 0;font-size:11px;color:var(--text-tertiary)">Pro features — coming later</div>');
       }
 
       html.push('</div>'); // end charts tab

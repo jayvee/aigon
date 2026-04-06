@@ -11,7 +11,7 @@
 
       // Gate entire Insights view when Pro is not active
       if (!isProActive()) {
-        c.innerHTML = '<div class="amp-empty" style="padding:40px;text-align:center"><div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Insights requires Aigon Pro</div><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:12px">AI-powered observations, coaching, and quality analytics.</div><a href="https://aigon.build/pro" target="_blank" style="font-size:12px;color:var(--accent,#3b82f6);text-decoration:none">Get Aigon Pro &rarr;</a></div>';
+        c.innerHTML = '<div class="amp-empty" style="padding:40px;text-align:center"><div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Insights is a Pro feature — coming later</div><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:12px">AI-powered observations, coaching, and quality analytics. Pro is in development and not yet available for purchase.</div><div style="font-size:11px;color:var(--text-tertiary)">Free alternative: <code>aigon board</code>, <code>aigon commits</code>, <code>aigon feature-status</code></div></div>';
         c.style.display = '';
         return;
       }
