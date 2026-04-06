@@ -36,7 +36,8 @@ Conductor:
                                     Start AutoConductor (tmux auto session) and return immediately
   feature-autonomous-start status <ID>
                                     Show AutoConductor tmux liveness + workflow state
-  dashboard                         Start the live dashboard (foreground HTTP server)
+  server start [--persistent]       Start the AIGON server (dashboard UI + supervisor)
+  server add [path]                 Register a repo with the server
 
 Feature Open:
   feature-open <ID> [agent] [--terminal=<type>]

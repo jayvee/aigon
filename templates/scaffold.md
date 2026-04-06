@@ -22,7 +22,7 @@ aigon dev-server start
 
 This allocates a unique port, starts the project's dev server (e.g. `npm run dev`), and registers it with the proxy for a named URL. **Never run `npm run dev` or `next dev` directly** — it bypasses port allocation and causes conflicts in worktrees.
 
-> Note: `aigon dashboard` is a different thing entirely — it is Aigon's centralised management dashboard, not this project's dev server. Never use it to preview project changes.
+> Note: `aigon server` is a different thing entirely — it is Aigon's centralised management server (dashboard UI + supervisor), not this project's dev server. Never use it to preview project changes.
 
 ## Dependencies
 <!-- How to install dependencies, e.g.:

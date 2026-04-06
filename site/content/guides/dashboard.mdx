@@ -10,9 +10,8 @@ The Aigon Dashboard is a browser-based control centre for all your repos. Monito
 ## Getting started
 
 ```bash
-aigon dashboard add                    # Register current repo
-aigon dashboard start                  # Start the dashboard server
-aigon dashboard open                   # Open in browser (http://aigon.localhost)
+aigon server start --persistent        # One-time: install as system service
+aigon server add ~/src/my-project      # Register a repo with the server
 ```
 
 The dashboard polls registered repos every 30 seconds and fires macOS notifications when agents reach `waiting` or when all agents submit.
@@ -145,19 +144,19 @@ The Statistics view gives a quick at-a-glance summary of activity across all reg
 ## Managing repos
 
 ```bash
-aigon dashboard add ~/src/my-project       # Register a repo
-aigon dashboard add ~/src/another-project  # Add more repos
-aigon dashboard list                       # See registered repos
-aigon dashboard remove ~/src/old-project   # Unregister a repo
+aigon server add ~/src/my-project       # Register a repo
+aigon server add ~/src/another-project  # Add more repos
+aigon server list                       # See registered repos
+aigon server remove ~/src/old-project   # Unregister a repo
 ```
 
 ## Dashboard commands
 
 ```bash
-aigon dashboard start          # Start the service
-aigon dashboard restart        # Stop and restart
-aigon dashboard status         # Check health + see waiting agents
-aigon dashboard open           # Open in browser
+aigon server start             # Start the service
+aigon server restart           # Stop and restart
+aigon server status            # Check health + see waiting agents
+aigon server open              # Open in browser
 ```
 
 ## Remote access

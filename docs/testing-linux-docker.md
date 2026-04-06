@@ -104,7 +104,7 @@ tmux attach -t brewboard-f2-gg-brewery-import
 
 ```bash
 nohup aigon server start > /dev/null 2>&1 &
-aigon dashboard add ~/src/brewboard
+aigon server add ~/src/brewboard
 ```
 
 Then open http://localhost:4100 on your Mac browser.

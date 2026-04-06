@@ -1,6 +1,6 @@
 export default {
   board: "board",
-  dashboard: "dashboard",
+  server: "server",
   "dev-server": "dev-server",
   deploy: "deploy",
   insights: "insights",
