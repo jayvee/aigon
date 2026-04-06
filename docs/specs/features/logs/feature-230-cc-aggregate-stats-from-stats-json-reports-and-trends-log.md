@@ -31,3 +31,19 @@ Agent: cc
 - **`CACHE_VERSION = 1`**, baked into the cache file. `isCacheFresh()` treats a version mismatch as stale, so bumping the version automatically rebuilds every cache on next read.
 - **Compacted `tests/integration/iterate-flag-rename.test.js`** from 46 → 15 LOC (dense style matching `feature-close-restart.test.js`) to free budget for the new regression test. All original assertions preserved. Final budget: 1996/2000 LOC.
 - **Respect feature 229/231 boundaries**: this feature deliberately does NOT touch `lib/telemetry.js` parsers, `feature-close` fallback logic, or the existing `collectAnalyticsData` code path. It consumes whatever each `stats.json` contains today (including fallback/no-telemetry records) and rolls them up faithfully. When 229 improves non-CC telemetry, the aggregate will pick up the better data automatically without any changes here.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-07
+
+### Findings
+- Per-agent aggregates lost commits, lines, duration, and files-changed metrics whenever a record used `cost.byAgent`, so agent comparison data undercounted real work for mixed-agent records.
+- No other targeted correctness issues found in the reviewed implementation scope.
+
+### Fixes Applied
+- `ad96e7c0` — `fix(review): roll up per-agent totals for byAgent stats`
+- Extended `tests/integration/stats-aggregate.test.js` to lock the proportional per-agent commit/LOC rollup behavior.
+
+### Notes
+- The implementation remains additive: it introduces the cached aggregate reader, CLI surface, and dashboard API endpoint without switching the existing Statistics tab over to the new payload yet.
