@@ -174,7 +174,7 @@
         <div class="pro-gated-content">
           <div class="stat-card-value">42%</div>
         </div>
-        <a href="https://aigon.build/pro" target="_blank" style="font-size:10px;color:var(--accent,#3b82f6);text-decoration:none;opacity:.7;margin-top:auto">Get Pro &rarr;</a>
+        <div style="font-size:10px;color:var(--text-tertiary);opacity:.7;margin-top:auto">Pro — coming later</div>
       </div>`;
     }
 
@@ -197,7 +197,7 @@
         </div>
         <div class="pro-chart-overlay">
           <span class="pro-badge">PRO</span>
-          <a href="https://aigon.build/pro" target="_blank">Get Aigon Pro &rarr;</a>
+          <span style="color:var(--text-tertiary);font-size:12px">Coming later</span>
         </div>
       </div>`;
     }
