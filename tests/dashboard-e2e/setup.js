@@ -48,10 +48,25 @@ function ensureFixtures() {
     }
 }
 
+// Env scrubbed of git credential helpers so macOS doesn't open a
+// "Keychain Not Found" dialog on every git invocation. GIT_CONFIG_GLOBAL
+// also wipes user.name/user.email so we re-supply via GIT_AUTHOR_* /
+// GIT_COMMITTER_* — otherwise `git commit` fails with "empty ident".
+const GIT_SAFE_ENV = {
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_CONFIG_SYSTEM: '/dev/null',
+    GIT_TERMINAL_PROMPT: '0',
+    GIT_ASKPASS: '/usr/bin/true',
+    GIT_AUTHOR_NAME: 'Aigon Test',
+    GIT_AUTHOR_EMAIL: 'test@aigon.test',
+    GIT_COMMITTER_NAME: 'Aigon Test',
+    GIT_COMMITTER_EMAIL: 'test@aigon.test',
+};
+
 function runAigon(args, cwd) {
     const result = spawnSync(process.execPath, [CLI_PATH, ...args], {
         cwd,
-        env: { ...process.env, HOME: os.tmpdir() },
+        env: { ...process.env, HOME: os.tmpdir(), ...GIT_SAFE_ENV },
         encoding: 'utf8',
         stdio: 'pipe',
     });
@@ -59,7 +74,12 @@ function runAigon(args, cwd) {
 }
 
 function runGit(args, cwd) {
-    spawnSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' });
+    spawnSync('git', args, {
+        cwd,
+        env: { ...process.env, ...GIT_SAFE_ENV },
+        encoding: 'utf8',
+        stdio: 'pipe',
+    });
 }
 
 function waitForServer(url, timeoutMs = 20000) {
@@ -94,12 +114,15 @@ module.exports = async function globalSetup() {
     runAigon(['feature-create', 'e2e-solo-feature'], tmpDir);
     runAigon(['feature-create', 'e2e-fleet-feature'], tmpDir);
 
-    const worktreeBase = tmpDir + '-worktrees';
-
     // ── Create temp home with .aigon/config.json ───────────────────────────────
     const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-e2e-home-'));
     const aigonDir = path.join(tempHome, '.aigon');
     fs.mkdirSync(aigonDir, { recursive: true });
+
+    // Worktree base: aigon v2.51+ uses ~/.aigon/worktrees/{repoName}/ — the
+    // dashboard process below has HOME=tempHome, so worktrees will land under
+    // tempHome/.aigon/worktrees/{repoName}/.
+    const worktreeBase = path.join(tempHome, '.aigon', 'worktrees', path.basename(tmpDir));
     fs.writeFileSync(
         path.join(aigonDir, 'config.json'),
         JSON.stringify({ repos: [tmpDir] }, null, 2)
@@ -110,13 +133,18 @@ module.exports = async function globalSetup() {
         ...process.env,
         HOME: tempHome,
         PORT: String(PORT),
-        // mock-bin/tmux prevents real tmux sessions from being created
-        PATH: MOCK_BIN_DIR + path.delimiter + process.env.PATH,
+        // Real tmux runs in the background (no GUI terminal pops up) because
+        // AIGON_TEST_MODE=1 makes openSingleWorktree skip the terminal-app open.
+        // Sessions are cleaned up in teardown.js by killing anything matching
+        // the fixture's repo-name prefix.
+        AIGON_TEST_MODE: '1',
         // GEMINI_CLI=1 makes feature-eval run in eval-setup mode (no agent launch)
         GEMINI_CLI: '1',
+        // Scrub git config and supply author identity — see GIT_SAFE_ENV above.
+        ...GIT_SAFE_ENV,
     };
 
-    const dashProc = spawn(process.execPath, [CLI_PATH, 'dashboard'], {
+    const dashProc = spawn(process.execPath, [CLI_PATH, 'server', 'start'], {
         env: dashEnv,
         cwd: tmpDir,
         stdio: ['ignore', 'pipe', 'pipe'],

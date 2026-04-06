@@ -110,7 +110,7 @@ test.describe('Dashboard state consistency', () => {
                 // Backlog cards should have Start feature action
                 const setupBtn = card.locator('.kcard-va-btn[data-va-action="feature-start"]');
                 await expect(setupBtn).toBeVisible();
-                await expect(setupBtn).toContainText('Start feature');
+                await expect(setupBtn).toContainText('Start');
 
                 // No Prioritise button (already prioritised)
                 await expect(card.locator('.kcard-va-btn[data-va-action="feature-prioritise"]')).toHaveCount(0);

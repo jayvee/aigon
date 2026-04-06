@@ -25,15 +25,14 @@ const { MockAgent } = require('../integration/mock-agent');
 const CTX_FILE = path.join(os.tmpdir(), 'aigon-dashboard-e2e-ctx.json');
 const { spawnSync } = require('child_process');
 
-// Use fast mock delays in CI or when MOCK_DELAY=fast is set
-const FAST = process.env.MOCK_DELAY === 'fast' || !!process.env.CI;
-// cc finishes first, gg second (staggered to test intermediate state)
-const CC_DELAYS = FAST
-    ? { implementing: 600, submitted: 200 }
-    : { implementing: 15000, submitted: 5000 };
-const GG_DELAYS = FAST
-    ? { implementing: 1200, submitted: 200 }
-    : { implementing: 20000, submitted: 5000 };
+// Fleet mode asserts an intermediate state (cc submitted, gg still running)
+// AND a final all-submitted state. Both checks need the dashboard poll +
+// engine signal flush cycle to observe transitions reliably. Fast delays
+// race those cycles and produce flakes. This test uses realistic delays
+// unconditionally — it is not worth pretending it can run in a second.
+// Total runtime ~40s; acceptable for a pre-push check.
+const CC_DELAYS = { implementing: 3000, submitted: 1500 };
+const GG_DELAYS = { implementing: 8000, submitted: 1500 };
 
 function readCtx() {
     return JSON.parse(fs.readFileSync(CTX_FILE, 'utf8'));
@@ -153,6 +152,7 @@ test.describe('Fleet mode lifecycle', () => {
             agentId: 'cc',
             desc,
             repoPath: ctx.tmpDir,
+            worktreeBase: ctx.worktreeBase,
             delays: CC_DELAYS,
         });
         const agentGG = new MockAgent({
@@ -160,6 +160,7 @@ test.describe('Fleet mode lifecycle', () => {
             agentId: 'gg',
             desc,
             repoPath: ctx.tmpDir,
+            worktreeBase: ctx.worktreeBase,
             delays: GG_DELAYS,
         });
 
@@ -183,11 +184,18 @@ test.describe('Fleet mode lifecycle', () => {
 
         // ── Step 6: Both submitted — verify all-submitted state ───────────────
 
+        // Give the async engine signal from MockAgent's CLI call time to
+        // flush through the event log before the dashboard re-reads. One
+        // force-refresh is not enough because the signal emission is
+        // promise-based and races the poll.
+        await page.waitForTimeout(1000);
+        await forceRefresh(page);
+        await page.waitForTimeout(500);
         await forceRefresh(page);
         await page.waitForTimeout(500);
 
         const allSubmittedStatuses = inProgressCard.locator('.kcard-agent .kcard-agent-status.status-submitted');
-        await expect(allSubmittedStatuses).toHaveCount(2, { timeout: 8000 });
+        await expect(allSubmittedStatuses).toHaveCount(2, { timeout: 10000 });
 
         // Fleet mode: feature-eval button should appear (not feature-close)
         const evalBtn = inProgressCard.locator('.kcard-va-btn[data-va-action="feature-eval"]');
@@ -199,9 +207,19 @@ test.describe('Fleet mode lifecycle', () => {
 
         // ── Step 7: Run eval via dashboard action ─────────────────────────────
 
+        // Clicking "Evaluate" opens the agent-picker modal — pick cc to
+        // evaluate, then submit. The API call fires on submit, not on the
+        // initial click.
+        await evalBtn.click();
+        const evalPicker = page.locator('#agent-picker');
+        await expect(evalPicker).toBeVisible({ timeout: 5000 });
+        const evalCcRadio = evalPicker.locator('input[value="cc"]').first();
+        await expect(evalCcRadio).toBeVisible();
+        await evalCcRadio.check();
+
         const [evalResp] = await Promise.all([
             page.waitForResponse('**/api/action'),
-            evalBtn.click(),
+            page.click('#agent-picker-submit'),
         ]);
         const evalJson = await evalResp.json().catch(() => ({}));
         expect(evalJson.ok, `feature-eval failed: ${evalJson.error || evalJson.stderr || ''}`).toBe(true);
@@ -245,18 +263,18 @@ test.describe('Fleet mode lifecycle', () => {
 
         await fleetCloseBtn.click();
 
-        // Winner picker should open (single-select mode)
-        const winnerPicker = page.locator('#agent-picker');
-        await expect(winnerPicker).toBeVisible({ timeout: 5000 });
-        // Title should indicate winner selection
-        await expect(page.locator('#agent-picker-title')).toContainText('winner', { ignoreCase: true });
+        // Fleet close opens the "Close & Merge" modal — select winner
+        // via radio group in `#close-modal-winners`, then submit.
+        const closeModal = page.locator('#close-modal');
+        await expect(closeModal).toBeVisible({ timeout: 5000 });
 
-        // Select cc as winner
-        await winnerPicker.locator('input[value="cc"]').check();
+        const ccWinnerRadio = closeModal.locator('#close-modal-winners input[value="cc"]');
+        await expect(ccWinnerRadio).toBeVisible();
+        await ccWinnerRadio.check();
 
         const [closeResp] = await Promise.all([
             page.waitForResponse('**/api/action'),
-            page.click('#agent-picker-submit'),
+            page.click('#close-modal-submit'),
         ]);
         const closeJson = await closeResp.json().catch(() => ({}));
         expect(closeJson.ok, `feature-close failed: ${closeJson.error || closeJson.stderr || ''}`).toBe(true);

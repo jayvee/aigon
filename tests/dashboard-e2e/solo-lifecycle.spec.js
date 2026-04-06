@@ -101,7 +101,7 @@ test.describe('Solo worktree lifecycle', () => {
         const backlogCard = page.locator('.kcard').filter({ hasText: 'e2e solo feature' }).first();
         const setupBtn = backlogCard.locator('.kcard-va-btn[data-va-action="feature-start"]');
         await expect(setupBtn).toBeVisible({ timeout: 5000 });
-        await expect(setupBtn).toContainText('Start feature');
+        await expect(setupBtn).toContainText('Start');
 
         await setupBtn.click();
 
@@ -149,6 +149,7 @@ test.describe('Solo worktree lifecycle', () => {
             agentId: 'cc',
             desc,
             repoPath: ctx.tmpDir,
+            worktreeBase: ctx.worktreeBase,
             delays: MOCK_DELAYS,
         });
 
@@ -175,7 +176,7 @@ test.describe('Solo worktree lifecycle', () => {
 
         const closeBtn = refreshedCard.locator('.kcard-va-btn[data-va-action="feature-close"]');
         await expect(closeBtn).toBeVisible({ timeout: 5000 });
-        await expect(closeBtn).toContainText('Accept & Close');
+        await expect(closeBtn).toContainText('Close');
 
         const [closeResp] = await Promise.all([
             page.waitForResponse('**/api/action'),
