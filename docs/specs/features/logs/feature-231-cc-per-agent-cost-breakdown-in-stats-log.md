@@ -51,3 +51,18 @@ records. Distinguish "no telemetry" (n/a) from real $0 by checking
 ## Conversation Summary
 User invoked `/aigon:feature-do 231` directly with no further messages.
 Implementation followed the spec verbatim.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-07
+
+### Findings
+- Fallback rows were rendering `n/a` in the Model column even though the spec only requires tokens and cost to be `n/a`.
+- The Total summary row only summed estimated cost; it did not total the input and output token columns shown in the table.
+
+### Fixes Applied
+- `53e04552` — `fix(review): show fallback models and full cost totals`
+
+### Notes
+- Review stayed within the dashboard rendering path. No backend changes were needed.
