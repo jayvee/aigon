@@ -107,5 +107,37 @@ test('non-existent dirs are skipped silently', () => {
     assert.deepStrictEqual(out, {});
 });
 
+// REGRESSION: prevents the "wall of bold text" bug where telemetry YAML
+// frontmatter (written by feature-submit / feature-close) rendered as a
+// massive header at the top of the Agent Log tab via marked.parse().
+// Log files are supposed to be pure narrative per CLAUDE.md, but the
+// telemetry pipeline has historically written frontmatter anyway. The
+// collector strips it before returning so the rendered output shows
+// only the narrative. See 2026-04-06 incident on feature 220's log.
+test('YAML frontmatter is stripped from the returned content', () => {
+    const dir = makeTempLogsDir();
+    const body = '# Implementation Log\n\nThe narrative body goes here.\n';
+    const withFrontmatter = `---\ncommit_count: 5\ncost_usd: 9.9996\nmodel: "claude-opus-4-6"\n---\n${body}`;
+    fs.writeFileSync(path.join(dir, 'feature-10-cc-example-log.md'), withFrontmatter);
+    const out = collectAgentLogs([dir], 10);
+    assert.ok(out.cc, 'cc entry should exist');
+    assert.ok(!out.cc.content.includes('commit_count'),
+        'frontmatter keys must be stripped');
+    assert.ok(!out.cc.content.includes('---'),
+        'frontmatter delimiters must be stripped');
+    assert.ok(out.cc.content.includes('# Implementation Log'),
+        'narrative body must be preserved');
+    assert.ok(out.cc.content.includes('narrative body goes here'),
+        'narrative prose must be preserved');
+});
+
+test('logs without frontmatter are returned unchanged', () => {
+    const dir = makeTempLogsDir();
+    const body = '# Plain log\n\nNo frontmatter here.\n';
+    fs.writeFileSync(path.join(dir, 'feature-11-cc-plain-log.md'), body);
+    const out = collectAgentLogs([dir], 11);
+    assert.strictEqual(out.cc.content, body);
+});
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed > 0 ? 1 : 0);
