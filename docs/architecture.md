@@ -94,7 +94,7 @@ Current shared modules:
   `collectDashboardStatusData`
 - `lib/server-runtime.js` (~90 lines): shared AIGON server lifecycle helpers extracted from infra command wiring
   `launchDashboardServer`, `stopDashboardProcess`
-- `lib/validation.js` (~1,045 lines): Ralph/autonomous loop and smart validation helpers
+- `lib/validation.js` (~1,045 lines): Iterate (Autopilot) loop and smart validation helpers
   `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`, `runFeatureValidateCommand`
 
 **Domain modules** (logic lives in the module itself):
@@ -441,7 +441,7 @@ All three must pass for `npm test` to succeed.
 - **Mock E2E** — run manually; exercises full feature lifecycle without AI tokens
 - **CLI E2E** — run manually; creates real fixture repos and tests real git operations
 - **No CI pipeline** — there are no GitHub Actions or pre-commit hooks; tests are run locally
-- **Ralph validation** — during `feature-do --autonomous`, the agent runs commands from the spec's `## Validation` section after each iteration; all must exit 0
+- **Iterate validation** — during `feature-do --iterate`, the agent runs commands from the spec's `## Validation` section after each iteration; all must exit 0
 
 ### Writing tests
 

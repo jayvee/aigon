@@ -46,7 +46,6 @@ Aigon Pro is a planned commercial tier bundling autonomous orchestration, AADE I
 | Pro-gated command | What it does | Free alternative |
 |---|---|---|
 | `feature-autonomous-start <id>` | AutoConductor: implement → review → close unattended | `feature-start <id>` + `feature-do <id>` |
-| `feature-do <id> --autonomous` | Autopilot loop: implement → validate → retry with fresh context | `feature-do <id>` (interactive) |
 | `research-autopilot <id>` | Fleet research with auto spawn + monitor + evaluate | `research-start <id>` + `research-do <id>` |
 | `aigon insights` | AADE Insights, coaching, amplification metrics | `aigon board`, `aigon commits`, `aigon feature-status` |
 

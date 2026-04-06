@@ -9,7 +9,7 @@
 | `{{CMD_PREFIX}}feature-now <name>` | Fast-track: inbox → prioritise → setup → implement, or create new + implement |
 | `{{CMD_PREFIX}}feature-prioritise <name>` | Assign ID and move to backlog |
 | `{{CMD_PREFIX}}feature-start <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
-| `{{CMD_PREFIX}}feature-do <ID> [--autonomous]` | Do feature work; `--autonomous` enables the autonomous retry loop |
+| `{{CMD_PREFIX}}feature-do <ID> [--iterate]` | Do feature work; `--iterate` enables the Autopilot retry loop |
 | `{{CMD_PREFIX}}feature-spec <ID> [--json]` | Resolve the canonical visible spec path for a feature |
 | `{{CMD_PREFIX}}feature-list [--active] [--all] [--json]` | Query feature records without going through the board UI |
 | `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |

@@ -14,7 +14,7 @@
 - [ ]
 
 ## Validation
-<!-- Optional: commands Ralph runs after each iteration (in addition to project-level validation).
+<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
      Use for feature-specific checks that don't fit in the general test suite.
      All commands must exit 0 for the iteration to be considered successful.
 -->

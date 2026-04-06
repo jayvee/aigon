@@ -55,7 +55,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/commands/setup.js` | 1212 | init, install-agent, check-version, update, doctor + state reconciliation |
 | `lib/terminal-adapters.js` | ~200 | Terminal adapter table: detect/launch/split per terminal (Warp, iTerm2, kitty, gnome-terminal, xterm, Terminal.app), tiling, Warp window close |
 | `lib/worktree.js` | 1300 | Worktree creation, tmux sessions, shell trap signal wrapper (terminal dispatch delegated to terminal-adapters.js) |
-| `lib/validation.js` | 1045 | Ralph/autonomous loop, acceptance-criteria parsing |
+| `lib/validation.js` | 1045 | Iterate (Autopilot) loop, acceptance-criteria parsing |
 | `lib/config.js` | ~950 | Global/project config, agent CLI config (profiles delegated to profile-placeholders.js) |
 | `lib/profile-placeholders.js` | ~500 | Profile presets (from `templates/profiles.json`), detection, instruction directive resolvers, `getProfilePlaceholders()` |
 | `lib/state-queries.js` | ~250 | Read-only UI helpers: feedback action/transition derivation — pure, no I/O. Feature/research constants retained for diagrams only |
@@ -218,7 +218,7 @@ The process for any visual change:
 Never hand-write CSS or guess at Tailwind classes for visual design. The frontend-design skill produces production-grade interfaces; hand-written CSS produces inconsistent, broken results.
 
 ## Common Agent Mistakes
-- **Inventing args**: adding `cc` or `--autonomous` to a plain command → causes wrong mode (Drive vs Fleet)
+- **Inventing args**: adding `cc` or `--iterate` to a plain command → causes wrong mode (Drive vs Fleet)
 - **Breaking dashboard visually**: passing syntax check but not verifying the rendered UI → ships broken tabs
 - **Complexity for simplicity**: responding to "simplify" with smarter/more code instead of removing code
 - **`.env.local` blocking flow**: treating it as uncommitted changes → blocks `feature-close`
