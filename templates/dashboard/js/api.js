@@ -74,6 +74,14 @@
         } else {
           showToast('Done: ' + (payload.command || action));
         }
+        // feature 234: when the backend signals it is about to restart (lib/*.js
+        // changes merged), show a transient "Reloading backend…" banner. The
+        // existing poll loop will automatically reconnect when the new server
+        // comes online and showServerRestartBanner() clears itself.
+        if (payload && payload.serverRestarting) {
+          showServerRestartBanner();
+          return; // skip refresh — the server is about to die
+        }
         await requestRefresh();
       } catch (e) {
         showToast('Action failed: ' + e.message, null, null, {error:true});
