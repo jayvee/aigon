@@ -283,7 +283,7 @@ Traditional cycle time measures "first commit to deploy" or "ticket started to t
 - Sub-phases reveal specific bottlenecks (is validation the problem? review?)
 - Aigon already has most required timestamps — low instrumentation cost
 - Directly comparable across features, agents, and developers
-- Compelling dashboard metric for Aigon Pro
+- Compelling dashboard metric
 
 ### Cons
 - Wall-clock time includes idle periods (nights, weekends, context switches)
@@ -405,7 +405,7 @@ These five metrics form a coherent picture when used together:
 
 ### Implementation Priority for Aigon
 
-| Metric | Data Available Today | New Instrumentation | Aigon Pro Value |
+| Metric | Data Available Today | New Instrumentation | Insights Value |
 |---|---|---|---|
 | Prompt-to-PR Latency | Mostly (timestamps in manifests) | PR creation timestamp | High — compelling dashboard |
 | First-Pass Success Rate | Partial (agent session outcomes) | CI integration | High — actionable |
@@ -417,7 +417,7 @@ These five metrics form a coherent picture when used together:
 
 **Start with Prompt-to-PR Latency and First-Pass Success Rate** — they require the least new instrumentation, produce the most actionable insights, and map directly to Aigon's existing data model (feature specs, manifests, git history).
 
-**Add Persistence Rate as the flagship "unique" metric** — no other tool measures AI code survival at the feature level. This is Aigon Pro's strongest differentiator for the insights dashboard.
+**Add Persistence Rate as the flagship "unique" metric** — no other tool measures AI code survival at the feature level. This is the strongest differentiator for Aigon's insights dashboard.
 
 **Defer AI Edit Distance and Prompt Efficiency** until agent transcript/API access is standardized — these provide valuable signal but require deeper instrumentation.
 
@@ -653,7 +653,7 @@ Aigon uniquely sees: feature lifecycle (spec to completion), agent session timin
 | metric-ai-attribution | Tag commits as AI-authored vs human-authored using git notes, commit metadata, or branch conventions | high | none |
 | metric-edit-distance | Compute normalized diff between agent output and final merged code per feature | medium | metric-ai-attribution |
 | metric-prompt-efficiency | Track session count, turn count, and token usage per feature as proxy for iteration efficiency | medium | none |
-| insights-dashboard-metrics | Aigon Pro dashboard panel displaying metric trends, comparisons, and anomaly alerts | high | metric-prompt-to-pr-latency, metric-first-pass-success |
+| insights-dashboard-metrics | Insights dashboard panel displaying metric trends, comparisons, and anomaly alerts | high | metric-prompt-to-pr-latency, metric-first-pass-success |
 
 ---
 
@@ -984,7 +984,7 @@ The cost in LLM tokens (and equivalent dollars) to deliver one unit of value (fe
 |------|------|
 | Directly answers "is AI cost-effective?" | "Value" is subjective and hard to standardize |
 | Token costs precisely trackable (API returns exact counts) | Features vary enormously in complexity |
-| Compelling for Aigon Pro ROI dashboard | Counterfactual is speculative |
+| Compelling for an ROI dashboard | Counterfactual is speculative |
 | Natural trend improvement (prices fall + models improve) | Hidden costs (developer review/fix time) not captured |
 
 ### Sources
@@ -1037,7 +1037,7 @@ The percentage of tasks completed by AI agents end-to-end without requiring huma
 - Zero-regression rates: most models <0.25; Claude Opus 4.5: 0.51; Claude Opus 4.6: 0.76
 - Critical: one-shot resolution rates overstate real-world autonomy
 
-**Relevance to Aigon:** Highly relevant. Aigon orchestrates agent sessions for features, bugs, and tests. This metric directly measures whether Aigon's orchestration produces shippable code. For Aigon Pro: higher autonomous resolution = less human intervention = more developer time saved = stronger ROI case.
+**Relevance to Aigon:** Highly relevant. Aigon orchestrates agent sessions for features, bugs, and tests. This metric directly measures whether Aigon's orchestration produces shippable code. Higher autonomous resolution = less human intervention = more developer time saved = stronger ROI signal in the insights dashboard.
 
 ### Pros & Cons
 
@@ -1172,4 +1172,4 @@ The single most important finding across all research: **AI increases individual
 | `metric-prompt-efficiency` | Session count, turn count, and token usage per feature | medium | none |
 | `metric-mutation-score` | Stryker/mutmut integration for mutation testing on AI-generated tests | low | none |
 | `metric-amplification-factor` | Historical comparison of feature cycle times before/after Aigon, complexity-normalized | low | `metric-token-cost-tracking` |
-| `dashboard-metrics-insights` | Aigon Pro dashboard visualizing all metrics with trends, benchmarks, anomaly detection | high | `metric-persistence-rate`, `metric-token-cost-tracking` |
+| `dashboard-metrics-insights` | Insights dashboard visualizing all metrics with trends, benchmarks, anomaly detection | high | `metric-persistence-rate`, `metric-token-cost-tracking` |

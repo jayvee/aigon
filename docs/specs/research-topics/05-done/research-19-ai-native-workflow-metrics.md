@@ -8,12 +8,12 @@ Traditional software engineering metrics (DORA, cycle time, velocity) were desig
 - **Lines of code / velocity are meaningless** — AI can produce thousands of lines that may need extensive rework
 - **Quality signals are inverted** — high throughput may correlate with higher defect rates when AI-generated code isn't properly validated
 
-Aigon already tracks some workflow data (feature lifecycle, agent status, session timing). The opportunity is to define and instrument the **right** metrics for AI-native workflows, then surface them in the Aigon Pro insights/amplification dashboard as a core differentiator.
+Aigon already tracks some workflow data (feature lifecycle, agent status, session timing). The opportunity is to define and instrument the **right** metrics for AI-native workflows, then surface them in the dashboard's insights view.
 
 This research should identify the top 5-10 metrics that Aigon should implement, considering:
 - What can Aigon actually measure from its position (CLI, git, agent orchestration)
 - What provides genuine signal vs. vanity metrics
-- What would be compelling for Aigon Pro's commercial insights offering
+- What would be most useful for users tracking AI-native workflow effectiveness
 
 ### Inspiration & Starting Points
 
@@ -76,8 +76,7 @@ The user has gathered initial ideas from multiple AI conversations, organized in
 ### Implementation in Aigon
 - [ ] Which metrics map to Aigon's existing data model? (feature specs, agent manifests, git history, session logs)
 - [ ] What new telemetry/instrumentation would each metric require?
-- [ ] How should metrics be presented in the Aigon Pro insights dashboard? (trends, benchmarks, alerts?)
-- [ ] Should any metrics be available in the free tier as a growth lever?
+- [ ] How should metrics be presented in the dashboard's insights view? (trends, benchmarks, alerts?)
 
 ## Scope
 
@@ -85,7 +84,6 @@ The user has gathered initial ideas from multiple AI conversations, organized in
 - Metrics measurable from an AI development workflow orchestrator's perspective
 - Metrics relevant to individual developers and small teams (Aigon's target audience)
 - Implementation feasibility within Aigon's architecture
-- Commercial positioning for Aigon Pro's insights offering
 - Academic and industry research on AI-native development measurement
 
 ### Out of Scope
@@ -128,7 +126,6 @@ All three research agents (CC, GG, CX) converged on this framing. The key gap to
 - Persistence Rate / Code Survivability is the flagship differentiator
 - Agent commit attribution is the foundational prerequisite
 - A balanced scorecard beats a single productivity score
-- Free-tier metrics should be a growth lever with deeper quality/ROI metrics reserved for Pro
 
 ### Deferred Metrics
 
@@ -147,7 +144,7 @@ The following were researched but deferred from implementation:
 |--------------|-------------|----------|----------------|
 | metrics-git-attribution | Formalize agent commit attribution (Co-authored-by, agent email, git notes) as the foundation for all quality metrics | high | `aigon feature-create "metrics-git-attribution"` |
 | metrics-code-durability | Post-merge code analysis: persistence rate (T+7d, T+30d via git blame), edit distance (agent output vs merged code), and post-merge rework rate | high | `aigon feature-create "metrics-code-durability"` |
-| metrics-insights-scorecard | Aigon Pro dashboard combining existing metrics (first-pass success, autonomy ratio, wait burden, cost, rework) with new durability metrics into a balanced scorecard with trends and agent comparisons | high | `aigon feature-create "metrics-insights-scorecard"` |
+| metrics-insights-scorecard | Insights dashboard view combining existing metrics (first-pass success, autonomy ratio, wait burden, cost, rework) with new durability metrics into a balanced scorecard with trends and agent comparisons | high | `aigon feature-create "metrics-insights-scorecard"` |
 | metrics-session-telemetry | Normalize per-session telemetry across all agents into a common schema (turns, tool calls, tokens input/output, cost) for cross-agent comparison and accurate cost-per-durable-change | medium | `aigon feature-create "metrics-session-telemetry"` |
 
 ### Feature Dependencies

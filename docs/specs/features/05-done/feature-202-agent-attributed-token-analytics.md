@@ -1,7 +1,7 @@
 # Feature: agent-attributed-token-analytics
 
 ## Summary
-Add per-agent token attribution to the analytics pipeline and Pro insights dashboard. Every token record must be attributed to a specific agent (cc, cx, gg, mv, etc.) so users can see which agents consume the most tokens, how agent usage mix changes over time, and whether fleet mode is cost-effective vs solo mode. This builds on the existing telemetry infrastructure but fixes the solo-mode transcript attribution bug and adds stacked time-series charts to the Pro amplification view.
+Add per-agent token attribution to the analytics pipeline. Every token record must be attributed to a specific agent (cc, cx, gg, mv, etc.) so users can see which agents consume the most tokens, how agent usage mix changes over time, and whether fleet mode is cost-effective vs solo mode. This builds on the existing telemetry infrastructure and fixes the solo-mode transcript attribution bug.
 
 ## User Stories
 - [ ] As a user running fleet mode, I want to see a breakdown of tokens per agent for each feature so I can assess whether 3 agents is worth the cost vs 1 implementer + 1 reviewer
@@ -14,12 +14,7 @@ Add per-agent token attribution to the analytics pipeline and Pro insights dashb
 - [ ] Telemetry records in `.aigon/telemetry/*.json` populate `tokenUsage.billable` correctly (fix session-end hook to capture actual token counts from transcript)
 - [ ] For worktree/fleet mode: transcripts are scoped to the worktree dir, already agent-attributed — verify this works end-to-end
 - [ ] For solo/Drive mode: the single transcript dir cannot be split by feature — `billableTokens` stays null (gap, not wrong data). Session-end telemetry (`.aigon/telemetry/`) is the attribution source
-- [ ] Pro amplification view includes a "Token Usage by Agent" stacked bar chart (Chart.js) with:
-  - X-axis: day or week buckets (toggle)
-  - Y-axis: total billable tokens
-  - Each agent is a distinct colored band (cc=blue, cx=purple, gg=green, mv=orange, etc.)
-  - Hover tooltip shows per-agent breakdown for that period
-- [ ] Pro amplification view includes an "Agent Efficiency" summary table: agent | features | median tokens | median cost | median tokens/line
+- [ ] `tokensByAgent` data is available downstream for the dashboard's insights view (out of scope here — this feature ships the data only)
 - [ ] Top Token Consumers table shows per-agent breakdown (expandable or inline columns)
 - [ ] `node -c lib/telemetry.js` passes (syntax check)
 - [ ] Dashboard renders without JS errors after changes
@@ -41,20 +36,11 @@ node -e "const t = require('./lib/telemetry'); console.log('telemetry OK')"
 3. **Extend `collectAnalyticsData()`** in `lib/utils.js` to aggregate telemetry by agent per feature. The `byFeature` map from `readTelemetryRecords()` already groups records by feature — add a second pass that groups by `record.agent` within each feature.
 4. **Return `tokensByAgent` on each feature object** in the API response so the frontend can render per-agent breakdowns.
 
-### Pro dashboard charts (Chart.js 4, already loaded)
-5. **Stacked bar chart**: "Token Usage by Agent Over Time"
-   - Bucket features by completion date (day/week toggle)
-   - Stack by agent, each a distinct color
-   - Use `type: 'bar'` with `stacked: true` on both axes
-6. **Agent Efficiency table**: aggregate across all features per agent — median tokens, median cost, feature count
-7. **Extend Top Token Consumers**: add per-agent columns or expandable rows showing agent breakdown
-
-### Agent color map
-Define a shared `AGENT_COLORS` constant: `{ cc: '#3b82f6', cx: '#8b5cf6', gg: '#22c55e', mv: '#f97316', solo: '#6b7280 }` — reuse across all charts.
+### Top Token Consumers (OSS dashboard)
+5. **Extend Top Token Consumers**: add per-agent columns or expandable rows showing agent breakdown
 
 ## Dependencies
-- Chart.js 4 + chartjs-adapter-date-fns (already in dashboard)
-- Aigon Pro (`@aigon/pro`) for amplification.js changes
+- None — this feature is purely a data pipeline extension
 
 ## Out of Scope
 - Real-time token streaming/live counters during agent execution
@@ -63,11 +49,9 @@ Define a shared `AGENT_COLORS` constant: `{ cc: '#3b82f6', cx: '#8b5cf6', gg: '#
 - Cost model configuration (per-model pricing) — use existing `resolveCostUsd()`
 
 ## Open Questions
-- Should the stacked chart default to daily or weekly? Weekly probably more useful for most users (daily too noisy with few features/day)
-- Should we show agent breakdown in the base dashboard (free tier) or keep it Pro-only? Recommendation: keep charts Pro-only, but show per-agent data in the feature table for all users
+- (None — scope finalized as data-pipeline-only)
 
 ## Related
 - `lib/telemetry.js` — transcript parsing, session capture, `findTranscriptFiles`
 - `lib/utils.js:collectAnalyticsData()` — analytics aggregation pipeline
-- `aigon-pro/dashboard/amplification.js` — Pro insights view (Chart.js rendering)
 - `templates/dashboard/js/logs.js` — base dashboard stats/details rendering

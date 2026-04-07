@@ -10,7 +10,7 @@
 
 ### Executive summary
 
-The strongest conclusion from the research is that Aigon should not try to invent a single "AI productivity score." The best-supported framing is still multi-dimensional. The SPACE framework explicitly argues developer productivity cannot be reduced to one metric, and recent DORA AI research shows AI can improve some outcomes while harming others, especially delivery stability. For Aigon Pro, the winning product shape is a compact scorecard of 5-8 metrics that balance speed, quality, flow, and cost rather than a vanity throughput dashboard.
+The strongest conclusion from the research is that Aigon should not try to invent a single "AI productivity score." The best-supported framing is still multi-dimensional. The SPACE framework explicitly argues developer productivity cannot be reduced to one metric, and recent DORA AI research shows AI can improve some outcomes while harming others, especially delivery stability. For Aigon's insights view, the winning shape is a compact scorecard of 5-8 metrics that balance speed, quality, flow, and cost rather than a vanity throughput dashboard.
 
 For first implementation, Aigon should prioritize metrics that match its actual vantage point: CLI orchestration, git history, worktree/session lifecycle, agent status transitions, feature logs, evaluation outcomes, and model token telemetry. That means Aigon is unusually well-positioned for workflow and rework metrics, moderately positioned for cost metrics, and poorly positioned for raw IDE metrics like suggestion acceptance rate unless it imports vendor telemetry from tools such as GitHub Copilot.
 
@@ -251,7 +251,7 @@ The closest thing to a standard is still "use a balanced framework":
 - **DORA** for delivery outcomes and operational quality
 - **DevEx / DX Core 4** for combining system metrics with human friction and business framing
 
-Inference: there is no settled AI-native metrics standard yet. That creates room for Aigon Pro to define a practical operator-oriented scorecard, as long as it avoids claiming a universal single-number truth.
+Inference: there is no settled AI-native metrics standard yet. That creates room for Aigon to define a practical operator-oriented scorecard, as long as it avoids claiming a universal single-number truth.
 
 #### What leaders actually want in dashboards
 
@@ -269,7 +269,7 @@ So the dashboard should answer four questions:
 3. Are reviews and fixes getting easier or harder?
 4. Are we getting enough value for the AI spend?
 
-### Recommended implementation plan for Aigon Pro
+### Recommended implementation plan for the insights dashboard
 
 #### Phase 1: ship now from current data
 
@@ -305,17 +305,14 @@ Build:
 
 Requires scheduled durability analysis and issue/PR integration.
 
-### Free-tier vs Pro packaging
+### Insights packaging
 
-Free tier should expose:
+The dashboard should expose:
 
 - latency
 - wait burden
 - first-pass success
 - simple cost per feature
-
-Pro should expose:
-
 - durable change / persistence views
 - rework and maintainability diagnostics
 - edit-distance attribution
@@ -354,7 +351,7 @@ That split is commercially sensible because the free tier can demonstrate immedi
 
 Implement an **AI-native scorecard**, not a monolithic productivity score.
 
-My recommendation is to launch Aigon Pro insights with a first wave centered on:
+My recommendation is to launch Aigon's insights view with a first wave centered on:
 
 1. Prompt-to-Submitted Latency
 2. Flow Interruption Burden
@@ -396,5 +393,5 @@ Use the table format below. Guidelines:
 | durable-change-analysis | Compute 7-day and 30-day persistence for merged changes and surface durable-change rate trends. | high | agent-authorship-attribution |
 | review-signal-integration | Import PR review timestamps, approvals, comments, and requested-changes events from GitHub/GitLab. | medium | ai-scorecard-foundation |
 | cost-per-durable-change | Combine token telemetry with durability and attribution to show AI spend per durable shipped outcome. | medium | durable-change-analysis |
-| agent-comparison-insights | Compare agents on latency, first-pass success, rework, durability, and cost in the Pro dashboard. | medium | ai-scorecard-foundation |
-| free-tier-insights-preview | Expose a limited free insights view with basic latency, wait burden, and first-pass metrics as a growth lever. | low | ai-scorecard-foundation |
+| agent-comparison-insights | Compare agents on latency, first-pass success, rework, durability, and cost in the insights dashboard. | medium | ai-scorecard-foundation |
+| insights-dashboard-foundation | Initial insights view with basic latency, wait burden, and first-pass metrics. | low | ai-scorecard-foundation |
