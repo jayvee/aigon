@@ -50,3 +50,18 @@ stays ignorant of where engine state lives.
 - **Test budget.** The suite was at 2000/2000 after adding the
   regression asserts. Compressed the new lines to fit exactly at the
   ceiling rather than deleting unrelated tests or asking for a bump.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-08
+
+### Findings
+- Branch diff included unrelated changes outside feature 242: a moved feature 243 spec and a `package-lock.json` metadata drift line.
+- The feature 242 implementation itself matches the spec's intended Option B fix: `feature-reset` now delegates workflow cleanup through `wf.resetFeature(...)` and reports engine-state removal.
+
+### Fixes Applied
+- `363a1209` — removed unrelated branch drift so this branch only carries the feature 242 reset fix and its review log.
+
+### Notes
+- No targeted changes were needed to the workflow reset implementation itself during review.
