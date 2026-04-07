@@ -1,0 +1,92 @@
+# Contributing to Aigon
+
+Thanks for your interest in contributing to Aigon — a spec-driven CLI for orchestrating AI coding agents. This guide covers the basics of getting set up, what to work on, and how to submit changes.
+
+## Quick start
+
+```bash
+# Clone and link
+git clone https://github.com/jayvee/aigon.git ~/src/aigon
+cd ~/src/aigon
+npm install
+npm link
+
+# Verify
+aigon --version
+aigon doctor
+
+# Run the test suite
+npm test                    # unit tests (fast)
+MOCK_DELAY=fast npm run test:ui   # dashboard e2e (~1 min)
+```
+
+You'll need **Node.js 18+**, **Git 2.20+**, and **tmux** (for Fleet/worktree mode tests).
+
+## Where to start
+
+- **Bugs**: file an issue using the bug report template, or send a PR if you have a fix
+- **Features**: open an issue first to discuss the design before coding — Aigon is opinionated and not every feature fits the workflow
+- **Docs improvements**: PRs welcome, no issue needed for clear improvements
+- **Good first issues**: look for the `good first issue` label on open issues
+
+## Repository layout
+
+The most useful pointers are in [`AGENTS.md`](AGENTS.md) and [`CLAUDE.md`](CLAUDE.md), which document the module map, the `ctx` dependency-injection pattern, and where to add code for different kinds of changes. Read those before opening a non-trivial PR.
+
+Key directories:
+
+- `aigon-cli.js` — CLI entry point (dispatch only, no business logic)
+- `lib/commands/` — domain command modules (feature, research, feedback, infra, setup, misc)
+- `lib/*.js` — shared library code (16 modules; see the module map in `AGENTS.md`)
+- `templates/generic/commands/` — agent prompt templates (source of truth)
+- `tests/` — unit + integration tests (kept under a 2,000-LOC ceiling)
+- `site/` — Next.js + Nextra documentation site published at [aigon.build](https://aigon.build)
+
+## Submitting a PR
+
+1. Fork the repo, create a feature branch from `main`
+2. Make your changes — keep them focused, one concern per PR
+3. **Add a test** for new code or bug fixes (see `AGENTS.md` rule T2 — every regression test should include a one-line `// REGRESSION:` comment naming the issue it prevents)
+4. Run the full pre-push check:
+   ```bash
+   npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh
+   ```
+   All three must pass before pushing.
+5. Open a PR using the template — explain the *why*, link the issue, list what you tested
+
+## Test discipline
+
+The test suite has a **hard ceiling of 2,000 LOC** enforced by `scripts/check-test-budget.sh`. When adding tests:
+
+- Test behaviour, not implementation details
+- Delete old tests that are now covered by integration tests
+- No snapshot tests, no tests where mock setup exceeds assertion count
+- Every test gets a `// REGRESSION:` comment naming the issue it prevents
+
+If you genuinely need to bump the ceiling, mention it in your PR and explain why.
+
+## Code style
+
+- Match the surrounding code style — Aigon is JavaScript (CommonJS, no TypeScript except in `site/`)
+- 4-space indentation in `lib/`, follow whatever the file already uses elsewhere
+- Don't add comments to existing code unless you're explaining genuinely non-obvious logic
+- Don't add validation, error handling, or fallbacks for scenarios that can't happen
+- Don't over-engineer — the simplest thing that works wins
+
+## Aigon Pro
+
+The commercial Pro tier lives in a separate private repo and is **not yet available for purchase**. PRs to aigon (this repo) should only touch open-source code. If a feature needs to coordinate with Pro, that's documented in `CLAUDE.md` and is rare — open an issue first.
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the [Apache License 2.0](LICENSE).
+
+## Code of conduct
+
+This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). Be kind, be patient, ask questions when something is unclear.
+
+## Questions?
+
+- Open a [GitHub Discussion](https://github.com/jayvee/aigon/discussions) (preferred for design/architecture)
+- File an [issue](https://github.com/jayvee/aigon/issues) (for bugs and concrete asks)
+- Visit the docs at [aigon.build](https://aigon.build)
