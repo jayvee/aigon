@@ -57,30 +57,11 @@ Agent sessions → Telemetry parsers → .aigon/telemetry/ → Reports tab (free
 
 The Insights tab reads the same normalized telemetry that the free Reports tab uses. No additional data collection is required — if Reports shows data, Insights can analyse it.
 
-## Setting up Pro
+## Getting Aigon Pro
 
-1. Install the Pro package:
+**Aigon Pro is in development and not yet available for purchase.** When the Insights tab is enabled, the dashboard surfaces a "Pro — coming later" placeholder where the deeper analytics will appear, and the `aigon insights` CLI command prints a gate message pointing at the free alternatives (`aigon board`, `aigon commits`, `aigon feature-status`).
 
-```bash
-cd ~/src/aigon-pro
-npm link
-cd ~/src/aigon
-npm link @aigon/pro
-```
-
-2. Verify Pro is detected:
-
-```bash
-aigon doctor
-```
-
-Look for the "Aigon Pro" line in the output.
-
-3. Restart the dashboard to load the Insights tab:
-
-```bash
-aigon server restart
-```
+If you'd like to be notified when Pro launches, follow [Sen Labs](https://senlabs.ai) for updates.
 
 ## When Insights is most useful
 

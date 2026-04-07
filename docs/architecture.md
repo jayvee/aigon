@@ -307,75 +307,38 @@ Components:
 
 ## Aigon Pro (`@aigon/pro`)
 
-Aigon has a **free/pro split**. Commercial Pro / Amplification features live in a separate private repo to keep them out of the public git history.
+Aigon has a **free/pro split**. The free tier (this repo) is open source under Apache 2.0. The commercial Pro tier is a separate package that augments aigon with deeper insights, AI coaching, and the autonomous-mode "AutoConductor" — **Pro is in development and not yet available for purchase**, and gate messages in the CLI explicitly say so.
 
-| | Aigon (this repo) | Aigon Pro (`~/src/aigon-pro`) |
+| | Aigon (this repo) | Aigon Pro |
 |---|---|---|
-| **Repo** | `github.com/jayvee/aigon` (public) | `github.com/jayvee/aigon-pro` (private) |
-| **Package** | `aigon` | `@aigon/pro` |
-| **Contains** | CLI, workflow engine, AIGON server, dashboard UI, free-tier features | Insights engine, amplification dashboard, AI coaching |
-| **Data collection** | Yes — `getFeatureGitSignals()` in `lib/git.js` collects metrics | No — uses data collected by the free tier |
-| **Analysis/insights** | Rule-based basics only | Full insights, trends, AI coaching |
+| **Status** | Free, open source (Apache 2.0) | In development, not yet for sale |
+| **Package** | `aigon` | `@aigon/pro` (separate package) |
+| **Contains** | CLI, workflow engine, dashboard, free-tier features | Insights engine, AI coaching, autonomous-mode runner |
+| **Data collection** | Yes — `getFeatureGitSignals()` in `lib/git.js` | No — consumes the free tier's data |
 
-### How the integration works
+### Integration shape
 
-There are exactly **two** files in aigon that may import `@aigon/pro`:
+The free tier is the **host**. Pro is an optional **subscriber** loaded via a single extension seam. There are exactly two files in aigon that may import `@aigon/pro`:
 
-1. **`lib/pro.js`** — lazy-require gate. Exposes `isProAvailable()` and `getPro()`. Respects the `AIGON_FORCE_PRO` **environment variable** (`false`/`0` simulates the free tier even when `@aigon/pro` is installed) so Pro can be simulated as absent for testing. Pro availability is a property of the **aigon install**, not of any individual repo — `lib/pro.js` must NOT read project config (`.aigon/config.json`). A per-repo `forcePro` flag produced an incoherence bug where the dashboard top nav and a subprocess spawned with a different `cwd` disagreed about Pro state in the same session.
-2. **`lib/pro-bridge.js`** — the **single Pro extension point**. Holds an in-process route registry and invites `@aigon/pro` to subscribe at server startup. Open-source modules never call `getPro()` for new features — they extend the bridge instead.
+1. **`lib/pro.js`** — lazy-require gate. Exposes `isProAvailable()` and `getPro()`. Respects the `AIGON_FORCE_PRO` environment variable so the free tier can be simulated as the only tier for testing.
+2. **`lib/pro-bridge.js`** — the single extension point. At server startup it invites Pro (if installed) to register itself, then dispatches incoming requests to whichever side owns them.
 
 ```js
-// lib/pro.js — gate
+// lib/pro.js — the entire integration surface visible to consumers
 let pro = null;
 try { pro = require('@aigon/pro'); } catch { /* free tier */ }
 module.exports = { isProAvailable, getPro: () => pro };
 ```
 
-When `@aigon/pro` is installed (via `npm link` during development), Pro features light up. When absent, the CLI gracefully degrades — dashboard shows "Pro — coming later" placeholders, `aigon insights` shows a free-tier message. Gate messages must never imply a purchase flow exists; Pro is in development and not yet available for purchase (see feature 159 — honest gate messaging).
+When `@aigon/pro` is absent (the default for everyone right now), the CLI gracefully degrades: the dashboard shows "Pro — coming later" placeholders, and `aigon insights` prints a friendly message pointing at the free alternatives (`aigon board`, `aigon commits`, `aigon feature-status`).
 
-### Pro extension contract (`lib/pro-bridge.js`)
+**Honest gate messaging is non-negotiable** — gate messages in the CLI must never imply that a purchase flow exists. There is no "buy" button anywhere because there is nothing to sell yet.
 
-Pro is a **subscriber**, not a caller. At server startup, `dashboard-server.js` calls `proBridge.initialize({ helpers })` exactly once. The bridge then invokes `pro.register(api)` if `@aigon/pro` exposes a `register()` function.
+### Specs for Pro features
 
-`api` is the stable contract surface:
+Since 2026-04-07, Pro feature specs live in a private companion repo, not in this one. Historical Pro feature IDs that moved out are listed in `docs/specs/features/MOVED-TO-AIGON-PRO.md`. For day-to-day OSS development this is invisible — you only notice it if you see a gap in feature numbering and want to know what filled it.
 
-| Field | Description |
-|---|---|
-| `api.registerRoute(method, path, handler)` | Register an HTTP route. `handler(req, res, ctx)` receives `ctx.url` (parsed) and `ctx.readJsonBody()` (Promise). |
-| `api.helpers.loadProjectConfig` | Read project-level `.aigon/config.json`. |
-| `api.helpers.resolveRequestedRepoPath(raw)` | Sanitize and resolve a repo path against the configured repos. Returns `{ ok, repoPath }` or `{ ok: false, status, error }`. |
-| `api.helpers.sendJson(res, status, payload)` | Standard JSON response helper. |
-
-Open-source `dashboard-server.js` then calls `proBridge.dispatchProRoute(method, path, req, res)` once per request. If a Pro route matches, the bridge handles it; otherwise it falls through. The dashboard server has **zero knowledge** of which paths Pro owns, except for a single `/api/insights*` prefix check that returns the upgrade payload when Pro is absent.
-
-**Adding new helpers** is backward-compatible. **Removing or changing existing helpers** is a breaking change requiring a coordinated version bump on both `aigon` and `@aigon/pro`. Pro declares its compatible aigon range as a peer-dep.
-
-**Future extension shapes** (event bus for lifecycle hooks, anti-corruption read layer for engine state) will live in `lib/pro-bridge.js` so there is exactly one place that knows about Pro. The current shape is **plugin route registration** (Option B from feature 219).
-
-**Pro side** — `~/src/aigon-pro/index.js` exports `register(api)` that calls `api.registerRoute(...)` for each Pro endpoint (`/api/insights`, `/api/insights/refresh`, etc.). It never imports anything from aigon directly — every dependency comes through `api.helpers`.
-
-### Cross-repo development
-
-Features are always tracked in the **aigon** repo (specs, logs, board). When a feature touches Pro code:
-
-1. The feature spec in aigon should note which `@aigon/pro` files need changes
-2. The agent should `cd ~/src/aigon-pro` to make and commit Pro changes
-3. Run `npm link` in `~/src/aigon-pro`, then `npm link @aigon/pro` in aigon to test integration
-4. Both repos need separate commits — aigon for the integration, aigon-pro for the Pro logic
-
-### Aigon Pro repo structure
-
-```
-~/src/aigon-pro/
-├── index.js            # main entry: exports insights, dashboard components
-├── lib/insights.js     # rule-based + AI insights engine
-├── dashboard/
-│   └── amplification.js  # amplification metrics dashboard view
-├── commands/
-│   └── insights.md     # slash command template for insights
-└── tests/
-    └── insights.test.js
-```
+If a future contribution to aigon needs to make a coordinated change with the Pro side, the convention is documented in `CLAUDE.md` and `AGENTS.md` under "Cross-repo features".
 
 ## Design Rules
 
