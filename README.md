@@ -41,13 +41,13 @@ Full documentation at **[aigon.build/docs](https://aigon.build/docs)**
 
 ## Aigon Pro (coming later)
 
-Aigon Pro is a planned commercial tier bundling autonomous orchestration, AADE Insights, and AI-powered coaching. **Pro is in development and not yet available for purchase** — the commands below will print a gate message and point you at the free alternative.
+Aigon Pro is a planned commercial tier bundling autonomous orchestration, Insights, and AI-powered coaching. **Pro is in development and not yet available for purchase** — the commands below will print a gate message and point you at the free alternative.
 
 | Pro-gated command | What it does | Free alternative |
 |---|---|---|
 | `feature-autonomous-start <id>` | AutoConductor: implement → review → close unattended | `feature-start <id>` + `feature-do <id>` |
 | `research-autopilot <id>` | Fleet research with auto spawn + monitor + evaluate | `research-start <id>` + `research-do <id>` |
-| `aigon insights` | AADE Insights, coaching, amplification metrics | `aigon board`, `aigon commits`, `aigon feature-status` |
+| `aigon insights` | Insights, coaching, amplification metrics | `aigon board`, `aigon commits`, `aigon feature-status` |
 
 The free tier — Drive mode, manual Fleet, the dashboard, interactive evaluation/review — is complete and stays free and open-source. There is no purchase flow today, and no "upgrade" CTA because there's nothing to sell yet.
 
