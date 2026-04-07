@@ -246,6 +246,11 @@
       // tmux alive is the ground truth — override engine status if session is running
       if (tmuxRunning && status !== 'submitted' && status !== 'waiting') {
         icon = '●'; label = drive ? 'Implementing' : 'Running'; cls = 'status-running';
+      } else if (drive && status === 'implementing') {
+        // Solo Drive mode runs in the current branch without a tmux session.
+        // Treat the workflow status as the source of truth instead of
+        // interpreting the missing tmux session as a crashed/ended session.
+        icon = '●'; label = 'Implementing'; cls = 'status-running';
       } else if (status === 'implementing' && endedFlag) {
         icon = '◐'; label = 'Finished (unconfirmed)'; cls = 'status-flagged';
       } else if (status === 'implementing' && !tmuxRunning) {
