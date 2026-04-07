@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Syntax check
+        run: |
+          node -c aigon-cli.js
+          node -c lib/utils.js
+          node -c lib/dashboard-server.js
+
+      - name: Workflow diagrams up-to-date
+        run: npm run workflow:diagrams:check
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Test budget under ceiling
+        run: bash scripts/check-test-budget.sh
