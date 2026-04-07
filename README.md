@@ -27,7 +27,9 @@
 
 ## What is Aigon?
 
-Aigon is a CLI-first workflow orchestrator for AI-assisted software development. You write a spec in Markdown, then let one agent implement it — or let several agents compete and pick the best result. Everything lives in plain files in your repo. No SaaS account, no vendor lock-in, no proprietary state.
+Aigon is an open-source, spec-driven orchestration system for AI coding agents — run them head-to-head on the same feature, then score their work so you can ship with confidence.
+
+You work with Aigon from wherever you already are: **slash commands** inside your agent (Claude Code, Gemini CLI, Codex CLI, Cursor), a **web dashboard** on `localhost`, or direct **CLI commands** in your terminal. All three surfaces read and write the same Markdown specs in your repo — no SaaS account, no vendor lock-in, no proprietary state.
 
 It works with the AI coding tools you already use:
 
@@ -66,21 +68,25 @@ aigon install-agent cc        # Install the Claude Code agent
 aigon doctor                  # Verify environment
 ```
 
-Create and implement your first feature:
+Create and implement your first feature — the fastest path is `/aigon:feature-now` from **inside Claude Code**:
+
+```
+/aigon:feature-now dark-mode
+Add a dark mode toggle with system preference detection, persist
+the choice in localStorage, and default to the system preference.
+```
+
+That one command creates the spec, assigns an ID, sets up the worktree, and starts implementing. You stay in your agent the whole time.
+
+Prefer the terminal? The CLI equivalent spread across explicit steps:
 
 ```bash
-# Drive mode: one agent, one feature, straight to done
 aigon feature-create "dark mode toggle with system preference detection"
 aigon feature-prioritise dark-mode
 aigon feature-start dark-mode cc    # Launches Claude Code in a worktree
 ```
 
-Or from inside Claude Code, use the slash command fast path:
-
-```
-/aigon:feature-now dark-mode
-Add a dark mode toggle with system preference detection...
-```
+Or spin up the web dashboard (`aigon server start`) and click "New Feature" on the kanban board. Same specs, three surfaces — pick whichever fits the moment.
 
 ## Demo
 
@@ -102,15 +108,15 @@ Full documentation lives at **[aigon.build/docs](https://aigon.build/docs)**:
 
 ## Aigon Pro (coming later)
 
-Aigon Pro is a planned commercial tier bundling autonomous orchestration, Insights, and AI-powered coaching. **Pro is in development and not yet available for purchase** — the commands below will print a gate message and point you at the free alternative.
+Aigon Pro is a planned commercial tier that extends the free workflow with three things the open-source side intentionally doesn't do:
 
-| Pro-gated command | What it does | Free alternative |
-|---|---|---|
-| `feature-autonomous-start <id>` | AutoConductor: implement → review → close unattended | `feature-start <id>` + `feature-do <id>` |
-| `research-autopilot <id>` | Fleet research with auto spawn + monitor + evaluate | `research-start <id>` + `research-do <id>` |
-| `aigon insights` | Insights, coaching, amplification metrics | `aigon board`, `aigon commits`, `aigon feature-status` |
+- **Autonomous orchestration** — AutoConductor runs implement → review → close unattended, so you can hand off a feature and come back to a merged PR
+- **Insights** — deeper analytics over your whole feature history: agent quality trends, cost per delivered change, token efficiency over time, agent-vs-agent comparisons
+- **AI-powered coaching** — recommendations based on your workflow patterns, so the system learns what "shipping well" looks like for your team
 
-The free tier — Drive mode, manual Fleet, the dashboard, interactive evaluation/review — is complete and stays free and open-source. There is no purchase flow today, and no "upgrade" CTA because there's nothing to sell yet. See the [Pro page](https://aigon.build/pro) for a preview of what's coming.
+**Pro is in development and not yet available for purchase.** There is no purchase flow, no upgrade CTA, no waitlist gate — the Pro-gated commands print an honest "coming later" message and point you at the free alternative.
+
+The free tier — Drive mode, manual Fleet, the dashboard, interactive evaluation/review, telemetry, and basic reports — is complete and stays free and open source. See the [Pro page](https://aigon.build/pro) for a preview of what's coming.
 
 ## Community and support
 
