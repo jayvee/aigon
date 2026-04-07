@@ -37,7 +37,7 @@ This is a real UX gap, not a one-off. Anyone running features from the dashboard
 # Source-level checks
 node --check lib/feature-workflow-rules.js
 node --check lib/dashboard-server.js
-grep -q "FEATURE_RESET\|feature-reset" lib/feature-workflow-rules.js
+grep -q "FEATURE_RESET\\|feature-reset" lib/feature-workflow-rules.js
 
 # Full suite
 npm test && MOCK_DELAY=fast npm run test:ui
@@ -74,7 +74,7 @@ Add to `FEATURE_INFRA_CANDIDATES` in `lib/feature-workflow-rules.js`:
     metadata: {
         apiEndpoint: 'feature/reset',
         destructive: true,          // New flag; frontend reads this and applies danger styling
-        confirmationMessage: 'Kill tmux sessions, remove worktree and branch, clear engine state, and move spec back to Backlog. Cannot be undone.',
+        confirmationMessage: 'Kill tmux sessions, remove worktree and branch, clear engine state, and move the spec back to Backlog. Cannot be undone.',
     },
 },
 ```
