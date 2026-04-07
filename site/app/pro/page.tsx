@@ -89,6 +89,18 @@ function FeatureCard({
 export default function ProPage() {
   return (
     <div className="min-h-screen">
+      {/* Preview banner — Pro is not yet for sale */}
+      <div className="border-b border-aigon-orange/30 bg-aigon-orange/10 px-6 py-3 text-center text-sm text-aigon-orange">
+        <strong>Preview.</strong> Aigon Pro is in development and <strong>not yet available for purchase</strong>. This page describes features being built — follow{" "}
+        <a
+          href="https://aigon.build"
+          className="underline hover:no-underline"
+        >
+          aigon.build
+        </a>{" "}
+        for launch updates.
+      </div>
+
       {/* Hero */}
       <section className="px-6 pt-24 pb-16 md:pt-32 md:pb-20">
         <div className="mx-auto max-w-3xl text-center">
