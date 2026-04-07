@@ -71,8 +71,8 @@ const navbar = (
 
 const footer = (
   <Footer>
-    <span>MIT {new Date().getFullYear()} &copy; Aigon</span>
-    <span> · <a href="https://senlabs.ai" target="_blank" rel="noopener noreferrer">A Sen Labs product</a></span>
+    <span>Apache 2.0 · {new Date().getFullYear()} &copy; Sen Labs</span>
+    <span> · <a href="https://senlabs.ai" target="_blank" rel="noopener noreferrer">senlabs.ai</a></span>
   </Footer>
 );
 
