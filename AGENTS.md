@@ -82,10 +82,27 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 ## Aigon Pro (`@aigon/pro`)
 - **Private repo**: `~/src/aigon-pro` (github.com/jayvee/aigon-pro)
 - **Integration point**: `lib/pro.js` — `require('@aigon/pro')` with graceful fallback
-- **What's there**: insights engine, amplification dashboard, AI coaching — all commercial AADE features
+- **What's there**: insights engine, amplification dashboard, AI coaching — all commercial features
 - **Dev setup**: `cd ~/src/aigon-pro && npm link`, then `cd ~/src/aigon && npm link @aigon/pro`
-- **Cross-repo features**: specs live in aigon, but note Pro file changes in the spec; commit to both repos separately
 - See `docs/architecture.md` § "Aigon Pro" for full details
+
+### Where Pro feature specs live (post-2026-04-07 split)
+Pro feature specs live in **aigon-pro**, not here. `aigon feature-create`
+inside aigon-pro writes there automatically. Historical Pro features that
+were moved out are listed in `docs/specs/features/MOVED-TO-AIGON-PRO.md`
+— check that file if you see a gap in aigon's feature numbering.
+
+### Cross-repo features (specs in aigon-pro that touch aigon code)
+A feature whose primary purpose is Pro behavior, but that needs to edit
+OSS aigon code (e.g. `lib/pro-bridge.js`) — the spec lives in aigon-pro.
+In the aigon commit, add this footer:
+
+```
+Cross-repo: aigon-pro feature N
+```
+
+This tells anyone reading public aigon history that the commit was
+Pro-driven, without revealing the spec contents.
 
 ## Install Architecture
 `aigon install-agent` writes **only aigon-owned files** — it never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).
