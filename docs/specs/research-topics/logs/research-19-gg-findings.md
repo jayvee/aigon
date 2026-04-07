@@ -44,15 +44,13 @@ The top 5-10 metrics that provide the highest signal-to-noise for AI-native work
 
 ### Implementation in Aigon
 - **Data Model Mapping**: Aigon's feature specs map perfectly to "Value". Agent session logs map to "Prompt Efficiency". Git history maps to "Survivability" and "Edit Distance".
-- **Presentation (Aigon Pro)**: Should be presented as an "AI ROI Dashboard" showing time saved, rework bottlenecks, and token costs.
-- **Free Tier vs Pro**:
-  - *Free*: Basic velocity (AI-Segmented Cycle Time) and Prompt Efficiency.
-  - *Pro*: Code Survivability, Rework Rate, and Token-to-Value (ROI).
+- **Presentation**: Should be presented as an "AI ROI Dashboard" in the insights view showing time saved, rework bottlenecks, and token costs.
+- **Insights view scope**: AI-Segmented Cycle Time, Prompt Efficiency, Code Survivability, Rework Rate, and Token-to-Value (ROI).
 
 ## Recommendation
-Aigon should adopt a **"Quality & Survivability First"** metrics strategy. Since Aigon acts as an autonomous orchestrator, proving that Aigon's code *survives* without human rework is the ultimate proof of value. 
+Aigon should adopt a **"Quality & Survivability First"** metrics strategy. Since Aigon acts as an autonomous orchestrator, proving that Aigon's code *survives* without human rework is the ultimate proof of value.
 
-We should immediately implement git attribution for all Aigon commits and build a background telemetry service that calculates **AI Edit Distance** and **Code Survivability**. These two metrics will form the core of the Aigon Pro Insights dashboard, differentiating Aigon from tools that only report vanity metrics like "lines generated."
+We should immediately implement git attribution for all Aigon commits and build a background telemetry service that calculates **AI Edit Distance** and **Code Survivability**. These two metrics will form the core of Aigon's insights dashboard, differentiating Aigon from tools that only report vanity metrics like "lines generated."
 
 ## Suggested Features
 
@@ -61,7 +59,7 @@ We should immediately implement git attribution for all Aigon commits and build 
 | `agent-git-attribution` | Ensure all agent commits use a distinct author email or git trailer for precise tracking. | high | none |
 | `metric-code-survivability` | Background job that uses git blame to calculate the 14-day persistence rate of agent code. | high | `agent-git-attribution` |
 | `metric-ai-edit-distance` | Calculate the diff size between the final agent commit and the PR merge commit. | high | `agent-git-attribution` |
-| `dashboard-roi-insights` | UI in Aigon Pro to visualize Token-to-Value, Survivability, and Rework Rate. | medium | `metric-code-survivability` |
+| `dashboard-roi-insights` | Insights view to visualize Token-to-Value, Survivability, and Rework Rate. | medium | `metric-code-survivability` |
 | `metric-prompt-efficiency` | Track and visualize agent session length and turns-to-completion per feature. | medium | none |
 | `metric-review-expansion` | Measure the time PRs sit in review, segmented by % of AI-authored code. | low | `agent-git-attribution` |
 
