@@ -1,28 +1,22 @@
 ---
-title: "feature-submit"
-description: "Submit feature implementation - commit changes, write log, signal done"
+title: "feature-submit (removed)"
+description: "Removed — submission is now signaled via agent-status"
 ---
 
-## Synopsis
+`feature-submit` has been removed. Implementation submission is now signaled
+automatically by the shell trap wrapper around [`feature-do`](/docs/reference/commands/feature/feature-do),
+or manually via `aigon agent-status submitted`.
 
 ```bash
+# Before (no longer works)
 aigon feature-submit
+
+# After — automatic on clean exit of feature-do
+aigon feature-do 42
+
+# Or signal manually
+aigon agent-status submitted
 ```
 
-## Shortcuts
-
-- `/afsb` (slash command) · `aigon afsb` (CLI)
-
-## Description
-
-Submit feature implementation - commit changes, write log, signal done
-
-## Usage
-
-```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feature-submit
-
-# CLI
-aigon feature-submit
-```
+See the [Drive Mode guide](/docs/guides/drive-mode) for the full submission
+flow.

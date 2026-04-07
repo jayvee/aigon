@@ -307,7 +307,7 @@ Components:
 
 ## Aigon Pro (`@aigon/pro`)
 
-Aigon has a **free/pro split**. Commercial AADE (Amplification) features live in a separate private repo to keep them out of the public git history.
+Aigon has a **free/pro split**. Commercial Pro / Amplification features live in a separate private repo to keep them out of the public git history.
 
 | | Aigon (this repo) | Aigon Pro (`~/src/aigon-pro`) |
 |---|---|---|
