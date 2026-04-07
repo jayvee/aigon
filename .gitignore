@@ -4,6 +4,12 @@ node_modules/
 # OS
 .DS_Store
 
+# Screenshots / dev artifacts at repo root — keep these in
+# site/public/img/ or docs/images/ instead. Subdirectories are unaffected.
+/*.png
+/*.jpg
+/*.jpeg
+
 # Environment (secrets, per-machine config)
 .env.local
 .env*.local
