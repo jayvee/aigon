@@ -76,14 +76,22 @@ Add a dark mode toggle with system preference detection, persist
 the choice in localStorage, and default to the system preference.
 ```
 
-That one command creates the spec, assigns an ID, creates a feature branch, and starts implementing — all in your current repo, no worktree. You stay in your agent the whole time.
+That one command creates the spec, assigns an ID, creates a feature branch, and starts implementing — all in your current repo. You stay in your agent the whole time.
 
-Prefer the terminal? The CLI equivalent spread across explicit steps:
+Prefer the terminal? Run `feature-create` with a short description and let an agent draft the spec for you:
 
 ```bash
-aigon feature-create "dark mode toggle with system preference detection"
-aigon feature-prioritise dark-mode
-aigon feature-start dark-mode cc    # Launches Claude Code in a worktree
+aigon feature-create dark-mode --agent cc "dark mode toggle with system preference detection, persisted in localStorage"
+```
+
+Aigon writes a bare spec from the description, then launches Claude Code (`cc`) headless to flesh out the user stories, acceptance criteria, and technical approach. The drafted spec lands in `docs/specs/features/01-inbox/` for you to review — nothing is committed, no branch is created, no work starts yet. When you're happy with the draft, move it forward:
+
+```bash
+aigon feature-prioritise dark-mode           # Assigns an ID, moves to backlog
+aigon feature-start dark-mode cc             # Single-agent Drive mode in a worktree
+# or
+aigon feature-start dark-mode cc cx          # Fleet mode — Claude and Codex race the implementation
+aigon feature-eval dark-mode                 # Compare results, pick the winner
 ```
 
 Or spin up the web dashboard (`aigon server start`) and click "New Feature" on the kanban board. Same specs, three surfaces — pick whichever fits the moment.
