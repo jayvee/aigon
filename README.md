@@ -78,13 +78,13 @@ the choice in localStorage, and default to the system preference.
 
 That one command creates the spec, assigns an ID, creates a feature branch, and starts implementing — all in your current repo. You stay in your agent the whole time.
 
-Prefer the terminal? Run `feature-create` with a short description and let an agent draft the spec for you:
+Prefer the terminal? Run `feature-create` with a short description and draft the spec collaboratively with an agent:
 
 ```bash
 aigon feature-create dark-mode --agent cc "dark mode toggle with system preference detection, persisted in localStorage"
 ```
 
-Aigon writes a bare spec from the description, then launches Claude Code (`cc`) headless to flesh out the user stories, acceptance criteria, and technical approach. The drafted spec lands in `docs/specs/features/01-inbox/` for you to review — nothing is committed, no branch is created, no work starts yet. When you're happy with the draft, move it forward:
+Aigon writes a bare spec from your description, then launches Claude Code (`cc`) **interactively** in your terminal with the drafting context pre-loaded. You have a real conversation with the agent — it asks clarifying questions, proposes user stories and acceptance criteria, you push back and iterate, and when you're satisfied you exit the session. The drafted spec lands in `docs/specs/features/01-inbox/` for a final review — nothing is committed, no branch is created, no work starts yet. When you're happy with the draft, move it forward:
 
 ```bash
 aigon feature-prioritise dark-mode           # Assigns an ID, moves to backlog
