@@ -4,9 +4,25 @@
 
 Add an `--agent <id>` flag to `aigon feature-create` that launches the named agent (cc, gg, cx, or cu) to flesh out the bare spec from a short description. The agent writes the user stories, acceptance criteria, and technical approach sections, saves the result, and exits. Feature stays in `01-inbox/` for user review before prioritising. Closes the gap between "describe a feature on the CLI" and "feature spec ready to prioritise" without requiring the user to be inside an agent first.
 
+## Recommended syntax
+
+Flags come **right after the feature name**, before the description. This keeps the agent choice scannable even when the description is long:
+
+```bash
+aigon feature-create <name> --agent <id> "<short description>"
+```
+
+Example:
+
+```bash
+aigon feature-create beer-colour --agent cc "add a colour label and filter by colour"
+```
+
+The parser still accepts flags in any order (so the existing `aigon feature-create beer-colour "..." --agent cc` keeps working), but documentation and examples consistently use the name → flags → description order.
+
 ## User Stories
 
-- [ ] As a user at the CLI, I can run `aigon feature-create beer-colour "every beer needs a colour label and filter" --agent cc` and get a fleshed-out spec within a minute, without having to open Claude Code first.
+- [ ] As a user at the CLI, I can run `aigon feature-create beer-colour --agent cc "every beer needs a colour label and filter"` and get a fleshed-out spec within a minute, without having to open Claude Code first.
 - [ ] As a user who prefers one agent over another for spec drafting, I can pick which agent does the drafting via the `--agent` flag.
 - [ ] As a user whose agent CLI fails mid-drafting, I can see a clear error and still have the bare spec in inbox to fill in manually or retry.
 - [ ] As a user reviewing AI-drafted specs, I can trust that nothing has been committed, no branch has been created, and the feature is still in inbox — ready for me to edit or reject without cleanup.
@@ -32,7 +48,7 @@ npm test
 
 # Manual end-to-end (requires at least one agent CLI installed):
 cd /tmp && mkdir aigon-test && cd aigon-test && git init && aigon init
-aigon feature-create smoke-test "a smoke test feature to verify agent drafting" --agent cc
+aigon feature-create smoke-test --agent cc "a smoke test feature to verify agent drafting"
 cat docs/specs/features/01-inbox/feature-smoke-test.md
 # Expect: User Stories, Acceptance Criteria, Technical Approach all populated
 ```
@@ -41,9 +57,22 @@ cat docs/specs/features/01-inbox/feature-smoke-test.md
 
 ### 1. Arg parsing
 
-Extend the `feature-create` handler in `lib/commands/feature.js`. Recognize `--agent <id>` in the args, validate the agent ID against `getAllAgentIds()` from `lib/agent-registry.js`, and error cleanly if unknown.
+Extend the `feature-create` handler in `lib/commands/feature.js`. The parser needs a small rewrite to be flag-aware so the positional description doesn't accidentally swallow flag values:
 
-The existing positional-description parser (just landed in `db3dd5de`) stays. `--agent` is extracted separately from the description so users can mix freely: `aigon feature-create beer-colour "short desc" --agent cc` works and so does `aigon feature-create beer-colour --agent cc --description "short desc"`.
+1. Take `args[0]` as the name
+2. Walk the remaining args, extracting any recognized flag pairs (`--agent <id>`, `--description <text>`, any future `--foo <bar>`) into a flags map
+3. Whatever positional args are left after flag extraction become the description (joined with spaces)
+
+This lets all of these work equivalently:
+
+```bash
+aigon feature-create beer-colour --agent cc "add a colour filter"        # recommended order
+aigon feature-create beer-colour "add a colour filter" --agent cc        # trailing flag
+aigon feature-create beer-colour --agent cc --description "add filter"   # both flags
+aigon feature-create beer-colour add a colour filter                     # no agent, positional
+```
+
+Validate the agent ID against `getAllAgentIds()` from `lib/agent-registry.js` and error cleanly if unknown. The current `feature-create` handler (from commit `db3dd5de`) is naive about flag extraction — it treats `args.slice(1)` as the description when `--description` isn't present — which would wrongly include `--agent cc` as description words. Rewrite to the walk-and-extract approach above.
 
 ### 2. Agent dispatcher
 
@@ -128,6 +157,7 @@ The exact CLI flags need to be confirmed against each agent's current version be
 
 ## Out of Scope
 
+- **Multi-line description input from the CLI.** The `--agent` flow accepts a short description as a positional one-liner or `--description "text"` — no editor mode, no `--description-file`, no stdin input. For longer or multi-line descriptions, users have two better options: (1) create the bare spec with `aigon feature-create <name>` and edit the file directly in their editor of choice, or (2) use `/aigon:feature-now <name>` inside Claude Code (or equivalent slash commands in other agents), which handles multi-line chat input natively with zero shell-escaping friction. The CLI `--agent` flow is deliberately scoped to the "I want a one-liner fleshed out into a proper spec" use case.
 - **Multi-agent fleet drafting** (two agents racing on the same spec draft) — single agent only. Fleet mode is for implementation, not spec drafting.
 - **Editing an existing spec** — `--agent` only works with `feature-create`. No `feature-rewrite --agent cc` for polishing specs already in backlog or in-progress. Could be a follow-up feature `feature-draft <id>`.
 - **Autonomous prioritise or start** — the drafted spec stays in inbox, full stop. User is the gate.
