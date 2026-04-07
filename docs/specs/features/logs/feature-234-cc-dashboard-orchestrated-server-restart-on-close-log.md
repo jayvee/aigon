@@ -138,3 +138,20 @@ backend + ~40 LOC of frontend + ~20 LOC of tests.
 5. Run `aigon feature-close <id>` from a terminal (not dashboard).
    Expected: "🔄 Restarting aigon server…" printed, existing behaviour
    unchanged.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-07
+
+### Findings
+- `tests/integration/dashboard-restart-marker.test.js` existed but was not included in `npm test`, so the new restart-marker regression coverage never executed.
+- The branch did not exercise `runDashboardInteractiveAction`, leaving the `AIGON_INVOKED_BY_DASHBOARD=1` launch contract unverified.
+
+### Fixes Applied
+- `73c4c922` `fix(review): restore feature 234 regression coverage`
+  - added `tests/integration/dashboard-restart-marker.test.js` to the `npm test` script
+  - added a direct regression assertion in `tests/integration/feature-close-restart.test.js` proving dashboard-launched actions inject `AIGON_INVOKED_BY_DASHBOARD=1`
+
+### Notes
+- Review stayed scoped to test coverage because the implementation path itself matched the intended restart behavior and did not warrant architectural changes.
