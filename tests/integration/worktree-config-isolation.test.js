@@ -10,11 +10,11 @@ assert.ok(/config --worktree user\.email/.test(src), 'user.email must use --work
 assert.ok(/config --worktree user\.name/.test(src), 'user.name must use --worktree');
 assert.ok(!/config --local user\.(name|email)/.test(src), 'must NEVER set user.name/email via --local (pollutes main)');
 assert.ok(/config --worktree core\.hooksPath/.test(src), 'core.hooksPath must be worktree-scoped');
-// REGRESSION (feature-create): positional description + --agent interactive drafting (feature 241).
+// REGRESSION (feature-create): positional description must work, not just --description.
 const featSrc = fs.readFileSync(require('path').join(__dirname, '../../lib/commands/feature.js'), 'utf8');
-assert.ok(/positional\.join\(' '\)/.test(featSrc), 'feature-create must support positional description');
+assert.ok(/args\.slice\(1\)\.join\(' '\)\.trim\(\)/.test(featSrc), 'feature-create must support positional description');
 assert.ok(/Ignored unrecognized args before --description/.test(featSrc), 'feature-create must warn on stranded args');
-assert.ok(/flags\.agent/.test(featSrc) && /draftSpecWithAgent/.test(featSrc), 'feature-create must route --agent to interactive dispatcher');
-const draftSrc = fs.readFileSync(require('path').join(__dirname, '../../lib/feature-draft.js'), 'utf8');
-assert.ok(/stdio:\s*'inherit'/.test(draftSrc), 'feature-draft must spawnSync with stdio:inherit for interactive TTY');
-console.log('  ✓ source-level regression checks (worktree config + feature-create + --agent)');
+// REGRESSION (feature-reset): must clean workflow-core engine state, not just legacy .aigon/state/. See feature 242.
+assert.ok(/wf\.resetFeature\s*\(/.test(featSrc), 'feature-reset must call wf.resetFeature');
+assert.ok(/async function resetFeature\s*\(/.test(fs.readFileSync(require('path').join(__dirname, '../../lib/workflow-core/engine.js'), 'utf8')), 'engine must export resetFeature');
+console.log('  ✓ source-level regression checks (worktree config + feature-create + feature-reset)');
