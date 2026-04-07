@@ -78,6 +78,48 @@ testAsync('solo: closeFeature transitions to done', () => withTempRepo(async (re
     assert.strictEqual(snap.lifecycle, 'done');
 }));
 
+testAsync('solo: registers as canonical "solo" agent and closes cleanly', () => withTempRepo(async (repo) => {
+    // REGRESSION: feature 34 / farline-ai-forge — solo Drive used to emit
+    // feature.started with agents:[]; signal.agent_ready was silently dropped,
+    // soloAllReady never gated, and feature-close threw "cannot be closed from
+    // implementing" AFTER the merge had already run, leaving a half-closed repo.
+    writeSpec(repo, '03', 'solo-no-agent');
+    await engine.startFeature(repo, '03', 'solo_branch', ['solo']);
+    await engine.signalAgentReady(repo, '03', 'solo');
+    const closable = await engine.canCloseFeature(repo, '03');
+    assert.ok(closable.ok, `canCloseFeature should be ok, got: ${closable.reason}`);
+    const snap = await engine.closeFeatureWithEffects(repo, '03', async () => {});
+    assert.strictEqual(snap.lifecycle, 'done');
+}));
+
+testAsync('canCloseFeature blocks pre-close when no agent has signaled', () => withTempRepo(async (repo) => {
+    // REGRESSION: feature 233 — without pre-validation, feature-close ran git
+    // side-effects (commit, push, merge) and only THEN discovered the engine
+    // would reject the transition, leaving a merged-but-not-closed half state.
+    writeSpec(repo, '04', 'solo-not-ready');
+    await engine.startFeature(repo, '04', 'solo_branch', ['solo']);
+    const closable = await engine.canCloseFeature(repo, '04');
+    assert.strictEqual(closable.ok, false);
+    assert.match(closable.reason, /not ready to close/);
+}));
+
+testAsync('recoverEmptyAgents heals legacy agents:[] features', () => withTempRepo(async (repo) => {
+    // REGRESSION: feature 233 — features started under the old code have
+    // feature.started with agents:[]. closeEngineState must auto-inject 'solo'
+    // so they can close without manual events.jsonl editing.
+    writeSpec(repo, '05', 'legacy-broken');
+    // Hand-craft the broken event log: feature.started with no agents.
+    await engine.startFeature(repo, '05', 'solo_branch', []);
+    let snap = await engine.showFeature(repo, '05');
+    assert.strictEqual(Object.keys(snap.agents).length, 0, 'precondition: agents empty');
+    const close = require('../../lib/feature-close');
+    snap = await close.recoverEmptyAgents(repo, '05', snap);
+    assert.ok(snap.agents.solo, 'solo agent should be registered after recovery');
+    assert.strictEqual(snap.agents.solo.status, 'ready');
+    const closable = await engine.canCloseFeature(repo, '05');
+    assert.ok(closable.ok, `should be closable post-recovery: ${closable.reason}`);
+}));
+
 testAsync('solo: done state has no actions', () => withTempRepo(async (repo) => {
     writeSpec(repo, '01', 'solo-test');
     await engine.startFeature(repo, '01', 'solo_branch', ['cc']);
@@ -209,6 +251,29 @@ test('telemetry aggregator reads StopHook records over transcripts', () => withT
 
     // Missing feature → null (caller falls back gracefully, no crash)
     assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('999', 'cc', { repoPath: repo }), null);
+}));
+
+// ─── git.getMainRepoPath ─────────────────────────────────────────────────────
+
+console.log('\ngit.getMainRepoPath');
+
+testAsync('getMainRepoPath returns repo root from a subdirectory', () => withTempDirAsync('aigon-git-', async (dir) => {
+    // REGRESSION: feature 233 — getMainRepoPath only handled absolute git-common-dir
+    // (worktree case). From a subdir of a non-worktree repo it returned the subdir,
+    // misrouting every spec/snapshot lookup and surfacing as
+    // "Could not resolve visible spec for feature N".
+    const { execSync } = require('child_process');
+    const gitLib = require('../../lib/git');
+    execSync('git init -q', { cwd: dir });
+    execSync('git config user.email t@t', { cwd: dir });
+    execSync('git config user.name t', { cwd: dir });
+    fs.writeFileSync(path.join(dir, 'README.md'), 'x');
+    execSync('git add . && git commit -qm init', { cwd: dir });
+    fs.mkdirSync(path.join(dir, 'a', 'b', 'c'), { recursive: true });
+    const subdir = path.join(dir, 'a', 'b', 'c');
+    // fs.realpathSync resolves /private/var → /var on macOS so the assert is stable.
+    assert.strictEqual(fs.realpathSync(gitLib.getMainRepoPath(subdir)), fs.realpathSync(dir));
+    assert.strictEqual(fs.realpathSync(gitLib.getMainRepoPath(dir)), fs.realpathSync(dir));
 }));
 
 // ─── Run and report ──────────────────────────────────────────────────────────
