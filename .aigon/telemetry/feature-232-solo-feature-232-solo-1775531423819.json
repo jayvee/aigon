@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "source": "feature-close-fallback",
+  "sessionId": "feature-232-solo-1775531423819",
+  "entityType": "feature",
+  "featureId": "232",
+  "repoPath": "/Users/jviner/src/aigon",
+  "agent": "solo",
+  "activity": "implement",
+  "model": "solo-cli",
+  "startAt": "2026-04-07T03:10:23.818Z",
+  "endAt": "2026-04-07T03:10:23.818Z",
+  "turnCount": 0,
+  "toolCalls": 0,
+  "tokenUsage": {
+    "input": 0,
+    "output": 0,
+    "cacheReadInput": 0,
+    "cacheCreationInput": 0,
+    "thinking": 0,
+    "total": 0,
+    "billable": 0
+  },
+  "costUsd": 0
+}
