@@ -19,7 +19,9 @@
       monitorType: localStorage.getItem(lsKey('monitorType')) || 'all',
       expandedPipelineColumns: JSON.parse(localStorage.getItem(lsKey('expandedPipelineColumns')) || '{}'),
       pendingActions: new Set(),
-      pendingDevServerPokes: new Set()
+      pendingDevServerPokes: new Set(),
+      // feature 234: true while the backend is restarting after a lib/*.js merge
+      serverRestarting: false
     };
 
     function isRepoHidden(repoPath) {

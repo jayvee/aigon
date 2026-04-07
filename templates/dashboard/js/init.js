@@ -453,9 +453,13 @@
         });
         state.data = applyForceProOverride(next);
         render();
+        setHealth();
       } catch (e) {
         state.failures += 1;
         setHealth();
+        // feature 234: while a restart is in progress, poll aggressively (500ms)
+        // until the new server answers, so the banner clears within ~2s.
+        if (state.serverRestarting) setTimeout(poll, 500);
       }
     }
 
