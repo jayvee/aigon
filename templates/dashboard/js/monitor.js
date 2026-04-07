@@ -16,9 +16,43 @@
     function setHealth() {
       const dot = document.getElementById('health-dot');
       const text = document.getElementById('health-text');
-      if (state.failures === 0) { dot.style.background = '#22c55e'; text.textContent = 'Connected'; return; }
+      if (state.failures === 0) {
+        dot.style.background = '#22c55e';
+        // feature 234: if we were showing the restart banner, a successful poll
+        // means the new server is up — clear it.
+        if (state.serverRestarting) hideServerRestartBanner();
+        text.textContent = 'Connected';
+        return;
+      }
       if (state.failures < 3) { dot.style.background = '#f59e0b'; text.textContent = 'Reconnecting...'; return; }
       dot.style.background = '#ef4444'; text.textContent = 'Disconnected';
+    }
+
+    // feature 234: transient banner shown while the dashboard server restarts
+    // after a lib/*.js merge. Created lazily so it doesn't clutter index.html.
+    function showServerRestartBanner() {
+      state.serverRestarting = true;
+      let el = document.getElementById('server-restart-banner');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'server-restart-banner';
+        el.setAttribute('role', 'status');
+        el.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:8px 14px;background:#1e3a8a;color:#fff;text-align:center;font-size:13px;z-index:9999;box-shadow:0 2px 6px rgba(0,0,0,.25);';
+        el.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px;"></span>Reloading backend…';
+        if (!document.getElementById('server-restart-banner-style')) {
+          const style = document.createElement('style');
+          style.id = 'server-restart-banner-style';
+          style.textContent = '@keyframes spin{to{transform:rotate(360deg);}}';
+          document.head.appendChild(style);
+        }
+        document.body.appendChild(el);
+      }
+    }
+
+    function hideServerRestartBanner() {
+      state.serverRestarting = false;
+      const el = document.getElementById('server-restart-banner');
+      if (el) el.remove();
     }
 
     function updateViewTabs() {
