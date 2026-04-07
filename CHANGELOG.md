@@ -232,24 +232,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agents instructed to create tasks from acceptance criteria during implementation
 - README updated with solo worktree mode, feature-list, and worktree reorganization docs
 
-## [2.3.0] - 2025-01-30
+## [2.3.0] - 2026-01-30
 
 ### Added
 - Automatic cleanup of deprecated slash commands during `install-agent` and `update`
 - Scans each agent's command directory for stale aigon-managed files and removes them
 - Reports removed commands with a cleanup message
 
-## [2.2.1] - 2025-01-29
+## [2.2.1] - 2026-01-29
 
 ### Fixed
 - Use native slash command syntax in next-step recommendations
 
-## [2.2.0] - 2025-01-28
+## [2.2.0] - 2026-01-28
 
 ### Added
 - Cursor agent support (`cu`) with `.cursor/commands/` integration
 
-## [2.1.0] - 2025-01-27
+## [2.1.0] - 2026-01-27
 
 ### Added
 - Arena mode for research topics - multiple agents can research in parallel
@@ -266,7 +266,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - `research-start` command (replaced by `research-setup` and `research-conduct`)
 
-## [2.0.0] - 2025-01-26
+## [2.0.0] - 2025-12-17
 
 ### Added
 - Unified workflow commands for solo and arena modes
@@ -284,13 +284,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Separate bakeoff commands (unified into feature commands)
 
-## [1.3.1] - 2025-01-25
+## [1.3.1] - 2025-12-16
 
 ### Fixed
 - Evaluator now correctly points to worktree logs instead of main repo
 - Removed unused `_aigon` cleanup code
 
-## [1.3.0] - 2025-01-24
+## [1.3.0] - 2025-12-16
 
 ### Added
 - Hooks system for custom pre/post command scripts
@@ -298,30 +298,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hook documentation in README
 - Support for `docs/aigon-hooks.md` configuration file
 
-## [1.2.1] - 2025-01-23
+## [1.2.1] - 2025-12-15
 
 ### Fixed
 - Various bug fixes and improvements
 
-## [1.2.0] - 2025-01-22
+## [1.2.0] - 2025-12-10
 
 ### Added
 - Initial bakeoff mode for multi-agent competitions
 - Worktree-based isolation for parallel implementations
 
-## [1.1.1] - 2025-01-21
+## [1.1.1] - 2025-12-09
 
 ### Fixed
 - Minor bug fixes
 
-## [1.1.0] - 2025-01-20
+## [1.1.0] - 2025-12-09
 
 ### Added
 - Agent configuration system
 - Support for Claude, Gemini, and Codex agents
 - `install-agent` command
 
-## [1.0.0] - 2025-01-19
+## [1.0.0] - 2025-11-24
+
+> **Note:** No git tag was cut for v1.0.0 — it's the conceptual initial release marker. The first actual tag is `v1.1.0` on 2025-12-09. The first commit (`5d73102a`) is dated 2025-11-24.
 
 ### Added
 - Initial release
