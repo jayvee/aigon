@@ -2,6 +2,28 @@
   "name": "aigon",
   "version": "2.50.43",
   "description": "CLI for the Aigon Spec-Driven AI Dev Flow",
+  "license": "Apache-2.0",
+  "author": "Sen Labs (https://senlabs.ai)",
+  "homepage": "https://aigon.build",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jayvee/aigon.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jayvee/aigon/issues"
+  },
+  "keywords": [
+    "ai-agents",
+    "claude-code",
+    "gemini-cli",
+    "codex",
+    "cli",
+    "multi-agent",
+    "spec-driven",
+    "agent-orchestration",
+    "developer-tools",
+    "workflow-engine"
+  ],
   "bin": {
     "aigon": "./aigon-cli.js"
   },

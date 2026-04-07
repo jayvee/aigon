@@ -6,6 +6,8 @@
 
 Aigon is a CLI-first, vendor-independent workflow for research, feature delivery, and feedback loops across Claude, Gemini, Codex, and Cursor.
 
+> Aigon is an open source project by [Sen Labs](https://senlabs.ai).
+
 - **Spec-driven:** features, research, and feedback tracked as Markdown files in your repo
 - **Multi-agent:** run one agent (Drive) or orchestrate competing implementations (Fleet)
 - **Vendor independent:** works across Claude Code, Gemini CLI, Codex CLI, and Cursor
@@ -53,4 +55,4 @@ The free tier — Drive mode, manual Fleet, the dashboard, interactive evaluatio
 
 ## License
 
-MIT
+[Apache License 2.0](LICENSE) — Copyright 2025–2026 [Sen Labs](https://senlabs.ai)
