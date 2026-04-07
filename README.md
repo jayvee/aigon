@@ -114,7 +114,7 @@ Aigon Pro is a planned commercial tier that extends the free workflow with three
 - **Insights** — deeper analytics over your whole feature history: agent quality trends, cost per delivered change, token efficiency over time, agent-vs-agent comparisons
 - **AI-powered coaching** — recommendations based on your workflow patterns, so the system learns what "shipping well" looks like for your team
 
-**Pro is in development and not yet available for purchase.** There is no purchase flow, no upgrade CTA, no waitlist gate — the Pro-gated commands print an honest "coming later" message and point you at the free alternative.
+**Pro is in development and not yet available for purchase.**
 
 The free tier — Drive mode, manual Fleet, the dashboard, interactive evaluation/review, telemetry, and basic reports — is complete and stays free and open source. See the [Pro page](https://aigon.build/pro) for a preview of what's coming.
 
