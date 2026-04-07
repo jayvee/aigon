@@ -10,8 +10,11 @@ assert.ok(/config --worktree user\.email/.test(src), 'user.email must use --work
 assert.ok(/config --worktree user\.name/.test(src), 'user.name must use --worktree');
 assert.ok(!/config --local user\.(name|email)/.test(src), 'must NEVER set user.name/email via --local (pollutes main)');
 assert.ok(/config --worktree core\.hooksPath/.test(src), 'core.hooksPath must be worktree-scoped');
-// REGRESSION (feature-create): positional description must work, not just --description.
+// REGRESSION (feature-create): positional description + --agent interactive drafting (feature 241).
 const featSrc = fs.readFileSync(require('path').join(__dirname, '../../lib/commands/feature.js'), 'utf8');
-assert.ok(/args\.slice\(1\)\.join\(' '\)\.trim\(\)/.test(featSrc), 'feature-create must support positional description');
+assert.ok(/positional\.join\(' '\)/.test(featSrc), 'feature-create must support positional description');
 assert.ok(/Ignored unrecognized args before --description/.test(featSrc), 'feature-create must warn on stranded args');
-console.log('  ✓ source-level regression checks (worktree config + feature-create)');
+assert.ok(/flags\.agent/.test(featSrc) && /draftSpecWithAgent/.test(featSrc), 'feature-create must route --agent to interactive dispatcher');
+const draftSrc = fs.readFileSync(require('path').join(__dirname, '../../lib/feature-draft.js'), 'utf8');
+assert.ok(/stdio:\s*'inherit'/.test(draftSrc), 'feature-draft must spawnSync with stdio:inherit for interactive TTY');
+console.log('  ✓ source-level regression checks (worktree config + feature-create + --agent)');
