@@ -76,7 +76,7 @@ Add a dark mode toggle with system preference detection, persist
 the choice in localStorage, and default to the system preference.
 ```
 
-That one command creates the spec, assigns an ID, sets up the worktree, and starts implementing. You stay in your agent the whole time.
+That one command creates the spec, assigns an ID, creates a feature branch, and starts implementing — all in your current repo, no worktree. You stay in your agent the whole time.
 
 Prefer the terminal? The CLI equivalent spread across explicit steps:
 
