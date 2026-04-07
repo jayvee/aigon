@@ -127,10 +127,29 @@ Research lifecycle is also managed by the workflow-core engine (`.aigon/workflow
 - **Private repo**: `~/src/aigon-pro` (github.com/jayvee/aigon-pro)
 - **Two integration files only**: `lib/pro.js` (lazy-require gate) and `lib/pro-bridge.js` (extension point). New Pro features extend the bridge — never add `getPro()` calls in unrelated modules.
 - **Bridge contract**: `proBridge.initialize({ helpers })` at server start invites Pro to `register(api)`. `api.registerRoute(method, path, handler)` is the current shape (Option B — plugin route registration). Future shapes (event bus, anti-corruption read layer) live in the same file.
-- **What's there**: insights engine, amplification dashboard, AI coaching — all commercial AADE features
+- **What's there**: insights engine, amplification dashboard, AI coaching — all commercial features
 - **Dev setup**: `cd ~/src/aigon-pro && npm link`, then `cd ~/src/aigon && npm link @aigon/pro`
-- **Cross-repo features**: specs live in aigon, but note Pro file changes in the spec; commit to both repos separately
 - See `docs/architecture.md` § "Aigon Pro" for full details
+
+### Where Pro feature specs live (post-2026-04-07 split)
+Pro feature specs live in **aigon-pro**, not here. `aigon feature-create`
+inside aigon-pro writes there automatically. The historical Pro features
+that were moved out are listed in `docs/specs/features/MOVED-TO-AIGON-PRO.md`
+— check that file if you see a gap in aigon's feature numbering.
+
+### Cross-repo features (specs in aigon-pro that touch aigon code)
+A feature whose primary purpose is Pro behavior, but that needs to edit
+OSS aigon code (e.g. `lib/pro-bridge.js`) — the spec lives in aigon-pro.
+In the aigon commit, add this footer to the message:
+
+```
+Cross-repo: aigon-pro feature N
+```
+
+This tells anyone reading public aigon history that the commit was
+Pro-driven, without revealing the spec contents. The full mechanism
+(paired worktrees, branch naming, `## Cross-repo touch` spec marker) is
+documented in aigon-pro's `feature-cross-repo-feature-support` spec.
 
 ## Where To Add Code
 - **New command** → edit `lib/commands/{domain}.js` (pick the matching domain)
