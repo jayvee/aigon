@@ -14,4 +14,7 @@ assert.ok(/config --worktree core\.hooksPath/.test(src), 'core.hooksPath must be
 const featSrc = fs.readFileSync(require('path').join(__dirname, '../../lib/commands/feature.js'), 'utf8');
 assert.ok(/args\.slice\(1\)\.join\(' '\)\.trim\(\)/.test(featSrc), 'feature-create must support positional description');
 assert.ok(/Ignored unrecognized args before --description/.test(featSrc), 'feature-create must warn on stranded args');
-console.log('  ✓ source-level regression checks (worktree config + feature-create)');
+// REGRESSION (feature-reset): must clean workflow-core engine state, not just legacy .aigon/state/. See feature 242.
+assert.ok(/wf\.resetFeature\s*\(/.test(featSrc), 'feature-reset must call wf.resetFeature');
+assert.ok(/async function resetFeature\s*\(/.test(fs.readFileSync(require('path').join(__dirname, '../../lib/workflow-core/engine.js'), 'utf8')), 'engine must export resetFeature');
+console.log('  ✓ source-level regression checks (worktree config + feature-create + feature-reset)');
