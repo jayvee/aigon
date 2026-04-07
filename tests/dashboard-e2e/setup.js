@@ -113,6 +113,7 @@ module.exports = async function globalSetup() {
     // Pre-create test features in inbox (IDs assigned later via dashboard Prioritise action)
     runAigon(['feature-create', 'e2e-solo-feature'], tmpDir);
     runAigon(['feature-create', 'e2e-fleet-feature'], tmpDir);
+    runAigon(['feature-create', 'e2e-drive-feature'], tmpDir);
 
     // ── Create temp home with .aigon/config.json ───────────────────────────────
     const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-e2e-home-'));
