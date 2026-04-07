@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and Discussions
+    url: https://github.com/jayvee/aigon/discussions
+    about: Ask questions, share workflows, propose ideas, or discuss design decisions.
+  - name: Documentation
+    url: https://aigon.build/docs
+    about: Read the full Aigon documentation before filing an issue.
+  - name: Security disclosure
+    url: https://github.com/jayvee/aigon/security/advisories/new
+    about: Report a security vulnerability privately. Do not file a public issue.
