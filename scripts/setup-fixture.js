@@ -234,7 +234,7 @@ function createBrewboard(repoDir) {
     }, null, 2));
 
     write(path.join(repoDir, 'README.md'), '# BrewBoard\n\nTrack and share your craft beer collection. Rate beers, follow breweries, and discover what\'s on tap near you.\n');
-    write(path.join(repoDir, '.gitignore'), 'node_modules/\n.next/\n.env*.local\n');
+    write(path.join(repoDir, '.gitignore'), 'node_modules/\n.next/\n.env*.local\n.aigon/workflows/\n');
 
     write(path.join(repoDir, 'tsconfig.json'), JSON.stringify({
         compilerOptions: {
@@ -545,7 +545,7 @@ function createTrailhead(repoDir) {
 
     // Swift/iOS project files
     write(path.join(repoDir, 'README.md'), '# Trailhead\n\nPersonal iOS app for logging hikes, tracking elevation, and pinning trail notes. Built with SwiftUI + MapKit.\n');
-    write(path.join(repoDir, '.gitignore'), '.DS_Store\n*.xcuserstate\nDerivedData/\n.build/\n*.resolved\n');
+    write(path.join(repoDir, '.gitignore'), '.DS_Store\n*.xcuserstate\nDerivedData/\n.build/\n*.resolved\n.aigon/workflows/\n');
 
     write(path.join(repoDir, 'Package.swift'), `// swift-tools-version:5.9
 import PackageDescription
