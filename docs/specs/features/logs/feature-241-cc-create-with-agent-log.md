@@ -61,3 +61,17 @@ test budget.
   a new test file (would blow the 2000-LOC ceiling by ~15 lines), added
   three lines to `worktree-config-isolation.test.js` which is already
   acting as the source-level regression catch-all for feature-create.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-08
+
+### Findings
+- Post-session success output did not report which spec sections were populated, so AC7 was only partially implemented.
+
+### Fixes Applied
+- `0d0eccc0` — `fix(review): report populated spec sections after drafting`
+
+### Notes
+- Review was limited to targeted code inspection and minimal fixes. Tests were not run per the review workflow.
