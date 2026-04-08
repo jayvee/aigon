@@ -24,6 +24,6 @@ Next step: Run `$aigon-research-start <ID>` (Drive) or `$aigon-research-start <I
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID assigned by the CLI:
+End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID assigned by the CLI:
 
 `$aigon-research-start <ID>`

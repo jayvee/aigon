@@ -59,7 +59,7 @@ Feature and research work are NOT complete until you run these commands yourself
 1. `aigon agent-status implementing` — when you start coding or begin active research
 2. `aigon agent-status submitted` — after committing all code, log updates, or research findings
 
-These are CLI commands you run directly — not slash commands, not auto-invoked. The `aigon agent-status` command writes state to the **main repo** (not the worktree), so you won't see state files locally. Just run the command and trust the output.
+These are direct lifecycle commands you run yourself in the agent host — slash commands for some agents, skills for Codex, and never auto-invoked. The `aigon agent-status` command writes state to the **main repo** (not the worktree), so you won't see state files locally. Just run the command and trust the output.
 
 ## Critical Rules
 

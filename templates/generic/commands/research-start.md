@@ -104,7 +104,7 @@ If research sessions need to be reopened or attached after setup, use:
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID and choose based on mode:
+End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID and choose based on mode:
 
 - **Drive mode:** `{{CMD_PREFIX}}research-do <ID>`
 - **Drive worktree:** `{{CMD_PREFIX}}research-do <ID>`
