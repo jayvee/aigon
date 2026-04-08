@@ -6,7 +6,6 @@
       document.getElementById('monitor-summary').style.display = 'none';
       document.getElementById('repo-header').style.display = 'none';
       document.getElementById('settings-view').style.display = 'none';
-      document.getElementById('config-view').style.display = 'none';
       document.getElementById('empty').style.display = 'none';
 
       // Gate entire Insights view when Pro is not active

@@ -149,7 +149,7 @@ tail -50 ~/.aigon/dashboard.log
 | **Pipeline** | Kanban board — drag-and-drop cards across columns (inbox → backlog → in-progress → evaluation → done) | `renderPipeline()` |
 | **Sessions** | Tmux session management — list, start, stop, attach to agent sessions | `renderSessions()` |
 | **Logs** | Live action log — shows recent CLI actions and their output | `renderLogs()` |
-| **Settings** | Repo registry management, auto-eval toggle, dashboard config | `renderSettings()` |
+| **Settings** | Unified settings screen for repositories, notifications, models, and defaults/overrides | `renderSettings()` |
 
 Both Monitor and Pipeline have a type toggle to filter by: All, Features, Research, Feedback.
 
