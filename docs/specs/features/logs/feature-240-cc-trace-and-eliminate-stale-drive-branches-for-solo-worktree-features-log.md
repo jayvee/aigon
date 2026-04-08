@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 274
+lines_removed: 141
+lines_changed: 415
+files_touched: 20
+fix_commit_count: 2
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 172
+output_tokens: 48701
+cache_creation_input_tokens: 378009
+cache_read_input_tokens: 15476802
+thinking_tokens: 0
+total_tokens: 15903684
+billable_tokens: 48873
+cost_usd: 33.958
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 240 - trace-and-eliminate-stale-drive-branches-for-solo-worktree-features
 Agent: cc
 
