@@ -4,6 +4,9 @@
     "testing": "skip",
     "planMode": "never"
   },
+  "security": {
+    "mode": "warn"
+  },
   "devProxy": {
     "basePort": 3010
   },
