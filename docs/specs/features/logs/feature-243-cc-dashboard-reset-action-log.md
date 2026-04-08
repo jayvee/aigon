@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 323
+lines_removed: 56
+lines_changed: 379
+files_touched: 19
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 131
+output_tokens: 28690
+cache_creation_input_tokens: 194764
+cache_read_input_tokens: 11561525
+thinking_tokens: 0
+total_tokens: 11785110
+billable_tokens: 28821
+cost_usd: 23.1478
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 243 - dashboard-reset-action
 Agent: cc
 
