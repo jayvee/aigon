@@ -120,6 +120,16 @@ export default function ProPage() {
         </div>
       </section>
 
+      {/* Leading screenshot */}
+      <section className="px-6 pb-8">
+        <div className="mx-auto max-w-5xl">
+          <ScreenshotFrame
+            src="/img/insights-pro.png"
+            alt="Aigon Pro insights — AI-generated observations and coaching"
+          />
+        </div>
+      </section>
+
       {/* Agent Quality Metrics */}
       <section className="px-6 py-16 md:py-20">
         <div className="mx-auto max-w-5xl">
@@ -268,11 +278,6 @@ export default function ProPage() {
             />
           </div>
 
-          <ScreenshotFrame
-            src="/img/insights-pro.png"
-            alt="Aigon Pro insights — AI-generated observations and coaching"
-            caption="Insights tab — AI-powered observations, coaching, and amplification analytics"
-          />
         </div>
       </section>
 
