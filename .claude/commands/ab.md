@@ -9,7 +9,7 @@ Visualize features and research topics in Kanban board or detailed list view.
 **IMPORTANT**:
 - After running the command, display the board output **directly in your response text** (not just as a tool result) so the user can see it without expanding collapsed output. Copy the full output verbatim into a code block in your response.
 - The board output includes `→ /command` action hints — make sure these are visible in your response, as they are the primary value of the board.
-- When suggesting what to work on next, reference items by their letter labels (e.g., "You could prioritize item c) create-plugin") and use **slash command format** for suggestions (e.g., `/aigon:feature-prioritise c`) not CLI format.
+- When suggesting what to work on next, reference items by their letter labels (e.g., "You could prioritize item c) create-plugin") and use the agent's native Aigon command format for suggestions (e.g., `/aigon:feature-prioritise c`) rather than raw `aigon ...` CLI syntax.
 
 ```bash
 aigon board {{args}}

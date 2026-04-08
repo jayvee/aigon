@@ -115,7 +115,7 @@ For complex research topics with multiple questions, consider creating an agent 
 
 ## Prompt Suggestion
 
-If Drive mode, end your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
+If Drive mode, end your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID:
 
 `/aigon:research-close <ID>`
 
