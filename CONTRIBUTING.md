@@ -40,7 +40,7 @@ Key directories:
 - `lib/*.js` — shared library code (16 modules; see the module map in `AGENTS.md`)
 - `templates/generic/commands/` — agent prompt templates (source of truth)
 - `tests/` — unit + integration tests (kept under a 2,000-LOC ceiling)
-- `site/` — Next.js + Nextra documentation site published at [aigon.build](https://aigon.build)
+- `site/` — Next.js + Nextra documentation site published at [aigon.build](https://www.aigon.build)
 
 ## Submitting a PR
 
@@ -89,4 +89,4 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 
 - Open a [GitHub Discussion](https://github.com/jayvee/aigon/discussions) (preferred for design/architecture)
 - File an [issue](https://github.com/jayvee/aigon/issues) (for bugs and concrete asks)
-- Visit the docs at [aigon.build](https://aigon.build)
+- Visit the docs at [aigon.build](https://www.aigon.build)

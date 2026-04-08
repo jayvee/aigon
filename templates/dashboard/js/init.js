@@ -495,7 +495,7 @@
     const docsLink = document.getElementById('docs-link');
     if (docsLink) {
       const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.endsWith('.localhost');
-      docsLink.href = isDev ? 'http://localhost:3600/docs' : 'https://aigon.build/docs';
+      docsLink.href = isDev ? 'http://localhost:3600/docs' : 'https://www.aigon.build/docs';
       docsLink.title = isDev ? 'Open docs (local dev)' : 'Open Aigon docs';
     }
     document.getElementById('refresh-btn').onclick = requestRefresh;

@@ -4,7 +4,7 @@
   "description": "CLI for the Aigon Spec-Driven AI Dev Flow",
   "license": "Apache-2.0",
   "author": "Sen Labs (https://senlabs.ai)",
-  "homepage": "https://aigon.build",
+  "homepage": "https://www.aigon.build",
   "repository": {
     "type": "git",
     "url": "https://github.com/jayvee/aigon.git"
