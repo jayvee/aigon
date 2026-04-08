@@ -15,7 +15,7 @@ echo "Branch: $BRANCH"
 
 Expected branch shape: `feature-<slug>-<agent>` (e.g. `feature-check-review-skill-command-cc`).
 
-Parse the `<slug>` out of the branch name (strip the `feature-` prefix and the trailing `-<agent>` suffix where agent is one of `cc`, `gg`, `cx`, `cu`, `mv`). Then resolve the slug to a feature ID by matching against `aigon feature-list --active`:
+Parse the `<slug>` out of the branch name (strip the `feature-` prefix and the trailing `-<agent>` suffix where agent is one of `cc`, `gg`, `cx`, `cu`). Then resolve the slug to a feature ID by matching against `aigon feature-list --active`:
 
 ```bash
 aigon feature-list --active
