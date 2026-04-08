@@ -13,7 +13,7 @@ description: Show Aigon commands
 | `$aigon-feature-now <name>` | Fast-track: inbox → prioritise → setup → implement, or create new + implement |
 | `$aigon-feature-prioritise <name>` | Assign ID and move to backlog |
 | `$aigon-feature-start <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
-| `$aigon-feature-do <ID> [--autonomous]` | Do feature work; `--autonomous` enables the autonomous retry loop |
+| `$aigon-feature-do <ID> [--iterate]` | Do feature work; `--iterate` enables the Autopilot retry loop |
 | `$aigon-feature-spec <ID> [--json]` | Resolve the canonical visible spec path for a feature |
 | `$aigon-feature-list [--active] [--all] [--json]` | Query feature records without going through the board UI |
 | `$aigon-feature-eval <ID>` | Create evaluation (code review or comparison) |

@@ -44,7 +44,7 @@ Example Fleet: `/aigon:feature-start 55 cc gg cx cu`
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID assigned by the CLI:
+End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID assigned by the CLI:
 
 `/aigon:feature-start <ID>`
 """
