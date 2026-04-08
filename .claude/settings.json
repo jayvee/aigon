@@ -594,7 +594,17 @@
       "Edit(/Users/jviner/.aigon/worktrees/aigon/feature-215-cx-codex-reliable-autonomous-submission/**)",
       "Write(/Users/jviner/.aigon/worktrees/aigon/feature-215-cx-codex-reliable-autonomous-submission/**)",
       "Bash(cd /Users/jviner/.aigon/worktrees/aigon/feature-215-cx-codex-reliable-autonomous-submission:*)",
-      "Bash(git -C /Users/jviner/.aigon/worktrees/aigon/feature-215-cx-codex-reliable-autonomous-submission:*)"
+      "Bash(git -C /Users/jviner/.aigon/worktrees/aigon/feature-215-cx-codex-reliable-autonomous-submission:*)",
+      "Read(/Users/jviner/.aigon/worktrees/aigon/feature-240-cc-trace-and-eliminate-stale-drive-branches-for-solo-worktree-features/**)",
+      "Edit(/Users/jviner/.aigon/worktrees/aigon/feature-240-cc-trace-and-eliminate-stale-drive-branches-for-solo-worktree-features/**)",
+      "Write(/Users/jviner/.aigon/worktrees/aigon/feature-240-cc-trace-and-eliminate-stale-drive-branches-for-solo-worktree-features/**)",
+      "Bash(cd /Users/jviner/.aigon/worktrees/aigon/feature-240-cc-trace-and-eliminate-stale-drive-branches-for-solo-worktree-features:*)",
+      "Bash(git -C /Users/jviner/.aigon/worktrees/aigon/feature-240-cc-trace-and-eliminate-stale-drive-branches-for-solo-worktree-features:*)",
+      "Read(/Users/jviner/.aigon/worktrees/aigon/feature-243-cc-dashboard-reset-action/**)",
+      "Edit(/Users/jviner/.aigon/worktrees/aigon/feature-243-cc-dashboard-reset-action/**)",
+      "Write(/Users/jviner/.aigon/worktrees/aigon/feature-243-cc-dashboard-reset-action/**)",
+      "Bash(cd /Users/jviner/.aigon/worktrees/aigon/feature-243-cc-dashboard-reset-action:*)",
+      "Bash(git -C /Users/jviner/.aigon/worktrees/aigon/feature-243-cc-dashboard-reset-action:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
