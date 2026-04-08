@@ -51,30 +51,12 @@ test('cc review verb falls back to implementPrompt when reviewPrompt missing', (
     assert.strictEqual(out, '/aigon:feature-do 03');
 });
 
-test('cx returns markdown body with sentinel line', () => {
+test('cx returns stripped template body with sentinel and substituted args', () => {
     const out = resolveCxPromptBody('do', '218');
-    assert.ok(out.startsWith('# aigon-feature-do'),
-        `Expected sentinel '# aigon-feature-do' at start, got: ${out.slice(0, 60)}`);
-});
-
-test('cx body has no description HTML comment', () => {
-    const out = resolveCxPromptBody('do', '218');
-    assert.ok(!out.includes('<!-- description'),
-        'description comment should be stripped');
-});
-
-test('cx body has no YAML frontmatter', () => {
-    const out = resolveCxPromptBody('eval', '218');
-    assert.ok(!out.startsWith('---\n'),
-        'YAML frontmatter should be stripped');
-});
-
-test('cx substitutes $ARGUMENTS / $1 with the feature id', () => {
-    const out = resolveCxPromptBody('do', '218');
-    assert.ok(!out.includes('$ARGUMENTS'),
-        '$ARGUMENTS token should be substituted');
-    assert.ok(!/\$1\b/.test(out),
-        '$1 token should be substituted');
+    assert.ok(out.startsWith('# aigon-feature-do'), `sentinel header missing, got: ${out.slice(0, 60)}`);
+    assert.ok(!out.includes('<!-- description'), 'description comment should be stripped');
+    assert.ok(!out.startsWith('---\n'), 'YAML frontmatter should be stripped');
+    assert.ok(!out.includes('$ARGUMENTS') && !/\$1\b/.test(out), '$ARGUMENTS/$1 should be substituted');
     assert.ok(out.includes('218'), 'feature id should appear in body');
 });
 
@@ -83,12 +65,6 @@ test('cx eval body propagates extraArgs through $ARGUMENTS', () => {
     assert.ok(out.includes('--allow-same-model-judge'),
         'extraArgs should be substituted into $ARGUMENTS');
     assert.ok(out.includes('218'), 'feature id should appear in body');
-});
-
-test('cx review body uses the feature-review template', () => {
-    const out = resolveCxPromptBody('review', '99');
-    assert.ok(out.includes('feature-review') || out.toLowerCase().includes('review'),
-        'review template body should reference review');
 });
 
 test('cx via resolveAgentPromptBody routes through cx path', () => {

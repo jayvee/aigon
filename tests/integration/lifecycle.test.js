@@ -52,8 +52,6 @@ const hasAction = (actions, actionName) => actions.validActions.some(a => a.acti
 
 // ─── Solo lifecycle ──────────────────────────────────────────────────────────
 
-console.log('\nSolo lifecycle: start → submit → close');
-
 testAsync('solo: start creates implementing state; agent-ready enables close', () => withTempRepo(async (repo) => {
     writeSpec(repo, '01', 'solo-test');
     const snap0 = await engine.startFeature(repo, '01', 'solo_branch', ['cc']);
@@ -120,8 +118,6 @@ testAsync('recoverEmptyAgents heals legacy agents:[] features', () => withTempRe
 
 // ─── Fleet lifecycle ─────────────────────────────────────────────────────────
 
-console.log('\nFleet lifecycle: start → submit both → eval → close');
-
 testAsync('fleet: start with two agents; both ready enables eval', () => withTempRepo(async (repo) => {
     writeSpec(repo, '02', 'fleet-test');
     const snap0 = await engine.startFeature(repo, '02', 'fleet', ['cc', 'gg']);
@@ -151,8 +147,6 @@ testAsync('fleet: eval → evaluating shows select-winner actions → close', ()
 
 // ─── Pause → resume ──────────────────────────────────────────────────────────
 
-console.log('\nPause → resume');
-
 testAsync('pause → resume lifecycle', () => withTempRepo(async (repo) => {
     writeSpec(repo, '03', 'pause-test');
     await engine.startFeature(repo, '03', 'solo_branch', ['cc']);
@@ -164,19 +158,6 @@ testAsync('pause → resume lifecycle', () => withTempRepo(async (repo) => {
     const resumeSnap = await engine.resumeFeature(repo, '03');
     assert.strictEqual(resumeSnap.currentSpecState, 'implementing');
     assert.ok(hasAction(getActions(resumeSnap, '03'), 'feature-pause'), 'resumed state should have pause action');
-}));
-
-// ─── Review flow ─────────────────────────────────────────────────────────────
-
-console.log('\nReview flow');
-
-testAsync('solo: agent-ready goes to ready_for_review in review-mode', () => withTempRepo(async (repo) => {
-    writeSpec(repo, '04', 'review-test');
-    await engine.startFeature(repo, '04', 'solo_branch', ['cc']);
-    const snap = await engine.signalAgentReady(repo, '04', 'cc');
-    // In solo mode, agent-ready should enable close
-    const actions = getActions(snap, '04');
-    assert.ok(hasAction(actions, 'feature-close'), 'should have close after agent-ready');
 }));
 
 // REGRESSION (feature 229): captureAgentTelemetry must aggregate normalized
@@ -222,8 +203,6 @@ test('telemetry aggregator reads StopHook records over transcripts', () => withT
 }));
 
 // ─── git.getMainRepoPath ─────────────────────────────────────────────────────
-
-console.log('\ngit.getMainRepoPath');
 
 testAsync('getMainRepoPath returns repo root from a subdirectory', () => withTempDirAsync('aigon-git-', async (dir) => {
     // REGRESSION: feature 233 — getMainRepoPath only handled absolute git-common-dir
