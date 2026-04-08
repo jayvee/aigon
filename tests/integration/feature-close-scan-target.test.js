@@ -34,36 +34,37 @@ a.deepStrictEqual(
 // so the scan sees the target branch, not sibling branches in the main checkout.
 let scanCall = null;
 const fakeScan = (stage, opts) => { scanCall = { stage, opts }; return { passed: false }; };
-const target = {
-    branchName: 'feature-245-cc-x',
-    agentId: 'cc',
-    num: 245,
-    worktreePath: process.cwd(), // exists
-};
-const result = mergeFeatureBranch(target, {
-    getDefaultBranch: () => 'main',
-    runGit: () => {},
-    runSecurityScan: fakeScan,
-});
+const target = { branchName: 'feature-245-cc-x', agentId: 'cc', num: 245, worktreePath: process.cwd() };
+const result = mergeFeatureBranch(target, { getDefaultBranch: () => 'main', runGit: () => {}, runSecurityScan: fakeScan });
 a.ok(scanCall, 'mergeFeatureBranch called runSecurityScan');
 a.strictEqual(scanCall.stage, 'featureClose', 'scan stage is featureClose');
 a.strictEqual(scanCall.opts.cwd, process.cwd(), 'AC3: scan cwd == target worktreePath');
 a.ok(!result.ok, 'scan failure still aborts the close');
 a.ok(/security scan failure/.test(result.error || ''), 'error mentions scan failure');
 
-const missingWtResult = mergeFeatureBranch({
-    branchName: 'feature-245-cc-x',
-    agentId: 'cc',
-    num: 245,
-    worktreePath: '/tmp/does-not-exist',
-}, {
-    getDefaultBranch: () => 'main',
-    runGit: () => {},
-    runSecurityScan: () => {
-        throw new Error('runSecurityScan should not be called when the target worktree is missing');
-    },
-});
+const missingWtResult = mergeFeatureBranch(
+    { branchName: 'feature-245-cc-x', agentId: 'cc', num: 245, worktreePath: '/tmp/does-not-exist' },
+    { getDefaultBranch: () => 'main', runGit: () => {}, runSecurityScan: () => { throw new Error('must not scan missing worktree'); } }
+);
 a.ok(!missingWtResult.ok, 'missing target worktree aborts the close');
 a.match(missingWtResult.error || '', /Target worktree not found/, 'error explains missing worktree');
+
+// REGRESSION feature 240: bare `feature-close <id>` must prefer an existing
+// worktree branch over a stale `feature-<num>-<desc>` drive branch left behind
+// by re-running `feature-start <id>` on an already-started worktree feature.
+const { resolveCloseTarget } = require('../../lib/feature-close');
+const sp = '/tmp/f240/docs/specs/features/03-in-progress/feature-240-demo.md';
+const ex = new Set(['feature-240-demo', 'feature-240-cx-demo']);
+const r240 = resolveCloseTarget(['240'], {
+    PATHS: { features: { root: '/tmp/f240/docs/specs/features' } },
+    findFile: () => ({ file: 'feature-240-demo.md', fullPath: sp, folder: '03-in-progress' }),
+    getWorktreeBase: () => '/tmp/wtbase',
+    findWorktrees: () => [{ path: '/tmp/wtbase/feature-240-cx-demo', agent: 'cx' }],
+    filterByFeatureId: (l) => l,
+    branchExists: (n) => ex.has(n),
+    resolveFeatureSpecInfo: () => ({ path: sp, stage: '03-in-progress' }),
+    gitLib: { getCurrentBranch: () => 'main', getDefaultBranch: () => 'main', getCommonDir: () => '.git', getMainRepoPath: (p) => p, isWorktree: () => false },
+});
+a.ok(r240.ok && r240.branchName === 'feature-240-cx-demo' && r240.mode === 'multi-agent', 'feature 240: worktree branch must win over stale drive branch');
 
 console.log('ok feature-close-scan-target');
