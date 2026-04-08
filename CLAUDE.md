@@ -158,6 +158,28 @@ documented in aigon-pro's `feature-cross-repo-feature-support` spec.
 - **Agent prompts or install content** → `templates/`; run `aigon install-agent cc` after
 - **Workflow state changes** → update command module AND affected templates together
 
+## Resetting / Cancelling A Feature
+**To start a feature over (different agent, fresh slate, abandon work) — there is ONE command:**
+
+```
+aigon feature-reset <ID>
+```
+
+This is the canonical full-reset path. It runs the entire sequence in order:
+1. `sessions-close` — kill agent processes, tmux sessions, preview dashboards, Warp tabs
+2. Remove worktrees (+ permissions/trust)
+3. Delete feature branches
+4. Clear `.aigon/state/feature-<id>-*` files
+5. Move spec back to `02-backlog/`
+6. Clear workflow-core engine state (`.aigon/workflows/features/<id>/`)
+7. GC dev-proxy entries
+
+**Do not stitch this together manually** with `feature-cleanup` + `git mv` + `rm -rf .aigon/workflows/...`. That path is fragile, leaks autonomous sessions, and predates `feature-reset`. If you find yourself reaching for those raw commands, stop and use `feature-reset` instead.
+
+`feature-cleanup <ID>` is a strict subset (worktrees + branches only). Use it when you only want to garbage-collect Fleet branches after a `feature-close`, not to abandon work.
+
+`sessions-close <ID>` is also a strict subset (just kills processes/sessions/tabs). `feature-reset` calls it internally — you should rarely need to invoke it directly.
+
 ## Rules Before Editing
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
@@ -243,6 +265,7 @@ Never hand-write CSS or guess at Tailwind classes for visual design. The fronten
 - **Complexity for simplicity**: responding to "simplify" with smarter/more code instead of removing code
 - **`.env.local` blocking flow**: treating it as uncommitted changes → blocks `feature-close`
 - **Editing working copies**: changing `.claude/commands/` instead of `templates/` → lost on next sync
+- **Manual feature reset**: stitching `feature-cleanup` + `git mv` + `rm -rf .aigon/workflows/...` to start a feature over → use `aigon feature-reset <ID>` instead. It does the full sequence including `sessions-close` (which the manual path always forgets)
 
 ## Reading Order
 1. `AGENTS.md` (this file) — quick orientation

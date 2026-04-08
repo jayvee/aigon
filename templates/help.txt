@@ -62,7 +62,9 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-eval <ID> [--force]       Create evaluation (code review or comparison)
   feature-review <ID>               Code review with fixes by a different agent
   feature-close <ID> [agent]        Merge and complete feature
-  feature-cleanup <ID>              Clean up Fleet worktrees and branches
+  feature-cleanup <ID>              Clean up Fleet worktrees and branches (worktrees + branches only)
+  feature-reset <ID>                Full reset back to backlog: sessions + worktrees + branches + state + spec move
+                                    (use this to start a feature over with a different agent)
   feature-autonomous-start <ID> <agents...> [--eval-agent=<id>] [--stop-after=implement|eval|close]   [Pro]
                                     Start autonomous execution in dedicated auto tmux session
 
@@ -128,6 +130,7 @@ Examples:
   aigon feature-eval 55                # Evaluate implementations
   aigon feature-close 55 cc             # Merge Claude's Fleet implementation
   aigon feature-cleanup 55 --push      # Clean up losing Fleet branches
+  aigon feature-reset 55               # Full reset back to backlog (start over with a different agent)
   aigon commits --period 30d           # Commit activity in the last 30 days
   aigon commits --feature 145 --agent cx # Filter by feature and agent
 
