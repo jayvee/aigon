@@ -25,6 +25,7 @@ assert.ok(/async function resetFeature\s*\(/.test(fs.readFileSync(require('path'
 const rulesSrc = fs.readFileSync(require('path').join(__dirname, '../../lib/feature-workflow-rules.js'), 'utf8');
 assert.ok(/FEATURE_RESET/.test(rulesSrc), 'feature 243: FEATURE_RESET must be declared in feature-workflow-rules.js');
 assert.ok(/confirmationMessage/.test(rulesSrc), 'feature 243: Reset must carry a confirmationMessage for the destructive modal');
+assert.ok(/uncommitted work on the branch/.test(rulesSrc), 'feature 243: Reset confirmation must warn that branch-local uncommitted work will be deleted');
 const dashSrc = fs.readFileSync(require('path').join(__dirname, '../../lib/dashboard-server.js'), 'utf8');
 assert.ok(/'feature-reset'/.test(dashSrc), 'feature 243: dashboard /api/action allowlist must include feature-reset');
 console.log('  ✓ source-level regression checks (worktree config + feature-create + feature-reset + feature 243 dashboard reset)');

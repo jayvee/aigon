@@ -307,7 +307,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     case 'feature-reset': {
       // feature 243: destructive reset — confirm before dispatch.
       const msg = (va.metadata && va.metadata.confirmationMessage)
-        || 'Kill tmux sessions, remove worktree and branch, clear engine state, and move the spec back to Backlog. This cannot be undone.';
+        || 'Kill tmux sessions, remove the worktree and branch (including any uncommitted work on the branch), clear engine state, and move the spec back to Backlog. This cannot be undone.';
       const ok = await showDangerConfirm({
         title: 'Reset feature #' + id + (feature.name ? ' \u2014 ' + feature.name : '') + '?',
         message: msg,
