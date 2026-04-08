@@ -311,30 +311,28 @@ docs/specs/features/logs/</code></pre>
                 <p class="feature-tag">Hands-on + one agent</p>
                 <h3>Drive mode</h3>
                 <p>Use when you want tight control over implementation details and review checkpoints.</p>
-                <pre><code>aigon feature-setup 07</code></pre>
+                <pre><code>aigon feature-start 07</code></pre>
                 <p>Outcome: one guided implementation branch with a full spec and log trail.</p>
               </article>
               <article class="feature-card">
                 <p class="feature-tag">Hands-on + multi-agent</p>
                 <h3>Fleet mode</h3>
                 <p>Orchestrate competing implementations you can evaluate and adopt the best from.</p>
-                <pre><code>aigon feature-setup 07 cc gg cx</code></pre>
+                <pre><code>aigon feature-start 07 cc gg cx</code></pre>
                 <p>Outcome: parallel worktrees and comparable outputs for structured selection.</p>
               </article>
               <article class="feature-card">
                 <p class="feature-tag">Hands-off + one agent</p>
-                <h3>Autopilot mode</h3>
-                <p>Use when the scope is clear and you want autonomous retries against validation checks.</p>
-                <pre><code>aigon feature-autopilot 07</code></pre>
+                <h3>Autonomous mode, Single Agent</h3>
+                <p>Use when the scope is clear, but you want the peace of mind of a reviewing agent.</p>
+                <pre><code>aigon feature-autonomous-start 07 cx --review-agent=cc --stop-after=closed</code></pre>
                 <p>Outcome: automated implement-validate loop that stops when checks pass or budget ends.</p>
               </article>
               <article class="feature-card">
                 <p class="feature-tag">Hands-off + multi-agent</p>
-                <h3>Swarm mode</h3>
-                <p>Fully orchestrated, fully autonomous — parallel agent runs converge into comparable outputs ready for evaluation.</p>
-                <pre><code>aigon feature-setup 07 cc gg cx
-# in each worktree:
-aigon feature-autopilot 07 --auto-submit</code></pre>
+                <h3>Autonomous mode, Multi Agent</h3>
+                <p>Fully orchestrated, fully autonomous — parallel agent runs converge into comparable outputs ready for auto evaluation and completion.</p>
+                <pre><code>aigon feature-autonomous-start 07 gg cx --eval-agent=cc --stop-after=closed</code></pre>
                 <p>Outcome: concurrent autonomous runs across agents with logs ready for comparison.</p>
               </article>
             </div>
@@ -364,7 +362,7 @@ aigon feature-autopilot 07 --auto-submit</code></pre>
                 <div class="step-context" id="step-context">
                   <p>Create a feature spec and move it into the backlog.</p>
                 </div>
-                <div class="step-mode-selector" id="step-mode-selector" hidden>
+                <div class="step-mode-selector" id="step-mode-selector">
                   <button class="step-mode-tab is-active" data-mode="drive">Drive</button>
                   <button class="step-mode-tab" data-mode="fleet">Fleet</button>
                   <button class="step-mode-tab" data-mode="autopilot">Autopilot</button>
@@ -547,7 +545,7 @@ aigon feature-autopilot 07 --auto-submit</code></pre>
         <terminal-line data="output">  Each agent iterates until checks pass, then submits.</terminal-line>
       </template>
 
-      <template id="step-implement">
+      <template id="step-implement-drive">
         <terminal-line data="input" lineDelay="400">/aigon:feature-do 07</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  Reading spec: feature-07-jwt-auth.md</terminal-line>
@@ -564,6 +562,44 @@ aigon feature-autopilot 07 --auto-submit</code></pre>
         <terminal-line data="output">  Committed: feat(07): jwt auth middleware</terminal-line>
         <terminal-line data="output">  Log: logs/feature-07-cc-jwt-auth-log.md</terminal-line>
         <terminal-line data="output">  ✅ Submitted</terminal-line>
+      </template>
+
+      <template id="step-implement-fleet">
+        <terminal-line data="output">  [worktree: feature-07-cc]</terminal-line>
+        <terminal-line data="input" lineDelay="400">/aigon:feature-do 07</terminal-line>
+        <terminal-line data="output" lineDelay="200">  ✓ Tasks complete · 12 files · submitted</terminal-line>
+        <terminal-line data="output"> </terminal-line>
+        <terminal-line data="output">  [worktree: feature-07-gg]</terminal-line>
+        <terminal-line data="input" lineDelay="300">/aigon:feature-do 07</terminal-line>
+        <terminal-line data="output" lineDelay="200">  ✓ Tasks complete · 18 files · submitted</terminal-line>
+        <terminal-line data="output"> </terminal-line>
+        <terminal-line data="output">  [worktree: feature-07-cx]</terminal-line>
+        <terminal-line data="input" lineDelay="300">/aigon:feature-do 07</terminal-line>
+        <terminal-line data="output" lineDelay="200">  ✓ Tasks complete · 9 files · submitted</terminal-line>
+        <terminal-line data="output"> </terminal-line>
+        <terminal-line data="output">  All 3 agents submitted. Ready to evaluate.</terminal-line>
+      </template>
+
+      <template id="step-implement-autopilot">
+        <terminal-line data="output">  Autopilot running — no manual steps needed.</terminal-line>
+        <terminal-line data="output"> </terminal-line>
+        <terminal-line data="output">  Iteration 1/4 ···</terminal-line>
+        <terminal-line data="output">  ✗ Tests: 3 failing — retrying</terminal-line>
+        <terminal-line data="output"> </terminal-line>
+        <terminal-line data="output">  Iteration 2/4 ···</terminal-line>
+        <terminal-line data="output">  ✓ All checks pass</terminal-line>
+        <terminal-line data="output"> </terminal-line>
+        <terminal-line data="output">  ✅ Submitted after 2 iterations</terminal-line>
+      </template>
+
+      <template id="step-implement-swarm">
+        <terminal-line data="output">  All agents iterating autonomously in parallel.</terminal-line>
+        <terminal-line data="output"> </terminal-line>
+        <terminal-line data="output">  cc  ✓ passed checks · submitted</terminal-line>
+        <terminal-line data="output">  gg  ✓ passed checks · submitted (iter 2)</terminal-line>
+        <terminal-line data="output">  cx  ✓ passed checks · submitted</terminal-line>
+        <terminal-line data="output"> </terminal-line>
+        <terminal-line data="output">  All 3 agents submitted. Ready to evaluate.</terminal-line>
       </template>
 
       <template id="step-evaluate">
@@ -693,7 +729,7 @@ aigon feature-autopilot 07 --auto-submit</code></pre>
 
       <template id="demo-cx-eval">
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="input" lineDelay="600">aigon feature-setup 07 cc gg cx</terminal-line>
+        <terminal-line data="input" lineDelay="600">$aigon-feature-start 07 cc gg cx</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  Fleet mode · 3 agents</terminal-line>
         <terminal-line data="output"> </terminal-line>
@@ -705,7 +741,6 @@ aigon feature-autopilot 07 --auto-submit</code></pre>
         <terminal-line data="output">  Agents ready — run /aigon:feature-do 07</terminal-line>
         <terminal-line data="output">  in each session.</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="output">  Open all: aigon worktree-open 07 --all</terminal-line>
       </template>
 
       <template id="demo-gg-research">
@@ -1005,14 +1040,22 @@ position of the menu bar</code></pre>
 
         var stepData = {
           define: {
-            context: "Create a feature spec and move it into the backlog.",
+            context: {
+              drive: "Write a spec for one agent to implement.",
+              fleet: "Write a spec — multiple agents will compete on it.",
+              autopilot: "Write a spec — Autopilot will handle everything from here.",
+              swarm: "Write a spec — all agents will iterate on it autonomously."
+            },
             template: "step-define",
-            ps1: "$ ",
-            hasModes: false
+            ps1: "$ "
           },
           setup: {
-            context: "Choose your execution mode — one agent or many, hands-on or autonomous.",
-            hasModes: true,
+            context: {
+              drive: "Create a branch. One agent, hands-on.",
+              fleet: "Create worktrees for each agent. Best implementation wins.",
+              autopilot: "One command — setup, implement, and validate in a single autonomous run.",
+              swarm: "Worktrees for all agents, each iterating autonomously until checks pass."
+            },
             modes: {
               drive: { template: "step-setup-drive", ps1: "> " },
               fleet: { template: "step-setup-fleet", ps1: "> " },
@@ -1021,16 +1064,28 @@ position of the menu bar</code></pre>
             }
           },
           implement: {
-            context: "Each agent reads the spec and works through the tasks.",
-            template: "step-implement",
-            ps1: "> ",
-            hasModes: false
+            context: {
+              drive: "The agent reads the spec and works through tasks. You guide it.",
+              fleet: "Each agent works in its own worktree simultaneously.",
+              autopilot: "Hands off — the agent iterates until all checks pass.",
+              swarm: "All agents iterate in parallel — no manual steps needed."
+            },
+            modes: {
+              drive: { template: "step-implement-drive", ps1: "> " },
+              fleet: { template: "step-implement-fleet", ps1: "> " },
+              autopilot: { template: "step-implement-autopilot", ps1: "$ " },
+              swarm: { template: "step-implement-swarm", ps1: "$ " }
+            }
           },
           evaluate: {
-            context: "Compare implementations side by side, pick the winner, merge and clean up.",
+            context: {
+              drive: "Review the work, merge into main, and close the feature.",
+              fleet: "Compare all submissions, pick the winner, and merge the best.",
+              autopilot: "Autopilot validated and closed automatically.",
+              swarm: "Compare all submissions, pick the winner, and merge the best."
+            },
             template: "step-evaluate",
-            ps1: "> ",
-            hasModes: false
+            ps1: "> "
           }
         };
 
@@ -1053,14 +1108,13 @@ position of the menu bar</code></pre>
           var data = stepData[step];
           if (!data) return;
 
-          stepContext.querySelector("p").textContent = data.context;
+          var ctx = typeof data.context === 'object' ? (data.context[currentMode] || data.context.drive) : data.context;
+          stepContext.querySelector("p").textContent = ctx;
 
-          if (data.hasModes) {
-            modeSelector.hidden = false;
+          if (data.modes) {
             var mode = data.modes[currentMode] || data.modes.drive;
             loadTerminal(mode.template, mode.ps1);
           } else {
-            modeSelector.hidden = true;
             loadTerminal(data.template, data.ps1);
           }
         }
@@ -1082,12 +1136,8 @@ position of the menu bar</code></pre>
             modeTabs.forEach(function (t) { t.classList.remove("is-active"); });
             tab.classList.add("is-active");
             currentMode = tab.dataset.mode;
-            // Re-render if we're on the setup step
             var activeStep = document.querySelector(".step-tab.is-active");
-            if (activeStep && activeStep.dataset.step === "setup") {
-              var mode = stepData.setup.modes[currentMode];
-              loadTerminal(mode.template, mode.ps1);
-            }
+            if (activeStep) activateStep(activeStep.dataset.step);
           });
         });
 
