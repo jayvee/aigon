@@ -1,0 +1,195 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Aigon Aigon Dashboard" [level=1] [ref=e4]:
+        - img "Aigon" [ref=e5]
+        - text: Aigon Dashboard
+      - generic [ref=e6]:
+        - generic [ref=e9]: Connected
+        - generic [ref=e10]: Updated just now
+        - button "Notifications" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+        - button "Refresh" [ref=e15] [cursor=pointer]
+        - link "?" [ref=e16] [cursor=pointer]:
+          - /url: http://localhost:3600/docs
+    - navigation "Dashboard views" [ref=e17]:
+      - button "Monitor" [ref=e18] [cursor=pointer]
+      - button "Pipeline" [ref=e19] [cursor=pointer]
+      - button "Sessions" [active] [ref=e20] [cursor=pointer]
+      - button "Reports" [ref=e21] [cursor=pointer]
+      - button "InsightsPRO" [ref=e22] [cursor=pointer]:
+        - text: Insights
+        - superscript [ref=e23]: PRO
+      - button "Logs" [ref=e24] [cursor=pointer]
+      - button "Console" [ref=e25] [cursor=pointer]
+      - button "Settings" [ref=e26] [cursor=pointer]
+      - button "Config" [ref=e27] [cursor=pointer]
+    - generic [ref=e28]:
+      - button "Hide sidebar" [ref=e29] [cursor=pointer]:
+        - img [ref=e30]
+      - listbox "Repository selector" [ref=e31]:
+        - option "All Repos" [ref=e473] [cursor=pointer]:
+          - generic [ref=e474]: All Repos
+        - option "farline-ai-forge 5" [ref=e475] [cursor=pointer]:
+          - generic [ref=e476]: farline-ai-forge
+          - generic [ref=e478]: "5"
+        - option "aigon 66" [selected] [ref=e479] [cursor=pointer]:
+          - generic [ref=e480]: aigon
+          - generic [ref=e482]: "66"
+        - option "farline 49" [ref=e483] [cursor=pointer]:
+          - generic [ref=e484]: farline
+          - generic [ref=e486]: "49"
+        - option "jvbot 18" [ref=e487] [cursor=pointer]:
+          - generic [ref=e488]: jvbot
+          - generic [ref=e490]: "18"
+        - option "sen-labs-site" [ref=e491] [cursor=pointer]:
+          - generic [ref=e492]: sen-labs-site
+        - option "aigon-pro 7" [ref=e493] [cursor=pointer]:
+          - generic [ref=e494]: aigon-pro
+          - generic [ref=e496]: "7"
+        - option "brewboard 13" [ref=e497] [cursor=pointer]:
+          - generic [ref=e498]: brewboard
+          - generic [ref=e500]: "13"
+      - generic [ref=e501]:
+        - generic [ref=e502]:
+          - strong [ref=e503]: Tmux Sessions
+          - generic [ref=e504]: 10 sessions
+          - button "Kill 14 Orphans" [ref=e505] [cursor=pointer]
+          - button "⊞ Tile Windows" [ref=e506] [cursor=pointer]
+          - button "↺ Refresh" [ref=e507] [cursor=pointer]
+        - generic [ref=e508]:
+          - generic [ref=e509]: Agent Sessions (4)
+          - generic [ref=e510]:
+            - generic "aigon-f240-review-cx-trace-and-eliminate-stale-drive-branches-for-solo-worktree-features" [ref=e511]
+            - generic [ref=e512]: f240
+            - generic [ref=e513]: 54m ago
+            - generic [ref=e514]:
+              - button "Open" [ref=e515] [cursor=pointer]
+              - button "Peek" [ref=e516] [cursor=pointer]
+              - button "Kill" [ref=e517] [cursor=pointer]
+          - generic [ref=e518]:
+            - generic "aigon-f243-review-cx-dashboard-reset-action" [ref=e519]
+            - generic [ref=e520]: f243
+            - generic [ref=e521]: 1h ago
+            - generic [ref=e522]:
+              - button "Open" [ref=e523] [cursor=pointer]
+              - button "Peek" [ref=e524] [cursor=pointer]
+              - button "Kill" [ref=e525] [cursor=pointer]
+          - generic [ref=e526]:
+            - generic "aigon-f243-do-cc-dashboard-reset-action" [ref=e527]
+            - generic [ref=e528]: f243
+            - generic [ref=e529]: attached
+            - generic [ref=e530]: 1h ago
+            - generic [ref=e531]:
+              - button "Open" [ref=e532] [cursor=pointer]
+              - button "Peek" [ref=e533] [cursor=pointer]
+              - button "Kill" [ref=e534] [cursor=pointer]
+          - generic [ref=e535]:
+            - generic "aigon-f240-do-cc-trace-and-eliminate-stale-drive-branches-for-solo-worktree-features" [ref=e536]
+            - generic [ref=e537]: f240
+            - generic [ref=e538]: attached
+            - generic [ref=e539]: 1h ago
+            - generic [ref=e540]:
+              - button "Open" [ref=e541] [cursor=pointer]
+              - button "Peek" [ref=e542] [cursor=pointer]
+              - button "Kill" [ref=e543] [cursor=pointer]
+        - generic [ref=e544]:
+          - generic [ref=e545]: Orphaned Sessions (6)
+          - generic [ref=e546]:
+            - generic "aigon-f242-review-cx-fix-feature-reset-engine-state-cleanup" [ref=e547]
+            - generic [ref=e548]: f242
+            - generic "This session's feature has been completed — F242" [ref=e549]: feature done — F242
+            - generic [ref=e550]: 11h ago
+            - generic [ref=e551]:
+              - button "Open" [ref=e552] [cursor=pointer]
+              - button "Peek" [ref=e553] [cursor=pointer]
+              - button "Kill" [ref=e554] [cursor=pointer]
+          - generic [ref=e555]:
+            - generic "aigon-f241-review-cx-create-with-agent" [ref=e556]
+            - generic [ref=e557]: f241
+            - generic "This session's feature has been completed — F241" [ref=e558]: feature done — F241
+            - generic [ref=e559]: 11h ago
+            - generic [ref=e560]:
+              - button "Open" [ref=e561] [cursor=pointer]
+              - button "Peek" [ref=e562] [cursor=pointer]
+              - button "Kill" [ref=e563] [cursor=pointer]
+          - generic [ref=e564]:
+            - generic "aigon-f242-do-cc-fix-feature-reset-engine-state-cleanup" [ref=e565]
+            - generic [ref=e566]: f242
+            - generic "This session's feature has been completed — F242" [ref=e567]: feature done — F242
+            - generic [ref=e568]: 11h ago
+            - generic [ref=e569]:
+              - button "Open" [ref=e570] [cursor=pointer]
+              - button "Peek" [ref=e571] [cursor=pointer]
+              - button "Kill" [ref=e572] [cursor=pointer]
+          - generic [ref=e573]:
+            - generic "aigon-f241-do-cc-create-with-agent" [ref=e574]
+            - generic [ref=e575]: f241
+            - generic "This session's feature has been completed — F241" [ref=e576]: feature done — F241
+            - generic [ref=e577]: 11h ago
+            - generic [ref=e578]:
+              - button "Open" [ref=e579] [cursor=pointer]
+              - button "Peek" [ref=e580] [cursor=pointer]
+              - button "Kill" [ref=e581] [cursor=pointer]
+          - generic [ref=e582]:
+            - generic "aigon-f236-review-cc-add-reference-pages-for-init-install-agent-doctor" [ref=e583]
+            - generic [ref=e584]: f236
+            - generic "This session's feature has been completed — F236" [ref=e585]: feature done — F236
+            - generic [ref=e586]: 22h ago
+            - generic [ref=e587]:
+              - button "Open" [ref=e588] [cursor=pointer]
+              - button "Peek" [ref=e589] [cursor=pointer]
+              - button "Kill" [ref=e590] [cursor=pointer]
+          - generic [ref=e591]:
+            - generic "aigon-f235-review-cc-delete-deprecated-command-doc-pages" [ref=e592]
+            - generic [ref=e593]: f235
+            - generic "This session's feature has been completed — F235" [ref=e594]: feature done — F235
+            - generic [ref=e595]: 22h ago
+            - generic [ref=e596]:
+              - button "Open" [ref=e597] [cursor=pointer]
+              - button "Peek" [ref=e598] [cursor=pointer]
+              - button "Kill" [ref=e599] [cursor=pointer]
+  - dialog "Notifications" [ref=e245]:
+    - generic [ref=e246]:
+      - generic [ref=e247]: Notifications
+      - button "Close notifications" [ref=e248] [cursor=pointer]: ×
+    - generic [ref=e250]: No notifications yet
+  - dialog "Peek" [ref=e251]:
+    - generic [ref=e252]:
+      - generic [ref=e254]: Peek
+      - generic [ref=e255]:
+        - button "⤢" [ref=e256] [cursor=pointer]
+        - button "Close" [ref=e257] [cursor=pointer]
+    - generic [ref=e260]:
+      - textbox "Send command…" [ref=e261]
+      - button "Send" [ref=e262] [cursor=pointer]
+  - dialog "Terminal" [ref=e263]:
+    - generic [ref=e264]:
+      - generic [ref=e266]: Terminal
+      - generic [ref=e267]:
+        - button "⤢" [ref=e268] [cursor=pointer]
+        - button "Stop" [ref=e269] [cursor=pointer]
+        - button "Detach (keep session running)" [ref=e270] [cursor=pointer]: Detach
+    - generic [ref=e273]: 0s
+  - dialog [ref=e274]:
+    - generic [ref=e275]:
+      - button "Copy filename for CLI" [ref=e276] [cursor=pointer]:
+        - img [ref=e277]
+      - generic [ref=e281]:
+        - button "↺ Refresh" [ref=e282] [cursor=pointer]
+        - button "Use AI" [ref=e283] [cursor=pointer]
+        - button "Open in Editor" [ref=e284] [cursor=pointer]
+        - button "⤢" [ref=e285] [cursor=pointer]
+        - button "Close" [ref=e286] [cursor=pointer]: ×
+    - tablist "Spec details" [ref=e287]:
+      - tab "Spec" [selected] [ref=e288] [cursor=pointer]
+      - tab "Status" [ref=e289] [cursor=pointer]
+      - tab "Events" [ref=e290] [cursor=pointer]
+      - tab "Agents" [ref=e291] [cursor=pointer]
+      - tab "Stats" [ref=e292] [cursor=pointer]
+      - tab "Agent Log" [ref=e293] [cursor=pointer]
+      - tab "Control" [ref=e294] [cursor=pointer]
+    - generic [ref=e297]:
+      - button "A−" [ref=e298] [cursor=pointer]
+      - generic [ref=e299]: "13"
+      - button "A+" [ref=e300] [cursor=pointer]

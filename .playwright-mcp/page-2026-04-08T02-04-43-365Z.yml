@@ -1,0 +1,156 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Aigon Aigon Dashboard" [level=1] [ref=e4]:
+        - img "Aigon" [ref=e5]
+        - text: Aigon Dashboard
+      - generic [ref=e6]:
+        - generic [ref=e9]: Connected
+        - generic [ref=e10]: Updated just now
+        - button "Notifications" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+        - button "Refresh" [ref=e15] [cursor=pointer]
+        - link "?" [ref=e16] [cursor=pointer]:
+          - /url: https://aigon.build/docs
+    - navigation "Dashboard views" [ref=e17]:
+      - button "Monitor" [ref=e18] [cursor=pointer]
+      - button "Pipeline" [ref=e19] [cursor=pointer]
+      - button "Sessions" [ref=e20] [cursor=pointer]
+      - button "Reports" [ref=e21] [cursor=pointer]
+      - button "InsightsPRO" [ref=e22] [cursor=pointer]:
+        - text: Insights
+        - superscript [ref=e23]: PRO
+      - button "Logs" [ref=e24] [cursor=pointer]
+      - button "Console" [ref=e25] [cursor=pointer]
+      - button "Settings" [ref=e26] [cursor=pointer]
+      - button "Config" [ref=e27] [cursor=pointer]
+    - generic [ref=e28]:
+      - button "Hide sidebar" [ref=e29] [cursor=pointer]:
+        - img [ref=e30]
+      - listbox "Repository selector" [ref=e31]:
+        - option "All Repos" [selected] [ref=e33] [cursor=pointer]:
+          - generic [ref=e34]: All Repos
+        - option "brewboard 13" [ref=e35] [cursor=pointer]:
+          - generic [ref=e36]: brewboard
+          - generic [ref=e38]: "13"
+        - option "aigon 66" [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]: aigon
+          - generic [ref=e42]: "66"
+        - option "farline-ai-forge 2" [ref=e43] [cursor=pointer]:
+          - generic [ref=e44]: farline-ai-forge
+          - generic [ref=e46]: "2"
+        - option "farline 48" [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: farline
+          - generic [ref=e50]: "48"
+        - option "jvbot 18" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: jvbot
+          - generic [ref=e54]: "18"
+        - option "sen-labs-site" [ref=e55] [cursor=pointer]:
+          - generic [ref=e56]: sen-labs-site
+        - option "aigon-pro 7" [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]: aigon-pro
+          - generic [ref=e60]: "7"
+      - generic [ref=e62]:
+        - generic [ref=e64]:
+          - button "All" [ref=e65] [cursor=pointer]
+          - button "Features" [ref=e66] [cursor=pointer]
+          - button "Research" [ref=e67] [cursor=pointer]
+          - button "Feedback" [ref=e68] [cursor=pointer]
+        - generic "Agent status summary" [ref=e69]:
+          - button "All" [ref=e70] [cursor=pointer]
+          - button "3 implementing" [ref=e71] [cursor=pointer]
+          - button "0 waiting" [ref=e72] [cursor=pointer]
+          - button "80 submitted" [ref=e73] [cursor=pointer]
+          - button "0 error" [ref=e74] [cursor=pointer]
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - generic [ref=e77] [cursor=pointer]:
+              - strong [ref=e78]: aigon
+              - generic [ref=e79]: ▾
+              - generic [ref=e81]:
+                - button "Ask cc" [ref=e82]
+                - button "▾" [ref=e83]
+            - article [ref=e85] [cursor=pointer]:
+              - generic [ref=e86]:
+                - generic [ref=e87]:
+                  - text: "#244 feature-close-spec-commit-boundaries"
+                  - generic [ref=e88]: Running autonomously
+                - button "Pause" [ref=e91]
+              - generic [ref=e93]:
+                - generic [ref=e94]: Codex
+                - generic [ref=e95]: ● Running
+                - generic [ref=e96]: 2m ago
+          - generic [ref=e97]:
+            - generic [ref=e98] [cursor=pointer]:
+              - strong [ref=e99]: brewboard
+              - generic [ref=e100]: ▾
+              - button "Start main dev server" [ref=e102]:
+                - img [ref=e103]
+              - generic [ref=e107]:
+                - button "Ask cc" [ref=e108]
+                - button "▾" [ref=e109]
+            - generic [ref=e110]:
+              - article [ref=e111] [cursor=pointer]:
+                - generic [ref=e112]:
+                  - generic [ref=e113]: "#02 brewery-import"
+                  - button "Pause" [ref=e116]
+                - generic [ref=e118]:
+                  - generic [ref=e119]: Drive
+                  - generic [ref=e120]: ● Implementing
+                  - generic [ref=e121]: 1h ago
+              - article [ref=e122] [cursor=pointer]:
+                - generic [ref=e123]:
+                  - generic [ref=e124]: "#03 featured-beer-hero"
+                  - button "Pause" [ref=e127]
+                - generic [ref=e129]:
+                  - generic [ref=e130]: Drive
+                  - generic [ref=e131]: ● Implementing
+                  - generic [ref=e132]: 1h ago
+              - article [ref=e133] [cursor=pointer]:
+                - generic [ref=e134]:
+                  - generic [ref=e135]: "#01 dark-mode"
+                  - button "Pause" [ref=e138]
+  - dialog "Notifications" [ref=e140]:
+    - generic [ref=e141]:
+      - generic [ref=e142]: Notifications
+      - button "Close notifications" [ref=e143] [cursor=pointer]: ×
+    - generic [ref=e145]: No notifications yet
+  - dialog "Peek" [ref=e146]:
+    - generic [ref=e147]:
+      - generic [ref=e149]: Peek
+      - generic [ref=e150]:
+        - button "⤢" [ref=e151] [cursor=pointer]
+        - button "Close" [ref=e152] [cursor=pointer]
+    - generic [ref=e155]:
+      - textbox "Send command…" [ref=e156]
+      - button "Send" [ref=e157] [cursor=pointer]
+  - dialog "Terminal" [ref=e158]:
+    - generic [ref=e159]:
+      - generic [ref=e161]: Terminal
+      - generic [ref=e162]:
+        - button "⤢" [ref=e163] [cursor=pointer]
+        - button "Stop" [ref=e164] [cursor=pointer]
+        - button "Detach (keep session running)" [ref=e165] [cursor=pointer]: Detach
+    - generic [ref=e168]: 0s
+  - dialog [ref=e169]:
+    - generic [ref=e170]:
+      - button "Copy filename for CLI" [ref=e171] [cursor=pointer]:
+        - img [ref=e172]
+      - generic [ref=e176]:
+        - button "↺ Refresh" [ref=e177] [cursor=pointer]
+        - button "Use AI" [ref=e178] [cursor=pointer]
+        - button "Open in Editor" [ref=e179] [cursor=pointer]
+        - button "⤢" [ref=e180] [cursor=pointer]
+        - button "Close" [ref=e181] [cursor=pointer]: ×
+    - tablist "Spec details" [ref=e182]:
+      - tab "Spec" [selected] [ref=e183] [cursor=pointer]
+      - tab "Status" [ref=e184] [cursor=pointer]
+      - tab "Events" [ref=e185] [cursor=pointer]
+      - tab "Agents" [ref=e186] [cursor=pointer]
+      - tab "Stats" [ref=e187] [cursor=pointer]
+      - tab "Agent Log" [ref=e188] [cursor=pointer]
+      - tab "Control" [ref=e189] [cursor=pointer]
+    - generic [ref=e192]:
+      - button "A−" [ref=e193] [cursor=pointer]
+      - generic [ref=e194]: "13"
+      - button "A+" [ref=e195] [cursor=pointer]

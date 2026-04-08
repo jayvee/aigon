@@ -1,0 +1,252 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Aigon Aigon Dashboard" [level=1] [ref=e4]:
+        - img "Aigon" [ref=e5]
+        - text: Aigon Dashboard
+      - generic [ref=e6]:
+        - generic [ref=e9]: Connected
+        - generic [ref=e10]: Updated just now
+        - button "Notifications" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+        - button "Refresh" [ref=e15] [cursor=pointer]
+        - link "?" [ref=e16] [cursor=pointer]:
+          - /url: http://localhost:3600/docs
+    - navigation "Dashboard views" [ref=e17]:
+      - button "Monitor" [ref=e18] [cursor=pointer]
+      - button "Pipeline" [ref=e19] [cursor=pointer]
+      - button "Sessions" [ref=e20] [cursor=pointer]
+      - button "Reports" [ref=e21] [cursor=pointer]
+      - button "InsightsPRO" [ref=e22] [cursor=pointer]:
+        - text: Insights
+        - superscript [ref=e23]: PRO
+      - button "Logs" [ref=e24] [cursor=pointer]
+      - button "Console" [ref=e25] [cursor=pointer]
+      - button "Settings" [ref=e26] [cursor=pointer]
+      - button "Config" [ref=e27] [cursor=pointer]
+    - generic [ref=e28]:
+      - button "Hide sidebar" [ref=e29] [cursor=pointer]:
+        - img [ref=e30]
+      - listbox "Repository selector" [ref=e31]:
+        - option "All Repos" [ref=e33] [cursor=pointer]:
+          - generic [ref=e34]: All Repos
+        - option "farline-ai-forge 5" [ref=e35] [cursor=pointer]:
+          - generic [ref=e36]: farline-ai-forge
+          - generic [ref=e38]: "5"
+        - option "aigon 66" [selected] [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]: aigon
+          - generic [ref=e42]: "66"
+        - option "farline 49" [ref=e43] [cursor=pointer]:
+          - generic [ref=e44]: farline
+          - generic [ref=e46]: "49"
+        - option "jvbot 18" [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: jvbot
+          - generic [ref=e50]: "18"
+        - option "sen-labs-site" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: sen-labs-site
+        - option "aigon-pro 7" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: aigon-pro
+          - generic [ref=e56]: "7"
+        - option "brewboard 13" [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]: brewboard
+          - generic [ref=e60]: "13"
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - heading "~/src/aigon" [level=2] [ref=e63]
+          - generic [ref=e64]: 51 features, 11 research
+          - generic [ref=e66]:
+            - button "Ask cc" [ref=e67] [cursor=pointer]
+            - button "▾" [ref=e68] [cursor=pointer]
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - generic [ref=e71]:
+              - button "Features" [ref=e72] [cursor=pointer]
+              - button "Research" [ref=e73] [cursor=pointer]
+              - button "Feedback" [ref=e74] [cursor=pointer]
+            - button "Show Paused" [ref=e75] [cursor=pointer]
+          - generic [ref=e77]:
+            - generic [ref=e78]:
+              - generic [ref=e79]:
+                - generic [ref=e80]: Inbox
+                - generic [ref=e81]:
+                  - generic [ref=e82]: "25"
+                  - button "+ New Feature" [ref=e83] [cursor=pointer]
+              - generic [ref=e84]:
+                - generic [ref=e85] [cursor=pointer]:
+                  - generic [ref=e86]: dashboard route table extract api handlers
+                  - generic [ref=e87]:
+                    - button "Prioritise" [ref=e88]
+                    - button "⋯" [ref=e90]
+                - generic [ref=e91] [cursor=pointer]:
+                  - generic [ref=e92]: kill utils js god object
+                  - generic [ref=e93]:
+                    - button "Prioritise" [ref=e94]
+                    - button "⋯" [ref=e96]
+                - generic [ref=e97] [cursor=pointer]:
+                  - generic [ref=e98]: split entity js extract feature dependency graph
+                  - generic [ref=e99]:
+                    - button "Prioritise" [ref=e100]
+                    - button "⋯" [ref=e102]
+                - generic [ref=e103] [cursor=pointer]:
+                  - generic [ref=e104]: switch cc agent default from dangerously skip permissions to auto mode
+                  - generic [ref=e105]:
+                    - button "Prioritise" [ref=e106]
+                    - button "⋯" [ref=e108]
+                - generic [ref=e109] [cursor=pointer]:
+                  - generic [ref=e110]: dashboard sse push model replace polling with server sent events
+                  - generic [ref=e111]:
+                    - button "Prioritise" [ref=e112]
+                    - button "⋯" [ref=e114]
+                - generic [ref=e115] [cursor=pointer]:
+                  - generic [ref=e116]: remove feature submit and enforce feature do submission
+                  - generic [ref=e117]:
+                    - button "Prioritise" [ref=e118]
+                    - button "⋯" [ref=e120]
+                - generic [ref=e121] [cursor=pointer]:
+                  - generic [ref=e122]: agent perf benchmarks
+                  - generic [ref=e123]:
+                    - button "Prioritise" [ref=e124]
+                    - button "⋯" [ref=e126]
+                - generic [ref=e127] [cursor=pointer]:
+                  - generic [ref=e128]: tracker webhook conflict
+                  - generic [ref=e129]:
+                    - button "Prioritise" [ref=e130]
+                    - button "⋯" [ref=e132]
+                - button "17 more …" [ref=e133] [cursor=pointer]
+            - generic [ref=e134]:
+              - generic [ref=e135]:
+                - generic [ref=e136]: Backlog
+                - generic [ref=e138]: "3"
+              - generic [ref=e139]:
+                - generic [ref=e140] [cursor=pointer]:
+                  - generic [ref=e141]: "#237"
+                  - generic [ref=e142]: fix dashboard open in finder button
+                  - generic [ref=e143]:
+                    - button "Start" [ref=e144]
+                    - button "⋯" [ref=e146]
+                - generic [ref=e147] [cursor=pointer]:
+                  - generic [ref=e148]: "#238"
+                  - generic [ref=e149]: merge comparisons extended into public site
+                  - generic [ref=e150]:
+                    - button "Start" [ref=e151]
+                    - button "⋯" [ref=e153]
+                - generic [ref=e154] [cursor=pointer]:
+                  - generic [ref=e155]: "#246"
+                  - generic [ref=e156]: agent registry single source of truth
+                  - generic [ref=e157]:
+                    - button "Start" [ref=e158]
+                    - button "⋯" [ref=e160]
+            - generic [ref=e161]:
+              - generic [ref=e162]:
+                - generic [ref=e163]: In-Progress
+                - generic [ref=e165]: "2"
+              - generic [ref=e166]:
+                - generic [ref=e167] [cursor=pointer]:
+                  - generic [ref=e168]: "#240"
+                  - generic [ref=e169]: trace and eliminate stale drive branches for solo worktree features
+                  - generic [ref=e170]:
+                    - generic [ref=e171]:
+                      - generic "Claude Code" [ref=e172]
+                      - button "Peek at session output" [ref=e173]:
+                        - img [ref=e174]
+                    - generic [ref=e177]: ✓ Submitted
+                  - generic [ref=e178]:
+                    - generic [ref=e179]:
+                      - generic [ref=e180]: Review
+                      - button "Peek at session output" [ref=e181]:
+                        - img [ref=e182]
+                    - generic [ref=e185]: ✓ Codex — Review complete
+                  - generic [ref=e186]:
+                    - button "Close" [ref=e187]
+                    - button "⋯" [ref=e189]
+                - generic [ref=e190] [cursor=pointer]:
+                  - generic [ref=e191]: "#243"
+                  - generic [ref=e192]: dashboard reset action
+                  - generic [ref=e193]:
+                    - generic [ref=e194]:
+                      - generic "Claude Code" [ref=e195]
+                      - button "Peek at session output" [ref=e196]:
+                        - img [ref=e197]
+                    - generic [ref=e200]: ✓ Submitted
+                  - generic [ref=e201]:
+                    - generic [ref=e202]:
+                      - generic [ref=e203]: Review
+                      - button "Peek at session output" [ref=e204]:
+                        - img [ref=e205]
+                    - generic [ref=e208]: ✓ Codex — Review complete
+                  - generic [ref=e209]:
+                    - button "Close" [ref=e210]
+                    - button "⋯" [ref=e212]
+            - generic [ref=e213]:
+              - generic [ref=e214]:
+                - generic [ref=e215]: Evaluation
+                - generic [ref=e217]: "0"
+              - generic [ref=e219]: Empty
+            - generic [ref=e220]:
+              - generic [ref=e221]:
+                - generic [ref=e222]: Done
+                - generic [ref=e224]: "216"
+              - generic [ref=e225]:
+                - generic [ref=e226] [cursor=pointer]:
+                  - generic [ref=e227]: "#245"
+                  - generic [ref=e228]: feature close scan target branch
+                - generic [ref=e229] [cursor=pointer]:
+                  - generic [ref=e230]: "#244"
+                  - generic [ref=e231]: feature close spec commit boundaries
+                - generic [ref=e232] [cursor=pointer]:
+                  - generic [ref=e233]: "#242"
+                  - generic [ref=e234]: fix feature reset engine state cleanup
+                - generic [ref=e235] [cursor=pointer]:
+                  - generic [ref=e236]: "#241"
+                  - generic [ref=e237]: create with agent
+                - generic [ref=e238] [cursor=pointer]:
+                  - generic [ref=e239]: "#239"
+                  - generic [ref=e240]: rename ai attribution emails from aigon dev to aigon build
+                - generic [ref=e241] [cursor=pointer]:
+                  - generic [ref=e242]: "#236"
+                  - generic [ref=e243]: add reference pages for init install agent doctor
+                - button "210 more — open in Finder" [ref=e244] [cursor=pointer]
+  - dialog "Notifications" [ref=e245]:
+    - generic [ref=e246]:
+      - generic [ref=e247]: Notifications
+      - button "Close notifications" [ref=e248] [cursor=pointer]: ×
+    - generic [ref=e250]: No notifications yet
+  - dialog "Peek" [ref=e251]:
+    - generic [ref=e252]:
+      - generic [ref=e254]: Peek
+      - generic [ref=e255]:
+        - button "⤢" [ref=e256] [cursor=pointer]
+        - button "Close" [ref=e257] [cursor=pointer]
+    - generic [ref=e260]:
+      - textbox "Send command…" [ref=e261]
+      - button "Send" [ref=e262] [cursor=pointer]
+  - dialog "Terminal" [ref=e263]:
+    - generic [ref=e264]:
+      - generic [ref=e266]: Terminal
+      - generic [ref=e267]:
+        - button "⤢" [ref=e268] [cursor=pointer]
+        - button "Stop" [ref=e269] [cursor=pointer]
+        - button "Detach (keep session running)" [ref=e270] [cursor=pointer]: Detach
+    - generic [ref=e273]: 0s
+  - dialog [ref=e274]:
+    - generic [ref=e275]:
+      - button "Copy filename for CLI" [ref=e276] [cursor=pointer]:
+        - img [ref=e277]
+      - generic [ref=e281]:
+        - button "↺ Refresh" [ref=e282] [cursor=pointer]
+        - button "Use AI" [ref=e283] [cursor=pointer]
+        - button "Open in Editor" [ref=e284] [cursor=pointer]
+        - button "⤢" [ref=e285] [cursor=pointer]
+        - button "Close" [ref=e286] [cursor=pointer]: ×
+    - tablist "Spec details" [ref=e287]:
+      - tab "Spec" [selected] [ref=e288] [cursor=pointer]
+      - tab "Status" [ref=e289] [cursor=pointer]
+      - tab "Events" [ref=e290] [cursor=pointer]
+      - tab "Agents" [ref=e291] [cursor=pointer]
+      - tab "Stats" [ref=e292] [cursor=pointer]
+      - tab "Agent Log" [ref=e293] [cursor=pointer]
+      - tab "Control" [ref=e294] [cursor=pointer]
+    - generic [ref=e297]:
+      - button "A−" [ref=e298] [cursor=pointer]
+      - generic [ref=e299]: "13"
+      - button "A+" [ref=e300] [cursor=pointer]

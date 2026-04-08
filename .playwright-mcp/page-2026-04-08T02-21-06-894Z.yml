@@ -1,0 +1,740 @@
+- generic [active] [ref=e1]:
+  - link "Skip to Content" [ref=e2] [cursor=pointer]:
+    - /url: "#nextra-skip-nav"
+  - banner [ref=e3]:
+    - navigation [ref=e5]:
+      - link "Home page" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]:
+          - img [ref=e8]
+          - text: Aigon
+      - generic [ref=e9]:
+        - link "Docs" [ref=e10] [cursor=pointer]:
+          - /url: /docs
+        - link "Pro" [ref=e11] [cursor=pointer]:
+          - /url: /pro
+      - combobox "Search documentation…" [ref=e14]
+      - link "Project repository" [ref=e15] [cursor=pointer]:
+        - /url: https://github.com/jayvee/aigon
+        - img "Project repository" [ref=e16]
+  - generic [ref=e18]:
+    - complementary [ref=e19]:
+      - list [ref=e22]:
+        - listitem [ref=e23]:
+          - link "Documentation" [ref=e24] [cursor=pointer]:
+            - /url: /docs
+        - listitem [ref=e25]:
+          - link "Getting Started" [ref=e26] [cursor=pointer]:
+            - /url: /docs/getting-started
+        - listitem [ref=e27]:
+          - button "Concepts" [ref=e28] [cursor=pointer]:
+            - text: Concepts
+            - img [ref=e29]
+          - list [ref=e31]:
+            - listitem [ref=e32]:
+              - link "Overview" [ref=e33] [cursor=pointer]:
+                - /url: /docs/concepts
+            - listitem [ref=e34]:
+              - link "Execution Modes" [ref=e35] [cursor=pointer]:
+                - /url: /docs/concepts/execution-modes
+            - listitem [ref=e36]:
+              - link "Evaluation" [ref=e37] [cursor=pointer]:
+                - /url: /docs/concepts/evaluation
+            - listitem [ref=e38]:
+              - link "Reliability & Safety" [ref=e39] [cursor=pointer]:
+                - /url: /docs/concepts/reliability
+        - listitem [ref=e40]:
+          - button "Guides" [ref=e41] [cursor=pointer]:
+            - text: Guides
+            - img [ref=e42]
+          - list [ref=e44]:
+            - listitem [ref=e45]:
+              - link "Guides" [ref=e46] [cursor=pointer]:
+                - /url: /docs/guides
+            - listitem [ref=e47]:
+              - link "Drive Mode" [ref=e48] [cursor=pointer]:
+                - /url: /docs/guides/drive-mode
+            - listitem [ref=e49]:
+              - link "Fleet Mode" [ref=e50] [cursor=pointer]:
+                - /url: /docs/guides/fleet-mode
+            - listitem [ref=e51]:
+              - link "Autonomous Mode" [ref=e52] [cursor=pointer]:
+                - /url: /docs/guides/autopilot-mode
+            - listitem [ref=e53]:
+              - link "Research Workflow" [ref=e54] [cursor=pointer]:
+                - /url: /docs/guides/research-workflow
+            - listitem [ref=e55]:
+              - link "Feedback Workflow" [ref=e56] [cursor=pointer]:
+                - /url: /docs/guides/feedback-workflow
+            - listitem [ref=e57]:
+              - link "Dashboard" [ref=e58] [cursor=pointer]:
+                - /url: /docs/guides/dashboard
+            - listitem [ref=e59]:
+              - link "Telemetry & Analytics" [ref=e60] [cursor=pointer]:
+                - /url: /docs/guides/telemetry
+            - listitem [ref=e61]:
+              - link "Security Scanning" [ref=e62] [cursor=pointer]:
+                - /url: /docs/guides/security-scanning
+            - listitem [ref=e63]:
+              - link "Insights" [ref=e64] [cursor=pointer]:
+                - /url: /docs/guides/amplification
+        - listitem [ref=e65]:
+          - button "Reference" [ref=e66] [cursor=pointer]:
+            - text: Reference
+            - img [ref=e67]
+          - list [ref=e69]:
+            - listitem [ref=e70]:
+              - button "CLI Commands" [ref=e71] [cursor=pointer]:
+                - text: CLI Commands
+                - img [ref=e72]
+              - list [ref=e74]:
+                - listitem [ref=e75]:
+                  - button "Feature Commands" [ref=e76] [cursor=pointer]:
+                    - text: Feature Commands
+                    - img [ref=e77]
+                  - list [ref=e79]:
+                    - listitem [ref=e80]:
+                      - link "feature-create" [ref=e81] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-create
+                    - listitem [ref=e82]:
+                      - link "feature-prioritise" [ref=e83] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-prioritise
+                    - listitem [ref=e84]:
+                      - link "feature-start" [ref=e85] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-start
+                    - listitem [ref=e86]:
+                      - link "feature-now" [ref=e87] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-now
+                    - listitem [ref=e88]:
+                      - link "feature-do" [ref=e89] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-do
+                    - listitem [ref=e90]:
+                      - link "feature-submit" [ref=e91] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-submit
+                    - listitem [ref=e92]:
+                      - link "feature-open" [ref=e93] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-open
+                    - listitem [ref=e94]:
+                      - link "feature-eval" [ref=e95] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-eval
+                    - listitem [ref=e96]:
+                      - link "feature-review" [ref=e97] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-review
+                    - listitem [ref=e98]:
+                      - link "feature-close" [ref=e99] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-close
+                    - listitem [ref=e100]:
+                      - link "feature-cleanup" [ref=e101] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-cleanup
+                    - listitem [ref=e102]:
+                      - link "feature-autonomous-start" [ref=e103] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-autonomous-start
+                    - listitem [ref=e104]:
+                      - link "feature-validate" [ref=e105] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-validate
+                    - listitem [ref=e106]:
+                      - link "feature-reset" [ref=e107] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-reset
+                    - listitem [ref=e108]:
+                      - link "feature-autopilot (removed)" [ref=e109] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-autopilot
+                - listitem [ref=e110]:
+                  - button "Research Commands" [ref=e111] [cursor=pointer]:
+                    - text: Research Commands
+                    - img [ref=e112]
+                  - list [ref=e114]:
+                    - listitem [ref=e115]:
+                      - link "research-create" [ref=e116] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-create
+                    - listitem [ref=e117]:
+                      - link "research-prioritise" [ref=e118] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-prioritise
+                    - listitem [ref=e119]:
+                      - link "research-start" [ref=e120] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-start
+                    - listitem [ref=e121]:
+                      - link "research-do" [ref=e122] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-do
+                    - listitem [ref=e123]:
+                      - link "research-submit" [ref=e124] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-submit
+                    - listitem [ref=e125]:
+                      - link "research-open" [ref=e126] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-open
+                    - listitem [ref=e127]:
+                      - link "research-eval" [ref=e128] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-eval
+                    - listitem [ref=e129]:
+                      - link "research-close" [ref=e130] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-close
+                    - listitem [ref=e131]:
+                      - link "research-autopilot" [ref=e132] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-autopilot
+                - listitem [ref=e133]:
+                  - button "Feedback Commands" [ref=e134] [cursor=pointer]:
+                    - text: Feedback Commands
+                    - img [ref=e135]
+                  - list [ref=e137]:
+                    - listitem [ref=e138]:
+                      - link "feedback-create" [ref=e139] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feedback/feedback-create
+                    - listitem [ref=e140]:
+                      - link "feedback-list" [ref=e141] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feedback/feedback-list
+                    - listitem [ref=e142]:
+                      - link "feedback-triage" [ref=e143] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feedback/feedback-triage
+                - listitem [ref=e144]:
+                  - button "Infrastructure" [ref=e145] [cursor=pointer]:
+                    - text: Infrastructure
+                    - img [ref=e146]
+                  - list [ref=e148]:
+                    - listitem [ref=e149]:
+                      - link "board" [ref=e150] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/board
+                    - listitem [ref=e151]:
+                      - link "server" [ref=e152] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/server
+                    - listitem [ref=e153]:
+                      - link "dev-server" [ref=e154] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/dev-server
+                    - listitem [ref=e155]:
+                      - link "deploy" [ref=e156] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/deploy
+                    - listitem [ref=e157]:
+                      - link "insights" [ref=e158] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/insights
+                    - listitem [ref=e159]:
+                      - link "agent-status" [ref=e160] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/agent-status
+                    - listitem [ref=e161]:
+                      - link "sessions-close" [ref=e162] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/sessions-close
+                    - listitem [ref=e163]:
+                      - link "status" [ref=e164] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/status
+                    - listitem [ref=e165]:
+                      - link "help" [ref=e166] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/help
+                    - listitem [ref=e167]:
+                      - link "next" [ref=e168] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/next
+            - listitem [ref=e169]:
+              - link "Configuration" [ref=e170] [cursor=pointer]:
+                - /url: /docs/reference/configuration
+            - listitem [ref=e171]:
+              - link "Agents" [ref=e172] [cursor=pointer]:
+                - /url: /docs/reference/agents
+            - listitem [ref=e173]:
+              - link "File Structure" [ref=e174] [cursor=pointer]:
+                - /url: /docs/reference/file-structure
+      - generic [ref=e175]:
+        - button "Light" [ref=e176] [cursor=pointer]:
+          - img [ref=e177]
+          - text: Light
+        - button "Collapse sidebar" [expanded] [ref=e179] [cursor=pointer]:
+          - img [ref=e180]
+    - article [ref=e183]:
+      - generic [ref=e184]:
+        - link "Docs" [ref=e185] [cursor=pointer]:
+          - /url: /docs
+        - img [ref=e186]
+        - generic "Getting Started" [ref=e188]
+      - main [ref=e189]:
+        - heading "Prerequisites" [level=2] [ref=e190]: "Prerequisites #"
+        - paragraph [ref=e191]: "Before installing Aigon, make sure you have:"
+        - table [ref=e192]:
+          - rowgroup [ref=e193]:
+            - row "Prerequisite Required Check Why" [ref=e194]:
+              - columnheader "Prerequisite" [ref=e195]
+              - columnheader "Required" [ref=e196]
+              - columnheader "Check" [ref=e197]
+              - columnheader "Why" [ref=e198]
+          - rowgroup [ref=e199]:
+            - row "Node.js 18+ Yes node -v Aigon is a Node.js CLI" [ref=e200]:
+              - cell "Node.js 18+" [ref=e201]:
+                - strong [ref=e202]: Node.js 18+
+              - cell "Yes" [ref=e203]
+              - cell "node -v" [ref=e204]:
+                - code [ref=e205]: node -v
+              - cell "Aigon is a Node.js CLI" [ref=e206]
+            - row "Git 2.20+ Yes git --version Spec files are tracked in Git" [ref=e207]:
+              - cell "Git 2.20+" [ref=e208]:
+                - strong [ref=e209]: Git 2.20+
+              - cell "Yes" [ref=e210]
+              - cell "git --version" [ref=e211]:
+                - code [ref=e212]: git --version
+              - cell "Spec files are tracked in Git" [ref=e213]
+            - row "tmux For Fleet/worktree mode tmux -V Persistent agent sessions that survive terminal closes. Optional if you only use single-agent Drive mode on a branch." [ref=e214]:
+              - cell "tmux" [ref=e215]:
+                - strong [ref=e216]: tmux
+              - cell "For Fleet/worktree mode" [ref=e217]
+              - cell "tmux -V" [ref=e218]:
+                - code [ref=e219]: tmux -V
+              - cell "Persistent agent sessions that survive terminal closes. Optional if you only use single-agent Drive mode on a branch." [ref=e220]
+        - heading "Install prerequisites" [level=3] [ref=e221]: "Install prerequisites #"
+        - paragraph [ref=e222]:
+          - strong [ref=e223]: "macOS (Homebrew):"
+        - code [ref=e226]:
+          - generic [ref=e227]: brew install node git tmux
+        - paragraph [ref=e228]:
+          - strong [ref=e229]: "Ubuntu / Debian:"
+        - code [ref=e232]:
+          - generic [ref=e233]: sudo apt install nodejs npm git tmux
+        - paragraph [ref=e234]:
+          - strong [ref=e235]: "Fedora:"
+        - code [ref=e238]:
+          - generic [ref=e239]: sudo dnf install nodejs npm git tmux
+        - paragraph [ref=e240]:
+          - strong [ref=e241]: "Arch:"
+        - code [ref=e244]:
+          - generic [ref=e245]: sudo pacman -S nodejs npm git tmux
+        - blockquote [ref=e246]:
+          - paragraph [ref=e247]:
+            - strong [ref=e248]: "Note:"
+            - text: On Ubuntu/Debian, the
+            - code [ref=e249]: nodejs
+            - text: package may be outdated. For Node.js 18+, use the
+            - link "NodeSource" [ref=e250] [cursor=pointer]:
+              - /url: https://github.com/nodesource/distributions
+              - text: NodeSource
+              - img [ref=e251]
+            - text: repository or
+            - link "nvm" [ref=e254] [cursor=pointer]:
+              - /url: https://github.com/nvm-sh/nvm
+              - text: nvm
+              - img [ref=e255]
+            - text: .
+        - heading "Installation" [level=2] [ref=e258]: "Installation #"
+        - paragraph [ref=e259]: "Clone the repository and link the CLI globally:"
+        - paragraph [ref=e260]:
+          - strong [ref=e261]: "macOS:"
+        - code [ref=e264]:
+          - generic [ref=e265]: git clone https://github.com/jayvee/aigon.git ~/src/aigon
+          - generic [ref=e266]: cd ~/src/aigon
+          - generic [ref=e267]: npm ci
+          - generic [ref=e268]: npm link
+        - paragraph [ref=e269]:
+          - strong [ref=e270]: "Linux:"
+        - code [ref=e273]:
+          - generic [ref=e274]: git clone https://github.com/jayvee/aigon.git ~/src/aigon
+          - generic [ref=e275]: cd ~/src/aigon
+          - generic [ref=e276]: npm ci
+          - generic [ref=e277]: sudo npm link
+        - blockquote [ref=e278]:
+          - paragraph [ref=e279]:
+            - text: Clone to
+            - code [ref=e280]: ~/src/aigon
+            - text: or your preferred location for code repos. The path doesn’t matter as long as you keep it around —
+            - code [ref=e281]: npm link
+            - text: creates a global symlink to this directory. On Linux, global npm commands (
+            - code [ref=e282]: npm link
+            - text: ","
+            - code [ref=e283]: npm i -g
+            - text: ) require
+            - code [ref=e284]: sudo
+            - text: .
+        - paragraph [ref=e285]: "Verify the install:"
+        - code [ref=e288]:
+          - generic [ref=e289]: aigon --version
+        - heading "Agent CLIs" [level=3] [ref=e290]: "Agent CLIs #"
+        - paragraph [ref=e291]: "Install at least one agent CLI to use Aigon:"
+        - table [ref=e292]:
+          - rowgroup [ref=e293]:
+            - row "Agent CLI binary Install" [ref=e294]:
+              - columnheader "Agent" [ref=e295]
+              - columnheader "CLI binary" [ref=e296]
+              - columnheader "Install" [ref=e297]
+          - rowgroup [ref=e298]:
+            - row "Claude Code claude brew install claude-code or npm i -g @anthropic-ai/claude-code" [ref=e299]:
+              - cell "Claude Code" [ref=e300]
+              - cell "claude" [ref=e301]:
+                - code [ref=e302]: claude
+              - cell "brew install claude-code or npm i -g @anthropic-ai/claude-code" [ref=e303]:
+                - code [ref=e304]: brew install claude-code
+                - text: or
+                - code [ref=e305]: npm i -g @anthropic-ai/claude-code
+            - row "Gemini CLI gemini npm i -g @google/gemini-cli" [ref=e306]:
+              - cell "Gemini CLI" [ref=e307]
+              - cell "gemini" [ref=e308]:
+                - code [ref=e309]: gemini
+              - cell "npm i -g @google/gemini-cli" [ref=e310]:
+                - code [ref=e311]: npm i -g @google/gemini-cli
+            - row "Codex CLI codex npm i -g @openai/codex" [ref=e312]:
+              - cell "Codex CLI" [ref=e313]
+              - cell "codex" [ref=e314]:
+                - code [ref=e315]: codex
+              - cell "npm i -g @openai/codex" [ref=e316]:
+                - code [ref=e317]: npm i -g @openai/codex
+            - row "Cursor agent cursor.com (desktop app)" [ref=e318]:
+              - cell "Cursor" [ref=e319]
+              - cell "agent" [ref=e320]:
+                - code [ref=e321]: agent
+              - cell "cursor.com (desktop app)" [ref=e322]:
+                - link "cursor.com" [ref=e323] [cursor=pointer]:
+                  - /url: https://cursor.com
+                  - text: cursor.com
+                  - img [ref=e324]
+                - text: (desktop app)
+        - blockquote [ref=e327]:
+          - paragraph [ref=e328]:
+            - strong [ref=e329]: "Linux:"
+            - text: prefix
+            - code [ref=e330]: npm i -g
+            - text: commands with
+            - code [ref=e331]: sudo
+            - text: (e.g.,
+            - code [ref=e332]: sudo npm i -g @google/gemini-cli
+            - text: ).
+        - paragraph [ref=e333]: You don’t need all of them — install whichever you have access to. Fleet mode works best with 2+ agents.
+        - heading "Optional tools" [level=3] [ref=e334]: "Optional tools #"
+        - table [ref=e335]:
+          - rowgroup [ref=e336]:
+            - row "Tool What it enables Install" [ref=e337]:
+              - columnheader "Tool" [ref=e338]
+              - columnheader "What it enables" [ref=e339]
+              - columnheader "Install" [ref=e340]
+          - rowgroup [ref=e341]:
+            - row "gitleaks Secret scanning in pre-commit hooks and merge gates brew install gitleaks" [ref=e342]:
+              - cell "gitleaks" [ref=e343]:
+                - strong [ref=e344]: gitleaks
+              - cell "Secret scanning in pre-commit hooks and merge gates" [ref=e345]
+              - cell "brew install gitleaks" [ref=e346]:
+                - code [ref=e347]: brew install gitleaks
+            - row "Semgrep SAST vulnerability scanning at merge gates brew install semgrep or pip install semgrep" [ref=e348]:
+              - cell "Semgrep" [ref=e349]:
+                - strong [ref=e350]: Semgrep
+              - cell "SAST vulnerability scanning at merge gates" [ref=e351]
+              - cell "brew install semgrep or pip install semgrep" [ref=e352]:
+                - code [ref=e353]: brew install semgrep
+                - text: or
+                - code [ref=e354]: pip install semgrep
+            - row "Playwright Dashboard end-to-end tests npx playwright install" [ref=e355]:
+              - cell "Playwright" [ref=e356]:
+                - strong [ref=e357]: Playwright
+              - cell "Dashboard end-to-end tests" [ref=e358]
+              - cell "npx playwright install" [ref=e359]:
+                - code [ref=e360]: npx playwright install
+        - heading "Verify your setup" [level=3] [ref=e361]: "Verify your setup #"
+        - paragraph [ref=e362]: "Run the doctor command to check that everything is configured correctly:"
+        - code [ref=e365]:
+          - generic [ref=e366]: aigon doctor
+        - paragraph [ref=e367]: Doctor checks Node.js version, Git availability, tmux, and which agent CLIs are in your PATH.
+        - heading "Configure your terminal" [level=3] [ref=e368]: "Configure your terminal #"
+        - paragraph [ref=e369]: "Aigon launches agent sessions in terminal windows. Create your global config:"
+        - code [ref=e372]:
+          - generic [ref=e373]: aigon config init --global
+        - paragraph [ref=e374]: "Then set your terminal. Pick the one you use:"
+        - paragraph [ref=e375]:
+          - strong [ref=e376]: iTerm2
+          - text: "(recommended — agents run in tabs within a single window):"
+        - code [ref=e379]:
+          - generic [ref=e380]: aigon config set --global terminal tmux
+          - generic [ref=e381]: aigon config set --global tmuxApp iterm2
+        - paragraph [ref=e382]:
+          - strong [ref=e383]: Warp
+          - text: "(agents run in side-by-side split panes):"
+        - code [ref=e386]:
+          - generic [ref=e387]: aigon config set --global terminal warp
+        - paragraph [ref=e388]:
+          - strong [ref=e389]: Terminal.app
+          - text: "(macOS built-in — agents run in tmux sessions):"
+        - code [ref=e392]:
+          - generic [ref=e393]: aigon config set --global terminal tmux
+        - blockquote [ref=e394]:
+          - paragraph [ref=e395]:
+            - strong [ref=e396]: "Default:"
+            - code [ref=e397]: terminal
+            - text: =
+            - code [ref=e398]: warp
+            - text: . If you already use Warp, you can skip this step.
+        - heading "Initialize a project" [level=2] [ref=e399]: "Initialize a project #"
+        - paragraph [ref=e400]: "Navigate to any Git repository and run:"
+        - code [ref=e403]:
+          - generic [ref=e404]: cd /path/to/your/project
+          - generic [ref=e405]: aigon init
+        - paragraph [ref=e406]:
+          - text: This creates the
+          - code [ref=e407]: docs/specs/
+          - text: folder structure with Kanban lanes for features, research, and feedback.
+        - paragraph [ref=e408]: "Then install the agents you want to use:"
+        - code [ref=e411]:
+          - generic [ref=e412]: "aigon install-agent cc gg # Claude Code + Gemini CLI"
+        - table [ref=e413]:
+          - rowgroup [ref=e414]:
+            - row "Code Agent Aigon command prefix" [ref=e415]:
+              - columnheader "Code" [ref=e416]
+              - columnheader "Agent" [ref=e417]
+              - columnheader "Aigon command prefix" [ref=e418]
+          - rowgroup [ref=e419]:
+            - row "cc Claude Code /aigon:" [ref=e420]:
+              - cell "cc" [ref=e421]:
+                - code [ref=e422]: cc
+              - cell "Claude Code" [ref=e423]
+              - cell "/aigon:" [ref=e424]:
+                - code [ref=e425]: "/aigon:"
+            - row "gg Gemini CLI /aigon:" [ref=e426]:
+              - cell "gg" [ref=e427]:
+                - code [ref=e428]: gg
+              - cell "Gemini CLI" [ref=e429]
+              - cell "/aigon:" [ref=e430]:
+                - code [ref=e431]: "/aigon:"
+            - row "cx Codex CLI $aigon- (skill mention)" [ref=e432]:
+              - cell "cx" [ref=e433]:
+                - code [ref=e434]: cx
+              - cell "Codex CLI" [ref=e435]
+              - cell "$aigon- (skill mention)" [ref=e436]:
+                - code [ref=e437]: $aigon-
+                - text: (skill mention)
+            - row "cu Cursor /aigon-" [ref=e438]:
+              - cell "cu" [ref=e439]:
+                - code [ref=e440]: cu
+              - cell "Cursor" [ref=e441]
+              - cell "/aigon-" [ref=e442]:
+                - code [ref=e443]: /aigon-
+        - paragraph [ref=e444]:
+          - text: Install only the agents you have access to. You can add more later with
+          - code [ref=e445]: aigon install-agent
+          - text: .
+        - blockquote [ref=e446]:
+          - paragraph [ref=e447]:
+            - strong [ref=e448]: "Tip:"
+            - code [ref=e449]: install-agent
+            - text: checks whether the agent CLI binary is in your PATH and warns you if it’s missing, so you’ll know immediately if you need to install something first.
+        - heading "Three ways to interact" [level=2] [ref=e450]: "Three ways to interact #"
+        - table [ref=e451]:
+          - rowgroup [ref=e452]:
+            - row "Agent Commands CLI Dashboard" [ref=e453]:
+              - columnheader [ref=e454]
+              - columnheader "Agent Commands" [ref=e455]
+              - columnheader "CLI" [ref=e456]
+              - columnheader "Dashboard" [ref=e457]
+          - rowgroup [ref=e458]:
+            - row "Where Inside an agent session Terminal / shell Browser UI" [ref=e459]:
+              - cell "Where" [ref=e460]:
+                - strong [ref=e461]: Where
+              - cell "Inside an agent session" [ref=e462]
+              - cell "Terminal / shell" [ref=e463]
+              - cell "Browser UI" [ref=e464]
+            - row "Best for Writing specs, implementing features Orchestration, setup, scripting Visual overview, monitoring Fleet runs" [ref=e465]:
+              - cell "Best for" [ref=e466]:
+                - strong [ref=e467]: Best for
+              - cell "Writing specs, implementing features" [ref=e468]
+              - cell "Orchestration, setup, scripting" [ref=e469]
+              - cell "Visual overview, monitoring Fleet runs" [ref=e470]
+            - row "Example /aigon:feature-do 07 or $aigon-feature-do 07 aigon feature-start 07 cc gg Click “Start feature” on a kanban card" [ref=e471]:
+              - cell "Example" [ref=e472]:
+                - strong [ref=e473]: Example
+              - cell "/aigon:feature-do 07 or $aigon-feature-do 07" [ref=e474]:
+                - code [ref=e475]: /aigon:feature-do 07
+                - text: or
+                - code [ref=e476]: $aigon-feature-do 07
+              - cell "aigon feature-start 07 cc gg" [ref=e477]:
+                - code [ref=e478]: aigon feature-start 07 cc gg
+              - cell "Click “Start feature” on a kanban card" [ref=e479]
+        - paragraph [ref=e480]: All three surfaces drive the same underlying workflow. Mix them freely.
+        - heading "Codex example" [level=3] [ref=e481]: "Codex example #"
+        - paragraph [ref=e482]:
+          - text: In a Codex session, use the
+          - code [ref=e483]: $aigon-...
+          - text: "skill syntax:"
+        - code [ref=e486]:
+          - generic [ref=e487]: $aigon-feature-create dark-mode
+          - generic [ref=e488]: Add a dark mode toggle to the top-right of the site header.
+          - generic [ref=e489]: Use CSS custom properties for theming. Default to system preference.
+          - generic [ref=e490]: Store the user's choice in localStorage.
+        - heading "Your first feature" [level=2] [ref=e491]: "Your first feature #"
+        - paragraph [ref=e492]:
+          - text: The fastest path from idea to implementation is
+          - code [ref=e493]: feature-now
+          - text: ". Describe what you want — the agent creates a spec, assigns an ID, sets up the workspace, and starts implementing:"
+        - code [ref=e496]:
+          - generic [ref=e497]: /aigon:feature-now dark-mode
+          - generic [ref=e498]: Add a dark mode toggle to the top-right of the site header.
+          - generic [ref=e499]: Use CSS custom properties for theming. Default to system preference.
+          - generic [ref=e500]: Store the user's choice in localStorage.
+        - paragraph [ref=e501]: This is a normal agent conversation — you can go back and forth, refine requirements, ask questions, and iterate on the spec before the agent starts coding. The difference is that the conversation is anchored to a feature spec with acceptance criteria, so decisions are captured rather than lost in chat history.
+        - heading "Step by step (the full loop)" [level=3] [ref=e502]: "Step by step (the full loop) #"
+        - paragraph [ref=e503]: "For more control, use the individual commands:"
+        - code [ref=e506]:
+          - generic [ref=e507]: "# 1. Create a feature — describe what you want"
+          - generic [ref=e508]: /aigon:feature-create dark-mode
+          - generic [ref=e509]: Add a dark/light mode toggle with system preference detection...
+          - generic [ref=e510]: "# 2. Prioritise — assigns an ID, moves to backlog"
+          - generic [ref=e511]: /aigon:feature-prioritise dark-mode
+          - generic [ref=e512]: "# → Assigned ID: 07"
+          - generic [ref=e513]: "# 3. Start — creates the branch and moves the spec to in-progress"
+          - generic [ref=e514]: /aigon:feature-start 07
+          - generic [ref=e515]: "# 4. Do the feature — the agent reads the spec and implements it"
+          - generic [ref=e516]: /aigon:feature-do 07
+          - generic [ref=e517]: "# 5. Agent implements the spec..."
+          - generic [ref=e518]: "# → explores the codebase, writes code"
+          - generic [ref=e519]: "# → commits, writes implementation log"
+          - generic [ref=e520]: "# → signals \"submitted\" when done"
+          - generic [ref=e521]: "# 6. Merge to main"
+          - generic [ref=e522]: /aigon:feature-close 07
+        - paragraph [ref=e523]:
+          - text: "Each step moves the feature through the pipeline:"
+          - code [ref=e524]: inbox → backlog → in-progress → done
+          - text: .
+        - heading "Try it end-to-end" [level=2] [ref=e525]: "Try it end-to-end #"
+        - paragraph [ref=e526]: Want to verify your installation works before using Aigon on a real project? Clone the seed repo — a small Next.js app with features already in the pipeline — and run a complete feature loop.
+        - heading "1. Set up the seed repo" [level=3] [ref=e527]: "1. Set up the seed repo #"
+        - code [ref=e530]:
+          - generic [ref=e531]: git clone https://github.com/jayvee/brewboard-seed.git ~/src/brewboard
+          - generic [ref=e532]: cd ~/src/brewboard
+          - generic [ref=e533]: "git remote remove origin # prevent push errors — this is a local sandbox"
+          - generic [ref=e534]: npm install
+          - generic [ref=e535]: aigon init
+          - generic [ref=e536]: "aigon install-agent gg # or: aigon install-agent cc"
+        - blockquote [ref=e537]:
+          - paragraph [ref=e538]:
+            - strong [ref=e539]: "Linux:"
+            - text: use
+            - code [ref=e540]: sudo npm link
+            - text: when installing aigon, and
+            - code [ref=e541]: sudo npm i -g
+            - text: for agent CLIs.
+        - heading "2. Start a feature" [level=3] [ref=e542]: "2. Start a feature #"
+        - paragraph [ref=e543]: "The seed repo has features ready in the backlog. Pick one and start it:"
+        - code [ref=e546]:
+          - generic [ref=e547]: "aigon feature-start 02 gg # Drive worktree mode with Gemini"
+        - paragraph [ref=e548]: "This creates a worktree and launches Gemini in a tmux session. On macOS it opens a terminal window; on Linux it prints the attach command:"
+        - code [ref=e551]:
+          - generic [ref=e552]: tmux attach -t brewboard-f2-gg-brewery-import
+        - blockquote [ref=e553]:
+          - paragraph [ref=e554]:
+            - text: Each agent’s dev server runs on its own port (shown in the output, e.g.
+            - code [ref=e555]: PORT=3001
+            - text: ). You can preview the app at
+            - code [ref=e556]: http://localhost:3001
+            - text: while the agent works.
+        - heading "3. Start the server" [level=3] [ref=e557]: "3. Start the server #"
+        - paragraph [ref=e558]: "The Aigon server provides the dashboard UI, agent supervisor, and WebSocket status updates. Install it as a persistent service so it starts automatically on login and restarts on crash:"
+        - code [ref=e561]:
+          - generic [ref=e562]: "aigon server start --persistent # One-time: install as system service"
+          - generic [ref=e563]: "aigon server add ~/src/brewboard # Register the seed repo"
+        - paragraph [ref=e564]:
+          - text: Then open
+          - link "http://localhost:4100" [ref=e565] [cursor=pointer]:
+            - /url: http://localhost:4100
+            - text: http://localhost:4100
+            - img [ref=e566]
+          - text: in your browser. You’ll see the feature in the Pipeline view with the agent status updating in real-time.
+        - blockquote [ref=e569]:
+          - paragraph [ref=e570]:
+            - strong [ref=e571]:
+              - text: What
+              - code [ref=e572]: "--persistent"
+              - text: "does:"
+            - text: On macOS it installs a launchd agent; on Linux a systemd user service. The server survives terminal closes, Mac restarts, and process crashes — launchd/systemd will always bring it back. Logs are written to
+            - code [ref=e573]: ~/.aigon/logs/server-*.log
+            - text: .
+          - paragraph [ref=e574]:
+            - text: You can also run
+            - code [ref=e575]: aigon server start
+            - text: (without
+            - code [ref=e576]: "--persistent"
+            - text: ) if you prefer a foreground process that stops when you close the terminal.
+          - paragraph [ref=e577]:
+            - text: The server auto-restarts when you run
+            - code [ref=e578]: aigon update
+            - text: . You only need to manually restart (
+            - code [ref=e579]: aigon server restart
+            - text: ) if you’re developing Aigon itself and editing
+            - code [ref=e580]: lib/*.js
+            - text: files.
+        - heading "4. Close the feature" [level=3] [ref=e581]: "4. Close the feature #"
+        - paragraph [ref=e582]: "When the agent shows “Submitted”, close from the CLI or click “Accept & Close” in the dashboard:"
+        - code [ref=e585]:
+          - generic [ref=e586]: aigon feature-close 02
+        - paragraph [ref=e587]:
+          - strong [ref=e588]: "What to expect at each step:"
+        - list [ref=e589]:
+          - listitem [ref=e590]:
+            - code [ref=e591]: aigon init
+            - text: — creates
+            - code [ref=e592]: docs/specs/
+            - text: directories, rebuilds manifests for existing features
+          - listitem [ref=e593]:
+            - code [ref=e594]: aigon install-agent
+            - text: — writes agent config files, warns if the agent CLI isn’t in your PATH
+          - listitem [ref=e595]:
+            - code [ref=e596]: aigon feature-start
+            - text: — moves spec to in-progress, creates worktree, starts agent in tmux
+          - listitem [ref=e597]:
+            - code [ref=e598]: aigon server start --persistent
+            - text: — installs the server as a system service; web UI at localhost:4100 showing pipeline, agent status, sessions. The
+            - strong [ref=e599]: Reports tab
+            - text: tracks token usage, cost, and throughput across agents — check it after your first feature to see telemetry in action
+          - listitem [ref=e600]:
+            - code [ref=e601]: aigon feature-close
+            - text: — merges the feature branch to main, moves spec to done, cleans up
+        - paragraph [ref=e602]:
+          - text: If anything goes wrong, run
+          - code [ref=e603]: aigon doctor
+          - text: to diagnose the issue.
+        - heading "Updating Aigon" [level=2] [ref=e604]: "Updating Aigon #"
+        - paragraph [ref=e605]: "Updating Aigon is two steps:"
+        - list [ref=e606]:
+          - listitem [ref=e607]:
+            - strong [ref=e608]: Update the CLI
+            - text: "— pull the latest code from GitHub:"
+        - code [ref=e611]:
+          - generic [ref=e612]: cd ~/src/aigon && git pull && npm ci
+        - list [ref=e613]:
+          - listitem [ref=e614]:
+            - strong [ref=e615]: Update your projects
+            - text: — happens automatically. The next time you start an agent session in any project, Aigon detects the version mismatch and re-runs
+            - code [ref=e616]: aigon update
+            - text: "to sync templates and agent configs. You can also run it manually:"
+        - code [ref=e619]:
+          - generic [ref=e620]: cd /path/to/your/project
+          - generic [ref=e621]: aigon update
+        - blockquote [ref=e622]:
+          - paragraph [ref=e623]:
+            - text: If the dashboard is running,
+            - code [ref=e624]: aigon update
+            - text: will restart it automatically to pick up the changes.
+        - heading "What’s next" [level=2] [ref=e625]: "What’s next #"
+        - list [ref=e626]:
+          - listitem [ref=e627]:
+            - strong [ref=e628]:
+              - link "Drive Mode" [ref=e629] [cursor=pointer]:
+                - /url: /docs/guides/drive-mode
+            - text: — hands-on implementation with one agent
+          - listitem [ref=e630]:
+            - strong [ref=e631]:
+              - link "Fleet Mode" [ref=e632] [cursor=pointer]:
+                - /url: /docs/guides/fleet-mode
+            - text: — multiple agents competing in parallel
+          - listitem [ref=e633]:
+            - strong [ref=e634]:
+              - link "Autonomous Mode" [ref=e635] [cursor=pointer]:
+                - /url: /docs/guides/autopilot-mode
+            - text: — hands-off autonomous loops
+          - listitem [ref=e636]:
+            - strong [ref=e637]:
+              - link "Execution Modes" [ref=e638] [cursor=pointer]:
+                - /url: /docs/concepts/execution-modes
+            - text: — Drive, Fleet, Autopilot, and Swarm
+      - generic [ref=e639]:
+        - text: Last updated on
+        - time [ref=e640]: April 8, 2026
+      - generic [ref=e641]:
+        - link "Documentation" [ref=e642] [cursor=pointer]:
+          - /url: /docs
+          - img [ref=e643]
+          - text: Documentation
+        - link "Overview" [ref=e645] [cursor=pointer]:
+          - /url: /docs/concepts
+          - text: Overview
+          - img [ref=e646]
+  - generic [ref=e648]:
+    - separator [ref=e649]
+    - contentinfo [ref=e650]:
+      - generic [ref=e651]: Apache 2.0 · 2026 © Sen Labs
+      - generic [ref=e652]:
+        - text: ·
+        - link "senlabs.ai" [ref=e653] [cursor=pointer]:
+          - /url: https://senlabs.ai
