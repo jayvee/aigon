@@ -81,7 +81,7 @@
                   </p>
                 </div>
                 <div class="analogy-slide" data-analogy="claude_code">
-                  <h1>Aigon ... if Trello and Claude Code had a baby ... and they had triplets.</h1>
+                  <h1>Aigon ... if Linear and Claude Code had a baby ... and they had triplets.</h1>
                   <p class="hero-summary">
                     You can stick with Claude Code as the star sibling, or bring in more brothers, sisters, and cousins—Aigon coordinates them all, making your workflow a true family effort.
                   </p>
@@ -117,19 +117,19 @@
               <div class="fleet-demo-step">
                 <p class="fleet-demo-label">1. Fleet started — agents implementing in parallel</p>
                 <div class="fleet-demo-frame">
-                  <img src="img/aigon-dashboard-01-fleet-start.gif" alt="Fleet started — Codex and Gemini implementing in parallel" width="1200" height="632">
+                  <img class="gif-lazy" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/aigon-dashboard-01-fleet-start.gif" alt="Fleet started — Codex and Gemini implementing in parallel" width="1200" height="632">
                 </div>
               </div>
               <div class="fleet-demo-step">
                 <p class="fleet-demo-label">2. Both submitted — Claude Code evaluating</p>
                 <div class="fleet-demo-frame">
-                  <img src="img/aigon-dashboard-02-fleet-evaluation.gif" alt="Claude Code evaluating the implementations" loading="lazy" width="1200" height="641">
+                  <img class="gif-lazy" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/aigon-dashboard-02-fleet-evaluation.gif" alt="Claude Code evaluating the implementations" width="1200" height="641">
                 </div>
               </div>
               <div class="fleet-demo-step">
                 <p class="fleet-demo-label">3. Evaluation complete — winner merged</p>
                 <div class="fleet-demo-frame">
-                  <img src="img/aigon-dashboard-03-fleet-submitted.gif?v=2" alt="Evaluation complete — winner selected and merged" loading="lazy" width="1200" height="631">
+                  <img class="gif-lazy" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/aigon-dashboard-03-fleet-submitted.gif" alt="Evaluation complete — winner selected and merged" width="1200" height="631">
                 </div>
               </div>
             </div>
@@ -1232,10 +1232,10 @@ position of the menu bar</code></pre>
 
           frame.addEventListener("click", function () {
             lastTrigger = frame;
-            open(img.src, img.alt);
+            open(img.dataset.src || img.src, img.alt);
           });
           frame.addEventListener("keydown", function (e) {
-            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); lastTrigger = frame; open(img.src, img.alt); }
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); lastTrigger = frame; open(img.dataset.src || img.src, img.alt); }
           });
         });
 
@@ -1246,6 +1246,23 @@ position of the menu bar</code></pre>
         document.addEventListener("keydown", function (e) {
           if (e.key === "Escape" && lightbox.classList.contains("is-open")) close();
         });
+      })();
+    </script>
+    <script>
+      // Start GIFs from frame 1 when they scroll into view
+      (function () {
+        var imgs = document.querySelectorAll("img.gif-lazy");
+        if (!imgs.length) return;
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            var img = entry.target;
+            var real = img.dataset.src;
+            if (real) { img.src = real; delete img.dataset.src; }
+            io.unobserve(img);
+          });
+        }, { threshold: 0.4 });
+        imgs.forEach(function (img) { io.observe(img); });
       })();
     </script>
   </body>
