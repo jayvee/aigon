@@ -20,6 +20,6 @@ Next step: Run `{{CMD_PREFIX}}research-start <ID>` (Drive) or `{{CMD_PREFIX}}res
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID assigned by the CLI:
+End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID assigned by the CLI:
 
 `{{CMD_PREFIX}}research-start <ID>`

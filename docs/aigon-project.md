@@ -4,7 +4,7 @@
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
 - **Shared logic**: `lib/*.js` — 16 modules; see Module Map below
-- **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
+- **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cx` (or any agent)
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
 - **Tests**: `npm test` · syntax: `node -c aigon-cli.js` · `node -c lib/utils.js`
@@ -77,7 +77,7 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 **Context delivery** (no root file injection):
 - CC/GG: SessionStart hook `aigon project-context` prints doc pointers to stdout → agent ingests as conversation context
 - CU: `.cursor/rules/aigon.mdc` with `alwaysApply: true`
-- CX: `.codex/prompt.md` with marker blocks
+- CX: project-local Skills under `.agents/skills/aigon-*/SKILL.md`; aigon-spawned Codex sessions inline the same template bodies directly
 
 **Auto-update**: SessionStart hook `aigon check-version` detects version mismatch → runs `aigon update` → re-runs `install-agent` for all detected agents
 
