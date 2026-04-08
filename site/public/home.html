@@ -393,7 +393,7 @@ aigon feature-autopilot 07 --auto-submit</code></pre>
               <button class="dashboard-tab" data-view="monitor" role="tab" aria-selected="false" aria-controls="dashboard-panel">Monitor</button>
               <button class="dashboard-tab" data-view="statistics" role="tab" aria-selected="false" aria-controls="dashboard-panel">Reports</button>
               <button class="dashboard-tab" data-view="logs" role="tab" aria-selected="false" aria-controls="dashboard-panel">Logs</button>
-              <button class="dashboard-tab" data-view="console" role="tab" aria-selected="false" aria-controls="dashboard-panel">Console</button>
+              <button class="dashboard-tab" data-view="allItems" role="tab" aria-selected="false" aria-controls="dashboard-panel">All Items</button>
             </div>
             <div class="dashboard-panel" id="dashboard-panel" role="tabpanel">
               <img
@@ -972,8 +972,8 @@ position of the menu bar</code></pre>
           monitor: { src: "img/aigon-dashboard-monitor.png", alt: "Aigon Dashboard Monitor view showing active agent sessions, attention items, and recent events across repositories" },
           statistics: { src: "img/aigon-dashboard-reports-charts.png", alt: "Aigon Dashboard Reports tab showing five aligned charts — features completed, commits, cycle time, commits per feature, and rework ratio" },
 
-          logs: { src: "img/aigon-dashboard-logs.png", alt: "Aigon Dashboard Logs view showing agent session output and event history" },
-          console: { src: "img/aigon-dashboard-console.png", alt: "Aigon Dashboard Console view showing live terminal output from agent sessions" }
+          allItems: { src: "img/aigon-dashboard-all-items.png", alt: "Aigon Dashboard All Items view showing the repo-wide index of features, research, and feedback" },
+          logs: { src: "img/aigon-dashboard-logs.png", alt: "Aigon Dashboard Logs view showing live terminal output from agent sessions" }
         };
         var tabs = document.querySelectorAll(".dashboard-tab");
         var img = document.getElementById("dashboard-screenshot");

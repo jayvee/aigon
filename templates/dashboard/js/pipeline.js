@@ -554,7 +554,7 @@
       if (evalBtn && feature.evalPath) {
         evalBtn.onclick = (e) => {
           e.stopPropagation();
-          const displayName = (feature.id ? '#' + feature.id + ' ' : '') + feature.name.replace(/-/g, ' ');
+          const displayName = feature.name.replace(/-/g, ' ');
           openDrawer(feature.evalPath, displayName + ' — Eval', feature.stage, repoPath);
         };
       }
@@ -601,7 +601,7 @@
         }
         if (e.target.closest('button') || e.target.closest('.btn')) return;
         if (feature.specPath) {
-          const displayName = (feature.id ? '#' + feature.id + ' ' : '') + feature.name.replace(/-/g, ' ');
+          const displayName = feature.name.replace(/-/g, ' ');
           openDrawer(feature.specPath, displayName, feature.stage, repoPath);
         }
       });

@@ -66,11 +66,11 @@
         const stderrStr = String(payload.stderr || '');
         const stderrError = !exitFailed && stderrStr && /^fatal:|❌/m.test(stderrStr) && !/failed to push some refs/i.test(stderrStr);
         if (exitFailed) {
-          showToast('Action failed (exit ' + payload.exitCode + ') — check Console', 'Console', () => { state.view = 'console'; localStorage.setItem(lsKey('view'), 'console'); render(); }, { error: true });
+          showToast('Action failed (exit ' + payload.exitCode + ') — check Logs', 'Logs', () => { state.view = 'logs'; localStorage.setItem(lsKey('view'), 'logs'); render(); }, { error: true });
         } else if (payload.agentWarning) {
-          showToast('Warning: ' + payload.agentWarning, 'Console', () => { state.view = 'console'; localStorage.setItem(lsKey('view'), 'console'); render(); }, { error: true });
+          showToast('Warning: ' + payload.agentWarning, 'Logs', () => { state.view = 'logs'; localStorage.setItem(lsKey('view'), 'logs'); render(); }, { error: true });
         } else if (stderrError) {
-          showToast('Done with warnings — check Console', 'Console', () => { state.view = 'console'; localStorage.setItem(lsKey('view'), 'console'); render(); });
+          showToast('Done with warnings — check Logs', 'Logs', () => { state.view = 'logs'; localStorage.setItem(lsKey('view'), 'logs'); render(); });
         } else {
           showToast('Done: ' + (payload.command || action));
         }

@@ -2,12 +2,13 @@
 
     const drawerState = {
       path: null, content: '',
-      title: '', stage: '', type: 'feature', repoPath: null,
+      title: '', stage: '', type: 'feature', repoPath: null, entityId: null,
       fontSize: Number(localStorage.getItem(lsKey('drawerFontSize')) || '13')
     };
     const drawerOverlay = document.getElementById('drawer-overlay');
     const drawerEl = document.getElementById('spec-drawer');
     const drawerTitle = document.getElementById('drawer-title');
+    const drawerId = document.getElementById('drawer-id');
     const drawerStage = document.getElementById('drawer-stage');
     const drawerTabs = document.getElementById('drawer-tabs');
     const drawerPreview = document.getElementById('drawer-preview');
@@ -106,6 +107,12 @@
       return 'feature';
     }
 
+    function specIdFromPath(specPath) {
+      const file = String(specPath || '').split('/').pop() || '';
+      const match = file.match(/^(?:feature|research|feedback)-(\d+)-/);
+      return match ? match[1] : null;
+    }
+
     function openDrawer(specPath, title, stage, repoPath, options) {
       if (!specPath) return;
       const opts = options || {};
@@ -115,8 +122,13 @@
       drawerState.stage = stage;
       drawerState.type = specTypeFromPath(specPath);
       drawerState.repoPath = repoPath || null;
+      drawerState.entityId = opts.entityId || specIdFromPath(specPath);
       drawerState._initialTab = opts.initialTab || null;
       drawerTitle.textContent = title;
+      if (drawerId) {
+        drawerId.textContent = drawerState.entityId ? `#${drawerState.entityId}` : '';
+        drawerId.style.display = drawerState.entityId ? '' : 'none';
+      }
       drawerStage.textContent = stage;
       drawerPreview.innerHTML = '<span style="color:var(--text-tertiary)">Loading…</span>';
       drawerDetailContent.innerHTML = '';
@@ -152,6 +164,11 @@
         document.body.style.overflow = '';
       }
       drawerState.path = null;
+      drawerState.entityId = null;
+      if (drawerId) {
+        drawerId.textContent = '';
+        drawerId.style.display = 'none';
+      }
       if (drawerDetailTabs) drawerDetailTabs.reset();
       // Refit terminal after spec drawer closes (terminal panel goes back to right side)
       setTimeout(() => { if (termState.fitAddon) try { termState.fitAddon.fit(); } catch (e) {} }, 300);

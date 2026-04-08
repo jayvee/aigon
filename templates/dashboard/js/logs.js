@@ -1,9 +1,10 @@
-    // ── Logs view ──────────────────────────────────────────────────────────────
+    // ── All Items view ────────────────────────────────────────────────────────
 
-    const logsState = {
+    const allItemsState = {
       sort: { col: 'updatedAt', dir: 'desc' },
       search: '',
       repoFilter: 'all',
+      typeFilter: 'all',
       page: 0,
       pageSize: 50
     };
@@ -12,17 +13,39 @@
       return (slug || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     }
 
-    // ── Console view ─────────────────────────────────────────────────────────
-    const CONSOLE_LS_KEY = lsKey('consoleEvents');
-    const CONSOLE_LS_MAX = 200;
+    function isNumericId(id) {
+      return /^\d+$/.test(String(id ?? ''));
+    }
 
-    function loadConsoleFromStorage() {
-      try { return JSON.parse(localStorage.getItem(CONSOLE_LS_KEY)) || []; } catch (_) { return []; }
+    function formatNumericId(id) {
+      return isNumericId(id) ? `#${String(id).padStart(2, '0')}` : '';
     }
-    function saveConsoleToStorage(events) {
-      try { localStorage.setItem(CONSOLE_LS_KEY, JSON.stringify(events.slice(-CONSOLE_LS_MAX))); } catch (_) {}
+
+    function itemTypeLabel(type) {
+      const normalized = String(type || 'feature');
+      if (normalized === 'research') return 'Research';
+      if (normalized === 'feedback') return 'Feedback';
+      return 'Feature';
     }
-    function mergeConsoleEvents(stored, server) {
+
+    function openItemDetails(row, options = {}) {
+      if (!row || !row.specPath) return;
+      openDrawer(row.specPath, slugToTitle(row.name), row.stage, row.repoPath, options);
+    }
+
+    // ── Logs view ────────────────────────────────────────────────────────────
+    const LOGS_LS_KEY = lsKey('logsEvents');
+    const LOGS_LS_MAX = 200;
+
+    function loadLogsFromStorage() {
+      try {
+        return JSON.parse(localStorage.getItem(LOGS_LS_KEY) || '[]') || [];
+      } catch (_) { return []; }
+    }
+    function saveLogsToStorage(events) {
+      try { localStorage.setItem(LOGS_LS_KEY, JSON.stringify(events.slice(-LOGS_LS_MAX))); } catch (_) {}
+    }
+    function mergeLogEvents(stored, server) {
       // Deduplicate by timestamp+command, prefer server version
       const seen = new Set();
       const merged = [];
@@ -36,38 +59,38 @@
         if (!seen.has(key)) merged.push(ev);
       }
       merged.sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
-      return merged.slice(-CONSOLE_LS_MAX);
+      return merged.slice(-LOGS_LS_MAX);
     }
 
-    const consoleState = { events: loadConsoleFromStorage(), scrollLocked: false };
+    const logsState = { events: loadLogsFromStorage(), scrollLocked: false };
 
-    async function renderConsole() {
-      const container = document.getElementById('console-view');
+    async function renderLogs() {
+      const container = document.getElementById('logs-view');
       if (!container) return;
 
       // Fetch events from server, merge with localStorage
-      let events = consoleState.events;
+      let events = logsState.events;
       try {
-        const res = await fetch('/api/console', { cache: 'no-store' });
+        const res = await fetch('/api/logs', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           const serverEvents = data.events || [];
-          events = mergeConsoleEvents(consoleState.events, serverEvents);
-          consoleState.events = events;
-          saveConsoleToStorage(events);
+          events = mergeLogEvents(logsState.events, serverEvents);
+          logsState.events = events;
+          saveLogsToStorage(events);
         }
       } catch (_) {}
 
       // Build HTML
       const html = [];
-      html.push('<div class="console-view">');
-      html.push('<div class="console-toolbar">');
-      html.push('<button class="console-clear-btn" id="console-clear-btn">Clear</button>');
-      html.push(`<span class="console-count">${events.length} event${events.length !== 1 ? 's' : ''}</span>`);
+      html.push('<div class="logs-view">');
+      html.push('<div class="logs-toolbar">');
+      html.push('<button class="logs-clear-btn" id="logs-clear-btn">Clear</button>');
+      html.push(`<span class="logs-count">${events.length} event${events.length !== 1 ? 's' : ''}</span>`);
       html.push('</div>');
-      html.push('<div class="console-log" id="console-log">');
+      html.push('<div class="logs-log" id="logs-log">');
       if (events.length === 0) {
-        html.push('<div class="console-empty">No events yet — run an action to see output here</div>');
+        html.push('<div class="logs-empty">No events yet — run an action to see output here</div>');
       } else {
         // Show newest entries first
         const sorted = [...events].reverse();
@@ -79,31 +102,31 @@
           const cmd = escHtml(evt.command || evt.action || evt.type || '');
           const repo = evt.repoPath ? escHtml(evt.repoPath.split('/').pop()) : '';
           const errorClass = ok ? '' : ' error';
-          html.push(`<div class="console-entry${errorClass}" data-idx="${idx}">`);
-          html.push('<div class="console-entry-row">');
-          html.push(`<span class="console-ts">[${escHtml(ts)}]</span>`);
-          html.push(`<span class="console-status" style="color:${ok ? 'var(--success)' : 'var(--error)'}">${statusIcon}</span>`);
-          if (repo) html.push(`<span class="console-repo">${repo}</span>`);
-          html.push(`<span class="console-cmd">${cmd}</span>`);
-          html.push(`<span class="console-dur">${escHtml(dur)}</span>`);
-          html.push('<span class="console-copy" title="Copy to clipboard">⧉</span>');
+          html.push(`<div class="logs-entry${errorClass}" data-idx="${idx}">`);
+          html.push('<div class="logs-entry-row">');
+          html.push(`<span class="logs-ts">[${escHtml(ts)}]</span>`);
+          html.push(`<span class="logs-status" style="color:${ok ? 'var(--success)' : 'var(--error)'}">${statusIcon}</span>`);
+          if (repo) html.push(`<span class="logs-repo">${repo}</span>`);
+          html.push(`<span class="logs-cmd">${cmd}</span>`);
+          html.push(`<span class="logs-dur">${escHtml(dur)}</span>`);
+          html.push('<span class="logs-copy" title="Copy to clipboard">⧉</span>');
           html.push('</div>');
           // Detail section (hidden until click)
           const hasStdout = evt.stdout && evt.stdout.trim();
           const hasStderr = evt.stderr && evt.stderr.trim();
           if (hasStdout || hasStderr) {
-            html.push('<div class="console-detail">');
-            html.push('<button class="console-close-btn" title="Close">✕</button>');
+            html.push('<div class="logs-detail">');
+            html.push('<button class="logs-close-btn" title="Close">✕</button>');
             if (hasStdout) {
-              html.push('<div class="console-detail-section">');
-              html.push('<div class="console-detail-label">stdout</div>');
-              html.push(`<div class="console-detail-content">${escHtml(evt.stdout)}</div>`);
+              html.push('<div class="logs-detail-section">');
+              html.push('<div class="logs-detail-label">stdout</div>');
+              html.push(`<div class="logs-detail-content">${escHtml(evt.stdout)}</div>`);
               html.push('</div>');
             }
             if (hasStderr) {
-              html.push('<div class="console-detail-section">');
-              html.push('<div class="console-detail-label">stderr</div>');
-              html.push(`<div class="console-detail-content console-stderr-content">${escHtml(evt.stderr)}</div>`);
+              html.push('<div class="logs-detail-section">');
+              html.push('<div class="logs-detail-label">stderr</div>');
+              html.push(`<div class="logs-detail-content logs-stderr-content">${escHtml(evt.stderr)}</div>`);
               html.push('</div>');
             }
             html.push('</div>');
@@ -111,12 +134,12 @@
           html.push('</div>');
         });
       }
-      html.push('</div>'); // .console-log
-      html.push('</div>'); // .console-view
+      html.push('</div>'); // .logs-log
+      html.push('</div>'); // .logs-view
 
       // Preserve expanded state before DOM rebuild
       const expandedBefore = new Set();
-      container.querySelectorAll('.console-entry.open').forEach(el => {
+      container.querySelectorAll('.logs-entry.open').forEach(el => {
         expandedBefore.add(el.dataset.idx);
       });
 
@@ -124,33 +147,33 @@
 
       // Restore expanded state
       expandedBefore.forEach(idx => {
-        const el = container.querySelector(`.console-entry[data-idx="${idx}"]`);
+        const el = container.querySelector(`.logs-entry[data-idx="${idx}"]`);
         if (el) el.classList.add('open');
       });
 
       // Expand on header row click, close on X button
-      container.querySelectorAll('.console-entry-row').forEach(row => {
+      container.querySelectorAll('.logs-entry-row').forEach(row => {
         row.addEventListener('click', () => {
           row.parentElement.classList.toggle('open');
         });
         row.style.cursor = 'pointer';
       });
       // Close button
-      container.querySelectorAll('.console-close-btn').forEach(btn => {
+      container.querySelectorAll('.logs-close-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
-          btn.closest('.console-entry').classList.remove('open');
+          btn.closest('.logs-entry').classList.remove('open');
         });
       });
       // Prevent clicks inside detail from toggling
-      container.querySelectorAll('.console-detail').forEach(detail => {
+      container.querySelectorAll('.logs-detail').forEach(detail => {
         detail.addEventListener('click', (e) => e.stopPropagation());
       });
       // Copy button
-      container.querySelectorAll('.console-copy').forEach(btn => {
+      container.querySelectorAll('.logs-copy').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
-          const entry = btn.closest('.console-entry');
+          const entry = btn.closest('.logs-entry');
           const idx = entry ? entry.dataset.idx : null;
           const sorted = [...events].reverse();
           const evt = idx != null ? sorted[parseInt(idx)] : null;
@@ -163,18 +186,18 @@
       });
 
       // Clear button
-      const clearBtn = container.querySelector('#console-clear-btn');
+      const clearBtn = container.querySelector('#logs-clear-btn');
       if (clearBtn) {
         clearBtn.onclick = () => {
-          consoleState.events = [];
-          saveConsoleToStorage([]);
-          renderConsole();
+          logsState.events = [];
+          saveLogsToStorage([]);
+          renderLogs();
         };
       }
 
       // Newest entries are at top — scroll to top by default
-      const logEl = container.querySelector('#console-log');
-      if (logEl && !consoleState.scrollLocked) {
+      const logEl = container.querySelector('#logs-log');
+      if (logEl && !logsState.scrollLocked) {
         logEl.scrollTop = 0;
       }
 
@@ -182,13 +205,13 @@
       if (logEl) {
         logEl.onscroll = () => {
           const atTop = logEl.scrollTop < 40;
-          consoleState.scrollLocked = !atTop;
+          logsState.scrollLocked = !atTop;
         };
       }
     }
 
-    function renderLogsView() {
-      const container = document.getElementById('logs-view');
+    function renderAllItemsView() {
+      const container = document.getElementById('all-items-view');
       document.getElementById('monitor-summary').style.display = 'none';
       document.getElementById('repo-header').style.display = 'none';
       document.getElementById('settings-view').style.display = 'none';
@@ -198,28 +221,40 @@
       const data = state.data;
       if (!data || !data.repos) { container.innerHTML = '<div class="stats-empty-msg">No data</div>'; return; }
 
-      // Collect all features from allFeatures (falls back to features if allFeatures absent)
+      // Collect all items across features, research, and feedback.
       const allRows = [];
       data.repos.forEach(repo => {
-        const src = repo.allFeatures || repo.features || [];
-        src.forEach(f => allRows.push({ ...f, repoName: repo.name, repoPath: repo.path, repoDisplay: repo.displayPath }));
+        const featureRows = repo.allFeatures || repo.features || [];
+        const researchRows = repo.research || [];
+        const feedbackRows = repo.feedback || [];
+        featureRows.forEach(f => allRows.push({ ...f, type: f.type || 'feature', repoName: repo.name, repoPath: repo.path, repoDisplay: repo.displayPath }));
+        researchRows.forEach(r => allRows.push({ ...r, type: r.type || 'research', repoName: repo.name, repoPath: repo.path, repoDisplay: repo.displayPath }));
+        feedbackRows.forEach(fb => allRows.push({ ...fb, type: fb.type || 'feedback', repoName: repo.name, repoPath: repo.path, repoDisplay: repo.displayPath }));
       });
 
       // Repo filter
-      let rows = logsState.repoFilter === 'all' ? allRows : allRows.filter(r => r.repoPath === logsState.repoFilter);
+      let rows = allItemsState.repoFilter === 'all' ? allRows : allRows.filter(r => r.repoPath === allItemsState.repoFilter);
+
+      // Type filter
+      if (allItemsState.typeFilter !== 'all') {
+        rows = rows.filter(r => r.type === allItemsState.typeFilter);
+      }
 
       // Search filter
-      const q = logsState.search.trim().toLowerCase();
+      const q = allItemsState.search.trim().toLowerCase();
       if (q) rows = rows.filter(r => {
         const title = slugToTitle(r.name).toLowerCase();
-        return title.includes(q) || (r.name || '').toLowerCase().includes(q) || String(r.id || '').includes(q);
+        return title.includes(q) || (r.name || '').toLowerCase().includes(q) || String(r.id || '').includes(q) || String(r.type || '').toLowerCase().includes(q);
       });
 
       // Sort
-      const { col, dir } = logsState.sort;
+      const { col, dir } = allItemsState.sort;
       rows = rows.slice().sort((a, b) => {
         let av, bv;
-        if (col === 'id') { av = Number(a.id ?? Infinity); bv = Number(b.id ?? Infinity); }
+        if (col === 'id') {
+          av = isNumericId(a.id) ? Number(a.id) : Infinity;
+          bv = isNumericId(b.id) ? Number(b.id) : Infinity;
+        }
         else if (col === 'name') { av = slugToTitle(a.name).toLowerCase(); bv = slugToTitle(b.name).toLowerCase(); }
         else if (col === 'stage') { av = a.stage || ''; bv = b.stage || ''; }
         else if (col === 'repo') { av = a.repoName || ''; bv = b.repoName || ''; }
@@ -230,9 +265,9 @@
       });
 
       const total = rows.length;
-      const totalPages = Math.max(1, Math.ceil(total / logsState.pageSize));
-      if (logsState.page >= totalPages) logsState.page = totalPages - 1;
-      const pageRows = rows.slice(logsState.page * logsState.pageSize, (logsState.page + 1) * logsState.pageSize);
+      const totalPages = Math.max(1, Math.ceil(total / allItemsState.pageSize));
+      if (allItemsState.page >= totalPages) allItemsState.page = totalPages - 1;
+      const pageRows = rows.slice(allItemsState.page * allItemsState.pageSize, (allItemsState.page + 1) * allItemsState.pageSize);
 
       function thHtml(key, label) {
         const active = col === key;
@@ -241,29 +276,37 @@
       }
 
       function stageHtml(stage) {
-        const cls = 'logs-stage stage-' + (stage || 'inbox').replace(/\s+/g, '-');
+        const cls = 'all-items-stage stage-' + (stage || 'inbox').replace(/\s+/g, '-');
         return `<span class="${cls}">${escHtml(stage || '')}</span>`;
       }
 
       const html = [];
-      html.push('<div class="logs-toolbar">');
-      html.push(`<input class="logs-search" id="logs-search-input" type="search" placeholder="Search features…" value="${escHtml(logsState.search)}">`);
+      html.push('<div class="all-items-toolbar">');
+      html.push(`<input class="all-items-search" id="all-items-search-input" type="search" placeholder="Search items…" value="${escHtml(allItemsState.search)}">`);
       html.push('<label style="font-size:12px;color:var(--text-secondary)">Repo:</label>');
-      html.push('<select class="stats-select" id="logs-repo-filter">');
-      html.push(`<option value="all"${logsState.repoFilter === 'all' ? ' selected' : ''}>All repos</option>`);
+      html.push('<select class="stats-select" id="all-items-repo-filter">');
+      html.push(`<option value="all"${allItemsState.repoFilter === 'all' ? ' selected' : ''}>All repos</option>`);
       data.repos.forEach(r => {
-        const sel = logsState.repoFilter === r.path ? ' selected' : '';
+        const sel = allItemsState.repoFilter === r.path ? ' selected' : '';
         html.push(`<option value="${escHtml(r.path)}"${sel}>${escHtml(r.displayPath)}</option>`);
       });
       html.push('</select>');
-      html.push(`<span style="margin-left:auto;font-size:11px;color:var(--text-tertiary)">${total} feature${total !== 1 ? 's' : ''}</span>`);
+      html.push('<label style="font-size:12px;color:var(--text-secondary)">Type:</label>');
+      html.push('<select class="stats-select" id="all-items-type-filter">');
+      html.push(`<option value="all"${allItemsState.typeFilter === 'all' ? ' selected' : ''}>All types</option>`);
+      html.push(`<option value="feature"${allItemsState.typeFilter === 'feature' ? ' selected' : ''}>Features</option>`);
+      html.push(`<option value="research"${allItemsState.typeFilter === 'research' ? ' selected' : ''}>Research</option>`);
+      html.push(`<option value="feedback"${allItemsState.typeFilter === 'feedback' ? ' selected' : ''}>Feedback</option>`);
+      html.push('</select>');
+      html.push(`<span style="margin-left:auto;font-size:11px;color:var(--text-tertiary)">${total} item${total !== 1 ? 's' : ''}</span>`);
       html.push('</div>');
 
       html.push('<div style="overflow-x:auto">');
-      html.push('<table class="logs-table">');
+      html.push('<table class="all-items-table">');
       html.push('<thead><tr>');
       html.push(thHtml('id', 'ID'));
       html.push(thHtml('name', 'Name'));
+      html.push(thHtml('type', 'Type'));
       html.push(thHtml('stage', 'Stage'));
       html.push(thHtml('repo', 'Repo'));
       html.push(thHtml('createdAt', 'Created'));
@@ -273,31 +316,33 @@
       html.push('<tbody>');
       pageRows.forEach((r, i) => {
         const title = slugToTitle(r.name);
-        const idStr = r.id != null ? `#${String(r.id).padStart(2, '0')}` : '—';
-        const hasLog = r.logPaths && r.logPaths.length > 0;
-        html.push(`<tr class="logs-row" data-idx="${i}">`);
-        html.push(`<td class="col-id">${idStr}</td>`);
-        html.push(`<td class="col-name">${escHtml(title)}</td>`);
+        const idStr = formatNumericId(r.id);
+        const typeStr = itemTypeLabel(r.type);
+        const idHtml = idStr ? `<button class="all-items-cell-btn all-items-id-btn" data-idx="${i}" type="button">${escHtml(idStr)}</button>` : '';
+        const nameHtml = `<button class="all-items-cell-btn all-items-name-btn" data-idx="${i}" type="button">${escHtml(title)}</button>`;
+        html.push(`<tr class="all-items-row" data-idx="${i}">`);
+        html.push(`<td class="col-id">${idHtml}</td>`);
+        html.push(`<td class="col-name">${nameHtml}</td>`);
+        html.push(`<td class="col-type">${escHtml(typeStr)}</td>`);
         html.push(`<td>${stageHtml(r.stage)}</td>`);
         html.push(`<td class="col-repo" title="${escHtml(r.repoDisplay || '')}">${escHtml(r.repoName || '—')}</td>`);
         html.push(`<td class="col-date">${logsDateFmt(r.createdAt)}</td>`);
         html.push(`<td class="col-date">${logsDateFmt(r.updatedAt)}</td>`);
         html.push('<td class="col-actions">');
-        html.push(`<button class="logs-action-btn logs-btn-spec" data-idx="${i}" data-tooltip="Open spec"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1h6l4 4v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/><path d="M10 1v4h4"/><path d="M6 9h4M6 12h2"/></svg></button>`);
-        html.push(`<button class="logs-action-btn logs-btn-log${hasLog ? '' : ' logs-btn-hidden'}" data-idx="${i}" data-tooltip="Open log"${hasLog ? '' : ' disabled'}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v12H2z"/><path d="M5 5h6M5 8h6M5 11h3"/></svg></button>`);
+        html.push(`<button class="all-items-action-btn all-items-btn-details" data-idx="${i}" data-tooltip="Open details"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1h6l4 4v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/><path d="M10 1v4h4"/><path d="M6 7h4M6 10h4M6 13h2"/></svg></button>`);
         html.push('</td>');
         html.push('</tr>');
       });
       if (pageRows.length === 0) {
-        html.push(`<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:20px 0">${q ? 'No features match your search.' : 'No features found.'}</td></tr>`);
+        html.push(`<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:20px 0">${q ? 'No items match your search.' : 'No items found.'}</td></tr>`);
       }
       html.push('</tbody></table></div>');
 
       // Pagination
-      html.push('<div class="logs-pagination">');
-      html.push(`<button class="logs-page-btn" id="logs-prev"${logsState.page === 0 ? ' disabled' : ''}>← Prev</button>`);
-      html.push(`<span class="logs-page-info">${logsState.page + 1} / ${totalPages}</span>`);
-      html.push(`<button class="logs-page-btn" id="logs-next"${logsState.page >= totalPages - 1 ? ' disabled' : ''}>Next →</button>`);
+      html.push('<div class="all-items-pagination">');
+      html.push(`<button class="all-items-page-btn" id="all-items-prev"${allItemsState.page === 0 ? ' disabled' : ''}>← Prev</button>`);
+      html.push(`<span class="all-items-page-info">${allItemsState.page + 1} / ${totalPages}</span>`);
+      html.push(`<button class="all-items-page-btn" id="all-items-next"${allItemsState.page >= totalPages - 1 ? ' disabled' : ''}>Next →</button>`);
       html.push('</div>');
 
       container.innerHTML = html.join('');
@@ -306,58 +351,60 @@
       container.querySelectorAll('th[data-sort]').forEach(th => {
         th.onclick = () => {
           const key = th.getAttribute('data-sort');
-          if (logsState.sort.col === key) {
-            logsState.sort.dir = logsState.sort.dir === 'asc' ? 'desc' : 'asc';
+          if (allItemsState.sort.col === key) {
+            allItemsState.sort.dir = allItemsState.sort.dir === 'asc' ? 'desc' : 'asc';
           } else {
-            logsState.sort.col = key;
-            logsState.sort.dir = key === 'updatedAt' || key === 'createdAt' ? 'desc' : 'asc';
+            allItemsState.sort.col = key;
+            allItemsState.sort.dir = key === 'updatedAt' || key === 'createdAt' ? 'desc' : 'asc';
           }
-          logsState.page = 0;
-          renderLogsView();
+          allItemsState.page = 0;
+          renderAllItemsView();
         };
       });
 
       // Wire up row hover
-      container.querySelectorAll('.logs-row').forEach(row => {
+      container.querySelectorAll('.all-items-row').forEach(row => {
         row.onmouseenter = () => row.style.background = 'var(--bg-surface)';
         row.onmouseleave = () => row.style.background = '';
       });
 
-      // Wire up spec buttons
-      container.querySelectorAll('.logs-btn-spec').forEach(btn => {
+      // Wire up detail buttons
+      container.querySelectorAll('.all-items-btn-details').forEach(btn => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const r = pageRows[Number(btn.dataset.idx)];
-          if (r && r.specPath) openDrawer(r.specPath, slugToTitle(r.name), r.stage);
+          if (r) openItemDetails(r);
         };
       });
 
-      // Wire up log buttons
-      container.querySelectorAll('.logs-btn-log').forEach(btn => {
+      // Wire up clickable name and ID cells
+      container.querySelectorAll('.all-items-name-btn, .all-items-id-btn').forEach(btn => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const r = pageRows[Number(btn.dataset.idx)];
-          if (r && r.logPaths && r.logPaths.length > 0) {
-            openDrawer(r.logPaths[0], slugToTitle(r.name) + ' — Log', r.stage);
-          }
+          if (r) openItemDetails(r);
         };
       });
 
       // Wire up repo filter
-      const repoFilter = document.getElementById('logs-repo-filter');
-      if (repoFilter) repoFilter.onchange = () => { logsState.repoFilter = repoFilter.value; logsState.page = 0; renderLogsView(); };
+      const repoFilter = document.getElementById('all-items-repo-filter');
+      if (repoFilter) repoFilter.onchange = () => { allItemsState.repoFilter = repoFilter.value; allItemsState.page = 0; renderAllItemsView(); };
+
+      // Wire up type filter
+      const typeFilter = document.getElementById('all-items-type-filter');
+      if (typeFilter) typeFilter.onchange = () => { allItemsState.typeFilter = typeFilter.value; allItemsState.page = 0; renderAllItemsView(); };
 
       // Wire up search
-      const searchInput = document.getElementById('logs-search-input');
+      const searchInput = document.getElementById('all-items-search-input');
       if (searchInput) {
-        searchInput.oninput = () => { logsState.search = searchInput.value; logsState.page = 0; renderLogsView(); };
+        searchInput.oninput = () => { allItemsState.search = searchInput.value; allItemsState.page = 0; renderAllItemsView(); };
       }
 
       // Wire up pagination
-      const prevBtn = document.getElementById('logs-prev');
-      const nextBtn = document.getElementById('logs-next');
-      if (prevBtn) prevBtn.onclick = () => { logsState.page--; renderLogsView(); };
-      if (nextBtn) nextBtn.onclick = () => { logsState.page++; renderLogsView(); };
+      const prevBtn = document.getElementById('all-items-prev');
+      const nextBtn = document.getElementById('all-items-next');
+      if (prevBtn) prevBtn.onclick = () => { allItemsState.page--; renderAllItemsView(); };
+      if (nextBtn) nextBtn.onclick = () => { allItemsState.page++; renderAllItemsView(); };
     }
 
     const FEAT_LIST_PAGE_SIZE = 20;

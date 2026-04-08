@@ -48,7 +48,7 @@ Mix and match. Aigon doesn't care which model writes the code — it just manage
 - **Autonomous mode** (in development as part of Aigon Pro) — AutoConductor runs implement → review → close unattended.
 - **Research workflow** — parallel research topics across multiple agents, then synthesize and promote findings into features.
 - **Feedback triage** — capture user input, de-duplicate, promote the actionable bits into features.
-- **Dashboard** — web kanban for features/research/feedback, telemetry charts, session monitoring, logs. Runs on `localhost`.
+- **Dashboard** — web kanban for features/research/feedback, telemetry charts, session monitoring, and the All Items index. Runs on `localhost`.
 - **No lock-in** — plain Markdown files in git. If Aigon disappears tomorrow, your specs and history are still there.
 - **Vendor independent** — we orchestrate, you choose the model.
 
@@ -102,7 +102,7 @@ Or spin up the web dashboard (`aigon server start`) and click "New Feature" on t
   <img src="site/public/img/aigon-dashboard-02-fleet-evaluation.gif" alt="Aigon Fleet mode — evaluation in progress" width="880"/>
 </p>
 
-The [Aigon dashboard](https://www.aigon.build/docs/guides/dashboard) shows features across their full lifecycle — inbox → backlog → in-progress → in-evaluation → done — with live agent session status, commit activity, telemetry, and logs. Above: a Fleet-mode feature being evaluated across three agents.
+The [Aigon dashboard](https://www.aigon.build/docs/guides/dashboard) shows features across their full lifecycle — inbox → backlog → in-progress → in-evaluation → done — with live agent session status, commit activity, telemetry, and the repo-wide All Items index for features, research, and feedback. Above: a Fleet-mode feature being evaluated across three agents.
 
 ## Documentation
 

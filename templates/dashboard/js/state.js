@@ -4,6 +4,11 @@
     const TS_MS = 30000;
     function lsKey(k) { return 'aigon-' + INSTANCE_NAME + '-' + k; }
     // _rawState is the plain JS object; state becomes the Alpine proxy after init
+    const storedView = localStorage.getItem(lsKey('view')) || 'monitor';
+    const initialView = storedView === 'console'
+      ? 'logs'
+      : (storedView === 'logs' ? 'all-items' : storedView);
+
     const _rawState = {
       data: INITIAL_DATA,
       failures: 0,
@@ -12,7 +17,7 @@
       hiddenRepos: JSON.parse(localStorage.getItem(lsKey('hiddenRepos')) || '[]'),
       sidebarHidden: localStorage.getItem(lsKey('sidebarHidden')) === 'true',
       filter: localStorage.getItem(lsKey('filter')) || 'all',
-      view: localStorage.getItem(lsKey('view')) || 'monitor',
+      view: initialView,
       selectedRepo: localStorage.getItem(lsKey('selectedRepo')) || 'all',
       settingsRepo: localStorage.getItem(lsKey('settingsRepo')) || '',
       pipelineType: localStorage.getItem(lsKey('pipelineType')) || 'features',
