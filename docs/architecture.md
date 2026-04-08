@@ -80,7 +80,7 @@ Current shared modules:
   `getCurrentBranch`, `getFeatureGitSignals`, `classifyCommitAttributionRange`, `getFileLineAttribution`, `getCommitAnalytics`, `filterCommitAnalytics`, `buildCommitSeries`
 - `lib/agent-status.js` (~130 lines): per-agent status file I/O in `.aigon/state/`, atomic JSON writes, candidate ID resolution
   `readAgentStatus`, `writeAgentStatus`, `writeAgentStatusAt`, `agentStatusPath`, `getStateDir`, `getLocksDir`
-- `lib/agent-prompt-resolver.js` (~140 lines): shared feature prompt resolution for agent launches; preserves configured slash-command prompts for cc/gg/cu and inlines the canonical `templates/generic/commands/feature-*.md` body for cx so Codex launches never depend on skill / prompt discovery
+- `lib/agent-prompt-resolver.js` (~140 lines): shared feature prompt resolution for agent launches; preserves configured slash-command prompts for cc/gg/cu and inlines the canonical `templates/generic/commands/feature-*.md` body for cx so Codex launches never depend on deprecated `/prompts:` discovery or local skill discovery
   `resolveAgentPromptBody`, `resolveCxPromptBody`
 - `lib/state-queries.js` (~250 lines): read-only UI helpers — feedback action/transition derivation (pure, no I/O). Feature/research constants retained for diagram generation only; action derivation for features/research lives in workflow-core.
   `getValidTransitions`, `getAvailableActions`, `getSessionAction`, `getRecommendedActions`, `isActionValid`, `shouldNotify`

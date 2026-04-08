@@ -36,6 +36,6 @@ Next step: Once the spec is committed, suggest `{{CMD_PREFIX}}feature-prioritise
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual feature name:
+End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual feature name:
 
 `{{CMD_PREFIX}}feature-prioritise <name>`

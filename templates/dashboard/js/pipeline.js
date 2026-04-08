@@ -78,6 +78,12 @@
       if (els.descriptionInput) els.descriptionInput.value = '';
     }
 
+    function getAgentPromptPrefix(agentId) {
+      if (agentId === 'cx') return '$aigon-';
+      if (agentId === 'cu') return '/aigon-';
+      return '/aigon:';
+    }
+
     async function submitCreateModal() {
       const els = getCreateModalElements();
       if (!els.modal || !els.nameInput || !els.descriptionInput || !els.submit) return;
@@ -135,9 +141,9 @@
           hideCreateModal();
           showToast('Created feature: ' + name);
         } else {
-          // Agent selected — use the slash command which creates + explores + fleshes out
+          // Agent selected — use that agent's native Aigon command syntax.
           const descContext = description ? `\n\nUser description: "${description}"` : '';
-          const prompt = `/aigon:feature-create ${name}${descContext}`;
+          const prompt = `${getAgentPromptPrefix(agentId)}feature-create ${name}${descContext}`;
 
           hideCreateModal();
           showToast('Opening agent to create feature: ' + name);

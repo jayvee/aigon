@@ -4,7 +4,7 @@
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
 - **Shared logic**: `lib/*.js` — 17 modules; see Module Map below
-- **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
+- **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cx` (or any agent)
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
 - **Tests**: `npm test` · syntax: `node -c aigon-cli.js` · `node -c lib/utils.js`
@@ -72,7 +72,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/dashboard-status-helpers.js` | ~200 | Shared dashboard status helpers: tmux/session detection, worktree lookup, status normalization, stale-session heuristics |
 | `lib/server-runtime.js` | ~90 | Shared AIGON server lifecycle helpers for start/restart/stop orchestration |
 | `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/feature-{id}-{agent}.json`) |
-| `lib/agent-prompt-resolver.js` | ~140 | Shared feature prompt resolution for agent launches. Default path preserves configured slash commands; cx reads the canonical `templates/generic/commands/feature-*.md` prompt body, strips metadata, and substitutes feature args inline so Codex no longer depends on `/prompts:` discovery. |
+| `lib/agent-prompt-resolver.js` | ~140 | Shared feature prompt resolution for agent launches. Default path preserves configured slash commands; cx reads the canonical `templates/generic/commands/feature-*.md` prompt body, strips metadata, and substitutes feature args inline so Codex no longer depends on deprecated `/prompts:` discovery or local skill discovery. |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | 899 | Branch/worktree/status helpers, feature git signals, AI attribution classification |
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
@@ -118,7 +118,7 @@ Pro-driven, without revealing the spec contents.
 **Context delivery** (no root file injection):
 - CC/GG: SessionStart hook `aigon project-context` prints doc pointers to stdout → agent ingests as conversation context
 - CU: `.cursor/rules/aigon.mdc` with `alwaysApply: true`
-- CX: `.codex/prompt.md` with marker blocks
+- CX: project-local Skills under `.agents/skills/aigon-*/SKILL.md`; aigon-spawned Codex sessions inline the same template bodies directly
 
 **Auto-update**: SessionStart hook `aigon check-version` detects version mismatch → runs `aigon update` → re-runs `install-agent` for all detected agents
 
