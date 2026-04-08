@@ -7,7 +7,7 @@
     const storedView = localStorage.getItem(lsKey('view')) || 'monitor';
     const initialView = storedView === 'console'
       ? 'logs'
-      : (storedView === 'logs' ? 'all-items' : storedView);
+      : (storedView === 'logs' ? 'all-items' : (storedView === 'config' ? 'settings' : storedView));
 
     const _rawState = {
       data: INITIAL_DATA,

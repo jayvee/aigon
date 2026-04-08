@@ -13,6 +13,15 @@
       return repos[0].path;
     }
 
+    function getSettingsScope() {
+      const repos = (state.data && state.data.repos) || [];
+      const validRepoPaths = repos.map(r => r.path);
+      if (state.settingsRepo === 'all') return 'all';
+      if (state.settingsRepo && validRepoPaths.includes(state.settingsRepo)) return state.settingsRepo;
+      if (state.selectedRepo && state.selectedRepo !== 'all' && validRepoPaths.includes(state.selectedRepo)) return state.selectedRepo;
+      return 'all';
+    }
+
     const settingsUiState = {
       drafts: {},
       focus: null,
@@ -76,6 +85,118 @@
       detailArea.scrollTop = scrollTop;
     }
 
+    function scrollSettingsSection(sectionId) {
+      const section = document.getElementById('settings-section-' + sectionId);
+      if (!section) return;
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function makeSettingsShell() {
+      const area = document.createElement('div');
+      area.className = 'settings-area';
+
+      const layout = document.createElement('div');
+      layout.className = 'settings-layout';
+
+      const nav = document.createElement('nav');
+      nav.className = 'settings-nav';
+      nav.setAttribute('aria-label', 'Settings sections');
+
+      const content = document.createElement('div');
+      content.className = 'settings-content';
+
+      const sections = [];
+      function addSection(id, label, title, description) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'settings-nav-btn';
+        btn.textContent = label;
+        btn.onclick = () => scrollSettingsSection(id);
+        nav.appendChild(btn);
+
+        const section = document.createElement('section');
+        section.className = 'settings-section settings-panel';
+        section.id = 'settings-section-' + id;
+        section.dataset.settingsSection = id;
+
+        const heading = document.createElement('h3');
+        heading.textContent = title;
+        section.appendChild(heading);
+
+        if (description) {
+          const copy = document.createElement('p');
+          copy.textContent = description;
+          section.appendChild(copy);
+        }
+
+        content.appendChild(section);
+        sections.push({ id: id, button: btn, section: section });
+        return section;
+      }
+
+      function setActiveSection(activeId) {
+        sections.forEach(item => {
+          item.button.classList.toggle('active', item.id === activeId);
+        });
+      }
+
+      const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter(entry => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) setActiveSection(visible.target.dataset.settingsSection);
+      }, { root: document.getElementById('detail-area'), threshold: [0.2, 0.45, 0.7] });
+
+      layout.appendChild(nav);
+      layout.appendChild(content);
+      area.appendChild(layout);
+
+      return { area: area, content: content, addSection: addSection, observeSection: (section) => observer.observe(section), setActiveSection: setActiveSection };
+    }
+
+    function renderSettingsScopeSelector(section) {
+      const wrap = document.createElement('div');
+      wrap.className = 'settings-target-wrap';
+
+      const label = document.createElement('div');
+      label.className = 'settings-target-label';
+      label.textContent = 'Compare values for';
+      wrap.appendChild(label);
+
+      const select = document.createElement('select');
+      select.className = 'settings-target-select';
+      const currentScope = getSettingsScope();
+
+      const allOption = document.createElement('option');
+      allOption.value = 'all';
+      allOption.textContent = 'All repos';
+      select.appendChild(allOption);
+
+      ((state.data && state.data.repos) || []).forEach(repo => {
+        const option = document.createElement('option');
+        option.value = repo.path;
+        option.textContent = repo.displayPath || repo.name || repo.path;
+        select.appendChild(option);
+      });
+
+      select.value = currentScope;
+      select.onchange = () => {
+        state.settingsRepo = select.value;
+        localStorage.setItem(lsKey('settingsRepo'), state.settingsRepo);
+        renderSettings();
+      };
+      wrap.appendChild(select);
+
+      const hint = document.createElement('div');
+      hint.className = 'settings-target-hint';
+      hint.textContent = currentScope === 'all'
+        ? 'Edit global defaults that apply across repositories.'
+        : 'Compare the selected repository against the shared defaults.';
+      wrap.appendChild(hint);
+
+      section.appendChild(wrap);
+    }
+
     async function fetchDashboardSettings(repoPath, options) {
       const opts = options || {};
       const params = [];
@@ -99,20 +220,11 @@
       return payload;
     }
 
-    function renderConfigEditorSection(area, settingsData, repoPath) {
-      const section = document.createElement('div');
-      section.className = 'settings-section';
+    function renderDefaultsAndOverridesSection(section, settingsData, repoPath) {
       const globalOnly = !!settingsData.globalOnly;
       const projectName = settingsData.projectName || (repoPath ? repoPath.split('/').filter(Boolean).pop() : 'selected repo');
-      if (globalOnly) {
-        section.innerHTML = '<h3>Global Defaults</h3><p>Editing <code>' + escHtml(settingsData.globalConfigPath || '~/.aigon/config.json') + '</code>. These defaults apply across repos unless a repo overrides them.</p>';
-      } else {
-        section.innerHTML = '<h3>Repo Overrides</h3><p>Editing overrides for <strong>' + escHtml(projectName) + '</strong> in <code>' + escHtml(settingsData.projectConfigPath || '.aigon/config.json') + '</code>.</p>';
-      }
-
       const settings = settingsData.settings || [];
       const ungrouped = settings.filter(d => !d.group);
-      const grouped = settings.filter(d => !!d.group);
 
       // Helper: create a text input wired to save on change
       function makeInput(def, scope, value, disabled) {
@@ -185,11 +297,18 @@
           }
         }
 
+        const explainer = document.createElement('div');
+        explainer.className = 'settings-compare-intro';
+        explainer.innerHTML = globalOnly
+          ? '<strong>Global defaults</strong> apply across every repository until a repository overrides them.'
+          : 'Editing <strong>' + escHtml(projectName) + '</strong> alongside the shared defaults. Changes here affect only this repository.';
+        section.appendChild(explainer);
+
         const card = document.createElement('div');
         card.className = 'agent-model-card';
         const header = document.createElement('div');
         header.className = 'agent-model-header';
-        header.textContent = 'General';
+        header.textContent = globalOnly ? 'Global Defaults' : 'Defaults and Repository Overrides';
         card.appendChild(header);
 
         const table = document.createElement('table');
@@ -233,97 +352,125 @@
         section.appendChild(card);
       }
 
-      area.appendChild(section);
-
-      // ── Grouped agent model settings ──
-      if (grouped.length > 0) {
-        const agentSection = document.createElement('div');
-        agentSection.className = 'settings-section';
-        agentSection.innerHTML = '<h3>Agent Models</h3><p>Model used for each task type. ' + (globalOnly ? 'Set global defaults here.' : 'Project overrides take precedence over global defaults.') + '</p>';
-
-        // Collect groups in order
-        const groupOrder = []; const groupMap = {};
-        grouped.forEach(def => {
-          if (!groupMap[def.group]) { groupMap[def.group] = { label: def.groupLabel || def.group, defs: [] }; groupOrder.push(def.group); }
-          groupMap[def.group].defs.push(def);
-        });
-
-        const grid = document.createElement('div');
-        grid.className = 'agent-model-grid';
-
-        groupOrder.forEach(groupKey => {
-          const g = groupMap[groupKey];
-          const card = document.createElement('div');
-          card.className = 'agent-model-card';
-
-          const header = document.createElement('div');
-          header.className = 'agent-model-header';
-          header.textContent = g.label;
-          card.appendChild(header);
-
-          const table = document.createElement('table');
-          table.className = 'agent-model-table';
-
-          // Table header
-          let headHtml = '<thead><tr><th>Task</th><th>Default</th>';
-          if (!globalOnly) headHtml += '<th>Override</th>';
-          headHtml += '<th>Effective</th></tr></thead>';
-          table.innerHTML = headHtml;
-
-          const tbody = document.createElement('tbody');
-          g.defs.forEach(def => {
-            const tr = document.createElement('tr');
-
-            // Task name cell
-            const tdTask = document.createElement('td');
-            tdTask.className = 'agent-model-task';
-            tdTask.textContent = def.label;
-            tr.appendChild(tdTask);
-
-            // Global default cell
-            const tdGlobal = document.createElement('td');
-            const globalInput = makeInput(def, 'global', def.globalValue, !globalOnly);
-            tdGlobal.appendChild(globalInput);
-            tr.appendChild(tdGlobal);
-
-            // Project override cell (if not globalOnly)
-            if (!globalOnly) {
-              const tdProject = document.createElement('td');
-              const projectInput = makeInput(def, 'project', def.projectValue, false);
-              tdProject.appendChild(projectInput);
-              tr.appendChild(tdProject);
-            }
-
-            // Effective value cell
-            const tdEff = document.createElement('td');
-            tdEff.className = 'agent-model-effective';
-            const effCode = document.createElement('code');
-            effCode.textContent = def.effectiveValue != null ? def.effectiveValue : 'unset';
-            tdEff.appendChild(effCode);
-            tr.appendChild(tdEff);
-
-            tbody.appendChild(tr);
-          });
-          table.appendChild(tbody);
-          card.appendChild(table);
-          grid.appendChild(card);
-        });
-
-        agentSection.appendChild(grid);
-        area.appendChild(agentSection);
-      }
-
       const rawSection = document.createElement('div');
-      rawSection.className = 'settings-section';
-      rawSection.innerHTML = '<h3>' + (globalOnly ? 'Global Config' : 'Computed Config') + '</h3><p>' + (globalOnly ? 'Read-only view of the current global configuration file.' : 'Read-only merged configuration used by command execution.') + '</p>';
+      rawSection.className = 'settings-subsection';
+      rawSection.innerHTML = '<h4>Current merged settings</h4><p>' + (globalOnly ? 'Read-only view of the global settings file.' : 'Read-only merged settings after applying the repository override.') + '</p>';
       const pre = document.createElement('pre');
       pre.className = 'settings-json';
       pre.textContent = JSON.stringify(settingsData.effective || {}, null, 2);
       rawSection.appendChild(pre);
-      area.appendChild(rawSection);
+      section.appendChild(rawSection);
+    }
+
+    function renderModelsSection(section, settingsData, repoPath) {
+      const globalOnly = !!settingsData.globalOnly;
+      const grouped = (settingsData.settings || []).filter(d => !!d.group);
+      if (grouped.length === 0) {
+        section.innerHTML += '<p class="settings-empty">No model settings found.</p>';
+        return;
+      }
+
+      function makeInput(def, scope, value, disabled) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'settings-input settings-input-compact';
+        input.placeholder = 'Unset';
+        input.dataset.settingsKey = def.key;
+        input.dataset.settingsScope = scope;
+        const draftKey = settingsDraftKey(scope, def.key);
+        const draftValue = Object.prototype.hasOwnProperty.call(settingsUiState.drafts, draftKey) ? settingsUiState.drafts[draftKey] : value;
+        writeSettingsInputValue(def.type, input, draftValue);
+        input.disabled = !!disabled;
+        input.oninput = () => { settingsUiState.drafts[draftKey] = input.value; };
+        input.onchange = async () => {
+          try {
+            settingsUiState.drafts[draftKey] = input.value;
+            await updateDashboardSetting(scope, def.key, input.value, repoPath);
+            delete settingsUiState.drafts[draftKey];
+            showToast('Updated ' + def.label.toLowerCase() + ' model');
+            render();
+          } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); render(); }
+        };
+        return input;
+      }
+
+      const compareCopy = document.createElement('div');
+      compareCopy.className = 'settings-compare-intro';
+      compareCopy.innerHTML = globalOnly
+        ? 'Set the shared model defaults for each task type.'
+        : 'Compare shared model defaults with this repository\'s override in one table.';
+      section.appendChild(compareCopy);
+
+      const groupOrder = [];
+      const groupMap = {};
+      grouped.forEach(def => {
+        if (!groupMap[def.group]) {
+          groupMap[def.group] = { label: def.groupLabel || def.group, defs: [] };
+          groupOrder.push(def.group);
+        }
+        groupMap[def.group].defs.push(def);
+      });
+
+      const grid = document.createElement('div');
+      grid.className = 'agent-model-grid';
+
+      groupOrder.forEach(groupKey => {
+        const g = groupMap[groupKey];
+        const card = document.createElement('div');
+        card.className = 'agent-model-card';
+
+        const header = document.createElement('div');
+        header.className = 'agent-model-header';
+        header.textContent = g.label;
+        card.appendChild(header);
+
+        const table = document.createElement('table');
+        table.className = 'agent-model-table';
+
+        let headHtml = '<thead><tr><th>Task</th><th>Default</th>';
+        if (!globalOnly) headHtml += '<th>Override</th>';
+        headHtml += '<th>Effective</th></tr></thead>';
+        table.innerHTML = headHtml;
+
+        const tbody = document.createElement('tbody');
+        g.defs.forEach(def => {
+          const tr = document.createElement('tr');
+
+          const tdTask = document.createElement('td');
+          tdTask.className = 'agent-model-task';
+          tdTask.textContent = def.label;
+          tr.appendChild(tdTask);
+
+          const tdGlobal = document.createElement('td');
+          tdGlobal.appendChild(makeInput(def, 'global', def.globalValue, !globalOnly));
+          tr.appendChild(tdGlobal);
+
+          if (!globalOnly) {
+            const tdProject = document.createElement('td');
+            tdProject.appendChild(makeInput(def, 'project', def.projectValue, false));
+            tr.appendChild(tdProject);
+          }
+
+          const tdEff = document.createElement('td');
+          tdEff.className = 'agent-model-effective';
+          const effCode = document.createElement('code');
+          effCode.textContent = def.effectiveValue != null ? def.effectiveValue : 'unset';
+          tdEff.appendChild(effCode);
+          tr.appendChild(tdEff);
+
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        card.appendChild(table);
+        grid.appendChild(card);
+      });
+
+      section.appendChild(grid);
     }
 
     function renderSettings() {
+      captureSettingsUiState();
+      const renderToken = ++settingsUiState.renderToken;
       const scrollTop = captureDetailScrollTop();
       document.getElementById('monitor-summary').style.display = 'none';
       document.getElementById('repo-header').style.display = 'none';
@@ -344,13 +491,11 @@
       reposRoot.innerHTML = '';
       empty.style.display = 'none';
 
-      const area = document.createElement('div');
-      area.className = 'settings-area';
+      const shell = makeSettingsShell();
+      const area = shell.area;
 
       // Repos section
-      const section = document.createElement('div');
-      section.className = 'settings-section';
-      section.innerHTML = '<h3>Registered Repositories</h3><p>Repos monitored by the Aigon dashboard. Toggle visibility to focus on specific repos.</p>';
+      const section = shell.addSection('repositories', 'Repositories', 'Repositories', 'Repos monitored by the dashboard. Toggle visibility, add new repos, or remove ones you no longer want to track.');
 
       const repos = readConductorReposFromGlobalConfig_client();
       const list = document.createElement('div');
@@ -448,7 +593,7 @@
       form.appendChild(input);
       form.appendChild(addBtn);
       section.appendChild(form);
-      area.appendChild(section);
+      shell.observeSection(section);
 
       // ── Notifications section ─────────────────────────────────────────────
       const NOTIF_TYPE_LABELS = {
@@ -458,9 +603,7 @@
         'all-research-submitted': 'All agents submitted (research)',
         'error': 'Errors'
       };
-      const notifSection = document.createElement('div');
-      notifSection.className = 'settings-section';
-      notifSection.innerHTML = '<h3>Notifications</h3><p>macOS notifications are delivered only while the dashboard is running.</p>';
+      const notifSection = shell.addSection('notifications', 'Notifications', 'Notifications', 'macOS notifications are delivered only while the dashboard is running.');
 
       async function loadAndRenderNotifToggles() {
         let cfg = { enabled: true, types: {} };
@@ -513,59 +656,42 @@
       }
 
       loadAndRenderNotifToggles();
-      area.appendChild(notifSection);
+      shell.observeSection(notifSection);
 
-      reposRoot.appendChild(area);
-      restoreDetailScrollTop(scrollTop);
-    }
+      const modelsSection = shell.addSection('models', 'Models', 'Models', 'Compare shared model defaults with repository-specific overrides in one place.');
+      renderSettingsScopeSelector(modelsSection);
+      modelsSection.insertAdjacentHTML('beforeend', '<div class="settings-loading">Loading models...</div>');
+      shell.observeSection(modelsSection);
 
-    function renderConfigView() {
-      captureSettingsUiState();
-      const renderToken = ++settingsUiState.renderToken;
-      const scrollTop = captureDetailScrollTop();
-      document.getElementById('monitor-summary').style.display = 'none';
-      document.getElementById('repo-header').style.display = 'none';
-      setHealth();
-      const data = state.data || {};
-      document.getElementById('updated-text').textContent = 'Updated ' + relTime(data.generatedAt || new Date().toISOString());
+      const defaultsSection = shell.addSection('defaults', 'Defaults & Overrides', 'Defaults & Overrides', 'Edit the shared defaults and compare them directly with repository-specific overrides.');
+      defaultsSection.insertAdjacentHTML('beforeend', '<div class="settings-loading">Loading settings...</div>');
+      shell.observeSection(defaultsSection);
 
-      const configRoot = document.getElementById('config-view');
-      const empty = document.getElementById('empty');
-      configRoot.className = '';
-      configRoot.innerHTML = '';
-      empty.style.display = 'none';
+      shell.setActiveSection('repositories');
 
-      const area = document.createElement('div');
-      area.className = 'settings-area';
-
-      const intro = document.createElement('div');
-      intro.className = 'settings-section';
-      intro.innerHTML = '<h3>Config</h3><p>Select <strong>All Repos</strong> in the left sidebar to edit global defaults. Select a specific repo to edit only that repo\'s overrides.</p>';
-      area.appendChild(intro);
-
-      const targetRepo = getSettingsTargetRepo();
-      const globalOnly = state.selectedRepo === 'all';
-
-      const configSection = document.createElement('div');
-      configSection.className = 'settings-section';
-      configSection.innerHTML = '<h3>Loading config...</h3>';
-      area.appendChild(configSection);
-
-      fetchDashboardSettings(globalOnly ? '' : targetRepo, { globalOnly: globalOnly })
+      const scope = getSettingsScope();
+      const globalOnly = scope === 'all';
+      const repoPath = globalOnly ? '' : scope;
+      fetchDashboardSettings(repoPath, { globalOnly: globalOnly })
         .then(payload => {
           if (renderToken !== settingsUiState.renderToken) return;
-          configSection.remove();
-          renderConfigEditorSection(area, payload, globalOnly ? '' : targetRepo);
+          const loadingModels = modelsSection.querySelector('.settings-loading');
+          if (loadingModels) loadingModels.remove();
+          const loadingDefaults = defaultsSection.querySelector('.settings-loading');
+          if (loadingDefaults) loadingDefaults.remove();
+          renderModelsSection(modelsSection, payload, repoPath);
+          renderDefaultsAndOverridesSection(defaultsSection, payload, repoPath);
           restoreDetailScrollTop(scrollTop);
-          restoreSettingsUiState(area);
+          restoreSettingsUiState(reposRoot);
         })
         .catch(err => {
           if (renderToken !== settingsUiState.renderToken) return;
-          configSection.innerHTML = '<h3>Config</h3><p class="settings-empty">Failed to load config: ' + escHtml(err.message) + '</p>';
+          modelsSection.innerHTML += '<p class="settings-empty">Failed to load model settings: ' + escHtml(err.message) + '</p>';
+          defaultsSection.innerHTML += '<p class="settings-empty">Failed to load defaults and overrides: ' + escHtml(err.message) + '</p>';
           restoreDetailScrollTop(scrollTop);
         });
 
-      configRoot.appendChild(area);
+      reposRoot.appendChild(area);
       restoreDetailScrollTop(scrollTop);
-      restoreSettingsUiState(area);
+      restoreSettingsUiState(reposRoot);
     }

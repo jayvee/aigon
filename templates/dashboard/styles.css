@@ -252,10 +252,21 @@
     .modal-error{margin:10px 0 0;color:#fca5a5;font-size:12px}
     .modal-actions .btn{padding:6px 16px}
     /* Settings view */
-    .settings-area{padding:16px 0 28px;max-width:640px}
+    .settings-area{padding:16px 0 28px}
+    .settings-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:22px;align-items:start}
+    .settings-nav{position:sticky;top:12px;display:grid;gap:8px;padding:12px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));border:1px solid var(--border-subtle);border-radius:12px}
+    .settings-nav-btn{display:flex;align-items:center;width:100%;padding:9px 12px;background:transparent;border:1px solid transparent;border-radius:9px;color:var(--text-secondary);cursor:pointer;font:inherit;font-size:12px;text-align:left;transition:border-color .12s ease,background .12s ease,color .12s ease}
+    .settings-nav-btn:hover{border-color:var(--border-default);background:rgba(255,255,255,.03);color:var(--text-primary)}
+    .settings-nav-btn.active{border-color:rgba(59,130,246,.35);background:rgba(59,130,246,.12);color:#dbeafe}
+    .settings-content{min-width:0}
     .settings-section{margin-bottom:24px}
+    .settings-panel{padding:16px 18px;background:rgba(255,255,255,.02);border:1px solid var(--border-subtle);border-radius:14px}
     .settings-section h3{margin:0 0 12px;font-size:15px;font-weight:600;letter-spacing:-.01em}
     .settings-section p{color:var(--text-secondary);font-size:12px;margin:0 0 12px}
+    .settings-subsection{margin-top:16px}
+    .settings-subsection h4{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--text-primary)}
+    .settings-compare-intro{margin:0 0 12px;padding:10px 12px;background:rgba(255,255,255,.025);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-secondary);font-size:12px;line-height:1.5}
+    .settings-loading{padding:14px 16px;border:1px dashed var(--border-subtle);border-radius:10px;color:var(--text-tertiary);font-size:12px;background:rgba(255,255,255,.015)}
     .settings-target-wrap{display:grid;gap:6px;margin-bottom:18px;padding:12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px}
     .settings-target-label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary)}
     .settings-target-select{padding:8px 10px;background:rgba(255,255,255,.02);border:1px solid var(--border-subtle);border-radius:8px}
@@ -330,6 +341,13 @@
     .settings-input-compact:disabled{color:var(--text-tertiary);cursor:not-allowed;opacity:.65}
     .settings-input-compact:focus{border-color:var(--accent)}
     .settings-help-inline{width:14px;height:14px;font-size:9px;vertical-align:middle;margin-left:2px}
+    @media (max-width: 960px){
+      .settings-layout{grid-template-columns:1fr}
+      .settings-nav{position:static;grid-auto-flow:column;grid-template-columns:repeat(4,minmax(140px,1fr));overflow-x:auto}
+    }
+    @media (max-width: 640px){
+      .settings-nav{grid-auto-flow:row;grid-template-columns:1fr}
+    }
     /* Spec drawer */
     .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;opacity:0;pointer-events:none;transition:opacity .2s ease}
     .drawer-overlay.open{opacity:1;pointer-events:auto}

@@ -300,7 +300,6 @@
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('settings-view').style.display = '';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('insights-view').style.display = 'none';
@@ -308,26 +307,10 @@
         document.getElementById('logs-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         renderSettings();
-      } else if (state.view === 'config') {
-        sidebar.style.display = state.sidebarHidden ? 'none' : '';
-        mobileSelect.style.display = '';
-        document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = '';
-        document.getElementById('sessions-view').style.display = 'none';
-        document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('insights-view').style.display = 'none';
-        document.getElementById('all-items-view').style.display = 'none';
-        document.getElementById('logs-view').style.display = 'none';
-        const allRepos = ((state.data || {}).repos || []);
-        renderSidebar(allRepos);
-        const selectedRepoData = state.selectedRepo !== 'all' ? allRepos.find(r => r.path === state.selectedRepo) : null;
-        renderRepoHeader(selectedRepoData);
-        renderConfigView();
       } else if (state.view === 'sessions') {
         sidebar.style.display = state.sidebarHidden ? 'none' : '';
         mobileSelect.style.display = '';
         document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = '';
         document.getElementById('statistics-view').style.display = 'none';
@@ -343,7 +326,6 @@
         sidebar.style.display = state.sidebarHidden ? 'none' : '';
         mobileSelect.style.display = '';
         document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = '';
@@ -358,7 +340,6 @@
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
@@ -371,7 +352,6 @@
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
@@ -384,7 +364,6 @@
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
@@ -398,7 +377,6 @@
         sidebar.style.display = state.sidebarHidden ? 'none' : '';
         mobileSelect.style.display = '';
         document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
