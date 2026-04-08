@@ -2,13 +2,46 @@
 
 'use strict';
 
-const { COMMAND_ALIASES } = require('./lib/constants');
-const { createFeatureCommands } = require('./lib/commands/feature');
-const { createResearchCommands } = require('./lib/commands/research');
-const { createFeedbackCommands } = require('./lib/commands/feedback');
-const { createSetupCommands } = require('./lib/commands/setup');
-const { createInfraCommands } = require('./lib/commands/infra');
-const { createMiscCommands } = require('./lib/commands/misc');
+/**
+ * Format a CLI error for the user. SyntaxError / module-load failures are
+ * surfaced with the offending file path so a half-applied stash or merge
+ * conflict in `lib/*.js` produces an actionable message instead of an
+ * opaque "Unexpected token '<<'" toast in the dashboard. (See
+ * farline-ai-forge feature 42 close failure on 2026-04-08.)
+ */
+function formatCliError(error) {
+    if (!error) return '❌ Unknown error';
+    const isLoadError = error instanceof SyntaxError
+        || (error && (error.code === 'ERR_REQUIRE_ESM' || error.code === 'MODULE_NOT_FOUND'));
+    if (isLoadError) {
+        // Extract first stack frame containing a file path so the user knows
+        // which module failed to load. SyntaxError.message strips the path.
+        const stack = typeof error.stack === 'string' ? error.stack : '';
+        const frame = stack.split('\n').find(line => /\.js[:\)]/.test(line));
+        const where = frame ? frame.trim() : '(unknown location)';
+        return `❌ aigon failed to load a module: ${error.message}\n   at ${where}\n`
+            + `   This usually means a file in lib/ has a syntax error or unresolved\n`
+            + `   merge conflict. Check: grep -rn '^<<<<<<<' "$(dirname "$(readlink -f "$0")")/lib"`;
+    }
+    return `❌ ${error.message}`;
+}
+
+let COMMAND_ALIASES;
+let createFeatureCommands, createResearchCommands, createFeedbackCommands;
+let createSetupCommands, createInfraCommands, createMiscCommands;
+
+try {
+    ({ COMMAND_ALIASES } = require('./lib/constants'));
+    ({ createFeatureCommands } = require('./lib/commands/feature'));
+    ({ createResearchCommands } = require('./lib/commands/research'));
+    ({ createFeedbackCommands } = require('./lib/commands/feedback'));
+    ({ createSetupCommands } = require('./lib/commands/setup'));
+    ({ createInfraCommands } = require('./lib/commands/infra'));
+    ({ createMiscCommands } = require('./lib/commands/misc'));
+} catch (error) {
+    console.error(formatCliError(error));
+    process.exit(1);
+}
 
 const commands = {
     ...createFeatureCommands(),
@@ -30,10 +63,16 @@ if (resolvedCommand === '--version' || resolvedCommand === '-v' || resolvedComma
 } else if (!resolvedCommand || resolvedCommand === 'help' || resolvedCommand === '--help' || resolvedCommand === '-h') {
     commands.help();
 } else if (commands[resolvedCommand]) {
-    const result = commands[resolvedCommand](commandArgs);
+    let result;
+    try {
+        result = commands[resolvedCommand](commandArgs);
+    } catch (error) {
+        console.error(formatCliError(error));
+        process.exit(1);
+    }
     if (result && typeof result.catch === 'function') {
         result.catch(error => {
-            console.error(`❌ ${error.message}`);
+            console.error(formatCliError(error));
             process.exit(1);
         });
     }
