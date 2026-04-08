@@ -1,3 +1,26 @@
+---
+commit_count: 8
+lines_added: 272
+lines_removed: 76
+lines_changed: 348
+files_touched: 49
+fix_commit_count: 4
+fix_commit_ratio: 0.5
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 73
+output_tokens: 12952
+cache_creation_input_tokens: 120243
+cache_read_input_tokens: 3244999
+thinking_tokens: 0
+total_tokens: 3378267
+billable_tokens: 13025
+cost_usd: 8.0945
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 245 - feature-close-scan-target-branch
 Agent: cc
 
