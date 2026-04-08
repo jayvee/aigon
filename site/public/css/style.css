@@ -1959,3 +1959,111 @@ pre code {
     font-size: min(10rem, 16vh);
   }
 }
+
+/* ── Pro strip (top announcement bar) ─────────────────────────────────── */
+.pro-strip {
+  border-bottom: 1px solid rgba(213, 95, 42, 0.18);
+  background: linear-gradient(90deg, rgba(213,95,42,0.04) 0%, rgba(15,119,117,0.04) 100%);
+  padding: 10px 0;
+}
+.pro-strip-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pro-strip-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid rgba(213,95,42,0.35);
+  border-radius: 4px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.pro-strip-text {
+  font-size: 13px;
+  color: var(--muted);
+  flex: 1;
+  min-width: 0;
+}
+.pro-strip-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.pro-strip-link:hover { opacity: 0.75; }
+
+/* ── Pro CTA section (end of page) ────────────────────────────────────── */
+.pro-cta-section {
+  background: var(--bg-alt);
+  border-top: 1px solid var(--line);
+}
+.pro-cta-inner {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 64px;
+  align-items: center;
+}
+.pro-cta-heading {
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin: 12px 0 20px;
+}
+.pro-cta-lead {
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--muted);
+  margin-bottom: 24px;
+  max-width: 44ch;
+}
+.pro-cta-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pro-cta-list li {
+  font-size: 14px;
+  color: var(--text);
+  padding-left: 20px;
+  position: relative;
+}
+.pro-cta-list li::before {
+  content: '✦';
+  position: absolute;
+  left: 0;
+  font-size: 9px;
+  top: 3px;
+  color: var(--accent);
+}
+.pro-cta-frame {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 48px rgba(27,23,17,0.10), 0 2px 8px rgba(27,23,17,0.06);
+}
+.pro-cta-frame img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+@media (max-width: 860px) {
+  .pro-cta-inner {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .pro-cta-visual { order: -1; }
+}
