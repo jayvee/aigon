@@ -30,7 +30,7 @@
   },
   "cli": {
     "command": "agent",
-    "implementFlag": "--force --trust",
+    "implementFlag": "--force",
     "implementPrompt": "/aigon-feature-do {featureId}",
     "evalPrompt": "/aigon-feature-eval {featureId}",
     "reviewPrompt": "/aigon-feature-review {featureId}",
