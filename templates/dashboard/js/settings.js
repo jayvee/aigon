@@ -4,13 +4,26 @@
       return (state.data && state.data.repos) ? state.data.repos.map(r => r.path) : [];
     }
 
-    function getSettingsScope() {
+    function formatSettingsRepoPath(repoPath) {
+      return String(repoPath || '').replace(/^\/Users\/[^/]+\//, '~/');
+    }
+
+    function getDefaultsSettingsRepo() {
       const repos = (state.data && state.data.repos) || [];
       const validRepoPaths = repos.map(r => r.path);
-      if (state.settingsRepo === 'all') return 'all';
-      if (state.settingsRepo && validRepoPaths.includes(state.settingsRepo)) return state.settingsRepo;
+      if (state.settingsDefaultsRepo && validRepoPaths.includes(state.settingsDefaultsRepo)) return state.settingsDefaultsRepo;
+      if (state.settingsRepo && state.settingsRepo !== 'all' && validRepoPaths.includes(state.settingsRepo)) return state.settingsRepo;
       if (state.selectedRepo && state.selectedRepo !== 'all' && validRepoPaths.includes(state.selectedRepo)) return state.selectedRepo;
-      return 'all';
+      return repos[0] ? repos[0].path : '';
+    }
+
+    function getModelSettingsRepo() {
+      const repos = (state.data && state.data.repos) || [];
+      const validRepoPaths = repos.map(r => r.path);
+      if (state.settingsModelRepo && validRepoPaths.includes(state.settingsModelRepo)) return state.settingsModelRepo;
+      if (state.settingsRepo && state.settingsRepo !== 'all' && validRepoPaths.includes(state.settingsRepo)) return state.settingsRepo;
+      if (state.selectedRepo && state.selectedRepo !== 'all' && validRepoPaths.includes(state.selectedRepo)) return state.selectedRepo;
+      return repos[0] ? repos[0].path : '';
     }
 
     const settingsUiState = {
@@ -174,7 +187,7 @@
       };
     }
 
-    function renderSettingsScopeSelector(section) {
+    function renderDefaultsScopeSelector(section) {
       const wrap = document.createElement('div');
       wrap.className = 'settings-target-wrap';
 
@@ -185,12 +198,7 @@
 
       const select = document.createElement('select');
       select.className = 'settings-target-select';
-      const currentScope = getSettingsScope();
-
-      const allOption = document.createElement('option');
-      allOption.value = 'all';
-      allOption.textContent = 'All repos';
-      select.appendChild(allOption);
+      const currentScope = getDefaultsSettingsRepo();
 
       ((state.data && state.data.repos) || []).forEach(repo => {
         const option = document.createElement('option');
@@ -201,20 +209,62 @@
 
       select.value = currentScope;
       select.onchange = () => {
-        state.settingsRepo = select.value;
-        localStorage.setItem(lsKey('settingsRepo'), state.settingsRepo);
+        state.settingsDefaultsRepo = select.value;
+        localStorage.setItem(lsKey('settingsDefaultsRepo'), state.settingsDefaultsRepo);
         renderSettings();
       };
       wrap.appendChild(select);
 
       const hint = document.createElement('div');
       hint.className = 'settings-target-hint';
-      hint.textContent = currentScope === 'all'
-        ? 'Edit global defaults that apply across repositories.'
-        : 'Compare the selected repository against the shared defaults.';
+      hint.textContent = currentScope
+        ? 'Shared settings stay on the left. Repository-specific values stay in the middle. The right column shows what Aigon will use.'
+        : 'No repositories available for comparison.';
       wrap.appendChild(hint);
 
       section.appendChild(wrap);
+    }
+
+    function renderSettingsRepoSelector(section, options) {
+      const opts = options || {};
+      const repos = (state.data && state.data.repos) || [];
+      const currentRepo = getModelSettingsRepo();
+      const fallbackRepo = repos[0] ? repos[0].path : '';
+      const selectedRepo = repos.some(repo => repo.path === currentRepo) ? currentRepo : fallbackRepo;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'settings-target-wrap';
+
+      const label = document.createElement('div');
+      label.className = 'settings-target-label';
+      label.textContent = opts.label || 'Select repository';
+      wrap.appendChild(label);
+
+      const select = document.createElement('select');
+      select.className = 'settings-target-select';
+      repos.forEach(repo => {
+        const option = document.createElement('option');
+        option.value = repo.path;
+        option.textContent = repo.displayPath || repo.name || repo.path;
+        select.appendChild(option);
+      });
+      select.value = selectedRepo;
+      select.onchange = () => {
+        state.settingsModelRepo = select.value;
+        localStorage.setItem(lsKey('settingsModelRepo'), state.settingsModelRepo);
+        renderSettings();
+      };
+      wrap.appendChild(select);
+
+      const hint = document.createElement('div');
+      hint.className = 'settings-target-hint';
+      hint.textContent = selectedRepo
+        ? 'Edit overrides for the selected repository and see the effective model that will be used.'
+        : 'No repositories available for comparison.';
+      wrap.appendChild(hint);
+
+      section.appendChild(wrap);
+      return selectedRepo;
     }
 
     async function fetchDashboardSettings(repoPath, options) {
@@ -240,14 +290,12 @@
       return payload;
     }
 
-    function renderDefaultsAndOverridesSection(section, settingsData, repoPath) {
-      const globalOnly = !!settingsData.globalOnly;
-      const projectName = settingsData.projectName || (repoPath ? repoPath.split('/').filter(Boolean).pop() : 'selected repo');
-      const settings = settingsData.settings || [];
-      const ungrouped = settings.filter(d => !d.group);
+    function renderDefaultsAndOverridesSection(section, globalSettingsData, repoSettingsData, repoPath) {
+      const projectName = formatSettingsRepoPath(repoPath) || 'selected repo';
+      const globalSettings = (globalSettingsData.settings || []).filter(d => !d.group);
+      const repoSettings = (repoSettingsData && repoSettingsData.settings ? repoSettingsData.settings : []).filter(d => !d.group);
 
-      // Helper: create a text input wired to save on change
-      function makeInput(def, scope, value, disabled) {
+      function makeInput(def, scope, value, repoPathForUpdate, disabled) {
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'settings-input settings-input-compact';
@@ -262,19 +310,16 @@
         input.onchange = async () => {
           try {
             settingsUiState.drafts[draftKey] = input.value;
-            await updateDashboardSetting(scope, def.key, input.value, repoPath);
+            await updateDashboardSetting(scope, def.key, input.value, repoPathForUpdate);
             delete settingsUiState.drafts[draftKey];
-            showToast('Updated ' + def.label.toLowerCase() + ' model');
+            showToast('Updated ' + def.label);
             render();
           } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); render(); }
         };
         return input;
       }
 
-      // ── General settings (table layout) ──
-      if (ungrouped.length > 0) {
-        // Helper: create a control element for a setting def + scope
-        function makeGeneralControl(def, scope, value, disabled) {
+      function makeGeneralControl(def, scope, value, repoPathForUpdate, disabled) {
           if (def.type === 'boolean') {
             const sw = document.createElement('label'); sw.className = 'toggle-switch';
             const input = document.createElement('input'); input.type = 'checkbox'; input.checked = !!value;
@@ -287,7 +332,7 @@
               try {
                 const nextValue = !!input.checked;
                 settingsUiState.drafts[draftKey] = nextValue;
-                await updateDashboardSetting(scope, def.key, nextValue, repoPath);
+                await updateDashboardSetting(scope, def.key, nextValue, repoPathForUpdate);
                 delete settingsUiState.drafts[draftKey];
                 showToast('Updated ' + def.label); render();
               } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); render(); }
@@ -306,40 +351,36 @@
             input.onchange = async () => {
               try {
                 settingsUiState.drafts[draftKey] = input.value;
-                await updateDashboardSetting(scope, def.key, input.value, repoPath);
+                await updateDashboardSetting(scope, def.key, input.value, repoPathForUpdate);
                 delete settingsUiState.drafts[draftKey];
                 showToast('Updated ' + def.label); render();
               } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); render(); }
             };
             return input;
           } else {
-            return makeInput(def, scope, value, disabled);
+            return makeInput(def, scope, value, repoPathForUpdate, disabled);
           }
         }
 
-        const explainer = document.createElement('div');
-        explainer.className = 'settings-compare-intro';
-        explainer.innerHTML = globalOnly
-          ? '<strong>Global defaults</strong> apply across every repository until a repository overrides them.'
-          : 'Editing <strong>' + escHtml(projectName) + '</strong> alongside the shared defaults. Changes here affect only this repository.';
-        section.appendChild(explainer);
-
+      function buildSettingsTable(defs, options) {
+        const opts = options || {};
         const card = document.createElement('div');
         card.className = 'agent-model-card';
         const header = document.createElement('div');
         header.className = 'agent-model-header';
-        header.textContent = globalOnly ? 'Global Defaults' : 'Defaults and Repository Overrides';
+        header.textContent = opts.title;
         card.appendChild(header);
 
         const table = document.createElement('table');
         table.className = 'agent-model-table';
-        let headHtml = '<thead><tr><th>Setting</th><th>Default</th>';
-        if (!globalOnly) headHtml += '<th>Override</th>';
-        headHtml += '<th>Effective</th></tr></thead>';
+        let headHtml = '<thead><tr><th>Setting</th><th>' + escHtml(opts.defaultLabel || 'Shared') + '</th>';
+        if (opts.showOverride) headHtml += '<th>' + escHtml(opts.overrideLabel || 'Repository') + '</th>';
+        if (opts.showEffective) headHtml += '<th>' + escHtml(opts.effectiveLabel || 'Result') + '</th>';
+        headHtml += '</tr></thead>';
         table.innerHTML = headHtml;
 
         const tbody = document.createElement('tbody');
-        ungrouped.forEach(def => {
+        defs.forEach(def => {
           const tr = document.createElement('tr');
 
           const tdName = document.createElement('td');
@@ -349,48 +390,85 @@
           tr.appendChild(tdName);
 
           const tdGlobal = document.createElement('td');
-          tdGlobal.appendChild(makeGeneralControl(def, 'global', def.globalValue, !globalOnly));
+          tdGlobal.appendChild(makeGeneralControl(def, 'global', def.globalValue, opts.repoPath || '', !!opts.disableDefaults));
           tr.appendChild(tdGlobal);
 
-          if (!globalOnly) {
+          if (opts.showOverride) {
             const tdProject = document.createElement('td');
-            tdProject.appendChild(makeGeneralControl(def, 'project', def.projectValue, false));
+            tdProject.appendChild(makeGeneralControl(def, 'project', def.projectValue, opts.repoPath || '', false));
             tr.appendChild(tdProject);
           }
 
-          const tdEff = document.createElement('td');
-          tdEff.className = 'agent-model-effective';
-          const effCode = document.createElement('code');
-          effCode.textContent = def.effectiveValue != null ? JSON.stringify(def.effectiveValue) : 'unset';
-          tdEff.appendChild(effCode);
-          tr.appendChild(tdEff);
+          if (opts.showEffective) {
+            const tdEff = document.createElement('td');
+            tdEff.className = 'agent-model-effective';
+            const effCode = document.createElement('code');
+            effCode.textContent = def.effectiveValue != null ? JSON.stringify(def.effectiveValue) : 'unset';
+            tdEff.appendChild(effCode);
+            tr.appendChild(tdEff);
+          }
 
           tbody.appendChild(tr);
         });
         table.appendChild(tbody);
         card.appendChild(table);
-        section.appendChild(card);
+        return card;
       }
+
+      if (globalSettings.length > 0) {
+        const globalSection = document.createElement('div');
+        globalSection.className = 'settings-subsection';
+        globalSection.innerHTML = '<h4>Shared settings</h4><p>These values apply to every repository unless a repository sets its own value.</p>';
+        globalSection.appendChild(buildSettingsTable(globalSettings, {
+          title: 'Shared settings',
+          defaultLabel: 'Shared',
+          showOverride: false,
+          showEffective: false,
+          disableDefaults: false
+        }));
+        section.appendChild(globalSection);
+      }
+
+      const repoSection = document.createElement('div');
+      repoSection.className = 'settings-subsection';
+      repoSection.innerHTML = '<h4>Repository settings</h4><p>Choose a repository, set any repository-specific values, and check the final result in the same row.</p>';
+      renderDefaultsScopeSelector(repoSection);
+      const compareCopy = document.createElement('div');
+      compareCopy.className = 'settings-compare-intro';
+      compareCopy.innerHTML = repoPath
+        ? 'Selected repository: <strong>' + escHtml(projectName) + '</strong>. Left = shared value, middle = repository value, right = what Aigon will use.'
+        : 'No repository selected.';
+      repoSection.appendChild(compareCopy);
+
+      if (repoSettings.length > 0) {
+        repoSection.appendChild(buildSettingsTable(repoSettings, {
+          title: 'Repository comparison',
+          defaultLabel: 'Shared',
+          overrideLabel: 'Repository',
+          effectiveLabel: 'Result',
+          showOverride: true,
+          showEffective: true,
+          disableDefaults: true,
+          repoPath: repoPath
+        }));
+      }
+      section.appendChild(repoSection);
 
       const rawSection = document.createElement('div');
       rawSection.className = 'settings-subsection';
-      rawSection.innerHTML = '<h4>Current merged settings</h4><p>' + (globalOnly ? 'Read-only view of the global settings file.' : 'Read-only merged settings after applying the repository override.') + '</p>';
+      rawSection.innerHTML = '<h4>Resulting settings</h4><p>Read-only merged settings for ' + escHtml(projectName) + ' after repository values are applied.</p>';
       const pre = document.createElement('pre');
       pre.className = 'settings-json';
-      pre.textContent = JSON.stringify(settingsData.effective || {}, null, 2);
+      pre.textContent = JSON.stringify((repoSettingsData && repoSettingsData.effective) || {}, null, 2);
       rawSection.appendChild(pre);
       section.appendChild(rawSection);
     }
 
-    function renderModelsSection(section, settingsData, repoPath) {
-      const globalOnly = !!settingsData.globalOnly;
-      const grouped = (settingsData.settings || []).filter(d => !!d.group);
-      if (grouped.length === 0) {
-        section.innerHTML += '<p class="settings-empty">No model settings found.</p>';
-        return;
-      }
+    function renderModelCards(container, grouped, options) {
+      const opts = options || {};
+      if (grouped.length === 0) return;
 
-      function makeInput(def, scope, value, disabled) {
+      function makeInput(def, scope, value, repoPath, disabled) {
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'settings-input settings-input-compact';
@@ -413,13 +491,6 @@
         };
         return input;
       }
-
-      const compareCopy = document.createElement('div');
-      compareCopy.className = 'settings-compare-intro';
-      compareCopy.innerHTML = globalOnly
-        ? 'Set the shared model defaults for each task type.'
-        : 'Compare shared model defaults with this repository\'s override in one table.';
-      section.appendChild(compareCopy);
 
       const groupOrder = [];
       const groupMap = {};
@@ -448,8 +519,9 @@
         table.className = 'agent-model-table';
 
         let headHtml = '<thead><tr><th>Task</th><th>Default</th>';
-        if (!globalOnly) headHtml += '<th>Override</th>';
-        headHtml += '<th>Effective</th></tr></thead>';
+        if (opts.showOverride) headHtml += '<th>Override</th>';
+        if (opts.showEffective) headHtml += '<th>Effective</th>';
+        headHtml += '</tr></thead>';
         table.innerHTML = headHtml;
 
         const tbody = document.createElement('tbody');
@@ -462,30 +534,66 @@
           tr.appendChild(tdTask);
 
           const tdGlobal = document.createElement('td');
-          tdGlobal.appendChild(makeInput(def, 'global', def.globalValue, !globalOnly));
+          tdGlobal.appendChild(makeInput(def, 'global', def.globalValue, opts.repoPath || '', !!opts.disableDefaults));
           tr.appendChild(tdGlobal);
 
-          if (!globalOnly) {
+          if (opts.showOverride) {
             const tdProject = document.createElement('td');
-            tdProject.appendChild(makeInput(def, 'project', def.projectValue, false));
+            tdProject.appendChild(makeInput(def, 'project', def.projectValue, opts.repoPath || '', false));
             tr.appendChild(tdProject);
           }
 
-          const tdEff = document.createElement('td');
-          tdEff.className = 'agent-model-effective';
-          const effCode = document.createElement('code');
-          effCode.textContent = def.effectiveValue != null ? def.effectiveValue : 'unset';
-          tdEff.appendChild(effCode);
-          tr.appendChild(tdEff);
+          if (opts.showEffective) {
+            const tdEff = document.createElement('td');
+            tdEff.className = 'agent-model-effective';
+            const effCode = document.createElement('code');
+            effCode.textContent = def.effectiveValue != null ? def.effectiveValue : 'unset';
+            tdEff.appendChild(effCode);
+            tr.appendChild(tdEff);
+          }
 
           tbody.appendChild(tr);
         });
+
         table.appendChild(tbody);
         card.appendChild(table);
         grid.appendChild(card);
       });
 
-      section.appendChild(grid);
+      container.appendChild(grid);
+    }
+
+    function renderModelsSection(section, globalSettingsData, repoSettingsData, repoPath) {
+      const globalGrouped = (globalSettingsData.settings || []).filter(d => !!d.group);
+      const repoGrouped = (repoSettingsData && repoSettingsData.settings ? repoSettingsData.settings : []).filter(d => !!d.group);
+
+      if (globalGrouped.length === 0) {
+        section.innerHTML += '<p class="settings-empty">No model settings found.</p>';
+        return;
+      }
+
+      const globalSection = document.createElement('div');
+      globalSection.className = 'settings-subsection';
+      globalSection.innerHTML = '<h4>Global defaults</h4><p>Set the shared defaults for each model family. These apply to every repository until a repository overrides them.</p>';
+      renderModelCards(globalSection, globalGrouped, { disableDefaults: false, showOverride: false, showEffective: false });
+      section.appendChild(globalSection);
+
+      const repoSection = document.createElement('div');
+      repoSection.className = 'settings-subsection';
+      repoSection.innerHTML = '<h4>Repository overrides</h4><p>Select a repository to override its model defaults and see the effective model that will be used.</p>';
+      renderSettingsRepoSelector(repoSection, { label: 'Edit overrides for repository' });
+      const compareCopy = document.createElement('div');
+      compareCopy.className = 'settings-compare-intro';
+      compareCopy.innerHTML = repoPath
+        ? 'Selected repository: <strong>' + escHtml(formatSettingsRepoPath(repoPath)) + '</strong>. Override values here and confirm the effective model in the same row.'
+        : 'No repository selected for model overrides.';
+      repoSection.appendChild(compareCopy);
+      if (repoGrouped.length > 0) {
+        renderModelCards(repoSection, repoGrouped, { disableDefaults: true, showOverride: true, showEffective: true, repoPath: repoPath });
+      } else {
+        repoSection.innerHTML += '<p class="settings-empty">No repository-specific model settings found.</p>';
+      }
+      section.appendChild(repoSection);
     }
 
     function renderSettings() {
@@ -678,30 +786,34 @@
       loadAndRenderNotifToggles();
       shell.observeSection(notifSection);
 
-      const modelsSection = shell.addSection('models', 'Models', 'Models', 'Compare shared model defaults with repository-specific overrides in one place.');
-      renderSettingsScopeSelector(modelsSection);
+      const modelsSection = shell.addSection('models', 'Models', 'Models', 'Set global model defaults first, then choose a repository below to override them and see the effective model.');
       modelsSection.insertAdjacentHTML('beforeend', '<div class="settings-loading">Loading models...</div>');
       shell.observeSection(modelsSection);
 
-      const defaultsSection = shell.addSection('defaults', 'Defaults & Overrides', 'Defaults & Overrides', 'Edit the shared defaults and compare them directly with repository-specific overrides.');
+      const defaultsSection = shell.addSection('defaults', 'Repository Settings', 'Repository Settings', 'Edit shared settings, then compare them with one repository at a time.');
       defaultsSection.insertAdjacentHTML('beforeend', '<div class="settings-loading">Loading settings...</div>');
       shell.observeSection(defaultsSection);
 
       shell.setActiveSection('repositories');
       requestAnimationFrame(() => shell.syncActiveSection());
 
-      const scope = getSettingsScope();
-      const globalOnly = scope === 'all';
-      const repoPath = globalOnly ? '' : scope;
-      fetchDashboardSettings(repoPath, { globalOnly: globalOnly })
-        .then(payload => {
+      const repoPath = getDefaultsSettingsRepo();
+      const modelRepoPath = getModelSettingsRepo();
+
+      Promise.all([
+        fetchDashboardSettings('', { globalOnly: true }),
+        modelRepoPath ? fetchDashboardSettings(modelRepoPath, { globalOnly: false }) : Promise.resolve(null),
+        fetchDashboardSettings('', { globalOnly: true }),
+        repoPath ? fetchDashboardSettings(repoPath, { globalOnly: false }) : Promise.resolve(null)
+      ])
+        .then(([globalPayload, modelRepoPayload, globalDefaultsPayload, repoDefaultsPayload]) => {
           if (renderToken !== settingsUiState.renderToken) return;
           const loadingModels = modelsSection.querySelector('.settings-loading');
           if (loadingModels) loadingModels.remove();
           const loadingDefaults = defaultsSection.querySelector('.settings-loading');
           if (loadingDefaults) loadingDefaults.remove();
-          renderModelsSection(modelsSection, payload, repoPath);
-          renderDefaultsAndOverridesSection(defaultsSection, payload, repoPath);
+          renderModelsSection(modelsSection, globalPayload, modelRepoPayload, modelRepoPath);
+          renderDefaultsAndOverridesSection(defaultsSection, globalDefaultsPayload, repoDefaultsPayload, repoPath);
           restoreDetailScrollTop(scrollTop);
           restoreSettingsUiState(reposRoot);
         })
