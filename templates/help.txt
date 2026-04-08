@@ -6,7 +6,7 @@ Usage: aigon <command> [arguments]
 
 Setup:
   init                              Initialize ./docs/specs directory structure
-  install-agent <agents...>         Install agent configs (cc, gg, cx, cu, mv)
+  install-agent <agents...>         Install agent configs (cc, gg, cx, cu)
   update                            Update Aigon files to latest version
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
   config <init|show|models>         Manage config and view model configuration
@@ -109,7 +109,7 @@ Examples:
   aigon feature-now dark-mode          # Fast-track: inbox match or create new + implement
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
   aigon feature-start 55               # Drive mode (creates branch)
-  aigon feature-start 55 cc gg cx cu mv      # Fleet mode (creates worktrees)
+  aigon feature-start 55 cc gg cx cu         # Fleet mode (creates worktrees)
   aigon feature-autonomous-start 42 cc            # Solo autonomous flow (implement -> close)
   aigon feature-autonomous-start 42 cc gg --eval-agent=gg --stop-after=eval
                                                    # Fleet autonomous flow (implement -> eval)
@@ -153,7 +153,7 @@ Examples:
   aigon research-open 05               # Open all Fleet agents side-by-side
   aigon research-do 05                 # Agent conducts research
   aigon research-submit 05 cc          # Signal cc's findings are complete
-  aigon research-autopilot 08 cc gg cx cu mv # Fleet autopilot: spawn + monitor + evaluate
+  aigon research-autopilot 08 cc gg cx cu    # Fleet autopilot: spawn + monitor + evaluate
   aigon research-eval 05               # Evaluate findings (after Fleet)
   aigon research-close 05              # Complete research (in-evaluation → done)
 
@@ -173,7 +173,7 @@ Agents:
   cu (cursor)   - Cursor
   gg (gemini)   - Gemini CLI
   cx (codex)    - OpenAI Codex
-  mv (vibe)     - Mistral Vibe
+
 
 Pro features are currently in development. Commands marked [Pro] will be enabled when Pro launches.
 

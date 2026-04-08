@@ -4,8 +4,8 @@
 // their own rendering logic.
 
 // Display name mapping (moved from pipeline.js for shared access)
-const AGENT_DISPLAY_NAMES = { cc: 'Claude Code', gg: 'Gemini', cx: 'Codex', cu: 'Cursor', mv: 'Mistral Vibe', solo: 'Agent' };
-const AGENT_SHORT_NAMES = { cc: 'CC', gg: 'GG', cx: 'CX', cu: 'CU', mv: 'MV', solo: 'Drive' };
+const AGENT_DISPLAY_NAMES = { cc: 'Claude Code', gg: 'Gemini', cx: 'Codex', cu: 'Cursor', solo: 'Agent' };
+const AGENT_SHORT_NAMES = { cc: 'CC', gg: 'GG', cx: 'CX', cu: 'CU', solo: 'Drive' };
 
 // Maps action + priority to button CSS class
 function validActionBtnClass(action, priority) {
@@ -281,7 +281,7 @@ let autonomousModalRepoPath = null;
 let autonomousModalBtn = null;
 let autonomousModalModels = null;
 
-const AUTONOMOUS_AGENT_IDS = ['cc', 'cx', 'gg', 'mv', 'cu'];
+const AUTONOMOUS_AGENT_IDS = ['cc', 'cx', 'gg', 'cu'];
 
 function showCloseModal(feature, repoPath, pipelineType) {
   closeModalFeature = feature;
