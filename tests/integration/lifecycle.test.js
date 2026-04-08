@@ -54,28 +54,25 @@ const hasAction = (actions, actionName) => actions.validActions.some(a => a.acti
 
 console.log('\nSolo lifecycle: start → submit → close');
 
-testAsync('solo: startFeature creates implementing state', () => withTempRepo(async (repo) => {
+testAsync('solo: start creates implementing state; agent-ready enables close', () => withTempRepo(async (repo) => {
     writeSpec(repo, '01', 'solo-test');
-    const snap = await engine.startFeature(repo, '01', 'solo_branch', ['cc']);
-    assert.strictEqual(snap.lifecycle, 'implementing');
-    assert.strictEqual(snap.mode, 'solo_branch');
-}));
-
-testAsync('solo: agent-ready enables close action', () => withTempRepo(async (repo) => {
-    writeSpec(repo, '01', 'solo-test');
-    await engine.startFeature(repo, '01', 'solo_branch', ['cc']);
+    const snap0 = await engine.startFeature(repo, '01', 'solo_branch', ['cc']);
+    assert.strictEqual(snap0.lifecycle, 'implementing');
+    assert.strictEqual(snap0.mode, 'solo_branch');
     const snap = await engine.signalAgentReady(repo, '01', 'cc');
     const actions = getActions(snap, '01');
     assert.ok(hasAction(actions, 'feature-close'), 'should have close action after agent-ready');
     assert.ok(hasAction(actions, 'feature-pause'), 'should have pause action');
 }));
 
-testAsync('solo: closeFeature transitions to done', () => withTempRepo(async (repo) => {
+testAsync('solo: closeFeature transitions to done with no actions', () => withTempRepo(async (repo) => {
     writeSpec(repo, '01', 'solo-test');
     await engine.startFeature(repo, '01', 'solo_branch', ['cc']);
     await engine.signalAgentReady(repo, '01', 'cc');
     const snap = await engine.closeFeatureWithEffects(repo, '01', async () => {});
     assert.strictEqual(snap.lifecycle, 'done');
+    const actions = getActions(snap, '01');
+    assert.strictEqual(actions.validActions.length, 0, 'done state should have no actions');
 }));
 
 testAsync('solo: registers as canonical "solo" agent and closes cleanly', () => withTempRepo(async (repo) => {
@@ -120,82 +117,53 @@ testAsync('recoverEmptyAgents heals legacy agents:[] features', () => withTempRe
     assert.ok(closable.ok, `should be closable post-recovery: ${closable.reason}`);
 }));
 
-testAsync('solo: done state has no actions', () => withTempRepo(async (repo) => {
-    writeSpec(repo, '01', 'solo-test');
-    await engine.startFeature(repo, '01', 'solo_branch', ['cc']);
-    await engine.signalAgentReady(repo, '01', 'cc');
-    const snap = await engine.closeFeatureWithEffects(repo, '01', async () => {});
-    const actions = getActions(snap, '01');
-    assert.strictEqual(actions.validActions.length, 0, 'done state should have no actions');
-}));
 
 // ─── Fleet lifecycle ─────────────────────────────────────────────────────────
 
 console.log('\nFleet lifecycle: start → submit both → eval → close');
 
-testAsync('fleet: startFeature with two agents', () => withTempRepo(async (repo) => {
+testAsync('fleet: start with two agents; both ready enables eval', () => withTempRepo(async (repo) => {
     writeSpec(repo, '02', 'fleet-test');
-    const snap = await engine.startFeature(repo, '02', 'fleet', ['cc', 'gg']);
-    assert.strictEqual(snap.lifecycle, 'implementing');
-    assert.strictEqual(snap.mode, 'fleet');
-}));
-
-testAsync('fleet: both agents ready enables eval', () => withTempRepo(async (repo) => {
-    writeSpec(repo, '02', 'fleet-test');
-    await engine.startFeature(repo, '02', 'fleet', ['cc', 'gg']);
+    const snap0 = await engine.startFeature(repo, '02', 'fleet', ['cc', 'gg']);
+    assert.strictEqual(snap0.lifecycle, 'implementing');
+    assert.strictEqual(snap0.mode, 'fleet');
     await engine.signalAgentReady(repo, '02', 'cc');
     const snap = await engine.signalAgentReady(repo, '02', 'gg');
     const actions = getActions(snap, '02');
     assert.ok(hasAction(actions, 'feature-eval'), 'should have eval action when all agents ready');
 }));
 
-testAsync('fleet: eval → select winner → close', () => withTempRepo(async (repo) => {
+testAsync('fleet: eval → evaluating shows select-winner actions → close', () => withTempRepo(async (repo) => {
     writeSpec(repo, '02', 'fleet-test');
     await engine.startFeature(repo, '02', 'fleet', ['cc', 'gg']);
     await engine.signalAgentReady(repo, '02', 'cc');
     await engine.signalAgentReady(repo, '02', 'gg');
     const evalSnap = await engine.requestFeatureEval(repo, '02');
     assert.strictEqual(evalSnap.lifecycle, 'evaluating');
+    // Before a winner is selected, fleet eval only offers per-agent select-winner
+    const pickActions = getActions(evalSnap, '02').validActions.filter(a => a.action === 'select-winner');
+    assert.ok(pickActions.length > 0, 'evaluating state should have select-winner actions before a winner is chosen');
     const winnerSnap = await engine.selectWinner(repo, '02', 'cc');
     assert.strictEqual(winnerSnap.winnerAgentId, 'cc');
     const closeSnap = await engine.closeFeatureWithEffects(repo, '02', async () => {});
     assert.strictEqual(closeSnap.lifecycle, 'done');
 }));
 
-testAsync('fleet: evaluating state shows select-winner actions before a winner is chosen', () => withTempRepo(async (repo) => {
-    writeSpec(repo, '02', 'fleet-test');
-    await engine.startFeature(repo, '02', 'fleet', ['cc', 'gg']);
-    await engine.signalAgentReady(repo, '02', 'cc');
-    await engine.signalAgentReady(repo, '02', 'gg');
-    const snap = await engine.requestFeatureEval(repo, '02');
-    const actions = getActions(snap, '02');
-    // Before a winner is selected, fleet eval only offers per-agent select-winner
-    const pickActions = actions.validActions.filter(a => a.action === 'select-winner');
-    assert.ok(pickActions.length > 0, 'evaluating state should have select-winner actions before a winner is chosen');
-}));
-
 // ─── Pause → resume ──────────────────────────────────────────────────────────
 
 console.log('\nPause → resume');
 
-testAsync('pause transitions to paused state', () => withTempRepo(async (repo) => {
+testAsync('pause → resume lifecycle', () => withTempRepo(async (repo) => {
     writeSpec(repo, '03', 'pause-test');
     await engine.startFeature(repo, '03', 'solo_branch', ['cc']);
-    const snap = await engine.pauseFeature(repo, '03');
-    assert.strictEqual(snap.currentSpecState, 'paused');
-    const actions = getActions(snap, '03');
-    assert.ok(hasAction(actions, 'feature-resume'), 'paused state should have resume action');
-    assert.ok(!hasAction(actions, 'feature-pause'), 'paused state should not have pause action');
-}));
-
-testAsync('resume returns to implementing state', () => withTempRepo(async (repo) => {
-    writeSpec(repo, '03', 'pause-test');
-    await engine.startFeature(repo, '03', 'solo_branch', ['cc']);
-    await engine.pauseFeature(repo, '03');
-    const snap = await engine.resumeFeature(repo, '03');
-    assert.strictEqual(snap.currentSpecState, 'implementing');
-    const actions = getActions(snap, '03');
-    assert.ok(hasAction(actions, 'feature-pause'), 'resumed state should have pause action');
+    const pauseSnap = await engine.pauseFeature(repo, '03');
+    assert.strictEqual(pauseSnap.currentSpecState, 'paused');
+    const pauseActions = getActions(pauseSnap, '03');
+    assert.ok(hasAction(pauseActions, 'feature-resume'), 'paused state should have resume action');
+    assert.ok(!hasAction(pauseActions, 'feature-pause'), 'paused state should not have pause action');
+    const resumeSnap = await engine.resumeFeature(repo, '03');
+    assert.strictEqual(resumeSnap.currentSpecState, 'implementing');
+    assert.ok(hasAction(getActions(resumeSnap, '03'), 'feature-pause'), 'resumed state should have pause action');
 }));
 
 // ─── Review flow ─────────────────────────────────────────────────────────────
