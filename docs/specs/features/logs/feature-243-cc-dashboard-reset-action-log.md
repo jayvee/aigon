@@ -60,3 +60,17 @@ Added a **Reset** action to dashboard feature cards that wraps `aigon feature-re
 10. `ls .aigon/state/feature-<id>-*` — no state files
 11. Click **Start** on the backlog card — launches a fresh worktree cleanly
 12. Verify the Reset action is NOT visible on backlog, inbox, or done cards
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-08
+
+### Findings
+- The reset confirmation copy did not warn that branch-local uncommitted work is deleted, which misses the spec's destructive-warning requirement.
+
+### Fixes Applied
+- `b336e1e2` — `fix(review): warn that reset deletes branch-local work`
+
+### Notes
+- Review was limited to targeted correctness checks on the reset action path and confirmation UX. I did not run the full test suite per review instructions.
