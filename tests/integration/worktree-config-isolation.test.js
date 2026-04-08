@@ -24,5 +24,5 @@ assert.ok(/async function resetFeature\s*\(/.test(fs.readFileSync(require('path'
 const rd = (p) => fs.readFileSync(require('path').join(__dirname, '../../', p), 'utf8');
 assert.ok(/engineIsWorktreeBased/.test(featSrc) && /skipping drive branch creation to avoid leaving a stale/.test(featSrc), 'feature-start must guard against stale drive branches');
 assert.ok(/Stale drive-style branch detected/.test(rd('lib/feature-close.js')), 'feature-close must warn when a stale drive branch coexists with a worktree branch');
-assert.ok(/stale-drive-branch/.test(rd('lib/commands/setup.js')), 'doctor must detect stale drive branches');
+assert.ok(/candidate\.tail\.endsWith/.test(rd('lib/commands/setup.js')) && /stale-drive-branch/.test(rd('lib/commands/setup.js')), 'doctor must detect stale drive branches without assuming two-letter slug prefixes are agent ids');
 console.log('  ✓ source-level regression checks (worktree config + feature-create + feature-reset + feature 240 stale drive branch)');
