@@ -215,7 +215,6 @@
       document.getElementById('monitor-summary').style.display = 'none';
       document.getElementById('repo-header').style.display = 'none';
       document.getElementById('settings-view').style.display = 'none';
-      document.getElementById('config-view').style.display = 'none';
       document.getElementById('empty').style.display = 'none';
 
       const data = state.data;
@@ -788,7 +787,6 @@
       document.getElementById('monitor-summary').style.display = 'none';
       document.getElementById('repo-header').style.display = 'none';
       document.getElementById('settings-view').style.display = 'none';
-      document.getElementById('config-view').style.display = 'none';
       document.getElementById('empty').style.display = 'none';
 
       if (!statsState.data) {
