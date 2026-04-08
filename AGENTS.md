@@ -129,6 +129,19 @@ Pro-driven, without revealing the spec contents.
 - **Agent prompts or install content** → `templates/`; run `aigon install-agent cc` after
 - **Workflow state changes** → update command module AND affected templates together
 
+## Resetting / Cancelling A Feature
+**To start a feature over (different agent, fresh slate, abandon work) — there is ONE command:**
+
+```
+aigon feature-reset <ID>
+```
+
+It runs the entire sequence in order: `sessions-close` → remove worktrees → delete branches → clear `.aigon/state/` → move spec back to `02-backlog/` → clear workflow-core engine state → GC dev-proxy entries.
+
+**Do not stitch this together manually** with `feature-cleanup` + `git mv` + `rm -rf .aigon/workflows/...`. That path leaks autonomous tmux sessions and predates `feature-reset`. If you reach for those raw commands, stop and use `feature-reset` instead.
+
+`feature-cleanup <ID>` is a strict subset (worktrees + branches only) — use it to GC Fleet branches after `feature-close`, not to abandon work. `sessions-close <ID>` is also a strict subset; `feature-reset` already calls it internally.
+
 ## Six Rules Before Editing
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
@@ -144,6 +157,7 @@ Pro-driven, without revealing the spec contents.
 - **`.env.local` blocking flow**: treating it as uncommitted changes → blocks `feature-close`
 - **Editing working copies**: changing `.claude/commands/` instead of `templates/` → lost on next sync
 - **Shipping architecture changes without docs**: adding modules, repos, or patterns without updating `AGENTS.md` or `docs/architecture.md` → next agent has no awareness of the change
+- **Manual feature reset**: stitching `feature-cleanup` + `git mv` + `rm -rf .aigon/workflows/...` to start a feature over → use `aigon feature-reset <ID>` instead. It does the full sequence including `sessions-close` (which the manual path always forgets)
 
 ## Reading Order
 1. `AGENTS.md` (this file) — quick orientation
