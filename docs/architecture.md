@@ -103,7 +103,7 @@ Current shared modules:
   `generateCaddyfile`, `reloadCaddy`, `registerDevServer`, `deregisterDevServer`, `reconcileProxyRoutes`, `allocatePort`
 - `lib/dashboard-server.js` (~2,660 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, and action dispatch from engine snapshots
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
-- `lib/worktree.js` (~1,300 lines): worktree creation, permissions, git attribution bootstrap, tmux sessions
+- `lib/worktree.js` (~1,300 lines): worktree creation, permissions, git attribution metadata bootstrap, tmux sessions
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
 - `lib/terminal-adapters.js` (~200 lines): data-driven terminal detection/dispatch — adapter table with `detect(env)`, `launch(cmd, opts)`, `split(configs, opts)` per terminal
   `findAdapter`, `getAdapter`, `tileITerm2Windows`, `closeWarpWindow`
