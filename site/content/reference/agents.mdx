@@ -7,8 +7,8 @@ Aigon supports multiple AI coding agents, with more being added over time. Each 
 
 ## Supported agents
 
-| Code | Agent | Slash prefix | CLI command |
-|------|-------|-------------|-------------|
+| Code | Agent | Aigon command prefix | CLI command |
+|------|-------|----------------------|-------------|
 | `cc` | Claude Code | `/aigon:` | `claude` |
 | `gg` | Gemini CLI | `/aigon:` | `gemini` |
 | `cx` | Codex CLI | `$aigon-` (skill) | `codex` |
@@ -50,6 +50,23 @@ Instead of injecting into user-owned files, Aigon delivers context through each 
 - **Claude Code / Gemini CLI**: A `SessionStart` hook runs `aigon project-context`, which prints doc pointers to stdout. The agent ingests this as conversation context.
 - **Cursor**: `.cursor/rules/aigon.mdc` with `alwaysApply: true`
 - **Codex**: per-skill `description:` fields under `.agents/skills/aigon-*/SKILL.md` — Codex selects skills implicitly or via explicit `$aigon-feature-do <id>` mentions
+
+## Codex example
+
+Inside a Codex session, use the explicit skill form:
+
+```text
+$aigon-feature-create dark-mode
+Add a theme toggle to the site header. Default to system preference and persist the user's choice.
+```
+
+After the feature has an ID, continue with:
+
+```text
+$aigon-feature-do 07
+```
+
+Use `$aigon-next` any time you want Codex to suggest the most likely next Aigon command for the current workflow state.
 
 ## Updating
 

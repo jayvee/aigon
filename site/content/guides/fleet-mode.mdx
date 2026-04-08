@@ -3,7 +3,7 @@ title: Fleet Mode
 description: Orchestrate competing implementations across multiple agents.
 ---
 
-Fleet mode runs multiple agents in parallel on the same feature spec. Each agent works in an isolated Git worktree. You compare the results and merge the winner.
+Fleet mode runs multiple agents in parallel on the same feature spec. Each agent works in an isolated Git worktree. Aigon's CLI sets up and launches the implementer sessions for you, then you compare the results and merge the winner.
 
 ## When to use
 
@@ -70,7 +70,7 @@ Fleet mode runs multiple agents in parallel on the same feature spec. Each agent
 
 ## Full workflow
 
-All commands below work as both CLI (`aigon feature-start ...`) and slash commands (`/aigon:feature-start ...` or `/afs ...`). We show CLI form here — use whichever surface you prefer.
+All commands below work as both CLI (`aigon feature-start ...`) and agent commands (`/aigon:feature-start ...`, `$aigon-feature-start ...`, etc.). We show CLI form here but this workflow can be driven from the dashboard and all agents supported as well.
 
 ### 1. Create and prioritise
 
@@ -91,7 +91,7 @@ aigon feature-start 108 cc gg cx
 This does everything in one step:
 - Creates three isolated worktrees (`../<repo>-worktrees/feature-108-cc-dark-mode`, etc.)
 - Creates a tmux session for each agent (`aigon-f108-cc`, `aigon-f108-gg`, `aigon-f108-cx`)
-- Opens terminal windows and launches each agent with `feature-do`
+- Opens terminal windows and launches each implementer with `feature-do` via the CLI
 - Each agent reads the same spec but builds independently in their own worktree
 
 The agents start implementing immediately. You can monitor progress in the dashboard or attach to any session:
@@ -116,13 +116,21 @@ aigon feature-review 108
 
 ### 4. Evaluate
 
-Back in the main repo:
+Back in the main repo, choose which agent should perform the evaluation. This is an implementation of "LLM as judge". Use `--agent=<id>` when you want the CLI to launch a specific evaluator agent (the default is cc):
 
 ```bash
 aigon feature-eval 108
+aigon feature-eval 108 --agent=gg
 ```
 
-This moves the feature to `04-in-evaluation/` and creates a comparison template. Aigon warns if the evaluator shares a provider family with an implementer (use `--allow-same-model-judge` to suppress).
+Examples:
+
+```text
+/aigon:feature-eval 108
+$aigon-feature-eval 108
+```
+
+This moves the feature to `04-in-evaluation/` and creates a comparison template. Any agent can act as the evaluator; choose the one you want judging the implementations. `aigon feature-eval 108` auto-selects cc as the evaluator, while `aigon feature-eval 108 --agent=gg` forces a specific one. Aigon warns if the evaluator shares a provider family with an implementer (use `--allow-same-model-judge` to suppress).
 
 ### 5. Merge the winner
 

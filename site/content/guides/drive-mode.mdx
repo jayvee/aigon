@@ -10,7 +10,7 @@ This is the default mode — if you run `feature-start` without specifying multi
 **What happens in Drive mode:**
 - You describe a feature in natural language
 - The agent writes a spec with acceptance criteria
-- You start the feature — the agent codes in a branch or worktree
+- You start the feature, then run `feature-do` to begin implementation
 - You review, give feedback, and the agent iterates
 - When you're happy, you close and merge
 
@@ -68,11 +68,20 @@ aigon feature-start 108               # Branch mode
 aigon feature-start 108 cc            # Worktree mode (isolated)
 ```
 
-Creates the workspace, opens a tmux session, and launches the agent. The agent starts implementing immediately — reading the spec, creating tasks from acceptance criteria, and writing code.
+`feature-start` sets up the workspace, but what happens next depends on the style:
+
+- **Branch mode** (`aigon feature-start 108`): creates the branch and moves the spec to in-progress. You must then run `aigon feature-do 108` yourself to start implementation.
+- **Worktree mode** (`aigon feature-start 108 cc`): creates the isolated worktree, opens the agent session, and launches `feature-do` there.
 
 ### 4. Work
 
-The agent implements the feature. You can:
+In branch mode, start implementation explicitly:
+
+```bash
+aigon feature-do 108
+```
+
+Then the agent implements the feature. You can:
 - **Watch** — attach to the tmux session and observe
 - **Guide** — jump in and give feedback, redirect, or refine
 - **Wait** — let the agent work and check back when it signals `submitted`

@@ -6,7 +6,7 @@ description: "Evaluate feature ID - code review or comparison"
 ## Synopsis
 
 ```bash
-aigon feature-eval <ID> [--allow-same-model-judge] [--force]
+aigon feature-eval <ID> [--agent=<id>] [--allow-same-model-judge] [--force]
 ```
 
 ## Shortcuts
@@ -15,6 +15,7 @@ aigon feature-eval <ID> [--allow-same-model-judge] [--force]
 
 ## Flags
 
+- `--agent=<id>`
 - `--allow-same-model-judge`
 - `--force`
 
@@ -22,12 +23,20 @@ aigon feature-eval <ID> [--allow-same-model-judge] [--force]
 
 Evaluate feature \<ID\> - code review or comparison
 
+Run this from the main repo after implementations are submitted. In Fleet mode, the evaluator can be whichever agent you choose to do the judging. Pass `--agent=<id>` to force a specific evaluator instead of letting Aigon auto-select one.
+
 ## Usage
 
 ```bash
 # Slash command (Claude Code / Gemini)
 /aigon:feature-eval <ID>
 
+# Skill command (Codex)
+$aigon-feature-eval <ID>
+
 # CLI
 aigon feature-eval <ID>
+
+# CLI with a specific evaluator
+aigon feature-eval <ID> --agent=gg
 ```
