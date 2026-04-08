@@ -10,6 +10,7 @@
  */
 
 const { expect } = require('@playwright/test');
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -22,6 +23,21 @@ const SOLO_DELAYS = FAST
 
 function readCtx() {
     return JSON.parse(fs.readFileSync(CTX_FILE, 'utf8'));
+}
+
+function ensureFixtureOnMainBranch() {
+    const ctx = readCtx();
+    try {
+        execSync('git checkout main', {
+            cwd: ctx.tmpDir,
+            stdio: 'pipe',
+            encoding: 'utf8',
+            env: process.env,
+        });
+    } catch (_) {
+        // If the fixture is already on main or a prior test left conflicts,
+        // the action response will still surface the real problem.
+    }
 }
 
 function waitForPath(p, timeoutMs = 15000) {
@@ -63,6 +79,7 @@ async function gotoPipelineWithMockedSessions(page) {
 
 /** Click Prioritise on the named inbox card; return the assigned padded ID. */
 async function prioritiseInboxFeature(page, featureName) {
+    ensureFixtureOnMainBranch();
     const inboxCard = page.locator('.kcard').filter({ hasText: featureName }).first();
     await expect(inboxCard).toBeVisible({ timeout: 8000 });
     const btn = inboxCard.locator('.kcard-va-btn[data-va-action="feature-prioritise"]');
