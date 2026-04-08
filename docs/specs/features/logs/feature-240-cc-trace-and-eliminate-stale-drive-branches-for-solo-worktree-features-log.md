@@ -83,3 +83,17 @@ Two-layer guard + detection:
 - Test budget was already at 2062 LOC (over 2000 ceiling) before this
   feature started. Got back under by deleting an orphaned test file
   that was not in the npm test script and compacting local assertions.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-08
+
+### Findings
+- `lib/commands/setup.js`: the new stale-drive doctor check assumed any `feature-<id>-xx-...` branch was worktree-style, so a legitimate drive branch whose slug starts with a two-letter segment such as `ui-refresh` could be misclassified and stale branches could be missed.
+
+### Fixes Applied
+- `fix(review): avoid false negatives in stale drive branch detection`
+
+### Notes
+- Kept the implementation approach intact and only corrected the branch-shape matching logic used by `doctor`.
