@@ -90,3 +90,17 @@ Test suite: 1963 / 2000 LOC (+42 for the new test, well under ceiling).
 4. Scan-failure still blocks: introduce a real finding in the target
    worktree, run `feature-close <id> <agent>`, confirm the close aborts
    with `🔒 feature-close aborted due to security scan failure.`
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-08
+
+### Findings
+- `resolveScanCwd()` still fell back to the caller's `cwd` when a fleet branch resolved but its worktree path was missing, which could reintroduce the original false-positive scan against an unrelated checkout.
+
+### Fixes Applied
+- `452d7539` `fix(review): fail closed when target worktree is missing` — abort `feature-close` with a targeted error instead of scanning the wrong checkout, and extend the regression test to cover the missing-worktree case.
+
+### Notes
+- I only ran syntax checks (`node -c`) for the touched files, consistent with the review workflow's "do not run tests" constraint.
