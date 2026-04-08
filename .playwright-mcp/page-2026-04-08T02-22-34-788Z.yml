@@ -1,0 +1,420 @@
+- generic [active] [ref=e1]:
+  - link "Skip to Content" [ref=e2] [cursor=pointer]:
+    - /url: "#nextra-skip-nav"
+  - banner [ref=e3]:
+    - navigation [ref=e5]:
+      - link "Home page" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]:
+          - img [ref=e8]
+          - text: Aigon
+      - generic [ref=e9]:
+        - link "Docs" [ref=e10] [cursor=pointer]:
+          - /url: /docs
+        - link "Pro" [ref=e11] [cursor=pointer]:
+          - /url: /pro
+      - combobox "Search documentation…" [ref=e14]
+      - link "Project repository" [ref=e15] [cursor=pointer]:
+        - /url: https://github.com/jayvee/aigon
+        - img "Project repository" [ref=e16]
+  - generic [ref=e18]:
+    - complementary [ref=e19]:
+      - list [ref=e22]:
+        - listitem [ref=e23]:
+          - link "Documentation" [ref=e24] [cursor=pointer]:
+            - /url: /docs
+        - listitem [ref=e25]:
+          - link "Getting Started" [ref=e26] [cursor=pointer]:
+            - /url: /docs/getting-started
+        - listitem [ref=e27]:
+          - button "Concepts" [ref=e28] [cursor=pointer]:
+            - text: Concepts
+            - img [ref=e29]
+          - list [ref=e31]:
+            - listitem [ref=e32]:
+              - link "Overview" [ref=e33] [cursor=pointer]:
+                - /url: /docs/concepts
+            - listitem [ref=e34]:
+              - link "Execution Modes" [ref=e35] [cursor=pointer]:
+                - /url: /docs/concepts/execution-modes
+            - listitem [ref=e36]:
+              - link "Evaluation" [ref=e37] [cursor=pointer]:
+                - /url: /docs/concepts/evaluation
+            - listitem [ref=e38]:
+              - link "Reliability & Safety" [ref=e39] [cursor=pointer]:
+                - /url: /docs/concepts/reliability
+        - listitem [ref=e40]:
+          - button "Guides" [ref=e41] [cursor=pointer]:
+            - text: Guides
+            - img [ref=e42]
+          - list [ref=e45]:
+            - listitem [ref=e46]:
+              - link "Guides" [ref=e47] [cursor=pointer]:
+                - /url: /docs/guides
+            - listitem [ref=e48]:
+              - link "Drive Mode" [ref=e49] [cursor=pointer]:
+                - /url: /docs/guides/drive-mode
+            - listitem [ref=e50]:
+              - link "Fleet Mode" [ref=e51] [cursor=pointer]:
+                - /url: /docs/guides/fleet-mode
+            - listitem [ref=e52]:
+              - link "Autonomous Mode" [ref=e53] [cursor=pointer]:
+                - /url: /docs/guides/autopilot-mode
+            - listitem [ref=e54]:
+              - link "Research Workflow" [ref=e55] [cursor=pointer]:
+                - /url: /docs/guides/research-workflow
+            - listitem [ref=e56]:
+              - link "Feedback Workflow" [ref=e57] [cursor=pointer]:
+                - /url: /docs/guides/feedback-workflow
+            - listitem [ref=e58]:
+              - link "Dashboard" [ref=e59] [cursor=pointer]:
+                - /url: /docs/guides/dashboard
+            - listitem [ref=e60]:
+              - link "Telemetry & Analytics" [ref=e61] [cursor=pointer]:
+                - /url: /docs/guides/telemetry
+            - listitem [ref=e62]:
+              - link "Security Scanning" [ref=e63] [cursor=pointer]:
+                - /url: /docs/guides/security-scanning
+            - listitem [ref=e64]:
+              - link "Insights" [ref=e65] [cursor=pointer]:
+                - /url: /docs/guides/amplification
+        - listitem [ref=e66]:
+          - button "Reference" [ref=e67] [cursor=pointer]:
+            - text: Reference
+            - img [ref=e68]
+          - list [ref=e70]:
+            - listitem [ref=e71]:
+              - button "CLI Commands" [ref=e72] [cursor=pointer]:
+                - text: CLI Commands
+                - img [ref=e73]
+              - list [ref=e75]:
+                - listitem [ref=e76]:
+                  - button "Feature Commands" [ref=e77] [cursor=pointer]:
+                    - text: Feature Commands
+                    - img [ref=e78]
+                  - list [ref=e80]:
+                    - listitem [ref=e81]:
+                      - link "feature-create" [ref=e82] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-create
+                    - listitem [ref=e83]:
+                      - link "feature-prioritise" [ref=e84] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-prioritise
+                    - listitem [ref=e85]:
+                      - link "feature-start" [ref=e86] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-start
+                    - listitem [ref=e87]:
+                      - link "feature-now" [ref=e88] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-now
+                    - listitem [ref=e89]:
+                      - link "feature-do" [ref=e90] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-do
+                    - listitem [ref=e91]:
+                      - link "feature-submit" [ref=e92] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-submit
+                    - listitem [ref=e93]:
+                      - link "feature-open" [ref=e94] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-open
+                    - listitem [ref=e95]:
+                      - link "feature-eval" [ref=e96] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-eval
+                    - listitem [ref=e97]:
+                      - link "feature-review" [ref=e98] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-review
+                    - listitem [ref=e99]:
+                      - link "feature-close" [ref=e100] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-close
+                    - listitem [ref=e101]:
+                      - link "feature-cleanup" [ref=e102] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-cleanup
+                    - listitem [ref=e103]:
+                      - link "feature-autonomous-start" [ref=e104] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-autonomous-start
+                    - listitem [ref=e105]:
+                      - link "feature-validate" [ref=e106] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-validate
+                    - listitem [ref=e107]:
+                      - link "feature-reset" [ref=e108] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-reset
+                    - listitem [ref=e109]:
+                      - link "feature-autopilot (removed)" [ref=e110] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feature/feature-autopilot
+                - listitem [ref=e111]:
+                  - button "Research Commands" [ref=e112] [cursor=pointer]:
+                    - text: Research Commands
+                    - img [ref=e113]
+                  - list [ref=e115]:
+                    - listitem [ref=e116]:
+                      - link "research-create" [ref=e117] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-create
+                    - listitem [ref=e118]:
+                      - link "research-prioritise" [ref=e119] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-prioritise
+                    - listitem [ref=e120]:
+                      - link "research-start" [ref=e121] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-start
+                    - listitem [ref=e122]:
+                      - link "research-do" [ref=e123] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-do
+                    - listitem [ref=e124]:
+                      - link "research-submit" [ref=e125] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-submit
+                    - listitem [ref=e126]:
+                      - link "research-open" [ref=e127] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-open
+                    - listitem [ref=e128]:
+                      - link "research-eval" [ref=e129] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-eval
+                    - listitem [ref=e130]:
+                      - link "research-close" [ref=e131] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-close
+                    - listitem [ref=e132]:
+                      - link "research-autopilot" [ref=e133] [cursor=pointer]:
+                        - /url: /docs/reference/commands/research/research-autopilot
+                - listitem [ref=e134]:
+                  - button "Feedback Commands" [ref=e135] [cursor=pointer]:
+                    - text: Feedback Commands
+                    - img [ref=e136]
+                  - list [ref=e138]:
+                    - listitem [ref=e139]:
+                      - link "feedback-create" [ref=e140] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feedback/feedback-create
+                    - listitem [ref=e141]:
+                      - link "feedback-list" [ref=e142] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feedback/feedback-list
+                    - listitem [ref=e143]:
+                      - link "feedback-triage" [ref=e144] [cursor=pointer]:
+                        - /url: /docs/reference/commands/feedback/feedback-triage
+                - listitem [ref=e145]:
+                  - button "Infrastructure" [ref=e146] [cursor=pointer]:
+                    - text: Infrastructure
+                    - img [ref=e147]
+                  - list [ref=e149]:
+                    - listitem [ref=e150]:
+                      - link "board" [ref=e151] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/board
+                    - listitem [ref=e152]:
+                      - link "server" [ref=e153] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/server
+                    - listitem [ref=e154]:
+                      - link "dev-server" [ref=e155] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/dev-server
+                    - listitem [ref=e156]:
+                      - link "deploy" [ref=e157] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/deploy
+                    - listitem [ref=e158]:
+                      - link "insights" [ref=e159] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/insights
+                    - listitem [ref=e160]:
+                      - link "agent-status" [ref=e161] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/agent-status
+                    - listitem [ref=e162]:
+                      - link "sessions-close" [ref=e163] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/sessions-close
+                    - listitem [ref=e164]:
+                      - link "status" [ref=e165] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/status
+                    - listitem [ref=e166]:
+                      - link "help" [ref=e167] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/help
+                    - listitem [ref=e168]:
+                      - link "next" [ref=e169] [cursor=pointer]:
+                        - /url: /docs/reference/commands/infra/next
+            - listitem [ref=e170]:
+              - link "Configuration" [ref=e171] [cursor=pointer]:
+                - /url: /docs/reference/configuration
+            - listitem [ref=e172]:
+              - link "Agents" [ref=e173] [cursor=pointer]:
+                - /url: /docs/reference/agents
+            - listitem [ref=e174]:
+              - link "File Structure" [ref=e175] [cursor=pointer]:
+                - /url: /docs/reference/file-structure
+      - generic [ref=e176]:
+        - button "Light" [ref=e177] [cursor=pointer]:
+          - img [ref=e178]
+          - text: Light
+        - button "Collapse sidebar" [expanded] [ref=e180] [cursor=pointer]:
+          - img [ref=e181]
+    - article [ref=e184]:
+      - generic [ref=e185]:
+        - link "Docs" [ref=e186] [cursor=pointer]:
+          - /url: /docs
+        - img [ref=e187]
+        - link "Guides" [ref=e189] [cursor=pointer]:
+          - /url: /docs/guides
+        - img [ref=e190]
+        - generic "Drive Mode" [ref=e192]
+      - main [ref=e193]:
+        - paragraph [ref=e194]: Drive mode is the most common way to use Aigon. You work with one agent, guiding the implementation step by step. Think of it as pair programming where the agent writes the code while you steer direction, review decisions, and set the pace.
+        - paragraph [ref=e195]:
+          - text: This is the default mode — if you run
+          - code [ref=e196]: feature-start
+          - text: without specifying multiple agents, you’re in Drive mode. It’s the right choice for most features and the best way to learn the Aigon workflow.
+        - paragraph [ref=e197]:
+          - strong [ref=e198]: "What happens in Drive mode:"
+        - list [ref=e199]:
+          - listitem [ref=e200]: You describe a feature in natural language
+          - listitem [ref=e201]: The agent writes a spec with acceptance criteria
+          - listitem [ref=e202]:
+            - text: You start the feature, then run
+            - code [ref=e203]: feature-do
+            - text: to begin implementation
+          - listitem [ref=e204]: You review, give feedback, and the agent iterates
+          - listitem [ref=e205]: When you’re happy, you close and merge
+        - paragraph [ref=e206]: "Every step produces a paper trail: the spec, the implementation log, and the git history. Nothing is lost."
+        - heading "When to use" [level=2] [ref=e207]: "When to use #"
+        - list [ref=e208]:
+          - listitem [ref=e209]:
+            - strong [ref=e210]: Most features
+            - text: — Drive is the default for a reason
+          - listitem [ref=e211]:
+            - strong [ref=e212]: You want control
+            - text: — you guide each step and review before merging
+          - listitem [ref=e213]:
+            - strong [ref=e214]: Learning Aigon
+            - text: — the simplest mode to understand the full lifecycle
+          - listitem [ref=e215]:
+            - strong [ref=e216]: Solo work
+            - text: — one agent, one branch, straightforward
+        - paragraph [ref=e217]:
+          - text: For important features where you want multiple perspectives, use
+          - link "Fleet mode" [ref=e218] [cursor=pointer]:
+            - /url: /docs/guides/fleet-mode
+          - text: instead.
+        - heading "Workspace styles" [level=2] [ref=e219]: "Workspace styles #"
+        - paragraph [ref=e220]: "Drive mode supports two workspace styles:"
+        - table [ref=e221]:
+          - rowgroup [ref=e222]:
+            - row "Style Command Where code lives Best for" [ref=e223]:
+              - columnheader "Style" [ref=e224]
+              - columnheader "Command" [ref=e225]
+              - columnheader "Where code lives" [ref=e226]
+              - columnheader "Best for" [ref=e227]
+          - rowgroup [ref=e228]:
+            - row "Branch aigon feature-start 07 Current repo, new branch Simple features, quick work" [ref=e229]:
+              - cell "Branch" [ref=e230]:
+                - strong [ref=e231]: Branch
+              - cell "aigon feature-start 07" [ref=e232]:
+                - code [ref=e233]: aigon feature-start 07
+              - cell "Current repo, new branch" [ref=e234]
+              - cell "Simple features, quick work" [ref=e235]
+            - row "Worktree aigon feature-start 07 cc Isolated directory at ../<repo>-worktrees/ Parallel features, isolation" [ref=e236]:
+              - cell "Worktree" [ref=e237]:
+                - strong [ref=e238]: Worktree
+              - cell "aigon feature-start 07 cc" [ref=e239]:
+                - code [ref=e240]: aigon feature-start 07 cc
+              - cell "Isolated directory at ../<repo>-worktrees/" [ref=e241]:
+                - text: Isolated directory at
+                - code [ref=e242]: ../<repo>-worktrees/
+              - cell "Parallel features, isolation" [ref=e243]
+        - paragraph [ref=e244]:
+          - text: Use
+          - strong [ref=e245]: branch
+          - text: when you’re working on one thing at a time. Use
+          - strong [ref=e246]: worktree
+          - text: when you want to run multiple features in parallel — each gets its own directory, its own tmux session, and its own agent.
+        - heading "Full workflow" [level=2] [ref=e247]: "Full workflow #"
+        - paragraph [ref=e248]:
+          - text: All commands below work as both CLI (
+          - code [ref=e249]: aigon feature-start ...
+          - text: ) and slash commands (
+          - code [ref=e250]: /aigon:feature-start ...
+          - text: ). We show both forms.
+        - heading "1. Create a feature" [level=3] [ref=e251]: "1. Create a feature #"
+        - code [ref=e254]:
+          - generic [ref=e255]: aigon feature-create dark-mode
+          - generic [ref=e256]: "# or: /aigon:feature-create dark-mode"
+          - generic [ref=e257]: "# Describe what you want:"
+          - generic [ref=e258]: "# Add a dark/light mode toggle to the site header."
+          - generic [ref=e259]: "# Use CSS custom properties. Default to system preference."
+        - paragraph [ref=e260]:
+          - text: This is a conversation — you describe the feature, the agent asks clarifying questions, explores your codebase, and writes a detailed spec with acceptance criteria. The spec lands in
+          - code [ref=e261]: docs/specs/features/01-inbox/
+          - text: .
+        - heading "2. Prioritise" [level=3] [ref=e262]: "2. Prioritise #"
+        - code [ref=e265]:
+          - generic [ref=e266]: "aigon feature-prioritise dark-mode # Assigns ID, e.g. #108"
+        - paragraph [ref=e267]:
+          - text: Moves the spec to
+          - code [ref=e268]: 02-backlog/
+          - text: and assigns a global ID.
+        - heading "3. Start" [level=3] [ref=e269]: "3. Start #"
+        - code [ref=e272]:
+          - generic [ref=e273]: "aigon feature-start 108 # Branch mode"
+          - generic [ref=e274]: "aigon feature-start 108 cc # Worktree mode (isolated)"
+        - paragraph [ref=e275]:
+          - code [ref=e276]: feature-start
+          - text: "sets up the workspace, but what happens next depends on the style:"
+        - list [ref=e277]:
+          - listitem [ref=e278]:
+            - strong [ref=e279]: Branch mode
+            - text: (
+            - code [ref=e280]: aigon feature-start 108
+            - text: "): creates the branch and moves the spec to in-progress. You must then run"
+            - code [ref=e281]: aigon feature-do 108
+            - text: yourself to start implementation.
+          - listitem [ref=e282]:
+            - strong [ref=e283]: Worktree mode
+            - text: (
+            - code [ref=e284]: aigon feature-start 108 cc
+            - text: "): creates the isolated worktree, opens the agent session, and launches"
+            - code [ref=e285]: feature-do
+            - text: there.
+        - heading "4. Work" [level=3] [ref=e286]: "4. Work #"
+        - paragraph [ref=e287]: "In branch mode, start implementation explicitly:"
+        - code [ref=e290]:
+          - generic [ref=e291]: aigon feature-do 108
+        - paragraph [ref=e292]: "Then the agent implements the feature. You can:"
+        - list [ref=e293]:
+          - listitem [ref=e294]:
+            - strong [ref=e295]: Watch
+            - text: — attach to the tmux session and observe
+          - listitem [ref=e296]:
+            - strong [ref=e297]: Guide
+            - text: — jump in and give feedback, redirect, or refine
+          - listitem [ref=e298]:
+            - strong [ref=e299]: Wait
+            - text: — let the agent work and check back when it signals
+            - code [ref=e300]: submitted
+        - heading "5. Review (optional)" [level=3] [ref=e301]: "5. Review (optional) #"
+        - paragraph [ref=e302]: "Open a session with a different agent for a cross-agent code review:"
+        - code [ref=e305]:
+          - generic [ref=e306]: aigon feature-review 108
+        - paragraph [ref=e307]:
+          - text: The reviewing agent reads the spec, reviews
+          - code [ref=e308]: git diff main...HEAD
+          - text: ", and commits targeted fixes with"
+          - code [ref=e309]: "fix(review):"
+          - text: prefix.
+        - heading "6. Close" [level=3] [ref=e310]: "6. Close #"
+        - code [ref=e313]:
+          - generic [ref=e314]: aigon feature-close 108
+        - paragraph [ref=e315]:
+          - text: Merges the branch to main, moves the spec to
+          - code [ref=e316]: 05-done/
+          - text: ", and archives the implementation log. For worktree mode, the agent is auto-detected and the worktree is cleaned up."
+        - heading "Fast-track" [level=2] [ref=e317]: "Fast-track #"
+        - paragraph [ref=e318]: "Skip the full loop when you know exactly what you want:"
+        - code [ref=e321]:
+          - generic [ref=e322]: aigon feature-now dark-mode
+          - generic [ref=e323]: "# Describe the feature..."
+        - paragraph [ref=e324]: Creates the spec, prioritises, sets up the workspace, and starts implementation — all in one command. The agent still writes a full spec, but the lifecycle is compressed.
+      - generic [ref=e325]:
+        - text: Last updated on
+        - time [ref=e326]: April 8, 2026
+      - generic [ref=e327]:
+        - link "Guides" [ref=e328] [cursor=pointer]:
+          - /url: /docs/guides
+          - img [ref=e329]
+          - text: Guides
+        - link "Fleet Mode" [ref=e331] [cursor=pointer]:
+          - /url: /docs/guides/fleet-mode
+          - text: Fleet Mode
+          - img [ref=e332]
+  - generic [ref=e334]:
+    - separator [ref=e335]
+    - contentinfo [ref=e336]:
+      - generic [ref=e337]: Apache 2.0 · 2026 © Sen Labs
+      - generic [ref=e338]:
+        - text: ·
+        - link "senlabs.ai" [ref=e339] [cursor=pointer]:
+          - /url: https://senlabs.ai
