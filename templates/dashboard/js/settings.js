@@ -16,7 +16,8 @@
     const settingsUiState = {
       drafts: {},
       focus: null,
-      renderToken: 0
+      renderToken: 0,
+      navScrollCleanup: null
     };
 
     function settingsDraftKey(scope, key) {
@@ -83,6 +84,7 @@
     }
 
     function makeSettingsShell() {
+      const detailArea = document.getElementById('detail-area');
       const area = document.createElement('div');
       area.className = 'settings-area';
 
@@ -102,7 +104,10 @@
         btn.type = 'button';
         btn.className = 'settings-nav-btn';
         btn.textContent = label;
-        btn.onclick = () => scrollSettingsSection(id);
+        btn.onclick = () => {
+          setActiveSection(id);
+          scrollSettingsSection(id);
+        };
         nav.appendChild(btn);
 
         const section = document.createElement('section');
@@ -131,18 +136,42 @@
         });
       }
 
-      const observer = new IntersectionObserver((entries) => {
-        const visible = entries
-          .filter(entry => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible) setActiveSection(visible.target.dataset.settingsSection);
-      }, { root: document.getElementById('detail-area'), threshold: [0.2, 0.45, 0.7] });
+      function updateActiveSectionFromScroll() {
+        if (!detailArea || sections.length === 0) return;
+        const detailTop = detailArea.getBoundingClientRect().top;
+        const anchorOffset = 120;
+        let active = sections[0];
+
+        sections.forEach(item => {
+          const top = item.section.getBoundingClientRect().top - detailTop;
+          if (top <= anchorOffset) active = item;
+        });
+
+        setActiveSection(active.id);
+      }
+
+      if (typeof settingsUiState.navScrollCleanup === 'function') {
+        settingsUiState.navScrollCleanup();
+        settingsUiState.navScrollCleanup = null;
+      }
+      if (detailArea) {
+        const onScroll = () => updateActiveSectionFromScroll();
+        detailArea.addEventListener('scroll', onScroll, { passive: true });
+        settingsUiState.navScrollCleanup = () => detailArea.removeEventListener('scroll', onScroll);
+      }
 
       layout.appendChild(nav);
       layout.appendChild(content);
       area.appendChild(layout);
 
-      return { area: area, content: content, addSection: addSection, observeSection: (section) => observer.observe(section), setActiveSection: setActiveSection };
+      return {
+        area: area,
+        content: content,
+        addSection: addSection,
+        observeSection: () => {},
+        setActiveSection: setActiveSection,
+        syncActiveSection: updateActiveSectionFromScroll
+      };
     }
 
     function renderSettingsScopeSelector(section) {
@@ -659,6 +688,7 @@
       shell.observeSection(defaultsSection);
 
       shell.setActiveSection('repositories');
+      requestAnimationFrame(() => shell.syncActiveSection());
 
       const scope = getSettingsScope();
       const globalOnly = scope === 'all';
