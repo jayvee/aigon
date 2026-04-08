@@ -149,8 +149,8 @@ Then install the agents you want to use:
 aigon install-agent cc gg          # Claude Code + Gemini CLI
 ```
 
-| Code | Agent | Slash prefix |
-|------|-------|-------------|
+| Code | Agent | Aigon command prefix |
+|------|-------|----------------------|
 | `cc` | Claude Code | `/aigon:` |
 | `gg` | Gemini CLI | `/aigon:` |
 | `cx` | Codex CLI | `$aigon-` (skill mention) |
@@ -162,13 +162,24 @@ Install only the agents you have access to. You can add more later with `aigon i
 
 ## Three ways to interact
 
-| | Slash Commands | CLI | Dashboard |
+| | Agent Commands | CLI | Dashboard |
 |---|---|---|---|
 | **Where** | Inside an agent session | Terminal / shell | Browser UI |
 | **Best for** | Writing specs, implementing features | Orchestration, setup, scripting | Visual overview, monitoring Fleet runs |
-| **Example** | `/aigon:feature-do 07` | `aigon feature-start 07 cc gg` | Click "Start feature" on a kanban card |
+| **Example** | `/aigon:feature-do 07` or `$aigon-feature-do 07` | `aigon feature-start 07 cc gg` | Click "Start feature" on a kanban card |
 
 All three surfaces drive the same underlying workflow. Mix them freely.
+
+### Codex example
+
+In a Codex session, use the `$aigon-...` skill syntax:
+
+```text
+$aigon-feature-create dark-mode
+Add a dark mode toggle to the top-right of the site header.
+Use CSS custom properties for theming. Default to system preference.
+Store the user's choice in localStorage.
+```
 
 ## Your first feature
 
@@ -196,15 +207,18 @@ Add a dark/light mode toggle with system preference detection...
 /aigon:feature-prioritise dark-mode
 # → Assigned ID: 07
 
-# 3. Start — creates workspace, launches agent
+# 3. Start — creates the branch and moves the spec to in-progress
 /aigon:feature-start 07
 
-# 4. Agent implements the spec...
-#    → reads spec, explores codebase, writes code
+# 4. Do the feature — the agent reads the spec and implements it
+/aigon:feature-do 07
+
+# 5. Agent implements the spec...
+#    → explores the codebase, writes code
 #    → commits, writes implementation log
 #    → signals "submitted" when done
 
-# 5. Merge to main
+# 6. Merge to main
 /aigon:feature-close 07
 ```
 
