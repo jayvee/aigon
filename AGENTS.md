@@ -59,7 +59,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/dashboard-server.js` | ~2660 | AIGON server HTTP module: serves dashboard UI, API, WebSocket relay, polling |
 | `lib/dashboard-status-collector.js` | ~830 | Repo/entity read-side assembly for the AIGON server: feature, research, feedback, summary, and compatibility reads |
 | `lib/utils.js` | 1464 | YAML parsers, spec CRUD, hooks, version, analytics |
-| `lib/worktree.js` | 1510 | Worktree creation, tmux sessions, terminal launch, agent git-attribution setup |
+| `lib/worktree.js` | 1510 | Worktree creation, tmux sessions, terminal launch, agent git-attribution metadata setup |
 | `lib/commands/setup.js` | 959 | init, install-agent, check-version, update, doctor |
 | `lib/config.js` | 951 | Global/project config, profiles, agent CLI config |
 | `lib/validation.js` | 1045 | Iterate (Autopilot) loop, acceptance-criteria parsing |
