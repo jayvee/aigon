@@ -7,8 +7,9 @@
     const storedView = localStorage.getItem(lsKey('view')) || 'monitor';
     const initialView = storedView === 'console'
       ? 'logs'
-      : (storedView === 'logs' ? 'all-items' : storedView);
+      : (storedView === 'logs' ? 'all-items' : (storedView === 'config' ? 'settings' : storedView));
 
+    const storedSettingsRepo = localStorage.getItem(lsKey('settingsRepo')) || '';
     const _rawState = {
       data: INITIAL_DATA,
       failures: 0,
@@ -19,7 +20,9 @@
       filter: localStorage.getItem(lsKey('filter')) || 'all',
       view: initialView,
       selectedRepo: localStorage.getItem(lsKey('selectedRepo')) || 'all',
-      settingsRepo: localStorage.getItem(lsKey('settingsRepo')) || '',
+      settingsRepo: storedSettingsRepo,
+      settingsModelRepo: localStorage.getItem(lsKey('settingsModelRepo')) || (storedSettingsRepo !== 'all' ? storedSettingsRepo : ''),
+      settingsDefaultsRepo: localStorage.getItem(lsKey('settingsDefaultsRepo')) || (storedSettingsRepo || ''),
       pipelineType: localStorage.getItem(lsKey('pipelineType')) || 'features',
       monitorType: localStorage.getItem(lsKey('monitorType')) || 'all',
       expandedPipelineColumns: JSON.parse(localStorage.getItem(lsKey('expandedPipelineColumns')) || '{}'),

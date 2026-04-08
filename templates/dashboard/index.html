@@ -33,7 +33,6 @@
       <button class="view-tab" id="tab-logs" data-view="logs">Logs</button>
       <button class="view-tab" id="tab-all-items" data-view="all-items">All Items</button>
       <button class="view-tab" id="tab-settings" data-view="settings">Settings</button>
-      <button class="view-tab" id="tab-config" data-view="config">Config</button>
     </nav>
     <select id="repo-select-mobile" class="repo-select-mobile" aria-label="Select repository"></select>
     <div class="dashboard-body">
@@ -215,9 +214,8 @@
           </template>
         </div>
 
-        <!-- Settings + config views — vanilla JS writes here -->
+        <!-- Settings view — vanilla JS writes here -->
         <div id="settings-view" class="repos" x-ignore style="display:none"></div>
-        <div id="config-view" class="repos" x-ignore style="display:none"></div>
         <div id="empty" class="empty" x-ignore style="display:none"></div>
         <div id="sessions-view" x-ignore style="display:none;padding:0 0 28px"></div>
         <div id="statistics-view" x-ignore style="display:none"></div>

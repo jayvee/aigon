@@ -6,9 +6,11 @@ const assert = require('assert');
 const fs = require('fs');
 const src = fs.readFileSync(require('path').join(__dirname, '../../lib/worktree.js'), 'utf8');
 assert.ok(/config --local extensions\.worktreeConfig true/.test(src), 'must enable extensions.worktreeConfig');
-assert.ok(/config --worktree user\.email/.test(src), 'user.email must use --worktree');
-assert.ok(/config --worktree user\.name/.test(src), 'user.name must use --worktree');
+assert.ok(!/config --worktree user\.(name|email)/.test(src), 'must NEVER set user.name/email in worktrees');
 assert.ok(!/config --local user\.(name|email)/.test(src), 'must NEVER set user.name/email via --local (pollutes main)');
+assert.ok(/config --worktree aigon\.agentId/.test(src), 'agent metadata must still be recorded');
+assert.ok(/config --worktree aigon\.agentName/.test(src), 'agent metadata must still be recorded');
+assert.ok(/config --worktree aigon\.agentEmail/.test(src), 'agent metadata must still be recorded');
 assert.ok(/config --worktree core\.hooksPath/.test(src), 'core.hooksPath must be worktree-scoped');
 // REGRESSION (feature-create): positional description must work, not just --description.
 const featSrc = fs.readFileSync(require('path').join(__dirname, '../../lib/commands/feature.js'), 'utf8');

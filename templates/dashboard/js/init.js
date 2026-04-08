@@ -6,7 +6,6 @@
       document.getElementById('monitor-summary').style.display = 'none';
       document.getElementById('repo-header').style.display = 'none';
       document.getElementById('settings-view').style.display = 'none';
-      document.getElementById('config-view').style.display = 'none';
       document.getElementById('empty').style.display = 'none';
 
       // Gate entire Insights view when Pro is not active
@@ -300,7 +299,6 @@
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('settings-view').style.display = '';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('insights-view').style.display = 'none';
@@ -308,26 +306,10 @@
         document.getElementById('logs-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         renderSettings();
-      } else if (state.view === 'config') {
-        sidebar.style.display = state.sidebarHidden ? 'none' : '';
-        mobileSelect.style.display = '';
-        document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = '';
-        document.getElementById('sessions-view').style.display = 'none';
-        document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('insights-view').style.display = 'none';
-        document.getElementById('all-items-view').style.display = 'none';
-        document.getElementById('logs-view').style.display = 'none';
-        const allRepos = ((state.data || {}).repos || []);
-        renderSidebar(allRepos);
-        const selectedRepoData = state.selectedRepo !== 'all' ? allRepos.find(r => r.path === state.selectedRepo) : null;
-        renderRepoHeader(selectedRepoData);
-        renderConfigView();
       } else if (state.view === 'sessions') {
         sidebar.style.display = state.sidebarHidden ? 'none' : '';
         mobileSelect.style.display = '';
         document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = '';
         document.getElementById('statistics-view').style.display = 'none';
@@ -343,7 +325,6 @@
         sidebar.style.display = state.sidebarHidden ? 'none' : '';
         mobileSelect.style.display = '';
         document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = '';
@@ -358,7 +339,6 @@
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
@@ -371,7 +351,6 @@
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
@@ -384,7 +363,6 @@
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
         document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
@@ -398,7 +376,6 @@
         sidebar.style.display = state.sidebarHidden ? 'none' : '';
         mobileSelect.style.display = '';
         document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
@@ -435,8 +412,23 @@
       return map;
     }
 
+    function listRepoPaths(data) {
+      return ((data && data.repos) || []).map(repo => repo.path);
+    }
+
+    function settingsNeedsRerender(previousData, nextData) {
+      const previousRepos = listRepoPaths(previousData);
+      const nextRepos = listRepoPaths(nextData);
+      if (previousRepos.length !== nextRepos.length) return true;
+      for (let i = 0; i < previousRepos.length; i += 1) {
+        if (previousRepos[i] !== nextRepos[i]) return true;
+      }
+      return false;
+    }
+
     async function poll() {
       const previous = flattenStatuses(state.data || {});
+      const previousData = state.data || {};
       try {
         const res = await fetch('/api/status', { cache: 'no-store' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -452,7 +444,13 @@
           if (prev.status !== 'error' && v.status === 'error') showToast('Agent entered error state', null, null, {error:true});
         });
         state.data = applyForceProOverride(next);
-        render();
+        if (state.view === 'settings') {
+          if (settingsNeedsRerender(previousData, state.data)) renderSettings();
+          document.getElementById('updated-text').textContent = 'Updated ' + relTime((state.data || {}).generatedAt || new Date().toISOString());
+          updateTitleAndFavicon(((state.data || {}).summary || {}).waiting || 0);
+        } else {
+          render();
+        }
         setHealth();
       } catch (e) {
         state.failures += 1;
