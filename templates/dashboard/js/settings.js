@@ -4,15 +4,6 @@
       return (state.data && state.data.repos) ? state.data.repos.map(r => r.path) : [];
     }
 
-    function getSettingsTargetRepo() {
-      const repos = (state.data && state.data.repos) || [];
-      if (repos.length === 0) return '';
-      const validRepoPaths = repos.map(r => r.path);
-      if (state.selectedRepo && state.selectedRepo !== 'all' && validRepoPaths.includes(state.selectedRepo)) return state.selectedRepo;
-      if (state.settingsRepo && validRepoPaths.includes(state.settingsRepo)) return state.settingsRepo;
-      return repos[0].path;
-    }
-
     function getSettingsScope() {
       const repos = (state.data && state.data.repos) || [];
       const validRepoPaths = repos.map(r => r.path);
