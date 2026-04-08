@@ -4,78 +4,78 @@
 
 ## Getting Started
 
-- [Getting Started](https://aigon.build/docs/getting-started): Install Aigon and run your first spec-driven feature loop.
+- [Getting Started](https://www.aigon.build/docs/getting-started): Install Aigon and run your first spec-driven feature loop.
 
 ## Concepts
 
-- [Core Concepts](https://aigon.build/docs/concepts): The three workflows (features, research, feedback) and four execution modes that make up Aigon.
-- [Execution Modes](https://aigon.build/docs/concepts/execution-modes): Drive, Fleet, Autopilot, and Swarm — four modes across two axes of agent count and autonomy.
-- [Feature Evaluation](https://aigon.build/docs/concepts/evaluation): Structured comparison of Fleet implementations with rubrics and scoring.
+- [Core Concepts](https://www.aigon.build/docs/concepts): The three workflows (features, research, feedback) and four execution modes that make up Aigon.
+- [Execution Modes](https://www.aigon.build/docs/concepts/execution-modes): Drive, Fleet, Autopilot, and Swarm — four modes across two axes of agent count and autonomy.
+- [Feature Evaluation](https://www.aigon.build/docs/concepts/evaluation): Structured comparison of Fleet implementations with rubrics and scoring.
 
 ## Guides
 
-- [Drive Mode](https://aigon.build/docs/guides/drive-mode): Hands-on implementation with a single agent — the default way to build features.
-- [Fleet Mode](https://aigon.build/docs/guides/fleet-mode): Orchestrate competing implementations across multiple agents in parallel.
-- [Autopilot Mode](https://aigon.build/docs/guides/autopilot-mode): Autonomous retry loop until validation passes.
-- [Dashboard](https://aigon.build/docs/guides/dashboard): Visual pipeline for monitoring features, agents, and statistics across repos.
-- [Research Workflow](https://aigon.build/docs/guides/research-workflow): Investigate options with one or more agents before committing to a feature approach.
-- [Feedback Workflow](https://aigon.build/docs/guides/feedback-workflow): Capture user input and route it back into your product workflow.
+- [Drive Mode](https://www.aigon.build/docs/guides/drive-mode): Hands-on implementation with a single agent — the default way to build features.
+- [Fleet Mode](https://www.aigon.build/docs/guides/fleet-mode): Orchestrate competing implementations across multiple agents in parallel.
+- [Autopilot Mode](https://www.aigon.build/docs/guides/autopilot-mode): Autonomous retry loop until validation passes.
+- [Dashboard](https://www.aigon.build/docs/guides/dashboard): Visual pipeline for monitoring features, agents, and statistics across repos.
+- [Research Workflow](https://www.aigon.build/docs/guides/research-workflow): Investigate options with one or more agents before committing to a feature approach.
+- [Feedback Workflow](https://www.aigon.build/docs/guides/feedback-workflow): Capture user input and route it back into your product workflow.
 
 ## Reference
 
-- [Agents](https://aigon.build/docs/reference/agents): Supported agents, installation, and how context reaches each one.
-- [Configuration](https://aigon.build/docs/reference/configuration): Configuration files, scopes, profiles, and options.
-- [File Structure](https://aigon.build/docs/reference/file-structure): How Aigon organises features, research, and feedback in your repository.
+- [Agents](https://www.aigon.build/docs/reference/agents): Supported agents, installation, and how context reaches each one.
+- [Configuration](https://www.aigon.build/docs/reference/configuration): Configuration files, scopes, profiles, and options.
+- [File Structure](https://www.aigon.build/docs/reference/file-structure): How Aigon organises features, research, and feedback in your repository.
 
 ### Feature Commands
 
-- [feature-create](https://aigon.build/docs/reference/commands/feature/feature-create): Create a new feature spec.
-- [feature-prioritise](https://aigon.build/docs/reference/commands/feature/feature-prioritise): Move a feature from inbox to backlog.
-- [feature-start](https://aigon.build/docs/reference/commands/feature/feature-start): Start implementation in a worktree with one or more agents.
-- [feature-now](https://aigon.build/docs/reference/commands/feature/feature-now): Create and immediately start a feature in one step.
-- [feature-do](https://aigon.build/docs/reference/commands/feature/feature-do): Send follow-up instructions to a running agent.
-- [feature-open](https://aigon.build/docs/reference/commands/feature/feature-open): Open a worktree terminal session for a feature.
-- [feature-submit](https://aigon.build/docs/reference/commands/feature/feature-submit): Mark an agent's implementation as ready for review.
-- [feature-validate](https://aigon.build/docs/reference/commands/feature/feature-validate): Run validation checks against a feature implementation.
-- [feature-eval](https://aigon.build/docs/reference/commands/feature/feature-eval): Evaluate and compare Fleet implementations.
-- [feature-review](https://aigon.build/docs/reference/commands/feature/feature-review): Review a submitted feature implementation.
-- [feature-close](https://aigon.build/docs/reference/commands/feature/feature-close): Merge the winning implementation and close the feature.
-- [feature-cleanup](https://aigon.build/docs/reference/commands/feature/feature-cleanup): Remove worktrees and branches for a closed feature.
-- [feature-reset](https://aigon.build/docs/reference/commands/feature/feature-reset): Reset a feature back to a previous state.
-- [feature-autopilot](https://aigon.build/docs/reference/commands/feature/feature-autopilot): Run a feature in autonomous retry mode.
+- [feature-create](https://www.aigon.build/docs/reference/commands/feature/feature-create): Create a new feature spec.
+- [feature-prioritise](https://www.aigon.build/docs/reference/commands/feature/feature-prioritise): Move a feature from inbox to backlog.
+- [feature-start](https://www.aigon.build/docs/reference/commands/feature/feature-start): Start implementation in a worktree with one or more agents.
+- [feature-now](https://www.aigon.build/docs/reference/commands/feature/feature-now): Create and immediately start a feature in one step.
+- [feature-do](https://www.aigon.build/docs/reference/commands/feature/feature-do): Send follow-up instructions to a running agent.
+- [feature-open](https://www.aigon.build/docs/reference/commands/feature/feature-open): Open a worktree terminal session for a feature.
+- [feature-submit](https://www.aigon.build/docs/reference/commands/feature/feature-submit): Mark an agent's implementation as ready for review.
+- [feature-validate](https://www.aigon.build/docs/reference/commands/feature/feature-validate): Run validation checks against a feature implementation.
+- [feature-eval](https://www.aigon.build/docs/reference/commands/feature/feature-eval): Evaluate and compare Fleet implementations.
+- [feature-review](https://www.aigon.build/docs/reference/commands/feature/feature-review): Review a submitted feature implementation.
+- [feature-close](https://www.aigon.build/docs/reference/commands/feature/feature-close): Merge the winning implementation and close the feature.
+- [feature-cleanup](https://www.aigon.build/docs/reference/commands/feature/feature-cleanup): Remove worktrees and branches for a closed feature.
+- [feature-reset](https://www.aigon.build/docs/reference/commands/feature/feature-reset): Reset a feature back to a previous state.
+- [feature-autopilot](https://www.aigon.build/docs/reference/commands/feature/feature-autopilot): Run a feature in autonomous retry mode.
 
 ### Research Commands
 
-- [research-create](https://aigon.build/docs/reference/commands/research/research-create): Create a new research topic.
-- [research-prioritise](https://aigon.build/docs/reference/commands/research/research-prioritise): Move a research topic from inbox to backlog.
-- [research-start](https://aigon.build/docs/reference/commands/research/research-start): Start research with one or more agents.
-- [research-open](https://aigon.build/docs/reference/commands/research/research-open): Open a research worktree session.
-- [research-do](https://aigon.build/docs/reference/commands/research/research-do): Send follow-up instructions to a research agent.
-- [research-submit](https://aigon.build/docs/reference/commands/research/research-submit): Mark research findings as ready for evaluation.
-- [research-eval](https://aigon.build/docs/reference/commands/research/research-eval): Evaluate findings from multiple research agents.
-- [research-close](https://aigon.build/docs/reference/commands/research/research-close): Close a completed research topic.
-- [research-autopilot](https://aigon.build/docs/reference/commands/research/research-autopilot): Run research in autonomous mode.
+- [research-create](https://www.aigon.build/docs/reference/commands/research/research-create): Create a new research topic.
+- [research-prioritise](https://www.aigon.build/docs/reference/commands/research/research-prioritise): Move a research topic from inbox to backlog.
+- [research-start](https://www.aigon.build/docs/reference/commands/research/research-start): Start research with one or more agents.
+- [research-open](https://www.aigon.build/docs/reference/commands/research/research-open): Open a research worktree session.
+- [research-do](https://www.aigon.build/docs/reference/commands/research/research-do): Send follow-up instructions to a research agent.
+- [research-submit](https://www.aigon.build/docs/reference/commands/research/research-submit): Mark research findings as ready for evaluation.
+- [research-eval](https://www.aigon.build/docs/reference/commands/research/research-eval): Evaluate findings from multiple research agents.
+- [research-close](https://www.aigon.build/docs/reference/commands/research/research-close): Close a completed research topic.
+- [research-autopilot](https://www.aigon.build/docs/reference/commands/research/research-autopilot): Run research in autonomous mode.
 
 ### Feedback Commands
 
-- [feedback-create](https://aigon.build/docs/reference/commands/feedback/feedback-create): Create a new feedback item.
-- [feedback-list](https://aigon.build/docs/reference/commands/feedback/feedback-list): List feedback items.
-- [feedback-triage](https://aigon.build/docs/reference/commands/feedback/feedback-triage): Triage feedback into actionable items.
+- [feedback-create](https://www.aigon.build/docs/reference/commands/feedback/feedback-create): Create a new feedback item.
+- [feedback-list](https://www.aigon.build/docs/reference/commands/feedback/feedback-list): List feedback items.
+- [feedback-triage](https://www.aigon.build/docs/reference/commands/feedback/feedback-triage): Triage feedback into actionable items.
 
 ### Infrastructure Commands
 
-- [board](https://aigon.build/docs/reference/commands/infra/board): Display the Kanban board in the terminal.
-- [dashboard](https://aigon.build/docs/reference/commands/infra/dashboard): Launch the browser-based dashboard.
-- [status](https://aigon.build/docs/reference/commands/infra/status): Show current project status.
-- [agent-status](https://aigon.build/docs/reference/commands/infra/agent-status): Show status of running agents.
-- [sessions-close](https://aigon.build/docs/reference/commands/infra/sessions-close): Close tmux agent sessions.
-- [conductor](https://aigon.build/docs/reference/commands/infra/conductor): Manage the conductor process.
-- [dev-server](https://aigon.build/docs/reference/commands/infra/dev-server): Manage development servers for worktrees.
-- [deploy](https://aigon.build/docs/reference/commands/infra/deploy): Deploy the project.
-- [insights](https://aigon.build/docs/reference/commands/infra/insights): View workflow insights and analytics.
-- [next](https://aigon.build/docs/reference/commands/infra/next): Show suggested next action.
-- [help](https://aigon.build/docs/reference/commands/infra/help): Show help information.
+- [board](https://www.aigon.build/docs/reference/commands/infra/board): Display the Kanban board in the terminal.
+- [dashboard](https://www.aigon.build/docs/reference/commands/infra/dashboard): Launch the browser-based dashboard.
+- [status](https://www.aigon.build/docs/reference/commands/infra/status): Show current project status.
+- [agent-status](https://www.aigon.build/docs/reference/commands/infra/agent-status): Show status of running agents.
+- [sessions-close](https://www.aigon.build/docs/reference/commands/infra/sessions-close): Close tmux agent sessions.
+- [conductor](https://www.aigon.build/docs/reference/commands/infra/conductor): Manage the conductor process.
+- [dev-server](https://www.aigon.build/docs/reference/commands/infra/dev-server): Manage development servers for worktrees.
+- [deploy](https://www.aigon.build/docs/reference/commands/infra/deploy): Deploy the project.
+- [insights](https://www.aigon.build/docs/reference/commands/infra/insights): View workflow insights and analytics.
+- [next](https://www.aigon.build/docs/reference/commands/infra/next): Show suggested next action.
+- [help](https://www.aigon.build/docs/reference/commands/infra/help): Show help information.
 
 ## Comparisons
 
-- [Comparisons](https://aigon.build/docs/comparisons): How Aigon compares to Cursor, Copilot Workspace, Kiro, and other AI development tools.
+- [Comparisons](https://www.aigon.build/docs/comparisons): How Aigon compares to Cursor, Copilot Workspace, Kiro, and other AI development tools.

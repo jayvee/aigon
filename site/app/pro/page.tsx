@@ -93,7 +93,7 @@ export default function ProPage() {
       <div className="border-b border-aigon-orange/30 bg-aigon-orange/10 px-6 py-3 text-center text-sm text-aigon-orange">
         <strong>Preview.</strong> Aigon Pro is in development and <strong>not yet available for purchase</strong>. This page describes features being built — follow{" "}
         <a
-          href="https://aigon.build"
+          href="https://www.aigon.build"
           className="underline hover:no-underline"
         >
           aigon.build

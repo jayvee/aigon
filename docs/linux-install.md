@@ -1,10 +1,10 @@
 # Aigon on Linux
 
-> **Start here:** Follow the [Getting Started guide](https://aigon.build/docs/getting-started) first — it covers prerequisites, installation, and your first feature loop for all platforms. This page covers Linux-specific details.
+> **Start here:** Follow the [Getting Started guide](https://www.aigon.build/docs/getting-started) first — it covers prerequisites, installation, and your first feature loop for all platforms. This page covers Linux-specific details.
 
 ## Prerequisites
 
-See the [Getting Started guide](https://aigon.build/docs/getting-started#prerequisites) for the full list. In short:
+See the [Getting Started guide](https://www.aigon.build/docs/getting-started#prerequisites) for the full list. In short:
 
 - **Node.js** 18+ (`node -v`)
 - **Git** 2.20+ (`git --version`)

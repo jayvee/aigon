@@ -180,4 +180,4 @@ Agents:
 
 Pro features are currently in development. Commands marked [Pro] will be enabled when Pro launches.
 
-Documentation: https://aigon.build/docs
+Documentation: https://www.aigon.build/docs

@@ -14,14 +14,14 @@
   <a href="https://github.com/jayvee/aigon/actions/workflows/test.yml"><img alt="CI" src="https://github.com/jayvee/aigon/actions/workflows/test.yml/badge.svg"/></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache_2.0-blue.svg"/></a>
   <img alt="Node" src="https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg"/>
-  <a href="https://aigon.build"><img alt="Docs" src="https://img.shields.io/badge/docs-aigon.build-orange.svg"/></a>
+  <a href="https://www.aigon.build"><img alt="Docs" src="https://img.shields.io/badge/docs-aigon.build-orange.svg"/></a>
 </p>
 
 <p align="center">
   <img src="site/public/img/aigon-dashboard-kanban.png" alt="Aigon Dashboard — kanban view" width="880"/>
 </p>
 
-> Aigon is an open source project by [Sen Labs](https://senlabs.ai). Follow [aigon.build](https://aigon.build) for updates.
+> Aigon is an open source project by [Sen Labs](https://senlabs.ai). Follow [aigon.build](https://www.aigon.build) for updates.
 
 ---
 
@@ -54,7 +54,7 @@ Mix and match. Aigon doesn't care which model writes the code — it just manage
 
 ## Quick start
 
-**Prerequisites:** Node.js 18+, Git 2.20+, and tmux (for Fleet/worktree mode). See the [Getting Started guide](https://aigon.build/docs/getting-started) for platform-specific install instructions.
+**Prerequisites:** Node.js 18+, Git 2.20+, and tmux (for Fleet/worktree mode). See the [Getting Started guide](https://www.aigon.build/docs/getting-started) for platform-specific install instructions.
 
 ```bash
 # Install aigon
@@ -102,17 +102,17 @@ Or spin up the web dashboard (`aigon server start`) and click "New Feature" on t
   <img src="site/public/img/aigon-dashboard-02-fleet-evaluation.gif" alt="Aigon Fleet mode — evaluation in progress" width="880"/>
 </p>
 
-The [Aigon dashboard](https://aigon.build/docs/guides/dashboard) shows features across their full lifecycle — inbox → backlog → in-progress → in-evaluation → done — with live agent session status, commit activity, telemetry, and logs. Above: a Fleet-mode feature being evaluated across three agents.
+The [Aigon dashboard](https://www.aigon.build/docs/guides/dashboard) shows features across their full lifecycle — inbox → backlog → in-progress → in-evaluation → done — with live agent session status, commit activity, telemetry, and logs. Above: a Fleet-mode feature being evaluated across three agents.
 
 ## Documentation
 
-Full documentation lives at **[aigon.build/docs](https://aigon.build/docs)**:
+Full documentation lives at **[aigon.build/docs](https://www.aigon.build/docs)**:
 
-- 📘 [Getting Started](https://aigon.build/docs/getting-started) — install and run your first feature
-- 🧭 [Core Concepts](https://aigon.build/docs/concepts) — workflows, execution modes, reliability
-- 🛠 [Guides](https://aigon.build/docs/guides) — Drive, Fleet, Autopilot, Research, Dashboard, Telemetry
-- 📚 [CLI Reference](https://aigon.build/docs/reference/commands) — every command documented
-- 🔍 [Agents](https://aigon.build/docs/reference/agents) — Claude, Gemini, Codex, Cursor setup
+- 📘 [Getting Started](https://www.aigon.build/docs/getting-started) — install and run your first feature
+- 🧭 [Core Concepts](https://www.aigon.build/docs/concepts) — workflows, execution modes, reliability
+- 🛠 [Guides](https://www.aigon.build/docs/guides) — Drive, Fleet, Autopilot, Research, Dashboard, Telemetry
+- 📚 [CLI Reference](https://www.aigon.build/docs/reference/commands) — every command documented
+- 🔍 [Agents](https://www.aigon.build/docs/reference/agents) — Claude, Gemini, Codex, Cursor setup
 
 ## Aigon Pro (coming later)
 
@@ -124,16 +124,16 @@ Aigon Pro is a planned commercial tier that extends the free workflow with three
 
 **Pro is in development and not yet available for purchase.**
 
-The free tier — Drive mode, manual Fleet, the dashboard, interactive evaluation/review, telemetry, and basic reports — is complete and stays free and open source. See the [Pro page](https://aigon.build/pro) for a preview of what's coming.
+The free tier — Drive mode, manual Fleet, the dashboard, interactive evaluation/review, telemetry, and basic reports — is complete and stays free and open source. See the [Pro page](https://www.aigon.build/pro) for a preview of what's coming.
 
 ## Community and support
 
 - 💬 [GitHub Discussions](https://github.com/jayvee/aigon/discussions) — questions, workflows, design ideas
 - 🐛 [Issues](https://github.com/jayvee/aigon/issues) — bugs and concrete feature requests
-- 📖 [Docs](https://aigon.build/docs) — the full manual
+- 📖 [Docs](https://www.aigon.build/docs) — the full manual
 - 🧑‍💻 [Contributing](CONTRIBUTING.md) — how to set up a dev environment and submit PRs
 - 🔒 [Security policy](SECURITY.md) — how to report vulnerabilities privately
-- 📰 [aigon.build](https://aigon.build) — follow here for launch updates, release notes, and Pro announcements
+- 📰 [aigon.build](https://www.aigon.build) — follow here for launch updates, release notes, and Pro announcements
 - 🏢 [Sen Labs](https://senlabs.ai) — the company behind Aigon
 
 ## License
