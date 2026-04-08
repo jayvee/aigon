@@ -10,8 +10,56 @@ const AGENT_SHORT_NAMES = { cc: 'CC', gg: 'GG', cx: 'CX', cu: 'CU', solo: 'Drive
 // Maps action + priority to button CSS class
 function validActionBtnClass(action, priority) {
   if (priority === 'high') return 'btn btn-primary';
-  if (action === 'feature-stop' || action === 'research-stop') return 'btn btn-danger';
+  if (action === 'feature-stop' || action === 'research-stop' || action === 'feature-reset') return 'btn btn-danger';
   return 'btn btn-secondary';
+}
+
+// feature 243: simple one-shot confirmation modal with default focus on Cancel.
+// Used for destructive actions like feature-reset. Resolves true on confirm,
+// false on cancel/escape. Enter fires the currently-focused button; Escape cancels.
+function showDangerConfirm(opts) {
+  return new Promise((resolve) => {
+    const title = (opts && opts.title) || 'Confirm';
+    const message = (opts && opts.message) || 'Are you sure?';
+    const confirmLabel = (opts && opts.confirmLabel) || 'Confirm';
+    const cancelLabel = (opts && opts.cancelLabel) || 'Cancel';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'danger-confirm-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999';
+
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--bg-panel,#1a1d23);border:1px solid rgba(239,68,68,.5);border-radius:8px;padding:20px;max-width:460px;color:var(--text-primary,#eee);box-shadow:0 10px 40px rgba(0,0,0,.5)';
+    box.innerHTML =
+      '<div style="font-size:16px;font-weight:600;margin-bottom:8px;color:#fca5a5">⚠ ' + escHtml(title) + '</div>' +
+      '<div style="font-size:14px;line-height:1.5;margin-bottom:18px;color:var(--text-secondary,#bbb)">' + escHtml(message) + '</div>' +
+      '<div style="display:flex;gap:10px;justify-content:flex-end">' +
+        '<button type="button" class="btn btn-secondary danger-confirm-cancel">' + escHtml(cancelLabel) + '</button>' +
+        '<button type="button" class="btn btn-danger danger-confirm-ok">' + escHtml(confirmLabel) + '</button>' +
+      '</div>';
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    const cancelBtn = box.querySelector('.danger-confirm-cancel');
+    const okBtn = box.querySelector('.danger-confirm-ok');
+
+    function cleanup(result) {
+      document.removeEventListener('keydown', onKey, true);
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result);
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); cleanup(false); }
+      if (e.key === 'Enter') { e.preventDefault(); cleanup(document.activeElement === okBtn); }
+    }
+    cancelBtn.addEventListener('click', () => cleanup(false));
+    okBtn.addEventListener('click', () => cleanup(true));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
+    document.addEventListener('keydown', onKey, true);
+
+    // AC9: default focus on Cancel so a stray Enter cannot destroy work.
+    setTimeout(() => cancelBtn.focus(), 0);
+  });
 }
 
 /**
@@ -137,7 +185,8 @@ function renderActionButtons(feature, repoPath, pipelineType) {
         return '<button class="kcard-overflow-item" data-view-review="' + escHtml(va._reviewSession) + '">' + escHtml(va._reviewLabel) + '</button>';
       }
       const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
-      const cls = (va.action === 'feature-stop' || va.action === 'research-stop') ? 'kcard-overflow-item kcard-va-btn btn-danger' : 'kcard-overflow-item kcard-va-btn';
+      const isDanger = va.action === 'feature-stop' || va.action === 'research-stop' || va.action === 'feature-reset';
+      const cls = isDanger ? 'kcard-overflow-item kcard-va-btn btn-danger' : 'kcard-overflow-item kcard-va-btn';
       return '<button class="' + cls + '" data-va-action="' + escHtml(va.action) + '"' + agentAttr + '>' + escHtml(actionLabel(va)) + '</button>';
     }).join('');
     html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
@@ -255,6 +304,20 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     case 'research-stop':
       await requestAction(va.action, [id, ...(agentId ? [agentId] : [])], repoPath, btn);
       break;
+    case 'feature-reset': {
+      // feature 243: destructive reset — confirm before dispatch.
+      const msg = (va.metadata && va.metadata.confirmationMessage)
+        || 'Kill tmux sessions, remove worktree and branch, clear engine state, and move the spec back to Backlog. This cannot be undone.';
+      const ok = await showDangerConfirm({
+        title: 'Reset feature #' + id + (feature.name ? ' \u2014 ' + feature.name : '') + '?',
+        message: msg,
+        confirmLabel: 'Reset feature',
+        cancelLabel: 'Cancel'
+      });
+      if (!ok) return;
+      await requestAction('feature-reset', [id], repoPath, btn);
+      break;
+    }
     default:
       // Generic handler: agent-mode actions get agent picker + terminal session
       if (va.mode === 'agent') {
