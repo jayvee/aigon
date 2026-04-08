@@ -44,35 +44,15 @@ function withEnv(value, fn) {
 
 console.log('\n── pro-gate (AIGON_FORCE_PRO env override) ──────────────');
 
-test('AIGON_FORCE_PRO=false forces OSS even when @aigon/pro is installed', () => {
-    const pro = reloadPro();
-    withEnv('false', () => assert.strictEqual(pro.isProAvailable(), false));
-});
-
-test('AIGON_FORCE_PRO="0" is treated the same as "false"', () => {
-    const pro = reloadPro();
-    withEnv('0', () => assert.strictEqual(pro.isProAvailable(), false));
-});
-
-test('AIGON_FORCE_PRO="true" passes through when @aigon/pro is installed', () => {
-    const pro = reloadPro();
-    withEnv('true', () => assert.strictEqual(pro.isProAvailable(), true));
-});
-
-test('AIGON_FORCE_PRO="1" passes through when @aigon/pro is installed', () => {
-    const pro = reloadPro();
-    withEnv('1', () => assert.strictEqual(pro.isProAvailable(), true));
-});
-
-test('AIGON_FORCE_PRO unset falls back to package availability', () => {
-    const pro = reloadPro();
-    withEnv(undefined, () => assert.strictEqual(pro.isProAvailable(), true));
-});
-
-test('AIGON_FORCE_PRO="garbage" is treated as no override', () => {
-    const pro = reloadPro();
-    withEnv('garbage', () => assert.strictEqual(pro.isProAvailable(), true));
-});
+for (const [val, expected] of [
+    ['false', false], ['0', false],
+    ['true', true], ['1', true], [undefined, true], ['garbage', true],
+]) {
+    test(`AIGON_FORCE_PRO ${JSON.stringify(val)} → isProAvailable()=${expected}`, () => {
+        const pro = reloadPro();
+        withEnv(val, () => assert.strictEqual(pro.isProAvailable(), expected));
+    });
+}
 
 test('isProAvailable never reads project config (static source check)', () => {
     const src = require('fs').readFileSync(PRO_PATH, 'utf8');
