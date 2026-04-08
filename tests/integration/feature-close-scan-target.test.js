@@ -7,25 +7,26 @@
 const a = require('assert');
 const { mergeFeatureBranch, resolveScanCwd } = require('../../lib/feature-close');
 
-// resolveScanCwd: worktree wins when it exists, falls back to cwd otherwise.
-a.strictEqual(
-    resolveScanCwd({ worktreePath: '/tmp/wt' }, '/repo', () => true),
-    '/tmp/wt',
+// resolveScanCwd: worktree wins when it exists, plain Drive falls back to cwd,
+// and missing fleet worktrees fail closed instead of scanning the wrong branch.
+a.deepStrictEqual(
+    resolveScanCwd({ branchName: 'feature-245-cc-x', worktreePath: '/tmp/wt' }, '/repo', () => true),
+    { cwd: '/tmp/wt' },
     'AC1: worktree-backed close scans the worktree path'
 );
-a.strictEqual(
-    resolveScanCwd({ worktreePath: '/tmp/wt' }, '/repo', () => false),
-    '/repo',
-    'falls back to cwd when worktreePath is missing on disk'
+a.match(
+    resolveScanCwd({ branchName: 'feature-245-cc-x', worktreePath: '/tmp/wt' }, '/repo', () => false).error || '',
+    /Target worktree not found/,
+    'missing fleet worktree fails closed instead of scanning caller cwd'
 );
-a.strictEqual(
+a.deepStrictEqual(
     resolveScanCwd({}, '/repo', () => true),
-    '/repo',
+    { cwd: '/repo' },
     'AC2: plain Drive branch (no worktree) scans current checkout'
 );
-a.strictEqual(
+a.deepStrictEqual(
     resolveScanCwd({ worktreePath: null }, '/repo', () => true),
-    '/repo',
+    { cwd: '/repo' },
     'null worktreePath falls through to cwd'
 );
 
@@ -49,5 +50,20 @@ a.strictEqual(scanCall.stage, 'featureClose', 'scan stage is featureClose');
 a.strictEqual(scanCall.opts.cwd, process.cwd(), 'AC3: scan cwd == target worktreePath');
 a.ok(!result.ok, 'scan failure still aborts the close');
 a.ok(/security scan failure/.test(result.error || ''), 'error mentions scan failure');
+
+const missingWtResult = mergeFeatureBranch({
+    branchName: 'feature-245-cc-x',
+    agentId: 'cc',
+    num: 245,
+    worktreePath: '/tmp/does-not-exist',
+}, {
+    getDefaultBranch: () => 'main',
+    runGit: () => {},
+    runSecurityScan: () => {
+        throw new Error('runSecurityScan should not be called when the target worktree is missing');
+    },
+});
+a.ok(!missingWtResult.ok, 'missing target worktree aborts the close');
+a.match(missingWtResult.error || '', /Target worktree not found/, 'error explains missing worktree');
 
 console.log('ok feature-close-scan-target');
