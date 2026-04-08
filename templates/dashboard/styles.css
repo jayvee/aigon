@@ -324,10 +324,10 @@
     .settings-effective code{display:inline-block;max-width:100%;padding:2px 8px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:6px;color:var(--text-primary);font-size:12px;white-space:pre-wrap;word-break:break-word}
     .settings-json{margin:0;padding:14px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-primary);font:12px/1.5 var(--mono);white-space:pre-wrap;word-break:break-word;overflow:auto}
     /* Agent model cards */
-    .agent-model-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
-    .agent-model-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;overflow:visible}
+    .agent-model-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:10px}
+    .agent-model-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;overflow-x:auto;overflow-y:visible}
     .agent-model-header{padding:10px 14px;font-size:13px;font-weight:600;color:var(--text-primary);border-bottom:1px solid var(--border-subtle);letter-spacing:.01em}
-    .agent-model-table{width:100%;border-collapse:collapse}
+    .agent-model-table{width:100%;min-width:430px;border-collapse:collapse}
     .agent-model-table th{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary);padding:8px 12px 4px;text-align:left}
     .agent-model-table td{padding:6px 12px;vertical-align:middle}
     .agent-model-table tbody tr:not(:last-child) td{border-bottom:1px solid var(--border-subtle)}
@@ -341,6 +341,9 @@
     .settings-input-compact:disabled{color:var(--text-tertiary);cursor:not-allowed;opacity:.65}
     .settings-input-compact:focus{border-color:var(--accent)}
     .settings-help-inline{width:14px;height:14px;font-size:9px;vertical-align:middle;margin-left:2px}
+    @media (max-width: 1260px){
+      .agent-model-grid{grid-template-columns:1fr}
+    }
     @media (max-width: 960px){
       .settings-layout{grid-template-columns:1fr}
       .settings-nav{position:static;grid-auto-flow:column;grid-template-columns:repeat(4,minmax(140px,1fr));overflow-x:auto}

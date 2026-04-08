@@ -412,8 +412,23 @@
       return map;
     }
 
+    function listRepoPaths(data) {
+      return ((data && data.repos) || []).map(repo => repo.path);
+    }
+
+    function settingsNeedsRerender(previousData, nextData) {
+      const previousRepos = listRepoPaths(previousData);
+      const nextRepos = listRepoPaths(nextData);
+      if (previousRepos.length !== nextRepos.length) return true;
+      for (let i = 0; i < previousRepos.length; i += 1) {
+        if (previousRepos[i] !== nextRepos[i]) return true;
+      }
+      return false;
+    }
+
     async function poll() {
       const previous = flattenStatuses(state.data || {});
+      const previousData = state.data || {};
       try {
         const res = await fetch('/api/status', { cache: 'no-store' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -429,7 +444,13 @@
           if (prev.status !== 'error' && v.status === 'error') showToast('Agent entered error state', null, null, {error:true});
         });
         state.data = applyForceProOverride(next);
-        render();
+        if (state.view === 'settings') {
+          if (settingsNeedsRerender(previousData, state.data)) renderSettings();
+          document.getElementById('updated-text').textContent = 'Updated ' + relTime((state.data || {}).generatedAt || new Date().toISOString());
+          updateTitleAndFavicon(((state.data || {}).summary || {}).waiting || 0);
+        } else {
+          render();
+        }
         setHealth();
       } catch (e) {
         state.failures += 1;
