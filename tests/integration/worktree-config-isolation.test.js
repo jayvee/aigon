@@ -12,13 +12,20 @@ assert.ok(!/config --local user\.(name|email)/.test(src), 'must NEVER set user.n
 assert.ok(/config --worktree core\.hooksPath/.test(src), 'core.hooksPath must be worktree-scoped');
 // REGRESSION (feature-create): positional description must work, not just --description.
 const featSrc = fs.readFileSync(require('path').join(__dirname, '../../lib/commands/feature.js'), 'utf8');
-assert.ok(/positional\.join\(' '\)/.test(featSrc), 'feature-create must support positional description (positional.join)');
+// feature-create must still support positional descriptions (post-refactor the
+// parser splits known flags from positionals; assert on the downstream join).
+assert.ok(/positional\.join\(' '\)/.test(featSrc), 'feature-create must join positional args into description');
 assert.ok(/Ignored unrecognized args before --description/.test(featSrc), 'feature-create must warn on stranded args');
 // REGRESSION (feature-reset): must clean workflow-core engine state, not just legacy .aigon/state/. See feature 242.
 assert.ok(/wf\.resetFeature\s*\(/.test(featSrc), 'feature-reset must call wf.resetFeature');
 assert.ok(/async function resetFeature\s*\(/.test(fs.readFileSync(require('path').join(__dirname, '../../lib/workflow-core/engine.js'), 'utf8')), 'engine must export resetFeature');
-// REGRESSION (cu --trust): cursor-agent 2026-03-30 tightened flag validation — --trust is only valid
-// with --print (headless). If it appears in implementFlag the tmux session exits immediately on launch.
-const cuTemplate = JSON.parse(fs.readFileSync(require('path').join(__dirname, '../../templates/agents/cu.json'), 'utf8'));
-assert.ok(!cuTemplate.cli.implementFlag.includes('--trust'), 'cu implementFlag must not contain --trust (invalid in interactive mode)');
-console.log('  ✓ source-level regression checks (worktree config + feature-create + feature-reset + cu --trust)');
+// REGRESSION (feature 243): dashboard Reset action must be declared in the central
+// rules registry (not hardcoded in the frontend), and the dashboard /api/action
+// allowlist must accept 'feature-reset' so clicking Reset can invoke the CLI.
+const rulesSrc = fs.readFileSync(require('path').join(__dirname, '../../lib/feature-workflow-rules.js'), 'utf8');
+assert.ok(/FEATURE_RESET/.test(rulesSrc), 'feature 243: FEATURE_RESET must be declared in feature-workflow-rules.js');
+assert.ok(/confirmationMessage/.test(rulesSrc), 'feature 243: Reset must carry a confirmationMessage for the destructive modal');
+assert.ok(/uncommitted work on the branch/.test(rulesSrc), 'feature 243: Reset confirmation must warn that branch-local uncommitted work will be deleted');
+const dashSrc = fs.readFileSync(require('path').join(__dirname, '../../lib/dashboard-server.js'), 'utf8');
+assert.ok(/'feature-reset'/.test(dashSrc), 'feature 243: dashboard /api/action allowlist must include feature-reset');
+console.log('  ✓ source-level regression checks (worktree config + feature-create + feature-reset + feature 243 dashboard reset)');

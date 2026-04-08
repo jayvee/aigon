@@ -7,11 +7,114 @@
 const AGENT_DISPLAY_NAMES = { cc: 'Claude Code', gg: 'Gemini', cx: 'Codex', cu: 'Cursor', solo: 'Agent' };
 const AGENT_SHORT_NAMES = { cc: 'CC', gg: 'GG', cx: 'CX', cu: 'CU', solo: 'Drive' };
 
+function createEl(tag, options) {
+  const el = document.createElement(tag);
+  const opts = options || {};
+  if (opts.className) el.className = opts.className;
+  if (opts.text != null) el.textContent = String(opts.text);
+  if (opts.attrs) {
+    Object.entries(opts.attrs).forEach(([key, value]) => {
+      if (value != null) el.setAttribute(key, String(value));
+    });
+  }
+  return el;
+}
+
+function buildAgentCheckRow(options) {
+  const opts = options || {};
+  const label = createEl('label', { className: 'agent-check-row' });
+  const input = createEl('input', {
+    attrs: {
+      type: opts.type || 'checkbox',
+      value: opts.value || '',
+      name: opts.name || null,
+      id: opts.id || null
+    }
+  });
+  if (opts.checked) input.checked = true;
+  if (opts.inputClassName) input.className = opts.inputClassName;
+  label.appendChild(input);
+  label.appendChild(createEl('span', { className: 'agent-check-label', text: opts.label || '' }));
+  if (opts.hint) label.appendChild(createEl('span', { className: 'agent-check-hint', text: opts.hint }));
+  if (opts.model) label.appendChild(createEl('span', { className: 'agent-check-model', text: opts.model }));
+  return label;
+}
+
+function replaceNodeChildren(node, children) {
+  node.replaceChildren(...children);
+}
+
+function replaceSelectOptions(select, options) {
+  const opts = (options || []).map(option => {
+    const el = document.createElement('option');
+    el.value = String(option.value || '');
+    el.textContent = String(option.label || '');
+    return el;
+  });
+  replaceNodeChildren(select, opts);
+}
+
 // Maps action + priority to button CSS class
 function validActionBtnClass(action, priority) {
   if (priority === 'high') return 'btn btn-primary';
-  if (action === 'feature-stop' || action === 'research-stop') return 'btn btn-danger';
+  if (action === 'feature-stop' || action === 'research-stop' || action === 'feature-reset') return 'btn btn-danger';
   return 'btn btn-secondary';
+}
+
+// feature 243: simple one-shot confirmation modal with default focus on Cancel.
+// Used for destructive actions like feature-reset. Resolves true on confirm,
+// false on cancel/escape. Enter fires the currently-focused button; Escape cancels.
+function showDangerConfirm(opts) {
+  return new Promise((resolve) => {
+    const title = (opts && opts.title) || 'Confirm';
+    const message = (opts && opts.message) || 'Are you sure?';
+    const confirmLabel = (opts && opts.confirmLabel) || 'Confirm';
+    const cancelLabel = (opts && opts.cancelLabel) || 'Cancel';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'danger-confirm-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999';
+
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--bg-panel,#1a1d23);border:1px solid rgba(239,68,68,.5);border-radius:8px;padding:20px;max-width:460px;color:var(--text-primary,#eee);box-shadow:0 10px 40px rgba(0,0,0,.5)';
+    const titleEl = document.createElement('div');
+    titleEl.style.cssText = 'font-size:16px;font-weight:600;margin-bottom:8px;color:#fca5a5';
+    titleEl.textContent = '⚠ ' + title;
+    const messageEl = document.createElement('div');
+    messageEl.style.cssText = 'font-size:14px;line-height:1.5;margin-bottom:18px;color:var(--text-secondary,#bbb)';
+    messageEl.textContent = message;
+    const actionsEl = document.createElement('div');
+    actionsEl.style.cssText = 'display:flex;gap:10px;justify-content:flex-end';
+    const cancelButton = createEl('button', { className: 'btn btn-secondary danger-confirm-cancel', text: cancelLabel, attrs: { type: 'button' } });
+    const okButton = createEl('button', { className: 'btn btn-danger danger-confirm-ok', text: confirmLabel, attrs: { type: 'button' } });
+    actionsEl.appendChild(cancelButton);
+    actionsEl.appendChild(okButton);
+    box.appendChild(titleEl);
+    box.appendChild(messageEl);
+    box.appendChild(actionsEl);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    const cancelBtn = box.querySelector('.danger-confirm-cancel');
+    const okBtn = box.querySelector('.danger-confirm-ok');
+
+    function cleanup(result) {
+      document.removeEventListener('keydown', onKey, true);
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result);
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); cleanup(false); }
+      if (e.key === 'Enter') { e.preventDefault(); cleanup(document.activeElement === okBtn); }
+    }
+    cancelBtn.addEventListener('click', () => cleanup(false));
+    okBtn.addEventListener('click', () => cleanup(true));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
+    document.addEventListener('keydown', onKey, true);
+
+    // AC9: default focus on Cancel so a stray Enter cannot destroy work.
+    setTimeout(() => cancelBtn.focus(), 0);
+  });
 }
 
 /**
@@ -137,7 +240,8 @@ function renderActionButtons(feature, repoPath, pipelineType) {
         return '<button class="kcard-overflow-item" data-view-review="' + escHtml(va._reviewSession) + '">' + escHtml(va._reviewLabel) + '</button>';
       }
       const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
-      const cls = (va.action === 'feature-stop' || va.action === 'research-stop') ? 'kcard-overflow-item kcard-va-btn btn-danger' : 'kcard-overflow-item kcard-va-btn';
+      const isDanger = va.action === 'feature-stop' || va.action === 'research-stop' || va.action === 'feature-reset';
+      const cls = isDanger ? 'kcard-overflow-item kcard-va-btn btn-danger' : 'kcard-overflow-item kcard-va-btn';
       return '<button class="' + cls + '" data-va-action="' + escHtml(va.action) + '"' + agentAttr + '>' + escHtml(actionLabel(va)) + '</button>';
     }).join('');
     html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
@@ -255,6 +359,20 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     case 'research-stop':
       await requestAction(va.action, [id, ...(agentId ? [agentId] : [])], repoPath, btn);
       break;
+    case 'feature-reset': {
+      // feature 243: destructive reset — confirm before dispatch.
+      const msg = (va.metadata && va.metadata.confirmationMessage)
+        || 'Kill tmux sessions, remove the worktree and branch (including any uncommitted work on the branch), clear engine state, and move the spec back to Backlog. This cannot be undone.';
+      const ok = await showDangerConfirm({
+        title: 'Reset feature #' + id + (feature.name ? ' \u2014 ' + feature.name : '') + '?',
+        message: msg,
+        confirmLabel: 'Reset feature',
+        cancelLabel: 'Cancel'
+      });
+      if (!ok) return;
+      await requestAction('feature-reset', [id], repoPath, btn);
+      break;
+    }
     default:
       // Generic handler: agent-mode actions get agent picker + terminal session
       if (va.mode === 'agent') {
@@ -293,14 +411,18 @@ function showCloseModal(feature, repoPath, pipelineType) {
 
   // Populate winner radio buttons
   const winnerContainer = document.getElementById('close-modal-winners');
-  winnerContainer.innerHTML = agents.map(a => {
+  replaceNodeChildren(winnerContainer, agents.map(a => {
     const displayName = AGENT_DISPLAY_NAMES[a.id] || a.id;
     const statusLabel = a.status || 'idle';
-    const checked = a.id === winnerAgent ? ' checked' : '';
-    return '<label class="agent-check-row"><input type="radio" name="close-winner" value="' + escHtml(a.id) + '"' + checked + '>' +
-      '<span class="agent-check-label">' + escHtml(a.id) + '</span>' +
-      '<span class="agent-check-hint">' + escHtml(displayName) + ' (' + escHtml(statusLabel) + ')</span></label>';
-  }).join('');
+    return buildAgentCheckRow({
+      type: 'radio',
+      name: 'close-winner',
+      value: a.id,
+      checked: a.id === winnerAgent,
+      label: a.id,
+      hint: displayName + ' (' + statusLabel + ')'
+    });
+  }));
 
   // Populate adoption checkboxes (losers = non-winner agents)
   const adoptContainer = document.getElementById('close-modal-adopt');
@@ -332,17 +454,25 @@ function updateAdoptionCheckboxes() {
     return;
   }
 
-  let html = '';
+  const adoptRows = [];
   if (losers.length > 1) {
-    html += '<label class="agent-check-row"><input type="checkbox" value="all" id="close-adopt-all"><span class="agent-check-label">Adopt all</span><span class="agent-check-hint">Merge changes from all losing agents</span></label>';
+    adoptRows.push(buildAgentCheckRow({
+      value: 'all',
+      id: 'close-adopt-all',
+      label: 'Adopt all',
+      hint: 'Merge changes from all losing agents'
+    }));
   }
   losers.forEach(a => {
     const displayName = AGENT_DISPLAY_NAMES[a.id] || a.id;
-    html += '<label class="agent-check-row"><input type="checkbox" value="' + escHtml(a.id) + '" class="close-adopt-agent">' +
-      '<span class="agent-check-label">Adopt from ' + escHtml(a.id) + '</span>' +
-      '<span class="agent-check-hint">' + escHtml(displayName) + '</span></label>';
+    adoptRows.push(buildAgentCheckRow({
+      value: a.id,
+      inputClassName: 'close-adopt-agent',
+      label: 'Adopt from ' + a.id,
+      hint: displayName
+    }));
   });
-  adoptContainer.innerHTML = html;
+  replaceNodeChildren(adoptContainer, adoptRows);
 
   // Wire "adopt all" toggle
   const adoptAll = document.getElementById('close-adopt-all');
@@ -413,16 +543,17 @@ async function showAutonomousModal(feature, repoPath, btn) {
   if (!desc || !checks || !evalSelect || !reviewSelect || !stopAfter || !modal) return;
 
   desc.textContent = '#' + feature.id + ' ' + feature.name;
-  checks.innerHTML = AUTONOMOUS_AGENT_IDS.map(agentId => {
+  replaceNodeChildren(checks, AUTONOMOUS_AGENT_IDS.map(agentId => {
     const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
     const modelName = (autonomousModalModels && autonomousModalModels[agentId] && autonomousModalModels[agentId].implement) || '';
-    return '<label class="agent-check-row">' +
-      '<input type="checkbox" value="' + escHtml(agentId) + '"' + (agentId === 'cc' ? ' checked' : '') + '>' +
-      '<span class="agent-check-label">' + escHtml(agentId) + '</span>' +
-      '<span class="agent-check-hint">' + escHtml(displayName) + '</span>' +
-      (modelName ? '<span class="agent-check-model">' + escHtml(modelName) + '</span>' : '') +
-      '</label>';
-  }).join('');
+    return buildAgentCheckRow({
+      value: agentId,
+      checked: agentId === 'cc',
+      label: agentId,
+      hint: displayName,
+      model: modelName
+    });
+  }));
 
   stopAfter.value = 'close';
   updateAutonomousModeControls();
@@ -444,7 +575,7 @@ function buildAutonomousAgentOptions(taskType, options) {
   const noneLabel = opts.noneLabel || 'none';
   const selectedAgents = Array.isArray(opts.selectedAgents) ? opts.selectedAgents : [];
   const rows = [];
-  if (includeNone) rows.push('<option value="">' + escHtml(noneLabel) + '</option>');
+  if (includeNone) rows.push({ value: '', label: noneLabel });
   AUTONOMOUS_AGENT_IDS.forEach(agentId => {
     const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
     const modelName = (autonomousModalModels && autonomousModalModels[agentId] && autonomousModalModels[agentId][taskType]) || '';
@@ -453,9 +584,9 @@ function buildAutonomousAgentOptions(taskType, options) {
     const label = modelName
       ? (agentId + ' · ' + displayName + ' · ' + modelName + suffix)
       : (agentId + ' · ' + displayName + suffix);
-    rows.push('<option value="' + escHtml(agentId) + '">' + escHtml(label) + '</option>');
+    rows.push({ value: agentId, label });
   });
-  return rows.join('');
+  return rows;
 }
 
 function updateAutonomousEvalOptions() {
@@ -464,7 +595,7 @@ function updateAutonomousEvalOptions() {
   const previousValue = String(evalSelect.value || '').trim();
 
   evalSelect.disabled = false;
-  evalSelect.innerHTML = buildAutonomousAgentOptions('evaluate');
+  replaceSelectOptions(evalSelect, buildAutonomousAgentOptions('evaluate'));
 
   if (previousValue && AUTONOMOUS_AGENT_IDS.includes(previousValue)) {
     evalSelect.value = previousValue;
@@ -478,11 +609,11 @@ function updateAutonomousReviewOptions() {
   const selectedAgents = [...document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]:checked')].map(cb => cb.value);
 
   reviewSelect.disabled = false;
-  reviewSelect.innerHTML = buildAutonomousAgentOptions('review', {
+  replaceSelectOptions(reviewSelect, buildAutonomousAgentOptions('review', {
     includeNone: true,
     noneLabel: 'none',
     selectedAgents
-  });
+  }));
 
   if (previousValue && AUTONOMOUS_AGENT_IDS.includes(previousValue)) {
     reviewSelect.value = previousValue;
@@ -522,9 +653,7 @@ function updateAutonomousModeControls() {
         { value: 'implement', label: 'implement' }
       ];
 
-  stopAfter.innerHTML = stopOptions.map(opt => (
-    '<option value="' + escHtml(opt.value) + '">' + escHtml(opt.label) + '</option>'
-  )).join('');
+  replaceSelectOptions(stopAfter, stopOptions);
   stopAfter.value = stopOptions.some(opt => opt.value === previousStop) ? previousStop : 'close';
 }
 
