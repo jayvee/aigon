@@ -239,7 +239,7 @@ export default function ProPage() {
           </div>
 
           <ScreenshotFrame
-            src="/img/aigon-dashboard-reports-activity.png"
+            src="/img/tokens-per-week.png"
             alt="Aigon Pro cost visibility — token usage by agent and activity type, cost per feature trend"
             caption="Token activity chart — usage broken down by agent and phase (implement, evaluate, review)"
           />
