@@ -50,6 +50,36 @@ Add a `devServerPortOffset` (or `webPort`, `apiPort`) field to each `templates/a
 
 `lib/git.js` regex: build the alternation string from `agentRegistry.getAllAgentIds()` at module load.
 
+## Agent Viability Checklist
+
+Before an agent can be added to `templates/agents/`, it must satisfy the minimum requirements that make Aigon's workflow actually function. Mistral Vibe (`mv`) was added and later removed because it failed several of these. This checklist lives in the spec so it travels with the registry work and is enforced at PR time.
+
+### Hard requirements (agent cannot be added without these)
+
+1. **Headless / non-interactive launch** — the agent CLI must be spawnable from a shell script without a TTY and must accept a prompt string as a flag or argument (e.g. `--prompt`, `-p`, positional). This is how `buildAgentCommand()` in `lib/worktree.js` launches it inside tmux.
+
+2. **Context delivery mechanism** — Aigon must have a way to inject its command prompt into the agent's context before it runs. Acceptable forms:
+   - **SessionStart hook** (like cc/gg): the agent exposes a hook that runs a shell command at session start; `aigon project-context` prints the doc pointers.
+   - **Slash commands / skills** (like cc/gg/cx): the agent discovers and executes aigon's command files (`.claude/commands/`, `.agents/skills/`, etc.).
+   - **Inline prompt injection** (like cx): aigon inlines the full command body into the launch prompt so the agent receives it directly.
+   Without one of these, the agent won't know what feature to work on or follow the workflow.
+
+3. **Exit on completion** — the agent process must exit when it finishes its task. Agents that stay open in an interactive REPL block the shell trap signal that tells Aigon the work is done.
+
+4. **Trust / permissions model** — the agent must have a way to grant Aigon's file paths appropriate access (read/write to spec files, worktree, etc.) without requiring interactive approval mid-session. This is typically configured in the agent's settings or policy file.
+
+### Strong preferences (absence is a yellow flag, not a hard block)
+
+5. **Shell trap signal support** — the agent's process lifecycle should be compatible with bash `trap EXIT` so `agent-status submitted/error` fires reliably when the session ends. Agents with unusual process trees (daemonised subprocesses, wrapper scripts that swallow the exit code) may not fire the trap correctly.
+
+6. **Cost/telemetry visibility** — Aigon parses transcript or session files to record token spend. If the agent produces no parseable cost data, telemetry will be blank. Not a blocker but makes cost tracking blind for that agent.
+
+7. **Bench performance** — mv scored 25–28/40 vs gg's 32–38/40 on identical features. An agent that can't reliably follow a multi-step spec is a poor fit regardless of whether the plumbing works.
+
+### What to put in the agent JSON
+
+The `templates/agents/<id>.json` file should record which of the above capabilities the agent has, using fields already present in the schema (`signals`, `capabilities`, `contextDelivery`). This makes it machine-checkable: `aigon doctor` can warn if a registered agent lacks a required capability field.
+
 ## Dependencies
 - `lib/agent-registry.js` (existing registry)
 - `templates/agents/*.json` (existing per-agent JSON files)
