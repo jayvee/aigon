@@ -148,7 +148,7 @@ tail -50 ~/.aigon/dashboard.log
 | **Monitor** | Live agent status — shows in-progress and in-evaluation items with agent rows, status dots, and action buttons | `renderMonitor()` |
 | **Pipeline** | Kanban board — drag-and-drop cards across columns (inbox → backlog → in-progress → evaluation → done) | `renderPipeline()` |
 | **Sessions** | Tmux session management — list, start, stop, attach to agent sessions | `renderSessions()` |
-| **Console** | Live action log — shows recent CLI actions and their output | `renderConsole()` |
+| **Logs** | Live action log — shows recent CLI actions and their output | `renderLogs()` |
 | **Settings** | Repo registry management, auto-eval toggle, dashboard config | `renderSettings()` |
 
 Both Monitor and Pipeline have a type toggle to filter by: All, Features, Research, Feedback.

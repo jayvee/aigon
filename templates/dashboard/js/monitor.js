@@ -202,12 +202,12 @@
         openFeatureSpec(e, feature) {
           if (e.target.closest('button') || e.target.closest('.btn')) return;
           if (!feature.specPath) return;
-          openDrawer(feature.specPath, (feature.id ? '#' + feature.id + ' ' : '') + feature.name, feature.stage);
+          openDrawer(feature.specPath, feature.name, feature.stage);
         },
         openSpecItem(e, item, prefix) {
           if (e.target.closest('button') || e.target.closest('.btn')) return;
           if (!item.specPath) return;
-          openDrawer(item.specPath, (item.id ? prefix + item.id + ' ' : '') + item.name, 'in-progress');
+          openDrawer(item.specPath, item.name, 'in-progress');
         },
         copyCmd(text) { copyText(text).then(ok => showToast(ok ? 'Copied: ' + text : 'Copy failed')); },
         attachAgent(repoPath, featureId, agentId, tmuxSession) { requestAttach(repoPath, featureId, agentId, tmuxSession); },

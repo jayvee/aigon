@@ -304,8 +304,8 @@
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
-        document.getElementById('console-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         renderSettings();
       } else if (state.view === 'config') {
@@ -316,8 +316,8 @@
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
-        document.getElementById('console-view').style.display = 'none';
         const allRepos = ((state.data || {}).repos || []);
         renderSidebar(allRepos);
         const selectedRepoData = state.selectedRepo !== 'all' ? allRepos.find(r => r.path === state.selectedRepo) : null;
@@ -332,8 +332,8 @@
         document.getElementById('sessions-view').style.display = '';
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
-        document.getElementById('console-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         const allRepos = ((state.data || {}).repos || []);
         renderSidebar(allRepos);
@@ -348,8 +348,8 @@
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = '';
         document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
-        document.getElementById('console-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         const allRepos = ((state.data || {}).repos || []);
         renderSidebar(allRepos);
@@ -363,10 +363,23 @@
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('insights-view').style.display = '';
+        document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
-        document.getElementById('console-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         renderInsights();
+      } else if (state.view === 'all-items') {
+        sidebar.style.display = 'none';
+        mobileSelect.style.display = 'none';
+        document.getElementById('settings-view').style.display = 'none';
+        document.getElementById('config-view').style.display = 'none';
+        document.getElementById('empty').style.display = 'none';
+        document.getElementById('sessions-view').style.display = 'none';
+        document.getElementById('statistics-view').style.display = 'none';
+        document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('all-items-view').style.display = '';
+        document.getElementById('logs-view').style.display = 'none';
+        document.getElementById('repo-header').style.display = 'none';
+        renderAllItemsView();
       } else if (state.view === 'logs') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
@@ -376,23 +389,10 @@
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = '';
-        document.getElementById('console-view').style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
-        renderLogsView();
-      } else if (state.view === 'console') {
-        sidebar.style.display = 'none';
-        mobileSelect.style.display = 'none';
-        document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('config-view').style.display = 'none';
-        document.getElementById('empty').style.display = 'none';
-        document.getElementById('sessions-view').style.display = 'none';
-        document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('insights-view').style.display = 'none';
-        document.getElementById('logs-view').style.display = 'none';
-        document.getElementById('console-view').style.display = '';
-        document.getElementById('repo-header').style.display = 'none';
-        renderConsole();
+        renderLogs();
       } else {
         // monitor or pipeline — Alpine components handle the view content
         sidebar.style.display = state.sidebarHidden ? 'none' : '';
@@ -403,8 +403,8 @@
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
         document.getElementById('insights-view').style.display = 'none';
+        document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
-        document.getElementById('console-view').style.display = 'none';
         // Sidebar + header are shared between monitor and pipeline
         const allRepos = ((state.data || {}).repos || []);
         renderSidebar(allRepos);
