@@ -88,7 +88,7 @@ $aigon-feature-open <ID> cc       # Re-open a specific Fleet agent
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID and choose based on mode:
+End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID and choose based on mode:
 
 - **Drive mode (branch):** `$aigon-feature-close <ID>`
 - **Drive worktree:** `$aigon-feature-close <ID>`

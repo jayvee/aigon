@@ -33,6 +33,6 @@ Next step: Once the topic is complete, run `{{CMD_PREFIX}}research-prioritise {{
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual topic name:
+End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual topic name:
 
 `{{CMD_PREFIX}}research-prioritise <name>`

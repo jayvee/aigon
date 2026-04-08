@@ -150,7 +150,7 @@ Run `aigon board` and display the output. Then suggest:
 
 ## Step 4: Present the suggestion
 
-- Display the suggestion(s) clearly as a ready-to-copy slash command
+- Display the suggestion(s) clearly as a ready-to-copy Aigon agent command
 - If there are multiple plausible actions, show a short numbered list (max 3 options)
 - Always include a one-line explanation of what the command does
 - Do NOT auto-execute the suggested command — always let the user confirm

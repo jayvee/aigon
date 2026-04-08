@@ -173,7 +173,7 @@ For example: `$aigon-feature-close $1 cc` if Claude's implementation wins.
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This influences Claude Code's prompt suggestion (grey text). Use the actual ID:
+End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID:
 
 - **Drive mode:** `$aigon-feature-close <ID>`
 - **Fleet mode:** `$aigon-feature-close <ID> <winning-agent>`
