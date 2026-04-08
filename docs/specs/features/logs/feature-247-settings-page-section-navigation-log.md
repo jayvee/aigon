@@ -22,3 +22,17 @@
 - Used an in-page section rail on desktop instead of more top-level tabs. This keeps the settings area navigable while preserving one settings surface.
 - Reused the current settings APIs and save flows. This feature changes presentation and navigation, not the underlying schema.
 - Switched from the old repo-sidebar dependency in Config to an in-page scope selector so the unified Settings page remains self-contained.
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-04-09
+
+### Findings
+- `getSettingsTargetRepo()` was left in settings.js after being superseded by `getSettingsScope()`. Dead code — never called.
+
+### Fixes Applied
+- `fix(review): remove dead getSettingsTargetRepo (superseded by getSettingsScope)` (72dfe6d0)
+
+### Notes
+- Implementation is solid. All acceptance criteria met: Config tab removed, single Settings surface, four named sections with in-page rail, scope selector replaces the old sidebar, compare layout preserved, localStorage migration for `config` → `settings` view state handled in state.js.
