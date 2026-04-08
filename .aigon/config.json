@@ -4,6 +4,9 @@
     "testing": "skip",
     "planMode": "never"
   },
+  "devProxy": {
+    "basePort": 3010
+  },
   "agents": {
     "cc": {
       "models": {
