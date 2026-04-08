@@ -8,4 +8,5 @@ export default {
   telemetry: "Telemetry & Analytics",
   "security-scanning": "Security Scanning",
   amplification: "Insights",
+  troubleshooting: "Troubleshooting",
 };
