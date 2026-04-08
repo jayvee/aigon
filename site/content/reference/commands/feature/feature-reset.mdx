@@ -1,6 +1,6 @@
 ---
 title: "feature-reset"
-description: "Reset feature ID - remove worktrees, branches, state, and move spec to backlog"
+description: "Fully reset a feature back to a fresh state — sessions, worktrees, branches, state, and spec all in one command"
 ---
 
 ## Synopsis
@@ -11,4 +11,48 @@ aigon feature-reset <ID>
 
 ## Description
 
-Reset feature \<ID\> - remove worktrees, branches, state, and move spec to backlog
+`feature-reset` is the **canonical full-reset path** for a feature. It rolls back everything that was created when the feature was started, leaving the spec in `02-backlog/` ready to be picked up again — by a different agent, or by the same agent for a fresh attempt.
+
+Use this whenever you want to abandon a feature's current attempt and start over.
+
+## What it does
+
+Runs the entire reset sequence in order:
+
+1. **`sessions-close`** — kills agent processes (SIGTERM, then SIGKILL stragglers), tmux sessions, preview dashboard processes, and Warp arena tabs for the feature ID
+2. **Removes worktrees** — including permissions and trust entries
+3. **Deletes feature branches** — both padded (`feature-05-*`) and unpadded (`feature-5-*`) variants
+4. **Clears legacy state files** — `.aigon/state/feature-<id>-*.json`
+5. **Moves the spec back** to `02-backlog/` from wherever it lives (`03-in-progress/`, `04-in-evaluation/`, `05-done/`, `06-paused/`)
+6. **Clears workflow-core engine state** — `.aigon/workflows/features/<id>/` (events, snapshot, stats)
+7. **Garbage-collects dev-proxy entries** — removes stale dev server registrations
+
+## Examples
+
+```bash
+# Start over with a different agent
+aigon feature-reset 44
+aigon feature-start 44 gg
+
+# Abandon a stuck autonomous run
+aigon feature-reset 44
+
+# Reset and re-prioritise
+aigon feature-reset 44
+```
+
+## When to use which command
+
+| Goal | Command |
+|---|---|
+| Start a feature over from scratch | **`feature-reset <ID>`** ← this command |
+| GC Fleet branches after `feature-close` | `feature-cleanup <ID>` |
+| Just kill running agent processes / tmux | `sessions-close <ID>` (already called by `feature-reset`) |
+
+`feature-cleanup` and `sessions-close` are strict subsets of `feature-reset`. If you're trying to abandon work and start over, **always use `feature-reset`** — manually stitching `feature-cleanup` + `git mv` + `rm -rf .aigon/workflows/...` is the most common reset bug because it always forgets `sessions-close`, leaving autonomous loops and tmux sessions running after the "reset".
+
+## Related
+
+- [`feature-cleanup`](./feature-cleanup) — worktrees + branches only
+- [`sessions-close`](../sessions-close) — kill processes/sessions/tabs only
+- [Troubleshooting › Reset a feature back to the start](/guides/troubleshooting#reset-a-feature-back-to-the-start)

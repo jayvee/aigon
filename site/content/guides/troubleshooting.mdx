@@ -1,0 +1,72 @@
+---
+title: Troubleshooting
+description: Recover from common stuck states — reset features, kill runaway sessions, fix port conflicts, and more.
+---
+
+When something goes wrong with a feature mid-flight, the right move is almost always to use a single Aigon command rather than reaching for `git`, `rm -rf`, or `pkill` directly. This page collects the most common recovery scenarios and the canonical command for each.
+
+## Reset a feature back to the start
+
+**You want to:** abandon a feature's current attempt and start over — with a different agent, after a bad merge conflict, after a stuck autonomous run, or just because you changed your mind about the approach.
+
+**Use:**
+
+```bash
+aigon feature-reset <ID>
+```
+
+This runs, in order:
+
+1. `sessions-close` — kills agent processes, tmux sessions, preview dashboards, and Warp arena tabs
+2. Removes worktrees (and their permissions/trust entries)
+3. Deletes feature branches (padded and unpadded variants)
+4. Clears legacy state files (`.aigon/state/feature-<id>-*`)
+5. Moves the spec back to `02-backlog/` from wherever it lives
+6. Clears workflow-core engine state (`.aigon/workflows/features/<id>/`)
+7. Garbage-collects dev-proxy entries
+
+After it completes, the feature is in exactly the state it would be in if you had just run `feature-prioritise` — ready to be picked up fresh by `feature-start <ID> <agent>`.
+
+> **Don't stitch this together manually.** A common anti-pattern is `feature-cleanup <ID>` + `git mv docs/specs/features/03-in-progress/feature-<ID>-* docs/specs/features/02-backlog/` + `rm -rf .aigon/workflows/features/<ID>/`. That sequence always forgets `sessions-close`, which means autonomous runs and tmux sessions linger after the "reset" — and the next `feature-start` will collide with the leftover state. Use `feature-reset`.
+
+See the [`feature-reset` command reference](/docs/reference/commands/feature/feature-reset) for the full step-by-step.
+
+## Kill running agent sessions without resetting
+
+**You want to:** stop the agents currently working on a feature, but keep the worktree, branch, and spec in place so you can resume later.
+
+**Use:**
+
+```bash
+aigon sessions-close <ID>
+```
+
+This kills agent processes (SIGTERM, then SIGKILL stragglers), tmux sessions, preview dashboard processes, and Warp arena tabs — but leaves worktrees, branches, and spec state untouched.
+
+This is what `feature-reset` calls internally as its first step. You should rarely need to invoke it directly — it's mostly useful when you want to pause a Fleet run without losing the in-progress work.
+
+## Clean up Fleet branches after a merge
+
+**You want to:** garbage-collect the losing Fleet branches and worktrees after a `feature-close <ID> <winner>` merged the winning agent's work.
+
+**Use:**
+
+```bash
+aigon feature-cleanup <ID>
+aigon feature-cleanup <ID> --push   # push branches to origin first, then delete locally
+```
+
+`feature-cleanup` only touches worktrees and branches — it does not move the spec, kill sessions, or clear state. It's the right tool for tidying up after a successful close, not for abandoning a feature mid-flight (use `feature-reset` for that).
+
+## Find the right command
+
+If you're not sure which recovery command to use:
+
+| Goal | Command |
+|---|---|
+| Start a feature over from scratch | `feature-reset <ID>` |
+| Pause agents but keep the work | `sessions-close <ID>` |
+| GC Fleet branches after merge | `feature-cleanup <ID>` |
+| Resume an existing in-progress feature | `feature-open <ID>` or `feature-do <ID>` |
+
+When in doubt: `feature-reset` is the safest "make this look like it never started" button.
