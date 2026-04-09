@@ -1,6 +1,6 @@
 # Aigon
 
-> Aigon is a CLI-first, vendor-independent workflow for spec-driven AI development and multi-agent orchestration. It manages research, feature delivery, and feedback loops across Claude Code, Gemini CLI, Codex CLI, and Cursor.
+> Aigon is a spec-driven AI development tool with a Kanban dashboard, a full CLI, and slash commands inside Claude, Gemini, and Codex — one workflow at every level of control.
 
 ## Getting Started
 
