@@ -901,7 +901,7 @@ position of the menu bar</code></pre>
     </footer>
 
     <script>
-      // Hero analogy carousel — GA4: analogy_impression, analogy_click
+      // Hero analogy carousel
       (function () {
         var carousel = document.querySelector(".analogy-carousel");
         if (!carousel || !carousel.querySelectorAll(".analogy-slide").length) return;
@@ -926,12 +926,6 @@ position of the menu bar</code></pre>
           resumeAt = Date.now() + IDLE_MS;
         }
 
-        function gtagEvent(name, params) {
-          if (typeof window.gtag === "function") {
-            window.gtag("event", name, params);
-          }
-        }
-
         function setAria(index) {
           slides.forEach(function (slide, i) {
             var on = i === index;
@@ -946,30 +940,15 @@ position of the menu bar</code></pre>
           });
         }
 
-        function impression(index, trigger) {
-          var slide = slides[index];
-          if (!slide) return;
-          var name = slide.getAttribute("data-analogy") || "";
-          gtagEvent("analogy_impression", {
-            analogy_name: name,
-            trigger: trigger,
-            start_position: startPosition
-          });
-        }
-
         function goTo(index, trigger) {
           index = ((index % n) + n) % n;
           if (index === current) return;
           current = index;
           setAria(current);
-          impression(current, trigger);
         }
 
         function emitNavigate(destIndex, direction) {
           destIndex = ((destIndex % n) + n) % n;
-          var slide = slides[destIndex];
-          var an = slide ? slide.getAttribute("data-analogy") : "";
-          gtagEvent("analogy_click", { analogy_name: an, direction: direction });
           bumpIdle();
           goTo(destIndex, "manual");
         }
@@ -983,7 +962,6 @@ position of the menu bar</code></pre>
         dots.forEach(function (d) { d.classList.remove("is-active"); });
         current = startPosition;
         setAria(current);
-        impression(current, "auto");
         carousel.classList.add("is-ready");
 
         window.setInterval(tickAuto, AUTO_MS);
@@ -1285,6 +1263,12 @@ position of the menu bar</code></pre>
         revealItems.forEach((item) => item.classList.add("is-visible"));
       }
     </script>
+    <!-- Vercel Web Analytics — anonymous pageviews, no cookies, no banner needed.
+         Loaded at platform level when @vercel/analytics is detected in the project. -->
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
     <div class="hero-lightbox" id="fleet-lightbox" role="dialog" aria-label="Dashboard animation enlarged" aria-hidden="true">
       <button class="hero-lightbox-close" id="fleet-lightbox-close" aria-label="Close">&times;</button>
       <img src="" alt="" class="hero-lightbox-img" id="fleet-lightbox-img">
