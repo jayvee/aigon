@@ -37,6 +37,22 @@ export const metadata: Metadata = {
       "Aigon is an open-source, spec-driven orchestration system for AI coding agents — run them head-to-head on the same feature, then score their work so you can ship with confidence.",
     type: "website",
     url: "https://www.aigon.build",
+    siteName: "Aigon",
+    images: [
+      {
+        url: "/img/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Aigon — run AI coding agents head-to-head, ship the best one",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Aigon | Open-Source AI Agent Orchestration",
+    description:
+      "Open-source orchestration for Claude, Gemini, Cursor, and Codex — run them head-to-head and ship the best implementation.",
+    images: ["/img/og-image.png"],
   },
   icons: {
     icon: [
