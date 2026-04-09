@@ -378,6 +378,32 @@ a {
   }
 }
 
+.hero-preview {
+  margin: 1.75rem 0 0;
+  max-width: 960px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow:
+    0 6px 28px rgba(0, 0, 0, 0.09),
+    0 1px 4px rgba(0, 0, 0, 0.04);
+  cursor: zoom-in;
+  transition: box-shadow 200ms ease-out, transform 200ms ease-out;
+}
+
+.hero-preview:hover {
+  box-shadow:
+    0 10px 36px rgba(0, 0, 0, 0.14),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.hero-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .hero-actions {
   margin-top: 1.55rem;
   display: flex;

@@ -105,6 +105,16 @@
                 <button type="button" class="analogy-arrow analogy-next" aria-label="Next analogy">&#8250;</button>
               </div>
             </div>
+            <div class="hero-preview">
+              <img
+                src="img/aigon-dashboard-kanban.png?v=1"
+                alt="Aigon Dashboard Kanban board — feature cards across inbox, backlog, in-progress, evaluation, and done columns"
+                width="2472"
+                height="1300"
+                loading="eager"
+                decoding="async"
+              >
+            </div>
             <div class="hero-actions">
               <a href="#docs" class="button">Start in 5 minutes</a>
               <a href="#workflow" class="button button-ghost">How it works</a>
@@ -125,27 +135,23 @@
               <div class="fleet-demo-step">
                 <p class="fleet-demo-label">1. Fleet started — agents implementing in parallel</p>
                 <div class="fleet-demo-frame">
-                  <img class="gif-lazy" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/aigon-dashboard-01-fleet-start.gif" alt="Fleet started — Codex and Gemini implementing in parallel" width="1200" height="632">
+                  <img class="gif-lazy" src="img/aigon-dashboard-01-fleet-start-poster.png" data-src="img/aigon-dashboard-01-fleet-start.gif" alt="Fleet started — Codex and Gemini implementing in parallel" width="1200" height="632">
                 </div>
               </div>
               <div class="fleet-demo-step">
                 <p class="fleet-demo-label">2. Both submitted — Codex evaluating</p>
                 <div class="fleet-demo-frame">
-                  <img class="gif-lazy" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/aigon-dashboard-02-fleet-evaluation.gif" alt="Claude Code evaluating the implementations" width="1200" height="641">
+                  <img class="gif-lazy" src="img/aigon-dashboard-02-fleet-evaluation-poster.png" data-src="img/aigon-dashboard-02-fleet-evaluation.gif" alt="Claude Code evaluating the implementations" width="1200" height="641">
                 </div>
               </div>
               <div class="fleet-demo-step">
                 <p class="fleet-demo-label">3. Evaluation complete — winner, Claude Code merged, with the best from Cursor implementation</p>
                 <div class="fleet-demo-frame">
-                  <img class="gif-lazy" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/aigon-dashboard-03-fleet-submitted.gif" alt="Evaluation complete — winner selected and merged" width="1200" height="631">
+                  <img class="gif-lazy" src="img/aigon-dashboard-03-fleet-submitted-poster.png" data-src="img/aigon-dashboard-03-fleet-submitted.gif" alt="Evaluation complete — winner selected and merged" width="1200" height="631">
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="hero-lightbox" id="fleet-lightbox" role="dialog" aria-label="Dashboard animation enlarged" aria-hidden="true">
-          <button class="hero-lightbox-close" id="fleet-lightbox-close" aria-label="Close">&times;</button>
-          <img src="" alt="" class="hero-lightbox-img" id="fleet-lightbox-img">
         </div>
       </section>
 
@@ -1282,6 +1288,10 @@ position of the menu bar</code></pre>
         revealItems.forEach((item) => item.classList.add("is-visible"));
       }
     </script>
+    <div class="hero-lightbox" id="fleet-lightbox" role="dialog" aria-label="Dashboard animation enlarged" aria-hidden="true">
+      <button class="hero-lightbox-close" id="fleet-lightbox-close" aria-label="Close">&times;</button>
+      <img src="" alt="" class="hero-lightbox-img" id="fleet-lightbox-img">
+    </div>
     <script>
       // Fleet GIF lightbox — click any frame to zoom
       (function () {
@@ -1305,7 +1315,7 @@ position of the menu bar</code></pre>
           if (lastTrigger) { lastTrigger.focus(); lastTrigger = null; }
         }
 
-        document.querySelectorAll(".fleet-demo-frame").forEach(function (frame) {
+        document.querySelectorAll(".fleet-demo-frame, .hero-preview").forEach(function (frame) {
           frame.setAttribute("role", "button");
           frame.setAttribute("tabindex", "0");
           var img = frame.querySelector("img");
