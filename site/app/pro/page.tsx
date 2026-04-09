@@ -12,6 +12,22 @@ export const metadata: Metadata = {
       "Agent quality metrics, trend charts, and AI-powered coaching for AI-assisted development.",
     type: "website",
     url: "https://www.aigon.build/pro",
+    siteName: "Aigon",
+    images: [
+      {
+        url: "/img/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Aigon Pro — agent quality metrics, trend charts, AI-powered coaching",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Aigon Pro — Deeper Insights Into Your AI Development Workflow",
+    description:
+      "Agent quality metrics, trend charts, and AI-powered coaching for AI-assisted development.",
+    images: ["/img/og-image.png"],
   },
 };
 

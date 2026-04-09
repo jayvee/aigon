@@ -1,0 +1,69 @@
+---
+title: CLI Commands
+description: Complete reference for every Aigon CLI command, organised by workflow.
+---
+
+Aigon's CLI commands are grouped into four families. Every command has both a long form (`aigon feature-create`) and a slash-command form for use inside an agent session (`/aigon:feature-create`).
+
+## Feature commands
+
+The core delivery workflow — moving a feature from idea to merged code.
+
+- [`feature-create`](/docs/reference/commands/feature/feature-create) — Create a new feature spec in the inbox
+- [`feature-prioritise`](/docs/reference/commands/feature/feature-prioritise) — Assign an ID and move to the backlog
+- [`feature-start`](/docs/reference/commands/feature/feature-start) — Create workspace and begin implementation
+- [`feature-do`](/docs/reference/commands/feature/feature-do) — Implement a feature (Drive or Fleet mode)
+- [`feature-open`](/docs/reference/commands/feature/feature-open) — Open the feature worktree and start an agent
+- [`feature-submit`](/docs/reference/commands/feature/feature-submit) — Submit an implementation for review
+- [`feature-review`](/docs/reference/commands/feature/feature-review) — Code-review a feature with a different agent
+- [`feature-eval`](/docs/reference/commands/feature/feature-eval) — Evaluate or compare implementations
+- [`feature-close`](/docs/reference/commands/feature/feature-close) — Merge the winner and finish the feature
+- [`feature-cleanup`](/docs/reference/commands/feature/feature-cleanup) — Garbage-collect worktrees and branches
+- [`feature-reset`](/docs/reference/commands/feature/feature-reset) — Full reset: kill sessions, drop worktrees, return spec to backlog
+- [`feature-now`](/docs/reference/commands/feature/feature-now) — Fast-track: create + prioritise + start in one step
+- [`feature-autopilot`](/docs/reference/commands/feature/feature-autopilot) — Autopilot loop: implement → review → fix → close
+- [`feature-autonomous-start`](/docs/reference/commands/feature/feature-autonomous-start) — Background AutoConductor session
+- [`feature-validate`](/docs/reference/commands/feature/feature-validate) — Run a feature's validation commands
+
+## Research commands
+
+Front-load investigation before you commit to building.
+
+- [`research-create`](/docs/reference/commands/research/research-create) — Create a new research topic
+- [`research-prioritise`](/docs/reference/commands/research/research-prioritise) — Assign an ID and move to the backlog
+- [`research-start`](/docs/reference/commands/research/research-start) — Create workspace and begin research
+- [`research-do`](/docs/reference/commands/research/research-do) — Have an agent investigate and write findings
+- [`research-open`](/docs/reference/commands/research/research-open) — Open Fleet research agents side-by-side
+- [`research-submit`](/docs/reference/commands/research/research-submit) — Signal that findings are complete
+- [`research-eval`](/docs/reference/commands/research/research-eval) — Synthesize findings and recommend features
+- [`research-autopilot`](/docs/reference/commands/research/research-autopilot) — Fleet research + spawn + monitor + evaluate
+- [`research-close`](/docs/reference/commands/research/research-close) — Move finished research to done
+
+## Feedback commands
+
+Capture and triage incoming feedback before it becomes a feature.
+
+- [`feedback-create`](/docs/reference/commands/feedback/feedback-create) — Create a new feedback item
+- [`feedback-list`](/docs/reference/commands/feedback/feedback-list) — List feedback items with filters
+- [`feedback-triage`](/docs/reference/commands/feedback/feedback-triage) — AI-assisted triage with recommendations
+
+## Infrastructure commands
+
+The dashboard, server, and supporting tooling that runs around your features.
+
+- [`board`](/docs/reference/commands/infra/board) — Show the Kanban board (or list view)
+- [`server`](/docs/reference/commands/infra/server) — Manage the Aigon dashboard server
+- [`dev-server`](/docs/reference/commands/infra/dev-server) — Manage app dev servers (start, stop, logs)
+- [`status`](/docs/reference/commands/infra/status) — Show repo status across all workflows
+- [`agent-status`](/docs/reference/commands/infra/agent-status) — Per-agent status signals (used by hooks)
+- [`sessions-close`](/docs/reference/commands/infra/sessions-close) — Kill all agent sessions for an ID
+- [`next`](/docs/reference/commands/infra/next) — Suggest the most likely next workflow action
+- [`insights`](/docs/reference/commands/infra/insights) — Pro analytics: cost, quality, trends
+- [`deploy`](/docs/reference/commands/infra/deploy) — Deploy a feature preview
+- [`help`](/docs/reference/commands/infra/help) — Show available commands
+
+## Conventions
+
+- **Slash form** — every workflow command is also a slash command inside Claude Code, Gemini, Codex, and Cursor: `/aigon:feature-create`, `/aigon:research-start`, etc.
+- **Shortcuts** — common commands have two-letter aliases (`afc` for `feature-create`, `ars` for `research-start`, `ab` for `board`). See each command page for its shortcut.
+- **IDs vs names** — most commands accept either the numeric feature ID (`42`) or the feature slug (`dark-mode`). Aigon resolves whichever you give it.
