@@ -1,7 +1,7 @@
 # Aigon Dashboard Demo Guide
 
 Sample features and step-by-step flows for demos and screen recordings.
-Uses the brewboard fixture repo (`~/src/brewboard`).
+Uses the brewboard fixture repo (created by `node test/setup-fixture.js` in `$HOME/src/`).
 
 **Before each demo:** reseed fixtures with `node test/setup-fixture.js`
 
@@ -74,7 +74,7 @@ A small, visually obvious feature for demonstrating the full lifecycle.
 ## Flow 3: Drive Branch Mode (CLI-only, no worktree)
 
 ```
-1. cd ~/src/brewboard
+1. cd <path-to-brewboard>
 
 2. aigon feature-start 01
    → Creates branch feature-01-dark-mode (no worktree)
