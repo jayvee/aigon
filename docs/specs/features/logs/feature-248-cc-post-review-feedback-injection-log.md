@@ -22,3 +22,18 @@ Two-part feature:
 - 60-minute timeout (120 polls at 30s) matches existing review timeout
 - No new modules or exports — all changes contained in the `__run-loop` scope
 - Pro-gate test failures are pre-existing worktree issue (`@aigon/pro` not npm-linked in worktree)
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-10
+
+### Findings
+- The injected feedback prompt hardcoded Claude slash commands, so solo autonomous runs with `cx` or `cu` would tell the implementing agent to run the wrong command form.
+- The canonical `feature-review-check` template intro still said "challenge" after Step 4 was changed to the new revert flow.
+
+### Fixes Applied
+- `5c96704d` — `fix(review): use agent-specific review prompt commands`
+
+### Notes
+- Review scope stayed narrow: no architecture changes, no tests run.
