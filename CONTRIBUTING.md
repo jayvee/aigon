@@ -5,9 +5,9 @@ Thanks for your interest in contributing to Aigon — a spec-driven CLI for orch
 ## Quick start
 
 ```bash
-# Clone and link
-git clone https://github.com/jayvee/aigon.git ~/src/aigon
-cd ~/src/aigon
+# Clone and link (install anywhere you keep source code)
+git clone https://github.com/jayvee/aigon.git
+cd aigon
 npm install
 npm link
 

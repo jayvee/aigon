@@ -57,9 +57,9 @@ Mix and match. Aigon doesn't care which model writes the code — it just manage
 **Prerequisites:** Node.js 18+, Git 2.20+, and tmux (for Fleet/worktree mode). See the [Getting Started guide](https://www.aigon.build/docs/getting-started) for platform-specific install instructions.
 
 ```bash
-# Install aigon
-git clone https://github.com/jayvee/aigon.git ~/src/aigon
-cd ~/src/aigon && npm install && npm link
+# Install aigon (any directory works)
+git clone https://github.com/jayvee/aigon.git
+cd aigon && npm install && npm link
 
 # Set up your project
 cd /path/to/your/project
