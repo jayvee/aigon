@@ -1,5 +1,5 @@
 ---
-description: Check the review just done on the current feature worktree and decide accept/challenge/modify (shortcut for feature-review-check)
+description: Check the review just done on the current feature worktree and decide accept/revert/modify (shortcut for feature-review-check)
 argument-hint: "[ID]"
 ---
 # aigon-feature-review-check
@@ -71,11 +71,17 @@ ls docs/specs/features/logs/feature-<resolved-id>-*-log.md
 
 ## Step 4: Decide
 
+You are the author of this code. The reviewer's changes are suggestions. You have full authority to accept, modify, or revert any review commit.
+
 Pick **one** of these three options. Be honest — your job is correctness, not deference.
 
 - **Accept** — the review is correct. Do nothing. Tell the user "Review accepted." and a one-line summary of what changed.
-- **Challenge** — you disagree with one or more of the reviewer's fixes. STOP, explain your reasoning to the user clearly (which commit, what's wrong with it), and wait for the user to decide. **Do NOT revert commits on your own** — the user makes that call.
-- **Modify** — the review is mostly right but needs follow-up changes (e.g., the fix introduced a bug, missed a related case, or needs a small adjustment). Make the minimal edits, then commit each change with a `fix(post-review):` prefix:
+- **Revert** — you disagree with one or more of the reviewer's fixes. Revert the commits you disagree with using `git revert <sha>` and commit with a `revert(review):` prefix explaining why. You own this code — if a review change is wrong, undo it.
+  ```bash
+  git revert <sha> --no-edit
+  git commit --amend -m "revert(review): <what was wrong with the reviewer's change>"
+  ```
+- **Modify** — the review is mostly right but needs follow-up changes (e.g., the fix introduced a bug, missed a related case, or needs a small adjustment). This includes partially reverting a review commit and re-applying it differently. Make the minimal edits, then commit each change with a `fix(post-review):` prefix:
   ```bash
   git add <files>
   git commit -m "fix(post-review): <what you changed and why>"
@@ -85,10 +91,10 @@ Pick **one** of these three options. Be honest — your job is correctness, not 
 
 Tell the user:
 
-1. Which option you chose (**Accept** / **Challenge** / **Modify**).
+1. Which option you chose (**Accept** / **Revert** / **Modify**).
 2. A one-line summary per review commit you looked at.
 3. For **Modify**: the list of follow-up commits you made.
-4. For **Challenge**: the specific disagreement and what you'd do instead.
+4. For **Revert**: which commits you reverted and why.
 5. Any open questions for the user.
 
 **Do NOT run `/aigon:feature-close`.** The user decides when to close the feature.
