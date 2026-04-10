@@ -1,11 +1,12 @@
 # Feature: post-review-feedback-injection
 
 ## Summary
-After a review agent completes its review in autonomous mode (solo), inject a prompt into the still-running implementing agent's tmux session so it can address review feedback before feature-close. This is the default behavior — not optional — because a review without follow-up is an incomplete cycle.
+After a review agent completes its review in autonomous mode (solo), inject a prompt into the still-running implementing agent's tmux session so it can address review feedback before feature-close. Also update the `feature-review-check` command template to give the implementing agent explicit authority to revert review changes it disagrees with. This is the default behavior — not optional — because a review without follow-up is an incomplete cycle.
 
 ## User Stories
 - [ ] As a developer running autonomous mode with a review agent, I want the implementing agent to automatically receive and address review feedback without manual intervention
 - [ ] As a developer, I want the full autonomous cycle to be: implement → review → address feedback → close
+- [ ] As a developer, I want the implementing agent to have full authority to accept, modify, or revert review changes — it owns the code
 
 ## Acceptance Criteria
 - [ ] After review-complete is signaled in solo autonomous mode, the AutoConductor injects a prompt into the existing implementation agent's tmux session via `tmux send-keys`
@@ -13,6 +14,7 @@ After a review agent completes its review in autonomous mode (solo), inject a pr
 - [ ] The AutoConductor waits for the implementing agent to finish addressing feedback before proceeding to feature-close
 - [ ] If the implementation session no longer exists (edge case), log a warning and proceed to close without injection
 - [ ] No accept/reject signal is needed — whatever state the worktree is in when the agent finishes is the final state
+- [ ] The `feature-review-check` template is updated to give the implementing agent explicit authority to revert review commits it disagrees with (not just challenge and wait)
 
 ## Validation
 ```bash
@@ -22,10 +24,28 @@ npm test
 
 ## Technical Approach
 
-### Key insight: both sessions stay open
+### Part 1: Update `feature-review-check` template
+
+**File:** `templates/generic/commands/feature-review-check.md`
+
+The current Step 4 "Challenge" option says: **"Do NOT revert commits on your own — the user makes that call."** This was written for the human-in-the-loop case. In autonomous mode there is no user to decide.
+
+Update Step 4 to give the implementing agent explicit authority:
+
+- **Accept** — unchanged
+- **Challenge → Revert** — rename this option. If the implementing agent disagrees with a review change, it has the right to `git revert <sha>` the reviewer's commit(s) and commit the revert with a `revert(review):` prefix explaining why. The implementing agent owns the code — the reviewer is advisory.
+- **Modify** — unchanged, but clarify that this includes reverting individual hunks and re-applying them differently
+
+Add a clear principle at the top of Step 4: **"You are the author of this code. The reviewer's changes are suggestions. You have full authority to accept, modify, or revert any review commit."**
+
+After running `install-agent`, the updated template will be synced to all agent working copies.
+
+### Part 2: AutoConductor feedback injection
+
+#### Key insight: both sessions stay open
 Both the implementation and review tmux sessions remain alive throughout the feature lifecycle — they are only closed when feature-close runs. The implementing agent's CLI (e.g. `claude`) returns to its `>` prompt after finishing its task, so it's sitting there waiting for input. This means we inject directly into the existing session — no need to spawn anything new.
 
-### Architecture
+#### Architecture
 Insert a new step in the AutoConductor `__run-loop` (solo mode) between "review completed" (Step 3) and "feature-close" (Step 4). The full autonomous flow becomes:
 
 ```
@@ -33,14 +53,14 @@ implement → review → address feedback → close
    Step 1     Step 2    Step 3→3.5       Step 4
 ```
 
-### New state variables (in the `__run-loop` scope)
+#### New state variables (in the `__run-loop` scope)
 ```js
 let feedbackInjected = false;
 let feedbackPolls = 0;
 const MAX_FEEDBACK_POLLS = 120; // 60 min at 30s intervals
 ```
 
-### Modified Step 3 (review completion)
+#### Modified Step 3 (review completion)
 When `reviewCompleted` is detected, instead of falling through to close:
 
 1. Compute the implementing agent's tmux session name using `buildTmuxSessionName()` with the implementing agent (`agentIds[0]`) and `role: 'do'`
@@ -55,7 +75,7 @@ The review is complete. Please run /aigon:feature-review-check to check and addr
 
 The `-l` flag is critical — without it, tmux interprets text as key names.
 
-### New Step 3.5 (wait for implementing agent to finish)
+#### New Step 3.5 (wait for implementing agent to finish)
 After injecting the prompt, poll for the implementing agent to signal completion. The agent will process the feedback and then either:
 - The agent-status file updates (the agent runs `/aigon:feature-submit` which calls `agent-status submitted`)
 - Or the tmux session exits (shell trap fires `submitted`)
@@ -64,7 +84,7 @@ Poll by checking agent-status timestamp — if `updatedAt` is newer than the inj
 
 Timeout after 60 minutes (same as review timeout).
 
-### Modified Step 4 guard
+#### Modified Step 4 guard
 Add `feedbackDone` to the `readyToClose` condition:
 ```js
 const feedbackDone = !reviewAgent || !feedbackInjected || feedbackAddressed;
@@ -73,24 +93,25 @@ const readyToClose = soloReadyToAdvance && effectiveStopAfter === 'close'
     && feedbackDone;
 ```
 
-### Why no accept/reject signal
-The implementing agent has full autonomy to apply fixes, partially apply them, or disagree and leave things as-is. Whatever state the worktree is in when the agent finishes is the final answer. Adding accept/reject would mean:
+#### Why no accept/reject signal
+The implementing agent has full autonomy to apply fixes, partially apply them, or revert and disagree. Whatever state the worktree is in when the agent finishes is the final answer. Adding accept/reject would mean:
 - A new signal type in agent-status (`accepted`/`rejected`)
 - Branching logic in the AutoConductor for each outcome
 - Edge cases (partial acceptance)
 
-This is over-engineering. The agent addresses what it agrees with and moves on.
+This is over-engineering. The agent addresses what it agrees with, reverts what it doesn't, and moves on.
 
-### tmux send-keys mechanics
+#### tmux send-keys mechanics
 - `tmux send-keys -t <session> -l "<text>"` sends literal text (no key-name interpretation)
 - `tmux send-keys -t <session> Enter ''` sends the Enter key
 - The implementing agent is at its prompt (`>`) waiting for input, so the text is delivered immediately
 - This is already proven in the codebase: `ensureAgentSessions()`, `sessions-close`, and dashboard `send-keys` action all use this pattern
 
-### Updated debug log line
+#### Updated debug log line
 Add `feedbackInjected=${feedbackInjected}` to the poll log for visibility.
 
 ## Files to modify
+- `templates/generic/commands/feature-review-check.md` — Step 4 rewrite: grant revert authority
 - `lib/commands/feature.js` — AutoConductor `__run-loop`, solo mode only (~40 lines added)
 
 ## Dependencies
@@ -109,6 +130,7 @@ Add `feedbackInjected=${feedbackInjected}` to the poll log for visibility.
 - None
 
 ## Related
+- `templates/generic/commands/feature-review-check.md` — current review-check template
 - `lib/commands/feature.js:2470` — AutoConductor `__run-loop`
 - `lib/worktree.js:508` — `buildTmuxSessionName()`
 - `lib/worktree.js:757` — `runTmux()`
