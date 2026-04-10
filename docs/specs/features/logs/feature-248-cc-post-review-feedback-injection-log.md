@@ -1,3 +1,26 @@
+---
+commit_count: 9
+lines_added: 152
+lines_removed: 56
+lines_changed: 208
+files_touched: 7
+fix_commit_count: 2
+fix_commit_ratio: 0.222
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 276
+output_tokens: 18242
+cache_creation_input_tokens: 232208
+cache_read_input_tokens: 6432015
+thinking_tokens: 0
+total_tokens: 6682741
+billable_tokens: 18518
+cost_usd: 15.3742
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 248 - post-review-feedback-injection
 Agent: cc
 
