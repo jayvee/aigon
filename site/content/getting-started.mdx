@@ -125,12 +125,12 @@ aigon config set --global tmuxApp iterm2
 aigon config set --global terminal warp
 ```
 
-**Terminal.app** (macOS built-in — agents run in tmux sessions):
+**Terminal.app** (macOS built-in — agents open in new Terminal.app windows):
 ```bash
-aigon config set --global terminal tmux
+aigon config set --global terminal terminal
 ```
 
-> **Default:** `terminal` = `warp`. If you already use Warp, you can skip this step.
+> **Default:** `terminal` = `terminal` (Terminal.app). If you're on macOS and happy with Terminal.app, you can skip this step.
 
 ## Initialize a project
 
@@ -162,24 +162,24 @@ Install only the agents you have access to. You can add more later with `aigon i
 
 ## Three ways to interact
 
-| | Agent Commands | CLI | Dashboard |
+The dashboard is the recommended starting point — it gives you a visual overview of the pipeline and lets you start, monitor, and close features with a click. Agent slash commands and the CLI are there when you want more control or want to script things.
+
+| | Dashboard | Agent Commands | CLI |
 |---|---|---|---|
-| **Where** | Inside an agent session | Terminal / shell | Browser UI |
-| **Best for** | Writing specs, implementing features | Orchestration, setup, scripting | Visual overview, monitoring Fleet runs |
-| **Example** | `/aigon:feature-do 07` or `$aigon-feature-do 07` | `aigon feature-start 07 cc gg` | Click "Start feature" on a kanban card |
+| **Where** | Browser UI | Inside an agent session | Terminal / shell |
+| **Best for** | Visual overview, monitoring, starting features | Writing specs, implementing features | Orchestration, setup, scripting |
+| **Example** | Click "Start" on a kanban card | `/aigon:feature-do 07` | `aigon feature-start 07 cc gg` |
 
 All three surfaces drive the same underlying workflow. Mix them freely.
 
-### Codex example
+### Start the dashboard
 
-In a Codex session, use the `$aigon-...` skill syntax:
-
-```text
-$aigon-feature-create dark-mode
-Add a dark mode toggle to the top-right of the site header.
-Use CSS custom properties for theming. Default to system preference.
-Store the user's choice in localStorage.
+```bash
+aigon server start --persistent        # install as a system service (survives restarts)
+aigon server add /path/to/your/project # register your project
 ```
+
+Open [http://localhost:4100](http://localhost:4100). The Pipeline view shows your features across Kanban lanes; clicking **Start** on a card launches an agent session directly.
 
 ## Your first feature
 
