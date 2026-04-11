@@ -626,12 +626,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/opt/homebrew/bin/aigon check-version",
+            "command": "/usr/local/bin/aigon check-version",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "/opt/homebrew/bin/aigon project-context",
+            "command": "/usr/local/bin/aigon project-context",
             "timeout": 10
           }
         ]
@@ -655,7 +655,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/opt/homebrew/bin/aigon check-agent-submitted",
+            "command": "/usr/local/bin/aigon check-agent-submitted",
             "timeout": 5
           }
         ]
