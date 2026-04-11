@@ -224,6 +224,46 @@ Add a dark/light mode toggle with system preference detection...
 
 Each step moves the feature through the pipeline: `inbox → backlog → in-progress → done`.
 
+## Set up the local proxy (optional)
+
+Aigon can route `.localhost` subdomains to its services, giving you clean URLs instead of `localhost:PORT`:
+
+| Without proxy | With proxy |
+|---|---|
+| `http://localhost:4100` | `http://aigon.localhost` |
+| `http://localhost:3001` | `http://brewboard-cc.localhost` |
+| `http://localhost:3002` | `http://brewboard-gg.localhost` |
+
+This is especially useful in Fleet mode, where each agent gets its own dev server on a different port. Instead of remembering which port belongs to which agent, you get named URLs that match the agent and project.
+
+The proxy uses [RFC 6761](https://www.rfc-editor.org/rfc/rfc6761) `.localhost` domains, which resolve to `127.0.0.1` automatically — no DNS or `/etc/hosts` changes needed.
+
+### Quick start (runs until you stop it)
+
+```bash
+aigon proxy start
+```
+
+### Persistent install (survives reboots, recommended)
+
+This installs a lightweight system daemon on port 80:
+
+```bash
+aigon proxy install          # requires sudo — installs a LaunchDaemon (macOS) or systemd unit (Linux)
+```
+
+Verify it's running:
+
+```bash
+aigon proxy-setup
+```
+
+You should see `✅ aigon-proxy: running`. If port 80 is in use by another service (Apache, nginx), you'll see a warning — stop that service first or the proxy will fall back to a non-standard port.
+
+> **Tip:** If you set up the proxy before the Brewboard tutorial below, the dashboard and dev server previews will use the clean `.localhost` URLs automatically.
+
+To remove the daemon later: `aigon proxy uninstall`.
+
 ## Try it end-to-end
 
 Want to verify your installation works before using Aigon on a real project? The **[Brewboard Tutorial](/docs/guides/brewboard-tutorial)** walks you through cloning a seed repo, adding it to the dashboard, and running a complete feature loop — Drive mode, Fleet mode, and Autonomous mode.
