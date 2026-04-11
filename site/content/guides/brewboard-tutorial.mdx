@@ -1,17 +1,19 @@
 ---
 title: "Tutorial: Try Aigon with Brewboard"
-description: A hands-on walkthrough using the Brewboard seed repo — clone it, add it to the dashboard, and run your first feature.
+description: A hands-on walkthrough using the Brewboard seed repo — run features from the dashboard, from Claude slash commands, and from the CLI.
 ---
 
-import { Callout, Steps } from "nextra/components";
+import { Callout, Steps, Tabs } from "nextra/components";
 
 Brewboard is a small Next.js app for tracking craft beers — it ships with six features already written and waiting in the backlog. Use it to get a feel for the full Aigon workflow before adding Aigon to a real project.
 
-You will:
-- Clone the seed repo and initialize Aigon inside it
-- Add it to the dashboard and watch the pipeline
-- Run a feature from backlog to done
-- (Optional) try Fleet mode with two agents competing
+You can drive Aigon from three different surfaces. This tutorial walks through all three:
+
+1. **The dashboard** — click-to-run from the browser UI
+2. **Slash commands** — inside a Claude Code session
+3. **The CLI** — from your terminal
+
+Each section covers Drive mode, Fleet mode, and Autonomous mode.
 
 <Callout type="info">
   **Prerequisites:** You've already installed Aigon, at least one agent CLI, and configured your terminal. If not, start with [Getting Started](/docs/getting-started).
@@ -56,6 +58,8 @@ aigon install-agent cc          # swap for gg, cx, or cu if you prefer
 
 ### Start the dashboard server
 
+If you haven't already started the Aigon server, do so now and register Brewboard:
+
 ```bash
 aigon server start --persistent        # install as a persistent system service
 aigon server add ~/src/brewboard       # register the repo with the dashboard
@@ -69,95 +73,157 @@ Open [http://localhost:4100](http://localhost:4100). You'll see the Brewboard re
 
 </Steps>
 
-## Run a feature
+---
 
-Pick any feature from the backlog. Feature 01 (dark mode) is a good starting point — it's a small, well-scoped UI change.
+## 1. From the dashboard
 
-### Drive mode (one agent)
+The dashboard is the most visual way to interact with Aigon. Open [http://localhost:4100](http://localhost:4100) and navigate to the Brewboard repo.
 
-Start the feature in Drive mode — one agent, one worktree, you supervise:
+### Drive mode
+
+In the Pipeline view, find feature **01 — Dark Mode** in the Backlog column. Click **Start** on the card — a picker appears where you select one agent to drive the implementation.
+
+<img src="/img/tutorial-drive-mode.png" alt="Drive mode agent picker — feature 01 dark-mode with Claude Code selected" width="420" style={{borderRadius:"8px",margin:"12px 0"}} />
+
+Click **Start**. Aigon creates a worktree, opens a tmux session, and begins implementation.
+
+Watch the card update in real-time:
+- Status moves from **Starting** → **Working** → **Submitted**
+- The Sessions panel shows agent liveness with heartbeat updates every 30s
+- Elapsed time and cost appear on the card as the session runs
+
+Before closing, click the **globe icon** on the card to open a preview of that worktree's dev server in your browser — eyeball the changes before committing to them. When you're happy, click **Accept & Close**. Aigon merges the branch to main, moves the spec to Done, and cleans up the worktree.
+
+### Fleet mode
+
+Fleet mode runs two agents on the same feature simultaneously. Find feature **04 — Rating System** in the Backlog. Click **Start** and select two agents (e.g. Claude Code + Gemini CLI).
+
+<img src="/img/tutorial-fleet-mode.png" alt="Fleet mode agent picker — feature 04 rating-system with Claude Code and Gemini selected" width="420" style={{borderRadius:"8px",margin:"12px 0"}} />
+
+Two cards appear for the same feature — one per agent — both updating independently. When both show **Submitted**, click **Evaluate** to open a review session that compares both implementations and recommends a winner. Then click **Accept & Close** on your preferred card to merge it.
+
+### Autonomous mode
+
+For a completely hands-off run, find feature **02 — Brewery Import**, open its action menu, and click **Start Autonomously**.
+
+<img src="/img/tutorial-start-autonomously-1.png" alt="Pipeline showing the Start Autonomously menu item on feature 02" width="300" style={{borderRadius:"8px",margin:"12px 0"}} />
+
+A modal appears where you select an implementation agent, a reviewer, and when to stop. The default stop point is after close — the full lifecycle runs unattended.
+
+<img src="/img/tutorial-start-autonomously-2.png" alt="Start Autonomously modal — implementation agent, reviewer, and stop-after fields" width="360" style={{borderRadius:"8px",margin:"12px 0"}} />
+
+Click **Start Autonomously**. The AutoConductor spawns the implementation session, waits for it to finish, automatically runs a review, and calls feature-close — all without any further input from you.
+
+Check the **Reports tab** after the session completes to see token usage and cost.
+
+---
+
+## 2. From slash commands in Claude
+
+Open a Claude Code session in the Brewboard directory (or any worktree), and use `/aigon:` slash commands directly in the conversation.
+
+### Drive mode
+
+```
+/aigon:feature-start 01 cc
+```
+
+Claude creates the worktree and begins implementing feature 01. You can watch it work, give feedback mid-implementation, or let it run to completion. When it signals done:
+
+```
+/aigon:feature-close 01
+```
+
+### Fleet mode
+
+Start two agents on feature 04 from inside Claude:
+
+```
+/aigon:feature-start 04 cc gg
+```
+
+Both agents start in parallel. Once both signal submitted, run the evaluation:
+
+```
+/aigon:feature-eval 04
+```
+
+The eval agent reads both diffs and writes a recommendation. Close with your chosen agent:
+
+```
+/aigon:feature-close 04 cc
+```
+
+### Autonomous mode
+
+Hand the whole lifecycle over to the AutoConductor:
+
+```
+/aigon:feature-autonomous-start 02 --agent cc --review-agent gg
+```
+
+The conductor handles implementation → review → close automatically. You'll see the feature move through the pipeline in the dashboard without any further commands.
+
+---
+
+## 3. From the CLI
+
+All Aigon operations are available as CLI commands — useful for scripting, CI, or when you prefer the terminal.
+
+### Drive mode
 
 ```bash
 aigon feature-start 01 cc
 ```
 
-This:
-- Creates an isolated worktree at `~/src/brewboard-worktrees/feature-01-cc-dark-mode/`
-- Launches Claude Code in a tmux session
-- Automatically runs `feature-do 01` inside the session
-
-Attach to the session to watch the agent work:
+This creates an isolated worktree at `~/src/brewboard-worktrees/feature-01-cc-dark-mode/`, launches Claude Code in a tmux session, and runs `feature-do` automatically inside it. Attach to watch:
 
 ```bash
 tmux attach -t brewboard-f1-cc-dark-mode
 ```
 
-The agent reads the spec, explores the codebase, and implements the acceptance criteria. When it signals `submitted`, detach from the session and close the feature:
+When the agent signals submitted, close from the terminal:
 
 ```bash
 aigon feature-close 01
 ```
 
-This merges the branch to main, moves the spec to `05-done/`, and cleans up the worktree.
-
-### What to look at in the dashboard
-
-While the agent is running, open the dashboard and explore:
-
-- **Pipeline view** — the feature card shows the agent, status (working / submitted), and elapsed time
-- **Sessions panel** — real-time session liveness; you can see heartbeat updates every 30s
-- **Reports tab** — token usage and cost appear here after the session ends. After your first feature you'll see input/output token counts and a cost estimate broken down by agent
-
-### Fleet mode (two agents competing)
-
-Fleet mode runs two agents on the same feature in parallel, then you pick the better implementation. Try it on feature 04 (rating system):
+### Fleet mode
 
 ```bash
 aigon feature-start 04 cc gg    # requires both Claude Code and Gemini CLI
 ```
 
-Two worktrees are created (`feature-04-cc-...` and `feature-04-gg-...`), each agent implements independently. In the dashboard you'll see two cards for the same feature, updating in parallel.
-
-When both agents signal `submitted`, evaluate and close:
+Two worktrees are created and both agents start implementing independently. When both are done, evaluate and close:
 
 ```bash
-aigon feature-eval 04           # code review comparing both implementations
-aigon feature-close 04 cc       # or: aigon feature-close 04 gg
+aigon feature-eval 04           # opens a review session comparing both diffs
+aigon feature-close 04 cc       # merge cc's branch; or swap for gg
 ```
 
-`feature-eval` opens a review session that reads both diffs and recommends a winner. `feature-close` merges the chosen agent's branch and discards the other.
-
-### Autonomous mode (hands-off)
-
-For a completely hands-off run, use `feature-autonomous-start`. The conductor spawns the agent, waits for `submitted`, runs a review, and calls `feature-close` automatically:
+### Autonomous mode
 
 ```bash
 aigon feature-autonomous-start 02 --agent cc --review-agent gg
 ```
 
-Walk away — the pipeline handles it. Check the dashboard when you come back to see the result.
-
-## Try a few more things
-
-Once you've closed a feature, the repo's main branch has the merged code. A few things worth exploring:
-
-**Run `aigon doctor`** — checks tmux, agent CLIs, Node version, and project config. Good habit before starting any feature session.
-
-**Check the Reports tab** — after two or three features, the Analytics view shows per-agent cost, token throughput, and weekly totals. You can see which agent is faster or cheaper for this class of work.
-
-**Try `aigon board`** — the CLI Kanban view. Useful when you don't have a browser open:
+Walk away — the AutoConductor handles implementation, review, and merge. Check `aigon board` when you're back to see the result:
 
 ```bash
 aigon board
 ```
 
-**Reset and repeat** — the seed repo is designed to be reset:
+---
+
+## Reset and repeat
+
+The seed repo is designed to be reset between runs:
 
 ```bash
 aigon seed-reset ~/src/brewboard
 ```
 
-This wipes all worktrees, branches, workflow state, and git history and re-clones from the seed, so you can run through the tutorial again with a different agent or mode.
+This wipes all worktrees, branches, workflow state, and git history and re-clones from the seed — so you can try a different surface, mode, or agent from scratch.
 
 ## Next steps
 
