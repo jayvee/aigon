@@ -226,71 +226,9 @@ Each step moves the feature through the pipeline: `inbox → backlog → in-prog
 
 ## Try it end-to-end
 
-Want to verify your installation works before using Aigon on a real project? Clone the seed repo — a small Next.js app with features already in the pipeline — and run a complete feature loop.
+Want to verify your installation works before using Aigon on a real project? The **[Brewboard Tutorial](/docs/guides/brewboard-tutorial)** walks you through cloning a seed repo, adding it to the dashboard, and running a complete feature loop — Drive mode, Fleet mode, and Autonomous mode.
 
-### 1. Set up the seed repo
-
-```bash
-git clone https://github.com/jayvee/brewboard-seed.git ~/src/brewboard
-cd ~/src/brewboard
-git remote remove origin        # prevent push errors — this is a local sandbox
-npm install
-aigon init
-aigon install-agent gg          # or: aigon install-agent cc
-```
-
-> **Linux:** use `sudo npm link` when installing aigon, and `sudo npm i -g` for agent CLIs.
-
-### 2. Start a feature
-
-The seed repo has features ready in the backlog. Pick one and start it:
-
-```bash
-aigon feature-start 02 gg       # Drive worktree mode with Gemini
-```
-
-This creates a worktree and launches Gemini in a tmux session. On macOS it opens a terminal window; on Linux it prints the attach command:
-
-```bash
-tmux attach -t brewboard-f2-gg-brewery-import
-```
-
-> Each agent's dev server runs on its own port (shown in the output, e.g. `PORT=3001`). You can preview the app at `http://localhost:3001` while the agent works.
-
-### 3. Start the server
-
-The Aigon server provides the dashboard UI, agent supervisor, and WebSocket status updates. Install it as a persistent service so it starts automatically on login and restarts on crash:
-
-```bash
-aigon server start --persistent        # One-time: install as system service
-aigon server add ~/src/brewboard       # Register the seed repo
-```
-
-Then open [http://localhost:4100](http://localhost:4100) in your browser. You'll see the feature in the Pipeline view with the agent status updating in real-time.
-
-> **What `--persistent` does:** On macOS it installs a launchd agent; on Linux a systemd user service. The server survives terminal closes, Mac restarts, and process crashes — launchd/systemd will always bring it back. Logs are written to `~/.aigon/logs/server-*.log`.
->
-> You can also run `aigon server start` (without `--persistent`) if you prefer a foreground process that stops when you close the terminal.
->
-> The server auto-restarts when you run `aigon update`. You only need to manually restart (`aigon server restart`) if you're developing Aigon itself and editing `lib/*.js` files.
-
-### 4. Close the feature
-
-When the agent shows "Submitted", close from the CLI or click "Accept & Close" in the dashboard:
-
-```bash
-aigon feature-close 02
-```
-
-**What to expect at each step:**
-
-1. `aigon init` — creates `docs/specs/` directories, rebuilds manifests for existing features
-2. `aigon install-agent` — writes agent config files, warns if the agent CLI isn't in your PATH
-3. `aigon feature-start` — moves spec to in-progress, creates worktree, starts agent in tmux
-4. `aigon server start --persistent` — installs the server as a system service; web UI at localhost:4100 showing pipeline, agent status, sessions. The **Reports tab** tracks token usage, cost, and throughput across agents — check it after your first feature to see telemetry in action
-5. `aigon feature-close` — merges the feature branch to main, moves spec to done, cleans up
-
-If anything goes wrong, run `aigon doctor` to diagnose the issue.
+If anything goes wrong at any point, run `aigon doctor` to diagnose the issue.
 
 ## Updating Aigon
 

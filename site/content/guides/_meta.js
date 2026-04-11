@@ -1,4 +1,5 @@
 export default {
+  "brewboard-tutorial": "Tutorial: Brewboard",
   "drive-mode": "Drive Mode",
   "fleet-mode": "Fleet Mode",
   "autopilot-mode": "Autonomous Mode",

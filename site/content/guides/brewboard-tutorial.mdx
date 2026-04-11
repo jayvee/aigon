@@ -1,0 +1,167 @@
+---
+title: "Tutorial: Try Aigon with Brewboard"
+description: A hands-on walkthrough using the Brewboard seed repo — clone it, add it to the dashboard, and run your first feature.
+---
+
+import { Callout, Steps } from "nextra/components";
+
+Brewboard is a small Next.js app for tracking craft beers — it ships with six features already written and waiting in the backlog. Use it to get a feel for the full Aigon workflow before adding Aigon to a real project.
+
+You will:
+- Clone the seed repo and initialize Aigon inside it
+- Add it to the dashboard and watch the pipeline
+- Run a feature from backlog to done
+- (Optional) try Fleet mode with two agents competing
+
+<Callout type="info">
+  **Prerequisites:** You've already installed Aigon, at least one agent CLI, and configured your terminal. If not, start with [Getting Started](/docs/getting-started).
+</Callout>
+
+## What's in the repo
+
+Brewboard has six pre-written feature specs, each describing a small, self-contained change:
+
+| ID | Feature | Description |
+|----|---------|-------------|
+| 01 | **Dark Mode** | Theme toggle, OS preference detection, localStorage persistence |
+| 02 | **Brewery Import** | CSV parser — reads a beer list and adds to a JSON collection |
+| 03 | **Featured Beer Hero** | Hero section on the homepage showing a featured beer |
+| 04 | **Rating System** | Star rating component with half-star support |
+| — | Beer Style Filters | Filter the beer list by style |
+| — | Social Sharing | Share a beer with a generated URL |
+
+Each spec has acceptance criteria, a technical approach, and out-of-scope constraints — so the agent has clear boundaries and knows exactly when it's done.
+
+## Set up Brewboard
+
+<Steps>
+
+### Clone the seed repo
+
+```bash
+git clone https://github.com/jayvee/brewboard-seed.git ~/src/brewboard
+cd ~/src/brewboard
+git remote remove origin        # prevent accidental pushes — this is a local sandbox
+npm install
+```
+
+### Initialize Aigon
+
+```bash
+aigon init
+aigon install-agent cc          # swap for gg, cx, or cu if you prefer
+```
+
+`aigon init` creates the `docs/specs/` folder structure and rebuilds the pre-seeded feature manifests. `install-agent` writes slash commands, hooks, and permissions for your chosen agent.
+
+### Start the dashboard server
+
+```bash
+aigon server start --persistent        # install as a persistent system service
+aigon server add ~/src/brewboard       # register the repo with the dashboard
+```
+
+Open [http://localhost:4100](http://localhost:4100). You'll see the Brewboard repo in the sidebar and its six features spread across the pipeline.
+
+<Callout>
+  `--persistent` installs Aigon as a launchd service (macOS) or systemd user service (Linux) — it survives terminal closes and machine restarts. You can skip it and use `aigon server start` for a foreground process instead.
+</Callout>
+
+</Steps>
+
+## Run a feature
+
+Pick any feature from the backlog. Feature 01 (dark mode) is a good starting point — it's a small, well-scoped UI change.
+
+### Drive mode (one agent)
+
+Start the feature in Drive mode — one agent, one worktree, you supervise:
+
+```bash
+aigon feature-start 01 cc
+```
+
+This:
+- Creates an isolated worktree at `~/src/brewboard-worktrees/feature-01-cc-dark-mode/`
+- Launches Claude Code in a tmux session
+- Automatically runs `feature-do 01` inside the session
+
+Attach to the session to watch the agent work:
+
+```bash
+tmux attach -t brewboard-f1-cc-dark-mode
+```
+
+The agent reads the spec, explores the codebase, and implements the acceptance criteria. When it signals `submitted`, detach from the session and close the feature:
+
+```bash
+aigon feature-close 01
+```
+
+This merges the branch to main, moves the spec to `05-done/`, and cleans up the worktree.
+
+### What to look at in the dashboard
+
+While the agent is running, open the dashboard and explore:
+
+- **Pipeline view** — the feature card shows the agent, status (working / submitted), and elapsed time
+- **Sessions panel** — real-time session liveness; you can see heartbeat updates every 30s
+- **Reports tab** — token usage and cost appear here after the session ends. After your first feature you'll see input/output token counts and a cost estimate broken down by agent
+
+### Fleet mode (two agents competing)
+
+Fleet mode runs two agents on the same feature in parallel, then you pick the better implementation. Try it on feature 04 (rating system):
+
+```bash
+aigon feature-start 04 cc gg    # requires both Claude Code and Gemini CLI
+```
+
+Two worktrees are created (`feature-04-cc-...` and `feature-04-gg-...`), each agent implements independently. In the dashboard you'll see two cards for the same feature, updating in parallel.
+
+When both agents signal `submitted`, evaluate and close:
+
+```bash
+aigon feature-eval 04           # code review comparing both implementations
+aigon feature-close 04 cc       # or: aigon feature-close 04 gg
+```
+
+`feature-eval` opens a review session that reads both diffs and recommends a winner. `feature-close` merges the chosen agent's branch and discards the other.
+
+### Autonomous mode (hands-off)
+
+For a completely hands-off run, use `feature-autonomous-start`. The conductor spawns the agent, waits for `submitted`, runs a review, and calls `feature-close` automatically:
+
+```bash
+aigon feature-autonomous-start 02 --agent cc --review-agent gg
+```
+
+Walk away — the pipeline handles it. Check the dashboard when you come back to see the result.
+
+## Try a few more things
+
+Once you've closed a feature, the repo's main branch has the merged code. A few things worth exploring:
+
+**Run `aigon doctor`** — checks tmux, agent CLIs, Node version, and project config. Good habit before starting any feature session.
+
+**Check the Reports tab** — after two or three features, the Analytics view shows per-agent cost, token throughput, and weekly totals. You can see which agent is faster or cheaper for this class of work.
+
+**Try `aigon board`** — the CLI Kanban view. Useful when you don't have a browser open:
+
+```bash
+aigon board
+```
+
+**Reset and repeat** — the seed repo is designed to be reset:
+
+```bash
+aigon seed-reset ~/src/brewboard
+```
+
+This wipes all worktrees, branches, workflow state, and git history and re-clones from the seed, so you can run through the tutorial again with a different agent or mode.
+
+## Next steps
+
+- **[Drive Mode](/docs/guides/drive-mode)** — full lifecycle reference for single-agent work
+- **[Fleet Mode](/docs/guides/fleet-mode)** — how parallel agents and evaluation work
+- **[Autonomous Mode](/docs/guides/autopilot-mode)** — hands-off loops with the AutoConductor
+- **[Dashboard](/docs/guides/dashboard)** — what each panel shows and how to use it
