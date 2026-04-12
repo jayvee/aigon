@@ -43,6 +43,19 @@ testAsync('runMigration restores backup on failure', async () => withTempDirAsyn
     assert.strictEqual(fs.readFileSync(path.join(wf, 'snapshot.json'), 'utf8'), original);
 }));
 
+testAsync('runMigration rollback removes workflows created from an empty pre-migration state', async () => withTempDirAsync(async (dir) => {
+    const m = require('../../lib/migration');
+    m._internals.migrations.clear();
+    const result = await m.runMigration(dir, '9.1.1', async (ctx) => {
+        const wf = path.join(ctx.workflowsDir, 'features', '01');
+        fs.mkdirSync(wf, { recursive: true });
+        fs.writeFileSync(path.join(wf, 'snapshot.json'), JSON.stringify({ id: '01' }));
+        throw new Error('intentional failure');
+    });
+    assert.strictEqual(result.status, 'restored');
+    assert.strictEqual(fs.existsSync(path.join(dir, '.aigon', 'workflows')), false);
+}));
+
 testAsync('runMigration is idempotent — skips if already succeeded', async () => withTempDirAsync(async (dir) => {
     const m = require('../../lib/migration');
     m._internals.migrations.clear();
@@ -52,6 +65,18 @@ testAsync('runMigration is idempotent — skips if already succeeded', async () 
     const result = await m.runMigration(dir, '9.2.0', async () => { called = true; });
     assert.strictEqual(result.status, 'skipped');
     assert.strictEqual(called, false);
+}));
+
+testAsync('runPendingMigrations records fromVersion in the manifest', async () => withTempDirAsync(async (dir) => {
+    const m = require('../../lib/migration');
+    m._internals.migrations.clear();
+    seedWorkflows(dir);
+    m.registerMigration('9.3.0', async () => {});
+    const results = await m.runPendingMigrations(dir, '9.2.0');
+    assert.deepStrictEqual(results, [{ version: '9.3.0', status: 'success' }]);
+    const manifest = m._internals.readManifest(dir, '9.3.0');
+    assert.strictEqual(manifest.fromVersion, '9.2.0');
+    assert.strictEqual(manifest.toVersion, '9.3.0');
 }));
 
 report();
