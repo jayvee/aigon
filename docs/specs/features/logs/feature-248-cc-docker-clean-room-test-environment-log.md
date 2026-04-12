@@ -15,3 +15,20 @@ Agent: cc
 - Smoke test does NOT install agent CLIs (Claude Code, Gemini CLI) since they need API keys and interactive auth — tests everything up to but not including agent sessions.
 - Scenarios run independently (each starts from clean state) rather than building on each other, so you can run just the one you care about.
 - Shell scripts use `set -euo pipefail` for strict error handling — fail fast on any broken step.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-12
+
+### Findings
+- `docker/clean-room/smoke-test.sh` did not implement the documented scenario-1 and scenario-2 flow from the feature's own test matrix. Scenario 1 skipped `aigon init`, `aigon install-agent cc`, and `aigon board`, and scenario 2 therefore did not build on that path.
+- `docker/clean-room/smoke-test.sh` hard-coded `~/src/aigon`, which breaks the macOS GitHub Actions path because the checked-out repo lives under the runner workspace, not that fixed directory.
+- The branch included unrelated edits to `docs/specs/research-topics/logs/research-29-cc-findings.md`, `docs/specs/research-topics/logs/research-29-cx-findings.md`, and `docs/specs/research-topics/logs/research-30-cx-findings.md`.
+
+### Fixes Applied
+- `93f3c878` — `fix(review): align clean-room smoke tests with spec scenarios`
+- `62e8259c` — `fix(review): remove unrelated research log changes`
+
+### Notes
+- Review stayed within the existing implementation approach. No tests were run as part of review per the feature-review workflow.
