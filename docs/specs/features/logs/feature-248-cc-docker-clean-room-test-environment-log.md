@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 1327
+lines_removed: 27
+lines_changed: 1354
+files_touched: 9
+fix_commit_count: 2
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 41
+output_tokens: 7816
+cache_creation_input_tokens: 81291
+cache_read_input_tokens: 1000412
+thinking_tokens: 0
+total_tokens: 1089560
+billable_tokens: 7857
+cost_usd: 3.6116
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 248 - docker-clean-room-test-environment
 Agent: cc
 
