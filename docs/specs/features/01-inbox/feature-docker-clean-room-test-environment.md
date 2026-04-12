@@ -22,16 +22,7 @@ Both modes target **Linux** (Docker container) and **macOS** (GitHub Actions run
 - [ ] **AC3** — `docker/clean-room/run.sh --auto` runs the automated install + tutorial setup script non-interactively and reports pass/fail.
 - [ ] **AC4** — From inside the container (manual mode), the user can follow the Getting Started guide step by step: install prerequisites, clone aigon, `npm ci && npm link`, `aigon --version`.
 - [ ] **AC5** — From inside the container (manual mode), the user can follow the Brewboard tutorial: clone the seed repo, `npm install`, `aigon init`, `aigon install-agent cc`, `aigon server start`, and access the dashboard from the host browser (port forwarded).
-- [ ] **AC6** — The automated script (`docker/clean-room/smoke-test.sh`) runs the following steps and exits 0 only if all succeed:
-  1. Install prerequisites (Node.js 18+, git, tmux) via apt
-  2. Clone and link aigon from the mounted/copied source
-  3. `aigon --version` succeeds
-  4. `aigon doctor` passes
-  5. Clone brewboard-seed, `npm install`
-  6. `aigon init` succeeds
-  7. `aigon install-agent cc` succeeds (without Claude Code binary — should warn but not fail)
-  8. `aigon server start` starts and responds on port 4100
-  9. `aigon board --list` shows the seeded features
+- [ ] **AC6** — The automated script (`docker/clean-room/smoke-test.sh`) supports `--scenario N` and `--all` flags. Each scenario exits 0 only if all its steps succeed. At minimum, scenarios 1, 2, and 5 from the test matrix must be implemented.
 
 ### macOS
 - [ ] **AC7** — A GitHub Actions workflow (`.github/workflows/clean-room-macos.yml`) runs the automated smoke test on `macos-latest`.
@@ -79,11 +70,48 @@ docker/clean-room/run.sh --auto
 
 The GitHub Actions path covers automated validation. Manual macOS testing is left to the maintainer's own machine or a cloud Mac instance.
 
+### Test scenarios (installation matrix)
+
+The smoke test should cover distinct installation paths that a real user might take. Each scenario is a separate run of `smoke-test.sh` with a `--scenario` flag (or run all with `--all`):
+
+| # | Scenario | Platform | What it tests |
+|---|----------|----------|---------------|
+| 1 | **Minimal single-agent** | Linux + macOS | Prerequisites → aigon → one agent (cc) → init → board. No proxy, no dashboard, no optional tools. The leanest possible install. |
+| 2 | **Dashboard + server** | Linux + macOS | Scenario 1 + `aigon server start` + verify dashboard responds on 4100. Tests the most common first-time setup. |
+| 3 | **With proxy** | Linux (Docker `--privileged`) | Scenario 2 + `aigon proxy install` + verify `.localhost` routing works. Tests the proxy setup docs and port 80 binding. |
+| 4 | **Multi-agent Fleet** | Linux + macOS | Prerequisites → aigon → two agents (cc + gg) → init → `aigon install-agent cc gg` → board shows both. Tests that Fleet-mode prerequisites are met. |
+| 5 | **Brewboard tutorial** | Linux + macOS | Full tutorial path: clone seed → init → install-agent → server start → board shows seeded features → dev-server start → verify dev server responds. Everything short of an actual agent session. |
+
+Each scenario builds on the previous one conceptually, but they run independently (each starts from a clean state). This lets you run just the scenario you care about or the full matrix.
+
+**Scenario selection:**
+```bash
+# Run one scenario
+docker/clean-room/run.sh --auto --scenario 2
+# Run all scenarios sequentially
+docker/clean-room/run.sh --auto --all
+# Manual mode (always starts clean, you pick your own path)
+docker/clean-room/run.sh
+```
+
+### macOS manual testing
+
+For interactive macOS testing (not just CI), the options are:
+
+| Option | Cost | Interactive? | Clean each run? | Notes |
+|--------|------|-------------|-----------------|-------|
+| **GitHub Actions** (`macos-latest`) | Free (public repo) | No — automated only | Yes | Best for automated smoke tests |
+| **MacStadium** | ~$50/mo or hourly | Yes — SSH | Can reimage | Dedicated Mac mini in the cloud |
+| **AWS EC2 Mac** (`mac2.metal`) | ~$6.50/hr (24h min) | Yes — SSH | Yes (new host) | Expensive but fully clean |
+| **Hetzner Mac Mini** | ~€50/mo | Yes — SSH | Can reimage | Cheaper than AWS, EU-based |
+| **Spare Mac / VM** | Free (if you have one) | Yes | Manual wipe | `createinstallmedia` USB + reinstall |
+
+For regular automated validation, GitHub Actions is sufficient. For manual walk-throughs matching a real first-time Mac user, MacStadium is the most practical option.
+
 ### What the smoke test does NOT cover
 - Running an actual agent session (requires API keys + agent CLI binary)
-- The proxy setup (requires port 80 / elevated permissions)
 - The full Brewboard tutorial interactive workflow (feature-do, feature-close)
-- Dashboard UI verification (no browser in the container — just checks the HTTP server responds)
+- Dashboard UI verification beyond HTTP response (no browser — just checks the server responds)
 
 ## Dependencies
 - Docker installed on the host machine (for Linux path)
@@ -93,15 +121,16 @@ The GitHub Actions path covers automated validation. Manual macOS testing is lef
 - brewboard-seed repo on GitHub
 
 ## Out of Scope
-- Testing agent CLI installation or agent sessions (requires API keys and auth)
-- Full interactive tutorial automation (the manual path is the point for that)
-- CI/CD gating (this is a validation tool, not a merge blocker — for now)
+- Testing agent CLI installation or actual agent sessions (requires API keys and interactive auth)
+- Full interactive tutorial automation beyond setup (feature-do, feature-close — those need a live agent)
+- CI/CD merge gating (this is a validation tool, not a blocker — for now)
 - Windows testing
+- Provisioning or managing cloud Mac instances (the spec documents options; the maintainer provisions manually)
 
 ## Open Questions
 - Should the automated smoke test also verify the docs site builds (`npm run build --prefix site`)?
-- Should we forward port 80 for proxy testing in Docker? Requires `--privileged` or `--cap-add NET_BIND_SERVICE`.
 - For the GitHub Actions macOS workflow, should it run on every push to `main` or only on manual trigger / docs changes?
+- Should there be a scenario that tests the Fedora/Arch install paths from the getting-started guide, or is Ubuntu sufficient?
 
 ## Related
 - Getting Started guide: `site/content/getting-started.mdx`
