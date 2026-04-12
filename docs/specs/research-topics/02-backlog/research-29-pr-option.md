@@ -1,5 +1,7 @@
 # Research: PR Option for Team Workflows
 
+**Created:** 2026-04-12
+
 ## Context
 
 Aigon currently operates without pull requests — features go through worktree → submit → review → close entirely within the local repo and branch model. For solo developers this is fine, but teams adopting Aigon will need PRs as part of their workflow for:
@@ -41,6 +43,28 @@ This research should explore what a `usePRs` config option would look like, how 
 - Replacing Aigon's review system entirely with PR reviews
 - Multi-repo PR workflows
 - PR-based research workflows (features only for now)
+
+## Aigon Pro Positioning
+
+This feature is a natural fit for **Aigon Pro** and the **"for Teams"** tier. The research should specifically explore:
+
+### Why this is a Pro feature
+- Solo developers using Aigon don't need PRs — the local review → close loop is sufficient. PRs become essential when **other humans** need to see, approve, and gate changes.
+- The entire PR workflow (creation, reviewer assignment, CI gating, merge blocking) is team infrastructure — it has no value for a single developer working alone.
+- This cleanly delineates free vs Pro: free Aigon gives you the full spec-driven loop locally; Pro adds the collaboration layer that teams require.
+
+### Marketing angle: "Aigon for Teams"
+- [ ] How does "PR workflow" fit into a broader "Teams" package alongside other Pro features (insights, coaching, amplification)?
+- [ ] What's the elevator pitch? e.g. "Your agents already write the code — now your team can review it the way they review everything else: pull requests."
+- [ ] Does enabling PRs unlock a natural upsell path? (Solo user tries Aigon free → joins a team → team requires PRs → needs Pro)
+- [ ] How do competitors position this? (Cursor Teams, Copilot Enterprise, Windsurf Teams — do they gate PR/collaboration features behind paid tiers?)
+- [ ] Should PR workflow be the anchor feature of a "Teams" launch, or one of several?
+
+### Implementation boundary: OSS vs Pro
+- [ ] What lives in `aigon` (OSS)? Likely: the `lib/pro-bridge.js` extension points, basic branch push mechanics
+- [ ] What lives in `@aigon/pro`? Likely: PR creation, description generation from specs/logs, reviewer assignment, PR status polling, dashboard PR widgets
+- [ ] Does the config (`usePRs`, `prReviewers`, etc.) go in project config and get gated by `lib/pro.js`, or does it live entirely in the Pro module?
+- [ ] How does this follow the existing cross-repo pattern? (spec in aigon-pro, bridge touch in aigon with `Cross-repo: aigon-pro feature N` footer)
 
 ## Inspiration
 - `gh pr create` / `gh pr merge` CLI patterns
