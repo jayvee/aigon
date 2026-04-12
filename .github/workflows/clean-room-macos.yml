@@ -1,0 +1,28 @@
+name: Clean Room - macOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'docker/clean-room/**'
+      - 'site/content/getting-started.mdx'
+      - 'site/content/guides/brewboard-tutorial.mdx'
+  pull_request:
+    paths:
+      - 'docker/clean-room/**'
+
+jobs:
+  smoke-test:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        scenario: [1, 2, 5]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run smoke test (scenario ${{ matrix.scenario }})
+        run: |
+          chmod +x docker/clean-room/smoke-test.sh
+          docker/clean-room/smoke-test.sh --scenario ${{ matrix.scenario }}
