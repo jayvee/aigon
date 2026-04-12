@@ -19,3 +19,19 @@ Agent: cc
 - **Validation checks JSON parsability**: Post-migration validation iterates `snapshot.json` and `stats.json` in all entity dirs
 - **Pre-existing test failures**: `pro-gate.test.js` has 4 failures unrelated to this feature (missing `@aigon/pro` in worktree)
 - **Dead test cleanup**: Removed `dashboard-sessions-parsing.test.js` (19 LOC, not in npm test) and `worktree-attribution.test.js` (105 LOC, not in npm test) to bring suite under 2000 LOC budget
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-12
+
+### Findings
+- `manifest.json` always wrote `fromVersion: null`, so the framework missed a required audit field from the acceptance criteria even when `runPendingMigrations()` knew the source version.
+- Rollback was incomplete when the repo started without `.aigon/workflows/`; a failing migration could leave newly created workflow state behind because empty backups returned early without removing created files.
+
+### Fixes Applied
+- `54061515` — `fix(review): restore empty-state rollbacks and record fromVersion`
+
+### Notes
+- Review covered `lib/migration.js`, `lib/commands/setup.js`, the migration tests, and the branch commit history.
+- Tests were not run during review, per the review workflow.
