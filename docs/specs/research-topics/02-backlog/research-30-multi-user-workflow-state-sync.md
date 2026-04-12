@@ -114,11 +114,60 @@ The sync mechanism should not depend on GitHub-specific features (GitHub API, Gi
 - Agent-to-agent communication across machines
 
 ## Findings
-<!-- To be completed during research -->
+
+See agent findings in `docs/specs/research-topics/logs/research-30-*-findings.md`. Three agents participated (cc, gg, cx). Claude and Gemini produced comprehensive findings; Codex produced no findings.
+
+**Consensus across agents:**
+- Workflow state (`events.jsonl`, `snapshot.json`, `review-state.json`, `stats.json`) should be consolidated into a single `state.json` per entity
+- State should be committed to git (not gitignored) for backup, history, and multi-user visibility
+- Pure-git claiming using git push rejection as distributed lock — no external service needed
+- User identity via `git config user.name` / `user.email`
+- State on main branch for global visibility
+- Batch commits on significant transitions only (start, submit, close)
+
+**Key design decisions made during evaluation:**
+- **Single mega file** over separate files — eliminates partial-state reads, simplifies migration and git tracking
+- **Sibling files** (`feature-42.state.json`) over subdirectories — avoids spec directory normalization, Aigon controls moves programmatically
+- **Mass migration** over lazy migration — one code path, no fallback logic in every reader
+- **Always write assignee** (solo and team mode) — one code path, useful for attribution in solo mode
+- **Always commit state** (solo and team mode) — backup for free, history via git log, no conditional logic
+- **`teamMode` only controls push + assignment locking** — not file location or commit behavior
+- **Migration framework** with versioned backups (`.aigon/migrations/{version}/`) for safe upgrades
 
 ## Recommendation
-<!-- To be completed during research -->
+
+Implement multi-user state sync as a 5-feature series with strict dependency ordering. Each feature is independently useful and testable:
+
+1. **Migration framework** — versioned backup/restore infrastructure for safe state format changes
+2. **State consolidation** — merge 4 files into 1 `state.json` per entity (engine simplification, valuable for all users)
+3. **Auto-assignee** — record git user on every entity start (attribution, filtering, prerequisite for team mode)
+4. **Committed state** — relocate state alongside specs, auto-commit, custom merge driver (backup, history, multi-user foundation)
+5. **Team mode sync** — push/pull, assignment locking via git push rejection, `aigon sync` command
+
+Features 1-4 work in solo mode with zero configuration. Feature 5 is opt-in via `teamMode: true`.
 
 ## Output
-<!-- To be completed during research -->
-- [ ] Feature:
+
+### Selected Features
+
+| Feature Name | Description | Priority | Sequence |
+|---|---|---|---|
+| multiuser-migration-framework | Versioned migration infrastructure with backup, restore, manifest, logging | high | 0 |
+| multiuser-state-consolidation | Merge 4 state files into single `state.json` per entity | high | 1 |
+| multiuser-auto-assignee | Always write assignee from git config on entity start, `--mine` filter | high | 2 |
+| multiuser-committed-state | Relocate state alongside specs, auto-commit, merge driver, IDE hide | high | 3 |
+| multiuser-team-mode-sync | `teamMode` toggle, push to main, assignment locking, `aigon sync` | high | 4 |
+
+### Feature Dependencies
+
+- multiuser-state-consolidation depends on multiuser-migration-framework
+- multiuser-auto-assignee depends on multiuser-state-consolidation
+- multiuser-committed-state depends on multiuser-auto-assignee
+- multiuser-team-mode-sync depends on multiuser-committed-state
+
+### Not Selected
+
+- team-dashboard-view (Pro: avatars, team activity feed) — future Pro feature
+- platform-hooks-pr (Pro: PR creation on feature-close) — future Pro feature
+- cross-user-analytics (Pro: team velocity, cost reporting) — future Pro feature
+- background-git-sync (dashboard fetch indicator) — folded into team-mode-sync
