@@ -6,6 +6,9 @@ set -euo pipefail
 
 # ---------- helpers ----------
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+WORK_ROOT="${AIGON_WORK_ROOT:-$HOME/src}"
 PASS_COUNT=0
 FAIL_COUNT=0
 CURRENT_SCENARIO=""
@@ -62,7 +65,7 @@ install_prerequisites() {
 
 install_aigon() {
   step "Install aigon from local source"
-  cd ~/src/aigon
+  cd "$REPO_ROOT"
   npm ci --ignore-scripts 2>&1 | tail -1
   if [[ "$PLATFORM" == "linux" ]]; then
     sudo npm link 2>&1 | tail -1
@@ -72,6 +75,26 @@ install_aigon() {
   check_command aigon
   aigon --version
   pass "aigon installed and responds to --version"
+}
+
+setup_minimal_project() {
+  local project_dir="$1"
+
+  step "Create a temp project"
+  mkdir -p "$project_dir"
+  cd "$project_dir"
+  git init -q
+  git commit --allow-empty -m "init" -q
+  aigon init 2>&1 || true
+  pass "aigon init in temp project"
+
+  step "Install agent (cc)"
+  aigon install-agent cc 2>&1 || true
+  pass "aigon install-agent cc"
+
+  step "Verify board runs"
+  aigon board 2>&1 | head -20
+  pass "aigon board runs"
 }
 
 # ---------- scenarios ----------
@@ -88,9 +111,14 @@ scenario_1() {
   aigon config set --global terminal tmux
   pass "aigon config set"
 
+  TEMP_PROJECT=$(mktemp -d)
+  setup_minimal_project "$TEMP_PROJECT"
+
   step "Run aigon doctor"
   aigon doctor || true
   pass "aigon doctor ran (warnings are OK for clean-room)"
+
+  rm -rf "$TEMP_PROJECT"
 
   echo ""
   echo "=== SCENARIO 1 COMPLETE ==="
@@ -109,18 +137,17 @@ scenario_2() {
     aigon config set --global terminal tmux
   fi
 
-  step "Create a temp project to register"
   TEMP_PROJECT=$(mktemp -d)
-  cd "$TEMP_PROJECT"
-  git init -q
-  git commit --allow-empty -m "init" -q
-  aigon init 2>&1 || true
-  pass "aigon init in temp project"
+  setup_minimal_project "$TEMP_PROJECT"
 
   step "Start aigon server"
   aigon server start &
   SERVER_PID=$!
   sleep 3
+
+  step "Register temp project with server"
+  aigon server add "$TEMP_PROJECT" 2>&1 || true
+  pass "aigon server add"
 
   step "Verify dashboard responds on port 4100"
   if curl -sf -o /dev/null http://localhost:4100; then
@@ -151,7 +178,8 @@ scenario_5() {
   fi
 
   step "Clone brewboard seed repo"
-  BREWBOARD_DIR=~/src/brewboard
+  mkdir -p "$WORK_ROOT"
+  BREWBOARD_DIR="$WORK_ROOT/brewboard"
   rm -rf "$BREWBOARD_DIR"
   git clone https://github.com/jayvee/brewboard-seed.git "$BREWBOARD_DIR"
   cd "$BREWBOARD_DIR"

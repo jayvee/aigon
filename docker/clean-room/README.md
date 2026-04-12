@@ -46,8 +46,8 @@ Runs `smoke-test.sh` inside the container. Each scenario installs prerequisites,
 
 | # | Name | What it tests |
 |---|------|---------------|
-| 1 | Minimal single-agent | Prerequisites, aigon install, config, doctor |
-| 2 | Dashboard + server | Scenario 1 + aigon server + dashboard HTTP check |
+| 1 | Minimal single-agent | Prerequisites, aigon install, config, init, install-agent `cc`, board, doctor |
+| 2 | Dashboard + server | Scenario 1 setup path + aigon server + dashboard HTTP check |
 | 5 | Brewboard tutorial | Clone seed, init, install-agent, server, board, dev-server |
 
 ```bash
@@ -66,6 +66,8 @@ The smoke test script detects Linux vs macOS and uses the appropriate package ma
 # On a clean Mac (or GitHub Actions runner):
 docker/clean-room/smoke-test.sh --all
 ```
+
+The script resolves the checked-out aigon repo from its own location, so the same file works both inside the Docker bind mount and on a GitHub Actions macOS checkout.
 
 ## Environment Variables
 
