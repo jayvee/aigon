@@ -45,6 +45,26 @@ Agent: cx
 - `npm test` fails in this environment in `tests/integration/pro-gate.test.js` because Pro availability expectations are unmet (`isProAvailable()` false where test expects true). This appears unrelated to sync changes; sync-specific syntax and smoke flow passed.
 - Initial smoke test push failed due missing git identity in a clean test HOME; resolved by adding sync-repo local identity seeding fallback.
 
+## Code Review
+
+**Reviewed by**: cc (Claude Opus 4.6)
+**Date**: 2026-04-13
+
+### Findings
+1. **Bug: URL normalization inconsistency** — `normalizeOriginUrl` produced different repo IDs for `ssh://git@host/path` vs `git@host:path` formats. The SSH protocol prefix was stripped but the `git@` user prefix was not removed for `ssh://` URLs, causing the same repo to get different IDs on laptops using different remote URL formats. This would silently break cross-laptop sync.
+2. **Bug: temp directory leak in `bootstrapMerge`** — If `mergeBundleIntoRepos` or the subsequent `syncPush` threw after successful tar extraction, the temp directory was never cleaned up (the `fs.rmSync` at the end was unreachable on error).
+3. **Bug: derived files needlessly synced** — `copyPortableStateFromRepo` copied `snapshot.json` and `stats.json` into the sync repo, but `restorePortableStateToRepo` / `clearDerivedWorkflowFiles` immediately deleted them on pull. This bloated the sync repo's git history with files that are always discarded.
+
+### Fixes Applied
+- `fix(review): URL normalization, temp dir leak, derived files in sync repo` — all three bugs fixed in one commit in `lib/sync.js`
+
+### Notes
+- `lib/sync-merge.js` is clean — correct event log dedup by content hash, proper snapshot/stats invalidation, conservative state merge
+- Code duplication (`listFilesRecursive`, `readJsonSafe`, `EPHEMERAL_STATE_FILE_RE`) between sync.js and sync-merge.js is minor; not refactoring per review scope
+- The `deepMergeJson` local-wins behavior for scalar conflicts is a reasonable default for bootstrap (local machine is the "current" authority)
+- Preflight checks (lock files, version gate, fast-forward enforcement) are thorough
+- `statusSnapshot` does byte-by-byte comparison for pending-change detection — could be slow for large state dirs, but acceptable for v1
+
 ## Conversation Summary
 - User requested feature implementation via `aigon-feature-do` with mandatory `feature-start` first.
 - Executed setup/check commands, implemented sync feature per spec scope (`infra.js`, `sync.js`, `sync-merge.js`), validated, and documented architectural changes.
