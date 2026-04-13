@@ -56,6 +56,13 @@ DOCKER_ARGS=(
   --hostname clean-room
 )
 
+# Mount aigon-pro if it exists alongside aigon
+AIGON_PRO_DIR="$(cd "$REPO_ROOT/.." && pwd)/aigon-pro"
+if [[ -d "$AIGON_PRO_DIR" ]]; then
+  DOCKER_ARGS+=(-v "$AIGON_PRO_DIR:/home/dev/src/aigon-pro")
+  echo "    Aigon Pro mounted at ~/src/aigon-pro"
+fi
+
 # Forward API keys if set
 for key in ANTHROPIC_API_KEY GOOGLE_API_KEY OPENAI_API_KEY; do
   if [[ -n "${!key:-}" ]]; then
