@@ -144,6 +144,26 @@ It runs the entire sequence in order: `sessions-close` → remove worktrees → 
 
 `feature-cleanup <ID>` is a strict subset (worktrees + branches only) — use it to GC Fleet branches after `feature-close`, not to abandon work. `sessions-close <ID>` is also a strict subset; `feature-reset` already calls it internally.
 
+## Publishing Branches & Remote Review Gate
+
+### `feature-push`
+`aigon feature-push <ID> [agent]` pushes the resolved feature branch to `origin` with upstream tracking. It does not alter workflow state, move specs, or merge anything. Use it when you want to create a GitHub PR for review before closing.
+
+### Remote close gate (opt-in)
+Set `"honourRemoteBranchGate": true` in `.aigon/config.json` to enable GitHub PR gating on `feature-close`. When enabled, `feature-close` checks that the branch has exactly one open, non-draft, mergeable PR on GitHub before proceeding with the local close flow. The gate is fail-closed: if `gh` is missing, auth fails, or no PR exists, close is blocked.
+
+**v1 constraints:**
+- GitHub-only (uses `gh` CLI)
+- Users must **not** merge the PR remotely before running `feature-close`
+- A remotely merged PR is treated as an unsupported state
+- No PR metadata is stored in `.aigon/`, workflow state, or git history
+
+**Workflow with gate enabled:**
+1. Implement the feature
+2. `aigon feature-push <ID>` — publish branch
+3. Create PR on GitHub, wait for review/CI
+4. `aigon feature-close <ID>` — gate checks PR, then runs local close
+
 ## Six Rules Before Editing
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
