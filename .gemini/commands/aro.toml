@@ -1,6 +1,6 @@
 name = "research-open"
 description = "Open all Fleet research agents side-by-side in terminal (shortcut for research-open)"
-prompt = """
+prompt = '''
 # aigon-research-open
 
 Open all Fleet research agents side-by-side in Warp terminal, each pre-loaded with the research-do command.
@@ -67,4 +67,4 @@ Tell the user:
 - That they should run the command in each pane to start research
 
 ARGUMENTS: {{args}}
-"""
+'''

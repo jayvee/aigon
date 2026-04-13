@@ -1,6 +1,6 @@
 name = "feature-review"
 description = "Review feature <ID> - code review with fixes by a different agent (shortcut for feature-review)"
-prompt = """
+prompt = '''
 # aigon-feature-review
 
 Perform a code review on another agent's implementation, making targeted fixes where needed.
@@ -182,4 +182,4 @@ The user or original implementing agent should then:
 End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID. The implementer should run this in their own session using that agent's native invocation style (slash command for cc/gg/cu, skill `$aigon-feature-review-check <ID>` for Codex):
 
 `/aigon:feature-review-check <ID>`
-"""
+'''

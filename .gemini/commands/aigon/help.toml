@@ -1,6 +1,6 @@
 name = "help"
 description = "Show Aigon commands"
-prompt = """
+prompt = '''
 # Aigon Commands
 
 ## Feature Commands (unified for Drive and Fleet modes)
@@ -89,4 +89,4 @@ All commands have top-level short aliases prefixed with `a` (for aigon):
 | `/ah` | help | `/arsb` | research-submit |
 
 Run `aigon help` in terminal for full CLI reference.
-"""
+'''

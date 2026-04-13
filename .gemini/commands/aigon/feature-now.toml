@@ -1,6 +1,6 @@
 name = "feature-now"
 description = "Fast-track feature <name> - create + setup + implement in one step"
-prompt = """
+prompt = '''
 # aigon-feature-now
 
 Fast-track a feature from idea to implementation in one step. Works in two modes:
@@ -153,4 +153,4 @@ Tell the user:
 **STAY in the session.** The user may review and request changes. If they do, make the changes and commit. Do NOT run or suggest `feature-close`.
 
 **This implementation session is complete.**
-"""
+'''

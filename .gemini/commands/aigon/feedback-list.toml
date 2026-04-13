@@ -1,6 +1,6 @@
 name = "feedback-list"
 description = "List feedback items with filters"
-prompt = """
+prompt = '''
 # aigon-feedback-list
 
 List feedback items for triage.
@@ -30,4 +30,4 @@ The command defaults to active triage lanes:
 - inbox
 - triaged
 - actionable
-"""
+'''

@@ -1,9 +1,4 @@
 {
-  "tools": {
-    "allowed": [
-      "aigon"
-    ]
-  },
   "_aigon": {
     "note": "Tools added by Aigon",
     "tools": [
@@ -17,12 +12,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/opt/homebrew/bin/aigon check-version",
+            "command": "/Users/jviner/.local/state/fnm_multishells/10966_1776052737107/bin/aigon check-version",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "/opt/homebrew/bin/aigon project-context",
+            "command": "/Users/jviner/.local/state/fnm_multishells/10966_1776052737107/bin/aigon project-context",
             "timeout": 10
           }
         ]
@@ -34,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/opt/homebrew/bin/aigon check-agent-signal",
+            "command": "/Users/jviner/.local/state/fnm_multishells/10966_1776052737107/bin/aigon check-agent-signal",
             "timeout": 5
           }
         ]

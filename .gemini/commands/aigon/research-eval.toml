@@ -1,6 +1,6 @@
 name = "research-eval"
 description = "Evaluate research <ID> - synthesize findings and recommend features"
-prompt = """
+prompt = '''
 # aigon-research-eval
 
 Evaluate and synthesize research findings from ALL agents, help the user select features, and update the main research document. This transitions research from in-progress to in-evaluation (matching the feature pipeline).
@@ -168,4 +168,4 @@ Then tell the user:
 
 
 ARGUMENTS: {{args}}
-"""
+'''

@@ -1,6 +1,6 @@
 name = "research-prioritise"
 description = "Prioritise research <name> - assigns ID, moves to backlog"
-prompt = """
+prompt = '''
 # aigon-research-prioritise
 
 Run this command followed by the research topic name.
@@ -25,4 +25,4 @@ Next step: Run `/aigon:research-start <ID>` (Drive) or `/aigon:research-start <I
 End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID assigned by the CLI:
 
 `/aigon:research-start <ID>`
-"""
+'''

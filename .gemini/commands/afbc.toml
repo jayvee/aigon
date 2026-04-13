@@ -1,6 +1,6 @@
 name = "feedback-create"
 description = "Create feedback <title> (shortcut for feedback-create)"
-prompt = """
+prompt = '''
 # aigon-feedback-create
 
 Create a new feedback item in `docs/specs/feedback/01-inbox/`.
@@ -29,4 +29,4 @@ After creation, read the new file and fill in:
 - `## Summary`
 - `## Evidence`
 - attribution fields (`reporter`, `source`)
-"""
+'''

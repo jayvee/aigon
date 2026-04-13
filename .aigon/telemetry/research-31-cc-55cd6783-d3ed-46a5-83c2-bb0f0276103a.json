@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "source": "claude-transcript",
+  "sessionId": "55cd6783-d3ed-46a5-83c2-bb0f0276103a",
+  "entityType": "research",
+  "featureId": "29",
+  "repoPath": "/Users/jviner/src/aigon",
+  "agent": "cc",
+  "activity": "implement",
+  "model": "claude-opus-4-6",
+  "startAt": "2026-04-10T01:50:11.189Z",
+  "endAt": "2026-04-10T01:55:29.296Z",
+  "turnCount": 45,
+  "toolCalls": 16,
+  "tokenUsage": {
+    "input": 7927,
+    "output": 6944,
+    "cacheReadInput": 854834,
+    "cacheCreationInput": 136176,
+    "thinking": 0,
+    "total": 1005881,
+    "billable": 14871
+  },
+  "costUsd": 4.4753
+}

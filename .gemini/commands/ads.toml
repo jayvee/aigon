@@ -1,6 +1,6 @@
 name = "dev-server"
 description = "Manage dev server - start, stop, logs, list (shortcut for dev-server)"
-prompt = """
+prompt = '''
 # aigon-dev-server
 
 Manage the dev server for the current project. Handles port allocation, process lifecycle, proxy registration, and log viewing.
@@ -79,4 +79,4 @@ Prints the proxy subdomain URL (or localhost fallback) for use in testing and br
 - Without the proxy, it falls back to `http://localhost:<port>`
 - Use `aigon dev-server logs` to diagnose startup issues — all stdout/stderr is captured
 - To check what's running: `aigon dev-server list` shows all active servers with their ports and URLs
-"""
+'''

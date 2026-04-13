@@ -1,6 +1,6 @@
 name = "feature-create"
 description = "Create feature <name> - creates spec in inbox (shortcut for feature-create)"
-prompt = """
+prompt = '''
 # aigon-feature-create
 
 Run this command followed by the feature name.
@@ -41,4 +41,4 @@ Next step: Once the spec is committed, suggest `/aigon:feature-prioritise {{args
 End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual feature name:
 
 `/aigon:feature-prioritise <name>`
-"""
+'''

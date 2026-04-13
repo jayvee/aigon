@@ -1,6 +1,6 @@
 name = "feedback-triage"
 description = "Triage feedback <ID> with AI-assisted recommendations (shortcut for feedback-triage)"
-prompt = """
+prompt = '''
 # aigon-feedback-triage
 
 Run a triage loop for one feedback item with explicit human confirmation before writes.
@@ -55,4 +55,4 @@ Notes:
 Confirm the command output shows:
 - front matter updates applied
 - file moved to the correct feedback lifecycle folder for the new status
-"""
+'''

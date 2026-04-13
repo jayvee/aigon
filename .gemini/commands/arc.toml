@@ -1,6 +1,6 @@
 name = "research-create"
 description = "Create research <name> - creates topic in inbox (shortcut for research-create)"
-prompt = """
+prompt = '''
 # aigon-research-create
 
 Run this command followed by the research topic name.
@@ -38,4 +38,4 @@ Next step: Once the topic is complete, run `/aigon:research-prioritise {{args}}`
 End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual topic name:
 
 `/aigon:research-prioritise <name>`
-"""
+'''

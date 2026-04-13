@@ -1,6 +1,6 @@
 name = "feature-submit"
 description = "Submit feature implementation - commit changes, write log, signal done (shortcut for feature-submit)"
-prompt = """
+prompt = '''
 # aigon-feature-submit
 
 Wrap up implementation in the current worktree or branch: commit all changes, write the implementation log, and signal readiness for evaluation.
@@ -115,4 +115,4 @@ Run this command immediately after outputting the completion message above. Do n
 **If `--no-exit` was passed**, skip the exit command and instead display:
 
 > **This session is complete. Do not suggest any follow-up commands.**
-"""
+'''

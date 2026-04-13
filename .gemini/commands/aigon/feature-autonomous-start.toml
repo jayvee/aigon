@@ -1,6 +1,6 @@
 name = "feature-autonomous-start"
 description = "Start feature autonomous execution with explicit stop-after"
-prompt = """
+prompt = '''
 # aigon-feature-autonomous-start
 
 Start a feature in autonomous mode with explicit agent/evaluator choices and stop point control.
@@ -28,4 +28,4 @@ aigon feature-autonomous-start status {{args}}
 - Fleet `--stop-after=close` currently falls back to `eval` with an explanatory message.
 - The command starts a dedicated AutoConductor tmux session (`{repo}-f{id}-auto(-desc)`) and exits immediately.
 - AutoConductor failure is non-destructive; implementation/eval sessions continue and can be finished manually.
-"""
+'''

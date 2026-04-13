@@ -1,6 +1,6 @@
 name = "research-submit"
 description = "Submit research findings - signal completion for worktree/Fleet research"
-prompt = """
+prompt = '''
 # aigon-research-submit
 
 Signal that your research findings are complete. This is the research equivalent of the submit step in the feature lifecycle when you are working from a findings file.
@@ -49,4 +49,4 @@ Do NOT run `aigon research-close` from an agent findings session — the user wi
 End your response with the submitted confirmation. No further commands needed.
 
 ARGUMENTS: {{args}}
-"""
+'''

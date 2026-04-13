@@ -1,6 +1,6 @@
 name = "sessions-close"
 description = "Kill all agent sessions for a feature/research ID and close Warp tab"
-prompt = """
+prompt = '''
 # aigon-sessions-close
 
 Kill all running agent processes for a given feature or research ID, and close the Warp Fleet tab.
@@ -62,4 +62,4 @@ Tell the user:
 - Whether the Warp tab was closed automatically
 
 ARGUMENTS: {{args}}
-"""
+'''

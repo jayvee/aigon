@@ -1,6 +1,6 @@
 name = "research-do"
 description = "Do research <ID> - agent writes findings"
-prompt = """
+prompt = '''
 # aigon-research-do
 
 Run this command followed by the Research ID.
@@ -126,4 +126,4 @@ If Drive mode, end your response with the suggested next command on its own line
 `/aigon:research-close <ID>`
 
 ARGUMENTS: {{args}}
-"""
+'''

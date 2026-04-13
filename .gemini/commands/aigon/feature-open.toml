@@ -1,6 +1,6 @@
 name = "feature-open"
 description = "Open feature worktree in terminal and start agent"
-prompt = """
+prompt = '''
 # feature-open
 
 Open a feature worktree in terminal and automatically start the AI agent with `/aigon:feature-do`.
@@ -55,4 +55,4 @@ Tell the user:
 - Which worktree was opened
 - Which agent was launched with which feature ID
 - That the agent should start implementing automatically
-"""
+'''

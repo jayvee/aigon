@@ -1,6 +1,6 @@
 name = "research-review"
 description = "Review research <ID> - review findings with a different agent"
-prompt = """
+prompt = '''
 # aigon-research-review
 
 Review research findings for rigor, completeness, and accuracy, making targeted improvements where needed.
@@ -117,4 +117,4 @@ Show a summary of what was reviewed and any improvements made.
 End your response with the suggested next command on its own line:
 
 `/aigon:research-eval <ID>`
-"""
+'''

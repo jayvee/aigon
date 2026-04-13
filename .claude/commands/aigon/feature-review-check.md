@@ -4,7 +4,7 @@ argument-hint: "[ID]"
 ---
 # aigon-feature-review-check
 
-A reviewing agent has just committed fixes (or notes) on this feature branch. Your job — as the **implementing agent** — is to read what the reviewer did, then decide how to respond: **accept**, **challenge**, or **modify**.
+A reviewing agent has just committed fixes (or notes) on this feature branch. Your job — as the **implementing agent** — is to read what the reviewer did, then decide how to respond: **accept**, **revert**, or **modify**.
 
 ## Step 0: Resolve the feature ID
 

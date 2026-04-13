@@ -1,6 +1,6 @@
 name = "board"
 description = "Show Kanban board or list view"
-prompt = """
+prompt = '''
 # aigon-board
 
 Visualize features and research topics in Kanban board or detailed list view.
@@ -129,4 +129,4 @@ In Progress (1):
 - Use **Kanban view** for quick status checks and standups
 - Use **list view** (`--list`) when you need full names and details
 - Combine filters: `aigon board --features --list --active`
-"""
+'''

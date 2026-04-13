@@ -1,6 +1,6 @@
 name = "feature-close"
 description = "Close feature <ID> [agent] [--adopt] - merges branch, cleans up, optionally adopts from losers"
-prompt = """
+prompt = '''
 # aigon-feature-close
 
 Complete a feature by merging the implementation and cleaning up.
@@ -202,4 +202,4 @@ After the command completes, check the pipeline and suggest the most useful next
 ## Prompt Suggestion
 
 End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID/name from the pipeline check above.
-"""
+'''

@@ -1,6 +1,6 @@
 name = "research-close"
 description = "Close research <ID> - moves to done"
-prompt = """
+prompt = '''
 # aigon-research-close
 
 Run this command followed by the Research ID.
@@ -28,4 +28,4 @@ This moves the research topic from `04-in-evaluation/` (or `03-in-progress/`) to
 
 
 ARGUMENTS: {{args}}
-"""
+'''

@@ -1,6 +1,6 @@
 name = "feature-start"
 description = "Start feature <ID> [agents...] - create workspace and begin implementation"
-prompt = """
+prompt = '''
 # aigon-feature-start
 
 Prepare your workspace to implement a feature in either Drive or Fleet mode.
@@ -91,4 +91,4 @@ End your response with the suggested next command on its own line. This helps ag
 - **Drive mode (branch):** `/aigon:feature-close <ID>`
 - **Drive worktree:** `/aigon:feature-close <ID>`
 - **Fleet:** `/aigon:feature-eval <ID>`
-"""
+'''

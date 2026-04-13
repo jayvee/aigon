@@ -1,6 +1,6 @@
 name = "feature-eval"
 description = "Evaluate feature <ID> - code review or comparison"
-prompt = """
+prompt = '''
 # aigon-feature-eval
 
 Evaluate a feature implementation. Works in both Drive mode (code review) and Fleet mode (comparison).
@@ -175,4 +175,4 @@ End your response with the suggested next command on its own line. This helps ag
 
 - **Drive mode:** `/aigon:feature-close <ID>`
 - **Fleet mode:** `/aigon:feature-close <ID> <winning-agent>`
-"""
+'''

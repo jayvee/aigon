@@ -1,6 +1,6 @@
 name = "research-start"
 description = "Start research <ID> [agents...] - create workspace and begin research (shortcut for research-start)"
-prompt = """
+prompt = '''
 # aigon-research-start
 
 Prepare your workspace to conduct research in either Drive or Fleet mode.
@@ -113,4 +113,4 @@ End your response with the suggested next command on its own line. This helps ag
 - **Fleet:** `/aigon:research-eval <ID>`
 
 ARGUMENTS: {{args}}
-"""
+'''

@@ -1,6 +1,6 @@
 name = "research-autopilot"
 description = "Research autopilot <ID> [agents...] - Fleet setup + spawn + monitor + evaluate (shortcut for research-autopilot)"
-prompt = """
+prompt = '''
 # aigon-research-autopilot
 
 Run a fully autonomous Fleet research pipeline. Sets up findings files, spawns agents in parallel, monitors progress, and optionally runs synthesis when all agents submit.
@@ -72,4 +72,4 @@ After all agents submit, suggest the eval command:
 `/aigon:research-eval {{args}}`
 
 ARGUMENTS: {{args}}
-"""
+'''

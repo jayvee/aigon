@@ -1,6 +1,6 @@
 name = "feature-prioritise"
 description = "Prioritise feature <name> - assigns ID, moves to backlog (shortcut for feature-prioritise)"
-prompt = """
+prompt = '''
 # aigon-feature-prioritise
 
 **CRITICAL:** You MUST use the CLI command below to prioritise. Do NOT manually rename or move spec files — the CLI handles ID assignment and file moves.
@@ -47,4 +47,4 @@ Example Fleet: `/aigon:feature-start 55 cc gg cx cu`
 End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID assigned by the CLI:
 
 `/aigon:feature-start <ID>`
-"""
+'''

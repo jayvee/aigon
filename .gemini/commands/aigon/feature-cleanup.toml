@@ -1,6 +1,6 @@
 name = "feature-cleanup"
 description = "Cleanup feature <ID> [--push] - remove all worktrees and branches"
-prompt = """
+prompt = '''
 # aigon-feature-cleanup
 
 Remove all worktrees and branches for a feature. Useful after completing a Fleet run or when canceling a feature.
@@ -71,4 +71,4 @@ aigon feature-cleanup 55           # Delete everything
 - The command will remove ALL branches matching `feature-<ID>-*`
 - For Drive mode features, this will delete the feature branch (use with caution)
 - Logs and specs in `docs/specs/features/` are NOT deleted
-"""
+'''

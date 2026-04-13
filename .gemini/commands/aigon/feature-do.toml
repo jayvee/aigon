@@ -1,6 +1,6 @@
 name = "feature-do"
 description = "Do feature <ID> - works in both Drive and Fleet modes"
-prompt = """
+prompt = '''
 # aigon-feature-do
 
 Implement a feature. Works in Drive mode (branch), Drive mode (worktree) (parallel development), and Fleet mode (competition).
@@ -182,4 +182,4 @@ Hard rules:
 After it succeeds, tell the user: "Implementation complete — ready for review."
 
 **STAY in the session.** The user may request changes. If they do, make the changes, commit, and say "Changes committed." Do NOT run or suggest `feature-close` — that's the user's decision. End with a brief summary of what was implemented.
-"""
+'''
