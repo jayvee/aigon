@@ -34,7 +34,7 @@ Current command families:
 | `lib/commands/feature.js` | All `feature-*` handlers, `sessions-close` |
 | `lib/commands/research.js` | All `research-*` handlers |
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
-| `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile` |
+| `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile`, `sync` |
 | `lib/commands/setup.js` | `init`, `install-agent`, `check-version`, `update`, `project-context`, `doctor` |
 | `lib/commands/misc.js` | `agent-status`, `status`, `deploy`, `next`, `help` |
 
@@ -113,6 +113,10 @@ Current shared modules:
   `readTemplate`, `processTemplate`, `readGenericTemplate`, `formatCommandOutput`, `COMMAND_REGISTRY`
 - `lib/utils.js` (~1,474 lines): shared utilities — hooks, spec CRUD, analytics, version, deploy
   `parseHooksFile`, `parseFrontMatter`, `findFile`, `collectAnalyticsData`, `safeWrite`
+- `lib/sync.js` (~800 lines): solo multi-laptop sync orchestration for portable `.aigon` state via private git sync repo
+  `handleSyncCommand`, `sync init/register/export/bootstrap-merge/push/pull/status`, preflight/version safety checks
+- `lib/sync-merge.js` (~300 lines): bootstrap merge engine for data-type-specific merge behavior
+  `mergeBundleIntoRepos` (workflow event dedupe, telemetry union, state manifest merge, derived cache invalidation)
 
 **Additional modules:**
 
