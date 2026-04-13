@@ -626,12 +626,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/jviner/.local/state/fnm_multishells/10966_1776052737107/bin/aigon check-version",
+            "command": "/Users/jviner/.local/state/fnm_multishells/46546_1776068025173/bin/aigon check-version",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "/Users/jviner/.local/state/fnm_multishells/10966_1776052737107/bin/aigon project-context",
+            "command": "/Users/jviner/.local/state/fnm_multishells/46546_1776068025173/bin/aigon project-context",
             "timeout": 10
           }
         ]
@@ -643,7 +643,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/jviner/.local/state/fnm_multishells/10966_1776052737107/bin/aigon capture-session-telemetry",
+            "command": "/Users/jviner/.local/state/fnm_multishells/46546_1776068025173/bin/aigon capture-session-telemetry",
             "timeout": 30
           }
         ]
@@ -655,7 +655,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/jviner/.local/state/fnm_multishells/10966_1776052737107/bin/aigon check-agent-submitted",
+            "command": "/Users/jviner/.local/state/fnm_multishells/46546_1776068025173/bin/aigon check-agent-submitted",
             "timeout": 5
           }
         ]
