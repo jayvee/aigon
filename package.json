@@ -28,7 +28,7 @@
     "aigon": "./aigon-cli.js"
   },
   "scripts": {
-    "test": "node scripts/generate-workflow-diagrams.js --check && node tests/integration/lifecycle.test.js && node tests/integration/agent-prompt-resolver.test.js && node tests/integration/agent-log-collector.test.js && node tests/integration/landing-home-check.test.js && node tests/integration/pro-gate.test.js && node tests/integration/iterate-flag-rename.test.js && node tests/integration/feature-close-restart.test.js && node tests/integration/dashboard-restart-marker.test.js && node tests/integration/stats-aggregate.test.js && node tests/integration/worktree-config-isolation.test.js && node tests/integration/feature-close-scan-target.test.js && node tests/integration/migration.test.js",
+    "test": "node scripts/generate-workflow-diagrams.js --check && node tests/integration/lifecycle.test.js && node tests/integration/agent-prompt-resolver.test.js && node tests/integration/agent-log-collector.test.js && node tests/integration/landing-home-check.test.js && node tests/integration/pro-gate.test.js && node tests/integration/iterate-flag-rename.test.js && node tests/integration/feature-close-restart.test.js && node tests/integration/remote-gate-github.test.js && node tests/integration/stats-aggregate.test.js && node tests/integration/worktree-config-isolation.test.js && node tests/integration/feature-close-scan-target.test.js && node tests/integration/migration.test.js",
     "test:ui": "npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list",
     "test:landing": "npx playwright test --config tests/landing/playwright.config.js --reporter=list",
     "test:all": "npm test && npm run test:ui && npm run test:landing",
