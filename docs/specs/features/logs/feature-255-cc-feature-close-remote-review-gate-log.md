@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 389
+lines_removed: 25
+lines_changed: 414
+files_touched: 12
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 298
+output_tokens: 18807
+cache_creation_input_tokens: 242901
+cache_read_input_tokens: 8797521
+thinking_tokens: 0
+total_tokens: 9059527
+billable_tokens: 19105
+cost_usd: 19.1657
+sessions: 1
+model: "claude-opus-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 255 - feature-close-remote-review-gate
 Agent: cc
 
