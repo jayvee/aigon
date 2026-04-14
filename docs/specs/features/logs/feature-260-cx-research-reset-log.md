@@ -30,3 +30,19 @@ Agent: cx
 - Treated reset as idempotent no-op where artifacts do not exist (files missing, spec already in backlog, absent engine state).
 - For heartbeat cleanup safety, removed heartbeat files only for known research agents (derived from findings/state/snapshot), avoiding broad deletion by ID alone.
 - Conversation summary: user asked whether implementation was already done mid-run; status was reported accurately and work proceeded through full implementation/validation.
+
+## Code Review
+
+**Reviewed by**: cc (Claude Code Opus)
+**Date**: 2026-04-14
+
+### Findings
+- **Bug**: `research-reset` was added to `TRANSITION_ACTIONS` in `lib/workflow-snapshot-adapter.js`, but it is a destructive lifecycle action, not a state transition. `feature-reset` is correctly absent from `TRANSITION_ACTIONS`. Including `research-reset` there would classify it as `type:'transition'` with `to:null`, potentially confusing the frontend drag-drop system.
+
+### Fixes Applied
+- `63f2cc51` — fix(review): remove research-reset from TRANSITION_ACTIONS
+
+### Notes
+- Overall implementation is solid and well-structured. Good decisions around entity-specific cleanup, idempotency, and using the workflow-core API rather than hardcoding paths.
+- All acceptance criteria are covered. Session teardown reuse via `createAllCommands()['sessions-close']` is heavier than the internal `closeSessionsForFeature` helper used by `feature-reset`, but `closeSessionsForFeature` is local to `feature.js` so this is the correct available path from `research.js`.
+- Dashboard wiring (action candidate, confirmation dialog, danger styling, sort ranking) is complete and consistent with the `feature-reset` pattern.
