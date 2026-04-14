@@ -26,7 +26,6 @@ const COMMAND_GROUPS = {
         'feature-now',
         'feature-start',
         'feature-do',
-        'feature-submit',
         'feature-validate',
         'feature-eval',
         'feature-review',

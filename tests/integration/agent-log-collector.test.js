@@ -85,7 +85,7 @@ test('non-existent dirs are skipped silently', () => {
 });
 
 // REGRESSION: prevents the "wall of bold text" bug where telemetry YAML
-// frontmatter (written by feature-submit / feature-close) rendered as a
+// frontmatter (written by close/log workflows) rendered as a
 // massive header at the top of the Agent Log tab via marked.parse().
 // Log files are supposed to be pure narrative per CLAUDE.md, but the
 // telemetry pipeline has historically written frontmatter anyway. The

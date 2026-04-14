@@ -134,7 +134,7 @@
         const startedTs = byType.started || byType['feature.started'] || byType['research.started'] || byType['feature-started'] || byType['research-started'] || byType['transition:feature-start'] || byType['transition:research-start'] || byType['signal.agent_started'];
         // Fallback: derive submit time from agent status files if no manifest event
         let agentSubmitTs = null;
-        if (!byType.submitted && !byType['all-submitted'] && !byType['feature-submitted'] && !byType['transition:feature-submit']) {
+        if (!byType.submitted && !byType['all-submitted'] && !byType['feature-submitted']) {
           const agentFiles = payload.agentFiles || {};
           Object.values(agentFiles).forEach(af => {
             if (af && af.status === 'submitted' && af.updatedAt) {
@@ -142,7 +142,7 @@
             }
           });
         }
-        const submittedTs = byType.submitted || byType['all-submitted'] || byType['feature.submitted'] || byType['research.submitted'] || byType['feature-submitted'] || byType['research-submitted'] || byType['transition:feature-submit'] || byType['transition:research-submit'] || byType['signal.agent_ready'] || agentSubmitTs;
+        const submittedTs = byType.submitted || byType['all-submitted'] || byType['feature.submitted'] || byType['research.submitted'] || byType['feature-submitted'] || byType['research-submitted'] || byType['transition:research-submit'] || byType['signal.agent_ready'] || agentSubmitTs;
         const reviewedTs = byType['review.completed'] || byType['feature.review_requested'] || byType['research.review_requested'] || byType['feature-review'] || byType['research-review'] || byType['transition:feature-review'] || byType['transition:research-review'];
         const evaluatedTs = byType['eval.completed'] || byType['feature.eval_requested'] || byType['research.eval_requested'] || byType['feature.closed'] || byType['research.closed'] || byType.evaluated || byType.closed || byType['feature-evaluated'] || byType['research-evaluated'] || byType['transition:feature-eval'] || byType['transition:feature-close'] || byType['transition:research-eval'] || byType['transition:research-close'];
 

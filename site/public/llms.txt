@@ -35,7 +35,6 @@
 - [feature-now](https://www.aigon.build/docs/reference/commands/feature/feature-now): Create and immediately start a feature in one step.
 - [feature-do](https://www.aigon.build/docs/reference/commands/feature/feature-do): Send follow-up instructions to a running agent.
 - [feature-open](https://www.aigon.build/docs/reference/commands/feature/feature-open): Open a worktree terminal session for a feature.
-- [feature-submit](https://www.aigon.build/docs/reference/commands/feature/feature-submit): Mark an agent's implementation as ready for review.
 - [feature-validate](https://www.aigon.build/docs/reference/commands/feature/feature-validate): Run validation checks against a feature implementation.
 - [feature-eval](https://www.aigon.build/docs/reference/commands/feature/feature-eval): Evaluate and compare Fleet implementations.
 - [feature-review](https://www.aigon.build/docs/reference/commands/feature/feature-review): Review a submitted feature implementation.

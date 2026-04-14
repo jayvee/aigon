@@ -52,7 +52,6 @@ docs/specs/
 | `aigon feature-implement <ID> [--iterate]` | Implement feature; `--iterate` runs Autopilot retry loop |
 | `aigon feature-eval <ID>` | Create evaluation (code review for solo, comparison for arena) |
 | `aigon feature-done <ID> [agent]` | Merge and complete (specify agent in arena mode) |
-| `aigon feature-push [ID] [agent]` | Push feature branch to origin for PR review |
 | `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
 ## Key Rules
@@ -100,30 +99,8 @@ For features, there are two relevant layers:
 
 Before running `feature-done`, always:
 
-1. **If you want GitHub PR review, publish the branch**:
+1. **Push the branch to origin** to save your work remotely:
    ```bash
-   aigon feature-push
+   git push -u origin <current-branch-name>
    ```
 2. **Ask the user** if they want to delete the local branch after merge (the CLI will delete it by default)
-
-## GitHub PR Workflow (Optional)
-
-If the repo `origin` is GitHub and `gh` is available, `feature-done` is PR-aware at close time:
-
-1. No PR for the feature branch:
-   - `feature-done` behaves like a normal local close
-2. Open PR for the feature branch:
-   - `feature-done` blocks so Aigon does not bypass the remote review/merge flow
-3. Merged PR for the feature branch:
-   - `feature-done` syncs local `main` from `origin/main`
-   - writes the final done-state spec/log commit
-   - pushes that final close-state commit to `origin/main`
-   - cleans up the worktree and branch
-
-Recommended flow:
-
-1. Implement the feature
-2. Run `aigon feature-push`
-3. Create and review the PR on GitHub
-4. Merge the PR on GitHub
-5. Run `aigon feature-done <ID>` to finalize in Aigon

@@ -4,7 +4,6 @@ export default {
   "feature-start": "feature-start",
   "feature-now": "feature-now",
   "feature-do": "feature-do",
-  "feature-submit": "feature-submit",
   "feature-open": "feature-open",
   "feature-eval": "feature-eval",
   "feature-review": "feature-review",
