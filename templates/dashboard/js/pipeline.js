@@ -289,6 +289,86 @@
 
     // Agent-specific action label overrides (keyed by action name)
     const AGENT_ACTION_LABELS = {};
+    const prStatusByFeature = new Map();
+    const prStatusLoading = new Set();
+
+    function prStatusKey(repoPath, featureId) {
+      return String(repoPath || '') + '::' + String(featureId || '');
+    }
+
+    function getCachedPrStatus(repoPath, featureId) {
+      return prStatusByFeature.get(prStatusKey(repoPath, featureId)) || null;
+    }
+
+    function setCachedPrStatus(repoPath, featureId, payload) {
+      const key = prStatusKey(repoPath, featureId);
+      const normalized = {
+        provider: payload && payload.provider ? String(payload.provider) : '',
+        status: payload && payload.status ? String(payload.status) : 'unavailable',
+        prNumber: payload && payload.prNumber != null ? payload.prNumber : null,
+        url: payload && payload.url ? String(payload.url) : '',
+        message: payload && payload.message ? String(payload.message) : ''
+      };
+      prStatusByFeature.set(key, normalized);
+      return normalized;
+    }
+
+    function shouldWarnCloseByPrStatus(repoPath, featureId) {
+      const cached = getCachedPrStatus(repoPath, featureId);
+      if (!cached) return false; // no warning before first refresh
+      return cached.status === 'none' || cached.status === 'open' || cached.status === 'draft' || cached.status === 'unavailable';
+    }
+
+    function buildPrStatusContent(repoPath, featureId) {
+      const cached = getCachedPrStatus(repoPath, featureId);
+      if (!cached) {
+        return '<span class="kcard-agent-status status-idle">- Click to check PR status</span>';
+      }
+
+      if (cached.status === 'none') {
+        return '<span class="kcard-agent-status kcard-gh-status status-none">- No PR</span>';
+      }
+
+      if (cached.status === 'open' || cached.status === 'draft') {
+        const isDraft = cached.status === 'draft';
+        const statusCls = isDraft ? 'status-draft' : 'status-open';
+        const label = (isDraft ? 'Draft' : 'Open') + (cached.prNumber ? ' #' + escHtml(cached.prNumber) : '');
+        const linkHtml = cached.url
+          ? ' <a class="kcard-gh-link" href="' + escHtml(cached.url) + '" target="_blank" rel="noopener noreferrer" aria-label="Open pull request">↗</a>'
+          : '';
+        return '<span class="kcard-agent-status kcard-gh-status ' + statusCls + '">● ' + label + linkHtml + '</span>';
+      }
+
+      if (cached.status === 'merged') {
+        const mergedLabel = 'Merged' + (cached.prNumber ? ' #' + escHtml(cached.prNumber) : '');
+        return '<span class="kcard-agent-status kcard-gh-status status-merged">✓ ' + mergedLabel + '</span>' +
+          '<div class="kcard-gh-helper">Ready to close</div>';
+      }
+
+      return '<span class="kcard-agent-status kcard-gh-status status-unavailable">- Unavailable</span>';
+    }
+
+    function buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType) {
+      if (pipelineType !== 'features') return '';
+      if (!repoMeta || !repoMeta.githubRemote) return '';
+      if (!feature || feature.stage === 'done') return '';
+
+      const key = prStatusKey(repoPath, feature.id);
+      const loading = prStatusLoading.has(key);
+      const refreshLabel = loading ? '[refreshing]' : '[refresh]';
+
+      return '<div class="kcard-agent agent-github">' +
+        '<div class="kcard-agent-header">' +
+          '<span class="kcard-agent-name">github</span>' +
+          '<button class="kcard-gh-refresh' + (loading ? ' is-loading' : '') + '"' +
+            ' data-gh-refresh="1"' +
+            ' data-repo-path="' + escHtml(repoPath || '') + '"' +
+            ' data-feature-id="' + escHtml(feature.id) + '"' +
+            (loading ? ' disabled' : '') + '>' + refreshLabel + '</button>' +
+        '</div>' +
+        '<div class="kcard-agent-status-row">' + buildPrStatusContent(repoPath, feature.id) + '</div>' +
+      '</div>';
+    }
 
     // Actions rendered from API — do not add action eligibility logic here.
     // All actions (workflow + infra) are derived server-side via the action registry.
@@ -363,7 +443,7 @@
 
     // validActionBtnClass, buildValidActionsHtml, handleValidAction moved to actions.js
 
-    function buildKanbanCard(feature, repoPath, pipelineType) {
+    function buildKanbanCard(feature, repoPath, pipelineType, repoMeta) {
       const card = document.createElement('div');
       card.className = 'kcard';
       card.draggable = true;
@@ -469,6 +549,7 @@
               '</div>';
           });
         }
+        innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         // Card-level actions (non-per-agent: close, eval, review, etc.)
         const cardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
         if (cardActionsHtml) {
@@ -501,6 +582,7 @@
               '</div>';
           });
         }
+        innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         // Card-level actions (close, review — no session controls)
         const soloCardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
         if (soloCardActionsHtml) {
@@ -526,11 +608,19 @@
           innerHtml +=
             (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
             evalStatusHtml +
+            buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType) +
             (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
         }
       }
 
       card.innerHTML = innerHtml;
+
+      // Advisory-only warning style on Close button when last PR check is non-merged.
+      if (shouldWarnCloseByPrStatus(repoPath, feature.id)) {
+        card.querySelectorAll('.kcard-va-btn[data-va-action="feature-close"]').forEach(btn => {
+          btn.classList.add('kcard-va-btn--pr-warning');
+        });
+      }
 
       // Wire overflow menu toggles
       card.querySelectorAll('.kcard-overflow-toggle').forEach(toggle => {
@@ -643,6 +733,32 @@
         };
       });
 
+      card.querySelectorAll('[data-gh-refresh="1"]').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const targetRepoPath = btn.getAttribute('data-repo-path') || repoPath || '';
+          const targetFeatureId = btn.getAttribute('data-feature-id') || feature.id;
+          const key = prStatusKey(targetRepoPath, targetFeatureId);
+          if (prStatusLoading.has(key)) return;
+
+          prStatusLoading.add(key);
+          render();
+          try {
+            const payload = await fetchPrStatus(targetRepoPath, targetFeatureId);
+            setCachedPrStatus(targetRepoPath, targetFeatureId, payload || {});
+          } catch (err) {
+            setCachedPrStatus(targetRepoPath, targetFeatureId, {
+              provider: 'github',
+              status: 'unavailable',
+              message: String(err && err.message ? err.message : 'Failed to fetch PR status')
+            });
+          } finally {
+            prStatusLoading.delete(key);
+            render();
+          }
+        };
+      });
+
       // Eval session view button (research)
       card.querySelectorAll('.kcard-eval-view').forEach(btn => {
         btn.onclick = async (e) => {
@@ -728,12 +844,12 @@
       const shouldCapOverflow = (stage === 'backlog' || stage === 'inbox') && cards.length > OVERFLOW_CAP;
       const displayCards = (stage === 'done' && cards.length > DONE_CAP) ? cards.slice(0, DONE_CAP)
         : (shouldCapOverflow && !isExpanded) ? cards.slice(0, OVERFLOW_CAP) : cards;
-      displayCards.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType)));
+      displayCards.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
       if (shouldCapOverflow && !isExpanded) {
         const hiddenCards = cards.slice(OVERFLOW_CAP);
         const hiddenContainer = document.createElement('div');
         hiddenContainer.style.display = 'none';
-        hiddenCards.forEach(feature => hiddenContainer.appendChild(buildKanbanCard(feature, repo.path, pType)));
+        hiddenCards.forEach(feature => hiddenContainer.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
         colBody.appendChild(hiddenContainer);
         const moreBtn = document.createElement('button');
         moreBtn.className = 'btn';

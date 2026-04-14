@@ -34,6 +34,23 @@
       }
     }
 
+    async function fetchPrStatus(repoPath, featureId) {
+      const repoToken = encodeURIComponent(String(repoPath || '').trim());
+      const featureToken = encodeURIComponent(String(featureId || '').trim());
+      if (!repoToken || !featureToken) {
+        throw new Error('repoPath and featureId are required');
+      }
+      const res = await fetch('/api/repos/' + repoToken + '/features/' + featureToken + '/pr-status', {
+        method: 'GET',
+        cache: 'no-store'
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload.error || ('HTTP ' + res.status));
+      }
+      return payload;
+    }
+
     async function requestAction(action, args, repoPath, btn) {
       const key = action + ':' + (args || []).join(':');
       if (state.pendingActions.has(key)) return;
