@@ -48,6 +48,49 @@ This research should produce a validated architecture for team sync that can rep
 - git-bug (https://github.com/git-bug/git-bug) — distributed bug tracker using git refs
 - git-appraise — Google's distributed code review tool using git notes
 
+## Prior Art: Distributed Git-Native Task Tracking Proposal
+
+The following proposal was drafted as a starting point for this research. It outlines a decentralised, platform-agnostic system using git's internal reference system. **This is unvalidated — the research questions above exist to test these assumptions.**
+
+### Core Architecture
+
+To avoid cluttering the repository's standard branches and tags, all Aigon metadata is stored in a custom namespace: `refs/aigon/`. This ensures the data is synchronised but invisible to standard git commands.
+
+Entity namespaces:
+- Features: `refs/aigon/features/`
+- Research: `refs/aigon/research/`
+- Feedback: `refs/aigon/feedback/`
+- Claims (Notes): `refs/notes/aigon/claims`
+
+### Phase 1: The Numbering Lock (Prioritisation)
+
+When a task file (e.g. `new-feature.md`) is prioritised, it is assigned a unique number.
+
+Numbering algorithm:
+1. Fetch latest metadata: `git fetch origin refs/aigon/*:refs/aigon/*`
+2. Calculate next ID: list all refs in the specific entity namespace (e.g. `refs/aigon/features/*`), find the highest integer, and increment by 1
+3. Reserve number: create a ref pointing to the current commit to "anchor" the number: `git update-ref refs/aigon/<type>/<number> HEAD`
+4. Atomic push: `git push origin refs/aigon/<type>/<number>`
+5. Conflict handling: if the push fails (e.g. Bob pushed #35 while Alice was calculating), the user must fetch and increment again
+6. Apply identity: only after a successful push, rename the local file to `<number>-task-name.md`
+
+### Phase 2: The Claiming Lock (Starting Work)
+
+A "Claim" represents a single person starting work on a numbered task.
+
+Claiming algorithm:
+1. Fetch latest claims: `git fetch origin refs/notes/aigon/claims:refs/notes/aigon/claims`
+2. Verify availability: check if a note already exists on the anchor ref: `git notes --ref aigon/claims show refs/aigon/<type>/<number>`
+3. Atomic claim: if empty, add a claim note: `git notes --ref aigon/claims add -m "owner: <user_id>, status: started, timestamp: <now>" refs/aigon/<type>/<number>`
+4. Synchronise: `git push origin refs/notes/aigon/claims`
+5. Race condition: if the push is rejected, someone else claimed the task within the last few seconds. The user is notified and the local claim is aborted.
+
+### CLI Requirements
+
+- Configuration: automatically set `remote.origin.fetch` and `log.excludeDecoration` for the Aigon namespaces
+- Commands: `aigon prioritize <filename>` (numbering + file rename), `aigon claim <number>` (git note claim + push), `aigon list <type>` (display tasks and owners)
+- Portability: use standard git primitives to ensure it works on GitHub, GitLab, or private SSH servers
+
 ## Findings
 <!-- Document discoveries, options evaluated, pros/cons -->
 
