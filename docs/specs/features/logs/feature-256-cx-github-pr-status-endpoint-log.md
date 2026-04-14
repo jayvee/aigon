@@ -35,6 +35,25 @@ Agent: cx
 - User requested full `feature-start` then `feature-do` workflow execution for feature `256` with direct implementation (no plan mode), commit discipline, validation, log update, and agent status transitions.
 - Implementation followed that flow in the feature worktree and completed with feature-specific validations and server restart.
 
+## Code Review
+
+**Reviewed by**: cc (Claude Code Opus)
+**Date**: 2026-04-14
+
+### Findings
+- Tests missing required `// REGRESSION:` comments per Rule T2
+- Test budget already over ceiling (2354/2000 LOC) — pre-existing, not introduced by this feature
+
+### Fixes Applied
+- `88ba8938` — added REGRESSION comments to new tests in both test files
+
+### Assessment
+Implementation is solid. The `queryGitHubPrStatus` extraction is clean — normalized return shape, correct `cwd` propagation for dashboard use, and full backward compatibility for `checkGitHubGate` (all 14 original tests pass unchanged). Branch resolution logic handles solo/fleet/drive modes correctly with proper ambiguity detection. Endpoint is read-only, no-cache, no mutations. All five spec'd status outcomes are tested.
+
+### Notes
+- `npm test` has a pre-existing failure in `pro-gate.test.js` (unrelated to this feature)
+- Test budget is over ceiling pre-existing; the ~87 new test LOC are justified but the budget issue should be addressed separately
+
 ## Issues And Resolutions
 - Issue: `npm test` fails in `tests/integration/pro-gate.test.js` due to local Pro availability assumptions (`isProAvailable()` expected true in that suite).  
   Resolution: Verified this is unrelated to the new PR-status endpoint and additionally ran all feature-specific validation commands/tests successfully.
