@@ -322,7 +322,7 @@
     function buildPrStatusContent(repoPath, featureId) {
       const cached = getCachedPrStatus(repoPath, featureId);
       if (!cached) {
-        return '<span class="kcard-agent-status status-idle">Click to check PR status</span>';
+        return '<button class="kcard-gh-check-btn" data-gh-refresh="1" data-repo-path="' + escHtml(repoPath || '') + '" data-feature-id="' + escHtml(featureId) + '">Check PR status</button>';
       }
 
       if (cached.status === 'none') {
@@ -351,20 +351,26 @@
     function buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType) {
       if (pipelineType !== 'features') return '';
       if (!repoMeta || !repoMeta.githubRemote) return '';
-      if (!feature || feature.stage === 'done') return '';
+      if (!feature || !feature.stage || feature.stage === 'done' || feature.stage === 'inbox' || feature.stage === 'backlog') return '';
 
       const key = prStatusKey(repoPath, feature.id);
       const loading = prStatusLoading.has(key);
-      const refreshLabel = loading ? '[refreshing]' : '[refresh]';
+      const cached = getCachedPrStatus(repoPath, feature.id);
+      const refreshLabel = loading ? '↻ …' : '↻';
 
-      return '<div class="kcard-agent agent-github">' +
-        '<div class="kcard-agent-header">' +
-          '<span class="kcard-agent-name">github</span>' +
-          '<button class="kcard-gh-refresh' + (loading ? ' is-loading' : '') + '"' +
+      // Only show header refresh button after first fetch; before that the content area has the "Check PR status" button
+      const refreshBtnHtml = cached
+        ? '<button class="kcard-gh-refresh' + (loading ? ' is-loading' : '') + '"' +
             ' data-gh-refresh="1"' +
             ' data-repo-path="' + escHtml(repoPath || '') + '"' +
             ' data-feature-id="' + escHtml(feature.id) + '"' +
-            (loading ? ' disabled' : '') + '>' + refreshLabel + '</button>' +
+            (loading ? ' disabled' : '') + '>' + refreshLabel + '</button>'
+        : '';
+
+      return '<div class="kcard-agent agent-github">' +
+        '<div class="kcard-agent-header">' +
+          '<span class="kcard-agent-name"><svg class="kcard-gh-logo" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> GitHub</span>' +
+          refreshBtnHtml +
         '</div>' +
         '<div class="kcard-agent-status-row">' + buildPrStatusContent(repoPath, feature.id) + '</div>' +
       '</div>';
@@ -741,8 +747,12 @@
           const key = prStatusKey(targetRepoPath, targetFeatureId);
           if (prStatusLoading.has(key)) return;
 
+          // Immediate visual feedback on the clicked button before full re-render
+          btn.disabled = true;
+          btn.classList.add('is-loading');
+          btn.textContent = btn.classList.contains('kcard-gh-check-btn') ? 'Checking…' : '↻ …';
+
           prStatusLoading.add(key);
-          render();
           try {
             const payload = await fetchPrStatus(targetRepoPath, targetFeatureId);
             setCachedPrStatus(targetRepoPath, targetFeatureId, payload || {});

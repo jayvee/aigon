@@ -94,4 +94,12 @@ Tell the user:
 4. For **Revert**: which commits you reverted and why.
 5. Any open questions for the user.
 
-**Do NOT run `{{CMD_PREFIX}}feature-close`.** The user decides when to close the feature.
+## Step 6: Signal completion
+
+After reporting your decision, signal that you have addressed the review feedback:
+
+```bash
+aigon agent-status feedback-addressed
+```
+
+This tells the AutoConductor that you are done processing the review. **Do NOT run `{{CMD_PREFIX}}feature-close`.** The user (or AutoConductor) decides when to close the feature.

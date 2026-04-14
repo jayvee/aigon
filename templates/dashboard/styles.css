@@ -193,6 +193,7 @@
     .agent-cu{border-left-color:#FB923C}
     .agent-solo{border-left-color:#94A3B8}
     .agent-github{border-left-color:#8B949E}
+    .kcard-gh-logo{width:12px;height:12px;vertical-align:-1px;margin-right:3px;opacity:.7}
     .kcard-agent-header{display:flex;align-items:center;gap:6px;margin-bottom:2px;min-width:0}
     .kcard-agent-name{font-size:11px;font-weight:700;font-family:var(--mono);color:var(--text-secondary);flex-shrink:0;letter-spacing:.03em}
     .kcard-agent-status-row{margin-bottom:3px}
@@ -212,15 +213,18 @@
     .monitor-dev-link:hover{opacity:1;border-color:var(--accent);color:var(--text-primary)}
     .kcard-agent-actions{display:flex;gap:4px;align-items:center;margin-top:3px;flex-wrap:wrap}
     .kcard-agent-actions .btn{font-size:11px;padding:3px 8px}
-    .kcard-gh-refresh{margin-left:auto;background:transparent;border:none;color:var(--text-secondary);font-family:var(--mono);font-size:11px;padding:0;cursor:pointer}
-    .kcard-gh-refresh:hover{color:var(--text-primary)}
+    .kcard-gh-refresh{margin-left:auto;background:rgba(139,148,158,.12);border:1px solid rgba(139,148,158,.25);border-radius:4px;color:var(--text-secondary);font-family:var(--mono);font-size:10px;padding:2px 8px;cursor:pointer;transition:all .15s ease}
+    .kcard-gh-refresh:hover{color:var(--text-primary);background:rgba(139,148,158,.22);border-color:rgba(139,148,158,.4)}
     .kcard-gh-refresh.is-loading{opacity:.65;animation:kcard-gh-pulse .8s ease-in-out infinite}
+    .kcard-gh-check-btn{background:rgba(139,148,158,.1);border:1px solid rgba(139,148,158,.2);border-radius:4px;color:var(--text-secondary);font-family:var(--mono);font-size:10px;padding:2px 8px;cursor:pointer;transition:all .15s ease}
+    .kcard-gh-check-btn:hover{color:var(--text-primary);background:rgba(139,148,158,.18);border-color:rgba(139,148,158,.35)}
+    .kcard-gh-check-btn.is-loading{opacity:.65;animation:kcard-gh-pulse .8s ease-in-out infinite;cursor:wait}
     .kcard-gh-status.status-none,.kcard-gh-status.status-unavailable{color:var(--text-tertiary)}
     .kcard-gh-status.status-open{color:#6B9EFF}
     .kcard-gh-status.status-draft{color:#FCD34D}
     .kcard-gh-status.status-merged{color:#4ADE80}
-    .kcard-gh-link{color:inherit;text-decoration:none;display:inline-flex;align-items:center}
-    .kcard-gh-link:hover{text-decoration:underline;text-underline-offset:2px}
+    .kcard-gh-link{color:inherit;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:22px;padding:2px 6px;border-radius:4px;background:rgba(139,148,158,.1);border:1px solid rgba(139,148,158,.2);margin-left:4px;transition:all .15s ease}
+    .kcard-gh-link:hover{background:rgba(139,148,158,.22);border-color:rgba(139,148,158,.4);text-decoration:none}
     .kcard-gh-helper{font-size:10px;color:#86EFAC;margin-top:2px}
     .kcard-va-btn--pr-warning{border-color:#FB923C!important;box-shadow:0 0 0 1px rgba(251,146,60,.3) inset}
     @keyframes kcard-gh-pulse{0%,100%{opacity:.65}50%{opacity:1}}
