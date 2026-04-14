@@ -7,6 +7,7 @@ export default {
   "research-workflow": "Research Workflow",
   "feedback-workflow": "Feedback Workflow",
   telemetry: "Telemetry & Analytics",
+  "github-pr-workflow": "GitHub PR Workflow",
   "security-scanning": "Security Scanning",
   amplification: "Insights",
   troubleshooting: "Troubleshooting",
