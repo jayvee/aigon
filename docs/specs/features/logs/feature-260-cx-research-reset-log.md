@@ -14,12 +14,14 @@ Agent: cx
 - Added workflow-core `resetResearch(...)` API and exported it.
 - Added `ManualActionKind.RESEARCH_RESET` and exposed action candidate in research workflow rules.
 - Updated snapshot adapter, dashboard server allowlist, and dashboard frontend action handling for destructive confirmation + dispatch to `research-reset`.
+- Follow-up UX fix: ranked `research-reset` with destructive actions in dashboard button ordering.
 - Added command metadata entry and new template: `templates/generic/commands/research-reset.md`.
 - Updated `AGENTS.md` reset guidance to include research reset flows.
 - Validation:
   - `node --check lib/commands/research.js` passed
   - `node --check lib/workflow-core/engine.js` passed
-  - `npm test` failed in pre-existing `tests/integration/pro-gate.test.js` assertions unrelated to this feature change.
+  - `node --check templates/dashboard/js/actions.js` passed
+  - `npm test` failed in pre-existing `tests/integration/pro-gate.test.js` assertions unrelated to this feature change (same result across two runs).
 
 ## Decisions
 - Reused existing shared session teardown by invoking `sessions-close` from `research-reset` instead of re-implementing tmux/process cleanup.
