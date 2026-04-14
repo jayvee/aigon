@@ -49,3 +49,7 @@ Agent: cx
 
 ## Issues Encountered
 - `npm test` currently fails in `pro-gate` integration tests (`AIGON_FORCE_PRO` true-path expectations) in this environment. This appears pre-existing and not introduced by the PR-status UI changes.
+
+## Commits
+- `804044ef` — wip: add dashboard github pr status section and warning styling
+- `95038526` — feat: add github pr status section to dashboard feature cards
