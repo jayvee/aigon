@@ -57,7 +57,7 @@ function replaceSelectOptions(select, options) {
 // Maps action + priority to button CSS class
 function validActionBtnClass(action, priority) {
   if (priority === 'high') return 'btn btn-primary';
-  if (action === 'feature-stop' || action === 'research-stop' || action === 'feature-reset' || action === 'research-reset') return 'btn btn-danger';
+  if (action === 'feature-stop' || action === 'research-stop' || action === 'feature-reset') return 'btn btn-danger';
   return 'btn btn-secondary';
 }
 
@@ -117,6 +117,58 @@ function showDangerConfirm(opts) {
   });
 }
 
+function showConfirm(opts) {
+  return new Promise((resolve) => {
+    const title = (opts && opts.title) || 'Confirm';
+    const message = (opts && opts.message) || 'Are you sure?';
+    const confirmLabel = (opts && opts.confirmLabel) || 'Confirm';
+    const cancelLabel = (opts && opts.cancelLabel) || 'Cancel';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'danger-confirm-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999';
+
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--bg-panel,#1a1d23);border:1px solid var(--border-color,#2a2f3a);border-radius:8px;padding:20px;max-width:460px;color:var(--text-primary,#eee);box-shadow:0 10px 40px rgba(0,0,0,.5)';
+    const titleEl = document.createElement('div');
+    titleEl.style.cssText = 'font-size:16px;font-weight:600;margin-bottom:8px;color:var(--text-primary,#eee)';
+    titleEl.textContent = title;
+    const messageEl = document.createElement('div');
+    messageEl.style.cssText = 'font-size:14px;line-height:1.5;margin-bottom:18px;color:var(--text-secondary,#bbb)';
+    messageEl.textContent = message;
+    const actionsEl = document.createElement('div');
+    actionsEl.style.cssText = 'display:flex;gap:10px;justify-content:flex-end';
+    const cancelButton = createEl('button', { className: 'btn btn-secondary confirm-cancel', text: cancelLabel, attrs: { type: 'button' } });
+    const okButton = createEl('button', { className: 'btn btn-primary confirm-ok', text: confirmLabel, attrs: { type: 'button' } });
+    actionsEl.appendChild(cancelButton);
+    actionsEl.appendChild(okButton);
+    box.appendChild(titleEl);
+    box.appendChild(messageEl);
+    box.appendChild(actionsEl);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    const cancelBtn = box.querySelector('.confirm-cancel');
+    const okBtn = box.querySelector('.confirm-ok');
+
+    function cleanup(result) {
+      document.removeEventListener('keydown', onKey, true);
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result);
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); cleanup(false); }
+      if (e.key === 'Enter') { e.preventDefault(); cleanup(document.activeElement === okBtn); }
+    }
+    cancelBtn.addEventListener('click', () => cleanup(false));
+    okBtn.addEventListener('click', () => cleanup(true));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
+    document.addEventListener('keydown', onKey, true);
+
+    setTimeout(() => cancelBtn.focus(), 0);
+  });
+}
+
 /**
  * Builds unified action button HTML from validActions.
  * Implements 3-tier hierarchy:
@@ -163,18 +215,9 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     if (!seen.has(key)) { seen.add(key); deduped.push(va); }
   }
 
-  // Sort: high-priority first, then normal, then stop/reset danger actions last
+  // Sort: high-priority first, then normal, then stop/danger last
   deduped.sort((a, b) => {
-    const rank = v => (
-      v.priority === 'high'
-        ? 0
-        : (v.action === 'feature-stop'
-          || v.action === 'research-stop'
-          || v.action === 'feature-reset'
-          || v.action === 'research-reset')
-          ? 2
-          : 1
-    );
+    const rank = v => v.priority === 'high' ? 0 : (v.action === 'feature-stop' || v.action === 'research-stop') ? 2 : 1;
     return rank(a) - rank(b);
   });
 
@@ -249,7 +292,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
         return '<button class="kcard-overflow-item" data-view-review="' + escHtml(va._reviewSession) + '">' + escHtml(va._reviewLabel) + '</button>';
       }
       const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
-      const isDanger = va.action === 'feature-stop' || va.action === 'research-stop' || va.action === 'feature-reset' || va.action === 'research-reset';
+      const isDanger = va.action === 'feature-stop' || va.action === 'research-stop' || va.action === 'feature-reset';
       const cls = isDanger ? 'kcard-overflow-item kcard-va-btn btn-danger' : 'kcard-overflow-item kcard-va-btn';
       return '<button class="' + cls + '" data-va-action="' + escHtml(va.action) + '"' + agentAttr + '>' + escHtml(actionLabel(va)) + '</button>';
     }).join('');
@@ -382,17 +425,17 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await requestAction('feature-reset', [id], repoPath, btn);
       break;
     }
-    case 'research-reset': {
+    case 'feature-push': {
       const msg = (va.metadata && va.metadata.confirmationMessage)
-        || 'Close running research sessions, remove findings and state artifacts, clear research workflow state, and move the spec back to Backlog. This cannot be undone.';
-      const ok = await showDangerConfirm({
-        title: 'Reset research #' + id + (feature.name ? ' \u2014 ' + feature.name : '') + '?',
+        || 'Push feature branch to origin?';
+      const ok = await showConfirm({
+        title: 'Push feature #' + id + (feature.name ? ' — ' + feature.name : '') + '?',
         message: msg,
-        confirmLabel: 'Reset research',
+        confirmLabel: 'Push',
         cancelLabel: 'Cancel'
       });
       if (!ok) return;
-      await requestAction('research-reset', [id], repoPath, btn);
+      await requestAction('feature-push', [id], repoPath, btn);
       break;
     }
     default:
