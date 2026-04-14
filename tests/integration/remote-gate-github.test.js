@@ -42,6 +42,8 @@ test('one closed + one open -> block on open', () => { const r = checkGitHubGate
 test('query failure -> query_failed', () => { const r = checkGitHubGate('f', 'main', { execFn: x({ list: ghFail }) }); a.ok(!r.ok); a.strictEqual(r.code, 'query_failed'); });
 
 console.log('query-github-pr-status');
+// REGRESSION: ensures queryGitHubPrStatus returns the correct normalized
+// status for each PR state — the dashboard endpoint depends on these shapes
 test('status none', () => {
     const r = queryGitHubPrStatus('feature-1-desc', 'main', { execFn: x({ list: () => '[]' }) });
     a.strictEqual(r.provider, 'github');

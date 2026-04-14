@@ -15,6 +15,8 @@ const branchResolverOptions = (overrides = {}) => ({
 
 console.log('dashboard-pr-status-endpoint');
 
+// REGRESSION: prevents branch resolution from breaking when worktree agent
+// branches exist — wrong branch → wrong PR status for the dashboard endpoint
 test('resolves solo worktree branch from snapshot agent', () => {
     const r = resolveFeatureBranchForPrStatus('/tmp/repo', '256', branchResolverOptions());
     a.ok(r.ok);
