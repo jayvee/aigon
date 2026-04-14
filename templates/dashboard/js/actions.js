@@ -57,7 +57,7 @@ function replaceSelectOptions(select, options) {
 // Maps action + priority to button CSS class
 function validActionBtnClass(action, priority) {
   if (priority === 'high') return 'btn btn-primary';
-  if (action === 'feature-stop' || action === 'research-stop' || action === 'feature-reset') return 'btn btn-danger';
+  if (action === 'feature-stop' || action === 'research-stop' || action === 'feature-reset' || action === 'research-reset') return 'btn btn-danger';
   return 'btn btn-secondary';
 }
 
@@ -240,7 +240,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
         return '<button class="kcard-overflow-item" data-view-review="' + escHtml(va._reviewSession) + '">' + escHtml(va._reviewLabel) + '</button>';
       }
       const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
-      const isDanger = va.action === 'feature-stop' || va.action === 'research-stop' || va.action === 'feature-reset';
+      const isDanger = va.action === 'feature-stop' || va.action === 'research-stop' || va.action === 'feature-reset' || va.action === 'research-reset';
       const cls = isDanger ? 'kcard-overflow-item kcard-va-btn btn-danger' : 'kcard-overflow-item kcard-va-btn';
       return '<button class="' + cls + '" data-va-action="' + escHtml(va.action) + '"' + agentAttr + '>' + escHtml(actionLabel(va)) + '</button>';
     }).join('');
@@ -371,6 +371,19 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       });
       if (!ok) return;
       await requestAction('feature-reset', [id], repoPath, btn);
+      break;
+    }
+    case 'research-reset': {
+      const msg = (va.metadata && va.metadata.confirmationMessage)
+        || 'Close running research sessions, remove findings and state artifacts, clear research workflow state, and move the spec back to Backlog. This cannot be undone.';
+      const ok = await showDangerConfirm({
+        title: 'Reset research #' + id + (feature.name ? ' \u2014 ' + feature.name : '') + '?',
+        message: msg,
+        confirmLabel: 'Reset research',
+        cancelLabel: 'Cancel'
+      });
+      if (!ok) return;
+      await requestAction('research-reset', [id], repoPath, btn);
       break;
     }
     default:

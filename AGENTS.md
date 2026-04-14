@@ -131,7 +131,7 @@ Pro-driven, without revealing the spec contents.
 - **Agent prompts or install content** → `templates/`; run `aigon install-agent cc` after
 - **Workflow state changes** → update command module AND affected templates together
 
-## Resetting / Cancelling A Feature
+## Resetting / Cancelling Work
 **To start a feature over (different agent, fresh slate, abandon work) — there is ONE command:**
 
 ```
@@ -143,6 +143,14 @@ It runs the entire sequence in order: `sessions-close` → remove worktrees → 
 **Do not stitch this together manually** with `feature-cleanup` + `git mv` + `rm -rf .aigon/workflows/...`. That path leaks autonomous tmux sessions and predates `feature-reset`. If you reach for those raw commands, stop and use `feature-reset` instead.
 
 `feature-cleanup <ID>` is a strict subset (worktrees + branches only) — use it to GC Fleet branches after `feature-close`, not to abandon work. `sessions-close <ID>` is also a strict subset; `feature-reset` already calls it internally.
+
+**To start a research topic over (wrong scope/agents, fresh backlog state) — use:**
+
+```
+aigon research-reset <ID>
+```
+
+It runs research-specific cleanup: `sessions-close` → remove findings files (`docs/specs/research-topics/logs/research-<id>-*-findings.md`) → clear research state files in `.aigon/state/` → move the topic spec back to `02-backlog/` → clear workflow-core engine state in `.aigon/workflows/research/<id>/`.
 
 ## Publishing Branches & Remote Review Gate
 
@@ -183,7 +191,7 @@ When `origin` is GitHub and `gh` is available, `feature-close` does a best-effor
 - **`.env.local` blocking flow**: treating it as uncommitted changes → blocks `feature-close`
 - **Editing working copies**: changing `.claude/commands/` instead of `templates/` → lost on next sync
 - **Shipping architecture changes without docs**: adding modules, repos, or patterns without updating `AGENTS.md` or `docs/architecture.md` → next agent has no awareness of the change
-- **Manual feature reset**: stitching `feature-cleanup` + `git mv` + `rm -rf .aigon/workflows/...` to start a feature over → use `aigon feature-reset <ID>` instead. It does the full sequence including `sessions-close` (which the manual path always forgets)
+- **Manual reset choreography**: stitching raw cleanup commands to start work over → use `aigon feature-reset <ID>` for features and `aigon research-reset <ID>` for research. These run the full reset sequences and prevent stale sessions/state.
 
 ## Reading Order
 1. `AGENTS.md` (this file) — quick orientation
