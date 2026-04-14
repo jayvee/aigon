@@ -7,7 +7,7 @@ Aigon runs security scans at the merge gate — when you close or submit a featu
 
 ## How it works
 
-When you run `aigon feature-close` or `aigon feature-submit`, Aigon executes configured scanners against your changed files:
+When you run `aigon feature-close` or `aigon agent-status submitted`, Aigon executes configured scanners against your changed files:
 
 1. **gitleaks** — detects hardcoded secrets (API keys, tokens, passwords)
 2. **Semgrep** — static analysis for security vulnerabilities (OWASP patterns, injection risks)

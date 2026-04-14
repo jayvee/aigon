@@ -115,15 +115,6 @@ Stage and commit your code changes using conventional commits (`feat:`, `fix:`, 
 
 
 
-## Step 4: Test your changes
-The **dev server** runs a local development server of this project's source code (e.g. Next.js, Vite, etc.) so you can verify your changes work correctly.
-**IMPORTANT:** `aigon dev-server start` starts the **project's** dev server (e.g. `npm run dev`) with managed port allocation. Never run `aigon server` to test your work.
-### Drive Mode (branch)
-- Start the dev server: `aigon dev-server start`
-- Use the URL printed by the command to access the app
-- Run the full test suite and verify all tests pass
-- Ask the user to verify
-### Worktree Mode (Drive worktree or Fleet)
 - Run the test suite to verify changes
 - Ask the user to verify
 > **Project-specific steps?** Check your root instructions file (e.g. AGENTS.md) for test commands.
@@ -156,11 +147,7 @@ Update it with:
 
 **Then commit the log file.**
 
-## Step 6.5: Start the dev server
 
-**You MUST start the dev server before signalling completion.** The evaluator and user need a running preview of your implementation.
-
-Start the dev server and leave it running.
 
 ## Step 5: Signal completion
 
@@ -178,7 +165,7 @@ Hard rules:
 - Implementation is **not** complete until `aigon agent-status submitted` succeeds
 - Do **not** say "done", "complete", or "ready for review" before it succeeds
 - If it fails, report the exact error output and stop for user guidance
-- Do **not** improvise with `feature-submit`, `feature-close`, or substitute commands
+- Do **not** improvise with `feature-close` or substitute commands
 
 After it succeeds, tell the user: "Implementation complete — ready for review."
 

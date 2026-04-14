@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - **AADE wording** purged from public-facing docs (`README.md`, `docs/architecture.md`, `site/content/comparisons.mdx`, `site/content/guides/_meta.js`) — feature 232.
-- **Dead `feature-submit.mdx` doc page** rewritten as a deprecation page pointing at `feature-do` and `aigon agent-status submitted`.
+- **Dead submit-command doc page** rewritten as a deprecation page pointing at `feature-do` and `aigon agent-status submitted`.
 - **Two broken image references** in `site/content/guides/amplification.mdx`.
 - **GA4 placeholder tracking** from `site/public/home.html` — relies on Vercel Analytics now.
 - **19 root-level dev artifacts** — 16 orphan PNG screenshots, `reproduce_bug.js`, `worktree_link` (broken symlink), and stale `COMPARISONS.md` (the public version at `site/content/comparisons.mdx` is canonical now).
@@ -57,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Repo-scoped tmux session naming convention** — sessions are namespaced by repo, so two repos working on the same feature ID don't collide.
-- **Auto-exit tmux session after feature-submit**.
+- **Auto-exit tmux session after implementation submission**.
 - **Workflow-core engine cutover** — features and research now run on event-sourced state with an XState machine and durable effects.
 
 ### Changed

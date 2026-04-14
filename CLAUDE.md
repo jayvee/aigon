@@ -184,7 +184,7 @@ This is the canonical full-reset path. It runs the entire sequence in order:
 
 ## Rules Before Editing
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
-2. **Filter `.env.local`** — never let it block `feature-close` or `feature-submit`; ignore in git checks
+2. **Filter `.env.local`** — never let it block `feature-close` or `aigon agent-status submitted`; ignore in git checks
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit
 4. **Restart after backend edits** — after changing any `lib/*.js`, restart `aigon server restart`
 5. **Don't move spec files manually** — always use `aigon` CLI commands to transition state
@@ -208,7 +208,7 @@ All three must pass. If any fail:
 - Do NOT push with a failing suite. Do NOT skip hooks with `--no-verify`.
 - If you genuinely cannot get the suite green, stop and ask the user.
 
-This applies to `feature-submit`, `feature-close`, and any direct `git push`. Running the suite ONLY when the user asks is not sufficient — test rot compounds silently otherwise.
+This applies to `aigon agent-status submitted`, `feature-close`, and any direct `git push`. Running the suite ONLY when the user asks is not sufficient — test rot compounds silently otherwise.
 
 ### Rule T2 — new code ships with a test
 

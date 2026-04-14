@@ -113,7 +113,7 @@ Hard rules:
 - Implementation is **not** complete until `aigon agent-status submitted` succeeds
 - Do **not** say "done", "complete", or "ready for review" before it succeeds
 - If it fails, report the exact error output and stop for user guidance
-- Do **not** improvise with `feature-submit`, `feature-close`, or substitute commands
+- Do **not** improvise with `feature-close` or substitute commands
 
 After it succeeds, tell the user: "Implementation complete — ready for review."
 

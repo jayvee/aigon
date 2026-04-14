@@ -12,12 +12,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/jviner/.local/state/fnm_multishells/46546_1776068025173/bin/aigon check-version",
+            "command": "/opt/homebrew/bin/aigon check-version",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "/Users/jviner/.local/state/fnm_multishells/46546_1776068025173/bin/aigon project-context",
+            "command": "/opt/homebrew/bin/aigon project-context",
             "timeout": 10
           }
         ]
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/jviner/.local/state/fnm_multishells/46546_1776068025173/bin/aigon check-agent-signal",
+            "command": "/opt/homebrew/bin/aigon check-agent-signal",
             "timeout": 5
           }
         ]

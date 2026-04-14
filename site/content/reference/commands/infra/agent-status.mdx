@@ -11,7 +11,7 @@ aigon agent-status <implementing|waiting|submitted|error>
 
 ## Description
 
-Sets the current agent's status in the Aigon state system. This is called automatically by agent workflows (feature-do, feature-submit) but can be used manually to signal status changes.
+Sets the current agent's status in the Aigon state system. This is called by agent workflows and can be used manually to signal status changes.
 
 The status is written to `.aigon/state/feature-{id}-{agent}.json` in the main repo, where the dashboard reads it to show real-time agent progress.
 
@@ -37,4 +37,4 @@ aigon agent-status submitted
 
 - Must be run from a feature branch or worktree — the feature ID and agent are parsed from the branch name
 - Status changes trigger dashboard notifications (if enabled)
-- Typically called by `feature-submit` rather than directly
+- Typically called as part of the implementation workflow rather than directly
