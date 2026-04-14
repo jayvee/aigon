@@ -179,37 +179,5 @@
       "exitEnforcement": null
     }
   },
-  "commands": [
-    "feature-create",
-    "feature-now",
-    "feature-prioritise",
-    "feature-start",
-    "feature-do",
-    "feature-submit",
-    "feature-eval",
-    "feature-review",
-    "feature-review-check",
-    "feature-close",
-    "feature-cleanup",
-    "feature-autonomous-start",
-    "board",
-    "feature-open",
-    "sessions-close",
-    "research-create",
-    "research-prioritise",
-    "research-start",
-    "research-open",
-    "research-do",
-    "research-submit",
-    "research-review",
-    "research-eval",
-    "research-close",
-    "research-autopilot",
-    "feedback-create",
-    "feedback-list",
-    "feedback-triage",
-    "dev-server",
-    "help",
-    "next"
-  ]
+  "commandExcludes": []
 }

@@ -1,85 +1,43 @@
 #!/usr/bin/env node
-// REGRESSION: prevents the remote branch gate from silently passing when it
-// should block, or blocking when it should pass. The gate decision table is
-// the critical safety boundary for feature 255.
 'use strict';
 const a = require('assert');
 const { test, report } = require('../_helpers');
 const { checkGitHubGate } = require('../../lib/remote-gate-github');
-
-const ghOk = () => '';
+const j = JSON.stringify;
 const ghFail = () => { throw new Error('not found'); };
-const prJson = (prs) => JSON.stringify(prs);
-const openPr = (n, merge = 'CLEAN', opts = {}) => ({
-    number: n, url: `https://github.com/test/repo/pull/${n}`, state: 'OPEN',
-    isDraft: opts.draft || false, baseRefName: 'main', headRefName: 'feature-1-desc',
-    mergeStateStatus: merge, mergedAt: null,
-});
-const mergedPr = (n) => ({ ...openPr(n), state: 'MERGED', mergedAt: '2026-01-01T00:00:00Z' });
-const closedPr = (n) => ({ ...openPr(n), state: 'CLOSED' });
-
-const mockExec = (handlers) => (cmd) => {
-    if (cmd === 'gh --version') return handlers.version ? handlers.version() : ghOk();
-    if (cmd === 'gh auth status') return handlers.auth ? handlers.auth() : ghOk();
-    if (cmd.startsWith('gh pr list')) return handlers.prList ? handlers.prList() : '[]';
+const open = (n, merge = 'CLEAN', x = {}) => ({ number: n, url: `https://github.com/test/repo/pull/${n}`, state: 'OPEN', isDraft: !!x.draft, baseRefName: 'main', headRefName: 'feature-1-desc', mergeStateStatus: merge, mergedAt: null });
+const merged = (n) => ({ ...open(n), state: 'MERGED', mergedAt: '2026-01-01T00:00:00Z' });
+const closed = (n) => ({ ...open(n), state: 'CLOSED' });
+const x = (h = {}) => (cmd) => {
+    if (cmd === 'git remote get-url origin') return h.origin ? h.origin() : 'https://github.com/test/repo.git';
+    if (cmd === 'gh --version') return h.version ? h.version() : '';
+    if (cmd === 'gh auth status') return h.auth ? h.auth() : '';
+    if (cmd.startsWith('gh pr list --head ')) return h.head ? h.head() : (h.list ? h.list() : '[]');
+    if (cmd.startsWith('gh pr list --state merged ')) return h.merged ? h.merged() : (h.list ? h.list() : '[]');
+    if (cmd.startsWith('gh pr list')) return h.list ? h.list() : '[]';
     return '';
 };
 
 console.log('remote-gate-github');
-
-test('gh missing → gh_missing', () => {
-    const r = checkGitHubGate('f', 'main', { execFn: mockExec({ version: ghFail }) });
-    a.strictEqual(r.ok, false); a.strictEqual(r.code, 'gh_missing');
+test('non-GitHub remote -> local', () => { const r = checkGitHubGate('f', 'main', { execFn: x({ origin: () => 'https://gitlab.com/test/repo.git' }) }); a.ok(r.ok); a.strictEqual(r.mode, 'local'); });
+test('gh missing -> local', () => { const r = checkGitHubGate('f', 'main', { execFn: x({ version: ghFail }) }); a.ok(r.ok); a.strictEqual(r.mode, 'local'); });
+test('gh auth broken -> local', () => { const r = checkGitHubGate('f', 'main', { execFn: x({ auth: ghFail }) }); a.ok(r.ok); a.strictEqual(r.mode, 'local'); });
+test('no PR -> local', () => { const r = checkGitHubGate('f', 'main', { execFn: x({ list: () => '[]' }) }); a.ok(r.ok); a.strictEqual(r.mode, 'local'); });
+test('open PR -> block', () => { const r = checkGitHubGate('feature-1-desc', 'main', { execFn: x({ list: () => j([open(1)]) }) }); a.ok(!r.ok); a.strictEqual(r.code, 'pr_open'); });
+test('draft PR -> block', () => { const r = checkGitHubGate('feature-1-desc', 'main', { execFn: x({ list: () => j([open(1, 'CLEAN', { draft: true })]) }) }); a.ok(!r.ok); a.strictEqual(r.code, 'pr_open'); });
+test('blocked merge state on open PR -> block', () => { const r = checkGitHubGate('feature-1-desc', 'main', { execFn: x({ list: () => j([open(1, 'BLOCKED')]) }) }); a.ok(!r.ok); a.strictEqual(r.code, 'pr_open'); });
+test('merged PR -> merged mode', () => { const r = checkGitHubGate('feature-1-desc', 'main', { execFn: x({ list: () => j([merged(1)]) }) }); a.ok(r.ok); a.strictEqual(r.mode, 'merged'); });
+test('deleted merged head branch falls back to merged lookup', () => { const r = checkGitHubGate('feature-1-desc', 'main', { execFn: x({ head: () => '[]', merged: () => j([merged(1)]) }) }); a.ok(r.ok); a.strictEqual(r.mode, 'merged'); });
+test('closed unmerged PR -> local', () => { const r = checkGitHubGate('feature-1-desc', 'main', { execFn: x({ list: () => j([closed(1)]) }) }); a.ok(r.ok); a.strictEqual(r.mode, 'local'); });
+test('multiple active PRs -> ambiguous', () => { const r = checkGitHubGate('feature-1-desc', 'main', { execFn: x({ list: () => j([open(1), open(2)]) }) }); a.ok(!r.ok); a.strictEqual(r.code, 'ambiguous_pr'); });
+test('multiple merged PRs for reused branch -> latest merged wins', () => {
+    const newer = { ...merged(2), mergedAt: '2026-01-02T00:00:00Z' };
+    const older = { ...merged(1), mergedAt: '2026-01-01T00:00:00Z' };
+    const r = checkGitHubGate('feature-1-desc', 'main', { execFn: x({ head: () => '[]', merged: () => j([older, newer]) }) });
+    a.ok(r.ok);
+    a.strictEqual(r.mode, 'merged');
+    a.strictEqual(r.prNumber, 2);
 });
-
-test('gh not authed → gh_auth', () => {
-    const r = checkGitHubGate('f', 'main', { execFn: mockExec({ auth: ghFail }) });
-    a.strictEqual(r.ok, false); a.strictEqual(r.code, 'gh_auth');
-});
-
-test('no PR → no_pr', () => {
-    const r = checkGitHubGate('f', 'main', { execFn: mockExec({ prList: () => '[]' }) });
-    a.strictEqual(r.ok, false); a.strictEqual(r.code, 'no_pr');
-});
-
-test('open mergeable PR → passes', () => {
-    const r = checkGitHubGate('feature-1-desc', 'main', { execFn: mockExec({ prList: () => prJson([openPr(1)]) }) });
-    a.strictEqual(r.ok, true); a.strictEqual(r.prNumber, 1);
-});
-
-test('draft PR → draft', () => {
-    const r = checkGitHubGate('feature-1-desc', 'main', { execFn: mockExec({ prList: () => prJson([openPr(1, 'CLEAN', { draft: true })]) }) });
-    a.strictEqual(r.ok, false); a.strictEqual(r.code, 'draft');
-});
-
-test('BLOCKED merge state → not_mergeable', () => {
-    const r = checkGitHubGate('feature-1-desc', 'main', { execFn: mockExec({ prList: () => prJson([openPr(1, 'BLOCKED')]) }) });
-    a.strictEqual(r.ok, false); a.strictEqual(r.code, 'not_mergeable');
-});
-
-test('merged PR → remote_merged_unsupported', () => {
-    const r = checkGitHubGate('feature-1-desc', 'main', { execFn: mockExec({ prList: () => prJson([mergedPr(1)]) }) });
-    a.strictEqual(r.ok, false); a.strictEqual(r.code, 'remote_merged_unsupported');
-});
-
-test('closed unmerged PR → closed_unmerged', () => {
-    const r = checkGitHubGate('feature-1-desc', 'main', { execFn: mockExec({ prList: () => prJson([closedPr(1)]) }) });
-    a.strictEqual(r.ok, false); a.strictEqual(r.code, 'closed_unmerged');
-});
-
-test('multiple active PRs → ambiguous_pr', () => {
-    const r = checkGitHubGate('feature-1-desc', 'main', { execFn: mockExec({ prList: () => prJson([openPr(1), openPr(2)]) }) });
-    a.strictEqual(r.ok, false); a.strictEqual(r.code, 'ambiguous_pr');
-});
-
-test('one closed + one open → passes (not ambiguous)', () => {
-    const r = checkGitHubGate('feature-1-desc', 'main', { execFn: mockExec({ prList: () => prJson([closedPr(1), openPr(2)]) }) });
-    a.strictEqual(r.ok, true); a.strictEqual(r.prNumber, 2);
-});
-
-test('query failure → query_failed', () => {
-    const r = checkGitHubGate('f', 'main', { execFn: mockExec({ prList: ghFail }) });
-    a.strictEqual(r.ok, false); a.strictEqual(r.code, 'query_failed');
-});
-
+test('one closed + one open -> block on open', () => { const r = checkGitHubGate('feature-1-desc', 'main', { execFn: x({ list: () => j([closed(1), open(2)]) }) }); a.ok(!r.ok); a.strictEqual(r.code, 'pr_open'); });
+test('query failure -> query_failed', () => { const r = checkGitHubGate('f', 'main', { execFn: x({ list: ghFail }) }); a.ok(!r.ok); a.strictEqual(r.code, 'query_failed'); });
 report();

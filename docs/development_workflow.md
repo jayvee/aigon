@@ -52,7 +52,7 @@ docs/specs/
 | `aigon feature-implement <ID> [--iterate]` | Implement feature; `--iterate` runs Autopilot retry loop |
 | `aigon feature-eval <ID>` | Create evaluation (code review for solo, comparison for arena) |
 | `aigon feature-done <ID> [agent]` | Merge and complete (specify agent in arena mode) |
-| `aigon feature-push <ID> [agent]` | Push feature branch to origin for PR review |
+| `aigon feature-push [ID] [agent]` | Push feature branch to origin for PR review |
 | `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
 ## Key Rules
@@ -100,23 +100,30 @@ For features, there are two relevant layers:
 
 Before running `feature-done`, always:
 
-1. **Push the branch to origin** to save your work remotely:
+1. **If you want GitHub PR review, publish the branch**:
    ```bash
-   aigon feature-push <ID>
+   aigon feature-push
    ```
 2. **Ask the user** if they want to delete the local branch after merge (the CLI will delete it by default)
 
-## GitHub PR Review Workflow (Optional)
+## GitHub PR Workflow (Optional)
 
-For teams using GitHub PRs for review and CI, Aigon supports an optional remote branch gate:
+If the repo `origin` is GitHub and `gh` is available, `feature-done` is PR-aware at close time:
 
-1. Set `"honourRemoteBranchGate": true` in `.aigon/config.json`
-2. Implement the feature as usual
-3. Run `aigon feature-push <ID>` to publish the branch to `origin`
-4. Create a PR on GitHub, wait for review and CI
-5. Run `aigon feature-done <ID>` — the gate checks the PR is open, non-draft, and mergeable before proceeding with the local close
+1. No PR for the feature branch:
+   - `feature-done` behaves like a normal local close
+2. Open PR for the feature branch:
+   - `feature-done` blocks so Aigon does not bypass the remote review/merge flow
+3. Merged PR for the feature branch:
+   - `feature-done` syncs local `main` from `origin/main`
+   - writes the final done-state spec/log commit
+   - pushes that final close-state commit to `origin/main`
+   - cleans up the worktree and branch
 
-**Important v1 constraints:**
-- Do **not** merge the PR on GitHub before running `feature-done` — v1 does not support remote-merged PRs
-- The gate uses the `gh` CLI and requires `gh auth login`
-- When the gate is disabled (default), `feature-done` behaves exactly as before
+Recommended flow:
+
+1. Implement the feature
+2. Run `aigon feature-push`
+3. Create and review the PR on GitHub
+4. Merge the PR on GitHub
+5. Run `aigon feature-done <ID>` to finalize in Aigon

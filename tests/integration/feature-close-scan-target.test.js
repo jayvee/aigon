@@ -5,7 +5,13 @@
 // stale sibling feature branch reported Semgrep findings from that sibling,
 // blocking the close even though the target worktree branch was clean.
 const a = require('assert');
-const { mergeFeatureBranch, resolveScanCwd } = require('../../lib/feature-close');
+const {
+    mergeFeatureBranch,
+    resolveScanCwd,
+    syncRemoteMergedBranch,
+    cleanupWorktreeAndBranch,
+    pushRemoteMergedCloseCommit,
+} = require('../../lib/feature-close');
 
 // resolveScanCwd: worktree wins when it exists, plain Drive falls back to cwd,
 // and missing fleet worktrees fail closed instead of scanning the wrong branch.
@@ -66,5 +72,36 @@ const r240 = resolveCloseTarget(['240'], {
     gitLib: { getCurrentBranch: () => 'main', getDefaultBranch: () => 'main', getCommonDir: () => '.git', getMainRepoPath: (p) => p, isWorktree: () => false },
 });
 a.ok(r240.ok && r240.branchName === 'feature-240-cx-demo' && r240.mode === 'multi-agent', 'feature 240: worktree branch must win over stale drive branch');
+
+// REGRESSION feature 255 follow-up: remote-merged close must actually sync
+// local main to origin/main rather than just switching branches and finishing.
+const calls = [];
+const okSync = syncRemoteMergedBranch(
+    { branchName: 'feature-255-cc-x' },
+    { getDefaultBranch: () => 'main', runGit: (cmd) => calls.push(cmd), getCurrentBranch: () => 'main', getGitStatusPorcelain: () => '' }
+);
+a.ok(okSync.ok, 'remote-merged close should succeed');
+a.deepStrictEqual(calls.slice(0, 3), ['git checkout main', 'git fetch origin main', 'git reset --hard origin/main'], 'remote-merged close fetches and resets to origin/main');
+
+const cleanupCalls = [];
+cleanupWorktreeAndBranch(
+    { branchName: 'feature-255-cc-x', keepBranch: false, worktreePath: null },
+    {
+        runGit: (cmd) => cleanupCalls.push(cmd),
+        safeRemoveWorktree: () => true,
+        getWorktreeStatus: () => '',
+        forceDeleteBranch: true,
+        deleteRemoteBranch: true,
+    }
+);
+a.deepStrictEqual(
+    cleanupCalls,
+    ['git branch -D feature-255-cc-x', 'git push origin --delete feature-255-cc-x'],
+    'remote-merged cleanup force-deletes local and remote feature branches'
+);
+
+const pushCalls = [];
+pushRemoteMergedCloseCommit('main', { runGit: (cmd) => pushCalls.push(cmd) });
+a.deepStrictEqual(pushCalls, ['git push origin main'], 'remote-merged close pushes the final close-state commit to origin/main');
 
 console.log('ok feature-close-scan-target');

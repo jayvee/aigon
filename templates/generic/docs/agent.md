@@ -18,6 +18,7 @@
 | `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `{{CMD_PREFIX}}feature-review <ID>` | Code review with fixes by a different agent |
 | `{{CMD_PREFIX}}feature-close <ID> [agent]` | Merge and complete feature |
+| `{{CMD_PREFIX}}feature-push [ID] [agent]` | Push feature branch to origin for PR review |
 | `{{CMD_PREFIX}}feature-autonomous-start <ID> <agents...>` | Start autonomous feature flow with explicit stop-after control |
 | `{{CMD_PREFIX}}feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
 
@@ -122,9 +123,9 @@ Research follows the same lifecycle shape as features: `start -> do -> submit ->
 
 Before running `{{CMD_PREFIX}}feature-close`, always:
 
-1. **Push the branch to origin** to save your work remotely:
+1. **If you want GitHub PR review, publish the branch**:
    ```bash
-   git push -u origin <current-branch-name>
+   {{CMD_PREFIX}}feature-push
    ```
 2. **Ask the user** if they want to delete the local branch after merge (the CLI will delete it by default)
 {{AGENT_PITFALLS}}
