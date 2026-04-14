@@ -18,6 +18,7 @@
 | `/aigon:feature-eval <ID>` | Create evaluation (code review or comparison) |
 | `/aigon:feature-review <ID>` | Code review with fixes by a different agent |
 | `/aigon:feature-close <ID> [agent]` | Merge and complete feature |
+| `/aigon:feature-push [ID] [agent]` | Push feature branch to origin for PR review |
 | `/aigon:feature-autonomous-start <ID> <agents...>` | Start autonomous feature flow with explicit stop-after control |
 | `/aigon:feature-cleanup <ID>` | Clean up Fleet worktrees and branches |
 
@@ -137,9 +138,9 @@ Prefer specific patterns — broad Bash allows can be chained to bypass deny rul
 
 Before running `/aigon:feature-close`, always:
 
-1. **Push the branch to origin** to save your work remotely:
+1. **If you want GitHub PR review, publish the branch**:
    ```bash
-   git push -u origin <current-branch-name>
+   /aigon:feature-push
    ```
 2. **Ask the user** if they want to delete the local branch after merge (the CLI will delete it by default)
 

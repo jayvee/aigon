@@ -134,7 +134,7 @@
               <li>Four clear modes: Drive, Fleet, Autopilot, and Swarm</li>
               <li>Specs, logs, and research findings in Git — searchable, portable, permanent</li>
               <li>Works with Claude, Gemini, Cursor, and Codex — swap freely or run them head-to-head</li>
-              <li>Optional GitHub PR gating — publish branches manually, gate close on review and CI</li>
+              <li>Optional GitHub PR workflow — publish branches manually, let GitHub merge, then finalize cleanly in Aigon</li>
               <li>No required SaaS account, plain files in Git, no proprietary formats</li>
             </ul>
           </div>
@@ -582,7 +582,7 @@ docs/specs/features/logs/</code></pre>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  All tasks complete · 12 files changed</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="input" lineDelay="600">/aigon:feature-submit 07</terminal-line>
+        <terminal-line data="input" lineDelay="600">aigon agent-status submitted</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  Committed: feat(07): jwt auth middleware</terminal-line>
         <terminal-line data="output">  Log: logs/feature-07-cc-jwt-auth-log.md</terminal-line>
@@ -663,7 +663,7 @@ docs/specs/features/logs/</code></pre>
         <terminal-line data="output">  ✓ Task 4/4: Update API documentation</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  All tasks complete · 12 files changed</terminal-line>
-        <terminal-line data="output">  Next: /aigon:feature-submit 07 or /aigon:feature-close 07</terminal-line>
+        <terminal-line data="output">  Next: aigon agent-status submitted or /aigon:feature-close 07</terminal-line>
       </template>
 
       <template id="demo-fleet">
@@ -684,7 +684,7 @@ docs/specs/features/logs/</code></pre>
         <terminal-line data="output">  ✓ Task 3/4: Integration tests (8/8 passing)</terminal-line>
         <terminal-line data="output">  ✓ Task 4/4: Update API documentation</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="input" lineDelay="600">/aigon:feature-submit 07</terminal-line>
+        <terminal-line data="input" lineDelay="600">aigon agent-status submitted</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  Committed: feat(07): jwt auth middleware</terminal-line>
         <terminal-line data="output">  Log: logs/feature-07-cc-jwt-auth-log.md</terminal-line>
