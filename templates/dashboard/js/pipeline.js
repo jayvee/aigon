@@ -322,11 +322,11 @@
     function buildPrStatusContent(repoPath, featureId) {
       const cached = getCachedPrStatus(repoPath, featureId);
       if (!cached) {
-        return '<span class="kcard-agent-status status-idle">- Click to check PR status</span>';
+        return '<span class="kcard-agent-status status-idle">Click to check PR status</span>';
       }
 
       if (cached.status === 'none') {
-        return '<span class="kcard-agent-status kcard-gh-status status-none">- No PR</span>';
+        return '<span class="kcard-agent-status kcard-gh-status status-none">No PR</span>';
       }
 
       if (cached.status === 'open' || cached.status === 'draft') {
@@ -345,7 +345,7 @@
           '<div class="kcard-gh-helper">Ready to close</div>';
       }
 
-      return '<span class="kcard-agent-status kcard-gh-status status-unavailable">- Unavailable</span>';
+      return '<span class="kcard-agent-status kcard-gh-status status-unavailable">Unavailable</span>';
     }
 
     function buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType) {
