@@ -25,17 +25,28 @@ If `gh` is missing or not authenticated, Aigon silently falls back to local clos
 
 ## Recommended workflow
 
+You'll typically do this from inside a feature worktree — a tmux session that Aigon created when you ran `feature-start` or `feature-open`. The slash commands auto-detect your feature ID and agent from the worktree branch, so you don't need to pass arguments.
+
 ### 1. Implement the feature
 
 Use any Aigon mode (Drive, Fleet, Autopilot) to build the feature as normal.
 
 ### 2. Push the branch
 
-```bash
-aigon feature-push
+From your agent session in the worktree:
+
+```
+/aigon:feature-push
 ```
 
-This pushes the feature branch to `origin` with upstream tracking. From a worktree, it auto-detects the branch. From the main repo, pass the feature ID: `aigon feature-push 07`.
+Or from the CLI (main repo or worktree):
+
+```bash
+aigon feature-push        # auto-detects from worktree branch
+aigon feature-push 07     # explicit ID from main repo
+```
+
+This pushes the feature branch to `origin` with upstream tracking.
 
 ### 3. Create a pull request
 
@@ -46,6 +57,14 @@ Create the PR on GitHub — through the web UI, `gh pr create`, or however you p
 Get reviews, iterate, and merge the PR on GitHub when ready.
 
 ### 5. Close the feature
+
+From the agent session:
+
+```
+/aigon:feature-close
+```
+
+Or from the CLI:
 
 ```bash
 aigon feature-close 07
