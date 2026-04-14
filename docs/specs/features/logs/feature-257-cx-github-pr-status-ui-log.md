@@ -50,6 +50,31 @@ Agent: cx
 ## Issues Encountered
 - `npm test` currently fails in `pro-gate` integration tests (`AIGON_FORCE_PRO` true-path expectations) in this environment. This appears pre-existing and not introduced by the PR-status UI changes.
 
+## Code Review
+
+**Reviewed by**: cc (Claude Code Opus)
+**Date**: 2026-04-14
+
+### Findings
+- No bugs, logic errors, or security issues found.
+- All acceptance criteria from the spec are met.
+- XSS prevention is correctly applied (escHtml on prNumber, url, repoPath, featureId in HTML attributes).
+- Ephemeral state requirement is satisfied — in-memory Map, no persistence.
+- Close button warning is advisory-only as specified — never disables the button.
+- GitHub section correctly hidden for non-GitHub remotes and done-stage features.
+- Double-click protection on refresh via prStatusLoading Set.
+- Tier cache for githubRemote detection avoids repeated execSync calls.
+- CSS is properly namespaced (kcard-gh-*, kcard-va-btn--pr-warning).
+- Test failures in pro-gate.test.js are pre-existing on main (confirmed by running tests on main repo) — environment-specific, not introduced by this feature.
+
+### Fixes Applied
+- None needed.
+
+### Notes
+- The implementation closely follows the spec's technical approach section. All five frontend touchpoints (api.js, pipeline.js, styles.css, dashboard-status-collector.js) are implemented as designed.
+- The buildKanbanCard signature change (added repoMeta param) is properly propagated to all call sites.
+- Provider future-proofing is in place — the UI renders based on the provider field from the endpoint response.
+
 ## Commits
 - `804044ef` — wip: add dashboard github pr status section and warning styling
 - `95038526` — feat: add github pr status section to dashboard feature cards
