@@ -7,6 +7,7 @@ export default {
   "feature-open": "feature-open",
   "feature-eval": "feature-eval",
   "feature-review": "feature-review",
+  "feature-push": "feature-push",
   "feature-close": "feature-close",
   "feature-cleanup": "feature-cleanup",
   "feature-autonomous-start": "feature-autonomous-start",
