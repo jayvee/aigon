@@ -2,7 +2,7 @@
 'use strict';
 const a = require('assert');
 const { test, report } = require('../_helpers');
-const { checkGitHubGate } = require('../../lib/remote-gate-github');
+const { checkGitHubGate, queryGitHubPrStatus } = require('../../lib/remote-gate-github');
 const j = JSON.stringify;
 const ghFail = () => { throw new Error('not found'); };
 const open = (n, merge = 'CLEAN', x = {}) => ({ number: n, url: `https://github.com/test/repo/pull/${n}`, state: 'OPEN', isDraft: !!x.draft, baseRefName: 'main', headRefName: 'feature-1-desc', mergeStateStatus: merge, mergedAt: null });
@@ -40,4 +40,39 @@ test('multiple merged PRs for reused branch -> latest merged wins', () => {
 });
 test('one closed + one open -> block on open', () => { const r = checkGitHubGate('feature-1-desc', 'main', { execFn: x({ list: () => j([closed(1), open(2)]) }) }); a.ok(!r.ok); a.strictEqual(r.code, 'pr_open'); });
 test('query failure -> query_failed', () => { const r = checkGitHubGate('f', 'main', { execFn: x({ list: ghFail }) }); a.ok(!r.ok); a.strictEqual(r.code, 'query_failed'); });
+
+console.log('query-github-pr-status');
+test('status none', () => {
+    const r = queryGitHubPrStatus('feature-1-desc', 'main', { execFn: x({ list: () => '[]' }) });
+    a.strictEqual(r.provider, 'github');
+    a.strictEqual(r.status, 'none');
+});
+test('status open', () => {
+    const r = queryGitHubPrStatus('feature-1-desc', 'main', { execFn: x({ list: () => j([open(1)]) }) });
+    a.strictEqual(r.provider, 'github');
+    a.strictEqual(r.status, 'open');
+    a.strictEqual(r.prNumber, 1);
+});
+test('status draft', () => {
+    const r = queryGitHubPrStatus('feature-1-desc', 'main', { execFn: x({ list: () => j([open(1, 'CLEAN', { draft: true })]) }) });
+    a.strictEqual(r.provider, 'github');
+    a.strictEqual(r.status, 'draft');
+    a.strictEqual(r.prNumber, 1);
+});
+test('status merged', () => {
+    const r = queryGitHubPrStatus('feature-1-desc', 'main', { execFn: x({ list: () => j([merged(7)]) }) });
+    a.strictEqual(r.provider, 'github');
+    a.strictEqual(r.status, 'merged');
+    a.strictEqual(r.prNumber, 7);
+});
+test('status unavailable (non-GitHub remote)', () => {
+    const r = queryGitHubPrStatus('feature-1-desc', 'main', { execFn: x({ origin: () => 'https://gitlab.com/test/repo.git' }) });
+    a.strictEqual(r.provider, null);
+    a.strictEqual(r.status, 'unavailable');
+});
+test('status unavailable (gh missing)', () => {
+    const r = queryGitHubPrStatus('feature-1-desc', 'main', { execFn: x({ version: ghFail }) });
+    a.strictEqual(r.provider, 'github');
+    a.strictEqual(r.status, 'unavailable');
+});
 report();
