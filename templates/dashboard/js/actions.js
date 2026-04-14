@@ -163,9 +163,18 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     if (!seen.has(key)) { seen.add(key); deduped.push(va); }
   }
 
-  // Sort: high-priority first, then normal, then stop/danger last
+  // Sort: high-priority first, then normal, then stop/reset danger actions last
   deduped.sort((a, b) => {
-    const rank = v => v.priority === 'high' ? 0 : (v.action === 'feature-stop' || v.action === 'research-stop') ? 2 : 1;
+    const rank = v => (
+      v.priority === 'high'
+        ? 0
+        : (v.action === 'feature-stop'
+          || v.action === 'research-stop'
+          || v.action === 'feature-reset'
+          || v.action === 'research-reset')
+          ? 2
+          : 1
+    );
     return rank(a) - rank(b);
   });
 
