@@ -124,6 +124,8 @@ Current shared modules:
   `writeNormalizedTelemetryRecord`, `captureFeatureTelemetry`
 - `lib/security.js` (~131+ lines): merge gate scanning — runs gitleaks + semgrep at feature-close/submit, severity-aware thresholds, diff-aware scanning, graceful degradation
   `runSecurityScan`, `parseSemgrepOutput`, `formatSemgrepFindings`
+- `lib/remote-gate-github.js` (~170 lines): GitHub PR gate for feature-close — queries `gh pr list` for the feature branch, returns a provider-neutral result shape. If a PR is open, feature-close blocks. If merged, feature-close syncs local main from origin. Degrades to local close when `gh` is unavailable or remote is not GitHub.
+  `checkGitHubGate`, `queryPrList`, `getOriginUrl`, `isGitHubRemote`
 - `lib/entity.js`: entity pipeline — shared feature/research processing, dependency parsing (`depends_on` frontmatter), DFS cycle detection at prioritise time
   `parseFrontMatter`, `resolveDependencies`, `detectCycles`
 
