@@ -38,3 +38,17 @@ Agent: cx
 - Followed spec acceptance criteria directly with minimal surface-area changes in docs content.
 - Limited edits to guide + cross-links + Pro direction copy to avoid introducing behavior drift.
 - Maintained honest messaging that integrations are platform direction while Pro remains Coming Soon.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-14
+
+### Findings
+- The new GitHub integration guide said the close action could still be used while remote review was in progress, which conflicted with the documented `feature-close` behavior that blocks on open or draft PRs.
+
+### Fixes Applied
+- `95538136` `fix(review): correct close warning behavior in GitHub guide`
+
+### Notes
+- Review scope covered the spec, implementation log, and all branch changes against existing GitHub PR workflow docs.
