@@ -42,6 +42,7 @@ Test overrides: `createAllCommands({ getCurrentBranch: () => 'mock-branch' })`.
 
 - **Feature lifecycle authority**: `lib/workflow-core/` and `.aigon/workflows/features/{id}/`
 - **Feature runtime / agent status files**: `.aigon/state/feature-{id}-{agent}.json`
+- **Feature autonomous conductor state**: `.aigon/state/feature-{id}-auto.json`
 - **Research lifecycle authority**: `lib/workflow-core/` and `.aigon/workflows/research/{id}/`
 - **Feedback lifecycle authority**: spec folder location plus command logic
 - **Preferred read path (feature + research)**: `lib/workflow-snapshot-adapter.js` via `lib/workflow-read-model.js`
@@ -70,6 +71,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/state-queries.js` | ~200 | Pure read-side query helpers used by research/feedback and feature fallback paths |
 | `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting for workflow and snapshot read paths |
 | `lib/dashboard-status-helpers.js` | ~200 | Shared dashboard status helpers: tmux/session detection, worktree lookup, status normalization, stale-session heuristics |
+| `lib/auto-session-state.js` | ~50 | Durable AutoConductor run state for features so autonomous status survives tmux/session exit |
 | `lib/server-runtime.js` | ~90 | Shared AIGON server lifecycle helpers for start/restart/stop orchestration |
 | `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/feature-{id}-{agent}.json`) |
 | `lib/agent-prompt-resolver.js` | ~140 | Shared feature prompt resolution for agent launches. Default path preserves configured slash commands; cx reads the canonical `templates/generic/commands/feature-*.md` prompt body, strips metadata, and substitutes feature args inline so Codex no longer depends on deprecated `/prompts:` discovery or local skill discovery. |

@@ -90,6 +90,8 @@ Current shared modules:
   `formatActionCommand`
 - `lib/dashboard-status-helpers.js` (~200 lines): shared dashboard status helpers so tmux detection, worktree lookup, and stale-session heuristics are not buried in the HTTP server module
   `safeTmuxSessionExists`, `resolveFeatureWorktreePath`, `normalizeDashboardStatus`, `maybeFlagEndedSession`
+- `lib/auto-session-state.js` (~50 lines): durable AutoConductor run-state helper so feature autonomous status survives tmux/session loss and can be reported by the dashboard/CLI
+  `readFeatureAutoState`, `writeFeatureAutoState`, `clearFeatureAutoState`
 - `lib/dashboard-status-collector.js` (~830 lines): shared AIGON server read-side collector so repo/entity status assembly is separated from HTTP transport and notification code
   `collectDashboardStatusData`
 - `lib/server-runtime.js` (~90 lines): shared AIGON server lifecycle helpers extracted from infra command wiring
@@ -209,6 +211,7 @@ The post-cutover system is easier to reason about if you separate lifecycle trut
 | Feature lifecycle (`implementing`, `evaluating`, `ready_for_review`, `closing`, `done`, `paused`) | `lib/workflow-core/` snapshot + event log | Sole write path for feature lifecycle |
 | Feature spec folder location | Engine effects (`move_spec`) | User-visible reflection of engine state |
 | Feature agent runtime status (`running`, `waiting`, `ready`, `lost`, etc.) | Engine signals plus per-agent status files in `.aigon/state/feature-{id}-{agent}.json` | Session/runtime metadata, not the lifecycle authority |
+| Feature autonomous conductor runtime (`starting`, `running`, `completed`, `failed`, etc.) | `.aigon/state/feature-{id}-auto.json` plus tmux session presence | Durable proof that autonomous orchestration started, what session it used, and how it ended |
 | Research lifecycle (`backlog`, `implementing`, `evaluating`, `closing`, `done`) | `lib/workflow-core/` snapshot + event log | Sole write path for research lifecycle |
 | Feedback lifecycle | Spec folder location + command logic | Feedback does not use workflow-core |
 

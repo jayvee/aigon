@@ -16,6 +16,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+const { execSync, execFileSync } = require('child_process');
 const { test, testAsync, withTempDir, withTempDirAsync, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 const { snapshotToDashboardActions } = require('../../lib/workflow-snapshot-adapter');
@@ -28,6 +29,12 @@ const REPO_DIRS = [
     'docs/specs/features/05-done',
     '.aigon/workflows/features',
     '.aigon/state',
+];
+
+const RESEARCH_REPO_DIRS = [
+    'docs/specs/research-topics/04-in-evaluation',
+    'docs/specs/research-topics/05-done',
+    'docs/specs/research-topics/logs',
 ];
 
 /** Run an async test body with a fresh aigon-style temp repo, auto-cleaned. */
@@ -44,6 +51,15 @@ function writeSpec(repoPath, featureId, name) {
         `feature-${featureId}-${name}.md`
     );
     fs.writeFileSync(specPath, `# Feature: ${name}\n`);
+    return specPath;
+}
+
+function writeResearchSpec(repoPath, researchId, name) {
+    const specPath = path.join(
+        repoPath, 'docs', 'specs', 'research-topics', '04-in-evaluation',
+        `research-${researchId}-${name}.md`
+    );
+    fs.writeFileSync(specPath, `---\ntitle: ${name}\n---\n\n# Research: ${name}\n`);
     return specPath;
 }
 
@@ -143,6 +159,43 @@ testAsync('fleet: eval → evaluating shows select-winner actions → close', ()
     assert.strictEqual(winnerSnap.winnerAgentId, 'cc');
     const closeSnap = await engine.closeFeatureWithEffects(repo, '02', async () => {});
     assert.strictEqual(closeSnap.lifecycle, 'done');
+}));
+
+test('research close finalizer stages engine-moved spec and commits it', () => withTempDir('aigon-research-close-', (repo) => {
+    for (const sub of RESEARCH_REPO_DIRS) fs.mkdirSync(path.join(repo, sub), { recursive: true });
+    execSync('git init -q', { cwd: repo });
+    execSync('git config user.email t@t', { cwd: repo });
+    execSync('git config user.name t', { cwd: repo });
+
+    const initialSpec = writeResearchSpec(repo, '24', 'close-test');
+    const findingsPath = path.join(repo, 'docs', 'specs', 'research-topics', 'logs', 'research-24-cc-findings.md');
+    fs.writeFileSync(findingsPath, '# Findings\n');
+    execSync('git add . && git commit -qm init', { cwd: repo });
+
+    const doneSpecPath = path.join(repo, 'docs', 'specs', 'research-topics', '05-done', path.basename(initialSpec));
+    fs.renameSync(initialSpec, doneSpecPath);
+
+    const script = `
+        const entity = require(${JSON.stringify(path.join(__dirname, '../../lib/entity'))});
+        const utils = require(${JSON.stringify(path.join(__dirname, '../../lib/utils'))});
+        const { execSync } = require('child_process');
+        const runGit = (command) => execSync(command, { cwd: process.cwd(), stdio: 'pipe' });
+        entity.entityCloseFinalize(entity.RESEARCH_DEF, { num: '24', fromFolder: '04-in-evaluation' }, {
+            utils,
+            git: { runGit },
+        });
+    `;
+    execFileSync(process.execPath, ['-e', script], { cwd: repo, stdio: 'pipe' });
+
+    const headMessage = execSync('git log --format=%s -1', { cwd: repo }).toString().trim();
+    assert.strictEqual(headMessage, 'chore: complete research 24 - move spec to done');
+
+    const nameStatus = execSync('git show --name-status --format= HEAD', { cwd: repo }).toString();
+    assert.match(nameStatus, /D\tdocs\/specs\/research-topics\/04-in-evaluation\/research-24-close-test\.md/);
+    assert.match(nameStatus, /A\tdocs\/specs\/research-topics\/05-done\/research-24-close-test\.md/);
+
+    const doneSpec = fs.readFileSync(doneSpecPath, 'utf8');
+    assert.match(doneSpec, /transitions:\n  - \{ from: "in-evaluation", to: "done"/);
 }));
 
 // ─── Pause → resume ──────────────────────────────────────────────────────────
