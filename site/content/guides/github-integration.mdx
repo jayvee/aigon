@@ -1,0 +1,51 @@
+---
+title: GitHub Integration
+description: Check GitHub PR status on demand from feature cards in the Aigon dashboard.
+---
+
+Aigon's dashboard can show GitHub pull request status directly on feature cards.
+This is a manual, on-demand status check so you can confirm PR state before you close a feature.
+
+## What it does
+
+When a feature branch is connected to GitHub, the feature card includes a GitHub section.
+Use it to run an on-demand status check and see the current PR state for that branch.
+
+## Prerequisites
+
+- Your repo `origin` points to GitHub
+- `gh` CLI is installed
+- `gh auth status` succeeds for the account that owns the repo access
+
+If these are missing, status may show as unavailable.
+
+## How to use it
+
+1. Open the dashboard and locate your feature card.
+2. Find the GitHub section on the card.
+3. Click refresh to run a manual status check.
+4. Read the returned status and decide whether to continue review or close.
+
+## Status reference
+
+| Status | What it means | What to do |
+|--------|----------------|------------|
+| **No PR** | No pull request was found for the feature branch. | Create a PR if you want remote review, or continue with local close workflow. |
+| **Open** | A PR exists and is open. | Continue review and merge in GitHub before running `feature-close`. |
+| **Draft** | A PR exists but is still draft. | Mark ready for review or close it if no longer needed. |
+| **Merged** | The PR was merged on GitHub. | Run `feature-close` to finalize local state and cleanup. |
+| **Unavailable** | Aigon could not determine status (missing auth, non-GitHub remote, or CLI issue). | Verify `gh` install/auth and remote setup, then refresh again. |
+
+## Close button warning
+
+If a PR is not merged yet, the feature card can show an orange close-state warning.
+This indicates remote review is still in progress. The close action remains visible so you can retry after a refresh, but `feature-close` may block until the PR is merged or closed.
+
+## Limitations
+
+- Manual refresh only (no automatic polling)
+- No webhooks or real-time sync
+- No auto-merge behavior
+- Read-only status visibility (Aigon does not edit PRs)
+
+For the broader close flow, see the [GitHub PR Workflow](./github-pr-workflow).

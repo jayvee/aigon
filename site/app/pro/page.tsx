@@ -297,6 +297,18 @@ export default function ProPage() {
         </div>
       </section>
 
+      {/* Integrations Direction */}
+      <section className="px-6 pb-4 md:pb-6">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="font-[family-name:var(--font-sora)] text-2xl font-bold text-gray-900 dark:text-[hsl(0_0%_94%)]">
+            Integrations
+          </h2>
+          <p className="mt-3 text-gray-600 dark:text-gray-400">
+            Aigon&apos;s dashboard connects to tools you already use, starting with GitHub PR status on feature cards, with room for future integrations.
+          </p>
+        </div>
+      </section>
+
       {/* Coming Soon Banner */}
       <section className="px-6 py-20 md:py-28">
         <div className="mx-auto max-w-3xl">
