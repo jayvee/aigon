@@ -117,6 +117,58 @@ function showDangerConfirm(opts) {
   });
 }
 
+function showConfirm(opts) {
+  return new Promise((resolve) => {
+    const title = (opts && opts.title) || 'Confirm';
+    const message = (opts && opts.message) || 'Are you sure?';
+    const confirmLabel = (opts && opts.confirmLabel) || 'Confirm';
+    const cancelLabel = (opts && opts.cancelLabel) || 'Cancel';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'danger-confirm-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999';
+
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--bg-panel,#1a1d23);border:1px solid var(--border-color,#2a2f3a);border-radius:8px;padding:20px;max-width:460px;color:var(--text-primary,#eee);box-shadow:0 10px 40px rgba(0,0,0,.5)';
+    const titleEl = document.createElement('div');
+    titleEl.style.cssText = 'font-size:16px;font-weight:600;margin-bottom:8px;color:var(--text-primary,#eee)';
+    titleEl.textContent = title;
+    const messageEl = document.createElement('div');
+    messageEl.style.cssText = 'font-size:14px;line-height:1.5;margin-bottom:18px;color:var(--text-secondary,#bbb)';
+    messageEl.textContent = message;
+    const actionsEl = document.createElement('div');
+    actionsEl.style.cssText = 'display:flex;gap:10px;justify-content:flex-end';
+    const cancelButton = createEl('button', { className: 'btn btn-secondary confirm-cancel', text: cancelLabel, attrs: { type: 'button' } });
+    const okButton = createEl('button', { className: 'btn btn-primary confirm-ok', text: confirmLabel, attrs: { type: 'button' } });
+    actionsEl.appendChild(cancelButton);
+    actionsEl.appendChild(okButton);
+    box.appendChild(titleEl);
+    box.appendChild(messageEl);
+    box.appendChild(actionsEl);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    const cancelBtn = box.querySelector('.confirm-cancel');
+    const okBtn = box.querySelector('.confirm-ok');
+
+    function cleanup(result) {
+      document.removeEventListener('keydown', onKey, true);
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result);
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); cleanup(false); }
+      if (e.key === 'Enter') { e.preventDefault(); cleanup(document.activeElement === okBtn); }
+    }
+    cancelBtn.addEventListener('click', () => cleanup(false));
+    okBtn.addEventListener('click', () => cleanup(true));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
+    document.addEventListener('keydown', onKey, true);
+
+    setTimeout(() => cancelBtn.focus(), 0);
+  });
+}
+
 /**
  * Builds unified action button HTML from validActions.
  * Implements 3-tier hierarchy:
@@ -371,6 +423,19 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       });
       if (!ok) return;
       await requestAction('feature-reset', [id], repoPath, btn);
+      break;
+    }
+    case 'feature-push': {
+      const msg = (va.metadata && va.metadata.confirmationMessage)
+        || 'Push feature branch to origin?';
+      const ok = await showConfirm({
+        title: 'Push feature #' + id + (feature.name ? ' — ' + feature.name : '') + '?',
+        message: msg,
+        confirmLabel: 'Push',
+        cancelLabel: 'Cancel'
+      });
+      if (!ok) return;
+      await requestAction('feature-push', [id], repoPath, btn);
       break;
     }
     default:
