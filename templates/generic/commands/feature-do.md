@@ -167,4 +167,9 @@ Hard rules:
 
 After it succeeds, tell the user: "Implementation complete — ready for review."
 
-**STAY in the session.** The user may request changes. If they do, make the changes, commit, and say "Changes committed." Do NOT run or suggest `feature-close` — that's the user's decision. End with a brief summary of what was implemented.
+**STAY in the session.** The user may request changes. If they do, make the changes, commit, and say "Changes committed."
+
+Post-submit rules:
+- In plain Drive mode (branch, no worktree), do **not** suggest `feature-eval`. If you suggest a next command, it should be `feature-close <ID>`. Do not run it.
+- In worktree/Fleet modes, do **not** invent the next lifecycle step either. Wait for the user unless they explicitly ask what to run next.
+- Do NOT run or suggest `feature-close` — that's the user's decision.
