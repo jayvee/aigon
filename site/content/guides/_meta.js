@@ -8,7 +8,6 @@ export default {
   "feedback-workflow": "Feedback Workflow",
   telemetry: "Telemetry & Analytics",
   "github-integration": "GitHub Integration",
-  "github-pr-workflow": "GitHub PR Workflow",
   "security-scanning": "Security Scanning",
   amplification: "Insights",
   troubleshooting: "Troubleshooting",
