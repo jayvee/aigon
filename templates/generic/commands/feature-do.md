@@ -5,12 +5,49 @@ Implement a feature. Works in Drive mode (branch), Drive mode (worktree) (parall
 
 **IMPORTANT:** Run `{{CMD_PREFIX}}feature-start <ID>` first to prepare your workspace.
 
-> **Worktree guardrails (apply when you are in a worktree):**
+> **Worktree execution rules (MANDATORY when you are in a worktree):**
 >
-> 1. **Use `aigon` directly.** It is normally installed as a global CLI on your PATH. Do not waste time searching the filesystem for wrapper scripts or alternate CLI entrypoints just to run an Aigon command.
-> 2. **Stay in your working directory.** Run `pwd` first. All file edits in worktree mode MUST use paths relative to the current working directory. Never use absolute paths that target the main repo checkout.
-> 3. **Install dependencies before building or testing when the project uses local package installs.** Worktrees do not share `node_modules/`. If the repo depends on local installs, run the project's install command before any build, test, or dev server command.
-> 4. **If a command fails, fix the stated cause.** Read the actual error and address it. Do not spiral into filesystem exploration for symlinks, alternate wrappers, or unrelated repos.
+>
+> You are already inside the correct repo checkout. Do not "locate" another one.
+>
+> 1. **Use `aigon` directly.**
+>    Run `aigon <command>` as-is.
+>    Do **not** search for `aigon-cli.js`, Homebrew wrappers, symlinks, npm globals, or alternate install paths.
+>
+> 2. **Treat the current working directory as the only repo you may edit.**
+>    Run `pwd` once and trust it.
+>    All reads and edits must use paths relative to the current working directory.
+>    Do **not** use absolute paths into the main checkout or sibling worktrees.
+>
+> 3. **Forbidden actions when a command fails:**
+>    Do **not** run repo-discovery commands like:
+>    - `find ... aigon-cli.js`
+>    - `rg aigon-cli.js`
+>    - `ls /Users/.../src/...`
+>    - `readlink $(which aigon)`
+>    - creating symlinks to make Aigon commands work
+>    If an `aigon` command fails, read the error, fix the actual cause, and retry.
+>
+> 4. **Install dependencies before build/test/dev commands when the project uses local installs.**
+>    Worktrees do not share `node_modules/`.
+>    If the repo uses local dependencies, install them before running any build, test, or dev server command.
+>
+> 5. **Do not diagnose Aigon installation unless the error explicitly proves Aigon itself is missing from PATH.**
+>    A failure in `aigon feature-do`, `aigon feature-spec`, or `aigon agent-status` usually means:
+>    - wrong feature state
+>    - missing project dependencies
+>    - wrong branch/worktree
+>    - project-specific config problem
+>    It usually does **not** mean you should search the filesystem for Aigon.
+>
+> 6. **If you accidentally leave the worktree mental model, stop and reset.**
+>    Re-run:
+>    ```bash
+>    pwd
+>    git branch --show-current
+>    aigon feature-do {{ARG1_SYNTAX}}
+>    ```
+>    Then continue implementation from the current worktree only.
 
 ## Argument Resolution
 
@@ -41,6 +78,8 @@ pwd
 
 **Expected for worktree mode**: A path ending in `feature-{{ARG1_SYNTAX}}-{{AGENT_ID}}-<description>`
 **Expected for Drive mode**: The main repository path (but on a feature branch, NOT main)
+
+**If `pwd` is a worktree path, never read or edit the main repo via an absolute path.**
 
 **Do not proceed past this step until you have confirmed you are on a feature branch.**
 
@@ -86,6 +125,7 @@ aigon agent-status implementing
 - **COMMIT EARLY AND OFTEN.** After every meaningful change (edited a file, deleted a file, moved code), run `git add -A && git commit -m "wip: <what you just did>"`. Never have more than 2 minutes of uncommitted work. If your session dies, committed work survives. Uncommitted work is lost forever.
 - Validate after committing, not before. Fix issues in follow-up commits.
 - **ALL file edits MUST use relative paths from the current working directory.** Never use absolute paths. Run `pwd` if unsure where you are.
+- **Never troubleshoot by searching for Aigon itself.** Troubleshoot the reported error, not the CLI installation.
 
 Work through the acceptance criteria in order. For worktree modes, use relative paths and maintain the worktree directory as your working directory.
 
