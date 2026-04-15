@@ -216,7 +216,7 @@
     .kcard-gh-refresh{margin-left:auto;background:rgba(139,148,158,.12);border:1px solid rgba(139,148,158,.25);border-radius:4px;color:var(--text-secondary);font-family:var(--mono);font-size:10px;padding:2px 8px;cursor:pointer;transition:all .15s ease}
     .kcard-gh-refresh:hover{color:var(--text-primary);background:rgba(139,148,158,.22);border-color:rgba(139,148,158,.4)}
     .kcard-gh-refresh.is-loading{opacity:.65;animation:kcard-gh-pulse .8s ease-in-out infinite}
-    .kcard-gh-check-btn{background:rgba(139,148,158,.1);border:1px solid rgba(139,148,158,.2);border-radius:4px;color:var(--text-secondary);font-family:var(--mono);font-size:10px;padding:2px 8px;cursor:pointer;transition:all .15s ease}
+    .kcard-gh-check-btn{background:rgba(139,148,158,.1);border:1px solid rgba(139,148,158,.2);border-radius:4px;color:var(--text-secondary);font-family:var(--mono);font-size:10px;padding:2px 8px;cursor:pointer;transition:all .15s ease;max-width:50%}
     .kcard-gh-check-btn:hover{color:var(--text-primary);background:rgba(139,148,158,.18);border-color:rgba(139,148,158,.35)}
     .kcard-gh-check-btn.is-loading{opacity:.65;animation:kcard-gh-pulse .8s ease-in-out infinite;cursor:wait}
     .kcard-gh-status.status-none,.kcard-gh-status.status-unavailable{color:var(--text-tertiary)}

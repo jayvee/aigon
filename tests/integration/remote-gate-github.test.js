@@ -12,8 +12,8 @@ const x = (h = {}) => (cmd) => {
     if (cmd === 'git remote get-url origin') return h.origin ? h.origin() : 'https://github.com/test/repo.git';
     if (cmd === 'gh --version') return h.version ? h.version() : '';
     if (cmd === 'gh auth status') return h.auth ? h.auth() : '';
+    if (cmd.startsWith('gh pr list --head ') && cmd.includes('--state merged')) return h.merged ? h.merged() : (h.head ? h.head() : (h.list ? h.list() : '[]'));
     if (cmd.startsWith('gh pr list --head ')) return h.head ? h.head() : (h.list ? h.list() : '[]');
-    if (cmd.startsWith('gh pr list --state merged ')) return h.merged ? h.merged() : (h.list ? h.list() : '[]');
     if (cmd.startsWith('gh pr list')) return h.list ? h.list() : '[]';
     return '';
 };

@@ -57,89 +57,37 @@ function replaceSelectOptions(select, options) {
 // Maps action + priority to button CSS class
 function validActionBtnClass(action, priority) {
   if (priority === 'high') return 'btn btn-primary';
-  if (action === 'feature-stop' || action === 'research-stop' || action === 'feature-reset') return 'btn btn-danger';
+  if (action === 'feature-stop' || action === 'research-stop' || action === 'feature-reset' || action === 'research-reset') return 'btn btn-danger';
   return 'btn btn-secondary';
 }
 
-// feature 243: simple one-shot confirmation modal with default focus on Cancel.
-// Used for destructive actions like feature-reset. Resolves true on confirm,
-// false on cancel/escape. Enter fires the currently-focused button; Escape cancels.
-function showDangerConfirm(opts) {
-  return new Promise((resolve) => {
-    const title = (opts && opts.title) || 'Confirm';
-    const message = (opts && opts.message) || 'Are you sure?';
-    const confirmLabel = (opts && opts.confirmLabel) || 'Confirm';
-    const cancelLabel = (opts && opts.cancelLabel) || 'Cancel';
-
-    const overlay = document.createElement('div');
-    overlay.className = 'danger-confirm-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999';
-
-    const box = document.createElement('div');
-    box.style.cssText = 'background:var(--bg-panel,#1a1d23);border:1px solid rgba(239,68,68,.5);border-radius:8px;padding:20px;max-width:460px;color:var(--text-primary,#eee);box-shadow:0 10px 40px rgba(0,0,0,.5)';
-    const titleEl = document.createElement('div');
-    titleEl.style.cssText = 'font-size:16px;font-weight:600;margin-bottom:8px;color:#fca5a5';
-    titleEl.textContent = '⚠ ' + title;
-    const messageEl = document.createElement('div');
-    messageEl.style.cssText = 'font-size:14px;line-height:1.5;margin-bottom:18px;color:var(--text-secondary,#bbb)';
-    messageEl.textContent = message;
-    const actionsEl = document.createElement('div');
-    actionsEl.style.cssText = 'display:flex;gap:10px;justify-content:flex-end';
-    const cancelButton = createEl('button', { className: 'btn btn-secondary danger-confirm-cancel', text: cancelLabel, attrs: { type: 'button' } });
-    const okButton = createEl('button', { className: 'btn btn-danger danger-confirm-ok', text: confirmLabel, attrs: { type: 'button' } });
-    actionsEl.appendChild(cancelButton);
-    actionsEl.appendChild(okButton);
-    box.appendChild(titleEl);
-    box.appendChild(messageEl);
-    box.appendChild(actionsEl);
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
-
-    const cancelBtn = box.querySelector('.danger-confirm-cancel');
-    const okBtn = box.querySelector('.danger-confirm-ok');
-
-    function cleanup(result) {
-      document.removeEventListener('keydown', onKey, true);
-      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-      resolve(result);
-    }
-    function onKey(e) {
-      if (e.key === 'Escape') { e.preventDefault(); cleanup(false); }
-      if (e.key === 'Enter') { e.preventDefault(); cleanup(document.activeElement === okBtn); }
-    }
-    cancelBtn.addEventListener('click', () => cleanup(false));
-    okBtn.addEventListener('click', () => cleanup(true));
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
-    document.addEventListener('keydown', onKey, true);
-
-    // AC9: default focus on Cancel so a stray Enter cannot destroy work.
-    setTimeout(() => cancelBtn.focus(), 0);
-  });
-}
-
+// Simple one-shot confirmation modal with default focus on Cancel.
+// Resolves true on confirm, false on cancel/escape.
+// Pass danger:true for destructive actions (red border + warning icon).
 function showConfirm(opts) {
   return new Promise((resolve) => {
     const title = (opts && opts.title) || 'Confirm';
     const message = (opts && opts.message) || 'Are you sure?';
     const confirmLabel = (opts && opts.confirmLabel) || 'Confirm';
     const cancelLabel = (opts && opts.cancelLabel) || 'Cancel';
+    const danger = !!(opts && opts.danger);
 
     const overlay = document.createElement('div');
     overlay.className = 'danger-confirm-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999';
 
     const box = document.createElement('div');
-    box.style.cssText = 'background:var(--bg-panel,#1a1d23);border:1px solid var(--border-color,#2a2f3a);border-radius:8px;padding:20px;max-width:460px;color:var(--text-primary,#eee);box-shadow:0 10px 40px rgba(0,0,0,.5)';
+    box.style.cssText = 'background:var(--bg-panel,#1a1d23);border:1px solid ' + (danger ? 'rgba(239,68,68,.5)' : 'var(--border-color,#2a2f3a)') + ';border-radius:8px;padding:20px;max-width:460px;color:var(--text-primary,#eee);box-shadow:0 10px 40px rgba(0,0,0,.5)';
     const titleEl = document.createElement('div');
-    titleEl.style.cssText = 'font-size:16px;font-weight:600;margin-bottom:8px;color:var(--text-primary,#eee)';
-    titleEl.textContent = title;
+    titleEl.style.cssText = 'font-size:16px;font-weight:600;margin-bottom:8px;color:' + (danger ? '#fca5a5' : 'var(--text-primary,#eee)');
+    titleEl.textContent = (danger ? '\u26a0 ' : '') + title;
     const messageEl = document.createElement('div');
     messageEl.style.cssText = 'font-size:14px;line-height:1.5;margin-bottom:18px;color:var(--text-secondary,#bbb)';
     messageEl.textContent = message;
     const actionsEl = document.createElement('div');
     actionsEl.style.cssText = 'display:flex;gap:10px;justify-content:flex-end';
     const cancelButton = createEl('button', { className: 'btn btn-secondary confirm-cancel', text: cancelLabel, attrs: { type: 'button' } });
-    const okButton = createEl('button', { className: 'btn btn-primary confirm-ok', text: confirmLabel, attrs: { type: 'button' } });
+    const okButton = createEl('button', { className: 'btn ' + (danger ? 'btn-danger' : 'btn-primary') + ' confirm-ok', text: confirmLabel, attrs: { type: 'button' } });
     actionsEl.appendChild(cancelButton);
     actionsEl.appendChild(okButton);
     box.appendChild(titleEl);
@@ -167,6 +115,11 @@ function showConfirm(opts) {
 
     setTimeout(() => cancelBtn.focus(), 0);
   });
+}
+
+// Convenience wrapper for destructive confirmations (red border + warning icon).
+function showDangerConfirm(opts) {
+  return showConfirm(Object.assign({}, opts, { danger: true }));
 }
 
 /**
@@ -215,9 +168,18 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     if (!seen.has(key)) { seen.add(key); deduped.push(va); }
   }
 
-  // Sort: high-priority first, then normal, then stop/danger last
+  // Sort: high-priority first, then normal, then stop/reset danger actions last
   deduped.sort((a, b) => {
-    const rank = v => v.priority === 'high' ? 0 : (v.action === 'feature-stop' || v.action === 'research-stop') ? 2 : 1;
+    const rank = v => (
+      v.priority === 'high'
+        ? 0
+        : (v.action === 'feature-stop'
+          || v.action === 'research-stop'
+          || v.action === 'feature-reset'
+          || v.action === 'research-reset')
+          ? 2
+          : 1
+    );
     return rank(a) - rank(b);
   });
 

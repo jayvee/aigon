@@ -291,17 +291,47 @@
     const AGENT_ACTION_LABELS = {};
     const prStatusByFeature = new Map();
     const prStatusLoading = new Set();
+    const PR_STATUS_STORAGE_KEY = 'aigon_pr_status_cache';
 
-    function prStatusKey(repoPath, featureId) {
-      return String(repoPath || '') + '::' + String(featureId || '');
+    // Restore from sessionStorage on load
+    try {
+      const stored = sessionStorage.getItem(PR_STATUS_STORAGE_KEY);
+      if (stored) {
+        const entries = JSON.parse(stored);
+        for (const [k, v] of entries) prStatusByFeature.set(k, v);
+      }
+    } catch (_) {}
+
+    function persistPrStatusCache() {
+      try {
+        sessionStorage.setItem(PR_STATUS_STORAGE_KEY, JSON.stringify(Array.from(prStatusByFeature.entries())));
+      } catch (_) {}
     }
 
-    function getCachedPrStatus(repoPath, featureId) {
-      return prStatusByFeature.get(prStatusKey(repoPath, featureId)) || null;
+    function prStatusFingerprint(featureOrId, maybeFeature) {
+      const feature = (featureOrId && typeof featureOrId === 'object') ? featureOrId : (maybeFeature || null);
+      const featureId = feature && feature.id != null ? feature.id : featureOrId;
+      const featureName = feature && feature.name ? feature.name : '';
+      const createdAt = feature && feature.createdAt ? feature.createdAt : '';
+      const specPath = feature && feature.specPath ? feature.specPath : '';
+      return [
+        String(featureId || ''),
+        String(featureName || ''),
+        String(createdAt || ''),
+        String(specPath || '')
+      ].join('::');
     }
 
-    function setCachedPrStatus(repoPath, featureId, payload) {
-      const key = prStatusKey(repoPath, featureId);
+    function prStatusKey(repoPath, featureOrId, maybeFeature) {
+      return String(repoPath || '') + '::' + prStatusFingerprint(featureOrId, maybeFeature);
+    }
+
+    function getCachedPrStatus(repoPath, featureOrId, maybeFeature) {
+      return prStatusByFeature.get(prStatusKey(repoPath, featureOrId, maybeFeature)) || null;
+    }
+
+    function setCachedPrStatus(repoPath, featureOrId, payload, maybeFeature) {
+      const key = prStatusKey(repoPath, featureOrId, maybeFeature);
       const normalized = {
         provider: payload && payload.provider ? String(payload.provider) : '',
         status: payload && payload.status ? String(payload.status) : 'unavailable',
@@ -310,19 +340,20 @@
         message: payload && payload.message ? String(payload.message) : ''
       };
       prStatusByFeature.set(key, normalized);
+      persistPrStatusCache();
       return normalized;
     }
 
-    function shouldWarnCloseByPrStatus(repoPath, featureId) {
-      const cached = getCachedPrStatus(repoPath, featureId);
+    function shouldWarnCloseByPrStatus(repoPath, feature) {
+      const cached = getCachedPrStatus(repoPath, feature);
       if (!cached) return false; // no warning before first refresh
       return cached.status === 'none' || cached.status === 'open' || cached.status === 'draft' || cached.status === 'unavailable';
     }
 
-    function buildPrStatusContent(repoPath, featureId) {
-      const cached = getCachedPrStatus(repoPath, featureId);
+    function buildPrStatusContent(repoPath, feature) {
+      const cached = getCachedPrStatus(repoPath, feature);
       if (!cached) {
-        return '<button class="kcard-gh-check-btn" data-gh-refresh="1" data-repo-path="' + escHtml(repoPath || '') + '" data-feature-id="' + escHtml(featureId) + '">Check PR status</button>';
+        return '<button class="kcard-gh-check-btn" data-gh-refresh="1" data-repo-path="' + escHtml(repoPath || '') + '" data-feature-id="' + escHtml(feature.id) + '">Check PR status</button>';
       }
 
       if (cached.status === 'none') {
@@ -341,7 +372,10 @@
 
       if (cached.status === 'merged') {
         const mergedLabel = 'Merged' + (cached.prNumber ? ' #' + escHtml(cached.prNumber) : '');
-        return '<span class="kcard-agent-status kcard-gh-status status-merged">✓ ' + mergedLabel + '</span>' +
+        const linkHtml = cached.url
+          ? ' <a class="kcard-gh-link" href="' + escHtml(cached.url) + '" target="_blank" rel="noopener noreferrer" aria-label="Open pull request">↗</a>'
+          : '';
+        return '<span class="kcard-agent-status kcard-gh-status status-merged">✓ ' + mergedLabel + linkHtml + '</span>' +
           '<div class="kcard-gh-helper">Ready to close</div>';
       }
 
@@ -352,10 +386,13 @@
       if (pipelineType !== 'features') return '';
       if (!repoMeta || !repoMeta.githubRemote) return '';
       if (!feature || !feature.stage || feature.stage === 'done' || feature.stage === 'inbox' || feature.stage === 'backlog') return '';
+      // Only show after an agent has submitted/is ready (branch likely pushed)
+      const agents = feature.agents || [];
+      if (!agents.some(function(a) { return a.status === 'submitted' || a.status === 'ready'; })) return '';
 
-      const key = prStatusKey(repoPath, feature.id);
+      const key = prStatusKey(repoPath, feature);
       const loading = prStatusLoading.has(key);
-      const cached = getCachedPrStatus(repoPath, feature.id);
+      const cached = getCachedPrStatus(repoPath, feature);
       const refreshLabel = loading ? '↻ …' : '↻';
 
       // Only show header refresh button after first fetch; before that the content area has the "Check PR status" button
@@ -372,7 +409,7 @@
           '<span class="kcard-agent-name"><svg class="kcard-gh-logo" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> GitHub</span>' +
           refreshBtnHtml +
         '</div>' +
-        '<div class="kcard-agent-status-row">' + buildPrStatusContent(repoPath, feature.id) + '</div>' +
+        '<div class="kcard-agent-status-row">' + buildPrStatusContent(repoPath, feature) + '</div>' +
       '</div>';
     }
 
@@ -622,7 +659,7 @@
       card.innerHTML = innerHtml;
 
       // Advisory-only warning style on Close button when last PR check is non-merged.
-      if (shouldWarnCloseByPrStatus(repoPath, feature.id)) {
+      if (shouldWarnCloseByPrStatus(repoPath, feature)) {
         card.querySelectorAll('.kcard-va-btn[data-va-action="feature-close"]').forEach(btn => {
           btn.classList.add('kcard-va-btn--pr-warning');
         });
@@ -744,7 +781,8 @@
           e.stopPropagation();
           const targetRepoPath = btn.getAttribute('data-repo-path') || repoPath || '';
           const targetFeatureId = btn.getAttribute('data-feature-id') || feature.id;
-          const key = prStatusKey(targetRepoPath, targetFeatureId);
+          const targetFeature = feature && String(feature.id) === String(targetFeatureId) ? feature : { id: targetFeatureId };
+          const key = prStatusKey(targetRepoPath, targetFeature);
           if (prStatusLoading.has(key)) return;
 
           // Immediate visual feedback on the clicked button before full re-render
@@ -755,13 +793,13 @@
           prStatusLoading.add(key);
           try {
             const payload = await fetchPrStatus(targetRepoPath, targetFeatureId);
-            setCachedPrStatus(targetRepoPath, targetFeatureId, payload || {});
+            setCachedPrStatus(targetRepoPath, targetFeatureId, payload || {}, targetFeature);
           } catch (err) {
             setCachedPrStatus(targetRepoPath, targetFeatureId, {
               provider: 'github',
               status: 'unavailable',
               message: String(err && err.message ? err.message : 'Failed to fetch PR status')
-            });
+            }, targetFeature);
           } finally {
             prStatusLoading.delete(key);
             render();
