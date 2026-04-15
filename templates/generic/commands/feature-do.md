@@ -5,6 +5,13 @@ Implement a feature. Works in Drive mode (branch), Drive mode (worktree) (parall
 
 **IMPORTANT:** Run `{{CMD_PREFIX}}feature-start <ID>` first to prepare your workspace.
 
+> **Worktree guardrails (apply when you are in a worktree):**
+>
+> 1. **Use `aigon` directly.** It is normally installed as a global CLI on your PATH. Do not waste time searching the filesystem for wrapper scripts or alternate CLI entrypoints just to run an Aigon command.
+> 2. **Stay in your working directory.** Run `pwd` first. All file edits in worktree mode MUST use paths relative to the current working directory. Never use absolute paths that target the main repo checkout.
+> 3. **Install dependencies before building or testing when the project uses local package installs.** Worktrees do not share `node_modules/`. If the repo depends on local installs, run the project's install command before any build, test, or dev server command.
+> 4. **If a command fails, fix the stated cause.** Read the actual error and address it. Do not spiral into filesystem exploration for symlinks, alternate wrappers, or unrelated repos.
+
 ## Argument Resolution
 
 If no ID is provided, or the ID doesn't match an existing active feature:
@@ -61,6 +68,10 @@ aigon feature-spec {{ARG1_SYNTAX}}
 
 {{PLAN_MODE_SECTION}}
 
+## Before Step 3: Install dependencies if needed
+
+{{WORKTREE_DEP_CHECK}}
+
 ## Step 3: Implement
 
 **Signal that you are starting implementation (you MUST run this shell command — do NOT write .aigon/state/ files directly):**
@@ -74,12 +85,9 @@ aigon agent-status implementing
 - Do not create test files unless the spec explicitly requires them.
 - **COMMIT EARLY AND OFTEN.** After every meaningful change (edited a file, deleted a file, moved code), run `git add -A && git commit -m "wip: <what you just did>"`. Never have more than 2 minutes of uncommitted work. If your session dies, committed work survives. Uncommitted work is lost forever.
 - Validate after committing, not before. Fix issues in follow-up commits.
+- **ALL file edits MUST use relative paths from the current working directory.** Never use absolute paths. Run `pwd` if unsure where you are.
 
 Work through the acceptance criteria in order. For worktree modes, use relative paths and maintain the worktree directory as your working directory.
-
-## Step 3.5: Install dependencies (worktree only)
-
-{{WORKTREE_DEP_CHECK}}
 
 ## Step 4: Commit your implementation
 
