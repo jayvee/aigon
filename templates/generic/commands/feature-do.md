@@ -3,7 +3,7 @@
 
 Implement a feature. Works in Drive mode (branch), Drive mode (worktree) (parallel development), and Fleet mode (competition).
 
-**IMPORTANT:** Run `{{CMD_PREFIX}}feature-start <ID>` first to prepare your workspace.
+**IMPORTANT:** If you are already on a `feature-<ID>-...` branch or inside a `feature-<ID>-...` worktree, do **not** run `feature-start` again. Go straight to `aigon feature-do <ID>`.
 
 > **Worktree execution rules (MANDATORY when you are in a worktree):**
 >
@@ -83,13 +83,15 @@ pwd
 
 **Do not proceed past this step until you have confirmed you are on a feature branch.**
 
-## Step 1: Run the CLI command
+## Step 1: Attach To The Existing Feature Workspace
 
-This command detects whether you're in Drive or Fleet mode and provides guidance.
+If Step 0 confirmed you are already on the feature branch or in the feature worktree, do **not** re-run `feature-start`. Use `feature-do` directly:
 
 ```bash
 aigon feature-do {{ARG1_SYNTAX}}
 ```
+
+Only run `{{CMD_PREFIX}}feature-start {{ARG1_SYNTAX}}` if Step 0 showed that the feature branch/worktree does not exist yet and the workspace was not prepared.
 
 {{AUTONOMOUS_SECTION}}
 
