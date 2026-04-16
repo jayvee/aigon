@@ -32,6 +32,13 @@
       return [repoPath || '', pipelineType || 'features', stage || ''].join('::');
     }
 
+    function getDoneFolderPath(repoPath, pipelineType) {
+      const specsRoot = (repoPath || '') + '/docs/specs';
+      if (pipelineType === 'research') return specsRoot + '/research-topics/05-done';
+      if (pipelineType === 'feedback') return specsRoot + '/feedback/04-done';
+      return specsRoot + '/features/05-done';
+    }
+
     function slugifyFeatureName(value) {
       const text = String(value || '').trim().toLowerCase();
       const slug = text.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -920,11 +927,19 @@
         moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
         moreBtn.textContent = (totalDone - DONE_CAP) + ' more — open in Finder';
         moreBtn.onclick = async () => {
-          const donePath = (repo.path || '') + '/docs/specs/features/05-done';
+          const donePath = getDoneFolderPath(repo.path, pType);
           try {
-            const res = await fetch('/api/open-path', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: donePath }) });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-          } catch (e) { showToast('Could not open Finder: ' + e.message, null, null, { error: true }); }
+            const res = await fetch('/api/open-folder', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: donePath }) });
+            const payload = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              const msg = payload && payload.error && payload.error.message
+                ? payload.error.message
+                : (payload && payload.error) || ('HTTP ' + res.status);
+              throw new Error(String(msg));
+            }
+          } catch (e) {
+            showToast('Could not open folder: ' + e.message, null, null, { error: true });
+          }
         };
         colBody.appendChild(moreBtn);
       }
