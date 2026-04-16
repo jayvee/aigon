@@ -2,44 +2,46 @@
 
 ## Summary
 
-Rewrite `site/content/comparisons.mdx` from scratch with a simplified dimension model, a curated tool list, and an honest "what Aigon doesn't do" section. Delete `docs/comparisons-extended.md` afterward — single source of truth.
+Rewrite `site/content/comparisons.mdx` from scratch with a simpler, more defensible comparison model, a curated tool list, and an honest "what Aigon doesn't do" section. Delete `docs/comparisons-extended.md` afterward — single source of truth.
 
-The current page has 9 tools with an 8-dimension binary matrix (dots). The new page uses ~5 philosophy-style dimensions (every cell is a word/phrase, not a dot), covers 10 tools + a native CLIs column, and leads with what makes Aigon different rather than a feature checklist.
+The current page mixes marketing claims, binary dots, and broad competitor buckets. The new page should use concrete observable rows, cover the most relevant competitors first, and lead with what makes Aigon different rather than a feature checklist.
 
 ## Design decisions (from research session 2026-04-16)
 
-### Dimensions — philosophy, not checkboxes
+### Dimensions — concrete, not vibes
 
-Replace the 8-column dot matrix with dimensions that capture *style*:
+Replace the 8-column dot matrix with rows that readers can verify from product docs and demos:
 
 | Dimension | What it captures |
 |---|---|
-| **Agent model** | Single / parallel fleet / sequential multi / wave-based / fully hosted |
-| **How you work** | Spec lifecycle / task cards / ad-hoc prompting / pair programming / task delegation |
-| **Autonomy** | Iterate loops / dependency chains / autonomous hooks / fully autonomous / interactive |
-| **Work isolation** | Git worktrees / cloud sandbox / working directory / branches |
-| **Cost model** | BYO subscriptions / platform fee / free / usage-based |
+| **Primary unit of work** | Feature spec / task card / session / issue / branch |
+| **Source of truth** | Markdown specs / board cards / chat history / IDE project state / hosted workspace |
+| **Isolation model** | Git worktrees / branches / cloud sandbox / editor workspace |
+| **Multi-agent behavior** | Parallel competition / dependency chains / sequential delegation / single-agent |
+| **Evaluation model** | Formal review / rubric / diff review / none |
+| **IDE / browser support** | Native IDE, browser testing, TUI, CLI-only, or mixed |
+| **Pricing model** | BYO subscriptions / platform fee / usage-based / free |
 | **Open source** | Yes / No / Partial |
 
-Dropped from old matrix: vendor independence (overlaps with agent model), IDE integration (moved to "doesn't do"), research workflows / feedback loop / structured evaluation (all absorbed into agent model — they're aspects of multi-agent orchestration).
+Dropped from the old matrix: abstract vendor-independence scoring and loose “autonomy” labels that collapse too many distinct behaviors into one cell.
 
 ### Tool list (10 + native CLIs)
 
 **Closest competitors:**
-- **Cline Kanban** — #1 comparison. Worktree-per-task kanban, parallel agents, dependency chains. Closest to Aigon but task-card-based, not spec-driven. No evaluation step.
-- **SpecKit** (GitHub) — 88k stars, spec-driven development toolkit. Structures upstream thinking (constitution → spec → plan → tasks) but single-agent, no fleet/eval.
-- **GSD** — Wave-based parallel execution with milestone specs. Nearest OSS competitor on multi-agent + spec.
+- **Cline Kanban** — closest surface-area match. Task-board workflow, parallel agents, dependency chains, worktree isolation. Closest to Aigon on orchestration UI, but task-card-based rather than spec-driven and without Aigon's evaluation/research model.
+- **SpecKit** (GitHub) — spec-driven development toolkit. Strong on upstream planning structure (constitution → spec → plan → tasks) but not a multi-agent orchestration system.
+- **GSD** — wave-based parallel execution with milestone specs. Nearest OSS competitor on spec execution and dependency ordering.
 
 **Commercial agents:**
-- **Cursor** — Dominant IDE agent. Polar opposite philosophy (all-in-one IDE). Also an Aigon engine via `cu`.
-- **Windsurf** — Second IDE agent, enough mindshare to matter.
-- **Kiro** (AWS) — Closest spec-driven commercial competitor. EARS notation, autonomous hooks.
-- **Devin** — Highest-profile autonomous agent. Cloud-only, opaque. Clean philosophical contrast.
-- **Jules** (Google) — Google's autonomous agent, same tier as Devin.
+- **Cursor** — dominant IDE agent. Strong IDE integration, weaker workflow orchestration than Aigon. Also an Aigon engine via `cu`.
+- **Windsurf** — major IDE agent with broad mindshare and tighter editor-native flow than Aigon.
+- **Kiro** (AWS) — closest commercial spec-driven comparator. EARS-style specs and task generation, but still an IDE-first product.
+- **Devin** — highest-profile autonomous agent. Cloud-first and opaque, with a very different control model.
+- **Jules** (Google) — autonomous coding agent in the same broad category as Devin.
 
 **OSS tools:**
-- **Roo Code** — OSS multi-agent IDE extension, 30k+ stars. Sequential multi-agent with custom modes.
-- **Aider** — Gold standard CLI pair programmer. 42k stars.
+- **Roo Code** — OSS IDE extension with custom modes and multi-step agent workflows.
+- **Aider** — mature CLI pair programmer with strong git-aware editing.
 
 **Native CLIs column** (not competitors — Aigon's engines):
 - Claude Code, Gemini CLI, Codex CLI — single entry showing what they are and aren't.
@@ -60,11 +62,12 @@ Dropped from old matrix: vendor independence (overlaps with agent model), IDE in
 
 - Uses your existing subscriptions — runs through CLIs you already pay for (Claude Max via Claude Code, Gemini via Gemini CLI, etc.)
 - Spec-driven lifecycle from idea to done, not just task execution
-- Competitive evaluation — agents compete, a fresh agent picks the winner
+- Competitive evaluation — agents compete, then a fresh agent picks the winner
+- Research and feedback workflows are first-class, not add-ons
 
 ### What Aigon doesn't do
 
-- No IDE integration (CLI + slash commands only)
+- No native IDE extension or embedded editor UI
 - No embedded browser testing or visual diffs
 - No single-file quick-edit workflow (designed for features, not one-liners)
 - No automatic model selection — you always choose which agent/model runs
@@ -73,20 +76,20 @@ Dropped from old matrix: vendor independence (overlaps with agent model), IDE in
 
 Cline Kanban is the closest competitor and deserves a detailed side-by-side (similar to the current OpenCode treatment). Key differentiators:
 
-- Cline Kanban is a **task runner with a board** — ad-hoc cards, dependency chains, auto-commit
-- Aigon is a **feature lifecycle manager** — specs define work, agents compete, evaluation picks the best
-- Cline has better review UX (inline diffs with PR-style comments on the board)
-- Aigon has deeper lifecycle (spec stages, research workflows, analytics, event-sourced state)
-- Both use worktrees; Cline symlinks node_modules (nice touch)
-- The question for users: "Do I need spec-driven lifecycle management, or do I just need to run agents in parallel?"
+- Cline Kanban is a **task board for agent orchestration** — ad-hoc cards, dependency chains, worktree-per-task execution.
+- Aigon is a **spec-driven feature lifecycle system** — specs define work, research and feedback are tracked separately, and evaluation chooses the winner.
+- Cline is stronger at **board-centric review UX** and direct task visibility.
+- Aigon is stronger at **cross-feature lifecycle management**, **research**, **feedback triage**, and **event-sourced state**.
+- Both use worktree isolation, but Aigon ties worktrees into a broader workflow engine rather than only a task board.
+- The user-facing question is: "Do I want a task board for agents, or a system that manages the whole feature lifecycle?"
 
 ## Acceptance Criteria
 
-- [ ] **AC1** — Feature matrix uses philosophy-style values (words/phrases), not binary dots
+- [ ] **AC1** — Feature matrix uses concrete observable values, not binary dots
 - [ ] **AC2** — Tool list includes exactly: Cline Kanban, SpecKit, GSD, Cursor, Windsurf, Kiro, Devin, Jules, Roo Code, Aider, + Native CLIs column
 - [ ] **AC3** — Each tool has a short prose entry with "How you work" / "Choose X when" / "Choose Aigon when"
 - [ ] **AC4** — "What Aigon does differently" section present (BYO subscriptions, spec lifecycle, competitive eval)
-- [ ] **AC5** — "What Aigon doesn't do" section present (no IDE, no browser testing, no quick-edit, no auto model selection)
+- [ ] **AC5** — "What Aigon doesn't do" section present (no native IDE extension, no browser testing, no quick-edit, no auto model selection)
 - [ ] **AC6** — Cline Kanban gets a detailed side-by-side comparison (the closest competitor)
 - [ ] **AC7** — Native CLIs (Claude Code, Gemini CLI, Codex) appear as a single column/entry explaining they are engines Aigon orchestrates, not competitors
 - [ ] **AC8** — `docs/comparisons-extended.md` is deleted
@@ -103,8 +106,8 @@ cd site && npm run build && cd ..
 ## Technical Approach
 
 1. Rewrite `site/content/comparisons.mdx` from scratch — don't patch the existing file
-2. Use the philosophy-style matrix as the centrepiece
-3. Group tools by category (closest competitors, commercial, OSS, engines)
+2. Use a concrete comparison matrix as the centrepiece
+3. Group tools by workflow type, not just market category
 4. Give Cline Kanban the deep side-by-side treatment
 5. Keep the "complementary usage" section (Aigon + Cursor, Aigon + Aider, etc.)
 6. Delete `docs/comparisons-extended.md` in the same commit
