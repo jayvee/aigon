@@ -12,12 +12,15 @@ The implementation inspects visible spec state, workflow snapshots, runtime stat
 
 I validated the command path with `node tests/integration/repair-command.test.js` and the full `npm test` suite.
 
+I also smoke-tested the command in a throwaway worktree by creating a stale `.aigon/state` file for feature 261, then running `aigon repair feature 261` and approving the destructive cleanup prompt. That uncovered two wiring issues in the real branch: the misc wrapper did not export `repair`, and the repair handler needed a shared `getStateDir()` helper plus status filtering so repair-owned state did not count as dirty work.
+
 ## Decisions
 
 - v1 scope is limited to `feature` and `research`.
 - The command refuses to act when it sees dirty work or unmerged branches, rather than trying to guess.
 - Destructive cleanup of stale worktrees or branches requires an explicit confirmation prompt.
 - The command now avoids false "not found" errors when the entity exists but is already clean.
+- The command must be exported through the misc compatibility wrapper and advertised in CLI help, not just the command factory.
 
 ## Code Review
 
