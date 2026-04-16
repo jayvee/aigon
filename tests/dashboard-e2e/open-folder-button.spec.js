@@ -4,6 +4,8 @@
 const { test, expect } = require('@playwright/test');
 const { gotoPipelineWithMockedSessions } = require('./_helpers');
 
+// REGRESSION: prevents the silent-no-op bug where "N more — open in Finder"
+// button sent requests to a non-existent /api/open-path endpoint (feature 237)
 test.describe('Done overflow folder opener', () => {
     test('clicking overflow button sends open-folder request for done specs path', async ({ page }) => {
         await gotoPipelineWithMockedSessions(page);
