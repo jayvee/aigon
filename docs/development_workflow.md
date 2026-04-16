@@ -90,14 +90,14 @@ For features, there are two relevant layers:
    - Implement the feature
    - Commit your changes
    - Update the implementation log
-   - **STOP** - Do NOT run `feature-done` from worktree
+   - **STOP** - Do NOT run `feature-close` from worktree
 4. Return to main repo for evaluation: `aigon feature-eval <ID>`
 5. Merge winner: `aigon feature-close <ID> cc`
 6. Clean up losers: `aigon feature-cleanup <ID> --push` (to save branches) or `aigon feature-cleanup <ID>` (to delete)
 
 ## Before Completing a Feature
 
-Before running `feature-done`, always:
+Before running `feature-close`, always:
 
 1. **Push the branch to origin** to save your work remotely:
    ```bash
