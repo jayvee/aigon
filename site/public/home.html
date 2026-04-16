@@ -545,11 +545,11 @@ docs/specs/features/logs/</code></pre>
         <terminal-line data="output">  ✓ Worktree: feature-07-cx  (Codex)</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  Spec copied to all worktrees.</terminal-line>
-        <terminal-line data="output">  Next: aigon worktree-open 07 --all</terminal-line>
+        <terminal-line data="output">  Next: aigon feature-open 07 --all</terminal-line>
       </template>
 
       <template id="step-setup-autopilot">
-        <terminal-line data="input" lineDelay="400">aigon feature-autopilot 07</terminal-line>
+        <terminal-line data="input" lineDelay="400">aigon feature-do 07 --iterate</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  ✈️ Autopilot mode</terminal-line>
         <terminal-line data="output">  Agent: cx · Iterations: 1..4</terminal-line>
@@ -559,12 +559,12 @@ docs/specs/features/logs/</code></pre>
       </template>
 
       <template id="step-setup-swarm">
-        <terminal-line data="input" lineDelay="400">aigon feature-setup 07 cc gg cx</terminal-line>
+        <terminal-line data="input" lineDelay="400">aigon feature-start 07 cc gg cx</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  🐝 Swarm mode</terminal-line>
         <terminal-line data="output">  Worktrees created for: cc, gg, cx</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="input" lineDelay="500">aigon feature-autopilot 07 --auto-submit</terminal-line>
+        <terminal-line data="input" lineDelay="500">aigon feature-do 07 --iterate</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  Autonomous loops running in all worktrees.</terminal-line>
         <terminal-line data="output">  Each agent iterates until checks pass, then submits.</terminal-line>
@@ -694,7 +694,7 @@ docs/specs/features/logs/</code></pre>
       </template>
 
       <template id="demo-autopilot">
-        <terminal-line data="input" lineDelay="400">aigon feature-autopilot 07</terminal-line>
+        <terminal-line data="input" lineDelay="400">aigon feature-do 07 --iterate</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  ✈️ Autopilot mode</terminal-line>
         <terminal-line data="output">  Agent: cx · Iterations: 1..4</terminal-line>
@@ -709,15 +709,15 @@ docs/specs/features/logs/</code></pre>
       </template>
 
       <template id="demo-swarm">
-        <terminal-line data="input" lineDelay="400">aigon feature-setup 07 cc gg cx</terminal-line>
+        <terminal-line data="input" lineDelay="400">aigon feature-start 07 cc gg cx</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  🐝 Swarm mode</terminal-line>
         <terminal-line data="output">  Worktrees created for: cc, gg, cx</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="input" lineDelay="500">aigon worktree-open 07 --all</terminal-line>
+        <terminal-line data="input" lineDelay="500">aigon feature-open 07 --all</terminal-line>
         <terminal-line data="output">  Opening all worktrees in parallel terminals...</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="input" lineDelay="500">aigon feature-autopilot 07 --auto-submit</terminal-line>
+        <terminal-line data="input" lineDelay="500">aigon feature-do 07 --iterate</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  Autonomous loops running:</terminal-line>
         <terminal-line data="output">  cc: pass on iteration 1</terminal-line>
