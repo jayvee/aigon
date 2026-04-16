@@ -7,6 +7,7 @@ export default {
   "agent-status": "agent-status",
   "sessions-close": "sessions-close",
   status: "status",
+  repair: "repair",
   help: "help",
   next: "next",
 };

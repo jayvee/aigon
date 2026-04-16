@@ -1,0 +1,36 @@
+---
+title: "repair"
+description: "Repair safe drift in a feature or research item without resetting work"
+---
+
+## Synopsis
+
+```bash
+aigon repair <feature|research> <ID> [--dry-run]
+```
+
+## Description
+
+Repairs safe drift between the visible spec, workflow engine, runtime state, sessions, and local Git state for a feature or research item.
+
+Use this when an item is already effectively complete but the dashboard or workflow state still looks wrong.
+
+## Flags
+
+- `--dry-run` - Print the diagnosis and planned repairs without mutating anything
+
+## Behavior
+
+- Prints a short diagnosis before any changes
+- Reconciles workflow state only when the spec is clearly complete
+- Removes stale agent state, session, worktree, and branch artifacts when safe
+- Refuses to guess when it finds dirty or unmerged work
+- Prompts before destructive cleanup that removes worktrees or branches
+
+## Examples
+
+```bash
+aigon repair feature 261 --dry-run
+aigon repair research 12
+```
+
