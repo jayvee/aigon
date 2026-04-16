@@ -22,10 +22,7 @@ aigon research-review {{args}}
 
 Read the research topic spec to understand what was being investigated:
 
-```bash
-SPEC_PATH=$(aigon research-spec {{ARG1_SYNTAX}})
-cat "$SPEC_PATH"
-```
+Look in `docs/specs/research-topics/03-in-progress/` for the research spec matching the ID.
 
 ## Step 3: Read the findings
 

@@ -10,18 +10,18 @@ tools:
   - name: aigon_feature_setup_arena
     description: Setup for arena mode - Create worktrees for multiple agents
     command: aigon feature-start {{id}} {{agents}}
-  - name: aigon_feature_implement
+  - name: aigon_feature_do
     description: Implement feature in current branch/worktree
-    command: aigon feature-implement {{id}}
+    command: aigon feature-do {{id}}
   - name: aigon_feature_eval
     description: Move feature to evaluation and create template (code review or comparison)
     command: aigon feature-eval {{id}}
-  - name: aigon_feature_done_solo
+  - name: aigon_feature_close_solo
     description: Complete and merge feature (solo mode)
-    command: aigon feature-done {{id}}
-  - name: aigon_feature_done_arena
+    command: aigon feature-close {{id}}
+  - name: aigon_feature_close_arena
     description: Complete and merge feature (arena mode - specify winning agent)
-    command: aigon feature-done {{id}} {{AGENT_ID}}
+    command: aigon feature-close {{id}} {{AGENT_ID}}
   - name: aigon_feature_cleanup
     description: Clean up arena worktrees and branches
     command: aigon feature-cleanup {{id}}
@@ -34,12 +34,12 @@ tools:
   - name: aigon_research_setup_arena
     description: Setup for arena research with multiple agents
     command: aigon research-start {{id}} {{agents}}
-  - name: aigon_research_conduct
+  - name: aigon_research_do
     description: Conduct research (write findings)
-    command: aigon research-conduct {{id}}
-  - name: aigon_research_done
+    command: aigon research-do {{id}}
+  - name: aigon_research_close
     description: Complete a research topic
-    command: aigon research-done {{id}}
+    command: aigon research-close {{id}}
   - name: aigon_dev_server_start
     description: Start the dev server - allocates port, registers with proxy, waits for healthy
     command: aigon dev-server start

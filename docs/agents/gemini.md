@@ -64,7 +64,7 @@ These are direct lifecycle commands you run yourself in the agent host — slash
 
 ## Critical Rules
 
-1. **Read the active spec first**: Use `aigon feature-spec <ID>` for features and `aigon research-spec <ID>` for research
+1. **Read the active spec first**: Use `aigon feature-spec <ID>` for features. For research, read the spec directly from `docs/specs/research-topics/03-in-progress/`
 2. **Use the correct workspace model**: Feature Drive uses a branch, Feature Fleet uses worktrees, Research usually runs in the main repo unless explicitly launched as parallel sessions
 3. **Use conventional commits when you commit**: Prefer `feat:`, `fix:`, `chore:`, or `docs:` as appropriate
 4. **Complete with the matching command**: Use the `feature-*` or `research-*` close/review/eval command for the entity you are working on
@@ -180,7 +180,7 @@ These are NOT optional. They are mandatory signals.
 **Symptom**: The work doesn't match the actual task, or you pull the wrong CLI context.
 **Prevention**: Resolve the matching spec before changing anything:
 - Features: `aigon feature-spec <ID>`
-- Research: `aigon research-spec <ID>`
+- Research: read the spec from `docs/specs/research-topics/03-in-progress/`
 
 ### 7. Ignoring the working directory in worktree mode
 **Symptom**: Editing files in the main repo instead of the worktree, or vice versa.

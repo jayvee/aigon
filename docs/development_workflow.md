@@ -49,9 +49,9 @@ docs/specs/
 | `aigon feature-create <name>` | Create a new feature spec |
 | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
 | `aigon feature-start <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
-| `aigon feature-implement <ID> [--iterate]` | Implement feature; `--iterate` runs Autopilot retry loop |
+| `aigon feature-do <ID> [--iterate]` | Implement feature; `--iterate` runs iterate loop |
 | `aigon feature-eval <ID>` | Create evaluation (code review for solo, comparison for arena) |
-| `aigon feature-done <ID> [agent]` | Merge and complete (specify agent in arena mode) |
+| `aigon feature-close <ID> [agent]` | Merge and complete (specify agent in arena mode) |
 | `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |
 
 ## Key Rules
@@ -72,32 +72,32 @@ For features, there are two relevant layers:
 ## Solo Mode Workflow
 
 1. Run `aigon feature-start <ID>` to create branch and move spec to in-progress
-2. Run `aigon feature-implement <ID>` to begin implementation (add `--iterate` for Autopilot retry loop)
+2. Run `aigon feature-do <ID>` to begin implementation (add `--iterate` for Autopilot retry loop)
 3. Read the spec path returned by `aigon feature-spec <ID>`
 4. Implement the feature according to the spec
 5. Test your changes and wait for user confirmation
 6. Commit using conventional commits (`feat:`, `fix:`, `chore:`)
 7. Update the implementation log in `./docs/specs/features/logs/`
-8. **STOP** - Wait for user to approve before running `aigon feature-done <ID>`
+8. **STOP** - Wait for user to approve before running `aigon feature-close <ID>`
 
 ## Arena Mode Workflow
 
 1. Run `aigon feature-start <ID> cc gg cx cu` to create worktrees for each agent
 2. **STOP** - Tell the user to open each worktree in a separate session
 3. In each worktree session:
-   - Run `aigon feature-implement <ID>`
+   - Run `aigon feature-do <ID>`
    - Read the spec path returned by `aigon feature-spec <ID>`
    - Implement the feature
    - Commit your changes
    - Update the implementation log
-   - **STOP** - Do NOT run `feature-done` from worktree
+   - **STOP** - Do NOT run `feature-close` from worktree
 4. Return to main repo for evaluation: `aigon feature-eval <ID>`
-5. Merge winner: `aigon feature-done <ID> cc`
+5. Merge winner: `aigon feature-close <ID> cc`
 6. Clean up losers: `aigon feature-cleanup <ID> --push` (to save branches) or `aigon feature-cleanup <ID>` (to delete)
 
 ## Before Completing a Feature
 
-Before running `feature-done`, always:
+Before running `feature-close`, always:
 
 1. **Push the branch to origin** to save your work remotely:
    ```bash
