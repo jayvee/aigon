@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "source": "feature-close-transcript",
+  "sessionId": "feature-255-cc-1776085114118",
+  "entityType": "feature",
+  "featureId": "255",
+  "repoPath": "/Users/jviner/src/aigon",
+  "agent": "cc",
+  "activity": "implement",
+  "model": "claude-opus-4-6",
+  "startAt": null,
+  "endAt": "2026-04-13T12:58:34.118Z",
+  "turnCount": 0,
+  "toolCalls": 0,
+  "tokenUsage": {
+    "input": 298,
+    "output": 18807,
+    "cacheReadInput": 8797521,
+    "cacheCreationInput": 242901,
+    "thinking": 0,
+    "total": 9059527,
+    "billable": 19105
+  },
+  "costUsd": 19.1657
+}

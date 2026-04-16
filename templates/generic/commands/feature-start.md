@@ -47,7 +47,12 @@ The CLI will:
 
 ### Drive Mode (branch)
 
-After the CLI completes, the agent is running `feature-do` in your current terminal. Wait for implementation to complete, then:
+After the CLI completes, setup is finished and you are on the feature branch in your current terminal. `feature-start` does **not** auto-run `feature-do` for normal Drive-mode sessions. Start implementation manually when you are ready:
+```bash
+{{CMD_PREFIX}}feature-do <ID>
+```
+
+After implementation is complete, then:
 ```bash
 {{CMD_PREFIX}}feature-close <ID>
 ```
@@ -80,7 +85,8 @@ If an agent session dies, use `feature-open` to re-attach:
 - **Drive worktree mode**: You'll work in an isolated worktree — ideal for parallel development of multiple features
 - **Fleet mode**: Multiple agents compete on the same feature in their own worktrees
 - Worktrees are created in `../<repo>-worktrees/` to keep them grouped with the project
-- Agents start automatically — no need to run `feature-open` after `feature-start`
+- Drive mode does setup only; worktree/Fleet modes start agent sessions automatically
+- Agents start automatically in worktree/Fleet modes — no need to run `feature-open` after `feature-start`
 
 ## Prompt Suggestion
 

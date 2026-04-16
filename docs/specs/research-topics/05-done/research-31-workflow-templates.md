@@ -56,6 +56,15 @@ The initial scope should be simple: let users select from pre-defined or user-cr
 - Workflow inheritance or composition
 - External system integrations (PR creation, deployment) — noted as future direction only
 
+## Implementation Notes
+
+### Multi-agent stages (from retired feature-multiple-reviewers-in-autonomous-mode)
+The workflow schema must support multiple agents per stage — e.g. a review stage with `"agents": ["cc", "gg"]`. This subsumes the previously proposed `--review-agent=cc --review-agent=gg` CLI flag extension. The AutoConductor needs to spawn all agents for a stage and treat the stage as complete only when all have finished. This is a general workflow capability, not a reviewer-specific feature. The retired spec also noted:
+- Cap at 2 reviewers initially (can relax later if workflows support arbitrary counts)
+- Parallel execution preferred over sequential (lower latency, fully independent)
+- `feature-review-check` needs to surface multiple review outputs, attributed by agent
+- Status reporting should show each agent's completion state independently
+
 ## Inspiration
 
 - The user's current workflow: "implement with Cursor, review with Claude Code, through to close" — repeated manually each time
