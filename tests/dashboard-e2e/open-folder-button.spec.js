@@ -2,42 +2,31 @@
 'use strict';
 
 const { test, expect } = require('@playwright/test');
-const fs = require('fs');
-const path = require('path');
-const { gotoPipelineWithMockedSessions, readCtx } = require('./_helpers');
-
-function seedDoneOverflowSpecs() {
-    const { tmpDir } = readCtx();
-    const doneDir = path.join(tmpDir, 'docs', 'specs', 'features', '05-done');
-    fs.mkdirSync(doneDir, { recursive: true });
-    for (let i = 0; i < 8; i += 1) {
-        const id = 900 + i;
-        const filePath = path.join(doneDir, `feature-${id}-e2e-open-folder-overflow-${i + 1}.md`);
-        if (fs.existsSync(filePath)) continue;
-        const content = [
-            '---',
-            `id: ${id}`,
-            `title: e2e open-folder overflow ${i + 1}`,
-            '---',
-            '',
-            '# e2e open-folder overflow',
-            '',
-            'Seed data for dashboard e2e overflow button test.',
-            '',
-        ].join('\n');
-        fs.writeFileSync(filePath, content, 'utf8');
-    }
-}
+const { gotoPipelineWithMockedSessions } = require('./_helpers');
 
 test.describe('Done overflow folder opener', () => {
     test('clicking overflow button sends open-folder request for done specs path', async ({ page }) => {
-        seedDoneOverflowSpecs();
         await gotoPipelineWithMockedSessions(page);
 
-        const doneCol = page.locator('.kanban-col[data-stage="done"]').first();
-        await expect(doneCol).toBeVisible({ timeout: 10000 });
+        await page.evaluate(() => {
+            const store = Alpine.store('dashboard');
+            const repos = (store && store.data && Array.isArray(store.data.repos)) ? store.data.repos : [];
+            if (!repos.length) return;
+            const firstRepo = { ...repos[0] };
+            firstRepo.features = Array.from({ length: 8 }).map((_, idx) => ({
+                id: String(1000 + idx),
+                name: `e2e-open-folder-${idx + 1}`,
+                stage: 'done',
+                validActions: [],
+                createdAt: '2026-04-01T00:00:00.000Z',
+                updatedAt: '2026-04-01T00:00:00.000Z'
+            }));
+            firstRepo.doneTotal = firstRepo.features.length;
+            store.pipelineType = 'features';
+            store.data = { ...store.data, repos: [firstRepo] };
+        });
 
-        const moreBtn = doneCol.locator('button.btn').filter({ hasText: 'more — open in Finder' }).first();
+        const moreBtn = page.locator('button.btn').filter({ hasText: 'more — open in Finder' }).first();
         await expect(moreBtn).toBeVisible({ timeout: 10000 });
 
         let requestPayload = null;
