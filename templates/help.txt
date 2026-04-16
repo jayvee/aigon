@@ -72,6 +72,8 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-review <ID>               Code review with fixes by a different agent
   feature-push [ID] [agent]         Push feature branch to origin for PR review
   feature-close <ID> [agent]        Merge and complete feature
+  repair <feature|research> <ID> [--dry-run]
+                                    Repair safe drift in a feature or research item
   feature-cleanup <ID>              Clean up Fleet worktrees and branches (worktrees + branches only)
   feature-reset <ID>                Full reset back to backlog: sessions + worktrees + branches + state + spec move
                                     (use this to start a feature over with a different agent)
