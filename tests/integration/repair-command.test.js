@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
+// REGRESSION: prevents repair command from being silently unregistered or
+// losing its CLI metadata entry (feature 261)
+
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
