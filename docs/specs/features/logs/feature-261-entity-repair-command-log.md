@@ -18,3 +18,29 @@ I validated the command path with `node tests/integration/repair-command.test.js
 - The command refuses to act when it sees dirty work or unmerged branches, rather than trying to guess.
 - Destructive cleanup of stale worktrees or branches requires an explicit confirmation prompt.
 - The command now avoids false "not found" errors when the entity exists but is already clean.
+
+## Code Review
+
+**Reviewed by**: cc (Claude Code Opus)
+**Date**: 2026-04-16
+
+### Findings
+
+1. **State/heartbeat cleanup ran unconditionally** — `stateFiles` and `heartbeatFiles` were removed regardless of whether the entity was actually done. Running `aigon repair feature 42` on an active in-progress feature would delete legitimate runtime state. The spec's repair policy and §3 ("remove stale `.aigon/state` files only when the authoritative lifecycle already proves they are stale") require gating on `doneSpecExists`.
+
+2. **Branch deletion trapped inside worktree block** — The `branches.forEach(branch => git branch -D)` loop was nested inside `if (worktrees.length > 0)`, so stale branches for features with no remaining worktrees were never cleaned. This is a real scenario (worktree manually removed, branch left behind).
+
+3. **Test not wired into `npm test`** — `repair-command.test.js` existed but was not in the test script in `package.json`. It passed when run directly but was invisible to CI and pre-push.
+
+4. **Missing REGRESSION comment on test** — Per T2 rules, every test needs a one-line comment naming the specific regression it prevents.
+
+5. **Test budget already exceeded** — The test suite is at 2626 LOC vs the 2000 ceiling. This predates the repair feature. Not blocking this review, but needs attention.
+
+### Fixes Applied
+
+- `3b775853` fix(review): gate state/heartbeat cleanup on done spec, fix branch deletion scope, wire test
+
+### Notes
+
+- The `visibleStage` derivation (lines 521-536) is a long chain of string-includes checks that duplicates folder-to-stage mapping already defined in `FEATURE_STAGE_FOLDERS` in setup.js. Not a bug, but a future simplification candidate.
+- The `dirtyBranches` array is populated but only used in error output — it doesn't independently gate the refusal (that's handled by `unsafeBranchState`). The naming is slightly misleading but functionally correct.
