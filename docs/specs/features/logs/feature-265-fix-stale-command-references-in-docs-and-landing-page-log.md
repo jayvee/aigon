@@ -1,3 +1,16 @@
+---
+commit_count: 9
+lines_added: 105
+lines_removed: 51
+lines_changed: 156
+files_touched: 14
+fix_commit_count: 5
+fix_commit_ratio: 0.556
+rework_thrashing: false
+rework_fix_cascade: true
+rework_scope_creep: false
+---
+
 # Implementation Log: Feature 265 - fix-stale-command-references-in-docs-and-landing-page
 
 ## Plan
