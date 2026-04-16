@@ -52,7 +52,6 @@ Examples:
 ```bash
 aigon repair feature 173
 aigon repair research 12
-aigon repair feedback 8
 ```
 
 Optional follow-up flags for future-proofing:
@@ -63,6 +62,12 @@ aigon repair feature 173 --verbose
 ```
 
 The initial implementation only needs `--dry-run` in addition to the base command.
+
+### v1 scope
+
+- This feature ships for `feature` and `research` only.
+- `feedback` is out of scope for v1 and should not be implied by examples or acceptance criteria.
+- If the command is later generalized to feedback, it should be a follow-up expansion with explicit lifecycle rules for feedback state.
 
 ## Acceptance Criteria
 
@@ -115,12 +120,26 @@ Examples of ambiguity that must stop rather than auto-repair:
 
 - [ ] spec says `done` but branch still exists with unmerged commits and workflow is not done
 - [ ] multiple plausible sources of truth disagree and there is no clearly dominant safe reconciliation
+- [ ] the branch is dirty or contains unmerged work and the repair would need to remove the branch/worktree
+
+### Repair policy
+
+Use these rules for the common repair cases:
+
+- [ ] `done` spec + active workflow + clean branch/worktree + stale runtime/session artifacts => safe auto-repair
+- [ ] `done` spec + active workflow + clean branch/worktree + no stale runtime/session artifacts => reconcile workflow to done and exit cleanly
+- [ ] `done` spec + active workflow + dirty branch or unmerged commits => stop and explain the conflict
+- [ ] active sessions only, but workflow is already `done` => close sessions, then report repaired
+- [ ] active runtime/session artifacts without a corresponding active workflow or spec drift => remove stale metadata only if the entity is otherwise clearly complete
+- [ ] if the command would delete a worktree or branch, require an explicit confirmation unless the implementation adds a dedicated `--yes` flag later
 
 ### Output
 
 - [ ] the command prints a short diagnosis section before applying fixes
 - [ ] the command prints each repair action it performed
 - [ ] the final output states whether the entity was repaired, unchanged, or could not be safely repaired
+- [ ] if the command refuses to act because of ambiguity or dirty work, it prints the specific reason and leaves state unchanged
+- [ ] if the command performs destructive cleanup such as removing a stale branch/worktree, it says so explicitly in the summary
 
 ### Dashboard impact
 
