@@ -214,6 +214,6 @@ testAsync('workflow CLI supports version 2 stage-based definitions', () => withT
         { type: 'counter-review', agents: ['cc'] },
         { type: 'close', agents: [] },
     ]);
-});
+}));
 
 report();
