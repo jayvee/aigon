@@ -36,7 +36,7 @@ Current command families:
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
 | `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile`, `sync` |
 | `lib/commands/setup.js` | `init`, `install-agent`, `check-version`, `update`, `project-context`, `doctor` |
-| `lib/commands/misc.js` | `agent-status`, `status`, `deploy`, `next`, `help` |
+| `lib/commands/misc.js` | `agent-status`, `status`, `deploy`, `next`, `workflow`, `help` |
 
 ### The ctx pattern
 
@@ -82,6 +82,8 @@ Current shared modules:
   `readAgentStatus`, `writeAgentStatus`, `writeAgentStatusAt`, `agentStatusPath`, `getStateDir`, `getLocksDir`
 - `lib/agent-prompt-resolver.js` (~140 lines): shared feature prompt resolution for agent launches; preserves configured slash-command prompts for cc/gg/cu and inlines the canonical `templates/generic/commands/feature-*.md` body for cx so Codex launches never depend on deprecated `/prompts:` discovery or local skill discovery
   `resolveAgentPromptBody`, `resolveCxPromptBody`
+- `lib/workflow-definitions.js` (~260 lines): saved workflow definition storage + validation, built-in/global/project precedence, and launch-time override merging for reusable feature start/autonomous presets
+  `validateWorkflowDefinition`, `listAvailableWorkflows`, `resolveWorkflowDefinition`, `applyWorkflowDefinition`, `saveWorkflowDefinition`, `deleteWorkflowDefinition`
 - `lib/state-queries.js` (~250 lines): read-only UI helpers — feedback action/transition derivation (pure, no I/O). Feature/research constants retained for diagram generation only; action derivation for features/research lives in workflow-core.
   `getValidTransitions`, `getAvailableActions`, `getSessionAction`, `getRecommendedActions`, `isActionValid`, `shouldNotify`
 - `lib/feature-spec-resolver.js` (~140 lines): canonical active-feature spec lookup so consumers stop guessing from visible folders

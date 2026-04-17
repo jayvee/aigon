@@ -42,7 +42,7 @@ Modes:
   🐝 Swarm      Multiple agents run autonomously in parallel
 
 Conductor:
-  feature-autonomous-start <ID> <agents...>                [Pro]
+  feature-autonomous-start <ID> [agents...] [--workflow <slug>]      [Pro]
                                     Start AutoConductor (tmux auto session) and return immediately
   feature-autonomous-start status <ID>                     [Pro]
                                     Show AutoConductor tmux liveness + workflow state
@@ -61,7 +61,8 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-create <name>             Create feature spec in inbox
   feature-now <name>                Fast-track: inbox match → prioritise + setup + implement; or create new + implement
   feature-prioritise <name>         Move feature from inbox to backlog (assigns ID)
-  feature-start <ID> [agents...]    Start Drive (branch) or Fleet (worktrees)
+  feature-start <ID> [agents...] [--workflow <slug>]
+                                    Start Drive (branch) or Fleet (worktrees)
   feature-do <ID> [--agent=<id>] [--iterate]  Do the work on a feature; launches agent from shell (--iterate runs Autopilot retry loop)
   feature-spec <ID> [--json]        Resolve the canonical visible spec path for a feature
   feature-status <ID> [--json]      Show deep status: session, progress, cost, spec criteria
@@ -77,8 +78,10 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-cleanup <ID>              Clean up Fleet worktrees and branches (worktrees + branches only)
   feature-reset <ID>                Full reset back to backlog: sessions + worktrees + branches + state + spec move
                                     (use this to start a feature over with a different agent)
-  feature-autonomous-start <ID> <agents...> [--eval-agent=<id>] [--stop-after=implement|eval|close]   [Pro]
+  feature-autonomous-start <ID> [agents...] [--workflow <slug>] [--eval-agent=<id>] [--review-agent=<id>] [--stop-after=implement|eval|review|close]   [Pro]
                                     Start autonomous execution in dedicated auto tmux session
+  workflow <create|list|show|delete> [...]
+                                    Manage saved workflow definitions (built-in, global, project)
 
 Research Commands:
   research-create <name>            Create research topic in inbox
@@ -123,11 +126,16 @@ Examples:
   aigon feature-now dark-mode          # Fast-track: inbox match or create new + implement
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
   aigon feature-start 55               # Drive mode (creates branch)
+  aigon feature-start 55 --workflow solo
+                                       # Saved workflow setup (agents only)
   aigon feature-start 55 cc gg cx cu         # Fleet mode (creates worktrees)
   aigon feature-autonomous-start 42 cc            # Solo autonomous flow (implement -> close)
+  aigon feature-autonomous-start 42 --workflow solo-reviewed
+                                                   # Saved autonomous workflow
   aigon feature-autonomous-start 42 cc gg --eval-agent=gg --stop-after=eval
                                                    # Fleet autonomous flow (implement -> eval)
   aigon feature-autonomous-start status 42         # Check conductor status
+  aigon workflow list                  # Show built-in + saved workflow definitions
   aigon server start                   # Start AIGON server (dashboard UI + API)
   aigon feature-open 55 cc             # Open feature worktree and start Claude
   aigon feature-open 55 --all          # Open all Fleet agents side-by-side
