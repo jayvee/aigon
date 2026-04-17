@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Note on entries from v2.19 onwards:** the changelog was backfilled in bulk from git history on 2026-04-07 ahead of the public launch. Entries are grouped by theme and dated by month rather than per-patch. For commit-level detail, see `git log v2.18.0..HEAD` or browse the [git tags](https://github.com/jayvee/aigon/tags).
 
+## [2.51.5] - 2026-04-18
+
+### Changed
+- **Agent config files are now gitignored** — `.claude/`, `.gemini/`, `.codex/`, `.cursor/`, `.agents/` are generated outputs from `aigon install-agent`. Contributors run `aigon install-agent <agent>` after cloning (see `CONTRIBUTING.md`).
+
 ## [2.50.0 – 2.50.43] - 2026-03-18 → 2026-04-07
 
 ### Added
