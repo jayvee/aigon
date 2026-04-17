@@ -136,6 +136,8 @@ Examples:
                                                    # Fleet autonomous flow (implement -> eval)
   aigon feature-autonomous-start status 42         # Check conductor status
   aigon workflow list                  # Show built-in + saved workflow definitions
+  aigon workflow create reviewed-close --version 2 --stage implement:cc --stage review:gg --stage counter-review:cc --stage close
+                                       # Saved stage-based autonomous workflow
   aigon server start                   # Start AIGON server (dashboard UI + API)
   aigon feature-open 55 cc             # Open feature worktree and start Claude
   aigon feature-open 55 --all          # Open all Fleet agents side-by-side
