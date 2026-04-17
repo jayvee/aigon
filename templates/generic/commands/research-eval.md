@@ -90,6 +90,24 @@ Ask the user:
 
 Wait for user response before proceeding.
 
+### Feature Set Naming
+
+When creating multiple features from a single research topic, use a **common prefix with sequence numbers** to group them as a feature set:
+
+```
+<prefix>-1-<specific-name>
+<prefix>-2-<specific-name>
+<prefix>-3-<specific-name>
+```
+
+The prefix should be a short, descriptive slug derived from the research topic (e.g., research "single source of truth" → prefix `single-source`). The sequence numbers reflect dependency order — feature 1 has no deps, feature 2 depends on 1, etc.
+
+**Ask the user** to confirm or suggest the prefix before creating features. Example prompt:
+
+> "I'll group these as a feature set with prefix `single-source`. Features will be named `single-source-1-engine-only-spec-transitions`, `single-source-2-engine-based-read-paths`, etc. Good, or prefer a different prefix?"
+
+This makes it easy to see which features belong together on the board, in `feature-list`, and in git history.
+
 **For each selected feature, run:**
 
 ```bash
