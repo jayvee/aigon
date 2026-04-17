@@ -32,6 +32,22 @@ Agent: cx
   - repaired a syntax typo in the new workflow test
   - treated empty `stages`/legacy arrays as unset so v1 CLI create continues to work and v2 create no longer falsely reports mixed schema
 
+## Code Review
+
+**Reviewed by**: cc (Claude Opus 4.6)
+**Date**: 2026-04-18
+
+### Findings
+- `validateWorkflowDefinition` passed the raw `input` object to `validateWorkflowStages` instead of the `normalized` result. This caused `cloneStages(input.stages)` to copy un-normalized stage data (potentially mixed-case agent names or types), silently discarding the normalization performed by `normalizeWorkflowStage`. The returned `stageValidation.stages` then replaced the correctly normalized stages in the output.
+
+### Fixes Applied
+- `fix(review): pass normalized input to validateWorkflowStages` (366d067c) — changed `validateWorkflowStages(input, options)` to `validateWorkflowStages(normalized, options)` so the validation operates on and returns properly normalized stage data.
+
+### Notes
+- The rest of the implementation is solid. The v1/v2 branching is clean, validation constraints match the spec's pipeline rules, the stage-based AutoConductor correctly mirrors the existing v1 loop structure, and the CLI create/show paths handle both formats well.
+- `buildStagesFromLegacy` is exported but currently unused — this is intentional for future v1→v2 conversion tooling.
+- The existing test suite covers the happy path and basic ordering errors well; the fix was verified against the full workflow-definitions test suite.
+
 ## Conversation Summary
 - User requested implementation of feature 267 from the already-prepared worktree via `aigon feature-do 267`.
 - Work completed in-place without re-running `feature-start`, with required status signaling and commit checkpoints during implementation.
