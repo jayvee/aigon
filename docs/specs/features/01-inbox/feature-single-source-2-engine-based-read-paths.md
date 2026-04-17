@@ -1,44 +1,39 @@
 # Feature: single-source-2-engine-based-read-paths
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Migrate board and dashboard from folder scanning to engine snapshot queries for feature/research lifecycle display. Remove `listStageSpecFiles()` and `fs.readdirSync()` folder scans from lifecycle display paths. After this, all read paths ask the engine for lifecycle truth, never the filesystem.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As a user, the board and dashboard always show the correct lifecycle stage for every feature/research, even if the spec file is in the wrong folder
+- [ ] As a user, I never see phantom features in the wrong column due to stale folder state
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] `lib/board.js` reads lifecycle state from engine snapshots, not folder scanning
+- [ ] `lib/dashboard-status-collector.js` reads lifecycle state from engine snapshots, not `listStageSpecFiles()`
+- [ ] Folder scanning is retained ONLY as a fallback for pre-engine entities (legacy migration)
+- [ ] Board and dashboard display is consistent with engine state even when folder position is stale
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+node --check aigon-cli.js
+npm test
 ```
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+- Replace `fs.readdirSync()` folder scanning in `lib/board.js` with engine snapshot queries via `lib/workflow-snapshot-adapter.js`
+- Replace `listStageSpecFiles()` in `lib/dashboard-status-collector.js` with engine-based listing
+- Keep folder scanning only as a legacy fallback for entities that predate the engine
+- Key files: `lib/board.js`, `lib/dashboard-status-collector.js`, `lib/workflow-snapshot-adapter.js`
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- depends_on: single-source-1-engine-only-spec-transitions
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- Auto-correction of folder position on read — that's feature single-source-3
+- Feedback entity changes — that's feature single-source-4
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- None
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research:
+- Research: research-33-single-source-of-truth-for-feature-state

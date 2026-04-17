@@ -1,44 +1,38 @@
 # Feature: single-source-4-feedback-single-authority
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Give feedback entities a single lifecycle authority. Currently feedback uses folder-only state management with no workflow engine — it has no desync today because there's only one authority, but it's the last remaining "state = folder location" subsystem. Either add minimal workflow-core support or move to explicit status metadata (e.g. frontmatter field) with folders as a derived projection.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As a user, feedback lifecycle state is managed by a single authority, consistent with how features and research work
+- [ ] As a user, feedback entities cannot end up in an inconsistent state due to manual file moves
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] Feedback entities have a single lifecycle authority (either workflow-core or explicit status metadata)
+- [ ] Folder position for feedback specs is a derived projection, not the source of truth
+- [ ] The conceptual model is consistent: every entity type (features, research, feedback) follows "one authority, derived folders"
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+node --check aigon-cli.js
+npm test
 ```
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+- Evaluate whether minimal workflow-core support or explicit status metadata (frontmatter/state file) is the better fit for feedback's simpler lifecycle
+- Implement the chosen approach
+- Make feedback folder position a derived projection
+- Key files: `lib/commands/feedback.js` (if it exists), `lib/state-queries.js`, feedback spec templates
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- depends_on: single-source-1-engine-only-spec-transitions
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- Changes to feature/research state management — covered by features 1-3
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Is workflow-core overkill for feedback's simpler lifecycle (inbox -> triaged -> actionable -> done/wont-fix/duplicate)?
+- Would explicit frontmatter status be simpler and sufficient?
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research:
+- Research: research-33-single-source-of-truth-for-feature-state
