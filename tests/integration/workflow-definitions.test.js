@@ -40,6 +40,8 @@ function runCli(args, cwd, homePath) {
 
 console.log('workflow-definitions');
 
+// REGRESSION: prevents project-scope workflows from silently losing to global-scope
+// definitions when the same slug exists in both directories
 testAsync('project workflows override global workflows with the same slug', () => withTempDirAsync('aigon-workflow-', async (tmpDir) => {
     const repoPath = path.join(tmpDir, 'repo');
     const homePath = path.join(tmpDir, 'home');
@@ -70,6 +72,8 @@ testAsync('project workflows override global workflows with the same slug', () =
     });
 }));
 
+// REGRESSION: prevents solo workflows from accepting evalAgent or fleet workflows
+// from accepting reviewAgent, and ensures explicit CLI flags override saved values
 testAsync('validation enforces solo/fleet schema constraints and explicit overrides win', () => withTempDirAsync('aigon-workflow-', async (tmpDir) => {
     const homePath = path.join(tmpDir, 'home');
     fs.mkdirSync(homePath, { recursive: true });
@@ -108,6 +112,8 @@ testAsync('validation enforces solo/fleet schema constraints and explicit overri
     });
 }));
 
+// REGRESSION: prevents CLI create/list/show/delete from breaking when workflow
+// storage directories are missing, or when built-in slugs are used with delete
 testAsync('workflow CLI supports create/list/show/delete round-trips', () => withTempDirAsync('aigon-workflow-', async (tmpDir) => {
     const repoPath = path.join(tmpDir, 'repo');
     const homePath = path.join(tmpDir, 'home');
