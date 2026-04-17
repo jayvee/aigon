@@ -35,3 +35,22 @@ Agent: cx
 ## Issues Encountered
 - The first CLI round-trip test for `workflow create` failed because the command incorrectly treated optional fields as interactive-only requirements. Fixed by making non-interactive creation require only schema-required fields.
 - Full `npm test` is currently blocked by an existing unrelated failure in `tests/integration/pro-gate.test.js` in this environment (`AIGON_FORCE_PRO` expectations fail because `isProAvailable()` returns `false`). The new workflow-definition integration test passes.
+
+## Code Review
+
+**Reviewed by**: cc (Claude Opus 4.6)
+**Date**: 2026-04-17
+
+### Findings
+- Tests were missing the `// REGRESSION:` comments required by Rule T2
+- Built-in `fleet` workflow includes `cu` (retired agent) — technically valid since `cu.json` still exists in the agent registry, but may confuse users. Design decision for the user to evaluate.
+- `GLOBAL_DIRNAME` and `PROJECT_DIRNAME` constants share the same value (`.aigon/workflow-definitions`); works correctly because they're joined with different base paths, but the duplication is cosmetic noise.
+- Overall implementation is clean: slug normalization prevents path traversal, precedence logic is correct, explicit CLI flags properly override workflow defaults using `undefined` vs `null` sentinel distinction.
+
+### Fixes Applied
+- `fix(review): add required REGRESSION comments to workflow-definitions tests`
+
+### Notes
+- The `feature-start --workflow` path correctly ignores `evalAgent`/`reviewAgent`/`stopAfter` from the workflow definition, since those are only relevant for `feature-autonomous-start`.
+- Validation is appropriately scoped: built-in workflows bypass file validation (they're hardcoded and frozen), while user-created workflows go through full validation.
+- Delete without `--project`/`--global` correctly searches both scopes (project first), matching the precedence hierarchy.
