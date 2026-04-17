@@ -72,6 +72,16 @@ The current architecture was intentional (folders as human-readable projection o
 - **Pros:** least change; works today
 - **Cons:** doesn't prevent the problem, just patches after the fact; users hit stale state before noticing; manual repair is annoying
 
+### Option E: Symlinks in folders, canonical files in one location
+
+- Spec files live in a single flat directory (e.g. `docs/specs/features/all/`)
+- The numbered folders (`01-inbox/`, `02-backlog/`, etc.) contain **symlinks** pointing to the canonical file
+- State transitions update the symlink (delete from old folder, create in new) — the real file never moves
+- Engine snapshot points to the canonical path; folder symlinks are derived
+- **Pros:** one canonical file path forever (stable git history, no rename churn); folders still work for `ls`/browsing; agents can't desync content by moving files since the real file is always in the same place; symlink moves are cheap and atomic
+- **Cons:** git tracks symlinks as text blobs (content is the target path) — GitHub renders them as small text files, not the actual markdown; Windows compatibility is poor (symlinks require admin or dev mode); some editors/tools don't follow symlinks transparently; `git log --follow` doesn't track through symlinks; adds a layer of indirection that can confuse new contributors
+- **Questions:** does this actually solve the desync? The symlink-in-folder can still disagree with the engine snapshot — it just makes the disagreement cheaper to fix. Does the browsing benefit justify the symlink complexity vs just using `aigon board` or the dashboard?
+
 ### Option D: Folders as the authority, engine derives from them
 
 - Reverse the current direction — scan folders to determine state
