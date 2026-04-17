@@ -728,7 +728,6 @@ function updateAutonomousEvalOptions(preferredValue) {
   if (!evalSelect) return;
   const previousValue = String(evalSelect.value || '').trim();
 
-  evalSelect.disabled = false;
   replaceSelectOptions(evalSelect, buildAutonomousAgentOptions('evaluate'));
 
   const nextValue = String(preferredValue || previousValue || '').trim();
@@ -743,7 +742,6 @@ function updateAutonomousReviewOptions(preferredValue) {
   const previousValue = String(reviewSelect.value || '').trim();
   const selectedAgents = getAutonomousSelectedAgents();
 
-  reviewSelect.disabled = false;
   replaceSelectOptions(reviewSelect, buildAutonomousAgentOptions('review', {
     includeNone: true,
     noneLabel: 'none',
@@ -778,11 +776,11 @@ function updateAutonomousModeControls(options) {
   const previousStop = String(stopAfter.value || 'close').trim();
   evalWrap.style.display = isSolo ? 'none' : '';
   reviewWrap.style.display = isSolo ? '' : 'none';
-  evalSelect.disabled = isSolo;
-  reviewSelect.disabled = !isSolo;
 
   updateAutonomousEvalOptions(opts.evalAgent);
   updateAutonomousReviewOptions(opts.reviewAgent);
+  evalSelect.disabled = isSolo;
+  reviewSelect.disabled = !isSolo;
 
   const stopOptions = isSolo
     ? [
