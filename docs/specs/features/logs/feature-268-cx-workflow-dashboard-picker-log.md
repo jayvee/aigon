@@ -42,3 +42,24 @@ Agent: cx
 - Manual browser verification on a preview server:
   - Built-in workflow selection repopulated agents/evaluator/stop-after as expected.
   - Saving the current modal state added a new project workflow back into the dropdown with a `[Project]` provenance label.
+
+## Code Review
+
+**Reviewed by**: cc (Claude Code Opus)
+**Date**: 2026-04-18
+
+### Findings
+- No bugs, security issues, or missing edge cases found.
+- All six acceptance criteria are met: workflow dropdown at top of modal, selection populates all fields, overrides work, save-as-workflow button works, GET /api/workflows (and /api/playbooks alias) returns merged list, provenance labels present.
+- The `collectAutonomousModalState()` refactor correctly prevents disabled-select value leakage — the original code had `evalSelect.disabled = false` inside `updateAutonomousEvalOptions()` which overrode the caller's disabled state. The new code centralizes disabled management in `updateAutonomousModeControls()`.
+- API endpoints reuse existing `workflow-definitions.js` functions properly (`listAvailableWorkflows`, `applyWorkflowDefinition`, `saveWorkflowDefinition`, `normalizeAgentList`, `getWorkflowDefinitionPath`, `formatWorkflowSummary`). All verified to exist and export correctly.
+- `replaceSelectOptions` uses `el.textContent` — XSS-safe for workflow names.
+- E2E helper fix for `#tab-console`→`#tab-logs` rename is reasonable resilience.
+- Branch has merge-drift from main (research spec moves, tmux fix, research-eval change landed on main after branch point) — will auto-resolve on merge.
+
+### Fixes Applied
+- None needed.
+
+### Notes
+- `saveWorkflowDefinition` throws if a slug already exists — user gets a clear toast error. Acceptable UX for MVP; a future enhancement could offer overwrite-or-rename.
+- The `window.prompt()` for workflow naming is functional but basic. A future iteration could use an inline input in the modal for polish.
