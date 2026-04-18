@@ -82,7 +82,7 @@ Current shared modules:
   `readAgentStatus`, `writeAgentStatus`, `writeAgentStatusAt`, `agentStatusPath`, `getStateDir`, `getLocksDir`
 - `lib/agent-prompt-resolver.js` (~140 lines): shared feature prompt resolution for agent launches; preserves configured slash-command prompts for cc/gg/cu and inlines the canonical `templates/generic/commands/feature-*.md` body for cx so Codex launches never depend on deprecated `/prompts:` discovery or local skill discovery
   `resolveAgentPromptBody`, `resolveCxPromptBody`
-- `lib/workflow-definitions.js` (~260 lines): saved workflow definition storage + validation for legacy flat v1 and `version: 2` stage-based pipelines, built-in/global/project precedence, and launch-time override merging for reusable feature start/autonomous presets
+- `lib/workflow-definitions.js` (~260 lines): saved workflow definition storage + validation, built-in/global/project precedence, and launch-time override merging for reusable feature start/autonomous presets
   `validateWorkflowDefinition`, `listAvailableWorkflows`, `resolveWorkflowDefinition`, `applyWorkflowDefinition`, `saveWorkflowDefinition`, `deleteWorkflowDefinition`
 - `lib/state-queries.js` (~250 lines): read-only UI helpers — feedback action/transition derivation (pure, no I/O). Feature/research constants retained for diagram generation only; action derivation for features/research lives in workflow-core.
   `getValidTransitions`, `getAvailableActions`, `getSessionAction`, `getRecommendedActions`, `isActionValid`, `shouldNotify`

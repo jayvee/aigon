@@ -75,7 +75,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/server-runtime.js` | ~90 | Shared AIGON server lifecycle helpers for start/restart/stop orchestration |
 | `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/feature-{id}-{agent}.json`) |
 | `lib/agent-prompt-resolver.js` | ~140 | Shared feature prompt resolution for agent launches. Default path preserves configured slash commands; cx reads the canonical `templates/generic/commands/feature-*.md` prompt body, strips metadata, and substitutes feature args inline so Codex no longer depends on deprecated `/prompts:` discovery or local skill discovery. |
-| `lib/workflow-definitions.js` | ~260 | Saved workflow definition storage + validation: legacy flat v1 plus `version: 2` stage-based pipelines, built-ins, project/global precedence, CRUD helpers, and launch-time override merging for `workflow`, `feature-start --workflow`, and `feature-autonomous-start --workflow`. |
+| `lib/workflow-definitions.js` | ~260 | Saved workflow definition storage + validation: built-ins, project/global precedence, CRUD helpers, and launch-time override merging for `workflow`, `feature-start --workflow`, and `feature-autonomous-start --workflow`. |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | 899 | Branch/worktree/status helpers, feature git signals, AI attribution classification |
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |

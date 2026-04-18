@@ -112,43 +112,6 @@ testAsync('validation enforces solo/fleet schema constraints and explicit overri
     });
 }));
 
-testAsync('version 2 workflows validate ordered stages and derive execution runtime', () => withTempDirAsync('aigon-workflow-', async (tmpDir) => {
-    const homePath = path.join(tmpDir, 'home');
-    fs.mkdirSync(homePath, { recursive: true });
-
-    withHome(homePath, (workflowDefinitions) => {
-        const valid = workflowDefinitions.validateWorkflowDefinition({
-            slug: 'review-loop',
-            version: 2,
-            stages: [
-                { type: 'implement', agents: ['cc'] },
-                { type: 'review', agents: ['gg'] },
-                { type: 'counter-review', agents: ['cc'] },
-                { type: 'close' },
-            ],
-        }, { availableAgents: AVAILABLE_AGENTS });
-        assert.deepStrictEqual(valid.errors, []);
-
-        const runtime = workflowDefinitions.applyWorkflowDefinition(valid.normalized);
-        assert.strictEqual(runtime.version, 2);
-        assert.deepStrictEqual(runtime.agents, ['cc']);
-        assert.strictEqual(runtime.reviewAgent, 'gg');
-        assert.strictEqual(runtime.stopAfterStage, 'close');
-        assert.deepStrictEqual(runtime.stages.map(stage => stage.type), ['implement', 'review', 'counter-review', 'close']);
-
-        const invalid = workflowDefinitions.validateWorkflowDefinition({
-            slug: 'bad-order',
-            version: 2,
-            stages: [
-                { type: 'review', agents: ['gg'] },
-                { type: 'implement', agents: ['cc'] },
-            ],
-        }, { availableAgents: AVAILABLE_AGENTS });
-        assert.ok(invalid.errors.some(error => error.includes('must begin with an implement stage')));
-        assert.ok(invalid.errors.some(error => error.includes('invalid stage ordering')));
-    });
-}));
-
 // REGRESSION: prevents CLI create/list/show/delete from breaking when workflow
 // storage directories are missing, or when built-in slugs are used with delete
 testAsync('workflow CLI supports create/list/show/delete round-trips', () => withTempDirAsync('aigon-workflow-', async (tmpDir) => {
@@ -184,36 +147,6 @@ testAsync('workflow CLI supports create/list/show/delete round-trips', () => wit
     assert.strictEqual(remove.status, 0, remove.stderr);
     assert.match(remove.stdout, /Deleted project workflow: demo/);
     assert.ok(!fs.existsSync(path.join(repoPath, '.aigon', 'workflow-definitions', 'demo.json')));
-}));
-
-testAsync('workflow CLI supports version 2 stage-based definitions', () => withTempDirAsync('aigon-workflow-', async (tmpDir) => {
-    const repoPath = path.join(tmpDir, 'repo');
-    const homePath = path.join(tmpDir, 'home');
-    fs.mkdirSync(repoPath, { recursive: true });
-    fs.mkdirSync(homePath, { recursive: true });
-
-    const create = runCli([
-        'workflow', 'create', 'reviewed-close',
-        '--version', '2',
-        '--stage', 'implement:cc',
-        '--stage', 'review:gg',
-        '--stage', 'counter-review:cc',
-        '--stage', 'close',
-    ], repoPath, homePath);
-    assert.strictEqual(create.status, 0, create.stderr);
-    assert.match(create.stdout, /Saved project workflow: reviewed-close/);
-    assert.match(create.stdout, /version=2 stages=/);
-
-    const show = runCli(['workflow', 'show', 'reviewed-close'], repoPath, homePath);
-    assert.strictEqual(show.status, 0, show.stderr);
-    const shown = JSON.parse(show.stdout);
-    assert.strictEqual(shown.version, 2);
-    assert.deepStrictEqual(shown.stages, [
-        { type: 'implement', agents: ['cc'] },
-        { type: 'review', agents: ['gg'] },
-        { type: 'counter-review', agents: ['cc'] },
-        { type: 'close', agents: [] },
-    ]);
 }));
 
 report();
