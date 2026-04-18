@@ -23,3 +23,20 @@ Replace the custom Node.js proxy daemon (aigon-proxy.js + servers.json registry)
 - **getCaddyPort()**: Reads `http_port` from the Caddyfile (defaults to 4080). Port 80 mode uses launchd with Caddy `run` command.
 - **getDevProxyUrl() now includes port**: When Caddy runs on 4080, URLs include `:4080`. On port 80, URLs are clean.
 - **isProxyAvailable() checks Caddy admin API**: Uses `curl -sf http://localhost:2019/` to check if Caddy is running (port 2019 is Caddy's default admin endpoint).
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-18
+
+### Findings
+- `gcCaddyRoutes()` and `aigon dev-server gc` were deleting persistent dashboard routes when the backend was down, breaking the required 502-and-recover behavior.
+- `aigon dev-server stop` depended on a Caddy route existing, so localhost-only dev servers could keep running while the command reported success.
+- The dashboard dev-server start API checked the wrong Caddy hostname after launch, so successful starts could return a missing URL.
+- Preview cleanup matched feature hostnames too broadly and could remove non-dashboard routes for the same feature prefix.
+
+### Fixes Applied
+- `ed8fc1b31` — `fix(review): preserve caddy routing behavior`
+
+### Notes
+- Restarted the AIGON server after backend edits per repo instructions.
