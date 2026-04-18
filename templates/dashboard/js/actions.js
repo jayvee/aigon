@@ -425,7 +425,6 @@ let autonomousModalFeature = null;
 let autonomousModalRepoPath = null;
 let autonomousModalBtn = null;
 let autonomousModalModels = null;
-let autonomousModalWorkflows = [];
 
 const AUTONOMOUS_AGENT_IDS = ['cc', 'cx', 'gg', 'cu'];
 
@@ -560,21 +559,15 @@ async function showAutonomousModal(feature, repoPath, btn) {
   autonomousModalFeature = feature;
   autonomousModalRepoPath = repoPath;
   autonomousModalBtn = btn || null;
-  const loaded = await Promise.all([
-    fetchAgentModels(repoPath).catch(() => ({})),
-    fetchFeatureWorkflows(repoPath).catch(() => [])
-  ]);
-  autonomousModalModels = loaded[0] || {};
-  autonomousModalWorkflows = Array.isArray(loaded[1]) ? loaded[1] : [];
+  autonomousModalModels = await fetchAgentModels(repoPath).catch(() => ({}));
 
   const desc = document.getElementById('autonomous-modal-desc');
-  const workflowSelect = document.getElementById('autonomous-workflow-select');
   const checks = document.getElementById('autonomous-agent-checks');
   const evalSelect = document.getElementById('autonomous-eval-agent');
   const reviewSelect = document.getElementById('autonomous-review-agent');
   const stopAfter = document.getElementById('autonomous-stop-after');
   const modal = document.getElementById('autonomous-modal');
-  if (!desc || !workflowSelect || !checks || !evalSelect || !reviewSelect || !stopAfter || !modal) return;
+  if (!desc || !checks || !evalSelect || !reviewSelect || !stopAfter || !modal) return;
 
   desc.textContent = '#' + feature.id + ' ' + feature.name;
   replaceNodeChildren(checks, AUTONOMOUS_AGENT_IDS.map(agentId => {
@@ -589,7 +582,6 @@ async function showAutonomousModal(feature, repoPath, btn) {
     });
   }));
 
-  populateAutonomousWorkflowOptions('');
   stopAfter.value = 'close';
   updateAutonomousModeControls();
   modal.style.display = 'flex';
@@ -602,105 +594,6 @@ function hideAutonomousModal() {
   autonomousModalRepoPath = null;
   autonomousModalBtn = null;
   autonomousModalModels = null;
-  autonomousModalWorkflows = [];
-}
-
-function formatAutonomousWorkflowOption(workflow) {
-  const sourceLabel = workflow && workflow.sourceLabel ? workflow.sourceLabel : 'Workflow';
-  const label = workflow && workflow.label ? workflow.label : (workflow && workflow.slug ? workflow.slug : 'Workflow');
-  return label + ' [' + sourceLabel + ']';
-}
-
-function populateAutonomousWorkflowOptions(selectedSlug) {
-  const workflowSelect = document.getElementById('autonomous-workflow-select');
-  if (!workflowSelect) return;
-  const options = [{ value: '', label: 'Custom configuration' }]
-    .concat((autonomousModalWorkflows || []).map(workflow => ({
-      value: workflow.slug || '',
-      label: formatAutonomousWorkflowOption(workflow)
-    })));
-  replaceSelectOptions(workflowSelect, options);
-  workflowSelect.value = options.some(option => option.value === selectedSlug) ? selectedSlug : '';
-}
-
-function getAutonomousSelectedAgents() {
-  return [...document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]:checked')]
-    .map(cb => cb.value);
-}
-
-function setAutonomousSelectedAgents(agentIds) {
-  const wanted = new Set(Array.isArray(agentIds) ? agentIds : []);
-  document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]').forEach(cb => {
-    cb.checked = wanted.has(cb.value);
-  });
-}
-
-function collectAutonomousModalState() {
-  const selectedAgents = getAutonomousSelectedAgents();
-  const evalSelect = document.getElementById('autonomous-eval-agent');
-  const reviewSelect = document.getElementById('autonomous-review-agent');
-  const stopAfter = document.getElementById('autonomous-stop-after');
-  const evalAgent = evalSelect && !evalSelect.disabled ? String(evalSelect.value || '').trim() : '';
-  const reviewAgent = reviewSelect && !reviewSelect.disabled ? String(reviewSelect.value || '').trim() : '';
-  const stopValue = stopAfter ? String(stopAfter.value || 'close').trim() : 'close';
-  return {
-    agents: selectedAgents,
-    evalAgent,
-    reviewAgent,
-    stopAfter: stopValue
-  };
-}
-
-function applyAutonomousWorkflowSelection(slug) {
-  const normalizedSlug = String(slug || '').trim();
-  if (!normalizedSlug) return;
-  const workflow = (autonomousModalWorkflows || []).find(entry => entry.slug === normalizedSlug);
-  if (!workflow) return;
-  setAutonomousSelectedAgents(workflow.agents || []);
-  updateAutonomousModeControls({
-    evalAgent: workflow.evalAgent || '',
-    reviewAgent: workflow.reviewAgent || '',
-    stopAfter: workflow.stopAfter || 'close'
-  });
-}
-
-async function saveAutonomousWorkflow() {
-  if (!autonomousModalRepoPath) return;
-  const current = collectAutonomousModalState();
-  if (current.agents.length === 0) {
-    showToast('Select at least one implementation agent', null, null, { error: true });
-    return;
-  }
-  if (current.stopAfter === 'review' && !current.reviewAgent) {
-    showToast('Select a reviewer to stop after review', null, null, { error: true });
-    return;
-  }
-  const workflowName = window.prompt('Workflow name');
-  const trimmedName = String(workflowName || '').trim();
-  if (workflowName === null) return;
-  if (!trimmedName) {
-    showToast('Workflow name is required', null, null, { error: true });
-    return;
-  }
-
-  try {
-    const payload = await requestSaveFeatureWorkflow({
-      name: trimmedName,
-      agents: current.agents,
-      evalAgent: current.evalAgent,
-      reviewAgent: current.reviewAgent,
-      stopAfter: current.stopAfter
-    }, autonomousModalRepoPath);
-    const savedWorkflow = payload && payload.workflow ? payload.workflow : null;
-    autonomousModalWorkflows = await fetchFeatureWorkflows(autonomousModalRepoPath).catch(() => autonomousModalWorkflows);
-    populateAutonomousWorkflowOptions(savedWorkflow && savedWorkflow.slug ? savedWorkflow.slug : '');
-    if (savedWorkflow && savedWorkflow.slug) {
-      applyAutonomousWorkflowSelection(savedWorkflow.slug);
-    }
-    showToast(payload.message || ('Saved workflow: ' + trimmedName));
-  } catch (error) {
-    showToast('Save workflow failed: ' + error.message, null, null, { error: true });
-  }
 }
 
 function buildAutonomousAgentOptions(taskType, options) {
@@ -723,48 +616,41 @@ function buildAutonomousAgentOptions(taskType, options) {
   return rows;
 }
 
-function updateAutonomousEvalOptions(preferredValue) {
+function updateAutonomousEvalOptions() {
   const evalSelect = document.getElementById('autonomous-eval-agent');
   if (!evalSelect) return;
   const previousValue = String(evalSelect.value || '').trim();
 
+  evalSelect.disabled = false;
   replaceSelectOptions(evalSelect, buildAutonomousAgentOptions('evaluate'));
 
-  const nextValue = String(preferredValue || previousValue || '').trim();
-  if (nextValue && AUTONOMOUS_AGENT_IDS.includes(nextValue)) {
-    evalSelect.value = nextValue;
+  if (previousValue && AUTONOMOUS_AGENT_IDS.includes(previousValue)) {
+    evalSelect.value = previousValue;
   }
 }
 
-function updateAutonomousReviewOptions(preferredValue) {
+function updateAutonomousReviewOptions() {
   const reviewSelect = document.getElementById('autonomous-review-agent');
   if (!reviewSelect) return;
   const previousValue = String(reviewSelect.value || '').trim();
-  const selectedAgents = getAutonomousSelectedAgents();
+  const selectedAgents = [...document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]:checked')].map(cb => cb.value);
 
+  reviewSelect.disabled = false;
   replaceSelectOptions(reviewSelect, buildAutonomousAgentOptions('review', {
     includeNone: true,
     noneLabel: 'none',
     selectedAgents
   }));
 
-  const nextValue = preferredValue !== undefined
-    ? String(preferredValue || '').trim()
-    : previousValue;
-  if (!nextValue) {
-    reviewSelect.value = '';
-    return;
-  }
-  if (AUTONOMOUS_AGENT_IDS.includes(nextValue)) {
-    reviewSelect.value = nextValue;
+  if (previousValue && AUTONOMOUS_AGENT_IDS.includes(previousValue)) {
+    reviewSelect.value = previousValue;
     return;
   }
   reviewSelect.value = AUTONOMOUS_AGENT_IDS.find(agentId => !selectedAgents.includes(agentId)) || '';
 }
 
-function updateAutonomousModeControls(options) {
-  const opts = options || {};
-  const selectedAgents = getAutonomousSelectedAgents();
+function updateAutonomousModeControls() {
+  const selectedAgents = [...document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]:checked')].map(cb => cb.value);
   const isSolo = selectedAgents.length === 1;
   const evalWrap = document.getElementById('autonomous-eval-wrap');
   const reviewWrap = document.getElementById('autonomous-review-wrap');
@@ -776,11 +662,11 @@ function updateAutonomousModeControls(options) {
   const previousStop = String(stopAfter.value || 'close').trim();
   evalWrap.style.display = isSolo ? 'none' : '';
   reviewWrap.style.display = isSolo ? '' : 'none';
-
-  updateAutonomousEvalOptions(opts.evalAgent);
-  updateAutonomousReviewOptions(opts.reviewAgent);
   evalSelect.disabled = isSolo;
   reviewSelect.disabled = !isSolo;
+
+  updateAutonomousEvalOptions();
+  updateAutonomousReviewOptions();
 
   const stopOptions = isSolo
     ? [
@@ -795,24 +681,24 @@ function updateAutonomousModeControls(options) {
       ];
 
   replaceSelectOptions(stopAfter, stopOptions);
-  const preferredStop = String(opts.stopAfter || previousStop || 'close').trim();
-  if (stopOptions.some(opt => opt.value === preferredStop)) {
-    stopAfter.value = preferredStop;
-    return;
-  }
   stopAfter.value = stopOptions.some(opt => opt.value === previousStop) ? previousStop : 'close';
 }
 
 async function submitAutonomousModal() {
   if (!autonomousModalFeature) return;
-  const current = collectAutonomousModalState();
-  const selectedAgents = current.agents;
+  const selectedAgents = [...document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]:checked')].map(cb => cb.value);
   if (selectedAgents.length === 0) {
     showToast('Select at least one implementation agent', null, null, { error: true });
     return;
   }
 
-  if (current.stopAfter === 'review' && !current.reviewAgent) {
+  const evalSelect = document.getElementById('autonomous-eval-agent');
+  const reviewSelect = document.getElementById('autonomous-review-agent');
+  const stopAfter = document.getElementById('autonomous-stop-after');
+  const evalAgent = evalSelect && !evalSelect.disabled ? String(evalSelect.value || '').trim() : '';
+  const reviewAgent = reviewSelect && !reviewSelect.disabled ? String(reviewSelect.value || '').trim() : '';
+  const stopValue = stopAfter ? String(stopAfter.value || 'close').trim() : 'close';
+  if (stopValue === 'review' && !reviewAgent) {
     showToast('Select a reviewer to stop after review', null, null, { error: true });
     return;
   }
@@ -823,9 +709,9 @@ async function submitAutonomousModal() {
   hideAutonomousModal();
   await requestFeatureAutonomousRun(featureId, {
     agents: selectedAgents,
-    evalAgent: current.evalAgent,
-    reviewAgent: current.reviewAgent,
-    stopAfter: current.stopAfter
+    evalAgent,
+    reviewAgent,
+    stopAfter: stopValue
   }, repoPath, btn);
 }
 
@@ -834,14 +720,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!modal) return;
 
   document.getElementById('autonomous-modal-cancel').onclick = () => hideAutonomousModal();
-  document.getElementById('autonomous-save-workflow').onclick = () => saveAutonomousWorkflow();
   modal.onclick = (e) => { if (e.target === e.currentTarget) hideAutonomousModal(); };
   document.getElementById('autonomous-modal-submit').onclick = () => submitAutonomousModal();
   modal.addEventListener('change', (e) => {
-    if (e.target && e.target.id === 'autonomous-workflow-select') {
-      applyAutonomousWorkflowSelection(e.target.value);
-      return;
-    }
     if (e.target && e.target.closest('#autonomous-agent-checks')) {
       updateAutonomousModeControls();
     }
