@@ -72,7 +72,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/pro.js` | ~25 | **Pro gate**: lazy-require `@aigon/pro` with `AIGON_FORCE_PRO` env override (`false`/`0` simulates free tier; never read project config). `isProAvailable()` / `getPro()`. Only `lib/pro-bridge.js` calls these — never add new call sites. |
 | `lib/pro-bridge.js` | ~180 | **Pro extension point**: in-process route registry. `initialize({ helpers })` invites `@aigon/pro` to `register(api)` at startup; `dispatchProRoute(method, path, req, res)` routes incoming requests. Plugin route registration is the current shape (Option B); future event bus / anti-corruption layers will live here too. |
 | `lib/remote-gate-github.js` | ~170 | **GitHub PR-aware close helper**: `checkGitHubGate()` queries `gh pr list` for the feature branch and chooses one of three outcomes for `feature-close`: local close (no PR or no GitHub capability), block (open PR), or remote-finalize (merged PR). |
-| `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
+| `lib/proxy.js` | ~660 | Caddy management (Caddyfile generation, route add/remove, reload), port allocation, dev server utilities |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | 700+ | Branch, worktree, status, commit helpers, commit analytics, git attribution |
 | `lib/telemetry.js` | ~1100 | Normalized session telemetry, cross-agent cost reporting. Parsers for CC (JSONL transcripts), GG (`~/.gemini/tmp/` session JSON), CX (`~/.codex/sessions/` JSONL matched by cwd). CU marked as no-telemetry. Pricing table covers Claude, Gemini, and GPT-5 models |
