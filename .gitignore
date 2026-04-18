@@ -23,6 +23,7 @@ test-results/
 .aigon/state/
 .aigon/locks/
 .aigon/workflows/
+.aigon/telemetry/
 .aigon/worktree.json
 .aigon/.board-map.json
 .aigon/cache/
