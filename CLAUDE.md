@@ -3,13 +3,14 @@
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
-- **Shared logic**: `lib/*.js` — 17 modules; see Module Map below
+- **Shared logic**: `lib/*.js` — 16 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
 - **Tests**: `npm test` · syntax: `node -c aigon-cli.js` · `node -c lib/utils.js`
 - **Version bumps**: after every commit — `npm version patch|minor|major && git push --tags`
 - **Seed reset**: `aigon seed-reset ~/src/<repo> --force` — resets seed repos (brewboard, trailhead) to initial state. Use `--dry-run` to preview. Handles tmux, worktrees, branches, state, git history.
+- **Cross-machine sync**: `aigon sync` — backup and restore `.aigon/` state (workflows, telemetry, config) via a private git repo. `sync init <url>` → `sync register` → `sync push`/`pull`. See `lib/sync.js`.
 
 ## The ctx Pattern
 Commands receive dependencies via a `ctx` object — enables test overrides without mocking globals:
@@ -68,11 +69,11 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/stats-aggregate.js` | ~270 | **Stats aggregate**: scans `.aigon/workflows/{features,research}/<id>/stats.json`, rolls up totals + per-agent + weekly/monthly buckets, caches to `.aigon/cache/stats-aggregate.json` with `CACHE_VERSION`. Rebuilt lazily when any `stats.json` mtime exceeds the cache. Powers `aigon stats`, `aigon doctor --rebuild-stats`, and the `/api/stats-aggregate` endpoint. |
 | `lib/migration.js` | ~300 | **Migration framework**: versioned state migrations with backup/restore/validate lifecycle. `registerMigration(version, fn)` + `runPendingMigrations()` called from `check-version`. Backup via tar, idempotent (manifest check), auto-rollback on failure. |
 | `lib/agent-prompt-resolver.js` | ~140 | Resolves the launch prompt for an agent + verb. Default path passes through `cliConfig.<verb>Prompt` (cc/gg/cu slash commands). cx path inlines the canonical `templates/generic/commands/feature-<verb>.md` body (frontmatter stripped, `$ARGUMENTS`/`$1` substituted) so codex launches never depend on skill / prompt discovery. |
-| `lib/workflow-definitions.js` | ~260 | Saved workflow definition storage + validation: built-ins, project/global precedence, CRUD helpers, and launch-time override merging for `workflow`, `feature-start --workflow`, and `feature-autonomous-start --workflow`. |
 | `lib/pro.js` | ~25 | **Pro gate**: lazy-require `@aigon/pro` with `AIGON_FORCE_PRO` env override (`false`/`0` simulates free tier; never read project config). `isProAvailable()` / `getPro()`. Only `lib/pro-bridge.js` calls these — never add new call sites. |
 | `lib/pro-bridge.js` | ~180 | **Pro extension point**: in-process route registry. `initialize({ helpers })` invites `@aigon/pro` to `register(api)` at startup; `dispatchProRoute(method, path, req, res)` routes incoming requests. Plugin route registration is the current shape (Option B); future event bus / anti-corruption layers will live here too. |
 | `lib/remote-gate-github.js` | ~170 | **GitHub PR-aware close helper**: `checkGitHubGate()` queries `gh pr list` for the feature branch and chooses one of three outcomes for `feature-close`: local close (no PR or no GitHub capability), block (open PR), or remote-finalize (merged PR). |
 | `lib/proxy.js` | ~660 | Caddy management (Caddyfile generation, route add/remove, reload), port allocation, dev server utilities |
+| `lib/sync.js` | ~900 | **Cross-machine sync**: portable state backup/restore via private git repo. `sync init/register/push/pull/export/bootstrap-merge/status`. Syncs `.aigon/workflows/`, telemetry, config across machines |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | 700+ | Branch, worktree, status, commit helpers, commit analytics, git attribution |
 | `lib/telemetry.js` | ~1100 | Normalized session telemetry, cross-agent cost reporting. Parsers for CC (JSONL transcripts), GG (`~/.gemini/tmp/` session JSON), CX (`~/.codex/sessions/` JSONL matched by cwd). CU marked as no-telemetry. Pricing table covers Claude, Gemini, and GPT-5 models |

@@ -128,13 +128,11 @@ async function expectFeatureClosed(page, featureName, extraStages = []) {
     await expect(page.locator(selector).filter({ hasText: featureName })).toHaveCount(0, { timeout: 5000 });
 }
 
-/** Verify the Console tab shows the named action in its log. */
+/** Verify the Logs tab shows the named action in its log. */
 async function expectConsoleHasAction(page, action) {
-    const tabSelector = (await page.locator('#tab-console').count()) > 0 ? '#tab-console' : '#tab-logs';
-    const viewSelector = (await page.locator('#console-view').count()) > 0 ? '#console-view' : '#logs-view';
-    await page.click(tabSelector);
-    await page.waitForSelector(viewSelector, { timeout: 5000 });
-    await expect(page.locator(viewSelector)).toContainText(action, { timeout: 5000 });
+    await page.click('#tab-logs');
+    await page.waitForSelector('#logs-view', { timeout: 5000 });
+    await expect(page.locator('#logs-view')).toContainText(action, { timeout: 5000 });
 }
 
 module.exports = {
