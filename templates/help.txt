@@ -12,13 +12,13 @@ Setup:
   config <init|show|models>         Manage config and view model configuration
   profile [show|set|detect]         Manage project profile (web, api, ios, etc.)
   doctor [--register]               Check port assignments and model configuration
-  proxy install                     One-time: install proxy as system daemon on port 80
-  proxy <start|stop|status|uninstall> Manage the aigon-proxy daemon
+  proxy install                     One-time: install Caddy proxy as system daemon on port 80
+  proxy <start|stop|status|uninstall> Manage the Caddy proxy daemon
 
 Dev Server (web/api profiles):
-  dev-server start [--port N] [--open]  Start dev server, register with proxy, wait for healthy
+  dev-server start [--port N] [--open]  Start dev server, add Caddy route, wait for healthy
   dev-server start --register-only  Register port mapping only (don't start process)
-  dev-server stop [serverId]        Stop process and deregister from proxy
+  dev-server stop [serverId]        Stop process and remove Caddy route
   dev-server open                   Open dev server URL in default browser
   dev-server list                   Show all active dev servers across all apps
   dev-server logs [-f] [-n N]       Show dev server output (default: last 50 lines, -f to follow)

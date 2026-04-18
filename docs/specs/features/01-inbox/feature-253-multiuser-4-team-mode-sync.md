@@ -1,4 +1,4 @@
-# Feature: multiuser-team-mode-sync
+# Feature: multiuser-4-team-mode-sync
 
 ## Summary
 

@@ -1,4 +1,4 @@
-# Feature: multiuser-state-consolidation
+# Feature: multiuser-1-state-consolidation
 
 ## Summary
 

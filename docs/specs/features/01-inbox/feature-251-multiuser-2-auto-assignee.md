@@ -1,4 +1,4 @@
-# Feature: multiuser-auto-assignee
+# Feature: multiuser-2-auto-assignee
 
 ## Summary
 

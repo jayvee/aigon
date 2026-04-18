@@ -101,8 +101,8 @@ Current shared modules:
 
 **Domain modules** (logic lives in the module itself):
 
-- `lib/proxy.js` (~711 lines): Caddy management, port allocation, dev-proxy registry, route reconciliation
-  `generateCaddyfile`, `reloadCaddy`, `registerDevServer`, `deregisterDevServer`, `reconcileProxyRoutes`, `allocatePort`
+- `lib/proxy.js` (~660 lines): Caddy management (Caddyfile generation, route add/remove, reload), port allocation, dev server utilities
+  `writeCaddyfile`, `addCaddyRoute`, `removeCaddyRoute`, `reloadCaddy`, `allocatePort`
 - `lib/dashboard-server.js` (~2,660 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, and action dispatch from engine snapshots
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
 - `lib/worktree.js` (~1,300 lines): worktree creation, permissions, git attribution metadata bootstrap, tmux sessions
@@ -357,8 +357,8 @@ If a future contribution to aigon needs to make a coordinated change with the Pr
 - Avoid circular dependencies between `lib/*.js` modules.
 - Treat `templates/` as source-of-truth for generated agent docs and prompts.
 - Project-specific agent instructions belong in `AGENTS.md` and/or `CLAUDE.md` (user-owned, never overwritten by aigon). `docs/aigon-project.md` provides committed defaults used when scaffolding `AGENTS.md` on first install.
-- The AIGON server is the foreground HTTP process. It serves the dashboard UI, registers with the proxy registry (`~/.aigon/dev-proxy/servers.json`) on start, and deregisters on shutdown, giving it named URLs (`aigon.localhost`, `cc-71.aigon.localhost`) via the aigon-proxy daemon.
-- The proxy (`lib/aigon-proxy.js`) is a ~100-line Node.js reverse proxy that reads `servers.json` and routes by Host header. Installed on port 80 via `aigon proxy install`.
+- The AIGON server is the foreground HTTP process. It serves the dashboard UI at `localhost:4100`. Named URLs (`aigon.localhost`, `cc-71.aigon.localhost`) are provided by the optional Caddy reverse proxy.
+- The proxy uses Caddy (`brew install caddy`). `aigon proxy install` sets it up as a system service on port 80. Routes are written to a Caddyfile at `~/.aigon/dev-proxy/Caddyfile` — they survive process crashes (Caddy returns 502 until the backend recovers). No PID tracking or registration lifecycle.
 
 ## Remote Access
 

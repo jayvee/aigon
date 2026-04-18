@@ -1,4 +1,4 @@
-# Feature: multiuser-committed-state
+# Feature: multiuser-3-committed-state
 
 ## Summary
 
