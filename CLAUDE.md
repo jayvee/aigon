@@ -3,7 +3,7 @@
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
-- **Shared logic**: `lib/*.js` — 17 modules; see Module Map below
+- **Shared logic**: `lib/*.js` — 16 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc`
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
@@ -68,7 +68,6 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/stats-aggregate.js` | ~270 | **Stats aggregate**: scans `.aigon/workflows/{features,research}/<id>/stats.json`, rolls up totals + per-agent + weekly/monthly buckets, caches to `.aigon/cache/stats-aggregate.json` with `CACHE_VERSION`. Rebuilt lazily when any `stats.json` mtime exceeds the cache. Powers `aigon stats`, `aigon doctor --rebuild-stats`, and the `/api/stats-aggregate` endpoint. |
 | `lib/migration.js` | ~300 | **Migration framework**: versioned state migrations with backup/restore/validate lifecycle. `registerMigration(version, fn)` + `runPendingMigrations()` called from `check-version`. Backup via tar, idempotent (manifest check), auto-rollback on failure. |
 | `lib/agent-prompt-resolver.js` | ~140 | Resolves the launch prompt for an agent + verb. Default path passes through `cliConfig.<verb>Prompt` (cc/gg/cu slash commands). cx path inlines the canonical `templates/generic/commands/feature-<verb>.md` body (frontmatter stripped, `$ARGUMENTS`/`$1` substituted) so codex launches never depend on skill / prompt discovery. |
-| `lib/workflow-definitions.js` | ~260 | Saved workflow definition storage + validation: built-ins, project/global precedence, CRUD helpers, and launch-time override merging for `workflow`, `feature-start --workflow`, and `feature-autonomous-start --workflow`. |
 | `lib/pro.js` | ~25 | **Pro gate**: lazy-require `@aigon/pro` with `AIGON_FORCE_PRO` env override (`false`/`0` simulates free tier; never read project config). `isProAvailable()` / `getPro()`. Only `lib/pro-bridge.js` calls these — never add new call sites. |
 | `lib/pro-bridge.js` | ~180 | **Pro extension point**: in-process route registry. `initialize({ helpers })` invites `@aigon/pro` to `register(api)` at startup; `dispatchProRoute(method, path, req, res)` routes incoming requests. Plugin route registration is the current shape (Option B); future event bus / anti-corruption layers will live here too. |
 | `lib/remote-gate-github.js` | ~170 | **GitHub PR-aware close helper**: `checkGitHubGate()` queries `gh pr list` for the feature branch and chooses one of three outcomes for `feature-close`: local close (no PR or no GitHub capability), block (open PR), or remote-finalize (merged PR). |

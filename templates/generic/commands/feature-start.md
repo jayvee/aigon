@@ -20,9 +20,6 @@ If no ID is provided, or the ID doesn't match an existing feature in the backlog
 # Drive mode (creates branch in current repo) — user passes only an ID
 aigon feature-start {{ARG1_SYNTAX}}
 
-# Saved workflow (uses agents from the workflow definition)
-aigon feature-start {{ARG1_SYNTAX}} --workflow <slug>
-
 # Drive worktree mode (creates worktree for parallel development) — user passes ID + agent
 aigon feature-start {{ARG1_SYNTAX}} <agent>
 
@@ -32,7 +29,6 @@ aigon feature-start {{ARG1_SYNTAX}} <agent1> <agent2> [agent3...]
 
 The mode is determined automatically based on what the user provides:
 - **No agents**: Drive mode - creates a git branch in the current repo
-- **Workflow with saved agents**: uses those agents instead of requiring them positionally
 - **1 agent**: Drive worktree mode - creates a worktree for parallel development
 - **2+ agents**: Fleet mode - creates worktrees for each agent to compete
 
