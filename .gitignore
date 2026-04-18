@@ -37,10 +37,7 @@ next-env.d.ts
 .claude/settings.local.json
 .claude/skills/
 .claude/projects/
-.gemini/commands/
-.gemini/settings.json
-.gemini/settings.json.orig
-.gemini/policies/
+.gemini/
 .codex/
 .cursor/
 .agents/
