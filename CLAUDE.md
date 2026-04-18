@@ -10,6 +10,7 @@
 - **Tests**: `npm test` · syntax: `node -c aigon-cli.js` · `node -c lib/utils.js`
 - **Version bumps**: after every commit — `npm version patch|minor|major && git push --tags`
 - **Seed reset**: `aigon seed-reset ~/src/<repo> --force` — resets seed repos (brewboard, trailhead) to initial state. Use `--dry-run` to preview. Handles tmux, worktrees, branches, state, git history.
+- **Cross-machine sync**: `aigon sync` — backup and restore `.aigon/` state (workflows, telemetry, config) via a private git repo. `sync init <url>` → `sync register` → `sync push`/`pull`. See `lib/sync.js`.
 
 ## The ctx Pattern
 Commands receive dependencies via a `ctx` object — enables test overrides without mocking globals:
@@ -72,6 +73,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/pro-bridge.js` | ~180 | **Pro extension point**: in-process route registry. `initialize({ helpers })` invites `@aigon/pro` to `register(api)` at startup; `dispatchProRoute(method, path, req, res)` routes incoming requests. Plugin route registration is the current shape (Option B); future event bus / anti-corruption layers will live here too. |
 | `lib/remote-gate-github.js` | ~170 | **GitHub PR-aware close helper**: `checkGitHubGate()` queries `gh pr list` for the feature branch and chooses one of three outcomes for `feature-close`: local close (no PR or no GitHub capability), block (open PR), or remote-finalize (merged PR). |
 | `lib/proxy.js` | 711 | Caddy management, port allocation, proxy registry |
+| `lib/sync.js` | ~900 | **Cross-machine sync**: portable state backup/restore via private git repo. `sync init/register/push/pull/export/bootstrap-merge/status`. Syncs `.aigon/workflows/`, telemetry, config across machines |
 | `lib/templates.js` | 550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | 700+ | Branch, worktree, status, commit helpers, commit analytics, git attribution |
 | `lib/telemetry.js` | ~1100 | Normalized session telemetry, cross-agent cost reporting. Parsers for CC (JSONL transcripts), GG (`~/.gemini/tmp/` session JSON), CX (`~/.codex/sessions/` JSONL matched by cwd). CU marked as no-telemetry. Pricing table covers Claude, Gemini, and GPT-5 models |
