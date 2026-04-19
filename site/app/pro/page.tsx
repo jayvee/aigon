@@ -297,6 +297,46 @@ export default function ProPage() {
         </div>
       </section>
 
+      {/* Reusable Workflows */}
+      <section className="px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-6">
+            <p className="mb-2 text-xs font-medium tracking-widest text-aigon-teal uppercase">
+              Reusable Workflows
+            </p>
+            <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-gray-900 dark:text-[hsl(0_0%_94%)]">
+              One-click autonomous orchestration
+            </h2>
+            <p className="mt-3 max-w-2xl text-gray-600 dark:text-gray-400">
+              Save your favourite autonomous-run shapes as named workflows and launch
+              them from the dashboard or CLI. No more retyping agent lists, reviewers,
+              evaluators, or stop-after flags &mdash; pick a workflow and go.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            <FeatureCard
+              title="Named Templates"
+              description="Capture stages as a slug — implement, review, counter-review, eval, close — then launch with aigon feature-autonomous-start --workflow=<slug>."
+            />
+            <FeatureCard
+              title="Shared with Your Team"
+              description="Project workflows live under .aigon/workflow-definitions/ and commit to git. Everyone on the repo gets the same configurations."
+            />
+            <FeatureCard
+              title="Dashboard Pre-fill"
+              description="The Start Autonomously modal exposes a Workflow dropdown plus a Save as workflow… button so you can capture and reuse configurations without leaving the UI."
+            />
+          </div>
+
+          <ScreenshotFrame
+            src="/img/workflow-choice.png"
+            alt="Aigon Pro workflow selection — dropdown in Start Autonomously modal listing built-in and project workflows"
+            caption="Pick a saved workflow from the Start Autonomously modal — built-ins, project, and global workflows all appear with provenance badges"
+          />
+        </div>
+      </section>
+
       {/* Integrations Direction */}
       <section className="px-6 pb-4 md:pb-6">
         <div className="mx-auto max-w-3xl text-center">

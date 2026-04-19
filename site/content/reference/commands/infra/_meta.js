@@ -8,6 +8,7 @@ export default {
   "sessions-close": "sessions-close",
   status: "status",
   repair: "repair",
+  workflow: "workflow",
   help: "help",
   next: "next",
 };

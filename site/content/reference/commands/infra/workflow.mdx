@@ -1,0 +1,137 @@
+---
+title: "workflow"
+description: "Manage named, reusable autonomous-orchestration workflow definitions"
+---
+
+## Synopsis
+
+```bash
+aigon workflow list [--json]
+aigon workflow show <slug> [--json]
+aigon workflow create <slug> [options]
+aigon workflow delete <slug> [--global]
+```
+
+## Description
+
+Workflow definitions are named, stages-based templates for [`feature-autonomous-start`](/docs/reference/commands/feature/feature-autonomous-start). Instead of re-entering implementation agents, review or eval agent, and stop-after every time, save the plan once as a slug and invoke it with `--workflow=<slug>`.
+
+Workflows resolve to the same inputs the autonomous conductor already understands — they are a UX layer, not a new execution engine. Any CLI flag provided alongside `--workflow` overrides the workflow's value for that run.
+
+## Scopes and precedence
+
+Workflows can live in three places. When a slug collides, the higher scope wins:
+
+| Scope | Location | Notes |
+|-------|----------|-------|
+| **Project** | `<repo>/.aigon/workflow-definitions/<slug>.json` | Commit to git so the team shares the same configurations |
+| **Global** | `~/.aigon/workflow-definitions/<slug>.json` | Personal, across all your repos |
+| **Built-in** | Bundled with Aigon | Always available, read-only, cannot be deleted or overwritten |
+
+`aigon workflow list` shows every merged workflow with a provenance column so you can see which scope each one came from.
+
+## Stage schema
+
+Every workflow is an array of `stages`. Valid stage types:
+
+| Stage | Purpose | Agent count |
+|-------|---------|-------------|
+| `implement` | Required first stage. Agents do the work. | 1+ (use 2+ if you intend to `eval`) |
+| `review` | Solo workflows only. One reviewer inspects the implementation. | Exactly 1 |
+| `counter-review` | Follows `review`. The implementer addresses feedback. | Exactly 1 |
+| `eval` | Fleet workflows only. Picks a winner across implementers. | Exactly 1 |
+| `close` | If present, must be last. Closes the feature automatically when the prior stage finishes. | n/a |
+
+### Example: stored JSON
+
+```json
+{
+  "slug": "my-reviewed",
+  "label": "My reviewed workflow",
+  "description": "CC implements, CX reviews, CC addresses feedback, auto-close",
+  "stages": [
+    { "type": "implement", "agents": ["cc"] },
+    { "type": "review", "agents": ["cx"] },
+    { "type": "counter-review", "agents": ["cc"] },
+    { "type": "close" }
+  ]
+}
+```
+
+### Validation rules
+
+- First stage must be `implement`; `close` if present must be last
+- At most one `review`, `counter-review`, and `eval` stage each
+- `review` and `eval` cannot be combined in the same workflow
+- Review-based workflows require exactly **one** implementing agent
+- Eval-based workflows require **at least two** implementing agents
+
+Each stage also supports optional `models: { "agentId": "modelId" }` and `params: { "agentId": { ... } }` maps. These are validated and stored; model overrides currently take effect via `AIGON_<AGENT>_<STAGE>_MODEL` environment variables.
+
+## Built-in workflows
+
+Run `aigon workflow list` to see the built-ins shipped with your current Aigon version. Common shapes include solo single-agent, solo with reviewer, and arena (multiple implementers + evaluator).
+
+## `workflow create` options
+
+| Option | Description |
+|--------|-------------|
+| `--file=<path>` | Read JSON definition from a file |
+| `--json=<inline>` | Inline JSON definition |
+| `--from=<slug>` | Copy stages from an existing workflow as a starting point |
+| `--implement=<a,b,c>` | Comma-separated implementation agents |
+| `--review=<agent>` | Solo review agent |
+| `--counter-review=<agent>` | Agent to address review feedback (defaults to first implementer) |
+| `--eval=<agent>` | Fleet eval agent |
+| `--no-close` | Omit the trailing `close` stage (autonomous run stops before close) |
+| `--label=<text>` | Human-readable label |
+| `--description=<text>` | Longer description |
+| `--global` | Save to `~/.aigon/workflow-definitions/` instead of the project scope |
+
+## Usage
+
+```bash
+# List every available workflow with its stages and provenance
+aigon workflow list
+
+# Inspect one — shows stages plus resolved autonomous inputs
+aigon workflow show solo-cc
+
+# Create a custom workflow from flag shorthand (saved to the project)
+aigon workflow create my-arena --implement=cc,gg --eval=cu --label="CU judges"
+
+# Create a global workflow by copying an existing one
+aigon workflow create my-solo --from=solo-cc --global --label="My solo default"
+
+# Create from a JSON file
+aigon workflow show fleet --json > /tmp/my-fleet.json
+# edit /tmp/my-fleet.json
+aigon workflow create my-fleet --file=/tmp/my-fleet.json
+
+# Delete a user-created workflow (built-ins cannot be deleted)
+aigon workflow delete my-arena
+aigon workflow delete my-solo --global
+```
+
+## Launching a feature with a workflow
+
+```bash
+# Use a saved workflow
+aigon feature-autonomous-start 42 --workflow=solo-cc-reviewed-cx
+
+# Override one field while still using the workflow for the rest
+aigon feature-autonomous-start 42 --workflow=my-arena --eval-agent=gg
+```
+
+## Dashboard
+
+The **Start Autonomously** modal includes a **Workflow** dropdown. Selecting a workflow pre-fills the agent checkboxes, reviewer/evaluator selects, and stop-after — each of which remains editable before you submit. A **Save as workflow…** button at the bottom of the modal saves the current configuration as a new project workflow.
+
+{/* SCREENSHOT: Workflow dropdown at top of the Start Autonomously modal with all built-in workflows visible */}
+
+{/* SCREENSHOT: Save as workflow… dialog — user entering a slug to capture the current modal configuration as a project workflow */}
+
+## Related
+
+- [`feature-autonomous-start`](/docs/reference/commands/feature/feature-autonomous-start) — the only command that consumes workflow definitions
+- [Autonomous Mode guide](/docs/guides/autopilot-mode) — when to use autonomous mode and how it orchestrates

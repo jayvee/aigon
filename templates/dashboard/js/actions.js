@@ -584,7 +584,103 @@ async function showAutonomousModal(feature, repoPath, btn) {
 
   stopAfter.value = 'close';
   updateAutonomousModeControls();
+  await populateAutonomousWorkflowDropdown(repoPath);
   modal.style.display = 'flex';
+}
+
+let autonomousModalWorkflows = [];
+
+async function populateAutonomousWorkflowDropdown(repoPath) {
+  const select = document.getElementById('autonomous-workflow');
+  if (!select) return;
+  try {
+    const q = repoPath ? '?repo=' + encodeURIComponent(repoPath) : '';
+    const res = await fetch('/api/workflows' + q, { cache: 'no-store' });
+    const data = res.ok ? await res.json() : { workflows: [] };
+    autonomousModalWorkflows = Array.isArray(data.workflows) ? data.workflows : [];
+  } catch (_) {
+    autonomousModalWorkflows = [];
+  }
+  const options = [{ value: '', label: '(custom — configure below)' }];
+  autonomousModalWorkflows.forEach(def => {
+    const badge = def.source === 'built-in' ? ' ★' : (def.source === 'global' ? ' [global]' : '');
+    options.push({ value: def.slug, label: def.slug + badge + ' — ' + def.label });
+  });
+  replaceSelectOptions(select, options);
+  select.value = '';
+  const descEl = document.getElementById('autonomous-workflow-desc');
+  if (descEl) descEl.textContent = '';
+}
+
+function applyAutonomousWorkflow(slug) {
+  const def = autonomousModalWorkflows.find(d => d.slug === slug);
+  const descEl = document.getElementById('autonomous-workflow-desc');
+  if (!def) {
+    if (descEl) descEl.textContent = '';
+    return;
+  }
+  if (descEl) descEl.textContent = def.description || def.stages.map(s => s.type + (s.agents ? '(' + s.agents.join(',') + ')' : '')).join(' → ');
+  const resolved = def.resolved || {};
+  const agents = Array.isArray(resolved.agents) ? resolved.agents : [];
+  document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]').forEach(cb => {
+    cb.checked = agents.includes(cb.value);
+  });
+  updateAutonomousModeControls();
+  const evalSelect = document.getElementById('autonomous-eval-agent');
+  const reviewSelect = document.getElementById('autonomous-review-agent');
+  const stopAfter = document.getElementById('autonomous-stop-after');
+  if (evalSelect) evalSelect.value = resolved.evalAgent || '';
+  if (reviewSelect) reviewSelect.value = resolved.reviewAgent || '';
+  if (stopAfter && resolved.stopAfter) stopAfter.value = resolved.stopAfter;
+}
+
+async function saveCurrentAsWorkflow() {
+  const slug = (window.prompt('Save as workflow — enter a slug (lowercase letters, digits, hyphens):') || '').trim();
+  if (!slug) return;
+  const selectedAgents = [...document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]:checked')].map(cb => cb.value);
+  if (selectedAgents.length === 0) {
+    showToast('Select at least one implementation agent before saving', null, null, { error: true });
+    return;
+  }
+  const evalSelect = document.getElementById('autonomous-eval-agent');
+  const reviewSelect = document.getElementById('autonomous-review-agent');
+  const stopAfter = document.getElementById('autonomous-stop-after');
+  const evalAgent = evalSelect && !evalSelect.disabled ? String(evalSelect.value || '').trim() : '';
+  const reviewAgent = reviewSelect && !reviewSelect.disabled ? String(reviewSelect.value || '').trim() : '';
+  const stopValue = stopAfter ? String(stopAfter.value || 'close').trim() : 'close';
+
+  const stages = [{ type: 'implement', agents: selectedAgents }];
+  if (reviewAgent) {
+    stages.push({ type: 'review', agents: [reviewAgent] });
+    stages.push({ type: 'counter-review', agents: [selectedAgents[0]] });
+  }
+  if (evalAgent && selectedAgents.length > 1) {
+    stages.push({ type: 'eval', agents: [evalAgent] });
+  }
+  if (stopValue === 'close') stages.push({ type: 'close' });
+
+  try {
+    const res = await fetch('/api/workflows', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        repo: autonomousModalRepoPath,
+        definition: { slug, label: slug, stages },
+        scope: 'project'
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast('Save failed: ' + (data.error || res.statusText), null, null, { error: true });
+      return;
+    }
+    showToast('Saved workflow "' + slug + '"');
+    await populateAutonomousWorkflowDropdown(autonomousModalRepoPath);
+    const select = document.getElementById('autonomous-workflow');
+    if (select) select.value = slug;
+  } catch (error) {
+    showToast('Save failed: ' + error.message, null, null, { error: true });
+  }
 }
 
 function hideAutonomousModal() {
@@ -722,6 +818,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('autonomous-modal-cancel').onclick = () => hideAutonomousModal();
   modal.onclick = (e) => { if (e.target === e.currentTarget) hideAutonomousModal(); };
   document.getElementById('autonomous-modal-submit').onclick = () => submitAutonomousModal();
+  const saveBtn = document.getElementById('autonomous-modal-save-workflow');
+  if (saveBtn) saveBtn.onclick = () => saveCurrentAsWorkflow();
+  const workflowSelect = document.getElementById('autonomous-workflow');
+  if (workflowSelect) {
+    workflowSelect.addEventListener('change', (e) => applyAutonomousWorkflow(String(e.target.value || '').trim()));
+  }
   modal.addEventListener('change', (e) => {
     if (e.target && e.target.closest('#autonomous-agent-checks')) {
       updateAutonomousModeControls();

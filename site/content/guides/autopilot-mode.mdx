@@ -94,6 +94,57 @@ aigon feature-autonomous-start 42 cc --stop-after=implement
 
 ---
 
+## Saved workflow definitions
+
+If you run autonomous mode with a recurring shape — "cc implements, cx reviews, close when ready", "three agents compete with cc as judge", and so on — save it once as a **workflow definition** and re-invoke it by slug instead of retyping the flags every time.
+
+```bash
+# See what is available (built-ins + project + global)
+aigon workflow list
+
+# Launch with a saved workflow
+aigon feature-autonomous-start 42 --workflow=solo-cc-reviewed-cx
+
+# Override a field for this run (flags always win over workflow values)
+aigon feature-autonomous-start 42 --workflow=my-arena --eval-agent=gg
+```
+
+Workflows resolve to the same `--agents`, `--eval-agent`, `--review-agent`, and `--stop-after` inputs documented on this page — they are a UX layer on top of the autonomous conductor, not a second execution engine.
+
+Workflows can live at three scopes: **built-in** (always available, read-only), **global** (`~/.aigon/workflow-definitions/`, personal across all repos), and **project** (`<repo>/.aigon/workflow-definitions/`, commit to share with your team). Higher scopes win on slug collision.
+
+In the dashboard, the **Start Autonomously** modal exposes a **Workflow** dropdown that pre-fills every control and a **Save as workflow…** button to store the current configuration. See the [`workflow` command reference](/docs/reference/commands/infra/workflow) for the full stage schema, validation rules, and CRUD examples.
+
+<img
+  src="/img/workflow-choice.png"
+  alt="Start Autonomously modal with the Workflow dropdown open, showing built-in and project workflows to choose from"
+  style={{ maxWidth: '480px', width: '100%', height: 'auto', display: 'block', margin: '1rem 0', borderRadius: '8px' }}
+/>
+
+### Anatomy of a workflow definition
+
+Every workflow is a JSON file with a slug, label, description, and ordered `stages`. The built-in `solo-cc-reviewed-cx` workflow is a good starting point — CC implements, CX reviews, CC addresses the review feedback, and the feature auto-closes when ready:
+
+```json
+{
+  "slug": "solo-cc-reviewed-cx",
+  "label": "Solo Reviewed",
+  "description": "Implement with CC, review with CX, counter-review with CC, then close",
+  "stages": [
+    { "type": "implement", "agents": ["cc"] },
+    { "type": "review", "agents": ["cx"] },
+    { "type": "counter-review", "agents": ["cc"] },
+    { "type": "close" }
+  ]
+}
+```
+
+Copy one as a starting point with `aigon workflow create my-reviewed --from=solo-cc-reviewed-cx`, or write a JSON file and pass it with `--file=<path>`.
+
+{/* SCREENSHOT: Workflow applied — agent checkboxes, reviewer/evaluator, and stop-after all pre-filled from the selected workflow */}
+
+---
+
 ## `--stop-after` options
 
 The stop-after value controls where autonomy ends. Available values differ by mode:
@@ -180,3 +231,4 @@ For features that need ongoing direction or spec refinement mid-stream, stick wi
 - **[Drive Mode](/docs/guides/drive-mode)** — single agent, full control
 - **[Fleet Mode](/docs/guides/fleet-mode)** — multiple agents competing in parallel
 - **[Dashboard](/docs/guides/dashboard)** — monitor autonomous runs in real-time
+- **[`workflow` reference](/docs/reference/commands/infra/workflow)** — save and reuse autonomous-run configurations by slug

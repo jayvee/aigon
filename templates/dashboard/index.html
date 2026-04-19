@@ -268,6 +268,13 @@
       <h3 id="autonomous-modal-title">Start Autonomously</h3>
       <p class="modal-desc" id="autonomous-modal-desc"></p>
       <div style="margin-bottom:12px">
+        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Workflow</label>
+        <select id="autonomous-workflow" class="create-input" style="padding:8px 10px">
+          <option value="">(custom — configure below)</option>
+        </select>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px" id="autonomous-workflow-desc"></div>
+      </div>
+      <div style="margin-bottom:12px">
         <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Implementation agents</label>
         <div class="agent-checks" id="autonomous-agent-checks"></div>
       </div>
@@ -288,9 +295,12 @@
           <option value="implement">implement</option>
         </select>
       </div>
-      <div class="modal-actions">
-        <button class="btn" id="autonomous-modal-cancel">Cancel</button>
-        <button class="btn btn-primary" id="autonomous-modal-submit">Start Autonomously</button>
+      <div class="modal-actions" style="justify-content:space-between">
+        <button class="btn" id="autonomous-modal-save-workflow" title="Save these settings as a reusable workflow">Save as workflow…</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="autonomous-modal-cancel">Cancel</button>
+          <button class="btn btn-primary" id="autonomous-modal-submit">Start Autonomously</button>
+        </div>
       </div>
     </div>
   </div>

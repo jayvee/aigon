@@ -12,6 +12,9 @@ aigon feature-autonomous-start <feature-id> <agent> [--review-agent=<agent>] [--
 # Fleet (multiple agents)
 aigon feature-autonomous-start <feature-id> <agent1> <agent2> [--eval-agent=<agent>] [--stop-after=implement|eval|close]
 
+# Use a saved workflow definition
+aigon feature-autonomous-start <feature-id> --workflow=<slug>
+
 # Status check
 aigon feature-autonomous-start status <feature-id>
 ```
@@ -36,6 +39,7 @@ When finished, the AutoConductor kills its own tmux session so the dashboard bad
 | `--review-agent=<agent>` | Solo only | Agent to run the code review after implementation. If omitted, skips review. |
 | `--eval-agent=<agent>` | Fleet only | Agent to run evaluation. Defaults to the first implementation agent. |
 | `--stop-after=<value>` | Both | Where to stop — see table below. Default: `close`. |
+| `--workflow=<slug>` | Both | Load agents, eval/review, and stop-after from a saved [workflow definition](/docs/reference/commands/infra/workflow). Positional args and other flags still override. |
 
 ## `--stop-after` values
 
@@ -76,6 +80,12 @@ aigon feature-autonomous-start 42 cc gg --eval-agent=cc --stop-after=eval
 # Implement only, then hand back control
 aigon feature-autonomous-start 42 cc --stop-after=implement
 
+# Use a saved workflow definition (see: aigon workflow list)
+aigon feature-autonomous-start 42 --workflow=solo-cc-reviewed-cx
+
+# Use a saved workflow but override the reviewer for this one run
+aigon feature-autonomous-start 42 --workflow=my-arena --eval-agent=gg
+
 # Check AutoConductor status
 aigon feature-autonomous-start status 42
 ```
@@ -83,6 +93,12 @@ aigon feature-autonomous-start status 42
 ### From the dashboard
 
 Click **Start Autonomously** on any backlog feature card. The modal adapts based on agent count: one agent shows the **Reviewer** picker; multiple agents show the **Evaluator** picker.
+
+The modal also exposes a **Workflow** dropdown. Selecting a saved workflow pre-fills every control below it (agents, reviewer/evaluator, stop-after) while leaving each one editable. A **Save as workflow…** button stores the current configuration as a new project workflow — see the [`workflow` command reference](/docs/reference/commands/infra/workflow).
+
+{/* SCREENSHOT: "Start Autonomously" modal — Workflow dropdown open showing built-ins (solo, solo-reviewed, arena) plus a project workflow */}
+
+{/* SCREENSHOT: "Start Autonomously" modal — workflow selected, controls below pre-filled; Save as workflow… button visible in footer */}
 
 {/* SCREENSHOT: "Start Autonomously" modal — solo mode with reviewer picker */}
 
@@ -156,4 +172,5 @@ aigon feature-close 42 cc             # merge the winner (fleet)
 - [`feature-review`](/docs/reference/commands/feature/feature-review) — manual code review
 - [`feature-eval`](/docs/reference/commands/feature/feature-eval) — manual evaluation
 - [`feature-close`](/docs/reference/commands/feature/feature-close) — manual close
+- [`workflow`](/docs/reference/commands/infra/workflow) — define reusable autonomous templates for `--workflow=<slug>`
 - [Autonomous Mode guide](/docs/guides/autopilot-mode)

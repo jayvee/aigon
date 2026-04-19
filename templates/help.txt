@@ -77,8 +77,17 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-cleanup <ID>              Clean up Fleet worktrees and branches (worktrees + branches only)
   feature-reset <ID>                Full reset back to backlog: sessions + worktrees + branches + state + spec move
                                     (use this to start a feature over with a different agent)
-  feature-autonomous-start <ID> <agents...> [--eval-agent=<id>] [--stop-after=implement|eval|close]   [Pro]
+  feature-autonomous-start <ID> <agents...> [--eval-agent=<id>] [--stop-after=implement|eval|close] [--workflow=<slug>]   [Pro]
                                     Start autonomous execution in dedicated auto tmux session
+
+Workflow Definitions (autonomous orchestration templates):
+  workflow list [--json]            List workflows (built-in + global + project)
+  workflow show <slug> [--json]     Show workflow stages and resolved autonomous inputs
+  workflow create <slug> [opts]     Create a project (default) or --global workflow
+                                    opts: --file=<path> | --json=<inline> | --from=<slug> |
+                                          --implement=<a,b> [--review=<a>] [--counter-review=<a>]
+                                          [--eval=<a>] [--no-close] [--label=<s>] [--description=<s>]
+  workflow delete <slug> [--global] Delete a user-created workflow (built-ins are read-only)
 
 Research Commands:
   research-create <name>            Create research topic in inbox
