@@ -29,8 +29,7 @@ function commitAll(repo, message, body = '', options = {}) {
     execSync(cmd, { cwd: repo });
 }
 
-// REGRESSION feature 278: dashboard cards must surface pending spec-review
-// state (count + reviewer ids + action) without per-entity git log calls.
+// REGRESSION F278: pending spec-review badge/actions without per-entity git log scans.
 test('feature backlog cards surface pending spec-review badge and actions', () => withTempDir('aigon-spec-review-', (repo) => {
     initRepo(repo);
     const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-12-test.md');
@@ -49,10 +48,7 @@ test('feature backlog cards surface pending spec-review badge and actions', () =
     assert.ok(items[0].validActions.some(action => action.action === 'feature-spec-review'));
     assert.ok(items[0].validActions.some(action => action.action === 'feature-spec-review-check'));
 }));
-
-// REGRESSION feature 278: --find-renames must follow the spec across
-// lifecycle folder moves (inbox → backlog) so a prioritise commit doesn't
-// orphan a pending review.
+// REGRESSION F278: --find-renames follows spec across inbox→backlog prioritise moves.
 test('pending spec reviews survive visible spec renames', () => withTempDir('aigon-spec-review-', (repo) => {
     initRepo(repo);
     const inboxPath = path.join(repo, 'docs/specs/features/01-inbox/feature-test-topic.md');
@@ -74,10 +70,7 @@ test('pending spec reviews survive visible spec renames', () => withTempDir('aig
     assert.strictEqual(items[0].specReview.pendingCount, 1);
     assert.deepStrictEqual(items[0].specReview.pendingAgents, ['cx']);
 }));
-
-// REGRESSION feature 278: an empty-body spec-review-check: ack commit must
-// still clear the pending-review badge — early impl missed allowEmpty acks
-// because the name-status scan dropped commits with no tree changes.
+// REGRESSION F278: allowEmpty spec-review-check ack clears badge (no tree changes).
 test('ack commit clears pending spec-review check action', () => withTempDir('aigon-spec-review-', (repo) => {
     initRepo(repo);
     const specPath = path.join(repo, 'docs/specs/research-topics/02-backlog/research-21-topic.md');
