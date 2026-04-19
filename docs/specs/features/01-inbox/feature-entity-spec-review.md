@@ -11,7 +11,9 @@ Design intent: spec quality today depends on the author agent's first pass being
 - [ ] As a user who just had agent A author feature spec 100, I run `aigon feature-spec-review 100` (or the slash command / dashboard action) and agent B reviews the spec content, edits it in place, and commits with a "spec-review:" commit message naming what changed.
 - [ ] As a user whose spec was reviewed, I run `aigon feature-spec-review-check 100` from agent A's context and see a summary of what the reviewer changed, with the option to accept (keep as-is), revert (drop B's edits), or modify (selectively keep parts).
 - [ ] As a user running research, the same round-trip works: `aigon research-spec-review 42` invokes the reviewer on the research topic spec, `aigon research-spec-review-check 42` invokes the author's review of the reviewer's edits.
+- [ ] As a user who wants multiple opinions, I can run `aigon feature-spec-review <ID>` multiple times with different agents before running `-check` once. Each reviewer sees the prior reviewers' edits and builds on them; the `-check` command processes all pending reviews in a single pass and emits one ack commit naming each reviewer. Three agents reviewing the same spec is a supported first-class use case, not an edge case.
 - [ ] As a dashboard user, a feature card (and a research card) shows a "Review spec" action when the entity is in any pre-implementation stage (inbox or backlog), and a "Check spec review" action when a prior spec-review commit exists on the spec file that hasn't been acknowledged by the author.
+- [ ] As a user skimming the dashboard, an indicator on the card shows how many unacknowledged spec reviews exist and which agents produced them (e.g. "3 reviews pending — cc, gg, cx") so multi-agent round-trips are visible at a glance.
 - [ ] As a maintainer, the review rubric used by the reviewer is editable in one place (`templates/generic/prompts/spec-review-rubric.md` or similar), not scattered across four command templates.
 
 ## Acceptance Criteria
@@ -19,10 +21,11 @@ Design intent: spec quality today depends on the author agent's first pass being
 ### CLI
 - [ ] `aigon feature-spec-review <ID>` exists and runs an agent-appropriate session that instructs the agent to review the feature spec at `docs/specs/features/<stage>/feature-<ID>-*.md` against a shared rubric, make edits in place, and commit with a message prefixed `spec-review: feature <ID> — <summary>`. The agent chosen is whichever is currently in the user's default reviewer slot or explicitly passed via `--agent=<id>`.
 - [ ] `aigon feature-spec-review-check <ID>` runs from the author's context. It shows the user:
-  - All commits on the spec file with subject matching `spec-review:` since the last `spec-review-check:` acknowledgement (or since the spec was created if none)
+  - All commits on the spec file with subject matching `spec-review:` since the last `spec-review-check:` acknowledgement (or since the spec was created if none). Uses `git log --follow` so reviews survive lifecycle folder moves.
   - The diff of each such commit
-  - A prompt for the agent to help decide accept / revert / modify per change
-  - After the user decides, a commit with subject `spec-review-check: feature <ID> — <decision summary>` lands, which acts as the acknowledgement so the same reviews don't reappear on re-run
+  - The structured review body of each such commit (summary, strengths, gaps, risky decisions, suggested edits — see Shared rubric section)
+  - A prompt for the agent to help decide accept / revert / modify per change, **aggregated across all pending reviews** — not one at a time. The author processes N reviewers' opinions in one pass.
+  - After the user decides, a single commit with subject `spec-review-check: feature <ID> — <decision summary>` lands, which acts as the acknowledgement so the same reviews don't reappear on re-run. Body of the ack commit names each reviewer processed (e.g. `reviewed: cc, gg, cx`).
 - [ ] `aigon research-spec-review <ID>` and `aigon research-spec-review-check <ID>` are the research equivalents, operating on `docs/specs/research-topics/<stage>/research-<ID>-*.md`.
 - [ ] All four commands are registered in `COMMAND_REGISTRY` in `lib/templates.js` with appropriate `argHints` and short aliases (suggested: `afsr`, `afsrc`, `arsr`, `arsrc` — confirm no conflict with existing aliases before landing).
 - [ ] The commands work whether the entity is in inbox (no numeric ID yet, name slug only) or in any numeric-ID stage (backlog / in-progress / in-evaluation / done). Inbox-stage invocation resolves by slug instead of numeric ID.
@@ -33,21 +36,34 @@ Design intent: spec quality today depends on the author agent's first pass being
 - [ ] For cx specifically, the skill body fully inlines the rubric and the step-by-step instructions (per the `agent-prompt-resolver.js` pattern already established) so cx doesn't depend on runtime skill discovery.
 
 ### Dashboard
-- [ ] Dashboard feature cards expose a "Review spec" action when the feature is in inbox or backlog AND has no open spec-review cycle. The action opens a modal (similar to the existing review-agent selector) asking which agent should review.
-- [ ] Dashboard feature cards expose a "Check spec review" action when there is an unacknowledged `spec-review:` commit on the spec file (i.e. `spec-review:` commits newer than the most recent `spec-review-check:` commit on that file).
-- [ ] Same two actions exist on research cards.
+- [ ] Dashboard feature cards expose a "Review spec" action when the feature is in inbox or backlog. Available even when a prior review is pending ack — multiple reviews are supported. The action opens a **single-select** agent-picker modal (not the multi-select Fleet picker) asking which agent should review next.
+- [ ] Dashboard feature cards expose a "Check spec review" action when there is at least one unacknowledged `spec-review:` commit on the spec file (i.e. `spec-review:` commits newer than the most recent `spec-review-check:` commit on that file).
+- [ ] The card shows a badge with the count of pending reviews and the reviewer agent ids (e.g. `3 pending — cc, gg, cx`).
+- [ ] Same actions + badge exist on research cards.
 - [ ] Both actions are defined in the central action registry (`lib/feature-workflow-rules.js` / `lib/research-workflow-rules.js`) with `bypassMachine: true` since they don't transition workflow lifecycle. They are categorised as `INFRA` or a new `SPEC_REVIEW` category — decide based on what reads best on the dashboard.
 - [ ] No action-eligibility logic lives in dashboard frontend files (per CLAUDE.md rule 8).
+- [ ] **Dashboard refresh latency from spec-review eligibility must be <50ms per repo regardless of entity count.** Do NOT run `git log` per entity per refresh — that scales as `features × research × repos × refresh-rate` (2000+ git calls per refresh for this user's 7-repo setup). Approved implementation approaches: (a) one aggregate `git log --all --grep='^spec-review'` per repo per refresh, bucketed by spec path; or (b) marker file `.aigon/workflows/<kind>/<id>/spec-review-pending.json` written by the reviewer CLI and deleted by the checker CLI, read via file-exists. Pick one, benchmark before merge.
 
 ### Shared rubric
 - [ ] `templates/generic/prompts/spec-review-rubric.md` (or similar stable path) is the single source of truth for what a reviewer looks for. Covers at minimum: specificity of acceptance criteria, testability, completeness (no open questions that block start), scope clarity (explicit out-of-scope items), dependencies named, file paths / commit refs where given are still valid, absence of vague terms ("should", "might", "flexible"), concrete examples where policy decisions were made, alignment with CLAUDE.md project conventions.
+- [ ] The rubric instructs reviewers to produce a **structured review body** in every `spec-review:` commit message (not just the in-place edits), covering:
+  - **Summary**: the spec as the reviewer understands it, in their own words — forces actual comprehension before editing.
+  - **Strengths**: what's already well-specified and should NOT be changed.
+  - **Gaps**: missing detail, ambiguous acceptance criteria, unresolved open questions that should block start.
+  - **Risky technical decisions**: choices that may not survive first contact with implementation.
+  - **Suggested edits**: what the reviewer changed in place, and why.
+  This structured body is what the `-check` command surfaces to the author for the accept/revert/modify decision — the diff alone isn't enough context.
 - [ ] The rubric is a living document — it can be updated without touching the four command templates, and updates flow to agents on the next `aigon install-agent` run.
 - [ ] The rubric distinguishes between "must be fixed before review-check" and "nice to have" so the reviewer doesn't over-edit small-scope specs.
+- [ ] Every `spec-review:` commit body includes the rubric version/hash it was run against. The `-check` command warns if the reviewed-against rubric is out of date, without forcing re-review — visibility only.
 
 ### Commit discipline
-- [ ] Reviewer commit message format is stable and greppable: `spec-review: feature <ID> — <summary>` (and analogous for research). Format is documented in the rubric and in the command template so reviewers don't drift.
-- [ ] Checker commit message format is `spec-review-check: feature <ID> — <decision>` where `<decision>` is one of `accepted`, `reverted`, `modified`, or a short free-text summary.
-- [ ] If the reviewer has nothing to change (spec is already good), they emit a commit with subject `spec-review: feature <ID> — no changes (reviewed by <agent>)` that updates nothing but the review log — so the checker knows the review happened. This acts as the ack anchor.
+- [ ] Reviewer commit message format is stable and greppable: `spec-review: feature <ID>: <summary>` (and analogous for research). Uses `:` as separator rather than an em-dash to avoid grep regex ambiguity across keyboards. Format is documented in the rubric and in the command template so reviewers don't drift.
+- [ ] Checker commit message format is `spec-review-check: feature <ID>: <decision>` where `<decision>` is one of `accepted`, `reverted`, `modified`, or a short free-text summary. Body names every reviewer processed in this ack (e.g. `reviewed: cc, gg, cx`).
+- [ ] If the reviewer has nothing to change (spec is already good), they emit a `git commit --allow-empty` with subject `spec-review: feature <ID>: no changes (reviewed by <agent>)`. Body contains the structured review (summary / strengths / gaps / risky decisions / suggested edits even if all reduced to "none") so the checker can see the review happened and what was considered.
+- [ ] Concurrent reviews: reviewer invocations serialize on a `.aigon/spec-review.lock` per repo. Second concurrent invocation waits or fails cleanly — it does NOT race onto main. Successive reviewers naturally stack edits on top of each other's commits.
+- [ ] Reviewer CLI refuses to spawn if `git status --porcelain` on main is non-empty. Error message: `"main has uncommitted changes — stash or commit before running spec-review"`. No silent commits on top of dirty state.
+- [ ] Reviewer agent prompt instructs the agent to modify **only the target spec file**. CLI verifies `git diff --stat` shows exactly one file changed before accepting the commit; rejects with a named error and reverts the commit otherwise. Out-of-scope edits never land on main.
 
 ### Test coverage
 - [ ] Integration test covers the CLI round-trip with mocked agents: run `feature-spec-review <ID>` → assert a `spec-review:` commit lands with the expected format; run `feature-spec-review-check <ID>` → assert the checker sees the diff and produces the ack commit.
@@ -110,11 +126,12 @@ Manual scenarios:
 6. Integration tests (last so the earlier commits are exerciseable but the test commit fails until the feature is complete).
 
 ## Dependencies
-- **F277 (`harden-autonomous-loop-write-paths`)** is highly desirable before this feature starts. F277 builds the inlined-skill-body mid-session helper that the review-check side of this feature also needs. Without F277, this feature will either duplicate F277's logic or ship with a less-durable prose-nudge path for cx. **Recommendation: hold start on this feature until F277 lands**, or coordinate so F277 goes first.
+- depends_on: harden-autonomous-loop-write-paths
+- F277 (`harden-autonomous-loop-write-paths`) is a **hard** dependency. F277 builds the mid-session injection contract and the `slashCommandInvocable` capability flag that this feature's reviewer-launch and `-check`-injection both rely on. Shipping this before F277 would duplicate F277's logic in a parallel code path — exactly the read/write asymmetry antipattern F277 exists to eliminate. Do not start this feature until F277 merges.
 - `agent-prompt-resolver.js` — the canonical launch-time prompt resolver. Reused for initial reviewer launches.
 - `lib/agent-registry.js` — for the capability flag F277 introduces (`slashCommandInvocable`) that determines whether cx needs inlined-body handling.
 - `lib/feature-spec-resolver.js` — for resolving the spec path from a numeric ID.
-- `lib/dashboard-status-collector.js` — for computing action eligibility from git log.
+- `lib/dashboard-status-collector.js` — for computing action eligibility (via aggregated git log per repo OR marker file approach — see Dashboard AC).
 
 ## Out of Scope
 - Spec review of **feedback entities**. Feedback lifecycle (per F273) uses frontmatter status not git log, and feedback specs are usually shorter and less structured. If desired later, a separate feature can extend the pattern once F273 has landed and the feedback spec shape has stabilised.
@@ -131,6 +148,7 @@ Manual scenarios:
 - **Dashboard UX**: should spec-review commits show on the card as a timeline entry (like comments) so the user can see "cx reviewed on 2026-04-19, cc acknowledged on 2026-04-20" without reading git log? Probably yes for polished v2; out of scope for v1 unless it's cheap.
 
 ## Related
+- **Supersedes `feature-review-spec.md`** (created 2026-04-19 10:34 AEST, commit `90b33357`). That earlier spec proposed a one-way review-report flow (agent writes a report to `.aigon/workflows/<kind>/<id>/spec-reviews/<ts>-<agent>.md`, user applies manually). This spec subsumes it: the edit-in-place + commit-based ack pattern is a stronger fit for Aigon's existing conventions. The valuable idea from the earlier spec — **multiple agents reviewing the same spec in parallel** — is preserved as a first-class use case here (see User Stories and Commit discipline ACs). The earlier spec file has been archived; this feature is the canonical path forward.
 - `feature-review` / `feature-review-check` — the code-review pair this feature is the content-review analogue of. Same commit-driven round-trip shape; different content scope.
 - Today's F270 / F272 / F275 / F276 / F277 retrospective — every one of those benefited from a human review of the spec before start. This feature institutionalises that step cheaply with a second-agent pair of eyes instead of only a human.
 - `templates/generic/commands/feature-review-check.md` — reference for the commit-history-driven check workflow shape.
