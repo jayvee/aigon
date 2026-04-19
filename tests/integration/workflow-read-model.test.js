@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-// REGRESSION: the dashboard read model must prefer the snapshot's lifecycle
-// over the visible folder stage — otherwise a feature whose engine state
-// advanced to implementing but whose spec file is still in 02-backlog (mid-
-// transition) shows up in the wrong column and loses its workflow actions.
-// Legacy numeric features with no snapshot stay visible but read-only; no-id
-// inbox entries stay on the compat path without the legacy marker; and the
-// board must re-bucket snapshot-backed items into their snapshot-derived
-// column so users don't see the same feature in two places.
 'use strict';
 
 const assert = require('assert');

@@ -1,17 +1,4 @@
 #!/usr/bin/env node
-/**
- * Integration tests — Layer 2 of the test pyramid.
- *
- * Exercises the workflow engine lifecycle with temp directories:
- *   - Solo: start → submit → close; plus feature 233 recovery paths
- *   - Fleet: start → submit both → eval → select winner → close
- *   - Pause → resume
- *   - Research close finalizer
- *   - git.getMainRepoPath from a subdirectory
- *
- * Verifies snapshotToDashboardActions() returns correct buttons at each step.
- */
-
 'use strict';
 
 const assert = require('assert');
@@ -57,14 +44,8 @@ function writeResearchSpec(repoPath, researchId, name) {
 const getActions = (snap, id) => snapshotToDashboardActions('feature', id, snap);
 const hasAction = (actions, name) => actions.validActions.some(a => a.action === name);
 
-// ─── Solo lifecycle (parametrized: canonical cc vs bare 'solo' agent) ────────
-
 for (const [label, agentId, featureId] of [['cc', 'cc', '01'], ['solo', 'solo', '03']]) {
     testAsync(`solo(${label}): start → ready → close transitions cleanly`, () => withTempRepo(async (repo) => {
-        // REGRESSION feature 34/233: bare 'solo' agent used to emit
-        // feature.started with agents:[]; signal.agent_ready was silently
-        // dropped and feature-close threw "cannot be closed from implementing"
-        // AFTER the merge had already run, leaving a half-closed repo.
         writeSpec(repo, featureId, `solo-${label}`);
         await engine.startFeature(repo, featureId, 'solo_branch', [agentId]);
         const ready = await engine.signalAgentReady(repo, featureId, agentId);
