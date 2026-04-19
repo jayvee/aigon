@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 1230
+lines_removed: 32
+lines_changed: 1262
+files_touched: 27
+fix_commit_count: 2
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 24665432
+output_tokens: 87867
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 23800704
+thinking_tokens: 31636
+total_tokens: 24753299
+billable_tokens: 24784935
+cost_usd: 54.794
+sessions: 8
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 278 - entity-spec-review
 Agent: cx
 
