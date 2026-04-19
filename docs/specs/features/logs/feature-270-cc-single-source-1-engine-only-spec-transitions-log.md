@@ -48,3 +48,47 @@ filesystem moves intentionally.
   migration and lifecycle tests (`tests/integration/migration.test.js`,
   `lifecycle.test.js`). Pro-gate tests required `npm link @aigon/pro` in the
   worktree to pass; that environment issue is unrelated to this feature.
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-04-19
+
+### Findings
+- AC #6 ("explicit migration guidance") was only partially satisfied.
+  `feature-close` and the research-* commands had been updated to detect a
+  missing `showFeatureOrNull` / `showResearchOrNull` result and print an
+  explicit pointer to `aigon doctor --fix`, but three other normal
+  state-changing commands still called `wf.showFeature()` directly and
+  therefore threw the engine's generic `Feature X does not exist` without
+  any migration guidance:
+    - `feature-eval` (ID path, post-launch state transition)
+    - `feature-pause` (ID path)
+    - `feature-resume` (ID path)
+- Scope checks were clean: all `fs.renameSync` / `moveFile` usages that
+  remain in `lib/commands/{feature,research,setup}.js` are either inside
+  the explicitly out-of-scope reset flows, inbox/paused name-based moves
+  for pre-engine entities (no snapshot exists by definition), or setup /
+  seed-reset layout migrations — none are normal lifecycle transitions
+  for engine-tracked entities.
+- `migrateEntityLifecycleIfNeeded` is now only reachable through
+  `migrateActiveEntities` (doctor's explicit bootstrap path). No normal
+  lifecycle command calls it any more.
+- `aigon update` no longer silently bootstraps; it warns + points to
+  doctor, matching the spec.
+- Drift-correction fallbacks in `feature-eval`, `feature-close`, and
+  `entityCloseFinalize` all now log visible `⚠️ Drift:` warnings before
+  force-moving, so post-engine filesystem races are investigable.
+
+### Fixes Applied
+- `fix(review): give explicit migration guidance on eval/pause/resume` —
+  added `showFeatureOrNull` guard + explicit `aigon doctor --fix` error
+  before each of the three state transitions above, so the three paths
+  behave like `feature-close` and the research-* commands do.
+
+### Notes
+- Full `npm test` is clean after the fix. One transient local failure
+  (`feature-close-restart.test.js` AC1) was caused by the reviewer's shell
+  having `AIGON_INVOKED_BY_DASHBOARD=1` leaked into it (this session was
+  spawned from the dashboard); unsetting the var makes the suite green.
+  Not a code issue.
