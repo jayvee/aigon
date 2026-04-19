@@ -80,6 +80,11 @@
       return '<span class="monitor-actions" data-repo="' + escHtml(repoPath) + '" data-feature-id="' + escHtml(feature.id) + '">' + html + '</span>';
     }
 
+    function buildCompatibilityBadgeHtml(item) {
+      if (!item || !item.missingWorkflowState) return '';
+      return '<span class="compat-badge" title="Legacy item missing workflow state. Read-only until migrated or backfilled.">legacy</span>';
+    }
+
     function monitorView() {
       return {
         monitorTypeOpts: [
@@ -145,7 +150,7 @@
           const autoBadge = feature.autonomousSession && feature.autonomousSession.running
             ? '<span class="autonomous-badge">Running autonomously</span>'
             : '';
-          return (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + autoBadge + evalBadge;
+          return (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + buildCompatibilityBadgeHtml(feature) + autoBadge + evalBadge;
         },
         researchTitle(item) {
           const readyToEval = (item.validActions || []).some(a => a.action === 'research-eval');
@@ -153,7 +158,7 @@
           const badge = inEval ? '<span class="eval-badge">evaluating</span>'
             : readyToEval ? '<span class="research-badge all-submitted">ready to evaluate</span>'
             : '<span class="research-badge">research</span>';
-          return (item.id ? 'R#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + badge;
+          return (item.id ? 'R#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + buildCompatibilityBadgeHtml(item) + badge;
         },
         feedbackTitle(item) { return (item.id ? 'FB#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + '<span class="research-badge">feedback</span>'; },
         researchEvalBtn(item) {
