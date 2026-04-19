@@ -23,7 +23,14 @@ function formatCliError(error) {
             + `   This usually means a file in lib/ has a syntax error or unresolved\n`
             + `   merge conflict. Check: grep -rn '^<<<<<<<' "$(dirname "$(readlink -f "$0")")/lib"`;
     }
-    return `❌ ${error.message}`;
+    // For runtime errors, include the stack so crash-loops and server boot
+    // failures produce actionable output. Set AIGON_NO_STACK=1 to suppress
+    // if it's ever too noisy for a given UX path.
+    const stack = typeof error.stack === 'string' ? error.stack : '';
+    if (process.env.AIGON_NO_STACK === '1' || !stack) {
+        return `❌ ${error.message}`;
+    }
+    return `❌ ${error.message}\n${stack}`;
 }
 
 let COMMAND_ALIASES;

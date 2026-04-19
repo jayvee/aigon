@@ -15,3 +15,12 @@ network_access = true
 note = "Configuration added by Aigon"
 tools = ["aigon"]
 # --- Aigon Configuration End ---
+# Note on MCP approval prompts: `approval_policy = "never"` above only affects
+# codex when it reads its config file *unprompted*. The `--full-auto` CLI
+# flag overrides that (it resolves to `-a on-request`), which lets the model
+# prompt for MCP tool approvals (e.g. playwright `browser_navigate`) and
+# blocks autonomous sessions indefinitely. Aigon's autonomous codex launcher
+# in lib/config.js deliberately uses `-a never --sandbox danger-full-access`
+# instead of `--full-auto` to avoid this class of deadlock. If you add a
+# legacy `--full-auto` flag via project agent config, autonomous cx will
+# break. See lib/config.js:getAgentLaunchFlagTokens.
