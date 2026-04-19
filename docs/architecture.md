@@ -86,7 +86,7 @@ Current shared modules:
   `getValidTransitions`, `getAvailableActions`, `getSessionAction`, `getRecommendedActions`, `isActionValid`, `shouldNotify`
 - `lib/feature-spec-resolver.js` (~200 lines): canonical feature/research visible-spec lookup so consumers stop guessing from visible folders
   `resolveEntitySpec`, `resolveFeatureSpec`, `resolveResearchSpec`
-- `lib/spec-reconciliation.js` (~130 lines): shared engine->folder self-healing helper for feature/research spec drift, reused by dashboard/board read paths and `aigon repair`
+- `lib/spec-reconciliation.js` (~130 lines): shared self-healing spec projection helper for feature/research workflow drift and feedback status->folder drift, reused by dashboard/list read paths and `aigon repair`
   `reconcileEntitySpec`
   `resolveFeatureSpec`, `listVisibleFeatureSpecs`, `isPlaceholderSpecPath`
 - `lib/action-command-mapper.js` (~75 lines): shared command formatting for dashboard and board consumers so snapshot reads emit the same CLI actions
@@ -95,7 +95,7 @@ Current shared modules:
   `safeTmuxSessionExists`, `resolveFeatureWorktreePath`, `normalizeDashboardStatus`, `maybeFlagEndedSession`
 - `lib/auto-session-state.js` (~50 lines): durable AutoConductor run-state helper so feature autonomous status survives tmux/session loss and can be reported by the dashboard/CLI
   `readFeatureAutoState`, `writeFeatureAutoState`, `clearFeatureAutoState`
-- `lib/dashboard-status-collector.js` (~830 lines): shared AIGON server read-side collector so repo/entity status assembly is separated from HTTP transport and notification code
+- `lib/dashboard-status-collector.js` (~830 lines): shared AIGON server read-side collector so repo/entity status assembly is separated from HTTP transport and notification code, including metadata-authoritative feedback status reads
   `collectDashboardStatusData`
 - `lib/server-runtime.js` (~90 lines): shared AIGON server lifecycle helpers extracted from infra command wiring
   `launchDashboardServer`, `stopDashboardProcess`
@@ -266,9 +266,10 @@ Feature writes go through the engine, but the read side is still mixed:
 
 - `lib/workflow-snapshot-adapter.js` is the preferred feature/research read adapter for lifecycle/actions when a workflow snapshot exists.
 - `lib/feature-spec-resolver.js` is the preferred visible-spec lookup for active feature/research entities. Consumers should not hardcode visible-folder probes.
-- `lib/spec-reconciliation.js` is the only shared spec-drift repair path for workflow-backed entities. It is one-way: engine snapshot -> visible folder. It never bootstraps workflow state from folder position.
+- `lib/spec-reconciliation.js` is the only shared spec-drift repair path. It is one-way: workflow snapshot -> visible folder for feature/research, and feedback frontmatter `status` -> visible folder for feedback. It never bootstraps lifecycle state from folder position.
 - `aigon feature-list` and `aigon feature-spec` are the preferred CLI query surfaces for active features. Do not use `board` output as a data API.
 - `lib/workflow-read-model.js` provides shared dashboard read state (snapshot-backed for features/research) and derives recommended actions for feedback via `lib/state-queries.js`.
+- `lib/feedback.js` provides feedback metadata parsing/collection so feedback list and dashboard reads derive status from frontmatter rather than folder position.
 - `lib/dashboard-status-collector.js` now owns the AIGON server's dashboard-facing repo/entity reads, including compatibility behavior for older repos that may not have a complete workflow snapshot yet.
 - `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, and action dispatch.
 
@@ -451,7 +452,7 @@ There are currently two read-side paths:
 
 - `lib/workflow-snapshot-adapter.js`: maps workflow-core snapshots into dashboard/board-friendly shapes for features and research. This is the preferred workflow read path.
 - `lib/workflow-read-model.js`: shared read model used by dashboard collectors/detail payloads for features/research (snapshot-backed), and derives recommended actions from `lib/state-queries.js` for feedback. It also invokes shared spec reconciliation on snapshot-backed reads.
-- `lib/spec-reconciliation.js`: shared self-healing visible-spec reconciliation for workflow-backed features/research and the reusable diagnosis path for `aigon repair`.
+- `lib/spec-reconciliation.js`: shared self-healing visible-spec reconciliation for workflow-backed features/research plus feedback status-derived folder projection, and the reusable diagnosis path for `aigon repair`.
 - `lib/action-command-mapper.js`: keeps command strings aligned between those two read paths so UI surfaces do not drift.
 - `lib/dashboard-status-helpers.js`: keeps session/worktree/status heuristics aligned between dashboard reads and command flows.
 

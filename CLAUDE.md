@@ -50,7 +50,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/feature-close.js` | ~740 | Feature-close phases: target resolution, merge, telemetry, engine close, cleanup |
 | `lib/feature-review-state.js` | ~220 | Review lifecycle state per feature: `review-state.json` (current + history), `markReviewingSync`, `completeReviewSync`, `reconcileReviewState`. Written by `agent-status` commands; read by AutoConductor `__run-loop` to confirm review completion. |
 | `lib/dashboard-server.js` | ~2660 | AIGON server HTTP/UI module: dashboard UI, API, WebSocket relay, polling, HTTP action dispatch. Never mutates engine state directly. |
-| `lib/dashboard-status-collector.js` | ~830 | AIGON server read-side collector: assembles repo, feature, research, feedback, summary, and compatibility status payloads |
+| `lib/dashboard-status-collector.js` | ~830 | AIGON server read-side collector: assembles repo, feature, research, feedback, summary, and compatibility status payloads, with feedback status derived from frontmatter metadata |
 | `lib/commands/infra.js` | ~1460 | `aigon server` command, board, config, proxy-setup, dev-server |
 | `lib/utils.js` | 1474 | Spec CRUD, hooks, version, analytics |
 | `lib/commands/setup.js` | 1212 | init, install-agent, check-version, update, doctor + state reconciliation |
@@ -105,9 +105,9 @@ Supporting state:
 - **Heartbeat is display-only**: heartbeat files exist for agent liveness tracking but card status uses tmux session checks directly. Heartbeat data NEVER triggers engine state transitions. The supervisor computes liveness and stores it in memory; the dashboard reads it via `getAgentLiveness()`. Users manually mark agents as lost/failed — the system never does this automatically.
 - Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 
-The dashboard UI uses `lib/state-queries.js` for feedback action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths, and `lib/dashboard-status-collector.js` to keep repo/entity status assembly out of the HTTP server module.
+The dashboard UI uses `lib/state-queries.js` for feedback action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths, `lib/spec-reconciliation.js` to project workflow or feedback-authority state back into visible folders, and `lib/dashboard-status-collector.js` to keep repo/entity status assembly out of the HTTP server module.
 
-Research lifecycle is also managed by the workflow-core engine (`.aigon/workflows/research/{id}/`). Feedback entities still use simpler filesystem-based transitions (spec folder moves) without the workflow engine.
+Research lifecycle is also managed by the workflow-core engine (`.aigon/workflows/research/{id}/`). Feedback entities still stay outside the workflow engine, but their frontmatter `status` is now the authority and visible folders are a reconciled projection of that metadata.
 
 ## Install Architecture
 `aigon install-agent` writes **only aigon-owned files** — it never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).
