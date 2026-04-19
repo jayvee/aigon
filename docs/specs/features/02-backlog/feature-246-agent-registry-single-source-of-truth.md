@@ -37,29 +37,20 @@ npm test
 The work naturally splits into five scopes:
 
 **1. Consolidate `lib/templates.js` AGENT_DEFS → agent-registry**
-`lib/agent-registry.js` already scans `templates/agents/*.json` and provides lookup maps. `lib/templates.js` AGENT_DEFS overlaps with this — remove the duplicate and redirect callers of `AGENT_DEFS` to use registry helpers. Check what `AGENT_DEFS` currently provides that the registry doesn't (e.g. `terminalColor`, `bannerColor`, `port`) and add those fields to the JSON files if missing.
+Remove `AGENT_DEFS` from `lib/templates.js`. Add `terminalColor`, `bannerColor`, and `portOffset` fields to the JSON schema in `templates/agents/*.json`. Redirect all callers of `AGENT_DEFS` to use `lib/agent-registry.js` lookup helpers.
 
 **2. Dashboard frontend: inject agent list from server, not hardcoded**
-The server already knows the full agent list via `lib/agent-registry.js`. Options:
-- Inject `AGENT_DISPLAY_NAMES`, `AGENT_SHORT_NAMES`, `AUTONOMOUS_AGENT_IDS` as a `<script>` block into `index.html` at serve time (simplest, no fetch round-trip).
-- Or expose `/api/agents` and have the frontend fetch on load.
-Prefer the injection approach — it keeps the frontend statically renderable and avoids a loading state.
-The agent checkbox list in the fleet-start UI should also be generated from the injected list.
+In `lib/dashboard-server.js`, inject a `<script>` block defining `window.__AIGON_AGENTS__` into `index.html` at serve time. This payload must include display names, short names, and autonomous agent flags derived from `lib/agent-registry.js`. Update `templates/dashboard/js/actions.js` and the fleet-start UI to iterate over `window.__AIGON_AGENTS__` instead of hardcoded lists.
 
 **3. Port maps in `profiles.json` → computed from agent JSON**
-Reuse the existing `portOffset` field (or rename it once everywhere, but keep one field only). `lib/profile-placeholders.js` should build the port map by iterating registered agents. Remove per-agent entries from `profiles.json`.
+Standardize on the `portOffset` field in agent JSON files. Update `lib/profile-placeholders.js` to build the port map dynamically by iterating over registered agents. Delete all per-agent hardcoded port entries from `templates/profiles.json`.
 
 **4. Help/install/docs surfaces: generate from registry**
-`templates/help.txt`, install-agent output, and any generated agent reference/help surfaces should be built from shared registry-backed helpers. The install path should use `installHint` from each agent JSON rather than a local map in `setup.js`.
-
-For docs, the key rule is: pages that describe the **currently supported agent set** should be generated from or validated against the registry. Historical writeups and old feature specs remain hand-authored and are out of scope.
+Update `lib/commands/setup.js` to read `installHint` from the agent JSON via the registry rather than a local map. Generate `templates/help.txt` agent lists using registry-backed helpers during `install-agent`.
 
 **5. Text templates: replace hardcoded agent lists with placeholders**
-`feature-review.md` and `feature-review-check.md` have prose like "cc, gg, cx, cu". Replace with `{{AGENT_IDS_SLASH_COMMAND}}` (agents that use slash commands) and `{{AGENT_IDS_SKILL}}` (agents that use skills), computed from agent JSON capability flags at install time.
-
-`templates/help.txt` agent list section can be generated from the registry and written by `install-agent`.
-
-`lib/git.js` regex: build the alternation string from `agentRegistry.getAllAgentIds()` at module load.
+Update `feature-review.md` and `feature-review-check.md` to replace hardcoded lists (e.g., "cc, gg, cx, cu") with `{{AGENT_IDS_SLASH_COMMAND}}` and `{{AGENT_IDS_SKILL}}`. Compute these placeholders at install time based on capability flags in the agent JSON files.
+Update `lib/git.js` to dynamically build the `co-author` alternation regex using `agentRegistry.getAllAgentIds()` at module load.
 
 ## Agent Viability Checklist
 
@@ -112,4 +103,6 @@ The `templates/agents/<id>.json` file should record which of the above capabilit
 ## Related
 - Deletion that prompted this: commit `e8905873` (chore: remove Mistral Vibe mv agent) — touched 14 files for a one-agent removal
 - `lib/agent-registry.js` — existing runtime registry (already the right shape)
+- `lib/profile-placeholders.js` — owns port and env placeholder injection at install time
+xisting runtime registry (already the right shape)
 - `lib/profile-placeholders.js` — owns port and env placeholder injection at install time
