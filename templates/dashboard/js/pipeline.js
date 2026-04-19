@@ -230,6 +230,11 @@
       return agents.map(a => '<span class="agent-badge ' + escHtml(a.status || '') + '">' + escHtml(a.id) + '</span>').join('');
     }
 
+    function buildCompatibilityBadgeHtml(item) {
+      if (!item || !item.missingWorkflowState) return '';
+      return '<span class="compat-badge" title="Legacy item missing workflow state. Read-only until migrated or backfilled.">legacy</span>';
+    }
+
     // AGENT_DISPLAY_NAMES moved to actions.js (shared between monitor + pipeline)
 
     function isSoloDrive(agent) { return agent.id === 'solo' && !agent.tmuxSession; }
@@ -526,7 +531,7 @@
 
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>' +
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildCompatibilityBadgeHtml(feature) + '</div>' +
         autonomousControllerRow;
 
       if (hasAgentSections) {

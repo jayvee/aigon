@@ -69,6 +69,7 @@
     .research-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.35);color:#67e8f9;margin-left:6px;flex-shrink:0}
     .research-badge.all-submitted{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#86efac}
     .autonomous-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#86efac;margin-left:6px;flex-shrink:0}
+    .compat-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.38);color:#fcd34d;margin-left:6px;flex-shrink:0}
     .eval-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#c4b5fd;flex-shrink:0;pointer-events:none;cursor:default;user-select:none}
     .eval-badge::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#a78bfa;flex-shrink:0}
     .eval-badge.pick-winner{color:#86efac}
