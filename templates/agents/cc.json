@@ -21,7 +21,8 @@
   },
   "capabilities": {
     "supportsModelFlag": true,
-    "transcriptTelemetry": true
+    "transcriptTelemetry": true,
+    "resolvesSlashCommands": true
   },
   "cli": {
     "command": "claude",
@@ -29,6 +30,7 @@
     "implementPrompt": "/aigon:feature-do {featureId}",
     "evalPrompt": "/aigon:feature-eval {featureId}",
     "reviewPrompt": "/aigon:feature-review {featureId}",
+    "reviewCheckPrompt": "/aigon:feature-review-check {featureId}",
     "models": {
       "research": "opus",
       "implement": "sonnet",

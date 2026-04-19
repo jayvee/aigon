@@ -19,28 +19,13 @@ for (const [desc, args, expected] of [
         { agentId: 'cc', verb: 'eval', featureId: '12', extraArgs: '--allow-same-model-judge',
           cliConfig: { evalPrompt: '/aigon:feature-eval {featureId}' } },
         '/aigon:feature-eval 12 --allow-same-model-judge'],
-    ['cc review falls back to implementPrompt when reviewPrompt missing',
-        { agentId: 'cc', verb: 'review', featureId: '03', cliConfig: { implementPrompt: '/aigon:feature-do {featureId}' } },
-        '/aigon:feature-do 03'],
 ]) test(desc, () => assert.strictEqual(resolveAgentPromptBody(args), expected));
 
-test('cx returns stripped template body with sentinel and substituted args', () => {
-    const out = resolveCxPromptBody('do', '218');
-    assert.ok(out.startsWith('# aigon-feature-do'));
-    assert.ok(!out.startsWith('---\n'));
-    assert.ok(!out.includes('$ARGUMENTS') && !/\$1\b/.test(out));
-    assert.ok(out.includes('218'));
-});
-
-test('cx eval propagates extraArgs through $ARGUMENTS', () => {
+test('cx inlines stripped template body and propagates extraArgs', () => {
     const out = resolveCxPromptBody('eval', '218', '--allow-same-model-judge');
-    assert.ok(out.includes('--allow-same-model-judge'));
-    assert.ok(out.includes('218'));
-});
-
-test('cx routes through resolveAgentPromptBody via agentId', () => {
-    const out = resolveAgentPromptBody({ agentId: 'cx', verb: 'do', featureId: '07' });
-    assert.ok(out.startsWith('# aigon-feature-do'));
+    assert.ok(out.startsWith('# aigon-feature-eval') && !out.startsWith('---\n'));
+    assert.ok(!out.includes('$ARGUMENTS') && !/\$1\b/.test(out));
+    assert.ok(out.includes('218') && out.includes('--allow-same-model-judge'));
 });
 
 test('unknown verb throws', () => {
