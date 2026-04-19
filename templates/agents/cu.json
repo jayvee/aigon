@@ -23,7 +23,7 @@
   "capabilities": {
     "supportsModelFlag": false,
     "transcriptTelemetry": false,
-    "resolvesSlashCommands": false
+    "resolvesSlashCommands": true
   },
   "legacy": {
     "rootFile": null,
