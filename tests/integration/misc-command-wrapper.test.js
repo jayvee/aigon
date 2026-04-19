@@ -49,4 +49,21 @@ test('branch with committed implementation files is accepted', () => withTempDir
     assert.strictEqual(ev.substantiveCommits.length, 1);
 }));
 
+test('legacy iterate flags still hard-error with the rename hint', () => {
+    for (const flag of ['--autonomous', '--ralph']) {
+        const r = require('child_process').spawnSync(process.execPath, [path.join(__dirname, '..', '..', 'aigon-cli.js'), 'feature-do', '7', flag], { encoding: 'utf8' });
+        assert.strictEqual(r.status, 1); assert.match(r.stderr, /--autonomous\/--ralph was renamed to --iterate/);
+    }
+    assert.match(require('../../lib/templates').COMMAND_REGISTRY['feature-do'].argHints, /\[--iterate\]/);
+});
+
+test('repair registration and worktree/reset guard rails stay wired', () => {
+    assert.strictEqual(typeof require('../../lib/commands/shared').createAllCommands().repair, 'function'); assert.strictEqual(typeof require('../../lib/commands/misc').createMiscCommands().repair, 'function');
+    assert.match(fs.readFileSync(path.join(__dirname, '../../templates/help.txt'), 'utf8'), /repair <feature\|research> <ID> \[--dry-run\]/);
+    const [wt, feature, setup] = ['../../lib/worktree.js', '../../lib/commands/feature.js', '../../lib/commands/setup.js'].map((p) => fs.readFileSync(path.join(__dirname, p), 'utf8'));
+    assert.match(wt, /config --local extensions\.worktreeConfig true/); assert.doesNotMatch(wt, /config --(?:local|worktree) user\.(?:name|email)/);
+    assert.match(wt, /config --worktree aigon\.agentId/); assert.match(wt, /config --worktree core\.hooksPath/);
+    assert.match(feature, /wf\.resetFeature\s*\(/); assert.match(setup, /stale-drive-branch/);
+});
+
 report();

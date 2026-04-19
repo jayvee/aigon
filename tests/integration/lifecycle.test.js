@@ -134,6 +134,15 @@ testAsync('pause → resume lifecycle', () => withTempRepo(async (repo) => {
     assert.ok(hasAction(getActions(resumed, '03'), 'feature-pause'));
 }));
 
+test('telemetry aggregator keeps feature-close normalization invariants', () => withTempDir('aigon-tel-', (repo) => {
+    const telemetry = require('../../lib/telemetry');
+    for (const [sessionId, activity, tokenUsage, costUsd] of [['sess-a', 'implement', { input: 100, output: 200, cacheReadInput: 50, cacheCreationInput: 25, thinking: 10, total: 385, billable: 310 }, 0.42], ['sess-b', 'review', { input: 50, output: 80, cacheReadInput: 0, cacheCreationInput: 0, thinking: 0, total: 130, billable: 130 }, 0.13]]) telemetry.writeNormalizedTelemetryRecord({ source: 'claude-transcript', sessionId, entityType: 'feature', featureId: '777', repoPath: repo, agent: 'cc', activity, model: 'claude-opus-4-6', startAt: '2026-04-07T00:00:00Z', endAt: '2026-04-07T01:00:00Z', tokenUsage, costUsd }, { repoPath: repo });
+    telemetry.writeAgentFallbackSession('777', 'cc', { repoPath: repo, source: 'feature-close-fallback', sessionId: 'fallback-close-record' });
+    const agg = telemetry.aggregateNormalizedTelemetryRecords('777', 'cc', { repoPath: repo, linesChanged: 50 });
+    assert.deepStrictEqual([agg.sessions, agg.input_tokens, agg.billable_tokens, agg.cost_usd, agg.model], [2, 150, 440, 0.55, 'claude-opus-4-6']); assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('777', 'solo', { repoPath: repo }).sessions, 2);
+    assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('999', 'cc', { repoPath: repo }), null);
+}));
+
 // ─── Research close finalizer ────────────────────────────────────────────────
 
 test('research close finalizer stages engine-moved spec and commits it', () => withTempDir('aigon-research-close-', (repo) => {
