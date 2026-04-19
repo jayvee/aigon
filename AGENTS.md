@@ -3,7 +3,7 @@
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
-- **Shared logic**: `lib/*.js` — 19 modules; see Module Map below
+- **Shared logic**: `lib/*.js` — 20 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cx` (or any agent)
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
@@ -45,7 +45,7 @@ Test overrides: `createAllCommands({ getCurrentBranch: () => 'mock-branch' })`.
 - **Feature autonomous conductor state**: `.aigon/state/feature-{id}-auto.json`
 - **Research lifecycle authority**: `lib/workflow-core/` and `.aigon/workflows/research/{id}/`
 - **Feedback lifecycle authority**: spec folder location plus command logic
-- **Preferred read path (feature + research)**: `lib/workflow-snapshot-adapter.js` via `lib/workflow-read-model.js`
+- **Preferred read path (feature + research)**: `lib/workflow-snapshot-adapter.js` via `lib/workflow-read-model.js`, with `lib/spec-reconciliation.js` self-healing visible spec drift from engine state
 - **Fallback read path (feedback + legacy items)**: `lib/workflow-read-model.js` + `lib/state-queries.js`
 
 Important: after feature 171, features no longer use the old coordinator manifest system as the lifecycle source of truth. Folder position is the visible outcome; the engine is the authority that moves the spec.
@@ -67,7 +67,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/workflow-core/` | ~2500 | **Workflow engine**: event-sourced state, XState machine, effects, locking — sole authority for feature + research lifecycle |
 | `lib/workflow-core/migration.js` | ~120 | Explicit migration helpers for pre-cutover feature/research lifecycle backfill |
 | `lib/workflow-snapshot-adapter.js` | ~310 | Shared read adapter: maps feature/research engine snapshots to dashboard/board formats |
-| `lib/feature-spec-resolver.js` | ~140 | Canonical feature spec lookup; shields consumers from folder guessing and placeholder specs |
+| `lib/feature-spec-resolver.js` | ~200 | Canonical feature/research visible spec lookup; shields consumers from folder guessing and placeholder specs |
+| `lib/spec-reconciliation.js` | ~130 | Shared engine->folder self-healing helper for feature/research spec drift; reused by read paths and `aigon repair` |
 | `lib/state-queries.js` | ~200 | Pure read-side query helpers used by research/feedback and feature fallback paths |
 | `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting for workflow and snapshot read paths |
 | `lib/dashboard-status-helpers.js` | ~200 | Shared dashboard status helpers: tmux/session detection, worktree lookup, status normalization, stale-session heuristics |
