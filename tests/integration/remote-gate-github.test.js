@@ -8,6 +8,7 @@
 const a = require('assert');
 const { test, report } = require('../_helpers');
 const { checkGitHubGate, queryGitHubPrStatus } = require('../../lib/remote-gate-github');
+const { resolveFeatureBranchForPrStatus, getFeaturePrStatusPayload } = require('../../lib/dashboard-server');
 const j = JSON.stringify;
 const ghFail = () => { throw new Error('not found'); };
 const open = (n, merge = 'CLEAN', x = {}) => ({ number: n, url: `https://github.com/test/repo/pull/${n}`, state: 'OPEN', isDraft: !!x.draft, baseRefName: 'main', headRefName: 'feature-1-desc', mergeStateStatus: merge, mergedAt: null });
@@ -69,5 +70,38 @@ for (const [desc, execFn, expect] of [
         for (const [k, v] of Object.entries(expect)) a.strictEqual(r[k], v, `${k}`);
     });
 }
+
+// REGRESSION feature 256: dashboard PR status endpoint must resolve the
+// worktree agent branch (not the spec basename) before querying PRs, and
+// must surface an unavailable shape instead of 500-ing on non-GitHub remotes.
+console.log('dashboard PR status endpoint');
+const prBranchOpts = (o = {}) => ({
+    readFeatureSnapshotSync: o.readFeatureSnapshotSync || (() => ({ agents: { cx: {} } })),
+    resolveFeatureSpec: o.resolveFeatureSpec || (() => ({ path: '/tmp/repo/docs/specs/features/03-in-progress/feature-256-x.md' })),
+    listRepoBranches: o.listRepoBranches || (() => ['feature-256-cx-x']),
+});
+
+test('resolveFeatureBranchForPrStatus picks solo worktree branch from snapshot', () => {
+    const r = resolveFeatureBranchForPrStatus('/tmp/repo', '256', prBranchOpts());
+    a.ok(r.ok);
+    a.strictEqual(r.branchName, 'feature-256-cx-x');
+});
+
+test('resolveFeatureBranchForPrStatus is unavailable when multiple agent branches exist', () => {
+    const r = resolveFeatureBranchForPrStatus('/tmp/repo', '256', prBranchOpts({
+        readFeatureSnapshotSync: () => ({ agents: {} }),
+        listRepoBranches: () => ['feature-256-cx-x', 'feature-256-cc-x'],
+    }));
+    a.ok(!r.ok);
+    a.match(r.message, /Multiple agent branches/);
+});
+
+test('getFeaturePrStatusPayload returns unavailable shape for non-GitHub remote', () => {
+    const r = getFeaturePrStatusPayload('/tmp/repo', '256', {
+        ...prBranchOpts(),
+        execFn: (cmd) => cmd === 'git remote get-url origin' ? 'https://gitlab.com/test/repo.git' : '',
+    });
+    a.deepStrictEqual(r, { provider: null, status: 'unavailable', message: 'Not a GitHub remote' });
+});
 
 report();
