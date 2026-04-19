@@ -32,4 +32,14 @@ test('fail-closed: unknown agent defaults to path-pointer', () => {
     assert.ok(p.includes('.agents/skills/') && !/\/aigon:/.test(p), p);
 });
 
+test('injected agent config controls slash-command capability during tests', () => {
+    const p = buildReviewCheckFeedbackPrompt('zz', '01', {
+        loadAgentConfig: () => ({
+            capabilities: { resolvesSlashCommands: true },
+            cli: { reviewCheckPrompt: '/aigon:feature-review-check {featureId}' },
+        }),
+    });
+    assert.ok(p.includes('/aigon:feature-review-check 01'), p);
+});
+
 report();
