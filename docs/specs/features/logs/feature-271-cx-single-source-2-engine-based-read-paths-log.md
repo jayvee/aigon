@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 475
+lines_removed: 118
+lines_changed: 593
+files_touched: 10
+fix_commit_count: 2
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 6369465
+output_tokens: 35610
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 5867392
+thinking_tokens: 15058
+total_tokens: 6405075
+billable_tokens: 6420133
+cost_usd: 14.1973
+sessions: 3
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 271 - single-source-2-engine-based-read-paths
 Agent: cx
 
