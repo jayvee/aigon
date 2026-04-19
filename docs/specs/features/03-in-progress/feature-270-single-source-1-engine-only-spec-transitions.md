@@ -36,6 +36,20 @@ Manual scenarios:
 - Audit direct movers in lifecycle code, including shared entity helpers and feature/research command handlers
 - Key files: `lib/workflow-core/effects.js`, `lib/workflow-core/engine.js`, `lib/commands/setup.js`, `lib/commands/feature.js`, `lib/commands/research.js`, `lib/entity.js`, `lib/feature-spec-resolver.js`
 
+## Migration Scope (measured 2026-04-19)
+
+Counted on the aigon repo before implementation starts, so the migration command has a known-small scope:
+
+**Features (6 missing-snapshot numeric entities):**
+- `01` — pre-engine feature (`05-done/feature-01-support-hooks`). True legacy.
+- `238, 270, 271, 272, 273` — prioritised backlog items. `feature-prioritise` inconsistently creates snapshots: F246 has one but F238 and F270-273 don't. Root cause is likely a change in the prioritise flow at some point between F246 and F238 being queued. The migration must backfill these, and the bug in `feature-prioritise` (if confirmed) should be fixed as part of this feature or tracked separately.
+
+**Research (0 missing-snapshot numeric entities):**
+- All 30 numeric research topics have snapshots. No migration needed.
+- Aside: 4 snapshots at IDs `13, 15, 23, 52` have no matching spec (orphaned snapshots from deleted specs). Not in scope for this feature — tracked separately as a research-workflow cleanup concern.
+
+Migration command: a one-shot `aigon repair --backfill-snapshots` (or similar) that creates a minimal snapshot for each of the 6 listed features from the spec's current folder position. This is the ONE allowed exception to "never recreate workflow state from folder position" and must be behind an explicit flag so it never runs as part of a normal command.
+
 ## Dependencies
 - None
 
