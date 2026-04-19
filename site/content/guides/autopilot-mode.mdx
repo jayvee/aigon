@@ -3,6 +3,12 @@ title: Autonomous Mode
 description: Hands-off feature execution with the AutoConductor — implement, review, evaluate, and close without intervention.
 ---
 
+import { Callout } from "nextra/components";
+
+<Callout type="info">
+  **Aigon Pro feature.** Autonomous mode — including `feature-autonomous-start`, `research-autopilot`, and the workflow-definition layer — is part of [Aigon Pro](/pro). Without Pro installed, running these commands prints a gate message pointing you to the free alternative (`feature-start` + `feature-do`). Pro is coming soon; see [aigon.build/pro](/pro) for launch updates.
+</Callout>
+
 Autonomous mode lets you start a feature and walk away. The **AutoConductor** — a dedicated background tmux session — watches workflow state and triggers the next stage automatically.
 
 ## How it works

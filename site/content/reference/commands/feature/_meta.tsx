@@ -1,3 +1,5 @@
+import { withPro } from "../../../../components/pro-badge";
+
 export default {
   "feature-create": "feature-create",
   "feature-prioritise": "feature-prioritise",
@@ -10,7 +12,7 @@ export default {
   "feature-push": "feature-push",
   "feature-close": "feature-close",
   "feature-cleanup": "feature-cleanup",
-  "feature-autonomous-start": "feature-autonomous-start",
+  "feature-autonomous-start": { title: withPro("feature-autonomous-start") },
   "feature-validate": "feature-validate",
   "feature-reset": "feature-reset",
 };
