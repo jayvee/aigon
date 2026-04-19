@@ -11,16 +11,16 @@ This feature makes `templates/agents/*.json` the single source of truth for all 
 - [ ] As a maintainer updating an agent's display name, install hint, or capabilities, I want downstream consumers to reflect the change from registry data rather than separate manual edits.
 
 ## Acceptance Criteria
-- [ ] The dashboard agent picker UI, display-name maps, short-name maps, and any other agent label data used by the frontend are derived from the live agent registry, not hardcoded in `templates/dashboard/js/*.js` or `templates/dashboard/index.html`. The server may inject this data at serve time or expose it via API.
+- [ ] The dashboard agent picker UI, display-name maps, short-name maps, autonomous/eligibility flags, and any other agent metadata used by the frontend are derived from the live agent registry, not hardcoded in `templates/dashboard/js/*.js` or `templates/dashboard/index.html`. The server-side read path is the authority for this payload; the frontend may only render/filter what the server provides and must not introduce a second hardcoded eligibility list.
 - [ ] `lib/templates.js` does not own duplicate agent metadata. Any remaining compatibility layer must be a thin projection of `lib/agent-registry.js`, not a second hand-maintained source.
 - [ ] Port allocations are derived from registry metadata (`portOffset` or equivalent) through shared code. `templates/profiles.json` must not contain hand-maintained per-agent port maps.
 - [ ] `aigon install-agent` uses registry metadata for available agent IDs, display names, CLI names, and install hints. `lib/commands/setup.js` must not maintain a separate hardcoded install-hint map for built-in agents.
-- [ ] Terminal help output (`templates/help.txt`) and generated agent help/reference content that enumerates supported agents are produced from registry data, not manually maintained agent lists.
-- [ ] Generic command templates that currently embed agent families in prose or examples use explicit placeholders substituted from registry-derived groups (for example, slash-command agents vs skill-based agents) rather than hardcoded ID lists.
-- [ ] `lib/git.js` co-author token regex is built dynamically from the registry's email-attribution agents, not a hardcoded alternation.
+- [ ] Terminal help output (`templates/help.txt`) and generated agent help/reference content that enumerate currently supported agents are produced from registry data, not manually maintained agent lists. Historical or archival docs are exempt.
+- [ ] Generic command templates that currently embed agent families in prose or examples use explicit placeholders substituted from registry-derived groups (for example, slash-command agents vs skill-based agents) rather than hardcoded ID lists. The grouping logic must live in shared generation code, not duplicated across individual templates.
+- [ ] `lib/git.js` co-author token regex is built dynamically from the registry's email-attribution agents, not a hardcoded alternation. If no agents qualify, the helper must degrade safely without throwing at module load.
 - [ ] Removing `templates/agents/mv.json` is sufficient to remove `mv` from all operational and generated surfaces: dashboard UI, help output, install-agent output, port maps, config defaults, and active agent docs/reference pages. Historical specs, logs, and research documents may still mention `mv`.
 - [ ] The docs/reference surfaces that describe currently supported agents are generated from or validated against the registry. Static docs that intentionally describe historical agents are exempt.
-- [ ] A regression test covers the registry contract: every consumer of agent metadata included in scope (dashboard payload, port maps, install hints, git regex inputs, help/reference output) contains exactly the agents present in `templates/agents/*.json` — no more, no less.
+- [ ] A regression test covers the registry contract: every consumer of agent metadata included in scope (dashboard payload, port maps, install hints, git regex inputs, help/reference output) contains exactly the agents present in `templates/agents/*.json` — no more, no less. The test must fail on both missing-agent and extra-agent drift.
 
 ## Validation
 ```bash
@@ -29,26 +29,36 @@ node -c lib/templates.js
 node -c lib/git.js
 node -c lib/profile-placeholders.js
 node -c lib/commands/setup.js
+node -c lib/dashboard-server.js
 node -c templates/dashboard/js/actions.js
 npm test
+aigon install-agent cx
+aigon server restart
 ```
 
+Manual verification after restart:
+- Confirm the dashboard renders the same agent picker/fleet-start controls without console errors and that agent labels come from the injected/runtime payload rather than template literals.
+- Temporarily removing one registry file in a throwaway branch or test fixture removes that agent from generated/install surfaces without follow-up code edits.
+
 ## Technical Approach
-The work naturally splits into five scopes:
+Implement in this order so ownership stays clear and downstream surfaces can project from one source:
 
 **1. Consolidate `lib/templates.js` AGENT_DEFS → agent-registry**
 Remove `AGENT_DEFS` from `lib/templates.js`. Add `terminalColor`, `bannerColor`, and `portOffset` fields to the JSON schema in `templates/agents/*.json`. Redirect all callers of `AGENT_DEFS` to use `lib/agent-registry.js` lookup helpers.
 
-**2. Dashboard frontend: inject agent list from server, not hardcoded**
-In `lib/dashboard-server.js`, inject a `<script>` block defining `window.__AIGON_AGENTS__` into `index.html` at serve time. This payload must include display names, short names, and autonomous agent flags derived from `lib/agent-registry.js`. Update `templates/dashboard/js/actions.js` and the fleet-start UI to iterate over `window.__AIGON_AGENTS__` instead of hardcoded lists.
+**2. Add one shared projection layer for downstream consumers**
+If existing consumers need slightly different shapes, add a shared projection/helper layer next to `lib/agent-registry.js` rather than letting each module reshape raw registry data independently. This is the only acceptable compatibility layer.
 
-**3. Port maps in `profiles.json` → computed from agent JSON**
+**3. Dashboard frontend: inject agent list from server, not hardcoded**
+In `lib/dashboard-server.js`, inject a `<script>` block defining `window.__AIGON_AGENTS__` into `index.html` at serve time. This payload must include each agent's `id`, display name, short name, and autonomous/eligibility flags derived from `lib/agent-registry.js`. Update `templates/dashboard/js/actions.js` and the fleet-start UI to iterate over `window.__AIGON_AGENTS__` instead of hardcoded lists.
+
+**4. Port maps in `profiles.json` → computed from agent JSON**
 Standardize on the `portOffset` field in agent JSON files. Update `lib/profile-placeholders.js` to build the port map dynamically by iterating over registered agents. Delete all per-agent hardcoded port entries from `templates/profiles.json`.
 
-**4. Help/install/docs surfaces: generate from registry**
+**5. Help/install/docs surfaces: generate from registry**
 Update `lib/commands/setup.js` to read `installHint` from the agent JSON via the registry rather than a local map. Generate `templates/help.txt` agent lists using registry-backed helpers during `install-agent`.
 
-**5. Text templates: replace hardcoded agent lists with placeholders**
+**6. Text templates: replace hardcoded agent lists with placeholders**
 Update `feature-review.md` and `feature-review-check.md` to replace hardcoded lists (e.g., "cc, gg, cx, cu") with `{{AGENT_IDS_SLASH_COMMAND}}` and `{{AGENT_IDS_SKILL}}`. Compute these placeholders at install time based on capability flags in the agent JSON files.
 Update `lib/git.js` to dynamically build the `co-author` alternation regex using `agentRegistry.getAllAgentIds()` at module load.
 
@@ -82,6 +92,8 @@ Before an agent can be added to `templates/agents/`, it must satisfy the minimum
 
 The `templates/agents/<id>.json` file should record which of the above capabilities the agent has, using fields already present in the schema (`signals`, `capabilities`, `contextDelivery`). This makes it machine-checkable: `aigon doctor` can warn if a registered agent lacks a required capability field.
 
+At minimum, the registry entry used by this feature must continue to supply or derive the fields needed by current consumers: identity (`id`, display name, CLI/install naming), install hints, attribution/email behavior, dashboard labels/eligibility flags, and `portOffset`.
+
 ## Dependencies
 - `lib/agent-registry.js` (existing registry)
 - `templates/agents/*.json` (existing per-agent JSON files)
@@ -94,15 +106,12 @@ The `templates/agents/<id>.json` file should record which of the above capabilit
 - Changing which agents are supported
 - Rewriting historical specs, research logs, or changelog-style docs to erase references to removed agents
 
-## Open Questions
-- Should `AGENT_DEFS` in `lib/templates.js` be deleted outright (callers refactored to registry) or aliased to registry output as a bridge? Deletion is cleaner but touches more call sites.
-- For the dashboard injection approach: should the injected script be a literal object or a call to a server endpoint? Literal is simpler; endpoint keeps the HTML template static.
-- Does `lib/git.js` building the regex dynamically introduce a startup cost worth worrying about? (Probably not — it's a tiny array join.)
-- Which docs/reference pages should be generated vs merely validated? Generating is cleaner for consistency; validation is lower churn if the site wants editorial control over prose.
+## Decisions / Remaining Questions
+- Decision: `AGENT_DEFS` should stop being a hand-maintained source. A temporary compatibility export is acceptable only if it is mechanically projected from `lib/agent-registry.js`.
+- Decision: the dashboard should use a server-injected payload for this feature rather than introducing a new endpoint. That keeps the change scoped to replacing hardcoded frontend data, not redesigning dashboard transport.
+- Open question: which docs/reference pages should be fully generated vs merely validated against the registry? The implementation should enumerate the chosen surfaces in the PR so the boundary is explicit.
 
 ## Related
 - Deletion that prompted this: commit `e8905873` (chore: remove Mistral Vibe mv agent) — touched 14 files for a one-agent removal
 - `lib/agent-registry.js` — existing runtime registry (already the right shape)
-- `lib/profile-placeholders.js` — owns port and env placeholder injection at install time
-xisting runtime registry (already the right shape)
 - `lib/profile-placeholders.js` — owns port and env placeholder injection at install time
