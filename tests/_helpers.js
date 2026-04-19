@@ -1,29 +1,9 @@
 'use strict';
-/**
- * Shared test runner + temp-dir helpers for tests/integration/*.test.js.
- *
- * Each test file requires this module, calls test() / testAsync() to register
- * cases, and calls report() at the bottom. Sync tests run immediately; async
- * tests are collected and awaited inside report().
- *
- * Module-level state (passed/failed/asyncTests) is per-process — npm test
- * invokes each test file as its own node process so counters never leak
- * across files.
- *
- * REGRESSION: prevents the boilerplate drift identified in the 2026-04-07
- * test audit, where 5 test files each declared their own near-identical
- * test runner (~88 LOC duplicated). Changes to error formatting or async
- * handling now happen in one place.
- */
 
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-// Shared git env for tests that spawn git/aigon under a fake HOME.
-// GIT_CONFIG_GLOBAL=/dev/null scrubs macOS keychain helpers AND wipes
-// user.name/email, so GIT_AUTHOR_* / GIT_COMMITTER_* must be supplied
-// explicitly — otherwise `git commit` fails with "empty ident".
 const GIT_SAFE_ENV = Object.freeze({
     GIT_CONFIG_GLOBAL: '/dev/null',
     GIT_CONFIG_SYSTEM: '/dev/null',

@@ -1,14 +1,6 @@
 // @ts-check
 'use strict';
 
-/**
- * Shared helpers for dashboard e2e specs (solo, fleet, solo-branch).
- *
- * REGRESSION: one source of truth for navigation + prioritise + close
- * verification prevents per-spec drift like the fleet-lifecycle .status-running
- * assertion bug that hid for six days (commit cd784ebb, 2026-04-01).
- */
-
 const { expect } = require('@playwright/test');
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -21,9 +13,6 @@ const FAST = process.env.MOCK_DELAY === 'fast' || !!process.env.CI;
 const SOLO_DELAYS = FAST
     ? { implementing: 600, submitted: 300 }
     : { implementing: 15000, submitted: 5000 };
-// Fleet asserts an intermediate state (cc submitted, gg still in flight) AND
-// a final all-submitted state. Both observations need the dashboard poll
-// cycle; fast delays race those cycles and flake. ~40s runtime.
 const FLEET_CC_DELAYS = { implementing: 3000, submitted: 1500 };
 const FLEET_GG_DELAYS = { implementing: 8000, submitted: 1500 };
 

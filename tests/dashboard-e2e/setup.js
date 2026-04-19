@@ -1,14 +1,6 @@
 // @ts-check
 'use strict';
 
-/**
- * Playwright globalSetup for dashboard e2e tests.
- *
- * Creates a temp fixture (copy of brewboard), starts a real dashboard server
- * on port 4119 pointed at the fixture, and writes context to a temp JSON file
- * so tests can find the fixture dir, worktree base, and dashboard PID.
- */
-
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -21,7 +13,6 @@ const CLI_PATH = path.join(ROOT, 'aigon-cli.js');
 const FIXTURES_DIR = path.join(os.homedir(), 'src');
 const MOCK_BIN_DIR = path.join(ROOT, 'tests', 'integration', 'mock-bin');
 
-/** Shared context file path — tests read this to locate fixture dirs */
 const CTX_FILE = path.join(os.tmpdir(), 'aigon-dashboard-e2e-ctx.json');
 exports.CTX_FILE = CTX_FILE;
 
