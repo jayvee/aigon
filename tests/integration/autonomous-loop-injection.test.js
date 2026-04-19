@@ -27,19 +27,10 @@ for (const file of fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.json'))) 
     });
 }
 
-test('fail-closed: unknown agent defaults to path-pointer', () => {
-    const p = buildReviewCheckFeedbackPrompt('zz', '01', { loadAgentConfig: () => ({ output: { commandDir: '.agents/skills' } }) });
-    assert.ok(p.includes('.agents/skills/') && !/\/aigon:/.test(p), p);
-});
-
-test('injected agent config controls slash-command capability during tests', () => {
-    const p = buildReviewCheckFeedbackPrompt('zz', '01', {
-        loadAgentConfig: () => ({
-            capabilities: { resolvesSlashCommands: true },
-            cli: { reviewCheckPrompt: '/aigon:feature-review-check {featureId}' },
-        }),
-    });
-    assert.ok(p.includes('/aigon:feature-review-check 01'), p);
+test('injected config controls gating: true→slash, missing→fail-closed path-pointer', () => {
+    const mk = (caps) => buildReviewCheckFeedbackPrompt('zz', '01', { loadAgentConfig: () => ({ capabilities: caps, cli: { reviewCheckPrompt: '/aigon:feature-review-check {featureId}' }, output: { commandDir: '.agents/skills' } }) });
+    assert.ok(mk({ resolvesSlashCommands: true }).includes('/aigon:feature-review-check 01'));
+    assert.ok(mk({}).includes('.agents/skills/') && !/\/aigon:/.test(mk({})));
 });
 
 report();
