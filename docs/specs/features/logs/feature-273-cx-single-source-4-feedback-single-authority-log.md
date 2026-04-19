@@ -37,3 +37,22 @@ Agent: cx
 ## Conversation Summary
 - The work followed the prepared feature worktree and spec directly.
 - No user clarification was needed; the implementation focused on aligning feedback with the repo's single-authority lifecycle model while preserving feedback's non-engine status.
+
+## Code Review
+
+**Reviewed by**: cc (Claude Code, claude-opus-4-7)
+**Date**: 2026-04-19
+
+### Findings
+- No blocking issues. Core behavior matches the spec: frontmatter `status` is the authority, folder position is a projection, drift is reconciled on read, and reconciliation is idempotent. Verified end-to-end with a temp-dir smoke test (file with `status: duplicate` in `01-inbox` → moved to `06-duplicate`; second call no-ops).
+- `normalizeFeedbackStatus` and `FEEDBACK_STATUS_TO_FOLDER` are duplicated between `lib/feedback.js` and `lib/spec-reconciliation.js`. The implementer documented this was deliberate to avoid a circular-dep problem. Acceptable trade-off; minor future maintenance burden if the status vocabulary grows.
+- `readFeedbackDocument` now defaults to `status: 'inbox'` when frontmatter is missing (old code fell back to `FEEDBACK_FOLDER_TO_STATUS[folder]`). For the current repo every feedback file has an explicit `status:`, so there is no practical regression; the spec's "metadata is authority" premise also justifies dropping the folder fallback.
+- `reconcileEntitySpec` scans all six feedback folders via `fs.readdirSync` per call; invoking it in a loop over N items in `feedback-list` and `collectFeedback` is O(N × 6) directory reads per dashboard/list pass. Not a correctness issue and consistent with how feature/research reconciliation is wired, but worth remembering if feedback volumes grow.
+- Per CLAUDE.md T2, non-trivial new behavior should ship with a regression test. No test was added and there is no existing feedback/reconciliation coverage in `tests/` to extend. Consistent with current precedent and the T3 line budget; noted as a gap rather than a blocker.
+
+### Fixes Applied
+- None needed.
+
+### Notes
+- `env -u AIGON_INVOKED_BY_DASHBOARD npm test` is green; the `feature-close-restart.test.js` failure seen under the Codex session's env is pre-existing environmental noise, not caused by this feature.
+- `node --check` passes for all modified files; `aigon feedback-list` works against the live repo.
