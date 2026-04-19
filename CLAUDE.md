@@ -109,6 +109,9 @@ The dashboard UI uses `lib/state-queries.js` for feedback action/transition deri
 
 Research lifecycle is also managed by the workflow-core engine (`.aigon/workflows/research/{id}/`). Feedback entities still stay outside the workflow engine, but their frontmatter `status` is now the authority and visible folders are a reconciled projection of that metadata.
 
+### Write-Path Contract
+Every write path (CLI command, autonomous-loop injection, hook-triggered transition) must produce the engine state its matching read path assumes exists — snapshot, event, or skill-file-pointer prompt for non-slash-command agents. Writes seed engine state; reads derive from it — never the reverse. Recent incidents: F270 → `1c2766bc` (prioritise missing snapshot), F272 → `cbe3aeba` + `98ed172b` (reconciler moving files across repos), AutoConductor → `b9c39a26` (cx injection phantom). When adding a new read path, grep for every parallel write path that produces the state it now assumes, and pin the invariant with a test.
+
 ## Install Architecture
 `aigon install-agent` writes **only aigon-owned files** — it never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).
 
@@ -270,6 +273,7 @@ Never hand-write CSS or guess at Tailwind classes for visual design. The fronten
 - **`.env.local` blocking flow**: treating it as uncommitted changes → blocks `feature-close`
 - **Editing working copies**: changing `.claude/commands/` instead of `templates/` → lost on next sync
 - **Manual feature reset**: stitching `feature-cleanup` + `git mv` + `rm -rf .aigon/workflows/...` to start a feature over → use `aigon feature-reset <ID>` instead. It does the full sequence including `sessions-close` (which the manual path always forgets)
+- **Hardening a read path without auditing parallel write paths**: three separate bugs in 24 hours (commits `1c2766bc`, `cbe3aeba`, `b9c39a26`) came from this — always grep for every write path that produces the state the read path now assumes is present.
 
 ## Reading Order
 1. `AGENTS.md` (this file) — quick orientation
