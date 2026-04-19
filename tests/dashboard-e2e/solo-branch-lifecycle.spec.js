@@ -21,17 +21,11 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const {
-    SOLO_DELAYS, readCtx, forceRefresh, gotoPipelineWithMockedSessions,
+    SOLO_DELAYS, GIT_SAFE_ENV, readCtx, forceRefresh, gotoPipelineWithMockedSessions,
     prioritiseInboxFeature, clickCardAction, expectFeatureClosed,
 } = require('./_helpers');
 
 const CLI_PATH = path.join(__dirname, '..', '..', 'aigon-cli.js');
-const GIT_SAFE_ENV = {
-    GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_SYSTEM: '/dev/null',
-    GIT_TERMINAL_PROMPT: '0', GIT_ASKPASS: '/usr/bin/true',
-    GIT_AUTHOR_NAME: 'Aigon Test', GIT_AUTHOR_EMAIL: 'test@aigon.test',
-    GIT_COMMITTER_NAME: 'Aigon Test', GIT_COMMITTER_EMAIL: 'test@aigon.test',
-};
 
 function runCli(args, cwd, extraEnv = {}) {
     const r = spawnSync(process.execPath, [CLI_PATH, ...args], {
