@@ -82,3 +82,13 @@
         '</div>' +
       '</span>';
     }
+
+    function buildSpecReviewBadgeHtml(item) {
+      const specReview = item && item.specReview;
+      if (!specReview || !specReview.pendingCount) return '';
+      return '<span class="spec-drift-wrap">' +
+        '<button class="spec-drift-badge spec-drift-toggle" type="button" title="' + escHtml(specReview.pendingLabel || '') + '">' +
+          escHtml(specReview.pendingLabel || (specReview.pendingCount + ' pending')) +
+        '</button>' +
+      '</span>';
+    }
