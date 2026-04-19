@@ -14,6 +14,8 @@ Give feedback entities a single lifecycle authority by making frontmatter `statu
 - [ ] Feedback commands update `status` metadata first, then project the file into the folder derived from that status
 - [ ] Feedback read paths derive stage/status from parsed metadata, not parent folder name
 - [ ] If feedback frontmatter `status` and folder position disagree, `status` wins and the file is moved to the status-derived folder
+- [ ] Folder reconciliation fires on the same trigger as feature/research (single-source-3): dashboard/board/list backend read paths invoke the shared reconciliation helper, which also covers feedback. Corrections are logged with entity id and from/to paths. No reconciliation on user-facing read output only (e.g. raw `cat` of a feedback file).
+- [ ] Reconciliation is idempotent; repeated reads after a correction are a no-op.
 - [ ] Manual `git mv` of a feedback file becomes cosmetic drift, not a lifecycle mutation
 - [ ] The conceptual model is consistent: every entity type follows "one authority, derived folders", even if the authority differs by entity type
 

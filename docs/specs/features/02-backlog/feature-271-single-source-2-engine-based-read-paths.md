@@ -34,6 +34,10 @@ Manual scenarios:
 - Replace folder-derived lifecycle stage calculation in board/dashboard with workflow-driven stage resolution
 - Keep compatibility fallback read-only; it must never bootstrap snapshots or rewrite lifecycle state
 - Prefer shared read abstractions (`lib/workflow-read-model.js`, `lib/workflow-snapshot-adapter.js`) and keep board/dashboard as consumers
+- Layering for the two shared modules — keep them distinct to avoid parallel implementations:
+  - `lib/workflow-snapshot-adapter.js` = raw translation layer. Given a workflow-core snapshot, produce the dashboard/board data shape. No compatibility logic, no filesystem fallback, no case-matrix decisions. Already exists today.
+  - `lib/workflow-read-model.js` = compatibility/matrix layer introduced by this feature. Owns the three-case read matrix (snapshot-backed numeric, no-ID inbox, legacy missing-snapshot numeric). Delegates to the adapter for case 1; reads filesystem for cases 2 and 3; tags case-3 items as `legacy/missing-workflow` for downstream consumers.
+  - `lib/board.js` and `lib/dashboard-status-collector.js` consume the read-model only. They must not call the adapter or filesystem directly.
 - Key files: `lib/board.js`, `lib/dashboard-status-collector.js`, `lib/workflow-read-model.js`, `lib/workflow-snapshot-adapter.js`, `lib/feature-spec-resolver.js`
 
 ## Dependencies
