@@ -175,6 +175,16 @@
     .kcard.dragging{opacity:.3;cursor:grabbing}
     .kcard-id{font-size:11px;color:var(--text-tertiary);font-family:var(--mono)}
     .kcard-name{font-size:12px;font-weight:500;margin:2px 0 6px;line-height:1.3;color:var(--text-primary);word-break:break-word}
+    .spec-drift-wrap{display:inline-flex;position:relative;margin-left:6px;vertical-align:middle}
+    .spec-drift-wrap.open .spec-drift-popover{display:flex}
+    .spec-drift-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 7px;border-radius:999px;border:1px solid rgba(251,146,60,.38);background:rgba(251,146,60,.12);color:#fdba74;cursor:pointer}
+    .spec-drift-badge:hover{background:rgba(251,146,60,.18);border-color:rgba(251,146,60,.55)}
+    .spec-drift-popover{display:none;position:absolute;top:calc(100% + 8px);right:0;z-index:240;min-width:240px;flex-direction:column;gap:6px;padding:10px;border-radius:8px;border:1px solid rgba(251,146,60,.25);background:rgba(15,23,42,.98);box-shadow:0 12px 30px rgba(0,0,0,.35)}
+    .spec-drift-title{font-size:11px;font-weight:700;color:#fed7aa}
+    .spec-drift-meta{font-size:10px;color:var(--text-secondary)}
+    .spec-drift-label{font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em}
+    .spec-drift-path{display:block;font-size:10px;line-height:1.45;padding:6px 8px;border-radius:6px;background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.16);color:#e2e8f0;white-space:normal;word-break:break-all}
+    .spec-drift-actions{display:flex;justify-content:flex-end}
     .kcard-agents{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
     .agent-badge{font-size:10px;font-family:var(--mono);padding:1px 6px;border-radius:999px;background:var(--bg-elevated);border:1px solid var(--border-subtle);color:var(--text-secondary)}
     .agent-badge.implementing{border-color:rgba(59,130,246,.4);color:#93c5fd}
