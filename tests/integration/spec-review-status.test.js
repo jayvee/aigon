@@ -8,93 +8,58 @@ const { execSync } = require('child_process');
 const { test, withTempDir, report } = require('../_helpers');
 const { applySpecReviewStatus, clearTierCache } = require('../../lib/dashboard-status-collector');
 
+const DIRS = ['docs/specs/features/01-inbox', 'docs/specs/features/02-backlog', 'docs/specs/research-topics/01-inbox', 'docs/specs/research-topics/02-backlog'];
 function initRepo(repo) {
-    [
-        'docs/specs/features/01-inbox',
-        'docs/specs/features/02-backlog',
-        'docs/specs/research-topics/01-inbox',
-        'docs/specs/research-topics/02-backlog',
-    ].forEach(dir => fs.mkdirSync(path.join(repo, dir), { recursive: true }));
-    execSync('git init -q', { cwd: repo });
-    execSync('git config user.email t@t', { cwd: repo });
-    execSync('git config user.name t', { cwd: repo });
+    DIRS.forEach(d => fs.mkdirSync(path.join(repo, d), { recursive: true }));
+    execSync('git init -q && git config user.email t@t && git config user.name t', { cwd: repo });
 }
+const commit = (repo, msg, body = '', allowEmpty = false) => execSync(
+    `git add . && git commit -qm ${JSON.stringify(msg)}${allowEmpty ? ' --allow-empty' : ''}${body ? ' -m ' + JSON.stringify(body) : ''}`, { cwd: repo });
+const mkItem = (id, stage, specPath) => [{ id, stage, specPath, updatedAt: new Date().toISOString(), validActions: [], nextActions: [] }];
 
-function commitAll(repo, message, body = '', options = {}) {
-    execSync('git add .', { cwd: repo });
-    const allowEmpty = options.allowEmpty ? ' --allow-empty' : '';
-    const cmd = body
-        ? `git commit -qm ${JSON.stringify(message)}${allowEmpty} -m ${JSON.stringify(body)}`
-        : `git commit -qm ${JSON.stringify(message)}${allowEmpty}`;
-    execSync(cmd, { cwd: repo });
-}
-
-// REGRESSION feature 278: dashboard cards must surface pending spec-review
-// state (count + reviewer ids + action) without per-entity git log calls.
+// REGRESSION F278: pending spec-review badge/actions without per-entity git log scans.
 test('feature backlog cards surface pending spec-review badge and actions', () => withTempDir('aigon-spec-review-', (repo) => {
     initRepo(repo);
     const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-12-test.md');
-    fs.writeFileSync(specPath, '# Feature: test\n');
-    commitAll(repo, 'init');
-
+    fs.writeFileSync(specPath, '# Feature: test\n'); commit(repo, 'init');
     fs.writeFileSync(specPath, '# Feature: test\n\nReviewed.\n');
-    commitAll(repo, 'spec-review: feature 12 — tighten acceptance criteria', 'Reviewer: gg');
-
-    const items = [{ id: '12', stage: 'backlog', specPath, updatedAt: new Date().toISOString(), validActions: [], nextActions: [] }];
-    clearTierCache(repo);
-    applySpecReviewStatus(repo, items, []);
-
+    commit(repo, 'spec-review: feature 12 — tighten acceptance criteria', 'Reviewer: gg');
+    const items = mkItem('12', 'backlog', specPath);
+    clearTierCache(repo); applySpecReviewStatus(repo, items, []);
     assert.strictEqual(items[0].specReview.pendingCount, 1);
     assert.deepStrictEqual(items[0].specReview.pendingAgents, ['gg']);
-    assert.ok(items[0].validActions.some(action => action.action === 'feature-spec-review'));
-    assert.ok(items[0].validActions.some(action => action.action === 'feature-spec-review-check'));
+    assert.ok(items[0].validActions.some(a => a.action === 'feature-spec-review'));
+    assert.ok(items[0].validActions.some(a => a.action === 'feature-spec-review-check'));
 }));
 
-// REGRESSION feature 278: --find-renames must follow the spec across
-// lifecycle folder moves (inbox → backlog) so a prioritise commit doesn't
-// orphan a pending review.
+// REGRESSION F278: --find-renames follows spec across inbox→backlog prioritise moves.
 test('pending spec reviews survive visible spec renames', () => withTempDir('aigon-spec-review-', (repo) => {
     initRepo(repo);
     const inboxPath = path.join(repo, 'docs/specs/features/01-inbox/feature-test-topic.md');
-    fs.writeFileSync(inboxPath, '# Feature: topic\n');
-    commitAll(repo, 'init');
-
+    fs.writeFileSync(inboxPath, '# Feature: topic\n'); commit(repo, 'init');
     fs.writeFileSync(inboxPath, '# Feature: topic\n\nInbox review.\n');
-    commitAll(repo, 'spec-review: feature test-topic — tighten scope', 'Reviewer: cx');
-
+    commit(repo, 'spec-review: feature test-topic — tighten scope', 'Reviewer: cx');
     const backlogPath = path.join(repo, 'docs/specs/features/02-backlog/feature-12-test-topic.md');
-    fs.mkdirSync(path.dirname(backlogPath), { recursive: true });
-    fs.renameSync(inboxPath, backlogPath);
-    commitAll(repo, 'chore: prioritise feature 12');
-
-    const items = [{ id: '12', stage: 'backlog', specPath: backlogPath, updatedAt: new Date().toISOString(), validActions: [], nextActions: [] }];
-    clearTierCache(repo);
-    applySpecReviewStatus(repo, items, []);
-
+    fs.renameSync(inboxPath, backlogPath); commit(repo, 'chore: prioritise feature 12');
+    const items = mkItem('12', 'backlog', backlogPath);
+    clearTierCache(repo); applySpecReviewStatus(repo, items, []);
     assert.strictEqual(items[0].specReview.pendingCount, 1);
     assert.deepStrictEqual(items[0].specReview.pendingAgents, ['cx']);
 }));
 
-// REGRESSION feature 278: an empty-body spec-review-check: ack commit must
-// still clear the pending-review badge — early impl missed allowEmpty acks
-// because the name-status scan dropped commits with no tree changes.
+// REGRESSION F278: allowEmpty spec-review-check ack clears badge (no tree changes).
 test('ack commit clears pending spec-review check action', () => withTempDir('aigon-spec-review-', (repo) => {
     initRepo(repo);
     const specPath = path.join(repo, 'docs/specs/research-topics/02-backlog/research-21-topic.md');
-    fs.writeFileSync(specPath, '# Research: topic\n');
-    commitAll(repo, 'init');
-
+    fs.writeFileSync(specPath, '# Research: topic\n'); commit(repo, 'init');
     fs.writeFileSync(specPath, '# Research: topic\n\nReviewed.\n');
-    commitAll(repo, 'spec-review: research 21 — tighten questions', 'Reviewer: cc');
-    commitAll(repo, 'spec-review-check: research 21 — accepted', 'reviewed: cc', { allowEmpty: true });
-
-    const items = [{ id: '21', stage: 'backlog', specPath, updatedAt: new Date().toISOString(), validActions: [], nextActions: [] }];
-    clearTierCache(repo);
-    applySpecReviewStatus(repo, [], items);
-
+    commit(repo, 'spec-review: research 21 — tighten questions', 'Reviewer: cc');
+    commit(repo, 'spec-review-check: research 21 — accepted', 'reviewed: cc', true);
+    const items = mkItem('21', 'backlog', specPath);
+    clearTierCache(repo); applySpecReviewStatus(repo, [], items);
     assert.strictEqual(items[0].specReview.pendingCount, 0);
-    assert.ok(items[0].validActions.some(action => action.action === 'research-spec-review'));
-    assert.ok(!items[0].validActions.some(action => action.action === 'research-spec-review-check'));
+    assert.ok(items[0].validActions.some(a => a.action === 'research-spec-review'));
+    assert.ok(!items[0].validActions.some(a => a.action === 'research-spec-review-check'));
 }));
 
 report();

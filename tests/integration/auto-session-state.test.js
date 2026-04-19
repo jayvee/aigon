@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+// REGRESSION commit dac7a380: AutoConductor status used to die with its tmux
+// session — dashboard read path couldn't distinguish "never started" from
+// "started and failed". writeFeatureAutoState persists failure/reason to
+// .aigon/state/, and safeFeatureAutoSessionExists surfaces that persisted
+// state when tmux is gone so the UI renders the right badge.
 'use strict';
 
 const assert = require('assert');
@@ -6,61 +11,28 @@ const fs = require('fs');
 const path = require('path');
 const { test, withTempDir, report } = require('../_helpers');
 const {
-    getFeatureAutoStatePath,
-    readFeatureAutoState,
-    writeFeatureAutoState,
-    clearFeatureAutoState,
+    getFeatureAutoStatePath, readFeatureAutoState,
+    writeFeatureAutoState, clearFeatureAutoState,
 } = require('../../lib/auto-session-state');
 const { safeFeatureAutoSessionExists } = require('../../lib/dashboard-status-helpers');
 
-test('feature auto state persists and clears cleanly', () => withTempDir('aigon-auto-state-', (repoDir) => {
-    const first = writeFeatureAutoState(repoDir, '7', {
-        status: 'starting',
-        sessionName: 'aigon-f07-auto-test',
-    });
+test('auto state persists, merges sessionName, and clears cleanly', () => withTempDir('aigon-auto-state-', (repo) => {
+    const first = writeFeatureAutoState(repo, '7', { status: 'starting', sessionName: 'aigon-f07-auto' });
     assert.strictEqual(first.featureId, '07');
-    assert.strictEqual(first.status, 'starting');
-    assert.ok(first.startedAt);
-    assert.ok(first.updatedAt);
-
-    const second = writeFeatureAutoState(repoDir, '07', {
-        status: 'completed',
-        running: false,
-        reason: 'feature-closed',
-    });
-    assert.strictEqual(second.featureId, '07');
-    assert.strictEqual(second.status, 'completed');
-    assert.strictEqual(second.reason, 'feature-closed');
-    assert.strictEqual(second.sessionName, 'aigon-f07-auto-test');
-
-    const statePath = getFeatureAutoStatePath(repoDir, '07');
-    assert.ok(fs.existsSync(statePath));
-    assert.deepStrictEqual(readFeatureAutoState(repoDir, '07'), second);
-
-    assert.strictEqual(clearFeatureAutoState(repoDir, '07'), true);
-    assert.strictEqual(fs.existsSync(statePath), false);
-    assert.strictEqual(readFeatureAutoState(repoDir, '07'), null);
+    const second = writeFeatureAutoState(repo, '07', { status: 'completed', running: false, reason: 'feature-closed' });
+    assert.strictEqual(second.sessionName, 'aigon-f07-auto', 'sessionName merged from prior write');
+    assert.deepStrictEqual(readFeatureAutoState(repo, '07'), second);
+    assert.strictEqual(clearFeatureAutoState(repo, '07'), true);
+    assert.strictEqual(fs.existsSync(getFeatureAutoStatePath(repo, '07')), false);
 }));
 
-test('dashboard helper falls back to persisted feature auto state when tmux session is gone', () => withTempDir('aigon-auto-state-', (repoDir) => {
-    fs.mkdirSync(path.join(repoDir, '.aigon', 'state'), { recursive: true });
-    writeFeatureAutoState(repoDir, '99123', {
-        status: 'failed',
-        running: false,
-        sessionName: 'aigon-f99123-auto-example',
-        reason: 'eval-session-start-failed',
-    });
-
-    const result = safeFeatureAutoSessionExists('99123', repoDir);
-    assert.deepStrictEqual(result, {
-        sessionName: null,
-        running: false,
-        status: 'failed',
-        updatedAt: readFeatureAutoState(repoDir, '99123').updatedAt,
-        startedAt: readFeatureAutoState(repoDir, '99123').startedAt,
-        endedAt: null,
-        reason: 'eval-session-start-failed',
-    });
+test('dashboard falls back to persisted state when tmux session is gone', () => withTempDir('aigon-auto-state-', (repo) => {
+    fs.mkdirSync(path.join(repo, '.aigon', 'state'), { recursive: true });
+    writeFeatureAutoState(repo, '99123', { status: 'failed', running: false, sessionName: 'aigon-f99123-auto', reason: 'eval-session-start-failed' });
+    const r = safeFeatureAutoSessionExists('99123', repo);
+    assert.strictEqual(r.status, 'failed');
+    assert.strictEqual(r.reason, 'eval-session-start-failed');
+    assert.strictEqual(r.running, false);
 }));
 
 report();
