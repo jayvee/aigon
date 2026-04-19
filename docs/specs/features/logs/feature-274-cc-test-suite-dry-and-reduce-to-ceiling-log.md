@@ -1,3 +1,26 @@
+---
+commit_count: 12
+lines_added: 775
+lines_removed: 1604
+lines_changed: 2379
+files_touched: 31
+fix_commit_count: 2
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 369
+output_tokens: 166815
+cache_creation_input_tokens: 705728
+cache_read_input_tokens: 34953167
+thinking_tokens: 0
+total_tokens: 35826079
+billable_tokens: 167184
+cost_usd: 78.1788
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 274 - test-suite-dry-and-reduce-to-ceiling
 Agent: cc
 
