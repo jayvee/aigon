@@ -30,3 +30,21 @@ Agent: cx
 ## Conversation Summary
 - The implementation followed the feature spec directly from the prepared worktree for feature `272`.
 - No extra user clarification was needed; the work focused on unifying spec-drift reconciliation and preserving `aigon repair` cleanup behavior.
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-04-19
+
+### Findings
+- All 8 acceptance criteria satisfied; shared helper, read-path wiring, and `aigon repair` reuse all match the spec.
+- Engine->folder one-way invariant holds: the previous `doneSpecExists && lifecycle !== 'done'` branch that called `wf.closeEntity` is correctly removed from repair.
+- `reconcileEntitySpec` filesystem operations (`fs.mkdirSync` / `fs.unlinkSync` / `fs.renameSync`) run on every dashboard/board read via `getBaseDashboardState`. They were unguarded, so a transient filesystem error or race (e.g. concurrent `aigon board` + dashboard refresh, or a manual `git mv` happening mid-read) would propagate up and break dashboard HTTP responses.
+- Minor, not fixed: repair diagnosis line changed from `spec: <stage>` to `spec: <absolute path>` (noisier, but still correct) and prints `spec: missing` for inbox features with no workflow state even when a visible spec exists — acceptable because repair is only meaningful once workflow state exists.
+- Pre-existing test failures (pro-gate, feature-close-restart) reproduce on `main`; unrelated to this change.
+
+### Fixes Applied
+- `fix(review): guard spec reconciliation filesystem ops against races` — wrapped the mkdir/exists/unlink/rename block in try/catch so reconciliation returns `skipped: 'rename-failed'` with a warning instead of throwing and crashing the read path.
+
+### Notes
+- Dashboard reads now perform a filesystem reconciliation per entity on each refresh. That is what the spec requires (engine wins), but if drift never actually happens in practice, this is extra I/O per refresh. Worth a look if dashboard latency becomes a concern — not worth optimising pre-emptively.
