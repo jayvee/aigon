@@ -1,3 +1,26 @@
+---
+commit_count: 8
+lines_added: 211
+lines_removed: 40
+lines_changed: 251
+files_touched: 12
+fix_commit_count: 3
+fix_commit_ratio: 0.375
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 221
+output_tokens: 126191
+cache_creation_input_tokens: 725378
+cache_read_input_tokens: 16892182
+thinking_tokens: 0
+total_tokens: 17743972
+billable_tokens: 126412
+cost_usd: 48.4068
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 277 - harden-autonomous-loop-write-paths
 Agent: cc
 
