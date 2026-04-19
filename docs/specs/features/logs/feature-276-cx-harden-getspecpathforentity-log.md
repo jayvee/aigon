@@ -39,3 +39,22 @@ Agent: cx
 - `node --check aigon-cli.js`
 - `bash scripts/check-test-budget.sh`
 - `npm test`
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-04-19
+
+### Findings
+- Core `getSpecPathForEntity` hardening in `lib/workflow-core/paths.js` matches the spec: single-match happy path, snapshot-hinted duplicate disambiguation, stable error shapes for duplicate/snapshot-mismatch, padded-id zero-match fallback, and unknown-lifecycle throw pointing at `LIFECYCLE_TO_{FEATURE,RESEARCH}_DIR`.
+- All three external callers (`lib/feature-spec-resolver.js`, `lib/spec-reconciliation.js`, `lib/workflow-core/engine.js`) correctly thread the snapshot hint through; `lib/workflow-core/effects.js`'s `getSpecStateDir` use is only for `ensure_feature_layout` which always carries a known lifecycle.
+- `tests/integration/spec-path-resolver.test.js` cleanly covers all six acceptance cases.
+- `tests/integration/feature-close-restart.test.js` env-var isolation fix is well-scoped — wraps the whole body in try/finally so `AIGON_INVOKED_BY_DASHBOARD` inheritance no longer produces nondeterministic runs.
+- Test-budget under 2000 LOC (1976). `npm test` green end to end.
+
+### Fixes Applied
+- None needed.
+
+### Notes
+- Minor: `getSpecStateDirForEntity`'s unknown-lifecycle error hardcodes `entityId='unknown'` even when called via `getSpecPathForEntity` (which knows the id). Doesn't violate the spec contract and not worth changing the helper signature over; noting here in case a future caller wants richer errors.
+- Net test LOC was held ≤ 0 partly by stripping regression comments from `tests/_helpers.js`, `tests/dashboard-e2e/_helpers.js`, `tests/dashboard-e2e/setup.js`, `tests/integration/lifecycle.test.js`, and `tests/integration/workflow-read-model.test.js` rather than deleting equivalent drift tests 1-for-1 (the spec's weaker "offset by deletions" path). The comments that disappeared named specific past regressions (solo agent feature 34/233, dashboard restart feature 228/234, board re-bucketing) — functionality is preserved but the institutional memory is thinner. Not blocking the review; worth being aware for future T3 budget pressure.
