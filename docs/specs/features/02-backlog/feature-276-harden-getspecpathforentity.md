@@ -16,6 +16,9 @@
 - [ ] Existing stray files under `.aigon/workflows/specs/{inbox,done,implementing}/` (pre-existing `172.md`, `173.md`, and anything else) are left on disk untouched — this feature changes code, not data.
 - [ ] All callers that relied on the `.aigon/workflows/specs/` fallback are either updated to provide the missing mapping or confirmed not to hit it (verified via grep + manual trace, covered by tests below).
 - [ ] New unit tests cover: single-match happy path, duplicate-match with snapshot disambiguation, duplicate-match without snapshot (throws), zero-match fallback, missing-lifecycle throw.
+- [ ] Net test-suite LOC change ≤ 0. New `tests/integration/spec-path-resolver.test.js` either replaces equivalent older drift/path tests 1-for-1, or is offset by deletions in the same commit. `bash scripts/check-test-budget.sh` passes at end of feature. (F274 landed the suite at 1974 LOC; this feature must not reopen the T3 budget fight.)
+- [ ] Errors thrown for duplicate-without-disambiguation and missing-lifecycle cases use a consistent message shape so tests and log grepping are stable: `Spec path resolution failed for <entityType>#<entityId>: <reason>. <details>` — where `<reason>` is one of `duplicate-matches-no-snapshot-hint`, `duplicate-matches-snapshot-mismatch`, `unknown-lifecycle`, and `<details>` lists the relevant filenames / lifecycle value. Error shape is stable across both `getSpecPathForEntity` and `getSpecStateDirForEntity`.
+- [ ] Pre-implementation lifecycle sweep has been run across all registered repos and the result is logged in the feature log. Any lifecycle values found in the wild that are not in `LIFECYCLE_TO_{FEATURE,RESEARCH}_DIR` must be either added to the map or noted as dead data before the throw-on-unknown-lifecycle change ships. Measured 2026-04-19: aigon + jvbot + aigon-pro snapshots use only {inbox, backlog, implementing, reviewing, evaluating, ready_for_review, closing, done, paused} — all present in the current maps.
 
 ## Validation
 ```bash
@@ -46,9 +49,17 @@ Manual scenarios:
 - Broader snapshot-schema work. We read `snapshot.specPath` opportunistically; formalising it as mandatory is another feature.
 - Migration of other path-helper functions (`getEntityRoot`, `getSnapshotPathForEntity`, etc.) — they don't share the duplicate-file hazard.
 
+## Pre-start findings (measured 2026-04-19)
+
+Both original open questions resolved with live data before start:
+
+- **Fallback callers audit:** `grep -n "getSpecStateDirForEntity\|getSpecPathForEntity" lib/**/*.js` shows only three external callers of `getSpecPathForEntity` (`lib/feature-spec-resolver.js`, `lib/spec-reconciliation.js`, `lib/workflow-core/engine.js`) and zero external callers of `getSpecStateDirForEntity` (only internal use within `lib/workflow-core/paths.js`). No caller depends on the `.aigon/workflows/specs/<lifecycle>/` fallback branch. Safe to remove without a migration.
+- **`snapshot.specPath` reliability:** every snapshot in every registered repo with workflow state has `specPath`. Verified counts: aigon 250/250, jvbot 64/64, aigon-pro 21/21 (brewboard was freshly seeded and has no workflows dir). Safe to use as the primary disambiguation hint; a fall-through to `snapshot.lifecycle` + padded-id naming is still worth implementing as defence-in-depth but is not the happy path.
+- **Lifecycle values in the wild:** only {inbox, backlog, implementing, reviewing, evaluating, ready_for_review, closing, done, paused} observed; all are already in `LIFECYCLE_TO_{FEATURE,RESEARCH}_DIR`. No unmapped values will trip the new throw-on-unknown-lifecycle change.
+
 ## Open Questions
-- Is there any legitimate caller that _relies_ on the `.aigon/workflows/specs/<lifecycle>/` fallback to write workflow-internal stub specs? Grep suggests no, but worth confirming during implementation.
-- For the duplicate-match disambiguation, is `snapshot.specPath` reliable across all entities and historical snapshot shapes? Might need a fall-through to `snapshot.lifecycle`-derived dir + `snapshot.featureId` / `snapshot.researchId` name conventions.
+
+- None. Both original open questions resolved above.
 
 ## Related
 - Research:

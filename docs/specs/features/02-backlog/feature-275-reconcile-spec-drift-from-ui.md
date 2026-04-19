@@ -17,6 +17,9 @@ After F272 was made detect-only on dashboard reads (`98ed172b`), the engine stil
 - [ ] No new auto-reconcile paths are introduced. The `workflow-read-model.js` dashboard hook stays dry-run unless `AIGON_AUTO_RECONCILE=1`.
 - [ ] The reconcile endpoint is defined in the action registry (`lib/feature-workflow-rules.js` / `lib/research-workflow-rules.js`) as an infra action with `bypassMachine: true` — consistent with CLAUDE.md rule 8.
 - [ ] Permissions: reconciliation from the UI is refused if the target directory is outside `<repoPath>/docs/specs/` (already enforced in `reconcileEntitySpec` post-`cbe3aeba`, verified end-to-end through the endpoint).
+- [ ] Drift detection boundary is explicit: drift is still detected on every dashboard read regardless of `AIGON_AUTO_RECONCILE`. Only the mutation step is gated by the env var. Detect-only is the default; auto-move is opt-in.
+- [ ] Reconciler is idempotent under concurrent clicks: double-clicking the "Reconcile" button, or two browser tabs clicking simultaneously, results in at most one move and no errors. The second request sees the already-corrected state and returns `driftDetected: false`.
+- [ ] Integration test hits `POST /api/spec-reconcile` with a crafted fixture where `expectedDir` resolves outside `<repoPath>/docs/specs/` and asserts the endpoint returns a non-mutating response (e.g. 400 or `skipped: 'expected-path-outside-docs'`) and the file on disk is unchanged.
 
 ## Validation
 ```bash
@@ -50,7 +53,6 @@ Manual scenarios:
 ## Open Questions
 - Should the badge also show in `aigon board` kanban view, or only in list view? Kanban cards are small; a single `⚠` icon might be enough. Decide at implementation time.
 - Should the popover let the user reveal WHY drift exists (show snapshot `lifecycle` and visible folder stage side-by-side)? Probably yes — helps diagnose stale snapshots vs stale folders.
-- Does `POST /api/spec-reconcile` need rate limiting / double-click protection? Reconciler is idempotent; probably not.
 
 ## Related
 - Research:
