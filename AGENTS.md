@@ -44,9 +44,10 @@ Test overrides: `createAllCommands({ getCurrentBranch: () => 'mock-branch' })`.
 - **Feature runtime / agent status files**: `.aigon/state/feature-{id}-{agent}.json`
 - **Feature autonomous conductor state**: `.aigon/state/feature-{id}-auto.json`
 - **Research lifecycle authority**: `lib/workflow-core/` and `.aigon/workflows/research/{id}/`
-- **Feedback lifecycle authority**: spec folder location plus command logic
+- **Feedback lifecycle authority**: frontmatter `status` in `docs/specs/feedback/`; folder position is a derived projection
 - **Preferred read path (feature + research)**: `lib/workflow-snapshot-adapter.js` via `lib/workflow-read-model.js`, with `lib/spec-reconciliation.js` self-healing visible spec drift from engine state
-- **Fallback read path (feedback + legacy items)**: `lib/workflow-read-model.js` + `lib/state-queries.js`
+- **Feedback read path**: `lib/feedback.js` metadata parsing plus `lib/spec-reconciliation.js` folder reconciliation, consumed by `feedback-list` and `lib/dashboard-status-collector.js`
+- **Fallback read path (legacy feature/research items)**: `lib/workflow-read-model.js` + `lib/state-queries.js`
 
 Important: after feature 171, features no longer use the old coordinator manifest system as the lifecycle source of truth. Folder position is the visible outcome; the engine is the authority that moves the spec.
 
@@ -58,7 +59,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/commands/feature.js` | 2403 | All `feature-*` handlers, `sessions-close` |
 | `lib/commands/infra.js` | 1893 | `aigon server` command, board, config, proxy-setup, dev-server, `sync` |
 | `lib/dashboard-server.js` | ~2660 | AIGON server HTTP module: serves dashboard UI, API, WebSocket relay, polling |
-| `lib/dashboard-status-collector.js` | ~830 | Repo/entity read-side assembly for the AIGON server: feature, research, feedback, summary, and compatibility reads |
+| `lib/dashboard-status-collector.js` | ~830 | Repo/entity read-side assembly for the AIGON server: feature/research workflow reads plus feedback metadata-driven status collection and reconciliation |
 | `lib/utils.js` | 1464 | YAML parsers, spec CRUD, hooks, version, analytics |
 | `lib/worktree.js` | 1510 | Worktree creation, tmux sessions, terminal launch, agent git-attribution metadata setup |
 | `lib/commands/setup.js` | 959 | init, install-agent, check-version, update, doctor |
@@ -68,7 +69,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/workflow-core/migration.js` | ~120 | Explicit migration helpers for pre-cutover feature/research lifecycle backfill |
 | `lib/workflow-snapshot-adapter.js` | ~310 | Shared read adapter: maps feature/research engine snapshots to dashboard/board formats |
 | `lib/feature-spec-resolver.js` | ~200 | Canonical feature/research visible spec lookup; shields consumers from folder guessing and placeholder specs |
-| `lib/spec-reconciliation.js` | ~130 | Shared engine->folder self-healing helper for feature/research spec drift; reused by read paths and `aigon repair` |
+| `lib/spec-reconciliation.js` | ~130 | Shared self-healing spec projection helper: engine->folder for feature/research, metadata-status->folder for feedback; reused by read paths and `aigon repair` |
 | `lib/state-queries.js` | ~200 | Pure read-side query helpers used by research/feedback and feature fallback paths |
 | `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting for workflow and snapshot read paths |
 | `lib/dashboard-status-helpers.js` | ~200 | Shared dashboard status helpers: tmux/session detection, worktree lookup, status normalization, stale-session heuristics |
