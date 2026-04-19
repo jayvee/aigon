@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 230
+lines_removed: 137
+lines_changed: 367
+files_touched: 12
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 3237005
+output_tokens: 25654
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 3086464
+thinking_tokens: 10095
+total_tokens: 3262659
+billable_tokens: 3272754
+cost_usd: 7.2966
+sessions: 4
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 276 - harden-getspecpathforentity
 Agent: cx
 
