@@ -9,7 +9,12 @@
 
 const assert = require('assert');
 const { test, report } = require('../_helpers');
-const { resolveAgentPromptBody, resolveCxPromptBody } = require('../../lib/agent-prompt-resolver');
+const {
+    resolveAgentCommandPrompt,
+    resolveAgentPromptBody,
+    resolveCxCommandBody,
+    resolveCxPromptBody,
+} = require('../../lib/agent-prompt-resolver');
 
 for (const [desc, args, expected] of [
     ['cc do substitutes {featureId}',
@@ -41,6 +46,25 @@ test('cx eval propagates extraArgs through $ARGUMENTS', () => {
 test('cx routes through resolveAgentPromptBody via agentId', () => {
     const out = resolveAgentPromptBody({ agentId: 'cx', verb: 'do', featureId: '07' });
     assert.ok(out.startsWith('# aigon-feature-do'));
+});
+
+test('generic non-cx command prompt resolves slash command for spec review', () => {
+    const out = resolveAgentCommandPrompt({ agentId: 'cc', commandName: 'feature-spec-review', argsString: '12' });
+    assert.strictEqual(out, '/aigon:feature-spec-review 12');
+});
+
+test('cx command prompt inlines rubric-backed feature spec review template', () => {
+    const out = resolveCxCommandBody('feature-spec-review', '12');
+    assert.ok(out.startsWith('# aigon-feature-spec-review'));
+    assert.ok(out.includes('## Spec Review Rubric'));
+    assert.ok(!out.includes('{{SPEC_REVIEW_RUBRIC}}'));
+});
+
+test('cx command prompt substitutes args in research spec review check template', () => {
+    const out = resolveCxCommandBody('research-spec-review-check', 'topic-slug');
+    assert.ok(out.startsWith('# aigon-research-spec-review-check'));
+    assert.ok(out.includes('topic-slug'));
+    assert.ok(!out.includes('$ARGUMENTS'));
 });
 
 test('unknown verb throws', () => {

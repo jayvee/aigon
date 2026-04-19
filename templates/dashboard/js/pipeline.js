@@ -531,7 +531,7 @@
 
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildCompatibilityBadgeHtml(feature) + buildSpecDriftBadgeHtml(feature) + '</div>' +
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildCompatibilityBadgeHtml(feature) + buildSpecDriftBadgeHtml(feature) + buildSpecReviewBadgeHtml(feature) + '</div>' +
         autonomousControllerRow;
 
       if (hasAgentSections) {

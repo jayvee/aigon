@@ -301,6 +301,20 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     await requestFeatureOpen(id, picked[0], repoPath, null, pipelineType, getLaunchMode(action));
   }
 
+  async function launchSpecReviewAction(endpoint, options) {
+    const picked = await showAgentPicker(id, feature.name, {
+      single: true,
+      title: options.title,
+      submitLabel: options.submitLabel,
+      repoPath,
+      taskType: 'review',
+      action: options.action
+    });
+    if (!picked || picked.length === 0) return;
+    await requestSpecReviewLaunch(endpoint, id, picked[0], repoPath, btn);
+    await requestRefresh();
+  }
+
   switch (va.action) {
     case 'open-session':
     case 'feature-open':
@@ -343,6 +357,38 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
         submitLabel: 'Run Evaluation',
         taskType: 'evaluate',
         setupAction: 'research-eval'
+      });
+      break;
+    }
+    case 'feature-spec-review': {
+      await launchSpecReviewAction('feature-spec-review', {
+        title: 'Choose spec reviewer',
+        submitLabel: 'Review Spec',
+        action: va.action
+      });
+      break;
+    }
+    case 'feature-spec-review-check': {
+      await launchSpecReviewAction('feature-spec-review-check', {
+        title: 'Choose author agent',
+        submitLabel: 'Check Spec Review',
+        action: va.action
+      });
+      break;
+    }
+    case 'research-spec-review': {
+      await launchSpecReviewAction('research-spec-review', {
+        title: 'Choose spec reviewer',
+        submitLabel: 'Review Spec',
+        action: va.action
+      });
+      break;
+    }
+    case 'research-spec-review-check': {
+      await launchSpecReviewAction('research-spec-review-check', {
+        title: 'Choose author agent',
+        submitLabel: 'Check Spec Review',
+        action: va.action
       });
       break;
     }

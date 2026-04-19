@@ -173,6 +173,27 @@
       }
     }
 
+    async function requestSpecReviewLaunch(endpoint, entityId, agentId, repoPath, btn) {
+      const origText = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origText); }
+      try {
+        const body = { entityId, agentId };
+        if (repoPath) body.repoPath = repoPath;
+        const res = await fetch('/api/' + endpoint, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+        showToast(payload.message || 'Agent started');
+      } catch (e) {
+        showToast('Start agent failed: ' + e.message, null, null, {error:true});
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = origText || btn._origText || 'Start'; }
+      }
+    }
+
     async function requestAgentFlagAction(action, payload, btn) {
       const origFlag = btn ? btn.textContent : '';
       if (btn) { btn.disabled = true; btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origFlag); }
