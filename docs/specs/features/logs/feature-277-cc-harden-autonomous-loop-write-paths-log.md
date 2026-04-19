@@ -78,3 +78,18 @@ behalf is the AutoConductor site, and it is now capability-gated.
 - Commit `731255b5` — capability flag + helper + builder + feature.js injection.
 - Commit `dca1c4ca` — contract test + resolver-test trim.
 - This commit — CLAUDE.md Write-Path Contract + Common Agent Mistakes bullet + log.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-19
+
+### Findings
+- `lib/agent-prompt-resolver.js` used `isSlashCommandInvocable(agentId)` directly inside `buildReviewCheckFeedbackPrompt`, so the injected `loadAgentConfig` test seam did not actually control capability gating for mocked or unknown agents.
+- `package.json` removed `tests/integration/spec-reconcile-endpoint.test.js` from `npm test`, which silently dropped unrelated integration coverage instead of only adding the new autonomous-loop contract coverage.
+
+### Fixes Applied
+- Commit `3a63874b` — `fix(review): honor injected capability flags and keep test coverage`
+
+### Notes
+- Review was limited to branch changes and targeted correctness fixes only; no tests were run per the review workflow.
