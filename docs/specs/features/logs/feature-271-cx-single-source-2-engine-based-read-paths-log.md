@@ -45,3 +45,19 @@ Agent: cx
 - `node tests/integration/lifecycle.test.js`
 - Dashboard screenshot captured after UI changes: `feature-271-dashboard.png`
 - `npm test` remains blocked by the pre-existing `pro-gate` failure above
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-04-19
+
+### Findings
+- `lib/board.js#displayListSection` referenced an `items` variable that was never defined. The refactor of `collectBoardItems` moved the data fetch, but `displayListSection` was not updated to call it. `aigon board --list` and `aigon board -a --list` would throw `ReferenceError: items is not defined` as soon as any folder matched the filter.
+- `lib/workflow-definitions.js` `solo-cx-reviewed-cc` stages were inverted vs. the label/description. The workflow label says "Implement with CX, review with CC" but stages were changed to `implement: cc, review: cx, counter-review: cc`, which is the reverse (and duplicates `solo-cc-reviewed-cx`). This change was also out of scope for feature 271 (read-path routing) and looks like an accidental edit.
+
+### Fixes Applied
+- `fix(review): define items in board list view` — added `const items = collectBoardItems(typeConfig, folderFilter);` at the top of `displayListSection`, matching the kanban view pattern. Confirmed `aigon board --list --all` renders without error.
+- `fix(review): restore solo-cx-reviewed-cc stage agents` — reverted the stage agents to `implement: cx, review: cc, counter-review: cx` so the workflow matches its label and description.
+
+### Notes
+- `npm test` still blocked by the pre-existing `pro-gate` failure (noted in the implementer's log). The new `tests/integration/workflow-read-model.test.js` passes on its own after both fixes.
