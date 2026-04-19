@@ -1,17 +1,21 @@
 # Feature: single-source-1-engine-only-spec-transitions
 
 ## Summary
-Enforce that all spec file moves go through the workflow engine's `move_spec` effect. No CLI command, agent, hook, or manual operation should move spec files directly. When folder position disagrees with engine state, auto-correct by moving the file to the engine-expected location. Remove the bootstrap path that creates snapshots from folder position (which is how stale folder state gets reintroduced as bad engine state).
+Enforce that all feature/research lifecycle spec moves go through the workflow engine's `move_spec` effect. Normal lifecycle commands must never infer or recreate workflow state from folder position. When folder position disagrees with existing engine state during a transition, the engine wins and the file is moved to the engine-expected location. Remove the bootstrap path that creates snapshots from folder position during normal setup/doctor flows.
 
 ## User Stories
 - [ ] As a user, when I run any aigon command that transitions feature state, the spec file always ends up in the correct folder matching the engine
 - [ ] As a user, if a spec file is in the wrong folder (e.g. due to a stale git operation), it gets auto-corrected on the next state transition
+- [ ] As a user, if a numeric feature/research spec is missing workflow state, normal lifecycle commands tell me to migrate it instead of silently rebuilding state from the filesystem
 
 ## Acceptance Criteria
-- [ ] All code paths that move spec files go through the workflow engine's `move_spec` effect — no direct `git mv` or `fs.renameSync` on spec files outside the engine
-- [ ] `lib/commands/setup.js` bootstrap no longer creates snapshots with lifecycle inferred from folder position
-- [ ] If a spec file exists in an unexpected folder (disagrees with engine snapshot), a warning is logged and the file is moved to the engine-expected location
-- [ ] Manual `git mv` of a spec file becomes cosmetic drift that gets auto-corrected, not a state mutation
+- [ ] All feature/research lifecycle transition code paths move spec files through the workflow engine's `move_spec` effect; no direct `git mv` / `fs.renameSync` / `utils.moveFile()` remains in normal lifecycle transitions
+- [ ] Destructive reset flows (`feature-reset`, `research-reset`) are explicitly out of scope for this feature and are not used as precedent for lifecycle transition behavior
+- [ ] `lib/commands/setup.js` init/doctor/bootstrap no longer creates snapshots with lifecycle inferred from folder position
+- [ ] If a spec file exists in an unexpected folder for an entity that already has workflow state, a warning is logged and the file is moved to the engine-expected location during the transition
+- [ ] Manual `git mv` of a spec file becomes cosmetic drift that gets auto-corrected engine -> folder, not a state mutation
+- [ ] If a numeric feature/research spec exists but no workflow snapshot exists, normal state-changing commands do not recreate workflow state from folder position; they fail with explicit migration guidance
+- [ ] The only allowed path for creating missing workflow snapshots for legacy numeric entities is an explicit migration/backfill flow, not a normal lifecycle command
 
 ## Validation
 ```bash
@@ -19,11 +23,18 @@ node --check aigon-cli.js
 npm test
 ```
 
+Manual scenarios:
+- [ ] Existing snapshot + stale folder position -> transition logs warning and restores engine-expected location
+- [ ] Numeric spec with no snapshot -> state-changing command refuses and points to migration/backfill flow
+- [ ] Re-running the same transition after correction is idempotent
+
 ## Technical Approach
-- Audit all code paths that move spec files; ensure every move goes through the engine's `move_spec` effect
-- Remove the setup.js bootstrap path that creates snapshots from folder position
-- Add auto-correction: on state transitions, if the spec file is in the wrong folder, move it to the engine-expected location and log a warning
-- Key files: `lib/workflow-core/effects.js`, `lib/commands/setup.js`, `lib/feature-spec-resolver.js`, `lib/commands/feature.js`
+- Audit all feature/research lifecycle transition paths and route spec moves through workflow-core effects only
+- Remove normal-operation bootstrap that seeds snapshots from visible folder position
+- Add transition-time correction: if workflow state exists and the visible file is in the wrong folder, move it to the engine-expected path and log a warning
+- Define/retain one explicit migration or backfill path for legacy numeric entities with missing workflow state
+- Audit direct movers in lifecycle code, including shared entity helpers and feature/research command handlers
+- Key files: `lib/workflow-core/effects.js`, `lib/workflow-core/engine.js`, `lib/commands/setup.js`, `lib/commands/feature.js`, `lib/commands/research.js`, `lib/entity.js`, `lib/feature-spec-resolver.js`
 
 ## Dependencies
 - None
@@ -32,9 +43,10 @@ npm test
 - Migrating read paths (board/dashboard) from folder scanning — that's feature single-source-2
 - Self-healing reconciliation on read — that's feature single-source-3
 - Feedback entity changes — that's feature single-source-4
+- Reset/teardown choreography for `feature-reset` / `research-reset`
 
 ## Open Questions
-- What should happen when a spec file exists but has no engine state at all? Error, or create engine state from the file?
+- None
 
 ## Related
 - Research: research-33-single-source-of-truth-for-feature-state
