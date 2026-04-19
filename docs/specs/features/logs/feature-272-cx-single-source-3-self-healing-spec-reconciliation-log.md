@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 323
+lines_removed: 76
+lines_changed: 399
+files_touched: 7
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 3587902
+output_tokens: 27648
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 3389952
+thinking_tokens: 8645
+total_tokens: 3615550
+billable_tokens: 3624195
+cost_usd: 8.0749
+sessions: 3
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 272 - single-source-3-self-healing-spec-reconciliation
 Agent: cx
 
