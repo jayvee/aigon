@@ -4,8 +4,9 @@
   "version": "0.1.0",
   "description": "Aigon documentation and marketing site",
   "scripts": {
+    "predev": "test -d public/_pagefind || npm run build",
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && npx pagefind --site .next/server/app --output-path public/_pagefind",
     "start": "next start",
     "preview": "next build && next start",
     "gen-commands": "node scripts/gen-commands.js"

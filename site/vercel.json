@@ -1,4 +1,4 @@
 {
   "framework": "nextjs",
-  "buildCommand": "next build && npx pagefind --site .next/server/app --output-path public/_pagefind"
+  "buildCommand": "npm run build"
 }
