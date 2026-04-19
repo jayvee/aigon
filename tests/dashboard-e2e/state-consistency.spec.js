@@ -56,10 +56,10 @@ test.describe('Dashboard state consistency', () => {
     for (const { stage, must, mustNot } of STAGE_ACTIONS) {
         test(`${stage} features show only expected actions`, async ({ page }) => {
             await gotoPipelineWithMockedSessions(page);
-            // Skip read-only legacy cards (missing-workflow snapshot) — they
-            // correctly render with zero action buttons; the must/mustNot
+            // Skip read-only legacy cards (missing-workflow snapshot). They carry
+            // a .compat-badge and only expose spec-review actions; the must/mustNot
             // contract only applies to snapshot-backed cards.
-            const cards = page.locator(`.kanban-col[data-stage="${stage}"] .kcard:has(.kcard-va-btn)`);
+            const cards = page.locator(`.kanban-col[data-stage="${stage}"] .kcard:not(:has(.compat-badge))`);
             const count = await cards.count();
             for (let i = 0; i < count; i++) {
                 const card = cards.nth(i);
