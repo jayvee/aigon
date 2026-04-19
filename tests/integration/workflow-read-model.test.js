@@ -113,31 +113,21 @@ test('board re-buckets snapshot-backed features and keeps legacy items in origin
     assert.strictEqual(legacy.boardAction, null);
 }));
 
-test('board marks drifted items in its column output', () => withTempDir('aigon-rm-', (repo) => {
+test('board items carry spec drift for display markers', () => withTempDir('aigon-rm-', (repo) => {
     seedRepo(repo);
     writeSpec(repo, 'features', '02-backlog', 'feature-18-x.md');
     writeSnap(repo, 'features', '18', 'implementing');
-    const logs = [];
-    const origLog = console.log;
-    const origCwd = process.cwd();
-    console.log = (...args) => logs.push(args.join(' '));
-    try {
-        process.chdir(repo);
-        board.displayBoardListView({
-            includeFeatures: true,
-            includeResearch: false,
-            showAll: true,
-            showActive: false,
-            showInbox: false,
-            showBacklog: false,
-            showDone: false,
-            showActions: false,
-        });
-    } finally {
-        process.chdir(origCwd);
-        console.log = origLog;
-    }
-    assert.ok(logs.some(line => line.includes('⚠ drift')));
+    const items = board.collectBoardItems(
+        { root: path.join(repo, 'docs', 'specs', 'features'), prefix: 'feature', folders: FOLDERS },
+        new Set(FOLDERS), repo
+    );
+    const drifted = (items['03-in-progress'] || []).find(item => item.id === '18');
+    assert.ok(drifted);
+    assert.deepStrictEqual(drifted.specDrift, {
+        currentPath: 'docs/specs/features/02-backlog/feature-18-x.md',
+        expectedPath: 'docs/specs/features/03-in-progress/feature-18-x.md',
+        lifecycle: 'implementing',
+    });
 }));
 
 report();
