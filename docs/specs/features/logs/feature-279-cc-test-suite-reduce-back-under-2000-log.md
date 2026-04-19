@@ -117,3 +117,36 @@ done
    `.aigon/workflows/features/<id>/snapshot.json` is written with
    `lifecycle: 'backlog'` and the card in the dashboard is NOT
    `missing-workflow`.
+
+## Code Review
+
+**Reviewed by**: cu (Cursor)
+**Date**: 2026-04-19
+
+### Findings
+
+- Feature branch was **~9 commits behind `main`**. A raw `git diff main..HEAD`
+  looked like F279 deleted F278 spec-review work; that was a **stale base**,
+  not intentional scope. Merging `main` into the feature branch was required
+  so closing the feature does not revert spec-review on `main`.
+- Merge conflict in `lib/spec-reconciliation.js`: `main` mapped some
+  `unknown-lifecycle` errors to `skipped: 'expected-path-outside-docs'`.
+  F279’s contract test requires **`skipped: 'unknown-lifecycle'`** with no
+  spec mutation. Resolution kept the F279 behavior for that error class.
+- After merge, `bash scripts/check-test-budget.sh` reported **2005 LOC**
+  (over the 2000 ceiling). Compressed REGRESSION comments in
+  `tests/integration/spec-review-status.test.js` to reach **1998 / 2000**.
+  The spec’s stricter **≤1900** target is **not** met until a further trim
+  pass; the **2000** script gate passes.
+
+### Fixes Applied
+
+- `fix(review): merge main; keep unknown-lifecycle reconcile + spec-review tests`
+- `fix(review): trim spec-review-status comments to stay under test budget`
+
+### Notes
+
+- If ≤1900 remains mandatory, schedule a follow-up trim (or widen AC
+  explicitly) now that `spec-review-status.test.js` from `main` is back in
+  the branch.
+- `npm test` was run after merge resolution; all integration tests passed.
