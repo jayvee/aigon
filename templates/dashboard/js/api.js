@@ -270,6 +270,56 @@
       }
     }
 
+    function formatSpecReconcileSkipReason(reason) {
+      if (reason === 'destination-exists') return 'destination already exists';
+      if (reason === 'expected-path-outside-docs') return 'expected path is outside docs/specs';
+      if (reason === 'rename-failed') return 'rename failed';
+      if (reason === 'missing-visible-spec') return 'visible spec was not found';
+      if (reason === 'missing-workflow-state') return 'workflow state is missing';
+      return reason || 'reconcile skipped';
+    }
+
+    async function requestSpecReconcile(repoPath, entityType, entityId, btn) {
+      const pendingKey = `spec-reconcile:${repoPath || ''}:${entityType || ''}:${entityId || ''}`;
+      if (state.pendingActions.has(pendingKey)) return;
+      state.pendingActions.add(pendingKey);
+
+      const origText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="run-next-spinner"></span>Reconcile';
+      }
+      const processingToast = showToast('Reconciling spec drift…', null, null, { processing: true });
+
+      try {
+        const res = await fetch('/api/spec-reconcile', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ repoPath, entityType, entityId })
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+
+        if (payload.moved) {
+          showToast('Reconciled spec drift');
+        } else if (payload.skipped) {
+          showToast('Reconcile skipped: ' + formatSpecReconcileSkipReason(payload.skipped), null, null, { error: true });
+        } else {
+          showToast(payload.driftDetected === false ? 'Spec already reconciled' : 'Reconcile finished');
+        }
+        await requestRefresh();
+      } catch (e) {
+        showToast('Reconcile failed: ' + e.message, null, null, { error: true });
+      } finally {
+        if (processingToast) processingToast.remove();
+        state.pendingActions.delete(pendingKey);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = origText || 'Reconcile';
+        }
+      }
+    }
+
     // ── Session execution ─────────────────────────────────────────────────────
 
     async function executeNextAction(command, mode, repoPath, btn) {

@@ -531,7 +531,7 @@
 
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildCompatibilityBadgeHtml(feature) + '</div>' +
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildCompatibilityBadgeHtml(feature) + buildSpecDriftBadgeHtml(feature) + '</div>' +
         autonomousControllerRow;
 
       if (hasAgentSections) {
@@ -704,6 +704,24 @@
         };
       }
 
+      card.querySelectorAll('.spec-drift-toggle').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const wrap = btn.closest('.spec-drift-wrap');
+          const isOpen = wrap && wrap.classList.contains('open');
+          document.querySelectorAll('.spec-drift-wrap.open').forEach(el => el.classList.remove('open'));
+          if (!isOpen && wrap) wrap.classList.add('open');
+        };
+      });
+
+      card.querySelectorAll('.spec-drift-reconcile-btn').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const entityType = pipelineType === 'research' ? 'research' : 'feature';
+          await requestSpecReconcile(repoPath, entityType, feature.id, btn);
+        };
+      });
+
       // Wire "View Review" buttons
       card.querySelectorAll('[data-view-review]').forEach(btn => {
         btn.onclick = (e) => {
@@ -743,6 +761,9 @@
         // Close overflow menus when clicking outside them
         if (!e.target.closest('.kcard-overflow-toggle') && !e.target.closest('.kcard-overflow-menu')) {
           card.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
+        }
+        if (!e.target.closest('.spec-drift-wrap')) {
+          card.querySelectorAll('.spec-drift-wrap.open').forEach(el => el.classList.remove('open'));
         }
         if (e.target.closest('button') || e.target.closest('.btn')) return;
         if (feature.specPath) {

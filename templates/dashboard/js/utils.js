@@ -66,3 +66,19 @@
       const ok = document.execCommand('copy'); ta.remove(); return ok;
     }
 
+    function buildSpecDriftBadgeHtml(item) {
+      const drift = item && item.specDrift;
+      if (!drift) return '';
+      return '<span class="spec-drift-wrap">' +
+        '<button class="spec-drift-badge spec-drift-toggle" type="button" title="Spec folder drift detected">⚠ drift</button>' +
+        '<div class="spec-drift-popover">' +
+          '<div class="spec-drift-title">Spec drift detected</div>' +
+          '<div class="spec-drift-meta">Lifecycle: <strong>' + escHtml(drift.lifecycle || 'unknown') + '</strong></div>' +
+          '<div class="spec-drift-label">Current</div>' +
+          '<code class="spec-drift-path">' + escHtml(drift.currentPath || 'unknown') + '</code>' +
+          '<div class="spec-drift-label">Expected</div>' +
+          '<code class="spec-drift-path">' + escHtml(drift.expectedPath || 'unknown') + '</code>' +
+          '<div class="spec-drift-actions"><button class="btn btn-secondary btn-xs spec-drift-reconcile-btn" type="button">Reconcile</button></div>' +
+        '</div>' +
+      '</span>';
+    }
