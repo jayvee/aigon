@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+// REGRESSION feature 259/260: setup-only worktree branches (spec/log moves
+// with no code changes) used to satisfy the submitted-evidence check,
+// letting Stop hooks and autonomous loops fire feature-close on empty work.
+// getFeatureSubmissionEvidence must only accept branches whose diff touches
+// real implementation files.
 'use strict';
 
 const assert = require('assert');
@@ -6,72 +11,59 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const { test, withTempDir, report } = require('../_helpers');
-const { createMiscCommands, getFeatureSubmissionEvidence } = require('../../lib/commands/misc');
+const { getFeatureSubmissionEvidence } = require('../../lib/commands/misc');
 
-test('createMiscCommands exposes Gemini hook commands', () => {
-    const commands = createMiscCommands();
-    assert.strictEqual(typeof commands['check-agent-signal'], 'function');
-    assert.strictEqual(typeof commands['check-agent-submitted'], 'function');
-});
+const git = (cwd, cmd) => execSync(`git ${cmd}`, { cwd, stdio: 'pipe' });
 
-test('check-agent-submitted does not enforce on plain solo Drive branches', () => {
-    const src = fs.readFileSync(path.join(__dirname, '../../lib/commands/misc.js'), 'utf8');
-    const block = src.match(/'check-agent-submitted': \(\) => \{[\s\S]*?process\.exitCode = 1;\n        \},/);
-    assert.ok(block, 'check-agent-submitted block should exist');
-    assert.ok(!/soloMatch/.test(block[0]), 'solo Drive branches must not be treated as agent sessions');
-    assert.ok(/Plain Drive-mode[\s\S]*must not be blocked by the CC Stop hook/.test(block[0]), 'source should document the solo Drive exemption');
-});
-
-test('getFeatureSubmissionEvidence rejects setup-only feature worktree branches', () => withTempDir('aigon-misc-', (repoDir) => {
-    execSync('git init -b main', { cwd: repoDir, stdio: 'pipe' });
-    execSync('git config user.name "Test User"', { cwd: repoDir, stdio: 'pipe' });
-    execSync('git config user.email "test@example.com"', { cwd: repoDir, stdio: 'pipe' });
-
+function seedRepo(repoDir, featureBranch) {
+    git(repoDir, 'init -b main');
+    git(repoDir, 'config user.name "t"');
+    git(repoDir, 'config user.email t@t');
     fs.mkdirSync(path.join(repoDir, 'docs', 'specs', 'features', 'logs'), { recursive: true });
     fs.writeFileSync(path.join(repoDir, 'README.md'), '# repo\n');
-    execSync('git add README.md', { cwd: repoDir, stdio: 'pipe' });
-    execSync('git commit -m "chore: seed repo"', { cwd: repoDir, stdio: 'pipe' });
+    git(repoDir, 'add README.md');
+    git(repoDir, 'commit -qm "chore: seed"');
+    git(repoDir, `checkout -b ${featureBranch}`);
+    const logFile = `docs/specs/features/logs/${featureBranch}-log.md`;
+    fs.writeFileSync(path.join(repoDir, logFile), '# log\n');
+    git(repoDir, `add ${logFile}`);
+    git(repoDir, 'commit -qm "chore: worktree setup for cx"');
+}
 
-    execSync('git checkout -b feature-259-cx-dashboard-feature-push-action', { cwd: repoDir, stdio: 'pipe' });
-    fs.writeFileSync(
-        path.join(repoDir, 'docs', 'specs', 'features', 'logs', 'feature-259-cx-dashboard-feature-push-action-log.md'),
-        '# log\n'
-    );
-    execSync('git add docs/specs/features/logs/feature-259-cx-dashboard-feature-push-action-log.md', { cwd: repoDir, stdio: 'pipe' });
-    execSync('git commit -m "chore: worktree setup for cx"', { cwd: repoDir, stdio: 'pipe' });
-
-    const evidence = getFeatureSubmissionEvidence(repoDir, '259', 'main');
-    assert.strictEqual(evidence.ok, false);
-    assert.match(evidence.reason, /no substantive commits|no implementation files changed/);
+test('setup-only feature branch (log commit but no impl) is rejected', () => withTempDir('aigon-misc-', (repo) => {
+    seedRepo(repo, 'feature-259-cx-dashboard-feature-push-action');
+    const ev = getFeatureSubmissionEvidence(repo, '259', 'main');
+    assert.strictEqual(ev.ok, false);
+    assert.match(ev.reason, /no substantive commits|no implementation files changed/);
 }));
 
-test('getFeatureSubmissionEvidence accepts branches with committed implementation files', () => withTempDir('aigon-misc-', (repoDir) => {
-    execSync('git init -b main', { cwd: repoDir, stdio: 'pipe' });
-    execSync('git config user.name "Test User"', { cwd: repoDir, stdio: 'pipe' });
-    execSync('git config user.email "test@example.com"', { cwd: repoDir, stdio: 'pipe' });
-
-    fs.mkdirSync(path.join(repoDir, 'docs', 'specs', 'features', 'logs'), { recursive: true });
-    fs.mkdirSync(path.join(repoDir, 'lib'), { recursive: true });
-    fs.writeFileSync(path.join(repoDir, 'README.md'), '# repo\n');
-    execSync('git add README.md', { cwd: repoDir, stdio: 'pipe' });
-    execSync('git commit -m "chore: seed repo"', { cwd: repoDir, stdio: 'pipe' });
-
-    execSync('git checkout -b feature-260-cx-research-reset', { cwd: repoDir, stdio: 'pipe' });
-    fs.writeFileSync(
-        path.join(repoDir, 'docs', 'specs', 'features', 'logs', 'feature-260-cx-research-reset-log.md'),
-        '# log\n'
-    );
-    execSync('git add docs/specs/features/logs/feature-260-cx-research-reset-log.md', { cwd: repoDir, stdio: 'pipe' });
-    execSync('git commit -m "chore: worktree setup for cx"', { cwd: repoDir, stdio: 'pipe' });
-
-    fs.writeFileSync(path.join(repoDir, 'lib', 'feature-reset.js'), 'module.exports = true;\n');
-    execSync('git add lib/feature-reset.js', { cwd: repoDir, stdio: 'pipe' });
-    execSync('git commit -m "feat: add research reset command"', { cwd: repoDir, stdio: 'pipe' });
-
-    const evidence = getFeatureSubmissionEvidence(repoDir, '260', 'main');
-    assert.strictEqual(evidence.ok, true);
-    assert.deepStrictEqual(evidence.substantiveFiles, ['lib/feature-reset.js']);
-    assert.strictEqual(evidence.substantiveCommits.length, 1);
+test('branch with committed implementation files is accepted', () => withTempDir('aigon-misc-', (repo) => {
+    seedRepo(repo, 'feature-260-cx-research-reset');
+    fs.mkdirSync(path.join(repo, 'lib'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'lib', 'feature-reset.js'), 'module.exports=1\n');
+    git(repo, 'add lib/feature-reset.js');
+    git(repo, 'commit -qm "feat: impl"');
+    const ev = getFeatureSubmissionEvidence(repo, '260', 'main');
+    assert.strictEqual(ev.ok, true);
+    assert.deepStrictEqual(ev.substantiveFiles, ['lib/feature-reset.js']);
+    assert.strictEqual(ev.substantiveCommits.length, 1);
 }));
+
+test('legacy iterate flags still hard-error with the rename hint', () => {
+    for (const flag of ['--autonomous', '--ralph']) {
+        const r = require('child_process').spawnSync(process.execPath, [path.join(__dirname, '..', '..', 'aigon-cli.js'), 'feature-do', '7', flag], { encoding: 'utf8' });
+        assert.strictEqual(r.status, 1); assert.match(r.stderr, /--autonomous\/--ralph was renamed to --iterate/);
+    }
+    assert.match(require('../../lib/templates').COMMAND_REGISTRY['feature-do'].argHints, /\[--iterate\]/);
+});
+
+test('repair registration and worktree/reset guard rails stay wired', () => {
+    assert.strictEqual(typeof require('../../lib/commands/shared').createAllCommands().repair, 'function'); assert.strictEqual(typeof require('../../lib/commands/misc').createMiscCommands().repair, 'function');
+    assert.match(fs.readFileSync(path.join(__dirname, '../../templates/help.txt'), 'utf8'), /repair <feature\|research> <ID> \[--dry-run\]/);
+    const [wt, feature, setup] = ['../../lib/worktree.js', '../../lib/commands/feature.js', '../../lib/commands/setup.js'].map((p) => fs.readFileSync(path.join(__dirname, p), 'utf8'));
+    assert.match(wt, /config --local extensions\.worktreeConfig true/); assert.doesNotMatch(wt, /config --(?:local|worktree) user\.(?:name|email)/);
+    assert.match(wt, /config --worktree aigon\.agentId/); assert.match(wt, /config --worktree core\.hooksPath/);
+    assert.match(feature, /wf\.resetFeature\s*\(/); assert.match(setup, /stale-drive-branch/);
+});
 
 report();

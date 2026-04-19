@@ -22,26 +22,9 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { GIT_SAFE_ENV } = require('../_helpers');
 
 const CLI_PATH = path.join(__dirname, '..', '..', 'aigon-cli.js');
-
-// Env scrubbed of git credential helpers so macOS doesn't open a
-// "Keychain Not Found" dialog when git runs under a fake HOME. Every
-// git / aigon invocation from MockAgent goes through this.
-//
-// GIT_CONFIG_GLOBAL=/dev/null ALSO wipes user.name/user.email, so we
-// re-supply them via GIT_AUTHOR_* / GIT_COMMITTER_* — otherwise
-// `git commit` fails with "empty ident".
-const GIT_SAFE_ENV = {
-    GIT_CONFIG_GLOBAL: '/dev/null',
-    GIT_CONFIG_SYSTEM: '/dev/null',
-    GIT_TERMINAL_PROMPT: '0',
-    GIT_ASKPASS: '/usr/bin/true',
-    GIT_AUTHOR_NAME: 'Aigon Test',
-    GIT_AUTHOR_EMAIL: 'test@aigon.test',
-    GIT_COMMITTER_NAME: 'Aigon Test',
-    GIT_COMMITTER_EMAIL: 'test@aigon.test',
-};
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));

@@ -14,12 +14,18 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { GIT_SAFE_ENV } = require('../_helpers');
 
 const CTX_FILE = path.join(os.tmpdir(), 'aigon-dashboard-e2e-ctx.json');
 const FAST = process.env.MOCK_DELAY === 'fast' || !!process.env.CI;
 const SOLO_DELAYS = FAST
     ? { implementing: 600, submitted: 300 }
     : { implementing: 15000, submitted: 5000 };
+// Fleet asserts an intermediate state (cc submitted, gg still in flight) AND
+// a final all-submitted state. Both observations need the dashboard poll
+// cycle; fast delays race those cycles and flake. ~40s runtime.
+const FLEET_CC_DELAYS = { implementing: 3000, submitted: 1500 };
+const FLEET_GG_DELAYS = { implementing: 8000, submitted: 1500 };
 
 function readCtx() {
     return JSON.parse(fs.readFileSync(CTX_FILE, 'utf8'));
@@ -136,7 +142,8 @@ async function expectConsoleHasAction(page, action) {
 }
 
 module.exports = {
-    CTX_FILE, SOLO_DELAYS, readCtx, waitForPath, forceRefresh,
+    CTX_FILE, SOLO_DELAYS, FLEET_CC_DELAYS, FLEET_GG_DELAYS, GIT_SAFE_ENV,
+    readCtx, waitForPath, forceRefresh,
     gotoPipelineWithMockedSessions, prioritiseInboxFeature, startFeatureWithAgents,
     clickCardAction, expectFeatureClosed, expectConsoleHasAction,
 };

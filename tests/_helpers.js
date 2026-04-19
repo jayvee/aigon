@@ -20,6 +20,21 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+// Shared git env for tests that spawn git/aigon under a fake HOME.
+// GIT_CONFIG_GLOBAL=/dev/null scrubs macOS keychain helpers AND wipes
+// user.name/email, so GIT_AUTHOR_* / GIT_COMMITTER_* must be supplied
+// explicitly — otherwise `git commit` fails with "empty ident".
+const GIT_SAFE_ENV = Object.freeze({
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_CONFIG_SYSTEM: '/dev/null',
+    GIT_TERMINAL_PROMPT: '0',
+    GIT_ASKPASS: '/usr/bin/true',
+    GIT_AUTHOR_NAME: 'Aigon Test',
+    GIT_AUTHOR_EMAIL: 'test@aigon.test',
+    GIT_COMMITTER_NAME: 'Aigon Test',
+    GIT_COMMITTER_EMAIL: 'test@aigon.test',
+});
+
 let passed = 0;
 let failed = 0;
 const asyncTests = [];
@@ -60,4 +75,4 @@ async function report() {
     if (failed > 0) process.exit(1);
 }
 
-module.exports = { test, testAsync, withTempDir, withTempDirAsync, report };
+module.exports = { test, testAsync, withTempDir, withTempDirAsync, report, GIT_SAFE_ENV };

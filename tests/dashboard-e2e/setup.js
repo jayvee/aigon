@@ -14,6 +14,7 @@ const path = require('path');
 const os = require('os');
 const http = require('http');
 const { spawnSync, spawn } = require('child_process');
+const { GIT_SAFE_ENV } = require('../_helpers');
 
 const ROOT = path.join(__dirname, '..', '..');
 const CLI_PATH = path.join(ROOT, 'aigon-cli.js');
@@ -47,21 +48,6 @@ function ensureFixtures() {
         if (result.status !== 0) throw new Error('Fixture generation failed');
     }
 }
-
-// Env scrubbed of git credential helpers so macOS doesn't open a
-// "Keychain Not Found" dialog on every git invocation. GIT_CONFIG_GLOBAL
-// also wipes user.name/user.email so we re-supply via GIT_AUTHOR_* /
-// GIT_COMMITTER_* — otherwise `git commit` fails with "empty ident".
-const GIT_SAFE_ENV = {
-    GIT_CONFIG_GLOBAL: '/dev/null',
-    GIT_CONFIG_SYSTEM: '/dev/null',
-    GIT_TERMINAL_PROMPT: '0',
-    GIT_ASKPASS: '/usr/bin/true',
-    GIT_AUTHOR_NAME: 'Aigon Test',
-    GIT_AUTHOR_EMAIL: 'test@aigon.test',
-    GIT_COMMITTER_NAME: 'Aigon Test',
-    GIT_COMMITTER_EMAIL: 'test@aigon.test',
-};
 
 function runAigon(args, cwd) {
     const result = spawnSync(process.execPath, [CLI_PATH, ...args], {

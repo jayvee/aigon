@@ -20,6 +20,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const { MockAgent } = require('../integration/mock-agent');
 const {
+    FLEET_CC_DELAYS, FLEET_GG_DELAYS,
     readCtx,
     waitForPath,
     forceRefresh,
@@ -29,13 +30,6 @@ const {
     expectFeatureClosed,
     expectConsoleHasAction,
 } = require('./_helpers');
-
-// Fleet asserts an intermediate state (cc submitted, gg still in flight) AND a
-// final all-submitted state. Both observations need the dashboard poll cycle to
-// catch transitions reliably. Fast delays race those cycles and produce flakes,
-// so this test uses realistic delays unconditionally — ~40s total runtime.
-const CC_DELAYS = { implementing: 3000, submitted: 1500 };
-const GG_DELAYS = { implementing: 8000, submitted: 1500 };
 
 function runGit(args, cwd) {
     spawnSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' });
@@ -74,8 +68,8 @@ test.describe('Fleet mode lifecycle', () => {
             waitForPath(ggLogPath, 30000),
         ]);
 
-        const agentCC = new MockAgent({ featureId: paddedId, agentId: 'cc', desc, repoPath: ctx.tmpDir, worktreeBase: ctx.worktreeBase, delays: CC_DELAYS });
-        const agentGG = new MockAgent({ featureId: paddedId, agentId: 'gg', desc, repoPath: ctx.tmpDir, worktreeBase: ctx.worktreeBase, delays: GG_DELAYS });
+        const agentCC = new MockAgent({ featureId: paddedId, agentId: 'cc', desc, repoPath: ctx.tmpDir, worktreeBase: ctx.worktreeBase, delays: FLEET_CC_DELAYS });
+        const agentGG = new MockAgent({ featureId: paddedId, agentId: 'gg', desc, repoPath: ctx.tmpDir, worktreeBase: ctx.worktreeBase, delays: FLEET_GG_DELAYS });
 
         // Start both — cc finishes first
         const ccRunning = agentCC.run();

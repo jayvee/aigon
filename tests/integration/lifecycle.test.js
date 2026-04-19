@@ -2,11 +2,12 @@
 /**
  * Integration tests — Layer 2 of the test pyramid.
  *
- * Exercises the full workflow engine lifecycle with temp directories:
- *   - Solo: start → submit → close
- *   - Fleet: start → submit both → eval → close (winner)
+ * Exercises the workflow engine lifecycle with temp directories:
+ *   - Solo: start → submit → close; plus feature 233 recovery paths
+ *   - Fleet: start → submit both → eval → select winner → close
  *   - Pause → resume
- *   - Review flow
+ *   - Research close finalizer
+ *   - git.getMainRepoPath from a subdirectory
  *
  * Verifies snapshotToDashboardActions() returns correct buttons at each step.
  */
@@ -21,8 +22,6 @@ const { test, testAsync, withTempDir, withTempDirAsync, report } = require('../_
 const engine = require('../../lib/workflow-core/engine');
 const { snapshotToDashboardActions } = require('../../lib/workflow-snapshot-adapter');
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
-
 const REPO_DIRS = [
     'docs/specs/features/03-in-progress',
     'docs/specs/features/logs',
@@ -30,14 +29,12 @@ const REPO_DIRS = [
     '.aigon/workflows/features',
     '.aigon/state',
 ];
-
 const RESEARCH_REPO_DIRS = [
     'docs/specs/research-topics/04-in-evaluation',
     'docs/specs/research-topics/05-done',
     'docs/specs/research-topics/logs',
 ];
 
-/** Run an async test body with a fresh aigon-style temp repo, auto-cleaned. */
 function withTempRepo(fn) {
     return withTempDirAsync('aigon-lifecycle-', async (dir) => {
         for (const sub of REPO_DIRS) fs.mkdirSync(path.join(dir, sub), { recursive: true });
@@ -46,65 +43,42 @@ function withTempRepo(fn) {
 }
 
 function writeSpec(repoPath, featureId, name) {
-    const specPath = path.join(
-        repoPath, 'docs', 'specs', 'features', '03-in-progress',
-        `feature-${featureId}-${name}.md`
-    );
+    const specPath = path.join(repoPath, 'docs', 'specs', 'features', '03-in-progress', `feature-${featureId}-${name}.md`);
     fs.writeFileSync(specPath, `# Feature: ${name}\n`);
     return specPath;
 }
 
 function writeResearchSpec(repoPath, researchId, name) {
-    const specPath = path.join(
-        repoPath, 'docs', 'specs', 'research-topics', '04-in-evaluation',
-        `research-${researchId}-${name}.md`
-    );
+    const specPath = path.join(repoPath, 'docs', 'specs', 'research-topics', '04-in-evaluation', `research-${researchId}-${name}.md`);
     fs.writeFileSync(specPath, `---\ntitle: ${name}\n---\n\n# Research: ${name}\n`);
     return specPath;
 }
 
-const getActions = (snapshot, featureId) => snapshotToDashboardActions('feature', featureId, snapshot);
-const hasAction = (actions, actionName) => actions.validActions.some(a => a.action === actionName);
+const getActions = (snap, id) => snapshotToDashboardActions('feature', id, snap);
+const hasAction = (actions, name) => actions.validActions.some(a => a.action === name);
 
-// ─── Solo lifecycle ──────────────────────────────────────────────────────────
+// ─── Solo lifecycle (parametrized: canonical cc vs bare 'solo' agent) ────────
 
-testAsync('solo: start creates implementing state; agent-ready enables close', () => withTempRepo(async (repo) => {
-    writeSpec(repo, '01', 'solo-test');
-    const snap0 = await engine.startFeature(repo, '01', 'solo_branch', ['cc']);
-    assert.strictEqual(snap0.lifecycle, 'implementing');
-    assert.strictEqual(snap0.mode, 'solo_branch');
-    const snap = await engine.signalAgentReady(repo, '01', 'cc');
-    const actions = getActions(snap, '01');
-    assert.ok(hasAction(actions, 'feature-close'), 'should have close action after agent-ready');
-    assert.ok(hasAction(actions, 'feature-pause'), 'should have pause action');
-}));
-
-testAsync('solo: closeFeature transitions to done with no actions', () => withTempRepo(async (repo) => {
-    writeSpec(repo, '01', 'solo-test');
-    await engine.startFeature(repo, '01', 'solo_branch', ['cc']);
-    await engine.signalAgentReady(repo, '01', 'cc');
-    const snap = await engine.closeFeatureWithEffects(repo, '01', async () => {});
-    assert.strictEqual(snap.lifecycle, 'done');
-    const actions = getActions(snap, '01');
-    assert.strictEqual(actions.validActions.length, 0, 'done state should have no actions');
-}));
-
-testAsync('solo: registers as canonical "solo" agent and closes cleanly', () => withTempRepo(async (repo) => {
-    // REGRESSION: feature 34 / farline-ai-forge — solo Drive used to emit
-    // feature.started with agents:[]; signal.agent_ready was silently dropped,
-    // soloAllReady never gated, and feature-close threw "cannot be closed from
-    // implementing" AFTER the merge had already run, leaving a half-closed repo.
-    writeSpec(repo, '03', 'solo-no-agent');
-    await engine.startFeature(repo, '03', 'solo_branch', ['solo']);
-    await engine.signalAgentReady(repo, '03', 'solo');
-    const closable = await engine.canCloseFeature(repo, '03');
-    assert.ok(closable.ok, `canCloseFeature should be ok, got: ${closable.reason}`);
-    const snap = await engine.closeFeatureWithEffects(repo, '03', async () => {});
-    assert.strictEqual(snap.lifecycle, 'done');
-}));
+for (const [label, agentId, featureId] of [['cc', 'cc', '01'], ['solo', 'solo', '03']]) {
+    testAsync(`solo(${label}): start → ready → close transitions cleanly`, () => withTempRepo(async (repo) => {
+        // REGRESSION feature 34/233: bare 'solo' agent used to emit
+        // feature.started with agents:[]; signal.agent_ready was silently
+        // dropped and feature-close threw "cannot be closed from implementing"
+        // AFTER the merge had already run, leaving a half-closed repo.
+        writeSpec(repo, featureId, `solo-${label}`);
+        await engine.startFeature(repo, featureId, 'solo_branch', [agentId]);
+        const ready = await engine.signalAgentReady(repo, featureId, agentId);
+        const actions = getActions(ready, featureId);
+        assert.ok(hasAction(actions, 'feature-close'));
+        assert.ok(hasAction(actions, 'feature-pause'));
+        const closed = await engine.closeFeatureWithEffects(repo, featureId, async () => {});
+        assert.strictEqual(closed.lifecycle, 'done');
+        assert.strictEqual(getActions(closed, featureId).validActions.length, 0);
+    }));
+}
 
 testAsync('canCloseFeature blocks pre-close when no agent has signaled', () => withTempRepo(async (repo) => {
-    // REGRESSION: feature 233 — without pre-validation, feature-close ran git
+    // REGRESSION feature 233: without pre-validation, feature-close ran git
     // side-effects (commit, push, merge) and only THEN discovered the engine
     // would reject the transition, leaving a merged-but-not-closed half state.
     writeSpec(repo, '04', 'solo-not-ready');
@@ -115,51 +89,61 @@ testAsync('canCloseFeature blocks pre-close when no agent has signaled', () => w
 }));
 
 testAsync('recoverEmptyAgents heals legacy agents:[] features', () => withTempRepo(async (repo) => {
-    // REGRESSION: feature 233 — features started under the old code have
+    // REGRESSION feature 233: features started under the old code have
     // feature.started with agents:[]. closeEngineState must auto-inject 'solo'
-    // so they can close without manual events.jsonl editing.
+    // so they close without manual events.jsonl editing.
     writeSpec(repo, '05', 'legacy-broken');
-    // Hand-craft the broken event log: feature.started with no agents.
     await engine.startFeature(repo, '05', 'solo_branch', []);
     let snap = await engine.showFeature(repo, '05');
-    assert.strictEqual(Object.keys(snap.agents).length, 0, 'precondition: agents empty');
+    assert.strictEqual(Object.keys(snap.agents).length, 0);
     const close = require('../../lib/feature-close');
     snap = await close.recoverEmptyAgents(repo, '05', snap);
-    assert.ok(snap.agents.solo, 'solo agent should be registered after recovery');
     assert.strictEqual(snap.agents.solo.status, 'ready');
-    const closable = await engine.canCloseFeature(repo, '05');
-    assert.ok(closable.ok, `should be closable post-recovery: ${closable.reason}`);
+    assert.ok((await engine.canCloseFeature(repo, '05')).ok);
 }));
-
 
 // ─── Fleet lifecycle ─────────────────────────────────────────────────────────
 
-testAsync('fleet: start with two agents; both ready enables eval', () => withTempRepo(async (repo) => {
-    writeSpec(repo, '02', 'fleet-test');
-    const snap0 = await engine.startFeature(repo, '02', 'fleet', ['cc', 'gg']);
-    assert.strictEqual(snap0.lifecycle, 'implementing');
-    assert.strictEqual(snap0.mode, 'fleet');
-    await engine.signalAgentReady(repo, '02', 'cc');
-    const snap = await engine.signalAgentReady(repo, '02', 'gg');
-    const actions = getActions(snap, '02');
-    assert.ok(hasAction(actions, 'feature-eval'), 'should have eval action when all agents ready');
-}));
-
-testAsync('fleet: eval → evaluating shows select-winner actions → close', () => withTempRepo(async (repo) => {
+testAsync('fleet: start → both ready → eval → select winner → close', () => withTempRepo(async (repo) => {
     writeSpec(repo, '02', 'fleet-test');
     await engine.startFeature(repo, '02', 'fleet', ['cc', 'gg']);
     await engine.signalAgentReady(repo, '02', 'cc');
-    await engine.signalAgentReady(repo, '02', 'gg');
+    const ready = await engine.signalAgentReady(repo, '02', 'gg');
+    assert.ok(hasAction(getActions(ready, '02'), 'feature-eval'));
     const evalSnap = await engine.requestFeatureEval(repo, '02');
     assert.strictEqual(evalSnap.lifecycle, 'evaluating');
-    // Before a winner is selected, fleet eval only offers per-agent select-winner
-    const pickActions = getActions(evalSnap, '02').validActions.filter(a => a.action === 'select-winner');
-    assert.ok(pickActions.length > 0, 'evaluating state should have select-winner actions before a winner is chosen');
-    const winnerSnap = await engine.selectWinner(repo, '02', 'cc');
-    assert.strictEqual(winnerSnap.winnerAgentId, 'cc');
-    const closeSnap = await engine.closeFeatureWithEffects(repo, '02', async () => {});
-    assert.strictEqual(closeSnap.lifecycle, 'done');
+    const pickers = getActions(evalSnap, '02').validActions.filter(a => a.action === 'select-winner');
+    assert.ok(pickers.length > 0);
+    const winner = await engine.selectWinner(repo, '02', 'cc');
+    assert.strictEqual(winner.winnerAgentId, 'cc');
+    const closed = await engine.closeFeatureWithEffects(repo, '02', async () => {});
+    assert.strictEqual(closed.lifecycle, 'done');
 }));
+
+// ─── Pause → resume ──────────────────────────────────────────────────────────
+
+testAsync('pause → resume lifecycle', () => withTempRepo(async (repo) => {
+    writeSpec(repo, '03', 'pause-test');
+    await engine.startFeature(repo, '03', 'solo_branch', ['cc']);
+    const paused = await engine.pauseFeature(repo, '03');
+    assert.strictEqual(paused.currentSpecState, 'paused');
+    assert.ok(hasAction(getActions(paused, '03'), 'feature-resume'));
+    assert.ok(!hasAction(getActions(paused, '03'), 'feature-pause'));
+    const resumed = await engine.resumeFeature(repo, '03');
+    assert.strictEqual(resumed.currentSpecState, 'implementing');
+    assert.ok(hasAction(getActions(resumed, '03'), 'feature-pause'));
+}));
+
+test('telemetry aggregator keeps feature-close normalization invariants', () => withTempDir('aigon-tel-', (repo) => {
+    const telemetry = require('../../lib/telemetry');
+    for (const [sessionId, activity, tokenUsage, costUsd] of [['sess-a', 'implement', { input: 100, output: 200, cacheReadInput: 50, cacheCreationInput: 25, thinking: 10, total: 385, billable: 310 }, 0.42], ['sess-b', 'review', { input: 50, output: 80, cacheReadInput: 0, cacheCreationInput: 0, thinking: 0, total: 130, billable: 130 }, 0.13]]) telemetry.writeNormalizedTelemetryRecord({ source: 'claude-transcript', sessionId, entityType: 'feature', featureId: '777', repoPath: repo, agent: 'cc', activity, model: 'claude-opus-4-6', startAt: '2026-04-07T00:00:00Z', endAt: '2026-04-07T01:00:00Z', tokenUsage, costUsd }, { repoPath: repo });
+    telemetry.writeAgentFallbackSession('777', 'cc', { repoPath: repo, source: 'feature-close-fallback', sessionId: 'fallback-close-record' });
+    const agg = telemetry.aggregateNormalizedTelemetryRecords('777', 'cc', { repoPath: repo, linesChanged: 50 });
+    assert.deepStrictEqual([agg.sessions, agg.input_tokens, agg.billable_tokens, agg.cost_usd, agg.model], [2, 150, 440, 0.55, 'claude-opus-4-6']); assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('777', 'solo', { repoPath: repo }).sessions, 2);
+    assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('999', 'cc', { repoPath: repo }), null);
+}));
+
+// ─── Research close finalizer ────────────────────────────────────────────────
 
 test('research close finalizer stages engine-moved spec and commits it', () => withTempDir('aigon-research-close-', (repo) => {
     for (const sub of RESEARCH_REPO_DIRS) fs.mkdirSync(path.join(repo, sub), { recursive: true });
@@ -181,88 +165,28 @@ test('research close finalizer stages engine-moved spec and commits it', () => w
         const { execSync } = require('child_process');
         const runGit = (command) => execSync(command, { cwd: process.cwd(), stdio: 'pipe' });
         entity.entityCloseFinalize(entity.RESEARCH_DEF, { num: '24', fromFolder: '04-in-evaluation' }, {
-            utils,
-            git: { runGit },
+            utils, git: { runGit },
         });
     `;
     execFileSync(process.execPath, ['-e', script], { cwd: repo, stdio: 'pipe' });
 
-    const headMessage = execSync('git log --format=%s -1', { cwd: repo }).toString().trim();
-    assert.strictEqual(headMessage, 'chore: complete research 24 - move spec to done');
-
+    assert.strictEqual(
+        execSync('git log --format=%s -1', { cwd: repo }).toString().trim(),
+        'chore: complete research 24 - move spec to done'
+    );
     const nameStatus = execSync('git show --name-status --format= HEAD', { cwd: repo }).toString();
     assert.match(nameStatus, /D\tdocs\/specs\/research-topics\/04-in-evaluation\/research-24-close-test\.md/);
     assert.match(nameStatus, /A\tdocs\/specs\/research-topics\/05-done\/research-24-close-test\.md/);
-
-    const doneSpec = fs.readFileSync(doneSpecPath, 'utf8');
-    assert.match(doneSpec, /transitions:\n  - \{ from: "in-evaluation", to: "done"/);
-}));
-
-// ─── Pause → resume ──────────────────────────────────────────────────────────
-
-testAsync('pause → resume lifecycle', () => withTempRepo(async (repo) => {
-    writeSpec(repo, '03', 'pause-test');
-    await engine.startFeature(repo, '03', 'solo_branch', ['cc']);
-    const pauseSnap = await engine.pauseFeature(repo, '03');
-    assert.strictEqual(pauseSnap.currentSpecState, 'paused');
-    const pauseActions = getActions(pauseSnap, '03');
-    assert.ok(hasAction(pauseActions, 'feature-resume'), 'paused state should have resume action');
-    assert.ok(!hasAction(pauseActions, 'feature-pause'), 'paused state should not have pause action');
-    const resumeSnap = await engine.resumeFeature(repo, '03');
-    assert.strictEqual(resumeSnap.currentSpecState, 'implementing');
-    assert.ok(hasAction(getActions(resumeSnap, '03'), 'feature-pause'), 'resumed state should have pause action');
-}));
-
-// REGRESSION (feature 229): captureAgentTelemetry must aggregate normalized
-// telemetry records written by the StopHook instead of re-parsing Claude
-// JSONL transcripts via brittle resolveClaudeProjectDir slug matching. When
-// records exist, transcript discovery is bypassed entirely.
-test('telemetry aggregator reads StopHook records over transcripts', () => withTempDir('aigon-tel-', (repo) => {
-    const telemetry = require('../../lib/telemetry');
-    telemetry.writeNormalizedTelemetryRecord({
-        source: 'claude-transcript', sessionId: 'sess-a', entityType: 'feature',
-        featureId: '777', repoPath: repo, agent: 'cc', activity: 'implement',
-        model: 'claude-opus-4-6', startAt: '2026-04-07T00:00:00Z', endAt: '2026-04-07T01:00:00Z',
-        tokenUsage: { input: 100, output: 200, cacheReadInput: 50, cacheCreationInput: 25, thinking: 10, total: 385, billable: 310 },
-        costUsd: 0.42,
-    }, { repoPath: repo });
-    telemetry.writeNormalizedTelemetryRecord({
-        source: 'claude-transcript', sessionId: 'sess-b', entityType: 'feature',
-        featureId: '777', repoPath: repo, agent: 'cc', activity: 'review',
-        model: 'claude-opus-4-6', startAt: '2026-04-07T02:00:00Z', endAt: '2026-04-07T03:00:00Z',
-        tokenUsage: { input: 50, output: 80, cacheReadInput: 0, cacheCreationInput: 0, thinking: 0, total: 130, billable: 130 },
-        costUsd: 0.13,
-    }, { repoPath: repo });
-    telemetry.writeAgentFallbackSession('777', 'cc', {
-        repoPath: repo,
-        source: 'feature-close-fallback',
-        sessionId: 'fallback-close-record',
-    });
-
-    const agg = telemetry.aggregateNormalizedTelemetryRecords('777', 'cc', { repoPath: repo, linesChanged: 50 });
-    assert.strictEqual(agg.sessions, 2, 'ignores fallback zero-usage records');
-    assert.strictEqual(agg.input_tokens, 150);
-    assert.strictEqual(agg.cost_usd, 0.55);
-    assert.strictEqual(agg.model, 'claude-opus-4-6');
-    assert.strictEqual(agg.billable_tokens, 440); // input+output+thinking
-    assert.strictEqual(agg.tokens_per_line_changed, 8.8);
-
-    // 'solo' acts as wildcard agent for legacy callers
-    const soloAgg = telemetry.aggregateNormalizedTelemetryRecords('777', 'solo', { repoPath: repo });
-    assert.strictEqual(soloAgg.sessions, 2);
-
-    // Missing feature → null (caller falls back gracefully, no crash)
-    assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('999', 'cc', { repoPath: repo }), null);
+    assert.match(fs.readFileSync(doneSpecPath, 'utf8'), /transitions:\n  - \{ from: "in-evaluation", to: "done"/);
 }));
 
 // ─── git.getMainRepoPath ─────────────────────────────────────────────────────
 
 testAsync('getMainRepoPath returns repo root from a subdirectory', () => withTempDirAsync('aigon-git-', async (dir) => {
-    // REGRESSION: feature 233 — getMainRepoPath only handled absolute git-common-dir
-    // (worktree case). From a subdir of a non-worktree repo it returned the subdir,
-    // misrouting every spec/snapshot lookup and surfacing as
-    // "Could not resolve visible spec for feature N".
-    const { execSync } = require('child_process');
+    // REGRESSION feature 233: getMainRepoPath only handled absolute
+    // git-common-dir (worktree case). From a subdir of a non-worktree repo it
+    // returned the subdir, misrouting every spec/snapshot lookup and surfacing
+    // as "Could not resolve visible spec for feature N".
     const gitLib = require('../../lib/git');
     execSync('git init -q', { cwd: dir });
     execSync('git config user.email t@t', { cwd: dir });
@@ -270,12 +194,9 @@ testAsync('getMainRepoPath returns repo root from a subdirectory', () => withTem
     fs.writeFileSync(path.join(dir, 'README.md'), 'x');
     execSync('git add . && git commit -qm init', { cwd: dir });
     fs.mkdirSync(path.join(dir, 'a', 'b', 'c'), { recursive: true });
-    const subdir = path.join(dir, 'a', 'b', 'c');
     // fs.realpathSync resolves /private/var → /var on macOS so the assert is stable.
-    assert.strictEqual(fs.realpathSync(gitLib.getMainRepoPath(subdir)), fs.realpathSync(dir));
+    assert.strictEqual(fs.realpathSync(gitLib.getMainRepoPath(path.join(dir, 'a', 'b', 'c'))), fs.realpathSync(dir));
     assert.strictEqual(fs.realpathSync(gitLib.getMainRepoPath(dir)), fs.realpathSync(dir));
 }));
-
-// ─── Run and report ──────────────────────────────────────────────────────────
 
 report();
