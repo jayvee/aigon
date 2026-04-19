@@ -157,3 +157,18 @@ DELETED (orphans, never wired):
 - [ ] `MOCK_DELAY=fast npm run test:ui` → 5 pre-existing failures on main, not introduced by this feature (see Unresolved above)
 - [x] Every remaining `test()` block has a named regression comment
 - [x] No snapshot tests, no mock-setup-heavy tests, no source-text regex tests remaining
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-19
+
+### Findings
+- Deleted integration coverage left live regressions unguarded for the legacy `--autonomous`/`--ralph` rename path, repair command registration/help wiring, and the stale-drive/worktree-reset invariants still exercised by production code.
+- The telemetry aggregation regression covering fallback-session filtering and `solo` wildcard aggregation was removed from `tests/integration/lifecycle.test.js` without equivalent surviving coverage.
+
+### Fixes Applied
+- `277971cb` `fix(review): restore trimmed regression coverage` restored the missing assertions in `tests/integration/misc-command-wrapper.test.js` and `tests/integration/lifecycle.test.js`, while keeping the suite at the 2000-LOC ceiling.
+
+### Notes
+- Review did not run `npm test` or `npm run test:ui`; only `bash scripts/check-test-budget.sh` and `node -c` were used for a non-test sanity pass.
