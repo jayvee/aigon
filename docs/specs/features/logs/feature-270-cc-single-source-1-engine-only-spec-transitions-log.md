@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 145
+lines_removed: 84
+lines_changed: 229
+files_touched: 7
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 317
+output_tokens: 84304
+cache_creation_input_tokens: 639660
+cache_read_input_tokens: 21891122
+thinking_tokens: 0
+total_tokens: 22615403
+billable_tokens: 84621
+cost_usd: 51.1578
+sessions: 2
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 270 - single-source-1-engine-only-spec-transitions
 Agent: cc
 
