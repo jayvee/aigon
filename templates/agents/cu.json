@@ -22,7 +22,8 @@
   },
   "capabilities": {
     "supportsModelFlag": false,
-    "transcriptTelemetry": false
+    "transcriptTelemetry": false,
+    "resolvesSlashCommands": false
   },
   "legacy": {
     "rootFile": null,
@@ -34,6 +35,7 @@
     "implementPrompt": "/aigon-feature-do {featureId}",
     "evalPrompt": "/aigon-feature-eval {featureId}",
     "reviewPrompt": "/aigon-feature-review {featureId}",
+    "reviewCheckPrompt": "/aigon-feature-review-check {featureId}",
     "models": {
       "review": "composer-2"
     }
