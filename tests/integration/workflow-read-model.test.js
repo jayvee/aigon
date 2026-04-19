@@ -74,6 +74,36 @@ test('research snapshot lifecycle also overrides visible folder stage', () => wi
     assert.strictEqual(s.readModelSource, wrm.WORKFLOW_SOURCE.SNAPSHOT);
 }));
 
+test('read model exposes detect-only spec drift relative paths by default', () => withTempDir('aigon-rm-', (repo) => {
+    seedRepo(repo);
+    writeSpec(repo, 'features', '02-backlog', 'feature-16-x.md');
+    writeSnap(repo, 'features', '16', 'implementing');
+    delete process.env.AIGON_AUTO_RECONCILE;
+    const s = wrm.getFeatureDashboardState(repo, '16', 'backlog', []);
+    assert.deepStrictEqual(s.specDrift, {
+        currentPath: 'docs/specs/features/02-backlog/feature-16-x.md',
+        expectedPath: 'docs/specs/features/03-in-progress/feature-16-x.md',
+        lifecycle: 'implementing',
+    });
+    assert.ok(fs.existsSync(path.join(repo, 'docs/specs/features/02-backlog/feature-16-x.md')));
+    assert.ok(!fs.existsSync(path.join(repo, 'docs/specs/features/03-in-progress/feature-16-x.md')));
+}));
+
+test('auto reconcile stays opt-in via AIGON_AUTO_RECONCILE=1', () => withTempDir('aigon-rm-', (repo) => {
+    seedRepo(repo);
+    writeSpec(repo, 'features', '02-backlog', 'feature-17-x.md');
+    writeSnap(repo, 'features', '17', 'implementing');
+    process.env.AIGON_AUTO_RECONCILE = '1';
+    try {
+        const s = wrm.getFeatureDashboardState(repo, '17', 'backlog', []);
+        assert.strictEqual(s.specDrift, null);
+        assert.ok(!fs.existsSync(path.join(repo, 'docs/specs/features/02-backlog/feature-17-x.md')));
+        assert.ok(fs.existsSync(path.join(repo, 'docs/specs/features/03-in-progress/feature-17-x.md')));
+    } finally {
+        delete process.env.AIGON_AUTO_RECONCILE;
+    }
+}));
+
 test('board re-buckets snapshot-backed features and keeps legacy items in original column', () => withTempDir('aigon-rm-', (repo) => {
     seedRepo(repo);
     writeSpec(repo, 'features', '02-backlog', 'feature-14-x.md');
@@ -89,6 +119,33 @@ test('board re-buckets snapshot-backed features and keeps legacy items in origin
     const legacy = (items['02-backlog'] || []).find(i => i.id === '15');
     assert.strictEqual(legacy.missingWorkflowState, true);
     assert.strictEqual(legacy.boardAction, null);
+}));
+
+test('board marks drifted items in its column output', () => withTempDir('aigon-rm-', (repo) => {
+    seedRepo(repo);
+    writeSpec(repo, 'features', '02-backlog', 'feature-18-x.md');
+    writeSnap(repo, 'features', '18', 'implementing');
+    const logs = [];
+    const origLog = console.log;
+    const origCwd = process.cwd();
+    console.log = (...args) => logs.push(args.join(' '));
+    try {
+        process.chdir(repo);
+        board.displayBoardListView({
+            includeFeatures: true,
+            includeResearch: false,
+            showAll: true,
+            showActive: false,
+            showInbox: false,
+            showBacklog: false,
+            showDone: false,
+            showActions: false,
+        });
+    } finally {
+        process.chdir(origCwd);
+        console.log = origLog;
+    }
+    assert.ok(logs.some(line => line.includes('⚠ drift')));
 }));
 
 report();
