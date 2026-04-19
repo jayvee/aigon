@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 313
+lines_removed: 80
+lines_changed: 393
+files_touched: 8
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 4204933
+output_tokens: 30902
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 3954944
+thinking_tokens: 13009
+total_tokens: 4235835
+billable_tokens: 4248844
+cost_usd: 9.4481
+sessions: 3
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 273 - single-source-4-feedback-single-authority
 Agent: cx
 
