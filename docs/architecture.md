@@ -78,13 +78,13 @@ Current shared modules:
   `normalizeFeedbackMetadata`, `collectFeedbackItems`, `findDuplicateFeedbackCandidates`, `buildFeedbackTriageRecommendation`
 - `lib/git.js` (~700+ lines): git helpers — branch/worktree/status, feature metrics, AI-attribution classification, commit analytics
   `getCurrentBranch`, `getFeatureGitSignals`, `classifyCommitAttributionRange`, `getFileLineAttribution`, `getCommitAnalytics`, `filterCommitAnalytics`, `buildCommitSeries`
-- `lib/agent-status.js` (~130 lines): per-agent status file I/O in `.aigon/state/`, atomic JSON writes, candidate ID resolution
+- `lib/agent-status.js` (~130 lines): per-agent status file I/O in `.aigon/state/`, atomic JSON writes, candidate ID resolution, and dashboard-facing state reads
   `readAgentStatus`, `writeAgentStatus`, `writeAgentStatusAt`, `agentStatusPath`, `getStateDir`, `getLocksDir`
 - `lib/agent-prompt-resolver.js` (~140 lines): shared feature prompt resolution for agent launches; preserves configured slash-command prompts for cc/gg/cu and inlines the canonical `templates/generic/commands/feature-*.md` body for cx so Codex launches never depend on deprecated `/prompts:` discovery or local skill discovery
   `resolveAgentPromptBody`, `resolveCxPromptBody`
 - `lib/state-queries.js` (~250 lines): read-only UI helpers — feedback action/transition derivation (pure, no I/O). Feature/research constants retained for diagram generation only; action derivation for features/research lives in workflow-core.
   `getValidTransitions`, `getAvailableActions`, `getSessionAction`, `getRecommendedActions`, `isActionValid`, `shouldNotify`
-- `lib/feature-spec-resolver.js` (~200 lines): canonical feature/research visible-spec lookup so consumers stop guessing from visible folders
+- `lib/feature-spec-resolver.js` (~200 lines): canonical feature/research visible-spec lookup so consumers stop guessing from visible folders or hardcoding dashboard folder scans
   `resolveEntitySpec`, `resolveFeatureSpec`, `resolveResearchSpec`
 - `lib/spec-reconciliation.js` (~130 lines): shared self-healing spec projection helper for feature/research workflow drift and feedback status->folder drift, reused by dashboard/list read paths and `aigon repair`
   `reconcileEntitySpec`
@@ -95,7 +95,7 @@ Current shared modules:
   `safeTmuxSessionExists`, `resolveFeatureWorktreePath`, `normalizeDashboardStatus`, `maybeFlagEndedSession`
 - `lib/auto-session-state.js` (~50 lines): durable AutoConductor run-state helper so feature autonomous status survives tmux/session loss and can be reported by the dashboard/CLI
   `readFeatureAutoState`, `writeFeatureAutoState`, `clearFeatureAutoState`
-- `lib/dashboard-status-collector.js` (~830 lines): shared AIGON server read-side collector so repo/entity status assembly is separated from HTTP transport and notification code, including metadata-authoritative feedback status reads
+- `lib/dashboard-status-collector.js` (~830 lines): shared AIGON server read-side collector so repo/entity status assembly, dashboard detail log reads, and done-count aggregation are separated from HTTP transport and notification code, including metadata-authoritative feedback status reads
   `collectDashboardStatusData`
 - `lib/server-runtime.js` (~90 lines): shared AIGON server lifecycle helpers extracted from infra command wiring
   `launchDashboardServer`, `stopDashboardProcess`
@@ -106,7 +106,7 @@ Current shared modules:
 
 - `lib/proxy.js` (~660 lines): Caddy management (Caddyfile generation, route add/remove, reload), port allocation, dev server utilities
   `writeCaddyfile`, `addCaddyRoute`, `removeCaddyRoute`, `reloadCaddy`, `allocatePort`
-- `lib/dashboard-server.js` (~1,980 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, static assets, and OSS/Pro route dispatch
+- `lib/dashboard-server.js` (~1,980 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, static assets, and OSS/Pro route dispatch. It should not parse engine-state/spec/log files directly.
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
 - `lib/dashboard-routes.js` (~1,660 lines): OSS dashboard API route table and dispatcher — owns `/api/...` route matching plus extracted handlers that receive request/response objects and server context
   `createDashboardRouteDispatcher`
@@ -272,8 +272,8 @@ Feature writes go through the engine, but the read side is still mixed:
 - `aigon feature-list` and `aigon feature-spec` are the preferred CLI query surfaces for active features. Do not use `board` output as a data API.
 - `lib/workflow-read-model.js` provides shared dashboard read state (snapshot-backed for features/research) and derives recommended actions for feedback via `lib/state-queries.js`.
 - `lib/feedback.js` provides feedback metadata parsing/collection so feedback list and dashboard reads derive status from frontmatter rather than folder position.
-- `lib/dashboard-status-collector.js` now owns the AIGON server's dashboard-facing repo/entity reads, including compatibility behavior for older repos that may not have a complete workflow snapshot yet.
-- `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, static serving, and delegating API requests to `lib/dashboard-routes.js`.
+- `lib/dashboard-status-collector.js` now owns the AIGON server's dashboard-facing repo/entity reads, including compatibility behavior for older repos that may not have a complete workflow snapshot yet, plus dashboard detail log reads and done-count aggregation.
+- `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, static serving, and delegating API requests to `lib/dashboard-routes.js`. It remains read-only with respect to both mutations and engine-state/spec/log file access.
 
 So the architecture after Feature 171 is:
 

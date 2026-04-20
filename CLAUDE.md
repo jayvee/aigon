@@ -49,8 +49,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/commands/feature.js` | ~2860 | All `feature-*` handlers, `sessions-close`, `feature-autonomous-start` (AutoConductor launcher + `__run-loop`) |
 | `lib/feature-close.js` | ~740 | Feature-close phases: target resolution, merge, telemetry, engine close, cleanup |
 | `lib/feature-review-state.js` | ~220 | Review lifecycle state per feature: `review-state.json` (current + history), `markReviewingSync`, `completeReviewSync`, `reconcileReviewState`. Written by `agent-status` commands; read by AutoConductor `__run-loop` to confirm review completion. |
-| `lib/dashboard-server.js` | ~2660 | AIGON server HTTP/UI module: dashboard UI, API, WebSocket relay, polling, HTTP action dispatch. Never mutates engine state directly. |
-| `lib/dashboard-status-collector.js` | ~830 | AIGON server read-side collector: assembles repo, feature, research, feedback, summary, and compatibility status payloads, with feedback status derived from frontmatter metadata |
+| `lib/dashboard-server.js` | ~2660 | AIGON server HTTP/UI module: dashboard UI, API, WebSocket relay, polling, HTTP action dispatch. Never mutates engine state directly and never reads engine-state/spec/log files directly. |
+| `lib/dashboard-status-collector.js` | ~830 | AIGON server read-side collector: assembles repo, feature, research, feedback, summary, compatibility status payloads, plus dashboard-owned log/detail read helpers |
 | `lib/commands/infra.js` | ~1460 | `aigon server` command, board, config, proxy-setup, dev-server |
 | `lib/utils.js` | 1474 | Spec CRUD, hooks, version, analytics |
 | `lib/commands/setup.js` | 1212 | init, install-agent, check-version, update, doctor + state reconciliation |
@@ -60,12 +60,12 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/config.js` | ~950 | Global/project config, agent CLI config (profiles delegated to profile-placeholders.js) |
 | `lib/profile-placeholders.js` | ~500 | Profile presets (from `templates/profiles.json`), detection, instruction directive resolvers, `getProfilePlaceholders()` |
 | `lib/state-queries.js` | ~250 | Read-only UI helpers: feedback action/transition derivation — pure, no I/O. Feature/research constants retained for diagrams only |
-| `lib/feature-spec-resolver.js` | ~140 | Canonical feature spec lookup for active features; avoids consumer-specific folder guessing |
+| `lib/feature-spec-resolver.js` | ~140 | Canonical feature/research spec lookup for visible specs; avoids consumer-specific folder guessing and direct folder scans |
 | `lib/feature-status.js` | ~230 | Deep feature status collector: `collectFeatureDeepStatus()` — session, progress, cost, spec data on demand |
 | `lib/action-command-mapper.js` | ~75 | Shared dashboard/board command formatting used by workflow read paths |
 | `lib/dashboard-status-helpers.js` | ~200 | Shared dashboard status helpers: tmux/session detection, worktree lookup, status normalization, stale-session heuristics |
 | `lib/server-runtime.js` | ~90 | Shared AIGON server lifecycle helpers for start/restart/stop orchestration |
-| `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/{prefix}-{id}-{agent}.json`), atomic writes |
+| `lib/agent-status.js` | ~130 | Per-agent status file I/O (`.aigon/state/{prefix}-{id}-{agent}.json`), atomic writes, and dashboard-facing state reads |
 | `lib/stats-aggregate.js` | ~270 | **Stats aggregate**: scans `.aigon/workflows/{features,research}/<id>/stats.json`, rolls up totals + per-agent + weekly/monthly buckets, caches to `.aigon/cache/stats-aggregate.json` with `CACHE_VERSION`. Rebuilt lazily when any `stats.json` mtime exceeds the cache. Powers `aigon stats`, `aigon doctor --rebuild-stats`, and the `/api/stats-aggregate` endpoint. |
 | `lib/migration.js` | ~300 | **Migration framework**: versioned state migrations with backup/restore/validate lifecycle. `registerMigration(version, fn)` + `runPendingMigrations()` called from `check-version`. Backup via tar, idempotent (manifest check), auto-rollback on failure. |
 | `lib/agent-prompt-resolver.js` | ~140 | Resolves the launch prompt for an agent + verb. Default path passes through `cliConfig.<verb>Prompt` (cc/gg/cu slash commands). cx path inlines the canonical `templates/generic/commands/feature-<verb>.md` body (frontmatter stripped, `$ARGUMENTS`/`$1` substituted) so codex launches never depend on skill / prompt discovery. |
@@ -105,7 +105,9 @@ Supporting state:
 - **Heartbeat is display-only**: heartbeat files exist for agent liveness tracking but card status uses tmux session checks directly. Heartbeat data NEVER triggers engine state transitions. The supervisor computes liveness and stores it in memory; the dashboard reads it via `getAgentLiveness()`. Users manually mark agents as lost/failed — the system never does this automatically.
 - Log files are **pure narrative markdown** — no YAML frontmatter, no machine state
 
-The dashboard UI uses `lib/state-queries.js` for feedback action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths, `lib/spec-reconciliation.js` to project workflow or feedback-authority state back into visible folders, and `lib/dashboard-status-collector.js` to keep repo/entity status assembly out of the HTTP server module.
+The dashboard UI uses `lib/state-queries.js` for feedback action/transition derivation (pure functions, no I/O), `lib/workflow-snapshot-adapter.js` to read engine snapshots through the AIGON server, `lib/action-command-mapper.js` to keep dashboard/board command formatting consistent across read paths, `lib/spec-reconciliation.js` to project workflow or feedback-authority state back into visible folders, `lib/agent-status.js` for per-agent state-file reads, `lib/feature-spec-resolver.js` for spec discovery, and `lib/dashboard-status-collector.js` to keep repo/entity status assembly and dashboard log/detail reads out of the HTTP server module.
+
+Dashboard read-only rule: the dashboard may not mutate engine state directly and may not parse engine-state/spec/log files directly from `dashboard-server.js` or frontend code. File-format ownership stays with the read-side owner modules.
 
 Research lifecycle is also managed by the workflow-core engine (`.aigon/workflows/research/{id}/`). Feedback entities still stay outside the workflow engine, but their frontmatter `status` is now the authority and visible folders are a reconciled projection of that metadata.
 
