@@ -41,3 +41,18 @@ Agent: cx
 ## Conversation Summary
 - Implemented feature 246 from the current worktree without re-running `feature-start`.
 - Focused only on the files named in the spec plus the new regression test and the package test script entry.
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-04-20
+
+### Findings
+- `templates/dashboard/js/pipeline.js:88-92` still hardcoded `getAgentPromptPrefix` as an `agentId === 'cx' / 'cu'` ladder. This violated acceptance criterion #1 (no hardcoded agent metadata in dashboard JS) — deleting `cu.json` or `cx.json` would leave dangling references.
+
+### Fixes Applied
+- `fix(review): route dashboard prompt prefix through registry` — added `cmdPrefix` to `getDashboardAgents()` in `lib/agent-registry.js` (sourced from `placeholders.CMD_PREFIX`) and rewrote `getAgentPromptPrefix` to read it from `window.__AIGON_AGENTS__`.
+
+### Notes
+- The rest of the implementation is solid: registry projections are the single source of truth, the new contract test guards against drift, and `npm test` passes clean.
+- Minor observations left as-is (not in scope for a spec-bounded review): `actions.js:647` still defaults the autonomous checkbox to `cc` with a literal ID, and several `|| 'cc'` fallbacks remain in `pipeline.js` / `sidebar.js`. These are defaults, not enumerated metadata, so they don't block the AC — but they are still drift risks if `cc` is ever retired.
