@@ -58,14 +58,8 @@ docs/specs/
 
 1. **Spec-Driven**: Never write code without resolving the active feature spec via `aigon feature-spec <ID>`
 2. **Work in isolation**: Solo mode uses branches, arena mode uses worktrees
-3. **Implementation Logs (mode-conditional)**: In **Fleet** mode, each agent writes a short log under `docs/specs/features/logs/` for side-by-side comparison. In **solo Drive (branch)** mode, no log is required by default (the spec and commits are the record). In **solo Drive worktree** mode, add at most a one-line note if a starter log exists. Set `"logging_level": "fleet-only" | "always" | "never"` in `.aigon/config.json` to override (`fleet-only` is the default when the key is omitted).
+3. **Implementation Logs**: Document implementation decisions in `logs/` before completing
 4. **Feature lifecycle is engine-backed**: workflow-core is the authority for features, and visible spec folders are a projection of that state
-
-## Worktree discipline
-
-- Run `pwd` and `git branch --show-current` once per session; you should see a `feature-<ID>-...` branch when implementing an active feature.
-- Stay in the worktree or branch the launcher created — do not manually `git mv` specs, create branches, or add worktrees; use `aigon feature-*` commands only.
-- If `aigon` fails, read the error text first. Do not hunt for `aigon-cli.js` or bypass the CLI.
 
 ## Feature State Model
 
@@ -83,7 +77,7 @@ For features, there are two relevant layers:
 4. Implement the feature according to the spec
 5. Test your changes and wait for user confirmation
 6. Commit using conventional commits (`feat:`, `fix:`, `chore:`)
-7. If your `aigon feature-do` prompt includes a log step, update `./docs/specs/features/logs/`; in solo Drive branch mode there is usually no log step
+7. Update the implementation log in `./docs/specs/features/logs/`
 8. **STOP** - Wait for user to approve before running `aigon feature-close <ID>`
 
 ## Arena Mode Workflow
@@ -95,7 +89,7 @@ For features, there are two relevant layers:
    - Read the spec path returned by `aigon feature-spec <ID>`
    - Implement the feature
    - Commit your changes
-   - Update the implementation log when prompted (Fleet: short bullets; solo worktree: one line if applicable)
+   - Update the implementation log
    - **STOP** - Do NOT run `feature-close` from worktree
 4. Return to main repo for evaluation: `aigon feature-eval <ID>`
 5. Merge winner: `aigon feature-close <ID> cc`
