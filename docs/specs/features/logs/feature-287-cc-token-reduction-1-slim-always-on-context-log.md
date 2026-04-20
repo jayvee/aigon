@@ -27,3 +27,18 @@ Net: the always-on context load (CLAUDE.md + `feature-do` working copy) dropped 
 - AGENTS.md now holds everything; CLAUDE.md is a 20-line pointer that lists only the hottest rules. The Claude Code harness still auto-loads CLAUDE.md, so a minimal pointer keeps the baseline small while the agent fetches AGENTS.md on demand.
 - Left `feature-start.md` template's `SETUP_ENV_LOCAL_LINE` placeholder at end-of-line; now the resolver prepends its own newline so empty variants collapse cleanly.
 - Did not touch `feature-do.md`'s DEP check heading in the template itself — moved it into the resolver so "not applicable" profiles (ios/android/generic) get zero lines instead of a dangling `## Before Step 3` heading with no body.
+
+## Code Review
+
+**Reviewed by**: cu (Cursor agent)
+**Date**: 2026-04-21
+
+### Findings
+- Broken doc anchor: `feature-do` pointed at `docs/development_workflow.md` § "Worktree discipline" but that heading did not exist (would confuse agents following the invariant link).
+
+### Fixes Applied
+- `fix(review): add Worktree discipline section for feature-do pointer` — added a short `## Worktree discipline` section to `docs/development_workflow.md` so the hot-template cross-reference resolves.
+
+### Notes
+- Acceptance criteria appear met: CLAUDE.md is a thin pointer; four hot templates dropped 322 source lines (>200); placeholders and `processTemplate` newline collapse behave as intended; eval/review templates avoid redundant `feature-spec` when the body is inlined; implementation log already records pre/post prompt deltas for cc/gg/cx.
+- `MEMORY.md` pruning is local to `~/.claude/` and is not verifiable from the repo diff.
