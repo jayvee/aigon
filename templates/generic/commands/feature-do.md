@@ -165,6 +165,8 @@ Hard rules:
 - If it fails, report the exact error output and stop for user guidance
 - Do **not** improvise with `feature-close` or substitute commands
 
+**Ship immediately once validation passes.** When tests/checks are green and your code is committed, call `aigon agent-status submitted` within 60 seconds. Do **not** re-run validation "to be sure", do **not** re-read the spec for a final look, do **not** expand the implementation log before submitting — the log step (Step 6) comes AFTER submit and is deliberately small. If you find yourself deliberating on "should I check one more thing", stop deliberating and ship.
+
 After it succeeds, tell the user: "Implementation complete — ready for review."
 
 **STAY in the session.** The user may request changes. If they do, make the changes, commit, and say "Changes committed."
