@@ -81,3 +81,43 @@ Today's AutoConductor (`feature-autonomous-start __run-loop`) runs one feature a
 - GitHub Milestones — simple label + completion percentage
 - Turborepo's task graph — dependency-aware parallel execution
 - Research evaluation flow that already produces multiple features as output
+
+## Recommendation
+
+All three evaluating agents (cc, gg, cu) converged on the same core design: **tag-only membership (`set: <slug>` in spec frontmatter) + a SetConductor that delegates to the existing single-feature AutoConductor in topological order**. The consensus design locks to three decisions that collapse a surprisingly large design space:
+
+1. **Lifecycle is derived, not tracked.** A set has no XState machine, no event log, no dedicated folder structure. Progress = counts over member workflow states (Linear Projects model). If set-level lifecycle actions ever emerge as a real need, promote to Option C (workflow-core entity) later — never preemptively.
+2. **`depends_on` remains the canonical order and merge-safety authority.** Sets do batching, visibility, and conductor scope. They do **not** duplicate dependency semantics; they consume the existing `lib/entity.js` dep graph.
+3. **"Safe to start the next member" = wait for `feature-close` success (merged to main).** Sequential-after-merge is the only policy where branch bases stay trivially correct — B branches off a fresh `origin/main` that already contains A's code. Waiting for `submitted` or `review-complete` opens a branch-base rebasing problem that dwarfs the time savings. Parallel mode is deferred until sequential is proven.
+
+The rollout ships in layers: **membership (#1)** is the OSS foundation; **research-eval emission (#2)** closes the common loop where sets are born; **the SetConductor (#3)** unlocks set-level autonomy; **pause/resume (#4)** makes it trustworthy to walk away from; **the dashboard card (#5)** turns it into a usable command center. Three features were deferred (manifest file, telemetry rollup, parallel execution) — each adds real value but the consensus is to defer until the core flow is exercised and a concrete need surfaces.
+
+The one live divergence — whether research-eval auto-tags or prompts — is resolved in favour of **opt-in prompt** (cc's position), because sets are a user-scope decision with real downstream consequences (grouping on the board, future autonomous batching). Silent tagging would surprise users in the worst moment.
+
+## Output
+
+### Selected Features
+
+| Feature Name | Description | Priority | Create Command |
+|--------------|-------------|----------|----------------|
+| feature-set-1-membership-and-board | `set:` frontmatter + scanner in `entity.js` + `aigon set list/show` CLI + collapsible board grouping. OSS foundation. | high | `aigon feature-create "feature-set-1-membership-and-board"` |
+| feature-set-2-research-eval-emit-metadata | `research-eval` proposes a set slug when ≥2 features are selected and stamps `set:` on created specs via `feature-create --set`. Opt-in only. | high | `aigon feature-create "feature-set-2-research-eval-emit-metadata"` |
+| feature-set-3-autonomous-conductor | SetConductor tmux loop + durable set-auto state + `set-autonomous-{start,stop,resume,reset}` CLI. Sequential, waits for `feature-close`. Pro-gated. | high | `aigon feature-create "feature-set-3-autonomous-conductor"` |
+| feature-set-4-failure-pause-resume | Pause the whole set on any member failure, notify via `supervisor.js`, resume from saved cursor. | medium | `aigon feature-create "feature-set-4-failure-pause-resume"` |
+| feature-set-5-dashboard-card | Set-level dashboard card: progress bar, dep-graph mini-view, current feature, action buttons via the central action registry. | medium | `aigon feature-create "feature-set-5-dashboard-card"` |
+
+### Feature Dependencies
+<!-- List dependency chains so features can be prioritised in order -->
+<!-- Each feature spec already has depends_on in its Dependencies section -->
+- feature-set-2 depends on feature-set-1
+- feature-set-3 depends on feature-set-1
+- feature-set-4 depends on feature-set-3
+- feature-set-5 depends on feature-set-3
+
+Recommended implementation order: `feature-set-1` → (`feature-set-2` and `feature-set-3` can go in parallel) → `feature-set-4` and `feature-set-5` after `feature-set-3` merges.
+
+### Not Selected
+<!-- Features discussed but not selected, for reference -->
+- **feature-set-manifest-io** (cu only, deferred): Optional `.aigon/feature-sets/<slug>.json` for ordered member list and provenance. cc and gg both argue the frontmatter tag + set-auto state file is enough for MVP. Reconsider if the SetConductor starts needing ordering hints that can't be derived from `depends_on`.
+- **feature-set-telemetry-rollup** (cc + cu, deferred): Per-set rollups in `lib/stats-aggregate.js` + `aigon stats --set <slug>`. Valuable but not on the autonomy critical path; add once sets are in real use and users ask for it.
+- **feature-set-parallel-execution** (cc defer / gg opt-in flag / cu ready-queue): Graph-aware parallel execution of independent members. cc's "defer to v2 after sequential is proven" is explicit; until a user actually needs this and sequential has stabilised, the worktree-contention complexity isn't worth it.
