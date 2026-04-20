@@ -4,7 +4,7 @@
 ## Agent Identity
 - **Agent ID**: `mv`
 - **Worktree Pattern**: `../feature-NN-mv-description`
-- **Implementation Log**: `./docs/specs/features/logs/feature-NN-mv-log.md`
+- **Implementation Log**: Mode-conditional — Fleet requires a short log under `./docs/specs/features/logs/`; solo Drive (branch) skips it by default; solo Drive worktree uses a one-line log when a starter file exists. Override with `"logging_level": "fleet-only" | "always" | "never"` in `.aigon/config.json` (see `docs/development_workflow.md`).
 
 ## Commands
 
