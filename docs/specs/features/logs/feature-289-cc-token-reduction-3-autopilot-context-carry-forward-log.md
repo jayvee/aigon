@@ -14,3 +14,6 @@ Agent: cc
 - Safety: carry-forward building is wrapped in try/catch; `iterationCarryForward` stays null if it throws, falling back to cold-start behaviour.
 - Carry-forward assertions live in `misc-command-wrapper.test.js` so `npm test` stays under the suite LOC ceiling.
 - 50% reduction achieved on iterations 3+ where the uncompressed progress file otherwise grows unboundedly.
+
+## Review
+- 2026-04-21: Approved — carry-forward omits duplicate criteria, tests stay under LOC budget, `npm test` green.
