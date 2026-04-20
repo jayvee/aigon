@@ -82,19 +82,75 @@ The output should distinguish clearly between:
 - If a question cannot be answered confidently from available data, say so directly and recommend the smallest follow-up measurement feature needed to close the gap.
 
 ## Findings
-<!-- Document discoveries, options evaluated, pros/cons -->
-Use this section to record:
-- a ranked list of the top token sinks, with evidence and confidence level for each
-- quick wins vs. medium-effort wins
-- known unknowns that require follow-up instrumentation rather than speculation
+
+Full per-agent findings live alongside this spec:
+
+- `docs/specs/research-topics/logs/research-35-cc-findings.md`
+- `docs/specs/research-topics/logs/research-35-cx-findings.md`
+- `docs/specs/research-topics/logs/research-35-gg-findings.md`
+
+### Consensus (cc + cx + gg)
+
+1. **Root docs are oversized.** `CLAUDE.md` 287 lines, `AGENTS.md` 210 lines, heavy overlap (Module Map, Rules, Common Agent Mistakes). `CLAUDE.md` auto-loads every CC session. Cross-repo sampling (cx) shows aigon is the outlier: aigon-pro `AGENTS.md` is 76 lines, farline 25, jvbot 33.
+2. **Command templates are mostly ceremony.** `feature-do.md` is 180 lines; ~70 of those are the "Worktree execution rules (MANDATORY)" + "Step 0: Verify workspace (MANDATORY)" blocks, paid every session on every hot template (`feature-do`, `feature-start`, `feature-eval`, `feature-review`). Profile placeholders (`{{TESTING_WRITE_SECTION}}`, `{{LOGGING_SECTION}}`, etc.) render full paragraphs even for "not applicable" variants.
+3. **Hot modules are large and frequently read.** `lib/commands/feature.js` ~3900 lines, `lib/dashboard-server.js` ~1850, `lib/worktree.js` ~1500.
+4. **AutoConductor polling is free.** `__run-loop` uses `spawnSync('sleep', ...)` and local file reads. The cost is session restarts, not the loop.
+5. **Autopilot cold-starts amplify context load.** Every iteration pays the full orientation + template + spec cost again with zero carry-forward.
+6. **Telemetry is insufficient to answer the cost questions cleanly.** No per-turn attribution, no context-load vs. mid-session split, telemetry corpus dominated by `implement` activity (cx:implement 94 sessions / 183M billable tokens vs cc:implement 54 / 1.5M).
+7. **`~/.codex/config.toml` (2069 lines) is unproven as a prompt cost.** All three agents flagged the file; none could prove it is serialised into the model prompt. Best available evidence points to local CLI use; a proper audit is needed before any pruning work.
+
+### Divergent views
+
+- **Fleet cost multiplier.** cc says ~3× (architectural — each worktree is a fresh CLI with no shared context). gg measured ~2× token volume on aggregate but **near-identical dollar cost** (~$18 either way) because Fleet mixes cheaper models. Both are compatible: tokens scale linearly, dollars don't.
+- **Memory pruning.** cc wants `MEMORY.md` pruned of retired-agent entries (mv, cu-as-retired). cx says memory is "worth pruning for correctness, but not the first win." gg does not mention it.
+- **Prompt caching.** cx is the only agent pushing explicit Anthropic prompt-caching around the stable Claude prefix; cc notes observed cache-read dominance without recommending a structural change; gg does not cover it.
+- **Duplicate context delivery paths.** cx uniquely calls out that `feature-do.md` inlines the spec but also teaches `aigon feature-spec` as a fallback, and some templates (`feature-review.md` Step 2) re-invoke it. cc's findings acknowledge the duplication exists; gg does not discuss it.
+
+### Ranked token sinks (synthesised)
+
+1. Root always-on docs duplication (`CLAUDE.md` + `AGENTS.md`) — high confidence, directly measurable.
+2. Hot-template ceremony blocks (`feature-do/start/eval/review`) — high confidence, directly countable.
+3. Autopilot cold-start per iteration — moderate confidence, mechanism clear.
+4. Profile placeholder "not applicable" prose — moderate confidence, fixable per resolver.
+5. Fleet parallelism (~2-3× multiplier) — high confidence, not reducible without changing Fleet semantics. Out of scope.
+6. `~/.codex/config.toml` — low confidence this is a sink; needs audit before action.
+7. Memory index bloat — low absolute impact; cheap to fix.
 
 ## Recommendation
-<!-- Summary of recommended approach based on findings -->
-Summarize the 3-5 highest-leverage actions in implementation order. For each, note whether it is:
-- directly actionable as a feature now
-- blocked on missing measurement
-- better deferred because it belongs to agent-vendor behavior rather than Aigon
+
+Grouped into four follow-up features (implementation order reflects dependencies, not priority):
+
+1. **`token-reduction-1-slim-always-on-context`** — Consolidate `CLAUDE.md` into `AGENTS.md`, collapse the "MANDATORY" ceremony in the four hot templates to a one-line invariant, make profile-placeholder "skip" variants render empty, remove duplicate `aigon feature-spec` paths, prune retired entries from the Claude memory index. **Directly actionable.**
+2. **`token-reduction-2-telemetry-and-audits`** — Extend cc/cx/gg parsers in `lib/telemetry.js` with per-turn token emission + a `contextLoadTokens` bucket, link implement/review/eval/close sessions under a shared `workflowRunId`, commit a short `docs/` audit recording whether `~/.codex/config.toml` reaches the model prompt. Closes the measurement gap that blocks data-driven iteration on `1`, `3`, and `4`. **Directly actionable** (the telemetry work); the audit is **directly actionable but evidence-bounded** — deliverable is a documented conclusion with confidence level, not a guaranteed proof.
+3. **`token-reduction-3-autopilot-context-carry-forward`** — Edit `lib/validation.js` so iterations 2+ of `--iterate` inject a bounded, deterministic summary of the previous iteration instead of paying the full cold-start cost. **Directly actionable.** Benefits from `2` shipping first so the win is measurable, but not blocked on it.
+4. **`token-reduction-4-claude-prompt-cache-stable-prefix`** — Make Claude prompt-caching of the stable Aigon prefix explicit after `1` has trimmed it down. **Directly actionable, depends on `1`.** If the CC harness does not expose a stable way to set `cache_control`, the feature downgrades to a documented confirmation task rather than code change.
+
+### Deferred / out of scope
+
+- **Codex `model_reasoning_effort` tuning** — model-selection lever, explicitly out of research scope.
+- **Splitting `lib/commands/feature.js` / `dashboard-server.js` / `worktree.js`** — target-repo refactor, explicitly out of research scope. Revisit once `2` gives real cost data per feature.
+- **Fleet-mode cost sharing** — would change Fleet semantics; out of research scope.
+- **Pruning `~/.codex/config.toml`** — deferred until the audit in `2` confirms whether it is actually sent as prompt context.
 
 ## Output
-<!-- Create follow-up feature specs only for recommendations that are clearly in Aigon's control and specific enough to implement. Do not create speculative features for vendor/tool behavior you cannot verify. Link the created files below. -->
-- [ ] Feature:
+
+### Selected Features
+
+| Feature Name | Description | Priority | Create Command |
+|--------------|-------------|----------|----------------|
+| token-reduction-1-slim-always-on-context | Consolidate CLAUDE.md into AGENTS.md; collapse MANDATORY ceremony in hot templates; empty-string "skip" placeholders; remove duplicate spec paths; prune memory index. | high | `aigon feature-create "token-reduction-1-slim-always-on-context"` |
+| token-reduction-2-telemetry-and-audits | Per-turn token attribution in cc/cx/gg parsers; shared workflowRunId across implement/review/eval/close; Codex config prompt-context audit. | high | `aigon feature-create "token-reduction-2-telemetry-and-audits"` |
+| token-reduction-3-autopilot-context-carry-forward | Iterations 2+ of the iterate loop inject a bounded deterministic summary of the previous iteration instead of cold-starting. | medium | `aigon feature-create "token-reduction-3-autopilot-context-carry-forward"` |
+| token-reduction-4-claude-prompt-cache-stable-prefix | Explicit Anthropic prompt-caching around the slim stable Aigon prefix for CC sessions. | medium | `aigon feature-create "token-reduction-4-claude-prompt-cache-stable-prefix"` |
+
+### Feature Dependencies
+
+- `token-reduction-4-claude-prompt-cache-stable-prefix` depends on `token-reduction-1-slim-always-on-context` (cache the slim prefix, not the bloated one). Captured via `depends_on` in the feature 4 spec.
+- Features 3 and 4 benefit from feature 2 landing first (measurable wins) but are not formally blocked on it.
+
+### Not Selected
+
+- **Splitting `lib/commands/feature.js` and other hot modules** — target-repo refactor, research topic explicitly put this out of scope. Revisit after feature 2 gives per-activity cost data.
+- **Codex `model_reasoning_effort` tuning** — model-selection lever, out of topic scope.
+- **Fleet cost-sharing redesign** — would change Fleet semantics, out of topic scope.
+- **Pruning `~/.codex/config.toml` now** — deferred until the audit in feature 2 proves or disproves it is a prompt-context cost.
