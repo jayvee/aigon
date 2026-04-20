@@ -1,10 +1,14 @@
 # --- Aigon Configuration Start ---
 # See: https://developers.openai.com/codex/local-config/
 
-# Trust the aigon CLI tool - allow it to run without approval prompts
+# Codex subagents inherit the parent session's approval and sandbox policy.
+# There is no separate awaiter approval key to set.
 approval_policy = "never"
 
-# Full access required for git branch operations (checkout, merge, etc.)
+# Pair with danger-full-access for autonomous shell/git work inside trusted
+# Aigon worktrees. Aigon also registers each worktree path under
+# ~/.codex/config.toml [projects."<path>"] trust_level = "trusted" so this
+# project config applies in child worktrees too.
 sandbox_mode = "danger-full-access"
 
 [sandbox_workspace_write]

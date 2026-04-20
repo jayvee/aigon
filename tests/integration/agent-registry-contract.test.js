@@ -3,7 +3,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { test, report } = require('../_helpers');
+const { test, withTempDir, report } = require('../_helpers');
 const agentRegistry = require('../../lib/agent-registry');
 const templates = require('../../lib/templates');
 const dashboardServer = require('../../lib/dashboard-server');
@@ -72,5 +72,54 @@ test('profile templates derive ports from basePort plus registry offsets', () =>
         assertExactAgentSet(Object.keys(buildAgentPortMap(profiles.profiles[profileName].devServer.basePort)), expectedIds, `${profileName} port map drifted`);
     });
 });
+
+test('codex trust writes exact project sections for repo and worktree paths', () => withTempDir('aigon-cx-trust-', tmpDir => {
+    // REGRESSION: prevents cx worktree trust from only covering the parent ~/.aigon/worktrees/<repo> dir.
+    const originalHome = process.env.HOME;
+    const originalCwd = process.cwd();
+    const repoPath = path.join(tmpDir, 'repo');
+    const worktreePath = path.join(tmpDir, 'worktrees', 'feature-284-cx-test');
+    fs.mkdirSync(repoPath, { recursive: true });
+    fs.mkdirSync(worktreePath, { recursive: true });
+    try {
+        process.env.HOME = tmpDir;
+        process.chdir(repoPath);
+        const trustedRepoPath = process.cwd();
+        const trustedWorktreePath = path.resolve(worktreePath);
+        agentRegistry.ensureAgentTrust('cx', [worktreePath]);
+        const configPath = path.join(tmpDir, '.codex', 'config.toml');
+        const config = fs.readFileSync(configPath, 'utf8');
+        assert.ok(config.includes(`[projects."${trustedRepoPath}"]`), 'missing repo trust entry');
+        assert.ok(config.includes(`[projects."${trustedWorktreePath}"]`), 'missing worktree trust entry');
+    } finally {
+        process.chdir(originalCwd);
+        process.env.HOME = originalHome;
+    }
+}));
+
+test('codex trust cleanup removes worktree entries without removing repo trust', () => withTempDir('aigon-cx-untrust-', tmpDir => {
+    // REGRESSION: prevents feature cleanup/reset from leaking stale ~/.codex/config.toml worktree entries.
+    const originalHome = process.env.HOME;
+    const originalCwd = process.cwd();
+    const repoPath = path.join(tmpDir, 'repo');
+    const worktreePath = path.join(tmpDir, 'worktrees', 'feature-284-cx-test');
+    fs.mkdirSync(repoPath, { recursive: true });
+    fs.mkdirSync(worktreePath, { recursive: true });
+    try {
+        process.env.HOME = tmpDir;
+        process.chdir(repoPath);
+        const trustedRepoPath = process.cwd();
+        const trustedWorktreePath = path.resolve(worktreePath);
+        agentRegistry.ensureAgentTrust('cx', [worktreePath]);
+        agentRegistry.removeAgentTrust('cx', [worktreePath]);
+        const configPath = path.join(tmpDir, '.codex', 'config.toml');
+        const config = fs.readFileSync(configPath, 'utf8');
+        assert.ok(config.includes(`[projects."${trustedRepoPath}"]`), 'repo trust entry should remain');
+        assert.ok(!config.includes(`[projects."${trustedWorktreePath}"]`), 'worktree trust entry should be removed');
+    } finally {
+        process.chdir(originalCwd);
+        process.env.HOME = originalHome;
+    }
+}));
 
 report();
