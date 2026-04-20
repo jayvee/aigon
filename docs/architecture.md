@@ -106,8 +106,10 @@ Current shared modules:
 
 - `lib/proxy.js` (~660 lines): Caddy management (Caddyfile generation, route add/remove, reload), port allocation, dev server utilities
   `writeCaddyfile`, `addCaddyRoute`, `removeCaddyRoute`, `reloadCaddy`, `allocatePort`
-- `lib/dashboard-server.js` (~2,660 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, and action dispatch from engine snapshots
+- `lib/dashboard-server.js` (~1,980 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, static assets, and OSS/Pro route dispatch
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
+- `lib/dashboard-routes.js` (~1,660 lines): OSS dashboard API route table and dispatcher — owns `/api/...` route matching plus extracted handlers that receive request/response objects and server context
+  `createDashboardRouteDispatcher`
 - `lib/worktree.js` (~1,300 lines): worktree creation, permissions, git attribution metadata bootstrap, tmux sessions
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
 - `lib/terminal-adapters.js` (~200 lines): data-driven terminal detection/dispatch — adapter table with `detect(env)`, `launch(cmd, opts)`, `split(configs, opts)` per terminal
@@ -271,7 +273,7 @@ Feature writes go through the engine, but the read side is still mixed:
 - `lib/workflow-read-model.js` provides shared dashboard read state (snapshot-backed for features/research) and derives recommended actions for feedback via `lib/state-queries.js`.
 - `lib/feedback.js` provides feedback metadata parsing/collection so feedback list and dashboard reads derive status from frontmatter rather than folder position.
 - `lib/dashboard-status-collector.js` now owns the AIGON server's dashboard-facing repo/entity reads, including compatibility behavior for older repos that may not have a complete workflow snapshot yet.
-- `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, and action dispatch.
+- `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, static serving, and delegating API requests to `lib/dashboard-routes.js`.
 
 So the architecture after Feature 171 is:
 
