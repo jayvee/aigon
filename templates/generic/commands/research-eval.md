@@ -156,21 +156,22 @@ Once user confirms, update the main research document:
 - other-feature: Reason not selected
 ```
 
-## Step 7: Signal completion
+## Step 7: Commit and hand off
 
 **THIS IS THE FINAL STEP. YOU MUST COMPLETE IT. DO NOT SKIP THIS STEP.**
 
-After updating the document, commit your changes and signal completion:
+After updating the document, commit your changes:
 
 ```bash
-git add docs/specs/research-topics/
+git add docs/specs/research-topics/ docs/specs/features/01-inbox/
 git commit -m "docs: research evaluation for {{ARG1_SYNTAX}}"
-aigon research-submit {{ARG1_SYNTAX}}
 ```
 
 Then tell the user:
 
 > "Evaluation complete. Selected features have been created with research backlinks. Run `/aigon:research-close {ID}` when ready."
+
+Do **not** run `aigon research-submit` — that signal is for the per-agent findings phase (`03-in-progress`). Closing out the evaluation is a user decision; they run `research-close` when they're satisfied with the output.
 
 **STAY in the session.** The user may want to review the evaluation or ask for changes.
 
