@@ -47,6 +47,16 @@ test('feature and research spec-review actions keep distinct labels', () => {
     assert.deepStrictEqual(pickSpecReviewLabels('research', 0), ['Review spec']);
 });
 
+// REGRESSION: inbox research with `id: null` crashed readWorkflowSnapshotSync; fix publishes slug-as-id.
+testAsync('inbox research with slug-as-id is handled without throwing', () => withTempDirAsync('aigon-spec-inbox-', async (repo) => {
+    initRepo(repo);
+    const specPath = path.join(repo, 'docs/specs/research-topics/01-inbox/research-foo.md');
+    fs.writeFileSync(specPath, '# Research: foo\n');
+    const inboxItems = item('research-foo', 'inbox', specPath);
+    clearTierCache(repo); applySpecReviewStatus(repo, [], inboxItems);
+    assert.strictEqual(inboxItems[0].specReview.pendingCount, 0);
+}));
+
 testAsync('migration backfills legacy spec-review commits into workflow state', () => withTempDirAsync('aigon-spec-review-mig-', async (repo) => {
     initRepo(repo);
     const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-12-test.md');
