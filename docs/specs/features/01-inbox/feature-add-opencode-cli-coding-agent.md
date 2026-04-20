@@ -96,7 +96,6 @@ Because this feature is also a regression test for feature 246's simplification,
 - Should `op.json` omit task-model entries entirely, or keep nullable/example values for compatibility with existing CLI-config readers?
 
 ## Related
-- Research:
 - [feature-246-agent-registry-single-source-of-truth](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-246-agent-registry-single-source-of-truth.md)
 - [feature-201-pluggable-agent-architecture-zero-hardcoded-agent-logic](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-201-pluggable-agent-architecture-zero-hardcoded-agent-logic.md)
 - [feature-277-harden-autonomous-loop-write-paths](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-277-harden-autonomous-loop-write-paths.md)
