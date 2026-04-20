@@ -61,6 +61,12 @@ docs/specs/
 3. **Implementation Logs**: Document implementation decisions in `logs/` before completing
 4. **Feature lifecycle is engine-backed**: workflow-core is the authority for features, and visible spec folders are a projection of that state
 
+## Worktree discipline
+
+- Run `pwd` and `git branch --show-current` once per session; you should see a `feature-<ID>-...` branch when implementing an active feature.
+- Stay in the worktree or branch the launcher created — do not manually `git mv` specs, create branches, or add worktrees; use `aigon feature-*` commands only.
+- If `aigon` fails, read the error text first. Do not hunt for `aigon-cli.js` or bypass the CLI.
+
 ## Feature State Model
 
 For features, there are two relevant layers:
