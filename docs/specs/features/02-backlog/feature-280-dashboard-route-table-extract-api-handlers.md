@@ -3,6 +3,8 @@
 ## Summary
 `lib/dashboard-server.js` is **3,083 lines** with **39 inline `/api/...` route branches** in a long if/else chain inside the main request handler. Extract the OSS route handlers into a route table pattern (`{ method, path, handler }`) that mirrors the shape of `lib/pro-bridge.js:dispatchProRoute()` — which feature 219 already shipped as the prior art for Pro routes. Goal: one mental model for how routes work (OSS + Pro), each handler testable in isolation, and a `dashboard-server.js` that holds infrastructure (HTTP, WebSocket, static serving, dispatcher) but no route-specific business logic. Incremental — extractions land one namespace at a time, each a shippable commit.
 
+Ownership stays server-side: route eligibility, path matching, and dispatch live in Node modules under `lib/`; the dashboard frontend keeps calling the same `/api/...` endpoints and must not gain any new routing logic or duplicate knowledge of which actions are available.
+
 ## Safety principle (non-negotiable)
 
 **This refactor must not change a single API response.** The e2e suite (`MOCK_DELAY=fast npm run test:ui`) exercises the exact routes being moved — it is the safety net. Every extraction commit runs the full pre-push check (`npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh`) before landing. Any extraction that breaks a test is reverted, not patched. No "flag day" where half the routes are moved and the other half are inline — each commit leaves the server in a fully-working state.
@@ -45,7 +47,7 @@ if (proBridge.dispatchProRoute(req.method, reqPath, req, res)) {
 - [ ] **AC3** — After every extraction, the e2e Playwright suite still passes without modification. The suite is the ground truth for "behavior unchanged".
 - [ ] **AC4** — The OSS route dispatcher **shares shape** with `proBridge.dispatchProRoute(method, path, req, res)`. Either factor out a common dispatcher helper both use, or mirror the signature exactly so both look identical to a reader.
 - [ ] **AC5** — No route handler lives inline in `dashboard-server.js` at the end. Every `/api/...` branch is registered through the route table.
-- [ ] **AC6** — `lib/dashboard-server.js` shrinks by at least the LOC of every extracted route (no growth, no stubs left behind).
+- [ ] **AC6** — `lib/dashboard-server.js` shrinks after every extraction commit, and the removed inline branch is replaced only by dispatcher glue. No commented-out blocks, dead stubs, or duplicate fallback logic remain.
 
 ### Extraction strategy — by namespace, incrementally
 
@@ -66,12 +68,14 @@ The implementer may merge or split these namespaces based on what makes sense wh
 
 - [ ] **EN.1** — Catalog every `/api/...` branch in the namespace being moved, including method, path pattern, and current handler location
 - [ ] **EN.2** — Create or extend `lib/dashboard-routes.js` with the extracted handlers
-- [ ] **EN.3** — Each handler has the signature `(req, res, ctx) => void` (or async equivalent). `ctx` carries dashboard state (repo list, config, etc.) — identical to the shape `proBridge` handlers use.
+- [ ] **EN.3** — Each handler is registered as `{ method, path, handler }`, where `handler` receives the same request/response objects the inline branch used today plus a single dashboard server context object. The context is built in `lib/dashboard-server.js` and only carries shared server-side dependencies already owned there (for example repo metadata, config access, helper functions, and process helpers). Do not move mutable lifecycle authority into the route table.
 - [ ] **EN.4** — Register the handlers through the new dispatcher (or the shared one with pro-bridge) in `dashboard-server.js`
 - [ ] **EN.5** — Delete the old inline branches in `dashboard-server.js`
-- [ ] **EN.6** — `wc -l lib/dashboard-server.js` shrinks by the full LOC of the moved block
+- [ ] **EN.6** — Path and method matching for the moved routes stays byte-for-byte compatible with the pre-extraction behavior, including dynamic segments such as `/api/detail/:type/:id`, query-string handling such as `/api/spec?path=...`, trailing-slash behavior if any, and 404 fallthrough for non-matches
 - [ ] **EN.7** — Full pre-push check passes: `npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh`
 - [ ] **EN.8** — Commit message follows `refactor(dashboard-routes): extract <namespace> from dashboard-server.js` and lists the routes moved
+- [ ] **EN.9** — After any extraction that edits `lib/*.js`, run `aigon server restart` before manual dashboard verification so the served UI/API reflect the extracted handlers
+- [ ] **EN.10** — After any dashboard-visible change, take a Playwright screenshot of the pipeline view as a manual sanity check that the UI still renders against the extracted routes
 
 ### Completion criterion
 
@@ -90,11 +94,12 @@ node -c lib/dashboard-routes.js         # or whichever file the routes landed in
 npm test
 MOCK_DELAY=fast npm run test:ui
 bash scripts/check-test-budget.sh
+aigon server restart
 
 # Final state:
 wc -l lib/dashboard-server.js           # should be materially smaller than 3,083
 wc -l lib/dashboard-routes*.js
-grep -c "reqPath.startsWith('/api/'" lib/dashboard-server.js   # expect 0
+grep -c "reqPath.startsWith('/api/'" lib/dashboard-server.js   # expect 0 for API route branches; static assets and non-API guards may remain
 ```
 
 ## Technical Approach
@@ -114,6 +119,8 @@ grep -c "reqPath.startsWith('/api/'" lib/dashboard-server.js   # expect 0
 
 Decision point during implementation. Default: Option C for the first few extractions (lowest blast radius, no changes to pro-bridge.js), then evaluate merging into a shared helper once both dispatchers have real usage and we can see whether they're actually duplicating or just visually similar.
 
+Whichever option is chosen, keep one source of truth for OSS route matching. Do not leave partial eligibility logic in `dashboard-server.js` that duplicates checks later performed by `lib/dashboard-routes.js`.
+
 ### Mechanical steps per extraction (repeat per namespace)
 
 1. In `dashboard-server.js`, identify the block of `if (reqPath.startsWith('/api/<namespace>'))` branches to move
@@ -124,9 +131,10 @@ Decision point during implementation. Default: Option C for the first few extrac
 6. Delete the old inline branches from `dashboard-server.js`
 7. Run `node -c` on both files to catch syntax errors
 8. Run the full pre-push check (`npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh`)
-9. If green: commit with a message listing the moved routes. If red: revert the commit, investigate, fix, retry
-10. Take a Playwright screenshot of the dashboard pipeline view — sanity check the UI renders
-11. Move to next namespace
+9. Restart the local dashboard server with `aigon server restart`
+10. If green: commit with a message listing the moved routes. If red: revert the commit, investigate, fix, retry
+11. Take a Playwright screenshot of the dashboard pipeline view — sanity check the UI renders
+12. Move to next namespace
 
 ### What is NOT changing
 
@@ -140,6 +148,7 @@ Decision point during implementation. Default: Option C for the first few extrac
 - **The supervisor / sweep loop** — not a route, not affected
 - **The workflow engine** — not touched
 - **Any route contract with the frontend** — the frontend calls `/api/...` URLs exactly as before
+- **Workflow-core authority** — feature/research lifecycle state remains owned by `lib/workflow-core/` and existing server-side modules; the route table is only a dispatch organization change
 
 ### Test discipline
 
@@ -178,7 +187,7 @@ That's the ground truth for "the refactor didn't break anything." If the suite g
 
 - **Dispatcher sharing with pro-bridge** — Option A, B, or C above? Decide during the first extraction based on what reads most cleanly.
 - **Single routes file vs per-namespace files** — `lib/dashboard-routes.js` vs `lib/dashboard-routes-spec.js` / `lib/dashboard-routes-lifecycle.js` / etc? Decide after the second or third extraction, based on how big the routes file is getting. Default: one file until it exceeds ~800 lines, then split.
-- **Handler signature** — `(req, res, ctx)` or `(ctx) => result` (where ctx carries req/res)? Match `proBridge` exactly — whichever signature it uses.
+- **Handler signature** — prefer `handler(req, res, ctx)` so the move stays close to today's inline code. If `proBridge` uses a different call shape, the registration/dispatch layer may adapt, but the route-table entry shape must remain visually aligned with Pro registration.
 
 ## Related
 
