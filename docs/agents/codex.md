@@ -71,13 +71,6 @@ These are direct lifecycle commands you run yourself in the agent host — slash
 5. **Follow project instructions**: Check `AGENTS.md` for shared project build, test, and dependency commands
 6. **Orient to the codebase first**: Read `docs/architecture.md` before making structural CLI changes
 
-## Awaiter Approval
-
-- Codex does not expose a separate awaiter-only approval knob. Current Codex behavior is that subagents inherit the parent session's approval and sandbox policy.
-- Aigon's cx fix is the combination of project `.codex/config.toml` with `approval_policy = "never"` and `sandbox_mode = "danger-full-access"`, plus exact-path trust entries in `~/.codex/config.toml` for the repo and each Aigon worktree.
-- `aigon install-agent cx` writes the project config and backfills trust entries for existing `~/.aigon/worktrees/<repo>/*` directories. New worktrees are registered at creation time and removed on cleanup/reset.
-- If cx still prompts inside a worktree, check `~/.codex/config.toml` for `[projects."<absolute worktree path>"] trust_level = "trusted"` rather than trusting only the parent worktree base directory.
-
 ## Drive Mode Workflow
 
 1. Run `$aigon-feature-start <ID>` to create branch and move spec
