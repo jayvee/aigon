@@ -41,7 +41,12 @@
     "reviewCheckPrompt": "/aigon-feature-review-check {featureId}",
     "models": {
       "review": "composer-2"
-    }
+    },
+    "modelOptions": [],
+    "effortOptions": [],
+    "modelFlag": null,
+    "effortFlag": null,
+    "effortEnv": null
   },
   "placeholders": {
     "AGENT_ID": "cu",

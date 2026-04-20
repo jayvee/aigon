@@ -425,6 +425,21 @@
       '</div>';
     }
 
+    // Render the {model, effort} badge the user chose for this agent on
+    // feature-start. Empty when the agent inherits the config default — we
+    // only show the badge when an override was explicitly captured on
+    // `feature.started`, so the card stays quiet for default runs.
+    function buildAgentTripletBadge(agent) {
+      const model = agent && agent.modelOverride ? String(agent.modelOverride) : '';
+      const effort = agent && agent.effortOverride ? String(agent.effortOverride) : '';
+      if (!model && !effort) return '';
+      const parts = [];
+      if (model) parts.push(model);
+      if (effort) parts.push(effort);
+      const text = parts.join(' · ');
+      return '<span class="kcard-agent-triplet" title="Per-feature override captured at start">' + escHtml(text) + '</span>';
+    }
+
     // Actions rendered from API — do not add action eligibility logic here.
     // All actions (workflow + infra) are derived server-side via the action registry.
     function buildAgentSectionHtml(agent, agentValidActions, feature, repoPath, pipelineType) {
@@ -485,9 +500,11 @@
       const peekBtn = agent.tmuxSession
         ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(agent.tmuxSession) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
         : '';
+      const tripletBadge = buildAgentTripletBadge(agent);
       return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
         '<div class="kcard-agent-header">' +
           '<span class="kcard-agent-name" title="' + escHtml(displayName) + '">' + escHtml(displayName) + '</span>' +
+          tripletBadge +
           peekBtn +
           devSlot +
         '</div>' +

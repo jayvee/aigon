@@ -22,5 +22,11 @@ a.notStrictEqual(sa.rebuildAggregate(tmp).generatedAt, ag.generatedAt, 'force re
 mk('features', '102', { completedAt: '2026-04-04T00:00:00Z', durationMs: 600000, commitCount: 2, cost: { estimatedUsd: 0.1 } });
 const f = Date.now() / 1000 + 120; fs.utimesSync(path.join(tmp, '.aigon', 'workflows', 'features', '102', 'stats.json'), f, f);
 a.strictEqual(sa.collectAggregateStats(tmp).totals.features, 3, 'cache invalidated when newer stats.json exists');
+// REGRESSION feature 291: perTriplet rollup keyed on `agent|model|effort`
+mk('features', '103', { completedAt:'2026-04-05T00:00:00Z', cost:{ estimatedUsd:0.6, byAgent:{ cx:{costUsd:0.6,sessions:2,modelOverride:'gpt-5.4',effortOverride:'high'} } } });
+const ag2 = sa.rebuildAggregate(tmp);
+a.strictEqual(ag2.perTriplet['cx|gpt-5.4|high'].effort, 'high');
+a.strictEqual(ag2.perTriplet['cx|gpt-5.4|high'].sessions, 2);
+a.ok(sa.CACHE_VERSION >= 2, 'CACHE_VERSION bumped when perTriplet added');
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log('  ✓ stats-aggregate regression tests passed');

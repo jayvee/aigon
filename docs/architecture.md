@@ -209,6 +209,19 @@ The workflow-core engine is the sole lifecycle authority for features and resear
 - `.aigon/workflows/features/{id}/snapshot.json` — derived snapshot
 - `.aigon/workflows/features/{id}/lock` — transient lock file
 
+### Per-Feature Model/Effort Overrides (feature 291)
+
+`feature.started` / `research.started` events carry optional `modelOverrides` and `effortOverrides` maps keyed by agent ID. The projector surfaces these as `snapshot.agents[id].modelOverride` and `snapshot.agents[id].effortOverride` so every respawn path can honour the original choice.
+
+**Resolution precedence** (highest wins, implemented in `lib/agent-launch.js`):
+1. event-log override (from `snapshot.agents[id].{model,effort}Override`)
+2. workflow-stage triplet (from `lib/workflow-definitions.js` stage `agents:` object form)
+3. global `aigon config models` default
+4. per-agent JSON default (`templates/agents/<id>.json` `cli.models[taskType]`)
+5. CLI-flag fallback / null
+
+**Central launch helper:** Every spawn path (`feature-start`, dashboard "restart agent", autopilot iterate, AutoConductor review spawn, `feature-open`) MUST go through `buildAgentLaunchInvocation({agentId, snapshot, stageDefaultModel})`. Direct reads of `cliConfig.models[...]` in new spawn sites will silently bypass the override — this is exactly the bug the helper exists to prevent.
+
 ### Workflow Authority Split
 
 The post-cutover system is easier to reason about if you separate lifecycle truth from runtime/session metadata:

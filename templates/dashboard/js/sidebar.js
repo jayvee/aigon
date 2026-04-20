@@ -102,6 +102,7 @@
 
     let pickerResolve = null;
     let pickerSingleMode = false;
+    let pickerCollectTriplet = false;
 
     function fetchAgentModels(repoPath) {
       const params = new URLSearchParams();
@@ -137,8 +138,11 @@
     function showAgentPicker(featureId, featureName, options) {
       const opts = options || {};
       pickerSingleMode = !!opts.single;
+      pickerCollectTriplet = !!opts.collectTriplet;
       const implAgents = opts.implementingAgents || [];
       const taskType = pickerTaskType(opts);
+      // Re-render rows to toggle triplet dropdowns on/off for this invocation.
+      renderAgentPickerRows({ collectTriplet: pickerCollectTriplet });
       return fetchAgentModels(opts.repoPath).then(models => new Promise((resolve) => {
         pickerResolve = resolve;
         document.getElementById('agent-picker-title').textContent = opts.title || 'Select Agents';
@@ -190,9 +194,23 @@
     document.getElementById('agent-picker').onclick = (e) => { if (e.target === e.currentTarget) hideAgentPicker(null); };
     document.getElementById('agent-picker-submit').onclick = () => {
       const inputType = pickerSingleMode ? 'radio' : 'checkbox';
-      const selected = [...document.querySelectorAll('#agent-picker input[type=' + inputType + ']:checked')].map(cb => cb.value);
-      if (selected.length === 0) { showToast('Select at least one agent'); return; }
-      hideAgentPicker(selected);
+      const checkedInputs = [...document.querySelectorAll('#agent-picker input[type=' + inputType + ']:checked')];
+      if (checkedInputs.length === 0) { showToast('Select at least one agent'); return; }
+      if (pickerCollectTriplet) {
+        const triplets = checkedInputs.map(cb => {
+          const row = cb.closest('.agent-check-row');
+          const modelSel = row ? row.querySelector('.agent-triplet-model') : null;
+          const effortSel = row ? row.querySelector('.agent-triplet-effort') : null;
+          return {
+            id: cb.value,
+            model: modelSel && modelSel.value ? modelSel.value : null,
+            effort: effortSel && effortSel.value ? effortSel.value : null,
+          };
+        });
+        hideAgentPicker(triplets);
+      } else {
+        hideAgentPicker(checkedInputs.map(cb => cb.value));
+      }
     };
 
     // ── Repo sidebar ──────────────────────────────────────────────────────────
