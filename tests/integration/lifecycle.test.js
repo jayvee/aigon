@@ -59,9 +59,6 @@ for (const [label, agentId, featureId] of [['cc', 'cc', '01'], ['solo', 'solo', 
 }
 
 testAsync('canCloseFeature blocks pre-close when no agent has signaled', () => withTempRepo(async (repo) => {
-    // REGRESSION feature 233: without pre-validation, feature-close ran git
-    // side-effects (commit, push, merge) and only THEN discovered the engine
-    // would reject the transition, leaving a merged-but-not-closed half state.
     writeSpec(repo, '04', 'solo-not-ready');
     await engine.startFeature(repo, '04', 'solo_branch', ['solo']);
     const closable = await engine.canCloseFeature(repo, '04');
@@ -69,10 +66,22 @@ testAsync('canCloseFeature blocks pre-close when no agent has signaled', () => w
     assert.match(closable.reason, /not ready to close/);
 }));
 
+testAsync('canCloseFeature blocks while spec reviews are still pending', () => withTempRepo(async (repo) => {
+    writeSpec(repo, '14', 'pending-spec-review');
+    await engine.startFeature(repo, '14', 'solo_branch', ['solo']);
+    await engine.signalAgentReady(repo, '14', 'solo');
+    await engine.recordSpecReviewSubmitted(repo, 'feature', '14', {
+        reviewId: 'sha-review-1',
+        reviewerId: 'gg',
+        summary: 'tighten scope',
+        commitSha: 'sha-review-1',
+    });
+    const closable = await engine.canCloseFeature(repo, '14');
+    assert.strictEqual(closable.ok, false);
+    assert.match(closable.reason, /feature-spec-review-check 14/);
+}));
+
 testAsync('recoverEmptyAgents heals legacy agents:[] features', () => withTempRepo(async (repo) => {
-    // REGRESSION feature 233: features started under the old code have
-    // feature.started with agents:[]. closeEngineState must auto-inject 'solo'
-    // so they close without manual events.jsonl editing.
     writeSpec(repo, '05', 'legacy-broken');
     await engine.startFeature(repo, '05', 'solo_branch', []);
     let snap = await engine.showFeature(repo, '05');
@@ -84,10 +93,6 @@ testAsync('recoverEmptyAgents heals legacy agents:[] features', () => withTempRe
 }));
 
 test('prioritise writes workflow snapshot (F270 1c2766bc)', () => withTempDir('aigon-prio-', (repo) => {
-    // REGRESSION F270 1c2766bc: entityPrioritise moved the spec but never
-    // registered the entity with workflow-core. Every newly prioritised entity
-    // rendered as "legacy / missing-workflow" until `aigon doctor --fix` ran.
-    // Pins initWorkflowSnapshot + idempotent skip-if-exists contract.
     const entity = require('../../lib/entity');
     const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-06-x.md');
     fs.mkdirSync(path.dirname(specPath), { recursive: true });
@@ -100,8 +105,6 @@ test('prioritise writes workflow snapshot (F270 1c2766bc)', () => withTempDir('a
     entity.initWorkflowSnapshot(repo, 'feature', '06', specPath);
     assert.strictEqual(fs.readFileSync(path.join(repo, '.aigon/workflows/features/06/events.jsonl'), 'utf8'), eventsBefore);
 }));
-
-// ─── Fleet lifecycle ─────────────────────────────────────────────────────────
 
 testAsync('fleet: start → both ready → eval → select winner → close', () => withTempRepo(async (repo) => {
     writeSpec(repo, '02', 'fleet-test');
@@ -118,8 +121,6 @@ testAsync('fleet: start → both ready → eval → select winner → close', ()
     const closed = await engine.closeFeatureWithEffects(repo, '02', async () => {});
     assert.strictEqual(closed.lifecycle, 'done');
 }));
-
-// ─── Pause → resume ──────────────────────────────────────────────────────────
 
 testAsync('pause → resume lifecycle', () => withTempRepo(async (repo) => {
     writeSpec(repo, '03', 'pause-test');
@@ -141,8 +142,6 @@ test('telemetry aggregator keeps feature-close normalization invariants', () => 
     assert.deepStrictEqual([agg.sessions, agg.input_tokens, agg.billable_tokens, agg.cost_usd, agg.model], [2, 150, 440, 0.55, 'claude-opus-4-6']); assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('777', 'solo', { repoPath: repo }).sessions, 2);
     assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('999', 'cc', { repoPath: repo }), null);
 }));
-
-// ─── Research close finalizer ────────────────────────────────────────────────
 
 test('research close finalizer stages engine-moved spec and commits it', () => withTempDir('aigon-research-close-', (repo) => {
     for (const sub of RESEARCH_REPO_DIRS) fs.mkdirSync(path.join(repo, sub), { recursive: true });
@@ -179,13 +178,7 @@ test('research close finalizer stages engine-moved spec and commits it', () => w
     assert.match(fs.readFileSync(doneSpecPath, 'utf8'), /transitions:\n  - \{ from: "in-evaluation", to: "done"/);
 }));
 
-// ─── git.getMainRepoPath ─────────────────────────────────────────────────────
-
 testAsync('getMainRepoPath returns repo root from a subdirectory', () => withTempDirAsync('aigon-git-', async (dir) => {
-    // REGRESSION feature 233: getMainRepoPath only handled absolute
-    // git-common-dir (worktree case). From a subdir of a non-worktree repo it
-    // returned the subdir, misrouting every spec/snapshot lookup and surfacing
-    // as "Could not resolve visible spec for feature N".
     const gitLib = require('../../lib/git');
     execSync('git init -q', { cwd: dir });
     execSync('git config user.email t@t', { cwd: dir });

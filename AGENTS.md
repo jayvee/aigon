@@ -41,9 +41,11 @@ Test overrides: `createAllCommands({ getCurrentBranch: () => 'mock-branch' })`.
 ## Workflow State At A Glance
 
 - **Feature lifecycle authority**: `lib/workflow-core/` and `.aigon/workflows/features/{id}/`
+- **Feature spec-review authority**: workflow-core events/snapshots under `.aigon/workflows/features/{id}/`; dashboard reads do not scan `git log`
 - **Feature runtime / agent status files**: `.aigon/state/feature-{id}-{agent}.json`
 - **Feature autonomous conductor state**: `.aigon/state/feature-{id}-auto.json`
 - **Research lifecycle authority**: `lib/workflow-core/` and `.aigon/workflows/research/{id}/`
+- **Research spec-review authority**: workflow-core events/snapshots under `.aigon/workflows/research/{id}/`
 - **Feedback lifecycle authority**: frontmatter `status` in `docs/specs/feedback/`; folder position is a derived projection
 - **Preferred read path (feature + research)**: `lib/workflow-snapshot-adapter.js` via `lib/workflow-read-model.js`, with `lib/spec-reconciliation.js` self-healing visible spec drift from engine state
 - **Feedback read path**: `lib/feedback.js` metadata parsing plus `lib/spec-reconciliation.js` folder reconciliation, consumed by `feedback-list` and `lib/dashboard-status-collector.js`
@@ -61,6 +63,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/dashboard-server.js` | ~1980 | AIGON server HTTP module: serves dashboard UI, WebSocket relay, static assets, polling, and OSS/Pro route dispatch glue |
 | `lib/dashboard-routes.js` | ~1660 | OSS dashboard API route table and dispatcher: `/api/...` handler registration and route-specific business logic extracted from `dashboard-server.js` |
 | `lib/dashboard-status-collector.js` | ~830 | Repo/entity read-side assembly for the AIGON server: feature/research workflow reads plus feedback metadata-driven status collection and reconciliation |
+| `lib/spec-review-state.js` | ~120 | Shared spec-review parsing/validation helpers: commit metadata parsing, reviewer validation, pending-review summary shaping |
 | `lib/utils.js` | 1464 | YAML parsers, spec CRUD, hooks, version, analytics |
 | `lib/worktree.js` | 1510 | Worktree creation, tmux sessions, terminal launch, agent git-attribution metadata setup |
 | `lib/commands/setup.js` | 959 | init, install-agent, check-version, update, doctor |

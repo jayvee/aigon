@@ -44,6 +44,7 @@ Decision:
 
 Notes:
 - <important rationale>"
+aigon research-spec-review-check-record {{ARG1_SYNTAX}}
 ```
 
 ## Report

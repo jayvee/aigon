@@ -86,6 +86,8 @@ Current shared modules:
   `getValidTransitions`, `getAvailableActions`, `getSessionAction`, `getRecommendedActions`, `isActionValid`, `shouldNotify`
 - `lib/feature-spec-resolver.js` (~200 lines): canonical feature/research visible-spec lookup so consumers stop guessing from visible folders or hardcoding dashboard folder scans
   `resolveEntitySpec`, `resolveFeatureSpec`, `resolveResearchSpec`
+- `lib/spec-review-state.js` (~120 lines): shared spec-review helpers for commit parsing, reviewer validation, and workflow-facing pending-review summary shaping
+  `parseSpecReviewSubject`, `extractSpecReviewerId`, `buildSpecReviewSummary`, `readHeadSpecReviewCommit`
 - `lib/spec-reconciliation.js` (~130 lines): shared self-healing spec projection helper for feature/research workflow drift and feedback status->folder drift, reused by dashboard/list read paths and `aigon repair`
   `reconcileEntitySpec`
   `resolveFeatureSpec`, `listVisibleFeatureSpecs`, `isPlaceholderSpecPath`
@@ -214,10 +216,12 @@ The post-cutover system is easier to reason about if you separate lifecycle trut
 | Concern | Authority | Notes |
 |--------|-----------|-------|
 | Feature lifecycle (`implementing`, `evaluating`, `ready_for_review`, `closing`, `done`, `paused`) | `lib/workflow-core/` snapshot + event log | Sole write path for feature lifecycle |
+| Feature spec-review pending/acked state | `lib/workflow-core/` event log + snapshot `specReview` projection | `spec_review.*` events; dashboard reads snapshot metadata, not `git log` |
 | Feature spec folder location | Engine effects (`move_spec`) | User-visible reflection of engine state |
 | Feature agent runtime status (`running`, `waiting`, `ready`, `lost`, etc.) | Engine signals plus per-agent status files in `.aigon/state/feature-{id}-{agent}.json` | Session/runtime metadata, not the lifecycle authority |
 | Feature autonomous conductor runtime (`starting`, `running`, `completed`, `failed`, etc.) | `.aigon/state/feature-{id}-auto.json` plus tmux session presence | Durable proof that autonomous orchestration started, what session it used, and how it ended |
 | Research lifecycle (`backlog`, `implementing`, `evaluating`, `closing`, `done`) | `lib/workflow-core/` snapshot + event log | Sole write path for research lifecycle |
+| Research spec-review pending/acked state | `lib/workflow-core/` event log + snapshot `specReview` projection | Same typed state model as features |
 | Feedback lifecycle | Spec folder location + command logic | Feedback does not use workflow-core |
 
 Important distinction: `.aigon/state/` still exists after the cutover, but it is no longer the coordinator manifest system that decides feature lifecycle.
@@ -225,6 +229,8 @@ Important distinction: `.aigon/state/` still exists after the cutover, but it is
 ### Write-Path Contract
 
 When a command updates workflow-backed entity state, the workflow-core write is authoritative and must succeed before any derived caches are updated. Per-agent status files in `.aigon/state/` are a read cache for dashboard/session consumers, not a fallback that can mask engine write failures. If the engine event cannot be persisted, the CLI must fail and leave the cache untouched.
+
+Spec review follows the same contract. `feature-spec-review` / `feature-spec-review-check` and their research equivalents may still write informational git commits for audit history, but those commits are not load-bearing state. The authoritative write is the workflow-core `spec_review.submitted` / `spec_review.acked` event persisted immediately after the commit. Dashboard reads and close gating must use the projected snapshot metadata, not commit-subject scans.
 
 ### Unified Action Registry
 
