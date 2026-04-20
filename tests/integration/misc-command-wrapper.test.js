@@ -1,9 +1,5 @@
 #!/usr/bin/env node
-// REGRESSION feature 259/260: setup-only worktree branches (spec/log moves
-// with no code changes) used to satisfy the submitted-evidence check,
-// letting Stop hooks and autonomous loops fire feature-close on empty work.
-// getFeatureSubmissionEvidence must only accept branches whose diff touches
-// real implementation files.
+// REGRESSION F259/260: setup-only branches (spec/log only) must not pass getFeatureSubmissionEvidence.
 'use strict';
 
 const assert = require('assert');
@@ -64,6 +60,16 @@ test('repair registration and worktree/reset guard rails stay wired', () => {
     assert.match(wt, /config --local extensions\.worktreeConfig true/); assert.doesNotMatch(wt, /config --(?:local|worktree) user\.(?:name|email)/);
     assert.match(wt, /config --worktree aigon\.agentId/); assert.match(wt, /config --worktree core\.hooksPath/);
     assert.match(feature, /wf\.resetFeature\s*\(/); assert.match(setup, /stale-drive-branch/);
+});
+
+// REGRESSION: F289 — bounded Autopilot carry-forward; criteria stay in CRITERIA_SECTION only.
+test('Autopilot buildIterationCarryForward', () => {
+    const { buildIterationCarryForward, CARRY_FORWARD_MAX_CHARS } = require('../../lib/validation');
+    assert.strictEqual(CARRY_FORWARD_MAX_CHARS, 2000);
+    const s = buildIterationCarryForward({ iteration: 2, commits: ['feat: x'], filesChanged: ['lib/a.js'], validationSummary: 'bad' });
+    assert.ok(/iteration 2/.test(s) && /feat: x/.test(s) && /lib\/a\.js/.test(s) && !/Failing criteria/.test(s));
+    const c = buildIterationCarryForward({ iteration: 1, commits: [], filesChanged: [], validationSummary: 'z'.repeat(6000) });
+    assert.ok(c.length <= CARRY_FORWARD_MAX_CHARS && c.endsWith('...'));
 });
 
 report();
