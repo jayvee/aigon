@@ -13,7 +13,9 @@ Each CC session starts with a fixed system prompt built by the CC harness from:
 3. **`MEMORY.md` index** — the auto-memory index (`~/.claude/projects/<repo>/memory/MEMORY.md`)
 4. **Skills index** — user-invocable skills summary injected via the system reminder
 
-All four components are static within a session and across sessions **until one of them changes** (see Cache Invalidation below). The CC harness places its implicit cache breakpoint at the end of this system prompt.
+**`AGENTS.md`** is the long-form repo orientation; Aigon surfaces pointers via the **SessionStart** hook (`aigon project-context`), not as part of the same auto-loaded file bundle as `CLAUDE.md`. It still lands in early conversation context, separate from the slash-command line Aigon passes on the CLI.
+
+The harness-owned block above is what stays stable across routine feature work. The CC harness’s implicit cache breakpoint sits at the end of that **system** stack; anything after it (hook output, first user message, expanded slash-command content) does not live in that same system prefix.
 
 ## What lives after the breakpoint (variable content)
 
@@ -58,7 +60,7 @@ Caching the slimmer prefix (after `1` landed) vs. the bloated one is why this fe
 - **`cache_read_input_tokens`** — tokens served from cache (should be the large majority)
 - **`cache_creation_input_tokens`** — tokens written to cache (spikes only on prefix change)
 
-View these via `aigon feature-close <ID>` or by reading `stats.json` entries in `.aigon/telemetry/`. A healthy session shows `cache_read_input_tokens` orders of magnitude larger than `cache_creation_input_tokens` on the second and subsequent sessions. The first session in a new repo or after a `CLAUDE.md` edit will show elevated `cache_creation_input_tokens`.
+View rolled-up totals via `aigon feature-close <ID>` (written to `.aigon/workflows/features/<id>/stats.json`). For per-session values, read normalized JSON under `.aigon/telemetry/` (`feature-<id>-<agent>-<sessionId>.json`, produced from CC transcripts). A healthy run shows `cache_read_input_tokens` orders of magnitude larger than `cache_creation_input_tokens` on the second and subsequent sessions in the same repo after the prefix is warm. The first session in a new repo or after a `CLAUDE.md` edit will show elevated `cache_creation_input_tokens`.
 
 ## How to update this policy
 
