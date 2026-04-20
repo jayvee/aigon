@@ -15,6 +15,8 @@ test('awaiting-input: write/overwrite/clear/stale-session', () => withTempDir('a
     ast.writeAwaitingInput(r, '01', 'cc', ''); a.strictEqual(rj(sp(r, '01', 'cc')).awaitingInput, undefined);
     ast.writeAwaitingInput(r, '01', 'cc', 'again'); ast.writeAgentStatusAt(r, '01', 'cc', { status: 'implementing' });
     a.strictEqual(rj(sp(r, '01', 'cc')).awaitingInput, undefined, 'implementing clears');
+    ast.writeAwaitingInput(r, '01', 'cc', 'q'); ast.writeAgentStatusAt(r, '01', 'cc', { status: 'waiting' });
+    a.strictEqual(rj(sp(r, '01', 'cc')).awaitingInput, undefined, 'waiting clears');
     ast.writeAwaitingInput(r, '07', 'cc', 'synthesis pause', 'research');
     fs.mkdirSync(path.join(r, '.aigon', 'workflows', 'research', '07'), { recursive: true });
     sup.sweepEntity(r, 'research', '07', { agents: { cc: { status: 'running' } }, lifecycle: 'in-progress' }, {});
