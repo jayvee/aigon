@@ -80,7 +80,13 @@ Extract the `## Suggested Features` table from each agent's findings file.
 
 ## Step 5: Get User Approval and Create Features
 
-Ask the user:
+Before pausing, signal the dashboard that you are blocked on user input so the card gets a pulsing "Awaiting input" badge and the user gets a desktop notification (they may not be watching the tmux pane):
+
+```bash
+aigon agent-status awaiting-input "Pick which of the consolidated features to create. Reply with numbers, 'all', 'consensus', or 'none'."
+```
+
+Then ask the user:
 
 > "Here are the consolidated features. Which should I create?
 > - Enter numbers to include (e.g., `1,2,3`)
@@ -88,7 +94,7 @@ Ask the user:
 > - Enter `consensus` to include only consensus items
 > - Enter `none` to skip feature creation"
 
-Wait for user response before proceeding.
+Wait for user response before proceeding. The awaiting-input flag clears automatically on the next `agent-status` write (which happens as part of research-submit later).
 
 ### Feature Set Naming
 

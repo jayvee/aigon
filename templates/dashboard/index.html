@@ -80,12 +80,15 @@
                   <!-- Feature cards -->
                   <template x-for="feature in getFeatures(repo)" :key="'f-' + feature.id + '-' + feature.name">
                     <article class="card feature-card"
-                             :class="{ 'waiting': feature.agents.some(a => a.status === 'waiting'), 'evaluating': feature.stage === 'in-evaluation' }"
+                             :class="{ 'waiting': feature.agents.some(a => a.status === 'waiting'), 'evaluating': feature.stage === 'in-evaluation', 'awaiting-input': feature.anyAwaitingInput }"
                              :style="feature.specPath ? 'cursor:pointer' : ''"
                              x-on:click="openFeatureSpec($event, feature)">
                       <div class="card-h">
                         <span class="feature" x-html="featureTitle(feature)"></span>
-                        <span class="head-actions" x-html="buildNextActionHtml(feature, repo.path)"></span>
+                        <span class="head-actions">
+                          <span x-html="buildAwaitingBadgeHtml(feature)"></span>
+                          <span x-html="buildNextActionHtml(feature, repo.path)"></span>
+                        </span>
                       </div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(feature.agents)" :key="agent.id">
@@ -112,12 +115,15 @@
                   <!-- Research cards -->
                   <template x-for="item in getResearch(repo)" :key="'r-' + item.id + '-' + item.name">
                     <article class="card research"
-                             :class="{ 'waiting': item.agents.some(a => a.status === 'waiting') }"
+                             :class="{ 'waiting': item.agents.some(a => a.status === 'waiting'), 'awaiting-input': item.anyAwaitingInput }"
                              :style="item.specPath ? 'cursor:pointer' : ''"
                              x-on:click="openSpecItem($event, item, 'R#')">
                       <div class="card-h">
                         <span class="feature" x-html="researchTitle(item)"></span>
-                        <span class="head-actions" x-html="researchEvalBtn(item)"></span>
+                        <span class="head-actions">
+                          <span x-html="buildAwaitingBadgeHtml(item)"></span>
+                          <span x-html="researchEvalBtn(item)"></span>
+                        </span>
                       </div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents)" :key="agent.id">
@@ -138,11 +144,12 @@
                   <!-- Feedback cards -->
                   <template x-for="item in getFeedback(repo)" :key="'fb-' + item.id + '-' + item.name">
                     <article class="card"
-                             :class="{ 'waiting': (item.agents || []).some(a => a.status === 'waiting') }"
+                             :class="{ 'waiting': (item.agents || []).some(a => a.status === 'waiting'), 'awaiting-input': item.anyAwaitingInput }"
                              :style="item.specPath ? 'cursor:pointer' : ''"
                              x-on:click="openSpecItem($event, item, 'FB#')">
                       <div class="card-h">
                         <span class="feature" x-html="feedbackTitle(item)"></span>
+                        <span class="head-actions" x-html="buildAwaitingBadgeHtml(item)"></span>
                       </div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents || [])" :key="agent.id">

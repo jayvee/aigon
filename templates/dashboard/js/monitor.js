@@ -85,6 +85,29 @@
       return '<span class="compat-badge" title="Legacy item missing workflow state. Read-only until migrated or backfilled.">legacy</span>';
     }
 
+    // Render the amber "awaiting your input" badge + tooltip for a card.
+    // Shows the first agent on the card that is paused. Tooltip offers a
+    // copy-attach-command button so the user can jump into the tmux session.
+    function buildAwaitingBadgeHtml(item) {
+      if (!item || !item.anyAwaitingInput) return '';
+      const agent = (item.agents || []).find(a => a && a.awaitingInput && a.awaitingInput.message);
+      if (!agent) return '';
+      const name = (window.AGENT_DISPLAY_NAMES && window.AGENT_DISPLAY_NAMES[agent.id]) || agent.id;
+      const msg = agent.awaitingInput.message;
+      const attach = agent.attachCommand || '';
+      const attachBtn = attach
+        ? '<button class="btn btn-xs copy" data-copy="' + escHtml(attach) + '" x-on:click.stop type="button">Copy attach</button>'
+        : '';
+      return '<span class="awaiting-badge" role="status" tabindex="0" aria-label="Awaiting your input: ' + escHtml(msg) + '" x-on:click.stop>'
+        + 'Awaiting input'
+        + '<span class="awaiting-tip">'
+          + '<span class="awaiting-tip-who">' + escHtml(name) + ' is waiting for you</span>'
+          + '<span class="awaiting-tip-msg">' + escHtml(msg) + '</span>'
+          + (attachBtn ? '<span class="awaiting-tip-cmd">' + attachBtn + '</span>' : '')
+        + '</span>'
+      + '</span>';
+    }
+
     function monitorView() {
       return {
         monitorTypeOpts: [
@@ -177,6 +200,7 @@
         },
         buildAskAgentHtml(repoPath) { return buildAskAgentHtml(repoPath); },
         buildMainDevServerHtml(repo) { return buildMainDevServerHtml(repo); },
+        buildAwaitingBadgeHtml(item) { return buildAwaitingBadgeHtml(item); },
         handleAskClick(e) {
           const btn = e.target.closest('[data-ask-run]');
           if (btn) { runAskAgent(btn.dataset.askRepo, btn.dataset.askRun); return; }
