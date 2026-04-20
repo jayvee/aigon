@@ -20,3 +20,20 @@ Agent: cx
 - Updated `AGENTS.md` and `docs/architecture.md` in the same change because the extraction adds a new core module and changes dashboard-server responsibilities.
 - `npm test` passed.
 - `MOCK_DELAY=fast npm run test:ui` failed in this environment because Playwright Chromium could not launch (`MachPortRendezvousServer ... Permission denied (1100)`), so route behavior was validated with live HTTP smoke requests instead.
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-04-20
+
+### Findings
+- **Pro-bridge dispatch removed** — the inline request handler used to call `proBridge.dispatchProRoute(req.method, reqPath, req, res)` right after the OSS branches, followed by a `/api/insights` upgrade-payload fallback when Pro is unavailable. Both were dropped during extraction, so every `@aigon/pro`-owned route (`/api/insights`, `/api/insights/refresh`, etc.) fell through to static serving and 404'd. This violates AC2 (no behavior change) and AC4 (dispatcher shares shape with `proBridge.dispatchProRoute`).
+
+### Fixes Applied
+- `fix(review): restore pro-bridge dispatch and /api/insights fallback` — re-inserted both calls right after `dispatchOssRoute()` in `lib/dashboard-server.js`, preserving original ordering (OSS first, then Pro, then insights fallback, then static). Verified with `npm test`, `MOCK_DELAY=fast npm run test:ui` (7/7 passed), and live smoke: `curl /api/insights` now returns the Pro payload through the bridge instead of 404.
+
+### Notes
+- The two spec-file deletions in the `main..HEAD` diff (`feature-add-opencode-cli-coding-agent.md`, `feature-282-fix-entity-submit-silent-signal-loss.md`) are just newer main commits that weren't on this branch at worktree time — not a review concern, they'll merge back in cleanly.
+- E2e Playwright suite runs fine in this environment; the implementer's Chromium launch failure was environmental.
+- The `/api/spec` predicate (`reqPath.startsWith('/api/spec')`, GET) is ordered safely after the POST `/api/spec-reconcile` and POST `/api/spec/create` entries; method filtering prevents cross-matches.
+
