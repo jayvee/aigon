@@ -6,8 +6,11 @@
     "cc"
   ],
   "displayName": "Claude Code",
+  "shortName": "CC",
   "providerFamily": "anthropic",
   "portOffset": 1,
+  "terminalColor": "blue",
+  "bannerColor": "#3B82F6",
   "defaultFleetAgent": true,
   "installHint": "brew install claude  (or: npm i -g @anthropic-ai/claude-code)",
   "trust": {

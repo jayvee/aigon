@@ -2,14 +2,16 @@
 
     // ── Ask-agent helpers ─────────────────────────────────────────────────────
 
-    const ASK_AGENTS = [
-      { id: 'cc', name: 'Claude Code' },
-      { id: 'gg', name: 'Gemini' },
-      { id: 'cx', name: 'Codex' },
-      { id: 'cu', name: 'Cursor' }
-    ];
+    const ASK_AGENTS = (Array.isArray(window.__AIGON_AGENTS__) ? window.__AIGON_AGENTS__ : []).map(agent => ({
+      id: agent.id,
+      name: agent.displayName || agent.id
+    }));
 
-    function getAskAgent() { return localStorage.getItem(lsKey('askAgent')) || 'cc'; }
+    function getAskAgent() {
+      const preferred = localStorage.getItem(lsKey('askAgent'));
+      if (preferred && ASK_AGENTS.some(agent => agent.id === preferred)) return preferred;
+      return ASK_AGENTS[0] ? ASK_AGENTS[0].id : 'cc';
+    }
     function setAskAgent(id) { localStorage.setItem(lsKey('askAgent'), id); }
 
     function buildAskAgentHtml(repoPath) {

@@ -231,12 +231,7 @@
     <div class="modal-box">
       <h3 id="agent-picker-title">Select Agents</h3>
       <p class="modal-desc" id="agent-picker-desc"></p>
-      <div class="agent-checks">
-        <label class="agent-check-row"><input type="checkbox" value="cc"><span class="agent-check-label">cc</span><span class="agent-check-hint">Claude Code</span></label>
-        <label class="agent-check-row"><input type="checkbox" value="cx"><span class="agent-check-label">cx</span><span class="agent-check-hint">Codex</span></label>
-        <label class="agent-check-row"><input type="checkbox" value="gg"><span class="agent-check-label">gg</span><span class="agent-check-hint">Gemini</span></label>
-<label class="agent-check-row"><input type="checkbox" value="cu"><span class="agent-check-label">cu</span><span class="agent-check-hint">Cursor</span></label>
-      </div>
+      <div class="agent-checks" id="agent-picker-checks"></div>
       <div class="modal-actions">
         <button class="btn" id="agent-picker-cancel">Cancel</button>
         <button class="btn btn-primary" id="agent-picker-submit">Setup</button>
@@ -439,6 +434,7 @@
   <script>
     const INITIAL_DATA = ${INITIAL_DATA};
     const INSTANCE_NAME = ${INSTANCE_NAME};
+    window.__AIGON_AGENTS__ = ${AIGON_AGENTS};
   </script>
   <!-- Dashboard modules — load order matters: state → utils → api → features → views → init -->
   <script src="/js/state.js"></script>

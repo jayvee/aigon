@@ -56,10 +56,7 @@
 
 | Code | Agent | Command | Mode |
 |------|-------|---------|------|
-| cc | Claude Code | `claude --permission-mode acceptEdits` | Auto-edits, prompts for risky Bash |
-| cu | Cursor | `agent --force` | Auto-approves commands (yolo mode) |
-| gg | Gemini | `gemini --yolo` | Auto-approves all |
-| cx | Codex | `codex --full-auto` | Workspace-write, smart approval |
+{{AGENT_CLI_MAPPING_ROWS}}
 
 **Quick-allow when prompted:** Claude `Shift+Tab` • Gemini `2` for always • Cursor "Add to allowlist" • Codex "Allow and remember"
 

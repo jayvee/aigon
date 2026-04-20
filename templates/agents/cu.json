@@ -6,8 +6,11 @@
     "cu"
   ],
   "displayName": "Cursor",
+  "shortName": "CU",
   "providerFamily": "varies",
   "portOffset": 4,
+  "terminalColor": "yellow",
+  "bannerColor": "#F97316",
   "defaultFleetAgent": false,
   "installHint": "Download from https://cursor.com",
   "trust": {

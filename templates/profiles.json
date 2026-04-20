@@ -9,14 +9,16 @@
     "web": {
       "devServer": {
         "enabled": true,
-        "ports": { "cc": 3001, "gg": 3002, "cx": 3003, "cu": 3004 }
+        "basePort": 3000,
+        "ports": {}
       },
       "setupEnvLine": "- Set up `.env.local` with agent-specific PORT (worktree modes)"
     },
     "api": {
       "devServer": {
         "enabled": true,
-        "ports": { "cc": 8001, "gg": 8002, "cx": 8003, "cu": 8004 }
+        "basePort": 8000,
+        "ports": {}
       },
       "setupEnvLine": "- Set up `.env.local` with agent-specific PORT (worktree modes)"
     },

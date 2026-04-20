@@ -3,9 +3,21 @@
 // Both Monitor and Pipeline views call these functions instead of maintaining
 // their own rendering logic.
 
-// Display name mapping (moved from pipeline.js for shared access)
-const AGENT_DISPLAY_NAMES = { cc: 'Claude Code', gg: 'Gemini', cx: 'Codex', cu: 'Cursor', solo: 'Agent' };
-const AGENT_SHORT_NAMES = { cc: 'CC', gg: 'GG', cx: 'CX', cu: 'CU', solo: 'Drive' };
+const AIGON_AGENTS = Array.isArray(window.__AIGON_AGENTS__) ? window.__AIGON_AGENTS__ : [];
+const AGENT_DISPLAY_NAMES = AIGON_AGENTS.reduce((map, agent) => {
+  map[agent.id] = agent.displayName || agent.id;
+  map.solo = 'Agent';
+  return map;
+}, {});
+const AGENT_SHORT_NAMES = AIGON_AGENTS.reduce((map, agent) => {
+  map[agent.id] = agent.shortName || String(agent.id || '').toUpperCase();
+  map.solo = 'Drive';
+  return map;
+}, {});
+
+function getAutonomousAgentIds() {
+  return AIGON_AGENTS.filter(agent => agent.autonomousEligible !== false).map(agent => agent.id);
+}
 
 function createEl(tag, options) {
   const el = document.createElement(tag);
@@ -472,7 +484,17 @@ let autonomousModalRepoPath = null;
 let autonomousModalBtn = null;
 let autonomousModalModels = null;
 
-const AUTONOMOUS_AGENT_IDS = ['cc', 'cx', 'gg', 'cu'];
+const AUTONOMOUS_AGENT_IDS = getAutonomousAgentIds();
+
+function renderAgentPickerRows() {
+  const checks = document.getElementById('agent-picker-checks');
+  if (!checks) return;
+  replaceNodeChildren(checks, AIGON_AGENTS.map(agent => buildAgentCheckRow({
+    value: agent.id,
+    label: agent.id,
+    hint: agent.displayName || agent.id,
+  })));
+}
 
 function showCloseModal(feature, repoPath, pipelineType) {
   closeModalFeature = feature;
@@ -586,6 +608,7 @@ async function submitCloseModal() {
 
 // Wire close modal events once DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+  renderAgentPickerRows();
   const modal = document.getElementById('close-modal');
   if (!modal) return;
 
