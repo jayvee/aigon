@@ -8,11 +8,11 @@ Stop paying the full cold-start context cost on every Autopilot iteration. Today
 - [ ] As an agent picking up iteration N+1, I see a short summary of what iteration N tried and why it failed, without needing to re-read the full feature log.
 
 ## Acceptance Criteria
-- [ ] Iterations 2+ of `runRalphCommand` (or its successor) consume materially less context than iteration 1 — target: at least a 50% reduction in first-turn input tokens on iterations 2+ versus iteration 1, measured against a representative feature.
-- [ ] The distilled carry-forward summary is bounded (hard cap in characters or tokens) and is generated deterministically from the previous iteration's output (e.g. last test-failure lines, last commit message, last error) — no additional model call just to produce the summary.
-- [ ] When no previous iteration output exists (iteration 1), behaviour is unchanged.
-- [ ] A test pins the summary-generation logic against a fixture iteration transcript.
-- [ ] Safety: if the carry-forward path fails or yields nothing useful, the loop falls back to the current cold-start behaviour — a broken summary must not block the iterate loop.
+- [ ] Iterations 2+ of `runRalphCommand` (or its successor) consume materially less context than iteration 1 — target: at least a 50% reduction in first-turn input tokens on iterations 2+ versus iteration 1, measured against a representative feature _(implementation shipped; quantify with token-reduction-2 telemetry when available)_.
+- [x] The distilled carry-forward summary is bounded (hard cap in characters or tokens) and is generated deterministically from the previous iteration's output (e.g. last test-failure lines, last commit message, last error) — no additional model call just to produce the summary.
+- [x] When no previous iteration output exists (iteration 1), behaviour is unchanged.
+- [x] `tests/integration/misc-command-wrapper.test.js` pins carry-forward shape, cap, truncation, and no duplicate criteria; it runs under `npm test`.
+- [x] Safety: if the carry-forward path fails or yields nothing useful, the loop falls back to the current cold-start behaviour — a broken summary must not block the iterate loop.
 
 ## Validation
 ```bash
