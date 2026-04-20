@@ -28,11 +28,17 @@ cat "$SPEC_PATH"
 2. Keep edits targeted and in-place.
 3. Clarify what a good findings document must contain without broadening the topic.
 
+Before committing, confirm the reviewer identity is available:
+
+```bash
+test -n "${AIGON_AGENT_ID:-}" || { echo "AIGON_AGENT_ID is required for spec-review commits"; exit 1; }
+```
+
 ## Commit format
 
 ```bash
 git add "$SPEC_PATH"
-git commit -m "spec-review: research {{ARG1_SYNTAX}} — <summary>" -m "Reviewer: ${AIGON_AGENT_ID:-unknown}
+git commit -m "spec-review: research {{ARG1_SYNTAX}} — <summary>" -m "Reviewer: ${AIGON_AGENT_ID}
 
 Summary:
 - <high-level summary>
@@ -48,6 +54,7 @@ Risky decisions:
 
 Suggested edits:
 - <notable edits you made>"
+aigon research-spec-review-record {{ARG1_SYNTAX}}
 ```
 
 ## Report

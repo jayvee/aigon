@@ -62,6 +62,7 @@ Decision:
 
 Notes:
 - <important rationale>"
+aigon feature-spec-review-check-record {{ARG1_SYNTAX}}
 ```
 
 If you reverted review commits, include that rationale in the acknowledgement commit body rather than creating a second ack commit.

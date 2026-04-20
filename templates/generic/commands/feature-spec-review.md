@@ -32,13 +32,19 @@ cat "$SPEC_PATH"
 3. Preserve author intent unless it is ambiguous, contradictory, or clearly under-specified.
 4. Prefer tightening acceptance criteria, execution order, ownership, and edge cases over adding net-new scope.
 
+Before committing, confirm the reviewer identity is available:
+
+```bash
+test -n "${AIGON_AGENT_ID:-}" || { echo "AIGON_AGENT_ID is required for spec-review commits"; exit 1; }
+```
+
 ## Commit format
 
 Commit exactly once after your spec edits:
 
 ```bash
 git add "$SPEC_PATH"
-git commit -m "spec-review: feature {{ARG1_SYNTAX}} — <summary>" -m "Reviewer: ${AIGON_AGENT_ID:-unknown}
+git commit -m "spec-review: feature {{ARG1_SYNTAX}} — <summary>" -m "Reviewer: ${AIGON_AGENT_ID}
 
 Summary:
 - <high-level summary>
@@ -54,6 +60,7 @@ Risky decisions:
 
 Suggested edits:
 - <notable edits you made>"
+aigon feature-spec-review-record {{ARG1_SYNTAX}}
 ```
 
 ## Report

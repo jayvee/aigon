@@ -69,6 +69,21 @@ testAsync('canCloseFeature blocks pre-close when no agent has signaled', () => w
     assert.match(closable.reason, /not ready to close/);
 }));
 
+testAsync('canCloseFeature blocks while spec reviews are still pending', () => withTempRepo(async (repo) => {
+    writeSpec(repo, '14', 'pending-spec-review');
+    await engine.startFeature(repo, '14', 'solo_branch', ['solo']);
+    await engine.signalAgentReady(repo, '14', 'solo');
+    await engine.recordSpecReviewSubmitted(repo, 'feature', '14', {
+        reviewId: 'sha-review-1',
+        reviewerId: 'gg',
+        summary: 'tighten scope',
+        commitSha: 'sha-review-1',
+    });
+    const closable = await engine.canCloseFeature(repo, '14');
+    assert.strictEqual(closable.ok, false);
+    assert.match(closable.reason, /feature-spec-review-check 14/);
+}));
+
 testAsync('recoverEmptyAgents heals legacy agents:[] features', () => withTempRepo(async (repo) => {
     // REGRESSION feature 233: features started under the old code have
     // feature.started with agents:[]. closeEngineState must auto-inject 'solo'
