@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 1759
+lines_removed: 1784
+lines_changed: 3543
+files_touched: 6
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 7078151
+output_tokens: 46178
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 6541952
+thinking_tokens: 8562
+total_tokens: 7124329
+billable_tokens: 7132891
+cost_usd: 15.8341
+sessions: 3
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 280 - dashboard-route-table-extract-api-handlers
 Agent: cx
 
