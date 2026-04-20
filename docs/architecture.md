@@ -220,6 +220,10 @@ The post-cutover system is easier to reason about if you separate lifecycle trut
 
 Important distinction: `.aigon/state/` still exists after the cutover, but it is no longer the coordinator manifest system that decides feature lifecycle.
 
+### Write-Path Contract
+
+When a command updates workflow-backed entity state, the workflow-core write is authoritative and must succeed before any derived caches are updated. Per-agent status files in `.aigon/state/` are a read cache for dashboard/session consumers, not a fallback that can mask engine write failures. If the engine event cannot be persisted, the CLI must fail and leave the cache untouched.
+
 ### Unified Action Registry
 
 All user-facing actions — workflow transitions and infrastructure operations — are defined in central candidate lists with consistent shape, eligibility guards, and metadata. Any UI surface (dashboard, board, macOS app) can discover available actions from the API without reimplementing eligibility logic.
