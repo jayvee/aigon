@@ -28,7 +28,9 @@ cat "$SPEC_PATH"
 2. Keep edits targeted and in-place.
 3. Clarify what a good findings document must contain without broadening the topic.
 
-## Commit format
+## Commit + record the review
+
+Commit the spec edits, then record the review so the dashboard and engine see it. The commit is an audit artefact; `aigon spec-review submit` is the authoritative write:
 
 ```bash
 git add "$SPEC_PATH"
@@ -48,7 +50,14 @@ Risky decisions:
 
 Suggested edits:
 - <notable edits you made>"
+
+aigon spec-review submit research {{ARG1_SYNTAX}} \
+  --reviewer="${AIGON_AGENT_ID}" \
+  --summary="<summary>" \
+  --commit-sha="$(git rev-parse HEAD)"
 ```
+
+If `AIGON_AGENT_ID` is empty, stop and tell the user — the review cannot be recorded without a reviewer id.
 
 ## Report
 

@@ -206,6 +206,7 @@ The workflow-core engine is the sole lifecycle authority for features and resear
 - `.aigon/workflows/features/{id}/events.jsonl` — immutable event log
 - `.aigon/workflows/features/{id}/snapshot.json` — derived snapshot
 - `.aigon/workflows/features/{id}/lock` — transient lock file
+- `.aigon/workflows/features/{id}/spec-review.json` — per-entity spec-review store (authoritative for pending/acked reviews; owned by `lib/spec-review-state.js`). Research entities use the parallel path under `.aigon/workflows/research/{id}/`. Replaces the prior git-log scan of `spec-review:` / `spec-review-check:` commits — commits remain audit artefacts but the JSON store is the write-path of record (seeded once from history by `migrateFromGitHistory` on first read).
 
 ### Workflow Authority Split
 

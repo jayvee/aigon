@@ -15,24 +15,21 @@ test -n "$SPEC_PATH" && echo "$SPEC_PATH"
 
 If `SPEC_PATH` is empty, stop and report that the feature spec could not be resolved.
 
-## Find pending review commits
+## Find pending reviews
 
-Find the latest acknowledgement, if any:
+Pending reviews live in `.aigon/workflows/features/<id>/spec-review.json` (the authoritative store). Inspect what is pending:
 
 ```bash
-LAST_ACK=$(git log --follow --format=%H -n 1 --grep='^spec-review-check:' -- "$SPEC_PATH")
-echo "last_ack=${LAST_ACK:-none}"
+cat .aigon/workflows/features/{{ARG1_SYNTAX}}/spec-review.json 2>/dev/null || echo '{"reviews": []}'
 ```
 
-Then inspect pending reviews newer than that acknowledgement:
+For context, you may also browse the audit commits:
 
 ```bash
 git log --follow --format='%H %s' -- "$SPEC_PATH"
 ```
 
-Pending reviews are commits whose subject starts with `spec-review:` and are newer than `LAST_ACK` if `LAST_ACK` exists.
-
-For every pending review commit:
+For a specific review commit:
 
 ```bash
 git show <sha> -- "$SPEC_PATH"
@@ -49,9 +46,9 @@ Process all pending reviewers together. Your options are:
 
 If you need changes, make them before the acknowledgement commit.
 
-## Acknowledge with one commit
+## Acknowledge the reviews
 
-After the spec is in its final state, commit exactly once with:
+After the spec is in its final state, commit the changes (audit trail) and record the ack. `aigon spec-review ack` clears the pending flag for **all** open reviews on this spec — if you need partial acks, run it once per commit-sha instead:
 
 ```bash
 git add "$SPEC_PATH"
@@ -62,6 +59,11 @@ Decision:
 
 Notes:
 - <important rationale>"
+
+aigon spec-review ack feature {{ARG1_SYNTAX}} \
+  --acked-by="${AIGON_AGENT_ID:-unknown}" \
+  --notes="<short decision summary>" \
+  --commit-sha="$(git rev-parse HEAD)"
 ```
 
 If you reverted review commits, include that rationale in the acknowledgement commit body rather than creating a second ack commit.

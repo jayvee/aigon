@@ -49,6 +49,7 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 | `lib/commands/feature.js` | ~2860 | All `feature-*` handlers, `sessions-close`, `feature-autonomous-start` (AutoConductor launcher + `__run-loop`) |
 | `lib/feature-close.js` | ~740 | Feature-close phases: target resolution, merge, telemetry, engine close, cleanup |
 | `lib/feature-review-state.js` | ~220 | Review lifecycle state per feature: `review-state.json` (current + history), `markReviewingSync`, `completeReviewSync`, `reconcileReviewState`. Written by `agent-status` commands; read by AutoConductor `__run-loop` to confirm review completion. |
+| `lib/spec-review-state.js` | ~170 | **Spec-review JSON store**: per-entity `.aigon/workflows/{features,research}/<id>/spec-review.json`. Write-path for `aigon spec-review submit`/`ack`; read-path for the dashboard spec-review collector (replaces prior git-log scan of `spec-review:` commits). Includes one-shot `migrateFromGitHistory` backfill keyed by `.aigon/workflows/spec-review-migrated.json`. |
 | `lib/dashboard-server.js` | ~2660 | AIGON server HTTP/UI module: dashboard UI, API, WebSocket relay, polling, HTTP action dispatch. Never mutates engine state directly and never reads engine-state/spec/log files directly. |
 | `lib/dashboard-status-collector.js` | ~830 | AIGON server read-side collector: assembles repo, feature, research, feedback, summary, compatibility status payloads, plus dashboard-owned log/detail read helpers |
 | `lib/commands/infra.js` | ~1460 | `aigon server` command, board, config, proxy-setup, dev-server |

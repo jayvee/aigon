@@ -12,17 +12,14 @@ test -n "$SPEC_PATH" && echo "$SPEC_PATH"
 
 If `SPEC_PATH` is empty, stop and report that the research spec could not be resolved.
 
-## Find pending review commits
+## Find pending reviews
 
 ```bash
-LAST_ACK=$(git log --follow --format=%H -n 1 --grep='^spec-review-check:' -- "$SPEC_PATH")
-echo "last_ack=${LAST_ACK:-none}"
+cat .aigon/workflows/research/{{ARG1_SYNTAX}}/spec-review.json 2>/dev/null || echo '{"reviews": []}'
 git log --follow --format='%H %s' -- "$SPEC_PATH"
 ```
 
-Pending reviews are commits whose subject starts with `spec-review:` and are newer than `LAST_ACK` if `LAST_ACK` exists.
-
-For every pending review commit:
+For a specific review commit:
 
 ```bash
 git show <sha> -- "$SPEC_PATH"
@@ -33,7 +30,9 @@ git show -s --format=%B <sha>
 
 Process all pending reviewers together. Accept, revert, or modify the reviewed changes, then leave the spec in its final state.
 
-## Acknowledge with one commit
+## Acknowledge the reviews
+
+Commit the spec (audit trail) and record the ack:
 
 ```bash
 git add "$SPEC_PATH"
@@ -44,6 +43,11 @@ Decision:
 
 Notes:
 - <important rationale>"
+
+aigon spec-review ack research {{ARG1_SYNTAX}} \
+  --acked-by="${AIGON_AGENT_ID:-unknown}" \
+  --notes="<short decision summary>" \
+  --commit-sha="$(git rev-parse HEAD)"
 ```
 
 ## Report

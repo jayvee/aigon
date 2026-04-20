@@ -32,9 +32,9 @@ cat "$SPEC_PATH"
 3. Preserve author intent unless it is ambiguous, contradictory, or clearly under-specified.
 4. Prefer tightening acceptance criteria, execution order, ownership, and edge cases over adding net-new scope.
 
-## Commit format
+## Commit + record the review
 
-Commit exactly once after your spec edits:
+Commit exactly once after your spec edits, then record the review so the dashboard and engine see it. The commit is an audit artefact; `aigon spec-review submit` is the authoritative write:
 
 ```bash
 git add "$SPEC_PATH"
@@ -54,7 +54,14 @@ Risky decisions:
 
 Suggested edits:
 - <notable edits you made>"
+
+aigon spec-review submit feature {{ARG1_SYNTAX}} \
+  --reviewer="${AIGON_AGENT_ID}" \
+  --summary="<summary>" \
+  --commit-sha="$(git rev-parse HEAD)"
 ```
+
+If `AIGON_AGENT_ID` is empty, stop and tell the user — the review cannot be recorded without a reviewer id.
 
 ## Report
 
