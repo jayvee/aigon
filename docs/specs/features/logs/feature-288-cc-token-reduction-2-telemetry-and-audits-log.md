@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 317
+lines_removed: 10
+lines_changed: 327
+files_touched: 7
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 122
+output_tokens: 51209
+cache_creation_input_tokens: 226546
+cache_read_input_tokens: 7494961
+thinking_tokens: 0
+total_tokens: 7772838
+billable_tokens: 51331
+cost_usd: 3.8665
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 288 - token-reduction-2-telemetry-and-audits
 Agent: cc
 
