@@ -6,8 +6,11 @@
     "cx"
   ],
   "displayName": "Codex",
+  "shortName": "CX",
   "providerFamily": "openai",
   "portOffset": 3,
+  "terminalColor": "magenta",
+  "bannerColor": "#A855F7",
   "defaultFleetAgent": false,
   "installHint": "npm i -g @openai/codex",
   "trust": {

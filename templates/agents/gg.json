@@ -6,8 +6,11 @@
     "gg"
   ],
   "displayName": "Gemini",
+  "shortName": "GG",
   "providerFamily": "google",
   "portOffset": 2,
+  "terminalColor": "green",
+  "bannerColor": "#22C55E",
   "defaultFleetAgent": true,
   "installHint": "npm i -g @google/gemini-cli",
   "trust": {

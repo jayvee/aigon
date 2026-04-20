@@ -6,7 +6,7 @@ Usage: aigon <command> [arguments]
 
 Setup:
   init                              Initialize ./docs/specs directory structure
-  install-agent <agents...>         Install agent configs (cc, gg, cx, cu)
+  install-agent <agents...>         Install agent configs ({{SUPPORTED_AGENT_INSTALL_IDS}})
   update                            Update Aigon files to latest version
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
   config <init|show|models>         Manage config and view model configuration
@@ -202,10 +202,7 @@ Examples:
   aigon feedback-triage 14 --type bug --severity high --tags auth,regression --apply --yes
 
 Agents:
-  cc (claude)   - Claude Code
-  cu (cursor)   - Cursor
-  gg (gemini)   - Gemini CLI
-  cx (codex)    - OpenAI Codex
+{{SUPPORTED_AGENT_HELP_LINES}}
 
 
 Pro features are currently in development. Commands marked [Pro] will be enabled when Pro launches.
