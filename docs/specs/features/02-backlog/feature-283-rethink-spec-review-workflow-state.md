@@ -8,6 +8,8 @@ The 2026-04-20 "2 pending — unknown on DONE #246" bug exposed three distinct s
 2. Pending state survived feature close because nobody ran `spec-review-check` — there was no forcing function.
 3. A read-path filter (Done → suppress badge) was the quick fix, but the underlying model couldn't tell Done from not-Done because the engine never saw spec-reviews at all.
 
+A second 2026-04-20 symptom exposed the same weakness from the dashboard-render side: a research card's action menu rendered **two identical "Review spec" items** instead of "Review spec" + "Check spec review". The workflow rules in `lib/research-workflow-rules.js` and `lib/feature-workflow-rules.js` define distinct labels for `*_SPEC_REVIEW` and `*_SPEC_REVIEW_CHECK`, but the dashboard still collapsed them — evidence that the CHECK action's label is being overwritten somewhere between rule definition and render (or the SPEC_REVIEW rule is being emitted twice when a pending review exists). Either root cause traces back to the same fact: spec-review is not a first-class engine concept, so the two actions are stitched together by convention rather than by typed state.
+
 This feature picks a non-git-commit-based model for spec-review state and migrates to it. The goal is one authoritative store that the engine reads and writes, aligned with the Write-Path Contract in CLAUDE.md.
 
 ## User Stories
@@ -24,6 +26,8 @@ This feature picks a non-git-commit-based model for spec-review state and migrat
 - [ ] Reviewer id is captured at write time; `Reviewer: unknown` becomes impossible (or at least flagged, not silently stored).
 - [ ] Feature close forces resolution of outstanding spec-reviews (auto-ack, explicit-decline, or block-close — per chosen design).
 - [ ] Regression test covers: review written → pending flag set, ack written → pending cleared, feature-close with outstanding reviews behaves per design, Done feature never shows pending badge.
+- [ ] Dashboard action menu renders **exactly one** "Review spec" item when a prior review is not pending, and **"Review spec" + "Check spec review"** (distinct labels) when a prior review is pending — no duplicate labels, for either feature or research cards.
+- [ ] Regression test covers: derive `validActions` for a feature and a research entity in inbox/backlog with and without a pending review; assert label uniqueness and that CHECK only appears when `pendingCount > 0`.
 - [ ] `docs/architecture.md` updated: remove spec-review-via-commits from the write-path narrative, document the new store.
 
 ## Validation
@@ -107,5 +111,6 @@ Option A is the acceptable fallback if engine changes feel too heavy. Option B i
 
 ## Related
 - Triggered by: 2026-04-20 Done-column pending-badge bug on feature #246 (fix landed in `lib/dashboard-status-collector.js` as a read-path `stage === 'done'` filter — see preceding commit).
+- Also triggered by: 2026-04-20 duplicate "Review spec" menu item on a research card in the dashboard (see Summary) — same root cause class: spec-review is stitched from convention rather than typed engine state.
 - Related: `feature-fix-entity-submit-silent-signal-loss` (same write-path-contract class).
 - CLAUDE.md § State Architecture and § Write-Path Contract are the governing design documents.
