@@ -101,7 +101,9 @@ The command will detect your mode (Drive/worktree/Fleet) and display the spec lo
 
 ## Step 2: Read the spec
 
-The spec content was printed inline by the `feature-do` command above. If it was not (e.g., you ran `feature-start` separately), read the spec at:
+The spec body was printed inline by the `feature-do` command above. **Use that inline copy.** Do not re-read the spec from disk, and do not re-run `aigon feature-spec` "to be sure" — the inline copy is authoritative.
+
+Only fetch the spec from disk if the inline body is genuinely absent (e.g., you started the session with `feature-start` rather than `feature-do`):
 
 ```bash
 aigon feature-spec {{ARG1_SYNTAX}}
@@ -128,6 +130,7 @@ aigon agent-status implementing
 - Validate after committing, not before. Fix issues in follow-up commits.
 - **ALL file edits MUST use relative paths from the current working directory.** Never use absolute paths. Run `pwd` if unsure where you are.
 - **Never troubleshoot by searching for Aigon itself.** Troubleshoot the reported error, not the CLI installation.
+- **Run shell commands directly; don't delegate them.** Simple commands (`npm test`, `node -c file.js`, `bash scripts/*.sh`, validation batches) should be invoked directly by you. Do not spawn a sub-agent, awaiter, or parallel worker to run them — the round-trip costs more than the command saves. Reserve sub-agents for genuinely parallel work (e.g. two independent long-running builds at once).
 
 Work through the acceptance criteria in order. For worktree modes, use relative paths and maintain the worktree directory as your working directory.
 
