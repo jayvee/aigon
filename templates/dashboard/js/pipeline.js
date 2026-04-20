@@ -86,9 +86,9 @@
     }
 
     function getAgentPromptPrefix(agentId) {
-      if (agentId === 'cx') return '$aigon-';
-      if (agentId === 'cu') return '/aigon-';
-      return '/aigon:';
+      const agents = Array.isArray(window.__AIGON_AGENTS__) ? window.__AIGON_AGENTS__ : [];
+      const agent = agents.find(entry => entry && entry.id === agentId);
+      return (agent && agent.cmdPrefix) || '/aigon:';
     }
 
     async function submitCreateModal() {
