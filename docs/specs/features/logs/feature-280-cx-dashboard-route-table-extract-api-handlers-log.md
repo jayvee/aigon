@@ -1,11 +1,11 @@
 ---
-commit_count: 5
-lines_added: 1759
-lines_removed: 1784
-lines_changed: 3543
-files_touched: 6
-fix_commit_count: 1
-fix_commit_ratio: 0.2
+commit_count: 0
+lines_added: 0
+lines_removed: 0
+lines_changed: 0
+files_touched: 0
+fix_commit_count: 0
+fix_commit_ratio: 0
 rework_thrashing: false
 rework_fix_cascade: false
 rework_scope_creep: false
