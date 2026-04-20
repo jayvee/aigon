@@ -42,7 +42,23 @@
       "implement": "gpt-5.3-codex",
       "evaluate": "gpt-5.4",
       "review": "gpt-5.4"
-    }
+    },
+    "modelOptions": [
+      { "value": null, "label": "Use config default" },
+      { "value": "gpt-5.2", "label": "GPT-5.2" },
+      { "value": "gpt-5.3-codex", "label": "GPT-5.3 Codex" },
+      { "value": "gpt-5.4", "label": "GPT-5.4" }
+    ],
+    "effortOptions": [
+      { "value": null, "label": "Use config default" },
+      { "value": "minimal", "label": "Minimal" },
+      { "value": "low", "label": "Low" },
+      { "value": "medium", "label": "Medium" },
+      { "value": "high", "label": "High" }
+    ],
+    "modelFlag": "--model",
+    "effortFlag": "-c model_reasoning_effort=",
+    "effortEnv": null
   },
   "placeholders": {
     "AGENT_ID": "cx",
