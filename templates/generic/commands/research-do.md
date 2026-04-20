@@ -110,7 +110,7 @@ This updates your agent state in the main repo so the dashboard and coordinator 
    - If it fails, report the exact error and stop for user guidance
    - **Do this even if you believe the user will run `research-eval` next.** That's a separate, later step — your submit signal is what unblocks it
 
-4. **Post-submit (after `agent-status submitted` exits 0):** output one line — "Findings submitted — ready for evaluation." — and STAY in the session. Do NOT run `aigon research-close` or `aigon research-eval` — those are user decisions.
+4. **Post-submit (after `agent-status submitted` exits 0):** output one line — "Findings submitted — ready for evaluation." — and STAY in the session in case the user has follow-up questions.
 
 **If Drive mode (no findings file):**
 - Run `aigon research-close {{ARG_SYNTAX}}` when the research pass is complete and ready to close
