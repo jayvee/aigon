@@ -14,10 +14,15 @@ The user regularly exhausts their 5-hour token-usage window when driving Aigon w
 
 This research should produce a **ranked, concrete list of quick wins and medium-effort wins** to cut tokens-per-feature, with rough expected savings for each.
 
+The output should distinguish clearly between:
+- **Measured findings** backed by telemetry, prompt/config size measurements, command output inspection, or documented tool behavior.
+- **Inferences** where direct measurement is unavailable.
+- **Recommendations** that can become follow-up features without requiring implementation in this research topic.
+
 ## Questions to Answer
 
 ### Measurement
-- [ ] Without instrumentation, how many tokens does a "typical" feature actually cost end-to-end (implement + submit) for cc vs cx vs gg? Is the existing telemetry (`lib/telemetry.js`) enough to answer this, and if not, what's missing?
+- [ ] Without adding new instrumentation in this topic, how many tokens does a "typical" feature cost end-to-end (implement + submit) for cc vs cx vs gg? Use existing artifacts first (`lib/telemetry.js`, workflow logs, agent-visible usage output, or vendor session summaries). If the current data cannot answer this, identify the exact missing fields and where they would need to be captured.
 - [ ] Where is time/cost skewed — on the first few model turns (context load), mid-implementation (exploration and re-reads), or post-submit (log writing, ceremony)?
 - [ ] Which Aigon workflows are the most expensive per run (e.g. Fleet 3-agent feature, solo Drive feature, research-autopilot)? Ranked list please.
 
@@ -30,7 +35,7 @@ This research should produce a **ranked, concrete list of quick wins and medium-
 
 ### Harness / session shape wins
 - [ ] Does `aigon install-agent` write more skill files than any given agent needs per session? Specifically: how many `.claude/skills/` files does a cc session actually load into context when running `feature-do`, vs. how many are installed?
-- [ ] For codex specifically, does `~/.codex/config.toml` (now 2000+ lines) get sent as context every session? If yes, this alone may be a massive hidden cost.
+- [ ] For codex specifically, does `~/.codex/config.toml` (now 2000+ lines) get sent as context every session? Distinguish between "Codex reads this file locally for configuration" and "the model receives this file content as prompt context," because those are different cost mechanisms.
 - [ ] Are the `CLAUDE.md` auto-memory files (`~/.claude/projects/<repo>/memory/*`) loaded in their entirety every session, or only the `MEMORY.md` index? If the full set is loaded, can we prune aggressively?
 - [ ] For repos using cc's plan mode, is the plan content re-read on every turn or only once?
 - [ ] Are there opportunities to use Claude's prompt-caching explicitly for the stable portions of the prompt (templates, CLAUDE.md, etc.)?
@@ -49,7 +54,7 @@ This research should produce a **ranked, concrete list of quick wins and medium-
 ### Codex-specific extra wins
 - [ ] Beyond `a092ef27` / `3db70a7a`, what else in codex-specific behaviour wastes tokens? (Awaiters still run occasionally; reasoning-effort set to "medium" globally.)
 - [ ] Would dropping `model_reasoning_effort = "medium"` to `"low"` for routine features meaningfully cut cost without hurting quality on simple tasks?
-- [ ] Does each cx session re-send the entire `~/.codex/config.toml` (2000+ lines of project trust entries) as part of its system prompt? If yes, pruning that file or moving trust-entries to a separate gitignored sidecar is high-leverage.
+- [ ] Does each cx session re-send the entire `~/.codex/config.toml` (2000+ lines of project trust entries) as part of its system prompt? If this cannot be proven directly, record the strongest available evidence and the uncertainty level instead of asserting it.
 
 ## Scope
 
@@ -69,12 +74,27 @@ This research should produce a **ranked, concrete list of quick wins and medium-
 - Per-agent pricing or rate-limit engineering — this research is about token volume, not vendor-side cost.
 - Writing any of the fixes themselves — this research only proposes ranked wins.
 
+## Evidence Expectations
+
+- Every major claim should name its evidence source: repository file/command inspection, telemetry artifact, observed CLI behavior, or external documentation.
+- When estimating savings, provide a rough method, such as prompt-size deltas, repeated-session overhead, or observed per-run token summaries. Exact token accounting is optional if the data is unavailable, but the estimation method must be explicit.
+- Separate repo-local facts from cross-repo sampling. If using aigon / aigon-pro / farline / brewboard / jvbot as examples, state which repos were sampled and why.
+- If a question cannot be answered confidently from available data, say so directly and recommend the smallest follow-up measurement feature needed to close the gap.
+
 ## Findings
 <!-- Document discoveries, options evaluated, pros/cons -->
+Use this section to record:
+- a ranked list of the top token sinks, with evidence and confidence level for each
+- quick wins vs. medium-effort wins
+- known unknowns that require follow-up instrumentation rather than speculation
 
 ## Recommendation
 <!-- Summary of recommended approach based on findings -->
+Summarize the 3-5 highest-leverage actions in implementation order. For each, note whether it is:
+- directly actionable as a feature now
+- blocked on missing measurement
+- better deferred because it belongs to agent-vendor behavior rather than Aigon
 
 ## Output
-<!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Link the newly created files below. -->
+<!-- Create follow-up feature specs only for recommendations that are clearly in Aigon's control and specific enough to implement. Do not create speculative features for vendor/tool behavior you cannot verify. Link the created files below. -->
 - [ ] Feature:
