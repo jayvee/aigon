@@ -3,7 +3,7 @@
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
-- **Shared logic**: `lib/*.js` — 20 modules; see Module Map below
+- **Shared logic**: `lib/*.js` — 21 modules; see Module Map below
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cx` (or any agent)
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
@@ -58,7 +58,8 @@ Key modules (run `wc -l lib/*.js lib/commands/*.js` for live counts):
 |--------|--------|------|
 | `lib/commands/feature.js` | 2403 | All `feature-*` handlers, `sessions-close` |
 | `lib/commands/infra.js` | 1893 | `aigon server` command, board, config, proxy-setup, dev-server, `sync` |
-| `lib/dashboard-server.js` | ~2660 | AIGON server HTTP module: serves dashboard UI, API, WebSocket relay, polling |
+| `lib/dashboard-server.js` | ~1980 | AIGON server HTTP module: serves dashboard UI, WebSocket relay, static assets, polling, and OSS/Pro route dispatch glue |
+| `lib/dashboard-routes.js` | ~1660 | OSS dashboard API route table and dispatcher: `/api/...` handler registration and route-specific business logic extracted from `dashboard-server.js` |
 | `lib/dashboard-status-collector.js` | ~830 | Repo/entity read-side assembly for the AIGON server: feature/research workflow reads plus feedback metadata-driven status collection and reconciliation |
 | `lib/utils.js` | 1464 | YAML parsers, spec CRUD, hooks, version, analytics |
 | `lib/worktree.js` | 1510 | Worktree creation, tmux sessions, terminal launch, agent git-attribution metadata setup |
