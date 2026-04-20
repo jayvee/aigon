@@ -24,3 +24,21 @@ Agent: cx
 ## Conversation Summary
 - The user invoked `aigon-feature-do` for feature 281 in an existing worktree.
 - I verified the branch/worktree, attached with `aigon feature-do 281`, implemented the read-side relocation, validated the change set, and prepared the feature for review.
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-04-20
+
+### Findings
+- `buildDetailPayload` renamed `resolvedFeatureSpec` -> `resolvedSpec`, but two references on the stage-fallback chain (feature-only branch) were missed. In strict mode `resolvedFeatureSpec` throws `ReferenceError` whenever `snapshotToStage(snapshot)` returns null (snapshot without lifecycle) or the feature lacks a snapshot (inbox / backlog). Existing tests did not catch this because they exercise features with a lifecycle-backed snapshot, where short-circuit evaluation skipped the dangling reference.
+- `stateDir` local in `buildDetailPayload` was left declared after the extraction but no longer referenced.
+
+### Fixes Applied
+- `fix(review): restore resolvedSpec reference in buildDetailPayload stage fallback` — renamed the two residual `resolvedFeatureSpec` references and removed the now-unused `stateDir` local.
+
+### Notes
+- Spec AC5/AC8 satisfied: `grep fs.readFileSync|fs.readdirSync lib/dashboard-server.js` returns 10 matches, all infrastructure (global/project config, HTML template, assets/ico, manifest, pro files). No reads against `.aigon/` or `docs/specs/`.
+- Boundary comment marker (AC7) present at top of `lib/dashboard-server.js`.
+- CLAUDE.md Module Map already notes the owner modules (AC10); read-only rule has been strengthened to call out engine-state/spec/log file access (AC9).
+- `npm test` and `bash scripts/check-test-budget.sh` passed after the fix (test budget 1971/2000).
