@@ -218,6 +218,7 @@
     .kcard-gh-logo{width:12px;height:12px;vertical-align:-1px;margin-right:3px;opacity:.7}
     .kcard-agent-header{display:flex;align-items:center;gap:6px;margin-bottom:2px;min-width:0}
     .kcard-agent-name{font-size:11px;font-weight:700;font-family:var(--mono);color:var(--text-secondary);flex-shrink:0;letter-spacing:.03em}
+    .kcard-agent-triplet{font-size:9px;font-family:var(--mono);color:var(--text-tertiary);opacity:.7;letter-spacing:.02em;padding:1px 5px;border:1px solid var(--border-subtle);border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
     .kcard-agent-status-row{margin-bottom:3px}
     .kcard-agent-status{font-size:10px;color:var(--text-tertiary);white-space:nowrap}
     .kcard-agent-status.status-running{color:#4ADE80}
@@ -277,6 +278,12 @@
     .agent-check-hint{font-size:11px;color:var(--text-tertiary)}
     .agent-check-badge{font-size:9px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;margin-left:6px;letter-spacing:.02em;opacity:.8}
     .agent-check-model{font-size:10px;color:var(--text-tertiary);opacity:.45;font-family:var(--mono);margin-left:6px}
+    .agent-triplet-selects{display:flex;gap:6px;margin-left:auto}
+    .agent-triplet-selects select{font:11px var(--mono);padding:3px 22px 3px 8px;background:var(--bg-root);color:var(--text-secondary);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;min-width:88px}
+    .agent-triplet-selects select:hover{border-color:var(--border-default);color:var(--text-primary)}
+    .agent-triplet-selects select:focus{outline:none;border-color:var(--accent)}
+    .agent-checks-triplet .agent-check-label{flex:0 0 auto;min-width:60px}
+    .agent-checks-triplet .agent-check-hint{flex:1}
     .modal-actions{display:flex;gap:8px;justify-content:flex-end}
     .create-modal-box{max-width:520px}
     .create-input{width:100%;padding:10px 12px;background:var(--bg-root);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:8px;font:13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;outline:none;transition:border-color .12s ease}

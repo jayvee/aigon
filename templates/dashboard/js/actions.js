@@ -35,6 +35,7 @@ function createEl(tag, options) {
 function buildAgentCheckRow(options) {
   const opts = options || {};
   const label = createEl('label', { className: 'agent-check-row' });
+  if (opts.rowClassName) label.className += ' ' + opts.rowClassName;
   const input = createEl('input', {
     attrs: {
       type: opts.type || 'checkbox',
@@ -51,6 +52,95 @@ function buildAgentCheckRow(options) {
   if (opts.model) label.appendChild(createEl('span', { className: 'agent-check-model', text: opts.model }));
   return label;
 }
+
+// Append a {model, effort} dropdown pair to an agent-check row. When the
+// agent has no options for a dropdown, that dropdown is omitted entirely.
+// Disable cu (no modelFlag/effortFlag) dropdowns cleanly by not rendering.
+function appendTripletSelects(rowEl, agent) {
+  if (!agent) return;
+  const container = createEl('span', { className: 'agent-triplet-selects' });
+  const modelOpts = Array.isArray(agent.modelOptions) ? agent.modelOptions : [];
+  if (modelOpts.length > 0) {
+    const sel = document.createElement('select');
+    sel.className = 'agent-triplet-model';
+    sel.dataset.agentId = agent.id;
+    modelOpts.forEach(opt => {
+      const el = document.createElement('option');
+      el.value = opt.value == null ? '' : String(opt.value);
+      el.textContent = opt.label || (opt.value == null ? 'Use config default' : String(opt.value));
+      sel.appendChild(el);
+    });
+    const stored = tripletStorage.read(agent.id);
+    if (stored.model != null && modelOpts.some(o => String(o.value || '') === stored.model)) {
+      sel.value = stored.model;
+    }
+    sel.addEventListener('click', e => e.stopPropagation());
+    sel.addEventListener('change', e => {
+      e.stopPropagation();
+      tripletStorage.write(agent.id, { model: sel.value || null });
+    });
+    container.appendChild(sel);
+  }
+  const effortOpts = Array.isArray(agent.effortOptions) ? agent.effortOptions : [];
+  if (effortOpts.length > 0) {
+    const sel = document.createElement('select');
+    sel.className = 'agent-triplet-effort';
+    sel.dataset.agentId = agent.id;
+    effortOpts.forEach(opt => {
+      const el = document.createElement('option');
+      el.value = opt.value == null ? '' : String(opt.value);
+      el.textContent = opt.label || (opt.value == null ? 'Use config default' : String(opt.value));
+      sel.appendChild(el);
+    });
+    const stored = tripletStorage.read(agent.id);
+    if (stored.effort != null && effortOpts.some(o => String(o.value || '') === stored.effort)) {
+      sel.value = stored.effort;
+    }
+    sel.addEventListener('click', e => e.stopPropagation());
+    sel.addEventListener('change', e => {
+      e.stopPropagation();
+      tripletStorage.write(agent.id, { effort: sel.value || null });
+    });
+    container.appendChild(sel);
+  }
+  if (container.childElementCount > 0) rowEl.appendChild(container);
+}
+
+// Convert picker triplets → --models / --efforts CLI flags. Omits a
+// pair entirely when both are null (so the CLI default applies).
+function tripletsToCliArgs(triplets) {
+  const models = [];
+  const efforts = [];
+  (triplets || []).forEach(t => {
+    if (t.model) models.push(t.id + '=' + t.model);
+    if (t.effort) efforts.push(t.id + '=' + t.effort);
+  });
+  const args = [];
+  if (models.length > 0) args.push('--models=' + models.join(','));
+  if (efforts.length > 0) args.push('--efforts=' + efforts.join(','));
+  return args;
+}
+
+// Last-used triplet persistence — keyed per agent; defaults restored when
+// picker reopens so users don't re-select "opus-4-7 + xhigh" every time.
+const tripletStorage = {
+  storageKey(agentId) { return 'aigon:picker-triplet:' + agentId; },
+  read(agentId) {
+    try {
+      const raw = localStorage.getItem(this.storageKey(agentId));
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (_) { return {}; }
+  },
+  write(agentId, patch) {
+    try {
+      const current = this.read(agentId);
+      const next = Object.assign({}, current, patch);
+      localStorage.setItem(this.storageKey(agentId), JSON.stringify(next));
+    } catch (_) { /* non-fatal */ }
+  }
+};
 
 function replaceNodeChildren(node, children) {
   node.replaceChildren(...children);
@@ -338,9 +428,11 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       break;
     case 'feature-start':
     case 'research-start': {
-      const agents = await showAgentPicker(id, feature.name, { repoPath, taskType: 'implement', action: va.action });
-      if (!agents) return;
-      await requestAction(pCmd('start'), [id, ...agents], repoPath, btn);
+      const triplets = await showAgentPicker(id, feature.name, { repoPath, taskType: 'implement', action: va.action, collectTriplet: true });
+      if (!triplets) return;
+      const extraArgs = tripletsToCliArgs(triplets);
+      const agentIds = triplets.map(t => t.id);
+      await requestAction(pCmd('start'), [id, ...agentIds, ...extraArgs], repoPath, btn);
       break;
     }
     case 'feature-autonomous-start': {
@@ -348,10 +440,12 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       break;
     }
     case 'feature-autopilot': {
-      const agents = await showAgentPicker(id, feature.name, { title: 'Select Autopilot Agents', submitLabel: 'Autopilot', repoPath, taskType: 'implement', action: va.action });
-      if (!agents) return;
-      if (agents.length < 2) { showToast('Select at least 2 agents for autopilot'); return; }
-      await requestAction('feature-autopilot', [id, ...agents, '--auto-eval'], repoPath, btn);
+      const triplets = await showAgentPicker(id, feature.name, { title: 'Select Autopilot Agents', submitLabel: 'Autopilot', repoPath, taskType: 'implement', action: va.action, collectTriplet: true });
+      if (!triplets) return;
+      if (triplets.length < 2) { showToast('Select at least 2 agents for autopilot'); return; }
+      const extraArgs = tripletsToCliArgs(triplets);
+      const agentIds = triplets.map(t => t.id);
+      await requestAction('feature-autopilot', [id, ...agentIds, ...extraArgs, '--auto-eval'], repoPath, btn);
       break;
     }
     case 'feature-eval': {
@@ -486,14 +580,25 @@ let autonomousModalModels = null;
 
 const AUTONOMOUS_AGENT_IDS = getAutonomousAgentIds();
 
-function renderAgentPickerRows() {
+function renderAgentPickerRows(options) {
+  const opts = options || {};
+  const collectTriplet = !!opts.collectTriplet;
   const checks = document.getElementById('agent-picker-checks');
   if (!checks) return;
-  replaceNodeChildren(checks, AIGON_AGENTS.map(agent => buildAgentCheckRow({
-    value: agent.id,
-    label: agent.id,
-    hint: agent.displayName || agent.id,
-  })));
+  replaceNodeChildren(checks, AIGON_AGENTS.map(agent => {
+    const row = buildAgentCheckRow({
+      value: agent.id,
+      label: agent.id,
+      hint: agent.displayName || agent.id,
+      rowClassName: collectTriplet ? 'agent-check-row-triplet' : '',
+    });
+    if (collectTriplet) {
+      row.dataset.agentId = agent.id;
+      appendTripletSelects(row, agent);
+    }
+    return row;
+  }));
+  checks.classList.toggle('agent-checks-triplet', collectTriplet);
 }
 
 function showCloseModal(feature, repoPath, pipelineType) {
