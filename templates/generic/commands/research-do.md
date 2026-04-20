@@ -79,7 +79,7 @@ This updates your agent state in the main repo so the dashboard and coordinator 
 
 ## When You're Done
 
-**THIS IS THE FINAL STEP. YOU MUST COMPLETE IT.**
+**THIS IS THE FINAL STEP. YOU MUST COMPLETE IT. DO NOT SKIP THIS STEP.**
 
 **If findings file exists (worktree/Fleet mode):**
 
@@ -96,12 +96,21 @@ This updates your agent state in the main repo so the dashboard and coordinator 
    git commit -m "docs: research findings for {{AGENT_ID}}"
    ```
 
-3. **Signal completion** so the dashboard knows you're done:
+3. **Signal completion immediately after the commit:**
    ```bash
    aigon agent-status submitted
    ```
 
-4. **STAY in the session.** The user may want to review your findings and ask follow-up questions. Do NOT run `aigon research-close` — the user will decide whether to evaluate or close next, just like feature work.
+   This command **must exit successfully** before you can claim your research is submitted.
+
+   Hard rules:
+   - Your findings are **not** submitted until `aigon agent-status submitted` returns exit 0
+   - Do **not** say "done", "complete", "findings written", or "ready for review" before it exits 0
+   - Do **not** summarise, narrate, or describe your output instead of running this command — the command IS the completion signal; prose is not a substitute
+   - If it fails, report the exact error and stop for user guidance
+   - **Do this even if you believe the user will run `research-eval` next.** That's a separate, later step — your submit signal is what unblocks it
+
+4. **Post-submit (after `agent-status submitted` exits 0):** output one line — "Findings submitted — ready for evaluation." — and STAY in the session. Do NOT run `aigon research-close` or `aigon research-eval` — those are user decisions.
 
 **If Drive mode (no findings file):**
 - Run `aigon research-close {{ARG_SYNTAX}}` when the research pass is complete and ready to close
