@@ -118,7 +118,6 @@ Research follows the same lifecycle shape as features: `start -> do -> submit ->
 6. Finish the topic: `/aigon:research-close <ID>`
 7. Use `/aigon:research-open <ID>` only to re-open or attach Fleet research sessions after setup
 
-
 ## Saving Permissions
 
 When the user says "save that permission", "remember that", or asks you to persist a permission you were just granted:
