@@ -1,97 +1,45 @@
 <!-- description: Start feature <ID> [agents...] - create workspace and begin implementation -->
 # aigon-feature-start
 
-Prepare your workspace to implement a feature in either Drive or Fleet mode.
+Prepare your workspace to implement a feature in Drive or Fleet mode.
 
-**CRITICAL:** You MUST use the CLI command below to perform setup. Do NOT manually move spec files, create branches, or create worktrees — the CLI handles committing the spec move before creating worktrees, which is essential for worktree modes.
+**CRITICAL:** Use the CLI command below. Do NOT manually move spec files, create branches, or create worktrees — the CLI commits the spec move before creating worktrees, which is essential for worktree modes.
 
 ## Argument Resolution
+If no ID is provided or doesn't match a backlog entry, list `./docs/specs/features/02-backlog/feature-*.md`, filter to matches, and ask the user to choose.
 
-If no ID is provided, or the ID doesn't match an existing feature in the backlog:
-1. List all files in `./docs/specs/features/02-backlog/` matching `feature-*.md`
-2. If a partial ID or name was given, filter to matches
-3. Present the matching features and ask the user to choose one
+## Step 1: Run the CLI
 
-## Step 1: Run the CLI command
-
-**CRITICAL: Run EXACTLY the arguments the user provided. Do NOT add agents that weren't specified.** The mode is determined by what the user passes — if they only pass a feature ID, that means Drive mode (branch). Do not assume worktree mode based on prior conversation context.
+**Pass EXACTLY the args the user provided. Do NOT add agents that weren't specified.**
 
 ```bash
-# Drive mode (creates branch in current repo) — user passes only an ID
+# Drive mode (branch in current repo) — ID only
 aigon feature-start {{ARG1_SYNTAX}}
 
-# Drive worktree mode (creates worktree for parallel development) — user passes ID + agent
+# Drive worktree mode (parallel development) — ID + 1 agent
 aigon feature-start {{ARG1_SYNTAX}} <agent>
 
-# Fleet mode (multiple agents compete in separate worktrees) — user passes ID + 2+ agents
+# Fleet mode (competition) — ID + 2+ agents
 aigon feature-start {{ARG1_SYNTAX}} <agent1> <agent2> [agent3...]
 ```
 
-The mode is determined automatically based on what the user provides:
-- **No agents**: Drive mode - creates a git branch in the current repo
-- **1 agent**: Drive worktree mode - creates a worktree for parallel development
-- **2+ agents**: Fleet mode - creates worktrees for each agent to compete
+Mode is determined by arg count (0 / 1 / 2+ agents). The CLI moves the spec from `02-backlog` to `03-in-progress`, commits the move (so worktrees inherit it), creates branch or worktree(s), and creates implementation log(s).{{SETUP_ENV_LOCAL_LINE}}
 
-The CLI will:
-- Move the spec from `02-backlog` to `03-in-progress`
-- **Commit the spec move** (so worktrees inherit it)
-- Create branch or worktree(s)
-- Create implementation log(s)
-{{SETUP_ENV_LOCAL_LINE}}
-
-**If the CLI reports any errors or warnings about committing the spec move, resolve them before proceeding.** Worktrees branch from HEAD — if the spec move isn't committed, the worktree won't have the spec in `03-in-progress` and `feature-do` will fail.
+If the CLI reports errors about committing the spec move, resolve them before proceeding.
 
 ## Step 2: Confirm setup and next steps
 
-`feature-start` creates the workspace AND opens agent terminals automatically. The agents are already running — there is no separate "open" step.
+`feature-start` creates the workspace AND opens agent terminals automatically — there is no separate "open" step.
 
-### Drive Mode (branch)
+- **Drive mode (branch):** you end up on the feature branch in your current terminal. Start implementation manually with `{{CMD_PREFIX}}feature-do <ID>`. Close with `{{CMD_PREFIX}}feature-close <ID>` when done.
+- **Drive worktree:** agent terminal is already running. Wait for submit, then `{{CMD_PREFIX}}feature-close <ID>` from the main repo.
+- **Fleet:** all agent terminals are running and implementing. Wait for all to submit, then `{{CMD_PREFIX}}feature-eval <ID>`.
+- **Re-open a crashed session:** `{{CMD_PREFIX}}feature-open <ID>` (or `{{CMD_PREFIX}}feature-open <ID> <agent>` for a specific Fleet agent).
 
-After the CLI completes, setup is finished and you are on the feature branch in your current terminal. `feature-start` does **not** auto-run `feature-do` for normal Drive-mode sessions. Start implementation manually when you are ready:
-```bash
-{{CMD_PREFIX}}feature-do <ID>
-```
-
-After implementation is complete, then:
-```bash
-{{CMD_PREFIX}}feature-close <ID>
-```
-
-### Drive Worktree Mode
-
-After the CLI completes, the agent terminal is already open and implementing. Wait for it to submit, then close from the main repo:
-```bash
-{{CMD_PREFIX}}feature-close <ID>
-```
-
-### Fleet Mode (competition)
-
-After the CLI completes, all agent terminals are already open and implementing. Wait for all agents to submit, then evaluate:
-```bash
-{{CMD_PREFIX}}feature-eval <ID>
-```
-
-### Re-opening a crashed/ended session
-
-If an agent session dies, use `feature-open` to re-attach:
-```bash
-{{CMD_PREFIX}}feature-open <ID>          # Re-open a Drive worktree agent
-{{CMD_PREFIX}}feature-open <ID> cc       # Re-open a specific Fleet agent
-```
-
-## Important Notes
-
-- **Drive mode**: You'll work in your current repository on the feature branch
-- **Drive worktree mode**: You'll work in an isolated worktree — ideal for parallel development of multiple features
-- **Fleet mode**: Multiple agents compete on the same feature in their own worktrees
-- Worktrees are created in `../<repo>-worktrees/` to keep them grouped with the project
-- Drive mode does setup only; worktree/Fleet modes start agent sessions automatically
-- Agents start automatically in worktree/Fleet modes — no need to run `feature-open` after `feature-start`
+Worktrees are created in `../<repo>-worktrees/` to keep them grouped with the project.
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID and choose based on mode:
-
-- **Drive mode (branch):** `{{CMD_PREFIX}}feature-close <ID>`
-- **Drive worktree:** `{{CMD_PREFIX}}feature-close <ID>`
+End your response with the next command on its own line:
+- **Drive / Drive worktree:** `{{CMD_PREFIX}}feature-close <ID>`
 - **Fleet:** `{{CMD_PREFIX}}feature-eval <ID>`

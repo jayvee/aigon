@@ -1,97 +1,44 @@
 <!-- description: Evaluate feature <ID> - code review or comparison -->
 # aigon-feature-eval
 
-Evaluate a feature implementation. Works in both Drive mode (code review) and Fleet mode (comparison).
+Evaluate a feature implementation. Works in Drive mode (code review) and Fleet mode (comparison).
 
 ## Argument Resolution
+If no ID is provided or doesn't match an active feature, run `aigon feature-list --active`, filter to matches, and ask the user which.
 
-If no ID is provided, or the ID doesn't match an existing feature:
-1. Run `aigon feature-list --active`
-2. If a partial ID or name was given, filter to matches
-3. Present the matching features and ask the user to choose one
-
-## Step 1: Run the CLI command
-
-IMPORTANT: You MUST run this command first.
+## Step 1: Run the CLI
 
 ```bash
 aigon feature-eval {{ARG1_SYNTAX}}
+# optional: --allow-same-model-judge    # suppress same-family bias warning
 ```
 
-Optional overrides:
+This moves the spec to `04-in-evaluation/`, creates `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`, detects mode (Drive or Fleet), warns on same-family evaluator/implementer, and commits. The spec body is printed inline — use that copy; do not re-run `aigon feature-spec`.
 
-```bash
-aigon feature-eval {{ARG1_SYNTAX}} --allow-same-model-judge
-```
+## Step 2: Review the implementation(s)
 
-This will:
-- Move the spec to `04-in-evaluation/` (if not already there)
-- Create an evaluation template at `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`
-- Detect mode (Drive or Fleet)
-- Warn if the evaluator shares a provider family with the implementer (same-family bias detection)
-- Commit the changes
-
-**IMPORTANT:** After the CLI command completes, open the evaluation file in markdown preview mode in a separate window:
-- File: `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`
-- Open the file, then use Cursor's command palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and run: `Markdown: Open Preview` (or press `Cmd+Shift+V` / `Ctrl+Shift+V`)
-- This will open the markdown preview in a separate window for easy reference while you work
-
-## Step 2: Read the spec
-
-Read the exact feature spec path returned by:
-
-```bash
-aigon feature-spec {{ARG1_SYNTAX}}
-```
-
-## Step 3: Review the implementation(s)
-
-### Drive Mode (Code Review)
-
-Review the single implementation:
-
+### Drive Mode (code review)
 1. Read the implementation log: `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md`
-2. Review the code changes: `git diff main..feature-{{ARG1_SYNTAX}}-*`
-3. Check if the implementation meets the spec requirements
-4. Verify code quality, testing, documentation, security
+2. `git diff main..feature-{{ARG1_SYNTAX}}-*`
+3. Check spec compliance, code quality, testing, documentation, security.
 
-### Fleet Mode (Comparison)
+### Fleet Mode (comparison)
+For each agent worktree at `../feature-{{ARG1_SYNTAX}}-<agent>-*`:
+- Read the implementation log from the worktree
+- Run `git diff main..HEAD` in each worktree
+- Check spec compliance
 
-Review each agent's implementation:
+> **Bias guard:** `feature-eval` warns automatically on same-family eval. Pass `--allow-same-model-judge` to suppress if intentional.
 
-1. For each agent worktree listed:
-   - Read implementation log from the worktree (e.g., `../feature-{{ARG1_SYNTAX}}-cc-*/docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-cc-*-log.md`)
-   - **Examine the actual code changes** in each worktree
-   - Run `git diff main..HEAD` in each worktree to see all changes
-   - Check spec compliance
+## Step 3: Write the evaluation
 
-2. **Worktree locations:** `../feature-{{ARG1_SYNTAX}}-<agent>-*`
-
-> **Bias guard:** `feature-eval` detects same-family evaluation and warns automatically. Pass `--allow-same-model-judge` to suppress if intentional.
-
-## Step 4: Write the evaluation
-
-Update `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`:
+Update `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`.
 
 ### Drive Mode
-
-Complete the code review checklist:
-- Spec Compliance
-- Code Quality
-- Testing
-- Documentation
-- Security
-
-Add notes on:
-- Strengths
-- Areas for Improvement
-- Approval decision (Approved / Needs Changes)
+Complete the checklist (Spec Compliance, Code Quality, Testing, Documentation, Security) and add Strengths, Areas for Improvement, and an Approval decision (Approved / Needs Changes).
 
 ### Fleet Mode
-
-Write the evaluation using this exact structure. Copy each template table below and fill in the values.
-
-**Scoring table** — score each criterion out of 10:
+Use this exact structure — scoring table, then summary table, then Strengths/Weaknesses, then Recommendation.
 
 ```markdown
 | Criteria | cx | gg |
@@ -103,8 +50,6 @@ Write the evaluation using this exact structure. Copy each template table below 
 | **Total** | **/40** | **/40** |
 ```
 
-**Summary table** — lines changed and total score per agent:
-
 ```markdown
 | Agent | Lines | Score |
 |---|---|---|
@@ -112,64 +57,28 @@ Write the evaluation using this exact structure. Copy each template table below 
 | gg | | /40 |
 ```
 
-Adjust agent columns to match the actual agents being evaluated.
+Adjust agent columns to match the actual agents. Use standard GFM pipe tables (not Unicode box-drawing) and do NOT wrap them in code fences — the dashboard needs raw markdown to render as HTML tables.
 
-**IMPORTANT formatting rules:**
-- Use standard GFM markdown tables (`| col | col |` with `|---|---|` separator rows) exactly as shown above
-- Do NOT use Unicode box-drawing characters (`┌─┬─┐`, `│`, `├─┼─┤`, `└─┴─┘`) — they break dashboard rendering
-- Do NOT wrap tables in code fences — write them as raw markdown so they render as HTML tables
+After the tables, include per-agent Strengths & Weaknesses (`####` headings) and a 1-2 sentence Recommendation.
 
-After the tables, document:
-- **Strengths & Weaknesses** for each agent (use `####` agent headings with bullet lists)
-- **Recommendation** — which agent wins and why (1-2 sentences)
-
-## Step 5: Present evaluation and STOP
+## Step 4: Present and STOP
 
 ### Drive Mode
+Summarise your review, highlight concerns, state your recommendation, then **ask**: "Would you like to proceed with merging this implementation?" and **WAIT**.
 
-After completing the evaluation:
-
-1. Present a summary of your review to the user
-2. Highlight strengths and any concerns
-3. State your recommendation (Approved / Needs Changes)
-4. **ASK the user**: "Would you like to proceed with merging this implementation?"
-5. **STOP and WAIT** for the user's decision
-
-**CRITICAL: Do NOT run `feature-close` automatically.**
-
-Once the user approves, tell them to run:
-
-```
-{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}}
-```
+**Do NOT run `feature-close` automatically.** Once the user approves, tell them to run `{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}}`.
 
 ### Fleet Mode
+Summarise the comparison, show scores, state your recommendation, and update `**Winner:**` in the eval file with the winning agent code (e.g., `**Winner:** cc (Claude) — rationale`).
 
-After completing the evaluation:
+**Explicitly address cross-pollination** — you MUST state one of:
+- "Before merging, consider adopting from `<agent>`: `<specific aspect>`" (be concrete), or
+- "The other implementations don't have particular features or aspects worth adopting beyond what the winner already provides."
 
-1. Present a summary of your comparison to the user
-2. Show the scores/comparison
-3. State your recommendation clearly — update `**Winner:**` in the eval file with the winning agent code (e.g., `**Winner:** cc (Claude) — rationale`)
-4. **Explicitly address cross-pollination:** After naming the winner, you MUST state one of:
-   - **If there are aspects worth adopting:** "Before merging, consider adopting from `<agent>`: `<specific aspect>`" — be concrete about what to take and from which implementation.
-   - **If there is nothing worth adopting:** "The other implementations don't have particular features or aspects worth adopting beyond what the winner already provides."
-   Do NOT skip this step or leave it ambiguous. The user needs a clear, actionable statement.
-5. **ASK the user**: "Which implementation would you like to merge?"
-6. **STOP and WAIT** for the user's decision
-
-**CRITICAL: Do NOT run `feature-close` automatically. The user must explicitly choose the winner.**
-
-Once the user has chosen, tell them to run (from the main repo, not a worktree):
-
-```
-{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}} <winning-agent>
-```
-
-For example: `{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}} cc` if Claude's implementation wins.
+Then **ask**: "Which implementation would you like to merge?" and **WAIT**. Do NOT run `feature-close` automatically. Once chosen, tell them to run (from the main repo, not a worktree): `{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}} <winning-agent>`.
 
 ## Prompt Suggestion
 
-End your response with the suggested next command on its own line. This helps agent UIs surface the next suggested Aigon command. Use the actual ID:
-
-- **Drive mode:** `{{CMD_PREFIX}}feature-close <ID>`
-- **Fleet mode:** `{{CMD_PREFIX}}feature-close <ID> <winning-agent>`
+End your response with the next command on its own line:
+- **Drive:** `{{CMD_PREFIX}}feature-close <ID>`
+- **Fleet:** `{{CMD_PREFIX}}feature-close <ID> <winning-agent>`
