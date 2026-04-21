@@ -14,6 +14,8 @@ function buildMinimalCtx() {
     return {
         utils: require('../../lib/utils'),
         hooks: require('../../lib/hooks'),
+        version: require('../../lib/version'),
+        specCrud: require('../../lib/spec-crud'),
         git: require('../../lib/git'),
         board: require('../../lib/board'),
         feedback: require('../../lib/feedback'),
