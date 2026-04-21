@@ -12,6 +12,12 @@ The full orientation lives in **`AGENTS.md`**. Read that first — it is the sin
 7. Use `Skill(frontend-design)` before any visual change.
 8. To start a feature over: `aigon feature-reset <ID>` — never stitch raw cleanup commands.
 
+## Write-path contract (pointer)
+
+Every write path must produce the state its read path assumes. Full rule, incident list, and grep discipline: **`AGENTS.md` § Write-Path Contract**.
+
+**F294:** Removed `COMPAT_INBOX` / `LEGACY_MISSING_WORKFLOW` half-states. The dashboard still renders full grids: rows without a workflow snapshot return `WORKFLOW_SOURCE.MISSING_SNAPSHOT` (no actions, no badge). **CLI** entrypoints (`feature-list`, `feature-status`, `research-*`, close paths) **exit non-zero** and cite `aigon doctor --fix` — that is the loud path for operators.
+
 ## Reading order
 1. `AGENTS.md` — orientation
 2. `docs/architecture.md` — full module docs

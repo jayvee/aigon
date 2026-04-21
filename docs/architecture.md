@@ -305,6 +305,8 @@ So the architecture after F171 → F283 → F294 is:
 
 **Every feature and research entity has a workflow-core snapshot.** A spec without a snapshot is a migration problem — the read model surfaces `WORKFLOW_SOURCE.MISSING_SNAPSHOT` with no actions and no badge, and every write-path command points users at `aigon doctor --fix`. The pre-F294 read model branched snapshotless entities into `COMPAT_INBOX` (prioritise action OK) vs `LEGACY_MISSING_WORKFLOW` (read-only amber badge); both branches kept reproducing the F285 → F293 bug class because any producer drift (reset without re-bootstrap, hand-edited spec, race between writers) arrived as a silent half-state instead of a loud error.
 
+**Surface split:** `getFeatureDashboardState` / `getResearchDashboardState` do not throw for a missing snapshot — they return the `MISSING_SNAPSHOT` row shape so the HTTP dashboard can load the full table. Interactive CLI commands (`feature-list`, `feature-status`, research equivalents, close helpers) **error** with the same migration hint (`aigon doctor --fix`).
+
 **Migration for pre-cutover entities:** Commands bootstrap lifecycle history via `aigon doctor --fix` before normal engine operations continue. A future F-series may swap that in for `aigon workflow --migrate-from-legacy` once Phase 2 ships.
 
 ## Where To Make Changes
