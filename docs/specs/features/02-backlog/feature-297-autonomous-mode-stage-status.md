@@ -35,6 +35,67 @@ Update `lib/dashboard-status-collector.js` / the feature dashboard state path to
 
 The write-path audit matters here. If the read side needs workflow slug, stop-after target, review agent, eval agent, or close intent and that data is not durably produced when autonomous mode starts, fix the producer in `feature-autonomous-start` / AutoConductor state persistence rather than adding read-side guesswork. This feature should fix the mechanism so every future autonomous run exposes its planned stages up front.
 
+### Card Mockup
+
+The autonomous timeline should read as a compact "planned run" block inside the existing feature card. The active stage is obvious, future stages are visible but quieter, and the card answers "what is running now, what happens next, and will this auto-close?" without opening logs.
+
+Solo reviewed workflow:
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│ #294 autonomous mode stage status                       │
+│                                                          │
+│ Autonomous plan                                          │
+│                                                          │
+│ ● Implement        Claude Code              Running      │
+│ │                                                        │
+│ ○ Review           Cursor                   Waiting      │
+│ │                                                        │
+│ ○ Close                                     Waiting      │
+└──────────────────────────────────────────────────────────┘
+```
+
+Review in progress with a follow-up counter-review:
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│ #294 autonomous mode stage status                       │
+│                                                          │
+│ Autonomous plan                                          │
+│                                                          │
+│ ✓ Implement        Claude Code             Complete      │
+│ │                                                        │
+│ ● Review           Cursor                  Running       │
+│ │                                                        │
+│ ○ Counter-review   Claude Code             Waiting       │
+│ │                                                        │
+│ ○ Close                                    Waiting       │
+└──────────────────────────────────────────────────────────┘
+```
+
+Fleet workflow:
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│ #295 improve dashboard telemetry                        │
+│                                                          │
+│ Autonomous plan                                          │
+│                                                          │
+│ ● Implement        CC, CX, GG               Running      │
+│ │                                                        │
+│ ○ Evaluate         Claude Code              Waiting      │
+│ │                                                        │
+│ ○ Close                                     Waiting      │
+└──────────────────────────────────────────────────────────┘
+```
+
+Visual intent:
+- Keep this as a single vertical timeline block rather than separate detached pills
+- Use `✓` for complete, `●` for running, and `○` for waiting
+- Show configured agent names inline on the same row as the stage label
+- Keep future stages visible but visually quieter than the active stage
+- Treat this block as read-only status, not an action surface
+
 ## Dependencies
 - Existing workflow definition plumbing in `lib/workflow-definitions.js`
 - Existing autonomous run-state persistence in `.aigon/state/feature-<id>-auto.json`
