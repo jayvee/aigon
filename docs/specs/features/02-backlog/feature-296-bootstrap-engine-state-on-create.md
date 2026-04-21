@@ -5,6 +5,8 @@ recommended_models:
   cx: { model: gpt-5.4, effort: high }
   gg: { model: gemini-3.1-pro-preview, effort: high }
   cu: { model: null, effort: null }
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-21T06:20:59.506Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: bootstrap-engine-state-on-create
