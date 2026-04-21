@@ -64,10 +64,24 @@ module.exports = async function globalSetup() {
     runGit(['config', 'user.email', 'test@aigon.test'], tmpDir);
     runGit(['config', 'user.name', 'Aigon Test'], tmpDir);
 
-    // Pre-create features in inbox (IDs assigned later via dashboard Prioritise).
-    runAigon(['feature-create', 'e2e-solo-feature'], tmpDir);
-    runAigon(['feature-create', 'e2e-fleet-feature'], tmpDir);
-    runAigon(['feature-create', 'e2e-drive-feature'], tmpDir);
+    // Drop the fixture's pre-existing inbox specs — post-F294 inbox specs
+    // without a workflow snapshot render as MISSING_SNAPSHOT (no actions),
+    // which is genuinely exceptional and not something tests should exercise.
+    const fixtureInbox = path.join(tmpDir, 'docs', 'specs', 'features', '01-inbox');
+    if (fs.existsSync(fixtureInbox)) {
+        for (const f of fs.readdirSync(fixtureInbox)) {
+            fs.rmSync(path.join(fixtureInbox, f), { force: true });
+        }
+    }
+
+    // Seed features straight into backlog: create in inbox then immediately
+    // prioritise so the engine bootstraps a snapshot. Lifecycle tests start
+    // from backlog; dashboard prioritise-from-inbox is no longer a supported
+    // entry point post-F294.
+    for (const name of ['e2e-solo-feature', 'e2e-fleet-feature', 'e2e-drive-feature']) {
+        runAigon(['feature-create', name], tmpDir);
+        runAigon(['feature-prioritise', name], tmpDir);
+    }
 
     const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-e2e-home-'));
     const aigonDir = path.join(tempHome, '.aigon');

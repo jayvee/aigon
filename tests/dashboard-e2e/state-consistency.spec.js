@@ -15,9 +15,12 @@
 const { test, expect } = require('@playwright/test');
 const { gotoPipelineWithMockedSessions } = require('./_helpers');
 
+// Post-F294: inbox specs without an engine snapshot render as
+// MISSING_SNAPSHOT (read-only, no actions). Dashboard prioritise-from-inbox
+// was COMPAT_INBOX behaviour and is gone; CLI `aigon feature-prioritise` is
+// the only supported entry point.
 const STAGE_ACTIONS = [
-    { stage: 'inbox',   must: ['feature-prioritise'], mustNot: ['feature-start', 'feature-close', 'feature-eval'] },
-    { stage: 'backlog', must: ['feature-start'],      mustNot: ['feature-prioritise', 'feature-close', 'feature-eval'] },
+    { stage: 'backlog', must: ['feature-start'], mustNot: ['feature-prioritise', 'feature-close', 'feature-eval'] },
 ];
 
 test.describe('Dashboard state consistency', () => {

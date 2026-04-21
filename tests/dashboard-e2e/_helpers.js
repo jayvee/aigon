@@ -72,20 +72,16 @@ async function gotoPipelineWithMockedSessions(page) {
     await page.waitForSelector('.kanban', { timeout: 10000 });
 }
 
-/** Click Prioritise on the named inbox card; return the assigned padded ID. */
+/** Locate the named feature in the backlog column and return its padded ID. */
 async function prioritiseInboxFeature(page, featureName) {
     ensureFixtureOnMainBranch();
-    const inboxCard = page.locator('.kcard').filter({ hasText: featureName }).first();
-    await expect(inboxCard).toBeVisible({ timeout: 8000 });
-    const btn = inboxCard.locator('.kcard-va-btn[data-va-action="feature-prioritise"]');
-    const [resp] = await Promise.all([page.waitForResponse('**/api/action'), btn.click()]);
-    const json = await resp.json().catch(() => ({}));
-    const idMatch = (json.stdout || '').match(/Assigned ID:\s*(\d+)/);
-    expect(idMatch && idMatch[1], 'feature-prioritise should assign an ID').toBeTruthy();
-    await page.waitForResponse('**/api/refresh');
     const backlogCol = page.locator('.kanban-col[data-stage="backlog"]').first();
     await expect(backlogCol).toContainText(featureName, { timeout: 8000 });
-    return String(idMatch[1]).padStart(2, '0');
+    const card = backlogCol.locator('.kcard').filter({ hasText: featureName }).first();
+    const idText = (await card.locator('.kcard-id, [data-feature-id]').first().textContent({ timeout: 2000 }).catch(() => '')) || '';
+    const m = idText.match(/(\d+)/);
+    expect(m && m[1], `could not read paddedId from backlog card for "${featureName}"`).toBeTruthy();
+    return String(m[1]).padStart(2, '0');
 }
 
 /** Open agent picker from a backlog card, check the given agent codes, submit. */
