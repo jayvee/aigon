@@ -117,6 +117,9 @@
       const reviewAgent = opts.reviewAgent || '';
       const models = typeof opts.models === 'string' ? opts.models.trim() : '';
       const efforts = typeof opts.efforts === 'string' ? opts.efforts.trim() : '';
+      const reviewModel = typeof opts.reviewModel === 'string' ? opts.reviewModel.trim() : '';
+      const reviewEffort = typeof opts.reviewEffort === 'string' ? opts.reviewEffort.trim() : '';
+      const workflow = typeof opts.workflow === 'string' ? opts.workflow.trim() : '';
       if (!featureId || agents.length === 0) {
         showToast('Start autonomously failed: missing feature or agents', null, null, { error: true });
         return;
@@ -134,6 +137,9 @@
         if (reviewAgent) body.reviewAgent = reviewAgent;
         if (models) body.models = models;
         if (efforts) body.efforts = efforts;
+        if (reviewModel) body.reviewModel = reviewModel;
+        if (reviewEffort) body.reviewEffort = reviewEffort;
+        if (workflow) body.workflow = workflow;
         const res = await fetch('/api/features/' + encodeURIComponent(String(featureId)) + '/run', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },

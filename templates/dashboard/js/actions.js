@@ -151,6 +151,51 @@ function appendTripletSelects(rowEl, agent) {
   rowEl.appendChild(cellEffort);
 }
 
+function updateReviewerTripletSelects(agentId) {
+  const modelCell = document.getElementById('autonomous-review-model-cell');
+  const effortCell = document.getElementById('autonomous-review-effort-cell');
+  if (!modelCell || !effortCell) return;
+  const agent = agentId ? AIGON_AGENTS.find(a => a.id === agentId) : null;
+  const modelOpts = agent && Array.isArray(agent.modelOptions) ? agent.modelOptions : [];
+  const effortOpts = agent && Array.isArray(agent.effortOptions) ? agent.effortOptions : [];
+
+  modelCell.innerHTML = '';
+  if (modelOpts.length > 0) {
+    const sel = document.createElement('select');
+    sel.id = 'autonomous-review-model';
+    sel.className = 'agent-triplet-model create-input';
+    sel.style.cssText = 'padding:8px 10px;width:100%';
+    modelOpts.forEach(opt => {
+      const el = document.createElement('option');
+      el.value = opt.value == null ? '' : String(opt.value);
+      const raw = opt.label || (opt.value == null ? '' : String(opt.value));
+      el.textContent = opt.value == null ? 'Default' : (raw || String(opt.value));
+      sel.appendChild(el);
+    });
+    modelCell.appendChild(sel);
+  } else {
+    modelCell.appendChild(appendTripletPlaceholder('No per-run model override for this agent'));
+  }
+
+  effortCell.innerHTML = '';
+  if (effortOpts.length > 0) {
+    const sel = document.createElement('select');
+    sel.id = 'autonomous-review-effort';
+    sel.className = 'agent-triplet-effort create-input';
+    sel.style.cssText = 'padding:8px 10px;width:100%';
+    effortOpts.forEach(opt => {
+      const el = document.createElement('option');
+      el.value = opt.value == null ? '' : String(opt.value);
+      const raw = opt.label || (opt.value == null ? '' : String(opt.value));
+      el.textContent = opt.value == null ? 'Default' : (raw || String(opt.value));
+      sel.appendChild(el);
+    });
+    effortCell.appendChild(sel);
+  } else {
+    effortCell.appendChild(appendTripletPlaceholder('No per-run effort override for this agent'));
+  }
+}
+
 // Convert picker triplets → --models / --efforts CLI flags. Omits a
 // pair entirely when both are null (so the CLI default applies).
 function tripletsToCliArgs(triplets) {
@@ -626,6 +671,7 @@ let autonomousModalFeature = null;
 let autonomousModalRepoPath = null;
 let autonomousModalBtn = null;
 let autonomousModalModels = null;
+let autonomousModalWorkflowSlug = '';
 
 const AUTONOMOUS_AGENT_IDS = getAutonomousAgentIds();
 
@@ -849,10 +895,18 @@ async function populateAutonomousWorkflowDropdown(repoPath) {
 }
 
 function applyAutonomousWorkflow(slug) {
+  autonomousModalWorkflowSlug = slug;
   const def = autonomousModalWorkflows.find(d => d.slug === slug);
   const descEl = document.getElementById('autonomous-workflow-desc');
   if (!def) {
     if (descEl) descEl.textContent = '';
+    document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]').forEach(cb => {
+      const wrap = cb.closest('.agent-check-row');
+      const modelSel = wrap && wrap.querySelector('.agent-triplet-model');
+      const effortSel = wrap && wrap.querySelector('.agent-triplet-effort');
+      if (modelSel) modelSel.value = '';
+      if (effortSel) effortSel.value = '';
+    });
     return;
   }
   if (descEl) descEl.textContent = def.description || def.stages.map(s => s.type + (s.agents ? '(' + s.agents.join(',') + ')' : '')).join(' → ');
@@ -868,6 +922,22 @@ function applyAutonomousWorkflow(slug) {
   if (evalSelect) evalSelect.value = resolved.evalAgent || '';
   if (reviewSelect) reviewSelect.value = resolved.reviewAgent || '';
   if (stopAfter && resolved.stopAfter) stopAfter.value = resolved.stopAfter;
+  updateReviewerTripletSelects(resolved.reviewAgent || '');
+  const reviewAgent = resolved.reviewAgent || '';
+  const modelOverrides = resolved.modelOverrides || {};
+  const effortOverrides = resolved.effortOverrides || {};
+  document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]').forEach(cb => {
+    const agentId = cb.value;
+    const wrap = cb.closest('.agent-check-row');
+    const modelSel = wrap && wrap.querySelector('.agent-triplet-model');
+    const effortSel = wrap && wrap.querySelector('.agent-triplet-effort');
+    if (modelSel) modelSel.value = agentId in modelOverrides ? (modelOverrides[agentId] || '') : '';
+    if (effortSel) effortSel.value = agentId in effortOverrides ? (effortOverrides[agentId] || '') : '';
+  });
+  const reviewModelSel = document.getElementById('autonomous-review-model');
+  const reviewEffortSel = document.getElementById('autonomous-review-effort');
+  if (reviewModelSel && reviewAgent in modelOverrides) reviewModelSel.value = modelOverrides[reviewAgent] || '';
+  if (reviewEffortSel && reviewAgent in effortOverrides) reviewEffortSel.value = effortOverrides[reviewAgent] || '';
 }
 
 async function saveCurrentAsWorkflow() {
@@ -887,7 +957,14 @@ async function saveCurrentAsWorkflow() {
 
   const stages = [{ type: 'implement', agents: selectedAgents }];
   if (reviewAgent) {
-    stages.push({ type: 'review', agents: [reviewAgent] });
+    const reviewModelSel = document.getElementById('autonomous-review-model');
+    const reviewEffortSel = document.getElementById('autonomous-review-effort');
+    const reviewModel = reviewModelSel ? String(reviewModelSel.value || '').trim() : '';
+    const reviewEffort = reviewEffortSel ? String(reviewEffortSel.value || '').trim() : '';
+    const reviewerEntry = (reviewModel || reviewEffort)
+      ? { id: reviewAgent, ...(reviewModel ? { model: reviewModel } : {}), ...(reviewEffort ? { effort: reviewEffort } : {}) }
+      : reviewAgent;
+    stages.push({ type: 'review', agents: [reviewerEntry] });
     stages.push({ type: 'counter-review', agents: [selectedAgents[0]] });
   }
   if (evalAgent && selectedAgents.length > 1) {
@@ -926,6 +1003,7 @@ function hideAutonomousModal() {
   autonomousModalRepoPath = null;
   autonomousModalBtn = null;
   autonomousModalModels = null;
+  autonomousModalWorkflowSlug = '';
 }
 
 function buildAutonomousAgentOptions(taskType, options) {
@@ -976,9 +1054,11 @@ function updateAutonomousReviewOptions() {
 
   if (previousValue && AUTONOMOUS_AGENT_IDS.includes(previousValue)) {
     reviewSelect.value = previousValue;
+    updateReviewerTripletSelects(reviewSelect.value);
     return;
   }
   reviewSelect.value = AUTONOMOUS_AGENT_IDS.find(agentId => !selectedAgents.includes(agentId)) || '';
+  updateReviewerTripletSelects(reviewSelect.value);
 }
 
 function updateAutonomousModeControls() {
@@ -1029,6 +1109,10 @@ async function submitAutonomousModal() {
   const stopAfter = document.getElementById('autonomous-stop-after');
   const evalAgent = evalSelect && !evalSelect.disabled ? String(evalSelect.value || '').trim() : '';
   const reviewAgent = reviewSelect && !reviewSelect.disabled ? String(reviewSelect.value || '').trim() : '';
+  const reviewModelSel = document.getElementById('autonomous-review-model');
+  const reviewEffortSel = document.getElementById('autonomous-review-effort');
+  const reviewModel = reviewAgent && reviewModelSel ? String(reviewModelSel.value || '').trim() : '';
+  const reviewEffort = reviewAgent && reviewEffortSel ? String(reviewEffortSel.value || '').trim() : '';
   const stopValue = stopAfter ? String(stopAfter.value || 'close').trim() : 'close';
   if (stopValue === 'review' && !reviewAgent) {
     showToast('Select a reviewer to stop after review', null, null, { error: true });
@@ -1061,6 +1145,9 @@ async function submitAutonomousModal() {
     stopAfter: stopValue,
     models: modelsCsv || undefined,
     efforts: effortsCsv || undefined,
+    reviewModel: reviewModel || undefined,
+    reviewEffort: reviewEffort || undefined,
+    workflow: autonomousModalWorkflowSlug || undefined,
   }, repoPath, btn);
 }
 
@@ -1076,6 +1163,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const workflowSelect = document.getElementById('autonomous-workflow');
   if (workflowSelect) {
     workflowSelect.addEventListener('change', (e) => applyAutonomousWorkflow(String(e.target.value || '').trim()));
+  }
+  const reviewAgentSelect = document.getElementById('autonomous-review-agent');
+  if (reviewAgentSelect) {
+    reviewAgentSelect.addEventListener('change', () => updateReviewerTripletSelects(reviewAgentSelect.value));
   }
   modal.addEventListener('change', (e) => {
     if (e.target && e.target.closest('#autonomous-agent-checks')) {
