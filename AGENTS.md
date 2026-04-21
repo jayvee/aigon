@@ -8,7 +8,7 @@
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
 - **Interrupting agents**: `aigon nudge <ID> [agent] "message"` is the canonical way to message a running session — do not handcraft `tmux send-keys`
-- **Tests**: `npm test` · syntax: `node -c aigon-cli.js` · `node -c lib/utils.js`
+- **Tests**: `npm test` · syntax: `node -c aigon-cli.js`
 - **Version bumps**: after every commit — `npm version patch|minor|major && git push --tags`
 - **Seed reset**: `aigon seed-reset ~/src/<repo> --force` — resets seed repos to initial state
 - **Cross-machine sync**: `aigon sync` — backup/restore `.aigon/` via private git repo (see `lib/sync.js`)
@@ -55,7 +55,13 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/dashboard-server.js` | ~2660 | HTTP/UI module: dashboard, API, WebSocket relay, HTTP action dispatch. Never mutates engine state directly and never reads engine-state/spec/log files directly |
 | `lib/dashboard-routes.js` | ~1660 | OSS dashboard API route table and dispatcher |
 | `lib/dashboard-status-collector.js` | ~830 | Read-side collector: repo/feature/research/feedback/summary status, log/detail reads |
-| `lib/utils.js` | ~1474 | Spec CRUD, hooks, version, analytics |
+| `lib/utils.js` | ~183 | Cross-cutting re-exports (config, proxy, dashboard, worktree, templates, git) + feedback constants, dev-server URL, terminal title, safeWrite |
+| `lib/hooks.js` | ~146 | Hook lifecycle: parseHooksFile, getDefinedHooks, executeHook, runPreHook, runPostHook |
+| `lib/analytics.js` | ~889 | Analytics: collectAnalyticsData, parseLogFrontmatterFull, buildCompletionSeries, buildWeeklyAutonomyTrend |
+| `lib/version.js` | ~154 | Version management: getAigonVersion, compareVersions, upgradeAigonCli, checkAigonCliOrigin |
+| `lib/spec-crud.js` | ~247 | Spec file CRUD: findFile, moveFile, modifySpecFile, getNextId, createSpecFile, readSpecSection |
+| `lib/cli-parse.js` | ~256 | CLI option parsing + YAML helpers: parseCliOptions, parseFrontMatter, serializeYamlScalar, slugify, escapeRegex |
+| `lib/deploy.js` | ~65 | Deploy command resolution and execution: resolveDeployCommand, runDeployCommand |
 | `lib/worktree.js` | ~1300 | Worktree creation, tmux, shell-trap signal wrapper (terminal dispatch in `terminal-adapters.js`) |
 | `lib/validation.js` | ~1045 | Iterate (Autopilot) loop, acceptance-criteria parsing |
 | `lib/config.js` | ~950 | Global/project config, agent CLI config |
