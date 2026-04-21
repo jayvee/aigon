@@ -28,6 +28,7 @@ const COMMAND_GROUPS = {
         'feature-do',
         'feature-validate',
         'feature-eval',
+        'feature-code-review',
         'feature-review',
         'feature-close',
         'feature-cleanup',

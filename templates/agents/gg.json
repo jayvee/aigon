@@ -38,8 +38,8 @@
     "implementFlag": "--yolo",
     "implementPrompt": "/aigon:feature-do {featureId}",
     "evalPrompt": "/aigon:feature-eval {featureId}",
-    "reviewPrompt": "/aigon:feature-review {featureId}",
-    "reviewCheckPrompt": "/aigon:feature-review-check {featureId}",
+    "reviewPrompt": "/aigon:feature-code-review {featureId}",
+    "reviewCheckPrompt": "/aigon:feature-code-review-check {featureId}",
     "models": {
       "research": "gemini-2.5-flash",
       "implement": "gemini-2.5-flash",

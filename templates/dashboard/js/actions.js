@@ -344,7 +344,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     if (va.agentId) return false; // per-agent actions handled by buildAgentSectionHtml
     if (va.category === 'infra' || va.category === 'view') return false; // infra/view handled separately
     // Hide eval/review actions when eval session is already running
-    if (evalRunning && (va.action === 'feature-eval' || va.action === 'research-eval' || va.action === 'feature-review')) return false;
+    if (evalRunning && (va.action === 'feature-eval' || va.action === 'research-eval' || va.action === 'feature-code-review')) return false;
     return true;
   });
   // Inject a synthetic close action when select-winner is available
@@ -462,7 +462,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
 
   function getLaunchMode(action) {
     if (action === 'feature-eval' || action === 'research-eval') return 'eval';
-    if (action === 'feature-review' || action === 'research-review') return 'review';
+    if (action === 'feature-code-review' || action === 'research-review') return 'review';
     return 'do';
   }
 
@@ -630,8 +630,8 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await requestAction('feature-reset', [id], repoPath, btn);
       break;
     }
-    case 'feature-review-check':
-      await requestAction('feature-review-check', [id], repoPath, btn);
+    case 'feature-code-review-check':
+      await requestAction('feature-code-review-check', [id], repoPath, btn);
       break;
     case 'feature-push': {
       const msg = (va.metadata && va.metadata.confirmationMessage)
