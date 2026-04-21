@@ -6,24 +6,25 @@ Aigon's codebase carries substantial compatibility and migration code that was d
 **This feature takes the aggressive posture.** Aigon's user base is one primary user plus a handful of others the maintainer can contact personally. The normal reason to keep compat paths — "we can't break existing users" — doesn't apply here at the cost/benefit the maintainer is paying in bug-fix time. Policy for this work:
 
 - **Delete by default.** If a branch handles a shape, and we can't name a current write path that produces that shape, it goes.
-- **Surface hard errors, not silent fallbacks.** Previously: `if (!snapshot) { return legacyReadOnlyState() }`. After: `if (!snapshot) { throw new Error("run 'aigon doctor --migrate-from-legacy'") }`.
-- **The migration escape valve is Phase 2**, not this feature. This feature removes the compat paths; Phase 2 adds `aigon doctor --migrate-from-legacy` as the single, documented way to upgrade any repo that still has old-shape state.
+- **Surface hard errors, not silent fallbacks.** Previously: `if (!snapshot) { return legacyReadOnlyState() }`. After: `if (!snapshot) { throw … }` with a **single canonical migration hint** per surface (see Acceptance Criteria — migration command naming).
+- **The migration escape valve is Phase 2**, not this feature. This feature removes the compat paths; Phase 2 adds `aigon doctor --migrate-from-legacy` as the single, documented way to upgrade any repo that still has old-shape state. **Until that subcommand exists**, error text must not contradict what already works today (`aigon doctor --fix` for snapshot bootstrap — see `lib/commands/feature.js` / `lib/commands/setup.js`).
 - **Audit is for evidence-in-the-commit-message, not for deferral.** If an audit is uncertain, the deletion still happens — the commit message records "no producer found, surface hard-error if missed." That inverts the cost of being wrong from "silent bug recurs" to "loud error reaches the maintainer fast."
 
 Target: **800–1200 LOC removed** across `lib/workflow-read-model.js`, `lib/dashboard-status-collector.js`, `lib/templates.js`, `lib/workflow-core/paths.js`, `lib/commands/feature.js`, `lib/commands/research.js`, plus incidental tests and helpers. Pure deletion + one-liner hard-error substitutions.
 
 ## Desired Outcome
-Every read path in `lib/` is consumed by a write path that exists today. No defensive branches for shapes nothing produces. Grep for `legacy`, `compat`, `deprecated`, `migrate` in `lib/` returns only the `doctor --migrate-from-legacy` command (added in Phase 2) — nothing else. A reader sees a lean, current codebase, not a palimpsest. Agent context cost on every future session drops by the deleted LOC × every agent read. Future bugs in deleted shapes are structurally impossible (no code paths to bug).
+Every read path in `lib/` is consumed by a write path that exists today. No defensive branches for shapes nothing produces. **Symbol-level:** no `COMPAT_INBOX`, `LEGACY_MISSING_WORKFLOW`, or legacy read-model branches remain. Broader English-word greps (`legacy`, `migrate`) are non-goals and may retain hits in unrelated prose. A reader sees a lean, current codebase, not a palimpsest. Agent context cost on every future session drops by the deleted LOC × every agent read. Future bugs in deleted shapes are structurally impossible (no code paths to bug).
 
 ## User Stories
 - [ ] As the maintainer, when I hit a bug on feature N, I never again see the root cause reduce to "a legacy compat branch was producing bad state" — those branches are gone. F285 → F293 class of recurrence is structurally prevented.
 - [ ] As an agent implementing a bug fix in `lib/workflow-read-model.js` or `lib/dashboard-status-collector.js`, I don't ingest ~200 LOC of defensive branches for states the write paths don't produce — the file is half its former size.
-- [ ] As a grep reader, searching `rg 'legacy|compat|deprecated|migrate' lib/` returns only the new `doctor --migrate-from-legacy` command (Phase 2 — not this feature) and any cross-repo reference markers. No stumps, no "kept for safety" comments.
+- [ ] As a grep reader, `rg 'COMPAT_|LEGACY_|legacyReadOnly' lib/` returns no hits outside error-string literals and comments that explicitly reference Phase 2. Broader `legacy|compat|deprecated` sweeps are advisory (may hit unrelated words in prose); file follow-up if noise remains.
 - [ ] As a user whose repo still has pre-snapshot state (if any exists at all), I hit a clear hard error pointing me at `aigon doctor --migrate-from-legacy`. No silent degrade, no confusing half-states.
 - [ ] As the eventual Phase 2 implementer, I have ONE well-defined migration path to build — I don't have to understand all the historical compat branches because they were deleted before I started.
 
 ## Acceptance Criteria
-- [ ] `lib/workflow-read-model.js`: `COMPAT_INBOX` and `LEGACY_MISSING_WORKFLOW` states + their creator functions + every downstream branch that reads them are deleted. `getFeatureDashboardState` and `getResearchDashboardState` assume a snapshot exists; if it doesn't, throw `new Error("Feature/research <id> has no workflow-core snapshot. Run 'aigon doctor --migrate-from-legacy' to backfill.")`. No fallback branch.
+- [ ] **Migration command naming (blocking):** Before merge, grep `lib/` for user-visible strings that mention missing snapshots. Either (A) all still cite **`aigon doctor --fix`** until Phase 2 ships `migrate-from-legacy`, or (B) the same PR (or stacked PR) introduces **`aigon doctor --migrate-from-legacy`** and updates **every** prior `--fix` snapshot-bootstrap hint so operators never see two conflicting commands. Record the choice in the PR description. Do not ship hard-errors that only name a non-existent subcommand without `--fix` as fallback.
+- [ ] `lib/workflow-read-model.js`: `COMPAT_INBOX` and `LEGACY_MISSING_WORKFLOW` states + their creator functions + every downstream branch that reads them are deleted. `getFeatureDashboardState` and `getResearchDashboardState` assume a snapshot exists; if it doesn't, **throw** (same message family as above AC) — no `readOnly`/compat return objects. Callers in `lib/dashboard-status-collector.js` / route layer must map thrown errors to a **logged, non-silent** dashboard response (HTTP 500 with JSON `{ error: string }` or existing dashboard error envelope — match whatever `dashboard-routes.js` + `dashboard-server.js` already use for collector failures; document the chosen pattern in the PR).
 - [ ] `lib/dashboard-status-collector.js`:
   - Legacy status-file resolution (`legacyStatusFile` + the `actualStatusFile` fallback chain near L762) deleted.
   - The spec-review git-log scanner (`applySpecReviewStatus` and its helpers `parseSpecReviewSubject`, `extractSpecReviewerId`, `readSpecReviewCommitBody`, `getSpecReviewEntries`, `parseSpecReviewNameStatusEntry`, the whole block ~300-400) deleted in full. Dashboard reads pending-review state exclusively from the engine snapshot as F283 established.
@@ -33,9 +34,9 @@ Every read path in `lib/` is consumed by a write path that exists today. No defe
 - [ ] `lib/commands/feature.js` + `lib/commands/research.js`: all `compatibilityLabel`, `readOnly: true`, and "missing snapshot" branches consumed by the deleted read-model states are removed. `feature-list`, `feature-status`, and equivalent research commands error hard if a spec exists with no snapshot, pointing at the migration command.
 - [ ] Retired-agent references (`mv` / Mistral Vibe) removed from all switches, registry lookups, and tests. An explicit reference to an unknown agent ID errors — no silent degrade.
 - [ ] Every deletion's commit message records the audit: which producer(s) were searched for, where (`rg` command used), and whether zero producers were found. Defer only if an audit turns up a real producer — and in that case, update the producer first, then delete in a follow-up commit on the same branch.
-- [ ] Net LOC reduction across touched files is **at least 800 lines**, measured via `git diff --stat main..HEAD`. Stretch goal: 1200.
+- [ ] Net LOC reduction across touched files is **at least 800 lines**, measured on the implementation branch via `git diff --stat "$(git merge-base main HEAD)..HEAD" -- lib/` (or equivalent against the repo default branch). Stretch goal: 1200. Paste the diffstat tail in the PR.
 - [ ] All existing tests pass. Tests that asserted deleted legacy behaviour are deleted in the same commit as the behaviour — they were asserting dead code. Tests that used legacy shapes incidentally are updated to use current shapes.
-- [ ] **New tests**: one per major deletion verifying the hard-error path replaces the fallback. Form: "given a numeric feature ID with no snapshot, the dashboard endpoint returns a clear error pointing at `doctor --migrate-from-legacy`, not a silent `readOnly: true` shell."
+- [ ] **New tests**: one per major deletion verifying the hard-error path replaces the fallback. Each test must name the **fixture setup** (e.g. temp repo with `docs/specs/features/03-in-progress/feature-NN-*.md` and **no** `.aigon/workflows/features/NN/snapshot.json`), the **entry surface** (CLI: `node aigon-cli.js feature-list` / `feature-status` / dashboard API route that hits the collector — pick one concrete invocation per test), and the **assertion**: non-zero CLI exit **or** HTTP ≥400 with body containing the canonical migration substring from the naming AC above; assert response does **not** contain `"readOnly": true` / `LEGACY_MISSING_WORKFLOW` / `COMPAT_INBOX`.
 - [ ] `docs/architecture.md` § State Architecture rewritten to remove every reference to the deleted compat states. The new narrative is: "every entity has a workflow-core snapshot; no snapshot is a migration problem, not a runtime fallback."
 - [ ] CLAUDE.md / AGENTS.md § Write-Path Contract incident list gets one new entry per class of deletion summarising which producer-drift bug each removal prevents.
 
@@ -50,8 +51,10 @@ node -c lib/commands/research.js
 npm test
 MOCK_DELAY=fast npm run test:ui
 bash scripts/check-test-budget.sh
-git diff --stat main..HEAD -- lib/ | tail -5   # verify ≥800 LOC reduction
-rg 'legacy|compat|deprecated|COMPAT_|LEGACY_' lib/ --type js   # should return near-zero hits in lib/
+git diff --stat "$(git merge-base main HEAD)..HEAD" -- lib/ | tail -5   # verify ≥800 LOC reduction on branch
+# Near-zero legacy symbols (tune pattern if error strings legitimately contain words like "migrate"):
+rg 'COMPAT_|LEGACY_|LEGACY_MISSING|COMPAT_INBOX' lib/ --type js
+rg '\blegacyReadOnly\b|readOnly:\s*true' lib/dashboard-status-collector.js lib/workflow-read-model.js --type js
 ```
 
 ## Pre-authorised
@@ -90,7 +93,7 @@ This feature writes the hard-error messages pointing at that command. The comman
 | `lib/dashboard-status-collector.js` | `listStageSpecFiles` research permissive regex | Same class as `listVisibleSpecMatches` | Tighten to explicit allow-list |
 | `lib/workflow-core/paths.js` | `listVisibleSpecMatches` permissive `/^\d+-/` regex | jvbot bug class | Tighten to canonical allow-list from `PATHS.features.folders` |
 | `lib/templates.js` | `migrateOldFlatCommands` | Pre-2026 migration; no current repo has old layout | Delete |
-| `lib/templates.js` | `removeDeprecatedCommands`, `removeDeprecatedSkillDirs` | Some renames still churn; audit specifically | Delete if rename-churn is zero in last 90 days, otherwise keep with a comment dating the next review |
+| `lib/templates.js` | `removeDeprecatedCommands`, `removeDeprecatedSkillDirs` | Some renames still churn; audit specifically | **Decision rule (not open-ended):** run `git log --since=90.days.ago --oneline -- templates/generic/commands/`. Zero commits touching renames → delete helpers in this feature. Any rename commit → keep helpers for this feature only; file a one-line tech-debt issue to delete them next quarter with evidence link |
 | `lib/agent-registry.js` | Retired-agent references | mv/Mistral Vibe retired 2026-04-08 | Delete; unknown agent = hard error |
 | `lib/commands/feature.js` + `lib/commands/research.js` | `compatibilityLabel`, `readOnly: true` branches | Consumed by the deleted read-model states | Delete |
 
@@ -123,9 +126,8 @@ This feature writes the hard-error messages pointing at that command. The comman
 - **Changing `aigon feature-reset` or `aigon feature-close` behaviour** beyond removing the compat-state consumers. Out of scope.
 
 ## Open Questions
-- Is the `removeDeprecatedCommands` / `removeDeprecatedSkillDirs` logic still actively churning (commands being renamed)? If yes, keep with a dated comment; if no, delete. (Answer at audit time: `git log --since=90.days.ago --oneline -- templates/generic/commands/` — any renames? None → delete.)
 - Should the hard-error messages include a one-liner about what `doctor --migrate-from-legacy` will do (e.g., "backfills missing snapshots"), or just the command? (Lean: just the command. Docs expand it.)
-- For the `listVisibleSpecMatches` tightening: should any non-canonical folders in existing repos be reported by `aigon doctor` as "rename these to canonical names," or silently ignored? (Lean: reported. Otherwise users won't know their files became invisible.)
+- For the `listVisibleSpecMatches` tightening: should any non-canonical folders in existing repos be reported by `aigon doctor` as "rename these to canonical names," or silently ignored? (Lean: reported. Otherwise users won't know their files became invisible.) **Owner:** Phase 2 spec unless `doctor --fix` already gains a dry-run report in this PR (then document which).
 
 ## Related
 - Triggered by: maintainer conversation on 2026-04-21 reviewing the F285→F293 legacy-state recurrence and recognising that the cost/benefit of compat paths doesn't match aigon's user-base size.
