@@ -117,6 +117,22 @@ test('entityPrioritise migrates slug-keyed workflow state to the numeric id', ()
     assert.ok(!events.includes('"featureId":"foo"'));
 }));
 
+// REGRESSION: F296 doctor migration must scan research 01-inbox, not only backlog-and-later stages.
+test('findEntitiesMissingWorkflowState discovers snapshotless research inbox specs', () => withTempDir('aigon-f296-rinbox-', (repo) => {
+    seedEntityDirs(repo, 'research-topics');
+    const specPath = path.join(repo, 'docs/specs/research-topics/01-inbox/research-wizardry.md');
+    fs.writeFileSync(specPath, '# Research: wizardry\n');
+
+    const setup = freshRequire('../../lib/commands/setup')._test;
+    const missing = setup.findEntitiesMissingWorkflowState(repo);
+    assert.deepStrictEqual(missing.research, [{ id: 'wizardry', stage: 'inbox', specPath }]);
+    assert.strictEqual(setup.bootstrapMissingWorkflowSnapshots(repo, missing.research, 'research'), 1);
+
+    const snapshot = readJson(path.join(repo, '.aigon/workflows/research/wizardry/snapshot.json'));
+    assert.strictEqual(snapshot.researchId, 'wizardry');
+    assert.strictEqual(snapshot.currentSpecState, 'inbox');
+}));
+
 // REGRESSION: F296 moves legacy inbox migration to explicit doctor/init bootstrap, not dashboard reads.
 test('bootstrapMissingWorkflowSnapshots migrates slug-keyed inbox specs', () => withTempDir('aigon-f296-doctor-', (repo) => {
     seedEntityDirs(repo, 'features');

@@ -18,6 +18,8 @@ Every write path must produce the state its read path assumes. Full rule, incide
 
 **F294:** Removed `COMPAT_INBOX` / `LEGACY_MISSING_WORKFLOW` half-states. The dashboard still renders full grids: rows without a workflow snapshot return `WORKFLOW_SOURCE.MISSING_SNAPSHOT` (no actions, no badge). **CLI** entrypoints (`feature-list`, `feature-status`, `research-*`, close paths) **exit non-zero** and cite `aigon doctor --fix` — that is the loud path for operators.
 
+**F296:** `feature-create` / `research-create` bootstrap slug-keyed inbox workflow state in the same write path as the spec; `doctor --fix` scans feature and research `01-inbox/` for snapshotless specs. Prioritise re-keys slug → numeric via `migrateEntityWorkflowIdSync` (F294/b1db12d3 incident: deleting compat read paths without fixing producers).
+
 ## Reading order
 1. `AGENTS.md` — orientation
 2. `docs/architecture.md` — full module docs
