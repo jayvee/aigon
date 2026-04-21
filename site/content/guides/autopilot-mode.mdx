@@ -210,7 +210,7 @@ Poll log output shows exactly what the AutoConductor sees on each cycle:
 If the AutoConductor dies mid-run, implementation, review, and eval sessions continue unaffected. Complete the feature manually from wherever it stopped:
 
 ```bash
-aigon feature-review 42               # if review hasn't run
+aigon feature-code-review 42          # if review hasn't run
 aigon feature-eval 42                 # if Fleet agents haven't been evaluated
 aigon feature-close 42 cc             # merge (pass winning agent for Fleet)
 ```

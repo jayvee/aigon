@@ -9,7 +9,7 @@ After Fleet agents submit their implementations, `feature-eval` generates a stru
 
 ## When evaluation applies
 
-Evaluation is **Fleet-only** — it requires multiple implementations to compare. For Drive mode, use `feature-review` for cross-agent code review instead.
+Evaluation is **Fleet-only** — it requires multiple implementations to compare. For Drive mode, use `feature-code-review` for cross-agent code review instead.
 
 ## Running an evaluation
 
@@ -88,7 +88,7 @@ aigon feature-cleanup 108 --push        # Push branches to origin first
 For Drive mode or when you want a quick review without full evaluation:
 
 ```bash
-/aigon:feature-review 108
+/aigon:feature-code-review 108
 ```
 
 A different agent reviews the code, reads the spec, checks `git diff main...HEAD`, and commits targeted fixes with `fix(review):` prefix.

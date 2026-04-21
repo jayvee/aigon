@@ -166,7 +166,7 @@ If the review session exits without signaling, the AutoConductor errors and prin
 If the AutoConductor dies mid-run, the feature continues in whatever stage it reached. Complete manually:
 
 ```bash
-aigon feature-review 42               # if review hasn't run (solo)
+aigon feature-code-review 42          # if review hasn't run (solo)
 aigon feature-eval 42                 # if agents haven't been evaluated (fleet)
 aigon feature-close 42                # merge (solo)
 aigon feature-close 42 cc             # merge the winner (fleet)
@@ -175,7 +175,7 @@ aigon feature-close 42 cc             # merge the winner (fleet)
 ## Related
 
 - [`feature-start`](/docs/reference/commands/feature/feature-start) — manual Fleet/Drive setup
-- [`feature-review`](/docs/reference/commands/feature/feature-review) — manual code review
+- [`feature-code-review`](/docs/reference/commands/feature/feature-code-review) — manual code review
 - [`feature-eval`](/docs/reference/commands/feature/feature-eval) — manual evaluation
 - [`feature-close`](/docs/reference/commands/feature/feature-close) — manual close
 - [`workflow`](/docs/reference/commands/infra/workflow) — define reusable autonomous templates for `--workflow=<slug>`

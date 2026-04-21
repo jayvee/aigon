@@ -37,8 +37,8 @@
     "implementFlag": "--force --trust",
     "implementPrompt": "/aigon-feature-do {featureId}",
     "evalPrompt": "/aigon-feature-eval {featureId}",
-    "reviewPrompt": "/aigon-feature-review {featureId}",
-    "reviewCheckPrompt": "/aigon-feature-review-check {featureId}",
+    "reviewPrompt": "/aigon-feature-code-review {featureId}",
+    "reviewCheckPrompt": "/aigon-feature-code-review-check {featureId}",
     "models": {
       "review": "composer-2"
     },

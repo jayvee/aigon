@@ -1,28 +1,8 @@
 ---
-title: "feature-review"
-description: "Review feature ID - code review with fixes by a different agent"
+title: "feature-review (deprecated)"
+description: "Deprecated — use feature-code-review instead"
 ---
 
-## Synopsis
+> **Deprecated:** This command has been renamed to [`feature-code-review`](/docs/reference/commands/feature/feature-code-review).
 
-```bash
-aigon feature-review <ID>
-```
-
-## Shortcuts
-
-- `/afr` (slash command) · `aigon afr` (CLI)
-
-## Description
-
-Review feature \<ID\> - code review with fixes by a different agent
-
-## Usage
-
-```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feature-review <ID>
-
-# CLI
-aigon feature-review <ID>
-```
+Use `aigon feature-code-review <ID>` instead. The old name emits a deprecation warning and delegates to the new command.
