@@ -26,30 +26,30 @@ After this feature:
 The Write-Path Contract invariant — "every entity has an engine snapshot" — is structurally true, not approximately true. A maintainer can delete compat read paths with confidence because the only remaining producers of snapshotless state are out-of-band mutations: hand-edited specs, partially upgraded repos that have not run `aigon doctor --fix`, or filesystem damage. Those stay explicit migration / repair cases rather than normal dashboard behaviour.
 
 ## User Stories
-- [ ] As a maintainer, when I delete a compat read path, I'm not retroactively breaking live producers — because `feature-create` + `research-create` + `feature-reset` all produce proper snapshots.
-- [ ] As the dashboard, when I render an inbox card, I read from the snapshot like I do for every other stage — no `buildMissingSnapshotState` fallback.
-- [ ] As a read-side consumer (`resolveFeatureSpec`, dashboard collector, board), a slug-keyed inbox entity resolves cleanly from its snapshot-backed state without needing a missing-snapshot compat branch.
-- [ ] As the operator after `aigon feature-prioritise`, the ID transitions from slug → numeric atomically. Engine state moves with the folder. No new "half-migrated" states possible.
-- [ ] As a future feature writer, if my read path assumes a snapshot exists, that assumption is safe.
+- [x] As a maintainer, when I delete a compat read path, I'm not retroactively breaking live producers — because `feature-create` + `research-create` + `feature-reset` all produce proper snapshots.
+- [x] As the dashboard, when I render an inbox card, I read from the snapshot like I do for every other stage — no `buildMissingSnapshotState` fallback.
+- [x] As a read-side consumer (`resolveFeatureSpec`, dashboard collector, board), a slug-keyed inbox entity resolves cleanly from its snapshot-backed state without needing a missing-snapshot compat branch.
+- [x] As the operator after `aigon feature-prioritise`, the ID transitions from slug → numeric atomically. Engine state moves with the folder. No new "half-migrated" states possible.
+- [x] As a future feature writer, if my read path assumes a snapshot exists, that assumption is safe.
 
 ## Acceptance Criteria
-- [ ] `entityCreate` in `lib/entity.js` is changed so spec creation and bootstrap are one logical write path. If `ensureEntityBootstrapped(repoPath, entityType, slug, 'inbox')` fails, the command exits non-zero and removes the just-written spec file instead of leaving a snapshotless inbox entity behind.
-- [ ] The create path does not print success or open the editor until both writes succeed. If needed, extend `createSpecFile()` or add a shared wrapper rather than bolting bootstrap on after the fact.
-- [ ] Engine state for inbox entities lives at `.aigon/workflows/{features,research}/<slug>/` — slug as directory name. Directory names with non-numeric characters are safe (the path resolver already tolerates them; verify no assumption breaks).
-- [ ] `entityPrioritise` in `lib/entity.js` (shared factory) re-keys workflow state from slug-keyed → numeric-keyed via one shared helper. The helper owns event rewrite, snapshot rewrite, and `specPath` rewrite for both features and research; callers do not duplicate this logic.
-- [ ] Re-keying is crash-safe: after any failure, the repo is left in one of two auditable states only: old slug-keyed workflow state still intact, or new numeric-keyed workflow state fully present. No half-visible directory / file mix.
-- [ ] `listVisibleSpecMatches` and related path resolvers tolerate slug-keyed engine state directories alongside numeric-keyed. Test: inbox entity with slug, backlog entity with numeric — both visible, no collision.
-- [ ] `workflow-read-model.js` `buildMissingSnapshotState` is simplified only after the explicit migration path covers pre-existing inbox slug specs. Missing snapshots then mean genuinely broken / unmigrated state, not a normal inbox path.
-- [ ] `feature-reset` / `research-reset` semantics do not change. Resets still move prioritised entities back to `02-backlog/` under their numeric id and re-bootstrap numeric workflow state there; this feature is about create-time inbox bootstrap, not a new reset-to-slug mode.
-- [ ] Dashboard reads inbox actions from the snapshot like every other stage — no code path checks for "null snapshot" as a normal case.
-- [ ] Explicit migration exists for existing repos with pre-feature inbox specs: `aigon doctor --fix` (and any bootstrap-on-init path) discovers slug-keyed inbox specs and creates `inbox` snapshots for them. Dashboard/server read paths remain detect-only and do not mutate engine state.
-- [ ] Regression tests:
+- [x] `entityCreate` in `lib/entity.js` is changed so spec creation and bootstrap are one logical write path. If `ensureEntityBootstrappedSync(repoPath, entityType, slug, 'inbox', specPath)` fails, the command exits non-zero and removes the just-written spec file instead of leaving a snapshotless inbox entity behind.
+- [x] The create path does not print success or open the editor until both writes succeed. If needed, extend `createSpecFile()` or add a shared wrapper rather than bolting bootstrap on after the fact.
+- [x] Engine state for inbox entities lives at `.aigon/workflows/{features,research}/<slug>/` — slug as directory name. Directory names with non-numeric characters are safe (the path resolver already tolerates them; verify no assumption breaks).
+- [x] `entityPrioritise` in `lib/entity.js` (shared factory) re-keys workflow state from slug-keyed → numeric-keyed via one shared helper. The helper owns event rewrite, snapshot rewrite, and `specPath` rewrite for both features and research; callers do not duplicate this logic.
+- [x] Re-keying is crash-safe: after any failure, the repo is left in one of two auditable states only: old slug-keyed workflow state still intact, or new numeric-keyed workflow state fully present. No half-visible directory / file mix.
+- [x] `listVisibleSpecMatches` and related path resolvers tolerate slug-keyed engine state directories alongside numeric-keyed. Test: inbox entity with slug, backlog entity with numeric — both visible, no collision.
+- [x] `workflow-read-model.js` `buildMissingSnapshotState` is simplified only after the explicit migration path covers pre-existing inbox slug specs. Missing snapshots then mean genuinely broken / unmigrated state, not a normal inbox path.
+- [x] `feature-reset` / `research-reset` semantics do not change. Resets still move prioritised entities back to `02-backlog/` under their numeric id and re-bootstrap numeric workflow state there; this feature is about create-time inbox bootstrap, not a new reset-to-slug mode.
+- [x] Dashboard reads inbox actions from the snapshot like every other stage — no code path checks for "null snapshot" as a normal case.
+- [x] Explicit migration exists for existing repos with pre-feature inbox specs: `aigon doctor --fix` (and any bootstrap-on-init path) discovers slug-keyed inbox specs and creates `inbox` snapshots for them. Dashboard/server read paths remain detect-only and do not mutate engine state.
+- [x] Regression tests:
   - `feature-create foo` creates both the spec file AND the snapshot; removing either leaves a broken state with a clear error.
   - `feature-prioritise foo` migrates slug-keyed → numeric-keyed; post-prioritise, slug directory is gone, numeric directory exists with rewritten event/snapshot identity and updated `specPath`.
   - `aigon doctor --fix` migrates a pre-existing `01-inbox/feature-foo.md` with no snapshot into a slug-keyed inbox snapshot. No dashboard read is required to trigger the migration.
   - Dashboard renders an inbox card with a slug-backed snapshot and shows `feature-prioritise` from snapshot-backed actions, not from the missing-snapshot fallback.
-- [ ] `docs/architecture.md` § State Architecture updated: the invariant is now "every entity has a snapshot from creation onward." Remove the "slug entities are special" carve-outs.
-- [ ] CLAUDE.md / AGENTS.md § Write-Path Contract gains an entry: F294/b1db12d3 as the incident that motivated closing this invariant.
+- [x] `docs/architecture.md` § State Architecture updated: the invariant is now "every entity has a snapshot from creation onward." Remove the "slug entities are special" carve-outs.
+- [x] CLAUDE.md / AGENTS.md § Write-Path Contract gains an entry: F294/b1db12d3 as the incident that motivated closing this invariant.
 
 ## Validation
 ```bash

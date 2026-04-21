@@ -15,10 +15,10 @@
 const { test, expect } = require('@playwright/test');
 const { gotoPipelineWithMockedSessions } = require('./_helpers');
 
-// Post-F294: inbox specs without an engine snapshot render as
-// MISSING_SNAPSHOT (read-only, no actions). Dashboard prioritise-from-inbox
-// was COMPAT_INBOX behaviour and is gone; CLI `aigon feature-prioritise` is
-// the only supported entry point.
+// Post-F296: inbox specs are snapshot-backed from create time onward, while
+// genuinely broken rows still surface as MISSING_SNAPSHOT (read-only, no
+// actions). The dashboard supports `paused` in the API, but the column stays
+// hidden unless the UI toggle is enabled.
 const STAGE_ACTIONS = [
     { stage: 'backlog', must: ['feature-start'], mustNot: ['feature-prioritise', 'feature-close', 'feature-eval'] },
 ];
@@ -48,7 +48,7 @@ test.describe('Dashboard state consistency', () => {
                 (byStage[f.stage] = byStage[f.stage] || []).push(f);
             }
             for (const [stage, list] of Object.entries(byStage)) {
-                if (stage === 'done' || list.length === 0) continue;
+                if (stage === 'done' || stage === 'paused' || list.length === 0) continue;
                 const col = page.locator(`.kanban-col[data-stage="${stage}"]`).first();
                 await expect(col).toBeVisible({ timeout: 5000 });
                 await expect(col.locator('.col-count').first()).toContainText(String(list.length), { timeout: 3000 });
@@ -75,7 +75,7 @@ test.describe('Dashboard state consistency', () => {
     test('in-progress solo features never expose feature-eval', async ({ page }) => {
         const resp = await page.request.get('/api/status');
         const data = await resp.json();
-        const VALID_STAGES = ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'];
+        const VALID_STAGES = ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'paused', 'done'];
         for (const repo of data.repos) {
             for (const f of repo.features) {
                 expect(VALID_STAGES, `Feature #${f.id} stage: ${f.stage}`).toContain(f.stage);

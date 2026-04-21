@@ -242,6 +242,8 @@ Important distinction: `.aigon/state/` still exists after the cutover, but it is
 
 When a command updates workflow-backed entity state, the workflow-core write is authoritative and must succeed before any derived caches are updated. Per-agent status files in `.aigon/state/` are a read cache for dashboard/session consumers, not a fallback that can mask engine write failures. If the engine event cannot be persisted, the CLI must fail and leave the cache untouched.
 
+Create paths follow the same contract. `feature-create` / `research-create` do not report success or open an editor until the inbox spec file and the initial workflow snapshot both exist. If bootstrap fails, the command removes the just-written spec instead of leaving a snapshotless inbox entity behind. Inbox entities use the slug as the workflow id at creation time; `feature-prioritise` / `research-prioritise` re-key that workflow state to the assigned numeric id through one shared workflow-core helper.
+
 Spec review follows the same contract. `feature-spec-review` / `feature-spec-review-check` and their research equivalents may still write informational git commits for audit history, but those commits are not load-bearing state. The authoritative write is the workflow-core `spec_review.submitted` / `spec_review.acked` event persisted immediately after the commit. Dashboard reads and close gating must use the projected snapshot metadata, not commit-subject scans.
 
 ### Unified Action Registry
@@ -303,7 +305,7 @@ So the architecture after F171 → F283 → F294 is:
 2. Feature lifecycle reads: workflow snapshots only — no permissive legacy fallbacks.
 3. Agent/session reads: combine snapshot data, `.aigon/state/` files, and tmux state.
 
-**Every feature and research entity has a workflow-core snapshot.** A spec without a snapshot is a migration problem — the read model surfaces `WORKFLOW_SOURCE.MISSING_SNAPSHOT` with no actions and no badge, and every write-path command points users at `aigon doctor --fix`. The pre-F294 read model branched snapshotless entities into `COMPAT_INBOX` (prioritise action OK) vs `LEGACY_MISSING_WORKFLOW` (read-only amber badge); both branches kept reproducing the F285 → F293 bug class because any producer drift (reset without re-bootstrap, hand-edited spec, race between writers) arrived as a silent half-state instead of a loud error.
+**Every feature and research entity has a workflow-core snapshot from creation onward.** A spec without a snapshot is a migration problem — the read model surfaces `WORKFLOW_SOURCE.MISSING_SNAPSHOT` with no actions and no badge, and every write-path command points users at `aigon doctor --fix`. Inbox entities are no longer a carve-out: create bootstraps a slug-keyed inbox snapshot immediately, and prioritise re-keys it to the numeric id. F294 deleted `COMPAT_INBOX` on the right principle; `b1db12d3` was the narrow stopgap that re-derived inbox actions from folder stage while create still violated the invariant. F296 removes that producer drift so the missing-snapshot path now means genuinely broken or unmigrated state.
 
 **Surface split:** `getFeatureDashboardState` / `getResearchDashboardState` do not throw for a missing snapshot — they return the `MISSING_SNAPSHOT` row shape so the HTTP dashboard can load the full table. Interactive CLI commands (`feature-list`, `feature-status`, research equivalents, close helpers) **error** with the same migration hint (`aigon doctor --fix`).
 

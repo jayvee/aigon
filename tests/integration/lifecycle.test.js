@@ -93,16 +93,15 @@ testAsync('recoverEmptyAgents heals legacy agents:[] features', () => withTempRe
 }));
 
 test('prioritise writes workflow snapshot (F270 1c2766bc)', () => withTempDir('aigon-prio-', (repo) => {
-    const entity = require('../../lib/entity');
     const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-06-x.md');
     fs.mkdirSync(path.dirname(specPath), { recursive: true });
     fs.writeFileSync(specPath, '# feature-06\n');
-    entity.initWorkflowSnapshot(repo, 'feature', '06', specPath);
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '06', 'backlog', specPath);
     const snap = JSON.parse(fs.readFileSync(path.join(repo, '.aigon/workflows/features/06/snapshot.json'), 'utf8'));
     assert.strictEqual(snap.lifecycle, 'backlog');
     assert.strictEqual(snap.currentSpecState, 'backlog');
     const eventsBefore = fs.readFileSync(path.join(repo, '.aigon/workflows/features/06/events.jsonl'), 'utf8');
-    entity.initWorkflowSnapshot(repo, 'feature', '06', specPath);
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '06', 'backlog', specPath);
     assert.strictEqual(fs.readFileSync(path.join(repo, '.aigon/workflows/features/06/events.jsonl'), 'utf8'), eventsBefore);
 }));
 
