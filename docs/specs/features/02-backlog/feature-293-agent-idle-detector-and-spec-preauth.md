@@ -26,13 +26,16 @@ An overnight autonomous run where cc hits a small policy gate either (a) proceed
 
 ### Part A: Idle detector
 - [ ] `lib/supervisor.js` gains an idle-detection pass that runs on its existing poll cadence (every ~30s).
-- [ ] For each active `do-*` / `review-*` / `spec-review-*` agent session, idle-stuck is computed as: (tmux session exists) AND (heartbeat file mtime < threshold) AND (no `agent-status` event in `.aigon/workflows/<entity>/<id>/events.jsonl` in the last N minutes).
-- [ ] Three default thresholds, configurable via `~/.aigon/config.json`:
+- [ ] For each agent row the supervisor already considers (`snapshot.agents` with `status` in `running` or `idle`), **idle-stuck** is computed only when **all** of the following hold:
+  - A tmux session for that agent is **alive** for the entity, using the **same naming rules as `buildTmuxSessionName` / `parseTmuxSessionName` in `lib/worktree.js`** — i.e. roles `do`, `eval`, `review`, `spec-review`, and `spec-check` (not only the legacy `{repo}-f{id}-{agent}` pattern). If multiple role sessions could exist for one agent, evaluate the one that is actually running or the union policy defined in implementation notes below.
+  - `computeAgentLiveness` from `lib/workflow-heartbeat.js` still classifies the agent as **alive** (with today’s rules: **tmux alive ⇒ always `alive`**, so idle-stuck is specifically “session still there, agent not dead, but no progress events”).
+  - No workflow **progress** event attributable to that `agentId` occurred in the last **N** minutes when scanning the tail of `.aigon/workflows/features/{id}/events.jsonl` or `.aigon/workflows/research/{id}/events.jsonl` (match `entityType`). **Progress events** are engine events with `type` in: `signal.agent_started`, `signal.agent_waiting`, `signal.agent_ready`, `signal.agent_submitted`, `signal.agent_failed` (the same family `agent-status` drives today via `lib/workflow-core/projector.js`). Optionally count `signal.heartbeat` only if the spec explicitly chooses it — default is **exclude** heartbeat so long test runs do not mask “no CLI progress.”
+- [ ] Three default thresholds, configurable via `~/.aigon/config.json` (see **Configuration defaults**):
   - `soft` = 10 min → dashboard card shows an "awaiting input" badge (amber, distinct from the red "orphan" badge)
   - `notify` = 20 min → one-shot macOS/Linux desktop notification via `terminal-notifier` / `notify-send` ("F291 cc agent awaiting input — 20m idle")
   - `sticky` = 60 min → entry added to the dashboard notifications panel that persists until resolved
-- [ ] Idle state is cleared the moment any workflow-state signal is emitted for that entity (implementing / submitted / review-complete / etc.).
-- [ ] Dashboard API (`/api/sessions` or a new `/api/sessions/idle`) surfaces an `idleSince` timestamp per session when idle-stuck; frontend renders the badge.
+- [ ] Idle state is cleared the moment any **progress** event (as defined above) for that `agentId` is appended to the entity’s `events.jsonl`, or when the tmux session ends / agent drops out of `running`/`idle` in the snapshot (whichever matches supervisor’s existing lifecycle assumptions).
+- [ ] Idle fields are exposed through the **existing dashboard read path** (`lib/dashboard-status-collector.js` merging supervisor-derived data into whatever structure backs session cards — extend that contract rather than inventing a parallel source). A dedicated `/api/sessions/idle` route is optional; same information may ride on the current sessions payload. **No** new action eligibility or buttons in dashboard JS — badges are display-only.
 - [ ] Idle detection is OBSERVATION ONLY. No session kills, no input injection, no auto-approvals. The user resolves manually.
 - [ ] Tests: supervisor test that a fresh session isn't idle; a session with no signal for > N minutes IS idle; a signal emitted mid-idle clears the flag.
 
@@ -40,11 +43,11 @@ An overnight autonomous run where cc hits a small policy gate either (a) proceed
 - [ ] Feature spec template gets a new optional section `## Pre-authorised` (between `## Validation` and `## Technical Approach`, or another sensible slot). Blank/absent = no pre-auths, same as today.
 - [ ] Each pre-auth is a single line with a clear condition + action, e.g.:
   - `- May raise \`scripts/check-test-budget.sh\` CEILING by up to +40 LOC if regression tests for this feature's invariants require it.`
-  - `- May skip \`npm test:ui\` when this feature touches only \`lib/\` and no dashboard assets.`
+  - `- May skip \`npm run test:ui\` when this feature touches only \`lib/\` and no dashboard assets.`
   - `- May self-grant a single \`--no-verify\` push IF the pre-push hook is blocking on a known-broken check unrelated to this feature; must commit a note explaining why.`
 - [ ] The `feature-do` template is updated to: "Before stopping on a policy gate, check the spec's `## Pre-authorised` section. If the gate matches a pre-auth line, proceed and include a commit footer `Pre-authorised-by: <spec line>` citing which line authorised it. If no pre-auth matches, stop and ask as before."
 - [ ] Every commit made under a pre-auth carries a footer: `Pre-authorised-by: <slug-of-preauth-line>` so `git log` is auditable.
-- [ ] `lib/validation.js` (or a new small helper) parses the `## Pre-authorised` section at feature-do start and makes the lines available to the agent as part of the inlined spec. Simple string list, no DSL, no parsing beyond "bullet per line."
+- [ ] `lib/utils.js` (or a tiny new helper module re-exported from there if the file is already crowded) parses the `## Pre-authorised` section when building feature context and makes the lines available to the agent as part of the inlined spec / prompt material. **Not** `lib/validation.js` unless the iterate loop is the single consumer — default owner is spec I/O next to other spec readers. Simple string list, no DSL, no parsing beyond "markdown bullet per line" under that heading.
 - [ ] Pre-auth lines are bounded and opt-in per feature — there's no global "auto-approve these" list. Each spec author decides what's acceptable for THAT feature.
 - [ ] Tests: a spec with `## Pre-authorised` round-trips through spec-create / spec-review / feature-start and the agent sees the lines; a spec without the section behaves identically to today.
 
@@ -52,7 +55,7 @@ An overnight autonomous run where cc hits a small policy gate either (a) proceed
 - [ ] Under-test-budget net: this feature adds ≤ 40 LOC of tests. If at ceiling, piggyback on the existing pre-auth mechanism by citing it in the spec. (Feature eats its own dog food.)
 - [ ] `docs/architecture.md` § Module Map updated for `lib/supervisor.js` — note the new idle-detection responsibility.
 - [ ] `docs/development_workflow.md` updated to describe the pre-auth mechanism and point to examples.
-- [ ] CLAUDE.md § Hot rules gets one new bullet: "Check the spec's `## Pre-authorised` section before stopping on a policy gate."
+- [ ] `AGENTS.md` **Rules Before Editing** (and the mirrored hot-rules pointer in `CLAUDE.md` if still present) get one new bullet: check the spec’s `## Pre-authorised` section before stopping on a policy gate; cite matching line in commit footer when proceeding.
 
 ## Validation
 ```bash
@@ -74,10 +77,13 @@ bash scripts/check-test-budget.sh
 The idle pass adds one more classification dimension: **progress**. For each alive session, read the entity's events log tail, find the last `agent-status`-derived event (signal.agent_ready, signal.agent_submitted, etc.) and compare its timestamp to now.
 
 ```js
-function computeIdleState(repoPath, entityType, entityId, agentId, thresholds) {
+function computeIdleState(repoPath, entityType, entityId, agentId, thresholds, sessionStartedAt) {
   const events = readRecentEvents(repoPath, entityType, entityId);
-  const lastSignal = events.reverse().find(e => e.type?.startsWith('signal.agent_') && e.agentId === agentId);
-  const lastSignalAt = lastSignal ? new Date(lastSignal.at).getTime() : sessionStartedAt;
+  const lastSignal = [...events].reverse().find((e) =>
+    PROGRESS_TYPES.has(e.type) && e.agentId === agentId);
+  const lastSignalAt = lastSignal
+    ? new Date(lastSignal.at).getTime()
+    : sessionStartedAt; // e.g. tmux session birth or last snapshot transition to running
   const idleMs = Date.now() - lastSignalAt;
   if (idleMs > thresholds.sticky * 60_000) return { level: 'sticky', idleMinutes: Math.floor(idleMs / 60_000) };
   if (idleMs > thresholds.notify * 60_000) return { level: 'notify', idleMinutes: Math.floor(idleMs / 60_000) };
@@ -92,7 +98,10 @@ The `notify`-level threshold fires a one-shot notification per transition — su
 Parsing tmux pane content to detect "Approval needed in Ash [awaiter]" or "I'm hitting the test-budget ceiling" across cc/cx/gg/cu would mean four agent-specific content parsers, each fragile to UI updates. Workflow-signal absence is agent-agnostic: if the agent isn't emitting progress, it's stuck, regardless of *why*.
 
 ### Spec pre-auth parsing
-Zero new parser logic — re-use `utils.readSpecSection(specPath, '## Pre-authorised')` if it exists, or add a trivial 10-line helper. The section is plain markdown bullets. The agent reads them verbatim as part of the spec; no semantic enforcement, just presentation. Trust is at the human level (you write the line, you trust the agent to honour it).
+Add a small `readSpecSection(specPath, '## Pre-authorised')` helper (or equivalent) next to other spec readers in `lib/utils.js`, unless an existing helper already covers generic `## Heading` extraction. The section is plain markdown bullets. The agent reads them verbatim as part of the spec; no semantic enforcement, just presentation. Trust is at the human level (you write the line, you trust the agent to honour it).
+
+### Tmux session vs snapshot agent
+Today `sweepEntity` probes a single `expectedSessionName` / `expectedResearchSessionName`. Modern launches use `{repo}-f{id}-{role}-{agent}`. Part A must either import a shared naming helper (if the “no cross-import” rule between supervisor and worktree is relaxed for a tiny shared module) **or** port the role-aware existence check into `lib/supervisor.js` so idle detection and liveness agree on whether the pane is actually there. Document the chosen approach in the implementation PR.
 
 ### Audit trail
 Every commit made under a pre-auth carries a footer:
@@ -121,11 +130,14 @@ They solve the same class of problem from opposite sides: idle detection catches
 - SMS / email / Slack notifications. Desktop notifications only; other channels are a follow-up.
 - Supervisor service restart / auto-recovery logic. This feature ONLY adds idle-status observation.
 
+## Configuration defaults (v1 — resolve Open Questions at implementation time)
+- **Threshold keys** live in **global** `~/.aigon/config.json` under a single object (e.g. `supervisor.idleThresholdsMinutes: { soft, notify, sticky }`) with defaults 10 / 20 / 60. Per-repo overrides are out of scope unless trivial to add via existing `loadProjectConfig` merge rules.
+- **Desktop notifications** for idle-stuck fire only when `supervisorNotifications: true` (or the same flag already used for dead-agent notifications, if one exists — reuse, do not invent a second knob).
+- **Dashboard badge click → pane tail** is explicitly **out of scope for v1**; badge + optional notification + notifications panel row only.
+- **`## Pre-authorised` placement** in the scaffolded feature template: immediately after `## Validation`, before `## Technical Approach` (operational context, not design detail).
+
 ## Open Questions
-- Should idle level thresholds live in `~/.aigon/config.json`, project `.aigon/config.json`, or both? (Lean: global — idle sensitivity is a per-user preference, not per-repo.)
-- Do we fire desktop notifications ALWAYS, or only when the user has opted in? (Lean: opt-in via `supervisorNotifications: true` in config — macOS permission prompts are annoying to trigger unexpectedly.)
-- Should the idle badge on the dashboard card be clickable to show what the agent was last doing (tail of last 20 lines of pane content)? (Lean: yes, second iteration. First ship = badge + notification, peek-to-pane comes later.)
-- Where exactly does `## Pre-authorised` go in the spec template — before Technical Approach (as I've placed it in this spec) or after Acceptance Criteria? (Lean: after Validation, before Technical Approach — pre-auth is operational context, not implementation context.)
+- If both `do` and `review` tmux sessions exist for one agent (hand-off window), should idle detection consider the **newest** mtime across roles or only the role matching the snapshot’s implied active task? (Default lean: any alive role session for that agent keeps the entity “active”; idle clock resets on progress from **any** role — document if different.)
 
 ## Related
 - Triggered by: 2026-04-21 F291 overnight idle — cc hit test-budget ceiling, correctly stopped to ask, sat for hours. Same session saw F282 cx awaiter approval stall for 17 min earlier.
