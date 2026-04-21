@@ -56,10 +56,12 @@ test('legacy iterate flags still hard-error with the rename hint', () => {
 test('repair registration and worktree/reset guard rails stay wired', () => {
     assert.strictEqual(typeof require('../../lib/commands/shared').createAllCommands().repair, 'function'); assert.strictEqual(typeof require('../../lib/commands/misc').createMiscCommands().repair, 'function');
     assert.match(fs.readFileSync(path.join(__dirname, '../../templates/help.txt'), 'utf8'), /repair <feature\|research> <ID> \[--dry-run\]/);
-    const [wt, feature, setup] = ['../../lib/worktree.js', '../../lib/commands/feature.js', '../../lib/commands/setup.js'].map((p) => fs.readFileSync(path.join(__dirname, p), 'utf8'));
+    const [wt, feature, entityCmds, setup] = ['../../lib/worktree.js', '../../lib/commands/feature.js', '../../lib/commands/entity-commands.js', '../../lib/commands/setup.js'].map((p) => fs.readFileSync(path.join(__dirname, p), 'utf8'));
     assert.match(wt, /config --local extensions\.worktreeConfig true/); assert.doesNotMatch(wt, /config --(?:local|worktree) user\.(?:name|email)/);
     assert.match(wt, /config --worktree aigon\.agentId/); assert.match(wt, /config --worktree core\.hooksPath/);
-    assert.match(feature, /wf\.resetFeature\s*\(/); assert.match(setup, /stale-drive-branch/);
+    // feature-reset is wired to the workflow engine via entityResetBase (F292).
+    assert.match(feature, /entityResetBase\(entity\.FEATURE_DEF/); assert.match(entityCmds, /wf\.resetFeature/);
+    assert.match(setup, /stale-drive-branch/);
 });
 
 // REGRESSION: F289 — bounded Autopilot carry-forward; criteria stay in CRITERIA_SECTION only.
