@@ -8,6 +8,7 @@ const { testAsync, withTempDirAsync, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 const ast = require('../../lib/agent-status');
 const { collectRepoStatus, clearTierCache } = require('../../lib/dashboard-status-collector');
+const { buildAutonomousPlanHtml } = require('../../templates/dashboard/js/autonomous-plan.js');
 const w = (root, rel, body) => { const f = path.join(root, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, body); };
 
 testAsync('dashboard payload: awaitingInput + anyAwaitingInput (feature + research)', async () => {
@@ -31,6 +32,28 @@ testAsync('dashboard payload: awaitingInput + anyAwaitingInput (feature + resear
         assert.ok(r && r.anyAwaitingInput);
         assert.strictEqual(r.agents.find((a) => a.id === 'cc').awaitingInput.message, 'Choose features');
     });
+});
+
+testAsync('dashboard autonomous renderer shows running and waiting stages together', async () => {
+    // REGRESSION F297: autonomous cards must render future planned stages, not just the active one.
+    const html = buildAutonomousPlanHtml({
+        stages: [
+            { type: 'implement', label: 'Implement', status: 'running', agents: [{ id: 'cc' }] },
+            { type: 'review', label: 'Review', status: 'waiting', agents: [{ id: 'cx' }] },
+            { type: 'close', label: 'Close', status: 'waiting', agents: [] },
+        ]
+    }, {
+        agentDisplayNames: { cc: 'Claude Code', cx: 'Cursor' }
+    });
+    assert.match(html, /Autonomous plan/);
+    assert.match(html, /Implement/);
+    assert.match(html, /Claude Code/);
+    assert.match(html, /Review/);
+    assert.match(html, /Cursor/);
+    assert.match(html, /Running/);
+    assert.match(html, /Waiting/);
+    assert.ok(html.indexOf('Implement') < html.indexOf('Review'));
+    assert.ok(html.indexOf('Review') < html.indexOf('Close'));
 });
 
 report();

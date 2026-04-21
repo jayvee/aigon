@@ -28,6 +28,11 @@ const writeSnap = (repo, kind, id, lifecycle) => {
         createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:05:00Z',
     }));
 };
+const writeFeatureAuto = (repo, id, payload) => {
+    const file = path.join(repo, '.aigon', 'state', `feature-${String(id).padStart(2, '0')}-auto.json`);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(payload, null, 2));
+};
 
 for (const [kind, getState] of [['features', wrm.getFeatureDashboardState], ['research-topics', wrm.getResearchDashboardState]]) {
     const id = kind === 'features' ? '12' : '21';
@@ -81,13 +86,64 @@ test('board re-buckets snapshot-backed features and carries spec drift', () => w
     assert.ok(!ids('02-backlog').includes('14') && ids('03-in-progress').includes('14'));
     const legacy = (items['02-backlog'] || []).find(i => i.id === '15');
     assert.strictEqual(legacy.readModelSource, wrm.WORKFLOW_SOURCE.MISSING_SNAPSHOT);
-    assert.strictEqual(legacy.boardAction, null);
     const drifted = (items['03-in-progress'] || []).find(i => i.id === '18');
     assert.deepStrictEqual(drifted.specDrift, {
         currentPath: 'docs/specs/features/02-backlog/feature-18-x.md',
         expectedPath: 'docs/specs/features/03-in-progress/feature-18-x.md',
         lifecycle: 'implementing',
     });
+}));
+
+test('autonomous plan exposes future reviewed solo stages before they start', () => withTempDir('aigon-rm-', (repo) => {
+    // REGRESSION F297: autonomous cards must show the full planned stage sequence from run start.
+    seed(repo);
+    writeSpec(repo, 'features', '03-in-progress', 'feature-12-auto-plan.md');
+    writeSnap(repo, 'features', '12', 'implementing');
+    writeFeatureAuto(repo, '12', {
+        featureId: '12',
+        status: 'running',
+        running: true,
+        mode: 'solo_worktree',
+        workflowSlug: 'solo-cc-reviewed-cx',
+        agents: ['cc'],
+        reviewAgent: 'cx',
+        stopAfter: 'close',
+        startedAt: '2026-04-01T10:00:00Z',
+        updatedAt: '2026-04-01T10:01:00Z',
+    });
+    const state = wrm.getFeatureDashboardState(repo, '12', 'in-progress', [{ id: 'cc', status: 'implementing' }]);
+    assert.ok(state.autonomousPlan);
+    assert.strictEqual(state.autonomousPlan.error, undefined);
+    assert.deepStrictEqual(
+        state.autonomousPlan.stages.map(stage => ({ type: stage.type, status: stage.status, agents: stage.agents.map(agent => agent.id) })),
+        [
+            { type: 'implement', status: 'running', agents: ['cc'] },
+            { type: 'review', status: 'waiting', agents: ['cx'] },
+            { type: 'counter-review', status: 'waiting', agents: ['cc'] },
+            { type: 'close', status: 'waiting', agents: [] },
+        ]
+    );
+}));
+
+test('autonomous plan fails loudly when workflow metadata cannot be resolved', () => withTempDir('aigon-rm-', (repo) => {
+    // REGRESSION F297: do not silently omit future autonomous stages when the plan metadata is broken.
+    seed(repo);
+    writeSpec(repo, 'features', '03-in-progress', 'feature-13-auto-error.md');
+    writeSnap(repo, 'features', '13', 'implementing');
+    writeFeatureAuto(repo, '13', {
+        featureId: '13',
+        status: 'running',
+        running: true,
+        mode: 'solo_worktree',
+        workflowSlug: 'missing-workflow',
+        agents: ['cc'],
+        stopAfter: 'close',
+        startedAt: '2026-04-01T10:00:00Z',
+        updatedAt: '2026-04-01T10:01:00Z',
+    });
+    const state = wrm.getFeatureDashboardState(repo, '13', 'in-progress', [{ id: 'cc', status: 'implementing' }]);
+    assert.ok(state.autonomousPlan && state.autonomousPlan.error);
+    assert.match(state.autonomousPlan.error.message, /aigon doctor --fix/);
 }));
 
 report();

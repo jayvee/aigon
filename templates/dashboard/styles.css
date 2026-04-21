@@ -229,6 +229,8 @@
     .kcard-agent-status{font-size:10px;color:var(--text-tertiary);white-space:nowrap}
     .kcard-agent-status.status-running{color:#4ADE80}
     .kcard-agent-status.status-waiting{color:#FCD34D}
+    .kcard-agent-status.status-complete{color:#86EFAC}
+    .kcard-agent-status.status-failed{color:#FB7185}
     .kcard-agent-status.status-submitted{color:#86EFAC}
     .kcard-agent-status.status-ended,.kcard-agent-status.status-idle{color:var(--text-tertiary)}
     .kcard-agent-status.status-flagged{color:#FB923C}
@@ -242,6 +244,17 @@
     .monitor-dev-link:hover{opacity:1;border-color:var(--accent);color:var(--text-primary)}
     .kcard-agent-actions{display:flex;gap:4px;align-items:center;margin-top:3px;flex-wrap:wrap}
     .kcard-agent-actions .btn{font-size:11px;padding:3px 8px}
+    .kcard-autonomous-plan-rows{display:flex;flex-direction:column;gap:5px}
+    .kcard-autonomous-stage{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .kcard-autonomous-stage-main{display:flex;align-items:center;gap:8px;min-width:0}
+    .kcard-autonomous-stage-marker{font-size:11px;color:var(--text-tertiary);width:10px;flex-shrink:0}
+    .kcard-autonomous-stage.is-running .kcard-autonomous-stage-marker{color:#4ADE80}
+    .kcard-autonomous-stage.is-complete .kcard-autonomous-stage-marker{color:#86EFAC}
+    .kcard-autonomous-stage.is-waiting .kcard-autonomous-stage-marker{color:#FCD34D}
+    .kcard-autonomous-stage.is-failed .kcard-autonomous-stage-marker{color:#FB7185}
+    .kcard-autonomous-stage-label{font-size:11px;color:var(--text-primary);font-weight:600;white-space:nowrap}
+    .kcard-autonomous-stage-agents{font-size:10px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .kcard-autonomous-plan-error{font-size:10px;line-height:1.45;color:#FB7185}
     .kcard-gh-refresh{margin-left:auto;background:rgba(139,148,158,.12);border:1px solid rgba(139,148,158,.25);border-radius:4px;color:var(--text-secondary);font-family:var(--mono);font-size:10px;padding:2px 8px;cursor:pointer;transition:all .15s ease}
     .kcard-gh-refresh:hover{color:var(--text-primary);background:rgba(139,148,158,.22);border-color:rgba(139,148,158,.4)}
     .kcard-gh-refresh.is-loading{opacity:.65;animation:kcard-gh-pulse .8s ease-in-out infinite}
