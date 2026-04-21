@@ -46,7 +46,8 @@
     "effortOptions": [],
     "modelFlag": null,
     "effortFlag": null,
-    "effortEnv": null
+    "effortEnv": null,
+    "submitKey": null
   },
   "placeholders": {
     "AGENT_ID": "cu",

@@ -557,10 +557,19 @@
 
       const hasNumericId = /^\d+$/.test(String(feature.id || ''));
 
+      const nudgeChipsHtml = Array.isArray(feature.nudges) && feature.nudges.length > 0
+        ? '<div class="kcard-nudges">' + feature.nudges.slice(-3).map(nudge => {
+          const label = (nudge.agentId || 'agent') + ': ' + String(nudge.text || '').replace(/\s+/g, ' ').trim();
+          const trimmed = label.length > 42 ? label.slice(0, 39) + '…' : label;
+          const title = (nudge.atISO ? new Date(nudge.atISO).toLocaleString() + ' — ' : '') + label;
+          return '<button class="kcard-nudge-chip" type="button" data-open-nudge-modal title="' + escHtml(title) + '">' + escHtml(trimmed) + '</button>';
+        }).join('') + '</div>'
+        : '';
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
         '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildSpecReviewBadgeHtml(feature) + '</div>' +
-        autonomousPlanHtml;
+        autonomousPlanHtml +
+        nudgeChipsHtml;
 
       if (hasAgentSections) {
         // --- Evaluation verdict layout (pick-winner state) ---
@@ -751,6 +760,13 @@
           e.stopPropagation();
           const entityType = pipelineType === 'research' ? 'research' : 'feature';
           await requestSpecReconcile(repoPath, entityType, feature.id, btn);
+        };
+      });
+
+      card.querySelectorAll('[data-open-nudge-modal]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          showNudgeModal(feature, repoPath, btn);
         };
       });
 

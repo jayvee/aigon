@@ -58,7 +58,8 @@
     ],
     "modelFlag": "--model",
     "effortFlag": "-c model_reasoning_effort=",
-    "effortEnv": null
+    "effortEnv": null,
+    "submitKey": "Enter"
   },
   "placeholders": {
     "AGENT_ID": "cx",

@@ -54,7 +54,8 @@
     "effortOptions": [],
     "modelFlag": "--model",
     "effortFlag": null,
-    "effortEnv": null
+    "effortEnv": null,
+    "submitKey": "Enter"
   },
   "placeholders": {
     "AGENT_ID": "gg",
