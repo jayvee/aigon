@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 'use strict';
+// REGRESSION feature 300: rebase-needed helper tests must not load the full
+// dashboard collector, which emits circular-dependency warnings in test runs.
 const assert = require('assert');
 const { execSync } = require('child_process');
 const { test, report, withTempDir, GIT_SAFE_ENV } = require('../_helpers');
-const { computeRebaseNeeded } = require('../../lib/dashboard-status-collector');
+const { computeRebaseNeeded } = require('../../lib/dashboard-status-helpers');
 
 function git(cwd, args) {
     execSync(`git ${args}`, { cwd, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
