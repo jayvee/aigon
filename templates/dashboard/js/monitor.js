@@ -103,6 +103,24 @@
       + '</span>';
     }
 
+    // Supervisor-derived workflow idle (no progress signals while tmux alive) — display only.
+    function buildWorkflowIdleBadgeHtml(item) {
+      if (!item || !item.agents) return '';
+      const agent = item.agents.find(a => a && a.idleState && a.idleState.level);
+      if (!agent) return '';
+      const name = (window.AGENT_DISPLAY_NAMES && window.AGENT_DISPLAY_NAMES[agent.id]) || agent.id;
+      const mins = agent.idleState.idleMinutes;
+      const lvl = agent.idleState.level;
+      const tip = name + ' — no workflow progress for ~' + mins + ' min (tmux still running). Threshold: ' + lvl + '.';
+      return '<span class="workflow-idle-badge" role="status" tabindex="0" aria-label="' + escHtml(tip) + '" x-on:click.stop>'
+        + 'Awaiting input'
+        + '<span class="workflow-idle-tip">'
+          + '<span class="workflow-idle-tip-title">Workflow idle</span>'
+          + '<span class="workflow-idle-tip-msg">' + escHtml(tip) + '</span>'
+        + '</span>'
+      + '</span>';
+    }
+
     function monitorView() {
       return {
         monitorTypeOpts: [
@@ -196,6 +214,7 @@
         buildAskAgentHtml(repoPath) { return buildAskAgentHtml(repoPath); },
         buildMainDevServerHtml(repo) { return buildMainDevServerHtml(repo); },
         buildAwaitingBadgeHtml(item) { return buildAwaitingBadgeHtml(item); },
+        buildWorkflowIdleBadgeHtml(item) { return buildWorkflowIdleBadgeHtml(item); },
         handleAskClick(e) {
           const btn = e.target.closest('[data-ask-run]');
           if (btn) { runAskAgent(btn.dataset.askRepo, btn.dataset.askRun); return; }

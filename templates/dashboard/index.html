@@ -87,6 +87,7 @@
                         <span class="feature" x-html="featureTitle(feature)"></span>
                         <span class="head-actions">
                           <span x-html="buildAwaitingBadgeHtml(feature)"></span>
+                          <span x-html="buildWorkflowIdleBadgeHtml(feature)"></span>
                           <span x-html="buildNextActionHtml(feature, repo.path)"></span>
                         </span>
                       </div>
@@ -122,6 +123,7 @@
                         <span class="feature" x-html="researchTitle(item)"></span>
                         <span class="head-actions">
                           <span x-html="buildAwaitingBadgeHtml(item)"></span>
+                          <span x-html="buildWorkflowIdleBadgeHtml(item)"></span>
                           <span x-html="researchEvalBtn(item)"></span>
                         </span>
                       </div>
@@ -149,7 +151,7 @@
                              x-on:click="openSpecItem($event, item, 'FB#')">
                       <div class="card-h">
                         <span class="feature" x-html="feedbackTitle(item)"></span>
-                        <span class="head-actions" x-html="buildAwaitingBadgeHtml(item)"></span>
+                        <span class="head-actions"><span x-html="buildAwaitingBadgeHtml(item)"></span><span x-html="buildWorkflowIdleBadgeHtml(item)"></span></span>
                       </div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents || [])" :key="agent.id">

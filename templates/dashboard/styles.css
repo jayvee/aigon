@@ -114,6 +114,13 @@
     .awaiting-badge .awaiting-tip-msg{display:block;color:var(--text-primary);margin-bottom:6px}
     .awaiting-badge .awaiting-tip-cmd{display:flex;align-items:center;gap:6px}
     .awaiting-badge .awaiting-tip-cmd button{font-size:11px}
+    /* workflow idle — supervisor: alive tmux but no progress signals (distinct dashed ring from hook awaiting-input) */
+    .workflow-idle-badge{position:relative;display:inline-flex;align-items:center;gap:6px;margin-left:6px;padding:2px 8px 2px 7px;border-radius:999px;background:rgba(251,191,36,.1);border:1px dashed rgba(251,191,36,.55);color:#fde68a;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;cursor:help;user-select:none;white-space:nowrap}
+    .workflow-idle-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:#fbbf24;opacity:.9}
+    .workflow-idle-badge .workflow-idle-tip{position:absolute;top:calc(100% + 6px);right:0;min-width:240px;max-width:360px;padding:8px 10px;background:var(--bg-surface);border:1px solid rgba(251,191,36,.45);border-radius:8px;color:var(--text-primary);font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;line-height:1.4;white-space:normal;box-shadow:0 10px 24px rgba(0,0,0,.35);opacity:0;pointer-events:none;transform:translateY(-4px);transition:opacity .12s,transform .12s;z-index:10}
+    .workflow-idle-badge:hover .workflow-idle-tip,.workflow-idle-badge:focus-within .workflow-idle-tip{opacity:1;pointer-events:auto;transform:translateY(0)}
+    .workflow-idle-badge .workflow-idle-tip-title{display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#fcd34d;margin-bottom:4px}
+    .workflow-idle-badge .workflow-idle-tip-msg{display:block;color:var(--text-primary)}
     .card.awaiting-input{box-shadow:0 0 0 1px rgba(245,158,11,.35),inset 0 0 0 1px rgba(245,158,11,.08)}
     .card-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 10px 6px}
     .card-h .feature{letter-spacing:-.02em;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
