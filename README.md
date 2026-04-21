@@ -42,15 +42,12 @@ Mix and match. Aigon doesn't care which model writes the code — it just manage
 
 ## Why Aigon?
 
-- **Spec-driven** — features, research, and feedback are tracked as Markdown files in your repo. Human-readable, git-versioned, diffable. No opaque SaaS database.
-- **Multi-agent Fleet mode** — run two or three agents on the same spec in parallel, compare the results, merge the winner. The only tool that does this across model vendors.
-- **Solo Drive mode** — single agent, single worktree, single branch. Get in, implement, get out.
-- **Autonomous mode** (in development as part of Aigon Pro) — AutoConductor runs implement → review → close unattended.
-- **Research workflow** — parallel research topics across multiple agents, then synthesize and promote findings into features.
-- **Feedback triage** — capture user input, de-duplicate, promote the actionable bits into features.
-- **Dashboard** — web kanban for features/research/feedback, telemetry charts, session monitoring, and the All Items index. Runs on `localhost`.
-- **No lock-in** — plain Markdown files in git. If Aigon disappears tomorrow, your specs and history are still there.
-- **Vendor independent** — we orchestrate, you choose the model.
+- **Bring your own subscriptions** — use the AI products you already pay for (Claude, Codex, Gemini, Cursor); no separate Aigon billing, no token packs, no markup.
+- **Stay in the flow when a subscription lapses** — switch agents or accounts mid-session instead of being stuck on one vendor's meter.
+- **Spec-driven development you control** — features and research live as Markdown specs that can be built, shipped, reset, and rebuilt for clean handoffs and retries.
+- **Autonomous and multi-agent workflows** — configure who drafts, implements, and reviews, then run long loops through a pre-built push/merge lifecycle.
+- **Context that compounds** — specs and implementation summaries feed forward into later work, so context accrues in the repo rather than evaporating with a session.
+- **Transparent, local, team-aligned** — agents run in plain tmux sessions you can attach to; CLI + git on your machine, no required hosted platform, and fits GitHub PR review cleanly.
 
 ## Quick start
 
