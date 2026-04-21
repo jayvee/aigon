@@ -69,7 +69,7 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
                                     Query feature records without using the board renderer
   feature-validate <ID>             Evaluate acceptance criteria (smart validation)
   feature-eval <ID> [--force]       Create evaluation (code review or comparison)
-  feature-review <ID>               Code review with fixes by a different agent
+  feature-code-review <ID>          Code review with fixes by a different agent
   feature-push [ID] [agent]         Push feature branch to origin for PR review
   feature-close <ID> [agent]        Merge and complete feature
   repair <feature|research> <ID> [--dry-run]

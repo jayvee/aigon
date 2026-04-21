@@ -16,7 +16,7 @@
 | `/aigon-feature-start <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
 | `/aigon-feature-do <ID> [--iterate]` | Implement feature; `--iterate` runs Autopilot retry loop |
 | `/aigon-feature-eval <ID>` | Create evaluation (code review or comparison) |
-| `/aigon-feature-review <ID>` | Code review with fixes by a different agent |
+| `/aigon-feature-code-review <ID>` | Code review with fixes by a different agent |
 | `/aigon-feature-close <ID> [agent]` | Merge and complete feature |
 | `/aigon-feature-push [ID] [agent]` | Push feature branch to origin for PR review |
 | `/aigon-feature-autonomous-start <ID> <agents...>` | Start autonomous feature flow with explicit stop-after control |
