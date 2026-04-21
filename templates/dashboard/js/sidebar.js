@@ -165,18 +165,19 @@
             row.querySelector('.agent-check-hint').before(badge);
           }
           // Show model name for this task type
-          let modelEl = row.querySelector('.agent-check-model');
+          let modelEl = row.querySelector('.agent-check-config-model') || row.querySelector('.agent-check-model');
           const modelName = (models[cb.value] && models[cb.value][taskType]) || '';
           if (modelName) {
             if (!modelEl) {
               modelEl = document.createElement('span');
-              modelEl.className = 'agent-check-model';
+              modelEl.className = row.classList.contains('agent-check-row-triplet') ? 'agent-check-config-model' : 'agent-check-model';
               const hint = row.querySelector('.agent-check-hint');
               if (hint) hint.after(modelEl); else row.appendChild(modelEl);
             }
             modelEl.textContent = modelName;
           } else if (modelEl) {
-            modelEl.remove();
+            if (modelEl.classList.contains('agent-check-config-model')) modelEl.textContent = '';
+            else modelEl.remove();
           }
         });
         document.getElementById('agent-picker-submit').textContent = opts.submitLabel || 'Start';

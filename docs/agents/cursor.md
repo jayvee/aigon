@@ -118,7 +118,6 @@ Research follows the same lifecycle shape as features: `start -> do -> submit ->
 6. Finish the topic: `/aigon-research-close <ID>`
 7. Use `/aigon-research-open <ID>` only to re-open or attach Fleet research sessions after setup
 
-
 ## Before Completing a Feature
 
 Before running `/aigon-feature-close`, always:

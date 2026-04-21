@@ -268,6 +268,7 @@
     /* Agent picker modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:flex;align-items:center;justify-content:center}
     .modal-box{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius);padding:20px 24px;min-width:280px;max-width:400px;width:100%}
+    .modal-box:has(.agent-checks-triplet){max-width:560px;min-width:320px}
     .modal-box h3{margin:0 0 14px;font-size:15px;letter-spacing:-.01em}
     .modal-desc{color:var(--text-secondary);font-size:12px;margin:0 0 14px}
     .agent-checks{display:grid;gap:8px;margin-bottom:18px}
@@ -278,12 +279,17 @@
     .agent-check-hint{font-size:11px;color:var(--text-tertiary)}
     .agent-check-badge{font-size:9px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;margin-left:6px;letter-spacing:.02em;opacity:.8}
     .agent-check-model{font-size:10px;color:var(--text-tertiary);opacity:.45;font-family:var(--mono);margin-left:6px}
-    .agent-triplet-selects{display:flex;gap:6px;margin-left:auto}
-    .agent-triplet-selects select{font:11px var(--mono);padding:3px 22px 3px 8px;background:var(--bg-root);color:var(--text-secondary);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;min-width:88px}
+    /* Triplet picker: fixed columns — id+name | config model | model DD | effort DD */
+    .agent-check-row.agent-check-row-triplet{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(72px,0.55fr) minmax(118px,0.95fr) minmax(118px,0.95fr);column-gap:10px;row-gap:4px;align-items:center;padding:8px 10px}
+    .agent-check-row-triplet .agent-check-primary{display:flex;align-items:center;gap:10px;min-width:0}
+    .agent-check-row-triplet .agent-check-label{flex:0 0 auto;font-family:var(--mono);font-size:13px}
+    .agent-check-row-triplet .agent-check-hint{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--text-tertiary)}
+    .agent-check-row-triplet .agent-check-config-model{font-size:10px;color:var(--text-tertiary);opacity:.88;font-family:var(--mono);min-width:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .agent-triplet-selects{display:contents}
+    .agent-triplet-selects select,.agent-check-row-triplet .agent-triplet-model,.agent-check-row-triplet .agent-triplet-effort{font:11px var(--mono);padding:4px 22px 4px 8px;background:var(--bg-root);color:var(--text-secondary);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;width:100%;min-width:0;max-width:100%;box-sizing:border-box}
     .agent-triplet-selects select:hover{border-color:var(--border-default);color:var(--text-primary)}
     .agent-triplet-selects select:focus{outline:none;border-color:var(--accent)}
-    .agent-checks-triplet .agent-check-label{flex:0 0 auto;min-width:60px}
-    .agent-checks-triplet .agent-check-hint{flex:1}
+    .agent-triplet-placeholder{display:inline-flex;align-items:center;justify-content:center;font:11px var(--mono);color:var(--text-tertiary);opacity:.5;border:1px dashed var(--border-subtle);border-radius:6px;min-height:28px;box-sizing:border-box;width:100%;min-width:0}
     .modal-actions{display:flex;gap:8px;justify-content:flex-end}
     .create-modal-box{max-width:520px}
     .create-input{width:100%;padding:10px 12px;background:var(--bg-root);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:8px;font:13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;outline:none;transition:border-color .12s ease}

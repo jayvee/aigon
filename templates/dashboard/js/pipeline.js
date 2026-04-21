@@ -1063,17 +1063,22 @@
               break;
             case 'feature-start':
             case 'research-start': {
-              const agents = await showAgentPicker(featureId, featureName, { repoPath: effectiveRepo, taskType: 'implement', action: transition.action });
-              if (!agents) return;
-              await requestAction(pipelineCommand(dragPType, 'start'), [featureId, ...agents], effectiveRepo);
+              const triplets = await showAgentPicker(featureId, featureName, { repoPath: effectiveRepo, taskType: 'implement', action: transition.action, collectTriplet: true });
+              if (!triplets) return;
+              const extraArgs = tripletsToCliArgs(triplets);
+              const agentIds = triplets.map(t => t.id);
+              await requestAction(pipelineCommand(dragPType, 'start'), [featureId, ...agentIds, ...extraArgs], effectiveRepo);
               break;
             }
             case 'feature-eval': {
-              const agents = await showAgentPicker(featureId, featureName, { single: true, title: 'Select evaluator agent', submitLabel: 'Evaluate', repoPath: effectiveRepo, taskType: 'evaluate', action: transition.action });
-              if (!agents || agents.length === 0) return;
-              const evalAgent = agents[0];
+              const triplets = await showAgentPicker(featureId, featureName, { single: true, collectTriplet: true, title: 'Select evaluator agent', submitLabel: 'Evaluate', repoPath: effectiveRepo, taskType: 'evaluate', action: transition.action });
+              if (!triplets || triplets.length === 0) return;
+              const t = triplets[0];
+              const launchOpts = {};
+              if (t.model) launchOpts.model = t.model;
+              if (t.effort) launchOpts.effort = t.effort;
               await requestAction(pipelineCommand(dragPType, 'eval'), [featureId], effectiveRepo);
-              await requestFeatureOpen(featureId, evalAgent, effectiveRepo, null, dragPType);
+              await requestFeatureOpen(featureId, t.id, effectiveRepo, null, dragPType, 'eval', launchOpts);
               break;
             }
             case 'feature-close': {

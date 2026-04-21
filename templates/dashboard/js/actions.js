@@ -36,6 +36,7 @@ function buildAgentCheckRow(options) {
   const opts = options || {};
   const label = createEl('label', { className: 'agent-check-row' });
   if (opts.rowClassName) label.className += ' ' + opts.rowClassName;
+  if (opts.tripletGrid) label.classList.add('agent-check-row-triplet');
   const input = createEl('input', {
     attrs: {
       type: opts.type || 'checkbox',
@@ -46,19 +47,39 @@ function buildAgentCheckRow(options) {
   });
   if (opts.checked) input.checked = true;
   if (opts.inputClassName) input.className = opts.inputClassName;
-  label.appendChild(input);
-  label.appendChild(createEl('span', { className: 'agent-check-label', text: opts.label || '' }));
-  if (opts.hint) label.appendChild(createEl('span', { className: 'agent-check-hint', text: opts.hint }));
-  if (opts.model) label.appendChild(createEl('span', { className: 'agent-check-model', text: opts.model }));
+  if (opts.tripletGrid) {
+    const primary = createEl('span', { className: 'agent-check-primary' });
+    primary.appendChild(input);
+    primary.appendChild(createEl('span', { className: 'agent-check-label', text: opts.label || '' }));
+    if (opts.hint) primary.appendChild(createEl('span', { className: 'agent-check-hint', text: opts.hint }));
+    label.appendChild(primary);
+    label.appendChild(createEl('span', { className: 'agent-check-config-model', attrs: { 'aria-label': 'Configured model (from settings)' } }));
+  } else {
+    label.appendChild(input);
+    label.appendChild(createEl('span', { className: 'agent-check-label', text: opts.label || '' }));
+    if (opts.hint) label.appendChild(createEl('span', { className: 'agent-check-hint', text: opts.hint }));
+    if (opts.model) label.appendChild(createEl('span', { className: 'agent-check-model', text: opts.model }));
+  }
   return label;
 }
 
-// Append a {model, effort} dropdown pair to an agent-check row. When the
-// agent has no options for a dropdown, that dropdown is omitted entirely.
-// Disable cu (no modelFlag/effortFlag) dropdowns cleanly by not rendering.
+function appendTripletPlaceholder(title) {
+  const span = createEl('span', {
+    className: 'agent-triplet-placeholder',
+    attrs: { title: title || 'Not configurable for this agent' }
+  });
+  span.textContent = '—';
+  span.addEventListener('click', e => e.stopPropagation());
+  return span;
+}
+
+// Append model + effort controls for triplet-grid rows. Always emits two
+// columns (select or placeholder) so the agent-picker grid stays aligned.
 function appendTripletSelects(rowEl, agent) {
   if (!agent) return;
+  rowEl.querySelectorAll('.agent-triplet-selects').forEach(n => n.remove());
   const container = createEl('span', { className: 'agent-triplet-selects' });
+  container.style.display = 'contents';
   const modelOpts = Array.isArray(agent.modelOptions) ? agent.modelOptions : [];
   if (modelOpts.length > 0) {
     const sel = document.createElement('select');
@@ -80,6 +101,8 @@ function appendTripletSelects(rowEl, agent) {
       tripletStorage.write(agent.id, { model: sel.value || null });
     });
     container.appendChild(sel);
+  } else {
+    container.appendChild(appendTripletPlaceholder('No per-run model override for this agent'));
   }
   const effortOpts = Array.isArray(agent.effortOptions) ? agent.effortOptions : [];
   if (effortOpts.length > 0) {
@@ -102,8 +125,10 @@ function appendTripletSelects(rowEl, agent) {
       tripletStorage.write(agent.id, { effort: sel.value || null });
     });
     container.appendChild(sel);
+  } else {
+    container.appendChild(appendTripletPlaceholder('No per-run effort override for this agent'));
   }
-  if (container.childElementCount > 0) rowEl.appendChild(container);
+  rowEl.appendChild(container);
 }
 
 // Convert picker triplets → --models / --efforts CLI flags. Omits a
@@ -389,6 +414,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     const implAgents = (feature.agents || []).map(a => a.id);
     const picked = await showAgentPicker(id, feature.name, {
       single: true,
+      collectTriplet: true,
       title: options.title,
       submitLabel: options.submitLabel,
       implementingAgents: implAgents,
@@ -397,15 +423,20 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       action
     });
     if (!picked || picked.length === 0) return;
+    const t = picked[0];
+    const launchOpts = {};
+    if (t.model) launchOpts.model = t.model;
+    if (t.effort) launchOpts.effort = t.effort;
     if (options.setupAction && feature.stage !== 'in-evaluation') {
       await requestAction(options.setupAction, [id, '--setup-only'], repoPath, btn);
     }
-    await requestFeatureOpen(id, picked[0], repoPath, null, pipelineType, getLaunchMode(action));
+    await requestFeatureOpen(id, t.id, repoPath, null, pipelineType, getLaunchMode(action), launchOpts);
   }
 
   async function launchSpecReviewAction(endpoint, options) {
     const picked = await showAgentPicker(id, feature.name, {
       single: true,
+      collectTriplet: true,
       title: options.title,
       submitLabel: options.submitLabel,
       repoPath,
@@ -413,7 +444,11 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       action: options.action
     });
     if (!picked || picked.length === 0) return;
-    await requestSpecReviewLaunch(endpoint, id, picked[0], repoPath, btn);
+    const t = picked[0];
+    const launchOpts = {};
+    if (t.model) launchOpts.model = t.model;
+    if (t.effort) launchOpts.effort = t.effort;
+    await requestSpecReviewLaunch(endpoint, id, t.id, repoPath, btn, launchOpts);
     await requestRefresh();
   }
 
@@ -539,6 +574,9 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await requestAction('feature-reset', [id], repoPath, btn);
       break;
     }
+    case 'feature-review-check':
+      await requestAction('feature-review-check', [id], repoPath, btn);
+      break;
     case 'feature-push': {
       const msg = (va.metadata && va.metadata.confirmationMessage)
         || 'Push feature branch to origin?';
@@ -590,7 +628,7 @@ function renderAgentPickerRows(options) {
       value: agent.id,
       label: agent.id,
       hint: agent.displayName || agent.id,
-      rowClassName: collectTriplet ? 'agent-check-row-triplet' : '',
+      tripletGrid: collectTriplet,
     });
     if (collectTriplet) {
       row.dataset.agentId = agent.id;
@@ -747,14 +785,21 @@ async function showAutonomousModal(feature, repoPath, btn) {
   replaceNodeChildren(checks, AUTONOMOUS_AGENT_IDS.map(agentId => {
     const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
     const modelName = (autonomousModalModels && autonomousModalModels[agentId] && autonomousModalModels[agentId].implement) || '';
-    return buildAgentCheckRow({
+    const agent = AIGON_AGENTS.find(a => a.id === agentId) || { id: agentId, modelOptions: [], effortOptions: [] };
+    const row = buildAgentCheckRow({
       value: agentId,
       checked: agentId === 'cc',
       label: agentId,
       hint: displayName,
-      model: modelName
+      tripletGrid: true,
     });
+    row.dataset.agentId = agentId;
+    appendTripletSelects(row, agent);
+    const cfg = row.querySelector('.agent-check-config-model');
+    if (cfg) cfg.textContent = modelName || '';
+    return row;
   }));
+  checks.classList.add('agent-checks-triplet');
 
   stopAfter.value = 'close';
   updateAutonomousModeControls();
@@ -973,6 +1018,21 @@ async function submitAutonomousModal() {
     return;
   }
 
+  const triplets = selectedAgents.map(id => {
+    const row = document.querySelector('#autonomous-agent-checks input[value="' + id + '"]');
+    const wrap = row && row.closest('.agent-check-row');
+    const modelSel = wrap && wrap.querySelector('.agent-triplet-model');
+    const effortSel = wrap && wrap.querySelector('.agent-triplet-effort');
+    return {
+      id,
+      model: modelSel && modelSel.value ? modelSel.value : null,
+      effort: effortSel && effortSel.value ? effortSel.value : null,
+    };
+  });
+  const triArgs = tripletsToCliArgs(triplets);
+  const modelsCsv = (triArgs.find(a => a.startsWith('--models=')) || '').slice('--models='.length) || '';
+  const effortsCsv = (triArgs.find(a => a.startsWith('--efforts=')) || '').slice('--efforts='.length) || '';
+
   const featureId = autonomousModalFeature.id;
   const repoPath = autonomousModalRepoPath;
   const btn = autonomousModalBtn;
@@ -981,7 +1041,9 @@ async function submitAutonomousModal() {
     agents: selectedAgents,
     evalAgent,
     reviewAgent,
-    stopAfter: stopValue
+    stopAfter: stopValue,
+    models: modelsCsv || undefined,
+    efforts: effortsCsv || undefined,
   }, repoPath, btn);
 }
 

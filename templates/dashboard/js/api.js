@@ -115,6 +115,8 @@
       const stopAfter = opts.stopAfter || 'close';
       const evalAgent = opts.evalAgent || '';
       const reviewAgent = opts.reviewAgent || '';
+      const models = typeof opts.models === 'string' ? opts.models.trim() : '';
+      const efforts = typeof opts.efforts === 'string' ? opts.efforts.trim() : '';
       if (!featureId || agents.length === 0) {
         showToast('Start autonomously failed: missing feature or agents', null, null, { error: true });
         return;
@@ -130,6 +132,8 @@
         if (repoPath) body.repoPath = repoPath;
         if (evalAgent) body.evalAgent = evalAgent;
         if (reviewAgent) body.reviewAgent = reviewAgent;
+        if (models) body.models = models;
+        if (efforts) body.efforts = efforts;
         const res = await fetch('/api/features/' + encodeURIComponent(String(featureId)) + '/run', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -150,7 +154,7 @@
       }
     }
 
-    async function requestFeatureOpen(featureId, agentId, repoPath, btn, pType, mode) {
+    async function requestFeatureOpen(featureId, agentId, repoPath, btn, pType, mode, launchOptions) {
       const origOpen = btn ? btn.textContent : '';
       if (btn) { btn.disabled = true; btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origOpen); }
       try {
@@ -158,6 +162,9 @@
         if (repoPath) body.repoPath = repoPath;
         if (pType) body.pipelineType = pType;
         if (mode) body.mode = mode;
+        const lo = launchOptions || {};
+        if (lo.model) body.model = lo.model;
+        if (lo.effort) body.effort = lo.effort;
         const res = await fetch('/api/feature-open', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -173,12 +180,15 @@
       }
     }
 
-    async function requestSpecReviewLaunch(endpoint, entityId, agentId, repoPath, btn) {
+    async function requestSpecReviewLaunch(endpoint, entityId, agentId, repoPath, btn, launchOptions) {
       const origText = btn ? btn.textContent : '';
       if (btn) { btn.disabled = true; btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origText); }
       try {
         const body = { entityId, agentId };
         if (repoPath) body.repoPath = repoPath;
+        const lo = launchOptions || {};
+        if (lo.model) body.model = lo.model;
+        if (lo.effort) body.effort = lo.effort;
         const res = await fetch('/api/' + endpoint, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },

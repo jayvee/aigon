@@ -56,7 +56,7 @@
       { "value": "xhigh", "label": "Extra-high" }
     ],
     "modelFlag": "--model",
-    "effortFlag": null,
+    "effortFlag": "--effort",
     "effortEnv": null
   },
   "placeholders": {
