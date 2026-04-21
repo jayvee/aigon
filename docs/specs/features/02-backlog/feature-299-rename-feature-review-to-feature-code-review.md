@@ -20,6 +20,12 @@ for users and agents reading help output, templates, and command listings.
 - [ ] All generic command templates updated (`templates/generic/commands/afr.md`, `afrc.md`, new `afcr.md`/`afcrc.md` if aliases change)
 - [ ] All agent config templates updated (`.claude/`, `.cursor/`, `.gemini/`, `.codex/`, `.agents/skills/`) — regenerated via `aigon install-agent`
 - [ ] `docs/development_workflow.md` and any docs referencing `feature-review` updated
+- [ ] Public docs site updated:
+  - `site/content/reference/commands/feature/feature-review.mdx` renamed to `feature-code-review.mdx` with title/synopsis updated
+  - `site/content/reference/commands/feature/_meta.tsx` entry updated from `"feature-review"` to `"feature-code-review"`
+  - `site/content/reference/commands/index.mdx` link updated
+  - All inline references updated (`guides/drive-mode.mdx`, `guides/fleet-mode.mdx`, `guides/autopilot-mode.mdx`, `guides/telemetry.mdx`, `concepts/evaluation.mdx`, `reference/commands/feature/feature-autonomous-start.mdx`)
+  - Add `feature-code-review-check.mdx` if a `feature-review-check` doc page is added (currently none exists)
 - [ ] `agent-prompt-resolver.js` verb mapping updated (`review` → `code-review`, `review-check` → `code-review-check`)
 - [ ] Tests updated: `agent-prompt-resolver.test.js`, `command-registry-drift.test.js`, any lifecycle tests
 - [ ] `getLaunchMode()` in `templates/dashboard/js/actions.js` updated to match new action names
