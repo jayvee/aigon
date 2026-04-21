@@ -1,54 +1,120 @@
-# Feature: dry-feature-js-command-handlers
+# Feature: DRY lib/commands/feature.js — extract fat handlers and delegation guard
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+
+`lib/commands/feature.js` is 3986 lines and acts as a command dispatcher, but three handlers were never extracted into the established `lib/feature-*.js` module pattern that already exists for close, status, review-state, spec-resolver, etc. `feature-autonomous-start` (~771 lines), `feature-start` (~475 lines), and `feature-eval` (~419 lines) contain real business logic that should live in `lib/`. Additionally, a 9-line delegation-guard block is copy-pasted across 4 command handlers unchanged. This feature extracts the three fat handlers into dedicated modules and replaces the delegation guard copies with a single helper, bringing feature.js under ~2000 lines with no handler over 200 lines.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+
+- [ ] As an agent working on autonomous mode, I can load `lib/feature-autonomous.js` in isolation without reading 3986 lines of unrelated command dispatch
+- [ ] As an agent adding a new feature command, I can see what a handler looks like — it's a thin wrapper over a lib module, not a 700-line function
+- [ ] As a developer reading `feature-start`, I see a short entry point that delegates to `lib/feature-start.js`, not 475 lines of inline logic
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+
+- [ ] `lib/feature-autonomous.js` contains the logic extracted from the `feature-autonomous-start` handler; the handler in feature.js calls it and is ≤ 30 lines
+- [ ] `lib/feature-start.js` contains the logic extracted from the `feature-start` handler; the handler in feature.js calls it and is ≤ 30 lines
+- [ ] `lib/feature-eval.js` contains the logic extracted from the `feature-eval` handler; the handler in feature.js calls it and is ≤ 30 lines
+- [ ] `lib/action-scope.js` exports `withActionDelegate(commandName, args, ctx, fn)` — wraps `buildActionContext → assertActionAllowed → runDelegatedAigonCommand → catch` in one call
+- [ ] The 4 delegation-guard blocks in feature.js (feature-now, feature-start, feature-eval, feature-cleanup) are replaced with `withActionDelegate(...)` calls
+- [ ] `lib/commands/feature.js` is ≤ 2200 lines after extraction
+- [ ] No handler in `lib/commands/feature.js` is longer than 200 lines
+- [ ] All existing tests pass: `npm test`
+- [ ] `node -c lib/commands/feature.js lib/feature-autonomous.js lib/feature-start.js lib/feature-eval.js lib/action-scope.js` passes
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
+
 ```bash
-# Example: node --check aigon-cli.js
+node -c lib/commands/feature.js
+node -c lib/feature-autonomous.js
+node -c lib/feature-start.js
+node -c lib/feature-eval.js
+node -c lib/action-scope.js
+npm test
+wc -l lib/commands/feature.js | awk '{if ($1 > 2200) { print "FAIL: feature.js still too large: " $1 " lines"; exit 1 } else print "OK: " $1 " lines"}'
 ```
 
 ## Pre-authorised
-<!-- Optional: standing orders the agent may enact without stopping to ask.
-     Each line is a single bounded permission. The agent cites the matching line
-     in a commit footer `Pre-authorised-by: <slug>` for auditability.
-     Absent or blank = no pre-auths; agent stops on every policy gate as normal.
-     Example lines:
-       - May raise `scripts/check-test-budget.sh` CEILING by up to +40 LOC if regression tests require it.
-       - May skip `npm run test:ui` when this feature touches only `lib/` and no dashboard assets.
--->
+
+- May raise `scripts/check-test-budget.sh` CEILING by up to +20 LOC to cover new unit tests for `withActionDelegate`.
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+
+### Extraction pattern (already established in codebase)
+
+Each fat handler becomes a thin entry point:
+
+```js
+// lib/commands/feature.js — after extraction
+'feature-autonomous-start': async (args) => {
+    await withActionDelegate('feature-autonomous-start', args, ctx, async () => {
+        const featureAutonomous = require('../feature-autonomous');
+        await featureAutonomous.run(args, ctx);
+    });
+},
+```
+
+The extracted module receives `args` and `ctx` and owns all the business logic. Follow the shape of `lib/feature-close.js` as the reference implementation.
+
+### `withActionDelegate` helper
+
+Add to `lib/action-scope.js`:
+
+```js
+function withActionDelegate(commandName, args, ctx, fn) {
+    const actionCtx = buildActionContext(ctx.git);
+    try {
+        const result = assertActionAllowed(commandName, actionCtx);
+        if (result && result.delegate) {
+            console.log(`📡 Delegating '${commandName}' to main repo...`);
+            runDelegatedAigonCommand(result.delegate, commandName, args);
+            return;
+        }
+    } catch (e) { process.exitCode = 1; return console.error(`❌ ${e.message}`); }
+    return fn();
+}
+```
+
+Replace the 4 copy-pasted blocks at lines 722–730, 823–831, 1676–1681, 2478–2486 with calls to this helper.
+
+### Extraction targets (in order of size)
+
+| Handler | Current lines | Extract to | Expected module size |
+|---|---|---|---|
+| `feature-autonomous-start` | ~771 | `lib/feature-autonomous.js` | ~750 lines |
+| `feature-start` | ~475 | `lib/feature-start.js` | ~450 lines |
+| `feature-eval` | ~419 | `lib/feature-eval.js` | ~400 lines |
+
+### Key files to read before implementing
+
+- `lib/feature-close.js` — reference for how an extracted handler module is structured
+- `lib/action-scope.js` — where `withActionDelegate` will be added
+- `lib/commands/feature.js` lines 2805–3576 (`feature-autonomous-start`), 823–1298 (`feature-start`), 1676–2095 (`feature-eval`)
+
+### What does NOT move
+
+- Thin handlers (< 100 lines): feature-create, feature-pause, feature-resume, feature-review, feature-close (already delegates to lib/feature-close.js), etc. — leave in place
+- The `ctx` object construction and command dispatch table — stays in feature.js
+- Internal helper functions used by only one handler — move with the handler that owns them
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+
+- None
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+
+- Extracting other handlers (< 100 lines each — not worth the overhead)
+- Changing the behaviour of any command
+- Updating templates or agent configs
+- Splitting feature.js into multiple command files (each handler stays in the same dispatch table)
+- Extracting common arg-validation patterns (the usage strings are all different; a helper saves ≤ 5 LOC per site and adds indirection)
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+
+- None — the extraction target is clear and the reference pattern (`lib/feature-close.js`) is established
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research:
+
+- Research: none
+- Feature 302: kill utils.js god object (parallel refactor, no dependency)
+- Feature 303: split entity.js (parallel refactor, no dependency)
