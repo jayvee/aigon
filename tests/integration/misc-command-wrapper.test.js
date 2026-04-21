@@ -6,8 +6,9 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const { test, withTempDir, report } = require('../_helpers');
+const { test, testAsync, withTempDir, report } = require('../_helpers');
 const { getFeatureSubmissionEvidence } = require('../../lib/commands/misc');
+const { sendNudge, resolveSessions } = require('../../lib/nudge');
 
 const git = (cwd, cmd) => execSync(`git ${cmd}`, { cwd, stdio: 'pipe' });
 
@@ -72,6 +73,38 @@ test('Autopilot buildIterationCarryForward', () => {
     assert.ok(/iteration 2/.test(s) && /feat: x/.test(s) && /lib\/a\.js/.test(s) && !/Failing criteria/.test(s));
     const c = buildIterationCarryForward({ iteration: 1, commits: [], filesChanged: [], validationSummary: 'z'.repeat(6000) });
     assert.ok(c.length <= CARRY_FORWARD_MAX_CHARS && c.endsWith('...'));
+});
+
+// REGRESSION feature 295: multiline nudges with quotes must go through tmux load-buffer verbatim.
+testAsync('nudge delivery keeps multiline quoted text intact', async () => {
+    const message = "line one\nline 'two'\nline \"three\""; const ops = []; let recorded = null;
+    const result = await sendNudge('/repo', '295', message, { _deps: {
+        resolveEntity: () => ({ entityType: 'feature', entityId: '295', snapshot: { agents: { cc: {} } }, desc: 'demo' }),
+        resolveSessions: () => ({ agentId: 'cc', role: 'do', sessionName: 'repo-f295-do-cc-demo' }),
+        resolveSubmitKey: () => 'Enter',
+        assertBelowRateLimit: async () => {},
+        persistEntityEvents: async (_repo, _type, _id, events) => { recorded = events[0]; },
+        runTmux: (args, opts = {}) => (ops.push({ args, input: opts.input || null }), args[0] === 'capture-pane' ? { status: 0, stdout: message, stderr: '' } : { status: 0, stdout: '', stderr: '' }),
+    } });
+    assert.strictEqual(ops[0].args[0], 'load-buffer'); assert.strictEqual(ops[0].input, message); assert.strictEqual(ops[1].args[0], 'paste-buffer'); assert.strictEqual(ops[2].args[0], 'send-keys');
+    assert.strictEqual(recorded.text, message); assert.strictEqual(result.agentId, 'cc');
+});
+
+// REGRESSION feature 295: omitted agent must fail loudly when more than one active session matches.
+test('nudge agent inference errors on multiple active sessions', () => {
+    assert.throws(() => resolveSessions({ entityType: 'feature', entityId: '295', desc: 'demo', snapshot: { agents: { cc: {}, gg: {} } } }, 'do', null, { tmuxSessionExists: () => true }), /Multiple active do sessions found/);
+});
+
+// REGRESSION feature 295: failed delivery confirmation must return pane tail for diagnosis.
+testAsync('nudge delivery failure includes pane tail', async () => {
+    await assert.rejects(() => sendNudge('/repo', '295', 'hello', { _deps: {
+        resolveEntity: () => ({ entityType: 'feature', entityId: '295', snapshot: { agents: { cc: {} } }, desc: 'demo' }),
+        resolveSessions: () => ({ agentId: 'cc', role: 'do', sessionName: 'repo-f295-do-cc-demo' }),
+        resolveSubmitKey: () => 'Enter',
+        assertBelowRateLimit: async () => {},
+        persistEntityEvents: async () => {},
+        runTmux: (args) => args[0] === 'capture-pane' ? { status: 0, stdout: 'stale pane output', stderr: '' } : { status: 0, stdout: '', stderr: '' },
+    } }), (error) => (assert.match(error.message, /Nudge text not found in pane after delivery/), assert.strictEqual(error.paneTail, 'stale pane output'), true));
 });
 
 report();

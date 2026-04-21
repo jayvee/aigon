@@ -646,6 +646,9 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await requestAction('feature-push', [id], repoPath, btn);
       break;
     }
+    case 'feature-nudge':
+      showNudgeModal(feature, repoPath, btn);
+      break;
     default:
       // Generic handler: agent-mode actions get agent picker + terminal session
       if (va.mode === 'agent') {
@@ -667,6 +670,9 @@ let closeModalResolve = null;
 let closeModalFeature = null;
 let closeModalRepoPath = null;
 let closeModalPipelineType = null;
+let nudgeModalFeature = null;
+let nudgeModalRepoPath = null;
+let nudgeModalBtn = null;
 let autonomousModalFeature = null;
 let autonomousModalRepoPath = null;
 let autonomousModalBtn = null;
@@ -674,6 +680,87 @@ let autonomousModalModels = null;
 let autonomousModalWorkflowSlug = '';
 
 const AUTONOMOUS_AGENT_IDS = getAutonomousAgentIds();
+
+function getNudgeCandidates(feature) {
+  const agents = Array.isArray(feature && feature.agents) ? feature.agents : [];
+  const running = agents.filter(agent => agent && agent.id && agent.tmuxRunning);
+  return (running.length > 0 ? running : agents).filter(agent => agent && agent.id && agent.id !== 'solo');
+}
+
+function renderNudgeHistory(feature) {
+  const box = document.getElementById('nudge-modal-history');
+  if (!box) return;
+  const nudges = Array.isArray(feature && feature.nudges) ? feature.nudges.slice().reverse() : [];
+  if (nudges.length === 0) {
+    box.innerHTML = '<div style="font-size:12px;color:var(--text-secondary)">No nudges sent yet.</div>';
+    return;
+  }
+  box.innerHTML = nudges.map((nudge) => {
+    const when = nudge.atISO ? new Date(nudge.atISO).toLocaleString() : '';
+    const role = nudge.role ? ' · ' + escHtml(nudge.role) : '';
+    return '<div style="padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--bg-secondary);display:grid;gap:4px">' +
+      '<div style="font-size:11px;color:var(--text-secondary)">' + escHtml((nudge.agentId || 'agent') + role + (when ? ' · ' + when : '')) + '</div>' +
+      '<div style="white-space:pre-wrap;font-size:13px;line-height:1.4">' + escHtml(nudge.text || '') + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function showNudgeModal(feature, repoPath, btn) {
+  nudgeModalFeature = feature;
+  nudgeModalRepoPath = repoPath;
+  nudgeModalBtn = btn || null;
+  const modal = document.getElementById('nudge-modal');
+  const desc = document.getElementById('nudge-modal-desc');
+  const agentSelect = document.getElementById('nudge-modal-agent');
+  const roleSelect = document.getElementById('nudge-modal-role');
+  const messageInput = document.getElementById('nudge-modal-message');
+  if (!modal || !desc || !agentSelect || !roleSelect || !messageInput) return;
+
+  desc.textContent = '#' + feature.id + ' ' + feature.name;
+  const candidates = getNudgeCandidates(feature);
+  replaceSelectOptions(agentSelect, candidates.map(agent => ({
+    value: agent.id,
+    label: agent.id + ' · ' + (AGENT_DISPLAY_NAMES[agent.id] || agent.id)
+  })));
+  if (candidates.length === 1) agentSelect.value = candidates[0].id;
+  else agentSelect.value = '';
+  roleSelect.value = 'do';
+  messageInput.value = '';
+  renderNudgeHistory(feature);
+  modal.style.display = 'flex';
+  window.setTimeout(() => messageInput.focus(), 0);
+}
+
+function hideNudgeModal() {
+  const modal = document.getElementById('nudge-modal');
+  if (modal) modal.style.display = 'none';
+  nudgeModalFeature = null;
+  nudgeModalRepoPath = null;
+  nudgeModalBtn = null;
+}
+
+async function submitNudgeModal() {
+  if (!nudgeModalFeature) return;
+  const agentSelect = document.getElementById('nudge-modal-agent');
+  const roleSelect = document.getElementById('nudge-modal-role');
+  const messageInput = document.getElementById('nudge-modal-message');
+  const agentId = String(agentSelect && agentSelect.value || '').trim();
+  const role = String(roleSelect && roleSelect.value || 'do').trim() || 'do';
+  const message = String(messageInput && messageInput.value || '');
+  if (!message.trim()) {
+    showToast('Enter a nudge message', null, null, { error: true });
+    return;
+  }
+  if (!agentId) {
+    showToast('Select an agent', null, null, { error: true });
+    return;
+  }
+  const featureId = nudgeModalFeature.id;
+  const repoPath = nudgeModalRepoPath;
+  const btn = nudgeModalBtn;
+  hideNudgeModal();
+  await requestFeatureNudge(featureId, { agentId, role, message }, repoPath, btn);
+}
 
 function renderAgentPickerRows(options) {
   const opts = options || {};
@@ -825,6 +912,23 @@ document.addEventListener('DOMContentLoaded', () => {
   modal.addEventListener('change', (e) => {
     if (e.target.name === 'close-winner') updateAdoptionCheckboxes();
   });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('nudge-modal');
+  if (!modal) return;
+  document.getElementById('nudge-modal-cancel').onclick = () => hideNudgeModal();
+  document.getElementById('nudge-modal-submit').onclick = () => submitNudgeModal();
+  modal.onclick = (e) => { if (e.target === e.currentTarget) hideNudgeModal(); };
+  const input = document.getElementById('nudge-modal-message');
+  if (input) {
+    input.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        submitNudgeModal();
+      }
+    });
+  }
 });
 
 // ── Autonomous modal logic ────────────────────────────────────────────────

@@ -8,9 +8,10 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { test, withTempDir, report } = require('../_helpers');
+const { test, testAsync, withTempDir, withTempDirAsync, report } = require('../_helpers');
 const wrm = require('../../lib/workflow-read-model');
 const board = require('../../lib/board');
+const workflowEngine = require('../../lib/workflow-core/engine');
 
 const FOLDERS = ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused'];
 const seed = (repo) => {
@@ -88,6 +89,18 @@ test('board re-buckets snapshot-backed features and carries spec drift', () => w
         expectedPath: 'docs/specs/features/03-in-progress/feature-18-x.md',
         lifecycle: 'implementing',
     });
+}));
+
+// REGRESSION feature 295: operator.nudge_sent must survive projection onto the workflow snapshot.
+testAsync('nudge event is recorded and surfaced on snapshot', () => withTempDirAsync('aigon-rm-', async (repo) => {
+    const specPath = path.join(repo, 'docs', 'specs', 'features', '03-in-progress', 'feature-07-test.md');
+    fs.mkdirSync(path.dirname(specPath), { recursive: true });
+    fs.writeFileSync(specPath, '# test\n');
+    workflowEngine.ensureEntityBootstrappedSync(repo, 'feature', '07', 'implementing', specPath);
+    const at = new Date().toISOString();
+    await workflowEngine.persistEntityEvents(repo, 'feature', '07', [{ type: 'operator.nudge_sent', featureId: '07', agentId: 'cc', role: 'do', text: 'follow up', at, atISO: at }]);
+    const snapshot = await workflowEngine.showFeature(repo, '07');
+    assert.deepStrictEqual(snapshot.nudges, [{ agentId: 'cc', role: 'do', text: 'follow up', atISO: at }]);
 }));
 
 report();

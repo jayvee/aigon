@@ -37,7 +37,7 @@ Current command families:
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
 | `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile`, `sync` |
 | `lib/commands/setup.js` | `init`, `install-agent`, `check-version`, `update`, `project-context`, `doctor` |
-| `lib/commands/misc.js` | `agent-status`, `status`, `deploy`, `next`, `help` |
+| `lib/commands/misc.js` | `agent-status`, `nudge`, `status`, `deploy`, `next`, `help` |
 
 ### The ctx pattern
 
@@ -136,6 +136,8 @@ Current shared modules:
   `runSecurityScan`, `parseSemgrepOutput`, `formatSemgrepFindings`
 - `lib/remote-gate-github.js` (~170 lines): GitHub PR gate for feature-close — queries `gh pr list` for the feature branch, returns a provider-neutral result shape. If a PR is open, feature-close blocks. If merged, feature-close syncs local main from origin. Degrades to local close when `gh` is unavailable or remote is not GitHub.
   `checkGitHubGate`, `queryPrList`, `getOriginUrl`, `isGitHubRemote`
+- `lib/nudge.js` (~250 lines): shared operator-to-agent message channel for CLI and dashboard. Resolves tmux sessions from workflow-backed entity state, delivers text atomically with tmux paste-buffer, confirms pane echo, rate-limits per session, and records `operator.nudge_sent` workflow events.
+  `sendNudge`, `resolveSessions`, `resolveSubmitKey`
 - `lib/entity.js`: entity pipeline — shared feature/research processing, dependency parsing (`depends_on` frontmatter), DFS cycle detection at prioritise time
   `parseFrontMatter`, `resolveDependencies`, `detectCycles`
 

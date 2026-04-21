@@ -57,7 +57,8 @@
     ],
     "modelFlag": "--model",
     "effortFlag": "--effort",
-    "effortEnv": null
+    "effortEnv": null,
+    "submitKey": "Enter"
   },
   "placeholders": {
     "AGENT_ID": "cc",
