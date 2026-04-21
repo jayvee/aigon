@@ -111,7 +111,18 @@ Research lifecycle also uses workflow-core (`.aigon/workflows/research/{id}/`). 
 The dashboard may not mutate engine state directly and may not parse engine-state/spec/log files directly from `dashboard-server.js` or frontend code. File-format ownership stays with read-side owner modules (`state-queries.js`, `workflow-snapshot-adapter.js`, `action-command-mapper.js`, `spec-reconciliation.js`, `agent-status.js`, `feature-spec-resolver.js`, `dashboard-status-collector.js`).
 
 ### Write-Path Contract
-Every write path (CLI command, autonomous-loop injection, hook-triggered transition) must produce the engine state its matching read path assumes exists — snapshot, event, or skill-file-pointer prompt for non-slash-command agents. Writes seed engine state; reads derive from it — never the reverse. Recent incidents: F270 → `1c2766bc` (prioritise missing snapshot), F272 → `cbe3aeba` + `98ed172b` (reconciler moving files across repos), AutoConductor → `b9c39a26` (cx injection phantom). When adding a new read path, grep for every parallel write path that produces the state it now assumes, and pin the invariant with a test.
+Every write path (CLI command, autonomous-loop injection, hook-triggered transition) must produce the engine state its matching read path assumes exists — snapshot, event, or skill-file-pointer prompt for non-slash-command agents. Writes seed engine state; reads derive from it — never the reverse.
+
+Recent incidents — every one of these is a case of a read path paving over a missing producer instead of failing loudly:
+- **F270 → `1c2766bc`** — prioritise assumed a snapshot existed; when it didn't, the read path silently fell through. Fix: fail loud and point at `aigon doctor --fix`.
+- **F272 → `cbe3aeba` + `98ed172b`** — the reconciler moved spec files across repos on every dashboard refresh. Fix: detect-only on read paths; `AIGON_AUTO_RECONCILE=1` opt-in for mutations.
+- **AutoConductor → `b9c39a26`** — cx injection arrived as a phantom because the read path assumed a skill-file-pointer prompt it never got. Fix: respect `capabilities.resolvesSlashCommands`.
+- **F283 → spec-review scanner deletion** — the dashboard scanned git log for `spec-review:` commits to derive badges, paving over the fact that the engine snapshot already carried `pendingCount`/`pendingAgents`. Fix: read-model copies verbatim from the snapshot.
+- **F271 → `legacyStatusFile` fallback** — research rows silently fell through to `feature-<id>-<agent>.json` when the canonical path was missing. Fix: canonical path only; missing file = no status.
+- **F285 → F293 → F294** — three features in a row on the same bug class. Snapshotless features first got a silent read-only `LEGACY_MISSING_WORKFLOW` degrade, then kept producing follow-on gaps. The final cut (F294) collapses both `COMPAT_INBOX` and `LEGACY_MISSING_WORKFLOW` into one `MISSING_SNAPSHOT` state with no actions and no badge — forcing producer fixes instead of papering over them.
+- **jvbot duplicate-match (2026-04-20)** — `listVisibleSpecMatches` accepted any `/^\d+-/` folder, so a stale pre-rename `04-done/` sibling caused the resolver to return two spec copies. Fix: tight allow-list (`CANONICAL_STAGE_DIRS` in `lib/workflow-core/paths.js`).
+
+**Rule:** When adding a new read path, grep for every parallel write path that produces the state it now assumes, and pin the invariant with a test. When a read path can't find the state it needs, **fail loudly and cite the repair command** (`aigon doctor --fix`) — do not add a silent fallback or a half-state.
 
 ## Install Architecture
 `aigon install-agent` writes **only aigon-owned files** — it never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).

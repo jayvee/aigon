@@ -296,18 +296,18 @@ Feature writes go through the engine, but the read side is still mixed:
 - `aigon feature-list` and `aigon feature-spec` are the preferred CLI query surfaces for active features. Do not use `board` output as a data API.
 - `lib/workflow-read-model.js` provides shared dashboard read state (snapshot-backed for features/research) and derives recommended actions for feedback via `lib/state-queries.js`.
 - `lib/feedback.js` provides feedback metadata parsing/collection so feedback list and dashboard reads derive status from frontmatter rather than folder position.
-- `lib/dashboard-status-collector.js` now owns the AIGON server's dashboard-facing repo/entity reads, including compatibility behavior for older repos that may not have a complete workflow snapshot yet, plus dashboard detail log reads and done-count aggregation.
+- `lib/dashboard-status-collector.js` owns the AIGON server's dashboard-facing repo/entity reads — spec-review state copied verbatim from engine snapshots, log reads, and done-count aggregation.
 - `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, static serving, and delegating API requests to `lib/dashboard-routes.js`. It remains read-only with respect to both mutations and engine-state/spec/log file access.
 
-So the architecture after Feature 171 is:
+So the architecture after F171 → F283 → F294 is:
 
 1. Feature lifecycle writes: engine only.
-2. Feature lifecycle reads: prefer workflow snapshots.
-3. Agent/session reads: still combine snapshot data, `.aigon/state/` files, tmux state, and some compatibility fallbacks.
+2. Feature lifecycle reads: workflow snapshots only — no permissive legacy fallbacks.
+3. Agent/session reads: combine snapshot data, `.aigon/state/` files, and tmux state.
 
-**Migration for pre-cutover entities:** Features or research topics started before workflow-core may have no event log. Commands now call explicit migration helpers to initialize lifecycle history before normal engine operations continue.
+**Every feature and research entity has a workflow-core snapshot.** A spec without a snapshot is a migration problem — the read model surfaces `WORKFLOW_SOURCE.MISSING_SNAPSHOT` with no actions and no badge, and every write-path command points users at `aigon doctor --fix`. The pre-F294 read model branched snapshotless entities into `COMPAT_INBOX` (prioritise action OK) vs `LEGACY_MISSING_WORKFLOW` (read-only amber badge); both branches kept reproducing the F285 → F293 bug class because any producer drift (reset without re-bootstrap, hand-edited spec, race between writers) arrived as a silent half-state instead of a loud error.
 
-**Compatibility note:** Migration is isolated in workflow-core migration helpers. Normal lifecycle commands use the standard engine path for new entities.
+**Migration for pre-cutover entities:** Commands bootstrap lifecycle history via `aigon doctor --fix` before normal engine operations continue. A future F-series may swap that in for `aigon workflow --migrate-from-legacy` once Phase 2 ships.
 
 ## Where To Make Changes
 
