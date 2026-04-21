@@ -13,6 +13,7 @@ const { test, report } = require('../_helpers');
 function buildMinimalCtx() {
     return {
         utils: require('../../lib/utils'),
+        hooks: require('../../lib/hooks'),
         git: require('../../lib/git'),
         board: require('../../lib/board'),
         feedback: require('../../lib/feedback'),
