@@ -46,7 +46,9 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | Module | ~Lines | Owns |
 |--------|--------|------|
 | `lib/agent-registry.js` | ~280 | Agent registry: scans `templates/agents/*.json`, provides lookup maps (display names, ports, providers, trust, capabilities). Zero hardcoded agent logic in `lib/` |
-| `lib/commands/feature.js` | ~2860 | All `feature-*` handlers, `sessions-close`, `feature-autonomous-start` (AutoConductor) |
+| `lib/commands/feature.js` | ~3800 | All `feature-*` handlers, `sessions-close`, `feature-autonomous-start` (AutoConductor). Entity-agnostic handlers (create, prioritise, spec-review quartet, reset base) are pulled from `./entity-commands` |
+| `lib/commands/research.js` | ~940 | All `research-*` handlers, research synthesis/review. Shares parallel handlers via `./entity-commands` |
+| `lib/commands/entity-commands.js` | ~295 | Shared factory for parallel feature/research lifecycle commands. `createEntityCommands(FEATURE_DEF\|RESEARCH_DEF, ctx)` returns `${prefix}-{create,prioritise,spec-review,spec-review-check,spec-review-record,spec-review-check-record}`. `entityResetBase` drives feature-reset/research-reset with entity-specific pre/post-cleanup hooks. **When adding a new parallel command, put it here — not in feature.js/research.js — so both entities pick it up by construction** |
 | `lib/commands/infra.js` | ~1460 | `aigon server` command, board, config, proxy-setup, dev-server |
 | `lib/commands/setup.js` | ~1212 | init, install-agent, check-version, update, doctor + state reconciliation |
 | `lib/dashboard-server.js` | ~2660 | HTTP/UI module: dashboard, API, WebSocket relay, HTTP action dispatch. Never mutates engine state directly and never reads engine-state/spec/log files directly |
@@ -148,6 +150,7 @@ Cross-repo: aigon-pro feature N
 
 ## Where To Add Code
 - **New command** → `lib/commands/{domain}.js`
+- **Parallel feature + research command** → `lib/commands/entity-commands.js` (factory auto-generates both `feature-*` and `research-*` variants; avoids drift). Entity-specific extras (feature-create's `--agent`, feature-close's Fleet logic, research-open) stay in their respective command module as overrides after the factory spread.
 - **Shared logic (2+ commands)** → `lib/{domain}.js` (most specific owner)
 - **Constants / command metadata** → `lib/constants.js`
 - **Agent prompts or install content** → `templates/`; run `aigon install-agent cc` after
