@@ -28,3 +28,9 @@ tools = ["aigon"]
 # instead of `--full-auto` to avoid this class of deadlock. If you add a
 # legacy `--full-auto` flag via project agent config, autonomous cx will
 # break. See lib/config.js:getAgentLaunchFlagTokens.
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["-y", "@playwright/mcp@latest"]
+# Auto-approve all Playwright MCP tool calls — no per-call prompts.
+default_tools_approval_mode = "approve"
