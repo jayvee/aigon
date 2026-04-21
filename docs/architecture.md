@@ -142,8 +142,6 @@ Current shared modules:
 **Thin re-export facades:**
 
 - `lib/constants.js`: re-exports command metadata and path constants (used by `aigon-cli.js`)
-- `lib/dashboard.js`: re-exports from `lib/dashboard-server.js` (backward compat)
-- `lib/devserver.js`: re-exports from `lib/proxy.js` (backward compat)
 
 ## Workflow State
 
