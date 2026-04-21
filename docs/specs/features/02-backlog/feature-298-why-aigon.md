@@ -8,17 +8,15 @@ The value proposition is organized into **six pillars** (copy on the site can gr
 
 1. **Bring your own subscriptions** — Use the AI products you already pay for (Claude, Codex, Gemini, etc.). No separate Aigon AI billing, no token packs, no markup. You choose which provider handles which stage.
 
-2. **Stay in the flow when a subscription lapses** — If a sub runs out mid-session, you are not stuck on one vendor’s meter—you can switch agents or accounts and keep going instead of losing momentum.
+2. **Stay in the flow when a subscription lapses** — If a sub runs out mid-session, you are not stuck on one vendor's meter—you can switch agents or accounts and keep going instead of losing momentum.
 
-3. **Spec-driven development you control** — Features and research use specs that can be built, shipped, reset, and rebuilt. That gives you repeatable structure: clear handoffs, clean retries, and less “tribal knowledge” in chat history alone.
+3. **Spec-driven development you control** — Features and research use specs that can be built, shipped, reset, and rebuilt. That gives you repeatable structure: clear handoffs, clean retries, and less "tribal knowledge" in chat history alone.
 
 4. **Autonomous and multi-agent workflows** — Kick off long runs (e.g. overnight) and walk away. Configure who does what—e.g. draft or refine a spec with one model, implement with another, review with others—then follow a pre-built lifecycle through push/merge, instead of manually orchestrating every step.
 
 5. **Context that compounds** — Specs and implementation summaries feed forward into what agents see next, so work accrues as durable project context rather than disappearing when a session ends.
 
 6. **Transparent, local, team-aligned** — Agents run in plain CLI sessions (e.g. tmux) you can attach to, read, and take over. The tool is CLI + git on your machine—no required hosted platform. It fits GitHub PRs and team review: push branches, open PRs, and optional close gates so remote review is not bypassed by accident.
-
-*Consolidation note:* Pillars 1–2 replace a single “BYOS only” bullet with both **economics** and **continuity**. Pillars 3–5 capture workflow, autonomy, and context (new). Pillar 6 folds in the previous “tmux,” “no SaaS lock-in,” and “GitHub PRs” ideas into one “how it runs + how teams use it” theme.
 
 ## User Stories
 
@@ -27,24 +25,30 @@ The value proposition is organized into **six pillars** (copy on the site can gr
 
 ## Acceptance Criteria
 
-- [ ] Landing page (`site/public/home.html`) includes a "Why Aigon" section covering the six pillars (or a scannable grouping that preserves all of them), each with a short explanation (1–2 sentences) where shown
-- [ ] Docs site getting-started page (`site/content/getting-started.mdx`) includes a brief "Why Aigon" section near the top, before Prerequisites
+- [ ] Landing page (`site/public/home.html`) includes a "Why Aigon" section with a **2×3 card grid** — six cards, one per pillar, each card showing the pillar heading and 1–2 sentence body; all six cards visible without interaction (no accordion/expand)
+- [ ] Docs site getting-started page (`site/content/getting-started.mdx`) includes a brief "Why Aigon" section before the Prerequisites heading — a 6-item bullet list with one sentence per pillar is sufficient
+- [ ] `README.md` (repo root) includes a "Why Aigon" `##` section immediately after the project description paragraph — one sentence per pillar
 - [ ] Copy uses concrete language, not marketing fluff — e.g. "plain tmux sessions" not "seamless integration"; name real workflows (spec → implement → review → push) without hard-coding model version numbers that go stale
 - [ ] No existing content is removed — new "why" material is additive
-- [ ] Visual check: Playwright screenshot of landing page and getting-started page after changes
+- [ ] Visual check: Playwright screenshot of landing page and getting-started page after changes confirms the "Why Aigon" section renders correctly
 
 ## Validation
 
+This feature edits only doc/site files — no CLI syntax validation applies. Verify with:
+
 ```bash
-node -c aigon-cli.js
+# Confirm only additive changes (no deletions of existing content)
+git diff HEAD -- site/public/home.html site/content/getting-started.mdx README.md
+# Playwright screenshot (see Acceptance Criteria)
 ```
 
 ## Technical Approach
 
-- Add a "Why Aigon" section to `site/public/home.html` — layout options: 2×3 grid, two rows of three, or a short list plus expandable detail; avoid clutter while keeping pillars discoverable
-- Add a short "Why Aigon" paragraph or list to the top of `site/content/getting-started.mdx` (may be tighter than the landing page)
-- Use the `frontend-design` skill for the landing page visual work
-- Keep copy factual and specific — avoid superlatives and vague claims; prefer "configure agents per stage" over naming specific model versions in permanent copy unless the docs are updated often
+- Add a "Why Aigon" section to `site/public/home.html` — use a **2×3 card grid**: six cards, one per pillar, each with a short heading and 1–2 sentence body; all cards visible without interaction
+- Add a "Why Aigon" section to `site/content/getting-started.mdx` before the Prerequisites heading — a tight 6-item bullet list (one sentence per pillar) is sufficient; no need to match the landing page layout
+- Add a "Why Aigon" `##` section to `README.md` immediately after the project description paragraph — one sentence per pillar
+- Use the `frontend-design` skill before any CSS or layout changes on the landing page
+- Keep copy factual and specific — avoid superlatives and vague claims; prefer "configure agents per stage" over naming specific model versions in permanent copy
 
 ## Dependencies
 
@@ -55,11 +59,6 @@ node -c aigon-cli.js
 - Rewriting the entire landing page or docs site
 - Comparison pages (already exist at `site/content/comparisons.mdx`)
 - Video or interactive demos
-
-## Open Questions
-
-- Should the README.md in the repo root also get the same pillars (possibly shortened)?
-- Landing scanability vs completeness: is a condensed "three themes" headline with six sub-bullets acceptable, or must the home page show six equal-weight cards?
 
 ## Related
 
