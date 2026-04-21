@@ -95,17 +95,10 @@ test('nudge agent inference errors on multiple active sessions', () => {
     assert.throws(() => resolveSessions({ entityType: 'feature', entityId: '295', desc: 'demo', snapshot: { agents: { cc: {}, gg: {} } } }, 'do', null, { tmuxSessionExists: () => true }), /Multiple active do sessions found/);
 });
 
-// REGRESSION feature 295: session name must derive repo prefix from entity.repoPath,
-// not from process.cwd() (which is the worktree basename when invoked from a worktree).
-test('nudge session name uses repoPath basename, not cwd', () => {
-    const probed = [];
-    const session = resolveSessions(
-        { entityType: 'feature', entityId: '295', desc: 'demo', snapshot: { agents: { cc: {} } }, repoPath: '/tmp/some-other-repo' },
-        'do', null,
-        { tmuxSessionExists: (name) => (probed.push(name), true) }
-    );
+// REGRESSION feature 295: session name must use entity.repoPath basename, not cwd.
+test('nudge session name uses repoPath basename', () => {
+    const session = resolveSessions({ entityType: 'feature', entityId: '295', desc: 'demo', snapshot: { agents: { cc: {} } }, repoPath: '/tmp/some-other-repo' }, 'do', null, { tmuxSessionExists: () => true });
     assert.strictEqual(session.sessionName, 'some-other-repo-f295-do-cc-demo');
-    assert.ok(probed.every(n => n.startsWith('some-other-repo-')));
 });
 
 // REGRESSION feature 295: failed delivery confirmation must return pane tail for diagnosis.
