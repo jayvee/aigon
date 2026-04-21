@@ -115,6 +115,8 @@ Current shared modules:
   `createDashboardRouteDispatcher`
 - `lib/worktree.js` (~1,300 lines): worktree creation, permissions, git attribution metadata bootstrap, tmux sessions
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
+- `lib/supervisor.js` (~330 lines): observe-only server monitoring — agent liveness from tmux + heartbeat, idle detection from missing workflow progress signals, desktop notifications. Never emits engine signals or mutates lifecycle state
+  `startSupervisorLoop`, `sweepEntity`, `getAgentLiveness`
 - `lib/terminal-adapters.js` (~200 lines): data-driven terminal detection/dispatch — adapter table with `detect(env)`, `launch(cmd, opts)`, `split(configs, opts)` per terminal
   `findAdapter`, `getAdapter`, `tileITerm2Windows`, `closeWarpWindow`
 - `lib/config.js` (~951 lines): global/project config, profiles, agent CLI config, editor detection
@@ -220,6 +222,15 @@ The workflow-core engine is the sole lifecycle authority for features and resear
 5. CLI-flag fallback / null
 
 **Central launch helper:** Every spawn path (`feature-start`, dashboard "restart agent", autopilot iterate, AutoConductor review spawn, `feature-open`) MUST go through `buildAgentLaunchInvocation({agentId, snapshot, stageDefaultModel})`. Direct reads of `cliConfig.models[...]` in new spawn sites will silently bypass the override — this is exactly the bug the helper exists to prevent.
+
+### Spec Pre-authorisation
+
+Feature specs may include an optional `## Pre-authorised` section after `## Validation`.
+
+- Each bullet is a bounded standing approval for that feature only.
+- Agents must check the section before stopping on a policy gate.
+- If an agent proceeds under a matching line, the commit must carry a `Pre-authorised-by:` footer citing that approval.
+- Blank or absent means current behavior: stop and ask.
 
 ### Workflow Authority Split
 

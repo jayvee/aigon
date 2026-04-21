@@ -61,6 +61,15 @@ docs/specs/
 3. **Implementation Logs**: Document implementation decisions in `logs/` before completing
 4. **Feature lifecycle is engine-backed**: workflow-core is the authority for features, and visible spec folders are a projection of that state
 
+## Pre-authorised Spec Notes
+
+Feature specs may include an optional `## Pre-authorised` section after `## Validation`.
+
+- Use it for bounded standing approvals specific to that feature, such as a small test-budget increase or a known-safe validation skip.
+- Before stopping on a policy gate, agents must check that section.
+- If a line authorises the action, proceed and cite it in the commit footer as `Pre-authorised-by: ...`.
+- If the section is blank or absent, behavior is unchanged: stop and ask.
+
 ## Feature State Model
 
 For features, there are two relevant layers:
