@@ -216,7 +216,6 @@ const WRAPPER_EXPORTS = {
         'getRootFileContent',
         'syncAgentsMdFile',
         'removeDeprecatedCommands',
-        'migrateOldFlatCommands',
         'upsertMarkedContent'
     ],
     board: [
