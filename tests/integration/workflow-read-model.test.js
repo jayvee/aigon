@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // REGRESSION F275 `cbe3aeba-era`: snapshot lifecycle must override the visible
-// folder (so in-flight features don't appear stuck in backlog on the dashboard)
-// while legacy snapshot-less features stay visible but read-only.
-// REGRESSION F271 `d015f7d1`: no-id inbox cards must stay on the compat path
-// (NOT marked as missing-workflow) so they keep their prioritise action.
+// folder (so in-flight features don't appear stuck in backlog on the dashboard).
+// REGRESSION F294: snapshotless specs collapse to a single MISSING_SNAPSHOT
+// state — no COMPAT_INBOX / LEGACY_MISSING_WORKFLOW half-states, no silent
+// read-only degrade. Consumers must render a gap and point users at
+// `aigon doctor --fix`.
 // REGRESSION F271 `936d2da7`: research read-model must not NPE on null entityId;
 // the research parametrization here exercises that guard.
 // REGRESSION F276: detect-only spec drift exposes currentPath/expectedPath;
@@ -47,22 +48,26 @@ for (const [kind, getState] of [['features', wrm.getFeatureDashboardState], ['re
     }));
 }
 
-test('legacy numeric feature without a snapshot is visible but read-only', () => withTempDir('aigon-rm-', (repo) => {
+test('numeric feature without a snapshot collapses to MISSING_SNAPSHOT with no actions (F294)', () => withTempDir('aigon-rm-', (repo) => {
     seed(repo);
     writeSpec(repo, 'features', '02-backlog', 'feature-13-x.md');
     const s = wrm.getFeatureDashboardState(repo, '13', 'backlog', []);
-    assert.strictEqual(s.readModelSource, wrm.WORKFLOW_SOURCE.LEGACY_MISSING_WORKFLOW);
-    assert.strictEqual(s.readOnly, true);
+    assert.strictEqual(s.readModelSource, wrm.WORKFLOW_SOURCE.MISSING_SNAPSHOT);
     assert.strictEqual(s.validActions.length, 0);
+    assert.strictEqual(s.nextAction, null);
+    assert.strictEqual(s.workflowSnapshot, null);
 }));
 
-test('no-id inbox feature stays on compat path (F271 d015f7d1)', () => withTempDir('aigon-rm-', (repo) => {
+test('no-id inbox feature also reports MISSING_SNAPSHOT — no compat half-state (F294)', () => withTempDir('aigon-rm-', (repo) => {
     seed(repo);
     writeSpec(repo, 'features', '01-inbox', 'feature-untriaged.md');
     const s = wrm.getFeatureDashboardState(repo, 'untriaged', 'inbox', []);
-    assert.strictEqual(s.readModelSource, wrm.WORKFLOW_SOURCE.COMPAT_INBOX);
-    assert.strictEqual(s.readOnly, false);
-    assert.strictEqual(s.missingWorkflowState, false);
+    assert.strictEqual(s.readModelSource, wrm.WORKFLOW_SOURCE.MISSING_SNAPSHOT);
+    assert.strictEqual(s.validActions.length, 0);
+    assert.strictEqual(s.nextAction, null);
+    assert.ok(!('readOnly' in s), 'readOnly field must not be present on the read-model output');
+    assert.ok(!('missingWorkflowState' in s), 'missingWorkflowState field must not be present on the read-model output');
+    assert.ok(!('compatibilityLabel' in s), 'compatibilityLabel field must not be present on the read-model output');
 }));
 
 test('spec drift is detect-only by default; AIGON_AUTO_RECONCILE=1 moves the file', () => withTempDir('aigon-rm-', (repo) => {
@@ -103,7 +108,7 @@ test('board re-buckets snapshot-backed features and carries spec drift', () => w
     const ids = (col) => (items[col] || []).map(i => i.id);
     assert.ok(!ids('02-backlog').includes('14') && ids('03-in-progress').includes('14'));
     const legacy = (items['02-backlog'] || []).find(i => i.id === '15');
-    assert.strictEqual(legacy.missingWorkflowState, true);
+    assert.strictEqual(legacy.readModelSource, wrm.WORKFLOW_SOURCE.MISSING_SNAPSHOT);
     assert.strictEqual(legacy.boardAction, null);
     const drifted = (items['03-in-progress'] || []).find(i => i.id === '18');
     assert.deepStrictEqual(drifted.specDrift, {
