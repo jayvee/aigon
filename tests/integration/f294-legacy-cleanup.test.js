@@ -1,19 +1,12 @@
 #!/usr/bin/env node
-// F294 regression tests. Three classes of legacy path were deleted in this
-// feature — each of them has a structural producer we need to hold still:
-//
-//   1. CANONICAL_STAGE_DIRS allow-list in listVisibleSpecMatches.
-//      The `jvbot` incident (2026-04-20) duplicated a spec under a stale
-//      `04-done/` sibling and the permissive `/^\d+-/` regex matched both
-//      copies, triggering a duplicate-match hard error on resolve.
-//   2. MISSING_SNAPSHOT read-model collapse.
-//      F285 → F293 kept producing half-state bugs out of the
-//      COMPAT_INBOX / LEGACY_MISSING_WORKFLOW branching. The replacement
-//      is one state that carries no actions and surfaces no readOnly
-//      flag — consumers render it as a visible gap.
-//   3. legacyStatusFile fallback in the research row collector.
-//      F271 left `feature-<id>-<agent>.json` as a valid status source; the
-//      dashboard now reads only the canonical statusFile path.
+// REGRESSION F294: three producer-drift incidents, one deletion each.
+//   - jvbot 2026-04-20: `listVisibleSpecMatches` permissive `/^\d+-/` regex
+//     matched stale sibling dirs → duplicate-match hard error on resolve.
+//   - F285 → F293 recurrence: COMPAT_INBOX / LEGACY_MISSING_WORKFLOW half
+//     states kept surfacing silent read-only degrades → collapsed to
+//     MISSING_SNAPSHOT with zero actions.
+//   - F283 follow-through: `applySpecReviewStatus` git-log scanner deleted;
+//     engine snapshot is sole authority for pending-review state.
 'use strict';
 
 const assert = require('assert');
@@ -35,16 +28,14 @@ const writeSpec = (repo, folder, file) =>
 
 test('listVisibleSpecMatches ignores non-canonical sibling dirs (jvbot duplicate-match guard)', () => withTempDir('aigon-f294-paths-', (repo) => {
     seedFeatureFolders(repo);
-    // Drop the spec into the canonical backlog dir and a stale pre-rename dir.
     writeSpec(repo, '02-backlog', 'feature-12-x.md');
-    fs.mkdirSync(path.join(repo, 'docs/specs/features/04-done'), { recursive: true });
-    fs.writeFileSync(path.join(repo, 'docs/specs/features/04-done/feature-12-x.md'), '# stale\n');
-    // Also drop a sibling directory that starts with a digit prefix. The old
-    // permissive `/^\d+-/` regex would have picked this up and raised the
+    // Stale pre-rename `04-done` + a `99-archive` sibling — both start with
+    // `\d+-` so the old permissive regex matched them and raised a
     // duplicate-match error instead of resolving the backlog copy.
-    fs.mkdirSync(path.join(repo, 'docs/specs/features/99-archive'), { recursive: true });
-    fs.writeFileSync(path.join(repo, 'docs/specs/features/99-archive/feature-12-x.md'), '# archive\n');
-
+    for (const stale of ['04-done', '99-archive']) {
+        fs.mkdirSync(path.join(repo, 'docs/specs/features', stale), { recursive: true });
+        fs.writeFileSync(path.join(repo, 'docs/specs/features', stale, 'feature-12-x.md'), '# stale\n');
+    }
     const resolved = paths.getSpecPathForEntity(repo, 'feature', '12', 'backlog');
     assert.ok(resolved.endsWith('/02-backlog/feature-12-x.md'), `expected backlog resolution, got ${resolved}`);
 }));
