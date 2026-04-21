@@ -261,6 +261,7 @@
     .kcard-overflow-item.kcard-overflow-item-neutral{color:var(--text-secondary)}
     .kcard-overflow-item.kcard-overflow-item-neutral:hover{color:var(--text-primary)}
     .kcard-overflow-item:hover{background:var(--bg-elevated)}
+    .kcard-ready-indicator{display:flex;align-items:center;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(134,239,172,.05);border:1px solid rgba(134,239,172,.18);border-left:3px solid #86efac;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:600;color:#86efac;letter-spacing:.02em}
     .kcard-transitions{margin-top:6px;padding-top:6px;border-top:1px solid var(--border-subtle);display:flex;gap:5px;flex-wrap:wrap;align-items:center}
     .kcard-transitions .btn{font-size:11px;padding:3px 8px}
     .col-empty{padding:12px 8px;color:var(--text-tertiary);font-size:12px;text-align:center}

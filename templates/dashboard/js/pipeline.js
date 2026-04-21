@@ -510,6 +510,13 @@
 
     // validActionBtnClass, buildValidActionsHtml, handleValidAction moved to actions.js
 
+    function buildReadyToCloseHtml(agents, reviews) {
+      const reviewDone = reviews.length > 0 && reviews.every(r => !r.running);
+      const implementerReady = agents.some(a => a.status === 'submitted' || a.status === 'ready');
+      if (!reviewDone || !implementerReady) return '';
+      return '<div class="kcard-ready-indicator">✓ Ready to close</div>';
+    }
+
     function buildKanbanCard(feature, repoPath, pipelineType, repoMeta) {
       const card = document.createElement('div');
       card.className = 'kcard';
@@ -616,6 +623,7 @@
               '</div>';
           });
         }
+        innerHtml += buildReadyToCloseHtml(agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         // Card-level actions (non-per-agent: close, eval, review, etc.)
         const cardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
@@ -649,6 +657,7 @@
               '</div>';
           });
         }
+        innerHtml += buildReadyToCloseHtml(agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         // Card-level actions (close, review — no session controls)
         const soloCardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
