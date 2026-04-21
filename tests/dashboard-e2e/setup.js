@@ -38,6 +38,11 @@ function runAigon(args, cwd) {
     });
 }
 
+function assertAigonOk(result, args) {
+    if (result.status === 0) return;
+    throw new Error(`aigon ${args.join(' ')} failed (${result.status}): ${result.stderr || result.stdout}`);
+}
+
 function runGit(args, cwd) {
     spawnSync('git', args, { cwd, env: { ...process.env, ...GIT_SAFE_ENV }, encoding: 'utf8', stdio: 'pipe' });
 }
@@ -78,9 +83,13 @@ module.exports = async function globalSetup() {
     // prioritise so the engine bootstraps a snapshot. Lifecycle tests start
     // from backlog; dashboard prioritise-from-inbox is no longer a supported
     // entry point post-F294.
-    for (const name of ['e2e-solo-feature', 'e2e-fleet-feature', 'e2e-drive-feature']) {
-        runAigon(['feature-create', name], tmpDir);
-        runAigon(['feature-prioritise', name], tmpDir);
+    for (const { title, slug } of [
+        { title: 'e2e solo feature', slug: 'e2e-solo-feature' },
+        { title: 'e2e fleet feature', slug: 'e2e-fleet-feature' },
+        { title: 'e2e drive feature', slug: 'e2e-drive-feature' },
+    ]) {
+        assertAigonOk(runAigon(['feature-create', title], tmpDir), ['feature-create', title]);
+        assertAigonOk(runAigon(['feature-prioritise', slug], tmpDir), ['feature-prioritise', slug]);
     }
 
     const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-e2e-home-'));

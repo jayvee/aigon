@@ -94,6 +94,7 @@ Feature and research lifecycle state are managed by the **workflow-core engine**
 - **XState machine** — validates lifecycle transitions; `snapshot.can()` for action derivation
 - **Effect lifecycle** — durable, resumable side effects (requested → claimed → succeeded/failed)
 - **Exclusive file locking** — prevents concurrent modification
+- **Create-time bootstrap** — `feature-create` / `research-create` write the spec file and seed the workflow snapshot in the same write path. Inbox entities use the slug as the engine id until prioritise re-keys them to the numeric id.
 
 Supporting state:
 - **Folders** (`docs/specs/features/0N-*/`) — shared ground truth, committed to git
@@ -120,6 +121,7 @@ Recent incidents — every one of these is a case of a read path paving over a m
 - **F283 → spec-review scanner deletion** — the dashboard scanned git log for `spec-review:` commits to derive badges, paving over the fact that the engine snapshot already carried `pendingCount`/`pendingAgents`. Fix: read-model copies verbatim from the snapshot.
 - **F271 → `legacyStatusFile` fallback** — research rows silently fell through to `feature-<id>-<agent>.json` when the canonical path was missing. Fix: canonical path only; missing file = no status.
 - **F285 → F293 → F294** — three features in a row on the same bug class. Snapshotless features first got a silent read-only `LEGACY_MISSING_WORKFLOW` degrade, then kept producing follow-on gaps. The final cut (F294) collapses both `COMPAT_INBOX` and `LEGACY_MISSING_WORKFLOW` into one `MISSING_SNAPSHOT` state with no actions and no badge — forcing producer fixes instead of papering over them.
+- **F294 + `b1db12d3` → F296** — deleting `COMPAT_INBOX` was correct, but create still produced slug-keyed inbox specs with no snapshot, so `b1db12d3` had to re-derive inbox actions from folder stage. F296 closes the producer gap: create bootstraps inbox snapshots immediately and prioritise re-keys slug → numeric under one shared workflow helper.
 - **jvbot duplicate-match (2026-04-20)** — `listVisibleSpecMatches` accepted any `/^\d+-/` folder, so a stale pre-rename `04-done/` sibling caused the resolver to return two spec copies. Fix: tight allow-list (`CANONICAL_STAGE_DIRS` in `lib/workflow-core/paths.js`).
 
 **Rule:** When adding a new read path, grep for every parallel write path that produces the state it now assumes, and pin the invariant with a test. When a read path can't find the state it needs, **fail loudly and cite the repair command** (`aigon doctor --fix`) — do not add a silent fallback or a half-state.
