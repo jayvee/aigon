@@ -44,13 +44,13 @@
       "review": "gpt-5.4"
     },
     "modelOptions": [
-      { "value": null, "label": "Use config default" },
+      { "value": null, "label": "Default" },
       { "value": "gpt-5.2", "label": "GPT-5.2" },
       { "value": "gpt-5.3-codex", "label": "GPT-5.3 Codex" },
       { "value": "gpt-5.4", "label": "GPT-5.4" }
     ],
     "effortOptions": [
-      { "value": null, "label": "Use config default" },
+      { "value": null, "label": "Default" },
       { "value": "minimal", "label": "Minimal" },
       { "value": "low", "label": "Low" },
       { "value": "medium", "label": "Medium" },

@@ -162,7 +162,11 @@
             const badge = document.createElement('span');
             badge.className = 'agent-check-badge';
             badge.textContent = 'implemented';
-            row.querySelector('.agent-check-hint').before(badge);
+            const hint = row.querySelector('.agent-check-hint');
+            const label = row.querySelector('.agent-check-label');
+            if (hint) hint.before(badge);
+            else if (label) label.after(badge);
+            else row.querySelector('.agent-check-meta') && row.querySelector('.agent-check-meta').appendChild(badge);
           }
           // Show model name for this task type
           let modelEl = row.querySelector('.agent-check-config-model') || row.querySelector('.agent-check-model');

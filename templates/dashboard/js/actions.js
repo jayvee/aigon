@@ -50,8 +50,10 @@ function buildAgentCheckRow(options) {
   if (opts.tripletGrid) {
     const primary = createEl('span', { className: 'agent-check-primary' });
     primary.appendChild(input);
-    primary.appendChild(createEl('span', { className: 'agent-check-label', text: opts.label || '' }));
-    if (opts.hint) primary.appendChild(createEl('span', { className: 'agent-check-hint', text: opts.hint }));
+    const meta = createEl('span', { className: 'agent-check-meta' });
+    meta.appendChild(createEl('span', { className: 'agent-check-label', text: opts.label || '' }));
+    if (opts.hint) meta.appendChild(createEl('span', { className: 'agent-check-hint', text: opts.hint }));
+    primary.appendChild(meta);
     label.appendChild(primary);
     label.appendChild(createEl('span', { className: 'agent-check-config-model', attrs: { 'aria-label': 'Configured model (from settings)' } }));
   } else {
@@ -73,14 +75,25 @@ function appendTripletPlaceholder(title) {
   return span;
 }
 
+function buildTripletPickerHeaderRow() {
+  const header = createEl('div', { className: 'agent-picker-triplet-header-row', attrs: { 'aria-hidden': 'true' } });
+  const thAgent = createEl('span', { className: 'agent-picker-th-agent' });
+  thAgent.appendChild(createEl('span', { className: 'agent-picker-th-gutter' }));
+  thAgent.appendChild(createEl('span', { className: 'agent-picker-th', text: 'Agent' }));
+  header.appendChild(thAgent);
+  header.appendChild(createEl('span', { className: 'agent-picker-th agent-picker-th-config', text: 'Configured model' }));
+  header.appendChild(createEl('span', { className: 'agent-picker-th agent-picker-th-override', text: 'Model override' }));
+  header.appendChild(createEl('span', { className: 'agent-picker-th agent-picker-th-override', text: 'Effort override' }));
+  return header;
+}
+
 // Append model + effort controls for triplet-grid rows. Always emits two
 // columns (select or placeholder) so the agent-picker grid stays aligned.
 function appendTripletSelects(rowEl, agent) {
   if (!agent) return;
-  rowEl.querySelectorAll('.agent-triplet-selects').forEach(n => n.remove());
-  const container = createEl('span', { className: 'agent-triplet-selects' });
-  container.style.display = 'contents';
+  rowEl.querySelectorAll('.agent-triplet-cell').forEach(n => n.remove());
   const modelOpts = Array.isArray(agent.modelOptions) ? agent.modelOptions : [];
+  const cellModel = createEl('span', { className: 'agent-triplet-cell agent-triplet-cell-model' });
   if (modelOpts.length > 0) {
     const sel = document.createElement('select');
     sel.className = 'agent-triplet-model';
@@ -88,23 +101,28 @@ function appendTripletSelects(rowEl, agent) {
     modelOpts.forEach(opt => {
       const el = document.createElement('option');
       el.value = opt.value == null ? '' : String(opt.value);
-      el.textContent = opt.label || (opt.value == null ? 'Use config default' : String(opt.value));
+      const raw = opt.label || (opt.value == null ? '' : String(opt.value));
+      el.textContent = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
       sel.appendChild(el);
     });
     const stored = tripletStorage.read(agent.id);
     if (stored.model != null && modelOpts.some(o => String(o.value || '') === stored.model)) {
       sel.value = stored.model;
     }
+    sel.title = 'Default: use the model from aigon config for this task type';
     sel.addEventListener('click', e => e.stopPropagation());
     sel.addEventListener('change', e => {
       e.stopPropagation();
       tripletStorage.write(agent.id, { model: sel.value || null });
     });
-    container.appendChild(sel);
+    cellModel.appendChild(sel);
   } else {
-    container.appendChild(appendTripletPlaceholder('No per-run model override for this agent'));
+    cellModel.appendChild(appendTripletPlaceholder('No per-run model override for this agent'));
   }
+  rowEl.appendChild(cellModel);
+
   const effortOpts = Array.isArray(agent.effortOptions) ? agent.effortOptions : [];
+  const cellEffort = createEl('span', { className: 'agent-triplet-cell agent-triplet-cell-effort' });
   if (effortOpts.length > 0) {
     const sel = document.createElement('select');
     sel.className = 'agent-triplet-effort';
@@ -112,23 +130,25 @@ function appendTripletSelects(rowEl, agent) {
     effortOpts.forEach(opt => {
       const el = document.createElement('option');
       el.value = opt.value == null ? '' : String(opt.value);
-      el.textContent = opt.label || (opt.value == null ? 'Use config default' : String(opt.value));
+      const raw = opt.label || (opt.value == null ? '' : String(opt.value));
+      el.textContent = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
       sel.appendChild(el);
     });
     const stored = tripletStorage.read(agent.id);
     if (stored.effort != null && effortOpts.some(o => String(o.value || '') === stored.effort)) {
       sel.value = stored.effort;
     }
+    sel.title = 'Default: use the effort level from aigon config for this agent';
     sel.addEventListener('click', e => e.stopPropagation());
     sel.addEventListener('change', e => {
       e.stopPropagation();
       tripletStorage.write(agent.id, { effort: sel.value || null });
     });
-    container.appendChild(sel);
+    cellEffort.appendChild(sel);
   } else {
-    container.appendChild(appendTripletPlaceholder('No per-run effort override for this agent'));
+    cellEffort.appendChild(appendTripletPlaceholder('No per-run effort override for this agent'));
   }
-  rowEl.appendChild(container);
+  rowEl.appendChild(cellEffort);
 }
 
 // Convert picker triplets → --models / --efforts CLI flags. Omits a
@@ -362,15 +382,6 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   // Secondary buttons
   secondary.forEach(va => {
     html += renderBtn(va, 'btn btn-secondary');
-  });
-
-  // Add "View Review" entries for each review session
-  const reviews = feature.reviewSessions || [];
-  reviews.forEach(r => {
-    if (r.session) {
-      const agentName = AGENT_DISPLAY_NAMES[r.agent] || r.agent;
-      overflow.push({ _reviewSession: r.session, _reviewLabel: 'View ' + agentName + ' Review' });
-    }
   });
 
   // Overflow dropdown
@@ -623,7 +634,7 @@ function renderAgentPickerRows(options) {
   const collectTriplet = !!opts.collectTriplet;
   const checks = document.getElementById('agent-picker-checks');
   if (!checks) return;
-  replaceNodeChildren(checks, AIGON_AGENTS.map(agent => {
+  const rows = AIGON_AGENTS.map(agent => {
     const row = buildAgentCheckRow({
       value: agent.id,
       label: agent.id,
@@ -635,7 +646,12 @@ function renderAgentPickerRows(options) {
       appendTripletSelects(row, agent);
     }
     return row;
-  }));
+  });
+  if (collectTriplet) {
+    replaceNodeChildren(checks, [buildTripletPickerHeaderRow(), ...rows]);
+  } else {
+    replaceNodeChildren(checks, rows);
+  }
   checks.classList.toggle('agent-checks-triplet', collectTriplet);
 }
 
@@ -782,7 +798,7 @@ async function showAutonomousModal(feature, repoPath, btn) {
   if (!desc || !checks || !evalSelect || !reviewSelect || !stopAfter || !modal) return;
 
   desc.textContent = '#' + feature.id + ' ' + feature.name;
-  replaceNodeChildren(checks, AUTONOMOUS_AGENT_IDS.map(agentId => {
+  const autoRows = AUTONOMOUS_AGENT_IDS.map(agentId => {
     const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
     const modelName = (autonomousModalModels && autonomousModalModels[agentId] && autonomousModalModels[agentId].implement) || '';
     const agent = AIGON_AGENTS.find(a => a.id === agentId) || { id: agentId, modelOptions: [], effortOptions: [] };
@@ -798,7 +814,8 @@ async function showAutonomousModal(feature, repoPath, btn) {
     const cfg = row.querySelector('.agent-check-config-model');
     if (cfg) cfg.textContent = modelName || '';
     return row;
-  }));
+  });
+  replaceNodeChildren(checks, [buildTripletPickerHeaderRow(), ...autoRows]);
   checks.classList.add('agent-checks-triplet');
 
   stopAfter.value = 'close';

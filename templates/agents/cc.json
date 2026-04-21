@@ -41,7 +41,7 @@
       "review": "opus"
     },
     "modelOptions": [
-      { "value": null, "label": "Use config default" },
+      { "value": null, "label": "Default" },
       { "value": "claude-haiku-4-5-20251001", "label": "Haiku 4.5 (fast/cheap)" },
       { "value": "claude-sonnet-4-6", "label": "Sonnet 4.6" },
       { "value": "claude-sonnet-4-6[1m]", "label": "Sonnet 4.6 (1M context)" },
@@ -49,7 +49,7 @@
       { "value": "claude-opus-4-7[1m]", "label": "Opus 4.7 (1M context)" }
     ],
     "effortOptions": [
-      { "value": null, "label": "Use config default" },
+      { "value": null, "label": "Default" },
       { "value": "low", "label": "Low" },
       { "value": "medium", "label": "Medium" },
       { "value": "high", "label": "High" },

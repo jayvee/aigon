@@ -268,10 +268,17 @@
     /* Agent picker modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:flex;align-items:center;justify-content:center}
     .modal-box{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius);padding:20px 24px;min-width:280px;max-width:400px;width:100%}
-    .modal-box:has(.agent-checks-triplet){max-width:560px;min-width:320px}
+    .modal-box:has(.agent-checks-triplet){max-width:880px;min-width:460px;width:min(880px,calc(100vw - 24px))}
     .modal-box h3{margin:0 0 14px;font-size:15px;letter-spacing:-.01em}
     .modal-desc{color:var(--text-secondary);font-size:12px;margin:0 0 14px}
     .agent-checks{display:grid;gap:8px;margin-bottom:18px}
+    .agent-checks.agent-checks-triplet{--agent-triplet-gutter:24px;--agent-triplet-cols:minmax(0,1.05fr) minmax(210px,1fr) 200px 200px}
+    .agent-picker-triplet-header-row{display:grid;grid-template-columns:var(--agent-triplet-cols);column-gap:12px;align-items:end;padding:0 12px 8px;margin:0 0 2px;border-bottom:1px solid var(--border-subtle)}
+    .agent-picker-th-agent{display:grid;grid-template-columns:var(--agent-triplet-gutter) minmax(0,1fr);column-gap:10px;align-items:end;min-width:0}
+    .agent-picker-th-gutter{width:var(--agent-triplet-gutter);min-width:var(--agent-triplet-gutter)}
+    .agent-picker-th{font-size:10px;font-weight:600;letter-spacing:.02em;color:var(--text-tertiary);line-height:1.25;text-transform:none}
+    .agent-picker-th.agent-picker-th-config{justify-self:end;text-align:right;max-width:100%}
+    .agent-picker-triplet-header-row>.agent-picker-th.agent-picker-th-override{align-self:end;justify-self:start;text-align:left;width:max-content;max-width:100%;line-height:1.2;white-space:normal;padding:0;margin:0}
     .agent-check-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--border-subtle);border-radius:8px;cursor:pointer;transition:background .1s ease,border-color .1s ease}
     .agent-check-row:hover{background:var(--bg-elevated);border-color:var(--border-default)}
     .agent-check-row input{cursor:pointer;accent-color:var(--accent)}
@@ -279,17 +286,20 @@
     .agent-check-hint{font-size:11px;color:var(--text-tertiary)}
     .agent-check-badge{font-size:9px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;margin-left:6px;letter-spacing:.02em;opacity:.8}
     .agent-check-model{font-size:10px;color:var(--text-tertiary);opacity:.45;font-family:var(--mono);margin-left:6px}
-    /* Triplet picker: fixed columns — id+name | config model | model DD | effort DD */
-    .agent-check-row.agent-check-row-triplet{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(72px,0.55fr) minmax(118px,0.95fr) minmax(118px,0.95fr);column-gap:10px;row-gap:4px;align-items:center;padding:8px 10px}
-    .agent-check-row-triplet .agent-check-primary{display:flex;align-items:center;gap:10px;min-width:0}
-    .agent-check-row-triplet .agent-check-label{flex:0 0 auto;font-family:var(--mono);font-size:13px}
-    .agent-check-row-triplet .agent-check-hint{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--text-tertiary)}
-    .agent-check-row-triplet .agent-check-config-model{font-size:10px;color:var(--text-tertiary);opacity:.88;font-family:var(--mono);min-width:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .agent-triplet-selects{display:contents}
-    .agent-triplet-selects select,.agent-check-row-triplet .agent-triplet-model,.agent-check-row-triplet .agent-triplet-effort{font:11px var(--mono);padding:4px 22px 4px 8px;background:var(--bg-root);color:var(--text-secondary);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;width:100%;min-width:0;max-width:100%;box-sizing:border-box}
-    .agent-triplet-selects select:hover{border-color:var(--border-default);color:var(--text-primary)}
-    .agent-triplet-selects select:focus{outline:none;border-color:var(--accent)}
-    .agent-triplet-placeholder{display:inline-flex;align-items:center;justify-content:center;font:11px var(--mono);color:var(--text-tertiary);opacity:.5;border:1px dashed var(--border-subtle);border-radius:6px;min-height:28px;box-sizing:border-box;width:100%;min-width:0}
+    /* Triplet picker: agent (cb+meta) | config label | model | effort — explicit cells so columns line up */
+    .agent-check-row.agent-check-row-triplet{display:grid;grid-template-columns:var(--agent-triplet-cols);column-gap:12px;align-items:center;padding:8px 12px;box-sizing:border-box}
+    .agent-check-row-triplet .agent-check-primary{display:grid;grid-template-columns:var(--agent-triplet-gutter) minmax(0,1fr);column-gap:10px;align-items:center;min-width:0}
+    .agent-check-row-triplet .agent-check-primary>input[type=checkbox],.agent-check-row-triplet .agent-check-primary>input[type=radio]{width:18px;height:18px;margin:0;justify-self:start;align-self:center;flex-shrink:0}
+    .agent-check-row-triplet .agent-check-meta{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;line-height:1.2}
+    .agent-check-row-triplet .agent-check-label{font-family:var(--mono);font-size:13px;font-weight:600;flex:none}
+    .agent-check-row-triplet .agent-check-hint{font-size:11px;color:var(--text-tertiary);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .agent-check-row-triplet .agent-check-config-model{font-size:10px;color:var(--text-tertiary);opacity:.95;font-family:var(--mono);min-width:0;max-width:100%;justify-self:stretch;text-align:right;align-self:center;line-height:1.25;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+    .agent-check-row-triplet .agent-check-badge{margin-left:0;margin-top:1px}
+    .agent-triplet-cell{display:flex;align-items:center;min-width:0;min-height:30px}
+    .agent-triplet-cell .agent-triplet-model,.agent-triplet-cell .agent-triplet-effort{font:11px var(--mono);padding:6px 28px 6px 8px;background:var(--bg-root);color:var(--text-secondary);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;width:100%;min-width:0;max-width:100%;box-sizing:border-box;min-height:32px;line-height:1.25}
+    .agent-triplet-cell select:hover{border-color:var(--border-default);color:var(--text-primary)}
+    .agent-triplet-cell select:focus{outline:none;border-color:var(--accent)}
+    .agent-triplet-placeholder{display:inline-flex;align-items:center;justify-content:center;font:11px var(--mono);color:var(--text-tertiary);opacity:.55;border:1px dashed var(--border-subtle);border-radius:6px;min-height:30px;box-sizing:border-box;width:100%;min-width:0;padding:0 6px}
     .modal-actions{display:flex;gap:8px;justify-content:flex-end}
     .create-modal-box{max-width:520px}
     .create-input{width:100%;padding:10px 12px;background:var(--bg-root);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:8px;font:13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;outline:none;transition:border-color .12s ease}
