@@ -142,8 +142,6 @@ Current shared modules:
 **Thin re-export facades:**
 
 - `lib/constants.js`: re-exports command metadata and path constants (used by `aigon-cli.js`)
-- `lib/dashboard.js`: re-exports from `lib/dashboard-server.js` (backward compat)
-- `lib/devserver.js`: re-exports from `lib/proxy.js` (backward compat)
 
 ## Workflow State
 
@@ -296,18 +294,20 @@ Feature writes go through the engine, but the read side is still mixed:
 - `aigon feature-list` and `aigon feature-spec` are the preferred CLI query surfaces for active features. Do not use `board` output as a data API.
 - `lib/workflow-read-model.js` provides shared dashboard read state (snapshot-backed for features/research) and derives recommended actions for feedback via `lib/state-queries.js`.
 - `lib/feedback.js` provides feedback metadata parsing/collection so feedback list and dashboard reads derive status from frontmatter rather than folder position.
-- `lib/dashboard-status-collector.js` now owns the AIGON server's dashboard-facing repo/entity reads, including compatibility behavior for older repos that may not have a complete workflow snapshot yet, plus dashboard detail log reads and done-count aggregation.
+- `lib/dashboard-status-collector.js` owns the AIGON server's dashboard-facing repo/entity reads — spec-review state copied verbatim from engine snapshots, log reads, and done-count aggregation.
 - `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, static serving, and delegating API requests to `lib/dashboard-routes.js`. It remains read-only with respect to both mutations and engine-state/spec/log file access.
 
-So the architecture after Feature 171 is:
+So the architecture after F171 → F283 → F294 is:
 
 1. Feature lifecycle writes: engine only.
-2. Feature lifecycle reads: prefer workflow snapshots.
-3. Agent/session reads: still combine snapshot data, `.aigon/state/` files, tmux state, and some compatibility fallbacks.
+2. Feature lifecycle reads: workflow snapshots only — no permissive legacy fallbacks.
+3. Agent/session reads: combine snapshot data, `.aigon/state/` files, and tmux state.
 
-**Migration for pre-cutover entities:** Features or research topics started before workflow-core may have no event log. Commands now call explicit migration helpers to initialize lifecycle history before normal engine operations continue.
+**Every feature and research entity has a workflow-core snapshot.** A spec without a snapshot is a migration problem — the read model surfaces `WORKFLOW_SOURCE.MISSING_SNAPSHOT` with no actions and no badge, and every write-path command points users at `aigon doctor --fix`. The pre-F294 read model branched snapshotless entities into `COMPAT_INBOX` (prioritise action OK) vs `LEGACY_MISSING_WORKFLOW` (read-only amber badge); both branches kept reproducing the F285 → F293 bug class because any producer drift (reset without re-bootstrap, hand-edited spec, race between writers) arrived as a silent half-state instead of a loud error.
 
-**Compatibility note:** Migration is isolated in workflow-core migration helpers. Normal lifecycle commands use the standard engine path for new entities.
+**Surface split:** `getFeatureDashboardState` / `getResearchDashboardState` do not throw for a missing snapshot — they return the `MISSING_SNAPSHOT` row shape so the HTTP dashboard can load the full table. Interactive CLI commands (`feature-list`, `feature-status`, research equivalents, close helpers) **error** with the same migration hint (`aigon doctor --fix`).
+
+**Migration for pre-cutover entities:** Commands bootstrap lifecycle history via `aigon doctor --fix` before normal engine operations continue. A future F-series may swap that in for `aigon workflow --migrate-from-legacy` once Phase 2 ships.
 
 ## Where To Make Changes
 
@@ -342,7 +342,7 @@ Research follows the same pattern with `r` instead of `f`:
 Components:
 - `{repo}` — repository directory name (e.g., `aigon`, `farline-ai`, `whos-buy-is-it`)
 - `{num}` — zero-padded feature/research ID (e.g., `07`, `140`)
-- `{agent}` — agent short code (`cc`, `gg`, `cx`, `cu`, `mv`)
+- `{agent}` — agent short code (`cc`, `gg`, `cx`, `cu`)
 - `{desc}` — kebab-case feature description from the spec filename
 
 ## Aigon Pro (`@aigon/pro`)

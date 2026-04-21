@@ -6,7 +6,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
-const { applySpecReviewStatus, clearTierCache } = require('../../lib/dashboard-status-collector');
+const { applySpecReviewFromSnapshots, clearTierCache } = require('../../lib/dashboard-status-collector');
 const { snapshotToDashboardActions } = require('../../lib/workflow-snapshot-adapter');
 const { runPendingMigrations } = require('../../lib/migration');
 
@@ -33,11 +33,20 @@ testAsync('workflow-backed spec-review status drives dashboard badges/actions', 
     await engine.recordSpecReviewAcknowledged(repo, 'research', '21', { commitSha: 'sha-ack-1' });
     const featureItems = item('12', 'backlog', featureSpec);
     const researchItems = item('21', 'backlog', researchSpec);
-    clearTierCache(repo); applySpecReviewStatus(repo, featureItems, researchItems);
+    clearTierCache(repo);
+    applySpecReviewFromSnapshots(repo, [
+        { entityType: 'feature', item: featureItems[0] },
+        { entityType: 'research', item: researchItems[0] },
+    ]);
     assert.deepStrictEqual([featureItems[0].specReview.pendingCount, featureItems[0].specReview.pendingAgents], [1, ['gg']]);
     assert.strictEqual(researchItems[0].specReview.pendingCount, 0);
-    assert.ok(featureItems[0].validActions.some((a) => a.action === 'feature-spec-review-check'));
-    assert.ok(!researchItems[0].validActions.some((a) => a.action === 'research-spec-review-check'));
+    // F283 moved action derivation to snapshotToDashboardActions; verify it here.
+    const featureSnapshot = await engine.showFeatureOrNull(repo, '12');
+    const featureActions = snapshotToDashboardActions('feature', '12', featureSnapshot, 'backlog').validActions;
+    assert.ok(featureActions.some((a) => a.action === 'feature-spec-review-check'));
+    const researchSnapshot = await engine.showResearchOrNull(repo, '21');
+    const researchActions = snapshotToDashboardActions('research', '21', researchSnapshot, 'backlog').validActions;
+    assert.ok(!researchActions.some((a) => a.action === 'research-spec-review-check'));
 }));
 
 test('feature and research spec-review actions keep distinct labels', () => {
@@ -53,7 +62,8 @@ testAsync('inbox research with slug-as-id is handled without throwing', () => wi
     const specPath = path.join(repo, 'docs/specs/research-topics/01-inbox/research-foo.md');
     fs.writeFileSync(specPath, '# Research: foo\n');
     const inboxItems = item('research-foo', 'inbox', specPath);
-    clearTierCache(repo); applySpecReviewStatus(repo, [], inboxItems);
+    clearTierCache(repo);
+    applySpecReviewFromSnapshots(repo, [{ entityType: 'research', item: inboxItems[0] }]);
     assert.strictEqual(inboxItems[0].specReview.pendingCount, 0);
 }));
 

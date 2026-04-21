@@ -129,6 +129,13 @@ This feature writes the hard-error messages pointing at that command. The comman
 - Should the hard-error messages include a one-liner about what `doctor --migrate-from-legacy` will do (e.g., "backfills missing snapshots"), or just the command? (Lean: just the command. Docs expand it.)
 - For the `listVisibleSpecMatches` tightening: should any non-canonical folders in existing repos be reported by `aigon doctor` as "rename these to canonical names," or silently ignored? (Lean: reported. Otherwise users won't know their files became invisible.) **Owner:** Phase 2 spec unless `doctor --fix` already gains a dry-run report in this PR (then document which).
 
+## Implementation notes (branch review, 2026-04-21)
+
+- **Migration hint (blocking AC):** Option **(A)** — user-visible snapshot-bootstrap strings cite `aigon doctor --fix` until Phase 2 adds `doctor --migrate-from-legacy`.
+- **Throw vs `MISSING_SNAPSHOT`:** Original AC text said the read-model should **throw** when no snapshot. Shipped behaviour matches `AGENTS.md` / `docs/architecture.md`: **dashboard** returns `WORKFLOW_SOURCE.MISSING_SNAPSHOT` (no actions, no badge) so the grid still loads; **CLI** surfaces non-zero exit + `doctor --fix`. Documented in `CLAUDE.md`, `docs/architecture.md`, and comments in `lib/workflow-read-model.js`.
+- **`removeDeprecatedCommands` / `removeDeprecatedSkillDirs`:** Per the spec’s own decision rule, **`git log --since=90.days.ago -- templates/generic/commands/`** shows ongoing template churn — helpers **remain** for this release; revisit next quarter if command renames go quiet. `migrateOldFlatCommands` is removed from `lib/templates.js` as planned.
+- **LOC metric:** Measure with `git diff --stat "$(git merge-base main HEAD)..HEAD" -- lib/`. If net deletions under `lib/` fall short of the 800-line stretch, cite **total-branch** `git diff … --shortstat` in the PR and treat the numeric goal as aspirational for follow-up deletions outside F294.
+
 ## Related
 - Triggered by: maintainer conversation on 2026-04-21 reviewing the F285→F293 legacy-state recurrence and recognising that the cost/benefit of compat paths doesn't match aigon's user-base size.
 - `4df8fe9d` — entityResetBase re-bootstraps post-wipe; removes the last known producer of LEGACY_MISSING_WORKFLOW state, clearing the path for this feature to delete the read-model fallback.

@@ -97,7 +97,6 @@ tail -50 ~/.aigon/dashboard.log
 | `lib/aigon-proxy.js` | Standalone proxy daemon — routes by Host header, handles WebSocket upgrades |
 | `lib/config.js` | Global/project config, profiles, agent CLI config |
 | `lib/worktree.js` | Worktree management, tmux sessions, terminal launching |
-| `lib/dashboard.js` | Thin re-exporter for backward compatibility |
 | `templates/dashboard/index.html` | Entire SPA — HTML, CSS, and JS in one file |
 | `lib/workflow-core/` | Workflow engine — sole authority for feature lifecycle state |
 | `lib/state-queries.js` | Pure action/transition derivation for feedback entities — used by the AIGON server for feedback dashboard behavior. Feature/research actions come from workflow-core exclusively |
