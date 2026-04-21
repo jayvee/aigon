@@ -3,6 +3,22 @@
 
 Perform a code review on another agent's implementation, making targeted fixes where needed. Use a different model than the implementer for best results.
 
+You are doing a write-capable review pass, not a read-only review report.
+Ignore any default "code review means findings-only" behavior for this task; this command is specifically a review-with-fixes workflow.
+
+Your default action is:
+1. identify a concrete issue
+2. patch it in the feature worktree
+3. commit it with `fix(review): ...`
+4. leave only residual issues in notes
+
+Do not stop at describing a fix if you can safely make it yourself.
+A findings-only review is valid only when:
+- the implementation is genuinely clean
+- the remaining issue requires a broader architectural or product decision
+- the issue is ambiguous and the correct behavior is not clear from the spec
+- you are blocked by missing context or infrastructure you cannot safely change
+
 ## Argument Resolution
 If no ID is provided or doesn't match an active feature, run `aigon feature-list --active`, filter to matches, and ask the user.
 
@@ -31,7 +47,7 @@ If you are on the feature branch, review files directly. If you are on main, use
 
 ## Step 2: Review
 
-### You MAY fix
+### You MUST fix now when the change is:
 - Bugs / logic errors
 - Missing edge cases from the spec's acceptance criteria
 - Security issues (injection, XSS, CSRF)
@@ -39,6 +55,14 @@ If you are on the feature branch, review files directly. If you are on main, use
 - Failing tests
 - Missing error handling for likely failures
 - Typos in user-facing strings
+- Missing test wiring, command wiring, config updates, or registration needed for the shipped change to actually be protected or reachable
+- Obvious omissions in a touched mechanism, such as producer/read-path mismatches or incomplete doctor/bootstrap coverage that are local to this branch and safe to patch
+
+### You MAY leave notes only when:
+- the fix would change the architecture or expand feature scope
+- the correct behavior is ambiguous
+- the issue spans a separate subsystem and is not safely patchable in this review pass
+- you are blocked by missing infrastructure, permissions, or context
 
 ### You must NOT
 - Refactor or restructure working code
@@ -53,11 +77,12 @@ If you are on the feature branch, review files directly. If you are on main, use
 
 ## Step 3: Make fixes and commit
 
-For each issue: make the minimal fix in the worktree, commit with `fix(review): <description>` (use `git -C "$WORKTREE"` if you're on main).
+For each issue you can safely patch: make the minimal fix in the worktree, commit with `fix(review): <description>` (use `git -C "$WORKTREE"` if you're on main).
 
 Examples: `fix(review): handle null user in profile lookup`, `fix(review): escape HTML in user-provided content`, `fix(review): add missing await on async call`.
 
 **If the implementation is solid, commit nothing for code.** A clean review is a valid outcome.
+If you report an issue without fixing it, explain why it was not safe or appropriate to patch in this review pass. Do not hand the implementer a to-do list for issues you could have fixed yourself.
 
 ## Step 4: Update the implementation log and commit
 
@@ -69,11 +94,11 @@ Append:
 **Reviewed by**: <your agent ID>
 **Date**: <date>
 
-### Findings
-- <issues found, or "No issues found">
-
 ### Fixes Applied
 - <commits made, or "None needed">
+
+### Residual Issues
+- <only issues not fixed, with reason left unresolved, or "None">
 
 ### Notes
 - <observations for the user>
@@ -93,6 +118,7 @@ aigon agent-status review-complete
 ```
 
 Then tell the user: "Code review complete. [N] fix(es) committed." (or "Code review complete. No fixes needed.") and show a summary.
+Lead with the fixes you committed. List residual unfixed issues only after that, with a reason each one was left unresolved.
 
 **CRITICAL: Do NOT run `aigon feature-close` or `aigon feature-eval`.**
 
