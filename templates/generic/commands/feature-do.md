@@ -43,6 +43,8 @@ aigon agent-status implementing
 - Use **relative paths** from the current worktree. Never absolute paths.
 - Run shell commands directly; don't delegate simple commands (`npm test`, `node -c file.js`, validation batches) to sub-agents.
 
+**Before stopping on a policy gate (test budget, security warning, ambiguous criterion):** check the spec's `## Pre-authorised` section. If the gate matches a listed line, proceed and include a commit footer `Pre-authorised-by: <slug-of-preauth-line>` citing which line authorised it. If no line matches, stop and ask as normal.
+
 Work through the acceptance criteria in order.
 
 ## Step 4: Commit your implementation

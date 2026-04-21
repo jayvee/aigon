@@ -98,6 +98,8 @@ test('prioritise writes workflow snapshot (F270 1c2766bc)', () => withTempDir('a
     fs.writeFileSync(specPath, '# feature-06\n');
     engine.ensureEntityBootstrappedSync(repo, 'feature', '06', 'backlog', specPath);
     const snap = JSON.parse(fs.readFileSync(path.join(repo, '.aigon/workflows/features/06/snapshot.json'), 'utf8'));
+    assert.strictEqual(snap.entityType, 'feature');
+    assert.strictEqual(snap.featureId, '06');
     assert.strictEqual(snap.lifecycle, 'backlog');
     assert.strictEqual(snap.currentSpecState, 'backlog');
     const eventsBefore = fs.readFileSync(path.join(repo, '.aigon/workflows/features/06/events.jsonl'), 'utf8');

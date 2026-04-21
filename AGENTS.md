@@ -80,7 +80,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/git.js` | ~700 | Branch, worktree, status, commit helpers, attribution |
 | `lib/security.js` | ~131 | Merge gate scanning (gitleaks + semgrep) |
 | `lib/workflow-heartbeat.js` | ~160 | Display-only liveness computation (alive/stale/dead); never changes engine state |
-| `lib/supervisor.js` | ~330 | Observe-only server monitoring: agent liveness, notifications. Never emits engine signals |
+| `lib/supervisor.js` | ~330 | Observe-only server monitoring: agent liveness, idle detection from workflow-signal gaps, desktop notifications. Never emits engine signals |
 | `lib/supervisor-service.js` | ~175 | Server auto-restart (launchd/systemd) for `aigon server start --persistent` |
 | `lib/terminal-adapters.js` | ~200 | Detect/launch/split per terminal (Warp, iTerm2, kitty, Terminal.app) |
 
@@ -104,6 +104,7 @@ Supporting state:
 - **Review state**: `.aigon/workflows/features/{id}/review-state.json` tracks `current` + `history[]`. Written by `agent-status reviewing`/`review-complete`; read by AutoConductor to confirm review completion.
 - **AutoConductor** (`feature-autonomous-start __run-loop`): detached tmux session. Solo: polls allReady → review session (if `--review-agent`) → waits for `review-complete` → `feature-close`. Fleet: polls allReady → eval session → polls eval file for `**Winner:**` → `feature-close <winner>`. Kills its own tmux session on completion.
 - **Heartbeat is display-only**: liveness tracking in memory only; never triggers engine transitions. Users manually mark agents as lost/failed — the system never does this automatically.
+- **Idle detection is display-only**: supervisor derives `idleState` from workflow progress gaps while a matching tmux session is still alive. It may badge and notify, but never kills, restarts, or auto-approves agents.
 - Log files are **pure narrative markdown** — no frontmatter, no machine state
 
 Research lifecycle also uses workflow-core (`.aigon/workflows/research/{id}/`). Feedback stays outside the engine; its frontmatter `status` is the authority and folder position is a reconciled projection.
@@ -202,6 +203,7 @@ When `origin` is GitHub and `gh` is available, `feature-close` does a best-effor
 7. **Use the `frontend-design` skill for ALL visual work** — see below
 8. **Never add action buttons or eligibility logic in dashboard frontend files** — all actions (workflow AND infra) must be defined in the central action registry (`lib/feature-workflow-rules.js` / `lib/research-workflow-rules.js`). The frontend renders actions from the `validActions` API response only.
 9. **Fix the class, not the instance.** When a bug surfaces on feature / entity N, the question is *"what mechanism produced this state, and how do I delete that mechanism so N+1 doesn't hit the same bug"* — not *"how do I unblock N right now."* Apply a one-off fix only when you've also fixed (or explicitly filed a feature for) the root cause in the same response. **Never leave "worth a follow-up feature" as prose in chat** — that's how the same bug hits a different entity a day later (F285 → F293 on 2026-04-21: identical legacy-missing-snapshot state, same unfiled follow-up, predictable recurrence). Choose one: fix the producer now, OR file the feature now. Don't do neither.
+10. **Check `## Pre-authorised` before stopping on a policy gate.** Before pausing to ask about a test-budget ceiling, security warning, or ambiguous criterion, read the spec's `## Pre-authorised` section. If the gate matches a listed line, proceed and include `Pre-authorised-by: <slug>` in the commit footer. If no line matches, stop and ask as normal.
 
 ## Testing Discipline (non-negotiable)
 

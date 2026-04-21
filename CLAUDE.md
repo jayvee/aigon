@@ -11,6 +11,7 @@ The full orientation lives in **`AGENTS.md`**. Read that first — it is the sin
 6. `npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh` must pass before any `git push`.
 7. Use `Skill(frontend-design)` before any visual change.
 8. To start a feature over: `aigon feature-reset <ID>` — never stitch raw cleanup commands.
+9. Check `## Pre-authorised` before stopping on a policy gate — if the gate matches a listed line, proceed and add `Pre-authorised-by: <slug>` in the commit footer.
 
 ## Write-path contract (pointer)
 
