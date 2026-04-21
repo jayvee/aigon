@@ -342,7 +342,7 @@ Research follows the same pattern with `r` instead of `f`:
 Components:
 - `{repo}` — repository directory name (e.g., `aigon`, `farline-ai`, `whos-buy-is-it`)
 - `{num}` — zero-padded feature/research ID (e.g., `07`, `140`)
-- `{agent}` — agent short code (`cc`, `gg`, `cx`, `cu`, `mv`)
+- `{agent}` — agent short code (`cc`, `gg`, `cx`, `cu`)
 - `{desc}` — kebab-case feature description from the spec filename
 
 ## Aigon Pro (`@aigon/pro`)
