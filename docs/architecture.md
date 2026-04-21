@@ -100,6 +100,8 @@ Current shared modules:
   `readFeatureAutoState`, `writeFeatureAutoState`, `clearFeatureAutoState`
 - `lib/dashboard-status-collector.js` (~830 lines): shared AIGON server read-side collector so repo/entity status assembly, dashboard detail log reads, and done-count aggregation are separated from HTTP transport and notification code, including metadata-authoritative feedback status reads
   `collectDashboardStatusData`
+- `templates/dashboard/js/autonomous-plan.js` (~80 lines): shared dashboard renderer for the server-owned autonomous stage timeline so card markup stays pure and testable outside the full browser bundle
+  `buildAutonomousPlanHtml`
 - `lib/server-runtime.js` (~90 lines): shared AIGON server lifecycle helpers extracted from infra command wiring
   `launchDashboardServer`, `stopDashboardProcess`
 - `lib/validation.js` (~1,045 lines): Iterate (Autopilot) loop and smart validation helpers
@@ -308,6 +310,7 @@ Feature writes go through the engine, but the read side is still mixed:
 - `lib/workflow-read-model.js` provides shared dashboard read state (snapshot-backed for features/research) and derives recommended actions for feedback via `lib/state-queries.js`.
 - `lib/feedback.js` provides feedback metadata parsing/collection so feedback list and dashboard reads derive status from frontmatter rather than folder position.
 - `lib/dashboard-status-collector.js` owns the AIGON server's dashboard-facing repo/entity reads — spec-review state copied verbatim from engine snapshots, log reads, and done-count aggregation.
+- `templates/dashboard/js/autonomous-plan.js` renders the dashboard card's autonomous timeline from the server-provided `autonomousPlan` payload. It does not infer stage state; `workflow-read-model.js` owns that read-side derivation.
 - `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, static serving, and delegating API requests to `lib/dashboard-routes.js`. It remains read-only with respect to both mutations and engine-state/spec/log file access.
 
 So the architecture after F171 → F283 → F294 is:

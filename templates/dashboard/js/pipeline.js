@@ -523,6 +523,15 @@
       return '<div class="kcard-rebase-warning">⚠ Rebase needed before close</div>';
     }
 
+    function buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn) {
+      const planRenderer = window.AIGON_AUTONOMOUS_PLAN;
+      if (!planRenderer || typeof planRenderer.buildAutonomousPlanHtml !== 'function') return '';
+      return planRenderer.buildAutonomousPlanHtml(feature.autonomousPlan, {
+        agentDisplayNames: AGENT_DISPLAY_NAMES,
+        peekButtonHtml: autonomousPeekBtn || ''
+      });
+    }
+
     function buildKanbanCard(feature, repoPath, pipelineType, repoMeta) {
       const card = document.createElement('div');
       card.className = 'kcard';
@@ -534,16 +543,10 @@
 
       const agents = feature.agents || [];
       const validActions = feature.validActions || [];
-      const autonomousRunning = !!(feature.autonomousSession && feature.autonomousSession.running);
       const autonomousPeekBtn = feature.autonomousSession && feature.autonomousSession.sessionName
         ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(feature.autonomousSession.sessionName) + '" title="Peek at autonomous controller output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
         : '';
-      const autonomousControllerRow = autonomousRunning
-        ? '<div class="kcard-agent agent-review">' +
-          '<div class="kcard-agent-header"><span class="kcard-agent-name">Autonomous</span>' + autonomousPeekBtn + '</div>' +
-          '<div class="kcard-agent-status-row"><span class="kcard-agent-status status-running">● Running autonomously</span></div>' +
-          '</div>'
-        : '';
+      const autonomousPlanHtml = buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn);
       // Done cards are clean — just ID and name, no agent sections, no actions
       const isDone = feature.stage === 'done';
       // Drive mode (branch): solo agent with no tmux session — skip agent sections
@@ -557,7 +560,7 @@
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
         '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildSpecReviewBadgeHtml(feature) + '</div>' +
-        autonomousControllerRow;
+        autonomousPlanHtml;
 
       if (hasAgentSections) {
         // --- Evaluation verdict layout (pick-winner state) ---
