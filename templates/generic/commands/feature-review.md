@@ -6,28 +6,30 @@ Perform a code review on another agent's implementation, making targeted fixes w
 ## Argument Resolution
 If no ID is provided or doesn't match an active feature, run `aigon feature-list --active`, filter to matches, and ask the user.
 
-## Step 1: Locate the branch
+## Step 1: Gather all context (one tool call)
 
-**You MUST commit review changes to the FEATURE WORKTREE, never to main.** Find the branch and worktree:
+**Run this entire block in a single shell execution** — do not split it up. It fetches branch info, the full diff, and the implementation log in one shot so you can review immediately without extra round-trips.
+
+**You MUST commit review changes to the FEATURE WORKTREE, never to main.**
 
 ```bash
 BRANCH=$(git branch --show-current)
 FEATURE_BRANCH=$(git branch --list 'feature-{{ARG1_SYNTAX}}-*' | head -1 | tr -d ' *')
 WORKTREE=$(git worktree list | grep "feature-{{ARG1_SYNTAX}}" | awk '{print $1}')
-```
-
-If you are on the feature branch, review files directly. If you are on main, review using `git diff main..$FEATURE_BRANCH` / `git show $FEATURE_BRANCH:path` — do NOT `cd` into the worktree from main. Commit any fixes with `git -C "$WORKTREE" add ... && git -C "$WORKTREE" commit -m "fix(review): ..."`. Review commits on main cause conflicts at `feature-close`.
-
-## Step 2: Read the spec and implementation log
-
-The spec body was printed inline by the launching CLI — use that copy. Then read `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md` for the implementer's approach.
-
-## Step 3: Review
-
-```bash
-git diff main..HEAD     # or main..$FEATURE_BRANCH from main
+echo "=== WORKSPACE ==="
+echo "Current: $BRANCH  Feature: $FEATURE_BRANCH  Worktree: $WORKTREE"
+echo "=== DIFF ==="
+git diff "main..${FEATURE_BRANCH:-HEAD}"
+echo "=== IMPLEMENTATION LOG ==="
+cat docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md 2>/dev/null || echo "(no log found)"
 aigon agent-status reviewing
 ```
+
+The spec body was printed inline by the launching CLI — use that copy for acceptance criteria.
+
+If you are on the feature branch, review files directly. If you are on main, use `git diff main..$FEATURE_BRANCH` / `git show $FEATURE_BRANCH:path` — do NOT `cd` into the worktree. Commit fixes with `git -C "$WORKTREE" add ... && git -C "$WORKTREE" commit -m "fix(review): ..."` (review commits on main cause conflicts at `feature-close`).
+
+## Step 2: Review
 
 ### You MAY fix
 - Bugs / logic errors
@@ -45,10 +47,11 @@ aigon agent-status reviewing
 - Rewrite in your preferred style
 - Add comments/docs to code you didn't change
 - "Improve" code that already works
+- Run lint, tsc, or build checks — focus on diff review only
 
 **Targeted fixes, not a rewrite.**
 
-## Step 4: Make fixes and commit
+## Step 3: Make fixes and commit
 
 For each issue: make the minimal fix in the worktree, commit with `fix(review): <description>` (use `git -C "$WORKTREE"` if you're on main).
 
@@ -56,7 +59,7 @@ Examples: `fix(review): handle null user in profile lookup`, `fix(review): escap
 
 **If the implementation is solid, commit nothing for code.** A clean review is a valid outcome.
 
-## Step 5: Update the implementation log and commit
+## Step 4: Update the implementation log and commit
 
 Append:
 
@@ -78,7 +81,7 @@ Append:
 
 Commit with `docs(review): add review notes to implementation log` (via `git -C "$WORKTREE"` if on main). Do not skip this even when no code fixes were needed — the review log entry is the audit trail for the autonomous controller and dashboard.
 
-## Step 6: Signal completion (MANDATORY before reporting)
+## Step 5: Signal completion (MANDATORY before reporting)
 
 In order:
 1. Commit every code fix with `fix(review): ...`

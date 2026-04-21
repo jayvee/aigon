@@ -47,7 +47,7 @@
       "review": "gemini-2.5-flash"
     },
     "modelOptions": [
-      { "value": null, "label": "Use config default" },
+      { "value": null, "label": "Default" },
       { "value": "gemini-2.5-flash", "label": "Gemini 2.5 Flash" },
       { "value": "gemini-2.5-pro", "label": "Gemini 2.5 Pro" }
     ],
@@ -150,6 +150,54 @@
           "commandPrefix": "wc",
           "decision": "allow",
           "priority": 90
+        },
+        {
+          "toolName": "run_shell_command",
+          "commandPrefix": "echo",
+          "decision": "allow",
+          "priority": 90
+        },
+        {
+          "toolName": "run_shell_command",
+          "commandPrefix": "awk",
+          "decision": "allow",
+          "priority": 90
+        },
+        {
+          "toolName": "run_shell_command",
+          "commandPrefix": "tr",
+          "decision": "allow",
+          "priority": 90
+        },
+        {
+          "toolName": "run_shell_command",
+          "commandPrefix": "head",
+          "decision": "allow",
+          "priority": 90
+        },
+        {
+          "toolName": "run_shell_command",
+          "commandPrefix": "tail",
+          "decision": "allow",
+          "priority": 90
+        },
+        {
+          "toolName": "run_shell_command",
+          "commandPrefix": "diff",
+          "decision": "allow",
+          "priority": 90
+        },
+        {
+          "toolName": "run_shell_command",
+          "commandPrefix": "mkdir",
+          "decision": "allow",
+          "priority": 90
+        },
+        {
+          "toolName": "run_shell_command",
+          "argsPattern": "\"command\":\"[A-Z_]+=\\$\\(",
+          "decision": "allow",
+          "priority": 88
         }
       ],
       "hooks": {
