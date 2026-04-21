@@ -15,6 +15,12 @@ sandbox_mode = "danger-full-access"
 # Allow network access for git operations (push, pull, fetch)
 network_access = true
 
+[mcp_servers.playwright]
+command = "npx"
+args = ["-y", "@playwright/mcp@latest"]
+# Auto-approve all Playwright MCP tool calls — no per-call prompts.
+default_tools_approval_mode = "approve"
+
 [_aigon]
 note = "Configuration added by Aigon"
 tools = ["aigon"]
