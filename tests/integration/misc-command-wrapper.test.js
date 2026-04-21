@@ -90,15 +90,11 @@ testAsync('nudge delivery keeps multiline quoted text intact', async () => {
     assert.strictEqual(recorded.text, message); assert.strictEqual(result.agentId, 'cc');
 });
 
-// REGRESSION feature 295: omitted agent must fail loudly when more than one active session matches.
-test('nudge agent inference errors on multiple active sessions', () => {
+// REGRESSION feature 295: multi-agent inference errors loudly; session name uses entity.repoPath basename (not cwd).
+test('nudge session inference + repoPath-derived session name', () => {
     assert.throws(() => resolveSessions({ entityType: 'feature', entityId: '295', desc: 'demo', snapshot: { agents: { cc: {}, gg: {} } } }, 'do', null, { tmuxSessionExists: () => true }), /Multiple active do sessions found/);
-});
-
-// REGRESSION feature 295: session name must use entity.repoPath basename, not cwd.
-test('nudge session name uses repoPath basename', () => {
-    const session = resolveSessions({ entityType: 'feature', entityId: '295', desc: 'demo', snapshot: { agents: { cc: {} } }, repoPath: '/tmp/some-other-repo' }, 'do', null, { tmuxSessionExists: () => true });
-    assert.strictEqual(session.sessionName, 'some-other-repo-f295-do-cc-demo');
+    const s = resolveSessions({ entityType: 'feature', entityId: '295', desc: 'demo', snapshot: { agents: { cc: {} } }, repoPath: '/tmp/some-other-repo' }, 'do', null, { tmuxSessionExists: () => true });
+    assert.strictEqual(s.sessionName, 'some-other-repo-f295-do-cc-demo');
 });
 
 // REGRESSION feature 295: failed delivery confirmation must return pane tail for diagnosis.
