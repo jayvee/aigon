@@ -202,6 +202,7 @@ When `origin` is GitHub and `gh` is available, `feature-close` does a best-effor
 7. **Use the `frontend-design` skill for ALL visual work** — see below
 8. **Never add action buttons or eligibility logic in dashboard frontend files** — all actions (workflow AND infra) must be defined in the central action registry (`lib/feature-workflow-rules.js` / `lib/research-workflow-rules.js`). The frontend renders actions from the `validActions` API response only.
 9. **Fix the class, not the instance.** When a bug surfaces on feature / entity N, the question is *"what mechanism produced this state, and how do I delete that mechanism so N+1 doesn't hit the same bug"* — not *"how do I unblock N right now."* Apply a one-off fix only when you've also fixed (or explicitly filed a feature for) the root cause in the same response. **Never leave "worth a follow-up feature" as prose in chat** — that's how the same bug hits a different entity a day later (F285 → F293 on 2026-04-21: identical legacy-missing-snapshot state, same unfiled follow-up, predictable recurrence). Choose one: fix the producer now, OR file the feature now. Don't do neither.
+10. **Check `## Pre-authorised` before stopping on a policy gate.** Before pausing to ask about a test-budget ceiling, security warning, or ambiguous criterion, read the spec's `## Pre-authorised` section. If the gate matches a listed line, proceed and include `Pre-authorised-by: <slug>` in the commit footer. If no line matches, stop and ask as normal.
 
 ## Testing Discipline (non-negotiable)
 

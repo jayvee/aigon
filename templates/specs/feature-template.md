@@ -22,6 +22,16 @@
 # Example: node --check aigon-cli.js
 ```
 
+## Pre-authorised
+<!-- Optional: standing orders the agent may enact without stopping to ask.
+     Each line is a single bounded permission. The agent cites the matching line
+     in a commit footer `Pre-authorised-by: <slug>` for auditability.
+     Absent or blank = no pre-auths; agent stops on every policy gate as normal.
+     Example lines:
+       - May raise `scripts/check-test-budget.sh` CEILING by up to +40 LOC if regression tests require it.
+       - May skip `npm run test:ui` when this feature touches only `lib/` and no dashboard assets.
+-->
+
 ## Technical Approach
 <!-- High-level approach, key decisions, constraints, non-functional requirements -->
 
