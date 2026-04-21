@@ -7,6 +7,7 @@
 - **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc` (or any agent)
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
+- **Interrupting agents**: `aigon nudge <ID> [agent] "message"` is the canonical way to message a running session — do not handcraft `tmux send-keys`
 - **Tests**: `npm test` · syntax: `node -c aigon-cli.js` · `node -c lib/utils.js`
 - **Version bumps**: after every commit — `npm version patch|minor|major && git push --tags`
 - **Seed reset**: `aigon seed-reset ~/src/<repo> --force` — resets seed repos to initial state
@@ -64,6 +65,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/profile-placeholders.js` | ~500 | Profile presets, detection, instruction directive resolvers, `getProfilePlaceholders()` |
 | `lib/feature-close.js` | ~740 | Feature-close phases: target resolution, merge, telemetry, engine close, cleanup |
 | `lib/feature-review-state.js` | ~220 | Per-feature `review-state.json` (current + history); read by AutoConductor to confirm review completion |
+| `lib/nudge.js` | ~250 | Shared nudge primitive: resolves tmux sessions from workflow state, rate-limits, delivers text atomically via paste-buffer, confirms pane echo, and records `operator.nudge_sent` events |
 | `lib/feature-spec-resolver.js` | ~140 | Canonical spec lookup |
 | `lib/state-queries.js` | ~250 | Read-only UI helpers: feedback action/transition derivation (pure, no I/O) |
 | `lib/agent-status.js` | ~130 | Per-agent status files (`.aigon/state/{prefix}-{id}-{agent}.json`), atomic writes |

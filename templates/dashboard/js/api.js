@@ -109,6 +109,50 @@
       }
     }
 
+    async function requestFeatureNudge(featureId, payload, repoPath, btn) {
+      const pendingKey = 'feature-nudge:' + String(featureId || '');
+      if (state.pendingActions.has(pendingKey)) return null;
+      state.pendingActions.add(pendingKey);
+      const origText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origText || 'Send nudge');
+      }
+      const processingToast = showToast('Sending nudge…', null, null, { processing: true });
+      try {
+        const res = await fetch('/api/feature/' + encodeURIComponent(String(featureId || '')) + '/nudge', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            repoPath,
+            agentId: payload && payload.agentId ? payload.agentId : '',
+            role: payload && payload.role ? payload.role : 'do',
+            message: payload && payload.message ? payload.message : '',
+          })
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const err = new Error(body.error || ('HTTP ' + res.status));
+          err.paneTail = body.paneTail || '';
+          throw err;
+        }
+        showToast(body.message || 'Nudge delivered');
+        await requestRefresh();
+        return body;
+      } catch (e) {
+        showToast('Nudge failed: ' + e.message, null, null, { error: true });
+        if (e.paneTail) openTerminalPanel('Nudge delivery check', 'tmux capture-pane', null, e.paneTail);
+        return null;
+      } finally {
+        if (processingToast) processingToast.remove();
+        state.pendingActions.delete(pendingKey);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = origText || 'Send nudge';
+        }
+      }
+    }
+
     async function requestFeatureAutonomousRun(featureId, options, repoPath, btn) {
       const opts = options || {};
       const agents = Array.isArray(opts.agents) ? opts.agents : [];
