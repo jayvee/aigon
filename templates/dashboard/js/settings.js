@@ -339,7 +339,7 @@
             };
             const track = document.createElement('span'); track.className = 'toggle-track';
             sw.appendChild(input); sw.appendChild(track); return sw;
-          } else if (def.type === 'enum') {
+          } else if (def.type === 'enum' || def.type === 'select') {
             const input = document.createElement('select'); input.className = 'settings-select settings-input-compact';
             const emptyOpt = document.createElement('option'); emptyOpt.value = ''; emptyOpt.textContent = ''; input.appendChild(emptyOpt);
             (def.options || []).forEach(opt => { const el = document.createElement('option'); el.value = opt; el.textContent = opt; input.appendChild(el); });
