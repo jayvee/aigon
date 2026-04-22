@@ -45,6 +45,12 @@ aigon agent-status implementing
 
 **Before stopping on a policy gate (test budget, security warning, ambiguous criterion):** check the spec's `## Pre-authorised` section. If the gate matches a listed line, proceed and include a commit footer `Pre-authorised-by: <slug-of-preauth-line>` citing which line authorised it. If no line matches, stop and ask as normal.
 
+**Scope guardrails — read before editing:**
+- Do not delete, move, or modify files unrelated to your feature spec. If existing code conflicts with your feature, document it in your log — do not remove it.
+- Do not delete any test files. Do not remove existing function exports.
+- Do not move spec files between folders — only the CLI manages spec state transitions.
+- If you must touch a file outside your feature's area, note it explicitly in your implementation log with the reason.
+
 Work through the acceptance criteria in order.
 
 ## Step 4: Commit your implementation
