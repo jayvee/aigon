@@ -8,26 +8,13 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { test, testAsync, withTempDir, withTempDirAsync, report } = require('../_helpers');
+const { test, testAsync, withTempDir, withTempDirAsync, report, ENTITY_STAGE_DIRS, seedEntityDirs, writeSpec, writeSnap } = require('../_helpers');
 const wrm = require('../../lib/workflow-read-model');
 const board = require('../../lib/board');
 const workflowEngine = require('../../lib/workflow-core/engine');
 
-const FOLDERS = ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused'];
 const seed = (repo) => {
-    for (const kind of ['features', 'research-topics'])
-        for (const f of FOLDERS) fs.mkdirSync(path.join(repo, 'docs', 'specs', kind, f), { recursive: true });
-};
-const writeSpec = (repo, kind, folder, file) => fs.writeFileSync(path.join(repo, 'docs', 'specs', kind, folder, file), `# ${file}\n`);
-const writeSnap = (repo, kind, id, lifecycle) => {
-    const dir = path.join(repo, '.aigon', 'workflows', kind, String(id));
-    fs.mkdirSync(dir, { recursive: true });
-    const entityType = kind === 'features' ? 'feature' : 'research';
-    fs.writeFileSync(path.join(dir, 'snapshot.json'), JSON.stringify({
-        entityType, [`${entityType}Id`]: String(id), currentSpecState: lifecycle, lifecycle,
-        mode: 'solo_branch', agents: { cx: { status: 'running' } },
-        createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:05:00Z',
-    }));
+    for (const kind of ['features', 'research-topics']) seedEntityDirs(repo, kind);
 };
 const writeFeatureAuto = (repo, id, payload) => {
     const file = path.join(repo, '.aigon', 'state', `feature-${String(id).padStart(2, '0')}-auto.json`);
@@ -80,8 +67,8 @@ test('board re-buckets snapshot-backed features and carries spec drift', () => w
     writeSnap(repo, 'features', '14', 'implementing');
     writeSnap(repo, 'features', '18', 'implementing');
     const items = board.collectBoardItems(
-        { root: path.join(repo, 'docs', 'specs', 'features'), prefix: 'feature', folders: FOLDERS },
-        new Set(FOLDERS), repo
+        { root: path.join(repo, 'docs', 'specs', 'features'), prefix: 'feature', folders: ENTITY_STAGE_DIRS },
+        new Set(ENTITY_STAGE_DIRS), repo
     );
     const ids = (col) => (items[col] || []).map(i => i.id);
     assert.ok(!ids('02-backlog').includes('14') && ids('03-in-progress').includes('14'));

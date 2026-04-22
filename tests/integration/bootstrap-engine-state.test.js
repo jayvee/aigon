@@ -4,26 +4,9 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { test, withTempDir, report } = require('../_helpers');
+const { test, withTempDir, report, seedEntityDirs, withRepoCwd } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 const wrm = require('../../lib/workflow-read-model');
-
-const STAGES = ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused'];
-
-function seedEntityDirs(repo, kind) {
-    STAGES.forEach((dir) => fs.mkdirSync(path.join(repo, 'docs', 'specs', kind, dir), { recursive: true }));
-}
-
-function withRepoCwd(repo, fn) {
-    const prev = process.cwd();
-    process.chdir(repo);
-    try {
-        return fn();
-    } finally {
-        process.chdir(prev);
-        process.exitCode = 0;
-    }
-}
 
 function freshRequire(modulePath) {
     delete require.cache[require.resolve(modulePath)];

@@ -55,4 +55,36 @@ async function report() {
     if (failed > 0) process.exit(1);
 }
 
-module.exports = { test, testAsync, withTempDir, withTempDirAsync, report, GIT_SAFE_ENV };
+const ENTITY_STAGE_DIRS = Object.freeze(['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused']);
+
+function seedEntityDirs(repo, kind) {
+    ENTITY_STAGE_DIRS.forEach((dir) => fs.mkdirSync(path.join(repo, 'docs', 'specs', kind, dir), { recursive: true }));
+}
+
+function writeSpec(repo, kind, stage, file) {
+    fs.writeFileSync(path.join(repo, 'docs', 'specs', kind, stage, file), `# ${file}\n`);
+}
+
+function writeSnap(repo, kind, id, lifecycle) {
+    const dir = path.join(repo, '.aigon', 'workflows', kind, String(id));
+    fs.mkdirSync(dir, { recursive: true });
+    const entityType = kind === 'features' ? 'feature' : 'research';
+    fs.writeFileSync(path.join(dir, 'snapshot.json'), JSON.stringify({
+        entityType, [`${entityType}Id`]: String(id), currentSpecState: lifecycle, lifecycle,
+        mode: 'solo_branch', agents: { cx: { status: 'running' } },
+        createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:05:00Z',
+    }));
+}
+
+function withRepoCwd(repo, fn) {
+    const prev = process.cwd();
+    process.chdir(repo);
+    try {
+        return fn();
+    } finally {
+        process.chdir(prev);
+        process.exitCode = 0;
+    }
+}
+
+module.exports = { test, testAsync, withTempDir, withTempDirAsync, report, GIT_SAFE_ENV, ENTITY_STAGE_DIRS, seedEntityDirs, writeSpec, writeSnap, withRepoCwd };
