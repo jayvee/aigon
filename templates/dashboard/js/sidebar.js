@@ -141,6 +141,9 @@
       pickerCollectTriplet = !!opts.collectTriplet;
       const implAgents = opts.implementingAgents || [];
       const taskType = pickerTaskType(opts);
+      // Feature 313: set recommendation before rendering rows so dropdowns pre-select.
+      if (typeof setPickerRecommendation === 'function') setPickerRecommendation(opts.recommendation || null);
+      renderPickerRecommendationBanner(opts.recommendation || null);
       // Re-render rows to toggle triplet dropdowns on/off for this invocation.
       renderAgentPickerRows({ collectTriplet: pickerCollectTriplet });
       return fetchAgentModels(opts.repoPath).then(models => new Promise((resolve) => {

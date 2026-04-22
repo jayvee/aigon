@@ -186,7 +186,8 @@
           const autoBadge = feature.autonomousSession && feature.autonomousSession.running
             ? '<span class="autonomous-badge">Running autonomously</span>'
             : '';
-          return (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + autoBadge + evalBadge;
+          const complexityBadge = typeof complexityBadgeHtml === 'function' ? complexityBadgeHtml(feature.complexity) : '';
+          return (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + complexityBadge + autoBadge + evalBadge;
         },
         researchTitle(item) {
           const readyToEval = (item.validActions || []).some(a => a.action === 'research-eval');
@@ -194,7 +195,8 @@
           const badge = inEval ? '<span class="eval-badge">evaluating</span>'
             : readyToEval ? '<span class="research-badge all-submitted">ready to evaluate</span>'
             : '<span class="research-badge">research</span>';
-          return (item.id ? 'R#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + badge;
+          const complexityBadge = typeof complexityBadgeHtml === 'function' ? complexityBadgeHtml(item.complexity) : '';
+          return (item.id ? 'R#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + complexityBadge + badge;
         },
         feedbackTitle(item) { return (item.id ? 'FB#' + escHtml(item.id) + ' ' : '') + escHtml(item.name) + '<span class="research-badge">feedback</span>'; },
         researchEvalBtn(item) {

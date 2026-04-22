@@ -87,6 +87,19 @@ function buildTripletPickerHeaderRow() {
   return header;
 }
 
+// Feature 313: recommendation for the currently-open agent picker.
+// Shape: { complexity, agents: { <id>: { model, effort, modelSource, effortSource } } }
+// Pre-selects dropdowns; user can still override.
+let pickerRecommendation = null;
+function setPickerRecommendation(rec) { pickerRecommendation = rec || null; }
+
+function getRecommendedValue(agentId, field) {
+  if (!pickerRecommendation || !pickerRecommendation.agents) return null;
+  const entry = pickerRecommendation.agents[agentId];
+  if (!entry) return null;
+  return entry[field] == null ? null : String(entry[field]);
+}
+
 // Append model + effort controls for triplet-grid rows. Always emits two
 // columns (select or placeholder) so the agent-picker grid stays aligned.
 function appendTripletSelects(rowEl, agent) {
@@ -105,14 +118,19 @@ function appendTripletSelects(rowEl, agent) {
       el.textContent = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
       sel.appendChild(el);
     });
+    const recommended = getRecommendedValue(agent.id, 'model');
     const stored = tripletStorage.read(agent.id);
-    if (stored.model != null && modelOpts.some(o => String(o.value || '') === stored.model)) {
+    if (recommended && modelOpts.some(o => String(o.value || '') === recommended)) {
+      sel.value = recommended;
+      sel.classList.add('agent-triplet-recommended');
+    } else if (stored.model != null && modelOpts.some(o => String(o.value || '') === stored.model)) {
       sel.value = stored.model;
     }
     sel.title = 'Default: use the model from aigon config for this task type';
     sel.addEventListener('click', e => e.stopPropagation());
     sel.addEventListener('change', e => {
       e.stopPropagation();
+      sel.classList.remove('agent-triplet-recommended');
       tripletStorage.write(agent.id, { model: sel.value || null });
     });
     cellModel.appendChild(sel);
@@ -134,14 +152,19 @@ function appendTripletSelects(rowEl, agent) {
       el.textContent = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
       sel.appendChild(el);
     });
+    const recommendedEffort = getRecommendedValue(agent.id, 'effort');
     const stored = tripletStorage.read(agent.id);
-    if (stored.effort != null && effortOpts.some(o => String(o.value || '') === stored.effort)) {
+    if (recommendedEffort && effortOpts.some(o => String(o.value || '') === recommendedEffort)) {
+      sel.value = recommendedEffort;
+      sel.classList.add('agent-triplet-recommended');
+    } else if (stored.effort != null && effortOpts.some(o => String(o.value || '') === stored.effort)) {
       sel.value = stored.effort;
     }
     sel.title = 'Default: use the effort level from aigon config for this agent';
     sel.addEventListener('click', e => e.stopPropagation());
     sel.addEventListener('change', e => {
       e.stopPropagation();
+      sel.classList.remove('agent-triplet-recommended');
       tripletStorage.write(agent.id, { effort: sel.value || null });
     });
     cellEffort.appendChild(sel);
@@ -231,6 +254,66 @@ const tripletStorage = {
     } catch (_) { /* non-fatal */ }
   }
 };
+
+// Feature 313: shared helpers for the complexity + recommendation UX.
+const COMPLEXITY_LABEL_CLASS = {
+  'low': 'complexity-low',
+  'medium': 'complexity-medium',
+  'high': 'complexity-high',
+  'very-high': 'complexity-very-high',
+};
+
+function complexityBadgeHtml(complexity) {
+  if (!complexity || !COMPLEXITY_LABEL_CLASS[complexity]) return '';
+  return '<span class="complexity-badge ' + COMPLEXITY_LABEL_CLASS[complexity] + '" title="Complexity rating from spec frontmatter">' + complexity + '</span>';
+}
+
+// Render a banner inside the agent picker modal summarising the spec
+// complexity and per-agent recommended {model, effort}. Hides banner when
+// recommendation is null.
+function renderPickerRecommendationBanner(recommendation) {
+  const modalCard = document.querySelector('#agent-picker .modal-card');
+  if (!modalCard) return;
+  let banner = document.getElementById('agent-picker-recommendation');
+  if (!recommendation || (!recommendation.complexity && (!recommendation.agents || Object.values(recommendation.agents).every(a => !a.model && !a.effort)))) {
+    if (banner) banner.style.display = 'none';
+    return;
+  }
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'agent-picker-recommendation';
+    banner.className = 'agent-picker-recommendation';
+    const after = document.getElementById('agent-picker-desc');
+    if (after && after.nextSibling) modalCard.insertBefore(banner, after.nextSibling);
+    else modalCard.appendChild(banner);
+  }
+  banner.style.display = '';
+  const parts = [];
+  if (recommendation.complexity) parts.push('<span class="recommendation-label">Recommended:</span> complexity ' + complexityBadgeHtml(recommendation.complexity));
+  else parts.push('<span class="recommendation-label">Recommended:</span>');
+  const agentBits = [];
+  Object.entries(recommendation.agents || {}).forEach(([id, entry]) => {
+    if (!entry || (!entry.model && !entry.effort)) return;
+    const modelLabel = entry.model || 'default';
+    const effortLabel = entry.effort ? '/' + entry.effort : '';
+    agentBits.push('<span class="recommendation-agent"><b>' + id + '</b> ' + modelLabel + effortLabel + '</span>');
+  });
+  if (agentBits.length > 0) parts.push(agentBits.join(' · '));
+  banner.innerHTML = parts.join(' ');
+}
+
+// Feature 313: fetch the spec-frontmatter recommendation for an entity.
+// Returns the `resolved` payload (with per-agent fallback chain applied) or null.
+async function fetchSpecRecommendation(type, id, repoPath) {
+  try {
+    const url = '/api/recommendation/' + encodeURIComponent(type) + '/' + encodeURIComponent(id)
+      + (repoPath ? '?repoPath=' + encodeURIComponent(repoPath) : '');
+    const res = await fetch(url, { headers: { 'accept': 'application/json' } });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body && body.resolved ? body.resolved : null;
+  } catch (_) { return null; }
+}
 
 function replaceNodeChildren(node, children) {
   node.replaceChildren(...children);
@@ -524,7 +607,9 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       break;
     case 'feature-start':
     case 'research-start': {
-      const triplets = await showAgentPicker(id, feature.name, { repoPath, taskType: 'implement', action: va.action, collectTriplet: true });
+      const recEntity = va.action === 'research-start' ? 'research' : 'feature';
+      const recommendation = await fetchSpecRecommendation(recEntity, id, repoPath);
+      const triplets = await showAgentPicker(id, feature.name, { repoPath, taskType: 'implement', action: va.action, collectTriplet: true, recommendation });
       if (!triplets) return;
       const extraArgs = tripletsToCliArgs(triplets);
       const agentIds = triplets.map(t => t.id);
@@ -536,7 +621,8 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       break;
     }
     case 'feature-autopilot': {
-      const triplets = await showAgentPicker(id, feature.name, { title: 'Select Autopilot Agents', submitLabel: 'Autopilot', repoPath, taskType: 'implement', action: va.action, collectTriplet: true });
+      const recommendation = await fetchSpecRecommendation('feature', id, repoPath);
+      const triplets = await showAgentPicker(id, feature.name, { title: 'Select Autopilot Agents', submitLabel: 'Autopilot', repoPath, taskType: 'implement', action: va.action, collectTriplet: true, recommendation });
       if (!triplets) return;
       if (triplets.length < 2) { showToast('Select at least 2 agents for autopilot'); return; }
       const extraArgs = tripletsToCliArgs(triplets);
