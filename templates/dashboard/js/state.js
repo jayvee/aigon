@@ -24,6 +24,7 @@
       settingsModelRepo: localStorage.getItem(lsKey('settingsModelRepo')) || (storedSettingsRepo !== 'all' ? storedSettingsRepo : ''),
       settingsDefaultsRepo: localStorage.getItem(lsKey('settingsDefaultsRepo')) || (storedSettingsRepo || ''),
       pipelineType: localStorage.getItem(lsKey('pipelineType')) || 'features',
+      pipelineGroupBySet: localStorage.getItem(lsKey('pipelineGroupBySet')) === '1',
       monitorType: localStorage.getItem(lsKey('monitorType')) || 'all',
       expandedPipelineColumns: JSON.parse(localStorage.getItem(lsKey('expandedPipelineColumns')) || '{}'),
       pendingActions: new Set(),

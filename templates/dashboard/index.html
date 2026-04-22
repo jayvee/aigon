@@ -188,6 +188,12 @@
                     x-on:click="togglePaused()"
                     x-text="showPaused ? 'Hide Paused' : 'Show Paused'"
                     :style="showPaused ? 'opacity:1' : 'opacity:0.5'"></button>
+            <button class="btn btn-sm pipeline-group-toggle"
+                    x-show="$store.dashboard.pipelineType === 'features'"
+                    x-on:click="toggleGroupBySet()"
+                    x-text="groupBySet ? 'Ungroup Sets' : 'Group by Set'"
+                    :style="groupBySet ? 'opacity:1' : 'opacity:0.5'"
+                    title="Group features by their `set:` frontmatter tag within each column"></button>
           </div>
           <!-- Empty state -->
           <div class="empty" x-show="visibleRepos.length === 0" x-text="emptyMessage"></div>

@@ -987,6 +987,48 @@
         colBody.appendChild(emp);
         return;
       }
+
+      // Group-by-set: for the features pipeline only, when the toggle is on,
+      // render a simple header row per set above its member cards while
+      // leaving ungrouped cards to render normally below. Set state itself
+      // is derived purely from member stage — no mutation here.
+      if (pType === 'features' && s.pipelineGroupBySet) {
+        const orderedSetSlugs = [];
+        const bySet = new Map();
+        const ungrouped = [];
+        for (const card of cards) {
+          if (card.set) {
+            if (!bySet.has(card.set)) {
+              bySet.set(card.set, []);
+              orderedSetSlugs.push(card.set);
+            }
+            bySet.get(card.set).push(card);
+          } else {
+            ungrouped.push(card);
+          }
+        }
+        if (bySet.size > 0) {
+          for (const setSlug of orderedSetSlugs) {
+            const members = bySet.get(setSlug);
+            const header = document.createElement('div');
+            header.className = 'kanban-set-header';
+            header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary);padding:6px 8px;margin:6px 0 2px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--bg-subtle,rgba(0,0,0,0.03))';
+            header.innerHTML = '<span>◉ ' + String(setSlug).replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</span><span style="opacity:0.7">' + members.length + '</span>';
+            colBody.appendChild(header);
+            members.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
+          }
+          if (ungrouped.length > 0) {
+            const header = document.createElement('div');
+            header.className = 'kanban-set-header kanban-set-header-ungrouped';
+            header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary);padding:6px 8px;margin:8px 0 2px';
+            header.innerHTML = '<span>Ungrouped</span><span style="opacity:0.7">' + ungrouped.length + '</span>';
+            colBody.appendChild(header);
+            ungrouped.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
+          }
+          return;
+        }
+      }
+
       const DONE_CAP = 6;
       const OVERFLOW_CAP = 8;
       const expandedColumns = state.expandedPipelineColumns || {};
@@ -1072,6 +1114,12 @@
           const next = !this.showPaused;
           Alpine.store('dashboard')._showPaused = next;
           localStorage.setItem(lsKey('showPaused'), next ? '1' : '0');
+        },
+        get groupBySet() { return !!Alpine.store('dashboard').pipelineGroupBySet; },
+        toggleGroupBySet() {
+          const next = !this.groupBySet;
+          Alpine.store('dashboard').pipelineGroupBySet = next;
+          localStorage.setItem(lsKey('pipelineGroupBySet'), next ? '1' : '0');
         },
         getStageDisplayCount(repo, stage) {
           const s = Alpine.store('dashboard');
