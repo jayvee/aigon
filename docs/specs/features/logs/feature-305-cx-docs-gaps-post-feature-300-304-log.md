@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 258
+lines_removed: 0
+lines_changed: 258
+files_touched: 11
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 1801418
+output_tokens: 14537
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 1626112
+thinking_tokens: 2881
+total_tokens: 1815955
+billable_tokens: 1818836
+cost_usd: 4.0444
+sessions: 5
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 305 - docs-gaps-post-feature-300-304
 Agent: cx
 
