@@ -52,6 +52,12 @@
       { "value": "gemini-2.5-pro", "label": "Gemini 2.5 Pro" }
     ],
     "effortOptions": [],
+    "complexityDefaults": {
+      "low":       { "model": "gemini-2.5-flash", "effort": null },
+      "medium":    { "model": "gemini-2.5-flash", "effort": null },
+      "high":      { "model": "gemini-2.5-pro",   "effort": null },
+      "very-high": { "model": "gemini-2.5-pro",   "effort": null }
+    },
     "modelFlag": "--model",
     "effortFlag": null,
     "effortEnv": null,

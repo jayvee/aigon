@@ -30,3 +30,10 @@ Review the spec against this checklist. Prefer small, targeted edits over broad 
 - Edit in place.
 - Keep valid author intent.
 - Strengthen the spec without rewriting its voice unless the original wording is actively harmful or unclear.
+
+### Frontmatter: complexity + recommended models (F313)
+- Verify `complexity:` matches the spec's actual scope + risk + judgment-load using the rubric (low / medium / high / very-high).
+  - **low** config/doc/single-file; **medium** standard cross-cutting; **high** multi-file engine/event/dashboard; **very-high** architectural shifts.
+- If the author over- or under-rated complexity, revise the value. Note the revision (old → new) in the review commit's Summary and give the reason in one line.
+- Check `recommended_models`: per-agent entries either stay `{ model: null, effort: null }` (inherit `cli.complexityDefaults`) or justify an asymmetric override in the Technical Approach prose. Strip bogus overrides; keep deliberate ones.
+- Frontmatter edits ship in the same `spec-review:` commit as other edits.

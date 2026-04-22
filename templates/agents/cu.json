@@ -44,6 +44,12 @@
     },
     "modelOptions": [],
     "effortOptions": [],
+    "complexityDefaults": {
+      "low":       { "model": null, "effort": null },
+      "medium":    { "model": null, "effort": null },
+      "high":      { "model": null, "effort": null },
+      "very-high": { "model": null, "effort": null }
+    },
     "modelFlag": null,
     "effortFlag": null,
     "effortEnv": null,

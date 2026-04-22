@@ -3,6 +3,9 @@
 The full orientation lives in **`AGENTS.md`**. Read that first — it is the single source of truth for repo structure, the ctx pattern, the module map, state architecture, editing rules, testing discipline, and common mistakes.
 
 ## Hot rules (read before editing)
+- **F313 frontmatter**: feature/research specs carry `complexity:` + `recommended_models:` YAML frontmatter. Parser: `lib/cli-parse.js parseFrontMatter` (inline `{}` maps supported). Resolver: `lib/spec-recommendation.js`. Dashboard reads via `/api/recommendation/:type/:id` and pre-selects the start-modal dropdowns. Missing frontmatter is valid; it falls back to `templates/agents/<id>.json cli.complexityDefaults`.
+
+
 1. Run args verbatim — never add agents/flags from context.
 2. Template source of truth is `templates/generic/commands/`. Never edit `.claude/commands/` working copies.
 3. After any `lib/*.js` edit, run `aigon server restart`.

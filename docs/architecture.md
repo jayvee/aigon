@@ -243,6 +243,28 @@ The workflow-core engine is the sole lifecycle authority for features and resear
 
 **Central launch helper:** Every spawn path (`feature-start`, dashboard "restart agent", autopilot iterate, AutoConductor review spawn, `feature-open`) MUST go through `buildAgentLaunchInvocation({agentId, snapshot, stageDefaultModel})`. Direct reads of `cliConfig.models[...]` in new spawn sites will silently bypass the override — this is exactly the bug the helper exists to prevent.
 
+### Spec Frontmatter: complexity + recommended models (feature 313)
+
+Feature and research specs may carry a YAML frontmatter block capturing the authoring AI's complexity assessment and per-agent `{model, effort}` recommendation:
+
+```yaml
+---
+complexity: low | medium | high | very-high
+recommended_models:
+  cc: { model: <string|null>, effort: <string|null> }
+  cx: { model: <string|null>, effort: <string|null> }
+  gg: { model: <string|null>, effort: <string|null> }
+  cu: { model: <string|null>, effort: <string|null> }
+---
+```
+
+- **What's allowed:** `complexity` (single enum) and `recommended_models` (map of agentId → `{model, effort}`). `transitions:` is also maintained here by the CLI for audit trail.
+- **What's not allowed:** workflow state. Lifecycle stage, agents, review status etc. live in the workflow-core snapshot — frontmatter is advisory, not authoritative.
+- **Parser:** `lib/cli-parse.js` `parseFrontMatter`. Inline `{ key: value }` maps are parsed into plain objects.
+- **Resolver:** `lib/spec-recommendation.js` applies the fallback chain `spec → agent.cli.complexityDefaults[<complexity>] → null` and exposes the per-agent recommendation via `/api/recommendation/:type/:id`.
+- **Missing / malformed frontmatter is valid** — treated as "no recommendation, use config defaults" (pre-F313 behaviour preserved).
+- Producers: `feature-create`, `research-create`, and `feature-spec-review` all touch frontmatter. Readers: the dashboard start modal (banner + pre-selection), backlog card complexity badge.
+
 ### Spec Pre-authorisation
 
 Feature specs may include an optional `## Pre-authorised` section after `## Validation`.

@@ -12,6 +12,7 @@
 - **Version bumps**: after every commit — `npm version patch|minor|major && git push --tags`
 - **Seed reset**: `aigon seed-reset ~/src/<repo> --force` — resets seed repos to initial state
 - **Cross-machine sync**: `aigon sync` — backup/restore `.aigon/` via private git repo (see `lib/sync.js`)
+- **Spec frontmatter (F313)**: `complexity:` (low/medium/high/very-high) and `recommended_models:` in feature/research specs drive the dashboard start modal's per-agent `{model, effort}` pre-selection. Missing frontmatter falls back to `templates/agents/<id>.json` `cli.complexityDefaults` and then to `aigon config models`. Parser + resolver live in `lib/spec-recommendation.js`; API `/api/recommendation/:type/:id`.
 
 ## The ctx Pattern
 Commands receive dependencies via a `ctx` object — enables test overrides without mocking globals:
