@@ -21,6 +21,7 @@ test-results/
 
 # Aigon runtime files (never committed)
 .aigon/state/
+.aigon/sessions/
 .aigon/locks/
 .aigon/workflows/
 .aigon/telemetry/
