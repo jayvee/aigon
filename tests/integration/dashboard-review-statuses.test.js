@@ -11,6 +11,8 @@ const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 const reviewState = require('../../lib/feature-review-state');
 const wrm = require('../../lib/workflow-read-model');
+const ast = require('../../lib/agent-status');
+const { collectRepoStatus, clearTierCache } = require('../../lib/dashboard-status-collector');
 const {
     normalizeDashboardStatus,
     deriveFeatureDashboardStatus,
@@ -53,6 +55,26 @@ testAsync('workflow read model reloads completed feature review state from disk'
     assert.strictEqual(second.reviewStatus, 'done');
     assert.strictEqual(second.reviewSessions.length, 1);
     assert.strictEqual(second.reviewSessions[0].agent, 'gg');
+}));
+
+testAsync('collectRepoStatus surfaces feedback-addressed from per-agent status file', () => withTempDirAsync('aigon-feedback-addressed-', async (repo) => {
+    const specPath = path.join(repo, 'docs', 'specs', 'features', '03-in-progress', 'feature-77-fb-addressed.md');
+    fs.mkdirSync(path.dirname(specPath), { recursive: true });
+    fs.writeFileSync(specPath, '# fb\n');
+    await engine.startFeature(repo, '77', 'solo_branch', ['cc']);
+    // Per-agent file is the only producer of `feedback-addressed` — the workflow
+    // snapshot still reports the agent as `implementing`, so the dashboard must
+    // read the status file rather than collapse to the snapshot value.
+    ast.writeAgentStatusAt(repo, '77', 'cc', { status: 'feedback-addressed' }, 'feature');
+    clearTierCache(repo);
+
+    const response = { summary: { implementing: 0, waiting: 0, submitted: 0, error: 0, total: 0 } };
+    const st = collectRepoStatus(repo, response);
+    const feature = st.features.find(f => String(f.id) === '77');
+    assert.ok(feature, 'feature 77 missing from dashboard payload');
+    const cc = feature.agents.find(a => a.id === 'cc');
+    assert.ok(cc, 'cc agent missing from feature 77');
+    assert.strictEqual(cc.status, 'feedback-addressed', `expected feedback-addressed, got ${cc.status}`);
 }));
 
 report();
