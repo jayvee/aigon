@@ -1,3 +1,7 @@
+---
+set: feature-set
+---
+
 # Feature: feature-set-3-autonomous-conductor
 
 ## Summary

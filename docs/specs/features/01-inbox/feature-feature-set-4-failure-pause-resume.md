@@ -1,3 +1,7 @@
+---
+set: feature-set
+---
+
 # Feature: feature-set-4-failure-pause-resume
 
 ## Summary
