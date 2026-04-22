@@ -19,7 +19,8 @@
 
 set -euo pipefail
 
-CEILING="${CEILING:-2500}"
+# Default includes F308 pre-authorised +80 LOC for failover regression tests (spec 308).
+CEILING="${CEILING:-2830}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"

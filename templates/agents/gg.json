@@ -242,5 +242,17 @@
       "exitEnforcement": null
     }
   },
+  "failureDetectors": {
+    "tokenExhaustion": {
+      "exitCodes": [1],
+      "stderrPatterns": [
+        "quota exceeded",
+        "rate limit",
+        "resource exhausted",
+        "token limit",
+        "context length"
+      ]
+    }
+  },
   "commandExcludes": []
 }
