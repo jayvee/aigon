@@ -75,7 +75,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/feature-spec-resolver.js` | ~140 | Canonical spec lookup |
 | `lib/state-queries.js` | ~250 | Read-only UI helpers: feedback action/transition derivation (pure, no I/O) |
 | `lib/agent-status.js` | ~130 | Per-agent status files (`.aigon/state/{prefix}-{id}-{agent}.json`), atomic writes |
-| `lib/agent-prompt-resolver.js` | ~140 | Resolves launch prompt for agent + verb. Default passes through `cliConfig.<verb>Prompt`; cx inlines the template body directly |
+| `lib/agent-prompt-resolver.js` | ~140 | Resolves launch prompt for agent + verb. Slash-invocable agents (cc/gg/cu) pass through `cliConfig.<verb>Prompt`; non-invocable agents (cx/op) inline the canonical template body directly |
 | `lib/agent-launch.js` | ~130 | `resolveLaunchTriplet` + `buildAgentLaunchInvocation`. **Every** spawn path must route through this helper so per-feature `{model, effort}` overrides captured on `feature.started` survive every respawn |
 | `lib/stats-aggregate.js` | ~270 | Rolled-up stats cache (`.aigon/cache/stats-aggregate.json`); rebuilt lazily; includes `perTriplet` rollup keyed on `agent\|model\|effort` |
 | `lib/migration.js` | ~300 | Versioned state migrations with backup/restore/validate lifecycle |
@@ -143,6 +143,7 @@ Recent incidents — every one of these is a case of a read path paving over a m
 - **gg**: `.gemini/commands/aigon/*.toml`, `.gemini/settings.json` (hooks), `.gemini/policies/aigon.toml`
 - **cx**: `.agents/skills/aigon-*/SKILL.md` (project-local), `.codex/config.toml`. Codex also needs exact-path trust entries in `~/.codex/config.toml` for each worktree; trusting only `~/.aigon/worktrees/<repo>` is not enough for child worktrees to inherit the repo `.codex/config.toml`.
 - **cu**: `.cursor/commands/aigon-*.md`, `.cursor/cli.json`, `.cursor/hooks.json`, `.cursor/rules/aigon.mdc`
+- **op**: `.agents/skills/aigon-*/SKILL.md` (project-local). OpenCode is a router/harness; Aigon does not own its config or hardcode a default model — model/provider selection stays in the user's OpenCode config. Aigon-spawned sessions use `opencode run "<inline prompt body>"` via the shared non-slash launch path (see `lib/agent-prompt-resolver.js`).
 
 **Shared:** `AGENTS.md` (scaffolded on first install only, never overwritten), `docs/agents/{agent}.md` (marker blocks), `docs/development_workflow.md` (full overwrite)
 
