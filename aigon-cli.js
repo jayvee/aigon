@@ -35,7 +35,7 @@ function formatCliError(error) {
 
 let COMMAND_ALIASES;
 let createFeatureCommands, createResearchCommands, createFeedbackCommands;
-let createSetupCommands, createInfraCommands, createMiscCommands, createWorkflowCommands;
+let createSetupCommands, createInfraCommands, createMiscCommands, createWorkflowCommands, createSetCommands;
 
 try {
     ({ COMMAND_ALIASES } = require('./lib/constants'));
@@ -46,6 +46,7 @@ try {
     ({ createInfraCommands } = require('./lib/commands/infra'));
     ({ createMiscCommands } = require('./lib/commands/misc'));
     ({ createWorkflowCommands } = require('./lib/commands/workflow'));
+    ({ createSetCommands } = require('./lib/commands/set'));
 } catch (error) {
     console.error(formatCliError(error));
     process.exit(1);
@@ -59,6 +60,7 @@ const commands = {
     ...createInfraCommands(),
     ...createMiscCommands(),
     ...createWorkflowCommands(),
+    ...createSetCommands(),
 };
 
 const args = process.argv.slice(2);
