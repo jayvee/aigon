@@ -110,6 +110,12 @@
           html.push(`<span class="logs-cmd">${cmd}</span>`);
           html.push(`<span class="logs-dur">${escHtml(dur)}</span>`);
           html.push('<span class="logs-copy" title="Copy to clipboard">⧉</span>');
+          if (!ok && evt.action === 'feature-close') {
+            const fId = escHtml((evt.args || [])[0] || '');
+            const aId = escHtml((evt.args || [])[1] || '');
+            const rp = escHtml(evt.repoPath || '');
+            html.push(`<button class="btn btn-secondary logs-close-resolve-btn" data-feature-id="${fId}" data-agent-id="${aId}" data-repo-path="${rp}">Close with agent</button>`);
+          }
           html.push('</div>');
           // Detail section (hidden until click)
           const hasStdout = evt.stdout && evt.stdout.trim();
@@ -182,6 +188,14 @@
           navigator.clipboard.writeText(text).then(() => {
             btn.textContent = '✓'; setTimeout(() => { btn.textContent = '⧉'; }, 1000);
           });
+        });
+      });
+
+      // "Close with agent" buttons on failed feature-close entries
+      container.querySelectorAll('.logs-close-resolve-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          requestFeatureOpen(btn.dataset.featureId, btn.dataset.agentId, btn.dataset.repoPath, btn, 'features', 'close-resolve');
         });
       });
 

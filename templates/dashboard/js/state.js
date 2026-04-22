@@ -28,6 +28,7 @@
       expandedPipelineColumns: JSON.parse(localStorage.getItem(lsKey('expandedPipelineColumns')) || '{}'),
       pendingActions: new Set(),
       pendingDevServerPokes: new Set(),
+      closeFailedFeatures: new Map(),
       // feature 234: true while the backend is restarting after a lib/*.js merge
       serverRestarting: false
     };

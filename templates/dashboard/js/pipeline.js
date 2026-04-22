@@ -817,13 +817,22 @@ function buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn) {
         const vaAction = btn.getAttribute('data-va-action');
         const vaAgentId = btn.getAttribute('data-agent') || null;
         const va = (feature.validActions || []).find(a => a.action === vaAction && (a.agentId || null) === vaAgentId)
-          || (vaAction === 'feature-close' ? { action: 'feature-close', label: 'Close' } : null)
-          || (vaAction === 'feature-open' ? { action: 'feature-open', label: 'Open worktree', agentId: vaAgentId } : null);
+          || (vaAction === 'feature-close' ? { action: 'feature-close', label: 'Close' } : null);
         if (!va) return;
         btn._origText = btn.textContent;
         btn.onclick = async (e) => {
           e.stopPropagation();
           await handleFeatureAction(va, feature, repoPath, btn, pipelineType);
+        };
+      });
+
+      card.querySelectorAll('.kcard-close-resolve-btn').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const info = state.closeFailedFeatures && state.closeFailedFeatures.get(String(feature.id));
+          if (!info) return;
+          state.closeFailedFeatures.delete(String(feature.id));
+          await requestFeatureOpen(feature.id, info.agentId, info.repoPath, btn, pipelineType, 'close-resolve');
         };
       });
 

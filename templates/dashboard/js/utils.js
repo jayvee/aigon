@@ -52,7 +52,8 @@
       n.appendChild(dismiss);
       wrap.prepend(n);
       while (wrap.children.length > 5) wrap.removeChild(wrap.lastChild);
-      if (!isProcessing) {
+      const isPersistent = opts && opts.persistent;
+      if (!isProcessing && !isPersistent) {
         const timeout = isError ? 20000 : 10000;
         setTimeout(() => n.remove(), timeout);
       }

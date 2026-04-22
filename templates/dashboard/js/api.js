@@ -89,6 +89,7 @@
         } else if (stderrError) {
           showToast('Done with warnings — check Logs', 'Logs', () => { state.view = 'logs'; localStorage.setItem(lsKey('view'), 'logs'); render(); });
         } else {
+          if (action === 'feature-close') state.closeFailedFeatures.delete(String((args || [])[0]));
           showToast('Done: ' + (payload.command || action));
         }
         // feature 234: when the backend signals it is about to restart (lib/*.js
@@ -101,15 +102,16 @@
         }
         await requestRefresh();
       } catch (e) {
-        if (action === 'feature-close' && /Merge conflict/i.test(e.message)) {
+        if (action === 'feature-close') {
           const featureId = (args || [])[0];
           const agentId = (args || [])[1];
+          state.closeFailedFeatures.set(String(featureId), { agentId, repoPath });
           showToast(
-            'Merge conflicts — open the worktree to resolve?',
-            'Open worktree',
-            () => requestFeatureOpen(featureId, agentId, repoPath),
-            { error: true }
+            'Close failed — use "Close with agent" on the card or in Logs',
+            null, null,
+            { error: true, persistent: true }
           );
+          render();
         } else {
           showToast('Action failed: ' + e.message, null, null, {error:true});
         }

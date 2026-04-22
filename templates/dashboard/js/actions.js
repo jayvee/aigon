@@ -429,12 +429,9 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     html += renderBtn(va, 'btn btn-secondary');
   });
 
-  // Inject "Open agent" into overflow for in-progress features with a worktree
-  if (feature.stage === 'in-progress') {
-    const implementers = (feature.agents || []).filter(a => a.status === 'submitted');
-    implementers.forEach(a => {
-      overflow.push({ action: 'feature-open', label: 'Open worktree', agentId: a.id });
-    });
+  // "Close with agent" — shown persistently after a failed close
+  if (state.closeFailedFeatures && state.closeFailedFeatures.has(String(feature.id))) {
+    html += '<button class="btn btn-secondary kcard-close-resolve-btn">Close with agent</button>';
   }
 
   // Overflow dropdown
