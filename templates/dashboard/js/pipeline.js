@@ -256,8 +256,12 @@
       const drive = isSoloDrive(agent);
       const endedFlag = !!(agent.flags && agent.flags.sessionEnded);
       let icon, label, cls;
-      // tmux alive is the ground truth — override engine status if session is running
-      if (tmuxRunning && status !== 'submitted' && status !== 'waiting') {
+      if (status === 'addressing-review') {
+        icon = '●'; label = 'Addressing review'; cls = 'status-reviewing';
+      } else if (status === 'feedback-addressed') {
+        icon = '✓'; label = 'Feedback addressed'; cls = 'status-review-done';
+      // tmux alive is the ground truth unless the workflow has a more specific review-loop state
+      } else if (tmuxRunning && status !== 'submitted' && status !== 'waiting') {
         icon = '●'; label = drive ? 'Implementing' : 'Running'; cls = 'status-running';
       } else if (drive && status === 'implementing') {
         // Solo Drive mode runs in the current branch without a tmux session.
