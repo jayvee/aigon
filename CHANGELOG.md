@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Note on entries from v2.19 onwards:** the changelog was backfilled in bulk from git history on 2026-04-07 ahead of the public launch. Entries are grouped by theme and dated by month rather than per-patch. For commit-level detail, see `git log v2.18.0..HEAD` or browse the [git tags](https://github.com/jayvee/aigon/tags).
 
+## [2.54.0] - 2026-04-22
+
+Autonomous-mode reliability and multi-agent resilience. 332 commits since v2.53.0, 26 features completed (F285 → F310). The running theme: autonomous runs should survive agents falling over (token exhaustion, stalls, usage limits) and operators should be able to intervene without losing in-flight work.
+
+### Added
+- **`aigon feature-transfer <ID> --to=<agent>`** — hand a stuck in-progress feature from its current agent to a different one without losing commits or in-flight work. Captures pane output → writes a briefing to `docs/specs/features/logs/feature-<ID>-transfer-*.md` → commits uncommitted changes as `wip(transfer): …` → kills old tmux sessions → moves the worktree with `git worktree move` → emits a fresh `feature.started` event → spawns a new tmux session running the receiving agent. Alias `aft`. Primitive that F308's auto-failover detector invokes.
+- **Auto failover on token exhaustion** (F308) — supervisor detects Codex/Claude usage-limit and auth-prompt patterns in agent stderr, emits `signal.token_exhausted`, and transitions the feature through `SWITCH_AGENT` guard to the next agent in the configured failover chain (`agentFailover` persisted on `feature.started`). Projector replays `token_exhausted` + `failover_switched` events and clears the exhausted flag so a slot can exhaust again.
+- **OpenCode (`op`) as a registry-first agent** (F301) — full registry entry at `templates/agents/op.json`, contract tests, docs at `docs/agents/opencode.md`. Install with `aigon install-agent op`.
+- **Close-with-agent flow** (F299) — when `feature-close` hits a blocker (merge conflict, non-fast-forward, pushed-PR mismatch), the dashboard offers a one-click "Open agent session to resolve" that spawns a targeted `feature-close-resolve` session with the blocker context pre-loaded. Removes the "Close Failed" terminal-dead-end.
+- **Autonomous stage plan timeline on dashboard cards** (F297) — running/waiting/complete/failed per stage (Implement → Review → Counter-review → Close) rendered inline on every autonomous card, driven from `feature-<ID>-auto.json` state.
+- **Rebase-needed warning** (F300) — proactive amber strip + Close button border when the feature branch is behind main. `computeRebaseNeeded` helper, graceful-degradation-tested.
+- **Ready-to-close indicator** — green strip when Implement + Review + Counter-review are complete.
+- **Per-agent model/effort triplet pickers** (F291) — dashboard agent-picker dropdowns with model + effort overrides per launch; override badges on cards; engine persists `modelOverrides` / `effortOverrides` on `feature.started`; stats aggregate per-triplet cost.
+- **Per-turn token telemetry + `workflowRunId`** — activity-scoped stats, Codex config audit, cost rollups.
+- **Compact carry-forward in Autopilot iterations 2+** (F289) — each retry gets a deduplicated summary of prior-iteration findings instead of an unbounded transcript.
+- **Dashboard review-check status indicators** (F290, F309) — per-review lifecycle status on cards.
+- **Auditable agent nudges** — every nudge logs to an append-only trail; nudge dialog on dashboard for targeted prompts.
+- **Bootstrap-engine-state-on-create** — `feature-create` / `research-create` now write the workflow snapshot immediately, eliminating the "newly-created renders as legacy" gap.
+- **Idle detector + spec pre-authorisation** (F293) — supervisor emits an idle signal when an agent hasn't committed or heartbeated for a configurable window; specs carry `## Pre-authorised` bullets that agents cite in commit footers to proceed past policy gates without stopping for user input.
+- **Pre-commit lint hook** + `eslint.config.js` (`no-undef: error`). Would have caught the `ReferenceError: rebaseNeeded is not defined` dashboard crash that actually happened.
+- **Dashboard bootstrap crash barrier** — `refreshLatestStatus()` wraps `collectDashboardStatusData()` in try/catch, falls back to a valid-shaped empty response with `collectorError` on failure. Collector bugs now degrade the UI instead of taking down the daemon.
+- **Pane capture + `wip(transfer)` commit** ensures no worktree work is lost during an agent swap — validated on #308's real transfer, which preserved 579 insertions across 16 files that had been sitting uncommitted for ~55 minutes.
+
+### Changed
+- **Unified `terminalApp` config** (F307) — migration framework folds legacy `terminal` / `tmuxApp` keys into a single canonical `terminalApp`. Idempotent; runs once on config load.
+- **`feature-review` → `feature-code-review`** (F298) — reduces collision with spec-review. Legacy aliases retained.
+- **`lib/feature-dependencies.js` extracted** from `feature.js` (part of god-object teardown).
+- **Test suite under ceiling + regression-anchored** (F310) — suite trimmed and a new rule: raising `CEILING` in `scripts/check-test-budget.sh` requires same-commit test deletion to offset. Error messages explain *why* the budget exists.
+- **Research-do submit signal hardened** — clearer Option B for main-branch research agents; reduces "did my review land?" confusion.
+- **Cursor agent launched with `--trust`**.
+
+### Fixed
+- **Dashboard crash loop on every `/api/status`** — `971ccada` (a `chore: rename feature` commit) swept uncommitted WIP into itself, leaving `rebaseNeeded` referenced but undeclared in the status collector. Two fixes: (1) `feature-rename` / `research-rename` no longer use `git add -A`; (2) per-feature forEach wrapped in try/catch so one broken feature can't kill the daemon. Third layer added this release: pre-commit lint gate so `no-undef` never reaches a commit.
+- **Dashboard server startup hardening** (F295) — `formatCliError` now prints stack traces; `listVisibleSpecMatches` filters to numeric-prefixed stage dirs; circular require chain for `lib/utils.js` moved to `Object.assign(module.exports, …)`; Codex autonomous launches use `--dangerously-bypass-approvals-and-sandbox` (prior `--full-auto` prompted for MCP approval and hung indefinitely).
+- **`feature-close` stash-pop conflicts now surface** instead of swallowing silently; iTerm AppleScript name fixed.
+- **`feature-reset` re-bootstraps engine state** after reset so the spec doesn't render as legacy.
+- **Spec drift on close** — `materializePendingEffects` preserves `fromPath` so `move_spec` doesn't lose the source location.
+- **Atomic tmux launch** — `bash -lc '…'` instead of create-then-send-keys, closes the F292/F293 byte-interleaved-launch corruption race.
+- **Research inbox doctor scan + safe migrate cleanup** (F296).
+- **Review prompts patch issues by default** instead of only commenting.
+- **Dashboard `/api/sessions/cleanup`** endpoint for the orphan killer; orphaned `aigon-cli.js server start` processes holding test ports now explicitly surfaced (encountered during this release's pre-push validation).
+- **Inbox research entries publish slug-as-id** so dashboard actions work on slug-only items.
+- **`*-spec-review-record` commands wired up** and reachable from the CLI.
+
+### Removed
+- `--full-auto` flag for Codex autonomous launches (replaced — see Fixed).
+
+### Notes
+- Two commits landed as hotfixes on this branch: `2ba7124f` (bootstrap guard + pre-commit lint) and `a481e517` (feature-transfer). Both validated against real incidents during development.
+- Incident postmortem: the `971ccada` rename-commit sweep pattern recurred once during this release's own development (reproduced while committing feature-transfer; caught, reset, re-staged precisely). The pre-commit lint hook and CLAUDE.md reminder to grep `git diff --cached --name-only` before commit are the current defences.
+
 ## [2.52.0] - 2026-04-20
 
 Single-source-of-truth refactor, spec-review workflow, and a hard-fought round of stability fixes. 362 commits since v2.51.3. Subsumes the pending 2.51.5 gitignore change.
