@@ -104,7 +104,19 @@
       } catch (e) {
         if (action === 'feature-close') {
           const featureId = (args || [])[0];
-          const agentId = (args || [])[1];
+          let agentId = (args || [])[1];
+          // Autonomous plan passes no agentId in args — infer from live feature data
+          if (!agentId) {
+            const fid = String(featureId);
+            outer: for (const repo of (state.data && state.data.repos || [])) {
+              for (const f of (repo.features || [])) {
+                if (String(f.id) === fid && f.agents && f.agents.length > 0) {
+                  agentId = f.agents[0].id;
+                  break outer;
+                }
+              }
+            }
+          }
           state.closeFailedFeatures.set(String(featureId), { agentId, repoPath });
           showToast(
             'Close failed — use "Close with agent" on the card or in Logs',
