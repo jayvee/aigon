@@ -9,10 +9,12 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { test, withTempDir, report } = require('../_helpers');
+const { test, testAsync, withTempDir, report } = require('../_helpers');
 const {
     getFeatureAutoStatePath, readFeatureAutoState,
     writeFeatureAutoState, clearFeatureAutoState,
+    getSetAutoStatePath, readSetAutoState,
+    writeSetAutoState, clearSetAutoState,
 } = require('../../lib/auto-session-state');
 const { safeFeatureAutoSessionExists } = require('../../lib/dashboard-status-helpers');
 
@@ -33,6 +35,28 @@ test('dashboard falls back to persisted state when tmux session is gone', () => 
     assert.strictEqual(r.status, 'failed');
     assert.strictEqual(r.reason, 'eval-session-start-failed');
     assert.strictEqual(r.running, false);
+}));
+
+testAsync('set auto state persists under lock and clears cleanly', async () => withTempDir('aigon-set-auto-state-', async (repo) => {
+    // REGRESSION F316: SetConductor writes must be lock-serialized so resume/start
+    // cannot race and corrupt set-<slug>-auto.json.
+    const first = await writeSetAutoState(repo, 'feature-set', {
+        status: 'starting',
+        currentFeature: '01',
+        completed: [],
+        failed: [],
+    });
+    assert.strictEqual(first.setSlug, 'feature-set');
+    const second = await writeSetAutoState(repo, 'feature-set', {
+        status: 'running',
+        running: true,
+        completed: ['01'],
+    });
+    assert.strictEqual(second.status, 'running');
+    assert.deepStrictEqual(second.completed, ['01']);
+    assert.deepStrictEqual(readSetAutoState(repo, 'feature-set').completed, ['01']);
+    assert.strictEqual(await clearSetAutoState(repo, 'feature-set'), true);
+    assert.strictEqual(fs.existsSync(getSetAutoStatePath(repo, 'feature-set')), false);
 }));
 
 report();
