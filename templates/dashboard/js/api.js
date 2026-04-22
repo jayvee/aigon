@@ -101,7 +101,18 @@
         }
         await requestRefresh();
       } catch (e) {
-        showToast('Action failed: ' + e.message, null, null, {error:true});
+        if (action === 'feature-close' && /Merge conflict/i.test(e.message)) {
+          const featureId = (args || [])[0];
+          const agentId = (args || [])[1];
+          showToast(
+            'Merge conflicts — open the worktree to resolve?',
+            'Open worktree',
+            () => requestFeatureOpen(featureId, agentId, repoPath),
+            { error: true }
+          );
+        } else {
+          showToast('Action failed: ' + e.message, null, null, {error:true});
+        }
         if (btn) { btn.disabled = false; btn.textContent = origText || btn._origText || action; }
       } finally {
         if (processingToast) processingToast.remove();

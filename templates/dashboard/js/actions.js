@@ -429,6 +429,14 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     html += renderBtn(va, 'btn btn-secondary');
   });
 
+  // Inject "Open agent" into overflow for in-progress features with a worktree
+  if (feature.stage === 'in-progress') {
+    const implementers = (feature.agents || []).filter(a => a.status === 'submitted');
+    implementers.forEach(a => {
+      overflow.push({ action: 'feature-open', label: 'Open worktree', agentId: a.id });
+    });
+  }
+
   // Overflow dropdown
   if (overflow.length > 0) {
     const items = overflow.map(va => {

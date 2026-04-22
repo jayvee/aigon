@@ -352,7 +352,6 @@
     }
 
     function shouldWarnCloseByPrStatus(repoPath, feature) {
-      if (feature && feature.rebaseNeeded) return true;
       const cached = getCachedPrStatus(repoPath, feature);
       if (!cached) return false; // no warning before first refresh
       return cached.status === 'none' || cached.status === 'open' || cached.status === 'draft' || cached.status === 'unavailable';
@@ -518,12 +517,7 @@
       return '<div class="kcard-ready-indicator">✓ Ready to close</div>';
     }
 
-    function buildRebaseWarningHtml(feature) {
-      if (!feature || feature.rebaseNeeded !== true || feature.stage !== 'in-progress') return '';
-      return '<div class="kcard-rebase-warning">⚠ Rebase needed before close</div>';
-    }
-
-    function buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn) {
+function buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn) {
       const planRenderer = window.AIGON_AUTONOMOUS_PLAN;
       if (!planRenderer || typeof planRenderer.buildAutonomousPlanHtml !== 'function') return '';
       return planRenderer.buildAutonomousPlanHtml(feature.autonomousPlan, {
@@ -642,7 +636,6 @@
           });
         }
         innerHtml += buildReadyToCloseHtml(agents, reviews);
-        innerHtml += buildRebaseWarningHtml(feature);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         // Card-level actions (non-per-agent: close, eval, review, etc.)
         const cardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
@@ -677,7 +670,6 @@
           });
         }
         innerHtml += buildReadyToCloseHtml(agents, reviews);
-        innerHtml += buildRebaseWarningHtml(feature);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         // Card-level actions (close, review — no session controls)
         const soloCardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
@@ -825,7 +817,8 @@
         const vaAction = btn.getAttribute('data-va-action');
         const vaAgentId = btn.getAttribute('data-agent') || null;
         const va = (feature.validActions || []).find(a => a.action === vaAction && (a.agentId || null) === vaAgentId)
-          || (vaAction === 'feature-close' ? { action: 'feature-close', label: 'Close' } : null);
+          || (vaAction === 'feature-close' ? { action: 'feature-close', label: 'Close' } : null)
+          || (vaAction === 'feature-open' ? { action: 'feature-open', label: 'Open worktree', agentId: vaAgentId } : null);
         if (!va) return;
         btn._origText = btn.textContent;
         btn.onclick = async (e) => {

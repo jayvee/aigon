@@ -53,7 +53,6 @@ docs/specs/
 | `aigon feature-eval <ID>` | Create evaluation (code review for solo, comparison for arena) |
 | `aigon feature-close <ID> [agent]` | Merge and complete (specify agent in arena mode) |
 | `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |
-| `aigon nudge <ID> [agent] "message"` | Send context into a running agent session without handcrafting tmux commands |
 
 ## Key Rules
 
@@ -70,14 +69,6 @@ Feature specs may include an optional `## Pre-authorised` section after `## Vali
 - Before stopping on a policy gate, agents must check that section.
 - If a line authorises the action, proceed and cite it in the commit footer as `Pre-authorised-by: ...`.
 - If the section is blank or absent, behavior is unchanged: stop and ask.
-
-## Nudging A Running Agent
-
-When an agent is idle, blocked, or waiting for operator context, prefer `aigon nudge` over manual `tmux send-keys`.
-
-- `aigon nudge 295 cc "proceed with option A"` targets the running implementation session for `cc`
-- Use `--role=review`, `--role=spec-review`, or `--role=auto` when you need to interrupt a non-`do` tmux role explicitly
-- The command records an `operator.nudge_sent` workflow event and confirms the text appeared in the target pane
 
 ## Feature State Model
 
