@@ -96,21 +96,30 @@ This updates your agent state in the main repo so the dashboard and coordinator 
    git commit -m "docs: research findings for {{AGENT_ID}}"
    ```
 
-3. **Signal completion immediately after the commit:**
+3. **Signal completion immediately after the commit. Run exactly one of these — do not skip:**
+
+   **Option A — from inside the tmux session (preferred):**
    ```bash
    aigon agent-status submitted
    ```
+   If this prints "use `aigon research-submit`" and exits non-zero, that means you are on `main` and the session context wasn't detected — use Option B instead.
 
-   This command **must exit successfully** before you can claim your research is submitted.
+   **Option B — explicit (always works on main branch):**
+   ```bash
+   aigon research-submit <ID> {{AGENT_ID}}
+   ```
+   Replace `<ID>` with the numeric research ID (e.g. `36`).
+
+   The command **must exit 0** before you can claim your research is submitted.
 
    Hard rules:
-   - Your findings are **not** submitted until `aigon agent-status submitted` returns exit 0
-   - Do **not** say "done", "complete", "findings written", or "ready for review" before it exits 0
-   - Do **not** summarise, narrate, or describe your output instead of running this command — the command IS the completion signal; prose is not a substitute
-   - If it fails, report the exact error and stop for user guidance
-   - **Do this even if you believe the user will run `research-eval` next.** That's a separate, later step — your submit signal is what unblocks it
+   - Your findings are **not** submitted until one of the above commands returns exit 0
+   - Do **not** say "done", "complete", "findings written", or "ready for evaluation" before it exits 0
+   - Do **not** summarise, narrate, or describe your output instead of running the command — the command IS the completion signal; prose is not a substitute
+   - **Submitting your signal has nothing to do with `research-eval`.** That is a separate coordinator step run by the user AFTER all agents submit. You must submit before you stop — regardless of what comes next.
+   - If both options fail, report the exact error output and stop for user guidance
 
-4. **Post-submit (after `agent-status submitted` exits 0):** output one line — "Findings submitted — ready for evaluation." — and STAY in the session in case the user has follow-up questions.
+4. **Post-submit:** output exactly one line — `Findings submitted — ready for evaluation.` — then STAY in the session in case the user has follow-up questions.
 
 **If Drive mode (no findings file):**
 - Run `aigon research-close {{ARG_SYNTAX}}` when the research pass is complete and ready to close
