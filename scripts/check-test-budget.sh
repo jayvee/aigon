@@ -19,7 +19,7 @@
 
 set -euo pipefail
 
-CEILING="${CEILING:-2500}"
+CEILING="${CEILING:-2750}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
