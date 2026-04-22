@@ -13,23 +13,26 @@ When an implementation agent stops mid-feature because it has hit a token / quot
 
 ## Acceptance Criteria
 
-- [ ] **Detection.** Aigon distinguishes token-exhaustion from other session-end causes (crash, user kill, normal completion). Detection signals to evaluate: agent CLI exit code, stderr text patterns ("rate limit", "quota exceeded", "context window full"), supervisor heartbeat going silent without a submit signal, telemetry showing tokens > limit.
-- [ ] **Workflow event.** A new event type (`agent.token_exhausted` or similar) is appended to the workflow events log when detected, with `{agentId, lastCommit, tokensConsumed, limit, source}`.
+- [ ] **Detection.** The detection write path lives in the existing session-observation stack (`lib/supervisor.js` / `lib/workflow-core/` effect path), not in the dashboard and not in a read-side collector. Aigon distinguishes token-exhaustion from other session-end causes (crash, user kill, normal completion) using agent-specific rules sourced from `templates/agents/*.json` or another single shared owner module. Detection must require a positive exhaustion signal (exit/stderr/telemetry) and must not infer exhaustion from heartbeat silence alone.
+- [ ] **Workflow event.** A new event type (`agent.token_exhausted` or similar) is appended to the workflow events log when detected, with `{agentId, role, lastCommit, tokensConsumed, limit, source}`. `source` records which detector fired (`stderr_pattern`, `exit_code`, `telemetry_limit`, or equivalent).
 - [ ] **Failover policy.** Three configurable behaviours per repo:
   - `notify` (default) — surface dashboard badge + desktop notification, no auto-action
   - `switch` — automatically launch the next agent in the configured chain on the same worktree/branch
   - `pause` — kill the session, mark feature as `paused-token-limit`, surface in dashboard
-- [ ] **Fallback chain config.** `~/.aigon/config.json` and `.aigon/config.json` accept `agentFailoverChain: ['cx', 'cc', 'gg']` (global) and per-feature override via `--failover-chain` on `feature-start`.
-- [ ] **Continuation context.** When auto-switching, the new agent gets the spec, the partial commits already on the branch, AND a primer that says "Previous agent <id> stopped at <commit-sha> due to token limit. Continue from current state."
-- [ ] **Dashboard surface.** A token-exhausted card shows an amber badge "⚠ <agent> token-exhausted" with a one-click "Switch to <next>" button.
-- [ ] **No false positives.** A clean submit must not trigger failover. A user-initiated stop (sessions-close) must not trigger failover.
+- [ ] **Fallback chain config.** `~/.aigon/config.json` and `.aigon/config.json` accept a single shared config shape for failover policy and chain ordering (for example `agentFailover.policy` plus `agentFailover.chain`). If `feature-start` adds `--failover-chain`, the flag must write into workflow state or feature-local config through an existing write path; the implementation must not depend on dashboard-only state.
+- [ ] **Continuation context.** When auto-switching, the new agent is launched through `lib/agent-launch.js` / the existing spawn path so per-feature `{model, effort}` overrides survive the respawn. The handoff prompt includes the previous agent id, the last reachable commit SHA (or explicit `none`), and an instruction to continue from the current branch state instead of resetting or re-planning the feature from scratch.
+- [ ] **Dashboard surface.** The dashboard shows a token-exhausted status and a one-click switch action only when the central workflow action registry exposes that action in `validActions`. No action eligibility or fallback-chain logic is duplicated in frontend files.
+- [ ] **No false positives.** A clean submit must not trigger failover. A user-initiated stop (`sessions-close`, `feature-reset`, operator nudge that ends the session) must not trigger failover. A generic non-zero exit without a matching exhaustion signal must remain a normal failure/crash path.
+- [ ] **Slot-scoped behaviour.** In Fleet mode, failover applies only to the exhausted agent slot. Other agent sessions for the same feature continue unchanged, and the workflow snapshot preserves enough attribution to tell which agent started the branch and which agent resumed it.
+- [ ] **Review separation.** If failover occurs during implementation, the eventual review agent must still be different from every implementation agent that touched the branch.
 
 ## Validation
 
 ```bash
 node -c lib/supervisor.js
-node -c lib/commands/feature.js
-npm test 2>&1 | grep -i "failover\|token-exhausted" | head -20
+node -c lib/agent-launch.js
+node -c lib/config.js
+npm test -- --grep "token exhausted|failover|feature-start"
 ```
 
 ## Pre-authorised
@@ -41,15 +44,22 @@ npm test 2>&1 | grep -i "failover\|token-exhausted" | head -20
 
 ### Detection sources
 
-1. **Agent CLI exit code + stderr.** Each agent (cc, cx, gg, cu) has its own quota error format. Catalogue the exit-code-and-stderr-text combinations in `templates/agents/*.json` so the supervisor can recognise them.
-2. **Supervisor liveness gap.** F293 added the agent idle detector. Extend it: when a session goes silent AND the last process exit was non-zero AND last stderr line matches a token-exhaustion pattern → emit `agent.token_exhausted`.
-3. **Cost telemetry threshold.** F288 added per-turn token telemetry. When billable tokens exceed a configured per-feature or per-session limit, pre-emptively warn or trigger failover before the agent CLI itself errors out.
+1. **Agent CLI exit code + stderr.** Each agent (cc, cx, gg, cu) has its own quota error format. Catalogue the exit-code-and-stderr-text combinations in `templates/agents/*.json` or one other canonical owner so the supervisor can recognise them. Do not scatter regexes across command modules and dashboard code.
+2. **Supervisor liveness gap.** F293 added the agent idle detector. Extend it only as a corroborating signal: when a session goes silent AND the last process exit was non-zero AND the last stderr line matches a token-exhaustion pattern, emit `agent.token_exhausted`.
+3. **Cost telemetry threshold.** F288 added per-turn token telemetry. When billable tokens exceed a configured per-session or per-feature limit, emit the same workflow event with `source=telemetry_limit` and then apply the configured policy. The telemetry path must reuse the same downstream failover code path as stderr/exit detection.
 
 ### Failover write path
 
-The hard part is making this safe. The current agent's worktree must be left in a clean state (no uncommitted scratch), the new agent must claim the same worktree path or a sibling, and the workflow snapshot must record both the original and new agents in the agents map (so reviews can attribute correctly).
+The hard part is making this safe. The current agent's worktree must be left in a recoverable state, the new agent must reuse the same feature branch, and the workflow snapshot/event log must record both the exhausted agent and the replacement so later review/close flows can attribute work correctly.
 
-Reuse `feature-start` infrastructure where possible — the failover is essentially "stop agent A, start agent B on the same branch, pass spec+commits+context primer".
+Reuse `feature-start` infrastructure where possible. The failover is essentially "stop agent A, start agent B on the same branch, pass spec + branch state + context primer", but it should route through the canonical spawn helpers (`lib/agent-launch.js`, existing worktree/session setup) instead of creating a second respawn implementation.
+
+Implementation order:
+
+1. Add token-exhaustion signal detection with one canonical producer and tests for true-positive / false-positive cases.
+2. Add workflow event + snapshot/state fields needed to expose the condition through existing read adapters.
+3. Add failover policy/config resolution and respawn through the existing launch path.
+4. Expose dashboard status/action from the central action registry after the write path exists.
 
 ### Edge cases to consider
 
@@ -74,7 +84,7 @@ Reuse `feature-start` infrastructure where possible — the failover is essentia
 ## Open Questions
 
 - Should detection be opt-in (default `notify`) or opt-in to auto-switch? Probably notify-by-default given the safety cost of automated agent swaps.
-- Token limits: per-session, per-feature, per-day, or all three?
+- Token limits: per-session, per-feature, per-day, or all three? The initial implementation should choose one or two concrete scopes instead of introducing all three at once.
 - For Codex specifically: does the CLI exit cleanly with a recognisable error, or does it just stop streaming output? Detection mechanism depends on this.
 
 ## Related
