@@ -10,7 +10,7 @@
     function getAskAgent() {
       const preferred = localStorage.getItem(lsKey('askAgent'));
       if (preferred && ASK_AGENTS.some(agent => agent.id === preferred)) return preferred;
-      return ASK_AGENTS[0] ? ASK_AGENTS[0].id : 'cc';
+      return ASK_AGENTS[0] ? ASK_AGENTS[0].id : (window.__AIGON_DEFAULT_AGENT__ || 'cc');
     }
     function setAskAgent(id) { localStorage.setItem(lsKey('askAgent'), id); }
 

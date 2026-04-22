@@ -117,6 +117,9 @@
               }
             }
           }
+          if (!agentId) {
+            agentId = window.__AIGON_DEFAULT_AGENT__ || 'cc';
+          }
           state.closeFailedFeatures.set(String(featureId), { agentId, repoPath });
           showToast(
             'Close failed — use "Close with agent" on the card or in Logs',
