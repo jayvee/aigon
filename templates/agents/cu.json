@@ -109,5 +109,16 @@
     "heartbeatSidecar": true,
     "cliHooks": null
   },
+  "failureDetectors": {
+    "tokenExhaustion": {
+      "exitCodes": [1],
+      "stderrPatterns": [
+        "quota exceeded",
+        "token limit",
+        "rate limit",
+        "insufficient credits"
+      ]
+    }
+  },
   "commandExcludes": []
 }

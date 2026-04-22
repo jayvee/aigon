@@ -158,5 +158,17 @@
       "exitEnforcement": "Stop"
     }
   },
+  "failureDetectors": {
+    "tokenExhaustion": {
+      "exitCodes": [1],
+      "stderrPatterns": [
+        "usage limit",
+        "quota exceeded",
+        "credit balance",
+        "context window",
+        "rate limit"
+      ]
+    }
+  },
   "commandExcludes": []
 }
