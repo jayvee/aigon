@@ -1,5 +1,7 @@
 ---
 set: feature-set
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-22T22:45:58.062Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: feature-set-2-research-eval-emit-metadata
