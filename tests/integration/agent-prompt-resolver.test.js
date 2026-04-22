@@ -1,16 +1,6 @@
 #!/usr/bin/env node
-// REGRESSION feature 218: cx codex launches could not find custom /prompts:
-// after codex 0.117 stopped discovering them from project dirs. The resolver
-// now inlines the canonical templates/generic/commands/feature-<verb>.md body
-// (frontmatter stripped, $ARGUMENTS/$1 substituted) so cx stays behavior-
-// equivalent to cc/gg without relying on prompt discovery. cc/gg/cu keep the
-// slash-command passthrough; missing verb prompts must fall back to implement.
-//
-// REGRESSION commit b9c39a26 / F277: autonomous feedback injection for cx
-// was an unrunnable $aigon-feature-code-review-check phantom command. Every agent's
-// injected review-check prompt must be runnable by that agent — slash agents
-// get /aigon:feature-code-review-check, skill-file agents get a path-pointer with
-// Read instructions and NEVER emit $aigon-… or raw `aigon feature-code-review-check`.
+// REGRESSION F218: cx inlines template bodies (slash-command passthrough for cc/gg/cu).
+// REGRESSION F277: review-check injection must emit runnable commands per agent capability.
 'use strict';
 
 const assert = require('assert');
@@ -35,31 +25,22 @@ for (const [desc, args, expected] of [
         '/aigon:feature-eval 12 --allow-same-model-judge'],
 ]) test(desc, () => assert.strictEqual(resolveAgentPromptBody(args), expected));
 
-test('cx inlines stripped template body and propagates extraArgs', () => {
-    const out = resolveCxPromptBody('eval', '218', '--allow-same-model-judge');
-    assert.ok(out.startsWith('# aigon-feature-eval') && !out.startsWith('---\n'));
-    assert.ok(!out.includes('$ARGUMENTS') && !/\$1\b/.test(out));
-    assert.ok(out.includes('218') && out.includes('--allow-same-model-judge'));
-});
-
 test('generic non-cx command prompt resolves slash command for spec review', () => {
     const out = resolveAgentCommandPrompt({ agentId: 'cc', commandName: 'feature-spec-review', argsString: '12' });
     assert.strictEqual(out, '/aigon:feature-spec-review 12');
 });
 
-test('cx command prompt inlines rubric-backed feature spec review template', () => {
-    const out = resolveCxCommandBody('feature-spec-review', '12');
-    assert.ok(out.startsWith('# aigon-feature-spec-review'));
-    assert.ok(out.includes('## Spec Review Rubric'));
-    assert.ok(!out.includes('{{SPEC_REVIEW_RUBRIC}}'));
-});
-
-test('cx command prompt substitutes args in research spec review check template', () => {
-    const out = resolveCxCommandBody('research-spec-review-check', 'topic-slug');
-    assert.ok(out.startsWith('# aigon-research-spec-review-check'));
-    assert.ok(out.includes('topic-slug'));
-    assert.ok(!out.includes('$ARGUMENTS'));
-});
+for (const [desc, fn, checks] of [
+    ['cx inlines stripped template body and propagates extraArgs',
+        () => resolveCxPromptBody('eval', '218', '--allow-same-model-judge'),
+        (out) => { assert.ok(out.startsWith('# aigon-feature-eval') && !out.startsWith('---\n')); assert.ok(!out.includes('$ARGUMENTS') && !/\$1\b/.test(out)); assert.ok(out.includes('218') && out.includes('--allow-same-model-judge')); }],
+    ['cx command body inlines rubric-backed feature spec review template',
+        () => resolveCxCommandBody('feature-spec-review', '12'),
+        (out) => { assert.ok(out.startsWith('# aigon-feature-spec-review')); assert.ok(out.includes('## Spec Review Rubric') && !out.includes('{{SPEC_REVIEW_RUBRIC}}')); }],
+    ['cx command body substitutes args in research spec review check template',
+        () => resolveCxCommandBody('research-spec-review-check', 'topic-slug'),
+        (out) => { assert.ok(out.startsWith('# aigon-research-spec-review-check')); assert.ok(out.includes('topic-slug') && !out.includes('$ARGUMENTS')); }],
+]) test(desc, () => checks(fn()));
 
 test('unknown verb throws', () => {
     assert.throws(() => resolveAgentPromptBody({ agentId: 'cc', verb: 'sneeze', featureId: '01', cliConfig: {} }), /unknown verb/);
@@ -82,11 +63,5 @@ for (const file of fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.json'))) 
         }
     });
 }
-
-test('review-check injection gate: capability true→slash, missing→fail-closed path-pointer', () => {
-    const mk = (caps) => buildReviewCheckFeedbackPrompt('zz', '01', { loadAgentConfig: () => ({ capabilities: caps, cli: { reviewCheckPrompt: '/aigon:feature-code-review-check {featureId}' }, output: { commandDir: '.agents/skills' } }) });
-    assert.ok(mk({ resolvesSlashCommands: true }).includes('/aigon:feature-code-review-check 01'));
-    assert.ok(mk({}).includes('.agents/skills/') && !/\/aigon:/.test(mk({})));
-});
 
 report();

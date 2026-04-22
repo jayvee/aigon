@@ -72,6 +72,7 @@ If you are on the feature branch, review files directly. If you are on main, use
 - Add comments/docs to code you didn't change
 - "Improve" code that already works
 - Run lint, tsc, or build checks — focus on diff review only
+- **Add a regression test by default.** When a bug is found, first ask: can the producer API be hardened (stricter types, enums, removed dead branch) to make re-introduction impossible? If yes, fix the producer. Add a test only when the bug is subtle enough that PR review genuinely won't catch it.
 
 **Targeted fixes, not a rewrite.**
 
