@@ -13,6 +13,9 @@ const { test, report } = require('../_helpers');
 function buildMinimalCtx() {
     return {
         utils: require('../../lib/utils'),
+        hooks: require('../../lib/hooks'),
+        version: require('../../lib/version'),
+        specCrud: require('../../lib/spec-crud'),
         git: require('../../lib/git'),
         board: require('../../lib/board'),
         feedback: require('../../lib/feedback'),
@@ -46,6 +49,19 @@ test('shared factory emits the spec-review quartet for both entities', () => {
             assert.strictEqual(typeof all[name], 'function', `missing ${name}`);
         });
     });
+});
+
+test('canonical code-review commands stay registered while deprecated review names remain addressable', () => {
+    const templates = require('../../lib/templates');
+    const all = require('../../lib/commands/shared').createAllCommands();
+    assert.ok(Object.hasOwn(templates.COMMAND_REGISTRY, 'feature-code-review'));
+    assert.ok(Object.hasOwn(templates.COMMAND_REGISTRY, 'feature-code-review-check'));
+    assert.strictEqual(templates.COMMAND_ALIASES.afr, 'feature-code-review');
+    assert.strictEqual(templates.COMMAND_ALIASES.afrc, 'feature-code-review-check');
+    assert.strictEqual(typeof all['feature-code-review'], 'function');
+    assert.strictEqual(typeof all['feature-code-review-check'], 'function');
+    assert.strictEqual(typeof all['feature-review'], 'function');
+    assert.strictEqual(typeof all['feature-review-check'], 'function');
 });
 
 report();

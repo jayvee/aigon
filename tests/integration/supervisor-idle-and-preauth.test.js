@@ -2,7 +2,7 @@
 'use strict';
 const a = require('assert'), fs = require('fs'), path = require('path'), { spawnSync } = require('child_process');
 const { test, withTempDir, report } = require('../_helpers');
-const sup = require('../../lib/supervisor'), { readSpecSection } = require('../../lib/utils');
+const sup = require('../../lib/supervisor'), { readSpecSection } = require('../../lib/spec-crud');
 const tmux = (args) => spawnSync('tmux', args, { encoding: 'utf8', stdio: 'pipe' });
 const kill = (name) => { try { tmux(['kill-session', '-t', name]); } catch (_) {} };
 const w = (f, body = '') => { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, body); };

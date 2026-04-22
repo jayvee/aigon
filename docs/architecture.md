@@ -125,8 +125,20 @@ Current shared modules:
   `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`, `getAgentCliConfig`
 - `lib/templates.js` (~550 lines): template loading, command registry, scaffolding, content generation
   `readTemplate`, `processTemplate`, `readGenericTemplate`, `formatCommandOutput`, `COMMAND_REGISTRY`
-- `lib/utils.js` (~1,474 lines): shared utilities — hooks, spec CRUD, analytics, version, deploy
-  `parseHooksFile`, `parseFrontMatter`, `findFile`, `collectAnalyticsData`, `safeWrite`
+- `lib/utils.js` (~183 lines): thin re-export hub for config/proxy/dashboard/worktree/templates/git, feedback constants, dev-server URL, safeWrite. Do not add domain logic here — route new code to its domain module instead.
+  `safeWrite`, `safeWriteWithStatus`, `setTerminalTitle`, `resolveDevServerUrl`, `FEEDBACK_STATUS_TO_FOLDER`
+- `lib/hooks.js` (~146 lines): hook lifecycle — parses `.aigon/hooks.json`, executes pre/post hooks
+  `parseHooksFile`, `getDefinedHooks`, `executeHook`, `runPreHook`, `runPostHook`
+- `lib/analytics.js` (~889 lines): usage analytics — log parsing, completion series, autonomy trend
+  `collectAnalyticsData`, `parseLogFrontmatterFull`, `buildCompletionSeries`, `buildWeeklyAutonomyTrend`
+- `lib/version.js` (~154 lines): version management — reads/writes installed version, compares, upgrades CLI
+  `getAigonVersion`, `getInstalledVersion`, `compareVersions`, `upgradeAigonCli`
+- `lib/spec-crud.js` (~247 lines): spec file operations — find, move, create, modify, section-read
+  `findFile`, `findUnprioritizedFile`, `moveFile`, `modifySpecFile`, `getNextId`, `createSpecFile`, `readSpecSection`
+- `lib/cli-parse.js` (~256 lines): CLI option parsing + YAML/frontmatter helpers — stateless, no I/O
+  `parseCliOptions`, `getOptionValue`, `parseFrontMatter`, `serializeYamlScalar`, `slugify`, `escapeRegex`
+- `lib/deploy.js` (~65 lines): deploy command resolution — reads config/package.json, runs deploy/preview
+  `resolveDeployCommand`, `runDeployCommand`
 - `lib/sync.js` (~800 lines): solo multi-laptop sync orchestration for portable `.aigon` state via private git sync repo
   `handleSyncCommand`, `sync init/register/export/bootstrap-merge/push/pull/status`, preflight/version safety checks
 - `lib/sync-merge.js` (~300 lines): bootstrap merge engine for data-type-specific merge behavior
