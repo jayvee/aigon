@@ -22,6 +22,45 @@ function spec(dir, file, set, dependsOn) {
     fs.writeFileSync(path.join(dir, file), lines.join('\n'));
 }
 
+function initRepo(root) {
+    execFileSync('git', ['init'], {
+        cwd: root,
+        env: { ...process.env, ...GIT_SAFE_ENV },
+        stdio: 'pipe',
+    });
+    execFileSync('git', ['config', 'user.email', 'test@aigon.test'], {
+        cwd: root,
+        env: { ...process.env, ...GIT_SAFE_ENV },
+        stdio: 'pipe',
+    });
+    execFileSync('git', ['config', 'user.name', 'Aigon Test'], {
+        cwd: root,
+        env: { ...process.env, ...GIT_SAFE_ENV },
+        stdio: 'pipe',
+    });
+    fs.writeFileSync(path.join(root, '.gitkeep'), '');
+    execFileSync('git', ['add', '.gitkeep'], {
+        cwd: root,
+        env: { ...process.env, ...GIT_SAFE_ENV },
+        stdio: 'pipe',
+    });
+    execFileSync('git', ['commit', '-m', 'chore: init test repo'], {
+        cwd: root,
+        env: { ...process.env, ...GIT_SAFE_ENV },
+        stdio: 'pipe',
+    });
+}
+
+function runCli(root, args) {
+    const cli = path.join(__dirname, '..', '..', 'aigon-cli.js');
+    return execFileSync('node', [cli, ...args], {
+        cwd: root,
+        env: { ...process.env, ...GIT_SAFE_ENV },
+        encoding: 'utf8',
+        stdio: 'pipe',
+    });
+}
+
 test('isValidSetSlug rejects whitespace, slashes, empty, non-strings', () => {
     assert.strictEqual(featureSets.isValidSetSlug('feature-set-1'), true);
     ['', 'Has Space', 'a/b', '-lead', 'UPPER', null, 5].forEach(v =>
@@ -88,5 +127,27 @@ test('aigon set list / show render tagged specs and fail cleanly on invalid slug
     assert.throws(() => run(['set', 'show', 'has/slash'], { stdio: 'pipe' }),
         e => e.status === 1 && /Invalid set slug/.test(String(e.stderr)));
 }));
+
+test('feature-create --set writes set frontmatter at creation time', () => withTempDir('aigon-feature-create-set-', (root) => {
+    // REGRESSION: research-eval needs feature-create to stamp set membership immediately, without manual spec edits.
+    initRepo(root);
+    fs.mkdirSync(path.join(root, 'docs', 'specs', 'features', '01-inbox'), { recursive: true });
+    runCli(root, ['feature-create', 'set aware feature', '--set', 'feature-set']);
+
+    const createdPath = path.join(root, 'docs', 'specs', 'features', '01-inbox', 'feature-set-aware-feature.md');
+    const { data } = parseFrontMatter(fs.readFileSync(createdPath, 'utf8'));
+    assert.strictEqual(data.set, 'feature-set');
+}));
+
+test('research-eval template records explicit set opt-in and output metadata', () => {
+    // REGRESSION: the evaluation prompt must preserve the chosen set slug so re-runs can rejoin the same set explicitly.
+    const templatePath = path.join(__dirname, '..', '..', 'templates', 'generic', 'commands', 'research-eval.md');
+    const template = fs.readFileSync(templatePath, 'utf8');
+
+    assert.match(template, /Group these as set `<slug>`\? \(y\/n\/edit slug\)/);
+    assert.match(template, /Chosen Set Slug: `feature-set`/);
+    assert.match(template, /Chosen Set Slug: none \(declined\)/);
+    assert.match(template, /aigon feature-create "feature-name" --set <slug>/);
+});
 
 report();
