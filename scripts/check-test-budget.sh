@@ -29,26 +29,25 @@ if [ ! -d tests ]; then
     exit 0
 fi
 
-# If the ceiling was raised in the current commit, enforce that at least one
+# If the ceiling was raised in HEAD (vs its parent), enforce that at least one
 # test file was deleted in the same commit. This prevents the silent ratchet
 # pattern where the ceiling rises with every incident.
-if git diff --cached --quiet 2>/dev/null || true; then
-    STAGED_CEILING_DELTA=$(git diff HEAD~1..HEAD -- scripts/check-test-budget.sh 2>/dev/null \
-        | grep -E '^\+CEILING=' | sed 's/.*CEILING=//' | head -1 || true)
-    OLD_CEILING=$(git diff HEAD~1..HEAD -- scripts/check-test-budget.sh 2>/dev/null \
-        | grep -E '^\-CEILING=' | sed 's/.*CEILING=//' | head -1 || true)
-    if [ -n "$STAGED_CEILING_DELTA" ] && [ -n "$OLD_CEILING" ] && [ "$STAGED_CEILING_DELTA" -gt "$OLD_CEILING" ] 2>/dev/null; then
-        DELETED_TESTS=$(git diff HEAD~1..HEAD --name-only --diff-filter=D -- 'tests/**/*.test.js' 'tests/**/*.spec.js' 2>/dev/null || true)
-        if [ -z "$DELETED_TESTS" ]; then
-            echo "❌ Ceiling raise requires same-commit deletion of at least one test file."
-            echo ""
-            echo "   The CEILING was raised from $OLD_CEILING to $STAGED_CEILING_DELTA but no test"
-            echo "   files were deleted. Consider hardening the producer API (stricter types,"
-            echo "   enums, or removed dead branches) rather than adding a regression test."
-            echo ""
-            echo "   To raise the ceiling: delete at least one test file in the same commit."
-            exit 1
-        fi
+# Extract numeric defaults from lines like: +CEILING="${CEILING:-2500}"
+STAGED_CEILING_DELTA=$(git diff HEAD~1..HEAD -- scripts/check-test-budget.sh 2>/dev/null \
+    | grep -E '^\+CEILING=' | head -1 | sed -E 's/^\+CEILING="\$\{CEILING:-([0-9]+)\}".*/\1/' || true)
+OLD_CEILING=$(git diff HEAD~1..HEAD -- scripts/check-test-budget.sh 2>/dev/null \
+    | grep -E '^\-CEILING=' | head -1 | sed -E 's/^\-CEILING="\$\{CEILING:-([0-9]+)\}".*/\1/' || true)
+if [ -n "$STAGED_CEILING_DELTA" ] && [ -n "$OLD_CEILING" ] && [ "$STAGED_CEILING_DELTA" -gt "$OLD_CEILING" ] 2>/dev/null; then
+    DELETED_TESTS=$(git diff HEAD~1..HEAD --name-only --diff-filter=D -- 'tests/**/*.test.js' 'tests/**/*.spec.js' 2>/dev/null || true)
+    if [ -z "$DELETED_TESTS" ]; then
+        echo "❌ Ceiling raise requires same-commit deletion of at least one test file."
+        echo ""
+        echo "   The CEILING default was raised from $OLD_CEILING to $STAGED_CEILING_DELTA but no test"
+        echo "   files were deleted. Consider hardening the producer API (stricter types,"
+        echo "   enums, or removed dead branches) rather than adding a regression test."
+        echo ""
+        echo "   To raise the ceiling: delete at least one test file in the same commit."
+        exit 1
     fi
 fi
 
