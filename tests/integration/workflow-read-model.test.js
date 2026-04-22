@@ -82,57 +82,34 @@ test('board re-buckets snapshot-backed features and carries spec drift', () => w
     });
 }));
 
-test('autonomous plan exposes future reviewed solo stages before they start', () => withTempDir('aigon-rm-', (repo) => {
-    // REGRESSION F297: autonomous cards must show the full planned stage sequence from run start.
-    seed(repo);
-    writeSpec(repo, 'features', '03-in-progress', 'feature-12-auto-plan.md');
-    writeSnap(repo, 'features', '12', 'implementing');
-    writeFeatureAuto(repo, '12', {
-        featureId: '12',
-        status: 'running',
-        running: true,
-        mode: 'solo_worktree',
-        workflowSlug: 'solo-cc-reviewed-cx',
-        agents: ['cc'],
-        reviewAgent: 'cx',
-        stopAfter: 'close',
-        startedAt: '2026-04-01T10:00:00Z',
-        updatedAt: '2026-04-01T10:01:00Z',
-    });
-    const state = wrm.getFeatureDashboardState(repo, '12', 'in-progress', [{ id: 'cc', status: 'implementing' }]);
-    assert.ok(state.autonomousPlan);
-    assert.strictEqual(state.autonomousPlan.error, undefined);
-    assert.deepStrictEqual(
-        state.autonomousPlan.stages.map(stage => ({ type: stage.type, status: stage.status, agents: stage.agents.map(agent => agent.id) })),
-        [
-            { type: 'implement', status: 'running', agents: ['cc'] },
-            { type: 'review', status: 'waiting', agents: ['cx'] },
-            { type: 'counter-review', status: 'waiting', agents: ['cc'] },
-            { type: 'close', status: 'waiting', agents: [] },
-        ]
-    );
-}));
-
-test('autonomous plan fails loudly when workflow metadata cannot be resolved', () => withTempDir('aigon-rm-', (repo) => {
-    // REGRESSION F297: do not silently omit future autonomous stages when the plan metadata is broken.
-    seed(repo);
-    writeSpec(repo, 'features', '03-in-progress', 'feature-13-auto-error.md');
-    writeSnap(repo, 'features', '13', 'implementing');
-    writeFeatureAuto(repo, '13', {
-        featureId: '13',
-        status: 'running',
-        running: true,
-        mode: 'solo_worktree',
-        workflowSlug: 'missing-workflow',
-        agents: ['cc'],
-        stopAfter: 'close',
-        startedAt: '2026-04-01T10:00:00Z',
-        updatedAt: '2026-04-01T10:01:00Z',
-    });
-    const state = wrm.getFeatureDashboardState(repo, '13', 'in-progress', [{ id: 'cc', status: 'implementing' }]);
-    assert.ok(state.autonomousPlan && state.autonomousPlan.error);
-    assert.match(state.autonomousPlan.error.message, /aigon doctor --fix/);
-}));
+// REGRESSION F297: autonomous plan shows full stage sequence (valid) or error with doctor hint (broken slug).
+for (const [desc, id, autoPayload, check] of [
+    ['valid workflow slug exposes future reviewed stages', '12',
+        { workflowSlug: 'solo-cc-reviewed-cx', agents: ['cc'], reviewAgent: 'cx' },
+        (state) => {
+            assert.ok(state.autonomousPlan && !state.autonomousPlan.error);
+            assert.deepStrictEqual(
+                state.autonomousPlan.stages.map(s => ({ type: s.type, status: s.status, agents: s.agents.map(a => a.id) })),
+                [
+                    { type: 'implement', status: 'running', agents: ['cc'] },
+                    { type: 'review', status: 'waiting', agents: ['cx'] },
+                    { type: 'counter-review', status: 'waiting', agents: ['cc'] },
+                    { type: 'close', status: 'waiting', agents: [] },
+                ]
+            );
+        }],
+    ['broken workflow slug errors loudly with doctor hint', '13',
+        { workflowSlug: 'missing-workflow', agents: ['cc'] },
+        (state) => { assert.ok(state.autonomousPlan && state.autonomousPlan.error); assert.match(state.autonomousPlan.error.message, /aigon doctor --fix/); }],
+]) {
+    test(`autonomous plan: ${desc}`, () => withTempDir('aigon-rm-', (repo) => {
+        seed(repo);
+        writeSpec(repo, 'features', '03-in-progress', `feature-${id}-auto.md`);
+        writeSnap(repo, 'features', id, 'implementing');
+        writeFeatureAuto(repo, id, { featureId: id, status: 'running', running: true, mode: 'solo_worktree', stopAfter: 'close', startedAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:01:00Z', ...autoPayload });
+        check(wrm.getFeatureDashboardState(repo, id, 'in-progress', [{ id: 'cc', status: 'implementing' }]));
+    }));
+}
 
 // REGRESSION feature 295: operator.nudge_sent must survive projection onto the workflow snapshot.
 testAsync('nudge event is recorded and surfaced on snapshot', () => withTempDirAsync('aigon-rm-', async (repo) => {
