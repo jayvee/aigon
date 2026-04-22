@@ -56,6 +56,12 @@
       { "value": "medium", "label": "Medium" },
       { "value": "high", "label": "High" }
     ],
+    "complexityDefaults": {
+      "low":       { "model": "gpt-5.2",       "effort": "low" },
+      "medium":    { "model": "gpt-5.3-codex", "effort": "medium" },
+      "high":      { "model": "gpt-5.4",       "effort": "high" },
+      "very-high": { "model": "gpt-5.4",       "effort": "high" }
+    },
     "modelFlag": "--model",
     "effortFlag": "-c model_reasoning_effort=",
     "effortEnv": null,

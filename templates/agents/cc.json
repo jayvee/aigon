@@ -55,6 +55,12 @@
       { "value": "high", "label": "High" },
       { "value": "xhigh", "label": "Extra-high" }
     ],
+    "complexityDefaults": {
+      "low":       { "model": "claude-haiku-4-5-20251001", "effort": "low" },
+      "medium":    { "model": "claude-sonnet-4-6",          "effort": "medium" },
+      "high":      { "model": "claude-sonnet-4-6[1m]",      "effort": "high" },
+      "very-high": { "model": "claude-opus-4-7[1m]",        "effort": "xhigh" }
+    },
     "modelFlag": "--model",
     "effortFlag": "--effort",
     "effortEnv": null,
