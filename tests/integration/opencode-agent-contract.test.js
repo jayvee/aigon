@@ -7,6 +7,9 @@
 'use strict';
 
 const assert = require('assert');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const { test, report } = require('../_helpers');
 const agentRegistry = require('../../lib/agent-registry');
 const {
@@ -14,6 +17,7 @@ const {
     resolveAgentCommandPrompt,
     buildReviewCheckFeedbackPrompt,
 } = require('../../lib/agent-prompt-resolver');
+const { buildRawAgentCommand } = require('../../lib/worktree');
 
 test('op is registered with OpenCode CLI + router provider family', () => {
     const op = agentRegistry.getAgent('op');
@@ -94,6 +98,41 @@ test('slash-invocable agents keep slash path after generalising cx check', () =>
             `${agentId} must still take the slash path, got: ${body.slice(0, 60)}`);
         assert.ok(body.includes('42'), `${agentId} must substitute feature id`);
     });
+});
+
+test('registry-derived help surfaces use generic agent placeholders, not the legacy fixed list', () => {
+    // REGRESSION: feature 301 must not reintroduce `cc|gg|cx|cu` lists on help/install surfaces after adding `op`.
+    const templates = require('../../lib/templates');
+    assert.strictEqual(templates.COMMAND_REGISTRY['feature-do'].argHints, '<ID> [--agent=<agent-id>] [--iterate] [--max-iterations=N] [--auto-submit] [--no-auto-submit] [--dry-run]');
+    assert.strictEqual(templates.COMMAND_REGISTRY['feature-spec-review'].argHints, '<ID|slug> [--agent=<agent-id>]');
+    assert.strictEqual(templates.COMMAND_REGISTRY['feature-spec-review-check'].argHints, '<ID|slug> [--agent=<agent-id>]');
+    assert.strictEqual(templates.COMMAND_REGISTRY['research-spec-review'].argHints, '<ID|slug> [--agent=<agent-id>]');
+    assert.strictEqual(templates.COMMAND_REGISTRY['research-spec-review-check'].argHints, '<ID|slug> [--agent=<agent-id>]');
+
+    const featureSource = fs.readFileSync(path.join(__dirname, '..', '..', 'lib', 'commands', 'feature.js'), 'utf8');
+    const setupSource = fs.readFileSync(path.join(__dirname, '..', '..', 'lib', 'commands', 'setup.js'), 'utf8');
+    assert.ok(featureSource.includes("Usage: aigon feature-do <ID> [--agent=<agent-id>]"));
+    assert.ok(setupSource.includes("Run 'aigon install-agent <agent-id>' to install."));
+    assert.ok(!featureSource.includes('--agent=<cc|gg|cx|cu>'));
+    assert.ok(!setupSource.includes('install-agent <cc|gg|cx|cu>'));
+});
+
+test('op spec-review launch uses a command-specific inline prompt filename', () => {
+    // REGRESSION: after generalising cx's inline path to op, spec-review/check launches wrote `feature-<id>-undefined.md`.
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-op-inline-'));
+    try {
+        const cmd = buildRawAgentCommand({
+            agent: 'op',
+            featureId: '301',
+            path: tmp,
+            repoPath: process.cwd(),
+            desc: 'demo',
+        }, 'spec-review');
+        assert.ok(cmd.includes('feature-301-feature-spec-review.md'), cmd);
+        assert.ok(!cmd.includes('feature-301-undefined.md'), cmd);
+    } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+    }
 });
 
 report();
