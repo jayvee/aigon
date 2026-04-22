@@ -2,7 +2,6 @@
 // REGRESSION F275: snapshot lifecycle overrides visible folder stage.
 // REGRESSION F271 `936d2da7`: research read-model tolerates null entityId.
 // REGRESSION F276: detect-only spec drift; AIGON_AUTO_RECONCILE=1 opts into moves.
-// Snapshotless-spec coverage lives in tests/integration/f294-legacy-cleanup.test.js.
 'use strict';
 
 const assert = require('assert');
@@ -13,9 +12,7 @@ const wrm = require('../../lib/workflow-read-model');
 const board = require('../../lib/board');
 const workflowEngine = require('../../lib/workflow-core/engine');
 
-const seed = (repo) => {
-    for (const kind of ['features', 'research-topics']) seedEntityDirs(repo, kind);
-};
+const seed = (repo) => ['features', 'research-topics'].forEach((kind) => seedEntityDirs(repo, kind));
 const writeFeatureAuto = (repo, id, payload) => {
     const file = path.join(repo, '.aigon', 'state', `feature-${String(id).padStart(2, '0')}-auto.json`);
     fs.mkdirSync(path.dirname(file), { recursive: true });

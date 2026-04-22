@@ -30,13 +30,8 @@ function buildCtx(utils) {
     };
 }
 
-function readJson(filePath) {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-}
-
-function normalizePath(filePath) {
-    return fs.realpathSync.native ? fs.realpathSync.native(filePath) : fs.realpathSync(filePath);
-}
+const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'));
+const normalizePath = (filePath) => fs.realpathSync.native ? fs.realpathSync.native(filePath) : fs.realpathSync(filePath);
 
 // REGRESSION: F296 must not leave a snapshotless inbox spec behind when create bootstrapping fails.
 test('entityCreate bootstraps inbox workflow state and rolls back the spec on bootstrap failure', () => withTempDir('aigon-f296-create-', (repo) => {

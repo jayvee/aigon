@@ -13,18 +13,13 @@ const { sendNudge, resolveSessions } = require('../../lib/nudge');
 const git = (cwd, cmd) => execSync(`git ${cmd}`, { cwd, stdio: 'pipe' });
 
 function seedRepo(repoDir, featureBranch) {
-    git(repoDir, 'init -b main');
-    git(repoDir, 'config user.name "t"');
-    git(repoDir, 'config user.email t@t');
+    git(repoDir, 'init -b main'); git(repoDir, 'config user.name "t"'); git(repoDir, 'config user.email t@t');
     fs.mkdirSync(path.join(repoDir, 'docs', 'specs', 'features', 'logs'), { recursive: true });
     fs.writeFileSync(path.join(repoDir, 'README.md'), '# repo\n');
-    git(repoDir, 'add README.md');
-    git(repoDir, 'commit -qm "chore: seed"');
-    git(repoDir, `checkout -b ${featureBranch}`);
+    git(repoDir, 'add README.md'); git(repoDir, 'commit -qm "chore: seed"'); git(repoDir, `checkout -b ${featureBranch}`);
     const logFile = `docs/specs/features/logs/${featureBranch}-log.md`;
     fs.writeFileSync(path.join(repoDir, logFile), '# log\n');
-    git(repoDir, `add ${logFile}`);
-    git(repoDir, 'commit -qm "chore: worktree setup for cx"');
+    git(repoDir, `add ${logFile}`); git(repoDir, 'commit -qm "chore: worktree setup for cx"');
 }
 
 test('setup-only feature branch (log commit but no impl) is rejected', () => withTempDir('aigon-misc-', (repo) => {
