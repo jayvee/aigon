@@ -579,9 +579,13 @@
           return '<button class="kcard-nudge-chip" type="button" data-open-nudge-modal title="' + escHtml(title) + '">' + escHtml(trimmed) + '</button>';
         }).join('') + '</div>'
         : '';
+      const blockedByHtml = (feature.stage === 'backlog' && feature.blockedBy && feature.blockedBy.length > 0)
+        ? '<div class="kcard-blocked">' + feature.blockedBy.map(d => '<span class="kcard-blocked-label">Blocked by #' + escHtml(String(parseInt(d.id, 10))) + '</span>').join('') + '</div>'
+        : '';
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
         '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildSpecReviewBadgeHtml(feature) + '</div>' +
+        blockedByHtml +
         autonomousPlanHtml +
         nudgeChipsHtml;
 
