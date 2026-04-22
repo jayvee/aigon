@@ -1,8 +1,8 @@
-<!-- description: DEPRECATED - use feature-code-review-check instead -->
-# aigon-feature-review-check (deprecated)
+<!-- description: Deprecated alias for feature-code-review-check -->
+# aigon-feature-review-check
 
 > **Deprecated:** This command has been renamed to `feature-code-review-check`.
-> Use `{{CMD_PREFIX}}feature-code-review-check [ID]` instead.
+> Use `{{CMD_PREFIX}}feature-code-review-check {{ARG1_SYNTAX}}` instead.
 
 This stub delegates to `feature-code-review-check`. It will be removed in a future release.
 
