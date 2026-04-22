@@ -1,0 +1,78 @@
+{
+  "id": "op",
+  "name": "OpenCode",
+  "aliases": [
+    "opencode",
+    "op"
+  ],
+  "displayName": "OpenCode",
+  "shortName": "OP",
+  "providerFamily": "router",
+  "portOffset": 5,
+  "terminalColor": "cyan",
+  "bannerColor": "#06B6D4",
+  "defaultFleetAgent": false,
+  "installHint": "npm i -g opencode-ai  (see: https://opencode.ai/docs)",
+  "worktreeEnv": {},
+  "git": {
+    "hasEmailAttribution": true
+  },
+  "capabilities": {
+    "supportsModelFlag": true,
+    "transcriptTelemetry": false,
+    "resolvesSlashCommands": false
+  },
+  "cli": {
+    "command": "opencode",
+    "implementFlag": "run",
+    "implementPrompt": "feature-do",
+    "evalPrompt": "feature-eval",
+    "reviewPrompt": "feature-code-review",
+    "reviewCheckPrompt": "feature-code-review-check",
+    "models": {},
+    "modelOptions": [
+      { "value": null, "label": "Default (OpenCode config)" }
+    ],
+    "effortOptions": [],
+    "modelFlag": "--model",
+    "effortFlag": null,
+    "effortEnv": null,
+    "submitKey": "Enter"
+  },
+  "placeholders": {
+    "AGENT_ID": "op",
+    "AGENT_NAME": "OpenCode",
+    "AGENT_TITLE": "OpenCode Configuration",
+    "ARG_SYNTAX": "$ARGUMENTS",
+    "ARG1_SYNTAX": "$1",
+    "CMD_PREFIX": "aigon-",
+    "AGENT_TEAMS_RESEARCH_NOTE": "",
+    "AGENT_TEAMS_FEATURE_NOTE": "",
+    "PERMISSION_SAVE_NOTE": "",
+    "AGENT_PITFALLS": "",
+    "AGENT_DEV_SERVER_NOTE": ""
+  },
+  "output": {
+    "format": "skill-md",
+    "commandDir": ".agents/skills",
+    "commandFilePrefix": "aigon-",
+    "commandFileExtension": "",
+    "skillFileName": "SKILL.md",
+    "frontmatter": [
+      "name",
+      "description"
+    ],
+    "global": false
+  },
+  "rootFile": null,
+  "supportsAgentsMd": true,
+  "agentFile": "opencode.md",
+  "templatePath": "generic/docs/agent.md",
+  "extras": {},
+  "signals": {
+    "shellTrap": true,
+    "heartbeatSidecar": true,
+    "cliHooks": null
+  },
+  "commandExcludes": []
+}
