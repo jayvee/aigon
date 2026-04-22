@@ -28,6 +28,8 @@ The goal is to automate these as weekly background tasks: scheduled agents that 
 
 The research should evaluate how to implement these using Aigon's own scheduling and automation primitives (remote triggers, cron, autopilot) versus external tools, and recommend the best setup for this specific codebase. The agent doing the research should also feel free to propose **further** tasks not in this list if they emerge naturally from the investigation.
 
+The output of this topic is a decision document, not a grab-bag. It should narrow the list to the tasks worth scheduling first, state which ones should stay manual or move to a per-PR/per-commit lint instead of a weekly job, and explain why.
+
 ## Questions to Answer
 
 - [ ] Does Aigon's existing `/schedule` skill (RemoteTrigger/CronCreate) support fully unattended weekly runs, or does it require a user session to be active?
@@ -46,20 +48,44 @@ The research should evaluate how to implement these using Aigon's own scheduling
 - [ ] Are there Aigon-native examples of self-scheduling agents in the codebase already (e.g. autopilot conductor patterns) that could be reused or adapted?
 - [ ] What cadence is realistic — true weekly cron, or triggered after N commits to main since last run?
 
+### Decision outputs the research must make
+- [ ] Which of the four user-suggested tasks should be implemented first, and in what order?
+- [ ] Which additional candidates are strong enough to recommend now, and which should be explicitly deferred?
+- [ ] Which tasks should create specs automatically versus only producing a report, nudge, or dashboard surface for human triage?
+- [ ] Should scheduling live in one orchestrator, a small set of grouped jobs, or one job per task for the recommended MVP?
+- [ ] What is the minimum safe write authority for unattended runs in this repo: read-only report generation, spec creation, doc commits, or direct PR creation?
+
 ## Scope
 
 ### In Scope
 - Aigon's own scheduling primitives: RemoteTrigger, CronCreate, autopilot conductor
-- The four task categories listed above for the aigon codebase specifically
+- The four user-suggested task categories listed above for the aigon codebase specifically
+- Evaluating the additional candidate tasks listed above well enough to rank, defer, or reject them
 - How the agent authenticates and accesses the repo when running unattended
 - What human approval steps (if any) are needed before the agent takes write actions (creating specs, committing docs)
 - Recommended output format and routing for each task type
 
 ### Out of Scope
 - General CI/CD pipeline configuration (GitHub Actions, etc.) — this is about agent-based automation, not build automation
-- Tasks beyond the four categories above
+- Deep implementation design for every additional candidate task. For candidates beyond the four user-suggested tasks, the required output is a recommendation and rationale unless the research concludes one is a top-priority addition.
 - Cross-repo scheduling (aigon-pro, brewboard) — focus on the aigon repo first
 - Implementing the tasks themselves — the output of this research is feature specs, not working code
+
+## Evidence Expectations
+
+- Every recommendation should cite its evidence source: repo inspection, existing docs/specs, observed command behavior, or external documentation.
+- Distinguish repo-local facts from inference. If the repo cannot prove a claim, say what was inferred and why.
+- For each candidate task, state the expected signal source and artifact shape. Example: git diff + docs file mtimes -> markdown report with missing pages list.
+- When recommending write actions for unattended agents, name the guardrail that makes the write safe enough, or state that human approval is still required.
+- If a question cannot be answered with current evidence, recommend the smallest follow-up measurement or spike instead of guessing.
+
+## Recommendation Requirements
+
+- The final recommendation must include a ranked list of tasks for an MVP weekly maintenance rollout.
+- The recommendation must group tasks by execution mode: weekly scheduled job, per-PR/per-commit lint, manual-only, or deferred.
+- The recommendation must make an explicit call on whether feature-spec creation is allowed autonomously for the recommended tasks.
+- If the best answer is an orchestrator plus child tasks, explain why that grouping beats one-job-per-task for this repo specifically.
+- If the best answer is to keep one or more user-suggested tasks out of the weekly rollout, say so directly and explain the tradeoff.
 
 ## Findings
 <!-- Document discoveries, options evaluated, pros/cons -->
@@ -68,7 +94,7 @@ The research should evaluate how to implement these using Aigon's own scheduling
 <!-- Summary of recommended approach based on findings -->
 
 ## Output
-<!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Link the newly created files below. -->
+<!-- Based on your recommendation, create feature specs only for the tasks you explicitly recommend implementing now. Leave deferred or manual-only tasks unchecked with a short rationale in Findings or Recommendation. -->
 User-suggested tasks:
 - [ ] Feature: weekly-docs-gap-scan (scheduled agent)
 - [ ] Feature: weekly-simplification-scan (scheduled agent)
