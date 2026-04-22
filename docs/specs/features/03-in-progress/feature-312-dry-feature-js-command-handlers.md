@@ -6,21 +6,21 @@
 
 ## User Stories
 
-- [ ] As an agent working on autonomous mode, I can load `lib/feature-autonomous.js` in isolation without reading 3986 lines of unrelated command dispatch
-- [ ] As an agent adding a new feature command, I can see what a handler looks like — it's a thin wrapper over a lib module, not a 700-line function
-- [ ] As a developer reading `feature-start`, I see a short entry point that delegates to `lib/feature-start.js`, not 475 lines of inline logic
+- [x] As an agent working on autonomous mode, I can load `lib/feature-autonomous.js` in isolation without reading 3986 lines of unrelated command dispatch
+- [x] As an agent adding a new feature command, I can see what a handler looks like — it's a thin wrapper over a lib module, not a 700-line function
+- [x] As a developer reading `feature-start`, I see a short entry point that delegates to `lib/feature-start.js`, not 475 lines of inline logic
 
 ## Acceptance Criteria
 
-- [ ] `lib/feature-autonomous.js` contains the logic extracted from the `feature-autonomous-start` handler; the handler in feature.js calls it and is ≤ 30 lines
-- [ ] `lib/feature-start.js` contains the logic extracted from the `feature-start` handler; the handler in feature.js calls it and is ≤ 30 lines
-- [ ] `lib/feature-eval.js` contains the logic extracted from the `feature-eval` handler; the handler in feature.js calls it and is ≤ 30 lines
-- [ ] `lib/action-scope.js` exports `withActionDelegate(commandName, args, ctx, fn)` — wraps `buildActionContext → assertActionAllowed → runDelegatedAigonCommand → catch` in one call
-- [ ] The 4 delegation-guard blocks in feature.js (feature-now, feature-start, feature-eval, feature-cleanup) are replaced with `withActionDelegate(...)` calls
-- [ ] `lib/commands/feature.js` is ≤ 2200 lines after extraction
-- [ ] No handler in `lib/commands/feature.js` is longer than 200 lines
-- [ ] All existing tests pass: `npm test`
-- [ ] `node -c lib/commands/feature.js lib/feature-autonomous.js lib/feature-start.js lib/feature-eval.js lib/action-scope.js` passes
+- [x] `lib/feature-autonomous.js` contains the logic extracted from the `feature-autonomous-start` handler; the handler in feature.js calls it and is ≤ 30 lines
+- [x] `lib/feature-start.js` contains the logic extracted from the `feature-start` handler; the handler in feature.js calls it and is ≤ 30 lines
+- [x] `lib/feature-eval.js` contains the logic extracted from the `feature-eval` handler; the handler in feature.js calls it and is ≤ 30 lines
+- [x] `lib/action-scope.js` exports `withActionDelegate(commandName, args, ctx, fn)` — wraps `buildActionContext → assertActionAllowed → runDelegatedAigonCommand → catch` in one call
+- [x] The 4 delegation-guard blocks in feature.js (feature-now, feature-start, feature-eval, feature-cleanup) are replaced with `withActionDelegate(...)` calls
+- [x] `lib/commands/feature.js` is ≤ 2200 lines after extraction
+- [x] No handler in `lib/commands/feature.js` is longer than 200 lines
+- [x] All existing tests pass: `npm test`
+- [x] `node -c lib/commands/feature.js lib/feature-autonomous.js lib/feature-start.js lib/feature-eval.js lib/feature-do.js lib/action-scope.js` passes
 
 ## Validation
 
@@ -29,6 +29,7 @@ node -c lib/commands/feature.js
 node -c lib/feature-autonomous.js
 node -c lib/feature-start.js
 node -c lib/feature-eval.js
+node -c lib/feature-do.js
 node -c lib/action-scope.js
 npm test
 wc -l lib/commands/feature.js | awk '{if ($1 > 2200) { print "FAIL: feature.js still too large: " $1 " lines"; exit 1 } else print "OK: " $1 " lines"}'
@@ -42,19 +43,17 @@ wc -l lib/commands/feature.js | awk '{if ($1 > 2200) { print "FAIL: feature.js s
 
 ### Extraction pattern (already established in codebase)
 
-Each fat handler becomes a thin entry point:
+Each fat handler becomes a thin entry point. Use `withActionDelegate` only where the handler previously had a delegation guard (`feature-now`, `feature-start`, `feature-eval`, `feature-cleanup`). `feature-autonomous-start` never had that guard historically — it stays a short `require` + `featureAutonomous.run(args, handlerDeps)` like today.
 
 ```js
-// lib/commands/feature.js — after extraction
-'feature-autonomous-start': async (args) => {
-    await withActionDelegate('feature-autonomous-start', args, ctx, async () => {
-        const featureAutonomous = require('../feature-autonomous');
-        await featureAutonomous.run(args, ctx);
-    });
-},
+// lib/commands/feature.js — after extraction (representative)
+'feature-start': async (args) => withActionDelegate('feature-start', args, ctx, async () => {
+    const featureStart = require('../feature-start');
+    await featureStart.run(args, handlerDeps);
+}),
 ```
 
-The extracted module receives `args` and `ctx` and owns all the business logic. Follow the shape of `lib/feature-close.js` as the reference implementation.
+The extracted module receives `args` plus a `handlerDeps` bundle (ctx, shared closures from the dispatcher — same idea as `lib/feature-close.js`).
 
 ### `withActionDelegate` helper
 
@@ -75,7 +74,7 @@ function withActionDelegate(commandName, args, ctx, fn) {
 }
 ```
 
-Replace the 4 copy-pasted blocks at lines 722–730, 823–831, 1676–1681, 2478–2486 with calls to this helper.
+Replace the four copy-pasted delegation guards (previously on `feature-now`, `feature-start`, `feature-eval`, `feature-cleanup`) with calls to this helper.
 
 ### Extraction targets (in order of size)
 
