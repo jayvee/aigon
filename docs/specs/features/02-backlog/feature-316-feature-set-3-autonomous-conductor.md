@@ -1,5 +1,7 @@
 ---
 set: feature-set
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-22T22:47:35.663Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: feature-set-3-autonomous-conductor
