@@ -12,5 +12,6 @@ export default {
   "github-integration": "GitHub Integration",
   "security-scanning": "Security Scanning",
   amplification: { title: withPro("Insights") },
+  nudge: "Nudging a Running Agent",
   troubleshooting: "Troubleshooting",
 };
