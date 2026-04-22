@@ -98,8 +98,8 @@ Current shared modules:
   `formatActionCommand`
 - `lib/dashboard-status-helpers.js` (~200 lines): shared dashboard status helpers so tmux detection, worktree lookup, and stale-session heuristics are not buried in the HTTP server module
   `safeTmuxSessionExists`, `resolveFeatureWorktreePath`, `normalizeDashboardStatus`, `maybeFlagEndedSession`
-- `lib/auto-session-state.js` (~50 lines): durable AutoConductor run-state helper so feature autonomous status survives tmux/session loss and can be reported by the dashboard/CLI
-  `readFeatureAutoState`, `writeFeatureAutoState`, `clearFeatureAutoState`
+- `lib/auto-session-state.js` (~100 lines): durable autonomous run-state helpers so feature and set conductor status survive tmux/session loss and can be reported by the dashboard/CLI
+  `readFeatureAutoState`, `writeFeatureAutoState`, `clearFeatureAutoState`, `readSetAutoState`, `writeSetAutoState`, `clearSetAutoState`
 - `lib/dashboard-status-collector.js` (~830 lines): shared AIGON server read-side collector so repo/entity status assembly, dashboard detail log reads, and done-count aggregation are separated from HTTP transport and notification code, including metadata-authoritative feedback status reads
   `collectDashboardStatusData`
 - `templates/dashboard/js/autonomous-plan.js` (~80 lines): shared dashboard renderer for the server-owned autonomous stage timeline so card markup stays pure and testable outside the full browser bundle
@@ -119,6 +119,8 @@ Current shared modules:
   `createDashboardRouteDispatcher`
 - `lib/worktree.js` (~1,300 lines): worktree creation, permissions, git attribution metadata bootstrap, tmux sessions
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
+- `lib/set-conductor.js` (~500 lines): detached set-level autonomous sequencer (`set-autonomous-start|stop|resume|reset`) that resolves set members in topo order, delegates each member to `feature-autonomous-start`, and persists `.aigon/state/set-<slug>-auto.json`
+  `run`, `resolveSetExecutionPlan`, `buildSetAutoSessionName`
 - `lib/supervisor.js` (~430 lines): server monitoring — liveness from tmux + heartbeat, idle/awaiting-input notifications, and token-exhaustion handling (F308) that may append workflow events, pause a feature, or auto-switch an agent slot per `agentFailover` policy
   `startSupervisorLoop`, `sweepEntity`, `getAgentLiveness`
 - `lib/agent-failover.js` (~140 lines): token-exhaustion signal construction, failover chain selection, handoff prompt text, and clearing per-slot status flags after a switch
