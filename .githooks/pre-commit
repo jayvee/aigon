@@ -11,4 +11,25 @@ if [ -n "$BLOCKED_FILES" ]; then
   exit 1
 fi
 
+# Lint staged JS that falls under eslint.config.js file patterns.
+# This is the guard that would have caught the f16c39c3-era
+# `ReferenceError: rebaseNeeded is not defined` crash at commit time.
+LINT_TARGETS="$(printf '%s\n' "$STAGED_FILES" | grep -E '^(lib/.+|tests/integration/.+)\.js$' || true)"
+
+if [ -n "$LINT_TARGETS" ]; then
+  REPO_ROOT="$(git rev-parse --show-toplevel)"
+  ESLINT_BIN="$REPO_ROOT/node_modules/.bin/eslint"
+  if [ -x "$ESLINT_BIN" ]; then
+    # shellcheck disable=SC2086
+    if ! "$ESLINT_BIN" --no-warn-ignored $LINT_TARGETS; then
+      echo "ERROR: eslint failed on staged files."
+      echo "Fix the issues above, restage, and retry the commit."
+      exit 1
+    fi
+  else
+    echo "WARNING: eslint not installed (node_modules/.bin/eslint missing)."
+    echo "         Run \`npm install\` so pre-commit can lint staged JS."
+  fi
+fi
+
 exit 0
