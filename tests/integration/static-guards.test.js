@@ -18,4 +18,13 @@ test('implementation logging policy', () => {
     const r = pp.resolveLoggingPlaceholders('full', { implementationLogMode: 'drive', loggingLevel: 'fleet-only', projectConfig: {} });
     assert.ok(r.LOGGING_SECTION.includes('No implementation log'));
 });
+// REGRESSION: feature 307 bans blanket staging in aigon-owned commit paths.
+test('aigon-owned commit paths avoid git add -A and git add .', () => {
+    const repoRoot = path.join(__dirname, '../..');
+    ['lib/feature-close.js', 'lib/worktree.js', 'lib/commands/setup.js'].forEach(relPath => {
+        const content = fs.readFileSync(path.join(repoRoot, relPath), 'utf8');
+        assert.ok(!content.includes('git add -A'));
+        assert.ok(!/git add \.(?:["'`\s]|$)/.test(content));
+    });
+});
 report();
