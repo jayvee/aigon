@@ -959,7 +959,7 @@ async function showAutonomousModal(feature, repoPath, btn) {
     const agent = AIGON_AGENTS.find(a => a.id === agentId) || { id: agentId, modelOptions: [], effortOptions: [] };
     const row = buildAgentCheckRow({
       value: agentId,
-      checked: agentId === 'cc',
+      checked: agentId === (window.__AIGON_DEFAULT_AGENT__ || 'cc'),
       label: agentId,
       hint: displayName,
       tripletGrid: true,

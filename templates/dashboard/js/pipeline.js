@@ -121,7 +121,7 @@
       try {
         // Use agent picked in modal, fall back to sidebar agent
         const agentRadio = document.querySelector('#create-modal-agent input[name="create-agent"]:checked');
-        const agentId = (agentRadio && agentRadio.value) || (typeof getAskAgent === 'function' && getAskAgent()) || 'cc';
+        const agentId = (agentRadio && agentRadio.value) || (typeof getAskAgent === 'function' && getAskAgent()) || window.__AIGON_DEFAULT_AGENT__ || 'cc';
 
         if (!agentId) {
           // "None" selected — create the file via CLI, no agent session
@@ -207,6 +207,14 @@
       setCreateModalBusy(false);
       els.nameInput.value = '';
       if (els.descriptionInput) els.descriptionInput.value = '';
+      const preferredAgent = window.__AIGON_DEFAULT_AGENT__ || (typeof getAskAgent === 'function' && getAskAgent()) || 'cc';
+      const agentInputs = document.querySelectorAll('#create-modal-agent input[name="create-agent"]');
+      agentInputs.forEach(input => {
+        input.checked = input.value === preferredAgent;
+      });
+      if (![...agentInputs].some(input => input.checked) && agentInputs[0]) {
+        agentInputs[0].checked = true;
+      }
       els.modal.style.display = 'flex';
       els.nameInput.focus();
     }
@@ -909,7 +917,7 @@
           const sessionName = btn.getAttribute('data-eval-session');
           // Parse agent from session name: {repo}-r{id}-eval-{agent}
           const evalMatch = sessionName.match(/eval-(\w+)$/);
-          const evalAgentId = evalMatch ? evalMatch[1] : 'cc';
+          const evalAgentId = evalMatch ? evalMatch[1] : (window.__AIGON_DEFAULT_AGENT__ || 'cc');
           await requestFeatureOpen(feature.id, evalAgentId, repoPath, btn, pipelineType, 'eval');
         };
       });
