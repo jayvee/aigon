@@ -1,130 +1,67 @@
 #!/usr/bin/env node
 // REGRESSION feature 313: spec frontmatter → per-agent {model, effort} recommendation.
-// Covers: inline-map YAML parsing, fallback chain (spec → agent default → none),
-//         missing frontmatter returns null, cli.complexityDefaults is populated for
-//         all supported agents.
+// Covers: inline-map YAML, fallback chain (spec → agent default → none), missing
+// frontmatter, required cli.complexityDefaults on supported agents.
 'use strict';
-const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-
+const a = require('assert');
+const fs = require('fs'); const path = require('path'); const os = require('os');
 const { parseFrontMatter } = require('../../lib/cli-parse');
-const specRec = require('../../lib/spec-recommendation');
-const agentRegistry = require('../../lib/agent-registry');
+const r = require('../../lib/spec-recommendation');
+const reg = require('../../lib/agent-registry');
 
-// 1. parseFrontMatter now parses inline `{ key: value, key: value }` maps.
-const inline = parseFrontMatter(`---
-complexity: medium
-recommended_models:
-  cc: { model: claude-sonnet-4-6, effort: medium }
-  cu: { model: null, effort: null }
----
-body
-`);
-assert.strictEqual(inline.data.complexity, 'medium');
-assert.deepStrictEqual(inline.data.recommended_models.cc, { model: 'claude-sonnet-4-6', effort: 'medium' });
-assert.deepStrictEqual(inline.data.recommended_models.cu, { model: null, effort: null });
+const fm = parseFrontMatter(`---\ncomplexity: medium\nrecommended_models:\n  cc: { model: claude-sonnet-4-6, effort: medium }\n  cu: { model: null, effort: null }\n---\nx`);
+a.strictEqual(fm.data.complexity, 'medium');
+a.deepStrictEqual(fm.data.recommended_models.cc, { model: 'claude-sonnet-4-6', effort: 'medium' });
+a.deepStrictEqual(fm.data.recommended_models.cu, { model: null, effort: null });
 
-// 2. parseSpecRecommendation returns normalised shape.
-const rec = specRec.parseSpecRecommendation(`---
-complexity: high
-recommended_models:
-  cc: { model: claude-opus-4-7, effort: high }
----
-body`);
-assert.strictEqual(rec.complexity, 'high');
-assert.strictEqual(rec.recommendedModels.cc.model, 'claude-opus-4-7');
+const rec = r.parseSpecRecommendation(`---\ncomplexity: high\nrecommended_models:\n  cc: { model: claude-opus-4-7, effort: high }\n---`);
+a.strictEqual(rec.complexity, 'high');
+a.strictEqual(rec.recommendedModels.cc.model, 'claude-opus-4-7');
+a.strictEqual(r.parseSpecRecommendation('# no frontmatter'), null);
+a.strictEqual(r.readSpecRecommendation('/nonexistent.md'), null);
+const bad = r.parseSpecRecommendation(`---\ncomplexity: extremely-hard\nrecommended_models:\n  cc: { model: claude-sonnet-4-6, effort: medium }\n---`);
+a.strictEqual(bad.complexity, null);
+a.strictEqual(bad.recommendedModels.cc.model, 'claude-sonnet-4-6');
 
-// 3. Missing frontmatter → null (today's behaviour preserved).
-assert.strictEqual(specRec.parseSpecRecommendation('# no frontmatter here'), null);
-assert.strictEqual(specRec.readSpecRecommendation('/nonexistent/path.md'), null);
+const cc = reg.getAgent('cc');
+a.ok(cc?.cli?.complexityDefaults?.medium?.model, 'cc complexityDefaults.medium.model required');
+const mDef = cc.cli.complexityDefaults.medium;
 
-// 4. Invalid complexity value is dropped (but recs kept).
-const invalidComplexity = specRec.parseSpecRecommendation(`---
-complexity: extremely-hard
-recommended_models:
-  cc: { model: claude-sonnet-4-6, effort: medium }
----`);
-assert.strictEqual(invalidComplexity.complexity, null);
-assert.strictEqual(invalidComplexity.recommendedModels.cc.model, 'claude-sonnet-4-6');
+const fbRec = r.parseSpecRecommendation(`---\ncomplexity: medium\nrecommended_models:\n  cc: { model: null, effort: null }\n---`);
+const fb = r.resolveAgentRecommendation('cc', fbRec);
+a.strictEqual(fb.model, mDef.model); a.strictEqual(fb.modelSource, 'agent-default');
+a.strictEqual(fb.effort, mDef.effort);
 
-// 5. Fallback chain: null per-agent value falls through to cli.complexityDefaults.
-const cc = agentRegistry.getAgent('cc');
-assert.ok(cc?.cli?.complexityDefaults, 'cc must have cli.complexityDefaults');
-const mediumDefault = cc.cli.complexityDefaults.medium;
-assert.ok(mediumDefault && mediumDefault.model, 'cc medium default must have a model');
+const sw = r.resolveAgentRecommendation('cc', r.parseSpecRecommendation(`---\ncomplexity: medium\nrecommended_models:\n  cc: { model: claude-haiku-4-5-20251001, effort: low }\n---`));
+a.strictEqual(sw.model, 'claude-haiku-4-5-20251001'); a.strictEqual(sw.modelSource, 'spec');
 
-const fallbackRec = specRec.parseSpecRecommendation(`---
-complexity: medium
-recommended_models:
-  cc: { model: null, effort: null }
----`);
-const fallbackResolved = specRec.resolveAgentRecommendation('cc', fallbackRec);
-assert.strictEqual(fallbackResolved.model, mediumDefault.model);
-assert.strictEqual(fallbackResolved.modelSource, 'agent-default');
-assert.strictEqual(fallbackResolved.effort, mediumDefault.effort);
+const none = r.resolveAgentRecommendation('cc', null);
+a.strictEqual(none.model, null); a.strictEqual(none.modelSource, 'none');
 
-// 6. Spec value wins over agent default.
-const specWinsRec = specRec.parseSpecRecommendation(`---
-complexity: medium
-recommended_models:
-  cc: { model: claude-haiku-4-5-20251001, effort: low }
----`);
-const specWins = specRec.resolveAgentRecommendation('cc', specWinsRec);
-assert.strictEqual(specWins.model, 'claude-haiku-4-5-20251001');
-assert.strictEqual(specWins.modelSource, 'spec');
-
-// 7. No complexity + no spec entry → null source.
-const noneResolved = specRec.resolveAgentRecommendation('cc', null);
-assert.strictEqual(noneResolved.model, null);
-assert.strictEqual(noneResolved.modelSource, 'none');
-
-// 8. All supported agents declare cli.complexityDefaults with the four buckets.
-const REQUIRED_BUCKETS = ['low', 'medium', 'high', 'very-high'];
-for (const agent of agentRegistry.getAllAgents()) {
-    // op is optional (not-yet-active) — skip if missing, but cc/cx/gg/cu must have it.
+for (const agent of reg.getAllAgents()) {
     if (!agent.cli?.complexityDefaults) {
-        assert.ok(!['cc', 'cx', 'gg', 'cu'].includes(agent.id),
-            `agent ${agent.id} must declare cli.complexityDefaults`);
+        a.ok(!['cc','cx','gg','cu'].includes(agent.id), `${agent.id} must declare cli.complexityDefaults`);
         continue;
     }
-    for (const bucket of REQUIRED_BUCKETS) {
-        assert.ok(bucket in agent.cli.complexityDefaults,
-            `${agent.id}.cli.complexityDefaults must have bucket "${bucket}"`);
-        const entry = agent.cli.complexityDefaults[bucket];
-        assert.ok(entry && typeof entry === 'object',
-            `${agent.id}.complexityDefaults.${bucket} must be an object`);
-        assert.ok('model' in entry && 'effort' in entry,
-            `${agent.id}.complexityDefaults.${bucket} must have model+effort keys`);
+    for (const b of ['low','medium','high','very-high']) {
+        a.ok(b in agent.cli.complexityDefaults, `${agent.id}.complexityDefaults.${b} missing`);
+        const e = agent.cli.complexityDefaults[b];
+        a.ok(e && 'model' in e && 'effort' in e, `${agent.id}.complexityDefaults.${b} must have model+effort`);
     }
 }
 
-// 9. buildRecommendationPayload returns per-agent entries for every registered agent.
-const payload = specRec.buildRecommendationPayload(fallbackRec);
-assert.strictEqual(payload.complexity, 'medium');
-for (const agent of agentRegistry.getAllAgents()) {
-    assert.ok(agent.id in payload.agents,
-        `payload.agents must include ${agent.id}`);
-}
+const payload = r.buildRecommendationPayload(fbRec);
+a.strictEqual(payload.complexity, 'medium');
+for (const agent of reg.getAllAgents()) a.ok(agent.id in payload.agents, `payload.agents missing ${agent.id}`);
 
-// 10. readSpecRecommendation round-trip through a real file.
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'f313-rec-'));
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'f313-'));
 try {
-    const specPath = path.join(tmp, 'feature-test.md');
-    fs.writeFileSync(specPath, `---
-complexity: very-high
-recommended_models:
-  cc: { model: claude-opus-4-7[1m], effort: xhigh }
----
-# Feature: test
-`);
-    const parsed = specRec.readSpecRecommendation(specPath);
-    assert.strictEqual(parsed.complexity, 'very-high');
-    assert.strictEqual(parsed.recommendedModels.cc.model, 'claude-opus-4-7[1m]');
-    assert.strictEqual(parsed.recommendedModels.cc.effort, 'xhigh');
-} finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-}
+    const p = path.join(tmp, 'feature-test.md');
+    fs.writeFileSync(p, `---\ncomplexity: very-high\nrecommended_models:\n  cc: { model: claude-opus-4-7[1m], effort: xhigh }\n---\n# x\n`);
+    const parsed = r.readSpecRecommendation(p);
+    a.strictEqual(parsed.complexity, 'very-high');
+    a.strictEqual(parsed.recommendedModels.cc.model, 'claude-opus-4-7[1m]');
+    a.strictEqual(parsed.recommendedModels.cc.effort, 'xhigh');
+} finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 
 console.log('  ✓ feature 313 spec-recommendation tests passed');
