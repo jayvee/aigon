@@ -1,4 +1,18 @@
+---
+complexity: medium
+recommended_models:
+  cc: { model: null, effort: null }
+  cx: { model: null, effort: null }
+  gg: { model: null, effort: null }
+  cu: { model: null, effort: null }
+---
+
 # Research: {{NAME}}
+
+<!-- Authoring AI: set `complexity:` using the same rubric as features —
+     low/medium/high/very-high — based on breadth of investigation and judgment
+     required. Leave per-agent entries `null` to inherit
+     `cli.complexityDefaults[<complexity>]` from the agent config. -->
 
 ## Context
 <!-- Why is this research needed? What problem or opportunity prompted it? -->

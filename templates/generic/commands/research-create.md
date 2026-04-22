@@ -29,6 +29,17 @@ Your job is ONLY to create a research topic document. You are NOT researching, i
 
 The output should be a short, well-structured document that frames the research — not the research itself. Think of it as a brief for another agent.
 
+### Set the spec frontmatter (complexity)
+
+The template ships with a `complexity:` frontmatter field that feeds the dashboard start modal's per-agent model recommendation. Pick:
+
+- **low** — narrow topic, one dimension, answer already clear-ish (lookup research).
+- **medium** — typical topic with 3–5 focused questions, moderate breadth.
+- **high** — wide-ranging investigation, competing options with non-obvious trade-offs.
+- **very-high** — exploratory research where the right *questions* aren't obvious yet. Reserve for research that needs strong reasoning.
+
+Leave `recommended_models.<agent>: { model: null, effort: null }` to inherit the agent's `cli.complexityDefaults[<complexity>]` defaults.
+
 Next step: Once the topic is complete, run `{{CMD_PREFIX}}research-prioritise {{ARG_SYNTAX}}` to assign an ID and move to backlog.
 
 ## Prompt Suggestion
