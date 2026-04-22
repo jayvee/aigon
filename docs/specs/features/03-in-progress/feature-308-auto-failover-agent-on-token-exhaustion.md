@@ -87,6 +87,10 @@ Implementation order:
 - Token limits: per-session, per-feature, per-day, or all three? The initial implementation should choose one or two concrete scopes instead of introducing all three at once.
 - For Codex specifically: does the CLI exit cleanly with a recognisable error, or does it just stop streaming output? Detection mechanism depends on this.
 
+## Implementation code review
+
+- [x] **Done (2026-04-22)** — Review completed; follow-up fixes merged: shared `clearTokenExhaustedFlag` in `lib/agent-failover.js`, dashboard `switch-agent` requires `tokenExhausted` on the slot and clears status flags after `agent.failover_switched`, tightened `buildTokenExhaustionSignal` gating, supervisor/module docs aligned with F308 behaviour, `docs/architecture.md` updated, test budget +80 per Pre-authorised, regression tests in `tests/integration/agent-failover.test.js`.
+
 ## Related
 
 - F293: agent-idle-detector-and-spec-preauth (provides the liveness signal we extend)

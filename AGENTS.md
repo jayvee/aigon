@@ -77,6 +77,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/agent-status.js` | ~130 | Per-agent status files (`.aigon/state/{prefix}-{id}-{agent}.json`), atomic writes |
 | `lib/agent-prompt-resolver.js` | ~140 | Resolves launch prompt for agent + verb. Slash-invocable agents (cc/gg/cu) pass through `cliConfig.<verb>Prompt`; non-invocable agents (cx/op) inline the canonical template body directly |
 | `lib/agent-launch.js` | ~130 | `resolveLaunchTriplet` + `buildAgentLaunchInvocation`. **Every** spawn path must route through this helper so per-feature `{model, effort}` overrides captured on `feature.started` survive every respawn |
+| `lib/agent-failover.js` | ~140 | Token-exhaustion detection helpers, failover chain selection, handoff prompt builder, `clearTokenExhaustedFlag` (shared by supervisor + dashboard switch) |
 | `lib/stats-aggregate.js` | ~270 | Rolled-up stats cache (`.aigon/cache/stats-aggregate.json`); rebuilt lazily; includes `perTriplet` rollup keyed on `agent\|model\|effort` |
 | `lib/migration.js` | ~300 | Versioned state migrations with backup/restore/validate lifecycle |
 | `lib/global-config-migration.js` | ~150 | Machine-wide `~/.aigon/config.json` migrations: versioned registry, backup/write-once runner, terminal settings rename (`terminal`/`tmuxApp` → `terminalApp`) |
@@ -89,7 +90,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/git.js` | ~700 | Branch, worktree, status, commit helpers, attribution |
 | `lib/security.js` | ~131 | Merge gate scanning (gitleaks + semgrep) |
 | `lib/workflow-heartbeat.js` | ~160 | Display-only liveness computation (alive/stale/dead); never changes engine state |
-| `lib/supervisor.js` | ~330 | Observe-only server monitoring: agent liveness, idle detection from workflow-signal gaps, desktop notifications. Never emits engine signals |
+| `lib/supervisor.js` | ~430 | Server monitoring: liveness, idle/awaiting-input notifications, and token-exhaustion detection (F308) that may append workflow events, pause a feature, or auto-switch a slot per `agentFailover` policy |
 | `lib/supervisor-service.js` | ~175 | Server auto-restart (launchd/systemd) for `aigon server start --persistent` |
 | `lib/terminal-adapters.js` | ~200 | Detect/launch/split per terminal (Warp, iTerm2, kitty, Terminal.app) |
 
@@ -113,7 +114,8 @@ Supporting state:
 - **Review state**: `.aigon/workflows/features/{id}/review-state.json` tracks `current` + `history[]`. Written by `agent-status reviewing`/`review-complete`; read by AutoConductor to confirm review completion.
 - **AutoConductor** (`feature-autonomous-start __run-loop`): detached tmux session. Solo: polls allReady → review session (if `--review-agent`) → waits for `review-complete` → `feature-close`. Fleet: polls allReady → eval session → polls eval file for `**Winner:**` → `feature-close <winner>`. Kills its own tmux session on completion.
 - **Heartbeat is display-only**: liveness tracking in memory only; never triggers engine transitions. Users manually mark agents as lost/failed — the system never does this automatically.
-- **Idle detection is display-only**: supervisor derives `idleState` from workflow progress gaps while a matching tmux session is still alive. It may badge and notify, but never kills, restarts, or auto-approves agents.
+- **Idle detection is display-only**: supervisor derives `idleState` from workflow progress gaps while a matching tmux session is still alive. It may badge and notify, but never kills, restarts, or auto-approves agents for idle alone.
+- **Token exhaustion (F308) is the exception**: when a positive detector fires, the supervisor may append `agent.token_exhausted`, pause the feature, notify, and (policy `switch`) kill that slot's tmux session and spawn the next agent in the failover chain via `buildAgentCommand` / `buildAgentLaunchInvocation`.
 - Log files are **pure narrative markdown** — no frontmatter, no machine state
 
 Research lifecycle also uses workflow-core (`.aigon/workflows/research/{id}/`). Feedback stays outside the engine; its frontmatter `status` is the authority and folder position is a reconciled projection.

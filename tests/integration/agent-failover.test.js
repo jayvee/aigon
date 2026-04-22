@@ -4,6 +4,7 @@ const a = require('assert');
 const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
 const fo = require('../../lib/agent-failover');
 const wf = require('../../lib/workflow-core');
+const { writeAgentStatusAt, readAgentStatusRecordAt } = require('../../lib/agent-status');
 const { projectContext } = require('../../lib/workflow-core/projector');
 const { FEATURE_ACTION_CANDIDATES } = require('../../lib/feature-workflow-rules');
 
@@ -25,6 +26,27 @@ test('buildTokenExhaustionSignal: fires on stderr pattern match', () => {
 });
 test('buildTokenExhaustionSignal: generic non-zero exit stays a normal failure', () =>
     a.strictEqual(sig({ statusRecord: { lastExitCode: 127, lastPaneTail: 'command not found: npx' } }), null));
+test('buildTokenExhaustionSignal: listed exit code without exhaustion stderr is ignored', () =>
+    a.strictEqual(sig({ statusRecord: { lastExitCode: 1, lastPaneTail: 'build failed' } }), null));
+
+// REGRESSION: dashboard manual switch must clear the same status flags as auto-switch or supervisor never re-detects exhaustion for that slot.
+testAsync('clearTokenExhaustedFlag: clears supervisor flags so a slot can exhaust again', () => withTempDirAsync(async (repo) => {
+    await wf.startFeature(repo, '79', 'solo_worktree', ['cx'], { agentFailover: { chain: ['cx', 'cc'] } });
+    writeAgentStatusAt(repo, '79', 'cx', {
+        status: 'needs_attention',
+        worktreePath: '/tmp/wt',
+        runtimeAgentId: 'cx',
+        lastExitCode: 1,
+        lastPaneTail: 'usage limit',
+        flags: { tokenExhausted: true, tokenExhaustedAt: 't1', tokenExhaustedSource: 'telemetry_limit' },
+    }, 'feature');
+    fo.clearTokenExhaustedFlag(repo, '79', 'cx', 'cc', '/tmp/wt');
+    const r = readAgentStatusRecordAt(repo, '79', 'cx', { prefixes: ['feature'] });
+    a.strictEqual(r.data.status, 'implementing');
+    a.strictEqual(r.data.runtimeAgentId, 'cc');
+    a.strictEqual(r.data.lastExitCode, null);
+    a.ok(!r.data.flags || !Object.prototype.hasOwnProperty.call(r.data.flags, 'tokenExhausted'));
+}));
 
 // Chain selection.
 test('chooseNextAgent: picks next entry, honours excludes, null when exhausted', () => {
