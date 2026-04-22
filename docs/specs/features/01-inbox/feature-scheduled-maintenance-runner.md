@@ -1,54 +1,52 @@
 # Feature: scheduled-maintenance-runner
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Thin dispatcher/report-formatter that runs a configured set of weekly maintenance checks and writes a single markdown digest to `docs/reports/maintenance-YYYY-WW.md`. Designed to be triggered by a Claude Code cloud routine (`/schedule`), not by any aigon-internal scheduler. Each enabled check is a small pure function that returns a report section; runner catches per-check errors so one broken check produces a "⚠ failed" subsection while others still run. No autonomous spec creation, commits, or PRs in v1.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As a maintainer, I can enable/disable individual maintenance checks in `.aigon/config.json` without editing code.
+- [ ] As a maintainer, I get one weekly digest file I can skim, rather than N scattered notifications.
+- [ ] As a maintainer, I can run any individual check ad-hoc from the CLI for debugging (`aigon maintenance-run --check dependency-sweep`).
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] New command `aigon maintenance-run` runs all checks enabled in config; `--check <name>` runs one; `--dry-run` prints the digest without writing.
+- [ ] Each check registers via a small interface: `{ name, run(ctx) -> { section: markdown, errors?: [] } }`.
+- [ ] Per-check try/catch ensures one failure does not abort the run; failed checks render "⚠ <name>: <error>" in the digest.
+- [ ] Output written to `docs/reports/maintenance-YYYY-WW.md` (ISO week). Overwrites same-week file on re-run.
+- [ ] Config shape: `.aigon/config.json` `maintenance: { enabled: [check names], reportPath?: string }`. Default enabled list is empty (opt-in per-check).
+- [ ] Optional dashboard nudge after run completes (behind `maintenance.nudge: true`).
+- [ ] No git commits, no spec creation, no PR creation from this runner in v1.
+- [ ] Documented `/schedule` routine example in `docs/development_workflow.md` showing how to wire a weekly cloud routine to `aigon maintenance-run`.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+node -c aigon-cli.js
+npm test
 ```
 
 ## Pre-authorised
-<!-- Optional: standing orders the agent may enact without stopping to ask.
-     Each line is a single bounded permission. The agent cites the matching line
-     in a commit footer `Pre-authorised-by: <slug>` for auditability.
-     Absent or blank = no pre-auths; agent stops on every policy gate as normal.
-     Example lines:
-       - May raise `scripts/check-test-budget.sh` CEILING by up to +40 LOC if regression tests require it.
-       - May skip `npm run test:ui` when this feature touches only `lib/` and no dashboard assets.
--->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+- New module `lib/maintenance.js` owns the runner, check registry, and digest formatter.
+- New command in `lib/commands/infra.js` (or a new `lib/commands/maintenance.js` if the surface grows) — thin shim into `lib/maintenance.js`.
+- Check registry is a plain object keyed on check name; individual check implementations live in `lib/maintenance/checks/<name>.js` so each feature can ship its own file without touching the runner.
+- Runner pulls fresh `git pull --ff-only` *only if* invoked with `--pull` (routines manage their own clone state; local runs often sit on a branch).
+- Digest file uses ISO week numbering (`YYYY-WW`) so back-to-back runs in the same week overwrite rather than accumulate.
+- No scheduling logic lives in aigon — cloud routine is the trigger; aigon owns the check commands.
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- none (this is the orchestrator; check features depend on it)
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- Implementing any of the individual checks (shipped as separate features).
+- Scheduling / cron primitives — delegated to Claude Code cloud routines.
+- Autonomous writes beyond the digest file (no `feature-create`, no commits, no PRs).
+- Cross-repo fan-out (aigon only for v1).
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Should the digest file be committed automatically, or left uncommitted for the user to review and commit? **Lean uncommitted** for v1 to preserve read-only posture.
+- Should dashboard nudge link to the digest file, or embed a summary? Start with file link.
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research:
+- Research: `docs/specs/research-topics/04-in-evaluation/research-36-weekly-background-maintenance-tasks.md`
+- Dependent features: `weekly-dependency-vulnerability-sweep`, `weekly-docs-gap-scan`
