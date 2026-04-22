@@ -5,6 +5,8 @@ recommended_models:
   cx: { model: gpt-5.4, effort: medium }
   gg: { model: gemini-3.1-pro-preview, effort: medium }
   cu: { model: null, effort: null }
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-22T13:53:36.666Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: recommended-model-on-create
