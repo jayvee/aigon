@@ -1,0 +1,47 @@
+---
+title: "research-rename"
+description: "Rename an inbox research topic before it has been prioritised"
+---
+
+## Synopsis
+
+```bash
+aigon research-rename <old-name> <new-name>
+```
+
+## Description
+
+Rename an unprioritised research topic in `docs/specs/research/01-inbox/`.
+
+Like `feature-rename`, this applies only to inbox items that do not have a numeric ID yet. Prioritised research topics should keep their assigned IDs.
+
+## Usage
+
+```bash
+# Rename by slug
+aigon research-rename api-cache-invalidation api-cache-invalidation-strategies
+
+# Multi-word names are accepted
+aigon research-rename "API cache invalidation" "API cache invalidation strategies"
+```
+
+## Behavior
+
+- Finds the matching inbox research spec
+- Renames the spec file with `git mv`
+- Migrates slug-keyed workflow state for the inbox item
+- Creates a commit for the rename automatically
+
+If the topic has already been prioritised or the destination slug already exists, the command exits with an error.
+
+## Examples
+
+```bash
+aigon research-rename search-ranking ranking-signal-options
+```
+
+After a successful rename, continue with:
+
+```bash
+aigon research-prioritise ranking-signal-options
+```

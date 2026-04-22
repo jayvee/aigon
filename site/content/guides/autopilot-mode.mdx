@@ -177,6 +177,8 @@ The stop-after value controls where autonomy ends. Available values differ by mo
 
 While the AutoConductor is running, the dashboard shows a **Running autonomously** badge on the feature card.
 
+From the moment the run starts, the dashboard also shows the full planned stage sequence for that autonomous workflow, not just the currently active stage. That makes it clear up front whether the run is expected to stop after implement, continue into review, branch into eval, or auto-close at the end.
+
 ```bash
 # Check AutoConductor status and current workflow state
 aigon feature-autonomous-start status 42

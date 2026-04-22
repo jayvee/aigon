@@ -88,3 +88,14 @@ Feedback creates an auditable trail:
 6. User confirms fix → mark feedback as done
 
 This answers both "why did we build this?" (forward) and "what happened to my request?" (backward).
+
+## Feedback-driven code review follow-up
+
+When a feedback item turns into a feature and that feature needs cross-agent review, use the current `feature-code-review` command names in docs, scripts, and team conventions:
+
+```bash
+aigon feature-code-review <ID>
+aigon feature-code-review-check <ID>
+```
+
+Older docs or notes that mention the previous review command names are stale. The current workflow uses the `feature-code-review` names throughout.

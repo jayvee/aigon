@@ -1,0 +1,56 @@
+---
+title: "nudge"
+description: "Send a message into a running feature or research agent session"
+---
+
+## Synopsis
+
+```bash
+aigon nudge <ID> [agent] "message" [--role=do|review|spec-review|auto] [--entity=feature|research]
+```
+
+## Description
+
+Send a plain-text message into a running agent session without restarting the session or resetting the feature.
+
+Use `nudge` when an agent is blocked, needs a course correction, or should switch approaches mid-flight while keeping its current worktree and in-progress work intact.
+
+## Usage
+
+```bash
+# Feature implementation session (default role/entity)
+aigon nudge 305 "Do not add a new test file. Update the existing docs page and rebuild the site."
+
+# Target a specific agent in Fleet mode
+aigon nudge 305 cx "Keep your current branch. Rebase onto main, resolve conflicts, then continue."
+
+# Nudge a review session explicitly
+aigon nudge 305 gg "Focus only on behavioral regressions and missing tests." --role=review
+
+# Target a research run instead of a feature
+aigon nudge 12 cc "Narrow this down to API pagination patterns only." --entity=research
+
+# Nudge the AutoConductor session
+aigon nudge 305 "Stop after eval if the winner is unclear." --role=auto
+```
+
+## Options
+
+- `agent` — optional agent id when multiple sessions may exist for the same entity
+- `--role=do|review|spec-review|auto` — choose which session type to message; defaults to `do`
+- `--entity=feature|research` — resolve the id as a feature or research item; defaults to feature resolution unless provided
+
+## Examples
+
+```bash
+aigon nudge 304 "Test budget is already over the ceiling. Skip the test file, revert the package.json change, commit, then run the validation gate and submit."
+```
+
+```bash
+aigon nudge 305 cx "Address the review feedback first, then mark feedback-addressed when you are done." --role=do
+```
+
+## See also
+
+- [Nudging a Running Agent](/docs/guides/nudge)
+- [`agent-status`](/docs/reference/commands/misc/agent-status)

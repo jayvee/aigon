@@ -2,6 +2,7 @@ import { withPro } from "../../../../components/pro-badge";
 
 export default {
   "feature-create": "feature-create",
+  "feature-rename": "feature-rename",
   "feature-prioritise": "feature-prioritise",
   "feature-start": "feature-start",
   "feature-now": "feature-now",
