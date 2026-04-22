@@ -55,6 +55,51 @@ Watch agents compete in real-time. The dashboard shows status badges for each ag
 If your repo uses a GitHub remote, feature cards include a GitHub section where you can check PR status on demand with manual refresh.
 See the [GitHub Integration guide](./github-integration) for prerequisites, status meanings, and expected behavior.
 
+### Awaiting input
+
+When an agent is blocked on a decision, it can emit `aigon agent-status awaiting-input "<question>"`. The feature card then shows a pulsing **Awaiting input** badge with the question text so you can see exactly what is blocking progress from the dashboard.
+
+{/* PLACEHOLDER: awaiting-input badge on a dashboard card */}
+
+The badge clears automatically when the agent reports its next status, so cards do not get stuck showing stale prompts after work resumes.
+
+### Model and effort picker
+
+When you start a feature from the dashboard, each agent slot includes a model picker and effort picker. The selected triplet is stored in workflow state so the choice survives server restarts and later respawns.
+
+{/* PLACEHOLDER: model picker dropdown in the dashboard start dialog */}
+
+After launch, the card shows the selected model and effort on the agent row so you can confirm exactly what configuration is running.
+
+{/* PLACEHOLDER: model and effort badge on an agent row */}
+
+### Rebase warning
+
+If `main` has commits that your feature branch does not, the card shows a rebase warning before you try to close. This is an early signal that `feature-close` will be blocked until the branch is rebased onto the latest `main`.
+
+{/* PLACEHOLDER: rebase warning on a dashboard card */}
+
+See the [Troubleshooting guide](./troubleshooting#rebase-needed-before-close) for the recommended recovery flow.
+
+### Review-check statuses
+
+After a code review completes, the implementing agent row can show two follow-up states while review feedback is being handled:
+
+- **Addressing review** means the agent is actively working through the review findings.
+- **Feedback addressed** means the implementation agent finished the requested follow-up and signaled completion.
+
+{/* PLACEHOLDER: addressing-review and feedback-addressed badges on an agent row */}
+
+These statuses make review handoff visible without requiring you to open the session log.
+
+### Close with agent
+
+If `feature-close` fails because of a merge conflict or another closing error, the card exposes a **Close with agent** button. That action starts an agent session specifically to unblock the close rather than making you leave the dashboard and recover manually.
+
+{/* PLACEHOLDER: close-with-agent button on a feature card */}
+
+Use it when the failure needs code changes or conflict resolution inside the worktree before the feature can be merged.
+
 ## Monitor view
 
 See every agent session across all repos — running, attached, or ended.

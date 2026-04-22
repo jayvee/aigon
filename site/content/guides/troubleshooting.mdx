@@ -58,6 +58,28 @@ aigon feature-cleanup <ID> --push   # push branches to origin first, then delete
 
 `feature-cleanup` only touches worktrees and branches — it does not move the spec, kill sessions, or clear state. It's the right tool for tidying up after a successful close, not for abandoning a feature mid-flight (use `feature-reset` for that).
 
+## Rebase needed before close
+
+**You want to:** close a feature, but the dashboard card shows a rebase warning because `main` has moved ahead of the feature branch.
+
+**What it means:** Aigon detected commits on `main` that are not present on the feature branch, so `feature-close` will block until you bring the worktree up to date.
+
+The warning appears directly on the dashboard card so you can catch the problem before starting the close flow.
+
+**Use:**
+
+```bash
+git rebase main
+```
+
+Run that inside the feature worktree, resolve any conflicts, re-run your validation if needed, then retry:
+
+```bash
+aigon feature-close <ID> [agent]
+```
+
+If the rebase becomes too messy or you want to abandon the current attempt, fall back to `aigon feature-reset <ID>` and restart from backlog.
+
 ## Find the right command
 
 If you're not sure which recovery command to use:

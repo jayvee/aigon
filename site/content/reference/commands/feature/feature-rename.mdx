@@ -1,0 +1,47 @@
+---
+title: "feature-rename"
+description: "Rename an inbox feature before it has been prioritised"
+---
+
+## Synopsis
+
+```bash
+aigon feature-rename <old-name> <new-name>
+```
+
+## Description
+
+Rename an unprioritised feature in `docs/specs/features/01-inbox/`.
+
+This command is for inbox items only. Once a feature has been prioritised and assigned a numeric ID, use the existing ID-based workflow rather than renaming it.
+
+## Usage
+
+```bash
+# Rename by the existing inbox title/slug
+aigon feature-rename onboarding-copy-refresh onboarding-empty-state-refresh
+
+# Multi-word names are accepted; Aigon slugifies both sides
+aigon feature-rename "onboarding copy refresh" "onboarding empty state refresh"
+```
+
+## Behavior
+
+- Finds the matching inbox feature spec
+- Renames the spec file with `git mv`
+- Migrates slug-keyed workflow state for the inbox item
+- Creates a commit for the rename automatically
+
+If the old and new names produce the same slug, or if the feature is no longer in `01-inbox/`, the command exits with an error.
+
+## Examples
+
+```bash
+aigon feature-rename dark-mode dashboard-dark-theme
+```
+
+After a successful rename, continue with:
+
+```bash
+aigon feature-prioritise dashboard-dark-theme
+```
