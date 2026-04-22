@@ -1116,7 +1116,11 @@
               break;
             case 'feature-start':
             case 'research-start': {
-              const triplets = await showAgentPicker(featureId, featureName, { repoPath: effectiveRepo, taskType: 'implement', action: transition.action, collectTriplet: true });
+              const recEntity = transition.action === 'research-start' ? 'research' : 'feature';
+              const recommendation = typeof fetchSpecRecommendation === 'function'
+                ? await fetchSpecRecommendation(recEntity, featureId, effectiveRepo)
+                : null;
+              const triplets = await showAgentPicker(featureId, featureName, { repoPath: effectiveRepo, taskType: 'implement', action: transition.action, collectTriplet: true, recommendation });
               if (!triplets) return;
               const extraArgs = tripletsToCliArgs(triplets);
               const agentIds = triplets.map(t => t.id);
