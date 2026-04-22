@@ -117,8 +117,10 @@ Current shared modules:
   `createDashboardRouteDispatcher`
 - `lib/worktree.js` (~1,300 lines): worktree creation, permissions, git attribution metadata bootstrap, tmux sessions
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
-- `lib/supervisor.js` (~330 lines): observe-only server monitoring — agent liveness from tmux + heartbeat, idle detection from missing workflow progress signals, desktop notifications. Never emits engine signals or mutates lifecycle state
+- `lib/supervisor.js` (~430 lines): server monitoring — liveness from tmux + heartbeat, idle/awaiting-input notifications, and token-exhaustion handling (F308) that may append workflow events, pause a feature, or auto-switch an agent slot per `agentFailover` policy
   `startSupervisorLoop`, `sweepEntity`, `getAgentLiveness`
+- `lib/agent-failover.js` (~140 lines): token-exhaustion signal construction, failover chain selection, handoff prompt text, and clearing per-slot status flags after a switch
+  `buildTokenExhaustionSignal`, `chooseNextAgent`, `buildFailoverPrompt`, `clearTokenExhaustedFlag`
 - `lib/terminal-adapters.js` (~200 lines): data-driven terminal detection/dispatch — adapter table with `detect(env)`, `launch(cmd, opts)`, `split(configs, opts)` per terminal
   `findAdapter`, `getAdapter`, `tileITerm2Windows`, `closeWarpWindow`
 - `lib/config.js` (~951 lines): global/project config, profiles, agent CLI config, editor detection
