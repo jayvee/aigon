@@ -16,7 +16,7 @@
 | `{{CMD_PREFIX}}feature-start <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
 | `{{CMD_PREFIX}}feature-do <ID> [--iterate]` | Implement feature; `--iterate` runs Autopilot retry loop |
 | `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
-| `{{CMD_PREFIX}}feature-review <ID>` | Code review with fixes by a different agent |
+| `{{CMD_PREFIX}}feature-code-review <ID>` | Code review with fixes by a different agent |
 | `{{CMD_PREFIX}}feature-close <ID> [agent]` | Merge and complete feature |
 | `{{CMD_PREFIX}}feature-push [ID] [agent]` | Push feature branch to origin for PR review |
 | `{{CMD_PREFIX}}feature-autonomous-start <ID> <agents...>` | Start autonomous feature flow with explicit stop-after control |

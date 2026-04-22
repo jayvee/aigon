@@ -35,8 +35,8 @@
     "implementFlag": "",
     "implementPrompt": "feature-do",
     "evalPrompt": "feature-eval",
-    "reviewPrompt": "feature-review",
-    "reviewCheckPrompt": "feature-review-check",
+    "reviewPrompt": "feature-code-review",
+    "reviewCheckPrompt": "feature-code-review-check",
     "models": {
       "research": "gpt-5.2",
       "implement": "gpt-5.3-codex",

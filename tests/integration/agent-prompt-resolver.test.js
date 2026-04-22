@@ -9,8 +9,8 @@
 // REGRESSION commit b9c39a26 / F277: autonomous feedback injection for cx
 // was an unrunnable $aigon-feature-review-check phantom command. Every agent's
 // injected review-check prompt must be runnable by that agent — slash agents
-// get /aigon:feature-review-check, skill-file agents get a path-pointer with
-// Read instructions and NEVER emit $aigon-… or raw `aigon feature-review-check`.
+// get /aigon:feature-code-review-check, skill-file agents get a path-pointer with
+// Read instructions and NEVER emit $aigon-… or raw `aigon feature-code-review-check`.
 'use strict';
 
 const assert = require('assert');
@@ -74,18 +74,18 @@ for (const file of fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.json'))) 
         assert.strictEqual(typeof cfg.capabilities?.resolvesSlashCommands, 'boolean', `${id} missing flag`);
         if (cfg.capabilities.resolvesSlashCommands) {
             const prefix = cfg.placeholders?.CMD_PREFIX || '/aigon:';
-            assert.ok(prompt.includes(`${prefix}feature-review-check 07`), prompt);
+            assert.ok(prompt.includes(`${prefix}feature-code-review-check 07`), prompt);
         } else {
             const dir = cfg.output?.commandDir || '.agents/skills';
-            assert.ok(prompt.includes(`${dir}/`) && /\bRead\b/.test(prompt) && prompt.includes('aigon agent-status feedback-addressed'), prompt);
-            assert.ok(!/\$aigon-feature-review-check\b/.test(prompt) && !/ aigon feature-review-check /.test(prompt), prompt);
+            assert.ok(prompt.includes(`${dir}/`) && prompt.includes('feature-code-review-check') && /\bRead\b/.test(prompt) && prompt.includes('aigon agent-status feedback-addressed'), prompt);
+            assert.ok(!/\$aigon-feature-code-review-check\b/.test(prompt) && !/ aigon feature-code-review-check /.test(prompt), prompt);
         }
     });
 }
 
 test('review-check injection gate: capability true→slash, missing→fail-closed path-pointer', () => {
-    const mk = (caps) => buildReviewCheckFeedbackPrompt('zz', '01', { loadAgentConfig: () => ({ capabilities: caps, cli: { reviewCheckPrompt: '/aigon:feature-review-check {featureId}' }, output: { commandDir: '.agents/skills' } }) });
-    assert.ok(mk({ resolvesSlashCommands: true }).includes('/aigon:feature-review-check 01'));
+    const mk = (caps) => buildReviewCheckFeedbackPrompt('zz', '01', { loadAgentConfig: () => ({ capabilities: caps, cli: { reviewCheckPrompt: '/aigon:feature-code-review-check {featureId}' }, output: { commandDir: '.agents/skills' } }) });
+    assert.ok(mk({ resolvesSlashCommands: true }).includes('/aigon:feature-code-review-check 01'));
     assert.ok(mk({}).includes('.agents/skills/') && !/\/aigon:/.test(mk({})));
 });
 

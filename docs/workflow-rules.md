@@ -168,6 +168,7 @@ Candidate actions:
 - `feature-close`
 - `feature-review`
   Solo only
+  Invokes `aigon feature-code-review`
 - `restart-agent`
 - `force-agent-ready`
 - `drop-agent`
@@ -259,6 +260,7 @@ From `in-progress`:
 - `feature-review`
   Solo only
   Shown when all agents are submitted
+  Invokes `aigon feature-code-review`
 - `feature-eval`
   Fleet only
   Shown when all agents are submitted
@@ -271,6 +273,7 @@ From `in-evaluation`:
   Label: Continue Evaluation
 - `feature-review`
   Solo only
+  Invokes `aigon feature-code-review`
 
 From `backlog`:
 - `feature-start`

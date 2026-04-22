@@ -520,6 +520,9 @@
 
     function buildRebaseWarningHtml(feature) {
       if (!feature || feature.rebaseNeeded !== true || feature.stage !== 'in-progress') return '';
+      const closeReady = Array.isArray(feature.validActions) &&
+        feature.validActions.some(a => a.action === 'feature-close' || a.action === 'feature-rebase');
+      if (!closeReady) return '';
       return '<div class="kcard-rebase-warning">⚠ Rebase needed before close</div>';
     }
 

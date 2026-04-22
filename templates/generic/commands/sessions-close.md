@@ -18,7 +18,7 @@ Use this after agents have **submitted** their work (research findings or featur
 
 ## What It Does
 
-1. Kills all running agent processes whose command line contains the ID (feature-do, feature-review, research-do)
+1. Kills all running agent processes whose command line contains the ID (feature-do, feature-code-review, feature-review, research-do)
 2. Attempts to close the Warp Fleet tab/window via AppleScript (best-effort)
 3. Reports what was killed
 
