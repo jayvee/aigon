@@ -121,8 +121,10 @@ Current shared modules:
   `startSupervisorLoop`, `sweepEntity`, `getAgentLiveness`
 - `lib/terminal-adapters.js` (~200 lines): data-driven terminal detection/dispatch — adapter table with `detect(env)`, `launch(cmd, opts)`, `split(configs, opts)` per terminal
   `findAdapter`, `getAdapter`, `tileITerm2Windows`, `closeWarpWindow`
-- `lib/config.js` (~951 lines): global/project config, profiles, agent CLI config, editor detection
+- `lib/config.js` (~951 lines): global/project config, profiles, agent CLI config, editor detection, and runtime compatibility for legacy `terminal`/`tmuxApp` reads while `terminalApp` rolls out
   `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`, `getAgentCliConfig`
+- `lib/global-config-migration.js` (~150 lines): machine-wide `~/.aigon/config.json` migration registry and runner; write-once backups + schemaVersion tracking for global config renames
+  `registerGlobalConfigMigration`, `runPendingGlobalConfigMigrations`, `migrateLegacyTerminalSettings`
 - `lib/templates.js` (~550 lines): template loading, command registry, scaffolding, content generation
   `readTemplate`, `processTemplate`, `readGenericTemplate`, `formatCommandOutput`, `COMMAND_REGISTRY`
 - `lib/utils.js` (~183 lines): thin re-export hub for config/proxy/dashboard/worktree/templates/git, feedback constants, dev-server URL, safeWrite. Do not add domain logic here — route new code to its domain module instead.
