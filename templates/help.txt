@@ -67,6 +67,8 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-status <ID> [--json]      Show deep status: session, progress, cost, spec criteria
   feature-list [--active] [--all] [--json]
                                     Query feature records without using the board renderer
+  set list [--all] [--json]         List feature sets (spec `set:` frontmatter tags) with stage counts
+  set show <slug> [--json]          Show set members in dependency order + intra-set edges
   feature-validate <ID>             Evaluate acceptance criteria (smart validation)
   feature-eval <ID> [--force]       Create evaluation (code review or comparison)
   feature-code-review <ID>          Code review with fixes by a different agent

@@ -1,3 +1,7 @@
+---
+set: feature-set
+---
+
 # Feature: feature-set-1-membership-and-board
 
 ## Summary

@@ -1,3 +1,7 @@
+---
+set: feature-set
+---
+
 # Feature: feature-set-5-dashboard-card
 
 ## Summary

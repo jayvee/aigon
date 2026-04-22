@@ -1,3 +1,7 @@
+---
+set: feature-set
+---
+
 # Feature: feature-set-2-research-eval-emit-metadata
 
 ## Summary

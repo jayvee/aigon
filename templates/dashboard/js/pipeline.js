@@ -987,6 +987,7 @@
         colBody.appendChild(emp);
         return;
       }
+
       const DONE_CAP = 6;
       const OVERFLOW_CAP = 8;
       const expandedColumns = state.expandedPipelineColumns || {};
@@ -995,6 +996,122 @@
       const shouldCapOverflow = (stage === 'backlog' || stage === 'inbox') && cards.length > OVERFLOW_CAP;
       const displayCards = (stage === 'done' && cards.length > DONE_CAP) ? cards.slice(0, DONE_CAP)
         : (shouldCapOverflow && !isExpanded) ? cards.slice(0, OVERFLOW_CAP) : cards;
+
+      const setsRollup = Array.isArray(repo.sets) ? repo.sets : [];
+
+      // Group-by-set: partition the *visible* cards (same caps as ungrouped) so
+      // done/overflow limits still apply when grouping is enabled.
+      if (pType === 'features' && s.pipelineGroupBySet) {
+        const orderedSetSlugs = [];
+        const bySet = new Map();
+        const ungrouped = [];
+        for (const card of displayCards) {
+          if (card.set) {
+            if (!bySet.has(card.set)) {
+              bySet.set(card.set, []);
+              orderedSetSlugs.push(card.set);
+            }
+            bySet.get(card.set).push(card);
+          } else {
+            ungrouped.push(card);
+          }
+        }
+        if (bySet.size > 0) {
+          const headerBaseStyle = 'font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:6px 8px;margin:6px 0 2px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--bg-subtle,rgba(0,0,0,0.03))';
+          for (const setSlug of orderedSetSlugs) {
+            const members = bySet.get(setSlug);
+            const header = document.createElement('div');
+            header.className = 'kanban-set-header';
+            header.style.cssText = headerBaseStyle + ';color:var(--text-secondary);display:block';
+
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px';
+            const title = document.createElement('span');
+            title.textContent = '◉ ' + setSlug;
+            const countEl = document.createElement('span');
+            countEl.style.opacity = '0.7';
+            const roll = setsRollup.find(x => x.slug === setSlug);
+            const doneN = roll ? (Number(roll.completed) || 0) : 0;
+            const totalN = roll ? (Number(roll.memberCount) || members.length) : members.length;
+            countEl.textContent = totalN ? (doneN + '/' + totalN) : String(members.length);
+            row.appendChild(title);
+            row.appendChild(countEl);
+            header.appendChild(row);
+
+            if (totalN > 0) {
+              const barWrap = document.createElement('div');
+              barWrap.style.cssText = 'width:100%;height:4px;border-radius:2px;background:rgba(128,128,128,0.22);margin-top:6px;overflow:hidden';
+              const bar = document.createElement('div');
+              const pct = Math.min(100, Math.round((100 * doneN) / totalN));
+              bar.style.cssText = 'height:100%;width:' + pct + '%;background:var(--accent,#3b82f6);border-radius:2px;transition:width .2s ease';
+              barWrap.appendChild(bar);
+              header.appendChild(barWrap);
+            }
+
+            colBody.appendChild(header);
+            members.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
+          }
+          if (ungrouped.length > 0) {
+            const header = document.createElement('div');
+            header.className = 'kanban-set-header kanban-set-header-ungrouped';
+            header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary);padding:6px 8px;margin:8px 0 2px';
+            const uTitle = document.createElement('span');
+            uTitle.textContent = 'Ungrouped';
+            const uCount = document.createElement('span');
+            uCount.style.opacity = '0.7';
+            uCount.textContent = String(ungrouped.length);
+            header.appendChild(uTitle);
+            header.appendChild(uCount);
+            colBody.appendChild(header);
+            ungrouped.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
+          }
+          if (shouldCapOverflow && !isExpanded) {
+            const hiddenCards = cards.slice(OVERFLOW_CAP);
+            const hiddenContainer = document.createElement('div');
+            hiddenContainer.style.display = 'none';
+            hiddenCards.forEach(feature => hiddenContainer.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
+            colBody.appendChild(hiddenContainer);
+            const moreBtn = document.createElement('button');
+            moreBtn.className = 'btn';
+            moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
+            moreBtn.textContent = (cards.length - OVERFLOW_CAP) + ' more …';
+            moreBtn.onclick = () => {
+              const next = { ...(state.expandedPipelineColumns || {}) };
+              next[columnKey] = true;
+              state.expandedPipelineColumns = next;
+              localStorage.setItem(lsKey('expandedPipelineColumns'), JSON.stringify(next));
+              render();
+            };
+            colBody.appendChild(moreBtn);
+          }
+          if (stage === 'done' && cards.length > DONE_CAP) {
+            const doneTotalKey = pType === 'research' ? 'researchDoneTotal' : pType === 'feedback' ? 'feedbackDoneTotal' : 'doneTotal';
+            const totalDone = repo[doneTotalKey] || cards.length;
+            const moreBtn = document.createElement('button');
+            moreBtn.className = 'btn';
+            moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
+            moreBtn.textContent = (totalDone - DONE_CAP) + ' more — open in Finder';
+            moreBtn.onclick = async () => {
+              const donePath = getDoneFolderPath(repo.path, pType);
+              try {
+                const res = await fetch('/api/open-folder', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: donePath }) });
+                const payload = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                  const msg = payload && payload.error && payload.error.message
+                    ? payload.error.message
+                    : (payload && payload.error) || ('HTTP ' + res.status);
+                  throw new Error(String(msg));
+                }
+              } catch (e) {
+                showToast('Could not open folder: ' + e.message, null, null, { error: true });
+              }
+            };
+            colBody.appendChild(moreBtn);
+          }
+          return;
+        }
+      }
+
       displayCards.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
       if (shouldCapOverflow && !isExpanded) {
         const hiddenCards = cards.slice(OVERFLOW_CAP);
@@ -1072,6 +1189,12 @@
           const next = !this.showPaused;
           Alpine.store('dashboard')._showPaused = next;
           localStorage.setItem(lsKey('showPaused'), next ? '1' : '0');
+        },
+        get groupBySet() { return !!Alpine.store('dashboard').pipelineGroupBySet; },
+        toggleGroupBySet() {
+          const next = !this.groupBySet;
+          Alpine.store('dashboard').pipelineGroupBySet = next;
+          localStorage.setItem(lsKey('pipelineGroupBySet'), next ? '1' : '0');
         },
         getStageDisplayCount(repo, stage) {
           const s = Alpine.store('dashboard');
