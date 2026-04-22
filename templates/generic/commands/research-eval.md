@@ -98,6 +98,14 @@ Wait for user response before proceeding. The awaiting-input flag clears automat
 
 ### Feature Set Naming
 
+When creating **2+ features** from a single research topic, always derive a proposed set slug from the research topic slug:
+
+- lowercase the topic slug
+- trim the leading `research-<id>-` prefix if present
+- keep it short and descriptive (example: `research-34-feature-set` → `feature-set`)
+
+Use that proposed set slug both for the feature-name prefix and, if the user opts in, for the feature spec frontmatter `set:` tag.
+
 When creating multiple features from a single research topic, use a **common prefix with sequence numbers** to group them as a feature set:
 
 ```
@@ -108,9 +116,17 @@ When creating multiple features from a single research topic, use a **common pre
 
 The prefix should be a short, descriptive slug derived from the research topic (e.g., research "single source of truth" → prefix `single-source`). The sequence numbers reflect dependency order — feature 1 has no deps, feature 2 depends on 1, etc.
 
-**Ask the user** to confirm or suggest the prefix before creating features. Example prompt:
+If the user selected **2+ features**, ask for explicit opt-in before writing any `set:` frontmatter. Use this exact prompt shape:
 
-> "I'll group these as a feature set with prefix `single-source`. Features will be named `single-source-1-engine-only-spec-transitions`, `single-source-2-engine-based-read-paths`, etc. Good, or prefer a different prefix?"
+> "Group these as set `<slug>`? (y/n/edit slug)"
+
+- `y` = keep the proposed slug and stamp `set: <slug>` into every created feature spec
+- `n` = create the features without any `set:` key
+- `edit slug` = accept grouping, but first let the user replace `<slug>` with a different valid slug
+
+Then confirm the naming plan. Example prompt:
+
+> "I’ll use prefix `single-source` and create `single-source-1-engine-only-spec-transitions`, `single-source-2-engine-based-read-paths`, etc. Good, or prefer a different prefix?"
 
 This makes it easy to see which features belong together on the board, in `feature-list`, and in git history.
 
@@ -118,6 +134,12 @@ This makes it easy to see which features belong together on the board, in `featu
 
 ```bash
 aigon feature-create "feature-name"
+```
+
+If the user accepted grouping, create each feature with:
+
+```bash
+aigon feature-create "feature-name" --set <slug>
 ```
 
 After creating each feature:
@@ -146,11 +168,17 @@ Once user confirms, update the main research document:
 ```markdown
 ## Output
 
+### Set Decision
+
+- Proposed Set Slug: `feature-set`
+- Chosen Set Slug: `feature-set`
+<!-- If declined, write: Chosen Set Slug: none (declined) -->
+
 ### Selected Features
 
 | Feature Name | Description | Priority | Create Command |
 |--------------|-------------|----------|----------------|
-| feature-name | Description | high | `aigon feature-create "feature-name"` |
+| feature-name | Description | high | `aigon feature-create "feature-name" --set feature-set` |
 
 ### Feature Dependencies
 <!-- List dependency chains so features can be prioritised in order -->
@@ -161,6 +189,8 @@ Once user confirms, update the main research document:
 <!-- Features discussed but not selected, for reference -->
 - other-feature: Reason not selected
 ```
+
+If the user declined grouping, keep the `Create Command` column without `--set` and record `Chosen Set Slug: none (declined)` so a later re-evaluation can preserve that decision explicitly.
 
 ## Step 7: Commit and hand off
 
