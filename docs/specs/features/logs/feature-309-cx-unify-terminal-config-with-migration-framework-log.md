@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 421
+lines_removed: 206
+lines_changed: 627
+files_touched: 14
+fix_commit_count: 2
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 6357438
+output_tokens: 26773
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 6106496
+thinking_tokens: 6721
+total_tokens: 6384211
+billable_tokens: 6390932
+cost_usd: 14.1503
+sessions: 2
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 309 - unify-terminal-config-with-migration-framework
 Agent: cx
 
