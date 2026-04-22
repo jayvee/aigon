@@ -31,7 +31,9 @@ Current command families:
 
 | File | Commands |
 |------|----------|
-| `lib/commands/feature.js` | All `feature-*` handlers, `sessions-close`. Parallel-with-research handlers (create, prioritise, spec-review quartet, reset base) come from `./entity-commands` via factory spread |
+| `lib/commands/feature.js` | Thin dispatcher for `feature-*` handlers + `sessions-close`. Fat handlers (`feature-start`, `feature-eval`, `feature-do`, `feature-autonomous-start`) delegate to sibling `lib/feature-*.js` modules via a shared `handlerDeps` bundle. Uses `withActionDelegate` from `action-scope` for the main-repo delegation guard. Parallel-with-research handlers (create, prioritise, spec-review quartet, reset base) come from `./entity-commands` via factory spread |
+| `lib/feature-start.js`, `lib/feature-eval.js`, `lib/feature-do.js`, `lib/feature-autonomous.js` | Extracted handler modules. Each exports `run(args, deps)` — `deps.ctx` gives access to utils/git/hooks/specCrud; `deps` also surfaces the local closures still owned by the parent dispatcher (`persistAndRunEffects`, `resolveFeatureMode`, `resolveMainRepoPath`, etc.) |
+| `lib/feature-command-helpers.js` | Shared helpers for feature handlers: `parseLogFrontmatterForBackfill`, `estimateExpectedScopeFiles`, `upsertLogFrontmatterScalars` |
 | `lib/commands/research.js` | All `research-*` handlers. Parallel-with-feature handlers come from `./entity-commands` via factory spread |
 | `lib/commands/entity-commands.js` | Shared factory for parallel feature/research lifecycle commands parameterised by `FEATURE_DEF` / `RESEARCH_DEF` from `lib/entity.js`. Exposes `createEntityCommands(def, ctx)` (create, prioritise, spec-review quartet) and `entityResetBase(def, id, ctx, hooks)` for reset plumbing. New parallel commands are added here — not in feature.js/research.js — so both entities pick them up by construction, eliminating the "defined but not whitelisted" drift class |
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
