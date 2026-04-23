@@ -57,7 +57,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/commands/setup.js` | ~1212 | init, install-agent, check-version, update, doctor + state reconciliation |
 | `lib/dashboard-server.js` | ~2660 | HTTP/UI module: dashboard, API, WebSocket relay, HTTP action dispatch. Never mutates engine state directly and never reads engine-state/spec/log files directly |
 | `lib/dashboard-routes.js` | ~1660 | OSS dashboard API route table and dispatcher |
-| `lib/dashboard-status-collector.js` | ~830 | Read-side collector: repo/feature/research/feedback/summary status, log/detail reads |
+| `lib/dashboard-status-collector.js` | ~900 | Read-side collector: repo/feature/research/feedback/summary status, log/detail reads, plus derived set-card payloads (progress/current feature/dep graph/validActions) |
 | `lib/utils.js` | ~183 | Cross-cutting re-exports (config, proxy, dashboard, worktree, templates, git) + feedback constants, dev-server URL, terminal title, safeWrite |
 | `lib/hooks.js` | ~146 | Hook lifecycle: parseHooksFile, getDefinedHooks, executeHook, runPreHook, runPostHook |
 | `lib/analytics.js` | ~889 | Analytics: collectAnalyticsData, parseLogFrontmatterFull, buildCompletionSeries, buildWeeklyAutonomyTrend |
@@ -77,6 +77,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/nudge.js` | ~250 | Shared nudge primitive: resolves tmux sessions from workflow state, rate-limits, delivers text atomically via paste-buffer, confirms pane echo, and records `operator.nudge_sent` events |
 | `lib/feature-spec-resolver.js` | ~140 | Canonical spec lookup |
 | `lib/feature-sets.js` | ~240 | Derived-state scanner: reads optional `set:` frontmatter from feature specs, builds `{setSlug → members}` index, topologically orders members using the existing `depends_on` graph (intra-set edges only). No new files or engine state — the dashboard/CLI derive set state from member workflow state. Consumed by `lib/commands/set.js` and `lib/dashboard-status-collector.js` (`sets` rollup + per-feature `set` key) |
+| `lib/feature-set-workflow-rules.js` | ~60 | Central action registry for set dashboard cards: derives `set-autonomous-{start,stop,resume,reset}` eligibility and button metadata from derived set state. Frontend must render only from this server-owned `validActions` payload |
 | `lib/set-conductor.js` | ~500 | Set-level autonomous orchestration (`set-autonomous-start|stop|resume|reset`): resolves set members with strict cycle checks, starts/resumes per-feature `feature-autonomous-start`, polls `feature-<id>-auto.json`, and persists durable set state in `.aigon/state/set-<slug>-auto.json` |
 | `lib/state-queries.js` | ~250 | Read-only UI helpers: feedback action/transition derivation (pure, no I/O) |
 | `lib/agent-status.js` | ~130 | Per-agent status files (`.aigon/state/{prefix}-{id}-{agent}.json`), atomic writes |

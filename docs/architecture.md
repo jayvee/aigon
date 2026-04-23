@@ -100,10 +100,14 @@ Current shared modules:
   `safeTmuxSessionExists`, `resolveFeatureWorktreePath`, `normalizeDashboardStatus`, `maybeFlagEndedSession`
 - `lib/auto-session-state.js` (~100 lines): durable autonomous run-state helpers so feature and set conductor status survive tmux/session loss and can be reported by the dashboard/CLI
   `readFeatureAutoState`, `writeFeatureAutoState`, `clearFeatureAutoState`, `readSetAutoState`, `writeSetAutoState`, `clearSetAutoState`
-- `lib/dashboard-status-collector.js` (~830 lines): shared AIGON server read-side collector so repo/entity status assembly, dashboard detail log reads, and done-count aggregation are separated from HTTP transport and notification code, including metadata-authoritative feedback status reads
+- `lib/dashboard-status-collector.js` (~900 lines): shared AIGON server read-side collector so repo/entity status assembly, dashboard detail log reads, done-count aggregation, and derived set-card payloads stay separated from HTTP transport and notification code, including metadata-authoritative feedback status reads
   `collectDashboardStatusData`
+- `lib/feature-set-workflow-rules.js` (~60 lines): central read-side action registry for set dashboard cards. Owns `set-autonomous-{start,stop,resume,reset}` eligibility and button metadata; the frontend renders only the returned `validActions`.
+  `buildSetValidActions`
 - `templates/dashboard/js/autonomous-plan.js` (~80 lines): shared dashboard renderer for the server-owned autonomous stage timeline so card markup stays pure and testable outside the full browser bundle
   `buildAutonomousPlanHtml`
+- `templates/dashboard/js/set-cards.js` (~100 lines): shared dashboard renderer for set cards and the dep-graph mini-view so SVG/layout markup is testable outside the full browser bundle.
+  `buildSetCardBodyHtml`, `buildSetDepGraphSvg`
 - `lib/server-runtime.js` (~90 lines): shared AIGON server lifecycle helpers extracted from infra command wiring
   `launchDashboardServer`, `stopDashboardProcess`
 - `lib/validation.js` (~1,045 lines): Iterate (Autopilot) loop and smart validation helpers
@@ -354,7 +358,9 @@ Feature writes go through the engine, but the read side is still mixed:
 - `lib/workflow-read-model.js` provides shared dashboard read state (snapshot-backed for features/research) and derives recommended actions for feedback via `lib/state-queries.js`.
 - `lib/feedback.js` provides feedback metadata parsing/collection so feedback list and dashboard reads derive status from frontmatter rather than folder position.
 - `lib/dashboard-status-collector.js` owns the AIGON server's dashboard-facing repo/entity reads — spec-review state copied verbatim from engine snapshots, log reads, and done-count aggregation.
+- `lib/feature-set-workflow-rules.js` owns set-card action eligibility; dashboard frontend code must not infer when `set-autonomous-*` is allowed.
 - `templates/dashboard/js/autonomous-plan.js` renders the dashboard card's autonomous timeline from the server-provided `autonomousPlan` payload. It does not infer stage state; `workflow-read-model.js` owns that read-side derivation.
+- `templates/dashboard/js/set-cards.js` renders set-card body/graph markup from the server-provided `sets[]` payload. It does not derive status or action eligibility; `dashboard-status-collector.js` and `feature-set-workflow-rules.js` own those read-side derivations.
 - `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, static serving, and delegating API requests to `lib/dashboard-routes.js`. It remains read-only with respect to both mutations and engine-state/spec/log file access.
 
 So the architecture after F171 → F283 → F294 is:
