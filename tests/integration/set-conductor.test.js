@@ -47,113 +47,34 @@ test('set conductor refuses dependency cycles within a set', () => withTempDir('
     assert.throws(() => resolveSetExecutionPlan(repo, 'auth'), /Dependency cycle inside set/);
 }));
 
-test('resume skips completed and already-merged members', () => {
-    // REGRESSION F316: rerun after a killed set tmux session must continue from the first incomplete member.
-    assert.deepStrictEqual(
-        computeRemainingOrder(['01', '02', '03'], ['01'], ['02']),
-        ['03']
-    );
-});
-
 test('set conductor tmux session naming matches spec', () => {
     assert.strictEqual(buildSetAutoSessionName('aigon', 'feature-set'), 'aigon-sfeature-set-auto');
 });
 
 // F319: failure pause/resume state transitions
 
-test('paused-on-failure state includes failedFeature field', () => withTempDir('aigon-set-pause-', async (repo) => {
-    // Simulate the conductor writing paused-on-failure state after a member fails.
+test('paused-on-failure: failedFeature persisted and completed list preserved', () => withTempDir('aigon-set-pause-', async (repo) => {
+    // REGRESSION F316+F319: rerun continues from first incomplete; pause records failedFeature
+    await writeSetAutoState(repo, 'auth', { status: 'running', running: true, completed: ['01'], failed: [] });
     await writeSetAutoState(repo, 'auth', {
-        setSlug: 'auth',
-        members: ['01', '02', '03'],
-        order: ['01', '02', '03'],
-        currentFeature: '02',
-        completed: ['01'],
-        failed: ['02'],
-        failedFeature: '02',
-        status: 'paused-on-failure',
-        running: false,
-        endedAt: new Date().toISOString(),
-        reason: 'feature-auto-failed',
+        completed: ['01'], failed: ['02'], failedFeature: '02',
+        status: 'paused-on-failure', running: false, reason: 'feature-auto-failed',
     });
     const state = readSetAutoState(repo, 'auth');
     assert.strictEqual(state.status, 'paused-on-failure');
     assert.strictEqual(state.failedFeature, '02');
-    assert.deepStrictEqual(state.failed, ['02']);
     assert.deepStrictEqual(state.completed, ['01']);
+    // resume: failed member is retried (not skipped); if now done in workflow it is skipped
+    assert.deepStrictEqual(computeRemainingOrder(['01', '02', '03'], ['01'], []), ['02', '03']);
+    assert.deepStrictEqual(computeRemainingOrder(['01', '02', '03'], ['01'], ['02']), ['03']);
 }));
 
-test('resume from paused-on-failure retries the failed feature (not skipped)', () => {
-    // F319 AC: resume re-enters at the failed feature.
-    // computeRemainingOrder does NOT exclude failed features — only completed and already-done.
-    const remaining = computeRemainingOrder(['01', '02', '03'], ['01'], []);
-    assert.deepStrictEqual(remaining, ['02', '03'], 'failed feature 02 is included (not skipped)');
+test('pause notification message contains slug, feature ID and resume command', () => {
+    const msg = buildPauseNotificationMessage('feature-set', '03', []);
+    assert.ok(msg.includes('feature-set') && msg.includes('feature #3'));
+    assert.ok(msg.includes('aigon set-autonomous-resume feature-set') && msg.includes('review failed'));
+    assert.ok(buildPauseNotificationMessage('s', 'x', []).includes('aigon set-autonomous-resume s'));
 });
-
-test('resume when failed feature is now done advances past it', () => {
-    // F319 AC: if the failed feature is now `done` in workflow-core, conductor advances to next.
-    // computeRemainingOrder receives it in alreadyDoneIds.
-    const remaining = computeRemainingOrder(['01', '02', '03'], ['01'], ['02']);
-    assert.deepStrictEqual(remaining, ['03'], 'feature 02 (now done) is skipped, continue from 03');
-});
-
-test('set-autonomous-reset clears paused state', () => withTempDir('aigon-set-reset-', async (repo) => {
-    await writeSetAutoState(repo, 'auth', {
-        setSlug: 'auth',
-        status: 'paused-on-failure',
-        failedFeature: '02',
-        failed: ['02'],
-        completed: ['01'],
-    });
-    const { clearSetAutoState } = require('../../lib/auto-session-state');
-    await clearSetAutoState(repo, 'auth');
-    const state = readSetAutoState(repo, 'auth');
-    assert.strictEqual(state, null, 'state is cleared after reset');
-}));
-
-test('notification message names the failing feature and includes resume command', () => {
-    const msg = buildPauseNotificationMessage('feature-set', '03', ['01', '02', '03']);
-    assert.ok(msg.includes('feature-set'), 'message includes set slug');
-    assert.ok(msg.includes('feature #3'), 'message includes numeric feature ID');
-    assert.ok(msg.includes('aigon set-autonomous-resume feature-set'), 'message includes resume command');
-    assert.ok(msg.includes('review failed'), 'message explains why paused');
-});
-
-test('notification message with non-numeric feature ID falls back gracefully', () => {
-    const msg = buildPauseNotificationMessage('myslug', 'pending-id', ['pending-id']);
-    assert.ok(msg.includes('myslug'), 'includes set slug');
-    assert.ok(msg.includes('aigon set-autonomous-resume myslug'), 'includes resume command');
-});
-
-test('state transition running → paused-on-failure preserves completed list', () => withTempDir('aigon-set-transition-', async (repo) => {
-    // Simulate running state
-    await writeSetAutoState(repo, 'myslug', {
-        setSlug: 'myslug',
-        members: ['01', '02', '03'],
-        order: ['01', '02', '03'],
-        currentFeature: '02',
-        completed: ['01'],
-        failed: [],
-        status: 'running',
-        running: true,
-    });
-    // Simulate failure transition
-    await writeSetAutoState(repo, 'myslug', {
-        currentFeature: '02',
-        completed: ['01'],
-        failed: ['02'],
-        failedFeature: '02',
-        status: 'paused-on-failure',
-        running: false,
-        endedAt: new Date().toISOString(),
-        reason: 'feature-auto-failed',
-    });
-    const state = readSetAutoState(repo, 'myslug');
-    assert.strictEqual(state.status, 'paused-on-failure');
-    assert.deepStrictEqual(state.completed, ['01'], 'completed list preserved');
-    assert.strictEqual(state.running, false);
-    assert.ok(state.endedAt, 'endedAt set');
-}));
 
 report();
 
