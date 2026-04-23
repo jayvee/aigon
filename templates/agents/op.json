@@ -31,7 +31,12 @@
     "reviewCheckPrompt": "feature-code-review-check",
     "models": {},
     "modelOptions": [
-      { "value": null, "label": "Default (OpenCode config)" }
+      { "value": null, "label": "Default (OpenCode config)" },
+      { "value": "openrouter/z-ai/glm-5.1", "label": "GLM-5.1 via OpenRouter" },
+      { "value": "openrouter/deepseek/deepseek-chat-v3-0324", "label": "DeepSeek V3 via OpenRouter" },
+      { "value": "openrouter/mistralai/codestral-2501", "label": "Codestral 2501 via OpenRouter" },
+      { "value": "openrouter/qwen/qwen3-235b-a22b:free", "label": "Qwen3 235B via OpenRouter" },
+      { "value": "openrouter/qwen/qwen3-coder:exacto", "label": "Qwen3 Code (exacto) via OpenRouter" }
     ],
     "effortOptions": [],
     "modelFlag": "--model",
