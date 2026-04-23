@@ -1,3 +1,13 @@
+---
+complexity: medium
+recommended_models:
+  cc: { model: null, effort: null }
+  cx: { model: null, effort: null }
+  gg: { model: null, effort: null }
+  cu: { model: null, effort: null }
+  op: { model: null, effort: null }
+---
+
 # Feature: recurring-features
 
 ## Summary
@@ -14,21 +24,25 @@ Add a "Recurring Features" capability to Aigon: template specs stored in `docs/s
 ## Acceptance Criteria
 
 ### Template format
-- [ ] Templates live in `docs/specs/recurring/` (gitignored from kanban scanning, not displayed on board or dashboard)
+- [ ] Templates live in `docs/specs/recurring/`; they are input templates only and must not be included by kanban / dashboard feature discovery
 - [ ] Template frontmatter supports: `schedule: weekly` (only `weekly` in v1), `name_pattern: <string>` using `{{YYYY-WW}}` (ISO year + week number) for the instantiated feature name
-- [ ] Template body is a standard feature spec (Summary, User Stories, Acceptance Criteria, etc.) — cloned verbatim into the new inbox spec, with the name rendered from `name_pattern`
+- [ ] Template frontmatter also supports a stable `recurring_slug:`; every instantiated feature carries that value in its own frontmatter so recurring-instance detection does not depend on filenames or titles
+- [ ] Template body is a standard feature spec (Summary, User Stories, Acceptance Criteria, etc.) and is cloned into the new inbox spec with the rendered feature title; the instance may add only the rendered `name`, `recurring_slug`, and machine-generated provenance fields needed for dedupe/debugging
 - [ ] Missing or malformed `schedule` frontmatter skips the file with a server log warning
+- [ ] Missing `name_pattern` or `recurring_slug`, duplicate `recurring_slug` values across templates, or unsupported placeholders skip that template with a warning and do not create partial specs
 
 ### Scheduling logic
-- [ ] Check runs once immediately on server startup and then every 24 hours via a separate `setInterval` — completely independent of the dashboard poll loop
-- [ ] "Due" means: the current ISO week (Mon–Sun, ISO 8601) has no open instance of this template across inbox, backlog, in-progress, and in-evaluation. Done and paused instances do not block creation
-- [ ] When due: clone the template, render `name_pattern`, write to `docs/specs/features/01-inbox/`, immediately run `feature-prioritise` to assign an ID and move to backlog
-- [ ] Last instantiation date tracked per template in `.aigon/recurring-state.json` (gitignored)
+- [ ] Check runs once immediately during server startup and then every 24 hours from a dedicated scheduler; it must remain independent of the dashboard poll loop and must not gate server boot if a check fails
+- [ ] "Due" means the current ISO week (Mon-Sun, ISO 8601) has no open instance for that `recurring_slug` across `01-inbox/`, `02-backlog/`, `03-in-progress/`, and `04-in-evaluation/`; `05-done/` and `06-paused/` do not block creation
+- [ ] When due, the shared recurring helper clones the template into `docs/specs/features/01-inbox/`, renders `name_pattern`, and then invokes the existing feature-prioritise implementation in-process so ID assignment and stage movement keep using the canonical write path
+- [ ] If inbox creation or prioritisation fails, the run logs the error, leaves no duplicate backlog item, and does not mark the template as created for that week
+- [ ] Concurrent triggers (`aigon recurring-run` while the background check is running, or rapid server restarts) must not create duplicate instances for the same `recurring_slug` and ISO week
+- [ ] `.aigon/recurring-state.json` is optional bookkeeping for last successful creation/check metadata only; open feature specs remain the authority for dedupe and due/not-due decisions
 - [ ] Server log records each check: templates found, how many due, how many created, how many skipped (with reason)
 
 ### Manual trigger
-- [ ] `aigon recurring-run` command performs the same due check and creation logic on demand — useful for testing templates and for running after adding a new template mid-week
-- [ ] `aigon recurring-list` shows all templates, their schedule, last instantiation date, and whether they are due this week
+- [ ] `aigon recurring-run` performs the same shared due-check and creation path on demand, prints a per-template summary, and exits successfully when nothing is due
+- [ ] `aigon recurring-list` shows each template's `recurring_slug`, schedule, last successful creation week (if any), and current due/not-due status derived from the same detection logic
 
 ### Built-in templates
 - [ ] `docs/specs/recurring/weekly-dep-sweep.md` — weekly feature that runs `npm audit` and `npm outdated`, writes findings to `docs/reports/dep-sweep-{{YYYY-WW}}.md`, and closes. Agent implements and closes; no eval step needed
@@ -42,8 +56,10 @@ Add a "Recurring Features" capability to Aigon: template specs stored in `docs/s
 
 ```bash
 node -c lib/dashboard-server.js
-node -c lib/commands/misc.js
+node -c lib/recurring.js
+node -c lib/commands/misc.js # or lib/commands/recurring.js if the commands are split out
 aigon recurring-list
+aigon recurring-run
 ```
 
 ## Technical Approach
@@ -59,19 +75,18 @@ function checkRecurringFeatures(repoPath) {
 
     for (const template of templates) {
         if (template.schedule !== 'weekly') continue;
-        if (state[template.slug]?.lastWeek === currentWeek) {
-            log(`Skipping ${template.slug} — already created this week`);
+        if (hasOpenInstance(repoPath, template.recurringSlug, currentWeek)) {
+            log(`Skipping ${template.recurringSlug} - open instance exists`);
             continue;
         }
-        if (hasOpenInstance(repoPath, template.slug)) {
-            log(`Skipping ${template.slug} — open instance exists`);
-            state[template.slug] = { lastWeek: currentWeek };  // mark done
+        if (state[template.recurringSlug]?.lastWeek === currentWeek) {
+            log(`Skipping ${template.recurringSlug} - already created this week`);
             continue;
         }
         const featureName = renderPattern(template.namePattern, currentWeek);
         createFeatureFromTemplate(repoPath, template, featureName);
         prioritiseFeature(repoPath, featureName);
-        state[template.slug] = { lastWeek: currentWeek };
+        state[template.recurringSlug] = { lastWeek: currentWeek };
         log(`Created and prioritised: ${featureName}`);
     }
     writeRecurringState(repoPath, state);
@@ -80,7 +95,7 @@ function checkRecurringFeatures(repoPath) {
 
 ### Open instance check
 
-Scan `01-inbox/`, `02-backlog/`, `03-in-progress/`, `04-in-evaluation/` for any filename containing the template slug. Done (`05-done/`) and paused (`06-paused/`) are explicitly excluded — a closed or abandoned instance does not block the new one.
+Use the instantiated spec frontmatter `recurring_slug:` as the match key when scanning `01-inbox/`, `02-backlog/`, `03-in-progress/`, and `04-in-evaluation/`. Done (`05-done/`) and paused (`06-paused/`) are explicitly excluded so a closed or abandoned instance does not block the new one.
 
 ### Server wiring (`lib/dashboard-server.js`)
 
@@ -92,12 +107,12 @@ checkRecurringFeatures(repoPath);
 setInterval(() => checkRecurringFeatures(repoPath), 24 * 60 * 60 * 1000).unref();
 ```
 
-No interaction with `pollStatus` or `scheduleNextPoll`.
+No interaction with `pollStatus` or `scheduleNextPoll`. The scheduler should call a shared library function; it must not shell out to the `aigon recurring-run` CLI.
 
 ### CLI commands (`lib/commands/misc.js` or new `lib/commands/recurring.js`)
 
-- `aigon recurring-run` — calls `checkRecurringFeatures()` and prints a summary
-- `aigon recurring-list` — prints each template with schedule, last week created, and due/not-due status for the current week
+- `aigon recurring-run` calls the shared recurring helper and prints a summary
+- `aigon recurring-list` prints each template with `recurring_slug`, schedule, last week created, and due/not-due status for the current week
 
 ### State file (`.aigon/recurring-state.json`, gitignored)
 
@@ -108,11 +123,11 @@ No interaction with `pollStatus` or `scheduleNextPoll`.
 }
 ```
 
-Simple enough that no migration is needed if the file is absent — treat missing as "never run."
+Simple enough that no migration is needed if the file is absent — treat missing as "never run." This file is an optimization for observability, not the source of truth for dedupe.
 
 ## Dependencies
 
-- None — the existing `feature-prioritise` CLI path handles ID assignment and git commit
+- None beyond existing feature-spec and prioritisation helpers; the implementation should reuse the canonical prioritise write path rather than inventing a second ID-assignment flow
 
 ## Out of Scope
 
@@ -124,7 +139,7 @@ Simple enough that no migration is needed if the file is absent — treat missin
 
 ## Open Questions
 
-- Should `recurring-run` be a no-op if nothing is due (just log "nothing due"), or should it support `--force` to create regardless of dedup? Lean toward `--force` for manual testing of new templates.
+- Should `recurring-run` also support `--force` for fixture-style testing, or is a no-op-with-summary enough for v1? The base command behavior should stay non-destructive and dedupe-respecting.
 - Should the two built-in templates ship enabled by default or require the user to opt in by copying them from an examples directory? Lean toward shipping them in `docs/specs/recurring/` directly on `aigon init` — they're useful for any repo.
 
 ## Related
