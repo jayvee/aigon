@@ -10,6 +10,10 @@ node_modules/
 /*.jpg
 /*.jpeg
 
+# CleanShot X exports — never commit (any path, any case)
+**/*CleanShot*
+**/*cleanshot*
+
 # Environment (secrets, per-machine config)
 .env.local
 .env*.local
