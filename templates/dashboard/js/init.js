@@ -391,6 +391,7 @@
         const selectedRepoData = state.selectedRepo !== 'all' ? allRepos.find(r => r.path === state.selectedRepo) : null;
         renderRepoHeader(selectedRepoData);
         setHealth();
+        renderUpdateBadge();
         updateTitleAndFavicon(((state.data || {}).summary || {}).waiting || 0);
         document.getElementById('updated-text').textContent = 'Updated ' + relTime((state.data || {}).generatedAt || new Date().toISOString());
         // Alpine reactively renders #monitor-view and #pipeline-view based on state.view
@@ -455,6 +456,7 @@
           render();
         }
         setHealth();
+        renderUpdateBadge();
       } catch (e) {
         state.failures += 1;
         setHealth();

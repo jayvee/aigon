@@ -824,6 +824,40 @@
           restoreDetailScrollTop(scrollTop);
         });
 
+      // Version section
+      const versionSection = shell.addSection('version', 'Version', 'Version', 'Installed version and npm registry update status.');
+      const uc = (state.data || {}).updateCheck;
+      const stateLabels = { latest: 'up to date', 'update-available': 'update available', 'prerelease-available': 'prerelease available', unavailable: 'unavailable' };
+      const stateCls = { latest: 'state-latest', 'update-available': 'state-update', 'prerelease-available': 'state-prerelease', unavailable: 'state-unavailable' };
+      const ucState = (uc && uc.state) || 'unavailable';
+      function vRow(label, value) {
+        const row = document.createElement('div');
+        row.className = 'version-row';
+        row.innerHTML = '<span class="version-label">' + escHtml(label) + '</span><span class="version-value">' + escHtml(value || '—') + '</span>';
+        return row;
+      }
+      const vPanel = document.createElement('div');
+      vPanel.className = 'version-info settings-panel';
+      vPanel.appendChild(vRow('Installed', (uc && uc.current) || '—'));
+      if (uc) {
+        if (uc.latestStable) vPanel.appendChild(vRow('Latest stable', uc.latestStable));
+        if (uc.latestNext) vPanel.appendChild(vRow('Latest next', uc.latestNext));
+        const stateRow = document.createElement('div');
+        stateRow.className = 'version-row';
+        stateRow.innerHTML = '<span class="version-label">Status</span><span class="version-state-badge ' + (stateCls[ucState] || 'state-unavailable') + '">' + escHtml(stateLabels[ucState] || ucState) + '</span>';
+        vPanel.appendChild(stateRow);
+        if (ucState === 'update-available' || ucState === 'prerelease-available') {
+          vPanel.appendChild(vRow('Upgrade command', uc.upgradeCommand));
+        }
+        if (uc.error) vPanel.appendChild(vRow('Registry error', uc.error));
+      } else {
+        const checking = document.createElement('div');
+        checking.className = 'version-row';
+        checking.innerHTML = '<span class="version-label">Status</span><span class="version-value" style="color:var(--text-tertiary)">Checking…</span>';
+        vPanel.appendChild(checking);
+      }
+      versionSection.appendChild(vPanel);
+
       reposRoot.appendChild(area);
       restoreDetailScrollTop(scrollTop);
       restoreSettingsUiState(reposRoot);
