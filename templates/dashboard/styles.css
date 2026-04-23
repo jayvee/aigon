@@ -428,7 +428,7 @@
     .create-input::placeholder{color:var(--text-tertiary)}
     .create-textarea{resize:vertical;min-height:92px;line-height:1.5}
     .pipeline-paused-toggle{font-size:11px;padding:4px 10px;margin-left:8px}
-    .create-agent-picks{display:flex;gap:8px}
+    .create-agent-picks{display:flex;gap:8px;flex-wrap:wrap}
     .create-agent-opt{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-secondary);cursor:pointer}
     .create-agent-opt input{margin:0}
     .create-agent-opt span{font-family:var(--mono);font-size:11px}

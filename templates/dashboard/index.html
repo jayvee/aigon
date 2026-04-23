@@ -394,12 +394,7 @@
       <label style="display:block;font-size:12px;color:var(--text-secondary);margin:12px 0 6px">Description (optional)</label>
       <textarea id="create-modal-description" class="create-input create-textarea" rows="4" placeholder="What should this feature do? Any technical ideas or constraints?"></textarea>
       <label style="display:block;font-size:12px;color:var(--text-secondary);margin:12px 0 6px">Refine with agent</label>
-      <div class="create-agent-picks" id="create-modal-agent">
-        <label class="create-agent-opt"><input type="radio" name="create-agent" value="cc" checked><span>cc</span></label>
-        <label class="create-agent-opt"><input type="radio" name="create-agent" value="gg"><span>gg</span></label>
-        <label class="create-agent-opt"><input type="radio" name="create-agent" value="cx"><span>cx</span></label>
-        <label class="create-agent-opt"><input type="radio" name="create-agent" value=""><span>None</span></label>
-      </div>
+      <div class="create-agent-picks" id="create-modal-agent" aria-label="Refine with agent"></div>
       <p id="create-modal-error" class="modal-error" style="display:none"></p>
       <div class="modal-actions" style="margin-top:16px">
         <button class="btn" id="create-modal-cancel">Cancel</button>

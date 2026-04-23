@@ -96,6 +96,55 @@
       return (agent && agent.cmdPrefix) || '/aigon:';
     }
 
+    function renderCreateModalAgents(preferredAgentId) {
+      const container = document.getElementById('create-modal-agent');
+      if (!container) return;
+      const agents = Array.isArray(window.__AIGON_AGENTS__) ? window.__AIGON_AGENTS__ : [];
+      const items = [];
+      agents.forEach(agent => {
+        if (!agent || !agent.id) return;
+        const id = String(agent.id);
+        const label = agent.displayName || agent.shortName || id;
+        const inputId = 'create-agent-' + id;
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'create-agent';
+        radio.value = id;
+        radio.id = inputId;
+        if (preferredAgentId && id === preferredAgentId) radio.checked = true;
+
+        const labelEl = document.createElement('label');
+        labelEl.className = 'create-agent-opt';
+        labelEl.setAttribute('for', inputId);
+        labelEl.title = id;
+        labelEl.appendChild(radio);
+
+        const text = document.createElement('span');
+        text.textContent = label;
+        labelEl.appendChild(text);
+        items.push(labelEl);
+      });
+
+      const noneId = 'create-agent-none';
+      const noneRadio = document.createElement('input');
+      noneRadio.type = 'radio';
+      noneRadio.name = 'create-agent';
+      noneRadio.value = '';
+      noneRadio.id = noneId;
+
+      const noneLabel = document.createElement('label');
+      noneLabel.className = 'create-agent-opt';
+      noneLabel.setAttribute('for', noneId);
+      noneLabel.title = 'Create the spec without opening an agent session';
+      noneLabel.appendChild(noneRadio);
+      const noneText = document.createElement('span');
+      noneText.textContent = 'None';
+      noneLabel.appendChild(noneText);
+
+      items.push(noneLabel);
+      container.replaceChildren(...items);
+    }
+
     async function submitCreateModal() {
       const els = getCreateModalElements();
       if (!els.modal || !els.nameInput || !els.descriptionInput || !els.submit) return;
@@ -213,12 +262,12 @@
       els.nameInput.value = '';
       if (els.descriptionInput) els.descriptionInput.value = '';
       const preferredAgent = window.__AIGON_DEFAULT_AGENT__ || (typeof getAskAgent === 'function' && getAskAgent()) || 'cc';
+      renderCreateModalAgents(preferredAgent);
       const agentInputs = document.querySelectorAll('#create-modal-agent input[name="create-agent"]');
-      agentInputs.forEach(input => {
-        input.checked = input.value === preferredAgent;
-      });
-      if (![...agentInputs].some(input => input.checked) && agentInputs[0]) {
-        agentInputs[0].checked = true;
+      if (![...agentInputs].some(input => input.checked)) {
+        const fallback = [...agentInputs].find(input => input.value);
+        if (fallback) fallback.checked = true;
+        else if (agentInputs[0]) agentInputs[0].checked = true;
       }
       els.modal.style.display = 'flex';
       els.nameInput.focus();
