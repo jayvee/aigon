@@ -113,6 +113,7 @@ Feature and research lifecycle state are managed by the **workflow-core engine**
 
 Supporting state:
 - **Folders** (`docs/specs/features/0N-*/`) — shared ground truth, committed to git
+- **Recurring templates** (`docs/specs/recurring/`) — weekly feature templates; scanned by `lib/recurring.js` at server startup and every 24 h; excluded from the Kanban board and dashboard discovery
 - **Agent status files** (`.aigon/state/feature-{id}-{agent}.json`) — managed by `lib/agent-status.js`
 - **Per-agent overrides** (`snapshot.agents[id].modelOverride` / `effortOverride`) — optional `{model, effort}` captured on `feature.started` and honoured by every respawn path via `lib/agent-launch.js:buildAgentLaunchInvocation`. Precedence: event override > workflow stage triplet > `aigon config models` > agent JSON default > null. Never read `cliConfig.models[...]` directly in a new spawn site
 - **Shell trap signals**: `buildAgentCommand()` wraps agent commands with a bash `trap EXIT` that fires `agent-status submitted` / `review-complete` / `error`. A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. Controlled by `signals` in `templates/agents/*.json`.
