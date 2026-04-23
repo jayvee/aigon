@@ -1,11 +1,5 @@
 ---
 complexity: medium
-recommended_models:
-  cc: { model: null, effort: null }
-  cx: { model: null, effort: null }
-  gg: { model: null, effort: null }
-  cu: { model: null, effort: null }
-  op: { model: null, effort: null }
 ---
 
 # Feature: recurring-features

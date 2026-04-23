@@ -29,4 +29,4 @@ aigon research-create <topic-name>
 
 ## Spec frontmatter
 
-The inbox topic is created from the research template with YAML frontmatter including **`complexity`** and optional **`recommended_models`**, same idea as features. Those fields feed model/effort defaults when you **research-start** from the dashboard or CLI. See [Agents: Spec complexity and model defaults](/docs/reference/agents#spec-complexity-and-model-defaults).
+The inbox topic is created from the research template with YAML frontmatter including **`complexity`**, same idea as features. Model/effort defaults when you **research-start** are resolved from that label plus each agent’s ladder and config — not from model names in the spec. See [Agents: Spec complexity and model defaults](/docs/reference/agents#spec-complexity-and-model-defaults).

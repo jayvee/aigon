@@ -1,10 +1,5 @@
 ---
 complexity: medium
-recommended_models:
-  cc: { model: null, effort: null }
-  cx: { model: null, effort: null }
-  gg: { model: null, effort: null }
-  cu: { model: null, effort: null }
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-23T07:31:02.171Z", actor: "cli/feature-prioritise" }
 ---

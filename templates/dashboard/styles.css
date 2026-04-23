@@ -266,13 +266,63 @@
     .kanban-set-header-row .kanban-set-start-autonomous{flex-shrink:0}
     .kanban-set-header-row .kanban-set-paused-badge{flex-shrink:0}
     .kanban-set-header-row .kcard-peek-btn{flex-shrink:0}
+    /* Group-by-set: one visual “bundle” so members read as a single unit */
+    .kanban-set-bundle{
+      display:flex;flex-direction:column;gap:0;
+      margin:8px 0 10px;
+      padding:0 0 8px;
+      border-radius:10px;
+      border:1px solid color-mix(in srgb, var(--border-default) 85%, transparent);
+      background:color-mix(in srgb, var(--bg-elevated) 55%, var(--bg-surface));
+      box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 4px 14px rgba(0,0,0,.08);
+      border-left:3px solid color-mix(in srgb, var(--accent) 55%, var(--border-default));
+      min-width:0;
+    }
+    .kanban-set-bundle--paused{
+      border-left-color:rgba(229,124,42,.85);
+      box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 4px 14px rgba(229,124,42,.08);
+    }
+    .kanban-set-bundle-head.kanban-set-header{
+      display:block;
+      margin:0;
+      padding:8px 10px 6px;
+      font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+      color:var(--text-secondary);
+      background:color-mix(in srgb, var(--bg-surface) 70%, transparent);
+      border:none;border-bottom:1px solid var(--border-subtle);
+      border-radius:10px 10px 0 0;
+    }
+    .kanban-set-bundle-head--paused{
+      background:rgba(229,124,42,.09);
+      border-bottom-color:rgba(229,124,42,.35);
+    }
+    .kanban-set-bundle-head--paused .kanban-set-title{color:#e57c2a}
+    .kanban-set-progress{width:100%;height:4px;border-radius:2px;background:rgba(128,128,128,.2);margin-top:6px;overflow:hidden}
+    .kanban-set-progress-fill{height:100%;width:0;background:var(--accent,#3b82f6);border-radius:2px;transition:width .2s ease}
+    .kanban-set-bundle--paused .kanban-set-progress-fill{background:linear-gradient(90deg,#e57c2a,#fb923c)}
+    /* Stacked members; single accent spine is .kanban-set-bundle border-left only */
+    .kanban-set-stack{
+      margin:8px 10px 2px 10px;
+      padding:2px 0 4px 0;
+    }
+    .kanban-set-stack > .kcard.kcard-in-set{
+      margin:5px 0 0;
+      border-radius:8px;
+      box-shadow:none;
+    }
+    .kanban-set-stack > .kcard.kcard-in-set:first-child{margin-top:0}
     .kcard{border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,.01);padding:8px 10px;cursor:grab;transition:background .12s ease,border-color .12s ease,box-shadow .12s ease;min-width:0;overflow:hidden}
     .kcard:hover{background:var(--bg-elevated);border-color:var(--border-default)}
     .kcard.dragging{opacity:.3;cursor:grabbing}
     .kcard-id{font-size:11px;color:var(--text-tertiary);font-family:var(--mono)}
     .kcard-name{font-size:12px;font-weight:500;margin:2px 0 6px;line-height:1.3;color:var(--text-primary);word-break:break-word}
-    .kcard-blocked{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 8px}
-    .kcard-blocked-label{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px;border:1px solid rgba(248,113,113,.38);background:rgba(248,113,113,.1);color:#fca5a5;letter-spacing:.02em}
+    /* Backlog dependency hint — neutral (not “blocked” / error styling) */
+    .kcard-dep-chain{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin:0 0 8px;font-size:11px;color:var(--text-secondary);line-height:1.35}
+    .kcard-dep-chain-label{font-weight:600;color:var(--text-tertiary);letter-spacing:.02em;text-transform:none;margin-right:2px}
+    .kcard-dep-wires{display:inline-flex;align-items:center;flex-wrap:wrap;gap:0}
+    .kcard-dep-wire{flex:0 0 14px;height:1px;background:var(--border-subtle);margin:0 1px;opacity:.9}
+    .kcard-dep-chip{display:inline-flex;align-items:center;padding:1px 7px;border-radius:6px;border:1px solid var(--border-subtle);background:rgba(255,255,255,.03);color:var(--text-secondary);font-weight:600;font-variant-numeric:tabular-nums}
+    .kcard-start-pending-deps{opacity:.92}
     .kcard-nudges{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
     .kcard-nudge-chip{appearance:none;border:1px solid color-mix(in srgb, var(--accent) 28%, var(--border-default));background:color-mix(in srgb, var(--accent) 10%, var(--bg-surface));color:var(--text-secondary);border-radius:999px;padding:3px 8px;font:600 10px/1.2 var(--mono);cursor:pointer;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .kcard-nudge-chip:hover{background:color-mix(in srgb, var(--accent) 16%, var(--bg-surface));color:var(--text-primary)}

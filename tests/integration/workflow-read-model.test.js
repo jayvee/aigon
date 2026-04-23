@@ -108,6 +108,20 @@ for (const [desc, id, autoPayload, check] of [
     }));
 }
 
+// REGRESSION: brewboard-seed backlog specs ship without engine snapshots — Start must still appear.
+test('backlog + MISSING_SNAPSHOT still exposes feature-start and research-start', () => withTempDir('aigon-rm-', (repo) => {
+    seed(repo);
+    writeSpec(repo, 'features', '02-backlog', 'feature-99-seed-demo.md');
+    const f = wrm.getFeatureDashboardState(repo, '99', 'backlog', []);
+    assert.strictEqual(f.readModelSource, wrm.WORKFLOW_SOURCE.MISSING_SNAPSHOT);
+    assert.ok(f.validActions.some((a) => a.action === 'feature-start'), 'feature-start for backlog without snapshot');
+    assert.ok(f.validActions.some((a) => a.action === 'feature-autonomous-start'), 'autonomous start for backlog without snapshot');
+    writeSpec(repo, 'research-topics', '02-backlog', 'research-88-seed-demo.md');
+    const r = wrm.getResearchDashboardState(repo, '88', 'backlog', []);
+    assert.strictEqual(r.readModelSource, wrm.WORKFLOW_SOURCE.MISSING_SNAPSHOT);
+    assert.ok(r.validActions.some((a) => a.action === 'research-start'), 'research-start for backlog without snapshot');
+}));
+
 // REGRESSION feature 295: operator.nudge_sent must survive projection onto the workflow snapshot.
 testAsync('nudge event is recorded and surfaced on snapshot', () => withTempDirAsync('aigon-rm-', async (repo) => {
     const specPath = path.join(repo, 'docs', 'specs', 'features', '03-in-progress', 'feature-07-test.md');

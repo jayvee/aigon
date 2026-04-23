@@ -31,14 +31,14 @@ The output should be a short, well-structured document that frames the research 
 
 ### Set the spec frontmatter (complexity)
 
-The template ships with a `complexity:` frontmatter field that feeds the dashboard start modal's per-agent model recommendation. Pick:
+The template ships with a `complexity:` frontmatter field that feeds the dashboard start modal's per-agent model/effort **defaults** (from each agent’s complexity ladder, then config). Pick:
 
 - **low** — narrow topic, one dimension, answer already clear-ish (lookup research).
 - **medium** — typical topic with 3–5 focused questions, moderate breadth.
 - **high** — wide-ranging investigation, competing options with non-obvious trade-offs.
 - **very-high** — exploratory research where the right *questions* aren't obvious yet. Reserve for research that needs strong reasoning.
 
-Leave `recommended_models.<agent>: { model: null, effort: null }` to inherit the agent's `cli.complexityDefaults[<complexity>]` defaults.
+Set `complexity:` in the frontmatter; do not write model or effort values into the spec — defaults are resolved at start time from each agent’s `cli.complexityDefaults[<complexity>]`.
 
 Next step: Once the topic is complete, run `{{CMD_PREFIX}}research-prioritise {{ARG_SYNTAX}}` to assign an ID and move to backlog.
 

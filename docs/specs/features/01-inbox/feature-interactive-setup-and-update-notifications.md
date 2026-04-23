@@ -2,7 +2,7 @@
 complexity: medium
 ---
 
-# Feature: {{NAME}}
+# Feature: Interactive Setup and Update Notifications
 
 <!-- Authoring AI: set `complexity:` using this rubric before writing the spec:
        low       — config tweaks, doc-only, single-file helpers, trivial bug fixes

@@ -37,8 +37,9 @@ test('agent picker recommendation banner mounts in index.html (no phantom .modal
     const idx = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/index.html'), 'utf8');
     const actions = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions.js'), 'utf8');
     assert.ok(idx.includes('id="agent-picker-recommendation"'));
+    assert.ok(idx.includes('id="autonomous-picker-recommendation"'));
     assert.ok(!actions.includes("querySelector('#agent-picker .modal-card')"));
-    assert.ok(actions.includes("getElementById('agent-picker-recommendation')"));
+    assert.ok(actions.includes("getElementById(mountId || 'agent-picker-recommendation')"));
 });
 // REGRESSION: SetConductor outer loop (repo-s{slug}-auto) must be peekable from Monitor + Pipeline like *-f{id}-auto.
 test('set autonomous conductor peek wired in dashboard templates', () => {

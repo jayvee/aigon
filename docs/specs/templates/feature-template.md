@@ -1,10 +1,5 @@
 ---
 complexity: medium
-recommended_models:
-  cc: { model: null, effort: null }
-  cx: { model: null, effort: null }
-  gg: { model: null, effort: null }
-  cu: { model: null, effort: null }
 ---
 
 # Feature: {{NAME}}
@@ -14,9 +9,8 @@ recommended_models:
        medium    — standard feature with moderate cross-cutting, one command handler, small refactor
        high      — multi-file engine edits, new event types, new dashboard surfaces, judgment-heavy deletion work
        very-high — architectural shifts, write-path-contract changes, new XState transitions, cross-cutting template+engine+frontend
-     Leave `recommended_models[agent]` at `{ model: null, effort: null }` to inherit the agent's
-     `cli.complexityDefaults[<complexity>]` values. Override per agent only when the feature is
-     asymmetrically hard for one agent (e.g. judgment-heavy for cc, mechanical for cx). -->
+     Model/effort defaults at start come from each agent's `cli.complexityDefaults[<complexity>]` in shipped
+     agent JSON — not from this spec. -->
 
 ## Summary
 <!-- One paragraph describing what this feature does and why -->

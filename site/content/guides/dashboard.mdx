@@ -67,7 +67,7 @@ The badge clears automatically when the agent reports its next status, so cards 
 
 When you start a feature from the dashboard, each agent slot includes a **model** picker and **effort** picker. The selected triplet is stored in workflow state so the choice survives server restarts and later respawns.
 
-**Complexity-driven defaults:** If the feature spec (or research topic) has valid YAML frontmatter with a **`complexity`** level, the dialog shows a short **explanation under the title** and pre-fills each row from that complexity plus each agent’s built-in **complexity ladder** (and optional per-agent `recommended_models` in the spec). **Default** in a dropdown still means your global `aigon config` value; change any row before Start if you want a one-off override. Details and the full resolution order are in the [Agents reference](/docs/reference/agents#spec-complexity-and-model-defaults).
+**Complexity-driven defaults:** If the feature spec (or research topic) has valid YAML frontmatter with a **`complexity`** level, the dialog shows a short **explanation under the title** and pre-fills each row from that complexity plus each agent’s built-in **complexity ladder** in `templates/agents/<id>.json` (not from model names stored in the spec). **Default** in a dropdown still means your global `aigon config` value; change any row before Start if you want a one-off override. Details and the full resolution order are in the [Agents reference](/docs/reference/agents#spec-complexity-and-model-defaults).
 
 {/* PLACEHOLDER: model picker dropdown in the dashboard start dialog */}
 
@@ -119,6 +119,8 @@ aigon set show <slug>       # Members in dependency order + intra-set edges
 ```
 
 Set-level autonomous actions (`set-autonomous-start` / `-stop` / `-resume` / `-reset`) are Pro features; OSS users see the progress view with the action buttons disabled.
+
+If you want the conceptual walkthrough for how set-level autonomy works end to end, see [Feature Sets in Autonomous Mode](./feature-sets-autonomous).
 
 ## Agent Budget
 
