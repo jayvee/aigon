@@ -6,7 +6,9 @@ complexity: medium
 
 ## Summary
 
-Implementation logs are currently reduced to "max 10 lines, 3-5 bullets on non-obvious issues," and the `feature-do` pipeline injects zero context about sibling features when implementing a feature that is part of a set. Both gaps degrade LLM performance: under-structured logs leave subsequent agents without the decisions, API surfaces, and gotchas they need; missing set context means feature 3 of 5 has no awareness of what features 1 and 2 established. This feature replaces the current log template with a research-backed structure (7 sections, ~400–700 words target), and updates `feature-do` to instruct agents to read completed sibling logs and the source research when a `set:` tag is present.
+Implementation logs are currently reduced to "max 10 lines, 3-5 bullets on non-obvious issues," and the `feature-do` pipeline injects zero context about sibling features when implementing a feature that is part of a set. Both gaps degrade LLM performance: under-structured logs leave subsequent agents without the decisions, API surfaces, and gotchas they need; missing set context means feature 3 of 5 has no awareness of what features 1 and 2 established. A third problem compounds both: a step-numbering contradiction in `feature-do.md` places the log-writing step before `agent-status submitted` in the template but labels it "do this AFTER submit" — and in autonomous/set mode the conductor reacts to `submitted` immediately and can kill the implementing session before the agent writes anything, which explains why many set-autonomous logs are completely empty.
+
+This feature fixes all three: replaces the log template with a research-backed structure (7 sections, ~400–700 words), updates `feature-do` to inject sibling context for set members, and fixes the log step ordering so the log is written before signalling completion (eliminating the autonomous race condition).
 
 Research basis: "Lost in the Middle" (primacy/recency bias), Chroma context-rot findings (distractors degrade performance even when information is present elsewhere), Anthropic sub-agent summary guidance (1K–2K tokens), ADR context window research (3–5 prior decisions is the sweet spot), Spotify background-agent context engineering (concrete examples > prose, out-of-scope boundaries matter as much as in-scope).
 
@@ -15,6 +17,7 @@ Research basis: "Lost in the Middle" (primacy/recency bias), Chroma context-rot 
 - [ ] As an agent implementing feature 4 of a 5-feature set, I am told (in the feature-do instructions) to read the implementation logs of completed siblings and the source research before coding, so I build on established patterns rather than re-inventing or contradicting them.
 - [ ] As an agent writing an implementation log, I have clear section headings and a word-count target so the log is dense with signal (decisions, new API surfaces, gotchas, integration notes) rather than narrative prose or a restatement of the spec.
 - [ ] As a developer reviewing a completed feature, the log tells me what decisions were made and why, what new modules were introduced, what was explicitly deferred, and what the next feature in the set must respect — without reading the diff.
+- [ ] As a set-autonomous run, the implementing agent writes its log before calling `aigon agent-status submitted`, so the conductor never races the log step.
 
 ## Acceptance Criteria
 
@@ -24,6 +27,8 @@ Research basis: "Lost in the Middle" (primacy/recency bias), Chroma context-rot 
 - [ ] `templates/generic/commands/feature-do.md` gains a new **Step 2.5: Set context** section that fires only when the spec has a `set:` tag. It instructs the agent to: (a) read completed sibling implementation logs listed via `aigon set <slug>`, (b) read the specs of `depends_on` predecessors, (c) read the research source named in `## Related`.
 - [ ] The `feature-do` CLI instruction mode (`lib/feature-do.js`) detects a `set:` tag in the current spec and prints the padded IDs and log paths of completed set siblings, so the agent has exact paths rather than a glob.
 - [ ] `templates/specs/feature-template.md` `## Related` section comment is updated to make the `Research:` field and prior-set-feature pointers explicit (not just a free-text comment).
+- [ ] `{{LOGGING_SECTION}}` is moved in `templates/generic/commands/feature-do.md` to appear after `## Step 5: Signal completion`, and the section header in `FULL_LOGGING` and `FLEET_LOGGING` is updated to say "before signalling completion" (not "AFTER submit"). The step is renumbered Step 5.5 to preserve the existing step numbering downstream.
+- [ ] The log starter skeleton written by `feature.js` (`init_log` effect, line ~51) and `worktree.js` (line ~1582) is updated to match the new 7-section structure so the agent sees the correct headings when it opens the file.
 - [ ] `node -c aigon-cli.js` passes. `npm test` passes.
 
 ## Validation
@@ -115,6 +120,14 @@ The placeholder must be resolved in `lib/profile-placeholders.js` `getProfilePla
 
 Implementation note: `getProfilePlaceholders()` currently does not read the spec. The simplest approach is to have the `feature-do.js` CLI path (both launch mode and instruction mode) detect the set slug from the spec and pass it via the existing `placeholders` merge at `resolveCxCommandBody` call site — no new I/O in `getProfilePlaceholders` itself.
 
+### Log step ordering fix
+
+**Root cause:** `{{LOGGING_SECTION}}` sits at line 68 in `feature-do.md`, before `## Step 5: Signal completion` at line 72. But `FULL_LOGGING` and `FLEET_LOGGING` both say "do this AFTER submit." In autonomous mode `feature-autonomous.js` reacts to the `submitted` signal immediately (`implAgentReadyForAutonomousClose` returns true on `submitted`) and with `stop-after=implement` calls `stopAutoSession` (kills the tmux session) — racing the agent's log-write step.
+
+**Fix:** Move `{{LOGGING_SECTION}}` to after `## Step 5: Signal completion` in `feature-do.md`, renumber it as Step 5.5, and update the section headers in `FULL_LOGGING` / `FLEET_LOGGING` from "do this AFTER submit" to "write this **before** calling `aigon agent-status submitted`." This makes the template order match the instruction, eliminates the autonomous race, and gives the log its own step that doesn't compete with urgency language.
+
+**Log starter skeleton:** The `init_log` effect in `feature.js:51` and the worktree bootstrap in `worktree.js:1582` both write the old `## Plan / ## Progress / ## Decisions` skeleton. Update both to the 7-section structure so agents see the right headings without having to remember the format.
+
 ## Dependencies
 
 - No feature dependencies. All touched files are in `lib/`, `templates/`, and `docs/specs/features/01-inbox/`.
@@ -123,7 +136,8 @@ Implementation note: `getProfilePlaceholders()` currently does not read the spec
 
 - A separate architecture decision record (ADR) file — decisions stay embedded in feature logs.
 - A memory system (mem0 or similar) for cross-feature retrieval — log quality is the approach.
-- Changing `MINIMAL_LOGGING` behavior — it stays at "one line or skip."
+- Changing `MINIMAL_LOGGING` behavior — it stays at "one line or skip" and is already placed before Step 5 in the template, which is correct.
+- Changes to the autonomous conductor poll logic — the fix is purely in the template step order and log section label, not in `feature-autonomous.js`.
 - Dashboard changes — this is log format and template only.
 - Auto-generating or summarizing logs from git history — the agent writes them.
 - A cumulative "interface map" document for the set — the `## For the Next Feature` section in each log covers this without a new artifact.
