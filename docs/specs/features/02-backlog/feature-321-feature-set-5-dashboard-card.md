@@ -1,5 +1,7 @@
 ---
 set: feature-set
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-23T00:40:18.596Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: feature-set-5-dashboard-card
