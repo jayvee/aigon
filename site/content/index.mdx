@@ -1,11 +1,27 @@
 ---
 title: Aigon Documentation
-description: Open-source, spec-driven orchestration system for AI coding agents.
+description: Open-source, spec-driven orchestration for AI coding agents — your subscriptions, your repo, your workflow.
 ---
 
-Aigon is an open-source, spec-driven orchestration system for AI coding agents — run them head-to-head on the same feature, then score their work so you can ship with confidence.
+## What is Aigon?
+
+Aigon is an **open-source, spec-driven workflow system** for building software with AI coding agents. You describe work in **Markdown specs** that live in your repository; Aigon coordinates **create → implement → review → evaluate → merge** (and research/feedback flows) so progress is **tracked, repeatable, and resettable** instead of ad hoc chat.
+
+You drive it from **slash commands** inside Claude Code, Gemini CLI, Codex, Cursor, and similar tools, from a **local web dashboard**, or from the **`aigon` CLI**. Every surface reads and writes the **same specs and workflow state** in your repo. There is **no required SaaS account** and **no proprietary lock-in** — you bring the AI products you already use.
 
 ![Aigon Dashboard — Reports Charts](/img/aigon-dashboard-reports-charts.png)
+
+## Why Aigon
+
+Feature lists describe mechanics; **why Aigon** is about how you want to work day to day:
+
+- **Bring your own subscriptions** — use your subscription quotas through Claude, Codex, Gemini, Cursor CLIs directly. Aigon does not sell tokens or sit in the billing path.
+- **Stay in the flow when a plan runs out** — swap agent, account, or provider instead of stopping mid-feature when a subscription hits its limit.
+- **Specs you can build, ship, reset, and rebuild** — one durable brief in git, a defined lifecycle, and a clean reset when you need a do-over.
+- **Autonomous runs you can leave unattended** — kick off long implement/evaluate loops and let them run overnight while you are away from the keyboard.
+- **Multi-agent lanes you design** — for example: shape a spec with one model, implement with another, run multi-agent code review, then land on `main` through a **pre-built workflow** instead of stitching steps by hand.
+- **Context that compounds in the repo** — specs, logs, and implementation summaries feed the next session so you are not starting from a blank chat every time.
+- **Move off token limits without drama** — when a Claude subscription is exhausted, **fail over or switch** to Codex (or another agent) on the same feature using the same spec and state.
 
 ## Sections
 

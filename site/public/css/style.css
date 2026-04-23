@@ -437,6 +437,117 @@ a {
   background: var(--accent-2);
 }
 
+.what-aigon-is {
+  margin: 1rem 0 1.35rem;
+  max-width: 42rem;
+}
+
+.what-aigon-is p {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.what-aigon-is p:last-child {
+  margin-bottom: 0;
+}
+
+.what-aigon-title {
+  margin: 0 0 0.65rem;
+  font-family: "Sora", sans-serif;
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.what-aigon-is code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.88em;
+}
+
+.why-aigon-hero {
+  margin-top: 1.75rem;
+  max-width: 42rem;
+}
+
+.why-aigon-hero-title {
+  margin: 0 0 0.35rem;
+  font-family: "Sora", sans-serif;
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.why-aigon-intro {
+  margin: 0.5rem 0 0.85rem;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.why-aigon-points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.why-aigon-points li {
+  position: relative;
+  padding-left: 1.25rem;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.why-aigon-points li::before {
+  content: "";
+  position: absolute;
+  top: 0.72em;
+  left: 0;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.why-aigon-points code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.88em;
+}
+
+.hero-at-a-glance-eyebrow {
+  margin-top: 1.85rem;
+}
+
+.hero-at-a-glance-lead {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.explore-docs-lead {
+  max-width: 42rem;
+}
+
+.explore-docs-lead a {
+  color: var(--accent-3);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.explore-docs-lead a:hover,
+.explore-docs-lead a:focus-visible {
+  color: var(--accent);
+}
+
 .hero-visual {
   display: grid;
   gap: 1rem;
