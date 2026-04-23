@@ -1,6 +1,8 @@
 ---
 complexity: medium
 set: publish-npm-package
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-23T13:58:56.117Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: publish-npm-package-4-interactive-global-setup
