@@ -80,4 +80,21 @@ testAsync('migration backfills legacy spec-review commits into workflow state', 
     assert.deepStrictEqual([snapshot.specReview.pendingCount, snapshot.specReview.pendingAgents], [1, ['gg']]);
 }));
 
+test('research dashboard actions never emit feature-delete when snapshot lacks entityType', () => {
+    // REGRESSION: deriveAvailableActions defaulted to feature — inbox delete showed feature-delete for research rows.
+    const legacySnap = {
+        researchId: '07',
+        currentSpecState: 'inbox',
+        lifecycle: 'backlog',
+        mode: 'solo_branch',
+        agents: {},
+        winnerAgentId: null,
+        updatedAt: new Date().toISOString(),
+        specPath: '/tmp/research-07-x.md',
+    };
+    const { validActions } = snapshotToDashboardActions('research', '07', legacySnap, 'inbox');
+    assert.ok(validActions.some((a) => a.action === 'research-delete'), 'expected research-delete');
+    assert.ok(!validActions.some((a) => a.action === 'feature-delete'), 'must not surface feature-delete on research read path');
+});
+
 report();

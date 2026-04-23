@@ -763,9 +763,15 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
     }
     case 'feature-delete':
     case 'research-delete': {
-      const entityLabel = va.action === 'research-delete' ? 'research' : 'feature';
-      const msg = (va.metadata && va.metadata.confirmationMessage)
-        || ('Delete this ' + entityLabel + ' spec and its workflow state? This cannot be undone.');
+      const deleteCmd = pipelineType === 'research' ? 'research-delete' : 'feature-delete';
+      const entityLabel = pipelineType === 'research' ? 'research' : 'feature';
+      let msg = va.metadata && va.metadata.confirmationMessage;
+      if (msg && entityLabel === 'research' && /\bfeature\b/i.test(msg)) {
+        msg = null;
+      }
+      if (!msg) {
+        msg = 'Delete this ' + entityLabel + ' spec and its workflow state? This cannot be undone.';
+      }
       const ok = await showDangerConfirm({
         title: 'Delete ' + entityLabel + ' #' + id + (feature.name ? ' — ' + feature.name : '') + '?',
         message: msg,
@@ -773,7 +779,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
         cancelLabel: 'Cancel'
       });
       if (!ok) return;
-      await requestAction(va.action, [id], repoPath, btn);
+      await requestAction(deleteCmd, [id], repoPath, btn);
       break;
     }
     case 'feature-code-review-check':
