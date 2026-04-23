@@ -77,6 +77,23 @@
                   <span x-html="buildAskAgentHtml(repo.path)" x-on:click.stop="handleAskClick($event)"></span>
                 </div>
                 <div class="repo-b" x-show="!isCollapsed(repo.path)">
+                  <section class="set-card-section" x-show="getSets(repo).length > 0">
+                    <div class="set-card-section-header">
+                      <span>Sets</span>
+                      <span x-text="getSets(repo).length"></span>
+                    </div>
+                    <div class="set-card-grid">
+                      <template x-for="setCard in getSets(repo)" :key="'set-' + setCard.slug">
+                        <article class="card set-card" :class="'status-' + setCard.status">
+                          <div class="card-h set-card-header">
+                            <span class="feature" x-text="setCard.slug"></span>
+                            <span class="head-actions" x-html="buildSetActionHtml(setCard, repo.path)"></span>
+                          </div>
+                          <div class="set-card-body" x-html="buildSetCardHtml(setCard)"></div>
+                        </article>
+                      </template>
+                    </div>
+                  </section>
                   <!-- Feature cards -->
                   <template x-for="feature in getFeatures(repo)" :key="'f-' + feature.id + '-' + feature.name">
                     <article class="card feature-card"
@@ -496,6 +513,7 @@
   <script src="/js/detail-tabs.js"></script>
   <script src="/js/spec-drawer.js"></script>
   <script src="/js/actions.js"></script>
+  <script src="/js/set-cards.js"></script>
   <script src="/js/monitor.js"></script>
   <script src="/js/autonomous-plan.js"></script>
   <script src="/js/pipeline.js"></script>
