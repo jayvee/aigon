@@ -5,6 +5,8 @@ recommended_models:
   cx: { model: null, effort: null }
   gg: { model: null, effort: null }
   cu: { model: null, effort: null }
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-23T01:24:09.882Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Agent Budget Awareness
