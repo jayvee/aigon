@@ -111,7 +111,7 @@ test('registry-derived help surfaces use generic agent placeholders, not the leg
 
     const featureSource = fs.readFileSync(path.join(__dirname, '..', '..', 'lib', 'commands', 'feature.js'), 'utf8');
     const setupSource = fs.readFileSync(path.join(__dirname, '..', '..', 'lib', 'commands', 'setup.js'), 'utf8');
-    assert.ok(featureSource.includes("'feature-do': (args) => {"));
+    assert.ok(featureSource.includes("Usage: aigon feature-do <ID> [--agent=<agent-id>]"));
     assert.ok(setupSource.includes("Run 'aigon install-agent <agent-id>' to install."));
     assert.ok(!featureSource.includes('--agent=<cc|gg|cx|cu>'));
     assert.ok(!setupSource.includes('install-agent <cc|gg|cx|cu>'));

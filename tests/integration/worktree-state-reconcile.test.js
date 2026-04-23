@@ -48,8 +48,8 @@ test('resolveHeartbeatStateDir: AIGON_PROJECT_PATH when no worktree.json; file w
 }));
 
 test('Cursor tmux wrapper records agent-status on agent exit then clears EXIT trap', () => {
-    // REGRESSION: Cursor launches were forced into a post-run shell, which
-    // hid the live interactive session and made tmux look stuck after the run.
+    // REGRESSION: Composer stayed open after review; EXIT trap never ran so
+    // review-complete was missing until a nudge. Same post-success path as op.
     const prev = process.env.AIGON_TEST_MODE;
     delete process.env.AIGON_TEST_MODE;
     try {
@@ -60,10 +60,10 @@ test('Cursor tmux wrapper records agent-status on agent exit then clears EXIT tr
             repoPath: process.cwd(),
             desc: 'wrapper-test',
         }, 'review');
+        assert.ok(cmd.includes('_aigon_agent_rc=$?'), cmd);
         assert.ok(cmd.includes('aigon agent-status review-complete'), cmd);
-        assert.ok(cmd.includes('trap _aigon_cleanup EXIT'), cmd);
-        assert.ok(!cmd.includes('exec bash -l'), cmd);
-        assert.ok(!cmd.includes('< /dev/null'), cmd);
+        assert.ok(cmd.includes('trap - EXIT'), cmd);
+        assert.ok(cmd.includes('exec bash -l'), cmd);
     } finally {
         if (prev === undefined) delete process.env.AIGON_TEST_MODE;
         else process.env.AIGON_TEST_MODE = prev;
@@ -101,9 +101,9 @@ test('OpenCode launcher keeps tmux shell open after a successful opencode run', 
     }
 });
 
-test('Cursor CLI tmux launch keeps the interactive session path', () => {
-    // REGRESSION: tmux launches were forced into headless print mode, which
-    // prevented a live interactive Cursor session from running in the pane.
+test('Cursor CLI tmux launch adds --print and --trust (workspace trust in headless)', () => {
+    // REGRESSION: dashboard/code-review in tmux hung on "Trust this workspace" — Cursor
+    // only honors --trust with --print; interactive agent has no stdin in tmux.
     const prev = process.env.AIGON_TEST_MODE;
     delete process.env.AIGON_TEST_MODE;
     try {
@@ -115,9 +115,10 @@ test('Cursor CLI tmux launch keeps the interactive session path', () => {
             desc: 'trust-test',
         }, 'review');
         assert.ok(cmd.includes(' agent '), `expected agent command in: ${cmd}`);
-        assert.ok(!cmd.includes('--print'), `did not expect --print in: ${cmd}`);
-        assert.ok(!cmd.includes('--trust'), `did not expect --trust in: ${cmd}`);
-        assert.ok(!cmd.includes('< /dev/null'), 'did not expect stdin to be closed for interactive Cursor');
+        assert.ok(cmd.includes('--print'), `expected --print in: ${cmd}`);
+        assert.ok(cmd.includes('--trust'), `expected --trust in: ${cmd}`);
+        assert.ok(cmd.indexOf('--print') < cmd.indexOf('--trust'), '--print should precede --trust');
+        assert.ok(cmd.includes('< /dev/null'), 'expected stdin closed so Cursor agent exits after --print turn');
     } finally {
         if (prev === undefined) delete process.env.AIGON_TEST_MODE;
         else process.env.AIGON_TEST_MODE = prev;
