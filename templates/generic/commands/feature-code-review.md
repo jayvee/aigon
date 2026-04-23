@@ -45,6 +45,22 @@ The spec body was printed inline by the launching CLI — use that copy for acce
 
 If you are on the feature branch, review files directly. If you are on main, use `git diff main..$FEATURE_BRANCH` / `git show $FEATURE_BRANCH:path` — do NOT `cd` into the worktree. Commit fixes with `git -C "$WORKTREE" add ... && git -C "$WORKTREE" commit -m "fix(review): ..."` (review commits on main cause conflicts at `feature-close`).
 
+## Step 1.5: Scope baseline check
+
+Before reviewing correctness, check for out-of-scope deletions. The scope snapshot at `.aigon/state/feature-{{ARG1_SYNTAX}}-file-snapshot.txt` (in the main repo) lists every tracked file at feature-start time.
+
+```bash
+# Check for deleted files and test file deletions in the diff
+git diff --name-status "main..${FEATURE_BRANCH:-HEAD}" | grep '^D'
+```
+
+**Check for out-of-scope deletions first**, then proceed to correctness review. Flag any files deleted that:
+- Are not related to the feature spec
+- Are test files (`.test.js`, `.test.ts`, `*.spec.*`)
+- Are from a different feature's implementation
+
+Revert out-of-scope deletions before reviewing the rest of the diff.
+
 ## Step 2: Review
 
 ### You MUST fix now when the change is:
