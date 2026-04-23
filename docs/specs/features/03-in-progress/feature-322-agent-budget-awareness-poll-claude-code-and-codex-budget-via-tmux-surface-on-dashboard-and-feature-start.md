@@ -13,14 +13,14 @@ transitions:
 
 ## Summary
 
-Poll Claude Code and Codex CLIs every 30 minutes via throwaway tmux sessions to extract remaining budget (session and weekly limits). Cache results in `.aigon/budget-cache.json`. Surface the data as a compact widget on the dashboard and annotate the agent picker in feature-start and autonomous-start flows so users can make informed agent selection decisions before a budget runs out mid-task.
+Poll Claude Code and Codex CLIs every 30 minutes via throwaway tmux sessions to extract remaining budget (session and weekly limits). Cache results in `.aigon/budget-cache.json`. Surface the data as a new **"Agent Budget" tab in the Settings panel** (alongside Repositories, Notifications, Models, Repository Settings) and annotate the agent picker in feature-start and autonomous-start flows so users can make informed agent selection decisions before a budget runs out mid-task.
 
 The polling approach was validated live: spawning a throwaway `claude --dangerously-skip-permissions` session, navigating to the Usage tab of `/status`, and capturing the pane costs zero tokens ($0.00 confirmed). Codex exposes `5h limit` and `Weekly limit` directly in its startup banner — no navigation required.
 
 ## User Stories
 
 - [ ] As a user about to start a feature, I can see that Claude Code is 97% through its weekly budget so I pick Codex as the implementation agent instead.
-- [ ] As a user running multiple parallel agents, I can see a dashboard widget showing each agent's session % and weekly % remaining without leaving the dashboard.
+- [ ] As a user, I can open Settings → Agent Budget and see each agent's session % and weekly % remaining, with a manual refresh button.
 - [ ] As a user starting an autonomous feature, I see a warning if my primary agent is >80% through either budget limit before the run begins.
 - [ ] As a user, budget data refreshes automatically every 30 minutes while the dashboard is running, and I can manually trigger a refresh via a button.
 
@@ -31,7 +31,7 @@ The polling approach was validated live: spawning a throwaway `claude --dangerou
 - [ ] Codex parsing extracts: 5h limit % remaining + reset time, weekly limit % remaining + reset time+date
 - [ ] Cache file includes a `polled_at` ISO timestamp per agent so staleness can be detected
 - [ ] `GET /api/budget` returns the cached data (or `null` per agent if never polled or poll failed)
-- [ ] Dashboard shows a compact "Agent Budget" panel with colour-coded indicators: green ≥50% remaining, amber 20–49%, red <20%
+- [ ] Settings panel has an "Agent Budget" tab showing each agent's limits with colour-coded bars: green ≥50% remaining, amber 20–49%, red <20%
 - [ ] Agent picker rows for `cc` and `cx` show inline budget annotation, e.g. `cc — 35% session · 3% week ⚠`
 - [ ] If a selected agent's primary budget metric is <20% remaining at feature-start time, a non-blocking confirmation warning is shown before proceeding
 - [ ] Autonomous-start handler checks budget before firing; warns if selected agent <20% on any limit
@@ -120,23 +120,32 @@ Add two routes to the routes array:
 - `GET /api/budget` — reads `.aigon/budget-cache.json` synchronously (small file, pure cache), returns parsed JSON or `{ cc: null, cx: null }` if the file doesn't exist
 - `POST /api/budget/refresh` — triggers an immediate out-of-cycle poll asynchronously; returns `{ ok: true }` immediately
 
-### Dashboard widget (`templates/dashboard/index.html` + `js/actions.js`)
+### Settings tab (`templates/dashboard/index.html` + `js/settings.js` or inline)
 
-Compact panel positioned between the board controls and the feature cards grid. Two rows (one per agent):
+Add "Agent Budget" as a new tab in the existing Settings panel, after "Repository Settings". The tab is only shown if at least one agent has been polled (i.e., cache file exists).
+
+Tab content — two rows, one per agent:
 
 ```
-Claude Code   [████████░░] 35% session   [█░░░░░░░░░] 3% week ⚠   updated 12min ago  ↻
-Codex         [██████████] 58% 5h        [██████████] 49% week ✓   updated 12min ago
+Claude Code   session  [████████░░] 35% left   resets 12pm (Melbourne)
+              week     [█░░░░░░░░░]  3% left ⚠ resets 9am (Melbourne)
+              updated 12 min ago                                      ↻
+
+Codex         5h       [██████████] 58% left   resets 13:47
+              weekly   [██████████] 49% left   resets 07:23 on 29 Apr
+              updated 8 min ago
 ```
 
-Colour classes applied to the bar and percentage text:
+Colour classes on bar and percentage:
 - `budget-green`: ≥50% remaining
 - `budget-amber`: 20–49%
 - `budget-red`: <20% (also shows ⚠)
 
-The `↻` button fires `POST /api/budget/refresh` and re-renders after a 10s delay.
+If `polled_at` is >90 min old, show "stale" label in grey — no colour coding applied.
 
-Widget is hidden entirely if both agents return `null` (never polled).
+The `↻` refresh button fires `POST /api/budget/refresh`, then re-fetches `/api/budget` after 12 seconds and re-renders the tab content. The 12s delay accounts for tmux session spawn + capture time.
+
+If both agents return `null`, show: "No budget data yet — data is collected every 30 minutes while the dashboard is running."
 
 ### Agent picker integration (`templates/dashboard/js/actions.js`)
 
