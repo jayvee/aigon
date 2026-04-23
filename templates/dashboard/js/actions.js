@@ -497,6 +497,11 @@ function renderActionButtons(feature, repoPath, pipelineType) {
 
   function renderBtn(va, cls) {
     const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
+    const isBlocked = (va.action === 'feature-start') && feature.blockedBy && feature.blockedBy.length > 0;
+    if (isBlocked) {
+      const blockedIds = feature.blockedBy.map(d => '#' + parseInt(d.id, 10)).join(', ');
+      return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '"' + agentAttr + ' disabled title="Blocked by ' + escHtml(blockedIds) + '">' + escHtml(actionLabel(va)) + '</button>';
+    }
     return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '"' + agentAttr + '>' + escHtml(actionLabel(va)) + '</button>';
   }
 
