@@ -953,3 +953,27 @@
       .settings-config-row{grid-template-columns:1fr}
       .settings-config-controls{grid-template-columns:1fr}
     }
+    /* Budget widget (F322) */
+    .budget-widget{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:6px 12px;margin:6px 14px 0;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;font-size:11px}
+    .budget-widget .budget-agent{display:flex;align-items:center;gap:8px;min-width:0}
+    .budget-widget .budget-agent-name{font-weight:600;color:var(--text-primary);min-width:74px}
+    .budget-widget .budget-metric{display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary)}
+    .budget-widget .budget-bar{position:relative;width:60px;height:6px;border-radius:3px;background:var(--border-subtle);overflow:hidden}
+    .budget-widget .budget-bar-fill{position:absolute;top:0;left:0;bottom:0;border-radius:3px}
+    .budget-widget .budget-pct{font-variant-numeric:tabular-nums;min-width:28px}
+    .budget-widget .budget-label{color:var(--text-tertiary);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+    .budget-widget .budget-meta{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--text-tertiary);font-size:10px}
+    .budget-widget .budget-refresh{background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:4px;line-height:1}
+    .budget-widget .budget-refresh:hover{color:var(--text-primary);background:var(--border-subtle)}
+    .budget-widget .budget-refresh.spinning{opacity:.5;cursor:progress}
+    .budget-green .budget-bar-fill{background:#3fb950}
+    .budget-green .budget-pct{color:#3fb950}
+    .budget-amber .budget-bar-fill{background:#e0a000}
+    .budget-amber .budget-pct{color:#e0a000}
+    .budget-red .budget-bar-fill{background:#f85149}
+    .budget-red .budget-pct{color:#f85149;font-weight:600}
+    .budget-stale .budget-bar-fill{background:var(--text-tertiary);opacity:.5}
+    .budget-stale .budget-pct{color:var(--text-tertiary)}
+    .agent-check-budget{font-size:10px;color:var(--text-tertiary);font-variant-numeric:tabular-nums;margin-left:8px}
+    .agent-check-budget.budget-red{color:#f85149;font-weight:600}
+    .agent-check-budget.budget-amber{color:#e0a000}
