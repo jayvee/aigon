@@ -546,6 +546,25 @@
       });
     }
 
+    function buildReviewerSectionHtml(title, reviewer, options) {
+      const mode = options && options.mode ? options.mode : 'implementation';
+      const reviewerName = AGENT_DISPLAY_NAMES[reviewer.agent] || reviewer.agent;
+      const isRunning = reviewer.running === true;
+      const statusIcon = isRunning ? '●' : '✓';
+      const statusLabel = isRunning
+        ? (mode === 'spec-check' ? 'Checking' : 'Reviewing')
+        : (mode === 'spec' ? 'Review submitted' : mode === 'spec-check' ? 'Review check complete' : 'Review complete');
+      const statusCls = isRunning ? 'status-reviewing' : 'status-review-done';
+      const peekBtn = reviewer.session
+        ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(reviewer.session) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
+        : '';
+      return '<div class="kcard-agent agent-review">' +
+        '<div class="kcard-agent-header"><span class="kcard-agent-name">' + escHtml(title) + '</span>' + peekBtn + '</div>' +
+        '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + statusCls + '">' + statusIcon + ' ' + escHtml(reviewerName) + ' — ' + statusLabel + '</span></div>' +
+        (isRunning && reviewer.session ? '<div class="kcard-agent-actions"><button class="btn btn-secondary kcard-review-open" data-review-session="' + escHtml(reviewer.session) + '">Open</button></div>' : '') +
+        '</div>';
+    }
+
     function buildKanbanCard(feature, repoPath, pipelineType, repoMeta) {
       const card = document.createElement('div');
       card.className = 'kcard';
@@ -568,6 +587,8 @@
       const hasAgentSections = !isDone && agents.length > 0 && !isSoloDriveBranch;
 
       const reviews = feature.reviewSessions || [];
+      const specReviews = feature.specReviewSessions || [];
+      const specChecks = feature.specCheckSessions || [];
 
       const hasNumericId = /^\d+$/.test(String(feature.id || ''));
 
@@ -645,18 +666,7 @@
         // Review section — dedicated block between agents and actions
         if (reviews.length > 0) {
           reviews.forEach(r => {
-            const reviewerName = AGENT_DISPLAY_NAMES[r.agent] || r.agent;
-            const statusIcon = r.running ? '●' : '✓';
-            const statusLabel = r.running ? 'Reviewing' : 'Review complete';
-            const statusCls = r.running ? 'status-reviewing' : 'status-review-done';
-            const reviewPeekBtn = r.session
-              ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(r.session) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
-              : '';
-            innerHtml += '<div class="kcard-agent agent-review">' +
-              '<div class="kcard-agent-header"><span class="kcard-agent-name">Review</span>' + reviewPeekBtn + '</div>' +
-              '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + statusCls + '">' + statusIcon + ' ' + escHtml(reviewerName) + ' — ' + statusLabel + '</span></div>' +
-              (r.running ? '<div class="kcard-agent-actions"><button class="btn btn-secondary kcard-review-open" data-review-session="' + escHtml(r.session) + '">Open</button></div>' : '') +
-              '</div>';
+            innerHtml += buildReviewerSectionHtml('Review', r);
           });
         }
         innerHtml += buildReadyToCloseHtml(agents, reviews);
@@ -679,18 +689,7 @@
         // Review section for solo mode
         if (reviews.length > 0) {
           reviews.forEach(r => {
-            const reviewerName = AGENT_DISPLAY_NAMES[r.agent] || r.agent;
-            const statusIcon = r.running ? '●' : '✓';
-            const statusLabel = r.running ? 'Reviewing' : 'Review complete';
-            const statusCls = r.running ? 'status-reviewing' : 'status-review-done';
-            const soloPeekBtn = r.session
-              ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(r.session) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
-              : '';
-            innerHtml += '<div class="kcard-agent agent-review">' +
-              '<div class="kcard-agent-header"><span class="kcard-agent-name">Review</span>' + soloPeekBtn + '</div>' +
-              '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + statusCls + '">' + statusIcon + ' ' + escHtml(reviewerName) + ' — ' + statusLabel + '</span></div>' +
-              (r.running ? '<div class="kcard-agent-actions"><button class="btn btn-secondary kcard-review-open" data-review-session="' + escHtml(r.session) + '">Open</button></div>' : '') +
-              '</div>';
+            innerHtml += buildReviewerSectionHtml('Review', r);
           });
         }
         innerHtml += buildReadyToCloseHtml(agents, reviews);
@@ -719,6 +718,8 @@
           }
           innerHtml +=
             (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
+            (specChecks.length > 0 ? specChecks.map(r => buildReviewerSectionHtml('Spec review check', r, { mode: 'spec-check' })).join('') : '') +
+            (specReviews.length > 0 ? specReviews.map(r => buildReviewerSectionHtml('Spec review', r, { mode: 'spec' })).join('') : '') +
             evalStatusHtml +
             buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType) +
             (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
@@ -943,6 +944,16 @@
         btn.onclick = (e) => {
           e.stopPropagation();
           const sessionName = btn.getAttribute('data-peek-session');
+          if (sessionName && typeof openPeekPanel === 'function') {
+            openPeekPanel(sessionName);
+          }
+        };
+      });
+
+      card.querySelectorAll('.kcard-review-open').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const sessionName = btn.getAttribute('data-review-session');
           if (sessionName && typeof openPeekPanel === 'function') {
             openPeekPanel(sessionName);
           }
