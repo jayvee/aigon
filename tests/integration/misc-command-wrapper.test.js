@@ -77,7 +77,7 @@ testAsync('nudge delivery failure includes pane tail', async () => {
 
 // REGRESSION: GET /api/budget gg — parse Gemini CLI /model "Model usage" rows (Flash / Flash Lite / Pro).
 test('parseGeminiModelUsage extracts tier pct and reset labels', () => {
-    const { parseGeminiModelUsage, stripAnsi } = require('../../lib/budget-poller');
+    const { parseGeminiModelUsage, parseGeminiFooterPlanQuota, stripAnsi } = require('../../lib/budget-poller');
     assert.strictEqual(stripAnsi('\x1b[31mX\x1b[0m'), 'X');
     const tiers = parseGeminiModelUsage(`
 Model usage
@@ -88,6 +88,17 @@ Model usage
     assert.strictEqual(tiers.length, 3);
     assert.strictEqual(tiers[2].tier, 'pro');
     assert.strictEqual(tiers[2].pct_used, 23);
+
+    const flashFirst = parseGeminiModelUsage('Flash Lite 99%\nFlash 1%');
+    assert.strictEqual(flashFirst.length, 2);
+    assert.strictEqual(flashFirst[0].tier, 'flash_lite');
+
+    const indented = parseGeminiModelUsage('  x  Pro ▬▬▬  44%   Resets: 8:13 PM (1h 2m)');
+    assert.strictEqual(indented.length, 1);
+    assert.strictEqual(indented[0].pct_used, 44);
+
+    const foot = parseGeminiFooterPlanQuota('sandbox  /model  quota\n  no sandbox   Auto (Gemini 3)   15% used (Limit resets in 14h 41m)');
+    assert.strictEqual(foot.pct_used, 15);
 });
 
 report();
