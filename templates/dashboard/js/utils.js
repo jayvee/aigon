@@ -86,10 +86,29 @@
 
     function buildSpecReviewBadgeHtml(item) {
       const specReview = item && item.specReview;
-      if (!specReview || !specReview.pendingCount) return '';
-      return '<span class="spec-drift-wrap">' +
-        '<button class="spec-drift-badge spec-drift-toggle" type="button" title="' + escHtml(specReview.pendingLabel || '') + '">' +
-          escHtml(specReview.pendingLabel || (specReview.pendingCount + ' pending')) +
-        '</button>' +
-      '</span>';
+      if (!specReview) return '';
+      let html = '';
+      const active = Array.isArray(specReview.activeReviewers) ? specReview.activeReviewers : [];
+      active.forEach(agentId => {
+        const label = '● Reviewing spec — ' + (AGENT_DISPLAY_NAMES[agentId] || agentId);
+        html += '<span class="kcard-spec-status kcard-spec-reviewing" title="Spec review in progress">' + escHtml(label) + '</span>';
+      });
+      if (specReview.pendingCount) {
+        html += '<span class="spec-drift-wrap">' +
+          '<button class="spec-drift-badge spec-drift-toggle" type="button" title="' + escHtml(specReview.pendingLabel || '') + '">' +
+            escHtml(specReview.pendingLabel || (specReview.pendingCount + ' pending')) +
+          '</button>' +
+        '</span>';
+      }
+      return html;
+    }
+
+    function buildSpecCheckBadgeHtml(item) {
+      const specReview = item && item.specReview;
+      if (!specReview) return '';
+      const checkers = Array.isArray(specReview.activeCheckers) ? specReview.activeCheckers : [];
+      return checkers.map(agentId => {
+        const label = '● Checking spec review — ' + (AGENT_DISPLAY_NAMES[agentId] || agentId);
+        return '<span class="kcard-spec-status kcard-spec-checking" title="Spec review check in progress">' + escHtml(label) + '</span>';
+      }).join('');
     }
