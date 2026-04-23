@@ -1073,6 +1073,27 @@
             const totalN = roll ? (Number(roll.memberCount) || members.length) : members.length;
             countEl.textContent = totalN ? (doneN + '/' + totalN) : String(members.length);
             row.appendChild(countEl);
+            const startSetVa = roll && Array.isArray(roll.validActions)
+              ? roll.validActions.find(a => a.action === 'set-autonomous-start')
+              : null;
+            if (startSetVa && !isPausedOnFailure) {
+              const setBtn = document.createElement('button');
+              setBtn.type = 'button';
+              setBtn.className = 'btn btn-sm kanban-set-start-autonomous';
+              setBtn.textContent = startSetVa.label || 'Start set autonomously';
+              if (startSetVa.disabled) {
+                setBtn.disabled = true;
+                setBtn.title = startSetVa.disabledReason || '';
+                setBtn.style.opacity = '0.55';
+              }
+              setBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (typeof handleSetAction === 'function') {
+                  handleSetAction(startSetVa, roll, repo.path, setBtn);
+                }
+              };
+              row.appendChild(setBtn);
+            }
             header.appendChild(row);
 
             if (totalN > 0) {

@@ -1148,7 +1148,15 @@ async function showAutonomousModal(feature, repoPath, btn) {
   const modal = document.getElementById('autonomous-modal');
   if (!desc || !checks || !evalSelect || !reviewSelect || !stopAfter || !modal) return;
 
-  desc.textContent = '#' + feature.id + ' ' + feature.name;
+  desc.textContent = '';
+  desc.appendChild(document.createTextNode('#' + feature.id + ' ' + (feature.name || '')));
+  if (feature.set) {
+    desc.appendChild(document.createElement('br'));
+    const hint = document.createElement('span');
+    hint.style.cssText = 'color:var(--text-secondary);font-size:12px;line-height:1.45';
+    hint.textContent = 'Set "' + String(feature.set) + '": this workflow runs this feature only. To run every set member in order, use "Start set autonomously" on the set card (Monitor) or the set row in Pipeline (Group by Set).';
+    desc.appendChild(hint);
+  }
   const autoRows = AUTONOMOUS_AGENT_IDS.map(agentId => {
     const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
     const modelName = (autonomousModalModels && autonomousModalModels[agentId] && autonomousModalModels[agentId].implement) || '';
