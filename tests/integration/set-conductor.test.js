@@ -9,7 +9,9 @@ const {
     buildSetAutoSessionName,
     resolveSetExecutionPlan,
     computeRemainingOrder,
+    buildPauseNotificationMessage,
 } = require('../../lib/set-conductor');
+const { readSetAutoState, writeSetAutoState } = require('../../lib/auto-session-state');
 
 const FOLDERS = ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused'];
 
@@ -45,16 +47,33 @@ test('set conductor refuses dependency cycles within a set', () => withTempDir('
     assert.throws(() => resolveSetExecutionPlan(repo, 'auth'), /Dependency cycle inside set/);
 }));
 
-test('resume skips completed and already-merged members', () => {
-    // REGRESSION F316: rerun after a killed set tmux session must continue from the first incomplete member.
-    assert.deepStrictEqual(
-        computeRemainingOrder(['01', '02', '03'], ['01'], ['02']),
-        ['03']
-    );
-});
-
 test('set conductor tmux session naming matches spec', () => {
     assert.strictEqual(buildSetAutoSessionName('aigon', 'feature-set'), 'aigon-sfeature-set-auto');
+});
+
+// F319: failure pause/resume state transitions
+
+test('paused-on-failure: failedFeature persisted and completed list preserved', () => withTempDir('aigon-set-pause-', async (repo) => {
+    // REGRESSION F316+F319: rerun continues from first incomplete; pause records failedFeature
+    await writeSetAutoState(repo, 'auth', { status: 'running', running: true, completed: ['01'], failed: [] });
+    await writeSetAutoState(repo, 'auth', {
+        completed: ['01'], failed: ['02'], failedFeature: '02',
+        status: 'paused-on-failure', running: false, reason: 'feature-auto-failed',
+    });
+    const state = readSetAutoState(repo, 'auth');
+    assert.strictEqual(state.status, 'paused-on-failure');
+    assert.strictEqual(state.failedFeature, '02');
+    assert.deepStrictEqual(state.completed, ['01']);
+    // resume: failed member is retried (not skipped); if now done in workflow it is skipped
+    assert.deepStrictEqual(computeRemainingOrder(['01', '02', '03'], ['01'], []), ['02', '03']);
+    assert.deepStrictEqual(computeRemainingOrder(['01', '02', '03'], ['01'], ['02']), ['03']);
+}));
+
+test('pause notification message contains slug, feature ID and resume command', () => {
+    const msg = buildPauseNotificationMessage('feature-set', '03', []);
+    assert.ok(msg.includes('feature-set') && msg.includes('feature #3'));
+    assert.ok(msg.includes('aigon set-autonomous-resume feature-set') && msg.includes('review failed'));
+    assert.ok(buildPauseNotificationMessage('s', 'x', []).includes('aigon set-autonomous-resume s'));
 });
 
 report();
