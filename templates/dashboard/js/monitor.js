@@ -28,6 +28,21 @@
       dot.style.background = '#ef4444'; text.textContent = 'Disconnected';
     }
 
+    function renderUpdateBadge() {
+      const pill = document.getElementById('update-pill');
+      if (!pill) return;
+      const uc = (state.data || {}).updateCheck;
+      if (!uc || uc.state === 'latest' || uc.state === 'unavailable') {
+        pill.setAttribute('data-hidden', '');
+        return;
+      }
+      const version = uc.latestStable || uc.latestNext || '';
+      const label = uc.state === 'prerelease-available' ? `↑ ${version} (next)` : `↑ ${version}`;
+      pill.textContent = label;
+      pill.title = `Update available — run: ${uc.upgradeCommand}`;
+      pill.removeAttribute('data-hidden');
+    }
+
     // feature 234: transient banner shown while the dashboard server restarts
     // after a lib/*.js merge. Created lazily so it doesn't clutter index.html.
     function showServerRestartBanner() {
