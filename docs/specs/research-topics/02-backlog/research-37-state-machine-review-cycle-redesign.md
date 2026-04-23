@@ -46,16 +46,28 @@ These terms were settled through design sessions grounded in UML statechart theo
 
 ## Questions to Answer
 
-- [ ] How should the new states be added to `lib/feature-workflow-rules.js`? Are there XState structural constraints in `lib/workflow-core/machine.js` that require changes?
+- [ ] How should the new states be added to the centralized workflow definition (`lib/feature-workflow-rules.js` and any matching machine/config owner)? Identify the exact write paths and read paths that must change together so state production and consumption stay aligned.
 - [ ] How are internal transient states (`spec_review_complete`, `code_review_complete` etc.) best modelled in XState — `always` transitions or ephemeral events?
-- [ ] What is the migration path from the current context-property spec review approach to first-class engine states?
-- [ ] What code in `lib/spec-review-state.js`, `lib/dashboard-status-collector.js`, and dashboard templates can be deleted once spec review is a proper state?
+- [ ] What is the migration path from the current context-property spec review approach to first-class engine states, including event-log compatibility, snapshot migration, and the failure mode when legacy state is encountered mid-transition?
+- [ ] Which current producers and consumers of spec-review state become obsolete once spec review is a proper engine state? Name the exact modules and whether each should be deleted, simplified, or kept as an adapter.
 - [ ] How does the `code_counter_review_complete` → `code_review_in_progress` loop-back transition work in XState? What guard distinguishes "another cycle" from "proceed"?
 - [ ] How is the next reviewer agent passed into a loop-back transition?
-- [ ] Can the dashboard derive all stage, activity, and action data purely from `currentSpecState` + a state definition map — eliminating all bespoke per-sub-state rendering logic?
+- [ ] Can the dashboard derive all stage, activity, and action data purely from workflow snapshot state plus a centralized state definition map — eliminating all bespoke per-sub-state rendering logic without adding frontend-only eligibility logic?
 - [ ] What is the exact spec frontmatter `agent:` field format? Does `feature-create` write it? Does `feature-start` respect it as a default implementor? Does `aigon doctor` flag missing values?
-- [ ] What migration is needed for existing workflow snapshots carrying `specReview` context properties?
+- [ ] What migration is needed for existing workflow snapshots carrying `specReview` context properties, and what tests pin the producer/consumer invariants so snapshotless or half-migrated entities fail loudly instead of degrading silently?
 - [ ] What is the correct implementation sequence? Recommend a phased set of features.
+
+## Evidence Expectations
+
+The findings document must answer each question above with repository-specific evidence, not just preferred architecture. For each claim, cite the exact module(s), command path(s), and workflow state/data shape involved.
+
+Minimum evidence required:
+
+- A current-state inventory covering engine state, workflow snapshot fields, status files, dashboard read models, and any review-specific helper modules that participate in spec review or code review today
+- A proposed target state table that names the source of truth for stage, state, activity, actions, cycle history, and owning-agent resolution
+- A transition inventory for every new review and counter-review state, including who triggers it, what event is appended, and what durable artifact changes
+- A migration plan for existing snapshots and event logs, including the expected repair path if legacy state is encountered
+- A test plan that names the commands or test files that should prove the new invariants
 
 ## Scope
 
@@ -68,12 +80,14 @@ These terms were settled through design sessions grounded in UML statechart theo
 - Dashboard consumption: data-driven from state definition, not bespoke per sub-state
 - Migration path for existing workflow snapshots
 - Implementation sequence: phased feature recommendations
+- Required producer/read-path audit so any new state model has one clear source of truth
 
 ### Out of Scope
 - Autonomous multi-cycle configuration (multiple reviewers declared upfront at feature-start) — future feature
 - Research entity review cycles — same pattern applies but separate concern
 - Feedback entity lifecycle
 - `agent:` frontmatter driving automatic agent selection beyond counter-review resolution
+- Rewriting unrelated dashboard or workflow infrastructure that is not necessary for review-cycle support
 
 ---
 
@@ -151,13 +165,33 @@ Subsequent reviewers infer prior cycle history from the feature's git log — no
 ---
 
 ## Findings
-<!-- Document discoveries, options evaluated, implementation constraints found -->
+<!-- Document discoveries, options evaluated, implementation constraints found.
+Include:
+- current-state inventory by module/write path/read path
+- constraints or invariants the redesign must preserve
+- options rejected and why
+- exact legacy state/data that must be migrated or deleted
+-->
 
 ## Recommendation
-<!-- Concrete recommended approach for each research question above -->
+<!-- Concrete recommended approach for each research question above.
+The recommendation should end with:
+- preferred state model
+- migration strategy
+- deletion/simplification list for legacy code
+- ordered implementation phases with dependency notes
+-->
 
 ## Output
-<!-- Create feature specs for each implementation phase and link below -->
+The final research output should be implementation-ready, not a general essay. It must contain:
+
+- A concise target state diagram or state table for backlog, in-progress, evaluation, paused, and done
+- A transition matrix covering review start, review completion, counter-review start, counter-review completion, loop-back, pause/resume, and close
+- A module ownership table naming which layer owns machine definition, event append, snapshot projection, dashboard read model, and agent launch decisions
+- A migration section naming required one-time migrations, compatibility rules, and explicit failure behavior for missing or partial state
+- A phased feature list where each phase has a clear boundary, named files/modules, and a test expectation
+
+Use the checklist below to capture the resulting implementation phases.
 - [ ] Feature: promote spec review to first-class engine states
 - [ ] Feature: add spec counter-review state + owning agent resolution
 - [ ] Feature: add code review cycle states (code_review_in_progress / code_review_complete)
