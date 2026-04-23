@@ -26,15 +26,15 @@ Research basis: "Lost in the Middle" (primacy/recency bias), Chroma context-rot 
 - [ ] `FULL_LOGGING` in `lib/profile-placeholders.js` is replaced with a 7-section template (see Technical Approach). The word-count guidance in the template targets 400–700 words / ~600–1,000 tokens.
 - [ ] `FLEET_LOGGING` is updated to the same 7-section structure with a tighter target (200–400 words), since fleet logs are read by the evaluator who already has full code diffs.
 - [ ] `MINIMAL_LOGGING` retains its current "one line or skip" behavior — unchanged.
-- [ ] `templates/generic/commands/feature-do.md` gains a new **Step 2.5: Set context** section that fires only when the spec has a `set:` tag. It instructs the agent to: (a) read completed sibling implementation logs listed via `aigon set <slug>`, (b) read the specs of `depends_on` predecessors, (c) read the research source named in `## Related`.
-- [ ] The `feature-do` CLI instruction mode (`lib/feature-do.js`) detects a `set:` tag in the current spec and prints the padded IDs and log paths of completed set siblings, so the agent has exact paths rather than a glob.
+- [ ] `templates/generic/commands/feature-do.md` gains a new conditional `{{SET_CONTEXT_SECTION}}` block inserted between Step 2 (read spec) and Step 3 (implement). For a spec with `set: <slug>`, the rendered command includes a **Step 2.5: Set context** section that instructs the agent to: (a) read completed sibling implementation logs listed via `aigon set <slug>`, (b) read the specs of `depends_on` predecessors, and (c) read the research source named in `## Related`. For a spec without `set:`, the rendered command contains no Step 2.5 block and no orphan blank line.
+- [ ] The `feature-do` CLI instruction mode in `lib/feature-do.js` detects a `set:` tag in the current spec, resolves set members via `getSetMembersSorted(slug)`, filters to completed members, and prints each sibling's padded ID and resolved log path before the implementation instructions. If no completed siblings exist, it prints no sibling-log list.
 - [ ] `templates/specs/feature-template.md` `## Related` section comment is updated to make the `Research:` field and prior-set-feature pointers explicit (not just a free-text comment).
-- [ ] `{{LOGGING_SECTION}}` is moved in `templates/generic/commands/feature-do.md` to appear after `## Step 5: Signal completion`, and the section header in `FULL_LOGGING` and `FLEET_LOGGING` is updated to say "before signalling completion" (not "AFTER submit"). The step is renumbered Step 5.5 to preserve the existing step numbering downstream.
+- [ ] `{{LOGGING_SECTION}}` in `templates/generic/commands/feature-do.md` is positioned before `## Step 5: Signal completion`, and the section headers in `FULL_LOGGING`, `FLEET_LOGGING`, and `MINIMAL_LOGGING` all say the log must be written before calling `aigon agent-status submitted`. The step label is `Step 4.5` or `Step 5` if needed to keep the command order internally consistent, but the rendered instructions must not place log writing after submission.
 - [ ] The log starter skeleton written by `lib/commands/feature.js` (`init_log` effect at line ~42, template string at line ~51) and `lib/worktree.js` (line ~1582) is updated to match the new 7-section structure so the agent sees the correct headings when it opens the file.
-- [ ] `MINIMAL_LOGGING` header is renumbered from "Step 6" to "Step 5.5" for consistency — body unchanged. A grep sweep of `templates/` and `docs/` for `"Step 6"` / `"AFTER submit"` confirms no orphan references remain (including `COMMAND_INSTALL_LOGGING_GUIDE` at `lib/profile-placeholders.js:455`).
-- [ ] `SET_CONTEXT_SECTION` is resolved in **both** the launch path (before `install-agent` renders the command body) and the instruction-mode path (already-inside-agent-session). A set-tagged spec must see the Step 2.5 block in both modes; a standalone spec must see an empty string (and no orphan blank line) in both.
+- [ ] A grep sweep of `templates/` and `docs/` for `"Step 6"` and `"AFTER submit"` leaves no stale guidance for the old ordering, including `COMMAND_INSTALL_LOGGING_GUIDE` in `lib/profile-placeholders.js`.
+- [ ] `SET_CONTEXT_SECTION` is resolved in both `feature-do` entry paths: launch mode (before the command body is rendered into the spawned session) and instruction mode (when the already-running agent re-reads the command). Both paths use the same set-slug detection rule, and standalone specs render an empty placeholder with no visible gap.
 - [ ] For a set-tagged feature, the generated implementation log contains a non-empty `## For the Next Feature in This Set` section — this is the handoff the next sibling reads. Verified by a unit/integration test or by running `feature-do` against a fixture set-tagged spec.
-- [ ] `node -c aigon-cli.js` passes. `npm test` passes.
+- [ ] Regression coverage is added for: (a) rendering `feature-do` with and without `set:` frontmatter, and (b) the log starter skeleton written by both bootstrap paths. `node -c aigon-cli.js` and `npm test` pass.
 
 ## Validation
 
@@ -121,15 +121,13 @@ Change the comment from a free-text note to an explicit structure:
 
 ### Placement of `SET_CONTEXT_SECTION` placeholder
 
-The placeholder must be resolved in `lib/profile-placeholders.js` `getProfilePlaceholders()`. When the current spec (resolved via `ARG1_SYNTAX`) has a `set:` tag, the placeholder expands to the Step 2.5 block above with the slug interpolated. When absent, it expands to an empty string. The blank-line collapse in `processTemplate` handles the gap cleanly.
-
-Implementation note: `getProfilePlaceholders()` currently does not read the spec. The simplest approach is to have the `feature-do.js` CLI path (both launch mode and instruction mode) detect the set slug from the spec and pass it via the existing `placeholders` merge at `resolveCxCommandBody` call site — no new I/O in `getProfilePlaceholders` itself. Both paths must resolve the placeholder: launch mode (before `install-agent` renders the body into the session) and instruction mode (when an agent already in-session re-reads the command). A standalone (no `set:` tag) spec must render an empty string with no orphan blank line — `processTemplate`'s blank-line collapse handles this cleanly.
+The placeholder must be supplied by `feature-do.js`, not by new spec-reading inside `lib/profile-placeholders.js`. `getProfilePlaceholders()` should stay a pure shared-placeholder builder; `feature-do.js` already owns current-spec lookup and should pass `SET_CONTEXT_SECTION` through the existing placeholder merge in both launch mode and instruction mode. When the current spec has a `set:` tag, the placeholder expands to the Step 2.5 block above with the slug interpolated. When absent, it expands to an empty string, and the existing blank-line collapse in `processTemplate` removes the gap cleanly.
 
 ### Log step ordering fix
 
-**Root cause:** `{{LOGGING_SECTION}}` sits at line 68 in `feature-do.md`, before `## Step 5: Signal completion` at line 72. But `FULL_LOGGING` and `FLEET_LOGGING` both say "do this AFTER submit." In autonomous mode `feature-autonomous.js` reacts to the `submitted` signal immediately (`implAgentReadyForAutonomousClose` returns true on `submitted`) and with `stop-after=implement` calls `stopAutoSession` (kills the tmux session) — racing the agent's log-write step.
+**Root cause:** `{{LOGGING_SECTION}}` currently appears before `## Step 5: Signal completion`, but `FULL_LOGGING` and `FLEET_LOGGING` instruct the agent to write the log after submitting. In autonomous mode `feature-autonomous.js` reacts to `submitted` immediately (`implAgentReadyForAutonomousClose` returns true on `submitted`) and with `stop-after=implement` calls `stopAutoSession`, which can kill the tmux session before the agent writes anything.
 
-**Fix:** Move `{{LOGGING_SECTION}}` to after `## Step 5: Signal completion` in `feature-do.md`, renumber it as Step 5.5, and update the section headers in `FULL_LOGGING`, `FLEET_LOGGING`, **and** `MINIMAL_LOGGING` from "Step 6 … do this AFTER submit" to "Step 5.5 … write this **before** calling `aigon agent-status submitted`." (`MINIMAL_LOGGING`'s body stays at "one line or skip"; only the step label changes.) This makes the template order match the instruction, eliminates the autonomous race, and gives the log its own step that doesn't compete with urgency language. Before implementing, grep `templates/` and `docs/` for `"Step 6"` and `"AFTER submit"` to catch any orphan references (including `COMMAND_INSTALL_LOGGING_GUIDE` at `lib/profile-placeholders.js:455`).
+**Fix:** Keep the logging block before the submit step, and change the wording so template order and instruction text agree: the agent must write the log first, then call `aigon agent-status submitted`. Renumber the logging step as needed so the visible sequence remains monotonic, and update the section headers in `FULL_LOGGING`, `FLEET_LOGGING`, and `MINIMAL_LOGGING` to remove every "after submit" instruction. `MINIMAL_LOGGING` still keeps its one-line-or-skip body. Before implementing, grep `templates/` and `docs/` for `"Step 6"` and `"AFTER submit"` to catch orphan references, including `COMMAND_INSTALL_LOGGING_GUIDE` in `lib/profile-placeholders.js`.
 
 **Log starter skeleton:** The `init_log` effect in `lib/commands/feature.js` (handler at line ~42, template string at line ~51) and the worktree bootstrap in `lib/worktree.js:1582` both write the old `## Plan / ## Progress / ## Decisions` skeleton. Update both to the 7-section structure so agents see the right headings without having to remember the format.
 
@@ -141,7 +139,7 @@ Implementation note: `getProfilePlaceholders()` currently does not read the spec
 
 - A separate architecture decision record (ADR) file — decisions stay embedded in feature logs.
 - A memory system (mem0 or similar) for cross-feature retrieval — log quality is the approach.
-- Changing `MINIMAL_LOGGING` behavior — it stays at "one line or skip" and is already placed before Step 5 in the template, which is correct.
+- Changing `MINIMAL_LOGGING` behavior beyond the step label and "write before submit" wording — it stays at "one line or skip."
 - Changes to the autonomous conductor poll logic — the fix is purely in the template step order and log section label, not in `feature-autonomous.js`.
 - Dashboard changes — this is log format and template only.
 - Auto-generating or summarizing logs from git history — the agent writes them.
@@ -149,7 +147,7 @@ Implementation note: `getProfilePlaceholders()` currently does not read the spec
 
 ## Open Questions
 
-- Should `SET_CONTEXT_SECTION` be a placeholder resolved at template-install time (static) or injected dynamically by `feature-do.js` at runtime? Dynamic (runtime injection via `feature-do.js` passing the slug through the existing `placeholders` map) is cleaner since the slug is only known when the spec is read. Confirm this is the right approach before implementing.
+- None. The placeholder should be injected dynamically by `feature-do.js` at runtime so the slug comes from the current spec without adding spec I/O to shared placeholder resolution.
 
 ## Related
 
