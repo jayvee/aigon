@@ -1,0 +1,40 @@
+---
+title: Agent Quota Awareness
+description: How Aigon uses live quota data to help you pick the right agent for implementation.
+---
+
+Aigon does more than show quota bars. It uses live budget information as part of the decision surface when you are choosing which agent should implement a feature.
+
+![Agent quota usage dashboard](/img/agent-quota-usage.png)
+
+## Why this matters
+
+When you are about to start work, the question is not just *which agent do I like using?* It is also:
+
+- Which agent has enough headroom to finish the implementation cleanly?
+- Which agent is already close to a limit and should be reserved for smaller work?
+- Which selection makes sense for the task at hand instead of burning a scarce window?
+
+Aigon keeps that context visible so you can route work intentionally instead of discovering the limit after the run is already underway.
+
+## Before you pick an agent
+
+The dashboard start flow surfaces quota warnings inline while you are selecting agents.
+
+![Agent selection with quota warnings](/img/select-agents-with-quota-warnings.png)
+
+That warning is there to help you make a better choice, not to stop you from shipping. If an agent is low on headroom, you can still use it when the task justifies it, but you get the signal early enough to choose a different implementation agent when that is the smarter call.
+
+## How to use it
+
+- Use the quota panel to spot which agents are healthy before you begin a run.
+- Prefer a less-constrained agent for straightforward implementation work.
+- Reserve tighter quota for review, validation, or smaller follow-up tasks.
+- Let the warning in the picker influence the mix of agents you select for a run.
+
+In practice, Aigon’s quota awareness helps you balance speed, specialization, and remaining headroom. That makes agent selection a planning decision instead of a guess.
+
+## See also
+
+- [Usage limits on the Pipeline](./pipeline-quota)
+- [Dashboard](./dashboard)

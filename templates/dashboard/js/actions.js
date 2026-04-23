@@ -143,12 +143,12 @@ function appendTripletSelects(rowEl, agent) {
       sel.value = stored.model;
     }
     const complexityHint = pickerRecommendation && pickerRecommendation.complexity
-      ? ' Pre-selected for ' + pickerRecommendation.complexity + ' complexity (from spec + this agent’s ladder).'
+      ? ' Suggested for ' + pickerRecommendation.complexity + ' complexity (from the spec).'
       : '';
     sel.title = recommended && sel.classList.contains('agent-triplet-recommended') && complexityHint
-      ? complexityHint.trim() + ' Default uses your global aigon config for this task type.'
+      ? complexityHint.trim() + ' Default keeps your global aigon model for this task type.'
       : recommended && sel.classList.contains('agent-triplet-recommended')
-        ? 'Pre-selected from spec. Default uses your global aigon config for this task type.'
+        ? 'Suggested from spec. Default keeps your global aigon model for this task type.'
         : 'Default: use the model from aigon config for this task type';
     sel.addEventListener('click', e => e.stopPropagation());
     sel.addEventListener('change', e => {
@@ -184,12 +184,12 @@ function appendTripletSelects(rowEl, agent) {
       sel.value = stored.effort;
     }
     const effortComplexityHint = pickerRecommendation && pickerRecommendation.complexity
-      ? ' Pre-selected for ' + pickerRecommendation.complexity + ' complexity (from spec + this agent’s ladder).'
+      ? ' Suggested for ' + pickerRecommendation.complexity + ' complexity (from the spec).'
       : '';
     sel.title = recommendedEffort && sel.classList.contains('agent-triplet-recommended') && effortComplexityHint
-      ? effortComplexityHint.trim() + ' Default uses your global aigon config for this agent.'
+      ? effortComplexityHint.trim() + ' Default keeps your global aigon effort for this agent.'
       : recommendedEffort && sel.classList.contains('agent-triplet-recommended')
-        ? 'Pre-selected from spec. Default uses your global aigon config for this agent.'
+        ? 'Suggested from spec. Default keeps your global aigon effort for this agent.'
         : 'Default: use the effort level from aigon config for this agent';
     sel.addEventListener('click', e => e.stopPropagation());
     sel.addEventListener('change', e => {
@@ -299,13 +299,11 @@ function complexityBadgeHtml(complexity) {
   return '<span class="complexity-badge ' + COMPLEXITY_LABEL_CLASS[complexity] + '" title="Complexity rating from spec frontmatter">' + complexity + '</span>';
 }
 
-// Render a banner inside the agent picker modal summarising the spec
-// complexity and per-agent recommended {model, effort}. Hides banner when
-// recommendation is null.
-// REGRESSION: must target #agent-picker .modal-box — there is no .modal-card
-// (banner was never shown before 2026-04).
-function renderPickerRecommendationBanner(recommendation) {
-  const banner = document.getElementById('agent-picker-recommendation');
+// Render a banner summarising spec complexity and per-agent recommended {model, effort}.
+// mountId: agent picker (#agent-picker-recommendation) or autonomous modal (#autonomous-picker-recommendation).
+// REGRESSION: must not use a phantom .modal-card mount (banner was never shown before 2026-04).
+function renderPickerRecommendationBanner(recommendation, mountId) {
+  const banner = document.getElementById(mountId || 'agent-picker-recommendation');
   if (!banner) return;
   if (!recommendation || (!recommendation.complexity && (!recommendation.agents || Object.values(recommendation.agents).every(a => !a.model && !a.effort)))) {
     banner.style.display = 'none';
@@ -324,10 +322,7 @@ function renderPickerRecommendationBanner(recommendation) {
   if (recommendation.complexity) {
     html += '<div class="recommendation-head"><span class="recommendation-label">Spec complexity</span> '
       + complexityBadgeHtml(recommendation.complexity) + '</div>';
-    html += '<p class="recommendation-explainer">Model and effort defaults in the columns below use each agent&rsquo;s ladder for this tier (plus any per-agent lines in the spec). Override before Start, or choose Default to use your global aigon config.</p>';
-  } else {
-    html += '<div class="recommendation-head"><span class="recommendation-label">From spec</span></div>';
-    html += '<p class="recommendation-explainer">Some model/effort values below are filled from the spec&rsquo;s <code>recommended_models</code> block. Override before Start.</p>';
+    html += '<p class="recommendation-explainer">Suggestions combine spec complexity with your aigon defaults—keep <strong>Default</strong> or override, then Start.</p>';
   }
   if (agentBits.length > 0) {
     html += '<div class="recommendation-agents-line"><span class="recommendation-label">Resolved defaults</span> '
@@ -1180,6 +1175,13 @@ async function showAutonomousModal(feature, repoPath, btn) {
   const modal = document.getElementById('autonomous-modal');
   if (!desc || !checks || !evalSelect || !reviewSelect || !stopAfter || !modal) return;
 
+  let autonomousRec = null;
+  try {
+    autonomousRec = await fetchSpecRecommendation('feature', String(feature.id), repoPath);
+  } catch (_) { autonomousRec = null; }
+  setPickerRecommendation(autonomousRec);
+  renderPickerRecommendationBanner(autonomousRec, 'autonomous-picker-recommendation');
+
   desc.textContent = '';
   desc.appendChild(document.createTextNode('#' + feature.id + ' ' + (feature.name || '')));
   if (feature.set) {
@@ -1212,6 +1214,7 @@ async function showAutonomousModal(feature, repoPath, btn) {
 
   stopAfter.value = 'close';
   updateAutonomousModeControls();
+  try { await fetchBudget(true); } catch (_) { /* best-effort */ }
   updateAutonomousBudgetNotice();
   await populateAutonomousWorkflowDropdown(repoPath);
   modal.style.display = 'flex';
@@ -1346,6 +1349,8 @@ async function saveCurrentAsWorkflow() {
 function hideAutonomousModal() {
   const modal = document.getElementById('autonomous-modal');
   if (modal) modal.style.display = 'none';
+  setPickerRecommendation(null);
+  renderPickerRecommendationBanner(null, 'autonomous-picker-recommendation');
   autonomousModalFeature = null;
   autonomousModalRepoPath = null;
   autonomousModalBtn = null;
@@ -1716,7 +1721,203 @@ function fmtRelAgo(iso) {
   return `${Math.floor(hr / 24)}d ago`;
 }
 
-function buildBudgetMetric({ label, pctRemaining, resetsAt, polledAt }) {
+function formatBudgetDateLabel(date, timeZone) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      timeZone: timeZone || undefined,
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    }).format(date);
+  } catch (_) {
+    return '';
+  }
+}
+
+function parseBudgetClockTime(value) {
+  const text = String(value || '').trim();
+  if (!text) return null;
+  const m = text.match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]m)?$/i);
+  if (!m) return null;
+  let hour = parseInt(m[1], 10);
+  const minute = m[2] ? parseInt(m[2], 10) : 0;
+  const ampm = (m[3] || '').toLowerCase();
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+  if (ampm === 'pm' && hour < 12) hour += 12;
+  if (ampm === 'am' && hour === 12) hour = 0;
+  if (!ampm && hour === 24) hour = 0;
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  return { hour, minute };
+}
+
+function getZoneDateTimeParts(date, timeZone) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).formatToParts(date);
+    const map = {};
+    for (const part of parts) {
+      if (part.type !== 'literal') map[part.type] = part.value;
+    }
+    let year = parseInt(map.year, 10);
+    let month = parseInt(map.month, 10);
+    let day = parseInt(map.day, 10);
+    let hour = parseInt(map.hour, 10);
+    const minute = parseInt(map.minute, 10);
+    const period = String(map.dayPeriod || '').toLowerCase();
+    if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day) || Number.isNaN(hour) || Number.isNaN(minute)) return null;
+    if (period === 'pm' && hour < 12) hour += 12;
+    if (period === 'am' && hour === 12) hour = 0;
+    return { year, month, day, hour, minute };
+  } catch (_) {
+    return null;
+  }
+}
+
+function getTimeZoneOffsetMinutes(date, timeZone) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      timeZoneName: 'shortOffset',
+      hour: 'numeric',
+    }).formatToParts(date);
+    const zonePart = parts.find(part => part.type === 'timeZoneName');
+    if (!zonePart) return null;
+    const m = String(zonePart.value || '').match(/^GMT([+-])(\d{1,2})(?::?(\d{2}))?$/i);
+    if (!m) return null;
+    const sign = m[1] === '+' ? 1 : -1;
+    const hours = parseInt(m[2], 10);
+    const minutes = m[3] ? parseInt(m[3], 10) : 0;
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+    return sign * (hours * 60 + minutes);
+  } catch (_) {
+    return null;
+  }
+}
+
+function addLocalDays(parts, days) {
+  const next = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + days, 0, 0, 0));
+  return {
+    year: next.getUTCFullYear(),
+    month: next.getUTCMonth() + 1,
+    day: next.getUTCDate(),
+  };
+}
+
+function compareLocalDateTime(a, b) {
+  const fields = ['year', 'month', 'day', 'hour', 'minute'];
+  for (const field of fields) {
+    const av = a[field];
+    const bv = b[field];
+    if (av > bv) return 1;
+    if (av < bv) return -1;
+  }
+  return 0;
+}
+
+function zonedDateTimeToDate(parts, timeZone) {
+  let utcMs = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, 0);
+  for (let i = 0; i < 2; i += 1) {
+    const offset = getTimeZoneOffsetMinutes(new Date(utcMs), timeZone);
+    if (offset == null) break;
+    const adjusted = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, 0) - (offset * 60000);
+    if (adjusted === utcMs) break;
+    utcMs = adjusted;
+  }
+  return new Date(utcMs);
+}
+
+function inferBudgetResetDate({ polledAt, resetsAt, timeZone, maxDays = 8 }) {
+  const target = parseBudgetClockTime(resetsAt);
+  if (!target || !polledAt || !timeZone) return null;
+  const base = new Date(polledAt);
+  if (Number.isNaN(base.getTime())) return null;
+  const current = getZoneDateTimeParts(base, timeZone);
+  if (!current) return null;
+
+  // Best-effort estimate: search forward through the next few local days for a
+  // matching wall clock time in the provider's timezone. This is enough to tell
+  // the user whether a reset is "tomorrow" vs "in a few days" when the source
+  // only exposes a time, not a full date.
+  for (let i = 0; i < maxDays; i += 1) {
+    const localDate = addLocalDays(current, i);
+    const candidateLocal = {
+      year: localDate.year,
+      month: localDate.month,
+      day: localDate.day,
+      hour: target.hour,
+      minute: target.minute,
+    };
+    if (compareLocalDateTime(candidateLocal, current) <= 0) continue;
+    const candidate = zonedDateTimeToDate({
+      year: localDate.year,
+      month: localDate.month,
+      day: localDate.day,
+      hour: target.hour,
+      minute: target.minute,
+    }, timeZone);
+    const parts = getZoneDateTimeParts(candidate, timeZone);
+    if (
+      parts
+      && parts.year === localDate.year
+      && parts.month === localDate.month
+      && parts.day === localDate.day
+      && parts.hour === target.hour
+      && parts.minute === target.minute
+    ) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function buildBudgetResetLabel({ resetsAt, resetsDate, resetsAtEpoch, polledAt, timeZone }) {
+  const time = String(resetsAt || '').trim();
+  if (!time) return null;
+
+  if (resetsAtEpoch != null && Number.isFinite(resetsAtEpoch)) {
+    const exact = new Date(resetsAtEpoch * 1000);
+    const dateLabel = formatBudgetDateLabel(exact);
+    if (dateLabel) {
+      return {
+        text: `${dateLabel} · ${time}`,
+        title: `Resets ${dateLabel} at ${time}`,
+      };
+    }
+  }
+
+  if (resetsDate) {
+    return {
+      text: `${resetsDate} · ${time}`,
+      title: `Resets ${resetsDate} at ${time}`,
+    };
+  }
+
+  const inferred = inferBudgetResetDate({ polledAt, resetsAt: time, timeZone });
+  if (inferred) {
+    const dateLabel = formatBudgetDateLabel(inferred, timeZone);
+    if (dateLabel) {
+      return {
+        text: `est. ${dateLabel} · ${time}`,
+        title: `Estimated from ${time} reset time in ${timeZone}`,
+      };
+    }
+  }
+
+  return {
+    text: time,
+    title: null,
+  };
+}
+
+function buildBudgetMetric({ label, pctRemaining, resetsAt, resetsDate, resetsAtEpoch, timeZone, polledAt }) {
   const wrap = createEl('span', { className: 'budget-metric ' + budgetClassFor(pctRemaining, polledAt) });
   const bar = createEl('span', { className: 'budget-bar' });
   const fill = createEl('span', { className: 'budget-bar-fill' });
@@ -1727,8 +1928,13 @@ function buildBudgetMetric({ label, pctRemaining, resetsAt, polledAt }) {
   const pctText = pctRemaining == null ? '—' : pctRemaining + '%';
   wrap.appendChild(createEl('span', { className: 'budget-pct', text: pctText }));
   wrap.appendChild(createEl('span', { className: 'budget-label', text: label }));
-  if (resetsAt) {
-    wrap.appendChild(createEl('span', { className: 'budget-label', text: '↻ ' + resetsAt }));
+  const resetLabel = buildBudgetResetLabel({ resetsAt, resetsDate, resetsAtEpoch, timeZone, polledAt });
+  if (resetLabel) {
+    wrap.appendChild(createEl('span', {
+      className: 'budget-reset',
+      text: '↻ ' + resetLabel.text,
+      attrs: resetLabel.title ? { title: resetLabel.title } : {},
+    }));
   }
   return wrap;
 }
@@ -1792,6 +1998,8 @@ function budgetSummaryForAgent(agentId, entry) {
       label: (t.label || t.tier || 'tier') + ' remaining',
       pctRemaining: t.pct_used != null ? 100 - t.pct_used : null,
       resetsAt: t.resets_at || null,
+      resetsDate: t.resets_date || null,
+      resetsAtEpoch: t.resets_at_epoch || null,
       polledAt: entry.polled_at,
     }));
     values = metrics.map(m => m.pctRemaining).filter(v => v != null && Number.isFinite(v));
@@ -1804,10 +2012,30 @@ function budgetSummaryForAgent(agentId, entry) {
     const weekPct = ccRemaining(entry.week_all);
     const sonnetPct = ccRemaining(entry.week_sonnet);
     metrics = [
-      { label: 'session remaining', pctRemaining: sessionPct, resetsAt: entry.session && entry.session.resets_at, polledAt: entry.polled_at },
-      { label: 'weekly remaining', pctRemaining: weekPct, resetsAt: entry.week_all && entry.week_all.resets_at, polledAt: entry.polled_at },
+      {
+        label: 'session remaining',
+        pctRemaining: sessionPct,
+        resetsAt: entry.session && entry.session.resets_at,
+        timeZone: entry.session && entry.session.tz,
+        polledAt: entry.polled_at,
+      },
+      {
+        label: 'weekly remaining',
+        pctRemaining: weekPct,
+        resetsAt: entry.week_all && entry.week_all.resets_at,
+        timeZone: entry.week_all && entry.week_all.tz,
+        polledAt: entry.polled_at,
+      },
     ];
-    if (entry.week_sonnet) metrics.push({ label: 'sonnet remaining', pctRemaining: sonnetPct, resetsAt: entry.week_sonnet.resets_at, polledAt: entry.polled_at });
+    if (entry.week_sonnet) {
+      metrics.push({
+        label: 'sonnet remaining',
+        pctRemaining: sonnetPct,
+        resetsAt: entry.week_sonnet.resets_at,
+        timeZone: entry.week_sonnet.tz,
+        polledAt: entry.polled_at,
+      });
+    }
     values = [sessionPct, weekPct, sonnetPct].filter(v => v != null);
     summaryText = compactBudgetSummary([
       { label: 'session', value: sessionPct },
@@ -1818,8 +2046,22 @@ function budgetSummaryForAgent(agentId, entry) {
     const fivePct = entry.five_hour && entry.five_hour.pct_remaining;
     const weeklyPct = entry.weekly && entry.weekly.pct_remaining;
     metrics = [
-      { label: '5h remaining', pctRemaining: fivePct, resetsAt: entry.five_hour && entry.five_hour.resets_at, polledAt: entry.polled_at },
-      { label: 'weekly remaining', pctRemaining: weeklyPct, resetsAt: entry.weekly && entry.weekly.resets_at, polledAt: entry.polled_at },
+      {
+        label: '5h remaining',
+        pctRemaining: fivePct,
+        resetsAt: entry.five_hour && entry.five_hour.resets_at,
+        resetsDate: entry.five_hour && entry.five_hour.resets_date,
+        resetsAtEpoch: entry.five_hour && entry.five_hour.resets_at_epoch,
+        polledAt: entry.polled_at,
+      },
+      {
+        label: 'weekly remaining',
+        pctRemaining: weeklyPct,
+        resetsAt: entry.weekly && entry.weekly.resets_at,
+        resetsDate: entry.weekly && entry.weekly.resets_date,
+        resetsAtEpoch: entry.weekly && entry.weekly.resets_at_epoch,
+        polledAt: entry.polled_at,
+      },
     ];
     values = [fivePct, weeklyPct].filter(v => v != null);
     summaryText = compactBudgetSummary([
@@ -1845,62 +2087,22 @@ function budgetSummaryForAgent(agentId, entry) {
   };
 }
 
-function renderBudgetNotice(containerId, agentIds) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  const ids = [...new Set((agentIds || []).filter(id => id === 'cc' || id === 'cx' || id === 'gg'))];
-  if (ids.length === 0) {
-    container.style.display = 'none';
-    container.replaceChildren();
-    return;
-  }
-
-  const states = ids.map(id => budgetSummaryForAgent(id, _budgetCache && _budgetCache[id]));
-  const title = createEl('div', { className: 'budget-notice-title' });
-  title.appendChild(createEl('span', { text: 'Remaining quota before reset' }));
-  const latest = states
-    .map(state => _budgetCache && _budgetCache[state.id] && _budgetCache[state.id].polled_at)
-    .filter(Boolean)
-    .sort()
-    .pop();
-  title.appendChild(createEl('span', { text: latest ? 'updated ' + fmtRelAgo(latest) : 'waiting for usage data' }));
-
-  const grid = createEl('div', { className: 'budget-notice-grid' });
-  states.forEach(state => {
-    const card = createEl('div', { className: 'budget-notice-card budget-notice-' + state.severity });
-    const head = createEl('div', { className: 'budget-notice-head' });
-    const heading = createEl('div');
-    heading.appendChild(createEl('span', { className: 'budget-notice-agent', text: state.name }));
-    if (state.supportText) heading.appendChild(createEl('div', { className: 'budget-notice-support', text: state.supportText }));
-    head.appendChild(heading);
-    head.appendChild(createEl('span', { className: 'budget-notice-badge', text: state.badge }));
-    card.appendChild(head);
-    card.appendChild(createEl('div', { className: 'budget-notice-copy', text: state.copy }));
-    if (state.metrics.length > 0) {
-      const metrics = createEl('div', { className: 'budget-notice-metrics' });
-      state.metrics.forEach(metric => metrics.appendChild(buildBudgetMetric(metric)));
-      card.appendChild(metrics);
-    }
-    grid.appendChild(card);
-  });
-
-  replaceNodeChildren(container, [title, grid]);
-  container.style.display = '';
-}
-
 function updatePickerBudgetNotice() {
-  const checked = [...document.querySelectorAll('#agent-picker input[type=checkbox]:checked, #agent-picker input[type=radio]:checked')].map(input => input.value);
-  renderBudgetNotice('agent-picker-budget-notice', checked);
+  const notice = document.getElementById('agent-picker-budget-notice');
+  if (notice) {
+    notice.style.display = 'none';
+    notice.replaceChildren();
+  }
+  annotateAgentPickerBudget();
 }
 
 function updateAutonomousBudgetNotice() {
-  const selectedAgents = [...document.querySelectorAll('#autonomous-agent-checks input[type=checkbox]:checked')].map(input => input.value);
-  const evalAgent = document.getElementById('autonomous-eval-agent');
-  const reviewAgent = document.getElementById('autonomous-review-agent');
-  const combined = selectedAgents
-    .concat(evalAgent && evalAgent.value ? [evalAgent.value] : [])
-    .concat(reviewAgent && reviewAgent.value ? [reviewAgent.value] : []);
-  renderBudgetNotice('autonomous-budget-notice', combined);
+  const notice = document.getElementById('autonomous-budget-notice');
+  if (notice) {
+    notice.style.display = 'none';
+    notice.replaceChildren();
+  }
+  annotateAutonomousAgentBudget();
 }
 
 function renderBudgetWidget() {
@@ -1927,7 +2129,7 @@ function renderBudgetWidget() {
   const head = createEl('div', { className: 'budget-widget-head' });
   head.appendChild(buildBudgetStatusDot(overallClass));
   const headTitles = createEl('div', { className: 'budget-widget-head-titles' });
-  headTitles.appendChild(createEl('span', { className: 'budget-widget-head-title', text: 'Remaining quota before reset' }));
+  headTitles.appendChild(createEl('span', { className: 'budget-widget-head-title', text: 'Agent Quota Usage' }));
   if (collapsed) {
     headTitles.appendChild(createEl('span', { className: 'budget-widget-head-summary', text: budgetCollapsedSummaryLine(data) }));
   }
@@ -1952,10 +2154,6 @@ function renderBudgetWidget() {
     return;
   }
 
-  const intro = createEl('span', { className: 'budget-intro' });
-  intro.appendChild(createEl('span', { className: 'budget-intro-note', text: 'Lower numbers mean the current window is closer to throttling. Each bar is remaining headroom before that limit resets.' }));
-  children.push(intro);
-
   const agentsWrap = createEl('div', { className: 'budget-agents' });
 
   if (budgetAgentEnabled('cc')) {
@@ -1971,12 +2169,14 @@ function renderBudgetWidget() {
         label: 'session remaining',
         pctRemaining: sessionPct,
         resetsAt: cc.session && cc.session.resets_at,
+        timeZone: cc.session && cc.session.tz,
         polledAt: cc.polled_at,
       }));
       row.appendChild(buildBudgetMetric({
         label: 'weekly remaining',
         pctRemaining: weekPct,
         resetsAt: cc.week_all && cc.week_all.resets_at,
+        timeZone: cc.week_all && cc.week_all.tz,
         polledAt: cc.polled_at,
       }));
       if (cc.week_sonnet) {
@@ -1984,6 +2184,7 @@ function renderBudgetWidget() {
           label: 'sonnet remaining',
           pctRemaining: sonnetPct,
           resetsAt: cc.week_sonnet.resets_at,
+          timeZone: cc.week_sonnet.tz,
           polledAt: cc.polled_at,
         }));
       }
@@ -2006,12 +2207,16 @@ function renderBudgetWidget() {
         label: '5h remaining',
         pctRemaining: fivePct,
         resetsAt: cx.five_hour && cx.five_hour.resets_at,
+        resetsDate: cx.five_hour && cx.five_hour.resets_date,
+        resetsAtEpoch: cx.five_hour && cx.five_hour.resets_at_epoch,
         polledAt: cx.polled_at,
       }));
       row.appendChild(buildBudgetMetric({
         label: 'weekly remaining',
         pctRemaining: weeklyPct,
         resetsAt: cx.weekly && cx.weekly.resets_at,
+        resetsDate: cx.weekly && cx.weekly.resets_date,
+        resetsAtEpoch: cx.weekly && cx.weekly.resets_at_epoch,
         polledAt: cx.polled_at,
       }));
     } else {
@@ -2031,6 +2236,8 @@ function renderBudgetWidget() {
           label: (t.label || t.tier || 'tier') + ' remaining',
           pctRemaining: pctRem,
           resetsAt: t.resets_at || null,
+          resetsDate: t.resets_date || null,
+          resetsAtEpoch: t.resets_at_epoch || null,
           polledAt: gg.polled_at,
         }));
       }
@@ -2061,6 +2268,30 @@ function annotateAgentPickerBudget() {
   const picker = document.getElementById('agent-picker');
   if (!picker || picker.style.display === 'none') return;
   const rows = picker.querySelectorAll('.agent-check-row');
+  rows.forEach(row => {
+    const cb = row.querySelector('input');
+    if (!cb) return;
+    const id = cb.value;
+    if (id !== 'cc' && id !== 'cx' && id !== 'gg') return;
+    const existing = row.querySelector('.agent-check-budget');
+    if (existing) existing.remove();
+
+    const summary = budgetSummaryForAgent(id, data[id]);
+    const el = createEl('span', {
+      className: 'agent-check-budget ' + summary.summaryClass,
+      text: summary.summaryText + (summary.severity === 'warning' ? ' ⚠' : ''),
+    });
+    const target = row.querySelector('.agent-check-meta') || row;
+    target.appendChild(el);
+  });
+}
+
+/** Same compact per-row quota line as the Start agent picker (F322). */
+function annotateAutonomousAgentBudget() {
+  const data = _budgetCache || { cc: null, cx: null, gg: null };
+  const modal = document.getElementById('autonomous-modal');
+  if (!modal || modal.style.display === 'none') return;
+  const rows = modal.querySelectorAll('#autonomous-agent-checks .agent-check-row');
   rows.forEach(row => {
     const cb = row.querySelector('input');
     if (!cb) return;
@@ -2125,16 +2356,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (picker) {
     const observer = new MutationObserver(() => {
       if (picker.style.display === 'flex') {
-        fetchBudget().then(() => {
-          annotateAgentPickerBudget();
-          updatePickerBudgetNotice();
-        });
+        fetchBudget().then(() => { updatePickerBudgetNotice(); });
       }
     });
     observer.observe(picker, { attributes: true, attributeFilter: ['style'] });
-    picker.addEventListener('change', () => {
-      annotateAgentPickerBudget();
-      updatePickerBudgetNotice();
+    picker.addEventListener('change', () => { updatePickerBudgetNotice(); });
+  }
+
+  const autonomousModalEl = document.getElementById('autonomous-modal');
+  if (autonomousModalEl) {
+    const autoObs = new MutationObserver(() => {
+      if (autonomousModalEl.style.display === 'flex') {
+        fetchBudget().then(() => { updateAutonomousBudgetNotice(); });
+      }
     });
+    autoObs.observe(autonomousModalEl, { attributes: true, attributeFilter: ['style'] });
   }
 });

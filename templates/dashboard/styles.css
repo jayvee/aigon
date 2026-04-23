@@ -1052,20 +1052,21 @@
       .budget-widget-head{flex-wrap:wrap}
       .budget-widget-head-meta{margin-left:0;width:100%;justify-content:flex-end;flex-wrap:wrap}
     }
-    .budget-widget .budget-intro{display:flex;flex-direction:column;justify-content:center;gap:3px;flex:1 0 100%;width:100%;box-sizing:border-box;min-width:220px;padding-right:8px}
+    .budget-widget .budget-intro{display:flex;flex-direction:column;justify-content:center;gap:2px;flex:1 0 100%;width:100%;box-sizing:border-box;min-width:220px;padding-right:8px}
     .budget-widget .budget-intro-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary)}
-    .budget-widget .budget-intro-note{font-size:12px;line-height:1.4;color:var(--text-secondary);max-width:280px}
+    .budget-widget .budget-intro-note{font-size:10px;line-height:1.2;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;opacity:.9}
     .budget-widget .budget-agents{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 12px;flex:1 0 100%;width:100%;box-sizing:border-box;align-items:stretch}
     .budget-widget .budget-agents .budget-agent{min-width:0}
     .budget-widget .budget-agent{display:flex;flex-direction:column;gap:10px;min-width:0;padding:10px 12px;background:rgba(255,255,255,.02);border:1px solid var(--border-subtle);border-radius:10px}
     .budget-widget .budget-agent-head{display:flex;flex-direction:column;gap:3px}
     .budget-widget .budget-agent-name{font-weight:600;color:var(--text-primary)}
     .budget-widget .budget-agent-support{font-size:11px;color:var(--text-tertiary)}
-    .budget-widget .budget-metric{display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary)}
+    .budget-widget .budget-metric{display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);flex-wrap:wrap}
     .budget-widget .budget-bar{position:relative;width:64px;height:6px;border-radius:3px;background:var(--border-subtle);overflow:hidden}
     .budget-widget .budget-bar-fill{position:absolute;top:0;left:0;bottom:0;border-radius:3px}
     .budget-widget .budget-pct{font-variant-numeric:tabular-nums;min-width:32px}
     .budget-widget .budget-label{color:var(--text-tertiary);font-size:10px;letter-spacing:.03em}
+    .budget-widget .budget-reset{color:var(--text-tertiary);font-size:10px;letter-spacing:.03em;white-space:nowrap}
     .budget-widget .budget-meta{flex:1 0 100%;width:100%;box-sizing:border-box;margin-left:0;display:flex;align-items:center;justify-content:flex-end;gap:8px;color:var(--text-tertiary);font-size:10px}
     .budget-widget .budget-refresh{background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:4px;line-height:1}
     .budget-widget .budget-refresh:hover{color:var(--text-primary);background:var(--border-subtle)}
