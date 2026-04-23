@@ -276,6 +276,9 @@
     .spec-drift-wrap.open .spec-drift-popover{display:flex}
     .spec-drift-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 7px;border-radius:999px;border:1px solid rgba(251,146,60,.38);background:rgba(251,146,60,.12);color:#fdba74;cursor:pointer}
     .spec-drift-badge:hover{background:rgba(251,146,60,.18);border-color:rgba(251,146,60,.55)}
+    .spec-review-wrap{display:inline-flex;position:relative;vertical-align:middle;margin-left:5px}
+    .spec-review-badge{appearance:none;display:inline-flex;align-items:center;gap:4px;min-height:18px;padding:1px 8px;border-radius:999px;border:1px solid rgba(251,191,36,.22);background:rgba(251,191,36,.08);color:#fcd34d;font-size:9px;font-family:var(--mono);font-weight:700;letter-spacing:.03em;line-height:1;cursor:default;white-space:nowrap}
+    .spec-review-badge:hover{background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.35);color:#fde68a}
     .spec-drift-popover{display:none;position:absolute;top:calc(100% + 8px);right:0;z-index:240;min-width:240px;flex-direction:column;gap:6px;padding:10px;border-radius:8px;border:1px solid rgba(251,146,60,.25);background:rgba(15,23,42,.98);box-shadow:0 12px 30px rgba(0,0,0,.35)}
     .spec-drift-title{font-size:11px;font-weight:700;color:#fed7aa}
     .spec-drift-meta{font-size:10px;color:var(--text-secondary)}
@@ -364,9 +367,9 @@
     .kcard-overflow-item+.kcard-overflow-item.btn-danger{border-top:1px solid rgba(239,68,68,.12);margin-top:2px;padding-top:7px}
     .kcard-overflow-item.kcard-overflow-item-neutral{color:var(--text-secondary)}
     .kcard-overflow-item.kcard-overflow-item-neutral:hover{background:rgba(255,255,255,.06);color:var(--text-primary)}
-    .kcard-spec-status{display:inline-block;font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 6px;border-radius:4px;margin-left:5px;vertical-align:middle;letter-spacing:.02em}
-    .kcard-spec-reviewing{color:#60a5fa;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2)}
-    .kcard-spec-checking{color:#34d399;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2)}
+    .kcard-spec-status{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-family:var(--mono);font-weight:700;padding:1px 7px;border-radius:999px;margin-left:5px;vertical-align:middle;letter-spacing:.03em;line-height:1;white-space:nowrap}
+    .kcard-spec-reviewing{color:#93c5fd;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18)}
+    .kcard-spec-checking{color:#6ee7b7;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18)}
     .kcard-ready-indicator{display:flex;align-items:center;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(134,239,172,.05);border:1px solid rgba(134,239,172,.18);border-left:3px solid #86efac;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:600;color:#86efac;letter-spacing:.02em}
     .kcard-rebase-warning{display:flex;align-items:center;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.18);border-left:3px solid #fbbf24;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:600;color:#fbbf24;letter-spacing:.02em}
     .kcard-transitions{margin-top:6px;padding-top:6px;border-top:1px solid var(--border-subtle);display:flex;gap:5px;flex-wrap:wrap;align-items:center}

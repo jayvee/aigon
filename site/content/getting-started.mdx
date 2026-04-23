@@ -126,21 +126,20 @@ Then set your terminal. Pick the one you use:
 
 **iTerm2** (recommended — agents run in tabs within a single window):
 ```bash
-aigon config set --global terminal tmux
-aigon config set --global tmuxApp iterm2
+aigon config set --global terminalApp iterm2
 ```
 
 **Warp** (agents run in side-by-side split panes):
 ```bash
-aigon config set --global terminal warp
+aigon config set --global terminalApp warp
 ```
 
 **Terminal.app** (macOS built-in — agents open in new Terminal.app windows):
 ```bash
-aigon config set --global terminal terminal
+aigon config set --global terminalApp apple-terminal
 ```
 
-> **Default:** `terminal` = `terminal` (Terminal.app). If you're on macOS and happy with Terminal.app, you can skip this step.
+> **Default:** `terminalApp` = `apple-terminal` (Terminal.app). If you're on macOS and happy with Terminal.app, you can skip this step.
 
 ## Initialize a project
 
