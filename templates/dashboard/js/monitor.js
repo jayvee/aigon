@@ -316,19 +316,27 @@
             const featureId = container ? container.getAttribute('data-feature-id') || '' : '';
             const vaAction = btn.getAttribute('data-va-action') || '';
             const vaAgentId = btn.getAttribute('data-agent') || null;
-            // Find the feature object from Alpine store
+            // Find the card payload from Alpine store (same repo row as this monitor-actions strip).
             const s = Alpine.store('dashboard');
             const data = s.data || { repos: [] };
+            // REGRESSION: research/feedback rows must not use pipelineType "features" — pCmd() and open-session routing depend on the real bucket.
+            const repoCandidates = repoPath
+              ? (data.repos || []).filter(r => r.path === repoPath)
+              : (data.repos || []);
             let feature = null;
-            for (const repo of (data.repos || [])) {
-              const allItems = [...(repo.features || []), ...(repo.research || []), ...(repo.feedback || [])];
-              feature = allItems.find(f => String(f.id) === String(featureId));
-              if (feature) break;
+            let pipelineTypeForCard = 'features';
+            for (const repo of (repoCandidates.length ? repoCandidates : data.repos || [])) {
+              const fHit = (repo.features || []).find(x => String(x.id) === String(featureId));
+              if (fHit) { feature = fHit; pipelineTypeForCard = 'features'; break; }
+              const rHit = (repo.research || []).find(x => String(x.id) === String(featureId));
+              if (rHit) { feature = rHit; pipelineTypeForCard = 'research'; break; }
+              const fbHit = (repo.feedback || []).find(x => String(x.id) === String(featureId));
+              if (fbHit) { feature = fbHit; pipelineTypeForCard = 'feedback'; break; }
             }
             if (!feature) return;
             const va = (feature.validActions || []).find(a => a.action === vaAction && (a.agentId || null) === vaAgentId) || { action: vaAction, agentId: vaAgentId, label: btn.textContent };
             btn._origText = btn.textContent;
-            handleFeatureAction(va, feature, repoPath, btn, 'features');
+            handleFeatureAction(va, feature, repoPath, btn, pipelineTypeForCard);
             return;
           }
           if (btn.dataset.devServerStart === '1') {

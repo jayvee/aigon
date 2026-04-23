@@ -3,6 +3,7 @@ import { withPro } from "../../components/pro-badge";
 export default {
   "brewboard-tutorial": "Tutorial: Brewboard",
   dashboard: "Dashboard",
+  "pipeline-quota": "Usage limits (Pipeline)",
   "drive-mode": "Drive Mode",
   "fleet-mode": "Fleet Mode",
   "autopilot-mode": { title: withPro("Autonomous Mode") },

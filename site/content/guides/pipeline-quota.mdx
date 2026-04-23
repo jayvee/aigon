@@ -1,0 +1,54 @@
+---
+title: Usage limits on the Pipeline
+description: Cached Claude Code and Codex quota readouts on the dashboard — what they mean and how they update.
+---
+
+The **Pipeline** tab shows a **Remaining quota before reset** panel: a read-only snapshot of how much headroom you have in each vendor’s rolling windows before throttling. It is **not** the same as [token telemetry](./telemetry) (post-session spend); it is the live subscription / rate-limit style data those CLIs expose.
+
+![Pipeline quota panel with Claude Code and Codex bars](/img/subscription-quota-status.png)
+
+## What you see
+
+- **Claude Code** — session, weekly, and (when present) Sonnet-specific remaining percentages, plus reset hints from the CLI output.
+- **Codex** — short-window (e.g. five-hour) and weekly remaining percentages, plus plan / credit hints when the Codex app-server returns them.
+
+Each **bar** is *remaining* headroom for that window (not “used”). **0%** means that window is already exhausted until it resets.
+
+## Colours
+
+Bars and the small **status dot** use the same bands:
+
+| Colour | Meaning |
+|--------|---------|
+| **Green** | ≥ 50% of that window still available |
+| **Amber** | 20–49% remaining |
+| **Red** | &lt; 20% remaining |
+| **Gray** | Stale poll or no numeric data yet |
+
+The **dot** is the **worst** band across every numeric limit shown for enabled agents — if Codex is red and Claude is green, the dot is red.
+
+## Collapse and refresh
+
+Use **Collapse** / **Expand** on the panel header to reclaim vertical space. When collapsed, you still get the dot, title, one-line summary, **updated …** time, and **↻** refresh.
+
+**↻** asks the server to poll again (subject to backend availability). The dashboard also refetches periodically so “updated Xm ago” stays honest.
+
+## Where the data comes from
+
+Roughly every **30 minutes** the Aigon server:
+
+- Polls **Claude Code** via a short-lived tmux session that drives the CLI usage view.
+- Reads **Codex** limits from the local Codex app-server (`account/rateLimits/read`).
+
+Results are written to **`.aigon/budget-cache.json`** in the repo the server runs from; the UI reads **`GET /api/budget`**. If `tmux`, the `claude` binary, or the Codex stack is missing, that agent’s card shows **usage unavailable** and polling is skipped — no error spam.
+
+Polls older than about **90 minutes** are treated as **stale** (gray) so you are not misled by an old snapshot.
+
+## Start flows
+
+When you start Fleet, autonomous, or set runs from the dashboard, Aigon can warn if selected agents are already in the red band on any limit — you can still proceed after confirming.
+
+## See also
+
+- **[Dashboard](./dashboard)** — full Pipeline tab tour  
+- **[Telemetry & Analytics](./telemetry)** — token and cost history after sessions complete
