@@ -633,8 +633,16 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       const recommendation = await fetchSpecRecommendation(recEntity, id, repoPath);
       const triplets = await showAgentPicker(id, feature.name, { repoPath, taskType: 'implement', action: va.action, collectTriplet: true, recommendation });
       if (!triplets) return;
-      const extraArgs = tripletsToCliArgs(triplets);
       const agentIds = triplets.map(t => t.id);
+      // F322: warn if any selected agent has <20% remaining on a budget limit.
+      try {
+        if (typeof fetchBudget === 'function') {
+          await fetchBudget();
+          const warning = budgetWarningForAgents(agentIds);
+          if (warning && !window.confirm(warning)) return;
+        }
+      } catch (_) { /* best-effort */ }
+      const extraArgs = tripletsToCliArgs(triplets);
       await requestAction(pCmd('start'), [id, ...agentIds, ...extraArgs], repoPath, btn);
       break;
     }
@@ -1355,6 +1363,15 @@ async function submitAutonomousModal() {
   const modelsCsv = (triArgs.find(a => a.startsWith('--models=')) || '').slice('--models='.length) || '';
   const effortsCsv = (triArgs.find(a => a.startsWith('--efforts=')) || '').slice('--efforts='.length) || '';
 
+  // F322: warn if a selected agent is below 20% on any budget limit.
+  try {
+    if (typeof fetchBudget === 'function') {
+      await fetchBudget();
+      const warning = budgetWarningForAgents([...selectedAgents, evalAgent, reviewAgent].filter(Boolean));
+      if (warning && !window.confirm(warning)) return;
+    }
+  } catch (_) { /* budget check is best-effort */ }
+
   const featureId = autonomousModalFeature.id;
   const repoPath = autonomousModalRepoPath;
   const btn = autonomousModalBtn;
@@ -1394,4 +1411,206 @@ document.addEventListener('DOMContentLoaded', () => {
       updateAutonomousModeControls();
     }
   });
+});
+
+// ── Agent budget widget (F322) ──────────────────────────────────────────────
+
+const BUDGET_STALE_MS = 90 * 60 * 1000;
+let _budgetCache = null;
+let _budgetFetchPromise = null;
+
+function budgetClassFor(pctRemaining, polledAt) {
+  if (polledAt && Date.now() - new Date(polledAt).getTime() > BUDGET_STALE_MS) return 'budget-stale';
+  if (pctRemaining == null || Number.isNaN(pctRemaining)) return 'budget-stale';
+  if (pctRemaining < 20) return 'budget-red';
+  if (pctRemaining < 50) return 'budget-amber';
+  return 'budget-green';
+}
+
+function fetchBudget(force) {
+  if (_budgetFetchPromise && !force) return _budgetFetchPromise;
+  _budgetFetchPromise = fetch('/api/budget', { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : { cc: null, cx: null })
+    .catch(() => ({ cc: null, cx: null }))
+    .then(data => { _budgetCache = data || { cc: null, cx: null }; _budgetFetchPromise = null; return _budgetCache; });
+  return _budgetFetchPromise;
+}
+
+function fmtRelAgo(iso) {
+  if (!iso) return '';
+  const ms = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(ms) || ms < 0) return '';
+  const min = Math.floor(ms / 60000);
+  if (min < 1) return 'just now';
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  return `${Math.floor(hr / 24)}d ago`;
+}
+
+function buildBudgetMetric({ label, pctRemaining, resetsAt, polledAt }) {
+  const wrap = createEl('span', { className: 'budget-metric ' + budgetClassFor(pctRemaining, polledAt) });
+  const bar = createEl('span', { className: 'budget-bar' });
+  const fill = createEl('span', { className: 'budget-bar-fill' });
+  const pct = Math.max(0, Math.min(100, Number.isFinite(pctRemaining) ? pctRemaining : 0));
+  fill.style.width = pct + '%';
+  bar.appendChild(fill);
+  wrap.appendChild(bar);
+  const pctText = pctRemaining == null ? '—' : pctRemaining + '%';
+  wrap.appendChild(createEl('span', { className: 'budget-pct', text: pctText }));
+  wrap.appendChild(createEl('span', { className: 'budget-label', text: label }));
+  if (resetsAt) {
+    wrap.appendChild(createEl('span', { className: 'budget-label', text: '↻ ' + resetsAt }));
+  }
+  return wrap;
+}
+
+function ccRemaining(entry) {
+  if (!entry || entry.pct_used == null) return null;
+  return 100 - entry.pct_used;
+}
+
+function renderBudgetWidget() {
+  const el = document.getElementById('budget-widget');
+  if (!el) return;
+  const data = _budgetCache || { cc: null, cx: null };
+  const cc = data.cc;
+  const cx = data.cx;
+  if (!cc && !cx) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  const children = [];
+
+  if (cc) {
+    const sessionPct = ccRemaining(cc.session);
+    const weekPct = ccRemaining(cc.week_all);
+    const row = createEl('span', { className: 'budget-agent' });
+    row.appendChild(createEl('span', { className: 'budget-agent-name', text: 'Claude Code' }));
+    row.appendChild(buildBudgetMetric({
+      label: 'session',
+      pctRemaining: sessionPct,
+      resetsAt: cc.session && cc.session.resets_at,
+      polledAt: cc.polled_at,
+    }));
+    row.appendChild(buildBudgetMetric({
+      label: 'week',
+      pctRemaining: weekPct,
+      resetsAt: cc.week_all && cc.week_all.resets_at,
+      polledAt: cc.polled_at,
+    }));
+    children.push(row);
+  }
+  if (cx) {
+    const fivePct = cx.five_hour ? cx.five_hour.pct_remaining : null;
+    const weeklyPct = cx.weekly ? cx.weekly.pct_remaining : null;
+    const row = createEl('span', { className: 'budget-agent' });
+    row.appendChild(createEl('span', { className: 'budget-agent-name', text: 'Codex' }));
+    row.appendChild(buildBudgetMetric({
+      label: '5h',
+      pctRemaining: fivePct,
+      resetsAt: cx.five_hour && cx.five_hour.resets_at,
+      polledAt: cx.polled_at,
+    }));
+    row.appendChild(buildBudgetMetric({
+      label: 'week',
+      pctRemaining: weeklyPct,
+      resetsAt: cx.weekly && cx.weekly.resets_at,
+      polledAt: cx.polled_at,
+    }));
+    children.push(row);
+  }
+
+  const meta = createEl('span', { className: 'budget-meta' });
+  const latest = [cc && cc.polled_at, cx && cx.polled_at].filter(Boolean).sort().pop();
+  if (latest) meta.appendChild(createEl('span', { text: 'updated ' + fmtRelAgo(latest) }));
+  const refreshBtn = createEl('button', { className: 'budget-refresh', text: '↻', attrs: { title: 'Refresh budgets', 'aria-label': 'Refresh budgets' } });
+  refreshBtn.onclick = () => {
+    refreshBtn.classList.add('spinning');
+    fetch('/api/budget/refresh', { method: 'POST' }).catch(() => {});
+    setTimeout(() => { fetchBudget(true).then(renderBudgetWidget).finally(() => refreshBtn.classList.remove('spinning')); }, 10000);
+  };
+  meta.appendChild(refreshBtn);
+  children.push(meta);
+
+  replaceNodeChildren(el, children);
+}
+
+function annotateAgentPickerBudget() {
+  const data = _budgetCache;
+  if (!data) return;
+  const picker = document.getElementById('agent-picker');
+  if (!picker || picker.style.display === 'none') return;
+  const rows = picker.querySelectorAll('.agent-check-row');
+  rows.forEach(row => {
+    const cb = row.querySelector('input');
+    if (!cb) return;
+    const id = cb.value;
+    if (id !== 'cc' && id !== 'cx') return;
+    const existing = row.querySelector('.agent-check-budget');
+    if (existing) existing.remove();
+
+    const entry = data[id];
+    if (!entry) return;
+    let worstPct = null;
+    let summary = '';
+    if (id === 'cc') {
+      const s = ccRemaining(entry.session);
+      const w = ccRemaining(entry.week_all);
+      if (s == null && w == null) return;
+      worstPct = [s, w].filter(v => v != null).reduce((a, b) => Math.min(a, b), 100);
+      summary = `${s != null ? s + '% session' : 'session —'} · ${w != null ? w + '% week' : 'week —'}`;
+    } else {
+      const fh = entry.five_hour && entry.five_hour.pct_remaining;
+      const wk = entry.weekly && entry.weekly.pct_remaining;
+      if (fh == null && wk == null) return;
+      worstPct = [fh, wk].filter(v => v != null).reduce((a, b) => Math.min(a, b), 100);
+      summary = `${fh != null ? fh + '% 5h' : '5h —'} · ${wk != null ? wk + '% week' : 'week —'}`;
+    }
+    const klass = budgetClassFor(worstPct, entry.polled_at);
+    const el = createEl('span', { className: 'agent-check-budget ' + klass, text: summary + (worstPct != null && worstPct < 20 ? ' ⚠' : '') });
+    row.appendChild(el);
+  });
+}
+
+function budgetWarningForAgents(agentIds) {
+  if (!_budgetCache) return null;
+  const warnings = [];
+  for (const id of agentIds) {
+    const entry = _budgetCache[id];
+    if (!entry) continue;
+    let worst = null;
+    let label = '';
+    if (id === 'cc') {
+      const s = ccRemaining(entry.session);
+      const w = ccRemaining(entry.week_all);
+      if (s != null && s < 20) { worst = s; label = 'session'; }
+      if (w != null && w < 20 && (worst == null || w < worst)) { worst = w; label = 'weekly'; }
+    } else if (id === 'cx') {
+      const fh = entry.five_hour && entry.five_hour.pct_remaining;
+      const wk = entry.weekly && entry.weekly.pct_remaining;
+      if (fh != null && fh < 20) { worst = fh; label = '5-hour'; }
+      if (wk != null && wk < 20 && (worst == null || wk < worst)) { worst = wk; label = 'weekly'; }
+    }
+    if (worst != null) {
+      const name = id === 'cc' ? 'Claude Code' : 'Codex';
+      warnings.push(`${name} is at ${100 - worst}% of its ${label} limit (${worst}% remaining).`);
+    }
+  }
+  return warnings.length > 0 ? warnings.join('\n') + '\n\nStart anyway?' : null;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  fetchBudget().then(renderBudgetWidget);
+  // Refresh widget every 2 minutes to keep "updated Xmin ago" accurate and pick up fresh polls.
+  setInterval(() => { fetchBudget(true).then(renderBudgetWidget); }, 2 * 60 * 1000);
+
+  // Annotate agent picker rows whenever it is opened.
+  const picker = document.getElementById('agent-picker');
+  if (picker) {
+    const observer = new MutationObserver(() => {
+      if (picker.style.display === 'flex') {
+        fetchBudget().then(annotateAgentPickerBudget);
+      }
+    });
+    observer.observe(picker, { attributes: true, attributeFilter: ['style'] });
+  }
 });
