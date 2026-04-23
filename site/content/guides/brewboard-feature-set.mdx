@@ -1,0 +1,93 @@
+---
+title: "Tutorial: Brewboard Feature Set"
+description: A concrete Brewboard walkthrough for tagging a feature set and running it autonomously.
+---
+
+import { Callout } from "nextra/components";
+
+<Callout type="info">
+  **Aigon Pro feature.** Set-level autonomous orchestration for Brewboard requires [Aigon Pro](/pro). The public repo gives you the feature-set membership and dashboard grouping foundation, but the set conductor itself is Pro-gated.
+</Callout>
+
+The Brewboard seed repo is a good place to learn feature sets because it keeps the scope small while still showing the real orchestration flow. Instead of a single feature running on its own, you can tag a short chain of related Brewboard specs as one set and let Aigon execute them in dependency order.
+
+## The Brewboard set
+
+In the Brewboard demo, features **#02**, **#03**, and **#04** share the same set slug:
+
+- `set: brewboard-data`
+- dependencies flow `02 → 03 → 04`
+
+That gives you a compact sequence that shows how set autonomy behaves when later features depend on earlier work landing first.
+
+<img
+  src="/img/brewboard-feature-set.png"
+  alt="Brewboard set card showing the brewboard-data feature set with three related features in dependency order"
+  width="720"
+  style={{ maxWidth: '72%', height: 'auto', display: 'block', margin: '1rem auto', borderRadius: '12px' }}
+/>
+
+## Start from the dashboard
+
+The best way to understand feature-set autonomy is to start it from the dashboard and watch the members complete one at a time.
+
+Open the Brewboard repo in the dashboard, find the `brewboard-data` set card, and use the Pro autonomous control to launch it.
+
+<img
+  src="/img/feature-set-autonomous-start-choose-agent.png"
+  alt="Dashboard modal for starting the Brewboard feature set autonomously and choosing an agent"
+  width="720"
+  style={{ maxWidth: '72%', height: 'auto', display: 'block', margin: '1rem auto', borderRadius: '12px' }}
+/>
+
+As soon as the set starts, the dashboard should show the first feature in progress.
+
+<img
+  src="/img/feature-set-autonomous-start-one-of-three-in-progress.png"
+  alt="Dashboard showing the Brewboard feature set with the first of three features in progress"
+  width="720"
+  style={{ maxWidth: '72%', height: 'auto', display: 'block', margin: '1rem auto', borderRadius: '12px' }}
+/>
+
+Once the set starts, the dashboard is the thing to watch:
+
+- the current feature advances in dependency order
+- each feature completes before the next one starts
+- the set card shows overall progress
+- pause or resume state appears if a member fails
+
+That is the core behavior to look for: a set is a dashboard-visible queue of related features, not a single giant run.
+
+## What the set is doing
+
+In the Brewboard demo, features **#02**, **#03**, and **#04** share the same set slug:
+
+- `set: brewboard-data`
+- dependencies flow `02 → 03 → 04`
+
+The conductor walks that queue one feature at a time. When `#02` closes, the conductor moves to `#03`; when `#03` closes, it moves to `#04`.
+
+## Optional CLI reference
+
+If you want the command shape, it is:
+
+```bash
+aigon set-autonomous-start brewboard-data cc --review-agent=gg
+```
+
+But for the tutorial, the dashboard is the main path. Start there, then watch the set finish member by member.
+
+## Why Brewboard is a good teaching repo
+
+Brewboard keeps the tutorial concrete without being noisy:
+
+- the features are small enough to understand at a glance
+- the dependency chain is short
+- the set card is easy to inspect in the dashboard
+- the run is obvious enough to explain without a lot of context
+
+## See also
+
+- [Feature Sets in Autonomous Mode](/docs/guides/feature-sets-autonomous)
+- [Tutorial: Try Aigon with Brewboard](/docs/guides/brewboard-tutorial)
+- [Dashboard](/docs/guides/dashboard#feature-sets)

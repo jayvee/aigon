@@ -1,0 +1,78 @@
+---
+title: Feature Sets in Autonomous Mode
+description: How Aigon runs a whole set end-to-end by sequencing member features in dependency order.
+---
+
+import { Callout } from "nextra/components";
+
+<Callout type="info">
+  **Aigon Pro feature.** Set-level autonomous orchestration — including `set-autonomous-start`, `set-autonomous-stop`, `set-autonomous-resume`, and `set-autonomous-reset` — requires [Aigon Pro](/pro). The OSS repo keeps the feature-set membership and dashboard grouping foundation, but the autonomous conductor itself is Pro-gated.
+</Callout>
+
+Aigon feature sets are more than a grouping label. In autonomous mode, a set becomes the unit of orchestration: Aigon walks the member features in dependency order, runs each feature through the existing autonomous loop, and carries the run forward until the set is complete or paused.
+
+If you want a concrete mental model, the [Brewboard tutorial](./brewboard-tutorial) shows the single-feature autonomous flow in a small sandbox repo. This page explains how that same idea scales from one feature to a whole set.
+
+{/* PLACEHOLDER: add an image here showing the set card and set-autonomous flow.
+    Suggested filename: /img/feature-sets-autonomous.png */}
+
+## What a feature set is
+
+A feature set is a shared `set: <slug>` frontmatter value across multiple feature specs. The set is derived from the specs themselves; there is no separate hidden database for membership.
+
+The important part is that the set gives Aigon a stable cluster of related work:
+
+- related features can be grouped together on the board
+- the dashboard can show aggregate progress for the cluster
+- autonomous execution can treat the set as a sequenced queue
+
+## How autonomous mode uses it
+
+When you start a set autonomously, Aigon does not invent a new implementation loop. It reuses the existing per-feature autonomous machinery and runs it member by member.
+
+The set conductor:
+
+- resolves the set members from `set: <slug>` frontmatter
+- topologically sorts them using the existing dependency graph
+- starts each member with the normal `feature-autonomous-start` flow
+- waits for each member to finish before moving on, unless the set is configured to behave otherwise
+- persists set-level run state so it can resume after interruption or failure
+
+That means the set behavior stays aligned with the single-feature workflow. You get orchestration across the set without duplicating the logic that already governs a feature run.
+
+## Why this matters
+
+The autonomous set flow is useful when one feature is really a cluster of smaller tasks that should land in order.
+
+It helps when you want to:
+
+- kick off a whole project slice once and come back later
+- avoid manually restarting the next feature after each close
+- keep dependency order explicit instead of relying on memory
+- resume a paused set without rebuilding the entire plan
+
+In practice, feature sets let Aigon operate at a higher level of abstraction while still keeping each feature’s own lifecycle intact.
+
+## Relationship to the dashboard
+
+The dashboard shows feature sets as cards with progress and action buttons. That makes the current set state visible while the conductor is running.
+
+The dashboard view is read-only. The actual set behavior comes from the workflow engine and the set conductor, not from frontend heuristics.
+
+## Brewboard as the example
+
+Use Brewboard to demonstrate the idea in a low-risk repo:
+
+- a single feature run shows the base autonomous lifecycle
+- a feature set lets you chain several related Brewboard specs in dependency order
+- the dashboard then shows the set card while the conductor advances through the members
+
+That makes Brewboard a good teaching repo because it keeps the moving parts small while still showing the real autonomous control flow.
+
+## See also
+
+- [Tutorial: Brewboard Feature Set](/docs/guides/brewboard-feature-set)
+- [Tutorial: Try Aigon with Brewboard](/docs/guides/brewboard-tutorial)
+- [Dashboard](/docs/guides/dashboard#feature-sets)
+- [Feature Sets reference](/docs/reference/commands/infra/set)
+- [Feature set research](/docs/specs/research-topics/05-done/research-34-feature-set)

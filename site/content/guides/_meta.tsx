@@ -8,6 +8,8 @@ export default {
   "drive-mode": "Drive Mode",
   "fleet-mode": "Fleet Mode",
   "autopilot-mode": { title: withPro("Autonomous Mode") },
+  "feature-sets-autonomous": { title: withPro("Feature Sets in Autonomous Mode") },
+  "brewboard-feature-set": { title: withPro("Tutorial: Brewboard Feature Set") },
   "recurring-features": "Recurring Features",
   "research-workflow": "Research Workflow",
   "feedback-workflow": "Feedback Workflow",

@@ -3,6 +3,8 @@ title: Guides
 description: Step-by-step walkthroughs for common Aigon workflows.
 ---
 
+import { withPro } from "../../components/pro-badge";
+
 Practical guides for using Aigon in different modes and workflows.
 
 <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -37,5 +39,13 @@ Practical guides for using Aigon in different modes and workflows.
   <a href="/docs/guides/agent-quota-awareness" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
     <h3 className="text-lg font-semibold mb-1">Agent Quota Awareness</h3>
     <p className="text-sm text-gray-400 m-0">Use live quota context to decide which agent should take the implementation work.</p>
+  </a>
+  <a href="/docs/guides/feature-sets-autonomous" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">{withPro("Feature Sets in Autonomous Mode")}</h3>
+    <p className="text-sm text-gray-400 m-0">How set-level autonomy sequences features, tracks progress, and resumes after failure.</p>
+  </a>
+  <a href="/docs/guides/brewboard-feature-set" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">{withPro("Tutorial: Brewboard Feature Set")}</h3>
+    <p className="text-sm text-gray-400 m-0">A concrete Brewboard walkthrough for tagging a set and running it autonomously.</p>
   </a>
 </div>
