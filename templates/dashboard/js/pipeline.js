@@ -655,7 +655,19 @@
         }).join('') + '</div>'
         : '';
       const blockedByHtml = (feature.stage === 'backlog' && feature.blockedBy && feature.blockedBy.length > 0)
-        ? '<div class="kcard-blocked">' + feature.blockedBy.map(d => '<span class="kcard-blocked-label">Blocked by #' + escHtml(String(parseInt(d.id, 10))) + '</span>').join('') + '</div>'
+        ? (function() {
+          const bits = ['<div class="kcard-dep-chain" role="note">',
+            '<span class="kcard-dep-chain-label">Depends on</span>',
+            '<div class="kcard-dep-wires" aria-hidden="true">'];
+          feature.blockedBy.forEach((d, i) => {
+            if (i > 0) bits.push('<span class="kcard-dep-wire"></span>');
+            const n = formatFeatureIdForDisplay(d.id);
+            const st = escHtml(String(d.stage || '').replace(/-/g, ' '));
+            bits.push('<span class="kcard-dep-chip" title="Feature #' + escHtml(n) + ' (' + st + ')">#' + escHtml(n) + '</span>');
+          });
+          bits.push('</div></div>');
+          return bits.join('');
+        })()
         : '';
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
@@ -1086,26 +1098,24 @@
           }
         }
         if (bySet.size > 0) {
-          const headerBaseStyle = 'font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:6px 8px;margin:6px 0 2px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--bg-subtle,rgba(0,0,0,0.03))';
           for (const setSlug of orderedSetSlugs) {
             const members = bySet.get(setSlug);
+            const roll = setsRollup.find(x => x.slug === setSlug);
+            const isPausedOnFailure = roll && roll.autonomous && roll.autonomous.status === 'paused-on-failure';
+
+            const bundle = document.createElement('div');
+            bundle.className = 'kanban-set-bundle' + (isPausedOnFailure ? ' kanban-set-bundle--paused' : '');
+
             const header = document.createElement('div');
-            header.className = 'kanban-set-header';
-            header.style.cssText = headerBaseStyle + ';color:var(--text-secondary);display:block';
+            header.className = 'kanban-set-header kanban-set-bundle-head' + (isPausedOnFailure ? ' kanban-set-bundle-head--paused' : '');
 
             const row = document.createElement('div');
             row.className = 'kanban-set-header-row';
             const title = document.createElement('span');
             title.className = 'kanban-set-title';
-            const roll = setsRollup.find(x => x.slug === setSlug);
-            const isPausedOnFailure = roll && roll.autonomous && roll.autonomous.status === 'paused-on-failure';
             const titlePrefix = isPausedOnFailure ? '⚠ ' : '◉ ';
             title.textContent = titlePrefix + setSlug;
             if (isPausedOnFailure) {
-              title.style.color = '#e57c2a';
-              header.style.borderTop = '1px solid #e57c2a44';
-              header.style.borderBottom = '1px solid #e57c2a44';
-              header.style.background = 'rgba(229,124,42,0.07)';
               const failedId = roll.autonomous.failedFeature || (Array.isArray(roll.autonomous.failed) && roll.autonomous.failed[0]);
               const failLabel = failedId ? `feature #${parseInt(failedId, 10) || failedId} failed` : 'review failed';
               const badge = document.createElement('span');
@@ -1177,16 +1187,25 @@
 
             if (totalN > 0) {
               const barWrap = document.createElement('div');
-              barWrap.style.cssText = 'width:100%;height:4px;border-radius:2px;background:rgba(128,128,128,0.22);margin-top:6px;overflow:hidden';
+              barWrap.className = 'kanban-set-progress';
               const bar = document.createElement('div');
               const pct = Math.min(100, Math.round((100 * doneN) / totalN));
-              bar.style.cssText = 'height:100%;width:' + pct + '%;background:var(--accent,#3b82f6);border-radius:2px;transition:width .2s ease';
+              bar.className = 'kanban-set-progress-fill';
+              bar.style.width = pct + '%';
               barWrap.appendChild(bar);
               header.appendChild(barWrap);
             }
 
-            colBody.appendChild(header);
-            members.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
+            bundle.appendChild(header);
+            const stack = document.createElement('div');
+            stack.className = 'kanban-set-stack';
+            members.forEach(feature => {
+              const card = buildKanbanCard(feature, repo.path, pType, repo);
+              card.classList.add('kcard-in-set');
+              stack.appendChild(card);
+            });
+            bundle.appendChild(stack);
+            colBody.appendChild(bundle);
           }
           if (ungrouped.length > 0) {
             const header = document.createElement('div');

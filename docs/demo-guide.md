@@ -1,9 +1,9 @@
 # Aigon Dashboard Demo Guide
 
 Sample features and step-by-step flows for demos and screen recordings.
-Uses the brewboard fixture repo (created by `node test/setup-fixture.js` in `$HOME/src/`).
+Uses the brewboard fixture repo (created by `npm run fixture:seed` / `node scripts/setup-fixture.js` in `$HOME/src/`).
 
-**Before each demo:** reseed fixtures with `node test/setup-fixture.js`
+**Before each demo:** reseed fixtures with `npm run fixture:seed`
 
 ---
 
@@ -104,13 +104,13 @@ A small, visually obvious feature for demonstrating the full lifecycle.
 
 ## Pre-seeded Backlog Features (brewboard)
 
-After `node test/setup-fixture.js`, brewboard has these in backlog:
+After `npm run fixture:seed`, brewboard has these in backlog (each feature spec includes varying **`complexity:`** frontmatter — `low` / `medium` / `high` / `very-high` — so the dashboard start modal shows different default model tiers). Features **#02, #03, #04** share **`set: brewboard-data`** with `depends_on` **02 → 03 → 04** so the **Set** card and `set-autonomous-start brewboard-data` demo work.
 
-| ID  | Name           | Good for testing          |
-|-----|----------------|---------------------------|
-| #01 | dark mode      | Fleet (cc vs gg)          |
-| #02 | rating system  | Drive worktree            |
-| #03 | export to CSV  | Drive branch              |
-| #04 | sort by rating | Quick single-agent test   |
+| ID  | Name            | Notes                                      |
+|-----|-----------------|--------------------------------------------|
+| #01 | dark mode       | Standalone backlog item                    |
+| #02 | brewery import  | Head of **brewboard-data** set (`high`)    |
+| #03 | user profiles   | Set member, depends on **02**            |
+| #04 | rating system   | Set member, depends on **03**              |
 
 And 2 features in inbox (beer style filters, social sharing) for create/prioritise demos.

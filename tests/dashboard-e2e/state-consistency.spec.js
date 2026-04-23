@@ -15,9 +15,10 @@
 const { test, expect } = require('@playwright/test');
 const { gotoPipelineWithMockedSessions } = require('./_helpers');
 
-// Post-F296: inbox specs are snapshot-backed from create time onward, while
-// genuinely broken rows still surface as MISSING_SNAPSHOT (read-only, no
-// actions). The dashboard supports `paused` in the API, but the column stays
+// Post-F296: inbox specs are snapshot-backed from create time onward. Rows
+// that truly lack engine state still surface MISSING_SNAPSHOT; inbox/backlog
+// folder positions still get pre-engine actions from the read model. The
+// dashboard supports `paused` in the API, but the column stays
 // hidden unless the UI toggle is enabled.
 const STAGE_ACTIONS = [
     { stage: 'backlog', must: ['feature-start'], mustNot: ['feature-prioritise', 'feature-close', 'feature-eval'] },

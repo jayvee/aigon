@@ -336,10 +336,11 @@
   </div>
   <!-- Start autonomously modal -->
   <div id="autonomous-modal" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="autonomous-modal-title">
-    <div class="modal-box">
+    <div class="modal-box agent-picker-modal-box">
       <h3 id="autonomous-modal-title">Start Autonomously</h3>
       <p class="modal-desc" id="autonomous-modal-desc"></p>
-      <div id="autonomous-budget-notice" class="budget-notice" style="display:none"></div>
+      <div id="autonomous-picker-recommendation" class="agent-picker-recommendation" style="display:none" role="status" aria-live="polite"></div>
+      <div id="autonomous-budget-notice" class="budget-notice" style="display:none" aria-hidden="true"></div>
       <div style="margin-bottom:12px">
         <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Workflow</label>
         <select id="autonomous-workflow" class="create-input" style="padding:8px 10px">
@@ -357,7 +358,7 @@
       </div>
       <div id="autonomous-review-wrap" style="margin-bottom:12px;display:none">
         <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Reviewer</label>
-        <div style="display:grid;grid-template-columns:minmax(0,1fr) 200px 200px;gap:8px;align-items:center">
+        <div class="agent-picker-reviewer-grid">
           <select id="autonomous-review-agent" class="create-input" style="padding:8px 10px"></select>
           <span id="autonomous-review-model-cell" class="agent-triplet-cell agent-triplet-cell-model"></span>
           <span id="autonomous-review-effort-cell" class="agent-triplet-cell agent-triplet-cell-effort"></span>

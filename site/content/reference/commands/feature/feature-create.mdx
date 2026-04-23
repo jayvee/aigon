@@ -31,7 +31,7 @@ aigon feature-create dark-mode
 
 A Markdown spec file at `docs/specs/features/01-inbox/feature-dark-mode.md` with sections:
 
-- **YAML frontmatter** — includes **`complexity`** (`low` / `medium` / `high` / `very-high`) and optional per-agent **`recommended_models`**. Those drive the dashboard’s model/effort pre-selection when you start the feature; see [Agents: Spec complexity and model defaults](/docs/reference/agents#spec-complexity-and-model-defaults).
+- **YAML frontmatter** — includes **`complexity`** (`low` / `medium` / `high` / `very-high`) only. Model/effort defaults at start come from each agent’s complexity ladder + `aigon config`, not from the spec; see [Agents: Spec complexity and model defaults](/docs/reference/agents#spec-complexity-and-model-defaults).
 - **Summary** — what and why
 - **User Stories** — who benefits and how
 - **Acceptance Criteria** — testable definition of done

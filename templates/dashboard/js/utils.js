@@ -22,6 +22,12 @@
     }
 
     function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    /** Numeric feature id for UI (matches kcard-id: #02 not #2). */
+    function formatFeatureIdForDisplay(id) {
+      const raw = String(id == null ? '' : id).trim();
+      if (!/^\d+$/.test(raw)) return raw;
+      return raw.padStart(2, '0');
+    }
     function statusRank(s){ return s === 'waiting' ? 0 : s === 'implementing' ? 1 : s === 'error' ? 2 : 3; }
     function featureRank(feature){ return feature.agents && feature.agents.length > 0 ? Math.min(...feature.agents.map(a => statusRank(a.status))) : 99; }
 

@@ -145,7 +145,7 @@ AIGON_CC_RESEARCH_MODEL=haiku aigon config models
 
 Env var pattern: `AIGON_{AGENT}_{TASK}_MODEL` where AGENT is `CC/GG/CX/CU` and TASK is `RESEARCH/IMPLEMENT/EVALUATE`.
 
-**Spec complexity:** Feature and research specs can declare a **`complexity`** level (and optional per-agent `recommended_models`) in YAML frontmatter. When you start work from the dashboard, those values **pre-select** model and effort before your config defaults are used. Global keys above are still the baseline when the spec leaves a slot empty or you pick **Default** in the picker. See [Agents → Spec complexity and model defaults](/docs/reference/agents#spec-complexity-and-model-defaults).
+**Spec complexity:** Feature and research specs can declare a **`complexity`** level in YAML frontmatter. When you start work from the dashboard, that label **pre-selects** model and effort via each agent’s complexity ladder, then your config defaults. Global keys above apply when you pick **Default** in the picker or when `complexity` is missing. See [Agents → Spec complexity and model defaults](/docs/reference/agents#spec-complexity-and-model-defaults).
 
 ## CLI flag overrides
 

@@ -1,10 +1,5 @@
 ---
 complexity: medium
-recommended_models:
-  cc: { model: null, effort: null }
-  cx: { model: null, effort: null }
-  gg: { model: null, effort: null }
-  cu: { model: null, effort: null }
 ---
 
 # Research: complexity → model defaults (tuning & policy)
@@ -13,10 +8,10 @@ recommended_models:
 
 An earlier draft of this topic assumed Aigon had a single fixed model per agent and needed a greenfield design for complexity metadata and start-time recommendations. **That work is largely shipped (F313):**
 
-- **Feature specs** are created from `templates/specs/feature-template.md`, which already includes YAML frontmatter with `complexity:` (`low` \| `medium` \| `high` \| `very-high`) and optional per-agent `recommended_models` overrides (`model` / `effort`, or `null` to inherit).
+- **Feature specs** are created from `templates/specs/feature-template.md`, which includes YAML frontmatter with `complexity:` (`low` \| `medium` \| `high` \| `very-high`) only. Model names do not belong in the spec.
 - **`feature-create` instructions** (`templates/generic/commands/feature-create.md`) require the authoring agent to set `complexity:` using the rubric in the template.
 - **Per-agent mapping** lives in `templates/agents/{cc,cx,gg,cu}.json` under `cli.complexityDefaults[<complexity>]` → default `{ model, effort }` for that tier.
-- **Resolution** is implemented in `lib/spec-recommendation.js`: spec per-agent overrides → `complexityDefaults` for the spec’s complexity → caller falls back to `aigon config models`. The dashboard consumes this via `/api/recommendation/:type/:id` and pre-selects the start modal.
+- **Resolution** is implemented in `lib/spec-recommendation.js`: `complexityDefaults` for the spec’s complexity → caller falls back to `aigon config models`. The dashboard consumes this via `/api/recommendation/:type/:id` and pre-selects the start modal.
 
 Users can still pick a specific model at start time; recommendations are defaults, not locks.
 
@@ -35,8 +30,6 @@ Users can still pick a specific model at start time; recommendations are default
 
 ### Recommendation policy
 - [ ] Should teams be able to set **repo-level** or **profile-level** floor/ceiling on model tier (e.g. “never below Sonnet for cc”) without editing every spec?
-- [ ] When should authors use `recommended_models` overrides vs only `complexity`?
-
 ### Validation (optional evidence)
 - [ ] Can we cheaply benchmark wrong-tier outcomes (e.g. same canned task at low vs high tier) or is qualitative review sufficient for the first iteration?
 
@@ -48,7 +41,7 @@ Users can still pick a specific model at start time; recommendations are default
 - Any small, evidence-backed adjustments to the feature-create rubric.
 
 ### Out of Scope
-- Replacing the existing frontmatter schema or resolver (unless research proves a breaking change is necessary).
+- Re-introducing per-agent model IDs into spec frontmatter (complexity-only is intentional).
 - Automatic mid-session model switching.
 - Full cost-accounting product work (cross-link observability research if needed).
 

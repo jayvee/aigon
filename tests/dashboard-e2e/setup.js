@@ -69,9 +69,9 @@ module.exports = async function globalSetup() {
     runGit(['config', 'user.email', 'test@aigon.test'], tmpDir);
     runGit(['config', 'user.name', 'Aigon Test'], tmpDir);
 
-    // Drop the fixture's pre-existing inbox specs — post-F294 inbox specs
-    // without a workflow snapshot render as MISSING_SNAPSHOT (no actions),
-    // which is genuinely exceptional and not something tests should exercise.
+    // Drop the fixture's pre-existing inbox specs — e2e seeds its own inbox
+    // rows via feature-create; we avoid mixing in brewboard's static inbox
+    // cards so lifecycle assertions stay deterministic.
     const fixtureInbox = path.join(tmpDir, 'docs', 'specs', 'features', '01-inbox');
     if (fs.existsSync(fixtureInbox)) {
         for (const f of fs.readdirSync(fixtureInbox)) {

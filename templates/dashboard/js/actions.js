@@ -531,8 +531,9 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     const disabledReason = va.disabledReason || '';
     const titleAttr = disabledReason ? ' title="' + escHtml(disabledReason) + '"' : '';
     if (isBlocked) {
-      const blockedIds = feature.blockedBy.map(d => '#' + parseInt(d.id, 10)).join(', ');
-      return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '"' + agentAttr + ' disabled title="Blocked by ' + escHtml(blockedIds) + '">' + escHtml(actionLabel(va)) + '</button>';
+      const blockedIds = feature.blockedBy.map(d => '#' + formatFeatureIdForDisplay(d.id)).join(', ');
+      const waitCls = cls.indexOf('btn-primary') !== -1 ? 'btn btn-secondary kcard-va-btn kcard-start-pending-deps' : cls + ' kcard-start-pending-deps';
+      return '<button class="' + waitCls + '" data-va-action="' + escHtml(va.action) + '"' + agentAttr + ' disabled title="Start unlocks when these are done: ' + escHtml(blockedIds) + '">' + escHtml(actionLabel(va)) + '</button>';
     }
     return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '"' + agentAttr + (va.disabled ? ' disabled' : '') + titleAttr + '>' + escHtml(actionLabel(va)) + '</button>';
   }

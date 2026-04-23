@@ -1,10 +1,5 @@
 ---
 complexity: medium
-recommended_models:
-  cc: { model: null, effort: null }
-  cx: { model: null, effort: null }
-  gg: { model: null, effort: null }
-  cu: { model: null, effort: null }
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-23T11:31:42.842Z", actor: "cli/research-prioritise" }
 ---
@@ -50,4 +45,5 @@ Aigon is currently installed by cloning the repository. To improve accessibility
 
 ## Output
 <!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Link the newly created files below. -->
-- [ ] Feature:
+- [x] Feature: [NPM Package Structure and Publishing](../../features/01-inbox/feature-npm-package-structure-and-publishing.md)
+- [x] Feature: [Interactive Setup and Update Notifications](../../features/01-inbox/feature-interactive-setup-and-update-notifications.md)

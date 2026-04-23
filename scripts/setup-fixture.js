@@ -13,7 +13,8 @@
  *   - Real commits with realistic messages
  *
  * Usage:
- *   node test/setup-fixture.js
+ *   node scripts/setup-fixture.js
+ *   npm run fixture:seed
  *
  * Existing fixture repos in ~/src/ are deleted and recreated.
  */
@@ -70,27 +71,120 @@ function commit(cwd, message) {
     runGit(['commit', '-m', message, '--allow-empty', '--no-verify'], cwd);
 }
 
+/** When GitHub blocks force-push to `main`, publish here and PATCH default_branch so `git clone` still works. */
+const SEED_PUBLISH_BRANCH = 'seed';
+
 function getGitHubUser() {
-    try {
-        return execSync('gh api user --jq .login', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
-    } catch (e) {
-        console.log('  ⚠️  gh CLI not available — skipping GitHub remote setup');
+    const auth = spawnSync('gh', ['auth', 'status', '-h', 'github.com'], { encoding: 'utf8' });
+    if (auth.status !== 0) {
+        console.log('  ⚠️  GitHub CLI is not logged in — skipping seed push.\n      Run: gh auth login -h github.com -w');
         return null;
     }
+    const who = spawnSync('gh', ['api', 'user', '--jq', '.login'], { encoding: 'utf8' });
+    if (who.status !== 0) {
+        const detail = (who.stderr || who.stdout || '').trim();
+        console.log(`  ⚠️  gh api user failed — skipping seed push.${detail ? `\n      ${detail}` : ''}`);
+        return null;
+    }
+    return who.stdout.trim();
+}
+
+function gitHasRemote(cwd, name) {
+    const r = spawnSync('git', ['remote'], { cwd, encoding: 'utf8' });
+    if (r.status !== 0) return false;
+    return r.stdout.split(/\r?\n/).map(s => s.trim()).filter(Boolean).includes(name);
+}
+
+function pushSeedToGitHub(repoDir, ghUser, repoName) {
+    const slug = `${repoName}-seed`;
+    const remoteUrl = `https://github.com/${ghUser}/${slug}.git`;
+
+    const pushMain = spawnSync('git', ['push', '--force', '-u', 'origin', 'main'], {
+        cwd: repoDir,
+        encoding: 'utf8',
+    });
+    if (pushMain.status === 0) {
+        console.log(`  ✓ Pushed ${repoName} → ${remoteUrl} (branch main)`);
+        return;
+    }
+
+    const mainErr = (pushMain.stderr || pushMain.stdout || '').trim();
+    // Protected default branch: mirror local main to a side branch GitHub allows, then make it default.
+    const pushMirror = spawnSync(
+        'git',
+        ['push', '--force', `origin`, `main:refs/heads/${SEED_PUBLISH_BRANCH}`],
+        { cwd: repoDir, encoding: 'utf8' },
+    );
+    if (pushMirror.status !== 0) {
+        const mirrorErr = (pushMirror.stderr || pushMirror.stdout || '').trim();
+        console.log(`  ⚠️  Could not push ${slug}: ${mainErr || '(no stderr)'} | ${mirrorErr || '(no stderr)'}`);
+        return;
+    }
+
+    const patch = spawnSync(
+        'gh',
+        ['api', '-X', 'PATCH', `repos/${ghUser}/${slug}`, '-f', `default_branch=${SEED_PUBLISH_BRANCH}`],
+        { encoding: 'utf8' },
+    );
+    if (patch.status !== 0) {
+        const perr = (patch.stderr || patch.stdout || '').trim();
+        console.log(
+            `  ⚠️  Pushed ${repoName} to branch ${SEED_PUBLISH_BRANCH} but could not set default branch.${perr ? `\n      ${perr}` : ''}\n` +
+            `      In GitHub: Settings → Branches → set default branch to \`${SEED_PUBLISH_BRANCH}\` (or allow force-push to main).`,
+        );
+        return;
+    }
+    console.log(
+        `  ✓ Pushed ${repoName} → ${remoteUrl} — default branch is \`${SEED_PUBLISH_BRANCH}\` (main is protected; clones still work).`,
+    );
 }
 
 function addGitHubRemote(repoDir, repoName, ghUser) {
     // Push to <name>-seed repos — seed-reset clones from these, not the bare repo names
-    const remoteUrl = `https://github.com/${ghUser}/${repoName}-seed.git`;
-    try {
-        // Create repo if it doesn't exist (ignore error if it already exists)
-        execSync(`gh repo create ${repoName}-seed --private --description "Aigon seed repo" 2>/dev/null || true`, { stdio: 'pipe' });
-        runGit(['remote', 'add', 'origin', remoteUrl], repoDir);
-        execSync('git push --force -u origin main', { cwd: repoDir, stdio: 'pipe' });
-        console.log(`  ✓ Pushed ${repoName} to ${remoteUrl} (seed repo)`);
-    } catch (e) {
-        console.log(`  ⚠️  Could not push ${repoName} to GitHub: ${e.message}`);
+    const slug = `${repoName}-seed`;
+    const remoteUrl = `https://github.com/${ghUser}/${slug}.git`;
+
+    // Create remote repo from this directory (cwd must be the fixture repo — not the aigon repo root).
+    const created = spawnSync(
+        'gh',
+        [
+            'repo', 'create', slug,
+            '--private',
+            '--description', 'Aigon canonical seed (npm run fixture:seed)',
+            '--source', '.',
+            '--remote', 'origin',
+            '--push',
+        ],
+        { cwd: repoDir, encoding: 'utf8' },
+    );
+
+    if (created.status === 0) {
+        console.log(`  ✓ Created / pushed ${repoName} → ${remoteUrl}`);
+        return;
     }
+
+    const createMsg = (created.stderr || created.stdout || '').trim();
+    const repoMissing = /Repository not found|404|Not Found/i.test(createMsg);
+    if (repoMissing) {
+        console.log(`  ⚠️  ${slug} does not exist on GitHub and auto-create failed:\n      ${createMsg}\n      Create it (empty private repo) or fix gh permissions, then re-run fixture:seed.`);
+        return;
+    }
+
+    // Repo already exists (or create failed for a benign reason) — ensure origin and push.
+    if (!gitHasRemote(repoDir, 'origin')) {
+        try {
+            runGit(['remote', 'add', 'origin', remoteUrl], repoDir);
+        } catch (e) {
+            console.log(`  ⚠️  ${repoName}: could not add origin (${e.message}). gh repo create said: ${createMsg}`);
+            return;
+        }
+    }
+
+    if (!/already exists|name already exists|HTTP 422/i.test(createMsg) && createMsg) {
+        console.log(`  ⚠️  gh repo create (${slug}): ${createMsg}`);
+    }
+
+    pushSeedToGitHub(repoDir, ghUser, repoName);
 }
 
 // ─── seed repo overrides ─────────────────────────────────────────────────────
@@ -139,20 +233,33 @@ This project uses the Aigon development workflow.
 }
 
 // ─── feature spec helpers ─────────────────────────────────────────────────────
+// Seed specs carry `complexity:` so the dashboard start modal demos the ladder (F313).
+// Optional `meta` adds `set:` / `depends_on:` for feature-set demos (brewboard backlog chain).
 
-function featureInboxContent(title, summary, ac, approach) {
+function featureYamlBlock(complexity, meta) {
+    const lines = ['---', `complexity: ${complexity}`];
+    if (meta && meta.set) lines.push(`set: ${meta.set}`);
+    if (meta && Array.isArray(meta.depends_on) && meta.depends_on.length > 0) {
+        lines.push('depends_on:');
+        for (const d of meta.depends_on) lines.push(`  - "${String(d)}"`);
+    }
+    lines.push('---');
+    return `${lines.join('\n')}\n\n`;
+}
+
+function featureInboxContent(title, summary, ac, approach, complexity = 'medium', meta = null) {
     const acLines = (ac || ['Feature is implemented and working']).map(a => `- [ ] ${a}`).join('\n');
     const techApproach = approach || 'Implement as described in the acceptance criteria. Keep changes minimal.';
-    return `# Feature: ${title}\n\n## Summary\n\n${summary}\n\n## Acceptance Criteria\n\n${acLines}\n\n## Technical Approach\n\n${techApproach}\n\n## Out of Scope\n\n- Do NOT write tests\n- Do NOT add documentation\n- Do NOT refactor existing code\n- Only create/edit the files listed in the acceptance criteria\n\n## Validation\n\n\`\`\`bash\necho "Feature ${title} validated"\n\`\`\`\n`;
+    const fm = featureYamlBlock(complexity, meta);
+    return `${fm}# Feature: ${title}\n\n## Summary\n\n${summary}\n\n## Acceptance Criteria\n\n${acLines}\n\n## Technical Approach\n\n${techApproach}\n\n## Out of Scope\n\n- Do NOT write tests\n- Do NOT add documentation\n- Do NOT refactor existing code\n- Only create/edit the files listed in the acceptance criteria\n\n## Validation\n\n\`\`\`bash\necho "Feature ${title} validated"\n\`\`\`\n`;
 }
 
-function featureBacklogContent(id, title, summary, ac, approach) {
-    return featureInboxContent(title, summary, ac, approach);
+function featureBacklogContent(id, title, summary, ac, approach, complexity = 'medium', meta = null) {
+    return featureInboxContent(title, summary, ac, approach, complexity, meta);
 }
 
-
-function featureDoneContent(id, title, summary) {
-    return featureInboxContent(title, summary);
+function featureDoneContent(id, title, summary, complexity = 'medium', meta = null) {
+    return featureInboxContent(title, summary, undefined, undefined, complexity, meta);
 }
 
 
@@ -175,11 +282,13 @@ function writeFixtureConfig(repoDir) {
                 research: { model: 'gpt-5.1-codex-mini' },
                 implement: { model: 'gpt-5.1-codex-mini' },
                 evaluate: { model: 'gpt-5.1-codex-mini' },
+                review: { model: 'gpt-5.1-codex-mini' },
             },
             cu: {
                 research: { model: 'composer-1.5' },
                 implement: { model: 'composer-1.5' },
                 evaluate: { model: 'composer-1.5' },
+                review: { model: 'composer-1.5' },
             },
         },
         devProxy: {
@@ -199,8 +308,9 @@ function writeFixtureConfig(repoDir) {
     write(path.join(repoDir, '.env'), `PORT=${port}\n`);
 }
 
-function researchContent(title, summary) {
-    return `# Research: ${title}\n\n## Summary\n\n${summary}\n\n## Questions\n\n- [ ] Which option should we choose right now?\n\n## Findings\n\nTBD\n`;
+function researchContent(title, summary, complexity = 'medium') {
+    const fm = `---\ncomplexity: ${complexity}\n---\n\n`;
+    return `${fm}# Research: ${title}\n\n## Summary\n\n${summary}\n\n## Questions\n\n- [ ] Which option should we choose right now?\n\n## Findings\n\nTBD\n`;
 }
 
 function feedbackContent(id, title, summary, status, type = 'bug', severity = 'medium', evidence = '', impact = '') {
@@ -433,7 +543,8 @@ export default config;
             'Add a utility function that filters an array of beers by style.',
             ['Create `src/lib/filter-by-style.ts` exporting `function filterByStyle(beers: Beer[], styles: string[]): Beer[]`',
              'Return beers where `beer.style` matches any of the given styles (case-insensitive)'],
-            'Array.filter with includes check. One file, one function.'));
+            'Array.filter with includes check. One file, one function.',
+            'low'));
 
     write(path.join(inboxDir, 'feature-social-sharing.md'),
         featureInboxContent('Social Sharing',
@@ -441,7 +552,8 @@ export default config;
             ['Create `src/lib/share-url.ts` exporting `function buildShareUrl(beerName: string, rating: number, platform: "twitter" | "facebook"): string`',
              'Twitter: return `https://twitter.com/intent/tweet?text=...` with beer name and rating',
              'Facebook: return `https://www.facebook.com/sharer/sharer.php?u=...`'],
-            'String template building. One file, one function.'));
+            'String template building. One file, one function.',
+            'low'));
 
     // ── features/02-backlog (2 items, with IDs) ──────────────────────────────
     const backlogDir = path.join(repoDir, 'docs', 'specs', 'features', '02-backlog');
@@ -452,7 +564,12 @@ export default config;
             ['Add a `dark` class toggle to `src/app/layout.tsx` that reads `prefers-color-scheme`',
              'Add a `ThemeToggle` button component in `src/components/theme-toggle.tsx`',
              'Persist theme choice to localStorage under key `brewboard-theme`'],
-            'Add a small client component for the toggle. Use `useEffect` to read localStorage on mount. Apply `className="dark"` to `<html>`.'));
+            'Add a small client component for the toggle. Use `useEffect` to read localStorage on mount. Apply `className="dark"` to `<html>`.',
+            'medium'));
+
+    // Three backlog features share `set: brewboard-data` with a simple chain so the
+    // dashboard Set card + set-autonomous-start demo works after seed-reset.
+    const SET_BREWBOARD_DATA = 'brewboard-data';
 
     write(path.join(backlogDir, 'feature-02-brewery-import.md'),
         featureBacklogContent('02', 'Brewery Import',
@@ -460,7 +577,9 @@ export default config;
             ['Create `src/lib/import-csv.ts` that reads a CSV string and returns `Array<{name: string, brewery: string}>`',
              'Handle comma-in-quotes edge case',
              'Deduplicate by name+brewery (case-insensitive)'],
-            'Simple string parsing — split by newline, then by comma. No external dependencies.'));
+            'Simple string parsing — split by newline, then by comma. No external dependencies.',
+            'high',
+            { set: SET_BREWBOARD_DATA }));
 
     // ── features/02-backlog (continued — items that would have been in-progress) ─
     write(path.join(backlogDir, 'feature-03-user-profiles.md'),
@@ -469,7 +588,9 @@ export default config;
             ['Create `src/components/profile-card.tsx` with props `{ username: string, beerCount: number }`',
              'Render username as an h2 and beer count as a paragraph',
              'Export the component as default'],
-            'Simple presentational React component. No data fetching — just props in, JSX out.'));
+            'Simple presentational React component. No data fetching — just props in, JSX out.',
+            'low',
+            { set: SET_BREWBOARD_DATA, depends_on: ['02'] }));
 
     write(path.join(backlogDir, 'feature-04-rating-system.md'),
         featureBacklogContent('04', 'Rating System',
@@ -477,29 +598,31 @@ export default config;
             ['Create `src/components/star-rating.tsx` with props `{ rating: number }` (0.0 to 5.0)',
              'Render filled, half-filled, and empty star characters (★ ½ ☆)',
              'Round to nearest 0.5'],
-            'Pure function component. Use Math.round(rating * 2) / 2 for rounding. Map 5 positions to star characters.'));
+            'Pure function component. Use Math.round(rating * 2) / 2 for rounding. Map 5 positions to star characters.',
+            'low',
+            { set: SET_BREWBOARD_DATA, depends_on: ['03'] }));
 
     // ── features/05-done (2 items) ───────────────────────────────────────────
     const doneDir = path.join(repoDir, 'docs', 'specs', 'features', '05-done');
 
     write(path.join(doneDir, 'feature-05-onboarding-flow.md'),
-        featureDoneContent('05', 'Onboarding Flow', 'Three-step onboarding wizard for new users: choose favourite styles, follow 3 breweries, add first beer.'));
+        featureDoneContent('05', 'Onboarding Flow', 'Three-step onboarding wizard for new users: choose favourite styles, follow 3 breweries, add first beer.', 'high'));
 
     write(path.join(doneDir, 'feature-06-search.md'),
-        featureDoneContent('06', 'Search', 'Full-text search across beers, breweries, and styles. Results ranked by relevance with highlighted matches.'));
+        featureDoneContent('06', 'Search', 'Full-text search across beers, breweries, and styles. Results ranked by relevance with highlighted matches.', 'very-high'));
 
     // ── research-topics (all in backlog or done — nothing in-progress without a session) ─
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '01-inbox', 'research-payment-providers.md'),
-        researchContent('Payment Providers', 'Pick between Stripe and Paddle for launch. Focus on setup speed and monthly cost.'));
+        researchContent('Payment Providers', 'Pick between Stripe and Paddle for launch. Focus on setup speed and monthly cost.', 'medium'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-01-caching-strategy.md'),
-        researchContent('Caching Strategy', 'Choose one cache approach for launch: in-memory or Redis. Keep recommendation to local dev + small prod traffic.'));
+        researchContent('Caching Strategy', 'Choose one cache approach for launch: in-memory or Redis. Keep recommendation to local dev + small prod traffic.', 'high'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '02-backlog', 'research-02-offline-sync.md'),
-        researchContent('Offline Sync', 'Pick an MVP offline strategy for read-only viewing: basic service worker cache or no offline in v1.'));
+        researchContent('Offline Sync', 'Pick an MVP offline strategy for read-only viewing: basic service worker cache or no offline in v1.', 'high'));
 
     write(path.join(repoDir, 'docs', 'specs', 'research-topics', '04-done', 'research-03-auth-providers.md'),
-        researchContent('Auth Providers', 'Compared Clerk, Auth0, and NextAuth. Decision: Clerk for its DX and Vercel integration.'));
+        researchContent('Auth Providers', 'Compared Clerk, Auth0, and NextAuth. Decision: Clerk for its DX and Vercel integration.', 'medium'));
 
     // ── feedback (realistic customer reports) ──────────────────────────────
     write(path.join(repoDir, 'docs', 'specs', 'feedback', '01-inbox', 'feedback-01-slow-search.md'),

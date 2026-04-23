@@ -251,27 +251,24 @@ The workflow-core engine is the sole lifecycle authority for features and resear
 
 **Central launch helper:** Every spawn path (`feature-start`, dashboard "restart agent", autopilot iterate, AutoConductor review spawn, `feature-open`) MUST go through `buildAgentLaunchInvocation({agentId, snapshot, stageDefaultModel})`. Direct reads of `cliConfig.models[...]` in new spawn sites will silently bypass the override — this is exactly the bug the helper exists to prevent.
 
-### Spec Frontmatter: complexity + recommended models (feature 313)
+### Spec Frontmatter: complexity (feature 313)
 
-Feature and research specs may carry a YAML frontmatter block capturing the authoring AI's complexity assessment and per-agent `{model, effort}` recommendation:
+Feature and research specs may carry a YAML frontmatter block with the authoring AI's **complexity** assessment only:
 
 ```yaml
 ---
 complexity: low | medium | high | very-high
-recommended_models:
-  cc: { model: <string|null>, effort: <string|null> }
-  cx: { model: <string|null>, effort: <string|null> }
-  gg: { model: <string|null>, effort: <string|null> }
-  cu: { model: <string|null>, effort: <string|null> }
 ---
 ```
 
-- **What's allowed:** `complexity` (single enum) and `recommended_models` (map of agentId → `{model, effort}`). `transitions:` is also maintained here by the CLI for audit trail.
-- **What's not allowed:** workflow state. Lifecycle stage, agents, review status etc. live in the workflow-core snapshot — frontmatter is advisory, not authoritative.
-- **Parser:** `lib/cli-parse.js` `parseFrontMatter`. Inline `{ key: value }` maps are parsed into plain objects.
-- **Resolver:** `lib/spec-recommendation.js` applies the fallback chain `spec → agent.cli.complexityDefaults[<complexity>] → null` and exposes the per-agent recommendation via `/api/recommendation/:type/:id`.
-- **Missing / malformed frontmatter is valid** — treated as "no recommendation, use config defaults" (pre-F313 behaviour preserved).
-- Producers: `feature-create`, `research-create`, and `feature-spec-review` all touch frontmatter. Readers: the dashboard start modal (banner + pre-selection), backlog card complexity badge.
+Per-agent **model and effort** defaults for the start modal are **not** stored in the spec — they are resolved at start time from `templates/agents/<id>.json` `cli.complexityDefaults[<complexity>]`, then global `aigon config models`, so provider SKUs can change without editing specs.
+
+- **What's allowed:** `complexity` (single enum). The CLI may also maintain **`transitions:`** here for audit trail (entity commands).
+- **What's not allowed:** workflow state. Lifecycle stage, agents, review status etc. live in the workflow-core snapshot — frontmatter is advisory, not authoritative. **Do not** embed `recommended_models` or other per-agent model IDs in specs (legacy fields should be removed in spec review).
+- **Parser:** `lib/cli-parse.js` `parseFrontMatter`.
+- **Resolver:** `lib/spec-recommendation.js` applies `agent.cli.complexityDefaults[<complexity>] → null` and exposes the per-agent recommendation via `/api/recommendation/:type/:id`.
+- **Missing / malformed `complexity` is valid** — treated as "no recommendation, use config defaults" (pre-F313 behaviour preserved).
+- Producers: `feature-create`, `research-create`, and `feature-spec-review` touch frontmatter. Readers: the dashboard start modal (banner + pre-selection), backlog card complexity badge.
 
 ### Spec Pre-authorisation
 
@@ -369,7 +366,7 @@ So the architecture after F171 → F283 → F294 is:
 2. Feature lifecycle reads: workflow snapshots only — no permissive legacy fallbacks.
 3. Agent/session reads: combine snapshot data, `.aigon/state/` files, and tmux state.
 
-**Every feature and research entity has a workflow-core snapshot from creation onward.** A spec without a snapshot is a migration problem — the read model surfaces `WORKFLOW_SOURCE.MISSING_SNAPSHOT` with no actions and no badge, and every write-path command points users at `aigon doctor --fix`. Inbox entities are no longer a carve-out: create bootstraps a slug-keyed inbox snapshot immediately, and prioritise re-keys it to the numeric id. F294 deleted `COMPAT_INBOX` on the right principle; `b1db12d3` was the narrow stopgap that re-derived inbox actions from folder stage while create still violated the invariant. F296 removes that producer drift so the missing-snapshot path now means genuinely broken or unmigrated state.
+**Every feature and research entity has a workflow-core snapshot from creation onward.** A spec without a snapshot is still a migration problem: the read model tags the row `WORKFLOW_SOURCE.MISSING_SNAPSHOT`, and **CLI** commands that need engine state exit non-zero with `aigon doctor --fix`. The **dashboard** does not 500 the grid: for specs that sit in **inbox** or **backlog** folders but lack `snapshot.json`, `buildMissingSnapshotState` still derives **pre-engine** `validActions` from folder stage (Prioritise / Start, etc.) via `snapshotToDashboardActions(..., null, stage)`; rows in later lifecycle folders without a snapshot keep empty actions. Inbox entities are no longer a carve-out at create time: create bootstraps a slug-keyed inbox snapshot immediately, and prioritise re-keys it to the numeric id. F294 deleted `COMPAT_INBOX` on the right principle; `b1db12d3` was the narrow stopgap that re-derived inbox actions from folder stage while create still violated the invariant. F296 removes that producer drift for newly created entities.
 
 **Surface split:** `getFeatureDashboardState` / `getResearchDashboardState` do not throw for a missing snapshot — they return the `MISSING_SNAPSHOT` row shape so the HTTP dashboard can load the full table. Interactive CLI commands (`feature-list`, `feature-status`, research equivalents, close helpers) **error** with the same migration hint (`aigon doctor --fix`).
 

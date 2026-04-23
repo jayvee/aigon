@@ -212,7 +212,6 @@
         }
         document.getElementById('agent-picker').style.display = 'flex';
         const afterOpen = function() {
-          if (typeof annotateAgentPickerBudget === 'function') annotateAgentPickerBudget();
           if (typeof updatePickerBudgetNotice === 'function') updatePickerBudgetNotice();
           const submitEl = document.getElementById('agent-picker-submit');
           if (submitEl) submitEl.focus();
