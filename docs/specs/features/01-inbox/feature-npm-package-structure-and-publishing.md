@@ -13,25 +13,20 @@ complexity: medium
      `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Lay the groundwork for shipping Aigon as a global npm package and split the work into the six ordered `publish-npm-package` feature slices. This umbrella spec exists to capture the overall goal and scope; the concrete implementation lives in the set members.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- As a maintainer, I want a single umbrella for the package-publishing effort so I can see the full rollout shape.
+- As a maintainer, I want the actual implementation to be split into smaller ordered features so release risk stays low.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- The umbrella spec describes the package publishing initiative at a high level.
+- The detailed implementation is decomposed into the six backlog features in the `publish-npm-package` set.
+- The research link points back to the canonical findings document.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+node -c aigon-cli.js
 ```
 
 ## Pre-authorised
@@ -45,7 +40,7 @@ complexity: medium
 -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+Treat this as the parent coordination spec rather than the implementation spec. The publish work is intentionally split into package boundary, release channels, update checks, onboarding, prerequisites, and server lifecycle slices.
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites.
@@ -54,13 +49,10 @@ complexity: medium
 -
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- the detailed implementation tasks covered by the `publish-npm-package` set
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Should this umbrella remain in inbox, or be retired once the set features are approved?
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research:
+- Research: #38 publish-npm-package

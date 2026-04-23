@@ -16,25 +16,21 @@ transitions:
      `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Add install-time prerequisite checks for global Aigon so obvious blockers are caught before a user assumes the package is working. The feature also provides remediation guidance for soft failures so the user can fix their environment without guessing.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- As a user, I want Aigon to tell me immediately if my Node, npm, or git setup cannot support the package.
+- As a user, I want actionable remediation instructions when a prerequisite is missing or below the supported version.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- Hard blockers fail fast with a clear explanation.
+- Soft issues are reported with remediation steps rather than silently ignored.
+- The prerequisite check covers the runtime dependencies needed for global install and setup.
+- The output is understandable in both interactive and scripted contexts.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+npm test
 ```
 
 ## Pre-authorised
@@ -48,7 +44,7 @@ transitions:
 -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+Implement a small checker that splits prerequisites into hard failures and soft warnings, then emits concrete remediation steps for each class. The logic should be reusable by setup and by later repair/doctor flows.
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites.
@@ -57,13 +53,10 @@ transitions:
 - depends_on: publish-npm-package-4-interactive-global-setup
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- release channels and npm publication mechanics
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Which prerequisites should be treated as warnings versus hard stops for the first release?
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
 - Research: #38 publish-npm-package

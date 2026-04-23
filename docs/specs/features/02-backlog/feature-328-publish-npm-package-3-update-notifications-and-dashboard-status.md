@@ -16,25 +16,21 @@ transitions:
      `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Create one shared npm version check that powers CLI update notices, slash-command output, and dashboard status for installed Aigon instances. The goal is to stop each surface from inventing its own version logic and to show the same upgrade signal everywhere.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- As a user, I want the CLI to tell me when a newer Aigon version is available.
+- As a user in a dashboard or agent session, I want the same update state shown consistently instead of different components disagreeing.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- CLI, slash-command, and dashboard update states come from the same shared version-check helper.
+- The check can distinguish installed, latest available, prerelease, and unavailable states.
+- Offline or registry-failure cases degrade cleanly without crashing the caller.
+- The payload includes enough metadata for the UI to present a useful upgrade prompt.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+npm test
 ```
 
 ## Pre-authorised
@@ -48,7 +44,7 @@ transitions:
 -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+Centralize npm registry lookup and semver comparison in one helper, then have each surface render from the same normalized result. This keeps the UI thin and avoids drift between CLI output and dashboard state.
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites.
@@ -57,13 +53,10 @@ transitions:
 - depends_on: publish-npm-package-1-package-structure-and-publishing
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- release automation and install-time onboarding
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Should update checks run on a timer, on startup, or both?
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
 - Research: #38 publish-npm-package

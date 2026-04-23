@@ -16,25 +16,21 @@ transitions:
      `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Add a release lane model for Aigon so stable and prerelease npm publishing are explicit. The feature defines how `latest` and `next` dist-tags are selected, how release metadata is validated, and how the publish flow avoids promoting prerelease builds into the stable channel.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- As a maintainer, I want to publish prerelease builds to `next` without risking the `latest` tag.
+- As a maintainer, I want a stable release path that is separate from prerelease automation so users get predictable upgrades.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- Stable releases publish to `latest` only when the release criteria are met.
+- Prerelease builds publish to `next` and never overwrite `latest`.
+- The release process records which dist-tag was used so update checks can interpret the installed version correctly.
+- The release flow has enough validation to prevent a release from being tagged with the wrong channel.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+npm pack --dry-run
 ```
 
 ## Pre-authorised
@@ -48,7 +44,7 @@ transitions:
 -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+Model release intent as an explicit channel decision and keep the publish command responsible for tagging, not guessing. The stable lane should remain conservative, while the prerelease lane can move faster without contaminating stable installs.
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites.
@@ -57,13 +53,10 @@ transitions:
 - depends_on: publish-npm-package-1-package-structure-and-publishing
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- update notifications and onboarding
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Should `next` be the only prerelease channel, or do we also need ad hoc dist-tags for canaries?
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
 - Research: #38 publish-npm-package

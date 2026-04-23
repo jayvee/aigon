@@ -16,25 +16,21 @@ transitions:
      `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Make `aigon server` work cleanly from a globally installed package, including persistent mode, startup discovery, and shutdown behavior. This feature closes the gap between a repo-cloned Aigon and a package-installed Aigon so the server lifecycle still behaves predictably.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- As a globally installed user, I want `aigon server` to find the active repo and start without manual path wiring.
+- As a maintainer, I want persistent server mode to keep working in the packaged install path.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- The server command works when Aigon is installed globally, not only from a cloned repo checkout.
+- Persistent mode continues to start, restart, and health-check correctly in the packaged install path.
+- Server lifecycle commands resolve the repo context before mutating runtime state.
+- The behavior matches the existing local install experience except for the global-distribution wiring.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+npm test
 ```
 
 ## Pre-authorised
@@ -48,7 +44,7 @@ transitions:
 -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+Keep server lifecycle orchestration in the same command surface, but make repo resolution and persistent-mode wiring robust to the package-install execution path. The implementation should reuse the existing server management machinery rather than introducing a second lifecycle model.
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites.
@@ -57,13 +53,10 @@ transitions:
 - depends_on: publish-npm-package-1-package-structure-and-publishing
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- release tagging, onboarding, and prerequisite detection
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Should persistent mode keep using the current supervisor path, or require a package-specific launcher?
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
 - Research: #38 publish-npm-package

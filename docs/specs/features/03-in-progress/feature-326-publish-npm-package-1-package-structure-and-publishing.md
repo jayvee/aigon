@@ -16,25 +16,22 @@ transitions:
      `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Define the npm package boundary for Aigon so the CLI can be published and installed as `@aigon/cli` without leaking internal workspace content. This feature establishes the allowlisted publish surface, the entrypoints that remain public, and the safeguards that prevent accidental release of unsupported files.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- As a maintainer, I want to publish only the runtime files needed by the CLI so the npm package stays small and predictable.
+- As a maintainer, I want a dry-run and allowlist check before publish so accidental file drift is caught before release.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- The package name, bin entrypoint, and public runtime surface are defined for `@aigon/cli`.
+- The publish path rejects unallowlisted files and fails before a release is created.
+- `npm pack --dry-run` shows only the intended runtime artifacts, not repo-local docs, tests, or workflow state.
+- The package documents the supported install and execution entrypoints so downstream release work can rely on them.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+npm pack --dry-run
+node -c aigon-cli.js
 ```
 
 ## Pre-authorised
@@ -48,22 +45,17 @@ transitions:
 -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+Establish a strict file allowlist for published artifacts, keep the CLI entrypoint explicit, and make the publish path verify the packed output before anything is pushed to npm. The implementation should favor fail-fast publish safeguards over broad include patterns so the package stays reproducible.
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
 - none
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- release automation, update checks, and onboarding flows
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Should the package expose any helper libraries publicly, or remain CLI-only?
+- Which files, if any, need to remain accessible for global install diagnostics?
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
 - Research: #38 publish-npm-package

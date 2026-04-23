@@ -16,25 +16,21 @@ transitions:
      `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Add a first-run setup flow for globally installed Aigon that guides users through the minimum required preferences without requiring manual config editing. The setup should be interactive when a TTY is available and should fall back to deterministic defaults when it is not.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- As a first-time user, I want Aigon to ask me for the basics once so I do not have to hand-edit config files.
+- As an automated install or agent-driven install, I want a non-interactive fallback so the setup can finish without waiting for prompts.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- The setup flow is interactive only when a terminal is available.
+- Non-interactive setup produces a valid default configuration without blocking.
+- User preferences captured during setup are stored in Aigon's config layer and can be reused on later runs.
+- The flow leaves the repo in a usable state for follow-on prerequisite checks and server startup.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+node -c aigon-cli.js
 ```
 
 ## Pre-authorised
@@ -48,7 +44,7 @@ transitions:
 -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+Build the setup as a guided wizard with a non-interactive code path that reuses the same defaults and persistence layer. That keeps global install behavior deterministic while still giving humans a low-friction onboarding path.
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites.
@@ -57,13 +53,10 @@ transitions:
 - depends_on: publish-npm-package-1-package-structure-and-publishing
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- prerequisite enforcement and release automation
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Which preferences are mandatory at install time versus safely deferable to later?
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
 - Research: #38 publish-npm-package
