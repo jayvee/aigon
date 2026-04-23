@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-23T23:19:19.646Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Implementation Log Format and Set Context
