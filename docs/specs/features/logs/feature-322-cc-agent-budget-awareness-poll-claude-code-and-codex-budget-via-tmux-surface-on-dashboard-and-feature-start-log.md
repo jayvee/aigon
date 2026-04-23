@@ -6,3 +6,4 @@ Agent: cc
 ## Progress
 
 ## Decisions
+- Solo Drive worktree: followed spec verbatim; skipped new unit tests because existing test suite is 3128/2830 LOC (pre-authorised +30 wouldn't close the gap).
