@@ -23,6 +23,11 @@
 
     let dragState = null;
 
+    /** Close every overflow "⋯" menu (fixed-position; must not be per-card). */
+    function closeAllKcardOverflowMenus() {
+      document.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
+    }
+
     function pipelineCommand(pipelineType, action) {
       const prefix = pipelineType === 'research' ? 'research' : pipelineType === 'feedback' ? 'feedback' : 'feature';
       return prefix + '-' + action;
@@ -741,7 +746,7 @@
           e.stopPropagation();
           const menu = toggle.parentElement.querySelector('.kcard-overflow-menu');
           const isOpen = menu && menu.classList.contains('open');
-          card.querySelectorAll('.kcard-overflow-menu').forEach(m => m.classList.remove('open'));
+          closeAllKcardOverflowMenus();
           if (!isOpen && menu) {
             // Position fixed menu relative to toggle button
             const rect = toggle.getBoundingClientRect();
@@ -791,7 +796,7 @@
       card.querySelectorAll('[data-view-review]').forEach(btn => {
         btn.onclick = (e) => {
           e.stopPropagation();
-          card.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
+          closeAllKcardOverflowMenus();
           openPeekPanel(btn.getAttribute('data-view-review'));
         };
       });
@@ -825,7 +830,7 @@
         if (wasDragged) { wasDragged = false; return; }
         // Close overflow menus when clicking outside them
         if (!e.target.closest('.kcard-overflow-toggle') && !e.target.closest('.kcard-overflow-menu')) {
-          card.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
+          closeAllKcardOverflowMenus();
         }
         if (!e.target.closest('.spec-drift-wrap')) {
           card.querySelectorAll('.spec-drift-wrap.open').forEach(el => el.classList.remove('open'));
