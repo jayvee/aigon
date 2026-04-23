@@ -4,6 +4,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 const { test, withTempDir, report, seedEntityDirs, withRepoCwd } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 
@@ -165,6 +166,166 @@ test('workflow read model exposes prioritise for slug-backed inbox snapshots', (
     assert.ok(inboxState.validActions.some((action) => action.action === 'feature-prioritise'));
     assert.strictEqual(backlogState.readModelSource, wrm.WORKFLOW_SOURCE.SNAPSHOT);
     assert.ok(backlogState.validActions.some((action) => action.action === 'feature-start'));
+}));
+
+// REGRESSION: pre-start inbox/backlog items must expose pause/delete actions from workflow snapshots.
+test('workflow read model exposes pause and delete for pre-start feature and research items', () => withTempDir('aigon-prestart-actions-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    seedEntityDirs(repo, 'research-topics');
+
+    const featureInboxPath = path.join(repo, 'docs/specs/features/01-inbox/feature-foo.md');
+    const featureBacklogPath = path.join(repo, 'docs/specs/features/02-backlog/feature-01-bar.md');
+    const researchInboxPath = path.join(repo, 'docs/specs/research-topics/01-inbox/research-wizardry.md');
+    const researchBacklogPath = path.join(repo, 'docs/specs/research-topics/02-backlog/research-02-deep-dive.md');
+    fs.writeFileSync(featureInboxPath, '# Feature: foo\n');
+    fs.writeFileSync(featureBacklogPath, '# Feature: bar\n');
+    fs.writeFileSync(researchInboxPath, '# Research: wizardry\n');
+    fs.writeFileSync(researchBacklogPath, '# Research: deep dive\n');
+
+    engine.ensureEntityBootstrappedSync(repo, 'feature', 'foo', 'inbox', featureInboxPath);
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '01', 'backlog', featureBacklogPath);
+    engine.ensureEntityBootstrappedSync(repo, 'research', 'wizardry', 'inbox', researchInboxPath);
+    engine.ensureEntityBootstrappedSync(repo, 'research', '02', 'backlog', researchBacklogPath);
+
+    const featureInbox = wrm.getFeatureDashboardState(repo, 'foo', 'inbox', []);
+    const featureBacklog = wrm.getFeatureDashboardState(repo, '01', 'backlog', []);
+    const researchInbox = wrm.getResearchDashboardState(repo, 'wizardry', 'inbox', []);
+    const researchBacklog = wrm.getResearchDashboardState(repo, '02', 'backlog', []);
+
+    assert.ok(featureInbox.validActions.some((action) => action.action === 'feature-pause'));
+    assert.ok(featureInbox.validActions.some((action) => action.action === 'feature-delete'));
+    assert.ok(featureBacklog.validActions.some((action) => action.action === 'feature-pause'));
+    assert.ok(featureBacklog.validActions.some((action) => action.action === 'feature-delete'));
+    assert.ok(researchInbox.validActions.some((action) => action.action === 'research-pause'));
+    assert.ok(researchInbox.validActions.some((action) => action.action === 'research-delete'));
+    assert.ok(researchBacklog.validActions.some((action) => action.action === 'research-pause'));
+    assert.ok(researchBacklog.validActions.some((action) => action.action === 'research-delete'));
+}));
+
+// REGRESSION: pre-start pause/resume must round-trip backlog features without resuming them into implementing.
+test('pausePrestartEntity and resumePrestartEntity preserve feature backlog state', () => withTempDir('aigon-prestart-feature-pause-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-01-foo.md');
+    fs.writeFileSync(specPath, '# Feature: foo\n');
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '01', 'backlog', specPath);
+    const entityModulePath = path.join(__dirname, '../../lib/entity');
+    const utilsModulePath = path.join(__dirname, '../../lib/utils');
+    const templatesModulePath = path.join(__dirname, '../../lib/templates');
+    const script = `
+        delete require.cache[require.resolve(${JSON.stringify(templatesModulePath)})];
+        delete require.cache[require.resolve(${JSON.stringify(utilsModulePath)})];
+        delete require.cache[require.resolve(${JSON.stringify(entityModulePath)})];
+        const entity = require(${JSON.stringify(entityModulePath)});
+        const utils = require(${JSON.stringify(utilsModulePath)});
+        (async () => {
+            const ctx = {
+                utils,
+                git: {
+                    getCurrentBranch: () => 'main',
+                    getDefaultBranch: () => 'main',
+                    getCommonDir: () => null,
+                    runGit: () => {},
+                },
+                board: { loadBoardMapping: () => null },
+            };
+            await entity.pausePrestartEntity(entity.FEATURE_DEF, '01', ctx);
+            await entity.resumePrestartEntity(entity.FEATURE_DEF, '01', ctx);
+        })().catch((error) => {
+            console.error(error.stack || error.message);
+            process.exit(1);
+        });
+    `;
+    execFileSync(process.execPath, ['-e', script], { cwd: repo, stdio: 'pipe' });
+
+    assert.ok(fs.existsSync(path.join(repo, 'docs/specs/features/02-backlog/feature-01-foo.md')));
+    const snapshot = readJson(path.join(repo, '.aigon/workflows/features/01/snapshot.json'));
+    assert.strictEqual(snapshot.currentSpecState, 'backlog');
+    assert.strictEqual(snapshot.pauseReason, null);
+}));
+
+// REGRESSION: pre-start delete must remove research specs and workflow state cleanly.
+test('entityDelete removes a backlog research topic and its workflow snapshot', () => withTempDir('aigon-research-delete-', (repo) => {
+    seedEntityDirs(repo, 'research-topics');
+    const specPath = path.join(repo, 'docs/specs/research-topics/02-backlog/research-02-deep-dive.md');
+    fs.writeFileSync(specPath, '# Research: deep dive\n');
+    engine.ensureEntityBootstrappedSync(repo, 'research', '02', 'backlog', specPath);
+    const entityModulePath = path.join(__dirname, '../../lib/entity');
+    const utilsModulePath = path.join(__dirname, '../../lib/utils');
+    const templatesModulePath = path.join(__dirname, '../../lib/templates');
+    const script = `
+        delete require.cache[require.resolve(${JSON.stringify(templatesModulePath)})];
+        delete require.cache[require.resolve(${JSON.stringify(utilsModulePath)})];
+        delete require.cache[require.resolve(${JSON.stringify(entityModulePath)})];
+        const entity = require(${JSON.stringify(entityModulePath)});
+        const utils = require(${JSON.stringify(utilsModulePath)});
+        (async () => {
+            const ctx = {
+                utils,
+                git: {
+                    getCurrentBranch: () => 'main',
+                    getDefaultBranch: () => 'main',
+                    getCommonDir: () => null,
+                    runGit: () => {},
+                },
+                board: { loadBoardMapping: () => null },
+            };
+            await entity.entityDelete(entity.RESEARCH_DEF, '02', ctx);
+        })().catch((error) => {
+            console.error(error.stack || error.message);
+            process.exit(1);
+        });
+    `;
+    execFileSync(process.execPath, ['-e', script], { cwd: repo, stdio: 'pipe' });
+
+    assert.ok(!fs.existsSync(specPath));
+    assert.ok(!fs.existsSync(path.join(repo, '.aigon/workflows/research/02')));
+}));
+
+// REGRESSION: deleting a feature must fail loudly when other specs still depend on it.
+test('entityDelete blocks deleting a feature that other specs depend on', () => withTempDir('aigon-feature-delete-deps-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    const basePath = path.join(repo, 'docs/specs/features/02-backlog/feature-01-core.md');
+    const dependentPath = path.join(repo, 'docs/specs/features/02-backlog/feature-02-ui.md');
+    fs.writeFileSync(basePath, '# Feature: core\n');
+    fs.writeFileSync(dependentPath, '---\ndepends_on: [01]\n---\n\n# Feature: ui\n');
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '01', 'backlog', basePath);
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '02', 'backlog', dependentPath);
+    const entityModulePath = path.join(__dirname, '../../lib/entity');
+    const utilsModulePath = path.join(__dirname, '../../lib/utils');
+    const templatesModulePath = path.join(__dirname, '../../lib/templates');
+    const script = `
+        delete require.cache[require.resolve(${JSON.stringify(templatesModulePath)})];
+        delete require.cache[require.resolve(${JSON.stringify(utilsModulePath)})];
+        delete require.cache[require.resolve(${JSON.stringify(entityModulePath)})];
+        const entity = require(${JSON.stringify(entityModulePath)});
+        const utils = require(${JSON.stringify(utilsModulePath)});
+        (async () => {
+            const ctx = {
+                utils,
+                git: {
+                    getCurrentBranch: () => 'main',
+                    getDefaultBranch: () => 'main',
+                    getCommonDir: () => null,
+                    runGit: () => {},
+                },
+                board: { loadBoardMapping: () => null },
+            };
+            await entity.entityDelete(entity.FEATURE_DEF, '01', ctx);
+        })().catch((error) => {
+            console.error(error.stack || error.message);
+            process.exit(1);
+        });
+    `;
+    let output = '';
+    try {
+        execFileSync(process.execPath, ['-e', script], { cwd: repo, stdio: 'pipe' });
+    } catch (error) {
+        output = String(error.stderr || '') + String(error.stdout || '');
+    }
+
+    assert.ok(fs.existsSync(basePath));
+    assert.ok(fs.existsSync(path.join(repo, '.aigon/workflows/features/01/snapshot.json')));
+    assert.match(output, /depends_on/);
 }));
 
 report();

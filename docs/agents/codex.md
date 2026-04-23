@@ -62,20 +62,6 @@ Feature and research work are NOT complete until you run these commands yourself
 
 These are direct lifecycle commands you run yourself in the agent host — slash commands for some agents, skills for Codex, and never auto-invoked. The `aigon agent-status` command writes state to the **main repo** (not the worktree), so you won't see state files locally. Just run the command and trust the output.
 
-## Scope Guardrails (cx — MANDATORY)
-
-> Codex has a known pattern of deleting completed features' code while implementing new ones. These rules are non-negotiable.
-
-**Additive-only by default.** Your job is to add the new feature, not to reshape the codebase.
-
-- **Do NOT delete or modify files unrelated to your feature spec.** If existing code conflicts, document the conflict in your implementation log — do not remove it.
-- **Do NOT delete any test files** (`.test.js`, `.test.ts`, `*.spec.*`). Ever. Not even if they appear redundant.
-- **Do NOT remove existing function exports** from any file you did not create in this feature.
-- **Do NOT move spec files between folders.** Only the `aigon` CLI manages spec state transitions.
-- **Do NOT remove or replace completed feature code** (e.g., agent implementations, dashboard components, registered commands). If you think something conflicts, stop and document it — do not remove it.
-
-Before every commit, ask yourself: "Did I delete or modify anything outside my feature's scope?" If yes, revert those changes before committing.
-
 ## Critical Rules
 
 1. **Read the active spec first**: Use `aigon feature-spec <ID>` for features. For research, read the spec directly from `docs/specs/research-topics/03-in-progress/`

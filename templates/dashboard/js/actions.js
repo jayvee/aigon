@@ -761,6 +761,21 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await requestAction('feature-reset', [id], repoPath, btn);
       break;
     }
+    case 'feature-delete':
+    case 'research-delete': {
+      const entityLabel = va.action === 'research-delete' ? 'research' : 'feature';
+      const msg = (va.metadata && va.metadata.confirmationMessage)
+        || ('Delete this ' + entityLabel + ' spec and its workflow state? This cannot be undone.');
+      const ok = await showDangerConfirm({
+        title: 'Delete ' + entityLabel + ' #' + id + (feature.name ? ' — ' + feature.name : '') + '?',
+        message: msg,
+        confirmLabel: 'Delete',
+        cancelLabel: 'Cancel'
+      });
+      if (!ok) return;
+      await requestAction(va.action, [id], repoPath, btn);
+      break;
+    }
     case 'feature-code-review-check':
       await requestAction('feature-code-review-check', [id], repoPath, btn);
       break;
@@ -800,6 +815,27 @@ async function handleSetAction(va, setCard, repoPath, btn) {
   if (!slug) return;
 
   switch (va.action) {
+    case 'set-autonomous-start': {
+      const triplets = await showAgentPicker(slug, 'set ' + slug, {
+        title: 'Choose set agents',
+        submitLabel: 'Start Set',
+        repoPath,
+        taskType: 'implement',
+        action: va.action,
+        collectTriplet: true
+      });
+      if (!triplets || triplets.length === 0) return;
+      const agentIds = triplets.map(t => t.id);
+      try {
+        if (typeof fetchBudget === 'function') {
+          await fetchBudget();
+          const warning = budgetWarningForAgents(agentIds);
+          if (warning && !window.confirm(warning)) return;
+        }
+      } catch (_) { /* best-effort */ }
+      await requestAction('set-autonomous-start', [slug, ...agentIds], repoPath, btn);
+      break;
+    }
     case 'set-autonomous-reset': {
       const message = (va.metadata && va.metadata.confirmationMessage)
         || ('Reset set "' + slug + '"? This clears the set conductor state file and any in-flight set session.');
@@ -813,7 +849,6 @@ async function handleSetAction(va, setCard, repoPath, btn) {
       await requestAction('set-autonomous-reset', [slug], repoPath, btn);
       break;
     }
-    case 'set-autonomous-start':
     case 'set-autonomous-stop':
     case 'set-autonomous-resume':
       await requestAction(va.action, [slug], repoPath, btn);
@@ -1131,6 +1166,7 @@ async function showAutonomousModal(feature, repoPath, btn) {
 
   stopAfter.value = 'close';
   updateAutonomousModeControls();
+  updateAutonomousBudgetNotice();
   await populateAutonomousWorkflowDropdown(repoPath);
   modal.style.display = 'flex';
 }
@@ -1436,22 +1472,33 @@ document.addEventListener('DOMContentLoaded', () => {
   if (saveBtn) saveBtn.onclick = () => saveCurrentAsWorkflow();
   const workflowSelect = document.getElementById('autonomous-workflow');
   if (workflowSelect) {
-    workflowSelect.addEventListener('change', (e) => applyAutonomousWorkflow(String(e.target.value || '').trim()));
+    workflowSelect.addEventListener('change', (e) => {
+      applyAutonomousWorkflow(String(e.target.value || '').trim());
+      updateAutonomousBudgetNotice();
+    });
   }
   const reviewAgentSelect = document.getElementById('autonomous-review-agent');
   if (reviewAgentSelect) {
-    reviewAgentSelect.addEventListener('change', () => updateReviewerTripletSelects(reviewAgentSelect.value));
+    reviewAgentSelect.addEventListener('change', () => {
+      updateReviewerTripletSelects(reviewAgentSelect.value);
+      updateAutonomousBudgetNotice();
+    });
   }
+  const evalAgentSelect = document.getElementById('autonomous-eval-agent');
+  if (evalAgentSelect) evalAgentSelect.addEventListener('change', () => updateAutonomousBudgetNotice());
   modal.addEventListener('change', (e) => {
     if (e.target && e.target.closest('#autonomous-agent-checks')) {
       updateAutonomousModeControls();
     }
+    updateAutonomousBudgetNotice();
   });
 });
 
 // ── Agent budget widget (F322) ──────────────────────────────────────────────
 
 const BUDGET_STALE_MS = 90 * 60 * 1000;
+const BUDGET_WIDGET_HIDDEN_KEY = 'aigon:budget-widget-hidden';
+const BUDGET_WIDGET_COLLAPSED_KEY = 'aigon:budget-widget-collapsed';
 let _budgetCache = null;
 let _budgetFetchPromise = null;
 
@@ -1470,6 +1517,123 @@ function fetchBudget(force) {
     .catch(() => ({ cc: null, cx: null }))
     .then(data => { _budgetCache = data || { cc: null, cx: null }; _budgetFetchPromise = null; return _budgetCache; });
   return _budgetFetchPromise;
+}
+
+function budgetWidgetCollapsed() {
+  try {
+    const v = localStorage.getItem(BUDGET_WIDGET_COLLAPSED_KEY);
+    if (v === '1' || v === '0') return v === '1';
+    if (localStorage.getItem(BUDGET_WIDGET_HIDDEN_KEY) === '1') {
+      localStorage.removeItem(BUDGET_WIDGET_HIDDEN_KEY);
+      localStorage.setItem(BUDGET_WIDGET_COLLAPSED_KEY, '1');
+      return true;
+    }
+  } catch (_) { /* ignore */ }
+  return false;
+}
+
+function setBudgetWidgetCollapsed(collapsed) {
+  try {
+    localStorage.setItem(BUDGET_WIDGET_COLLAPSED_KEY, collapsed ? '1' : '0');
+    localStorage.removeItem(BUDGET_WIDGET_HIDDEN_KEY);
+  } catch (_) { /* ignore */ }
+}
+
+function budgetAgentEnabled(agentId) {
+  return AIGON_AGENTS.some(agent => agent.id === agentId);
+}
+
+function hasAnyBudgetData(data) {
+  const entry = data || _budgetCache || {};
+  return !!(entry.cc || entry.cx);
+}
+
+function syncBudgetToggleButton(hasData) {
+  const btn = document.getElementById('budget-toggle-btn');
+  if (!btn) return;
+  if (!hasData) {
+    btn.style.display = 'none';
+    return;
+  }
+  btn.style.display = '';
+  const collapsed = budgetWidgetCollapsed();
+  btn.textContent = collapsed ? 'Expand quota' : 'Collapse quota';
+  btn.setAttribute('aria-pressed', collapsed ? 'false' : 'true');
+  btn.title = collapsed ? 'Expand the agent quota panel' : 'Collapse the agent quota panel to save space';
+}
+
+function collectBudgetPctValues(data) {
+  const values = [];
+  let polledAt = null;
+  const touchPoll = iso => {
+    if (!iso) return;
+    if (!polledAt || new Date(iso) > new Date(polledAt)) polledAt = iso;
+  };
+  if (budgetAgentEnabled('cc') && data.cc) {
+    touchPoll(data.cc.polled_at);
+    [ccRemaining(data.cc.session), ccRemaining(data.cc.week_all),
+      data.cc.week_sonnet ? ccRemaining(data.cc.week_sonnet) : null]
+      .filter(v => v != null && Number.isFinite(v))
+      .forEach(v => values.push(v));
+  }
+  if (budgetAgentEnabled('cx') && data.cx) {
+    touchPoll(data.cx.polled_at);
+    const fh = data.cx.five_hour && data.cx.five_hour.pct_remaining;
+    const wk = data.cx.weekly && data.cx.weekly.pct_remaining;
+    [fh, wk].filter(v => v != null && Number.isFinite(v)).forEach(v => values.push(v));
+  }
+  return { values, polledAt };
+}
+
+function budgetOverallSummaryClass(data) {
+  const { values, polledAt } = collectBudgetPctValues(data);
+  if (values.length === 0) return 'budget-stale';
+  const worst = values.reduce((a, b) => Math.min(a, b), 100);
+  return budgetClassFor(worst, polledAt);
+}
+
+function budgetOverallAriaLabel(summaryClass) {
+  if (summaryClass === 'budget-red') return 'Overall quota headroom: low';
+  if (summaryClass === 'budget-amber') return 'Overall quota headroom: moderate';
+  if (summaryClass === 'budget-green') return 'Overall quota headroom: healthy';
+  return 'Overall quota: stale or unavailable';
+}
+
+function budgetCollapsedSummaryLine(data) {
+  const parts = [];
+  for (const id of ['cc', 'cx']) {
+    if (!budgetAgentEnabled(id)) continue;
+    const s = budgetSummaryForAgent(id, data[id]);
+    parts.push(`${s.name}: ${s.summaryText}`);
+  }
+  return parts.join(' · ') || 'Waiting for usage data';
+}
+
+function buildBudgetStatusDot(summaryClass) {
+  return createEl('span', {
+    className: 'budget-status-dot ' + summaryClass,
+    attrs: {
+      role: 'img',
+      'aria-label': budgetOverallAriaLabel(summaryClass),
+    },
+  });
+}
+
+function buildBudgetCollapseControl(collapsed) {
+  const btn = createEl('button', {
+    className: 'budget-collapse-btn',
+    text: collapsed ? 'Expand' : 'Collapse',
+    attrs: {
+      type: 'button',
+      'aria-expanded': collapsed ? 'false' : 'true',
+      title: collapsed ? 'Show full quota details' : 'Collapse quota panel',
+    },
+  });
+  btn.addEventListener('click', () => {
+    setBudgetWidgetCollapsed(!budgetWidgetCollapsed());
+    renderBudgetWidget();
+  });
+  return btn;
 }
 
 function fmtRelAgo(iso) {
@@ -1501,9 +1665,150 @@ function buildBudgetMetric({ label, pctRemaining, resetsAt, polledAt }) {
   return wrap;
 }
 
+function budgetSupportText(agentId, entry) {
+  if (agentId !== 'cx' || !entry) return '';
+  const parts = [];
+  if (entry.plan_type) parts.push(String(entry.plan_type).replace(/^\w/, c => c.toUpperCase()));
+  if (entry.credits) {
+    if (entry.credits.unlimited) parts.push('unlimited credits');
+    else if (entry.credits.hasCredits) parts.push(`credits ${entry.credits.balance || ''}`.trim());
+    else parts.push('no credits');
+  }
+  return parts.join(' · ');
+}
+
+function compactBudgetSummary(parts) {
+  return parts
+    .filter(part => part && part.value != null)
+    .map(part => `${part.label} ${part.value}%`)
+    .join(' · ') || 'usage unavailable';
+}
+
 function ccRemaining(entry) {
   if (!entry || entry.pct_used == null) return null;
   return 100 - entry.pct_used;
+}
+
+function budgetSummaryForAgent(agentId, entry) {
+  const name = agentId === 'cc' ? 'Claude Code' : 'Codex';
+  if (!entry) {
+    return {
+      id: agentId,
+      name,
+      severity: 'muted',
+      badge: 'Info',
+      copy: 'Usage data is not available from the latest poll yet.',
+      metrics: [],
+      summaryText: 'usage unavailable',
+      summaryClass: 'budget-stale',
+    };
+  }
+
+  let metrics = [];
+  let values = [];
+  let summaryText = 'usage unavailable';
+  if (agentId === 'cc') {
+    const sessionPct = ccRemaining(entry.session);
+    const weekPct = ccRemaining(entry.week_all);
+    const sonnetPct = ccRemaining(entry.week_sonnet);
+    metrics = [
+      { label: 'session remaining', pctRemaining: sessionPct, resetsAt: entry.session && entry.session.resets_at, polledAt: entry.polled_at },
+      { label: 'weekly remaining', pctRemaining: weekPct, resetsAt: entry.week_all && entry.week_all.resets_at, polledAt: entry.polled_at },
+    ];
+    if (entry.week_sonnet) metrics.push({ label: 'sonnet remaining', pctRemaining: sonnetPct, resetsAt: entry.week_sonnet.resets_at, polledAt: entry.polled_at });
+    values = [sessionPct, weekPct, sonnetPct].filter(v => v != null);
+    summaryText = compactBudgetSummary([
+      { label: 'session', value: sessionPct },
+      { label: 'week', value: weekPct },
+      { label: 'sonnet', value: sonnetPct },
+    ]);
+  } else {
+    const fivePct = entry.five_hour && entry.five_hour.pct_remaining;
+    const weeklyPct = entry.weekly && entry.weekly.pct_remaining;
+    metrics = [
+      { label: '5h remaining', pctRemaining: fivePct, resetsAt: entry.five_hour && entry.five_hour.resets_at, polledAt: entry.polled_at },
+      { label: 'weekly remaining', pctRemaining: weeklyPct, resetsAt: entry.weekly && entry.weekly.resets_at, polledAt: entry.polled_at },
+    ];
+    values = [fivePct, weeklyPct].filter(v => v != null);
+    summaryText = compactBudgetSummary([
+      { label: '5h', value: fivePct },
+      { label: 'week', value: weeklyPct },
+    ]);
+  }
+
+  const worst = values.length > 0 ? values.reduce((a, b) => Math.min(a, b), 100) : null;
+  const warning = worst != null && worst < 20;
+  return {
+    id: agentId,
+    name,
+    severity: warning ? 'warning' : 'info',
+    badge: warning ? 'Warning' : 'Info',
+    copy: warning
+      ? `${name} is low on remaining quota. Lower percentages mean less room before the current limit window resets.`
+      : `${name} has remaining quota available for this run.`,
+    metrics,
+    supportText: budgetSupportText(agentId, entry),
+    summaryText,
+    summaryClass: budgetClassFor(worst, entry.polled_at),
+  };
+}
+
+function renderBudgetNotice(containerId, agentIds) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const ids = [...new Set((agentIds || []).filter(id => id === 'cc' || id === 'cx'))];
+  if (ids.length === 0) {
+    container.style.display = 'none';
+    container.replaceChildren();
+    return;
+  }
+
+  const states = ids.map(id => budgetSummaryForAgent(id, _budgetCache && _budgetCache[id]));
+  const title = createEl('div', { className: 'budget-notice-title' });
+  title.appendChild(createEl('span', { text: 'Remaining quota before reset' }));
+  const latest = states
+    .map(state => _budgetCache && _budgetCache[state.id] && _budgetCache[state.id].polled_at)
+    .filter(Boolean)
+    .sort()
+    .pop();
+  title.appendChild(createEl('span', { text: latest ? 'updated ' + fmtRelAgo(latest) : 'waiting for usage data' }));
+
+  const grid = createEl('div', { className: 'budget-notice-grid' });
+  states.forEach(state => {
+    const card = createEl('div', { className: 'budget-notice-card budget-notice-' + state.severity });
+    const head = createEl('div', { className: 'budget-notice-head' });
+    const heading = createEl('div');
+    heading.appendChild(createEl('span', { className: 'budget-notice-agent', text: state.name }));
+    if (state.supportText) heading.appendChild(createEl('div', { className: 'budget-notice-support', text: state.supportText }));
+    head.appendChild(heading);
+    head.appendChild(createEl('span', { className: 'budget-notice-badge', text: state.badge }));
+    card.appendChild(head);
+    card.appendChild(createEl('div', { className: 'budget-notice-copy', text: state.copy }));
+    if (state.metrics.length > 0) {
+      const metrics = createEl('div', { className: 'budget-notice-metrics' });
+      state.metrics.forEach(metric => metrics.appendChild(buildBudgetMetric(metric)));
+      card.appendChild(metrics);
+    }
+    grid.appendChild(card);
+  });
+
+  replaceNodeChildren(container, [title, grid]);
+  container.style.display = '';
+}
+
+function updatePickerBudgetNotice() {
+  const checked = [...document.querySelectorAll('#agent-picker input[type=checkbox]:checked, #agent-picker input[type=radio]:checked')].map(input => input.value);
+  renderBudgetNotice('agent-picker-budget-notice', checked);
+}
+
+function updateAutonomousBudgetNotice() {
+  const selectedAgents = [...document.querySelectorAll('#autonomous-agent-checks input[type=checkbox]:checked')].map(input => input.value);
+  const evalAgent = document.getElementById('autonomous-eval-agent');
+  const reviewAgent = document.getElementById('autonomous-review-agent');
+  const combined = selectedAgents
+    .concat(evalAgent && evalAgent.value ? [evalAgent.value] : [])
+    .concat(reviewAgent && reviewAgent.value ? [reviewAgent.value] : []);
+  renderBudgetNotice('autonomous-budget-notice', combined);
 }
 
 function renderBudgetWidget() {
@@ -1512,60 +1817,117 @@ function renderBudgetWidget() {
   const data = _budgetCache || { cc: null, cx: null };
   const cc = data.cc;
   const cx = data.cx;
-  if (!cc && !cx) { el.style.display = 'none'; return; }
+  if (!hasAnyBudgetData(data)) {
+    el.style.display = 'none';
+    el.classList.remove('budget-widget--collapsed');
+    syncBudgetToggleButton(false);
+    return;
+  }
+  syncBudgetToggleButton(true);
   el.style.display = 'flex';
+  const collapsed = budgetWidgetCollapsed();
+  const overallClass = budgetOverallSummaryClass(data);
+  if (collapsed) el.classList.add('budget-widget--collapsed');
+  else el.classList.remove('budget-widget--collapsed');
+
   const children = [];
 
-  if (cc) {
-    const sessionPct = ccRemaining(cc.session);
-    const weekPct = ccRemaining(cc.week_all);
-    const sonnetPct = ccRemaining(cc.week_sonnet);
+  const latest = [cc && cc.polled_at, cx && cx.polled_at].filter(Boolean).sort().pop();
+  const head = createEl('div', { className: 'budget-widget-head' });
+  head.appendChild(buildBudgetStatusDot(overallClass));
+  const headTitles = createEl('div', { className: 'budget-widget-head-titles' });
+  headTitles.appendChild(createEl('span', { className: 'budget-widget-head-title', text: 'Remaining quota before reset' }));
+  if (collapsed) {
+    headTitles.appendChild(createEl('span', { className: 'budget-widget-head-summary', text: budgetCollapsedSummaryLine(data) }));
+  }
+  head.appendChild(headTitles);
+  const headMeta = createEl('div', { className: 'budget-widget-head-meta' });
+  if (collapsed) {
+    if (latest) headMeta.appendChild(createEl('span', { className: 'budget-widget-head-updated', text: 'updated ' + fmtRelAgo(latest) }));
+    const headRefresh = createEl('button', { className: 'budget-refresh', text: '↻', attrs: { title: 'Refresh budgets', 'aria-label': 'Refresh budgets' } });
+    headRefresh.onclick = () => {
+      headRefresh.classList.add('spinning');
+      fetch('/api/budget/refresh', { method: 'POST' }).catch(() => {});
+      setTimeout(() => { fetchBudget(true).then(renderBudgetWidget).finally(() => headRefresh.classList.remove('spinning')); }, 10000);
+    };
+    headMeta.appendChild(headRefresh);
+  }
+  headMeta.appendChild(buildBudgetCollapseControl(collapsed));
+  head.appendChild(headMeta);
+  children.push(head);
+
+  if (collapsed) {
+    replaceNodeChildren(el, children);
+    return;
+  }
+
+  const intro = createEl('span', { className: 'budget-intro' });
+  intro.appendChild(createEl('span', { className: 'budget-intro-note', text: 'Lower numbers mean the current window is closer to throttling. Each bar is remaining headroom before that limit resets.' }));
+  children.push(intro);
+
+  if (budgetAgentEnabled('cc')) {
     const row = createEl('span', { className: 'budget-agent' });
-    row.appendChild(createEl('span', { className: 'budget-agent-name', text: 'Claude Code' }));
-    row.appendChild(buildBudgetMetric({
-      label: 'session',
-      pctRemaining: sessionPct,
-      resetsAt: cc.session && cc.session.resets_at,
-      polledAt: cc.polled_at,
-    }));
-    row.appendChild(buildBudgetMetric({
-      label: 'week',
-      pctRemaining: weekPct,
-      resetsAt: cc.week_all && cc.week_all.resets_at,
-      polledAt: cc.polled_at,
-    }));
-    if (cc.week_sonnet) {
+    const head = createEl('span', { className: 'budget-agent-head' });
+    head.appendChild(createEl('span', { className: 'budget-agent-name', text: 'Claude Code' }));
+    row.appendChild(head);
+    if (cc) {
+      const sessionPct = ccRemaining(cc.session);
+      const weekPct = ccRemaining(cc.week_all);
+      const sonnetPct = ccRemaining(cc.week_sonnet);
       row.appendChild(buildBudgetMetric({
-        label: 'sonnet',
-        pctRemaining: sonnetPct,
-        resetsAt: cc.week_sonnet.resets_at,
+        label: 'session remaining',
+        pctRemaining: sessionPct,
+        resetsAt: cc.session && cc.session.resets_at,
         polledAt: cc.polled_at,
       }));
+      row.appendChild(buildBudgetMetric({
+        label: 'weekly remaining',
+        pctRemaining: weekPct,
+        resetsAt: cc.week_all && cc.week_all.resets_at,
+        polledAt: cc.polled_at,
+      }));
+      if (cc.week_sonnet) {
+        row.appendChild(buildBudgetMetric({
+          label: 'sonnet remaining',
+          pctRemaining: sonnetPct,
+          resetsAt: cc.week_sonnet.resets_at,
+          polledAt: cc.polled_at,
+        }));
+      }
+    } else {
+      row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'usage unavailable' }));
     }
     children.push(row);
   }
-  if (cx) {
-    const fivePct = cx.five_hour ? cx.five_hour.pct_remaining : null;
-    const weeklyPct = cx.weekly ? cx.weekly.pct_remaining : null;
+  if (budgetAgentEnabled('cx')) {
     const row = createEl('span', { className: 'budget-agent' });
-    row.appendChild(createEl('span', { className: 'budget-agent-name', text: 'Codex' }));
-    row.appendChild(buildBudgetMetric({
-      label: '5h',
-      pctRemaining: fivePct,
-      resetsAt: cx.five_hour && cx.five_hour.resets_at,
-      polledAt: cx.polled_at,
-    }));
-    row.appendChild(buildBudgetMetric({
-      label: 'week',
-      pctRemaining: weeklyPct,
-      resetsAt: cx.weekly && cx.weekly.resets_at,
-      polledAt: cx.polled_at,
-    }));
+    const head = createEl('span', { className: 'budget-agent-head' });
+    head.appendChild(createEl('span', { className: 'budget-agent-name', text: 'Codex' }));
+    const support = budgetSupportText('cx', cx);
+    if (support) head.appendChild(createEl('span', { className: 'budget-agent-support', text: support }));
+    row.appendChild(head);
+    if (cx) {
+      const fivePct = cx.five_hour ? cx.five_hour.pct_remaining : null;
+      const weeklyPct = cx.weekly ? cx.weekly.pct_remaining : null;
+      row.appendChild(buildBudgetMetric({
+        label: '5h remaining',
+        pctRemaining: fivePct,
+        resetsAt: cx.five_hour && cx.five_hour.resets_at,
+        polledAt: cx.polled_at,
+      }));
+      row.appendChild(buildBudgetMetric({
+        label: 'weekly remaining',
+        pctRemaining: weeklyPct,
+        resetsAt: cx.weekly && cx.weekly.resets_at,
+        polledAt: cx.polled_at,
+      }));
+    } else {
+      row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'usage unavailable' }));
+    }
     children.push(row);
   }
 
   const meta = createEl('span', { className: 'budget-meta' });
-  const latest = [cc && cc.polled_at, cx && cx.polled_at].filter(Boolean).sort().pop();
   if (latest) meta.appendChild(createEl('span', { text: 'updated ' + fmtRelAgo(latest) }));
   const refreshBtn = createEl('button', { className: 'budget-refresh', text: '↻', attrs: { title: 'Refresh budgets', 'aria-label': 'Refresh budgets' } });
   refreshBtn.onclick = () => {
@@ -1580,8 +1942,7 @@ function renderBudgetWidget() {
 }
 
 function annotateAgentPickerBudget() {
-  const data = _budgetCache;
-  if (!data) return;
+  const data = _budgetCache || { cc: null, cx: null };
   const picker = document.getElementById('agent-picker');
   if (!picker || picker.style.display === 'none') return;
   const rows = picker.querySelectorAll('.agent-check-row');
@@ -1593,26 +1954,13 @@ function annotateAgentPickerBudget() {
     const existing = row.querySelector('.agent-check-budget');
     if (existing) existing.remove();
 
-    const entry = data[id];
-    if (!entry) return;
-    let worstPct = null;
-    let summary = '';
-    if (id === 'cc') {
-      const s = ccRemaining(entry.session);
-      const w = ccRemaining(entry.week_all);
-      if (s == null && w == null) return;
-      worstPct = [s, w].filter(v => v != null).reduce((a, b) => Math.min(a, b), 100);
-      summary = `${s != null ? s + '% session' : 'session —'} · ${w != null ? w + '% week' : 'week —'}`;
-    } else {
-      const fh = entry.five_hour && entry.five_hour.pct_remaining;
-      const wk = entry.weekly && entry.weekly.pct_remaining;
-      if (fh == null && wk == null) return;
-      worstPct = [fh, wk].filter(v => v != null).reduce((a, b) => Math.min(a, b), 100);
-      summary = `${fh != null ? fh + '% 5h' : '5h —'} · ${wk != null ? wk + '% week' : 'week —'}`;
-    }
-    const klass = budgetClassFor(worstPct, entry.polled_at);
-    const el = createEl('span', { className: 'agent-check-budget ' + klass, text: summary + (worstPct != null && worstPct < 20 ? ' ⚠' : '') });
-    row.appendChild(el);
+    const summary = budgetSummaryForAgent(id, data[id]);
+    const el = createEl('span', {
+      className: 'agent-check-budget ' + summary.summaryClass,
+      text: summary.summaryText + (summary.severity === 'warning' ? ' ⚠' : ''),
+    });
+    const target = row.querySelector('.agent-check-meta') || row;
+    target.appendChild(el);
   });
 }
 
@@ -1627,17 +1975,17 @@ function budgetWarningForAgents(agentIds) {
     if (id === 'cc') {
       const s = ccRemaining(entry.session);
       const w = ccRemaining(entry.week_all);
-      if (s != null && s < 20) { worst = s; label = 'session'; }
-      if (w != null && w < 20 && (worst == null || w < worst)) { worst = w; label = 'weekly'; }
+      if (s != null && s < 20) { worst = s; label = 'session window'; }
+      if (w != null && w < 20 && (worst == null || w < worst)) { worst = w; label = 'weekly window'; }
     } else if (id === 'cx') {
       const fh = entry.five_hour && entry.five_hour.pct_remaining;
       const wk = entry.weekly && entry.weekly.pct_remaining;
-      if (fh != null && fh < 20) { worst = fh; label = '5-hour'; }
-      if (wk != null && wk < 20 && (worst == null || wk < worst)) { worst = wk; label = 'weekly'; }
+      if (fh != null && fh < 20) { worst = fh; label = '5-hour window'; }
+      if (wk != null && wk < 20 && (worst == null || wk < worst)) { worst = wk; label = 'weekly window'; }
     }
     if (worst != null) {
       const name = id === 'cc' ? 'Claude Code' : 'Codex';
-      warnings.push(`${name} is at ${100 - worst}% of its ${label} limit (${worst}% remaining).`);
+      warnings.push(`${name} has only ${worst}% remaining in its ${label}.`);
     }
   }
   return warnings.length > 0 ? warnings.join('\n') + '\n\nStart anyway?' : null;
@@ -1646,16 +1994,31 @@ function budgetWarningForAgents(agentIds) {
 document.addEventListener('DOMContentLoaded', () => {
   fetchBudget().then(renderBudgetWidget);
   // Refresh widget every 2 minutes to keep "updated Xmin ago" accurate and pick up fresh polls.
-  setInterval(() => { fetchBudget(true).then(renderBudgetWidget); }, 2 * 60 * 1000);
+  setInterval(() => { fetchBudget(true).then(() => { renderBudgetWidget(); updatePickerBudgetNotice(); updateAutonomousBudgetNotice(); }); }, 2 * 60 * 1000);
+
+  const toggleBtn = document.getElementById('budget-toggle-btn');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      setBudgetWidgetCollapsed(!budgetWidgetCollapsed());
+      renderBudgetWidget();
+    });
+  }
 
   // Annotate agent picker rows whenever it is opened.
   const picker = document.getElementById('agent-picker');
   if (picker) {
     const observer = new MutationObserver(() => {
       if (picker.style.display === 'flex') {
-        fetchBudget().then(annotateAgentPickerBudget);
+        fetchBudget().then(() => {
+          annotateAgentPickerBudget();
+          updatePickerBudgetNotice();
+        });
       }
     });
     observer.observe(picker, { attributes: true, attributeFilter: ['style'] });
+    picker.addEventListener('change', () => {
+      annotateAgentPickerBudget();
+      updatePickerBudgetNotice();
+    });
   }
 });

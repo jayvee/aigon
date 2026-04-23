@@ -43,16 +43,18 @@ function ScreenshotFrame({
   src,
   alt,
   caption,
+  figureClassName,
 }: {
   src: string;
   alt: string;
   caption?: string;
+  figureClassName?: string;
 }) {
   const filePath = path.join(process.cwd(), "public", src);
   const exists = fs.existsSync(filePath);
 
   return (
-    <figure className="mt-8">
+    <figure className={`mt-8 ${figureClassName ?? ""}`.trim()}>
       {exists ? (
         <div className="overflow-hidden rounded-xl border border-gray-200 shadow-lg dark:border-white/5 dark:shadow-[0_12px_32px_rgba(0,0,0,0.3)]">
           <img
@@ -333,6 +335,7 @@ export default function ProPage() {
             src="/img/workflow-choice.png"
             alt="Aigon Pro workflow selection — dropdown in Start Autonomously modal listing built-in and project workflows"
             caption="Pick a saved workflow from the Start Autonomously modal — built-ins, project, and global workflows all appear with provenance badges"
+            figureClassName="mx-auto max-w-2xl lg:max-w-3xl"
           />
         </div>
       </section>

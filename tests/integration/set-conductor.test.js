@@ -7,6 +7,7 @@ const path = require('path');
 const { test, withTempDir, report } = require('../_helpers');
 const {
     buildSetAutoSessionName,
+    buildSetRunLoopCommandArgs,
     resolveSetExecutionPlan,
     computeRemainingOrder,
     buildPauseNotificationMessage,
@@ -51,6 +52,27 @@ test('set conductor tmux session naming matches spec', () => {
     assert.strictEqual(buildSetAutoSessionName('aigon', 'feature-set'), 'aigon-sfeature-set-auto');
 });
 
+test('set conductor encodes explicit agents into the detached run-loop command', () => {
+    // REGRESSION: fresh seed repos need set-autonomous-start <slug> <agent> to survive snapshot bootstrap with no author agent.
+    const args = buildSetRunLoopCommandArgs({
+        setSlug: 'homepage-polish',
+        mode: 'sequential',
+        stopAfter: 'close',
+        sessionName: 'brewboard-shomepage-polish-auto',
+        explicitAgents: ['cc'],
+    });
+    assert.deepStrictEqual(args, [
+        'set-autonomous-start',
+        '__run-loop',
+        'homepage-polish',
+        '--mode=sequential',
+        '--stop-after=close',
+        '--session-name=brewboard-shomepage-polish-auto',
+        '--poll-seconds=30',
+        '--agents=cc',
+    ]);
+});
+
 // F319: failure pause/resume state transitions
 
 test('paused-on-failure: failedFeature persisted and completed list preserved', () => withTempDir('aigon-set-pause-', async (repo) => {
@@ -77,4 +99,3 @@ test('pause notification message contains slug, feature ID and resume command', 
 });
 
 report();
-

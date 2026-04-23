@@ -16,6 +16,7 @@
       <div class="meta">
         <span class="health" aria-live="polite"><span class="dot" id="health-dot"></span><span id="health-text">Connected</span></span>
         <span id="updated-text">Updated just now</span>
+        <button class="btn" id="budget-toggle-btn" title="Collapse or expand the agent quota panel" style="display:none">Collapse quota</button>
         <button class="notif-btn" id="notif-bell-btn" title="Notifications" aria-label="Notifications">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5v1.75L2 9.5h12l-1.5-1.75V6A4.5 4.5 0 0 0 8 1.5z"/><path d="M6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg>
           <span class="notif-badge" id="notif-badge" data-hidden>0</span>
@@ -264,6 +265,7 @@
     <div class="modal-box">
       <h3 id="agent-picker-title">Select Agents</h3>
       <p class="modal-desc" id="agent-picker-desc"></p>
+      <div id="agent-picker-budget-notice" class="budget-notice" style="display:none"></div>
       <div class="agent-checks" id="agent-picker-checks"></div>
       <div class="modal-actions">
         <button class="btn" id="agent-picker-cancel">Cancel</button>
@@ -326,6 +328,7 @@
     <div class="modal-box">
       <h3 id="autonomous-modal-title">Start Autonomously</h3>
       <p class="modal-desc" id="autonomous-modal-desc"></p>
+      <div id="autonomous-budget-notice" class="budget-notice" style="display:none"></div>
       <div style="margin-bottom:12px">
         <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Workflow</label>
         <select id="autonomous-workflow" class="create-input" style="padding:8px 10px">

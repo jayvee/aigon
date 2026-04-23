@@ -189,6 +189,8 @@
         });
         document.getElementById('agent-picker-submit').textContent = opts.submitLabel || 'Start';
         document.getElementById('agent-picker').style.display = 'flex';
+        if (typeof annotateAgentPickerBudget === 'function') annotateAgentPickerBudget();
+        if (typeof updatePickerBudgetNotice === 'function') updatePickerBudgetNotice();
         document.getElementById('agent-picker-submit').focus();
       }));
     }

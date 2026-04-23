@@ -48,13 +48,15 @@ function writeSnapshot(repo, featureId, lifecycle, stage) {
 
 test('set action registry derives start, stop, resume, and reset eligibility', () => {
     // REGRESSION: set cards must derive action eligibility centrally instead of hardcoding button states in the frontend.
-    const idle = buildSetValidActions({ slug: 'auth', status: 'idle', isComplete: false, autonomous: null }).map((action) => action.action);
+    const idleActions = buildSetValidActions({ slug: 'auth', status: 'idle', isComplete: false, autonomous: null });
+    const idle = idleActions.map((action) => action.action);
     const running = buildSetValidActions({ slug: 'auth', status: 'running', isComplete: false, autonomous: { running: true } }).map((action) => action.action);
     const paused = buildSetValidActions({ slug: 'auth', status: 'paused-on-failure', isComplete: false, autonomous: { running: false } }).map((action) => action.action);
 
     assert.deepStrictEqual(idle, ['set-autonomous-start']);
     assert.deepStrictEqual(running, ['set-autonomous-stop', 'set-autonomous-reset']);
     assert.deepStrictEqual(paused, ['set-autonomous-resume', 'set-autonomous-reset']);
+    assert.strictEqual(idleActions[0].requiresInput, 'agentPicker');
 });
 
 testAsync('collector builds set card payload with graph states and validActions', async () => {

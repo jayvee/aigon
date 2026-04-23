@@ -82,6 +82,26 @@ If a PR is not merged yet, the feature card can show an orange close-state warni
 
 If you never push or create a PR, nothing changes. `feature-close` works exactly as before — local merge, cleanup, done. The PR gate only activates when it detects a PR exists for your branch.
 
+## Disabling dashboard GitHub status
+
+If you don't use GitHub PRs and don't want the PR status section appearing on dashboard cards, set `github.prCheck` to `false` in your project config:
+
+```bash
+aigon config set github.prCheck false
+```
+
+Or add it directly to `.aigon/config.json`:
+
+```json
+{
+  "github": {
+    "prCheck": false
+  }
+}
+```
+
+This disables GitHub PR checking entirely: the PR status section is hidden from dashboard feature cards, and `feature-close` skips the open-PR gate.
+
 ## Limitations
 
 - Manual refresh only (no automatic polling)

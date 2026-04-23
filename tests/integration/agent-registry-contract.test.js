@@ -37,6 +37,13 @@ test('dashboard bootstrap payload renders exactly the registry agents', () => {
     assert.ok(match, 'dashboard payload was not injected');
     assertExactAgentSet(JSON.parse(match[1]).map(agent => agent.id), 'dashboard HTML payload drifted');
 });
+test('parseDashboardActionRequest allows feature-delete and research-delete', () => {
+    // REGRESSION: engine manual actions must pass /api/action allowlist (not only SM_INVOCABLE_ACTIONS).
+    const f = dashboardServer.parseDashboardActionRequest({ action: 'feature-delete', args: ['5'] });
+    assert.ok(f.ok, f.error);
+    const r = dashboardServer.parseDashboardActionRequest({ action: 'research-delete', args: ['3'] });
+    assert.ok(r.ok, r.error);
+});
 test('profile templates derive ports from basePort plus registry offsets', () => {
     const profiles = JSON.parse(fs.readFileSync(PROFILES_PATH, 'utf8'));
     ['web', 'api'].forEach(profileName => {

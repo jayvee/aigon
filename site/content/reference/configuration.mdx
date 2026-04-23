@@ -82,6 +82,7 @@ Created with `aigon config init` at `.aigon/config.json`:
 | `agents.{id}.implementFlag` | Global | CLI flags for permission prompts | String (empty = manual approval) |
 | `security.enabled` | Global | Enable merge gate security scanning | `true` (default), `false` |
 | `security.mergeGateStages` | Global | Which scanners run at each stage | `{ featureClose: ['gitleaks', 'semgrep'] }` |
+| `github.prCheck` | Project | Show GitHub PR status on dashboard cards | `true` (default), `false` to hide |
 | `fleet.testInstructions` | Project | Custom test instructions for Fleet mode | String |
 | `devProxy.command` | Project | Dev server start command | Default: `npm run dev` |
 | `devProxy.healthCheck` | Project | Path to verify server is up | Default: `/` |
