@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Note on entries from v2.19 onwards:** the changelog was backfilled in bulk from git history on 2026-04-07 ahead of the public launch. Entries are grouped by theme and dated by month rather than per-patch. For commit-level detail, see `git log v2.18.0..HEAD` or browse the [git tags](https://github.com/jayvee/aigon/tags).
 
+## [2.54.1] - 2026-04-23
+
+Autonomous **feature sets** (SetConductor) and solo AutoConductor hardening: the outer set loop can advance when members use review → counter-review → close, and operators can peek the set orchestrator session from the dashboard.
+
+### Fixed
+- **SetConductor inner `feature-autonomous-start`** spawns the repo-root `aigon-cli.js` (regression: a wrong `..` depth exited the loop immediately, so the set run never saw per-feature AutoConductor finish).
+- **Stale `running` in `feature-*-auto.json`** no longer blocks a fresh inner AutoConductor when the per-feature `*-f{id}-auto` tmux session is gone; liveness is tied to real tmux.
+- **Solo AutoConductor after code review** — if the implementer re-runs `agent-status submitted` (or updates status / `updatedAt`) instead of the exact `feedback-addressed` value, the controller now treats that as progress, runs `feature-close`, and marks the inner run `completed` so **SetConductor** can move to the next set member. (Previously the outer loop waited forever with “Counter-review running / Close waiting”.)
+- **Post-`feature-close` snapshot wait** — increased poll budget so slow merges do not spuriously fail the inner run.
+
+### Added
+- **Dashboard peek** (eye icon) for the set AutoConductor tmux session (e.g. `repo-s{slug}-auto`) in Monitor set cards and Pipeline “group by set” headers, consistent with per-feature AutoConductor peek.
+- **Gemini budget poller** — `parseGeminiFooterPlanQuota` and tighter `parseGeminiModelUsage` handling for real `/model` output; integration tests extended.
+
+### Changed
+- `workflow-snapshot-adapter` exposes fresh snapshot reads for SetConductor completion checks; session sidecar and `worktree` matching for set `S` entity type.
+
 ## [2.54.0] - 2026-04-22
 
 Autonomous-mode reliability and multi-agent resilience. 332 commits since v2.53.0, 26 features completed (F285 → F310). The running theme: autonomous runs should survive agents falling over (token exhaustion, stalls, usage limits) and operators should be able to intervene without losing in-flight work.
