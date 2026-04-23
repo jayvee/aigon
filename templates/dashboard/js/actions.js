@@ -348,7 +348,8 @@ function replaceSelectOptions(select, options) {
 // Maps action + priority to button CSS class
 function validActionBtnClass(action, priority) {
   if (priority === 'high') return 'btn btn-primary';
-  if (action === 'feature-stop' || action === 'research-stop' || action === 'feature-reset' || action === 'research-reset') return 'btn btn-danger';
+  if (action === 'feature-stop' || action === 'research-stop' || action === 'feature-reset' || action === 'research-reset'
+    || action === 'set-autonomous-stop' || action === 'set-autonomous-reset') return 'btn btn-danger';
   return 'btn btn-secondary';
 }
 
@@ -514,11 +515,13 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   function renderBtn(va, cls) {
     const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
     const isBlocked = (va.action === 'feature-start') && feature.blockedBy && feature.blockedBy.length > 0;
+    const disabledReason = va.disabledReason || '';
+    const titleAttr = disabledReason ? ' title="' + escHtml(disabledReason) + '"' : '';
     if (isBlocked) {
       const blockedIds = feature.blockedBy.map(d => '#' + parseInt(d.id, 10)).join(', ');
       return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '"' + agentAttr + ' disabled title="Blocked by ' + escHtml(blockedIds) + '">' + escHtml(actionLabel(va)) + '</button>';
     }
-    return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '"' + agentAttr + '>' + escHtml(actionLabel(va)) + '</button>';
+    return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '"' + agentAttr + (va.disabled ? ' disabled' : '') + titleAttr + '>' + escHtml(actionLabel(va)) + '</button>';
   }
 
   let html = '';
@@ -546,9 +549,14 @@ function renderActionButtons(feature, repoPath, pipelineType) {
         return '<button class="kcard-overflow-item" data-view-review="' + escHtml(va._reviewSession) + '">' + escHtml(va._reviewLabel) + '</button>';
       }
       const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
-      const isDanger = va.action === 'feature-stop' || va.action === 'research-stop' || va.action === 'feature-reset';
+      const isDanger = va.action === 'feature-stop' || va.action === 'research-stop' || va.action === 'feature-reset'
+        || va.action === 'set-autonomous-stop' || va.action === 'set-autonomous-reset';
       const cls = isDanger ? 'kcard-overflow-item kcard-va-btn btn-danger' : 'kcard-overflow-item kcard-va-btn';
-      return '<button class="' + cls + '" data-va-action="' + escHtml(va.action) + '"' + agentAttr + '>' + escHtml(actionLabel(va)) + '</button>';
+      const disabledReason = va.disabledReason || '';
+      return '<button class="' + cls + '" data-va-action="' + escHtml(va.action) + '"' + agentAttr
+        + (va.disabled ? ' disabled' : '')
+        + (disabledReason ? ' title="' + escHtml(disabledReason) + '"' : '')
+        + '>' + escHtml(actionLabel(va)) + '</button>';
     }).join('');
     html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
   }
@@ -784,6 +792,34 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       } else {
         await requestAction(va.action, [id, ...(agentId ? [agentId] : [])], repoPath, btn);
       }
+  }
+}
+
+async function handleSetAction(va, setCard, repoPath, btn) {
+  const slug = String(setCard && setCard.slug || '');
+  if (!slug) return;
+
+  switch (va.action) {
+    case 'set-autonomous-reset': {
+      const message = (va.metadata && va.metadata.confirmationMessage)
+        || ('Reset set "' + slug + '"? This clears the set conductor state file and any in-flight set session.');
+      const ok = await showDangerConfirm({
+        title: 'Reset set "' + slug + '"?',
+        message,
+        confirmLabel: 'Reset set',
+        cancelLabel: 'Cancel'
+      });
+      if (!ok) return;
+      await requestAction('set-autonomous-reset', [slug], repoPath, btn);
+      break;
+    }
+    case 'set-autonomous-start':
+    case 'set-autonomous-stop':
+    case 'set-autonomous-resume':
+      await requestAction(va.action, [slug], repoPath, btn);
+      break;
+    default:
+      await requestAction(va.action, [slug], repoPath, btn);
   }
 }
 
