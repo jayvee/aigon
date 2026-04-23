@@ -1519,6 +1519,7 @@ function renderBudgetWidget() {
   if (cc) {
     const sessionPct = ccRemaining(cc.session);
     const weekPct = ccRemaining(cc.week_all);
+    const sonnetPct = ccRemaining(cc.week_sonnet);
     const row = createEl('span', { className: 'budget-agent' });
     row.appendChild(createEl('span', { className: 'budget-agent-name', text: 'Claude Code' }));
     row.appendChild(buildBudgetMetric({
@@ -1533,6 +1534,14 @@ function renderBudgetWidget() {
       resetsAt: cc.week_all && cc.week_all.resets_at,
       polledAt: cc.polled_at,
     }));
+    if (cc.week_sonnet) {
+      row.appendChild(buildBudgetMetric({
+        label: 'sonnet',
+        pctRemaining: sonnetPct,
+        resetsAt: cc.week_sonnet.resets_at,
+        polledAt: cc.polled_at,
+      }));
+    }
     children.push(row);
   }
   if (cx) {
