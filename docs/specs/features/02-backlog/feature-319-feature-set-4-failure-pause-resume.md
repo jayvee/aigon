@@ -1,5 +1,7 @@
 ---
 set: feature-set
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-23T00:15:36.128Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: feature-set-4-failure-pause-resume
