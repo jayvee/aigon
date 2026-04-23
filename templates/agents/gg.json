@@ -100,8 +100,7 @@
         },
         {
           "toolName": "run_shell_command",
-          "commandPrefix": "node",
-          "argsPattern": "aigon-cli\\.js",
+          "commandPrefix": "node aigon-cli.js",
           "decision": "allow",
           "priority": 100
         },
@@ -203,13 +202,7 @@
         },
         {
           "toolName": "run_shell_command",
-          "argsPattern": "\"command\":\"[A-Z_]+=\\$\\(",
-          "decision": "allow",
-          "priority": 88
-        },
-        {
-          "toolName": "run_shell_command",
-          "commandRegex": "^[A-Z_][A-Z0-9_]*=[^\\n]+(?:\\n[A-Z_][A-Z0-9_]*=[^\\n]+)*\\n(?:echo|git|cat|grep|awk|head|tail|tr|find|pwd|ls|wc|diff|mkdir|aigon|npm|npx|node\\b)",
+          "commandPrefix": "BRANCH=$(git branch --show-current)",
           "decision": "allow",
           "priority": 89
         }
