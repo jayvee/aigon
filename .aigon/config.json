@@ -31,5 +31,8 @@
       }
     }
   },
-  "worktreeSetup": "npm install"
+  "worktreeSetup": "npm install",
+  "github": {
+    "prCheck": false
+  }
 }

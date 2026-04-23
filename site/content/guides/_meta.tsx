@@ -6,6 +6,7 @@ export default {
   "drive-mode": "Drive Mode",
   "fleet-mode": "Fleet Mode",
   "autopilot-mode": { title: withPro("Autonomous Mode") },
+  "recurring-features": "Recurring Features",
   "research-workflow": "Research Workflow",
   "feedback-workflow": "Feedback Workflow",
   telemetry: "Telemetry & Analytics",

@@ -34,35 +34,51 @@ function createEl(tag, options) {
 
 function buildAgentCheckRow(options) {
   const opts = options || {};
-  const label = createEl('label', { className: 'agent-check-row' });
-  if (opts.rowClassName) label.className += ' ' + opts.rowClassName;
-  if (opts.tripletGrid) label.classList.add('agent-check-row-triplet');
-  const input = createEl('input', {
-    attrs: {
-      type: opts.type || 'checkbox',
-      value: opts.value || '',
-      name: opts.name || null,
-      id: opts.id || null
-    }
-  });
+  // Triplet rows append <select>s for model/effort. A single outer <label>
+  // would associate with the checkbox only (first labelable descendant), so
+  // clicks on the selects toggled the checkbox instead of opening the picker
+  // (REGRESSION: OpenCode GLM row felt "unselectable" in Fleet/autonomous UI).
+  const useTripletShell = !!opts.tripletGrid;
+  const rowEl = createEl(useTripletShell ? 'div' : 'label', { className: 'agent-check-row' });
+  if (opts.rowClassName) rowEl.className += ' ' + opts.rowClassName;
+  if (opts.tripletGrid) rowEl.classList.add('agent-check-row-triplet');
+
+  const inputAttrs = {
+    type: opts.type || 'checkbox',
+    value: opts.value || '',
+    name: opts.name || null,
+    id: null,
+  };
+  if (opts.tripletGrid) {
+    const prefix = opts.tripletCheckboxIdPrefix || 'triplet';
+    const safeVal = String(opts.value || 'x').replace(/[^a-zA-Z0-9_-]/g, '') || 'x';
+    inputAttrs.id = `${prefix}-cb-${safeVal}`;
+  } else if (opts.id) {
+    inputAttrs.id = opts.id;
+  }
+  const input = createEl('input', { attrs: inputAttrs });
   if (opts.checked) input.checked = true;
   if (opts.inputClassName) input.className = opts.inputClassName;
+
   if (opts.tripletGrid) {
-    const primary = createEl('span', { className: 'agent-check-primary' });
-    primary.appendChild(input);
+    const primaryLabel = createEl('label', {
+      className: 'agent-check-primary',
+      attrs: inputAttrs.id ? { for: inputAttrs.id } : {},
+    });
+    primaryLabel.appendChild(input);
     const meta = createEl('span', { className: 'agent-check-meta' });
     meta.appendChild(createEl('span', { className: 'agent-check-label', text: opts.label || '' }));
     if (opts.hint) meta.appendChild(createEl('span', { className: 'agent-check-hint', text: opts.hint }));
-    primary.appendChild(meta);
-    label.appendChild(primary);
-    label.appendChild(createEl('span', { className: 'agent-check-config-model', attrs: { 'aria-label': 'Configured model (from settings)' } }));
+    primaryLabel.appendChild(meta);
+    rowEl.appendChild(primaryLabel);
+    rowEl.appendChild(createEl('span', { className: 'agent-check-config-model', attrs: { 'aria-label': 'Configured model (from settings)' } }));
   } else {
-    label.appendChild(input);
-    label.appendChild(createEl('span', { className: 'agent-check-label', text: opts.label || '' }));
-    if (opts.hint) label.appendChild(createEl('span', { className: 'agent-check-hint', text: opts.hint }));
-    if (opts.model) label.appendChild(createEl('span', { className: 'agent-check-model', text: opts.model }));
+    rowEl.appendChild(input);
+    rowEl.appendChild(createEl('span', { className: 'agent-check-label', text: opts.label || '' }));
+    if (opts.hint) rowEl.appendChild(createEl('span', { className: 'agent-check-hint', text: opts.hint }));
+    if (opts.model) rowEl.appendChild(createEl('span', { className: 'agent-check-model', text: opts.model }));
   }
-  return label;
+  return rowEl;
 }
 
 function appendTripletPlaceholder(title) {
@@ -588,6 +604,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       collectTriplet: true,
       title: options.title,
       submitLabel: options.submitLabel,
+      preselect: options.preselect || null,
       repoPath,
       taskType: 'review',
       action: options.action
@@ -665,6 +682,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await launchSpecReviewAction('feature-spec-review-check', {
         title: 'Choose author agent',
         submitLabel: 'Check Spec Review',
+        preselect: feature.authorAgentId || null,
         action: va.action
       });
       break;
@@ -681,6 +699,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await launchSpecReviewAction('research-spec-review-check', {
         title: 'Choose author agent',
         submitLabel: 'Check Spec Review',
+        preselect: feature.authorAgentId || null,
         action: va.action
       });
       break;
@@ -869,6 +888,7 @@ function renderAgentPickerRows(options) {
       label: agent.id,
       hint: agent.displayName || agent.id,
       tripletGrid: collectTriplet,
+      tripletCheckboxIdPrefix: collectTriplet ? 'agent-picker' : undefined,
     });
     if (collectTriplet) {
       row.dataset.agentId = agent.id;
@@ -1054,6 +1074,7 @@ async function showAutonomousModal(feature, repoPath, btn) {
       label: agentId,
       hint: displayName,
       tripletGrid: true,
+      tripletCheckboxIdPrefix: 'autonomous',
     });
     row.dataset.agentId = agentId;
     appendTripletSelects(row, agent);

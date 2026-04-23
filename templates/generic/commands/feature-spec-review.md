@@ -3,6 +3,13 @@
 
 Review the feature spec itself, not the code. Edit the spec in place using the shared rubric below, then commit the reviewed spec with a `spec-review:` commit.
 
+You are already inside the spec-review task for this feature.
+
+- Do not run `aigon feature-spec-review {{ARG1_SYNTAX}}` again.
+- Do not ask the shell to start the same command recursively.
+- Use the resolved spec path below, edit that spec in place, then make the required `spec-review:` commit and run `aigon feature-spec-review-record {{ARG1_SYNTAX}}`.
+- If you cannot complete the commit or record step, stop and report the blocker instead of making a generic commit.
+
 ## Resolve the spec
 
 ```bash
@@ -27,10 +34,15 @@ cat "$SPEC_PATH"
 
 ## Review workflow
 
-1. Read the full spec carefully.
-2. Make targeted edits in place.
-3. Preserve author intent unless it is ambiguous, contradictory, or clearly under-specified.
-4. Prefer tightening acceptance criteria, execution order, ownership, and edge cases over adding net-new scope.
+1. Resolve `SPEC_PATH`.
+2. Read the full spec carefully.
+3. Make targeted edits in place.
+4. Preserve author intent unless it is ambiguous, contradictory, or clearly under-specified.
+5. Prefer tightening acceptance criteria, execution order, ownership, and edge cases over adding net-new scope.
+6. Verify `AIGON_AGENT_ID` is set before committing.
+7. Commit with the exact `spec-review: feature ...` format below.
+8. Run `aigon feature-spec-review-record {{ARG1_SYNTAX}}`.
+9. Do not create any other commit message format.
 
 Before committing, confirm the reviewer identity is available:
 
@@ -62,6 +74,12 @@ Suggested edits:
 - <notable edits you made>"
 aigon feature-spec-review-record {{ARG1_SYNTAX}}
 ```
+
+## Forbidden
+
+- Running `aigon feature-spec-review {{ARG1_SYNTAX}}` from inside this task
+- Making a non-`spec-review:` commit
+- Ending the task before `feature-spec-review-record` succeeds
 
 ## Report
 
