@@ -9,7 +9,7 @@ complexity: medium
 
 ## Summary
 
-Scan for documentation gaps across two surfaces: (1) **internal docs** (`AGENTS.md`, `docs/architecture.md`, `docs/development_workflow.md`) that are behind code changes in `lib/` and `templates/`; and (2) **public-facing docs** (`site/content/`) that are missing pages, have stale command references, or don't cover features that have shipped since the last docs update. Write a gap report to `docs/reports/docs-gap-{{YYYY-WW}}.md` with concrete recommended actions. Close without evaluation when complete.
+Scan for documentation gaps across two surfaces and fix them directly: (1) **internal docs** (`AGENTS.md`, `docs/architecture.md`, `docs/development_workflow.md`) that are behind code changes in `lib/` and `templates/`; and (2) **public-facing docs** (`site/content/`) that are missing pages, have stale command references, or don't cover features that have shipped since the last docs update. Write the fixes, commit them, and close without review.
 
 ## Acceptance Criteria
 
@@ -26,12 +26,11 @@ Scan for documentation gaps across two surfaces: (1) **internal docs** (`AGENTS.
 - [ ] Identify commands in `aigon help` output that have no corresponding `site/content/reference/commands/` page
 - [ ] Identify `site/content/` pages that reference commands, flags, or file paths that no longer exist
 
-### Report
-- [ ] Write `docs/reports/docs-gap-{{YYYY-WW}}.md` with two clearly labelled sections:
-  - **Internal docs gaps**: list each gap with the affected file and a one-line recommended fix
-  - **Public docs gaps**: list each gap with the affected guide/reference path and a one-line recommended fix
-  - Overall verdict per surface: "up to date" or "N gaps found"
-- [ ] Commit the report: `git add docs/reports/ && git commit -m "chore: docs-gap report {{YYYY-WW}}"`
+### Fixes
+- [ ] For each internal doc gap: edit the affected file (`AGENTS.md`, `docs/architecture.md`, or `docs/development_workflow.md`) to add or update the missing content
+- [ ] For each public doc gap: edit or create the affected `site/content/` page with accurate, up-to-date content; create new `.mdx` files for missing reference pages and add them to the relevant `_meta.tsx`
+- [ ] Remove or correct stale references (commands, flags, file paths) in any `site/content/` page
+- [ ] Commit all doc changes: `git add AGENTS.md docs/architecture.md docs/development_workflow.md site/content/ && git commit -m "docs: automated gap fixes {{YYYY-WW}}"`
 - [ ] Close the feature (no eval step needed)
 
 ## Technical Approach
@@ -49,12 +48,13 @@ Scan for documentation gaps across two surfaces: (1) **internal docs** (`AGENTS.
 8. Run `aigon help 2>&1` and extract all command names; for each command check whether `site/content/reference/commands/<cmd>.mdx` exists
 9. For each `site/content/` page: grep for command names, file paths, and flag names; verify each still exists in the codebase
 
-### Report and close
-10. Write `docs/reports/docs-gap-{{YYYY-WW}}.md` with both sections
-11. `git add docs/reports/ && git commit -m "chore: docs-gap report {{YYYY-WW}}"`
+### Fix and close
+10. For each identified gap, make the edit directly — update the relevant doc file or create the missing page
+11. `git add AGENTS.md docs/architecture.md docs/development_workflow.md site/content/ && git commit -m "docs: automated gap fixes {{YYYY-WW}}"`
 12. `aigon agent-status submitted`
 13. `aigon feature-close <ID>`
 
 ## Pre-authorised
 
-- Skip eval step: this is a read-only reporting task, no docs are modified
+- Skip eval step: automated doc updates do not require human review
+- Write to `AGENTS.md`, `docs/architecture.md`, `docs/development_workflow.md`, and `site/content/**`
