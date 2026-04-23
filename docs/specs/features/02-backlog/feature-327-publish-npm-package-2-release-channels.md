@@ -1,6 +1,8 @@
 ---
 complexity: medium
 set: publish-npm-package
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-23T13:58:55.293Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: publish-npm-package-2-release-channels
