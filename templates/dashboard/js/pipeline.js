@@ -1045,8 +1045,9 @@
             header.style.cssText = headerBaseStyle + ';color:var(--text-secondary);display:block';
 
             const row = document.createElement('div');
-            row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px';
+            row.className = 'kanban-set-header-row';
             const title = document.createElement('span');
+            title.className = 'kanban-set-title';
             const roll = setsRollup.find(x => x.slug === setSlug);
             const isPausedOnFailure = roll && roll.autonomous && roll.autonomous.status === 'paused-on-failure';
             const titlePrefix = isPausedOnFailure ? '⚠ ' : '◉ ';
@@ -1059,6 +1060,7 @@
               const failedId = roll.autonomous.failedFeature || (Array.isArray(roll.autonomous.failed) && roll.autonomous.failed[0]);
               const failLabel = failedId ? `feature #${parseInt(failedId, 10) || failedId} failed` : 'review failed';
               const badge = document.createElement('span');
+              badge.className = 'kanban-set-paused-badge';
               badge.style.cssText = 'font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#e57c2a22;color:#e57c2a;border:1px solid #e57c2a55;border-radius:3px;padding:1px 5px;cursor:default;white-space:nowrap';
               badge.textContent = 'PAUSED';
               badge.title = `Set paused on failure — ${failLabel}. Run: aigon set-autonomous-resume ${setSlug}`;
@@ -1068,11 +1070,39 @@
               row.appendChild(title);
             }
             const countEl = document.createElement('span');
+            countEl.className = 'kanban-set-count';
             countEl.style.opacity = '0.7';
             const doneN = roll ? (Number(roll.completed) || 0) : 0;
             const totalN = roll ? (Number(roll.memberCount) || members.length) : members.length;
             countEl.textContent = totalN ? (doneN + '/' + totalN) : String(members.length);
             row.appendChild(countEl);
+            // Peek SetConductor tmux (same name scheme as per-feature AutoConductor peek)
+            let setPeekSession = '';
+            if (roll && roll.autonomous) {
+              const a = roll.autonomous;
+              if (a.sessionName) {
+                setPeekSession = a.sessionName;
+              } else {
+                const st = a.status || '';
+                const base = repo && repo.name ? String(repo.name) : '';
+                if (base && (st === 'running' || a.running || st === 'paused-on-failure')) {
+                  setPeekSession = base + '-s' + setSlug + '-auto';
+                }
+              }
+            }
+            if (setPeekSession) {
+              const peekBtn = document.createElement('button');
+              peekBtn.type = 'button';
+              peekBtn.className = 'kcard-peek-btn';
+              peekBtn.setAttribute('data-peek-session', setPeekSession);
+              peekBtn.title = 'Peek at set autonomous conductor output';
+              peekBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg>';
+              peekBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (typeof openPeekPanel === 'function') openPeekPanel(setPeekSession);
+              };
+              row.appendChild(peekBtn);
+            }
             const startSetVa = roll && Array.isArray(roll.validActions)
               ? roll.validActions.find(a => a.action === 'set-autonomous-start')
               : null;

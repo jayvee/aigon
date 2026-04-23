@@ -80,10 +80,28 @@
       return '<span class="monitor-actions" data-repo="' + escHtml(repoPath) + '" data-feature-id="' + escHtml(feature.id) + '">' + html + '</span>';
     }
 
+    const SET_AUTO_PEEK_SVG = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg>';
+
+    function setConductorTmuxNameForPeek(setCard, repoPath) {
+      const auto = setCard && setCard.autonomous;
+      if (!auto) return '';
+      if (auto.sessionName) return String(auto.sessionName);
+      const st = auto.status || '';
+      if (!(st === 'running' || auto.running || st === 'paused-on-failure')) return '';
+      const base = repoPath ? repoPath.split(/[/\\]/).filter(Boolean).pop() || '' : '';
+      const slug = setCard && setCard.slug ? String(setCard.slug) : '';
+      if (base && slug) return base + '-s' + slug + '-auto';
+      return '';
+    }
+
     function buildSetActionHtml(setCard, repoPath) {
+      const sessionName = setConductorTmuxNameForPeek(setCard, repoPath);
+      const peek = sessionName
+        ? '<button type="button" class="kcard-peek-btn" data-peek-session="' + escHtml(sessionName) + '" title="Peek at set autonomous conductor output">' + SET_AUTO_PEEK_SVG + '</button>'
+        : '';
       const html = renderActionButtons(setCard, repoPath, 'sets');
-      if (!html) return '';
-      return '<span class="monitor-actions" data-repo="' + escHtml(repoPath) + '" data-set-slug="' + escHtml(setCard.slug) + '">' + html + '</span>';
+      if (!peek && !html) return '';
+      return '<span class="monitor-actions" data-repo="' + escHtml(repoPath) + '" data-set-slug="' + escHtml(setCard.slug) + '">' + peek + html + '</span>';
     }
 
     function buildSetCardHtml(setCard) {
@@ -287,6 +305,12 @@
         handleMonitorClick(e) {
           const btn = e.target.closest('button');
           if (!btn) return;
+          if (btn.classList.contains('kcard-peek-btn')) {
+            e.stopPropagation();
+            const sessionName = btn.getAttribute('data-peek-session') || '';
+            if (sessionName && typeof openPeekPanel === 'function') openPeekPanel(sessionName);
+            return;
+          }
           if (btn.classList.contains('copy') || btn.classList.contains('next-copy')) {
             const text = btn.getAttribute('data-copy') || '';
             if (text) copyText(text).then(ok => showToast(ok ? 'Copied: ' + text : 'Copy failed'));

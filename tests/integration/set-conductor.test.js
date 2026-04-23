@@ -11,6 +11,7 @@ const {
     resolveSetExecutionPlan,
     computeRemainingOrder,
     buildPauseNotificationMessage,
+    isFeatureDone,
 } = require('../../lib/set-conductor');
 const { readSetAutoState, writeSetAutoState } = require('../../lib/auto-session-state');
 
@@ -52,6 +53,21 @@ test('set conductor tmux session naming matches spec', () => {
     assert.strictEqual(buildSetAutoSessionName('aigon', 'feature-set'), 'aigon-sfeature-set-auto');
 });
 
+test('isFeatureDone treats spec in 05-done or uncached snapshot lifecycle as done', () => withTempDir('aigon-set-done-', (repo) => {
+    // REGRESSION: SetConductor must advance when F01 closes — detect done via spec dir and fresh snapshot read.
+    const featuresRoot = seedFeatureDirs(repo);
+    writeSpec(featuresRoot, '05-done', 'feature-01-x.md', { set: 's' });
+    assert.strictEqual(isFeatureDone(repo, '1'), true);
+    assert.strictEqual(isFeatureDone(repo, '01'), true);
+    const wfDir = path.join(repo, '.aigon', 'workflows', 'features', '02');
+    fs.mkdirSync(wfDir, { recursive: true });
+    fs.writeFileSync(path.join(wfDir, 'snapshot.json'), JSON.stringify({
+        lifecycle: 'done',
+        currentSpecState: 'done',
+    }));
+    assert.strictEqual(isFeatureDone(repo, '2'), true);
+}));
+
 test('set conductor encodes explicit agents into the detached run-loop command', () => {
     // REGRESSION: fresh seed repos need set-autonomous-start <slug> <agent> to survive snapshot bootstrap with no author agent.
     const args = buildSetRunLoopCommandArgs({
@@ -71,6 +87,27 @@ test('set conductor encodes explicit agents into the detached run-loop command',
         '--poll-seconds=30',
         '--agents=cc',
     ]);
+    const withReview = buildSetRunLoopCommandArgs({
+        setSlug: 'homepage-polish',
+        mode: 'sequential',
+        stopAfter: 'close',
+        sessionName: 'brewboard-shomepage-polish-auto',
+        explicitAgents: ['cc'],
+        reviewAgent: 'gg',
+    });
+    assert.ok(withReview.includes('--review-agent=gg'), 'REGRESSION: dashboard/CLI can pass a single review agent for all set members');
+    const withModels = buildSetRunLoopCommandArgs({
+        setSlug: 'homepage-polish',
+        mode: 'sequential',
+        stopAfter: 'close',
+        sessionName: 'brewboard-shomepage-polish-auto',
+        explicitAgents: ['cc'],
+        reviewAgent: 'gg',
+        models: 'cc=sonnet,gg:gemini-1',
+        efforts: 'cc=high,gg:default',
+    });
+    assert.ok(withModels.includes('--models=cc=sonnet,gg:gemini-1'), 'REGRESSION: set run passes per-agent triplet + review to each feature-autonomous-start');
+    assert.ok(withModels.includes('--efforts=cc=high,gg:default'), 'REGRESSION: set run passes effort overrides to feature-autonomous-start');
 });
 
 // F319: failure pause/resume state transitions

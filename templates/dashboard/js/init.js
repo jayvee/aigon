@@ -162,6 +162,9 @@
 
       function entityBadge(s) {
         if (!s.entityType) return '';
+        if (s.entityType === 'S') {
+          return '<span class="session-entity-badge feature" title="Set autonomous (orchestrates members)">set ' + escHtml(s.entityId) + '</span>';
+        }
         const label = s.entityType + s.entityId;
         const cls = s.entityType === 'f' ? 'feature' : 'research';
         return '<span class="session-entity-badge ' + cls + '">' + escHtml(label) + '</span>';

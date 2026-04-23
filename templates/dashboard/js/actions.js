@@ -190,9 +190,10 @@ function appendTripletSelects(rowEl, agent) {
   rowEl.appendChild(cellEffort);
 }
 
-function updateReviewerTripletSelects(agentId) {
-  const modelCell = document.getElementById('autonomous-review-model-cell');
-  const effortCell = document.getElementById('autonomous-review-effort-cell');
+function updateReviewerTripletSelects(agentId, scope = 'autonomous') {
+  const prefix = scope === 'picker-set' ? 'agent-picker-review' : 'autonomous-review';
+  const modelCell = document.getElementById(prefix + '-model-cell');
+  const effortCell = document.getElementById(prefix + '-effort-cell');
   if (!modelCell || !effortCell) return;
   const agent = agentId ? AIGON_AGENTS.find(a => a.id === agentId) : null;
   const modelOpts = agent && Array.isArray(agent.modelOptions) ? agent.modelOptions : [];
@@ -201,7 +202,7 @@ function updateReviewerTripletSelects(agentId) {
   modelCell.innerHTML = '';
   if (modelOpts.length > 0) {
     const sel = document.createElement('select');
-    sel.id = 'autonomous-review-model';
+    sel.id = prefix + '-model';
     sel.className = 'agent-triplet-model create-input';
     sel.style.cssText = 'padding:8px 10px;width:100%';
     modelOpts.forEach(opt => {
@@ -219,7 +220,7 @@ function updateReviewerTripletSelects(agentId) {
   effortCell.innerHTML = '';
   if (effortOpts.length > 0) {
     const sel = document.createElement('select');
-    sel.id = 'autonomous-review-effort';
+    sel.id = prefix + '-effort';
     sel.className = 'agent-triplet-effort create-input';
     sel.style.cssText = 'padding:8px 10px;width:100%';
     effortOpts.forEach(opt => {
@@ -822,24 +823,38 @@ async function handleSetAction(va, setCard, repoPath, btn) {
 
   switch (va.action) {
     case 'set-autonomous-start': {
-      const triplets = await showAgentPicker(slug, 'set ' + slug, {
+      const pick = await showAgentPicker(slug, 'set ' + slug, {
         title: 'Choose set agents',
-        submitLabel: 'Start Set',
+        submitLabel: 'Start set',
         repoPath,
         taskType: 'implement',
         action: va.action,
-        collectTriplet: true
+        collectTriplet: true,
+        includeSetReviewer: true,
       });
-      if (!triplets || triplets.length === 0) return;
+      if (!pick || !Array.isArray(pick.triplets) || pick.triplets.length === 0) return;
+      const triplets = pick.triplets;
       const agentIds = triplets.map(t => t.id);
+      const triArgs = tripletsToCliArgs(triplets);
+      const modelsCsv = (triArgs.find(a => a.startsWith('--models=')) || '').slice('--models='.length) || '';
+      const effortsCsv = (triArgs.find(a => a.startsWith('--efforts=')) || '').slice('--efforts='.length) || '';
+      const reviewAgent = String(pick.reviewAgent || '').trim();
+      const reviewModel = String(pick.reviewModel || '').trim();
+      const reviewEffort = String(pick.reviewEffort || '').trim();
+      const mergedModels = [modelsCsv, reviewAgent && reviewModel ? (`${reviewAgent}:${reviewModel}`) : ''].filter(Boolean).join(',');
+      const mergedEfforts = [effortsCsv, reviewAgent && reviewEffort ? (`${reviewAgent}:${reviewEffort}`) : ''].filter(Boolean).join(',');
+      const args = [slug, ...agentIds, '--stop-after=close'];
+      if (reviewAgent) args.push(`--review-agent=${reviewAgent}`);
+      if (mergedModels) args.push(`--models=${mergedModels}`);
+      if (mergedEfforts) args.push(`--efforts=${mergedEfforts}`);
       try {
         if (typeof fetchBudget === 'function') {
           await fetchBudget();
-          const warning = budgetWarningForAgents(agentIds);
+          const warning = budgetWarningForAgents([...agentIds, reviewAgent].filter(Boolean));
           if (warning && !window.confirm(warning)) return;
         }
       } catch (_) { /* best-effort */ }
-      await requestAction('set-autonomous-start', [slug, ...agentIds], repoPath, btn);
+      await requestAction('set-autonomous-start', args, repoPath, btn);
       break;
     }
     case 'set-autonomous-reset': {
@@ -1341,6 +1356,33 @@ function buildAutonomousAgentOptions(taskType, options) {
   return rows;
 }
 
+/** Set autonomous: reviewer row on the same modal as implementers (agent-picker). */
+function populateSetAgentPickerReviewerSection(repoPath, implementerIds) {
+  const sel = document.getElementById('agent-picker-review-agent');
+  if (!sel) return Promise.resolve();
+  const setup = function(models) {
+    const prev = autonomousModalModels;
+    autonomousModalModels = models || {};
+    replaceSelectOptions(sel, buildAutonomousAgentOptions('review', {
+      includeNone: true,
+      noneLabel: 'No code review (skip review step)',
+      selectedAgents: Array.isArray(implementerIds) ? implementerIds : [],
+    }));
+    sel.value = '';
+    sel.onchange = function() {
+      updateReviewerTripletSelects(String(sel.value || '').trim(), 'picker-set');
+    };
+    updateReviewerTripletSelects('', 'picker-set');
+    autonomousModalModels = prev;
+  };
+  if (typeof fetchAgentModels === 'function') {
+    return fetchAgentModels(repoPath).then(setup).catch(function() { setup({}); });
+  }
+  setup({});
+  return Promise.resolve();
+}
+if (typeof window !== 'undefined') window.populateSetAgentPickerReviewerSection = populateSetAgentPickerReviewerSection;
+
 function updateAutonomousEvalOptions() {
   const evalSelect = document.getElementById('autonomous-eval-agent');
   if (!evalSelect) return;
@@ -1527,9 +1569,9 @@ function budgetClassFor(pctRemaining, polledAt) {
 function fetchBudget(force) {
   if (_budgetFetchPromise && !force) return _budgetFetchPromise;
   _budgetFetchPromise = fetch('/api/budget', { cache: 'no-store' })
-    .then(r => r.ok ? r.json() : { cc: null, cx: null })
-    .catch(() => ({ cc: null, cx: null }))
-    .then(data => { _budgetCache = data || { cc: null, cx: null }; _budgetFetchPromise = null; return _budgetCache; });
+    .then(r => r.ok ? r.json() : { cc: null, cx: null, gg: null })
+    .catch(() => ({ cc: null, cx: null, gg: null }))
+    .then(data => { _budgetCache = data || { cc: null, cx: null, gg: null }; _budgetFetchPromise = null; return _budgetCache; });
   return _budgetFetchPromise;
 }
 
@@ -1559,7 +1601,7 @@ function budgetAgentEnabled(agentId) {
 
 function hasAnyBudgetData(data) {
   const entry = data || _budgetCache || {};
-  return !!(entry.cc || entry.cx);
+  return !!(entry.cc || entry.cx || entry.gg);
 }
 
 function collectBudgetPctValues(data) {
@@ -1582,6 +1624,15 @@ function collectBudgetPctValues(data) {
     const wk = data.cx.weekly && data.cx.weekly.pct_remaining;
     [fh, wk].filter(v => v != null && Number.isFinite(v)).forEach(v => values.push(v));
   }
+  if (budgetAgentEnabled('gg') && data.gg && Array.isArray(data.gg.tiers)) {
+    touchPoll(data.gg.polled_at);
+    for (const t of data.gg.tiers) {
+      if (t && t.pct_used != null) {
+        const rem = 100 - t.pct_used;
+        if (Number.isFinite(rem)) values.push(rem);
+      }
+    }
+  }
   return { values, polledAt };
 }
 
@@ -1601,7 +1652,7 @@ function budgetOverallAriaLabel(summaryClass) {
 
 function budgetCollapsedSummaryLine(data) {
   const parts = [];
-  for (const id of ['cc', 'cx']) {
+  for (const id of ['cc', 'cx', 'gg']) {
     if (!budgetAgentEnabled(id)) continue;
     const s = budgetSummaryForAgent(id, data[id]);
     parts.push(`${s.name}: ${s.summaryText}`);
@@ -1690,7 +1741,7 @@ function ccRemaining(entry) {
 }
 
 function budgetSummaryForAgent(agentId, entry) {
-  const name = agentId === 'cc' ? 'Claude Code' : 'Codex';
+  const name = agentId === 'cc' ? 'Claude Code' : agentId === 'cx' ? 'Codex' : 'Gemini';
   if (!entry) {
     return {
       id: agentId,
@@ -1707,7 +1758,31 @@ function budgetSummaryForAgent(agentId, entry) {
   let metrics = [];
   let values = [];
   let summaryText = 'usage unavailable';
-  if (agentId === 'cc') {
+  if (agentId === 'gg') {
+    if (!entry.tiers || !entry.tiers.length) {
+      return {
+        id: agentId,
+        name,
+        severity: 'muted',
+        badge: 'Info',
+        copy: 'Usage data is not available from the latest poll yet.',
+        metrics: [],
+        summaryText: 'usage unavailable',
+        summaryClass: 'budget-stale',
+      };
+    }
+    metrics = entry.tiers.map(t => ({
+      label: (t.label || t.tier || 'tier') + ' remaining',
+      pctRemaining: t.pct_used != null ? 100 - t.pct_used : null,
+      resetsAt: t.resets_at || null,
+      polledAt: entry.polled_at,
+    }));
+    values = metrics.map(m => m.pctRemaining).filter(v => v != null && Number.isFinite(v));
+    summaryText = compactBudgetSummary(entry.tiers.map(t => ({
+      label: t.label || t.tier || 'tier',
+      value: t.pct_used != null ? 100 - t.pct_used : null,
+    })));
+  } else if (agentId === 'cc') {
     const sessionPct = ccRemaining(entry.session);
     const weekPct = ccRemaining(entry.week_all);
     const sonnetPct = ccRemaining(entry.week_sonnet);
@@ -1756,7 +1831,7 @@ function budgetSummaryForAgent(agentId, entry) {
 function renderBudgetNotice(containerId, agentIds) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  const ids = [...new Set((agentIds || []).filter(id => id === 'cc' || id === 'cx'))];
+  const ids = [...new Set((agentIds || []).filter(id => id === 'cc' || id === 'cx' || id === 'gg'))];
   if (ids.length === 0) {
     container.style.display = 'none';
     container.replaceChildren();
@@ -1814,9 +1889,10 @@ function updateAutonomousBudgetNotice() {
 function renderBudgetWidget() {
   const el = document.getElementById('budget-widget');
   if (!el) return;
-  const data = _budgetCache || { cc: null, cx: null };
+  const data = _budgetCache || { cc: null, cx: null, gg: null };
   const cc = data.cc;
   const cx = data.cx;
+  const gg = data.gg;
   if (!hasAnyBudgetData(data)) {
     el.style.display = 'none';
     el.classList.remove('budget-widget--collapsed');
@@ -1830,7 +1906,7 @@ function renderBudgetWidget() {
 
   const children = [];
 
-  const latest = [cc && cc.polled_at, cx && cx.polled_at].filter(Boolean).sort().pop();
+  const latest = [cc && cc.polled_at, cx && cx.polled_at, gg && gg.polled_at].filter(Boolean).sort().pop();
   const head = createEl('div', { className: 'budget-widget-head' });
   head.appendChild(buildBudgetStatusDot(overallClass));
   const headTitles = createEl('div', { className: 'budget-widget-head-titles' });
@@ -1862,6 +1938,8 @@ function renderBudgetWidget() {
   const intro = createEl('span', { className: 'budget-intro' });
   intro.appendChild(createEl('span', { className: 'budget-intro-note', text: 'Lower numbers mean the current window is closer to throttling. Each bar is remaining headroom before that limit resets.' }));
   children.push(intro);
+
+  const agentsWrap = createEl('div', { className: 'budget-agents' });
 
   if (budgetAgentEnabled('cc')) {
     const row = createEl('span', { className: 'budget-agent' });
@@ -1895,7 +1973,7 @@ function renderBudgetWidget() {
     } else {
       row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'usage unavailable' }));
     }
-    children.push(row);
+    agentsWrap.appendChild(row);
   }
   if (budgetAgentEnabled('cx')) {
     const row = createEl('span', { className: 'budget-agent' });
@@ -1922,8 +2000,30 @@ function renderBudgetWidget() {
     } else {
       row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'usage unavailable' }));
     }
-    children.push(row);
+    agentsWrap.appendChild(row);
   }
+  if (budgetAgentEnabled('gg')) {
+    const row = createEl('span', { className: 'budget-agent' });
+    const head = createEl('span', { className: 'budget-agent-head' });
+    head.appendChild(createEl('span', { className: 'budget-agent-name', text: 'Gemini' }));
+    row.appendChild(head);
+    if (gg && Array.isArray(gg.tiers) && gg.tiers.length) {
+      for (const t of gg.tiers) {
+        const pctRem = t.pct_used != null ? 100 - t.pct_used : null;
+        row.appendChild(buildBudgetMetric({
+          label: (t.label || t.tier || 'tier') + ' remaining',
+          pctRemaining: pctRem,
+          resetsAt: t.resets_at || null,
+          polledAt: gg.polled_at,
+        }));
+      }
+    } else {
+      row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'usage unavailable' }));
+    }
+    agentsWrap.appendChild(row);
+  }
+
+  if (agentsWrap.childNodes.length) children.push(agentsWrap);
 
   const meta = createEl('span', { className: 'budget-meta' });
   if (latest) meta.appendChild(createEl('span', { text: 'updated ' + fmtRelAgo(latest) }));
@@ -1940,7 +2040,7 @@ function renderBudgetWidget() {
 }
 
 function annotateAgentPickerBudget() {
-  const data = _budgetCache || { cc: null, cx: null };
+  const data = _budgetCache || { cc: null, cx: null, gg: null };
   const picker = document.getElementById('agent-picker');
   if (!picker || picker.style.display === 'none') return;
   const rows = picker.querySelectorAll('.agent-check-row');
@@ -1948,7 +2048,7 @@ function annotateAgentPickerBudget() {
     const cb = row.querySelector('input');
     if (!cb) return;
     const id = cb.value;
-    if (id !== 'cc' && id !== 'cx') return;
+    if (id !== 'cc' && id !== 'cx' && id !== 'gg') return;
     const existing = row.querySelector('.agent-check-budget');
     if (existing) existing.remove();
 
@@ -1980,9 +2080,18 @@ function budgetWarningForAgents(agentIds) {
       const wk = entry.weekly && entry.weekly.pct_remaining;
       if (fh != null && fh < 20) { worst = fh; label = '5-hour window'; }
       if (wk != null && wk < 20 && (worst == null || wk < worst)) { worst = wk; label = 'weekly window'; }
+    } else if (id === 'gg' && Array.isArray(entry.tiers)) {
+      for (const t of entry.tiers) {
+        const rem = t.pct_used != null ? 100 - t.pct_used : null;
+        const tierLabel = t.label || t.tier || 'tier';
+        if (rem != null && rem < 20 && (worst == null || rem < worst)) {
+          worst = rem;
+          label = `${tierLabel} window`;
+        }
+      }
     }
     if (worst != null) {
-      const name = id === 'cc' ? 'Claude Code' : 'Codex';
+      const name = id === 'cc' ? 'Claude Code' : id === 'cx' ? 'Codex' : 'Gemini';
       warnings.push(`${name} has only ${worst}% remaining in its ${label}.`);
     }
   }

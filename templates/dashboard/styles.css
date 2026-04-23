@@ -125,7 +125,7 @@
     .agent-picker-recommendation .recommendation-agent b{color:#e0e7ff;margin-right:3px}
     .budget-notice{margin:8px 0 14px;padding:12px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--border-subtle)}
     .budget-notice-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary)}
-    .budget-notice-grid{display:grid;gap:10px}
+    .budget-notice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
     .budget-notice-card{padding:10px 12px;border-radius:10px;border:1px solid var(--border-subtle);background:rgba(255,255,255,.02)}
     .budget-notice-card.budget-notice-warning{border-color:rgba(248,81,73,.35);background:rgba(248,81,73,.08)}
     .budget-notice-card.budget-notice-info{border-color:rgba(59,130,246,.28);background:rgba(59,130,246,.07)}
@@ -245,15 +245,23 @@
     .toggle-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
     .toggle-btn.active{background:var(--accent);color:#fff}
     /* Pipeline / Kanban */
-    .kanban{display:grid;grid-template-columns:repeat(var(--kanban-cols,5),minmax(180px,1fr));gap:10px;align-items:start;overflow-x:auto;padding-bottom:8px}
-    .kanban-col{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden;min-height:120px}
+    /* minmax: set headers + feature cards need ~220px+; 180px clipped "Start set" and kcard actions */
+    .kanban{display:grid;grid-template-columns:repeat(var(--kanban-cols,5),minmax(220px,1fr));gap:10px;align-items:start;overflow-x:auto;padding-bottom:8px;min-width:0}
+    .kanban-col{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden;min-height:120px;min-width:0}
     .kanban-col.drag-over{border-color:rgba(59,130,246,.6);background:rgba(59,130,246,.06)}
     .kanban-col.drag-blocked{border-color:rgba(239,68,68,.4)}
     .col-h{padding:9px 12px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center}
     .col-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary)}
     .col-count{font-size:11px;color:var(--text-tertiary)}
     .col-new-feature-btn{font-size:10px;padding:3px 8px}
-    .col-body{padding:8px;display:grid;gap:6px;min-height:60px}
+    .col-body{padding:8px;display:grid;gap:6px;min-height:60px;min-width:0}
+    /* Group-by-set: header row must wrap / truncate so kcards are not clipped by narrow columns */
+    .kanban-set-header-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;width:100%;min-width:0}
+    .kanban-set-header-row .kanban-set-title{min-width:0;flex:1 1 80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .kanban-set-header-row .kanban-set-count{flex-shrink:0;white-space:nowrap}
+    .kanban-set-header-row .kanban-set-start-autonomous{flex-shrink:0}
+    .kanban-set-header-row .kanban-set-paused-badge{flex-shrink:0}
+    .kanban-set-header-row .kcard-peek-btn{flex-shrink:0}
     .kcard{border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,.01);padding:8px 10px;cursor:grab;transition:background .12s ease,border-color .12s ease,box-shadow .12s ease;min-width:0;overflow:hidden}
     .kcard:hover{background:var(--bg-elevated);border-color:var(--border-default)}
     .kcard.dragging{opacity:.3;cursor:grabbing}
@@ -373,6 +381,12 @@
     .modal-desc{color:var(--text-secondary);font-size:12px;margin:0 0 14px}
     .agent-checks{display:grid;gap:8px;margin-bottom:18px}
     .agent-checks.agent-checks-triplet{--agent-triplet-gutter:24px;--agent-triplet-cols:minmax(0,1.05fr) minmax(210px,1fr) 200px 200px}
+    .agent-picker-modal-box{max-width:min(820px,96vw)}
+    .agent-picker-reviewer-wrap{margin:16px 0 4px;padding:12px 0 0;border-top:1px solid var(--border-subtle)}
+    .agent-picker-reviewer-head{margin-bottom:6px}
+    .agent-picker-reviewer-title{font-size:12px;font-weight:600;color:var(--text-secondary);letter-spacing:.02em}
+    .agent-picker-reviewer-hint{font-size:12px;color:var(--text-secondary);margin:0 0 10px;line-height:1.45}
+    .agent-picker-reviewer-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,200px) minmax(130px,200px);gap:8px;align-items:center}
     .agent-picker-triplet-header-row{display:grid;grid-template-columns:var(--agent-triplet-cols);column-gap:12px;align-items:end;padding:0 12px 8px;margin:0 0 2px;border-bottom:1px solid var(--border-subtle)}
     .agent-picker-th-agent{display:grid;grid-template-columns:var(--agent-triplet-gutter) minmax(0,1fr);column-gap:10px;align-items:end;min-width:0}
     .agent-picker-th-gutter{width:var(--agent-triplet-gutter);min-width:var(--agent-triplet-gutter)}
@@ -1031,10 +1045,12 @@
       .budget-widget-head{flex-wrap:wrap}
       .budget-widget-head-meta{margin-left:0;width:100%;justify-content:flex-end;flex-wrap:wrap}
     }
-    .budget-widget .budget-intro{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:220px;padding-right:8px}
+    .budget-widget .budget-intro{display:flex;flex-direction:column;justify-content:center;gap:3px;flex:1 0 100%;width:100%;box-sizing:border-box;min-width:220px;padding-right:8px}
     .budget-widget .budget-intro-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary)}
     .budget-widget .budget-intro-note{font-size:12px;line-height:1.4;color:var(--text-secondary);max-width:280px}
-    .budget-widget .budget-agent{display:flex;flex-direction:column;gap:10px;min-width:250px;padding:10px 12px;background:rgba(255,255,255,.02);border:1px solid var(--border-subtle);border-radius:10px}
+    .budget-widget .budget-agents{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 12px;flex:1 0 100%;width:100%;box-sizing:border-box;align-items:stretch}
+    .budget-widget .budget-agents .budget-agent{min-width:0}
+    .budget-widget .budget-agent{display:flex;flex-direction:column;gap:10px;min-width:0;padding:10px 12px;background:rgba(255,255,255,.02);border:1px solid var(--border-subtle);border-radius:10px}
     .budget-widget .budget-agent-head{display:flex;flex-direction:column;gap:3px}
     .budget-widget .budget-agent-name{font-weight:600;color:var(--text-primary)}
     .budget-widget .budget-agent-support{font-size:11px;color:var(--text-tertiary)}
@@ -1043,7 +1059,7 @@
     .budget-widget .budget-bar-fill{position:absolute;top:0;left:0;bottom:0;border-radius:3px}
     .budget-widget .budget-pct{font-variant-numeric:tabular-nums;min-width:32px}
     .budget-widget .budget-label{color:var(--text-tertiary);font-size:10px;letter-spacing:.03em}
-    .budget-widget .budget-meta{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--text-tertiary);font-size:10px}
+    .budget-widget .budget-meta{flex:1 0 100%;width:100%;box-sizing:border-box;margin-left:0;display:flex;align-items:center;justify-content:flex-end;gap:8px;color:var(--text-tertiary);font-size:10px}
     .budget-widget .budget-refresh{background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:4px;line-height:1}
     .budget-widget .budget-refresh:hover{color:var(--text-primary);background:var(--border-subtle)}
     .budget-widget .budget-refresh.spinning{opacity:.5;cursor:progress}
@@ -1067,5 +1083,5 @@
       .budget-notice-metrics .budget-metric{width:100%;justify-content:flex-start}
       .budget-widget{padding:10px}
       .budget-widget .budget-intro{min-width:100%;padding-right:0}
-      .budget-widget .budget-agent{min-width:100%}
+      .budget-widget .budget-agents{grid-template-columns:1fr}
     }

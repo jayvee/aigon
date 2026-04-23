@@ -103,6 +103,7 @@
     let pickerResolve = null;
     let pickerSingleMode = false;
     let pickerCollectTriplet = false;
+    let pickerIncludeSetReviewer = false;
 
     function fetchAgentModels(repoPath) {
       const params = new URLSearchParams();
@@ -135,10 +136,15 @@
       return 'implement';
     }
 
+    function getPickerCheckedImplementerIds() {
+      return [...document.querySelectorAll('#agent-picker-checks input[type="checkbox"]:checked')].map(c => c.value);
+    }
+
     function showAgentPicker(featureId, featureName, options) {
       const opts = options || {};
       pickerSingleMode = !!opts.single;
       pickerCollectTriplet = !!opts.collectTriplet;
+      pickerIncludeSetReviewer = !!opts.includeSetReviewer;
       const implAgents = opts.implementingAgents || [];
       const taskType = pickerTaskType(opts);
       // Feature 313: set recommendation before rendering rows so dropdowns pre-select.
@@ -188,14 +194,46 @@
           }
         });
         document.getElementById('agent-picker-submit').textContent = opts.submitLabel || 'Start';
+        const revWrap = document.getElementById('agent-picker-reviewer-wrap');
+        const checksEl = document.getElementById('agent-picker-checks');
+        if (revWrap) revWrap.style.display = pickerIncludeSetReviewer ? 'block' : 'none';
+        if (pickerIncludeSetReviewer && checksEl) {
+          const refreshReviewerOptions = function() {
+            if (typeof window.populateSetAgentPickerReviewerSection === 'function') {
+              window.populateSetAgentPickerReviewerSection(opts.repoPath, getPickerCheckedImplementerIds());
+            }
+          };
+          checksEl.removeEventListener('change', checksEl._aigonSetReviewerRefresh);
+          checksEl._aigonSetReviewerRefresh = refreshReviewerOptions;
+          checksEl.addEventListener('change', refreshReviewerOptions);
+        } else if (checksEl && checksEl._aigonSetReviewerRefresh) {
+          checksEl.removeEventListener('change', checksEl._aigonSetReviewerRefresh);
+          checksEl._aigonSetReviewerRefresh = null;
+        }
         document.getElementById('agent-picker').style.display = 'flex';
-        if (typeof annotateAgentPickerBudget === 'function') annotateAgentPickerBudget();
-        if (typeof updatePickerBudgetNotice === 'function') updatePickerBudgetNotice();
-        document.getElementById('agent-picker-submit').focus();
+        const afterOpen = function() {
+          if (typeof annotateAgentPickerBudget === 'function') annotateAgentPickerBudget();
+          if (typeof updatePickerBudgetNotice === 'function') updatePickerBudgetNotice();
+          const submitEl = document.getElementById('agent-picker-submit');
+          if (submitEl) submitEl.focus();
+        };
+        if (pickerIncludeSetReviewer && typeof window.populateSetAgentPickerReviewerSection === 'function') {
+          window.populateSetAgentPickerReviewerSection(opts.repoPath, getPickerCheckedImplementerIds()).then(afterOpen).catch(afterOpen);
+        } else {
+          afterOpen();
+        }
       }));
     }
 
     function hideAgentPicker(result) {
+      const revWrap = document.getElementById('agent-picker-reviewer-wrap');
+      if (revWrap) revWrap.style.display = 'none';
+      const checksEl = document.getElementById('agent-picker-checks');
+      if (checksEl && checksEl._aigonSetReviewerRefresh) {
+        checksEl.removeEventListener('change', checksEl._aigonSetReviewerRefresh);
+        checksEl._aigonSetReviewerRefresh = null;
+      }
+      pickerIncludeSetReviewer = false;
       document.getElementById('agent-picker').style.display = 'none';
       if (pickerResolve) { pickerResolve(result); pickerResolve = null; }
     }
@@ -217,7 +255,22 @@
             effort: effortSel && effortSel.value ? effortSel.value : null,
           };
         });
-        hideAgentPicker(triplets);
+        if (pickerIncludeSetReviewer) {
+          const rSel = document.getElementById('agent-picker-review-agent');
+          const rModel = document.getElementById('agent-picker-review-model');
+          const rEff = document.getElementById('agent-picker-review-effort');
+          const ra = rSel ? String(rSel.value || '').trim() : '';
+          const reviewModel = ra && rModel ? String(rModel.value || '').trim() : '';
+          const reviewEffort = ra && rEff ? String(rEff.value || '').trim() : '';
+          hideAgentPicker({
+            triplets: triplets,
+            reviewAgent: ra || null,
+            reviewModel: reviewModel || null,
+            reviewEffort: reviewEffort || null,
+          });
+        } else {
+          hideAgentPicker(triplets);
+        }
       } else {
         hideAgentPicker(checkedInputs.map(cb => cb.value));
       }

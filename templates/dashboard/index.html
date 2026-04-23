@@ -261,11 +261,22 @@
   <div id="toasts" class="toast-wrap" aria-live="polite"></div>
   <!-- Agent picker modal -->
   <div id="agent-picker" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="agent-picker-title">
-    <div class="modal-box">
+    <div class="modal-box agent-picker-modal-box">
       <h3 id="agent-picker-title">Select Agents</h3>
       <p class="modal-desc" id="agent-picker-desc"></p>
       <div id="agent-picker-budget-notice" class="budget-notice" style="display:none"></div>
       <div class="agent-checks" id="agent-picker-checks"></div>
+      <div id="agent-picker-reviewer-wrap" class="agent-picker-reviewer-wrap" style="display:none" aria-label="Reviewer options for set autonomous">
+        <div class="agent-picker-reviewer-head">
+          <span class="agent-picker-reviewer-title">Reviewer (optional)</span>
+        </div>
+        <p class="agent-picker-reviewer-hint">Runs the <strong>code review</strong> after each member&rsquo;s implementation (same reviewer for every feature in this set). Model and effort apply to the review phase only. Leave the first field empty to skip review.</p>
+        <div class="agent-picker-reviewer-grid">
+          <select id="agent-picker-review-agent" class="create-input" aria-label="Review agent"></select>
+          <span id="agent-picker-review-model-cell" class="agent-triplet-cell agent-triplet-cell-model"></span>
+          <span id="agent-picker-review-effort-cell" class="agent-triplet-cell agent-triplet-cell-effort"></span>
+        </div>
+      </div>
       <div class="modal-actions">
         <button class="btn" id="agent-picker-cancel">Cancel</button>
         <button class="btn btn-primary" id="agent-picker-submit">Setup</button>

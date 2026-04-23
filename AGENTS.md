@@ -96,7 +96,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/git.js` | ~700 | Branch, worktree, status, commit helpers, attribution |
 | `lib/security.js` | ~131 | Merge gate scanning (gitleaks + semgrep) |
 | `lib/workflow-heartbeat.js` | ~160 | Display-only liveness computation (alive/stale/dead); never changes engine state |
-| `lib/budget-poller.js` | ~300 | F322 agent budget awareness: polls `claude`/`codex` via throwaway tmux sessions every 30min, caches to `.aigon/budget-cache.json`. Dashboard reads via `GET /api/budget`, refreshes via `POST /api/budget/refresh`. Silent no-op if tmux or the agent binary is missing |
+| `lib/budget-poller.js` | ~450 | F322 agent budget awareness: polls `claude`/`codex`/`gemini` (tmux → `/model` Model usage tiers) every 30min, caches to `.aigon/budget-cache.json`. Dashboard reads via `GET /api/budget`, refreshes via `POST /api/budget/refresh`. Silent no-op if tmux or the agent binary is missing |
 | `lib/supervisor.js` | ~430 | Server monitoring: liveness, idle/awaiting-input notifications, and token-exhaustion detection (F308) that may append workflow events, pause a feature, or auto-switch a slot per `agentFailover` policy |
 | `lib/supervisor-service.js` | ~175 | Server auto-restart (launchd/systemd) for `aigon server start --persistent` |
 | `lib/terminal-adapters.js` | ~200 | Detect/launch/split per terminal (Warp, iTerm2, kitty, Terminal.app) |

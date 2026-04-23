@@ -75,4 +75,19 @@ testAsync('nudge delivery failure includes pane tail', async () => {
     } }), (error) => (assert.match(error.message, /Nudge text not found in pane after delivery/), assert.strictEqual(error.paneTail, 'stale pane output'), true));
 });
 
+// REGRESSION: GET /api/budget gg — parse Gemini CLI /model "Model usage" rows (Flash / Flash Lite / Pro).
+test('parseGeminiModelUsage extracts tier pct and reset labels', () => {
+    const { parseGeminiModelUsage, stripAnsi } = require('../../lib/budget-poller');
+    assert.strictEqual(stripAnsi('\x1b[31mX\x1b[0m'), 'X');
+    const tiers = parseGeminiModelUsage(`
+Model usage
+│ Flash       ▬  0%   Resets: 11:15 AM (14h 41m)
+│ Flash Lite  ▬  0%   Resets: 11:15 AM (14h 41m)
+│ Pro         ▬  23%   Resets: 8:13 PM (23h 39m)
+`);
+    assert.strictEqual(tiers.length, 3);
+    assert.strictEqual(tiers[2].tier, 'pro');
+    assert.strictEqual(tiers[2].pct_used, 23);
+});
+
 report();

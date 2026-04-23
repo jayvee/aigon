@@ -17,6 +17,7 @@ node_modules/
 # Playwright
 playwright-report/
 test-results/
+tests/dashboard-e2e/screenshots/
 .playwright-mcp/
 
 # Aigon runtime files (never committed)

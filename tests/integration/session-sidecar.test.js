@@ -68,4 +68,20 @@ test('parseEnrichedTmuxSessionsOutput prunes sidecar files with no live tmux ses
     assert.ok(fs.existsSync(path.join(sessionsDir, `${liveName}.json`)));
 }));
 
+test('parseEnrichedTmuxSessionsOutput resolves set conductor ...-s<slug>-auto to repo (no unlinked filter)', () => withTempDir('aigon-set-tmux-', (tmp) => {
+    // REGRESSION: set-autonomous-start uses {repo}-s{setSlug}-auto; must not lose repoPath (sessions tab filter).
+    const repo = path.join(tmp, 'brewboard');
+    fs.mkdirSync(repo, { recursive: true });
+    const name = 'brewboard-shomepage-polish-auto';
+    const epochSec = 1_000_000;
+    const line = `${name}${SEP}${epochSec}${SEP}0`;
+    const rows = parseEnrichedTmuxSessionsOutput(line, [repo]);
+    assert.strictEqual(rows.length, 1);
+    assert.strictEqual(rows[0].entityType, 'S');
+    assert.strictEqual(rows[0].entityId, 'homepage-polish');
+    assert.strictEqual(path.resolve(rows[0].repoPath), path.resolve(repo));
+    assert.strictEqual(rows[0].orphan, null);
+    assert.strictEqual(rows[0].role, 'auto');
+}));
+
 report();
