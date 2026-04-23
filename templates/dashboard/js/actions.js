@@ -1548,20 +1548,6 @@ function hasAnyBudgetData(data) {
   return !!(entry.cc || entry.cx);
 }
 
-function syncBudgetToggleButton(hasData) {
-  const btn = document.getElementById('budget-toggle-btn');
-  if (!btn) return;
-  if (!hasData) {
-    btn.style.display = 'none';
-    return;
-  }
-  btn.style.display = '';
-  const collapsed = budgetWidgetCollapsed();
-  btn.textContent = collapsed ? 'Expand quota' : 'Collapse quota';
-  btn.setAttribute('aria-pressed', collapsed ? 'false' : 'true');
-  btn.title = collapsed ? 'Expand the agent quota panel' : 'Collapse the agent quota panel to save space';
-}
-
 function collectBudgetPctValues(data) {
   const values = [];
   let polledAt = null;
@@ -1820,10 +1806,8 @@ function renderBudgetWidget() {
   if (!hasAnyBudgetData(data)) {
     el.style.display = 'none';
     el.classList.remove('budget-widget--collapsed');
-    syncBudgetToggleButton(false);
     return;
   }
-  syncBudgetToggleButton(true);
   el.style.display = 'flex';
   const collapsed = budgetWidgetCollapsed();
   const overallClass = budgetOverallSummaryClass(data);
@@ -1995,14 +1979,6 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchBudget().then(renderBudgetWidget);
   // Refresh widget every 2 minutes to keep "updated Xmin ago" accurate and pick up fresh polls.
   setInterval(() => { fetchBudget(true).then(() => { renderBudgetWidget(); updatePickerBudgetNotice(); updateAutonomousBudgetNotice(); }); }, 2 * 60 * 1000);
-
-  const toggleBtn = document.getElementById('budget-toggle-btn');
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', () => {
-      setBudgetWidgetCollapsed(!budgetWidgetCollapsed());
-      renderBudgetWidget();
-    });
-  }
 
   // Annotate agent picker rows whenever it is opened.
   const picker = document.getElementById('agent-picker');
