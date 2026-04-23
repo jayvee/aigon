@@ -19,24 +19,10 @@ network_access = true
 command = "npx"
 args = ["-y", "@playwright/mcp@latest"]
 # Auto-approve all Playwright MCP tool calls — no per-call prompts.
+# approval_policy = "never" does NOT cover MCP tool calls; this key does.
 default_tools_approval_mode = "approve"
 
 [_aigon]
 note = "Configuration added by Aigon"
 tools = ["aigon"]
 # --- Aigon Configuration End ---
-# Note on MCP approval prompts: `approval_policy = "never"` above only affects
-# codex when it reads its config file *unprompted*. The `--full-auto` CLI
-# flag overrides that (it resolves to `-a on-request`), which lets the model
-# prompt for MCP tool approvals (e.g. playwright `browser_navigate`) and
-# blocks autonomous sessions indefinitely. Aigon's autonomous codex launcher
-# in lib/config.js deliberately uses `-a never --sandbox danger-full-access`
-# instead of `--full-auto` to avoid this class of deadlock. If you add a
-# legacy `--full-auto` flag via project agent config, autonomous cx will
-# break. See lib/config.js:getAgentLaunchFlagTokens.
-
-[mcp_servers.playwright]
-command = "npx"
-args = ["-y", "@playwright/mcp@latest"]
-# Auto-approve all Playwright MCP tool calls — no per-call prompts.
-default_tools_approval_mode = "approve"
