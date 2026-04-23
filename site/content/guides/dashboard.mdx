@@ -65,7 +65,9 @@ The badge clears automatically when the agent reports its next status, so cards 
 
 ### Model and effort picker
 
-When you start a feature from the dashboard, each agent slot includes a model picker and effort picker. The selected triplet is stored in workflow state so the choice survives server restarts and later respawns.
+When you start a feature from the dashboard, each agent slot includes a **model** picker and **effort** picker. The selected triplet is stored in workflow state so the choice survives server restarts and later respawns.
+
+**Complexity-driven defaults:** If the feature spec (or research topic) has valid YAML frontmatter with a **`complexity`** level, the dialog shows a short **explanation under the title** and pre-fills each row from that complexity plus each agent’s built-in **complexity ladder** (and optional per-agent `recommended_models` in the spec). **Default** in a dropdown still means your global `aigon config` value; change any row before Start if you want a one-off override. Details and the full resolution order are in the [Agents reference](/docs/reference/agents#spec-complexity-and-model-defaults).
 
 {/* PLACEHOLDER: model picker dropdown in the dashboard start dialog */}
 

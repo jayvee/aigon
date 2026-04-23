@@ -21,7 +21,7 @@ aigon config init --global                  # Create global config
 
 # Set values (dot-notation for nested keys)
 aigon config set profile web
-aigon config set --global terminal warp
+aigon config set --global terminalApp warp
 aigon config set fleet.testInstructions "run npm test"
 
 # Get values (shows where the value comes from)
@@ -144,6 +144,8 @@ AIGON_CC_RESEARCH_MODEL=haiku aigon config models
 ```
 
 Env var pattern: `AIGON_{AGENT}_{TASK}_MODEL` where AGENT is `CC/GG/CX/CU` and TASK is `RESEARCH/IMPLEMENT/EVALUATE`.
+
+**Spec complexity:** Feature and research specs can declare a **`complexity`** level (and optional per-agent `recommended_models`) in YAML frontmatter. When you start work from the dashboard, those values **pre-select** model and effort before your config defaults are used. Global keys above are still the baseline when the spec leaves a slot empty or you pick **Default** in the picker. See [Agents → Spec complexity and model defaults](/docs/reference/agents#spec-complexity-and-model-defaults).
 
 ## CLI flag overrides
 

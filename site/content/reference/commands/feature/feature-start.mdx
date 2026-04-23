@@ -26,3 +26,13 @@ Start feature \<ID\> [agents...] - create workspace and begin implementation
 # CLI
 aigon feature-start <ID>
 ```
+
+## Model and effort overrides
+
+Per-run overrides (after any agents list):
+
+```bash
+aigon feature-start 42 cc --models=cc=claude-opus-4-7 --efforts=cc=high
+```
+
+If you omit `--models` / `--efforts`, the CLI uses the same **spec frontmatter → per-agent complexity ladder → `aigon config models`** resolution as the dashboard. That is driven by the feature spec’s **`complexity`** and optional **`recommended_models`** keys. See [Agents: Spec complexity and model defaults](/docs/reference/agents#spec-complexity-and-model-defaults).

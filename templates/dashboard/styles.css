@@ -123,6 +123,10 @@
     .agent-picker-recommendation .recommendation-label{font-weight:600;color:#e0e7ff;margin-right:4px}
     .agent-picker-recommendation .recommendation-agent{display:inline-block;margin-right:10px}
     .agent-picker-recommendation .recommendation-agent b{color:#e0e7ff;margin-right:3px}
+    .agent-picker-recommendation .recommendation-head{margin:0 0 6px}
+    .agent-picker-recommendation .recommendation-explainer{margin:0 0 8px;font-size:11px;line-height:1.45;color:var(--text-secondary);font-weight:400}
+    .agent-picker-recommendation .recommendation-explainer code{font-size:10px;padding:1px 4px;border-radius:3px;background:rgba(0,0,0,.25)}
+    .agent-picker-recommendation .recommendation-agents-line{font-size:11px;color:#c7d2fe;margin:0}
     .budget-notice{margin:8px 0 14px;padding:12px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--border-subtle)}
     .budget-notice-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary)}
     .budget-notice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}

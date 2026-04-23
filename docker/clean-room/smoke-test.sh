@@ -166,7 +166,7 @@ scenario_1() {
 
   step "Configure aigon"
   aigon config init --global 2>&1 || true
-  aigon config set --global terminal tmux
+  aigon config set --global terminalApp tmux
   pass "aigon config set"
 
   clone_brewboard

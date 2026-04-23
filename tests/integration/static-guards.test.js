@@ -32,6 +32,14 @@ test('autonomous close gate: feedback-addressed and per-agent file bridge snapsh
     const snapSolo = { agents: { solo: { status: 'ready' } } };
     assert.ok(implAgentReadyForAutonomousClose(snapSolo, 'cu', '1', repo), 'solo engine slot bridges concrete --agents id');
 }));
+// REGRESSION: F313 banner used querySelector('#agent-picker .modal-card') but the modal is .modal-box — banner never rendered.
+test('agent picker recommendation banner mounts in index.html (no phantom .modal-card)', () => {
+    const idx = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/index.html'), 'utf8');
+    const actions = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions.js'), 'utf8');
+    assert.ok(idx.includes('id="agent-picker-recommendation"'));
+    assert.ok(!actions.includes("querySelector('#agent-picker .modal-card')"));
+    assert.ok(actions.includes("getElementById('agent-picker-recommendation')"));
+});
 // REGRESSION: SetConductor outer loop (repo-s{slug}-auto) must be peekable from Monitor + Pipeline like *-f{id}-auto.
 test('set autonomous conductor peek wired in dashboard templates', () => {
     const root = path.join(__dirname, '../../templates/dashboard/js');

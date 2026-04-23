@@ -142,7 +142,14 @@ function appendTripletSelects(rowEl, agent) {
     } else if (stored.model != null && modelOpts.some(o => String(o.value || '') === stored.model)) {
       sel.value = stored.model;
     }
-    sel.title = 'Default: use the model from aigon config for this task type';
+    const complexityHint = pickerRecommendation && pickerRecommendation.complexity
+      ? ' Pre-selected for ' + pickerRecommendation.complexity + ' complexity (from spec + this agent’s ladder).'
+      : '';
+    sel.title = recommended && sel.classList.contains('agent-triplet-recommended') && complexityHint
+      ? complexityHint.trim() + ' Default uses your global aigon config for this task type.'
+      : recommended && sel.classList.contains('agent-triplet-recommended')
+        ? 'Pre-selected from spec. Default uses your global aigon config for this task type.'
+        : 'Default: use the model from aigon config for this task type';
     sel.addEventListener('click', e => e.stopPropagation());
     sel.addEventListener('change', e => {
       e.stopPropagation();
@@ -176,7 +183,14 @@ function appendTripletSelects(rowEl, agent) {
     } else if (stored.effort != null && effortOpts.some(o => String(o.value || '') === stored.effort)) {
       sel.value = stored.effort;
     }
-    sel.title = 'Default: use the effort level from aigon config for this agent';
+    const effortComplexityHint = pickerRecommendation && pickerRecommendation.complexity
+      ? ' Pre-selected for ' + pickerRecommendation.complexity + ' complexity (from spec + this agent’s ladder).'
+      : '';
+    sel.title = recommendedEffort && sel.classList.contains('agent-triplet-recommended') && effortComplexityHint
+      ? effortComplexityHint.trim() + ' Default uses your global aigon config for this agent.'
+      : recommendedEffort && sel.classList.contains('agent-triplet-recommended')
+        ? 'Pre-selected from spec. Default uses your global aigon config for this agent.'
+        : 'Default: use the effort level from aigon config for this agent';
     sel.addEventListener('click', e => e.stopPropagation());
     sel.addEventListener('change', e => {
       e.stopPropagation();
@@ -288,26 +302,17 @@ function complexityBadgeHtml(complexity) {
 // Render a banner inside the agent picker modal summarising the spec
 // complexity and per-agent recommended {model, effort}. Hides banner when
 // recommendation is null.
+// REGRESSION: must target #agent-picker .modal-box — there is no .modal-card
+// (banner was never shown before 2026-04).
 function renderPickerRecommendationBanner(recommendation) {
-  const modalCard = document.querySelector('#agent-picker .modal-card');
-  if (!modalCard) return;
-  let banner = document.getElementById('agent-picker-recommendation');
+  const banner = document.getElementById('agent-picker-recommendation');
+  if (!banner) return;
   if (!recommendation || (!recommendation.complexity && (!recommendation.agents || Object.values(recommendation.agents).every(a => !a.model && !a.effort)))) {
-    if (banner) banner.style.display = 'none';
+    banner.style.display = 'none';
+    banner.innerHTML = '';
     return;
   }
-  if (!banner) {
-    banner = document.createElement('div');
-    banner.id = 'agent-picker-recommendation';
-    banner.className = 'agent-picker-recommendation';
-    const after = document.getElementById('agent-picker-desc');
-    if (after && after.nextSibling) modalCard.insertBefore(banner, after.nextSibling);
-    else modalCard.appendChild(banner);
-  }
   banner.style.display = '';
-  const parts = [];
-  if (recommendation.complexity) parts.push('<span class="recommendation-label">Recommended:</span> complexity ' + complexityBadgeHtml(recommendation.complexity));
-  else parts.push('<span class="recommendation-label">Recommended:</span>');
   const agentBits = [];
   Object.entries(recommendation.agents || {}).forEach(([id, entry]) => {
     if (!entry || (!entry.model && !entry.effort)) return;
@@ -315,8 +320,20 @@ function renderPickerRecommendationBanner(recommendation) {
     const effortLabel = entry.effort ? '/' + entry.effort : '';
     agentBits.push('<span class="recommendation-agent"><b>' + id + '</b> ' + modelLabel + effortLabel + '</span>');
   });
-  if (agentBits.length > 0) parts.push(agentBits.join(' · '));
-  banner.innerHTML = parts.join(' ');
+  let html = '';
+  if (recommendation.complexity) {
+    html += '<div class="recommendation-head"><span class="recommendation-label">Spec complexity</span> '
+      + complexityBadgeHtml(recommendation.complexity) + '</div>';
+    html += '<p class="recommendation-explainer">Model and effort defaults in the columns below use each agent&rsquo;s ladder for this tier (plus any per-agent lines in the spec). Override before Start, or choose Default to use your global aigon config.</p>';
+  } else {
+    html += '<div class="recommendation-head"><span class="recommendation-label">From spec</span></div>';
+    html += '<p class="recommendation-explainer">Some model/effort values below are filled from the spec&rsquo;s <code>recommended_models</code> block. Override before Start.</p>';
+  }
+  if (agentBits.length > 0) {
+    html += '<div class="recommendation-agents-line"><span class="recommendation-label">Resolved defaults</span> '
+      + agentBits.join(' · ') + '</div>';
+  }
+  banner.innerHTML = html;
 }
 
 // Feature 313: fetch the spec-frontmatter recommendation for an entity.

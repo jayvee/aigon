@@ -1,65 +1,63 @@
-# Research: choose-recommend-model
+---
+complexity: medium
+recommended_models:
+  cc: { model: null, effort: null }
+  cx: { model: null, effort: null }
+  gg: { model: null, effort: null }
+  cu: { model: null, effort: null }
+---
+
+# Research: complexity → model defaults (tuning & policy)
 
 ## Context
 
-Currently Aigon uses a fixed model per agent per task type (e.g., cc implement = Sonnet, gg implement = gemini-2.5-flash). Every feature gets the same model regardless of complexity — simple one-liner changes use the same expensive model as complex architectural refactors. This wastes cost on simple features and potentially under-powers complex ones.
+An earlier draft of this topic assumed Aigon had a single fixed model per agent and needed a greenfield design for complexity metadata and start-time recommendations. **That work is largely shipped (F313):**
 
-The vision is a two-part system:
-1. **Complexity assessment at feature creation time** — when a feature spec is written (by AI or human), frontmatter captures a complexity level that maps to a model tier.
-2. **Model recommendation at feature-start time** — when starting a feature, Aigon suggests the appropriate model for each agent based on complexity, with the user able to override.
+- **Feature specs** are created from `templates/specs/feature-template.md`, which already includes YAML frontmatter with `complexity:` (`low` \| `medium` \| `high` \| `very-high`) and optional per-agent `recommended_models` overrides (`model` / `effort`, or `null` to inherit).
+- **`feature-create` instructions** (`templates/generic/commands/feature-create.md`) require the authoring agent to set `complexity:` using the rubric in the template.
+- **Per-agent mapping** lives in `templates/agents/{cc,cx,gg,cu}.json` under `cli.complexityDefaults[<complexity>]` → default `{ model, effort }` for that tier.
+- **Resolution** is implemented in `lib/spec-recommendation.js`: spec per-agent overrides → `complexityDefaults` for the spec’s complexity → caller falls back to `aigon config models`. The dashboard consumes this via `/api/recommendation/:type/:id` and pre-selects the start modal.
 
-For example, with Claude Code: low complexity → Haiku, medium → Sonnet, high → Opus. Each agent has its own model ladder mapped to the same complexity scale.
+Users can still pick a specific model at start time; recommendations are defaults, not locks.
+
+**What this research should cover instead** is whether the *defaults* and *process* are right: ladder tuning per provider, gaps (e.g. agents without `complexityDefaults`), org/repo policy, and whether `complexity` is reliably present and accurate on real specs.
 
 ## Questions to Answer
 
-### Complexity assessment
-- [ ] What factors determine feature complexity? (files touched, cross-cutting concerns, new vs modify, test requirements, domain knowledge needed)
-- [ ] What complexity scale works best? (3 levels: low/medium/high? 5 levels? continuous score?)
-- [ ] How should complexity be assessed during `feature-create`? (LLM analyzes the spec text? heuristic rules? both?)
-- [ ] What frontmatter format should store complexity? (e.g., `complexity: medium`, `complexity_score: 3`)
-- [ ] Can complexity be refined later? (e.g., after reading the codebase during `feature-do`, re-assess and switch models mid-flight?)
-- [ ] How accurate is LLM-based complexity assessment? What are the failure modes? (over/under-estimation)
-- [ ] Should the user be able to override the AI-assessed complexity?
+### Preconditions (is `complexity` actually on specs?)
+- [ ] In practice, what share of feature specs in the wild have valid `complexity:` in frontmatter vs missing/invalid/stale?
+- [ ] If gaps are common, is the fix **process** (stronger prompts, spec-review checks) or **product** (lint on prioritise, dashboard warning, `doctor` hint) — and what is the minimal enforcement that avoids silent wrong-tier defaults?
 
-### Model ladder per agent
-- [ ] What models are available for each agent and how do they map to tiers?
-  - CC: Haiku (low) → Sonnet (medium) → Opus (high)?
-  - CX: gpt-4.1-mini (low) → gpt-4.1 (medium) → gpt-5.3-codex (high)?
-  - GG: gemini-2.5-flash-lite (low) → gemini-2.5-flash (medium) → gemini-2.5-pro (high)?
-- [ ] Should the model ladder be configurable per-repo or per-profile? (e.g., a company might mandate Sonnet minimum)
-- [ ] How should the model ladder be stored? (agent config JSON? global config? both with override chain?)
-- [ ] Does the model ladder need different mappings for implement vs evaluate vs research tasks?
+### Mapping quality (agent model ↔ complexity tier)
+- [ ] Are the current `complexityDefaults` tables in each agent JSON appropriate for cost vs quality (including model renames and new SKUs)?
+- [ ] Which agents lack `complexityDefaults` today (e.g. OpenCode / other harness-only agents), and should they get explicit ladders or documented “N/A” behavior?
+- [ ] Should **implement**, **evaluate**, and **review** tasks use the same ladder or different rows (today the recommendation is primarily start/implement-shaped; document actual behavior in code paths)?
 
-### Resolution order
-- [ ] What is the model resolution priority? (user override > complexity recommendation > repo config > global config > agent default)
-- [ ] How should this interact with the existing `models.implement` / `models.research` / `models.evaluate` config?
-- [ ] Should the dashboard show the recommended model and allow one-click override at feature-start time?
+### Recommendation policy
+- [ ] Should teams be able to set **repo-level** or **profile-level** floor/ceiling on model tier (e.g. “never below Sonnet for cc”) without editing every spec?
+- [ ] When should authors use `recommended_models` overrides vs only `complexity`?
 
-### Cost and quality tradeoffs
-- [ ] What are typical cost ratios between tiers? (e.g., Haiku is 10x cheaper than Opus)
-- [ ] How much quality difference is there between tiers for simple tasks? Is Haiku genuinely sufficient for low-complexity features?
-- [ ] Could this be validated by running the same feature at different tiers and comparing eval scores?
+### Validation (optional evidence)
+- [ ] Can we cheaply benchmark wrong-tier outcomes (e.g. same canned task at low vs high tier) or is qualitative review sufficient for the first iteration?
 
 ## Scope
 
 ### In Scope
-- Complexity assessment methods (LLM-based and heuristic)
-- Model ladder definition per agent
-- Frontmatter schema for complexity metadata
-- Resolution order and override chain
-- Integration points in `feature-create` and `feature-start`
+- Auditing real spec frontmatter and default tables; proposing concrete changes to `templates/agents/*.json` and/or docs.
+- Policy and enforcement options for missing `complexity`.
+- Any small, evidence-backed adjustments to the feature-create rubric.
 
 ### Out of Scope
-- Automatic model switching mid-feature (beyond scope — research only)
-- Cost tracking infrastructure (covered in observability research)
-- Model fine-tuning or custom models
-- Non-coding models (image generation, embeddings)
+- Replacing the existing frontmatter schema or resolver (unless research proves a breaking change is necessary).
+- Automatic mid-session model switching.
+- Full cost-accounting product work (cross-link observability research if needed).
 
 ## Inspiration
-- Current model config: `lib/config.js` lines 295-310 (`DEFAULT_GLOBAL_CONFIG.agents.*.models`)
-- Agent templates: `templates/agents/cc.json`, `cx.json`, `gg.json`
-- Feature spec format: `docs/specs/features/` (markdown with potential frontmatter)
-- Model override chain: `lib/config.js` `getActiveProfile()` merge logic
+- `lib/spec-recommendation.js` — resolver and `ALLOWED_COMPLEXITY`
+- `templates/specs/feature-template.md` — canonical frontmatter
+- `templates/agents/cc.json` (and cx/gg/cu) — `cli.complexityDefaults`
+- `templates/generic/commands/feature-create.md` — authoring instructions
+- Dashboard: `/api/recommendation/:type/:id` (see `lib/dashboard-routes.js` or collector wiring)
 
 ## Findings
 <!-- Document discoveries, options evaluated, pros/cons -->

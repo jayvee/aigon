@@ -103,6 +103,51 @@ Override with:
 aigon config set --global agents.cc.implementFlag ""
 ```
 
+## Spec complexity and model defaults
+
+When you **start** a feature or research topic, Aigon can **pre-select model and effort** for each agent from the **spec’s YAML frontmatter**, not only from global `aigon config` defaults. That is how “simple work vs heavy refactors” maps to cheaper or stronger models without editing config for every ticket.
+
+### What lives in the spec
+
+New feature and research specs include frontmatter (see the templates under `templates/specs/` in the repo). The important keys are:
+
+- **`complexity`** — one of `low`, `medium`, `high`, `very-high`. Describes how demanding the work is so Aigon can pick a tier.
+- **`recommended_models`** (optional) — per agent id, `{ model: "<id>|null", effort: "<level>|null" }`. Use `null` for either field to mean “inherit the default for this agent at this complexity.”
+
+If frontmatter is missing or invalid, Aigon falls back to normal config defaults; nothing breaks.
+
+### Where per-agent defaults come from
+
+Each bundled agent definition (`templates/agents/<id>.json` in the repo) includes **`cli.complexityDefaults`**: a small table from each **complexity** bucket to a default **`model`** and **`effort`** for that agent (for example, a lighter Claude model for `low`, a larger context Sonnet tier for `high`). Those tables are the “ladder” for that provider.
+
+### Resolution order (per agent, per field)
+
+For each of `model` and `effort`, Aigon resolves in this order:
+
+1. **Explicit value** in the spec’s `recommended_models.<agent>` (if present).
+2. Else **value from `complexityDefaults[complexity]`** for that agent (when the spec has a valid `complexity`).
+3. Else **`aigon config models`** and related config (see [Configuration](/docs/reference/configuration#model-selection)).
+
+So: **spec overrides → complexity ladder → global config.** Changing `aigon config set agents.cc.models.implement …` still applies whenever the spec leaves that field at `null` and the ladder does not override it.
+
+### Dashboard behaviour
+
+On **Start** (and similar flows), the agent picker shows:
+
+- A short **note** with the spec’s **complexity** (when present) and plain-language text that model/effort defaults follow each agent’s ladder for that tier.
+- **Model override** and **Effort override** dropdowns, pre-filled from the resolved recommendation. **Default** in the dropdown means “use the global aigon config value for this task,” not “ignore the spec.”
+
+You can always change a row before confirming; the choice is stored on the workflow snapshot for respawns.
+
+### CLI and API
+
+- **CLI**: `aigon feature-start <id> …` supports per-run overrides, e.g. `--models=cc=claude-opus-4-7,gg=gemini-2.5-pro` and `--efforts=cc=high`. See the [feature-start](/docs/reference/commands/feature/feature-start) reference.
+- **API**: `GET /api/recommendation/feature/<id>` and `GET /api/recommendation/research/<id>` return the resolved recommendation payload (optional `repoPath` query when needed). Integrations and the dashboard use this for the same pre-selection logic.
+
+### Authoring guidance
+
+Set **`complexity`** when you write or review a spec (the feature-create flow and templates describe the rubric). Only add **`recommended_models`** lines when one agent needs an exception (for example, a judgment-heavy model for `cc` while `cx` stays on the ladder).
+
 ## Using agents in Fleet mode
 
 In Fleet mode, each agent gets an isolated worktree. Mismatch protection prevents launching the wrong agent in a worktree:
@@ -127,6 +172,5 @@ How agents launch depends on your terminal config:
 Configure with:
 
 ```bash
-aigon config set --global terminal tmux
-aigon config set --global tmuxApp iterm2
+aigon config set --global terminalApp iterm2
 ```
