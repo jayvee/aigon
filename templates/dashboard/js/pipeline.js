@@ -1027,14 +1027,31 @@
             const row = document.createElement('div');
             row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px';
             const title = document.createElement('span');
-            title.textContent = '◉ ' + setSlug;
+            const roll = setsRollup.find(x => x.slug === setSlug);
+            const isPausedOnFailure = roll && roll.autonomous && roll.autonomous.status === 'paused-on-failure';
+            const titlePrefix = isPausedOnFailure ? '⚠ ' : '◉ ';
+            title.textContent = titlePrefix + setSlug;
+            if (isPausedOnFailure) {
+              title.style.color = '#e57c2a';
+              header.style.borderTop = '1px solid #e57c2a44';
+              header.style.borderBottom = '1px solid #e57c2a44';
+              header.style.background = 'rgba(229,124,42,0.07)';
+              const failedId = roll.autonomous.failedFeature || (Array.isArray(roll.autonomous.failed) && roll.autonomous.failed[0]);
+              const failLabel = failedId ? `feature #${parseInt(failedId, 10) || failedId} failed` : 'review failed';
+              const badge = document.createElement('span');
+              badge.style.cssText = 'font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#e57c2a22;color:#e57c2a;border:1px solid #e57c2a55;border-radius:3px;padding:1px 5px;cursor:default;white-space:nowrap';
+              badge.textContent = 'PAUSED';
+              badge.title = `Set paused on failure — ${failLabel}. Run: aigon set-autonomous-resume ${setSlug}`;
+              row.appendChild(title);
+              row.appendChild(badge);
+            } else {
+              row.appendChild(title);
+            }
             const countEl = document.createElement('span');
             countEl.style.opacity = '0.7';
-            const roll = setsRollup.find(x => x.slug === setSlug);
             const doneN = roll ? (Number(roll.completed) || 0) : 0;
             const totalN = roll ? (Number(roll.memberCount) || members.length) : members.length;
             countEl.textContent = totalN ? (doneN + '/' + totalN) : String(members.length);
-            row.appendChild(title);
             row.appendChild(countEl);
             header.appendChild(row);
 
