@@ -122,7 +122,7 @@ Research follows the same lifecycle shape as features: `start -> do -> submit ->
 
 When the user says "save that permission" or "remember that":
 
-1. Read or create a TOML file in `.gemini/policies/` (e.g., `.gemini/policies/custom.toml`)
+1. Read or create a TOML file in `~/.gemini/policies/` (e.g., `~/.gemini/policies/custom.toml`)
 2. Add a `[[rule]]` block with the tool name, decision, and priority
 3. Example:
    ```toml

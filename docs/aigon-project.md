@@ -68,7 +68,7 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 
 **Per-agent outputs:**
 - **cc**: `.claude/commands/aigon/*.md`, `.claude/settings.json` (permissions + hooks), `.claude/skills/aigon/SKILL.md`
-- **gg**: `.gemini/commands/aigon/*.toml`, `.gemini/settings.json` (hooks), `.gemini/policies/aigon.toml`
+- **gg**: `.gemini/commands/aigon/*.toml`, `.gemini/settings.json` (hooks), `~/.gemini/policies/aigon.toml`
 - **cx**: `.agents/skills/aigon-*/SKILL.md` (project-local), `.codex/config.toml`
 - **cu**: `.cursor/commands/aigon-*.md`, `.cursor/cli.json`, `.cursor/hooks.json`, `.cursor/rules/aigon.mdc`
 
