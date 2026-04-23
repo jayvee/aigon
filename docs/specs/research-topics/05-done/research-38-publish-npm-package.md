@@ -39,7 +39,13 @@ Aigon is currently installed by cloning the repository. To improve accessibility
 - Comparison with `@openai/codex` or Gemini CLI installation flows.
 
 ## Findings
-<!-- Document discoveries, options evaluated, pros/cons -->
+- The package boundary has to come first. If Aigon is going to ship as `@aigon/cli`, the published artifact must be tightly allowlisted so internal docs, templates, tests, and workflow state never leak into npm.
+- Release automation needs explicit tag discipline. `latest` and `next` should be treated as separate lanes, not a single publish path with a flag bolted on later.
+- Update detection should be shared across surfaces. CLI notices, slash-command output, and dashboard state should read from the same registry/version check so users do not see conflicting upgrade guidance.
+- First-run setup should be interactive only when a TTY is available. Non-interactive installs still need a deterministic fallback path so CI, scripts, and agent-driven installs do not hang.
+- Prerequisite checks should distinguish blockers from warnings. Node/npm/git availability and minimum versions should fail fast; softer issues should produce remediation guidance, not a hard stop.
+- Global installs change the server lifecycle problem. `aigon server` needs to work when the binary is installed globally and the repo is only discovered at runtime, including persistent mode and restart behavior.
+- The selected feature set is coherent and dependency-ordered. Package structure unlocks release channels and server lifecycle support; those in turn support update notifications and guided setup.
 
 ## Recommendation
 Use a staged implementation plan centered on publish safety first, then release/process maturity. Start with a strict package boundary and publish controls (`@aigon/cli`, `files` allowlist, dry-run validation), then add explicit `latest`/`next` release automation, followed by a shared update-status path used by CLI/slash/dashboard, and finally complete first-run onboarding plus prereq remediation and packaged server lifecycle support. This sequencing keeps risk low, delivers user-visible value early, and preserves clean dependency ordering for implementation.
