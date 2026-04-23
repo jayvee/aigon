@@ -3,6 +3,7 @@ import { withPro } from "../../../../components/pro-badge";
 export default {
   board: "board",
   server: "server",
+  set: "set",
   nudge: "nudge",
   "dev-server": "dev-server",
   deploy: "deploy",

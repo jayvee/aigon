@@ -1,0 +1,47 @@
+---
+title: "set"
+description: "List and inspect feature sets — groups of features that share a `set:` frontmatter tag"
+---
+
+## Synopsis
+
+```bash
+aigon set list [--all] [--json]
+aigon set show <slug> [--json]
+```
+
+## Description
+
+A **feature set** is any group of feature specs that share the same `set: <slug>` YAML frontmatter value. Sets are derived state — there is no separate database or file — the scanner reads the frontmatter from every feature spec and assembles the view on demand. Intra-set ordering comes from each member's existing `depends_on` edges; set membership does not imply a dependency by itself.
+
+Sets power the **Set cards** on the [dashboard](/docs/guides/dashboard#feature-sets) (progress bar, dep-graph mini-view, `set-autonomous-*` actions) and are the unit the SetConductor drives when a set is run autonomously.
+
+## Subcommands
+
+### `set list`
+
+Show every set with per-stage member counts.
+
+```bash
+aigon set list              # Sets that still have open members (default)
+aigon set list --all        # Include sets where every member is done
+aigon set list --json       # Machine-readable output
+```
+
+Columns: `SLUG`, `MEMBERS` (done / total), plus counts for `DONE`, `INBOX`, `BACKLOG`, `IN-PROG`, `EVAL`, `PAUSED`, and the most recent member update timestamp.
+
+### `set show <slug>`
+
+Show a set's members in topological order with intra-set `depends_on` edges.
+
+```bash
+aigon set show feature-set             # Table view
+aigon set show feature-set --json      # Full payload with edges
+```
+
+Columns: feature `ID`, current workflow `STAGE`, spec title, workflow `STATUS`, and any intra-set dependencies. The `--json` form is the shape consumed by the dashboard Set card payload.
+
+## See also
+
+- [Dashboard → Feature Sets](/docs/guides/dashboard#feature-sets) — set cards, progress, and action buttons
+- [`feature-autonomous-start`](./../feature/feature-autonomous-start) — the per-feature autonomous flow that SetConductor orchestrates for set members

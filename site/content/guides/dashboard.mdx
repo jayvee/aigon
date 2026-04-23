@@ -100,6 +100,34 @@ If `feature-close` fails because of a merge conflict or another closing error, t
 
 Use it when the failure needs code changes or conflict resolution inside the worktree before the feature can be merged.
 
+## Feature Sets
+
+If multiple features belong to a coordinated effort, add a `set: <slug>` frontmatter key to each spec and Aigon renders a dedicated **Set card** at the top of the pipeline. Each card shows:
+
+- Progress bar (merged / total members)
+- Status label (`idle`, `running`, `paused-on-failure`, `done`)
+- Current feature id and the last set-auto event
+- Dependency mini-graph — members are colored by workflow state (backlog / in-progress / in-review / done / failed), intra-set `depends_on` edges are drawn
+
+Action buttons (`Start`, `Stop`, `Resume`, `Reset`) invoke the `set-autonomous-*` commands. Button eligibility is derived server-side by `lib/feature-set-workflow-rules.js` and delivered in the `validActions` payload — the card is a read-only view of engine state.
+
+```bash
+aigon set list              # All sets with stage counts
+aigon set show <slug>       # Members in dependency order + intra-set edges
+```
+
+Set-level autonomous actions (`set-autonomous-start` / `-stop` / `-resume` / `-reset`) are Pro features; OSS users see the progress view with the action buttons disabled.
+
+## Agent Budget
+
+Claude Code and Codex expose remaining session and weekly budgets. Aigon polls those values every 30 minutes via a throwaway tmux session and caches the result to `.aigon/budget-cache.json`.
+
+- **Settings → Agent Budget** shows each agent's session % and weekly % remaining with colour bars (green ≥ 50 %, amber 20–49 %, red < 20 %) plus a manual refresh button.
+- The **agent picker** on `feature-start` / `feature-autonomous-start` annotates `cc` and `cx` rows with inline budget, e.g. `cc — 35% session · 3% week ⚠`.
+- Picking an agent with < 20 % remaining on any limit shows a non-blocking confirmation before the run proceeds.
+
+Data flows through `GET /api/budget` (cached snapshot) and `POST /api/budget/refresh` (force a re-poll). If tmux or the agent binary is missing, polling is a silent no-op — the dashboard falls back to `null` per agent.
+
 ## Monitor view
 
 See every agent session across all repos — running, attached, or ended.
