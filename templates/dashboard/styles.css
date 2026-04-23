@@ -300,6 +300,9 @@
     .kcard-overflow-item+.kcard-overflow-item.btn-danger{border-top:1px solid rgba(239,68,68,.12);margin-top:2px;padding-top:7px}
     .kcard-overflow-item.kcard-overflow-item-neutral{color:var(--text-secondary)}
     .kcard-overflow-item.kcard-overflow-item-neutral:hover{background:rgba(255,255,255,.06);color:var(--text-primary)}
+    .kcard-spec-status{display:inline-block;font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 6px;border-radius:4px;margin-left:5px;vertical-align:middle;letter-spacing:.02em}
+    .kcard-spec-reviewing{color:#60a5fa;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2)}
+    .kcard-spec-checking{color:#34d399;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2)}
     .kcard-ready-indicator{display:flex;align-items:center;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(134,239,172,.05);border:1px solid rgba(134,239,172,.18);border-left:3px solid #86efac;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:600;color:#86efac;letter-spacing:.02em}
     .kcard-rebase-warning{display:flex;align-items:center;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.18);border-left:3px solid #fbbf24;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:600;color:#fbbf24;letter-spacing:.02em}
     .kcard-transitions{margin-top:6px;padding-top:6px;border-top:1px solid var(--border-subtle);display:flex;gap:5px;flex-wrap:wrap;align-items:center}

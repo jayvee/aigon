@@ -584,7 +584,7 @@
         : '';
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildSpecReviewBadgeHtml(feature) + '</div>' +
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildSpecReviewBadgeHtml(feature) + buildSpecCheckBadgeHtml(feature) + '</div>' +
         blockedByHtml +
         autonomousPlanHtml +
         nudgeChipsHtml;
