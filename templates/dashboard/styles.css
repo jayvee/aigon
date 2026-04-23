@@ -66,46 +66,6 @@
     .card.waiting{border-left:2px solid var(--warning)}
     .card.evaluating{border-left:2px solid #a78bfa}
     .card.research{border-left:2px solid #06b6d4}
-    .set-card-section{display:grid;gap:10px}
-    .set-card-section-header{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary);padding:2px 2px 0}
-    .set-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px}
-    .set-card{border-left:2px solid rgba(59,130,246,.45);background:linear-gradient(180deg,rgba(59,130,246,.05),rgba(255,255,255,.01))}
-    .set-card.status-running{border-left-color:#22c55e}
-    .set-card.status-paused-on-failure{border-left-color:#f59e0b}
-    .set-card-header{align-items:flex-start}
-    .set-card-body{padding:0 10px 10px}
-    .set-card-stack{display:grid;gap:10px}
-    .set-card-goal{margin:0;color:var(--text-secondary);font-size:12px;line-height:1.5}
-    .set-card-status-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-    .set-card-status{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;border:1px solid var(--border-default);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary)}
-    .set-card-status::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--text-tertiary)}
-    .set-card-status.is-running{color:#86efac;border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.1)}
-    .set-card-status.is-running::before{background:#22c55e}
-    .set-card-status.is-paused-on-failure{color:#fde68a;border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.1)}
-    .set-card-status.is-paused-on-failure::before{background:#f59e0b}
-    .set-card-status.is-done{color:#93c5fd;border-color:rgba(59,130,246,.35);background:rgba(59,130,246,.12)}
-    .set-card-status.is-done::before{background:#3b82f6}
-    .set-card-status.is-idle{color:var(--text-secondary)}
-    .set-card-progress-text{font-size:12px;color:var(--text-secondary)}
-    .set-card-progress-track{height:7px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden}
-    .set-card-progress-track span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#3b82f6,#22c55e)}
-    .set-card-meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-    .set-card-current,.set-card-last-event{display:grid;gap:4px;padding:9px 10px;border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,.03);min-width:0}
-    .set-card-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary)}
-    .set-card-current span:last-child,.set-card-last-event span:last-child{font-size:12px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .set-card-graph{padding:8px;border:1px solid var(--border-subtle);border-radius:10px;background:rgba(255,255,255,.02);overflow-x:auto}
-    .set-graph-svg{display:block;width:100%;min-width:220px;height:auto}
-    .set-graph-edge{fill:none;stroke:rgba(148,163,184,.35);stroke-width:1.5}
-    .set-graph-node circle{stroke:rgba(255,255,255,.2);stroke-width:1.5}
-    .set-graph-node text{fill:var(--text-secondary);font-size:9px;font-weight:700;letter-spacing:.03em}
-    .set-graph-node.state-backlog circle{fill:rgba(148,163,184,.3)}
-    .set-graph-node.state-blocked circle{fill:rgba(244,63,94,.55)}
-    .set-graph-node.state-in-progress circle{fill:rgba(34,197,94,.7)}
-    .set-graph-node.state-in-review circle{fill:rgba(59,130,246,.75)}
-    .set-graph-node.state-done circle{fill:rgba(125,211,252,.85)}
-    .set-graph-node.state-failed circle{fill:rgba(245,158,11,.85)}
-    .set-graph-node.is-current circle{stroke:#f8fafc;stroke-width:2.2}
-    .set-graph-empty{font-size:12px;color:var(--text-secondary)}
     .research-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.35);color:#67e8f9;margin-left:6px;flex-shrink:0}
     .research-badge.all-submitted{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#86efac}
     .autonomous-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#86efac;margin-left:6px;flex-shrink:0}
@@ -239,7 +199,6 @@
     .repo.collapsed .repo-b{display:none}
     @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(2.2);opacity:.05}}
     @media (max-width:1200px){.kanban{grid-template-columns:1fr}}
-    @media (max-width:900px){.set-card-grid{grid-template-columns:1fr}.set-card-meta-grid{grid-template-columns:1fr}}
     @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
     /* Pipeline toolbar */
     .pipeline-toolbar{display:flex;align-items:center;gap:12px;margin:8px 0 12px}
@@ -264,6 +223,8 @@
     .kanban-set-header-row .kanban-set-title{min-width:0;flex:1 1 80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .kanban-set-header-row .kanban-set-count{flex-shrink:0;white-space:nowrap}
     .kanban-set-header-row .kanban-set-start-autonomous{flex-shrink:0}
+    .kanban-set-prioritise-strip{padding:8px 10px;border-top:1px solid color-mix(in srgb,var(--border-default) 80%,transparent);background:rgba(59,130,246,.08)}
+    .kanban-set-prioritise-banner{width:100%;justify-content:center;font-size:12px;font-weight:600;padding:8px 12px}
     .kanban-set-header-row .kanban-set-paused-badge{flex-shrink:0}
     .kanban-set-header-row .kcard-peek-btn{flex-shrink:0}
     /* Group-by-set: one visual “bundle” so members read as a single unit */

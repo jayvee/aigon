@@ -883,6 +883,19 @@ async function handleSetAction(va, setCard, repoPath, btn) {
       await requestAction('set-autonomous-reset', [slug], repoPath, btn);
       break;
     }
+    case 'set-prioritise': {
+      const msg = (va.metadata && va.metadata.confirmationMessage)
+        || ('Prioritise all inbox members of set "' + slug + '" in dependency order?');
+      const ok = await showConfirm({
+        title: 'Prioritise set "' + slug + '"?',
+        message: msg,
+        confirmLabel: 'Prioritise set',
+        cancelLabel: 'Cancel'
+      });
+      if (!ok) return;
+      await requestAction('set-prioritise', [slug], repoPath, btn);
+      break;
+    }
     case 'set-autonomous-stop':
     case 'set-autonomous-resume':
       await requestAction(va.action, [slug], repoPath, btn);

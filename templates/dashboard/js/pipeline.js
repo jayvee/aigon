@@ -1162,26 +1162,33 @@
               };
               row.appendChild(peekBtn);
             }
-            const startSetVa = roll && Array.isArray(roll.validActions)
-              ? roll.validActions.find(a => a.action === 'set-autonomous-start')
-              : null;
-            if (startSetVa && !isPausedOnFailure) {
+            const setValid = roll && Array.isArray(roll.validActions) ? roll.validActions : [];
+            const appendSetHeaderAction = (va) => {
+              if (!va || !roll) return;
               const setBtn = document.createElement('button');
               setBtn.type = 'button';
-              setBtn.className = 'btn btn-sm kanban-set-start-autonomous';
-              setBtn.textContent = startSetVa.label || 'Start set autonomously';
-              if (startSetVa.disabled) {
+              if (va.action === 'set-autonomous-start') {
+                setBtn.className = 'btn btn-sm btn-secondary kanban-set-start-autonomous';
+              } else {
+                setBtn.className = 'btn btn-sm btn-secondary';
+              }
+              setBtn.textContent = va.label || va.action;
+              if (va.disabled) {
                 setBtn.disabled = true;
-                setBtn.title = startSetVa.disabledReason || '';
+                setBtn.title = va.disabledReason || '';
                 setBtn.style.opacity = '0.55';
               }
               setBtn.onclick = (e) => {
                 e.stopPropagation();
                 if (typeof handleSetAction === 'function') {
-                  handleSetAction(startSetVa, roll, repo.path, setBtn);
+                  handleSetAction(va, roll, repo.path, setBtn);
                 }
               };
               row.appendChild(setBtn);
+            };
+            const startSetVa = setValid.find(a => a.action === 'set-autonomous-start');
+            if (startSetVa && !isPausedOnFailure) {
+              appendSetHeaderAction(startSetVa);
             }
             header.appendChild(row);
 
@@ -1197,6 +1204,30 @@
             }
 
             bundle.appendChild(header);
+
+            const prioVa = setValid.find(a => a.action === 'set-prioritise');
+            if (prioVa && roll) {
+              const strip = document.createElement('div');
+              strip.className = 'kanban-set-prioritise-strip';
+              const pBtn = document.createElement('button');
+              pBtn.type = 'button';
+              pBtn.className = 'btn btn-primary kanban-set-prioritise-banner';
+              pBtn.textContent = prioVa.label || 'Prioritise set';
+              if (prioVa.disabled) {
+                pBtn.disabled = true;
+                pBtn.title = prioVa.disabledReason || '';
+                pBtn.style.opacity = '0.55';
+              }
+              pBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (typeof handleSetAction === 'function') {
+                  handleSetAction(prioVa, roll, repo.path, pBtn);
+                }
+              };
+              strip.appendChild(pBtn);
+              bundle.appendChild(strip);
+            }
+
             const stack = document.createElement('div');
             stack.className = 'kanban-set-stack';
             members.forEach(feature => {

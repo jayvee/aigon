@@ -33,9 +33,12 @@ test('assertActionAllowed returns delegate for main-only command from worktree',
         getDefaultBranch: () => 'main',
         getCommonDir: () => path.join(path.sep, 'tmp', 'mainrepo', '.git'),
     });
-    const result = assertActionAllowed('feature-start', actionCtx);
-    assert.ok(result && result.delegate);
-    assert.strictEqual(result.delegate, path.join(path.sep, 'tmp', 'mainrepo'));
+    const featureStart = assertActionAllowed('feature-start', actionCtx);
+    const setPrioritise = assertActionAllowed('set-prioritise', actionCtx);
+    assert.ok(featureStart && featureStart.delegate);
+    assert.ok(setPrioritise && setPrioritise.delegate);
+    assert.strictEqual(featureStart.delegate, path.join(path.sep, 'tmp', 'mainrepo'));
+    assert.strictEqual(setPrioritise.delegate, featureStart.delegate);
 });
 
 report();

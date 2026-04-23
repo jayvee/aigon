@@ -48,7 +48,9 @@ function writeSnapshot(repo, featureId, lifecycle, stage) {
 
 test('set action registry derives start, stop, resume, and reset eligibility', () => {
     // REGRESSION: set cards must derive action eligibility centrally instead of hardcoding button states in the frontend.
-    const idleActions = buildSetValidActions({ slug: 'auth', status: 'idle', isComplete: false, autonomous: null });
+    const idleActions = buildSetValidActions({
+        slug: 'auth', status: 'idle', isComplete: false, autonomous: null, inboxMemberCount: 0,
+    });
     const idle = idleActions.map((action) => action.action);
     const running = buildSetValidActions({ slug: 'auth', status: 'running', isComplete: false, autonomous: { running: true } }).map((action) => action.action);
     const paused = buildSetValidActions({ slug: 'auth', status: 'paused-on-failure', isComplete: false, autonomous: { running: false } }).map((action) => action.action);
@@ -56,7 +58,11 @@ test('set action registry derives start, stop, resume, and reset eligibility', (
     assert.deepStrictEqual(idle, ['set-autonomous-start']);
     assert.deepStrictEqual(running, ['set-autonomous-stop', 'set-autonomous-reset']);
     assert.deepStrictEqual(paused, ['set-autonomous-resume', 'set-autonomous-reset']);
-    assert.strictEqual(idleActions[0].requiresInput, 'agentPicker');
+    assert.strictEqual(idleActions.find((a) => a.action === 'set-autonomous-start').requiresInput, 'agentPicker');
+    const idleWithInbox = buildSetValidActions({
+        slug: 'auth', status: 'idle', isComplete: false, autonomous: null, inboxMemberCount: 2,
+    }).map((a) => a.action);
+    assert.deepStrictEqual(idleWithInbox, ['set-prioritise', 'set-autonomous-start']);
 });
 
 testAsync('collector builds set card payload with graph states and validActions', async () => {
@@ -108,25 +114,19 @@ test('dashboard action runner accepts set autonomous commands', () => {
     const childProcess = require('child_process');
     const dashboardServerPath = require.resolve('../../lib/dashboard-server');
     const originalSpawnSync = childProcess.spawnSync;
-    let seen = null;
+    const seen = [];
     try {
         delete require.cache[dashboardServerPath];
-        childProcess.spawnSync = (cmd, args, opts) => {
-            seen = { cmd, args, opts };
+        childProcess.spawnSync = (cmd, args, _opts) => {
+            seen.push(args);
             return { status: 0, stdout: '', stderr: '' };
         };
         const dashboardServer = require('../../lib/dashboard-server');
-        const result = dashboardServer.runDashboardInteractiveAction({
-            action: 'set-autonomous-start',
-            args: ['auth'],
-            repoPath: process.cwd(),
-            registeredRepos: [],
-            defaultRepoPath: process.cwd(),
-        });
-        assert.ok(result.ok);
-        assert.ok(seen, 'expected dashboard action to invoke spawnSync');
-        assert.ok(seen.args.includes('set-autonomous-start'));
-        assert.ok(seen.args.includes('auth'));
+        const base = { repoPath: process.cwd(), registeredRepos: [], defaultRepoPath: process.cwd() };
+        assert.ok(dashboardServer.runDashboardInteractiveAction({ ...base, action: 'set-autonomous-start', args: ['auth'] }).ok);
+        assert.ok(dashboardServer.runDashboardInteractiveAction({ ...base, action: 'set-prioritise', args: ['z'] }).ok);
+        assert.ok(seen.some((args) => args.includes('set-autonomous-start') && args.includes('auth')));
+        assert.ok(seen.some((args) => args.includes('set-prioritise') && args.includes('z')));
     } finally {
         childProcess.spawnSync = originalSpawnSync;
         delete require.cache[dashboardServerPath];

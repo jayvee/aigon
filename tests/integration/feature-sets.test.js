@@ -5,7 +5,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { test, withTempDir, report, GIT_SAFE_ENV } = require('../_helpers');
+const { test, withTempDir, report, GIT_SAFE_ENV, seedEntityDirs } = require('../_helpers');
 const featureSets = require('../../lib/feature-sets');
 const { parseFrontMatter } = require('../../lib/cli-parse');
 
@@ -137,6 +137,51 @@ test('feature-create --set writes set frontmatter at creation time', () => withT
     const createdPath = path.join(root, 'docs', 'specs', 'features', '01-inbox', 'feature-set-aware-feature.md');
     const { data } = parseFrontMatter(fs.readFileSync(createdPath, 'utf8'));
     assert.strictEqual(data.set, 'feature-set');
+}));
+
+test('computeSetInboxPrioritisationOrder orders inbox peers and rejects cycles', () => {
+    // REGRESSION: batch set prioritisation must topo-sort slug depends_on and fail on cycles.
+    withTempDir('aigon-set-inbox-topo-', (root) => {
+        const p = mkFeaturePaths(root);
+        const inbox = path.join(p.root, '01-inbox');
+        spec(inbox, 'feature-bee.md', 'hive');
+        spec(inbox, 'feature-ayy.md', 'hive', ['bee']);
+        assert.deepStrictEqual(featureSets.computeSetInboxPrioritisationOrder('hive', p), ['bee', 'ayy']);
+    });
+    withTempDir('aigon-set-inbox-cycle-', (root) => {
+        const p = mkFeaturePaths(root);
+        const inbox = path.join(p.root, '01-inbox');
+        spec(inbox, 'feature-one.md', 'ring', ['two']);
+        spec(inbox, 'feature-two.md', 'ring', ['one']);
+        assert.throws(() => featureSets.computeSetInboxPrioritisationOrder('ring', p), /Circular depends_on/);
+    });
+});
+
+test('aigon set-prioritise assigns ids in intra-set dependency order', () => withTempDir('aigon-set-prio-cli-', (root) => {
+    // REGRESSION: set-prioritise must chain feature-prioritise so inbox depends_on between slugs succeeds.
+    initRepo(root);
+    seedEntityDirs(root, 'features');
+    runCli(root, ['feature-create', 'xaa', '--set', 'prio']);
+    runCli(root, ['feature-create', 'xbb', '--set', 'prio']);
+    runCli(root, ['feature-create', 'xcc', '--set', 'prio']);
+    function injectDep(relInboxFile, deps) {
+        const fp = path.join(root, 'docs/specs/features/01-inbox', relInboxFile);
+        let body = fs.readFileSync(fp, 'utf8');
+        const depLine = `depends_on: [${deps.join(', ')}]\n`;
+        body = body.replace(/^(set: [^\n]+\n)/m, `$1${depLine}`);
+        fs.writeFileSync(fp, body);
+    }
+    injectDep('feature-xbb.md', ['xaa']);
+    injectDep('feature-xcc.md', ['xbb']);
+    execFileSync('git', ['add', 'docs/specs/features/'], { cwd: root, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+    execFileSync('git', ['commit', '-m', 'test: inbox deps for set'], { cwd: root, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+    runCli(root, ['set-prioritise', 'prio']);
+    const backlog = path.join(root, 'docs/specs/features/02-backlog');
+    const names = fs.readdirSync(backlog).filter((f) => f.startsWith('feature-') && f.endsWith('.md')).sort();
+    assert.strictEqual(names.length, 3);
+    assert.match(names[0], /^feature-01-xaa\.md$/);
+    assert.match(names[1], /^feature-02-xbb\.md$/);
+    assert.match(names[2], /^feature-03-xcc\.md$/);
 }));
 
 test('research-eval template records explicit set opt-in and output metadata', () => {

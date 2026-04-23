@@ -80,36 +80,6 @@
       return '<span class="monitor-actions" data-repo="' + escHtml(repoPath) + '" data-feature-id="' + escHtml(feature.id) + '">' + html + '</span>';
     }
 
-    const SET_AUTO_PEEK_SVG = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg>';
-
-    function setConductorTmuxNameForPeek(setCard, repoPath) {
-      const auto = setCard && setCard.autonomous;
-      if (!auto) return '';
-      if (auto.sessionName) return String(auto.sessionName);
-      const st = auto.status || '';
-      if (!(st === 'running' || auto.running || st === 'paused-on-failure')) return '';
-      const base = repoPath ? repoPath.split(/[/\\]/).filter(Boolean).pop() || '' : '';
-      const slug = setCard && setCard.slug ? String(setCard.slug) : '';
-      if (base && slug) return base + '-s' + slug + '-auto';
-      return '';
-    }
-
-    function buildSetActionHtml(setCard, repoPath) {
-      const sessionName = setConductorTmuxNameForPeek(setCard, repoPath);
-      const peek = sessionName
-        ? '<button type="button" class="kcard-peek-btn" data-peek-session="' + escHtml(sessionName) + '" title="Peek at set autonomous conductor output">' + SET_AUTO_PEEK_SVG + '</button>'
-        : '';
-      const html = renderActionButtons(setCard, repoPath, 'sets');
-      if (!peek && !html) return '';
-      return '<span class="monitor-actions" data-repo="' + escHtml(repoPath) + '" data-set-slug="' + escHtml(setCard.slug) + '">' + peek + html + '</span>';
-    }
-
-    function buildSetCardHtml(setCard) {
-      const renderer = window.AIGON_SET_CARDS;
-      if (!renderer || typeof renderer.buildSetCardBodyHtml !== 'function') return '';
-      return renderer.buildSetCardBodyHtml(setCard);
-    }
-
     // Render the amber "awaiting your input" badge + tooltip for a card.
     // Shows the first agent on the card that is paused. Tooltip offers a
     // copy-attach-command button so the user can jump into the tmux session.
@@ -175,7 +145,7 @@
         get emptyMessage() {
           const s = Alpine.store('dashboard');
           if (this.visibleRepos.length === 0) return s.selectedRepo === 'all' ? 'No repos registered. Run: aigon server add' : 'No data for selected repo.';
-          const hasItems = this.visibleRepos.some(r => this.getSets(r).length > 0 || this.getFeatures(r).length > 0 || this.getResearch(r).length > 0 || this.getFeedback(r).length > 0);
+          const hasItems = this.visibleRepos.some(r => this.getFeatures(r).length > 0 || this.getResearch(r).length > 0 || this.getFeedback(r).length > 0);
           if (hasItems) return '';
           return s.filter === 'all' ? 'No items in progress.' : 'No items match filter: ' + s.filter;
         },
@@ -187,16 +157,6 @@
         },
         setFilter(f) { Alpine.store('dashboard').filter = f; localStorage.setItem(lsKey('filter'), f); },
         setMonitorType(t) { Alpine.store('dashboard').monitorType = t; localStorage.setItem(lsKey('monitorType'), t); },
-        getSets(repo) {
-          return [...(repo.sets || [])].sort((a, b) => {
-            const rank = (set) => {
-              if (set.status === 'running') return 0;
-              if (set.status === 'paused-on-failure') return 1;
-              return 2;
-            };
-            return rank(a) - rank(b) || String(a.slug || '').localeCompare(String(b.slug || ''));
-          });
-        },
         getFeatures(repo) {
           const s = Alpine.store('dashboard');
           const mt = s.monitorType || 'all';
@@ -218,11 +178,9 @@
           const raw = [...(repo.feedback || [])].filter(f => f.stage === 'in-progress').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
           return s.filter === 'all' ? raw : raw.filter(f => (f.agents || []).some(a => a.status === s.filter));
         },
-        getTotalItems(repo) { return this.getSets(repo).length + this.getFeatures(repo).length + this.getResearch(repo).length + this.getFeedback(repo).length; },
+        getTotalItems(repo) { return this.getFeatures(repo).length + this.getResearch(repo).length + this.getFeedback(repo).length; },
         sortedAgents(agents) { return [...(agents || [])].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id)); },
         relTimeProxy(iso) { return relTime(iso); },
-        buildSetActionHtml(setCard, repoPath) { return buildSetActionHtml(setCard, repoPath); },
-        buildSetCardHtml(setCard) { return buildSetCardHtml(setCard); },
         featureTitle(feature) {
           const evalBadge = feature.stage === 'in-evaluation' ? '<span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus || 'evaluating') + '</span>' : '';
           const autoBadge = feature.autonomousSession && feature.autonomousSession.running
@@ -278,16 +236,12 @@
           }
         },
         repoSummaryText(repo) {
-          const sets = this.getSets(repo), features = this.getFeatures(repo), research = this.getResearch(repo), feedback = this.getFeedback(repo);
-          const total = sets.length + features.length + research.length + feedback.length;
+          const features = this.getFeatures(repo), research = this.getResearch(repo), feedback = this.getFeedback(repo);
           const waitingCards = features.filter(f => f.agents.some(a => a.status === 'waiting')).length
             + research.filter(r => r.agents.some(a => a.status === 'waiting')).length
             + feedback.filter(f => (f.agents || []).some(a => a.status === 'waiting')).length;
           const collapsed = this.isCollapsed(repo.path);
-          const setBadge = sets.length > 0
-            ? '<span class="pill-filter" style="font-size:10px;padding:1px 6px">' + sets.length + ' sets</span>'
-            : '';
-          return (setBadge || '') + (waitingCards ? '<span class="pill-filter waiting" style="font-size:10px;padding:1px 6px">' + waitingCards + ' waiting</span>' : '') + ' <span style="color:var(--text-tertiary);font-size:11px" aria-label="Toggle">' + (collapsed ? '▸' : '▾') + '</span>';
+          return (waitingCards ? '<span class="pill-filter waiting" style="font-size:10px;padding:1px 6px">' + waitingCards + ' waiting</span>' : '') + ' <span style="color:var(--text-tertiary);font-size:11px" aria-label="Toggle">' + (collapsed ? '▸' : '▾') + '</span>';
         },
         openFeatureSpec(e, feature) {
           if (e.target.closest('button') || e.target.closest('.btn')) return;
@@ -321,22 +275,6 @@
             e.stopPropagation();
             const container = btn.closest('.monitor-actions');
             const repoPath = container ? container.getAttribute('data-repo') || '' : '';
-            const setSlug = container ? container.getAttribute('data-set-slug') || '' : '';
-            if (setSlug) {
-              const s = Alpine.store('dashboard');
-              const data = s.data || { repos: [] };
-              let setCard = null;
-              for (const repo of (data.repos || [])) {
-                setCard = (repo.sets || []).find(item => String(item.slug) === String(setSlug));
-                if (setCard) break;
-              }
-              if (!setCard) return;
-              const vaAction = btn.getAttribute('data-va-action') || '';
-              const va = (setCard.validActions || []).find(a => a.action === vaAction) || { action: vaAction, label: btn.textContent };
-              btn._origText = btn.textContent;
-              handleSetAction(va, setCard, repoPath, btn);
-              return;
-            }
             const featureId = container ? container.getAttribute('data-feature-id') || '' : '';
             const vaAction = btn.getAttribute('data-va-action') || '';
             const vaAgentId = btn.getAttribute('data-agent') || null;
