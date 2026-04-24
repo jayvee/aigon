@@ -78,7 +78,7 @@ testAsync('canCloseFeature blocks while spec reviews are still pending', () => w
     });
     const closable = await engine.canCloseFeature(repo, '14');
     assert.strictEqual(closable.ok, false);
-    assert.match(closable.reason, /feature-spec-review-check 14/);
+    assert.match(closable.reason, /feature-spec-revise 14/);
 }));
 
 testAsync('recoverEmptyAgents heals legacy agents:[] features', () => withTempRepo(async (repo) => {

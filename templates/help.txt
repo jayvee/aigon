@@ -72,7 +72,7 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-validate <ID>             Evaluate acceptance criteria (smart validation)
   feature-eval <ID> [--force]       Create evaluation (code review or comparison)
   feature-code-review <ID>          Code review with fixes by a different agent
-  feature-code-review-check [ID]    Implementer-side review follow-up (infers ID from worktree branch)
+  feature-code-revise [ID]          Implementer-side review follow-up (infers ID from worktree branch)
   feature-push [ID] [agent]         Push feature branch to origin for PR review
   feature-close <ID> [agent]        Merge and complete feature
   repair <feature|research> <ID> [--dry-run]
@@ -88,7 +88,7 @@ Workflow Definitions (autonomous orchestration templates):
   workflow show <slug> [--json]     Show workflow stages and resolved autonomous inputs
   workflow create <slug> [opts]     Create a project (default) or --global workflow
                                     opts: --file=<path> | --json=<inline> | --from=<slug> |
-                                          --implement=<a,b> [--review=<a>] [--counter-review=<a>]
+                                          --implement=<a,b> [--review=<a>] [--revision=<a>]
                                           [--eval=<a>] [--no-close] [--label=<s>] [--description=<s>]
   workflow delete <slug> [--global] Delete a user-created workflow (built-ins are read-only)
 

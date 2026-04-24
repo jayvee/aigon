@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // REGRESSION F218: cx inlines template bodies (slash-command passthrough for cc/gg/cu).
-// REGRESSION F277: review-check injection must emit runnable commands per agent capability.
+// REGRESSION F277: revise injection must emit runnable commands per agent capability.
 'use strict';
 
 const assert = require('assert');
@@ -37,9 +37,9 @@ for (const [desc, fn, checks] of [
     ['cx command body inlines rubric-backed feature spec review template',
         () => resolveCxCommandBody('feature-spec-review', '12'),
         (out) => { assert.ok(out.startsWith('# aigon-feature-spec-review')); assert.ok(out.includes('## Spec Review Rubric') && !out.includes('{{SPEC_REVIEW_RUBRIC}}')); }],
-    ['cx command body substitutes args in research spec review check template',
-        () => resolveCxCommandBody('research-spec-review-check', 'topic-slug'),
-        (out) => { assert.ok(out.startsWith('# aigon-research-spec-review-check')); assert.ok(out.includes('topic-slug') && !out.includes('$ARGUMENTS')); }],
+    ['cx command body substitutes args in research spec revise template',
+        () => resolveCxCommandBody('research-spec-revise', 'topic-slug'),
+        (out) => { assert.ok(out.startsWith('# aigon-research-spec-revise')); assert.ok(out.includes('topic-slug') && !out.includes('$ARGUMENTS')); }],
 ]) test(desc, () => checks(fn()));
 
 test('spec review templates explicitly forbid recursive self-invocation and generic commits', () => {
@@ -71,15 +71,15 @@ for (const file of fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.json'))) 
     const id = file.replace(/\.json$/, '');
     const cfg = JSON.parse(fs.readFileSync(path.join(AGENTS_DIR, file), 'utf8'));
     const prompt = buildReviewCheckFeedbackPrompt(id, '07', { loadAgentConfig: () => cfg });
-    test(`review-check injection for '${id}' matches capability (no phantom $aigon-… for any agent)`, () => {
+    test(`revise injection for '${id}' matches capability (no phantom $aigon-… for any agent)`, () => {
         assert.strictEqual(typeof cfg.capabilities?.resolvesSlashCommands, 'boolean', `${id} missing flag`);
         if (cfg.capabilities.resolvesSlashCommands) {
             const prefix = cfg.placeholders?.CMD_PREFIX || '/aigon:';
-            assert.ok(prompt.includes(`${prefix}feature-code-review-check 07`), prompt);
+            assert.ok(prompt.includes(`${prefix}feature-code-revise 07`), prompt);
         } else {
             const dir = cfg.output?.commandDir || '.agents/skills';
-            assert.ok(prompt.includes(`${dir}/`) && prompt.includes('feature-code-review-check') && /\bRead\b/.test(prompt) && prompt.includes('aigon agent-status feedback-addressed'), prompt);
-            assert.ok(!/\$aigon-feature-code-review-check\b/.test(prompt) && !/ aigon feature-code-review-check /.test(prompt), prompt);
+            assert.ok(prompt.includes(`${dir}/`) && prompt.includes('feature-code-revise') && /\bRead\b/.test(prompt) && prompt.includes('aigon agent-status feedback-addressed'), prompt);
+            assert.ok(!/\$aigon-feature-code-revise\b/.test(prompt) && !/ aigon feature-code-revise /.test(prompt), prompt);
         }
     });
 }

@@ -319,7 +319,7 @@ export default function ProPage() {
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             <FeatureCard
               title="Named Templates"
-              description="Capture stages as a slug — implement, review, counter-review, eval, close — then launch with aigon feature-autonomous-start --workflow=<slug>."
+              description="Capture stages as a slug — implement, review, revision, eval, close — then launch with aigon feature-autonomous-start --workflow=<slug>."
             />
             <FeatureCard
               title="Shared with Your Team"
