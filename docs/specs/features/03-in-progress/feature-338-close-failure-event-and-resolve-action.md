@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-24T02:32:52.468Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: close-failure-event-and-resolve-action
