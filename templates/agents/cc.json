@@ -129,7 +129,21 @@
         "Bash(git log*)",
         "Bash(git stash*)",
         "Bash(git rebase*)",
-        "Bash(git merge*)"
+        "Bash(git merge*)",
+        "Bash(curl *)",
+        "Bash(cat *)",
+        "Bash(ls*)",
+        "Bash(find *)",
+        "Bash(grep *)",
+        "Bash(mkdir *)",
+        "Bash(cp *)",
+        "Bash(mv *)",
+        "Bash(touch *)",
+        "Bash(echo *)",
+        "Bash(pwd)",
+        "Bash(which *)",
+        "Bash(head *)",
+        "Bash(tail *)"
       ],
       "denyPermissions": [
         "Bash(rm -rf /)",
