@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-24T22:51:05.786Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: consolidate-research-submit-into-agent-status
