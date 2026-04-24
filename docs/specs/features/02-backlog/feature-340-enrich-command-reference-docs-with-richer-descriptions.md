@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-24T22:58:06.430Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: enrich command reference docs with richer descriptions
