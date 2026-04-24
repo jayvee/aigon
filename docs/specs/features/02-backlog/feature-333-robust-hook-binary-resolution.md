@@ -8,7 +8,7 @@ transitions:
 
 ## Summary
 
-When `aigon install-agent` writes hook commands into `.claude/settings.json` (and equivalent configs for Gemini, Codex, Cursor), it currently resolves the aigon binary path at install time using a hardcoded list of candidate locations (`/opt/homebrew/bin/aigon`, `/usr/local/bin/aigon`, `/usr/bin/aigon`). This is brittle: it fails in corporate environments, custom install prefixes, nvm/fnm setups, and any location not on the hardcoded list. The fix is to wrap hook commands in the user's login shell (`$SHELL -l -c "..."`), which sources the user's shell profile at hook runtime and resolves `aigon` correctly regardless of where it is installed.
+When `aigon install-agent` writes hook commands into the agent config files it owns, it currently resolves the `aigon` binary path at install time using a hardcoded list of candidate locations (`/opt/homebrew/bin/aigon`, `/usr/local/bin/aigon`, `/usr/bin/aigon`). This is brittle: it fails in corporate environments, custom install prefixes, nvm/fnm setups, and any location not on the hardcoded list. The fix is to wrap hook commands in the user's login shell (`$SHELL -l -c "..."`), which sources the user's shell profile at hook runtime and resolves `aigon` correctly regardless of where it is installed.
 
 ## Background & Research
 
@@ -56,12 +56,12 @@ Hooks execute in Bash by default and inherit Claude Code's environment. When Cla
 
 ## Acceptance Criteria
 
-- [ ] Hook commands written by `install-agent` use `$SHELL -l -c "aigon ..."` (or equivalent) rather than hardcoded absolute paths or bare `aigon`.
+- [ ] Hook commands written by `install-agent` use `${process.env.SHELL || '/bin/bash'} -l -c "aigon ..."` (or equivalent shell-quoted form) rather than hardcoded absolute paths or bare `aigon`.
 - [ ] The shell binary is resolved at install time from `process.env.SHELL`, with `/bin/bash` as fallback.
-- [ ] Re-running `install-agent` on an existing install migrates existing hook commands to the new format.
-- [ ] Hooks fire correctly when Claude Code is launched from the macOS Dock (minimal PATH environment).
-- [ ] Hooks fire correctly when aigon is installed via nvm, fnm, Homebrew, or sudo npm -g.
-- [ ] The hardcoded candidate path list (`/opt/homebrew/bin/aigon`, etc.) and install-time `which aigon` resolution are removed from the hook-writing path.
+- [ ] Re-running `install-agent` on an existing install migrates existing Aigon hook commands in place to the new format without duplicating entries or rewriting unrelated hooks.
+- [ ] Hooks remain correct when Claude Code is launched from the macOS Dock (minimal PATH environment) and when aigon is installed via nvm, fnm, Homebrew, or `npm -g`.
+- [ ] The hardcoded candidate path list (`/opt/homebrew/bin/aigon`, etc.) and install-time `which aigon` resolution are removed from every hook-writing path in `lib/commands/setup.js`.
+- [ ] The test suite includes a regression test that covers generated hook command wrapping and migration of an existing absolute-path hook command.
 - [ ] `node -c aigon-cli.js` and `npm test` pass.
 
 ## Validation
@@ -79,7 +79,7 @@ npm test
 
 ### Change hook command format
 
-In `lib/commands/setup.js`, the section that writes hook commands (around line 1250) currently builds `aigonAbsPath` from a hardcoded candidate list. Replace this entirely:
+In `lib/commands/setup.js`, the sections that write hook commands for settings-backed hooks and standalone hook files currently build `aigonAbsPath` from a hardcoded candidate list. Replace this entirely:
 
 ```js
 // Before (brittle):
@@ -95,7 +95,7 @@ const userShell = process.env.SHELL || '/bin/bash';
 // Hook commands become: `zsh -l -c "aigon session-hook ..."` etc.
 ```
 
-When writing each hook's `command` field, wrap it:
+When writing each hook's `command` field, wrap it with the resolved shell and preserve the original `aigon` arguments verbatim:
 ```js
 // Instead of: `${aigonAbsPath} session-hook --repo ...`
 // Write:       `${userShell} -l -c "aigon session-hook --repo ..."`
@@ -103,7 +103,7 @@ When writing each hook's `command` field, wrap it:
 
 ### Migration of existing hooks
 
-The existing migration path (around line 1280) that rewrites stale absolute paths should also rewrite old-format hook commands to the new `$SHELL -l -c` format. Match on commands that start with a `/`-prefixed aigon path and rewrite them.
+The existing migration path (around line 1280) that rewrites stale absolute paths should also rewrite old-format hook commands to the new `$SHELL -l -c` format. Match on commands that start with a `/`-prefixed aigon path and rewrite them. Existing non-Aigon hooks must be left untouched.
 
 ### Scope of changes
 
@@ -116,7 +116,7 @@ The existing migration path (around line 1280) that rewrites stale absolute path
 
 ## Out of Scope
 
-- Solving PATH for hooks in Gemini, Codex, or Cursor agent configs (those agents may have different hook execution environments — treat as a follow-on once the Claude Code case is validated)
+- Solving agent CLI startup PATH problems outside the hook command strings written by `install-agent`
 - Solving the case where the user's shell profile has errors (this is a user environment problem, not solvable at the tool level)
 - Windows support
 
