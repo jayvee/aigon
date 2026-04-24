@@ -111,7 +111,7 @@ async function main() {
     }
 
     const isInteractiveEnv = process.stdin.isTTY && process.stdout.isTTY && !process.env.CI;
-    if (!SKIP_FIRST_RUN.has(resolvedCommand) && !firstRunComplete()) {
+    if (isInteractiveEnv && !SKIP_FIRST_RUN.has(resolvedCommand) && !firstRunComplete()) {
         try {
             await commands['onboarding']([]);
         } catch (error) {
