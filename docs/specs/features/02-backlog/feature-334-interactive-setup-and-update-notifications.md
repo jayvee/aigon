@@ -1,5 +1,6 @@
 ---
 complexity: small
+depends_on: feature-337-onboarding-wizard
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-24T00:36:03.948Z", actor: "cli/feature-prioritise" }
 ---
