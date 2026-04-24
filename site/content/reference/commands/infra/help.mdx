@@ -1,6 +1,6 @@
 ---
 title: "help"
-description: "Show Aigon commands"
+description: "Print a summary of available Aigon commands grouped by workflow area"
 ---
 
 ## Synopsis
@@ -15,14 +15,20 @@ aigon help
 
 ## Description
 
-Show Aigon commands
+`aigon help` prints a grouped summary of all available commands — feature, research, feedback, and infrastructure — directly in the terminal. It is the quickest way to discover command names and shortcuts without leaving your session.
+
+For detailed documentation on a specific command, see its reference page in this section or pass the command name to `aigon help <command>` (if supported by your version).
 
 ## Usage
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:help
-
-# CLI
+# Print all commands
 aigon help
+
+# From an agent session
+/aigon:help
 ```
+
+## Related
+
+- [CLI Commands overview](/docs/reference/commands) — full reference index organised by workflow area

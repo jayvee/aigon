@@ -1,6 +1,6 @@
 ---
 title: "sessions-close"
-description: "Kill all agent sessions for a feature/research ID and close Warp tab"
+description: "Kill all running agent processes, tmux sessions, and Warp tabs for a feature or research ID"
 ---
 
 ## Synopsis
@@ -11,4 +11,38 @@ aigon sessions-close <ID>
 
 ## Description
 
-Kill all agent sessions for a feature/research ID and close Warp tab
+`sessions-close` terminates every agent session associated with a given feature or research ID — including agent processes (SIGTERM, then SIGKILL for stragglers), tmux sessions, preview dashboard processes, and Warp arena tabs. It is the targeted kill switch for running agents without touching branches, worktrees, or spec state.
+
+This command is automatically called as the first step of `feature-reset`. Use it directly when you want to stop all agents for a feature but keep the worktrees and branches intact — for example, to restart agents with different parameters after pausing.
+
+## What it does
+
+1. Sends SIGTERM to agent processes matching the feature/research ID
+2. Waits briefly, then sends SIGKILL to any that haven't stopped
+3. Closes tmux sessions for the feature (both implementation and review sessions)
+4. Closes preview dashboard processes registered for the feature
+5. Closes Warp arena tabs for the feature ID (if Warp is in use)
+
+## Examples
+
+```bash
+# Kill all agents for feature 42
+aigon sessions-close 42
+
+# Kill agents for research 7
+aigon sessions-close 7
+```
+
+## When to use which command
+
+| Goal | Command |
+|------|---------|
+| Kill agents and immediately restart | `sessions-close <ID>` then `feature-open <ID>` |
+| Abandon work and start over entirely | `feature-reset <ID>` (calls sessions-close internally) |
+| GC worktrees/branches after close | `feature-cleanup <ID>` |
+
+## Related
+
+- [`feature-reset`](../feature/feature-reset) — full reset: sessions + worktrees + branches + engine state
+- [`feature-open`](../feature/feature-open) — re-open agent terminals after closing sessions
+- [`feature-cleanup`](../feature/feature-cleanup) — remove worktrees and branches (does not kill sessions)
