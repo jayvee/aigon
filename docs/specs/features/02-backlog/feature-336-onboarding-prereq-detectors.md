@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-24T01:45:14.712Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: onboarding-prereq-detectors
