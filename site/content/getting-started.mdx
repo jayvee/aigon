@@ -67,17 +67,19 @@ npm install -g @aigon/cli
 sudo npm install -g @aigon/cli
 ```
 
-Verify the install:
+Then run the setup wizard:
 
 ```bash
-aigon --version
+aigon onboarding
 ```
 
-> **First-run setup:** On first install, Aigon automatically runs a short setup to configure your preferences. You can re-run it anytime with `aigon global-setup`.
+The wizard walks you through prerequisites, terminal preference, agent CLI installation, an optional seed project, and starting the dashboard — all in one guided flow. It runs automatically the first time you use any `aigon` command, so you can also just skip straight to [Initialize a project](#initialize-a-project) and the wizard will launch on its own.
 
-### Agent CLIs
+To re-run it at any time: `aigon onboarding --resume`
 
-Install at least one agent CLI to use Aigon:
+### Agent CLIs (manual install)
+
+If you prefer to install agent CLIs yourself rather than through the wizard:
 
 | Agent | Binary | macOS | Linux |
 |-------|--------|-------|-------|
