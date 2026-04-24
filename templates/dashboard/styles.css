@@ -387,6 +387,9 @@
     .kcard-spec-checking{color:#6ee7b7;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18)}
     .kcard-ready-indicator{display:flex;align-items:center;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(134,239,172,.05);border:1px solid rgba(134,239,172,.18);border-left:3px solid #86efac;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:600;color:#86efac;letter-spacing:.02em}
     .kcard-rebase-warning{display:flex;align-items:center;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.18);border-left:3px solid #fbbf24;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:600;color:#fbbf24;letter-spacing:.02em}
+    .kcard-close-failure{display:flex;align-items:flex-start;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(251,113,133,.05);border:1px solid rgba(251,113,133,.2);border-left:3px solid #f87171;border-radius:4px;font-size:10px;font-family:var(--mono);color:#fca5a5;cursor:help}
+    .kcard-close-failure-icon{flex-shrink:0}
+    .kcard-close-failure-text{word-break:break-word}
     .kcard-transitions{margin-top:6px;padding-top:6px;border-top:1px solid var(--border-subtle);display:flex;gap:5px;flex-wrap:wrap;align-items:center}
     .kcard-transitions .btn{font-size:11px;padding:3px 8px}
     .col-empty{padding:12px 8px;color:var(--text-tertiary);font-size:12px;text-align:center}

@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] — 2026-04-24
 
+### Feature close failures are now persisted and actionable
+
+`aigon feature-close` now emits a `feature_close.failed` workflow event whenever the close exits non-zero (merge conflicts, security scan, push failures, etc.). The event payload carries `kind`, `conflictFiles[]`, `stderrTail`, and `exitCode` — data that previously vanished with the conductor's tmux pane.
+
+- **Persistent diagnostics**: `events.jsonl` is the durable record. Even days later, you can see exactly which files conflicted.
+- **Dashboard "Resolve & close"**: When `lastCloseFailure.kind === 'merge-conflict'`, the card's "Close" button is replaced with a **"Resolve & close"** button. Clicking it opens an agent in the worktree with a pre-injected prompt naming the conflict files and instructing a `git rebase` + retry.
+- **Inline failure line**: The card renders a compact warning line (e.g. `⚠ Merge conflict in lib/commands/setup.js, feature-335-…md`) visible without expanding any panel.
+- **Auto-cleared on success**: `lastCloseFailure` is cleared from the snapshot when a subsequent `feature.closed` event lands.
+
 ### BREAKING: `review-check` renamed to `revise`
 
 The author-turn step after a reviewer critiques a spec or code is now called **revise** (verb) / **revision** (stage). Commands, shortcuts, stage types, and dashboard buttons all use the new vocabulary.

@@ -286,6 +286,7 @@ The post-cutover system is easier to reason about if you separate lifecycle trut
 | Concern | Authority | Notes |
 |--------|-----------|-------|
 | Feature lifecycle (`implementing`, `evaluating`, `ready_for_review`, `closing`, `done`, `paused`) | `lib/workflow-core/` snapshot + event log | Sole write path for feature lifecycle |
+| Feature close failure details | `lib/workflow-core/` event log + snapshot `lastCloseFailure` projection | `feature_close.failed` event emitted by `feature-close` on non-zero exit; projector sets `lastCloseFailure` (`kind`, `conflictFiles`, `stderrTail`, `at`) on snapshot; cleared on `feature.closed`. Dashboard swaps "Close" for "Resolve & close" when `kind === 'merge-conflict'`. |
 | Feature spec-review pending/acked state | `lib/workflow-core/` event log + snapshot `specReview` projection | `spec_review.*` events; dashboard reads snapshot metadata, not `git log` |
 | Feature spec folder location | Engine effects (`move_spec`) | User-visible reflection of engine state |
 | Feature agent runtime status (`running`, `waiting`, `ready`, `lost`, etc.) | Engine signals plus per-agent status files in `.aigon/state/feature-{id}-{agent}.json` | Session/runtime metadata, not the lifecycle authority |
