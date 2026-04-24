@@ -39,13 +39,14 @@
     "reviewPrompt": "feature-code-review",
     "reviewCheckPrompt": "feature-code-revise",
     "models": {
-      "research": "gpt-5.2",
-      "implement": "gpt-5.3-codex",
-      "evaluate": "gpt-5.4",
-      "review": "gpt-5.4"
+      "research": "gpt-5.4-mini",
+      "implement": "gpt-5.5",
+      "evaluate": "gpt-5.5",
+      "review": "gpt-5.5"
     },
     "modelOptions": [
       { "value": null, "label": "Default" },
+      { "value": "gpt-5.5", "label": "GPT-5.5" },
       { "value": "gpt-5.4", "label": "GPT-5.4" },
       { "value": "gpt-5.4-mini", "label": "GPT-5.4 Mini" },
       { "value": "gpt-5.3-codex", "label": "GPT-5.3 Codex" },
@@ -59,10 +60,10 @@
       { "value": "high", "label": "High" }
     ],
     "complexityDefaults": {
-      "low":       { "model": "gpt-5.2",       "effort": "low" },
-      "medium":    { "model": "gpt-5.3-codex", "effort": "medium" },
-      "high":      { "model": "gpt-5.4",       "effort": "high" },
-      "very-high": { "model": "gpt-5.4",       "effort": "high" }
+      "low":       { "model": "gpt-5.4-mini",  "effort": "low" },
+      "medium":    { "model": "gpt-5.5",        "effort": "medium" },
+      "high":      { "model": "gpt-5.5",        "effort": "high" },
+      "very-high": { "model": "gpt-5.5",        "effort": "high" }
     },
     "modelFlag": "--model",
     "effortFlag": "-c model_reasoning_effort=",
