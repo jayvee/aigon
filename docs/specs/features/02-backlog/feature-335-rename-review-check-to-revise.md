@@ -56,7 +56,7 @@ This is a **hard rename** — no deprecated aliases, no dual-path event handlers
 - [ ] AI skills under `.agents/skills/` renamed from `*-review-check` to `*-revise` (including `aigon-feature-review-check`), updating both folder names and `SKILL.md` contents.
 
 **Migration (registered in `lib/migration.js`)**
-- [ ] New migration registered at the target release version, dynamically reading `require('../../package.json').version`.
+- [ ] New migration registered at a hardcoded target release version (e.g. `registerMigration('2.55.0', …)`); version string resolved and locked at release-cut time.
 - [ ] Migration scans every `.aigon/workflows/{features,research}/*/snapshot.json` and rewrites:
   - `stage.type: 'counter-review'` → `'revision'`
   - Any status string ending `-review-check-pending` → `-revision-pending`
