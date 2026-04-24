@@ -3,6 +3,8 @@ Agent: cc
 
 ## Status
 
+Implemented @clack/prompts wizard (6 steps), state file, --yes/--resume flags, SIGINT guard, non-interactive guard, TTY-only first-run gate in aigon-cli.js, and `setup` alias.
+
 ## New API Surface
 
 ## Key Decisions
