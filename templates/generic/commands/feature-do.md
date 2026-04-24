@@ -26,6 +26,8 @@ The spec body was printed inline by `feature-do` above. **Use that copy.** Do no
 
 {{PLAN_MODE_SECTION}}
 
+{{SET_CONTEXT_SECTION}}
+
 {{WORKTREE_DEP_CHECK}}
 
 ## Step 3: Implement
