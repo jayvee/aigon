@@ -56,12 +56,14 @@ Hooks execute in Bash by default and inherit Claude Code's environment. When Cla
 
 ## Acceptance Criteria
 
-- [ ] Hook commands written by `install-agent` use `${process.env.SHELL || '/bin/bash'} -l -c "aigon ..."` (or equivalent shell-quoted form) rather than hardcoded absolute paths or bare `aigon`.
+- [ ] Hook commands written by `install-agent` use `${process.env.SHELL || '/bin/bash'} -l -c "aigon ..."` (or equivalent shell-quoted form) rather than hardcoded absolute paths or bare `aigon`. This applies to **both** the settings-backed hook path (Claude/Gemini, around `lib/commands/setup.js:1250`) and the standalone hooks-file path (Cursor, around `lib/commands/setup.js:1366`).
 - [ ] The shell binary is resolved at install time from `process.env.SHELL`, with `/bin/bash` as fallback.
-- [ ] Re-running `install-agent` on an existing install migrates existing Aigon hook commands in place to the new format without duplicating entries or rewriting unrelated hooks.
-- [ ] Hooks remain correct when Claude Code is launched from the macOS Dock (minimal PATH environment) and when aigon is installed via nvm, fnm, Homebrew, or `npm -g`.
-- [ ] The hardcoded candidate path list (`/opt/homebrew/bin/aigon`, etc.) and install-time `which aigon` resolution are removed from every hook-writing path in `lib/commands/setup.js`.
-- [ ] The test suite includes a regression test that covers generated hook command wrapping and migration of an existing absolute-path hook command.
+- [ ] The wrapped form preserves any `$VAR` or `$CLAUDE_PROJECT_DIR`-style shell expansions in the original command (i.e. inner content is wrapped in double quotes, not single quotes; embedded double quotes inside the inner command, if any exist, are escaped).
+- [ ] Re-running `install-agent` on an existing install migrates existing Aigon hook commands in place to the new format without duplicating entries or rewriting unrelated (non-Aigon) hooks. Migration is idempotent: a hook already in the wrapped `$SHELL -l -c "aigon ..."` form is left unchanged on subsequent runs.
+- [ ] Migration rewrites all known stale forms: bare `aigon ...`, absolute path `/opt/homebrew/bin/aigon ...` (and other `^/.+/aigon` forms), and stale `~/.local/state/fnm_multishells/.../aigon` paths. Non-Aigon hook entries remain byte-for-byte identical.
+- [ ] Hooks remain correct when Claude Code is launched from the macOS Dock (minimal PATH environment) and when aigon is installed via nvm, fnm, Homebrew, or `npm -g`. (Verified manually on macOS Dock launch; documented in the implementation commit message.)
+- [ ] The hardcoded candidate path list (`/opt/homebrew/bin/aigon`, `/usr/local/bin/aigon`, `/usr/bin/aigon`) and install-time `which aigon` resolution are removed from **every** hook-writing path in `lib/commands/setup.js` (currently lines ~1261–1305 and ~1397–1408).
+- [ ] The test suite includes regression tests covering: (a) fresh install writes the wrapped form for both settings-based and standalone-file hook paths, (b) migration of a hook with a hardcoded absolute path to the wrapped form, (c) migration of a stale fnm-multishells path, (d) idempotent re-run leaves an already-wrapped hook unchanged, (e) a non-Aigon hook entry sharing the same event is left untouched.
 - [ ] `node -c aigon-cli.js` and `npm test` pass.
 
 ## Validation
@@ -79,7 +81,12 @@ npm test
 
 ### Change hook command format
 
-In `lib/commands/setup.js`, the sections that write hook commands for settings-backed hooks and standalone hook files currently build `aigonAbsPath` from a hardcoded candidate list. Replace this entirely:
+In `lib/commands/setup.js`, two sections currently build `aigonAbsPath` from a hardcoded candidate list and write the resolved absolute path into hook commands:
+
+1. Settings-backed hooks for Claude/Gemini — around lines 1261–1305 (and the per-hook resolution at lines 1330, 1342, 1346).
+2. Standalone hooks file for Cursor — around lines 1397–1411.
+
+Replace both with a single resolved-at-install-time shell wrapper:
 
 ```js
 // Before (brittle):
@@ -88,26 +95,36 @@ const stableCandidates = [
     '/usr/local/bin/aigon',
     '/usr/bin/aigon',
 ];
-// ... resolves to an absolute path written into the hook command
+// ... falls through to `which aigon`, then writes the absolute path into the hook command
 
 // After (robust):
 const userShell = process.env.SHELL || '/bin/bash';
-// Hook commands become: `zsh -l -c "aigon session-hook ..."` etc.
+// Hook commands become: `/bin/zsh -l -c "aigon session-hook --repo ..."`
 ```
 
-When writing each hook's `command` field, wrap it with the resolved shell and preserve the original `aigon` arguments verbatim:
+When writing each hook's `command` field, wrap it with the resolved shell. Inner content must use **double quotes** so that `$CLAUDE_PROJECT_DIR` and other shell variables in existing hook templates continue to expand at runtime; if the inner command itself contains `"`, escape it as `\"`:
+
 ```js
-// Instead of: `${aigonAbsPath} session-hook --repo ...`
-// Write:       `${userShell} -l -c "aigon session-hook --repo ..."`
+// Instead of: `${aigonAbsPath} session-hook --repo "$CLAUDE_PROJECT_DIR"`
+// Write:       `${userShell} -l -c "aigon session-hook --repo \"$CLAUDE_PROJECT_DIR\""`
 ```
+
+A small helper (`wrapAigonCommand(rawCmd)`) used by both sections will keep the wrapping consistent.
 
 ### Migration of existing hooks
 
-The existing migration path (around line 1280) that rewrites stale absolute paths should also rewrite old-format hook commands to the new `$SHELL -l -c` format. Match on commands that start with a `/`-prefixed aigon path and rewrite them. Existing non-Aigon hooks must be left untouched.
+The existing migration path (around lines 1281–1305) currently rewrites bare `aigon ...` and stale `^/.+/aigon ...` to a new absolute path. Replace it so it rewrites all known stale forms — bare `aigon `, hardcoded absolute path `^/.+/aigon `, and `fnm_multishells/.../aigon ` — to the wrapped `$SHELL -l -c "aigon ..."` form.
+
+Migration must be:
+- **Idempotent**: a command already starting with `${userShell} -l -c "aigon ` (or any `*sh -l -c "aigon `) is left unchanged.
+- **Scoped**: any non-Aigon hook entry (`existing.command` that does not contain `aigon`) is byte-for-byte preserved.
+
+The same migration logic must run for the Cursor standalone-hooks-file path (currently no migration block exists there — it must be added).
 
 ### Scope of changes
 
-- `lib/commands/setup.js` — hook command generation and migration logic
+- `lib/commands/setup.js` — hook command generation and migration logic in both hook-writing blocks
+- New test cases under the existing test suite covering the cases listed in Acceptance Criteria
 - No changes to templates, dashboard, or workflow engine
 
 ## Dependencies
@@ -122,7 +139,7 @@ The existing migration path (around line 1280) that rewrites stale absolute path
 
 ## Open Questions
 
-- Should we emit a warning during `install-agent` if `aigon` is not findable in a login shell invocation, so the user knows hooks may fail? This would require spawning a login shell to test — useful but adds install time.
+- ~~Should we emit a warning during `install-agent` if `aigon` is not findable in a login shell invocation?~~ **Resolved: defer.** Spawning a login shell at install time adds noticeable latency for every `install-agent` run, and the failure mode (hook fires, user sees a "command not found" once) is loud enough on its own. Revisit only if real-world reports show silent hook failures.
 
 ## Related
 
