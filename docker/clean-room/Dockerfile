@@ -15,7 +15,9 @@ RUN apt-get update && \
 
 # Create non-root user with sudo access
 RUN useradd -m -s /bin/bash dev && \
-    echo "dev ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    echo "dev ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+    mkdir -p /home/dev/src && \
+    chown dev:dev /home/dev/src
 
 # Working directory
 WORKDIR /home/dev
