@@ -32,3 +32,17 @@ N/A — standalone feature.
 ## Test Coverage
 
 3 regression tests added to static-guards.test.js: SET_CONTEXT_SECTION cx rendering, 7-section log skeleton structure, Step 4.5 / no-AFTER-submit label check. All 28 test files pass.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-24
+
+### Fixes Applied
+- `e9365444` — `fix(review): use log globs in set context`
+
+### Residual Issues
+- None
+
+### Notes
+- The original set-context implementation resolved one arbitrary log filename per completed feature. That dropped valid Fleet sibling logs and diverged from the spec, which requires pointing agents at `feature-<N>-*-log.md` patterns.
