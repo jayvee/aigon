@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 66
+lines_removed: 62
+lines_changed: 128
+files_touched: 5
+fix_commit_count: 2
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 58
+output_tokens: 25291
+cache_creation_input_tokens: 96720
+cache_read_input_tokens: 1815838
+thinking_tokens: 0
+total_tokens: 1937907
+billable_tokens: 25349
+cost_usd: 1.287
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 334 - interactive-setup-and-update-notifications
 Agent: cc
 
