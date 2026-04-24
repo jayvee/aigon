@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-24T00:49:17.804Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: rename-review-check-to-revise
