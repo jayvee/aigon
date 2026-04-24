@@ -708,10 +708,10 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       });
       break;
     }
-    case 'feature-spec-review-check': {
-      await launchSpecReviewAction('feature-spec-review-check', {
+    case 'feature-spec-revise': {
+      await launchSpecReviewAction('feature-spec-revise', {
         title: 'Choose author agent',
-        submitLabel: 'Check Spec Review',
+        submitLabel: 'Revise Spec',
         preselect: feature.authorAgentId || null,
         action: va.action
       });
@@ -725,10 +725,10 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       });
       break;
     }
-    case 'research-spec-review-check': {
-      await launchSpecReviewAction('research-spec-review-check', {
+    case 'research-spec-revise': {
+      await launchSpecReviewAction('research-spec-revise', {
         title: 'Choose author agent',
-        submitLabel: 'Check Spec Review',
+        submitLabel: 'Revise Spec',
         preselect: feature.authorAgentId || null,
         action: va.action
       });
@@ -796,8 +796,8 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await requestAction(deleteCmd, [id], repoPath, btn);
       break;
     }
-    case 'feature-code-review-check':
-      await requestAction('feature-code-review-check', [id], repoPath, btn);
+    case 'feature-code-revise':
+      await requestAction('feature-code-revise', [id], repoPath, btn);
       break;
     case 'feature-push': {
       const msg = (va.metadata && va.metadata.confirmationMessage)
@@ -1329,7 +1329,7 @@ async function saveCurrentAsWorkflow() {
       ? { id: reviewAgent, ...(reviewModel ? { model: reviewModel } : {}), ...(reviewEffort ? { effort: reviewEffort } : {}) }
       : reviewAgent;
     stages.push({ type: 'review', agents: [reviewerEntry] });
-    stages.push({ type: 'counter-review', agents: [selectedAgents[0]] });
+    stages.push({ type: 'revision', agents: [selectedAgents[0]] });
   }
   if (evalAgent && selectedAgents.length > 1) {
     stages.push({ type: 'eval', agents: [evalAgent] });

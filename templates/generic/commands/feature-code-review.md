@@ -139,10 +139,10 @@ Lead with the fixes you committed. List residual unfixed issues only after that,
 
 **CRITICAL: Do NOT run `aigon feature-close` or `aigon feature-eval`.**
 
-The user or original implementing agent should then review your fix commits and run `{{CMD_PREFIX}}feature-code-review-check <ID>` in the implementer's session (using that agent's native invocation — slash command for {{AGENT_IDS_SLASH_COMMAND}}, skill command for {{AGENT_IDS_SKILL}}) so the implementer reads the review and decides accept/challenge/modify. When ready to merge, they run `{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}}`.
+The user or original implementing agent should then review your fix commits and run `{{CMD_PREFIX}}feature-code-revise <ID>` in the implementer's session (using that agent's native invocation — slash command for {{AGENT_IDS_SLASH_COMMAND}}, skill command for {{AGENT_IDS_SKILL}}) so the implementer reads the review and decides accept/challenge/modify. When ready to merge, they run `{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}}`.
 
 ## Prompt Suggestion
 
 End your response with the suggested next command on its own line:
 
-`{{CMD_PREFIX}}feature-code-review-check <ID>`
+`{{CMD_PREFIX}}feature-code-revise <ID>`

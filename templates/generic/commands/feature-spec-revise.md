@@ -1,5 +1,5 @@
-<!-- description: Check pending feature spec reviews and acknowledge them in one pass -->
-# aigon-feature-spec-review-check
+<!-- description: Revise feature spec after pending spec reviews — decide and acknowledge in one pass -->
+# aigon-feature-spec-revise
 
 You are the author-side agent. Review all pending `spec-review:` commits on the feature spec, decide what to keep, and land one acknowledgement commit.
 
@@ -62,7 +62,7 @@ Decision:
 
 Notes:
 - <important rationale>"
-aigon feature-spec-review-check-record {{ARG1_SYNTAX}}
+aigon feature-spec-revise-record {{ARG1_SYNTAX}}
 ```
 
 If you reverted review commits, include that rationale in the acknowledgement commit body rather than creating a second ack commit.

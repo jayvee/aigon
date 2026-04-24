@@ -20,7 +20,7 @@ const pickSpecReviewLabels = (entityType, pendingCount) => snapshotToDashboardAc
     entityType, featureId: '12', currentSpecState: 'backlog', lifecycle: 'backlog', mode: 'solo_branch',
     agents: {}, winnerAgentId: null, updatedAt: new Date().toISOString(),
     specReview: { pendingCount, pendingAgents: pendingCount ? ['gg'] : [], pendingLabel: pendingCount ? `${pendingCount} pending — gg` : '', pendingReviews: pendingCount ? [{ reviewId: 'sha1', reviewerId: 'gg', summary: 'tighten spec' }] : [] },
-}).validActions.filter((action) => action.action.includes('spec-review')).map((action) => action.label);
+}).validActions.filter((action) => action.action.includes('spec-review') || action.action.includes('spec-revise')).map((action) => action.label);
 
 testAsync('workflow-backed spec-review status drives dashboard badges/actions', () => withTempDirAsync('aigon-spec-review-', async (repo) => {
     initRepo(repo);
@@ -43,15 +43,15 @@ testAsync('workflow-backed spec-review status drives dashboard badges/actions', 
     // F283 moved action derivation to snapshotToDashboardActions; verify it here.
     const featureSnapshot = await engine.showFeatureOrNull(repo, '12');
     const featureActions = snapshotToDashboardActions('feature', '12', featureSnapshot, 'backlog').validActions;
-    assert.ok(featureActions.some((a) => a.action === 'feature-spec-review-check'));
+    assert.ok(featureActions.some((a) => a.action === 'feature-spec-revise'));
     const researchSnapshot = await engine.showResearchOrNull(repo, '21');
     const researchActions = snapshotToDashboardActions('research', '21', researchSnapshot, 'backlog').validActions;
-    assert.ok(!researchActions.some((a) => a.action === 'research-spec-review-check'));
+    assert.ok(!researchActions.some((a) => a.action === 'research-spec-revise'));
 }));
 
 test('feature and research spec-review actions keep distinct labels', () => {
-    assert.deepStrictEqual(pickSpecReviewLabels('feature', 1), ['Review spec', 'Check spec review']);
-    assert.deepStrictEqual(pickSpecReviewLabels('research', 1), ['Review spec', 'Check spec review']);
+    assert.deepStrictEqual(pickSpecReviewLabels('feature', 1), ['Review spec', 'Spec Revise']);
+    assert.deepStrictEqual(pickSpecReviewLabels('research', 1), ['Review spec', 'Spec Revise']);
     assert.deepStrictEqual(pickSpecReviewLabels('feature', 0), ['Review spec']);
     assert.deepStrictEqual(pickSpecReviewLabels('research', 0), ['Review spec']);
 });

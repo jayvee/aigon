@@ -41,27 +41,29 @@ test('createFeatureCommands exposes every factory handler', () => {
     assertWrapperExposesFactory(m, m.createFeatureCommands, 'createFeatureCommands');
 });
 
-test('shared factory emits the spec-review quartet for both entities', () => {
+test('shared factory emits the spec-review sextet for both entities', () => {
     const all = require('../../lib/commands/shared').createAllCommands();
     ['feature', 'research'].forEach(type => {
-        ['spec-review', 'spec-review-check', 'spec-review-record', 'spec-review-check-record'].forEach(suffix => {
+        ['spec-review', 'spec-revise', 'spec-review-record', 'spec-revise-record'].forEach(suffix => {
             const name = `${type}-${suffix}`;
             assert.strictEqual(typeof all[name], 'function', `missing ${name}`);
         });
     });
 });
 
-test('canonical code-review commands stay registered while deprecated review names remain addressable', () => {
+test('canonical code-review and code-revise commands are registered with correct aliases', () => {
     const templates = require('../../lib/templates');
     const all = require('../../lib/commands/shared').createAllCommands();
     assert.ok(Object.hasOwn(templates.COMMAND_REGISTRY, 'feature-code-review'));
-    assert.ok(Object.hasOwn(templates.COMMAND_REGISTRY, 'feature-code-review-check'));
+    assert.ok(Object.hasOwn(templates.COMMAND_REGISTRY, 'feature-code-revise'));
     assert.strictEqual(templates.COMMAND_ALIASES.afr, 'feature-code-review');
-    assert.strictEqual(templates.COMMAND_ALIASES.afrc, 'feature-code-review-check');
+    assert.strictEqual(templates.COMMAND_ALIASES.afrv, 'feature-code-revise');
     assert.strictEqual(typeof all['feature-code-review'], 'function');
-    assert.strictEqual(typeof all['feature-code-review-check'], 'function');
+    assert.strictEqual(typeof all['feature-code-revise'], 'function');
     assert.strictEqual(typeof all['feature-review'], 'function');
-    assert.strictEqual(typeof all['feature-review-check'], 'function');
+    // Old review-check names must be gone
+    assert.strictEqual(typeof all['feature-review-check'], 'undefined');
+    assert.strictEqual(typeof all['feature-code-review-check'], 'undefined');
 });
 
 report();

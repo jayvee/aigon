@@ -73,10 +73,10 @@ test('op command prompt inlines rubric-backed spec review template', () => {
     assert.ok(!body.includes('{{SPEC_REVIEW_RUBRIC}}'));
 });
 
-test('op review-check injection uses skill path, not phantom slash command', () => {
+test('op revise injection uses skill path, not phantom slash command', () => {
     const op = agentRegistry.getAgent('op');
     const prompt = buildReviewCheckFeedbackPrompt('op', '301', { loadAgentConfig: () => op });
-    assert.ok(prompt.includes('.agents/skills/aigon-feature-code-review-check/SKILL.md'), prompt);
+    assert.ok(prompt.includes('.agents/skills/aigon-feature-code-revise/SKILL.md'), prompt);
     assert.ok(!/\$aigon-/.test(prompt), 'must not emit $aigon- phantom command');
     assert.ok(!/\/aigon:/.test(prompt), 'must not emit slash command');
     assert.ok(prompt.includes('aigon agent-status feedback-addressed'), prompt);
@@ -105,9 +105,9 @@ test('registry-derived help surfaces use generic agent placeholders, not the leg
     const templates = require('../../lib/templates');
     assert.strictEqual(templates.COMMAND_REGISTRY['feature-do'].argHints, '<ID> [--agent=<agent-id>] [--iterate] [--max-iterations=N] [--auto-submit] [--no-auto-submit] [--dry-run]');
     assert.strictEqual(templates.COMMAND_REGISTRY['feature-spec-review'].argHints, '<ID|slug> [--agent=<agent-id>]');
-    assert.strictEqual(templates.COMMAND_REGISTRY['feature-spec-review-check'].argHints, '<ID|slug> [--agent=<agent-id>]');
+    assert.strictEqual(templates.COMMAND_REGISTRY['feature-spec-revise'].argHints, '<ID|slug> [--agent=<agent-id>]');
     assert.strictEqual(templates.COMMAND_REGISTRY['research-spec-review'].argHints, '<ID|slug> [--agent=<agent-id>]');
-    assert.strictEqual(templates.COMMAND_REGISTRY['research-spec-review-check'].argHints, '<ID|slug> [--agent=<agent-id>]');
+    assert.strictEqual(templates.COMMAND_REGISTRY['research-spec-revise'].argHints, '<ID|slug> [--agent=<agent-id>]');
 
     const featureSource = fs.readFileSync(path.join(__dirname, '..', '..', 'lib', 'commands', 'feature.js'), 'utf8');
     const setupSource = fs.readFileSync(path.join(__dirname, '..', '..', 'lib', 'commands', 'setup.js'), 'utf8');

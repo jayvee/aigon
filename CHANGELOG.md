@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Note on entries from v2.19 onwards:** the changelog was backfilled in bulk from git history on 2026-04-07 ahead of the public launch. Entries are grouped by theme and dated by month rather than per-patch. For commit-level detail, see `git log v2.18.0..HEAD` or browse the [git tags](https://github.com/jayvee/aigon/tags).
 
+## [Unreleased] — 2026-04-24
+
+### BREAKING: `review-check` renamed to `revise`
+
+The author-turn step after a reviewer critiques a spec or code is now called **revise** (verb) / **revision** (stage). Commands, shortcuts, stage types, and dashboard buttons all use the new vocabulary.
+
+**Run `aigon update` to migrate in-flight features.** The migration rewrites `.aigon/workflows/**/snapshot.json` entries automatically; you do not need to touch your data manually.
+
+**Commands and shortcuts renamed (old names removed — no aliases):**
+
+| Old | New |
+|-----|-----|
+| `aigon feature-code-review-check` / `/afrc` | `aigon feature-code-revise` / `/afrv` |
+| `aigon feature-spec-review-check` / `/afsrc` | `aigon feature-spec-revise` / `/afsrv` |
+| `aigon research-spec-review-check` / `/arsrc` | `aigon research-spec-revise` / `/arsrv` |
+| `aigon feature-review-check` | removed (was deprecated alias for code-review-check) |
+
+**Any scripts, hooks, or docs referencing the old command names or shortcuts (`afsrc`, `afrc`, `arsrc`) must be updated.**
+
+Dashboard buttons: "Check Spec Review" → **"Spec Revise"**; "Check Code Review" → **"Code Revise"**.
+
+Autonomous-mode stage type `counter-review` → `revision`. Workflow definition files with `"type": "counter-review"` are rewritten by `aigon update`.
+
 ## [2.54.1] - 2026-04-23
 
 Autonomous **feature sets** (SetConductor) and solo AutoConductor hardening: the outer set loop can advance when members use review → counter-review → close, and operators can peek the set orchestrator session from the dashboard.

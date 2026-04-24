@@ -28,7 +28,7 @@
     "implementPrompt": "feature-do",
     "evalPrompt": "feature-eval",
     "reviewPrompt": "feature-code-review",
-    "reviewCheckPrompt": "feature-code-review-check",
+    "reviewCheckPrompt": "feature-code-revise",
     "models": {},
     "modelOptions": [
       { "value": null, "label": "Default (OpenCode config)" },

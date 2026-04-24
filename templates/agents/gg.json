@@ -39,7 +39,7 @@
     "implementPrompt": "/aigon:feature-do {featureId}",
     "evalPrompt": "/aigon:feature-eval {featureId}",
     "reviewPrompt": "/aigon:feature-code-review {featureId}",
-    "reviewCheckPrompt": "/aigon:feature-code-review-check {featureId}",
+    "reviewCheckPrompt": "/aigon:feature-code-revise {featureId}",
     "models": {
       "research": "gemini-2.5-flash",
       "implement": "gemini-2.5-flash",

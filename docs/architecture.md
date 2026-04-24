@@ -302,7 +302,7 @@ When a command updates workflow-backed entity state, the workflow-core write is 
 
 Create paths follow the same contract. `feature-create` / `research-create` do not report success or open an editor until the inbox spec file and the initial workflow snapshot both exist. If bootstrap fails, the command removes the just-written spec instead of leaving a snapshotless inbox entity behind. Inbox entities use the slug as the workflow id at creation time; `feature-prioritise` / `research-prioritise` re-key that workflow state to the assigned numeric id through one shared workflow-core helper.
 
-Spec review follows the same contract. `feature-spec-review` / `feature-spec-review-check` and their research equivalents may still write informational git commits for audit history, but those commits are not load-bearing state. The authoritative write is the workflow-core `spec_review.submitted` / `spec_review.acked` event persisted immediately after the commit. Dashboard reads and close gating must use the projected snapshot metadata, not commit-subject scans.
+Spec review follows the same contract. `feature-spec-review` / `feature-spec-revise` and their research equivalents may still write informational git commits for audit history, but those commits are not load-bearing state. The authoritative write is the workflow-core `spec_review.submitted` / `spec_review.acked` event persisted immediately after the commit. Dashboard reads and close gating must use the projected snapshot metadata, not commit-subject scans.
 
 ### Unified Action Registry
 

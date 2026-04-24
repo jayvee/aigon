@@ -784,7 +784,7 @@
           }
           innerHtml +=
             (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
-            (specChecks.length > 0 ? specChecks.map(r => buildReviewerSectionHtml('Spec review check', r, { mode: 'spec-check' })).join('') : '') +
+            (specChecks.length > 0 ? specChecks.map(r => buildReviewerSectionHtml('Spec Revise', r, { mode: 'spec-check' })).join('') : '') +
             (specReviews.length > 0 ? specReviews.map(r => buildReviewerSectionHtml('Spec review', r, { mode: 'spec' })).join('') : '') +
             evalStatusHtml +
             buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType) +

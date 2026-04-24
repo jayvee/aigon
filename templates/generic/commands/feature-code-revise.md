@@ -1,5 +1,5 @@
-<!-- description: Check the review just done on the current feature worktree and decide accept/revert/modify -->
-# aigon-feature-code-review-check
+<!-- description: Revise the current feature worktree after code review — decide accept/revert/modify -->
+# aigon-feature-code-revise
 
 A reviewing agent has just committed fixes (or notes) on this feature branch. Your job — as the **implementing agent** — is to read what the reviewer did, then decide how to respond: **accept**, **revert**, or **modify**.
 
@@ -26,7 +26,7 @@ Find the row whose name matches the slug and read its ID.
 
 **If the branch is `main`** or doesn't match the `feature-<slug>-<agent>` pattern: STOP. Print this one-liner and do nothing else:
 
-> Can't infer feature ID — run this inside the feature worktree, or pass an explicit ID (e.g. `{{CMD_PREFIX}}feature-code-review-check 230`).
+> Can't infer feature ID — run this inside the feature worktree, or pass an explicit ID (e.g. `{{CMD_PREFIX}}feature-code-revise 230`).
 
 Do **not** guess. Do **not** prompt the user to pick from a list — that's noise. Just stop.
 

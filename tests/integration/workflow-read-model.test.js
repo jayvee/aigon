@@ -90,7 +90,7 @@ for (const [desc, id, autoPayload, check] of [
                 [
                     { type: 'implement', status: 'running', agents: ['cc'] },
                     { type: 'review', status: 'waiting', agents: ['cx'] },
-                    { type: 'counter-review', status: 'waiting', agents: ['cc'] },
+                    { type: 'revision', status: 'waiting', agents: ['cc'] },
                     { type: 'close', status: 'waiting', agents: [] },
                 ]
             );

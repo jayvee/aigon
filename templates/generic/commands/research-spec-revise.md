@@ -1,5 +1,5 @@
-<!-- description: Check pending research spec reviews and acknowledge them in one pass -->
-# aigon-research-spec-review-check
+<!-- description: Revise research spec after pending spec reviews — decide and acknowledge in one pass -->
+# aigon-research-spec-revise
 
 You are the author-side agent. Review all pending `spec-review:` commits on the research spec, decide what to keep, and land one acknowledgement commit.
 
@@ -44,7 +44,7 @@ Decision:
 
 Notes:
 - <important rationale>"
-aigon research-spec-review-check-record {{ARG1_SYNTAX}}
+aigon research-spec-revise-record {{ARG1_SYNTAX}}
 ```
 
 ## Report
