@@ -1,6 +1,8 @@
 ---
 complexity: very-high
 set: review-cycle-redesign
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-24T23:50:02.865Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: review-cycle-redesign-1-spec-states
