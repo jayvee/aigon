@@ -83,14 +83,14 @@ Defined in `lib/feature-workflow-rules.js:23-65` as `FEATURE_ENGINE_STATES`:
 
 | Path | Module | Current | Target |
 |------|--------|---------|--------|
-| State rule table | `lib/feature-workflow-rules.js:23-65` | 8 states in `FEATURE_ENGINE_STATES` | Add 8 new states: `backlog`, `spec_review_in_progress`, `spec_review_complete`, `spec_counter_review_in_progress`, `spec_counter_review_complete`, `code_review_in_progress`, `code_review_complete`, `code_counter_review_in_progress`, `code_counter_review_complete`. Rename `reviewing` → `code_review_in_progress` |
+| State rule table | `lib/feature-workflow-rules.js:23-65` | 8 states in `FEATURE_ENGINE_STATES` | Add 8 new states: `backlog`, `spec_review_in_progress`, `spec_review_complete`, `spec_revision_in_progress`, `spec_revision_complete`, `code_review_in_progress`, `code_review_complete`, `code_revision_in_progress`, `code_revision_complete`. Rename `reviewing` → `code_review_in_progress` |
 | Research state table | `lib/research-workflow-rules.js:5-49` | 8 states | Same additions (research shares the pattern) |
 | Hydrating rules | Both workflow-rules files | Guards for 8 states | Add guards for all new states |
 | Machine guards | `lib/workflow-core/machine.js:19-76` | `isReviewing`, `isImplementing`, etc. | Add `isBacklog`, `isSpecReviewInProgress`, `isSpecReviewComplete`, `isSpecCounterReviewInProgress`, `isCodeReviewInProgress`, `isCodeReviewComplete`, `isCodeCounterReviewInProgress`, `isCodeCounterReviewComplete` |
-| Projector lifecycle | `lib/workflow-core/projector.js:86-160` | Switch on event types to set `lifecycle` | Add cases for all new review/counter-review events |
+| Projector lifecycle | `lib/workflow-core/projector.js:86-160` | Switch on event types to set `lifecycle` | Add cases for all new review/revision events |
 | Engine `applyTransition()` | `lib/workflow-core/engine.js:598-602` | Routes `feature.review` → XState | Route all new events through XState machine |
 | Engine public API | `lib/workflow-core/engine.js:1746-1802` | `recordSpecReview*()` functions | Change to emit machine-transition events instead of context-only events |
-| Lifecycle-to-stage map | `lib/workflow-snapshot-adapter.js:23-32` | `LIFECYCLE_TO_STAGE` | Add `backlog→backlog`, `spec_review_in_progress→backlog`, `spec_review_complete→backlog`, `spec_counter_review_in_progress→backlog`, `spec_counter_review_complete→backlog`, `code_review_in_progress→in-progress`, `code_review_complete→in-progress`, `code_counter_review_in_progress→in-progress`, `code_counter_review_complete→in-progress` |
+| Lifecycle-to-stage map | `lib/workflow-snapshot-adapter.js:23-32` | `LIFECYCLE_TO_STAGE` | Add `backlog→backlog`, `spec_review_in_progress→backlog`, `spec_review_complete→backlog`, `spec_revision_in_progress→backlog`, `spec_revision_complete→backlog`, `code_review_in_progress→in-progress`, `code_review_complete→in-progress`, `code_revision_in_progress→in-progress`, `code_revision_complete→in-progress` |
 | Lifecycle-to-dir map | `lib/workflow-core/paths.js` | `LIFECYCLE_TO_FEATURE_DIR` | Same additions for directory path resolution |
 | Action candidates | `lib/feature-workflow-rules.js:67-307` | `FEATURE_SPEC_REVIEW` / `FEATURE_SPEC_REVISE` with `bypassMachine: true` | Convert to machine-governed action candidates with proper `eventType` |
 | `canCloseFeature()` | `lib/workflow-core/engine.js:1042-1076` | Reads `snapshot.specReview.pendingCount` | Replace with machine guard — can't close from review-in-progress states |
@@ -132,7 +132,7 @@ XState evaluates `always` transitions synchronously on state entry — no event 
 
 ### Recommended: `always` for `*_complete` Transients
 
-The four `*_complete` states (`spec_review_complete`, `spec_counter_review_complete`, `code_review_complete`, `code_counter_review_complete`) should use `always` transitions for the same reason `hydrating` does: **no operator action is needed to leave them**. The decision of what comes next is already baked into the event that entered them.
+The four `*_complete` states (`spec_review_complete`, `spec_revision_complete`, `code_review_complete`, `code_revision_complete`) should use `always` transitions for the same reason `hydrating` does: **no operator action is needed to leave them**. The decision of what comes next is already baked into the event that entered them.
 
 **Implementation**: Extend `buildStateConfig()` in `machine.js` to recognize transient states. Two options:
 
@@ -141,8 +141,8 @@ The four `*_complete` states (`spec_review_complete`, `spec_counter_review_compl
 ```js
 const TRANSIENT_STATES = new Set([
     'hydrating',
-    'spec_review_complete', 'spec_counter_review_complete',
-    'code_review_complete', 'code_counter_review_complete',
+    'spec_review_complete', 'spec_revision_complete',
+    'code_review_complete', 'code_revision_complete',
 ]);
 ```
 
@@ -164,9 +164,9 @@ An alternative would be to make `*_complete` normal states requiring an explicit
 
 When the machine processes an event that enters a transient, it **immediately** evaluates the `always` transitions and exits. The snapshot will show the *resolved target state*, not the transient itself. This means:
 
-- `spec_review_complete` → immediately resolves to `backlog` (proceed) or `spec_counter_review_in_progress` (counter-review needed)
-- `code_review_complete` → immediately resolves to `submitted` (proceed) or `code_counter_review_in_progress` (counter-review needed)
-- `code_counter_review_complete` → immediately resolves to `submitted` (proceed) or `code_review_in_progress` (another cycle)
+- `spec_review_complete` → immediately resolves to `backlog` (proceed) or `spec_revision_in_progress` (revision needed)
+- `code_review_complete` → immediately resolves to `submitted` (proceed) or `code_revision_in_progress` (revision needed)
+- `code_revision_complete` → immediately resolves to `submitted` (proceed) or `code_review_in_progress` (another cycle)
 
 **However**, the event log records the full chain. For dashboard timeline rendering, the read model can detect `spec_review.submitted` events to show "Spec review complete" even though the snapshot never rests at that state.
 
@@ -200,7 +200,7 @@ A new migration in `lib/migration.js` (e.g., `2.xx.0`):
 
 1. **Rewrite snapshot**: For any feature with `snapshot.specReview.pendingCount > 0` and `currentSpecState === 'backlog'`, set `currentSpecState = 'spec_review_in_progress'` (or the appropriate review state based on `activeReviewers`/`activeCheckers`).
 
-2. **Synthesize review cycle events**: For each entry in `review-state.json` history, synthesize equivalent `feature.code_review.completed` / `feature.code_counter_review.completed` events and append to `events.jsonl` (if not already present — idempotency check by looking for matching timestamp or cycle marker).
+2. **Synthesize review cycle events**: For each entry in `review-state.json` history, synthesize equivalent `feature.code_review.completed` / `feature.code_revision.completed` events and append to `events.jsonl` (if not already present — idempotency check by looking for matching timestamp or cycle marker).
 
 3. **Rewrite `reviewing` lifecycle**: Any snapshot with `lifecycle === 'reviewing'` gets rewritten to `lifecycle = 'code_review_in_progress'`.
 
@@ -265,12 +265,12 @@ The event log is append-only and immutable. Old `spec_review.*` events stay in t
 
 ---
 
-## Q5: Loop-Back Transition — `code_counter_review_complete` → `code_review_in_progress`
+## Q5: Loop-Back Transition — `code_revision_complete` → `code_review_in_progress`
 
 ### XState Machine Definition
 
 ```js
-code_counter_review_complete: [
+code_revision_complete: [
     { always: [
         { target: 'code_review_in_progress', guard: 'anotherCycleRequested', effect: 'recordNextCycle' },
         { target: 'submitted' },  // default: proceed
@@ -290,12 +290,12 @@ anotherCycleRequested: ({ context, event }) => {
 }
 ```
 
-The event `feature.code_counter_review.completed` carries `requestAnotherCycle: true` or `false` in its payload. The guard is deterministic — the decision was made by the operator when they chose the action.
+The event `feature.code_revision.completed` carries `requestAnotherCycle: true` or `false` in its payload. The guard is deterministic — the decision was made by the operator when they chose the action.
 
 ### Why Not a Separate Event
 
 Making "request another cycle" a separate event (e.g., `feature.start_another_review`) would require:
-1. The machine to rest at `code_counter_review_complete` waiting for an event
+1. The machine to rest at `code_revision_complete` waiting for an event
 2. An operator or automation to fire the event
 3. A stuck-state risk if the event never fires
 
@@ -326,14 +326,14 @@ This appends a new entry to `reviewCycles[]` and sets `pendingCodeReviewer` so t
 
 ### Event Payload Approach
 
-Two distinct `validActions` entries appear when the feature is at `code_counter_review_complete` (or rather, when actions are derived for the state *before* entering the transient):
+Two distinct `validActions` entries appear when the feature is at `code_revision_complete` (or rather, when actions are derived for the state *before* entering the transient):
 
 **Action: "Another Review Cycle"**
 ```js
 {
     kind: 'FEATURE_CODE_REVIEW_CYCLE',
     label: 'Another review cycle',
-    eventType: 'feature.code_counter_review.completed',
+    eventType: 'feature.code_revision.completed',
     requiresInput: 'agentPicker',
     eventPayload: { requestAnotherCycle: true, nextReviewerId: '${selectedAgent}' },
     recommendedOrder: 30,
@@ -345,7 +345,7 @@ Two distinct `validActions` entries appear when the feature is at `code_counter_
 {
     kind: 'FEATURE_PROCEED_AFTER_REVIEW',
     label: 'Proceed',
-    eventType: 'feature.code_counter_review.completed',
+    eventType: 'feature.code_revision.completed',
     eventPayload: { requestAnotherCycle: false },
     recommendedOrder: 40,
 }
@@ -359,7 +359,7 @@ Both actions fire the **same event type** but with different payloads. The agent
 2. **Dashboard/CLI** builds the event with `requestAnotherCycle: true, nextReviewerId: 'gg'`
 3. **Engine** appends the event to `events.jsonl`
 4. **Projector** processes the event: sets `context.pendingCodeReviewer = event.nextReviewerId`, appends to `context.reviewCycles[]`
-5. **Machine** enters `code_counter_review_complete` → `always` guard `anotherCycleRequested` passes → transitions to `code_review_in_progress`
+5. **Machine** enters `code_revision_complete` → `always` guard `anotherCycleRequested` passes → transitions to `code_review_in_progress`
 6. **Effect** `recordNextCycle` writes `pendingCodeReviewer` and cycle entry
 7. **`code_review_in_progress`** state: the launch side-effect reads `context.pendingCodeReviewer` and passes it to `buildAgentCommand()`
 
@@ -395,10 +395,10 @@ Define a centralized map in `lib/workflow-snapshot-adapter.js` (or a new `lib/st
 const STATE_RENDER_META = {
     backlog:                          { icon: '○', label: 'Backlog',               cls: 'status-idle' },
     spec_review_in_progress:          { icon: '●', label: 'Reviewing spec',       cls: 'status-reviewing', badge: 'spec-review' },
-    spec_counter_review_in_progress:  { icon: '●', label: 'Addressing spec review', cls: 'status-reviewing', badge: 'spec-counter-review' },
+    spec_revision_in_progress:  { icon: '●', label: 'Revising spec',          cls: 'status-reviewing', badge: 'spec-revision' },
     implementing:                     { icon: '●', label: 'Implementing',         cls: 'status-running' },
     code_review_in_progress:          { icon: '●', label: 'Reviewing code',       cls: 'status-reviewing', badge: 'code-review' },
-    code_counter_review_in_progress:  { icon: '●', label: 'Addressing review',   cls: 'status-reviewing', badge: 'code-counter-review' },
+    code_revision_in_progress:  { icon: '●', label: 'Revising',             cls: 'status-reviewing', badge: 'code-revision' },
     submitted:                        { icon: '✓', label: 'Submitted',            cls: 'status-submitted' },
     evaluating:                       { icon: '●', label: 'Evaluating',          cls: 'status-running' },
     paused:                           { icon: '⏸', label: 'Paused',              cls: 'status-ended' },
@@ -459,9 +459,9 @@ Plain YAML scalar. No nesting, no structured object. The value is a single agent
 
 | Context | Priority 1 | Priority 2 | Priority 3 | Priority 4 |
 |---------|-----------|-----------|-----------|-----------|
-| Spec counter-review | Event payload `nextReviewerId` | `agent:` frontmatter | Configured `defaultAgent` | First registered agent |
+| Spec revision | Event payload `nextReviewerId` | `agent:` frontmatter | Configured `defaultAgent` | First registered agent |
 | Feature-start default | CLI arg `--agent` | `agent:` frontmatter | Configured `defaultAgent` | First registered agent |
-| Code counter-review | Implementing agent from `context.agents` | — | — | — |
+| Code revision | Implementing agent from `context.agents` | — | — | — |
 
 ### Where `agent:` Is Written
 
@@ -475,7 +475,7 @@ Plain YAML scalar. No nesting, no structured object. The value is a single agent
 
 | Module | Function | Purpose |
 |--------|----------|---------|
-| `lib/feature-workflow-rules.js` | Spec counter-review action candidate | Resolve owning agent for counter-review |
+| `lib/feature-workflow-rules.js` | Spec revision action candidate | Resolve owning agent for revision |
 | `lib/feature-start.js` | Default agent resolution | When no CLI agent is provided, use spec's `agent:` as default |
 | `lib/spec-crud.js` | `readSpecSection()` | Parse frontmatter, expose `agent` field |
 | `lib/commands/setup.js` | `aigon doctor` | Validate `agent:` is a registered agent ID |
@@ -508,7 +508,7 @@ Both `specReview` context properties AND new `reviewCycles[]` + machine states a
 registerMigration('<version>', async ({ repoPath, log }) => {
     // For every feature snapshot:
     // 1. If specReview.activeReviewers.length > 0 → set currentSpecState = 'spec_review_in_progress'
-    // 2. If specReview.pendingCount > 0 and no activeReviewers → set currentSpecState = 'spec_counter_review_in_progress'
+    // 2. If specReview.pendingCount > 0 and no activeReviewers → set currentSpecState = 'spec_revision_in_progress'
     // 3. If lifecycle === 'reviewing' → set lifecycle = 'code_review_in_progress'
     // 4. Synthesize reviewCycles[] from review-state.json history
     // 5. Write review-state.json entries as engine events in events.jsonl
@@ -531,9 +531,9 @@ After the migration has run across all repos:
 | `tests/integration/spec-review-status.test.js` | `specReview.pendingCount` → `reviewCycles[]` derivation; `validActions` filtering for spec-review states |
 | `tests/integration/dashboard-review-statuses.test.js` | `reviewSessions` / `specReviewSessions` shape from engine state |
 | `tests/integration/migration-255.test.js` | Migration idempotency; re-running doesn't corrupt |
-| New: `tests/integration/review-cycle-loopback.test.js` | Loop-back transition: `code_counter_review_complete` → `code_review_in_progress` with `anotherCycleRequested` |
+| New: `tests/integration/review-cycle-loopback.test.js` | Loop-back transition: `code_revision_complete` → `code_review_in_progress` with `anotherCycleRequested` |
 | New: `tests/integration/missing-migration-detection.test.js` | Snapshot with `specReview` but no `reviewCycles` → `MISSING_MIGRATION` tag, fail-loudly |
-| New: `tests/integration/agent-frontmatter-resolution.test.js` | `agent:` field → counter-review agent resolution precedence |
+| New: `tests/integration/agent-frontmatter-resolution.test.js` | `agent:` field → revision agent resolution precedence |
 
 Each test includes a `// REGRESSION: ...` comment naming the specific regression it prevents.
 
@@ -548,11 +548,11 @@ Phase 1: agent-frontmatter-field
     ↓
 Phase 2: spec-review-engine-states  (depends on Phase 1 for owning-agent resolution)
     ↓
-Phase 3: spec-counter-review-state  (depends on Phase 2)
+Phase 3: spec-revision-state  (depends on Phase 2)
     ↓
 Phase 4: code-review-cycle-states   (depends on Phase 2 for transient pattern)
     ↓
-Phase 5: code-counter-review-state  (depends on Phase 4)
+Phase 5: code-revision-state  (depends on Phase 4)
     ↓
 Phase 6: review-cycle-loopback      (depends on Phase 4 + 5)
     ↓
@@ -571,11 +571,11 @@ Phase 7: dashboard-data-driven      (depends on Phase 2 + 6)
 - Files: `lib/feature-workflow-rules.js`, `lib/research-workflow-rules.js`, `lib/workflow-core/machine.js`, `lib/workflow-core/projector.js`, `lib/workflow-core/engine.js`, `lib/workflow-core/paths.js`, `lib/workflow-snapshot-adapter.js`, `lib/spec-review-state.js`
 - Changes: Add `backlog`, `spec_review_in_progress`, `spec_review_complete` to XState machine. Extend `buildStateConfig()` for transient states. Convert `FEATURE_SPEC_REVIEW` from `bypassMachine: true` to machine-governed. Add migration.
 - Test: `tests/integration/spec-review-status.test.js` (update), `tests/integration/missing-migration-detection.test.js` (new)
-- Boundary: Spec review is now first-class; spec counter-review NOT yet added. Actions for spec counter-review appear in `validActions` but the states don't exist yet.
+- Boundary: Spec review is now first-class; spec revision NOT yet added. Actions for spec revision appear in `validActions` but the states don't exist yet.
 
-**Phase 3: `spec-counter-review-state`**
+**Phase 3: `spec-revision-state`**
 - Files: `lib/feature-workflow-rules.js`, `lib/workflow-core/projector.js`, `lib/workflow-core/engine.js`, `lib/feature-workflow-rules.js` (action candidates)
-- Changes: Add `spec_counter_review_in_progress`, `spec_counter_review_complete`. Add `FEATURE_SPEC_COUNTER_REVIEW` action candidate with `requiresInput: 'agentPicker'` resolved from `agent:` frontmatter. Wire `spec_review_complete` → `spec_counter_review_in_progress` (default) or `backlog` (if no pending counter-review).
+- Changes: Add `spec_revision_in_progress`, `spec_revision_complete`. Add `FEATURE_SPEC_REVISE` action candidate with `requiresInput: 'agentPicker'` resolved from `agent:` frontmatter. Wire `spec_review_complete` → `spec_revision_in_progress` (default) or `backlog` (if no revision needed).
 - Test: Extend `tests/integration/spec-review-status.test.js`
 - Boundary: Full spec review cycle works end-to-end.
 
@@ -585,15 +585,15 @@ Phase 7: dashboard-data-driven      (depends on Phase 2 + 6)
 - Test: `tests/integration/dashboard-review-statuses.test.js` (update)
 - Boundary: Code review is now first-class with cycle tracking. Counter-review NOT yet added.
 
-**Phase 5: `code-counter-review-state`**
+**Phase 5: `code-revision-state`**
 - Files: `lib/feature-workflow-rules.js`, `lib/workflow-core/projector.js`, `lib/workflow-core/engine.js`
-- Changes: Add `code_counter_review_in_progress`, `code_counter_review_complete`. Add `FEATURE_CODE_COUNTER_REVIEW` action candidate. Wire `code_review_complete` → `code_counter_review_in_progress` (default).
+- Changes: Add `code_revision_in_progress`, `code_revision_complete`. Add `FEATURE_CODE_REVISE` action candidate. Wire `code_review_complete` → `code_revision_in_progress` (default).
 - Test: `tests/integration/review-cycle-loopback.test.js` (new)
-- Boundary: Single code review + counter-review works. No loop-back yet.
+- Boundary: Single code review + revision works. No loop-back yet.
 
 **Phase 6: `review-cycle-loopback`**
 - Files: `lib/feature-workflow-rules.js`, `lib/workflow-core/machine.js`, `lib/workflow-core/engine.js`
-- Changes: Add `anotherCycleRequested` guard, `recordNextCycle` effect. `code_counter_review_complete` → `always:` with two targets. Add `FEATURE_CODE_REVIEW_CYCLE` and `FEATURE_PROCEED_AFTER_REVIEW` action candidates. Update AutoConductor to support multiple review cycles.
+- Changes: Add `anotherCycleRequested` guard, `recordNextCycle` effect. `code_revision_complete` → `always:` with two targets. Add `FEATURE_CODE_REVIEW_CYCLE` and `FEATURE_PROCEED_AFTER_REVIEW` action candidates. Update AutoConductor to support multiple review cycles.
 - Test: `tests/integration/review-cycle-loopback.test.js` (extend)
 - Boundary: Full review cycle loop works for both spec and code.
 
@@ -673,10 +673,10 @@ Three-phase migration: (1) dual-read compatibility, (2) versioned migration with
 
 | Feature Name | Description | Priority | Depends On |
 |--------------|-------------|----------|------------|
-| `agent-frontmatter-field` | Add `agent:` YAML scalar to spec frontmatter; `feature-create --agent` writes it; `feature-start` and counter-review read it as default; `aigon doctor` validates | high | none |
+| `agent-frontmatter-field` | Add `agent:` YAML scalar to spec frontmatter; `feature-create --agent` writes it; `feature-start` and the revision step read it as default; `aigon doctor` validates | high | none |
 | `spec-review-engine-states` | Promote spec review from context properties to first-class XState states (`backlog`, `spec_review_in_progress`, `spec_review_complete`); extend `buildStateConfig()` for transient states; add migration | high | agent-frontmatter-field |
-| `spec-counter-review-state` | Add `spec_counter_review_in_progress` and `spec_counter_review_complete` states; owning agent resolved from `agent:` frontmatter → default config; wire transient loop-back to `backlog` or `spec_counter_review_in_progress` | high | spec-review-engine-states |
+| `spec-revision-state` | Add `spec_revision_in_progress` and `spec_revision_complete` states; owning agent resolved from `agent:` frontmatter → default config; wire transient loop-back to `backlog` or `spec_revision_in_progress` | high | spec-review-engine-states |
 | `code-review-cycle-states` | Rename `reviewing` → `code_review_in_progress`; add `code_review_complete` transient; add `reviewCycles[]` context field; migrate `review-state.json` sidecar into engine events | high | spec-review-engine-states |
-| `code-counter-review-state` | Add `code_counter_review_in_progress` and `code_counter_review_complete` states; owning agent is implementing agent from `context.agents`; wire transient loop-back | high | code-review-cycle-states |
-| `review-cycle-loopback` | `always` guard `anotherCycleRequested` on `code_counter_review_complete` → `code_review_in_progress`; `recordNextCycle` effect; `FEATURE_CODE_REVIEW_CYCLE` and `FEATURE_PROCEED_AFTER_REVIEW` action candidates; AutoConductor multi-cycle support | medium | code-counter-review-state, spec-counter-review-state |
-| `dashboard-data-driven-rendering` | Centralized `STATE_RENDER_META` map; refactor `buildAgentStatusHtml` to consult it; eliminate `buildSpecReviewBadgeHtml`/`buildSpecCheckBadgeHtml`; delete `lib/spec-review-state.js` | medium | spec-counter-review-state, review-cycle-loopback |
+| `code-revision-state` | Add `code_revision_in_progress` and `code_revision_complete` states; owning agent is implementing agent from `context.agents`; wire transient loop-back | high | code-review-cycle-states |
+| `review-cycle-loopback` | `always` guard `anotherCycleRequested` on `code_revision_complete` → `code_review_in_progress`; `recordNextCycle` effect; `FEATURE_CODE_REVIEW_CYCLE` and `FEATURE_PROCEED_AFTER_REVIEW` action candidates; AutoConductor multi-cycle support | medium | code-revision-state, spec-revision-state |
+| `dashboard-data-driven-rendering` | Centralized `STATE_RENDER_META` map; refactor `buildAgentStatusHtml` to consult it; eliminate `buildSpecReviewBadgeHtml`/`buildSpecCheckBadgeHtml`; delete `lib/spec-review-state.js` | medium | spec-revision-state, review-cycle-loopback |
