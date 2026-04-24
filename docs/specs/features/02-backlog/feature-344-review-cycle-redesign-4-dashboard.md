@@ -1,6 +1,8 @@
 ---
 complexity: medium
 set: review-cycle-redesign
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-24T23:50:04.502Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: review-cycle-redesign-4-dashboard
