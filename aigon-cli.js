@@ -72,25 +72,75 @@ const commandArgs = args.slice(1);
 const cleanCommand = commandName ? commandName.replace(/^aigon-/, '') : null;
 const resolvedCommand = cleanCommand ? (COMMAND_ALIASES[cleanCommand] || cleanCommand) : cleanCommand;
 
-if (resolvedCommand === '--version' || resolvedCommand === '-v' || resolvedCommand === 'version') {
-    console.log(require('./package.json').version);
-} else if (!resolvedCommand || resolvedCommand === 'help' || resolvedCommand === '--help' || resolvedCommand === '-h') {
-    commands.help();
-} else if (commands[resolvedCommand]) {
-    let result;
-    try {
-        result = commands[resolvedCommand](commandArgs);
-    } catch (error) {
-        console.error(formatCliError(error));
-        process.exit(1);
+const SKIP_FIRST_RUN = new Set(['onboarding', 'setup', '--version', '-v', 'version', '--help', '-h', 'help', 'check-version', 'update']);
+
+function firstRunComplete() {
+    const os = require('os');
+    const path = require('path');
+    const fs = require('fs');
+    // Check global config for onboarded flag
+    const globalConfigPath = path.join(os.homedir(), '.aigon', 'config.json');
+    if (fs.existsSync(globalConfigPath)) {
+        try {
+            const cfg = JSON.parse(fs.readFileSync(globalConfigPath, 'utf8'));
+            if (cfg.onboarded === true) return true;
+        } catch (_) {}
     }
-    if (result && typeof result.catch === 'function') {
-        result.catch(error => {
+    // Check onboarding state file for all steps complete
+    const statePath = path.join(os.homedir(), '.aigon', 'onboarding-state.json');
+    if (!fs.existsSync(statePath)) return false;
+    try {
+        const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+        const steps = state.steps || {};
+        const STEP_IDS = ['prereqs', 'terminal', 'agents', 'seed-repo', 'server'];
+        return STEP_IDS.every(id => steps[id] === 'done' || steps[id] === 'skipped');
+    } catch (_) {
+        return false;
+    }
+}
+
+async function main() {
+    if (resolvedCommand === '--version' || resolvedCommand === '-v' || resolvedCommand === 'version') {
+        console.log(require('./package.json').version);
+        return;
+    }
+
+    if (!resolvedCommand || resolvedCommand === 'help' || resolvedCommand === '--help' || resolvedCommand === '-h') {
+        commands.help();
+        return;
+    }
+
+    const isInteractiveEnv = process.stdin.isTTY && process.stdout.isTTY && !process.env.CI;
+    if (isInteractiveEnv && !SKIP_FIRST_RUN.has(resolvedCommand) && !firstRunComplete()) {
+        try {
+            await commands['onboarding']([]);
+        } catch (error) {
             console.error(formatCliError(error));
             process.exit(1);
-        });
+        }
     }
-} else {
-    console.error(`Unknown command: ${commandName}\n`);
-    commands.help();
+
+    if (commands[resolvedCommand]) {
+        let result;
+        try {
+            result = commands[resolvedCommand](commandArgs);
+        } catch (error) {
+            console.error(formatCliError(error));
+            process.exit(1);
+        }
+        if (result && typeof result.catch === 'function') {
+            result.catch(error => {
+                console.error(formatCliError(error));
+                process.exit(1);
+            });
+        }
+    } else {
+        console.error(`Unknown command: ${commandName}\n`);
+        commands.help();
+    }
 }
+
+main().catch(error => {
+    console.error(formatCliError(error));
+    process.exit(1);
+});
