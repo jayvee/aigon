@@ -13,6 +13,7 @@
   "bannerColor": "#06B6D4",
   "defaultFleetAgent": false,
   "installHint": "npm i -g opencode-ai  (see: https://opencode.ai/docs)",
+  "installCommand": "npm i -g opencode-ai",
   "worktreeEnv": {},
   "git": {
     "hasEmailAttribution": true
