@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 291
+lines_removed: 73
+lines_changed: 364
+files_touched: 4
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 103
+output_tokens: 40774
+cache_creation_input_tokens: 148644
+cache_read_input_tokens: 4529975
+thinking_tokens: 0
+total_tokens: 4719496
+billable_tokens: 40877
+cost_usd: 2.5283
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 333 - robust-hook-binary-resolution
 Agent: cc
 
