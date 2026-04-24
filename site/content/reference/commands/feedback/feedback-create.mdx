@@ -1,6 +1,6 @@
 ---
 title: "feedback-create"
-description: "Create feedback title"
+description: "Capture a new piece of user or internal feedback as a tracked inbox item"
 ---
 
 ## Synopsis
@@ -15,14 +15,40 @@ aigon feedback-create <title>
 
 ## Description
 
-Create feedback \<title\>
+`feedback-create` opens a new feedback item in `docs/specs/feedback/01-inbox/` with a generated ID. Feedback items are lighter-weight than feature specs — they capture observations, bug reports, user complaints, and suggestions that need to be triaged before they become actionable work.
 
-## Usage
+The command creates the file and then expects you (or an agent) to fill in the `## Summary` and `## Evidence` sections, plus attribution fields (`reporter`, `source`). Once filed, use `feedback-triage` to classify it and decide what to do with it.
+
+## What it does
+
+1. Creates `docs/specs/feedback/01-inbox/feedback-<ID>-<slug>.md` from the feedback template
+2. Pre-fills frontmatter with the assigned ID and title
+3. Prints the next suggested command: `aigon feedback-triage <ID>`
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feedback-create <title>
+# Create a feedback item from the CLI
+aigon feedback-create "Export button crashes on Safari"
 
-# CLI
-aigon feedback-create <title>
+# From an agent session (agent fills in details after creation)
+/aigon:feedback-create "Dashboard load time regression after deploy"
 ```
+
+## After creating
+
+Read the new file and fill in:
+- `## Summary` — clear description of the issue or observation
+- `## Evidence` — links, screenshots, error messages, reproduction steps
+- Attribution fields: `reporter` (who reported it) and `source` (where it came from — user, Slack, support ticket, etc.)
+
+Then triage:
+
+```bash
+aigon feedback-triage <ID>
+```
+
+## Related
+
+- [`feedback-triage`](./feedback-triage) — classify and decide the next action
+- [`feedback-list`](./feedback-list) — see all feedback in the inbox

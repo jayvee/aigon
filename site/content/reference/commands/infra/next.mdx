@@ -1,6 +1,6 @@
 ---
 title: "next"
-description: "Suggest the most likely next workflow action based on current context"
+description: "Inspect the current workflow state and suggest the most likely next command to run"
 ---
 
 ## Synopsis
@@ -15,14 +15,25 @@ aigon next
 
 ## Description
 
-Suggest the most likely next workflow action based on current context
+`aigon next` reads the current workflow state — what features and research are in-progress, which agents have submitted, and where each item sits in its lifecycle — and suggests the most appropriate next command to run. It is especially useful when returning to a session after a break, or when you're unsure whether to run `feature-eval`, `feature-close`, or `research-eval` next.
 
-## Usage
+The suggestion is a single command with the relevant ID pre-filled. If multiple actions are pending (e.g. two features ready for `feature-close`), it ranks them by urgency and lists the top suggestion.
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:next
-
-# CLI
+# Find out what to do next
 aigon next
+
+# Inside an agent session
+/aigon:next
 ```
+
+## When to use
+
+Run `aigon next` whenever you sit back down after a break and can't remember where you left off, or when you want a quick sanity check before issuing the next command manually.
+
+## Related
+
+- [`board`](./board) — full Kanban view for a broader overview of all work
+- [`status`](./status) — detailed in-progress status per feature

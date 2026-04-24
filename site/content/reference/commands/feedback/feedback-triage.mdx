@@ -1,6 +1,6 @@
 ---
 title: "feedback-triage"
-description: "Triage feedback ID with AI-assisted recommendations"
+description: "Classify a feedback item with AI-assisted recommendations and apply the outcome"
 ---
 
 ## Synopsis
@@ -13,27 +13,54 @@ aigon feedback-triage <ID> [--type <type>] [--severity <severity|none>] [--tags 
 
 - `/afbt` (slash command) · `aigon afbt` (CLI)
 
-## Flags
-
-- `--type`
-- `--severity`
-- `--tags`
-- `--status`
-- `--duplicate-of`
-- `--action`
-- `--apply`
-- `--yes`
-
 ## Description
 
-Triage feedback \<ID\> with AI-assisted recommendations
+`feedback-triage` is a two-phase command: first it reads the feedback item and produces AI-generated recommendations (type, severity, tags, and next action), then — after you confirm — it applies those changes and moves the file to the appropriate lifecycle folder.
 
-## Usage
+The human confirmation step is mandatory. The agent never writes triage changes until the user explicitly approves. This prevents misclassification from silently polluting the backlog.
+
+The `--action` flag controls what happens to the item: `keep` leaves it triaged for later, `promote-feature` creates a feature spec from it, `promote-research` creates a research topic, `mark-duplicate` links it to an existing item, and `wont-fix` archives it.
+
+## What it does
+
+1. Runs `aigon feedback-triage <ID>` to load the item's content and context
+2. Reads all other feedback (via `aigon feedback-list --all`) for duplicate detection
+3. Proposes: type, severity, tags, duplicate candidates, and next action
+4. **Waits for explicit user confirmation before writing anything**
+5. Applies the triage with: `aigon feedback-triage <ID> --type ... --severity ... --apply --yes`
+6. Moves the file to the correct lifecycle folder for the new status
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--type` | Feedback classification (e.g. `bug`, `enhancement`, `question`) |
+| `--severity` | Impact level — use `none` to clear |
+| `--tags` | Comma-separated tags — use `none` to clear all |
+| `--status` | Target lifecycle status |
+| `--duplicate-of <ID>` | Link to an existing item — use `none` to clear |
+| `--action` | What to do: `keep`, `mark-duplicate`, `promote-feature`, `promote-research`, `wont-fix` |
+| `--apply` | Actually write the changes (dry-run without this flag) |
+| `--yes` | Skip the per-field confirmation prompt |
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feedback-triage <ID>
+# AI-assisted triage (agent reads, proposes, waits for approval)
+aigon feedback-triage 7
 
-# CLI
-aigon feedback-triage <ID>
+# Manually apply a classification without AI
+aigon feedback-triage 7 --type bug --severity high --tags auth,login --apply --yes
+
+# Mark as duplicate and archive
+aigon feedback-triage 7 --action mark-duplicate --duplicate-of 3 --apply --yes
+
+# Promote to a feature spec
+aigon feedback-triage 7 --action promote-feature --apply --yes
 ```
+
+## Related
+
+- [`feedback-create`](./feedback-create) — file the feedback item before triaging
+- [`feedback-list`](./feedback-list) — see what's in the inbox before starting a triage session
+- [Feedback Workflow guide](/docs/guides/feedback-workflow)

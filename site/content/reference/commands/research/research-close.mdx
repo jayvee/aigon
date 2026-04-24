@@ -1,6 +1,6 @@
 ---
 title: "research-close"
-description: "Close research ID - moves to done"
+description: "Archive a finished research topic — moves the spec to done and records the outcome"
 ---
 
 ## Synopsis
@@ -15,14 +15,32 @@ aigon research-close <ID>
 
 ## Description
 
-Close research \<ID\> - moves to done
+`research-close` archives a research topic once its investigation is complete. It moves the spec from `04-in-evaluation/` (or `03-in-progress/`) to `05-done/` and records the workflow completion event, making the topic visible on the dashboard's Done column.
 
-## Usage
+This is the final step in the research lifecycle. Unlike `feature-close`, it does not merge any branch — research lives entirely in markdown files committed to the main repo.
+
+Closing from `03-in-progress/` without running `research-eval` first is allowed and shows a warning but proceeds. This is normal for single-agent research where there is nothing to compare.
+
+## What it does
+
+1. Resolves the research ID to a spec file in `04-in-evaluation/` or `03-in-progress/`
+2. Moves the spec to `05-done/` via `git mv` and commits the move
+3. Records a `closed` workflow event so the dashboard shows the item as done
+4. Prints a summary with the topic name and done path
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:research-close <ID>
+# Standard flow: evaluate first, then close
+aigon research-eval 5
+aigon research-close 5
 
-# CLI
-aigon research-close <ID>
+# Close single-agent research directly (skips eval)
+aigon research-close 12
 ```
+
+## Related
+
+- [`research-eval`](./research-eval) — synthesize findings and recommend features before closing
+- [`research-submit`](./research-submit) — Fleet agents signal completion (call this, not close)
+- [Research Workflow guide](/docs/guides/research-workflow)

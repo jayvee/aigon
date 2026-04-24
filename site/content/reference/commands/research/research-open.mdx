@@ -1,12 +1,12 @@
 ---
 title: "research-open"
-description: "Open all Fleet research agents side-by-side in terminal"
+description: "Open all Fleet research agents side-by-side in terminal, each pre-loaded with research-do"
 ---
 
 ## Synopsis
 
 ```bash
-aigon research-open
+aigon research-open <research-id>
 ```
 
 ## Shortcuts
@@ -15,14 +15,36 @@ aigon research-open
 
 ## Description
 
-Open all Fleet research agents side-by-side in terminal
+`research-open` is the Fleet mode companion to `research-start` — it opens multiple terminal panes (one per agent) with the `research-do` command pre-loaded and ready to run. Use it when you've set up Fleet research with `research-start` and want to launch all agents simultaneously without manually switching terminals.
 
-## Usage
+The command reads which agents are configured by scanning the findings files created by `research-start`, then opens a split-pane Warp terminal with each agent's CLI pre-loaded. Each pane opens in the main repository directory — research agents share a single branch.
+
+## What it does
+
+1. Scans `docs/specs/research-topics/logs/` for per-agent findings files matching the research ID
+2. Opens Warp terminal with one horizontal pane per agent
+3. Each pane is pre-loaded with the agent CLI and the `research-do <ID>` command
+4. All panes point to the main repository directory (not separate worktrees)
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:research-open
-
-# CLI
-aigon research-open
+# Set up Fleet research, then open all agents
+aigon research-start 5 cc gg cx
+aigon research-open 5
 ```
+
+This opens three panes:
+- **Pane 1 (cc):** Claude Code with `/aigon:research-do 5`
+- **Pane 2 (gg):** Gemini with `/aigon:research-do 5`
+- **Pane 3 (cx):** Codex with the research-do prompt inlined at launch
+
+## When to use
+
+Use `research-open` only for **Fleet mode research** (multiple agents). If you're running Drive mode research with a single agent, simply call `research-do <ID>` directly in your current session.
+
+## Related
+
+- [`research-start`](./research-start) — creates findings files and configures agents (run before research-open)
+- [`research-do`](./research-do) — the command each agent runs in its pane
+- [`research-submit`](./research-submit) — each agent calls this when done

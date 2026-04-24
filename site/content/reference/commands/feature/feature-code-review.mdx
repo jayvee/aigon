@@ -1,6 +1,6 @@
 ---
 title: "feature-code-review"
-description: "Review feature ID - code review with fixes by a different agent"
+description: "Run a write-capable code review on a feature's implementation using a different agent"
 ---
 
 ## Synopsis
@@ -15,14 +15,40 @@ aigon feature-code-review <ID>
 
 ## Description
 
-Review feature \<ID\> - code review with fixes by a different agent
+`feature-code-review` assigns a reviewer agent to inspect and fix a feature's implementation. Unlike a traditional read-only review, this is a **write-capable review pass** — the reviewing agent reads the diff, identifies concrete issues, and patches them directly in the feature worktree with `fix(review): ...` commits. A findings-only report is appropriate only when issues require architectural decisions or missing context that the reviewer cannot resolve alone.
 
-## Usage
+For the best results, use a **different model** than the implementer. Model diversity catches different classes of bugs.
+
+The reviewer checks: correctness against acceptance criteria, out-of-scope file deletions, test coverage, and code quality — in that priority order.
+
+## What it does
+
+1. Fetches the full diff (`git diff main..feature-<ID>-*`) and the implementation log
+2. Runs `aigon agent-status reviewing` to signal the dashboard
+3. Checks for out-of-scope deletions (files not related to the spec)
+4. Reviews correctness against the spec's acceptance criteria
+5. Patches issues directly in the feature worktree with `fix(review): ...` commits
+6. Signals `review-complete` when done
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feature-code-review <ID>
+# Run a code review on feature 42
+aigon feature-code-review 42
 
-# CLI
-aigon feature-code-review <ID>
+# From within an agent session (use a different model than the implementer)
+/aigon:feature-code-review 42
 ```
+
+## When to use
+
+Use `feature-code-review` in the **solo Drive mode** workflow — after the implementer submits, before closing. In Fleet mode, use `feature-eval` to compare implementations instead.
+
+For the automated equivalent (AutoConductor runs review for you), see `feature-autonomous-start --review-agent=<agent>`.
+
+## Related
+
+- [`feature-eval`](./feature-eval) — compare Fleet implementations (use instead of code-review in Fleet mode)
+- [`feature-close`](./feature-close) — merge after review is complete
+- [`feature-autonomous-start`](./feature-autonomous-start) — run implement + review + close automatically
+- [Drive Mode guide](/docs/guides/drive-mode)

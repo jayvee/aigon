@@ -1,6 +1,6 @@
 ---
 title: "research-do"
-description: "Do research ID - agent writes findings"
+description: "Main research work step — agent investigates the topic and writes findings"
 ---
 
 ## Synopsis
@@ -15,14 +15,40 @@ aigon research-do <ID>
 
 ## Description
 
-Do research \<ID\> - agent writes findings
+`research-do` is the main work step in the research lifecycle — the equivalent of `feature-do` but for investigation rather than implementation. The agent reads the research topic spec, conducts deep investigation (web searches, primary sources, codebase exploration), and writes structured findings with trade-offs, recommendations, and suggested features.
 
-## Usage
+In Drive mode the agent writes directly into the `## Findings` section of the main research spec. In Fleet mode (multiple agents) each agent writes only to its own findings file (`research-{ID}-{agent}-findings.md`), leaving all other files untouched.
+
+Research agents work in the **main repository on the current branch** — unlike feature agents, they do not need branch isolation because they only write findings files, not source code.
+
+## What it does
+
+1. Reads the research topic spec from `docs/specs/research-topics/03-in-progress/research-{ID}-*.md`
+2. Signals `implementing` status to the dashboard via `aigon agent-status implementing`
+3. Conducts research: web searches, documentation reads, codebase exploration
+4. Writes findings covering consensus views, divergent approaches, trade-offs, and source citations
+5. Fills in the `## Suggested Features` table with feature names, descriptions, priorities, and dependencies
+6. In Fleet mode, writes only to the per-agent findings file; in Drive mode, writes to the main spec
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:research-do <ID>
+# Drive mode — agent investigates and writes findings directly to the spec
+aigon research-do 5
 
-# CLI
-aigon research-do <ID>
+# Fleet mode — each agent runs this command in its own session
+/aigon:research-do 5
 ```
+
+## Key constraints
+
+- **Do not modify source code** (`.js`, `.ts`, `.py`, etc.) — research is read + write of markdown only
+- **Do not modify other agents' findings files** in Fleet mode
+- **Do not create new branches** — stay on the current branch
+
+## Related
+
+- [`research-start`](./research-start) — creates the workspace and starts agents
+- [`research-open`](./research-open) — opens Fleet agent sessions side-by-side
+- [`research-submit`](./research-submit) — Fleet agents call this when findings are complete
+- [`research-eval`](./research-eval) — synthesizes findings from all agents after research-do

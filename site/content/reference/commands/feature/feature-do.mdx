@@ -1,6 +1,6 @@
 ---
 title: "feature-do"
-description: "Do feature ID - works in both Drive and Fleet modes"
+description: "Attach to a feature workspace and implement — the main work step in Drive and Fleet modes"
 ---
 
 ## Synopsis
@@ -15,23 +15,59 @@ aigon feature-do <ID> [--agent=<cc|gg|cx|cu>] [--iterate] [--max-iterations=N] [
 
 ## Flags
 
-- `--agent=<cc|gg|cx|cu>`
-- `--iterate`
-- `--max-iterations`
-- `--auto-submit`
-- `--no-auto-submit`
-- `--dry-run`
+| Flag | Description |
+|------|-------------|
+| `--agent=<cc\|gg\|cx\|cu>` | Override agent detection (useful when branch name is ambiguous) |
+| `--iterate` | Run in Autopilot mode: implement → validate → repeat until passing or max iterations |
+| `--max-iterations=N` | Max iterations for `--iterate` mode (default: 5) |
+| `--auto-submit` | Automatically run `agent-status submitted` when done |
+| `--no-auto-submit` | Suppress auto-submit even if configured |
+| `--dry-run` | Print what would happen without executing |
 
 ## Description
 
-Do feature \<ID\> - works in both Drive and Fleet modes
+`feature-do` is the main work step — the command an agent runs inside a feature worktree to implement the spec. It prints the feature spec inline (so the agent doesn't need to re-read from disk), detects whether you're in Drive or Fleet mode, and signals the appropriate lifecycle transitions.
 
-## Usage
+You typically don't call this from the CLI directly. `feature-start` opens the agent terminal and loads it automatically. Use `/aigon:feature-do <ID>` inside an agent session when you need to re-attach after a restart, or when launching an agent manually.
+
+## What it does
+
+1. Resolves the feature ID and attaches to the workspace
+2. Prints the spec inline so the agent can work from it without further reads
+3. Signals `implementing` status to the dashboard
+4. Agent implements the spec, commits incrementally, and runs validation
+5. Agent calls `aigon agent-status submitted` when done
+
+## Iterate mode
+
+With `--iterate`, Aigon runs an implement-validate loop:
+
+```
+implement → run spec validation → if fail, spawn fresh agent context → repeat
+```
+
+Each iteration uses a clean context window. Add a `## Validation` section to your feature spec to define what "passing" means. The loop stops when validation passes or `--max-iterations` is reached.
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feature-do <ID>
-
-# CLI
-aigon feature-do <ID>
+aigon feature-do 42 --iterate --max-iterations=3
 ```
+
+## Examples
+
+```bash
+# Re-attach to a feature after restarting an agent session
+/aigon:feature-do 42
+
+# From the CLI with iterate mode
+aigon feature-do 42 --iterate
+
+# Dry run — print mode and context without executing
+aigon feature-do 42 --dry-run
+```
+
+## Related
+
+- [`feature-start`](./feature-start) — creates the workspace and opens agents (call before feature-do)
+- [`feature-open`](./feature-open) — re-open a crashed agent terminal
+- [`feature-code-review`](./feature-code-review) — review after implementation (Drive mode)
+- [`feature-eval`](./feature-eval) — compare implementations after all agents submit (Fleet mode)

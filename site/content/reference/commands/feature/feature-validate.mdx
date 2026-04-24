@@ -1,6 +1,6 @@
 ---
 title: "feature-validate"
-description: "Reference for aigon feature-validate"
+description: "Run a feature's validation commands and check acceptance criteria against the current implementation"
 ---
 
 ## Synopsis
@@ -11,5 +11,60 @@ aigon feature-validate <ID> [--dry-run] [--no-update]
 
 ## Flags
 
-- `--dry-run`
-- `--no-update`
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Print the planned validation steps without executing anything |
+| `--no-update` | Run validation but don't update any state or status files |
+
+## Description
+
+`feature-validate` runs the validation commands defined in the feature spec's `## Validation` section and evaluates whether the acceptance criteria are met. It is used both as a manual check during development and as the gating step in `feature-do --iterate` mode — where failed validation triggers a fresh implementation attempt.
+
+The command reads the spec from `03-in-progress/`, parses the `## Validation` commands, executes them, and reports which acceptance criteria passed, failed, or were skipped (along with brief reasoning for each outcome).
+
+If the spec has no `## Validation` section, the command reports that no commands were found and exits cleanly.
+
+## What it does
+
+1. Finds the feature spec in `03-in-progress/`
+2. Parses the `## Acceptance Criteria` checklist items
+3. Runs each command in the `## Validation` section
+4. Evaluates which criteria passed, failed, or should be skipped
+5. Prints a summary: `Criteria: N passed, N failed, N skipped`
+
+## Examples
+
+```bash
+# Validate feature 42 manually
+aigon feature-validate 42
+
+# Dry run — show planned validation without running anything
+aigon feature-validate 42 --dry-run
+
+# Validate without writing state updates
+aigon feature-validate 42 --no-update
+```
+
+## In iterate mode
+
+When you run `feature-do <ID> --iterate`, `feature-validate` is called automatically at the end of each iteration. A failed validation spawns a new implementation attempt with fresh context up to `--max-iterations`. A passing validation exits the loop.
+
+## Adding validation to your spec
+
+In the feature spec, add a `## Validation` section with shell commands:
+
+```markdown
+## Validation
+
+\`\`\`bash
+npm test
+npm run build 2>&1 | tail -5
+\`\`\`
+```
+
+These commands are run in the feature's worktree directory.
+
+## Related
+
+- [`feature-do`](./feature-do) — `--iterate` flag uses feature-validate as the loop gate
+- [Feature Spec format](/docs/reference/file-structure) — how to write the Validation section

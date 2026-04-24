@@ -1,6 +1,6 @@
 ---
 title: "feature-eval"
-description: "Evaluate feature ID - code review or comparison"
+description: "Compare Fleet implementations and select a winner — the judging step before feature-close"
 ---
 
 ## Synopsis
@@ -15,28 +15,55 @@ aigon feature-eval <ID> [--agent=<id>] [--allow-same-model-judge] [--force]
 
 ## Flags
 
-- `--agent=<id>`
-- `--allow-same-model-judge`
-- `--force`
+| Flag | Description |
+|------|-------------|
+| `--agent=<id>` | Force a specific evaluator agent instead of auto-selection |
+| `--allow-same-model-judge` | Allow the evaluator to be the same model as an implementer |
+| `--force` | Re-run evaluation even if a winner has already been recorded |
 
 ## Description
 
-Evaluate feature \<ID\> - code review or comparison
+`feature-eval` is the Fleet mode judging step — it compares all agent implementations against the spec, picks a winner, and records that decision so `feature-close` knows which branch to merge. Run it from the main repo after all agents have signalled `submitted`.
 
-Run this from the main repo after implementations are submitted. In Fleet mode, the evaluator can be whichever agent you choose to do the judging. Pass `--agent=<id>` to force a specific evaluator instead of letting Aigon auto-select one.
+By default, Aigon auto-selects an evaluator that is different from the implementing agents to avoid bias. Pass `--agent=<id>` to override and choose a specific evaluator. To allow the same model to judge its own implementation (not recommended), use `--allow-same-model-judge`.
 
-## Usage
+In Drive mode (single agent), use `feature-code-review` instead — there is no competition to judge.
+
+## What it does
+
+1. Reads all submitted implementations from the feature's worktrees
+2. Selects an evaluator (or uses the one specified via `--agent`)
+3. Opens an evaluation session pre-loaded with the full diff for each agent
+4. Evaluator compares implementations against the spec's acceptance criteria
+5. Records the winner in workflow state
+6. Suggests `feature-close <ID> <winning-agent>` as the next step
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feature-eval <ID>
+# Auto-select an evaluator and compare
+aigon feature-eval 42
 
-# Skill command (Codex)
-$aigon-feature-eval <ID>
+# Force a specific evaluator
+aigon feature-eval 42 --agent=gg
 
-# CLI
-aigon feature-eval <ID>
-
-# CLI with a specific evaluator
-aigon feature-eval <ID> --agent=gg
+# Re-evaluate after changing your mind about the winner
+aigon feature-eval 42 --force
 ```
+
+## After evaluation
+
+```bash
+# Merge the winner
+aigon feature-close 42 cc
+
+# Merge winner and adopt selected pieces from losers
+aigon feature-close 42 cc --adopt gg
+```
+
+## Related
+
+- [`feature-code-review`](./feature-code-review) — Drive mode alternative: one reviewer inspects and fixes
+- [`feature-close`](./feature-close) — merge the winner after evaluation
+- [`feature-autonomous-start`](./feature-autonomous-start) — runs eval automatically (AutoConductor)
+- [Fleet Mode guide](/docs/guides/fleet-mode)

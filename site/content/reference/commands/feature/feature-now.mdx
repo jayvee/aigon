@@ -1,12 +1,12 @@
 ---
 title: "feature-now"
-description: "Fast-track feature name - create + setup + implement in one step"
+description: "Fast-track a feature from idea to implementation — create, prioritise, and start in one step"
 ---
 
 ## Synopsis
 
 ```bash
-aigon feature-now <existing-feature-name> OR <feature-description>
+aigon feature-now <feature-name-or-description>
 ```
 
 ## Shortcuts
@@ -15,14 +15,39 @@ aigon feature-now <existing-feature-name> OR <feature-description>
 
 ## Description
 
-Fast-track feature \<name\> - create + setup + implement in one step
+`feature-now` collapses the three-step `feature-create → feature-prioritise → feature-start` sequence into a single command. It's designed for small, well-understood features where you want to go from idea to in-progress immediately without the usual inbox → backlog pipeline.
 
-## Usage
+The command works in two paths:
+
+- **Existing inbox feature**: If the name matches something in `01-inbox/`, it fast-tracks that spec through prioritise and start
+- **New feature**: If no inbox match is found, it creates a spec from scratch, then prioritises and starts it
+
+After starting, `feature-now` proceeds to implementation immediately — you land in the feature worktree with the agent running.
+
+## What it does
+
+1. Checks `docs/specs/features/01-inbox/` for a matching spec
+2. If found: calls `feature-prioritise` to assign an ID and move to backlog
+3. If not found: calls `feature-create` to write the spec, then `feature-prioritise`
+4. Calls `feature-start <ID>` to create the Drive worktree
+5. Opens the agent terminal and begins implementation
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feature-now <existing-feature-name>
+# Fast-track an existing inbox spec
+aigon feature-now onboarding-empty-state
 
-# CLI
-aigon feature-now <existing-feature-name>
+# Fast-track a new feature described inline
+/aigon:feature-now "add keyboard shortcut to dismiss notifications"
 ```
+
+## When to use
+
+Use `feature-now` for **small, low-complexity features** that don't need time in the backlog. For features that require careful spec writing, dependency resolution, or Fleet competition, go through the standard `feature-create → feature-prioritise → feature-start` flow.
+
+## Related
+
+- [`feature-create`](./feature-create) — create a spec without starting (more deliberate flow)
+- [`feature-prioritise`](./feature-prioritise) — assign an ID and move to backlog
+- [`feature-start`](./feature-start) — create the workspace (use when you want control over agents/mode)
