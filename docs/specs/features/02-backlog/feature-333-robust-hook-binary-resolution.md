@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-24T00:34:37.225Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: robust-hook-binary-resolution
