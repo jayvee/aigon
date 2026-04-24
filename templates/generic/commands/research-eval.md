@@ -94,7 +94,7 @@ Then ask the user:
 > - Enter `consensus` to include only consensus items
 > - Enter `none` to skip feature creation"
 
-Wait for user response before proceeding. The awaiting-input flag clears automatically on the next `agent-status` write (which happens as part of research-submit later).
+Wait for user response before proceeding. The awaiting-input flag clears automatically on the next `agent-status` write.
 
 ### Feature Set Naming
 
@@ -207,7 +207,7 @@ Then tell the user:
 
 > "Evaluation complete. Selected features have been created with research backlinks. Run `/aigon:research-close {ID}` when ready."
 
-Do **not** run `aigon research-submit` — that signal is for the per-agent findings phase (`03-in-progress`). Closing out the evaluation is a user decision; they run `research-close` when they're satisfied with the output.
+Do **not** run `aigon agent-status submitted` — that signal is for the per-agent findings phase (`03-in-progress`). Closing out the evaluation is a user decision; they run `research-close` when they're satisfied with the output.
 
 **STAY in the session.** The user may want to review the evaluation or ask for changes.
 

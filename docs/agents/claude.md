@@ -30,7 +30,6 @@
 | `/aigon:research-start <ID> [agents...]` | Setup for Drive or Fleet execution |
 | `/aigon:research-open <ID>` | Re-open or attach Fleet research sessions when needed |
 | `/aigon:research-do <ID>` | Conduct research (write findings) |
-| `/aigon:research-submit [ID] [agent]` | Signal research findings are complete |
 | `/aigon:research-review <ID>` | Review research findings with a different agent |
 | `/aigon:research-eval <ID>` | Synthesize findings before close |
 | `/aigon:research-close <ID>` | Complete research topic |
