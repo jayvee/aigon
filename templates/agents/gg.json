@@ -13,6 +13,7 @@
   "bannerColor": "#22C55E",
   "defaultFleetAgent": true,
   "installHint": "npm i -g @google/gemini-cli",
+  "installCommand": "npm i -g @google/gemini-cli",
   "trust": {
     "type": "json-kv",
     "path": "~/.gemini/trustedFolders.json",

@@ -13,6 +13,7 @@
   "bannerColor": "#F97316",
   "defaultFleetAgent": false,
   "installHint": "Download from https://cursor.com",
+  "installCommand": null,
   "trust": {
     "type": "vscode-settings-bool",
     "path": "~/Library/Application Support/Cursor/User/settings.json",
