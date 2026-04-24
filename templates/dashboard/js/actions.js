@@ -757,6 +757,12 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       }
       break;
     }
+    case 'feature-resolve-and-close': {
+      const lcf = feature.lastCloseFailure || null;
+      const resolveAgentId = agentId || ((feature.agents || []).find(a => a.id !== 'solo') || {}).id || null;
+      await requestFeatureOpen(id, resolveAgentId, repoPath, btn, pipelineType, 'close-resolve', lcf ? { lastCloseFailure: lcf } : {});
+      break;
+    }
     case 'feature-stop':
     case 'research-stop':
       await requestAction(va.action, [id, ...(agentId ? [agentId] : [])], repoPath, btn);

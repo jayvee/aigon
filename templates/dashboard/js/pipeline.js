@@ -619,6 +619,28 @@
         '</div>';
     }
 
+    function buildCloseFailureHtml(feature) {
+      const lcf = feature.lastCloseFailure;
+      if (!lcf) return '';
+      const kindLabels = {
+        'merge-conflict': 'Merge conflict',
+        'security-scan': 'Security scan failed',
+        'push-failed': 'Push failed',
+        'test-failed': 'Tests failed',
+        'other': 'Close failed',
+      };
+      const kindLabel = kindLabels[lcf.kind] || 'Close failed';
+      const filesText = Array.isArray(lcf.conflictFiles) && lcf.conflictFiles.length > 0
+        ? lcf.conflictFiles.join(', ')
+        : '';
+      const summaryText = filesText ? kindLabel + ' in ' + filesText : kindLabel;
+      const stderrAttr = lcf.stderrTail ? ' title="' + escHtml(lcf.stderrTail.slice(0, 500)) + '"' : '';
+      return '<div class="kcard-close-failure"' + stderrAttr + '>' +
+        '<span class="kcard-close-failure-icon">⚠</span>' +
+        '<span class="kcard-close-failure-text">' + escHtml(summaryText) + '</span>' +
+        '</div>';
+    }
+
     function buildKanbanCard(feature, repoPath, pipelineType, repoMeta) {
       const card = document.createElement('div');
       card.className = 'kcard';
@@ -737,6 +759,7 @@
         }
         innerHtml += buildReadyToCloseHtml(agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
+        innerHtml += buildCloseFailureHtml(feature);
         // Card-level actions (non-per-agent: close, eval, review, etc.)
         const cardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
         if (cardActionsHtml) {
@@ -760,6 +783,7 @@
         }
         innerHtml += buildReadyToCloseHtml(agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
+        innerHtml += buildCloseFailureHtml(feature);
         // Card-level actions (close, review — no session controls)
         const soloCardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
         if (soloCardActionsHtml) {
