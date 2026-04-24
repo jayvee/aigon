@@ -1,6 +1,8 @@
 ---
 complexity: high
 depends_on: feature-336-onboarding-prereq-detectors
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-24T01:47:42.330Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: onboarding-wizard
