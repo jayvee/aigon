@@ -57,6 +57,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@clack/prompts": "^1.2.0",
     "xstate": "^5.30.0"
   }
 }
