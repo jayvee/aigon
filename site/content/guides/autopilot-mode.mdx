@@ -135,11 +135,11 @@ Every workflow is a JSON file with a slug, label, description, and ordered `stag
 {
   "slug": "solo-cc-reviewed-cx",
   "label": "Solo Reviewed",
-  "description": "Implement with CC, review with CX, counter-review with CC, then close",
+  "description": "Implement with CC, review with CX, revision with CC, then close",
   "stages": [
     { "type": "implement", "agents": ["cc"] },
     { "type": "review", "agents": ["cx"] },
-    { "type": "counter-review", "agents": ["cc"] },
+    { "type": "revision", "agents": ["cc"] },
     { "type": "close" }
   ]
 }

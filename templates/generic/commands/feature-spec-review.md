@@ -84,7 +84,7 @@ aigon feature-spec-review-record {{ARG1_SYNTAX}}
 
 - Running `aigon feature-spec-review {{ARG1_SYNTAX}}` from inside this task
 - Running `aigon feature-spec-revise {{ARG1_SYNTAX}}` or `aigon feature-spec-revise-record {{ARG1_SYNTAX}}` — that is the next stage, not this one
-- Making a `spec-review-check:` commit (even `--allow-empty`) — that commit belongs to the check stage
+- Making a `spec-revise:` commit (even `--allow-empty`) — that commit belongs to the revise stage
 - Making a non-`spec-review:` commit
 - Ending the task before `feature-spec-review-record` succeeds
 

@@ -44,7 +44,7 @@ Every workflow is an array of `stages`. Valid stage types:
 |-------|---------|-------------|
 | `implement` | Required first stage. Agents do the work. | 1+ (use 2+ if you intend to `eval`) |
 | `review` | Solo workflows only. One reviewer inspects the implementation. | Exactly 1 |
-| `counter-review` | Follows `review`. The implementer addresses feedback. | Exactly 1 |
+| `revision` | Follows `review`. The implementer addresses feedback. | Exactly 1 |
 | `eval` | Fleet workflows only. Picks a winner across implementers. | Exactly 1 |
 | `close` | If present, must be last. Closes the feature automatically when the prior stage finishes. | n/a |
 
@@ -54,11 +54,11 @@ Every workflow is an array of `stages`. Valid stage types:
 {
   "slug": "my-reviewed",
   "label": "My reviewed workflow",
-  "description": "CC implements, CX reviews, CC addresses feedback, auto-close",
+  "description": "CC implements, CX reviews, CC revises, auto-close",
   "stages": [
     { "type": "implement", "agents": ["cc"] },
     { "type": "review", "agents": ["cx"] },
-    { "type": "counter-review", "agents": ["cc"] },
+    { "type": "revision", "agents": ["cc"] },
     { "type": "close" }
   ]
 }
@@ -67,7 +67,7 @@ Every workflow is an array of `stages`. Valid stage types:
 ### Validation rules
 
 - First stage must be `implement`; `close` if present must be last
-- At most one `review`, `counter-review`, and `eval` stage each
+- At most one `review`, `revision`, and `eval` stage each
 - `review` and `eval` cannot be combined in the same workflow
 - Review-based workflows require exactly **one** implementing agent
 - Eval-based workflows require **at least two** implementing agents
@@ -87,7 +87,7 @@ Run `aigon workflow list` to see the built-ins shipped with your current Aigon v
 | `--from=<slug>` | Copy stages from an existing workflow as a starting point |
 | `--implement=<a,b,c>` | Comma-separated implementation agents |
 | `--review=<agent>` | Solo review agent |
-| `--counter-review=<agent>` | Agent to address review feedback (defaults to first implementer) |
+| `--revision=<agent>` | Agent to address review feedback (defaults to first implementer) |
 | `--eval=<agent>` | Fleet eval agent |
 | `--no-close` | Omit the trailing `close` stage (autonomous run stops before close) |
 | `--label=<text>` | Human-readable label |

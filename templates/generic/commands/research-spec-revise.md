@@ -15,7 +15,7 @@ If `SPEC_PATH` is empty, stop and report that the research spec could not be res
 ## Find pending review commits
 
 ```bash
-LAST_ACK=$(git log --follow --format=%H -n 1 --grep='^spec-review-check:' -- "$SPEC_PATH")
+LAST_ACK=$(git log --follow --format=%H -n 1 --grep='^spec-review-check:' --grep='^spec-revise:' -- "$SPEC_PATH")
 echo "last_ack=${LAST_ACK:-none}"
 git log --follow --format='%H %s' -- "$SPEC_PATH"
 ```
@@ -37,7 +37,7 @@ Process all pending reviewers together. Accept, revert, or modify the reviewed c
 
 ```bash
 git add "$SPEC_PATH"
-git commit --allow-empty -m "spec-review-check: research {{ARG1_SYNTAX}} — <decision summary>" -m "reviewed: <comma-separated reviewer ids>
+git commit --allow-empty -m "spec-revise: research {{ARG1_SYNTAX}} — <decision summary>" -m "reviewed: <comma-separated reviewer ids>
 
 Decision:
 - <accept|revert|modify summary>

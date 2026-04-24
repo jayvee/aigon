@@ -20,7 +20,7 @@ If `SPEC_PATH` is empty, stop and report that the feature spec could not be reso
 Find the latest acknowledgement, if any:
 
 ```bash
-LAST_ACK=$(git log --follow --format=%H -n 1 --grep='^spec-review-check:' -- "$SPEC_PATH")
+LAST_ACK=$(git log --follow --format=%H -n 1 --grep='^spec-review-check:' --grep='^spec-revise:' -- "$SPEC_PATH")
 echo "last_ack=${LAST_ACK:-none}"
 ```
 
@@ -55,7 +55,7 @@ After the spec is in its final state, commit exactly once with:
 
 ```bash
 git add "$SPEC_PATH"
-git commit --allow-empty -m "spec-review-check: feature {{ARG1_SYNTAX}} — <decision summary>" -m "reviewed: <comma-separated reviewer ids>
+git commit --allow-empty -m "spec-revise: feature {{ARG1_SYNTAX}} — <decision summary>" -m "reviewed: <comma-separated reviewer ids>
 
 Decision:
 - <accept|revert|modify summary>
