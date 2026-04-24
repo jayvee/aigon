@@ -1,6 +1,6 @@
 ---
 title: "feature-cleanup"
-description: "Cleanup feature ID [--push] - remove all worktrees and branches"
+description: "Remove all worktrees and branches for a feature after Fleet completion or cancellation"
 ---
 
 ## Synopsis
@@ -11,8 +11,49 @@ aigon feature-cleanup <ID> [--push]
 
 ## Flags
 
-- `--push`
+| Flag | Description |
+|------|-------------|
+| `--push` | Push all branches to `origin` before deleting them locally |
 
 ## Description
 
-Cleanup feature \<ID\> [--push] - remove all worktrees and branches
+`feature-cleanup` garbage-collects the branches and worktrees that were created when a feature was started. It is a strict **subset** of `feature-reset` — it removes the runtime artifacts (worktrees, branches) but does not touch the spec file, workflow engine state, or running sessions.
+
+The typical use case is after `feature-close` in Fleet mode: you've merged the winning implementation, and the losing agents' worktrees and branches are no longer needed. `feature-cleanup` removes them cleanly.
+
+If you want to **abandon** a feature entirely and start over, use `feature-reset` instead — it also closes sessions, clears engine state, and returns the spec to backlog.
+
+## What it does
+
+1. Finds all worktrees for the feature (e.g. `feature-42-cc-*`, `feature-42-gg-*`)
+2. Removes each worktree and its permissions/trust entries
+3. Deletes all local branches matching `feature-<ID>-*`
+4. With `--push`: pushes each branch to `origin` before deleting locally
+
+## Examples
+
+```bash
+# After closing Fleet feature 42 with the cc winner — clean up losers
+aigon feature-close 42 cc
+aigon feature-cleanup 42
+
+# Preserve work on remote before cleaning up locally
+aigon feature-cleanup 42 --push
+
+# Cancel an in-progress Fleet feature
+aigon feature-cleanup 42
+```
+
+## When to use which command
+
+| Goal | Command |
+|------|---------|
+| Post-close GC of Fleet branches | **`feature-cleanup <ID>`** ← this command |
+| Abandon in-progress work and start over | `feature-reset <ID>` |
+| Kill running agent sessions only | `sessions-close <ID>` |
+
+## Related
+
+- [`feature-reset`](./feature-reset) — full reset: sessions + worktrees + branches + engine state + spec
+- [`feature-close`](./feature-close) — merge the winner (run before cleanup in Fleet mode)
+- [`sessions-close`](../infra/sessions-close) — kill agent processes without removing worktrees

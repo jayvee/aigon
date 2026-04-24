@@ -1,6 +1,6 @@
 ---
 title: "feature-close"
-description: "Close feature ID [agent] [--adopt] - merges branch, cleans up, optionally adopts from losers"
+description: "Merge the winning implementation, move the spec to done, and clean up the workspace"
 ---
 
 ## Synopsis
@@ -15,18 +15,59 @@ aigon feature-close <ID> [agent] [--adopt <agents...|all>]
 
 ## Flags
 
-- `--adopt`
+| Flag | Description |
+|------|-------------|
+| `--adopt <agents\|all>` | After merging the winner, print diffs from losing agents for selective adoption |
 
 ## Description
 
-Close feature \<ID\> [agent] [--adopt] - merges branch, cleans up, optionally adopts from losers
+`feature-close` is the final step in the feature lifecycle. It merges the implementation into main, moves the spec from `03-in-progress/` to `05-done/`, organizes the implementation logs, and removes the feature's worktree and branch.
 
-## Usage
+The command behaves differently depending on how the feature was developed:
+
+- **Drive mode** (single agent, branch or worktree): no `[agent]` argument needed — the command auto-detects the implementation
+- **Fleet mode** (multiple agents): pass the winning agent's ID to specify which branch to merge
+
+If a GitHub pull request is open for the feature branch, `feature-close` will block and tell you to merge or close the PR first. See the [GitHub Integration guide](/docs/guides/github-integration).
+
+## What it does
+
+### Drive mode
+
+1. Auto-commits any uncommitted changes on the feature branch
+2. Pushes the feature branch to `origin`
+3. Switches to `main` and merges with `--no-ff`
+4. Moves spec to `05-done/`
+5. Moves implementation log to `logs/selected/`
+6. Deletes the local feature branch
+
+### Fleet mode
+
+1. Pushes the winning agent's branch to `origin`
+2. Switches to `main` and merges the winning branch with `--no-ff`
+3. Moves spec to `05-done/`
+4. Organizes logs: winning agent → `logs/selected/`, others → `logs/`
+5. With `--adopt`: prints diffs from each losing agent's branch so you can cherry-pick improvements
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feature-close <ID>
+# Drive mode — single agent, no argument needed
+aigon feature-close 42
 
-# CLI
-aigon feature-close <ID>
+# Fleet mode — specify the winning agent
+aigon feature-close 42 cc
+
+# Fleet mode — merge winner and show diffs from all losers for adoption
+aigon feature-close 42 cc --adopt all
+
+# Fleet mode — adopt from specific agents only
+aigon feature-close 42 cc --adopt gg cx
 ```
+
+## Related
+
+- [`feature-eval`](./feature-eval) — compare implementations before deciding the winner (Fleet mode)
+- [`feature-cleanup`](./feature-cleanup) — remove remaining Fleet worktrees after close
+- [`feature-reset`](./feature-reset) — abandon work and start over instead of closing
+- [GitHub Integration guide](/docs/guides/github-integration)

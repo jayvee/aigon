@@ -1,6 +1,6 @@
 ---
 title: "feature-open"
-description: "Open feature worktree in terminal and start agent"
+description: "Re-open a feature worktree in terminal and restart the agent session"
 ---
 
 ## Synopsis
@@ -15,19 +15,49 @@ aigon feature-open <ID> [agent] [--all] [--terminal=<type>]
 
 ## Flags
 
-- `--all`
-- `--terminal=<type>`
+| Flag | Description |
+|------|-------------|
+| `[agent]` | Target a specific agent's worktree (e.g. `cc`, `gg`) |
+| `--all` | Open all Fleet agent worktrees simultaneously |
+| `--terminal=<type>` | Override the terminal preference from config |
 
 ## Description
 
-Open feature worktree in terminal and start agent
+`feature-open` reopens an agent terminal for a feature that already has a worktree — the go-to command when an agent session crashes, is accidentally closed, or needs to be manually relaunched. It reads the user's terminal preference from `~/.aigon/config.json`, opens the worktree directory in that terminal, and pre-loads the agent CLI with the `feature-do <ID>` command.
 
-## Usage
+`feature-start` already opens agent terminals automatically when a workspace is created. Use `feature-open` only when you need to **re-open** an existing session, not to start a new workspace from scratch.
+
+## What it does
+
+1. Finds the matching worktree for the feature (and optional agent) in the worktrees directory
+2. Opens the configured terminal (Warp, iTerm2, etc.) as a new tab
+3. Navigates to the worktree directory
+4. Pre-loads the agent CLI with `/aigon:feature-do <ID>`
+
+## Agent mappings
+
+| Code | Agent | Launch command |
+|------|-------|----------------|
+| `cc` | Claude Code | `claude --permission-mode acceptEdits` |
+| `gg` | Gemini | `gemini --yolo` |
+| `cx` | Codex | `codex --full-auto` |
+| `cu` | Cursor | `agent --force` |
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feature-open <ID>
+# Re-open the most recent worktree for feature 42
+aigon feature-open 42
 
-# CLI
-aigon feature-open <ID>
+# Re-open a specific agent's worktree
+aigon feature-open 42 cc
+
+# Open all Fleet agents side-by-side
+aigon feature-open 42 --all
 ```
+
+## Related
+
+- [`feature-start`](./feature-start) — creates the workspace and opens agents for the first time
+- [`feature-do`](./feature-do) — the command agents run inside the opened worktree
+- [`sessions-close`](../infra/sessions-close) — kill running sessions before re-opening

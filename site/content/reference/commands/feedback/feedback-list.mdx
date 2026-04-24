@@ -1,6 +1,6 @@
 ---
 title: "feedback-list"
-description: "List feedback items with filters"
+description: "List feedback items across lifecycle stages, with filters for status, type, severity, and tags"
 ---
 
 ## Synopsis
@@ -13,29 +13,47 @@ aigon feedback-list [--inbox|--triaged|--actionable|--done|--wont-fix|--duplicat
 
 - `/afbl` (slash command) · `aigon afbl` (CLI)
 
-## Flags
-
-- `--inbox`
-- `--triaged`
-- `--actionable`
-- `--done`
-- `--wont-fix`
-- `--duplicate`
-- `--all`
-- `--type`
-- `--severity`
-- `--tag`
-
 ## Description
 
-List feedback items with filters
+`feedback-list` scans the feedback lifecycle folders and prints a table of items with their IDs, titles, status, type, and severity. It is the starting point for a triage session — run it with no args to see what's waiting in the active lanes (inbox, triaged, actionable), then drill into individual items with `feedback-triage`.
 
-## Usage
+By default (no args), the command shows inbox, triaged, and actionable items — the lanes that need attention. Pass status flags to scope the view, and combine with `--type`, `--severity`, or `--tag` to filter further.
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--inbox` | Show only inbox items (not yet triaged) |
+| `--triaged` | Show items that have been classified but not yet actioned |
+| `--actionable` | Show items marked for action (will become features or research) |
+| `--done` | Show resolved or promoted items |
+| `--wont-fix` | Show items marked as won't fix |
+| `--duplicate` | Show items marked as duplicates |
+| `--all` | Show items in all stages |
+| `--type <type>` | Filter by type (e.g. `bug`, `enhancement`, `question`) |
+| `--severity <severity>` | Filter by severity (e.g. `high`, `medium`, `low`) |
+| `--tag <tag>` | Filter by tag |
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feedback-list [--inbox|--triaged|--actionable|--done|--wont-fix|--duplicate|--all]
+# Active triage lanes (default — inbox + triaged + actionable)
+aigon feedback-list
 
-# CLI
-aigon feedback-list [--inbox|--triaged|--actionable|--done|--wont-fix|--duplicate|--all]
+# All unresolved bugs
+aigon feedback-list --all --type bug
+
+# High-severity items across all stages
+aigon feedback-list --all --severity high
+
+# Items tagged with a specific area
+aigon feedback-list --all --tag auth
+
+# Just the inbox
+aigon feedback-list --inbox
 ```
+
+## Related
+
+- [`feedback-create`](./feedback-create) — file a new feedback item
+- [`feedback-triage`](./feedback-triage) — classify and action an individual item

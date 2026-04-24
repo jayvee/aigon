@@ -1,6 +1,6 @@
 ---
 title: "feature-start"
-description: "Start feature ID [agents...] - create workspace and begin implementation"
+description: "Create the implementation workspace and open agent terminals — the transition from backlog to in-progress"
 ---
 
 ## Synopsis
@@ -15,17 +15,20 @@ aigon feature-start <ID> [agents...]
 
 ## Description
 
-Start feature \<ID\> [agents...] - create workspace and begin implementation
+`feature-start` moves a feature from backlog to in-progress by creating the implementation workspace and opening agent terminals. The number of agents you pass determines the mode:
 
-## Usage
+- **No agent** — Drive mode (branch): creates a feature branch in the current repo, switches to it, and leaves you on that branch to implement manually
+- **One agent** — Drive worktree: creates an isolated worktree for that agent, opens the agent terminal pre-loaded with `feature-do`
+- **Two or more agents** — Fleet mode: creates one worktree per agent, opens all agent terminals simultaneously, agents implement in parallel
 
-```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feature-start <ID>
+**Always use this CLI command** — never manually create branches or worktrees. The CLI commits the spec move from `02-backlog/` to `03-in-progress/` before creating worktrees, which is essential so all worktrees inherit the updated spec.
 
-# CLI
-aigon feature-start <ID>
-```
+## What it does
+
+1. Moves the spec from `02-backlog/` to `03-in-progress/` and commits the move
+2. Creates a feature branch (`feature-<ID>-<slug>`) or worktree(s) (`feature-<ID>-<agent>-<slug>`)
+3. For worktrees: writes a `.env.local` with an isolated `PORT` value for the dev server
+4. Opens agent terminals pre-loaded with `feature-do <ID>`
 
 ## Model and effort overrides
 
@@ -35,4 +38,36 @@ Per-run overrides (after any agents list):
 aigon feature-start 42 cc --models=cc=claude-opus-4-7 --efforts=cc=high
 ```
 
-If you omit `--models` / `--efforts`, the CLI uses the same **spec `complexity` → per-agent complexity ladder → `aigon config models`** resolution as the dashboard. See [Agents: Spec complexity and model defaults](/docs/reference/agents#spec-complexity-and-model-defaults).
+If you omit `--models` / `--efforts`, the CLI uses the **spec `complexity` → per-agent complexity ladder → `aigon config models`** resolution. See [Agents: Spec complexity and model defaults](/docs/reference/agents#spec-complexity-and-model-defaults).
+
+## Examples
+
+```bash
+# Drive mode (branch) — manual implementation in current repo
+aigon feature-start 42
+
+# Drive worktree — isolated development, agent opens automatically
+aigon feature-start 42 cc
+
+# Fleet mode — cc and gg implement in parallel
+aigon feature-start 42 cc gg
+
+# Fleet mode with model overrides
+aigon feature-start 42 cc gg --models=cc=claude-opus-4-7,gg=gemini-2.5-pro
+```
+
+## What to do next
+
+| Mode | After feature-start |
+|------|---------------------|
+| Drive (branch) | Implement manually, then `feature-close <ID>` |
+| Drive worktree | Wait for agent to submit, then `feature-close <ID>` |
+| Fleet | Wait for all agents to submit, then `feature-eval <ID>` |
+
+## Related
+
+- [`feature-prioritise`](./feature-prioritise) — assign the ID and move to backlog (run before start)
+- [`feature-do`](./feature-do) — the command agents run inside the workspace
+- [`feature-open`](./feature-open) — re-open a crashed agent terminal after start
+- [`feature-eval`](./feature-eval) — compare Fleet implementations after agents submit
+- [`feature-close`](./feature-close) — merge the winning implementation

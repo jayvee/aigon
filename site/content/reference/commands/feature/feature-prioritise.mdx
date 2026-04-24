@@ -1,6 +1,6 @@
 ---
 title: "feature-prioritise"
-description: "Prioritise feature name - assigns ID, moves to backlog"
+description: "Assign a numeric ID to an inbox feature and move it to the backlog"
 ---
 
 ## Synopsis
@@ -15,14 +15,49 @@ aigon feature-prioritise <feature-name or letter>
 
 ## Description
 
-Prioritise feature \<name\> - assigns ID, moves to backlog
+`feature-prioritise` graduates a feature from the inbox to the backlog by assigning it the ID it will carry through its entire lifecycle. It renames the spec file with the numeric ID prefix, resolves any `depends_on` declarations to canonical IDs, checks for circular dependencies, and commits the move.
 
-## Usage
+The name argument accepts partial matches — if you type `dark`, Aigon finds any inbox spec whose filename contains that string. If multiple match, it lists them and asks you to pick.
+
+**Always use this CLI command** — never manually move or rename spec files. The CLI handles ID assignment, workflow state migration, and git housekeeping atomically.
+
+## What it does
+
+1. Finds the matching spec in `docs/specs/features/01-inbox/`
+2. Assigns the next available numeric ID
+3. Renames the file to `feature-<ID>-<slug>.md`
+4. Resolves `depends_on` declarations to canonical numeric IDs
+5. Validates that no circular dependencies exist
+6. Migrates any existing slug-keyed workflow state to the numeric key
+7. Moves the spec to `02-backlog/` and commits the change
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:feature-prioritise <feature-name
+# Prioritise by partial name
+aigon feature-prioritise dark-mode
 
-# CLI
-aigon feature-prioritise <feature-name
+# Prioritise interactively — list all inbox specs
+aigon feature-prioritise
 ```
+
+## Next steps
+
+After prioritising, choose your mode:
+
+```bash
+# Drive mode (branch in current repo)
+aigon feature-start <ID>
+
+# Drive worktree (isolated, parallel development)
+aigon feature-start <ID> cc
+
+# Fleet mode (multiple agents compete)
+aigon feature-start <ID> cc gg cx
+```
+
+## Related
+
+- [`feature-create`](./feature-create) — create the inbox spec (run before prioritise)
+- [`feature-start`](./feature-start) — create the workspace (run after prioritise)
+- [`feature-rename`](./feature-rename) — rename an inbox spec before it has been prioritised
