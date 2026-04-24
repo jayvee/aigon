@@ -111,7 +111,7 @@ function firstRunComplete() {
 
 const shouldNotifyUpdates = (
     process.stdout.isTTY &&
-    !process.env.AIGON_NO_UPDATE_NOTIFIER &&
+    process.env.AIGON_NO_UPDATE_NOTIFIER !== '1' &&
     !PLUMBING_COMMANDS.has(resolvedCommand)
 );
 
