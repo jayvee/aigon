@@ -37,6 +37,7 @@ let COMMAND_ALIASES;
 let createFeatureCommands, createResearchCommands, createFeedbackCommands;
 let createSetupCommands, createInfraCommands, createMiscCommands, createWorkflowCommands, createSetCommands;
 let createRecurringCommands;
+let checkForUpdate, getCachedUpdateCheck, formatUpdateNotice;
 
 try {
     ({ COMMAND_ALIASES } = require('./lib/constants'));
@@ -49,10 +50,19 @@ try {
     ({ createWorkflowCommands } = require('./lib/commands/workflow'));
     ({ createSetCommands } = require('./lib/commands/set'));
     ({ createRecurringCommands } = require('./lib/commands/recurring'));
+    ({ checkForUpdate, getCachedUpdateCheck, formatUpdateNotice } = require('./lib/npm-update-check'));
 } catch (error) {
     console.error(formatCliError(error));
     process.exit(1);
 }
+
+// Commands that emit machine-readable output or are called programmatically — suppress update notices for these.
+const PLUMBING_COMMANDS = new Set([
+    'feature-spec-review-record',
+    'sync-heartbeat',
+    'session-hook',
+    'agent-status',
+]);
 
 const commands = {
     ...createFeatureCommands(),
@@ -99,6 +109,17 @@ function firstRunComplete() {
     }
 }
 
+const shouldNotifyUpdates = (
+    process.stdout.isTTY &&
+    process.env.AIGON_NO_UPDATE_NOTIFIER !== '1' &&
+    !PLUMBING_COMMANDS.has(resolvedCommand)
+);
+
+// Fire background update check so the cache is warm for this and future commands.
+if (shouldNotifyUpdates) {
+    checkForUpdate({ unref: true }).catch(() => {}); // fire-and-forget
+}
+
 async function main() {
     if (resolvedCommand === '--version' || resolvedCommand === '-v' || resolvedCommand === 'version') {
         console.log(require('./package.json').version);
@@ -140,7 +161,12 @@ async function main() {
     }
 }
 
-main().catch(error => {
+main().then(() => {
+    if (shouldNotifyUpdates) {
+        const notice = formatUpdateNotice(getCachedUpdateCheck());
+        if (notice) process.stderr.write(notice + '\n');
+    }
+}).catch(error => {
     console.error(formatCliError(error));
     process.exit(1);
 });
