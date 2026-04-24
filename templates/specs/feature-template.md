@@ -63,4 +63,6 @@ complexity: medium
 
 ## Related
 <!-- Links to research topics, other features, or external docs -->
-- Research:
+- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
+- Set: <!-- set slug if this feature is part of a set; omit line if standalone -->
+- Prior features in set: <!-- feature IDs that precede this one, e.g. F314, F315; omit if standalone -->
