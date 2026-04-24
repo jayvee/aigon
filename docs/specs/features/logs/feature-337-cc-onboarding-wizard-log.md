@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 536
+lines_removed: 50
+lines_changed: 586
+files_touched: 9
+fix_commit_count: 2
+fix_commit_ratio: 0.4
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 155
+output_tokens: 66626
+cache_creation_input_tokens: 196728
+cache_read_input_tokens: 7483572
+thinking_tokens: 0
+total_tokens: 7747081
+billable_tokens: 66781
+cost_usd: 3.9827
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 337 - onboarding-wizard
 Agent: cc
 
