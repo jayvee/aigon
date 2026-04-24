@@ -30,7 +30,6 @@
 | `{{CMD_PREFIX}}research-start <ID> [agents...]` | Setup for Drive or Fleet execution |
 | `{{CMD_PREFIX}}research-open <ID>` | Re-open or attach Fleet research sessions when needed |
 | `{{CMD_PREFIX}}research-do <ID>` | Conduct research (write findings) |
-| `{{CMD_PREFIX}}research-submit [ID] [agent]` | Signal research findings are complete |
 | `{{CMD_PREFIX}}research-review <ID>` | Review research findings with a different agent |
 | `{{CMD_PREFIX}}research-eval <ID>` | Synthesize findings before close |
 | `{{CMD_PREFIX}}research-close <ID>` | Complete research topic |
@@ -105,7 +104,7 @@ Research follows the same lifecycle shape as features: `start -> do -> submit ->
 2. Run `{{CMD_PREFIX}}research-do <ID>` to conduct the research
 3. Write findings directly in the main research document
 4. Optionally run `{{CMD_PREFIX}}research-review <ID>` for a second-agent review pass
-5. Run `aigon agent-status submitted` when your research pass is complete
+5. Run `aigon agent-status submitted` when your research pass is complete (from outside the tmux session, use the explicit form: `aigon agent-status submitted <ID> <agent>`)
 6. Run `{{CMD_PREFIX}}research-close <ID>` when ready to finish
 
 ### Fleet Mode
