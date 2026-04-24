@@ -21,7 +21,9 @@ F329 implemented a minimal `aigon global-setup` that asks one question (terminal
 
 - [ ] `aigon global-setup` asks the Linux terminal question (gnome-terminal, kitty, xterm, or skip) when run interactively on Linux.
 - [ ] `aigon global-setup` also asks for the user's preferred shell on Linux if `$SHELL` is not set.
-- [ ] After any aigon CLI command that writes output to a TTY, a single-line update notice is appended if a newer version is available (using the cached result from `npm-update-check.js` — no extra network call on the hot path).
+- [ ] After any user-facing aigon CLI command that writes output to a TTY, a single-line update notice is appended to `stderr` if a newer version is available (using the cached result from `lib/npm-update-check.js` — no extra network call on the hot path).
+- [ ] The background network call to check for updates (cache warming) must not prevent the Node.js process from exiting when the CLI command finishes.
+- [ ] The update notice and background check are suppressed for internal plumbing commands (e.g., `feature-spec-review-record`, `sync-heartbeat`, `session-hook`).
 - [ ] The update notice is suppressed when stdout is not a TTY (`process.stdout.isTTY` is falsy).
 - [ ] The update notice is suppressed if `AIGON_NO_UPDATE_NOTIFIER=1` is set in the environment.
 - [ ] `aigon global-setup` prints a clear success summary on completion: version installed, terminal configured, update status.
@@ -83,7 +85,7 @@ At the end of `aigon global-setup` (interactive path), print:
 
 ## Open Questions
 
-- Should the update check fire-and-forget on every command, or only on "user-facing" commands (i.e. not internal plumbing commands like `session-hook`)? Probably exclude internal commands to avoid noise.
+- None (resolved: exclude internal plumbing commands like `session-hook` to avoid noise and prevent background check from delaying short-lived internal calls).
 
 ## Related
 
