@@ -87,6 +87,7 @@ module.exports = async function globalSetup() {
         { title: 'e2e solo feature', slug: 'e2e-solo-feature' },
         { title: 'e2e fleet feature', slug: 'e2e-fleet-feature' },
         { title: 'e2e drive feature', slug: 'e2e-drive-feature' },
+        { title: 'e2e close failure feature', slug: 'e2e-close-failure-feature' },
     ]) {
         assertAigonOk(runAigon(['feature-create', title], tmpDir), ['feature-create', title]);
         assertAigonOk(runAigon(['feature-prioritise', slug], tmpDir), ['feature-prioritise', slug]);
