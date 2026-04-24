@@ -38,6 +38,16 @@ testAsync('submit signals survive concurrent CLI submits', () => withTempDirAsyn
     assert.strictEqual(readEvents(repo, '.aigon/workflows/features/01/events.jsonl', 'signal.agent_ready').length, 2); assert.deepStrictEqual(Object.values(readJson(repo, '.aigon/workflows/features/01/snapshot.json').agents).map((a) => a.status), ['ready', 'ready']);
 }));
 
+testAsync('explicit feature agent-status submitted works from main (no branch evidence gate)', () => withTempDirAsync('aigon-explicit-feat-main-', async (repo) => {
+    // REGRESSION: F339 explicit `agent-status submitted <id> <agent>` must succeed from default branch; evidence scan is empty on main.
+    await initFeatureRepo(repo);
+    git(repo, 'git checkout -q main');
+    const r = await cli(['agent-status', 'submitted', '01', 'cc'], repo, { AIGON_TEST_MODE: '1', AIGON_FORCE_PRO: 'true' });
+    assert.strictEqual(r.status, 0, r.stderr || r.stdout);
+    assert.strictEqual(readEvents(repo, '.aigon/workflows/features/01/events.jsonl', 'signal.agent_ready').length, 1);
+    assert.deepStrictEqual(readJson(repo, '.aigon/workflows/features/01/snapshot.json').agents.cc.status, 'ready');
+}));
+
 testAsync('submit command fails before writing stale cache when engine write fails', () => withTempDirAsync('aigon-submit-fail-', async (repo) => {
     await initResearchRepo(repo);
     const preload = path.join(repo, 'force-submit-failure.js');
