@@ -50,7 +50,9 @@
     "modelOptions": [
       { "value": null, "label": "Default" },
       { "value": "gemini-2.5-flash", "label": "Gemini 2.5 Flash" },
-      { "value": "gemini-2.5-pro", "label": "Gemini 2.5 Pro" }
+      { "value": "gemini-2.5-pro", "label": "Gemini 2.5 Pro" },
+      { "value": "gemini-2.5-flash-preview-05-20", "label": "Gemini 2.5 Flash Preview" },
+      { "value": "gemini-3-flash-preview", "label": "Gemini 3 Flash Preview (free fallback)" }
     ],
     "effortOptions": [],
     "complexityDefaults": {
