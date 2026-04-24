@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-24T00:36:03.948Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Interactive Setup and Update Notifications
