@@ -13,6 +13,7 @@
   "bannerColor": "#A855F7",
   "defaultFleetAgent": false,
   "installHint": "npm i -g @openai/codex",
+  "installCommand": "npm i -g @openai/codex",
   "trust": {
     "type": "toml-project",
     "path": "~/.codex/config.toml",

@@ -13,6 +13,7 @@
   "bannerColor": "#3B82F6",
   "defaultFleetAgent": true,
   "installHint": "brew install claude  (or: npm i -g @anthropic-ai/claude-code)",
+  "installCommand": "npm i -g @anthropic-ai/claude-code",
   "trust": {
     "type": "claude-json",
     "path": "~/.claude.json",
