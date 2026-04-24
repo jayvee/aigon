@@ -1,6 +1,6 @@
 ---
 title: "research-eval"
-description: "Evaluate research ID - compare findings and select features"
+description: "Synthesize findings from all research agents and recommend features to create"
 ---
 
 ## Synopsis
@@ -15,18 +15,56 @@ aigon research-eval <ID> [--force]
 
 ## Flags
 
-- `--force`
+| Flag | Description |
+|------|-------------|
+| `--force` | Re-run evaluation even if the topic is already in `04-in-evaluation/` |
 
 ## Description
 
-Evaluate research \<ID\> - compare findings and select features
+`research-eval` is the synthesis step that turns raw agent findings into actionable feature recommendations. It transitions the research topic to `04-in-evaluation/`, reads all per-agent findings files, and produces a consolidated view: what agents agreed on, where they diverged, and a deduplicated feature table ranked by priority and consensus strength.
 
-## Usage
+Unlike `feature-eval`, this command does not pick a single winner — it merges insights from all agents. The evaluator presents a consolidated feature table and asks the user which features to create, then stops. The user decides what to promote; `research-eval` never creates features automatically.
+
+For unbiased synthesis, use a **different model** than those that conducted the research.
+
+## What it does
+
+1. Transitions the spec from `03-in-progress/` to `04-in-evaluation/` (skipped if already there; use `--force` to re-evaluate)
+2. Reads all findings files: `docs/specs/research-topics/logs/research-{ID}-*-findings.md`
+3. Produces a **Consensus** section — what all agents agreed on
+4. Produces a **Divergent Views** section — where agents disagreed and why
+5. Consolidates the `## Suggested Features` tables across all findings, deduplicating by concept
+6. Presents the merged feature table and asks the user which features to create
+7. Stops — does not close the topic or create features automatically
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:research-eval <ID>
+# Evaluate after all agents have submitted findings
+aigon research-eval 5
 
-# CLI
-aigon research-eval <ID>
+# Re-run evaluation (topic already in 04-in-evaluation/)
+aigon research-eval 5 --force
+
+# Use a different model for unbiased synthesis
+# (Start a fresh Claude session with Sonnet before running)
+/aigon:research-eval 5
 ```
+
+## After evaluation
+
+After presenting the feature table and getting user confirmation, the typical next step is to create features for selected items, then close:
+
+```bash
+aigon feature-create <selected-feature-name>
+# ... create more features as needed ...
+aigon research-close 5
+```
+
+## Related
+
+- [`research-do`](./research-do) — agents write findings (runs before eval)
+- [`research-submit`](./research-submit) — Fleet agents signal completion before eval is triggered
+- [`research-close`](./research-close) — archive the topic after evaluation is done
+- [`research-autopilot`](./research-autopilot) — runs research-start + research-eval automatically
+- [Research Workflow guide](/docs/guides/research-workflow)

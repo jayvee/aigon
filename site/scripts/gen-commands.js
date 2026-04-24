@@ -3,6 +3,11 @@
 /**
  * gen-commands.js — Auto-generate CLI command MDX reference pages
  *
+ * ⚠️  WARNING: Running this script will OVERWRITE manually enriched MDX pages in
+ * site/content/reference/commands/. The committed MDX pages are the canonical
+ * source — do NOT run gen-commands unless you intend to regenerate from scratch
+ * and re-apply enrichments. See feature-340 for context.
+ *
  * Reads COMMAND_REGISTRY from lib/templates.js and template descriptions from
  * templates/generic/commands/*.md to produce individual MDX pages in
  * site/content/docs/reference/commands/.

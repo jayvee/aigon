@@ -1,6 +1,6 @@
 ---
 title: "research-submit"
-description: "Submit research findings - signal completion for Fleet autopilot"
+description: "Signal that a Fleet research agent's findings are complete and ready for evaluation"
 ---
 
 ## Synopsis
@@ -15,14 +15,43 @@ aigon research-submit
 
 ## Description
 
-Submit research findings - signal completion for Fleet autopilot
+`research-submit` is the Fleet mode completion signal — the research equivalent of `aigon agent-status submitted` in the feature lifecycle. A Fleet research agent calls it after writing and committing its findings file, signaling to the coordinator (and the `research-autopilot` AutoConductor) that its work is done.
 
-## Usage
+This command does not close the research topic and does not trigger evaluation. It only marks the current agent's findings as submitted so the coordinator knows all agents are ready. The user (or AutoConductor) then runs `research-eval` when all agents have submitted.
+
+In Drive mode (single agent working directly on the main spec), you don't call `research-submit` — just complete the `## Findings` section and the investigation is done.
+
+## What it does
+
+1. Detects the current research ID from the working directory or branch context
+2. Updates the per-agent findings file's status to `submitted`
+3. Prints a confirmation — no further action is taken automatically
+
+## Before submitting
+
+Ensure your findings file is complete and committed:
+
+- All research questions answered
+- Sources and references cited
+- Recommendation written
+- `## Suggested Features` table populated with names, descriptions, priorities, and dependencies
+
+## Examples
 
 ```bash
-# Slash command (Claude Code / Gemini)
-/aigon:research-submit
-
-# CLI
+# After writing findings and committing them, signal completion
 aigon research-submit
+
+# From within an agent session:
+/aigon:research-submit
 ```
+
+## After submitting
+
+Stay in the session — the user may want to ask follow-up questions about your findings. Do **not** call `research-close` or `research-eval` from a research agent session.
+
+## Related
+
+- [`research-do`](./research-do) — write findings (runs before submit)
+- [`research-eval`](./research-eval) — synthesize all submitted findings (runs after all agents submit)
+- [`research-open`](./research-open) — open Fleet agent sessions side-by-side
