@@ -111,7 +111,7 @@ async function main() {
     }
 
     const isInteractiveEnv = process.stdin.isTTY && process.stdout.isTTY && !process.env.CI;
-    if (isInteractiveEnv && !SKIP_FIRST_RUN.has(resolvedCommand) && !firstRunComplete()) {
+    if (!SKIP_FIRST_RUN.has(resolvedCommand) && !firstRunComplete()) {
         try {
             await commands['onboarding']([]);
         } catch (error) {
@@ -123,7 +123,7 @@ async function main() {
     if (commands[resolvedCommand]) {
         let result;
         try {
-            result = commands[resolvedCommand](commandArgs);
+            result = await commands[resolvedCommand](commandArgs);
         } catch (error) {
             console.error(formatCliError(error));
             process.exit(1);
