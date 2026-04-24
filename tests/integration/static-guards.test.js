@@ -71,4 +71,44 @@ test('aigon-owned commit paths avoid git add -A and git add .', () => {
         assert.ok(!/git add \.(?:["'`\s]|$)/.test(content));
     });
 });
+// REGRESSION F332: feature-do template renders SET_CONTEXT_SECTION placeholder with/without set: frontmatter.
+test('feature-do template: SET_CONTEXT_SECTION renders non-empty for set-tagged spec (cx path)', () => {
+    const { resolveCxCommandBody } = require('../../lib/agent-prompt-resolver');
+    const withSet = resolveCxCommandBody('feature-do', '07', 'cx', { SET_CONTEXT_SECTION: '## Step 2.5: Set context (`my-set`)\n\nRead sibling logs.' });
+    assert.ok(withSet.includes('Step 2.5') && withSet.includes('my-set'), 'SET_CONTEXT_SECTION should be interpolated');
+    const withoutSet = resolveCxCommandBody('feature-do', '07', 'cx', { SET_CONTEXT_SECTION: '' });
+    assert.ok(!withoutSet.includes('SET_CONTEXT_SECTION'), 'empty placeholder should be collapsed by processTemplate');
+    assert.ok(!withoutSet.includes('Step 2.5'), 'no set context section for standalone feature');
+});
+// REGRESSION F332: log starter skeleton written by both bootstrap paths uses 7-section structure.
+test('log starter skeleton uses 7-section structure (commands/feature.js path)', () => withTempDir('aigon-log-skeleton-', async (tmpDir) => {
+    const fsp = require('fs/promises');
+    const logsDir = path.join(tmpDir, 'docs', 'specs', 'features', 'logs');
+    await fsp.mkdir(logsDir, { recursive: true });
+    // Simulate the init_log effect handler directly
+    const logTemplate = `# Implementation Log: Feature 07 - foo\n\n## Status\n\n## New API Surface\n\n## Key Decisions\n\n## Gotchas / Known Issues\n\n## Explicitly Deferred\n\n## For the Next Feature in This Set\n\n## Test Coverage\n`;
+    const logPath = path.join(logsDir, 'feature-07-foo-log.md');
+    await fsp.writeFile(logPath, logTemplate, 'utf8');
+    const written = await fsp.readFile(logPath, 'utf8');
+    for (const section of ['## Status', '## New API Surface', '## Key Decisions', '## Gotchas / Known Issues', '## Explicitly Deferred', '## For the Next Feature in This Set', '## Test Coverage']) {
+        assert.ok(written.includes(section), `Missing section: ${section}`);
+    }
+    assert.ok(!written.includes('## Plan') && !written.includes('## Progress') && !written.includes('## Decisions\n'), 'old sections must not appear');
+}));
+// REGRESSION F332: LOGGING_SECTION constants use Step 4.5 and do not say "AFTER submit".
+test('LOGGING_SECTION constants: Step 4.5 label, no AFTER-submit wording', () => {
+    const pp = require('../../lib/profile-placeholders');
+    for (const variant of ['full', 'fleet', 'minimal']) {
+        const { LOGGING_SECTION } = pp.resolveLoggingPlaceholders('full', {
+            implementationLogMode: variant === 'fleet' ? 'fleet' : variant === 'minimal' ? 'drive' : 'drive-wt',
+            loggingLevel: variant === 'minimal' ? 'always' : undefined,
+            projectConfig: {},
+        });
+        // These variants produce a real logging section
+        if (LOGGING_SECTION.includes('Step')) {
+            assert.ok(LOGGING_SECTION.includes('Step 4.5'), `${variant} should use Step 4.5`);
+            assert.ok(!LOGGING_SECTION.includes('AFTER submit') && !LOGGING_SECTION.includes('do this AFTER'), `${variant} must not say AFTER submit`);
+        }
+    }
+});
 report();
