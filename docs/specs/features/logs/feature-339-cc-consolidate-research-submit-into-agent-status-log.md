@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 135
+lines_removed: 228
+lines_changed: 363
+files_touched: 23
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 248
+output_tokens: 82158
+cache_creation_input_tokens: 295522
+cache_read_input_tokens: 19517097
+thinking_tokens: 0
+total_tokens: 19895025
+billable_tokens: 82406
+cost_usd: 40.9823
+sessions: 2
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 Extended `agent-status submitted` to accept `<ID> <agent>` explicit args (auto-detects entity type from snapshot) and removed the duplicate `research-submit` command.
 
 ## Code Review
