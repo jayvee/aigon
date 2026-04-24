@@ -102,16 +102,31 @@ test('fresh install: standalone hooks file written with login-shell wrapper', ()
     const hooksPath = path.join(dir, '.cursor', 'hooks.json');
     fs.mkdirSync(path.dirname(hooksPath), { recursive: true });
 
-    // Simulate adding a new hook entry
-    const hookCmd = 'aigon check-version';
-    const resolved = { command: wrapAigonCommand(hookCmd), timeout: 30 };
-    const hooksFile = { hooks: { sessionStart: [resolved] } };
+    // Simulate adding the full Cursor hook set from install-agent.
+    const hookConfigs = [
+        { command: 'aigon check-version', timeout: 30 },
+        { command: 'aigon project-context', timeout: 10 },
+    ];
+    const hooksFile = { hooks: { sessionStart: [] } };
+    hookConfigs.forEach(hookConfig => {
+        const alreadyExists = hooksFile.hooks.sessionStart.some(existing =>
+            existing.command && existing.command.includes(hookConfig.command)
+        );
+        if (!alreadyExists) {
+            hooksFile.hooks.sessionStart.push({
+                ...hookConfig,
+                command: wrapAigonCommand(hookConfig.command),
+            });
+        }
+    });
     fs.writeFileSync(hooksPath, JSON.stringify(hooksFile, null, 2));
 
     const written = JSON.parse(fs.readFileSync(hooksPath, 'utf8'));
-    const cmd = written.hooks.sessionStart[0].command;
-    assert.ok(cmd.startsWith(userShell), 'cursor hook command should start with user shell');
-    assert.ok(cmd.includes('-l -c "aigon check-version"'), 'cursor hook command should be login-shell wrapped');
+    assert.strictEqual(written.hooks.sessionStart.length, 2, 'cursor hooks file should include both aigon hooks');
+    const commands = written.hooks.sessionStart.map(entry => entry.command);
+    assert.ok(commands.every(cmd => cmd.startsWith(userShell)), 'cursor hook commands should start with user shell');
+    assert.ok(commands.some(cmd => cmd.includes('-l -c "aigon check-version"')), 'cursor hooks file should include wrapped check-version');
+    assert.ok(commands.some(cmd => cmd.includes('-l -c "aigon project-context"')), 'cursor hooks file should include wrapped project-context');
 }));
 
 // ── integration: re-run is idempotent ──────────────────────────────────────

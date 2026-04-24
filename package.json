@@ -27,7 +27,8 @@
   "files": [
     "aigon-cli.js",
     "lib",
-    "templates"
+    "templates",
+    "assets/icon"
   ],
   "publishConfig": {
     "access": "public"

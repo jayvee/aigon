@@ -33,7 +33,8 @@ brew install node git tmux
 **Ubuntu / Debian:**
 
 ```bash
-sudo apt install nodejs npm git tmux
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash -
+sudo apt-get install -y nodejs git tmux lsof
 ```
 
 **Fedora:**
@@ -48,31 +49,23 @@ sudo dnf install nodejs npm git tmux
 sudo pacman -S nodejs npm git tmux
 ```
 
-> **Note:** On Ubuntu/Debian, the `nodejs` package may be outdated. For Node.js 18+, use the [NodeSource](https://github.com/nodesource/distributions) repository or [nvm](https://github.com/nvm-sh/nvm).
+> **Note:** On Ubuntu/Debian, `nodejs` 18+ is required — the NodeSource script above installs the correct version.
 
 ## Installation
 
-Clone the repository and link the CLI globally:
+Install Aigon globally with npm:
 
 **macOS:**
 
 ```bash
-git clone https://github.com/jayvee/aigon.git ~/src/aigon
-cd ~/src/aigon
-npm ci
-npm link
+npm install -g @aigon/cli
 ```
 
 **Linux:**
 
 ```bash
-git clone https://github.com/jayvee/aigon.git ~/src/aigon
-cd ~/src/aigon
-npm ci
-sudo npm link
+sudo npm install -g @aigon/cli
 ```
-
-> Clone to `~/src/aigon` or your preferred location for code repos. The path doesn't matter as long as you keep it around — `npm link` creates a global symlink to this directory. On Linux, global npm commands (`npm link`, `npm i -g`) require `sudo`.
 
 Verify the install:
 
@@ -80,29 +73,72 @@ Verify the install:
 aigon --version
 ```
 
+> **First-run setup:** On first install, Aigon automatically runs a short setup to configure your preferences. You can re-run it anytime with `aigon global-setup`.
+
 ### Agent CLIs
 
 Install at least one agent CLI to use Aigon:
 
-| Agent | CLI binary | Install |
-|-------|-----------|---------|
-| Claude Code | `claude` | `brew install claude-code` or `npm i -g @anthropic-ai/claude-code` |
-| Gemini CLI | `gemini` | `npm i -g @google/gemini-cli` |
-| Codex CLI | `codex` | `npm i -g @openai/codex` |
-| Cursor | `agent` | [cursor.com](https://cursor.com) (desktop app) |
+| Agent | Binary | macOS | Linux |
+|-------|--------|-------|-------|
+| Claude Code | `claude` | `brew install claude-code` | `sudo npm i -g @anthropic-ai/claude-code` |
+| Gemini CLI | `gemini` | `npm i -g @google/gemini-cli` | `sudo npm i -g @google/gemini-cli` |
+| Codex CLI | `codex` | `npm i -g @openai/codex` | `sudo npm i -g @openai/codex` |
+| Cursor | `agent` | `curl https://cursor.com/install -fsS \| bash` | `curl https://cursor.com/install -fsS \| bash` |
 
-> **Linux:** prefix `npm i -g` commands with `sudo` (e.g., `sudo npm i -g @google/gemini-cli`).
+> **Cursor:** The installer places `agent` in `~/.local/bin`. If the command isn't found after install, add it to your PATH: `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc`. See the [Cursor CLI docs](https://cursor.com/docs/cli/installation) for more.
 
 You don't need all of them — install whichever you have access to. Fleet mode works best with 2+ agents.
 
+### Aigon Pro (beta access)
+
+If you have been granted beta access to Aigon Pro, clone and link it after installing Aigon:
+
+```bash
+git clone https://github.com/jayvee/aigon-pro.git ~/src/aigon-pro
+cd ~/src/aigon-pro && npm install
+```
+
+**macOS:**
+```bash
+npm link && cd ~/src/aigon && npm link @aigon/pro
+```
+
+**Linux:**
+```bash
+sudo npm link && cd ~/src/aigon && sudo npm link @aigon/pro
+```
+
+> **Access:** Aigon Pro is a private repository. If `git clone` fails with a permissions error, you have not yet been granted beta access. Contact [Sen Labs](https://senlabs.ai) to request it. Once granted, your GitHub account will be added as a collaborator and `gh auth login` will provide the necessary credentials.
+
 ### Optional tools
 
-| Tool | What it enables | Install |
-|------|----------------|---------|
-| **GitHub CLI (`gh`)** | [GitHub Integration](/docs/guides/github-integration) — `feature-close` blocks on open PRs | `brew install gh` then `gh auth login` |
-| **gitleaks** | Secret scanning in pre-commit hooks and merge gates | `brew install gitleaks` |
-| **Semgrep** | SAST vulnerability scanning at merge gates | `brew install semgrep` or `pip install semgrep` |
-| **Playwright** | Dashboard end-to-end tests | `npx playwright install` |
+| Tool | What it enables | macOS | Linux |
+|------|----------------|-------|-------|
+| **GitHub CLI (`gh`)** | [GitHub Integration](/docs/guides/github-integration) — `feature-close` blocks on open PRs | `brew install gh` | See below |
+| **gitleaks** | Secret scanning in pre-commit hooks and merge gates | `brew install gitleaks` | `sudo apt install gitleaks` (or see [releases](https://github.com/gitleaks/gitleaks/releases)) |
+| **Semgrep** | SAST vulnerability scanning at merge gates | `brew install semgrep` | `sudo apt-get install -y python3-pip && pip3 install semgrep` |
+| **Playwright** | Dashboard end-to-end tests (aigon contributors only) | `npx playwright install` (from the aigon repo) | `npx playwright install` then `sudo npx playwright install-deps` |
+
+**Installing `gh` on Linux (Ubuntu / Debian):**
+
+```bash
+(type -p wget >/dev/null || (sudo apt update && sudo apt install wget -y)) \
+  && sudo mkdir -p -m 755 /etc/apt/keyrings \
+  && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+  && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+  && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+  && sudo mkdir -p -m 755 /etc/apt/sources.list.d \
+  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+  && sudo apt update \
+  && sudo apt install gh -y
+```
+
+Then authenticate:
+
+```bash
+gh auth login
+```
 
 ### Verify your setup
 
@@ -114,34 +150,51 @@ aigon doctor
 
 Doctor checks Node.js version, Git availability, tmux, and which agent CLIs are in your PATH.
 
+> **Git identity:** Aigon commits spec moves on your behalf. If you've never set up Git on this machine, do it now — otherwise your first feature start will fail:
+> ```bash
+> git config --global user.name "Your Name"
+> git config --global user.email "you@example.com"
+> ```
+
 ### Configure your terminal
 
-Aigon launches agent sessions in terminal windows. Create your global config:
+Aigon launches agent sessions in terminal windows. First, create your global config:
 
 ```bash
 aigon config init --global
 ```
 
-Then set your terminal. Pick the one you use:
+#### macOS
 
-**iTerm2** (recommended — agents run in tabs within a single window):
-```bash
-aigon config set --global terminalApp iterm2
-```
+Pick the terminal you use:
 
-**Warp** (agents run in side-by-side split panes):
-```bash
-aigon config set --global terminalApp warp
-```
+| Terminal | Command |
+|----------|---------|
+| **iTerm2** (recommended — agents run in tabs within a single window) | `aigon config set --global terminalApp iterm2` |
+| **Warp** (agents run in side-by-side split panes) | `aigon config set --global terminalApp warp` |
+| **Terminal.app** (macOS built-in) | `aigon config set --global terminalApp apple-terminal` |
 
-**Terminal.app** (macOS built-in — agents open in new Terminal.app windows):
-```bash
-aigon config set --global terminalApp apple-terminal
-```
+> **Default:** Terminal.app. If you're on macOS and happy with Terminal.app, you can skip this step.
 
-> **Default:** `terminalApp` = `apple-terminal` (Terminal.app). If you're on macOS and happy with Terminal.app, you can skip this step.
+#### Linux
+
+Aigon auto-detects your terminal on Linux — you can skip this step if you're happy with auto-detection. To set one explicitly:
+
+| Terminal | Command |
+|----------|---------|
+| **GNOME Terminal** | `aigon config set --global linuxTerminal gnome-terminal` |
+| **Kitty** | `aigon config set --global linuxTerminal kitty` |
+| **xterm** | `aigon config set --global linuxTerminal xterm` |
+
+> **Headless / server Linux:** No terminal config is needed. Agent sessions run inside tmux and you connect to them with `tmux attach -t <session-name>`.
 
 ## Initialize a project
+
+**New to Aigon?** Start with the [Brewboard Tutorial](/docs/guides/brewboard-tutorial). It clones a seed project, walks through the full feature loop, and confirms your install is working — takes about 10 minutes. Come back here when you're ready to use Aigon on your own project.
+
+**Have your own project ready?** Continue below.
+
+---
 
 Navigate to any Git repository and run:
 
@@ -183,12 +236,36 @@ All three surfaces drive the same underlying workflow. Mix them freely.
 
 ### Start the dashboard
 
+Register your project and start the server:
+
 ```bash
-aigon server start --persistent        # install as a system service (survives restarts)
-aigon server add /path/to/your/project # register your project
+aigon server add /path/to/your/project
+aigon server start
 ```
 
 Open [http://localhost:4100](http://localhost:4100). The Pipeline view shows your features across Kanban lanes; clicking **Start** on a card launches an agent session directly.
+
+#### Persistent mode (survives reboots)
+
+**macOS** — installs a launchd service, starts automatically:
+
+```bash
+aigon server start --persistent
+```
+
+**Linux with systemd (desktop or server with an active user session):**
+
+```bash
+aigon server start --persistent
+```
+
+> **Note:** On a headless Linux server, systemd user services require lingering to be enabled so the service survives logout: `sudo loginctl enable-linger $USER`. Then run `aigon server start --persistent`.
+
+**Linux without systemd (containers, WSL, minimal installs)** — run in the background instead:
+
+```bash
+nohup aigon server start > ~/.aigon/logs/server.log 2>&1 &
+```
 
 ## Your first feature
 
@@ -269,34 +346,24 @@ aigon proxy-setup
 
 You should see `✅ aigon-proxy: running`. If port 80 is in use by another service (Apache, nginx), you'll see a warning — stop that service first or the proxy will fall back to a non-standard port.
 
-> **Tip:** If you set up the proxy before the Brewboard tutorial below, the dashboard and dev server previews will use the clean `.localhost` URLs automatically.
+> **Tip:** If you set up the proxy before running the [Brewboard Tutorial](/docs/guides/brewboard-tutorial), the dashboard and dev server previews will use the clean `.localhost` URLs automatically.
 
 To remove the daemon later: `aigon proxy uninstall`.
 
-## Try it end-to-end
-
-Want to verify your installation works before using Aigon on a real project? The **[Brewboard Tutorial](/docs/guides/brewboard-tutorial)** walks you through cloning a seed repo, adding it to the dashboard, and running a complete feature loop — Drive mode, Fleet mode, and Autonomous mode.
-
-If anything goes wrong at any point, run `aigon doctor` to diagnose the issue.
-
 ## Updating Aigon
 
-Updating Aigon is two steps:
-
-1. **Update the CLI** — pull the latest code from GitHub:
-
 ```bash
-cd ~/src/aigon && git pull && npm ci
+npm update -g @aigon/cli
 ```
 
-2. **Update your projects** — happens automatically. The next time you start an agent session in any project, Aigon detects the version mismatch and re-runs `aigon update` to sync templates and agent configs. You can also run it manually:
+Project templates and agent configs update automatically the next time you start an agent session. To force a sync immediately:
 
 ```bash
 cd /path/to/your/project
 aigon update
 ```
 
-> If the dashboard is running, `aigon update` will restart it automatically to pick up the changes.
+> If the dashboard is running, `aigon update` restarts it automatically to pick up the changes.
 
 ## What's next
 

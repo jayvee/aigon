@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-24T00:49:17.804Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: rename-review-check-to-revise
@@ -47,13 +49,14 @@ This is a **hard rename** — no deprecated aliases, no dual-path event handlers
 - [ ] Modal titles, submit labels, and autonomous-mode progress UI use "Revise" / "Revision".
 - [ ] Playwright screenshot captured (CLAUDE.md rule 4) showing both buttons and the autonomous-mode stage label.
 
-**Templates**
+**Templates & Skills**
 - [ ] `templates/generic/commands/feature-spec-revise.md`, `feature-code-revise.md`, `research-spec-revise.md` exist with the revised verb throughout.
 - [ ] Old template files (`feature-{spec,code}-review-check.md`, `research-spec-review-check.md`) deleted from `templates/generic/commands/`.
 - [ ] Agent-specific command files regenerated via `aigon install-agent`.
+- [ ] AI skills under `.agents/skills/` renamed from `*-review-check` to `*-revise` (including `aigon-feature-review-check`), updating both folder names and `SKILL.md` contents.
 
 **Migration (registered in `lib/migration.js`)**
-- [ ] New migration registered at the target release version (e.g. `registerMigration('2.55.0', async ({ repoPath, log }) => { … })`).
+- [ ] New migration registered at the target release version, dynamically reading `require('../../package.json').version`.
 - [ ] Migration scans every `.aigon/workflows/{features,research}/*/snapshot.json` and rewrites:
   - `stage.type: 'counter-review'` → `'revision'`
   - Any status string ending `-review-check-pending` → `-revision-pending`
@@ -105,7 +108,7 @@ bash scripts/check-test-budget.sh
    - `lib/commands/entity-commands.js` — audit & rename.
    - `lib/templates.js` — `COMMAND_REGISTRY`, `COMMAND_ALIASES`, `COMMAND_ALIAS_REVERSE`, `COMMAND_ARG_HINTS` — replace entries, don't deprecate.
 
-2. **Template rename.** `git mv` the three template files; update their body text to use the new verb throughout. Delete any old references in other templates.
+2. **Template & Skill rename.** `git mv` the three template files and all four `.agents/skills/*-review-check` directories; update their body text to use the new verb throughout. Delete any old references in other templates or skills.
 
 3. **Dashboard UI.** `templates/dashboard/js/actions.js` — rename action cases (711–718, 728–735, 799–800) and the `stages.push` stage type (1332). Enforce scoping rule in the render logic (spec-revise hidden once code implementation begins; code-revise hidden until ≥1 code review completes).
 
@@ -145,12 +148,8 @@ bash scripts/check-test-budget.sh
 - A genuine "counter-review" stage (second independent reviewer). If that ever gets built, it gets the name `counter-review` back.
 - Refactoring the internal `reviewCheckPrompt` field name in data structures — low-cost to leave, can be a follow-up.
 - Adding a `schemaVersion` to snapshots. The migration framework already tracks what's been applied; no per-snapshot versioning needed here.
-
-## Open Questions
-
-- What release version does this ship under? The `registerMigration()` call needs the exact version string. Resolve at release-cut time.
-- Should the dashboard visually hint at the scoping rule (e.g. a tooltip explaining "available after code review") for the case where a user expects a button that isn't there? Polish; base acceptance is that the button simply doesn't render outside its phase.
-- Should the CLI, on unknown command, suggest the new name when it sees an old one (e.g. `did you mean: feature-spec-revise?`)? Optional nicety; would require a small did-you-mean table in `aigon-cli.js` dispatch. Resolve: yes if trivial, skip if the generic unknown-command path already covers it.
+- "Did you mean" hints in the CLI for the old commands (a hard "unknown command" is sufficient).
+- Tooltips or disabled states in the UI explaining the scoping rules (hiding the button when out of phase is sufficient).
 
 ## Related
 
