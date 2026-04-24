@@ -20,6 +20,7 @@ const ALLOWED_PREFIXES = [
     'aigon-cli.js',
     'lib/',
     'templates/',
+    'assets/icon/',
 ];
 
 function isAllowed(filePath) {
