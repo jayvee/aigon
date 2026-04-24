@@ -123,26 +123,20 @@ Append:
 
 Commit with `docs(review): add review notes to implementation log` (via `git -C "$WORKTREE"` if on main). Do not skip this even when no code fixes were needed — the review log entry is the audit trail for the autonomous controller and dashboard.
 
-## Step 5: Signal completion (MANDATORY before reporting)
+## Step 5: Report, then signal completion
 
-In order:
-1. Commit every code fix with `fix(review): ...`
-2. Commit the log update with `docs(review): ...`
-3. Signal completion:
+**First, report to the user:**
+
+Say: "Code review done. [N] fix(es) committed." (or "Code review done. No fixes needed.") and show:
+- Fixes committed (commit message + SHA for each)
+- Residual unfixed issues with reason each was left unresolved, or "None"
+
+**CRITICAL — do NOT run `aigon feature-close`, `aigon feature-eval`, or any other command. Your job ends with the signal below. The implementing agent handles everything after this.**
+
+**Last action — run this and stop:**
 
 ```bash
 aigon agent-status review-complete
 ```
 
-Then tell the user: "Code review complete. [N] fix(es) committed." (or "Code review complete. No fixes needed.") and show a summary.
-Lead with the fixes you committed. List residual unfixed issues only after that, with a reason each one was left unresolved.
-
-**CRITICAL: Do NOT run `aigon feature-close` or `aigon feature-eval`.**
-
-The user or original implementing agent should then review your fix commits and run `{{CMD_PREFIX}}feature-code-review-check <ID>` in the implementer's session (using that agent's native invocation — slash command for {{AGENT_IDS_SLASH_COMMAND}}, skill command for {{AGENT_IDS_SKILL}}) so the implementer reads the review and decides accept/challenge/modify. When ready to merge, they run `{{CMD_PREFIX}}feature-close {{ARG1_SYNTAX}}`.
-
-## Prompt Suggestion
-
-End your response with the suggested next command on its own line:
-
-`{{CMD_PREFIX}}feature-code-review-check <ID>`
+**STOP. Do not suggest, offer, or run anything after `aigon agent-status review-complete`.**

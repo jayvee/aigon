@@ -6,7 +6,7 @@ description: "Signal the current agent's status to the dashboard"
 ## Synopsis
 
 ```bash
-aigon agent-status <implementing|waiting|submitted|error>
+aigon agent-status <status> [message]
 ```
 
 ## Description
@@ -19,16 +19,26 @@ The status is written to `.aigon/state/feature-{id}-{agent}.json` in the main re
 
 | Status | Meaning |
 |--------|---------|
-| `implementing` | Agent is actively working |
-| `waiting` | Agent needs human input |
-| `submitted` | Agent has finished and committed |
+| `implementing` | Agent is actively working on the feature |
+| `waiting` | Agent needs human input before continuing |
+| `submitted` | Agent has finished and committed its work |
 | `error` | Agent encountered an error |
+| `reviewing` | Agent is conducting a code review |
+| `review-complete` | Agent has finished the code review |
+| `feedback-addressed` | Agent has addressed feedback from a review |
+| `awaiting-input` | Agent is blocked waiting for a specific prompt response |
 
 ## Usage
 
 ```bash
 # From inside a feature worktree:
 aigon agent-status submitted
+
+# Signal review completion:
+aigon agent-status review-complete
+
+# Block with a message explaining what's needed:
+aigon agent-status awaiting-input "Pick which features to create"
 
 # The command auto-detects the feature ID and agent from the branch name
 ```
