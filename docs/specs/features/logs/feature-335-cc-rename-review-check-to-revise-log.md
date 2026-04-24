@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 357
+lines_removed: 176
+lines_changed: 533
+files_touched: 52
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 387
+output_tokens: 119183
+cache_creation_input_tokens: 330995
+cache_read_input_tokens: 44270625
+thinking_tokens: 0
+total_tokens: 44721190
+billable_tokens: 119570
+cost_usd: 16.3113
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 335 - rename-review-check-to-revise
 Agent: cc
 
