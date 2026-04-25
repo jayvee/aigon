@@ -42,3 +42,21 @@ Complete. All acceptance criteria implemented, tested, and validated.
 - `tests/integration/sidecar-migration.test.js` — migration 2.58.0 replay + idempotency
 - Updated `tests/integration/dashboard-review-statuses.test.js` — replaced sidecar `writeReviewState` with engine events
 - Updated `tests/integration/review-cycle-redesign-states.test.js` — unchanged (F341/F342 regression tests still valid)
+
+## Code Review
+
+**Reviewed by**: assistant (code review pass)  
+**Date**: 2026-04-25
+
+### Fixes Applied
+
+- `fix(review): prefer pendingCodeReviewer in deriveReviewStateFromSnapshot` — after a loopback, `code_review_in_progress` could show the previous cycle’s `codeReview.reviewerId` until the next `code_review.started`. The read model now prefers `snapshot.pendingCodeReviewer` in that window and nulls `startedAt` when awaiting the next review session.
+
+### Residual Issues
+
+- Merge or rebase against current `main` before opening a PR. This branch is many commits behind `main`; a raw `git diff main..HEAD` lists files as “deleted” that were added on `main` after the common ancestor — that is branch drift, not 343’s intended scope.
+- Spec acceptance: `code_review_in_progress` launch / `buildAgentLaunchInvocation` does not yet read `pendingCodeReviewer` (per implementation log, launch paths *can* consume it later; dashboard `requiresInput: 'agentPicker'` still supplies the next reviewer for “Another review cycle”).
+
+### Notes
+
+- F343’s actual delta vs merge-base is 16 files (core workflow, read model, migration, three small tests). The implementation log’s architecture summary matches the code: projector + machine both implement loopback; `reviewCycles` is only non-empty when a loopback occurred.
