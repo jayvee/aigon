@@ -906,7 +906,8 @@
         btn.onclick = (e) => {
           e.stopPropagation();
           closeAllKcardOverflowMenus();
-          openPeekPanel(btn.getAttribute('data-view-review'));
+          const reviewSession = btn.getAttribute('data-view-review');
+          if (reviewSession) openTerminalPanel(reviewSession, null, reviewSession, null, null);
         };
       });
 
@@ -1053,14 +1054,12 @@
         };
       });
 
-      // Wire peek buttons — open the peek panel (same as Sessions tab peek)
-      card.querySelectorAll('.kcard-peek-btn').forEach(btn => {
+      // Wire peek/view buttons — open the session in the dashboard terminal panel
+      card.querySelectorAll('.kcard-peek-btn[data-peek-session]').forEach(btn => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const sessionName = btn.getAttribute('data-peek-session');
-          if (sessionName && typeof openPeekPanel === 'function') {
-            openPeekPanel(sessionName);
-          }
+          if (sessionName) openTerminalPanel(sessionName, null, sessionName, null, null);
         };
       });
 
@@ -1068,9 +1067,7 @@
         btn.onclick = (e) => {
           e.stopPropagation();
           const sessionName = btn.getAttribute('data-review-session');
-          if (sessionName && typeof openPeekPanel === 'function') {
-            openPeekPanel(sessionName);
-          }
+          if (sessionName) openTerminalPanel(sessionName, null, sessionName, null, null);
         };
       });
 
@@ -1183,32 +1180,32 @@
             const totalN = roll ? (Number(roll.memberCount) || members.length) : members.length;
             countEl.textContent = totalN ? (doneN + '/' + totalN) : String(members.length);
             row.appendChild(countEl);
-            // Peek SetConductor tmux (same name scheme as per-feature AutoConductor peek)
-            let setPeekSession = '';
+            // View SetConductor tmux session in the dashboard terminal panel
+            let setConductorSession = '';
             if (roll && roll.autonomous) {
               const a = roll.autonomous;
               if (a.sessionName) {
-                setPeekSession = a.sessionName;
+                setConductorSession = a.sessionName;
               } else {
                 const st = a.status || '';
                 const base = repo && repo.name ? String(repo.name) : '';
                 if (base && (st === 'running' || a.running || st === 'paused-on-failure')) {
-                  setPeekSession = base + '-s' + setSlug + '-auto';
+                  setConductorSession = base + '-s' + setSlug + '-auto';
                 }
               }
             }
-            if (setPeekSession) {
-              const peekBtn = document.createElement('button');
-              peekBtn.type = 'button';
-              peekBtn.className = 'kcard-peek-btn';
-              peekBtn.setAttribute('data-peek-session', setPeekSession);
-              peekBtn.title = 'Peek at set autonomous conductor output';
-              peekBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg>';
-              peekBtn.onclick = (e) => {
+            if (setConductorSession) {
+              const viewBtn = document.createElement('button');
+              viewBtn.type = 'button';
+              viewBtn.className = 'kcard-peek-btn';
+              viewBtn.setAttribute('data-conductor-session', setConductorSession);
+              viewBtn.title = 'View set autonomous conductor output';
+              viewBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg>';
+              viewBtn.onclick = (e) => {
                 e.stopPropagation();
-                if (typeof openPeekPanel === 'function') openPeekPanel(setPeekSession);
+                openTerminalPanel(setConductorSession, null, setConductorSession, null, null);
               };
-              row.appendChild(peekBtn);
+              row.appendChild(viewBtn);
             }
             const setValid = roll && Array.isArray(roll.validActions) ? roll.validActions : [];
             const appendSetHeaderAction = (va) => {

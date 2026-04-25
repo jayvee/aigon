@@ -277,7 +277,7 @@
           if (btn.classList.contains('kcard-peek-btn')) {
             e.stopPropagation();
             const sessionName = btn.getAttribute('data-peek-session') || '';
-            if (sessionName && typeof openPeekPanel === 'function') openPeekPanel(sessionName);
+            if (sessionName) openTerminalPanel(sessionName, null, sessionName, null, null);
             return;
           }
           if (btn.classList.contains('copy') || btn.classList.contains('next-copy')) {

@@ -1128,3 +1128,18 @@
     .version-state-badge.state-update{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:#fcd34d}
     .version-state-badge.state-prerelease{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35);color:#c4b5fd}
     .version-state-badge.state-unavailable{background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);color:var(--text-tertiary)}
+    /* ── Terminal CSS tokens ──────────────────────────────────────────────── */
+    :root{--term-bg:#0c0d10;--term-fg:#e8e9ec;--term-cursor:#4d9fff;--term-cursor-accent:#0c0d10;--term-selection:rgba(77,159,255,.22);--term-black:#1c1d21;--term-red:#e06c75;--term-green:#98c379;--term-yellow:#e5c07b;--term-blue:#61afef;--term-magenta:#c678dd;--term-cyan:#56b6c2;--term-white:#abb2bf;--term-bright-black:#3e4452;--term-bright-red:#e06c75;--term-bright-green:#98c379;--term-bright-yellow:#e5c07b;--term-bright-blue:#61afef;--term-bright-magenta:#c678dd;--term-bright-cyan:#56b6c2;--term-bright-white:#c8ccd4}
+    #terminal-container{flex:1;overflow:hidden;background:var(--term-bg);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);position:relative;display:flex;flex-direction:column}
+    #terminal-container .xterm{height:100%}
+    #terminal-container .xterm-viewport{background:var(--term-bg) !important}
+    .term-target-control{display:flex;border:1px solid var(--border-default);border-radius:8px;overflow:hidden}
+    .term-target-btn{flex:1;padding:6px 12px;font-size:12px;background:transparent;border:none;color:var(--text-secondary);cursor:pointer;transition:background .12s,color .12s}
+    .term-target-btn.active{background:var(--accent);color:#fff}
+    .term-target-btn:not(.active):hover{background:var(--bg-hover);color:var(--text-primary)}
+    .term-font-select{width:100%;padding:6px 10px;background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:8px;color:var(--text-primary);font-size:12px;font-family:var(--mono);cursor:pointer}
+    .term-font-select:focus{outline:none;border-color:var(--accent)}
+    .term-settings-row{display:flex;flex-direction:column;gap:6px;padding:10px 0}
+    .term-settings-label{font-size:12px;color:var(--text-secondary);font-weight:500}
+    .term-settings-hint{font-size:11px;color:var(--text-tertiary)}
+    .terminal-stream-status{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-tertiary);font-family:var(--mono);padding:4px 8px;border-top:1px solid var(--border-subtle)}
