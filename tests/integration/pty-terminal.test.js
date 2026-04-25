@@ -25,7 +25,9 @@ test('loopback check', () => {
 // REGRESSION F356: Origin allow-list
 test('origin check', () => {
     a.ok(h.isValidOrigin('http://localhost:4100')); a.ok(h.isValidOrigin('http://127.0.0.1:4100')); a.ok(h.isValidOrigin('http://aigon.localhost:4101'));
-    a.ok(!h.isValidOrigin('http://evil.com')); a.ok(!h.isValidOrigin('https://localhost:4100')); a.ok(!h.isValidOrigin(null));
+    a.ok(!h.isValidOrigin('http://evil.com')); a.ok(!h.isValidOrigin('https://evil.com'));
+    a.ok(h.isValidOrigin('https://localhost:4100')); a.ok(h.isValidOrigin('https://aigon.localhost:4101'));
+    a.ok(!h.isValidOrigin(null));
 });
 
 // REGRESSION F356: resize round-trip
