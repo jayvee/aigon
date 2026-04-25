@@ -8,7 +8,6 @@ const fs = require('fs');
 const path = require('path');
 const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
-const reviewState = require('../../lib/feature-review-state');
 const wrm = require('../../lib/workflow-read-model');
 const ast = require('../../lib/agent-status');
 const { collectRepoStatus, clearTierCache } = require('../../lib/dashboard-status-collector');
@@ -62,22 +61,14 @@ test('dashboard status helpers preserve review-check states', () => {
         'feedback-addressed'
     );
 });
-testAsync('workflow read model reloads completed feature review state from disk', () => withTempDirAsync('aigon-review-status-', async (repo) => {
+testAsync('workflow read model derives completed feature review state from engine events', () => withTempDirAsync('aigon-review-status-', async (repo) => {
     const specPath = path.join(repo, 'docs', 'specs', 'features', '03-in-progress', 'feature-99-review-status.md');
     fs.mkdirSync(path.dirname(specPath), { recursive: true });
     fs.writeFileSync(specPath, '# Feature: review status\n');
     await engine.startFeature(repo, '99', 'solo_branch', ['cc']);
-    reviewState.writeReviewState(repo, '99', {
-        current: null,
-        history: [{
-            agent: 'gg',
-            status: 'complete',
-            startedAt: '2026-04-20T10:00:00Z',
-            completedAt: '2026-04-20T10:05:00Z',
-            cycle: 1,
-            source: 'test',
-        }],
-    });
+    await engine.signalAgentReady(repo, '99', 'cc');
+    await engine.recordCodeReviewStarted(repo, 'feature', '99', { reviewerId: 'gg', at: '2026-04-20T10:00:00Z' });
+    await engine.recordCodeReviewCompleted(repo, 'feature', '99', { reviewerId: 'gg', requestRevision: true, at: '2026-04-20T10:05:00Z' });
     const first = wrm.getFeatureDashboardState(repo, '99', 'in-progress', [{ id: 'cc', status: 'implementing' }]);
     const second = wrm.getFeatureDashboardState(repo, '99', 'in-progress', [{ id: 'cc', status: 'implementing' }]);
     assert.strictEqual(first.reviewStatus, 'done');
