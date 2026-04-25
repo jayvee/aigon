@@ -168,6 +168,16 @@ After creating each feature, edit the spec to add:
 ```
 This enables Aigon’s dependency system to enforce ordering — dependent features cannot be started until their dependencies are done. Every feature that has a predecessor **must** have this field; omitting it is a mistake.
 
+3. After all specs are edited, **immediately prioritise every feature in the set in dependency order** (roots first, leaves last). This assigns numeric IDs in execution order, so the board reflects the correct sequence at a glance.
+
+```bash
+aigon feature-prioritise "prefix-1-name"   # root — no deps
+aigon feature-prioritise "prefix-2-name"   # depends on #1
+aigon feature-prioritise "prefix-3-name"   # depends on #2
+```
+
+**Never prioritise in creation order or alphabetical order.** Always follow the dependency chain: if feature B depends on feature A, A must be prioritised first so it gets the lower ID.
+
 ## Step 6: Update Main Research Doc
 
 Once user confirms, update the main research document:
