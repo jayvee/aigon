@@ -142,6 +142,8 @@ test('machine: code review complete routes to revision or submitted', () => {
     revise.start();
     revise.send({ type: 'feature.code_review.started', reviewerId: 'gg', at: '2026-04-01T01:00:00Z' });
     assert.strictEqual(revise.getSnapshot().value, 'code_review_in_progress');
+    revise.send({ type: 'feature.code_review.started', reviewerId: 'gg', at: '2026-04-01T01:00:30Z' });
+    assert.strictEqual(revise.getSnapshot().value, 'code_review_in_progress');
     revise.send({ type: 'feature.code_review.completed', reviewerId: 'gg', requestRevision: true, at: '2026-04-01T02:00:00Z' });
     assert.strictEqual(revise.getSnapshot().value, 'code_revision_in_progress');
     assert.strictEqual(revise.getSnapshot().context.codeReview.revisionAgentId, 'cc');
