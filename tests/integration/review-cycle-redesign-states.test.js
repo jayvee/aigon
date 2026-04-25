@@ -16,6 +16,7 @@ const { projectContext } = require('../../lib/workflow-core/projector');
 const readModel = require('../../lib/workflow-read-model');
 const { resolveSpecRevisionAgent } = require('../../lib/commands/entity-commands');
 const { runPendingMigrations } = require('../../lib/migration');
+const wf = require('../../lib/workflow-core');
 
 function initRepo(repo) {
     ['docs/specs/features/01-inbox', 'docs/specs/features/02-backlog']
@@ -74,6 +75,35 @@ test('agent resolver: precedence event > frontmatter > authorAgentId > default',
     // 3. Snapshot fallback when no spec path and no event.
     assert.strictEqual(resolveSpecRevisionAgent({ snapshot: { authorAgentId: 'gg' } }), 'gg');
 });
+
+testAsync('record paths: review submit and revise ack emit transient completion events', () => withTempDirAsync('aigon-f341-record-', async (repo) => {
+    initRepo(repo);
+    fs.writeFileSync(path.join(repo, 'docs/specs/features/02-backlog/feature-12-x.md'), '# x\n');
+    execSync('git add . && git commit -qm init', { cwd: repo });
+
+    await wf.recordSpecReviewStarted(repo, 'feature', '12', { reviewerId: 'gg', at: '2026-04-01T01:00:00Z' });
+    await wf.recordSpecReviewSubmitted(repo, 'feature', '12', {
+        reviewerId: 'gg',
+        reviewId: 'r1',
+        summary: 'looks good',
+        commitSha: 'abc123',
+        at: '2026-04-01T02:00:00Z',
+    });
+    let snapshot = JSON.parse(fs.readFileSync(path.join(repo, '.aigon/workflows/features/12/snapshot.json'), 'utf8'));
+    assert.strictEqual(snapshot.currentSpecState, 'backlog');
+    assert.strictEqual(snapshot.specReview.pendingCount, 1);
+
+    await wf.recordSpecReviewCheckStarted(repo, 'feature', '12', { checkerId: 'cc', at: '2026-04-01T03:00:00Z' });
+    await wf.recordSpecReviewAcknowledged(repo, 'feature', '12', {
+        reviewIds: ['r1'],
+        ackedBy: 'cc',
+        commitSha: 'def456',
+        at: '2026-04-01T04:00:00Z',
+    });
+    snapshot = JSON.parse(fs.readFileSync(path.join(repo, '.aigon/workflows/features/12/snapshot.json'), 'utf8'));
+    assert.strictEqual(snapshot.currentSpecState, 'backlog');
+    assert.strictEqual(snapshot.specReview.pendingCount, 0);
+}));
 
 testAsync('migration 2.56.0: idempotent rewrite of snapshots into new states', () => withTempDirAsync('aigon-f341-mig-', async (repo) => {
     initRepo(repo);
