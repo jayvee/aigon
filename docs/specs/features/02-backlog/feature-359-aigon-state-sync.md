@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-25T10:25:58.606Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: aigon-state-sync
