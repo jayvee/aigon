@@ -16,6 +16,23 @@ const writeFeatureAuto = (repo, id, payload) => {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify(payload, null, 2));
 };
+
+// REGRESSION: inbox + spec review must not show in backlog column before prioritise.
+test('inbox + spec_review_in_progress lifecycle still buckets as inbox (feature and research)', () => withTempDir('aigon-rm-', (repo) => {
+    seed(repo);
+    const slug = 'pre-prio-spec-review';
+    writeSpec(repo, 'features', '01-inbox', `feature-${slug}.md`);
+    writeSpec(repo, 'research-topics', '01-inbox', `research-${slug}.md`);
+    writeSnap(repo, 'features', slug, 'spec_review_in_progress');
+    writeSnap(repo, 'research', slug, 'spec_review_in_progress');
+    const f = wrm.getFeatureDashboardState(repo, slug, 'inbox', []);
+    const r = wrm.getResearchDashboardState(repo, slug, 'inbox', []);
+    assert.strictEqual(f.stage, 'inbox');
+    assert.strictEqual(r.stage, 'inbox');
+    assert.strictEqual(f.readModelSource, wrm.WORKFLOW_SOURCE.SNAPSHOT);
+    assert.strictEqual(r.readModelSource, wrm.WORKFLOW_SOURCE.SNAPSHOT);
+}));
+
 for (const [kind, getState] of [['features', wrm.getFeatureDashboardState], ['research-topics', wrm.getResearchDashboardState]]) {
     const id = kind === 'features' ? '12' : '21';
     test(`${kind}: snapshot lifecycle overrides visible folder stage`, () => withTempDir('aigon-rm-', (repo) => {
