@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-25T13:26:43.164Z", actor: "cli/research-prioritise" }
 ---
 
 # Research: session-transcript-capture-and-storage
