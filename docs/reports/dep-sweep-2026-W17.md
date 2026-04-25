@@ -29,12 +29,12 @@ Date: 2026-04-25
       "total": 0
     },
     "dependencies": {
-      "prod": 8,
+      "prod": 11,
       "dev": 90,
       "optional": 1,
       "peer": 0,
       "peerOptional": 0,
-      "total": 97
+      "total": 102
     }
   }
 }
@@ -44,6 +44,6 @@ Date: 2026-04-25
 
 ```
 Package           Current  Wanted  Latest  Location                       Depended by
-@playwright/test   1.58.2  1.59.1  1.59.1  node_modules/@playwright/test  feature-346-km-dep-sweep-2026-w17
-eslint             9.39.4  9.39.4  10.2.1  node_modules/eslint            feature-346-km-dep-sweep-2026-w17
+@playwright/test   1.58.2  1.59.1  1.59.1  node_modules/@playwright/test  feature-363-cc-dep-sweep-2026-w17
+eslint             9.39.4  9.39.4  10.2.1  node_modules/eslint            feature-363-cc-dep-sweep-2026-w17
 ```
