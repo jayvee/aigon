@@ -1,55 +1,60 @@
 {
-  "id": "op",
-  "name": "OpenCode",
+  "id": "km",
+  "name": "Kimi",
   "aliases": [
-    "opencode",
-    "op"
+    "kimi",
+    "km"
   ],
-  "displayName": "OpenCode",
-  "shortName": "OP",
-  "providerFamily": "router",
-  "portOffset": 5,
-  "terminalColor": "cyan",
-  "bannerColor": "#06B6D4",
+  "displayName": "Kimi Code CLI",
+  "shortName": "KM",
+  "providerFamily": "moonshot",
+  "portOffset": 6,
+  "terminalColor": "magenta",
+  "bannerColor": "#7C3AED",
   "defaultFleetAgent": false,
-  "installHint": "npm i -g opencode-ai  (see: https://opencode.ai/docs)",
-  "installCommand": "npm i -g opencode-ai",
+  "installHint": "uv tool install --python 3.13 kimi-cli  (requires uv — see: https://docs.astral.sh/uv/getting-started/installation/)",
+  "installCommand": "uv tool install --python 3.13 kimi-cli",
+  "installPrerequisites": [
+    {
+      "binary": "uv",
+      "hint": "Install uv first: curl -LsSf https://astral.sh/uv/install.sh | sh  (or see https://docs.astral.sh/uv/getting-started/installation/)"
+    }
+  ],
   "worktreeEnv": {},
   "git": {
     "hasEmailAttribution": true
   },
   "capabilities": {
-    "supportsModelFlag": true,
+    "supportsModelFlag": false,
     "transcriptTelemetry": false,
     "resolvesSlashCommands": false
   },
   "cli": {
-    "command": "opencode",
-    "implementFlag": "run",
+    "command": "kimi",
+    "implementFlag": "--print",
+    "promptFlag": "-p",
     "implementPrompt": "feature-do",
     "evalPrompt": "feature-eval",
     "reviewPrompt": "feature-code-review",
     "reviewCheckPrompt": "feature-code-revise",
     "models": {},
-    "modelOptions": [
-      { "value": null, "label": "Default (OpenCode config)" },
-      { "value": "openrouter/moonshotai/kimi-k2.6", "label": "Kimi K2.6 via OpenRouter" },
-      { "value": "openrouter/z-ai/glm-5.1", "label": "GLM-5.1 via OpenRouter" },
-      { "value": "openrouter/deepseek/deepseek-chat-v3-0324", "label": "DeepSeek V3 via OpenRouter" },
-      { "value": "openrouter/mistralai/codestral-2501", "label": "Codestral 2501 via OpenRouter" },
-      { "value": "openrouter/qwen/qwen3-235b-a22b:free", "label": "Qwen3 235B via OpenRouter" },
-      { "value": "openrouter/qwen/qwen3-coder:exacto", "label": "Qwen3 Code (exacto) via OpenRouter" }
-    ],
+    "modelOptions": [],
     "effortOptions": [],
+    "complexityDefaults": {
+      "low":       { "model": null, "effort": null },
+      "medium":    { "model": null, "effort": null },
+      "high":      { "model": null, "effort": null },
+      "very-high": { "model": null, "effort": null }
+    },
     "modelFlag": "--model",
     "effortFlag": null,
     "effortEnv": null,
     "submitKey": "Enter"
   },
   "placeholders": {
-    "AGENT_ID": "op",
-    "AGENT_NAME": "OpenCode",
-    "AGENT_TITLE": "OpenCode Configuration",
+    "AGENT_ID": "km",
+    "AGENT_NAME": "Kimi",
+    "AGENT_TITLE": "Kimi Code CLI Configuration",
     "ARG_SYNTAX": "$ARGUMENTS",
     "ARG1_SYNTAX": "$1",
     "CMD_PREFIX": "aigon-",
@@ -73,7 +78,7 @@
   },
   "rootFile": null,
   "supportsAgentsMd": true,
-  "agentFile": "opencode.md",
+  "agentFile": "kimi.md",
   "templatePath": "generic/docs/agent.md",
   "extras": {},
   "signals": {
