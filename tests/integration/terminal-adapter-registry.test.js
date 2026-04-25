@@ -39,8 +39,8 @@ test('getDisplayName iterm2', () => assert.strictEqual(ta.getDisplayName('iterm2
 test('getDisplayName apple-terminal', () => assert.strictEqual(ta.getDisplayName('apple-terminal'), 'Terminal.app'));
 
 test('canonicalize "terminal" alias → apple-terminal', () => assert.strictEqual(ta.canonicalize('terminal'), 'apple-terminal'));
-test('canonicalize unknown → null', () => assert.strictEqual(ta.canonicalize('ghostty'), null));
-test('isValidId unknown → false', () => assert.ok(!ta.isValidId('ghostty')));
+test('canonicalize unknown → null', () => assert.strictEqual(ta.canonicalize('definitely-not-a-real-terminal'), null));
+test('isValidId unknown → false', () => assert.ok(!ta.isValidId('definitely-not-a-real-terminal')));
 
 test('linux adapters absent from darwin picker', () => {
     const values = ta.getPickerOptions({ platform: 'darwin' }).map(o => o.value);
@@ -50,12 +50,12 @@ test('linux adapters absent from darwin picker', () => {
 test('canonicalizeTerminalApp delegates to registry', () => {
     assert.strictEqual(canonicalizeTerminalApp('warp'), 'warp');
     assert.strictEqual(canonicalizeTerminalApp('terminal'), 'apple-terminal');
-    assert.strictEqual(canonicalizeTerminalApp('ghostty'), null);
+    assert.strictEqual(canonicalizeTerminalApp('definitely-not-a-real-terminal'), null);
 });
 
 test('getTerminalConfigHelpIds covers darwin terminals', () => {
     const ids = getTerminalConfigHelpIds();
-    assert.ok(ids.includes('warp') && ids.includes('iterm2') && ids.includes('apple-terminal'));
+    assert.ok(ids.includes('warp') && ids.includes('iterm2') && ids.includes('apple-terminal') && ids.includes('ghostty'));
 });
 
 // ---------------------------------------------------------------------------
