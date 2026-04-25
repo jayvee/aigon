@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 261
+lines_removed: 137
+lines_changed: 398
+files_touched: 13
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 346
+output_tokens: 166251
+cache_creation_input_tokens: 296456
+cache_read_input_tokens: 33157345
+thinking_tokens: 0
+total_tokens: 33620398
+billable_tokens: 166597
+cost_usd: 13.5537
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 344 - review-cycle-redesign-4-dashboard
 Agent: cc
 
