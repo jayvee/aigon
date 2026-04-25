@@ -129,8 +129,8 @@ Current shared modules:
   `startSupervisorLoop`, `sweepEntity`, `getAgentLiveness`
 - `lib/agent-failover.js` (~140 lines): token-exhaustion signal construction, failover chain selection, handoff prompt text, and clearing per-slot status flags after a switch
   `buildTokenExhaustionSignal`, `chooseNextAgent`, `buildFailoverPrompt`, `clearTokenExhaustedFlag`
-- `lib/terminal-adapters.js` (~200 lines): data-driven terminal detection/dispatch — adapter table with `detect(env)`, `launch(cmd, opts)`, `split(configs, opts)` per terminal
-  `findAdapter`, `getAdapter`, `tileITerm2Windows`, `closeWarpWindow`
+- `lib/terminal-adapters.js` (~200 lines): data-driven terminal detection/dispatch — adapter table with `detect(env)`, `launch(cmd, opts)`, `split(configs, opts)` per terminal. **Registry API** (F350): each macOS adapter carries `id`, `displayName`, `pickerLabel`, `platforms`, `aliases`, `hiddenFromPicker` — all consumer surfaces (dashboard enum, onboarding picker, display-name map, canonicaliser, help text) derive from this single source. Adding a new terminal requires only a new adapter object here.
+  `findAdapter`, `getAdapter`, `tileITerm2Windows`, `closeWarpWindow`, `getTerminalIds`, `getPickerOptions`, `getDashboardOptions`, `getDisplayName`, `canonicalize`, `isValidId`, `registerAdapter`
 - `lib/config.js` (~951 lines): global/project config, profiles, agent CLI config, editor detection, and runtime compatibility for legacy `terminal`/`tmuxApp` reads while `terminalApp` rolls out
   `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`, `getAgentCliConfig`
 - `lib/global-config-migration.js` (~150 lines): machine-wide `~/.aigon/config.json` migration registry and runner; write-once backups + schemaVersion tracking for global config renames
