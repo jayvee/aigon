@@ -1,0 +1,72 @@
+---
+title: "schedule"
+description: "Schedule a feature autonomous run or research start for a specific time. Polled by the aigon server."
+---
+
+# `aigon schedule`
+
+Defer a kickoff to a specific clock time. The aigon server (`aigon server start`) polls the schedule store every ~45 seconds and fires each job once at or after its `--run-at`. If the server is offline at that moment, the job stays pending and fires on the next poll after the server starts (catch-up: it fires once when `runAt <= now`).
+
+```bash
+aigon schedule add feature_autonomous <id> --run-at=<iso8601> <agents...> [options]
+aigon schedule add research_start <id> --run-at=<iso8601> [agents...] [options]
+aigon schedule list   [--all] [--repo=<path>]
+aigon schedule cancel <jobId> [--repo=<path>]
+```
+
+The server is a hard requirement — without it, scheduled jobs never fire.
+
+## `add feature_autonomous`
+
+Queue a [`feature-autonomous-start`](/docs/reference/commands/feature/feature-autonomous-start) for a future time.
+
+```bash
+aigon schedule add feature_autonomous 142 \
+  --run-at=2026-04-28T09:30:00-07:00 cc \
+  --stop-after=eval --eval-agent=gg
+```
+
+| Flag | Meaning |
+|------|---------|
+| `--run-at=<iso8601>` | Required. Must include an explicit timezone (`Z` or `±hh:mm`). |
+| `--stop-after=` | `implement` \| `eval` \| `review` \| `close` (forwarded to `feature-autonomous-start`). |
+| `--eval-agent=<id>` | Agent for the eval phase. |
+| `--review-agent=<id>` | Agent for the code-review phase. |
+| `--workflow=<slug>` | Workflow definition slug. |
+| `--models=<csv>` | Per-agent model overrides (e.g. `cc=claude-opus-4-7,gg=gemini-2.5-pro`). |
+| `--efforts=<csv>` | Per-agent effort overrides. |
+| `--review-model=<id>` / `--review-effort=<id>` | Review-phase overrides. |
+| `--repo=<path>` | Target repo (defaults to current). |
+
+## `add research_start`
+
+Queue a [`research-start`](/docs/reference/commands/research/research-start).
+
+```bash
+aigon schedule add research_start 12 \
+  --run-at=2026-04-29T08:00:00Z cc gg --background
+```
+
+| Flag | Meaning |
+|------|---------|
+| `--run-at=<iso8601>` | Required. Must include an explicit timezone. |
+| `--background` / `--foreground` | Forwarded to `research-start`. |
+| `--repo=<path>` | Target repo. |
+
+## `list`
+
+Print pending jobs in the schedule store. Pass `--all` to include completed and cancelled jobs as well.
+
+## `cancel <jobId>`
+
+Cancel a pending job by its id (printed by `add` and `list`). Already-fired jobs cannot be cancelled.
+
+## How it's stored
+
+Scheduled jobs live in `.aigon/state/scheduled-kickoffs.json` (lock-protected, store version `1`). The store is part of the portable state covered by [`aigon sync`](/docs/reference/commands/infra/sync), so a job scheduled on one laptop fires from whichever machine has its server running at `runAt`.
+
+## See also
+
+- [`feature-autonomous-start`](/docs/reference/commands/feature/feature-autonomous-start) — what a `feature_autonomous` job actually runs.
+- [`research-start`](/docs/reference/commands/research/research-start) — what a `research_start` job runs.
+- [`server`](/docs/reference/commands/infra/server) — required to fire scheduled jobs.

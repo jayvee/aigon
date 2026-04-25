@@ -13,6 +13,10 @@ Aigon supports multiple AI coding agents, with more being added over time. Each 
 | `gg` | Gemini CLI | `/aigon:` | `gemini` |
 | `cx` | Codex CLI | `$aigon-` (skill) | `codex` |
 | `cu` | Cursor | `/aigon-` | `agent` |
+| `op` | OpenCode | inlined prompt body | `opencode` |
+| `km` | Kimi Code CLI | inlined prompt body | `kimi` |
+
+Slash-invocable agents (`cc`, `gg`, `cu`) receive aigon prompts through their native slash-command discovery. Non-invocable agents (`cx`, `op`, `km`) launch with the canonical prompt body inlined directly — no slash-command registration is required on those CLIs.
 
 ## Installing agents
 
@@ -95,7 +99,9 @@ Default "yolo mode" flags auto-approve commands:
 | `cc` | `--permission-mode acceptEdits` | Auto-edits, prompts for risky Bash |
 | `gg` | `--yolo` | Auto-approves all |
 | `cx` | _(empty)_ | Interactive by default (`--full-auto` only in autonomous mode) |
-| `mv` | `-p` | Headless prompt mode |
+| `cu` | `--print --force --trust --output-format stream-json` | Headless print mode, trusts the workspace |
+| `op` | `run` | Runs the OpenCode `run` subcommand |
+| `km` | `--print` | Headless prompt mode |
 
 Override with:
 

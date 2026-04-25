@@ -1,0 +1,70 @@
+---
+title: "sync"
+description: "Solo multi-laptop sync of portable .aigon/ state via a private git repo."
+---
+
+# `aigon sync`
+
+Sync your portable `.aigon/` state — workflow snapshots, sessions, agent status, scheduled jobs — across machines using a **private git repo** that you own. Aigon stages the data in a hidden helper repo at `.aigon/.sync/repo/` and pushes a dedicated `aigon-state` branch, so your working tree and feature branches are never touched.
+
+```bash
+aigon sync init <git-url>
+aigon sync register [repo-path]
+aigon sync export [--output <file>]
+aigon sync bootstrap-merge <bundle> [--push]
+aigon sync push
+aigon sync pull
+aigon sync status
+```
+
+## Subcommands
+
+| Subcommand | Purpose |
+|------------|---------|
+| `init <git-url>` | Initialize a fresh private sync repo and save the URL in your global config. Run once per laptop. |
+| `register [path]` | Register the current (or given) repo for portable-state sync. |
+| `export [--output file]` | Export a portable-state bundle (`.tgz`) for first-time bootstrap onto a new machine. |
+| `bootstrap-merge <bundle> [--push]` | Merge an exported bundle into local state. Pass `--push` to publish the resulting baseline back to the sync repo. |
+| `push` | Copy portable state into the helper repo, commit, and push to the `aigon-state` branch. |
+| `pull` | Fetch the `aigon-state` branch and restore portable state into every registered repo. |
+| `status` | Show initialization/bootstrap status, registered repos, and any pending changes. |
+
+## What gets synced
+
+By default Aigon syncs the parts of `.aigon/` that describe portable session and workflow state. The exclusion list lives in `.aigon/.syncignore` (auto-created on first push) and you can tune it per project. Cache files, lock files, and tmux scratch state are excluded out of the box.
+
+## Typical bootstrap (laptop A → laptop B)
+
+On **laptop A**:
+
+```bash
+aigon sync init git@github.com:you/aigon-sync.git
+aigon sync register
+aigon sync export --output ~/Desktop/aigon-sync-A.tgz
+```
+
+Move `aigon-sync-A.tgz` to **laptop B**, then:
+
+```bash
+aigon sync init git@github.com:you/aigon-sync.git
+aigon sync bootstrap-merge ~/Desktop/aigon-sync-A.tgz --push
+```
+
+After bootstrap, normal flow on either laptop:
+
+```bash
+aigon sync pull   # before starting work
+# … work …
+aigon sync push   # before switching machines
+```
+
+## Implementation notes
+
+- The helper repo at `.aigon/.sync/repo/` is the only thing pushed/pulled — your project's working tree, feature branches, and history are never touched.
+- The branch used in your sync repo is always `aigon-state`.
+- `aigon sync` rejects pushes when uncommitted state in `.aigon/` looks unsafe to ship; run `aigon sync status` to see the diff first.
+
+## See also
+
+- [`server`](/docs/reference/commands/infra/server) — the dashboard server that consumes synced workflow state.
+- [`schedule`](/docs/reference/commands/infra/schedule) — server-side scheduled kickoffs (synced alongside other workflow state).
