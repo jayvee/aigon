@@ -129,4 +129,72 @@ testAsync('migration 2.56.0: idempotent rewrite of snapshots into new states', (
     assert.strictEqual(after2.currentSpecState, 'spec_review_in_progress');
 }));
 
+test('machine: code review complete routes to revision or submitted', () => {
+    // REGRESSION: code review must not collapse back to the legacy reviewing state.
+    const base = {
+        currentSpecState: 'implementing',
+        mode: 'solo_branch',
+        authorAgentId: 'cc',
+        winnerAgentId: null,
+        agents: { cc: { status: 'ready' } },
+    };
+    const revise = createActor(featureMachine, { input: base });
+    revise.start();
+    revise.send({ type: 'feature.code_review.started', reviewerId: 'gg', at: '2026-04-01T01:00:00Z' });
+    assert.strictEqual(revise.getSnapshot().value, 'code_review_in_progress');
+    revise.send({ type: 'feature.code_review.completed', reviewerId: 'gg', requestRevision: true, at: '2026-04-01T02:00:00Z' });
+    assert.strictEqual(revise.getSnapshot().value, 'code_revision_in_progress');
+    assert.strictEqual(revise.getSnapshot().context.codeReview.revisionAgentId, 'cc');
+
+    const clean = createActor(featureMachine, { input: base });
+    clean.start();
+    clean.send({ type: 'feature.code_review.started', reviewerId: 'gg', at: '2026-04-01T01:00:00Z' });
+    clean.send({ type: 'feature.code_review.completed', reviewerId: 'gg', requestRevision: false, at: '2026-04-01T02:00:00Z' });
+    assert.strictEqual(clean.getSnapshot().value, 'submitted');
+});
+
+test('projector: accepts legacy review_requested and new code review events', () => {
+    // REGRESSION: legacy review_requested event logs must project like new code review starts.
+    const legacyCtx = projectContext([
+        { type: 'feature.started', featureId: '1', mode: 'solo_branch', agents: ['cc'], at: '2026-04-01T00:00:00Z' },
+        { type: 'signal.agent_submitted', agentId: 'cc', at: '2026-04-01T00:30:00Z' },
+        { type: 'feature.review_requested', reviewerId: 'gg', at: '2026-04-01T01:00:00Z' },
+    ]);
+    const newCtx = projectContext([
+        { type: 'feature.started', featureId: '1', mode: 'solo_branch', agents: ['cc'], at: '2026-04-01T00:00:00Z' },
+        { type: 'signal.agent_submitted', agentId: 'cc', at: '2026-04-01T00:30:00Z' },
+        { type: 'feature.code_review.started', reviewerId: 'gg', at: '2026-04-01T01:00:00Z' },
+        { type: 'feature.code_review.completed', reviewerId: 'gg', requestRevision: true, at: '2026-04-01T02:00:00Z' },
+        { type: 'feature.code_revision.completed', revisionAgentId: 'cc', at: '2026-04-01T03:00:00Z' },
+    ]);
+    assert.strictEqual(legacyCtx.currentSpecState, 'code_review_in_progress');
+    assert.strictEqual(newCtx.currentSpecState, 'submitted');
+    assert.strictEqual(newCtx.codeReview.revisionAgentId, 'cc');
+    assert.strictEqual(newCtx.codeReview.revisionCompletedAt, '2026-04-01T03:00:00Z');
+});
+
+testAsync('migration 2.57.0: idempotent reviewing rename', () => withTempDirAsync('aigon-f342-mig-', async (repo) => {
+    initRepo(repo);
+    const snapDir = path.join(repo, '.aigon/workflows/features/12');
+    fs.mkdirSync(snapDir, { recursive: true });
+    fs.writeFileSync(path.join(snapDir, 'snapshot.json'), JSON.stringify({
+        entityType: 'feature',
+        featureId: '12',
+        lifecycle: 'reviewing',
+        currentSpecState: 'reviewing',
+        mode: 'solo_branch',
+        agents: { cc: { status: 'ready' } },
+        eventCount: 2,
+        createdAt: '2026-04-01T00:00:00Z',
+        updatedAt: '2026-04-01T01:00:00Z',
+    }, null, 2));
+    fs.writeFileSync(path.join(snapDir, 'events.jsonl'), '');
+    await runPendingMigrations(repo);
+    const after1 = JSON.parse(fs.readFileSync(path.join(snapDir, 'snapshot.json'), 'utf8'));
+    assert.strictEqual(after1.currentSpecState, 'code_review_in_progress');
+    await runPendingMigrations(repo);
+    const after2 = JSON.parse(fs.readFileSync(path.join(snapDir, 'snapshot.json'), 'utf8'));
+    assert.strictEqual(after2.currentSpecState, 'code_review_in_progress');
+}));
+
 report();
