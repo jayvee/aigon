@@ -309,6 +309,8 @@ Create paths follow the same contract. `feature-create` / `research-create` do n
 
 Spec review follows the same contract. `feature-spec-review` / `feature-spec-revise` and their research equivalents may still write informational git commits for audit history, but those commits are not load-bearing state. The authoritative write is the workflow-core `spec_review.submitted` / `spec_review.acked` event persisted immediately after the commit. Dashboard reads and close gating must use the projected snapshot metadata, not commit-subject scans.
 
+**Spec-review cycle stage contract (F354):** spec review and spec revise are only permitted while the entity is in **inbox** or **backlog** (pre-implementation). Once the entity moves to `implementing` or later, spec-review actions are absent from `validActions`, the CLI exits non-zero with a message citing the allowed stages, and the engine write path (`recordSpecReviewStarted`) throws. The predicate is `isSpecReviewCycleAllowed(lifecycle)` in `lib/spec-review-state.js` — a single source of truth used by the action registry guards and the CLI. Spec-revise additionally allows `spec_review_in_progress` (continuing an already-started review cycle) but not any implementing/post state.
+
 ### Unified Action Registry
 
 All user-facing actions — workflow transitions and infrastructure operations — are defined in central candidate lists with consistent shape, eligibility guards, and metadata. Any UI surface (dashboard, board, macOS app) can discover available actions from the API without reimplementing eligibility logic.

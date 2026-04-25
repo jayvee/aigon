@@ -41,12 +41,20 @@ testAsync('workflow-backed spec-review status drives dashboard actions', () => w
     assert.ok(!researchActions.some((a) => a.action === 'research-spec-revise'));
 }));
 
-test('feature and research spec-review actions keep distinct labels', () => {
+// REGRESSION: spec-review cycle actions must be absent for implementing entities; present for inbox/backlog
+test('spec-review cycle: backlog allows, implementing blocks, labels distinct', () => {
+    const hasSR = (et, lc, st) => snapshotToDashboardActions(et, '01', { entityType: et, featureId: '01', researchId: '01', currentSpecState: lc, lifecycle: lc, mode: 'solo_branch', agents: {}, winnerAgentId: null, updatedAt: new Date().toISOString() }, st).validActions.some(a => /spec-rev/.test(a.action));
+    ['feature', 'research'].forEach(et => { assert.ok(hasSR(et, 'backlog', 'backlog'), `${et} backlog`); assert.ok(!hasSR(et, 'implementing', 'in-progress'), `${et} implementing`); });
     assert.deepStrictEqual(pickSpecReviewLabels('feature', 1), ['Review spec', 'Spec Revise']);
-    assert.deepStrictEqual(pickSpecReviewLabels('research', 1), ['Review spec', 'Spec Revise']);
-    assert.deepStrictEqual(pickSpecReviewLabels('feature', 0), ['Review spec']);
     assert.deepStrictEqual(pickSpecReviewLabels('research', 0), ['Review spec']);
 });
+// REGRESSION: spec-review engine write path rejects implementing lifecycle (hard fail, not silent no-op)
+testAsync('spec-review engine guard rejects implementing lifecycle', () => withTempDirAsync('aigon-sr-guard-', async (repo) => {
+    initRepo(repo); fs.mkdirSync(path.join(repo, 'docs/specs/features/03-in-progress'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'docs/specs/features/03-in-progress/feature-05-test.md'), '# Feature: test\n');
+    await engine.startFeature(repo, '05', 'solo_branch', ['cc']);
+    await assert.rejects(() => engine.recordSpecReviewStarted(repo, 'feature', '05', { reviewerId: 'gg' }), /inbox or backlog/);
+}));
 
 
 testAsync('migration backfills legacy spec-review commits into workflow state', () => withTempDirAsync('aigon-spec-review-mig-', async (repo) => {
