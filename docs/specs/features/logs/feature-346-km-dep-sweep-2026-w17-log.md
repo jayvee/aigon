@@ -1,9 +1,9 @@
 ---
-commit_count: 2
-lines_added: 65
+commit_count: 0
+lines_added: 0
 lines_removed: 0
-lines_changed: 65
-files_touched: 2
+lines_changed: 0
+files_touched: 0
 fix_commit_count: 0
 fix_commit_ratio: 0
 rework_thrashing: false

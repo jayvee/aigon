@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-25T07:01:22.075Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: doctor-runs-pending-schema-migrations
