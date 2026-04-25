@@ -21,18 +21,17 @@ Add a first-class `aigon sync` command that lets a user reliably move their Aigo
 ## Acceptance Criteria
 
 - [ ] `aigon sync configure <git-remote-url>` stores the remote in `.aigon/config.json` as `sync.remote`.
-- [ ] `aigon sync push` commits all changes under `.aigon/` (excluding `locks/`, `sessions/index.json`, and any `.env*` files) and pushes to `sync.remote` on a dedicated `aigon-state` branch.
-- [ ] `aigon sync pull` fetches and fast-forward merges `aigon-state` from the remote; reports conflicts if the branch has diverged and instructs the user to resolve manually.
-- [ ] After a pull, features whose `worktreePath` no longer exists locally are shown with a `[suspended]` badge in `aigon board` output; `aigon feature-start` on a suspended feature re-creates the worktree from scratch rather than erroring.
+- [ ] `aigon sync push` commits all changes under `.aigon/` (excluding `locks/`, `sessions/index.json`, and any `.env*` files) with message `aigon-sync: <timestamp>` and pushes to `sync.remote` on a dedicated `aigon-state` branch.
+- [ ] `aigon sync pull` fetches and fast-forward merges `aigon-state` from the remote; reports conflicts if the branch has diverged (detected via `git merge-base --is-ancestor`) and instructs the user to resolve manually.
+- [ ] After a pull, features whose `worktreePath` no longer exists locally are shown with a `[suspended]` badge in the `STATUS` column of `aigon board` output; `aigon feature-start` on a suspended feature re-creates the worktree from scratch rather than erroring.
 - [ ] `aigon sync status` shows: last push timestamp, last pull timestamp, number of local-only commits, number of remote-only commits.
 - [ ] `.aigon/.syncignore` (similar to `.gitignore`) lists paths excluded from sync; defaults include `locks/`, `sessions/`, `*.env`.
 
 ## Validation
 
-```bash
-node --check aigon-cli.js
-npm test
-```
+- [ ] **Integration Test:** Script that initializes two empty directories as Aigon workspaces, configures a shared bare git repo as the sync remote, and verifies that `aigon sync push` from Workspace A followed by `aigon sync pull` in Workspace B replicates all features and research topics.
+- [ ] **Conflict Test:** Verify that if both workspaces have local-only `.aigon` changes, `aigon sync pull` refuses to merge and provides the correct manual resolution command.
+- [ ] **Suspension Test:** Verify that `aigon board` on Workspace B shows `[suspended]` for a feature started on Workspace A, and that `aigon feature-start` on that feature successfully re-clones/re-links the worktree.
 
 ## Pre-authorised
 
@@ -43,15 +42,17 @@ npm test
 
 **Why git as the transport:** The `.aigon/` state directory is already flat JSON + JSONL, which git merges well. JSONL event logs are append-only and thus naturally conflict-free. Workflow snapshot JSON files are last-write-wins per entity (keyed by entity ID), so conflicts are rare and recoverable. Using git avoids introducing any new sync infrastructure — users already have git installed.
 
-**Branch strategy:** A dedicated `aigon-state` branch (orphan, no relation to the repo's feature branches) lives in the same git remote as the main repo, or in a separate bare repo configured by the user. This keeps Aigon state out of the main project history.
+**Branch strategy:** A dedicated `aigon-state` branch lives in the configured remote. To avoid disrupting the user's current worktree/branch, `aigon sync` operations should use a temporary git index or a background worktree to manage the `aigon-state` branch commits.
+- **Initialization:** If `aigon-state` doesn't exist on the remote, it is initialized as an orphan branch.
+- **Commit Format:** `aigon-sync: <ISO-8601-timestamp>`.
 
 **Excluded from sync:**
 - `locks/` — machine-local coordination primitives
 - `sessions/index.json` — machine-local tmux session index (from F351)
 - `*.env`, `.env.local` — secrets
-- Worktree paths themselves — only metadata syncs, not worktree file contents
+- Worktree paths themselves — only metadata syncs, not worktree file contents. These should be enforced via a generated `.aigon/.syncignore` that is automatically used during the internal commit process.
 
-**Suspended feature detection:** On pull, scan `workflows/features/*/snapshot.json` for entries with `worktreePath` set. If that path doesn't exist on the current machine, show `[suspended]` in board output. This is a read-path decoration — nothing is written to the snapshot, so the remote state stays clean.
+**Suspended feature detection:** On pull, scan `workflows/features/*/snapshot.json` for entries with `worktreePath` set. If that path doesn't exist on the current machine, show `[suspended]` in the `STATUS` column of `aigon board` (e.g., `[suspended] in-progress`). This is a read-path decoration — nothing is written to the snapshot, so the remote state stays clean.
 
 **Conflict handling (MVP):** On diverged branches, refuse to auto-merge and print a clear message with `git pull --rebase` instructions. True CRDT/merge is out of scope.
 
