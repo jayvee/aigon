@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-25T02:18:37.250Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: terminal-adapter-registry
