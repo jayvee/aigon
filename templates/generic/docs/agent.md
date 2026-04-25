@@ -61,6 +61,7 @@ Feature and research work are NOT complete until you run these commands yourself
 
 These are direct lifecycle commands you run yourself in the agent host — slash commands for some agents, skills for Codex, and never auto-invoked. The `aigon agent-status` command writes state to the **main repo** (not the worktree), so you won't see state files locally. Just run the command and trust the output.
 
+{{AGENT_DEV_SERVER_NOTE}}
 ## Critical Rules
 
 1. **Read the active spec first**: Use `aigon feature-spec <ID>` for features. For research, read the spec directly from `docs/specs/research-topics/03-in-progress/`
@@ -81,6 +82,7 @@ These are direct lifecycle commands you run yourself in the agent host — slash
 7. Update the implementation log in `./docs/specs/features/logs/`
 8. **STOP** - Wait for user to approve before running `{{CMD_PREFIX}}feature-close <ID>`
 
+<!-- AIGON_LIGHT_OPTIONAL_START -->
 ## Fleet Mode Workflow
 
 1. Run `{{CMD_PREFIX}}feature-start <ID> cc cx gg cu` to create worktrees for each agent
@@ -93,6 +95,7 @@ These are direct lifecycle commands you run yourself in the agent host — slash
 4. Return to main repo for evaluation: `{{CMD_PREFIX}}feature-eval <ID>`
 5. Merge winner: `{{CMD_PREFIX}}feature-close <ID> cx`
 6. Clean up losers: `{{CMD_PREFIX}}feature-cleanup <ID> --push` (to save branches) or `{{CMD_PREFIX}}feature-cleanup <ID>` (to delete)
+<!-- AIGON_LIGHT_OPTIONAL_END -->
 
 ## Research Workflow
 
@@ -107,6 +110,7 @@ Research follows the same lifecycle shape as features: `start -> do -> submit ->
 5. Run `aigon agent-status submitted` when your research pass is complete (from outside the tmux session, use the explicit form: `aigon agent-status submitted <ID> <agent>`)
 6. Run `{{CMD_PREFIX}}research-close <ID>` when ready to finish
 
+<!-- AIGON_LIGHT_OPTIONAL_START -->
 ### Fleet Mode
 
 1. Run `{{CMD_PREFIX}}research-start <ID> cc cx gg cu` to prepare and launch parallel research
@@ -116,6 +120,7 @@ Research follows the same lifecycle shape as features: `start -> do -> submit ->
 5. Return to the main repo for synthesis: `{{CMD_PREFIX}}research-eval <ID>`
 6. Finish the topic: `{{CMD_PREFIX}}research-close <ID>`
 7. Use `{{CMD_PREFIX}}research-open <ID>` only to re-open or attach Fleet research sessions after setup
+<!-- AIGON_LIGHT_OPTIONAL_END -->
 
 {{PERMISSION_SAVE_NOTE}}
 ## Before Completing a Feature
