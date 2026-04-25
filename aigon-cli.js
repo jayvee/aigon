@@ -36,7 +36,7 @@ function formatCliError(error) {
 let COMMAND_ALIASES;
 let createFeatureCommands, createResearchCommands, createFeedbackCommands;
 let createSetupCommands, createInfraCommands, createMiscCommands, createWorkflowCommands, createSetCommands;
-let createRecurringCommands;
+let createRecurringCommands, createScheduleCommands;
 let checkForUpdate, getCachedUpdateCheck, formatUpdateNotice;
 
 try {
@@ -50,6 +50,7 @@ try {
     ({ createWorkflowCommands } = require('./lib/commands/workflow'));
     ({ createSetCommands } = require('./lib/commands/set'));
     ({ createRecurringCommands } = require('./lib/commands/recurring'));
+    ({ createScheduleCommands } = require('./lib/commands/schedule'));
     ({ checkForUpdate, getCachedUpdateCheck, formatUpdateNotice } = require('./lib/npm-update-check'));
 } catch (error) {
     console.error(formatCliError(error));
@@ -74,6 +75,7 @@ const commands = {
     ...createWorkflowCommands(),
     ...createSetCommands(),
     ...createRecurringCommands(),
+    ...createScheduleCommands(),
 };
 
 const args = process.argv.slice(2);

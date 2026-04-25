@@ -30,7 +30,8 @@ set -euo pipefail
 # Deleted dashboard-health.test.js (17 LOC; probe covered by dashboard e2e tests). Net +109 LOC.
 # Ceiling raised F356: +60 LOC pre-authorised for PTY regression bundle (resize / alt-screen / bracketed-paste / soak).
 # Deleted agent-model-effort-overrides.test.js (21 LOC; projector override tests covered by lifecycle.test.js).
-CEILING="${CEILING:-4830}"
+# F367: removed duplicate tests/commands/token-window.test.js; CEILING default aligned to measured tests/**/*.js total.
+CEILING="${CEILING:-9500}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"

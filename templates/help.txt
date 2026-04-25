@@ -130,6 +130,11 @@ Token Window:
   token-window [--message=<text>] [--agents=<id1,id2>] [--dry-run]
                                     Send a kickoff nudge to active agent sessions to align provider usage windows
 
+Scheduled kickoffs (server poller; requires aigon server):
+  schedule add feature_autonomous <id> --run-at=<iso8601> <agents...> [--stop-after=] [--repo=]
+  schedule add research_start <id> --run-at=<iso8601> [agents...] [--repo=]
+  schedule list [--all] [--repo=]   schedule cancel <jobId> [--repo=]
+
 Examples:
   aigon init                           # Setup specs directory
   aigon install-agent cc gg            # Install Claude and Gemini configs
