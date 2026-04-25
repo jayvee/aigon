@@ -1,6 +1,8 @@
 ---
 complexity: medium
 set: in-dashboard-terminal
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-25T09:23:14.371Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: in-dashboard-terminal-cutover-and-polish
