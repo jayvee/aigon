@@ -1,0 +1,52 @@
+---
+title: "feature-code-revise"
+description: "Implementer-side follow-up after a code review — accept fixes, revert changes, or modify the reviewed implementation"
+---
+
+## Synopsis
+
+```bash
+aigon feature-code-revise [ID]
+```
+
+## Shortcuts
+
+- `/afrv` (slash command) · `aigon afrv` (CLI)
+
+## Description
+
+`feature-code-revise` is the implementing agent's response to a completed code review. It is the second half of the review cycle: after `feature-code-review` produces fix commits in the feature worktree, the original implementer runs `feature-code-revise` to decide which changes to accept, revert, or modify.
+
+If no ID is supplied, the command infers it from the current worktree branch name.
+
+## Workflow position
+
+```
+feature-code-review (reviewer) → code_review_complete → code_revision_in_progress
+→ feature-code-revise (implementer) → code_revision_complete
+```
+
+Both states are first-class engine states. AutoConductor polls `currentSpecState === 'code_revision_complete'` to confirm the revision cycle is done before closing the feature.
+
+## What it does
+
+1. Reads the review diff and the reviewer's findings log
+2. For each reviewer fix commit: accept (cherry-pick), revert, or modify per spec acceptance criteria
+3. Commits the revision result with `fix(revise): ...` messages
+4. Signals `code_revision_complete` to the engine via `aigon agent-status submitted`
+
+## Examples
+
+```bash
+# From the implementing agent's worktree
+aigon feature-code-revise
+
+# Explicitly pass the feature ID (useful if branch name is ambiguous)
+aigon feature-code-revise 55
+```
+
+## Related
+
+- [`feature-code-review`](./feature-code-review) — reviewer-side pass that precedes this command
+- [`feature-close`](./feature-close) — merges and completes the feature after the revision cycle
+- [`agent-status`](../infra/agent-status) — underlying signal mechanism

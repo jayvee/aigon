@@ -1,0 +1,103 @@
+---
+title: "token-window"
+description: "Nudge active agent sessions to align rolling provider usage windows with your workday"
+---
+
+## Synopsis
+
+```bash
+aigon token-window [--message=<text>] [--agents=<id1,id2>] [--dry-run]
+```
+
+## Description
+
+`token-window` sends a lightweight nudge message to every active Aigon agent session so that the first substantive interaction of the day starts your provider's rolling usage window at the right time. This is useful for plans with a **~5-hour rolling window** (e.g. Claude Pro/Max) where the window resets relative to your last real usage — running this command at e.g. 05:00 means the window is aligned for peak work hours.
+
+If no active sessions are found, the command logs a no-op message and exits 0.
+
+> **Ethics and ToS:** This command uses the normal product interaction surface (message delivery). It does not bypass, spoof, or misrepresent provider limits. Do not use it to circumvent fair-use policies. See [`docs/token-maxing.md`](https://github.com/jviner/aigon/blob/main/docs/token-maxing.md) for the full mental model, caveats, and scheduler examples.
+
+## Options
+
+| Flag | Description |
+|------|-------------|
+| `--message=<text>` | Override the kickoff message (default: config value or `"Checking in to align token window"`) |
+| `--agents=<list>` | Comma-separated agent IDs to target (default: all active sessions, or `tokenWindow.targetAgents` from config) |
+| `--dry-run` | Print what would be sent without actually nudging any session |
+
+## Configuration
+
+Set defaults in `~/.aigon/config.json` under the `tokenWindow` key:
+
+```json
+{
+  "tokenWindow": {
+    "message": "Checking in to align token window",
+    "targetAgents": ["cc", "gg"],
+    "timezone": "America/New_York"
+  }
+}
+```
+
+The kickoff timestamp is written to `.aigon/state/last-token-kickoff` and exposed via `GET /api/budget` as `lastTokenKickoffAt`.
+
+## Scheduling examples
+
+### macOS (launchd)
+
+Create `~/Library/LaunchAgents/build.aigon.token-window.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>build.aigon.token-window</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/aigon</string>
+    <string>token-window</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>5</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/tmp/aigon-token-window.log</string>
+</dict>
+</plist>
+```
+
+Load with: `launchctl load ~/Library/LaunchAgents/build.aigon.token-window.plist`
+
+### Linux (cron)
+
+```bash
+# Run at 05:00 daily
+0 5 * * * /usr/local/bin/aigon token-window >> /tmp/aigon-token-window.log 2>&1
+```
+
+## Examples
+
+```bash
+# Nudge all active sessions with the configured message
+aigon token-window
+
+# Override the message for this run
+aigon token-window --message="Morning check-in"
+
+# Target only Claude Code sessions
+aigon token-window --agents=cc
+
+# Preview without sending
+aigon token-window --dry-run
+```
+
+## Related
+
+- [`agent-status`](./agent-status) — manual status signaling for agent sessions
+- [`nudge`](./nudge) — send arbitrary messages to a specific feature/research agent session

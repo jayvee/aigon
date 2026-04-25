@@ -15,12 +15,12 @@ The core delivery workflow — moving a feature from idea to merged code.
 - [`feature-do`](/docs/reference/commands/feature/feature-do) — Implement a feature (Drive or Fleet mode)
 - [`feature-open`](/docs/reference/commands/feature/feature-open) — Open the feature worktree and start an agent
 - [`feature-code-review`](/docs/reference/commands/feature/feature-code-review) — Code-review a feature with a different agent
+- [`feature-code-revise`](/docs/reference/commands/feature/feature-code-revise) — Implementer-side follow-up after a code review
 - [`feature-eval`](/docs/reference/commands/feature/feature-eval) — Evaluate or compare implementations
 - [`feature-close`](/docs/reference/commands/feature/feature-close) — Merge the winner and finish the feature
 - [`feature-cleanup`](/docs/reference/commands/feature/feature-cleanup) — Garbage-collect worktrees and branches
 - [`feature-reset`](/docs/reference/commands/feature/feature-reset) — Full reset: kill sessions, drop worktrees, return spec to backlog
 - [`feature-now`](/docs/reference/commands/feature/feature-now) — Fast-track: create + prioritise + start in one step
-- [`feature-autopilot`](/docs/reference/commands/feature/feature-autopilot) — Autopilot loop: implement → review → fix → close
 - [`feature-autonomous-start`](/docs/reference/commands/feature/feature-autonomous-start) — Background AutoConductor session
 - [`feature-validate`](/docs/reference/commands/feature/feature-validate) — Run a feature's validation commands
 
@@ -55,6 +55,8 @@ The dashboard, server, and supporting tooling that runs around your features.
 - [`status`](/docs/reference/commands/infra/status) — Show repo status across all workflows
 - [`agent-status`](/docs/reference/commands/infra/agent-status) — Per-agent status signals (used by hooks)
 - [`sessions-close`](/docs/reference/commands/infra/sessions-close) — Kill all agent sessions for an ID
+- [`session-list`](/docs/reference/commands/infra/session-list) — List all live Aigon-managed tmux sessions
+- [`token-window`](/docs/reference/commands/infra/token-window) — Nudge sessions to align rolling provider usage windows
 - [`repair`](/docs/reference/commands/infra/repair) — Repair safe drift without resetting work
 - [`next`](/docs/reference/commands/infra/next) — Suggest the most likely next workflow action
 - [`insights`](/docs/reference/commands/infra/insights) — Pro analytics: cost, quality, trends

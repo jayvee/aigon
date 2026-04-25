@@ -1,0 +1,72 @@
+---
+title: "session-list"
+description: "Print all live tmux sessions Aigon manages, with entity binding, role, agent, tmux ID, and status"
+---
+
+## Synopsis
+
+```bash
+aigon session-list
+```
+
+## Description
+
+`session-list` queries the tmux server and Aigon's session sidecar files to produce a tabular view of every Aigon-managed tmux session. It covers both **entity-bound** sessions (tied to a feature or research ID) and **repo-level** sessions (e.g. interactive "Ask agent" sessions not tied to a specific feature).
+
+Each row shows:
+
+| Column | Description |
+|--------|-------------|
+| CATEGORY | `entity` (feature/research) or `repo` (repo-scoped session) |
+| ENTITY | Entity shorthand, e.g. `f42` for feature 42, `r7` for research 7, or `repo:<name>` |
+| ROLE | Session role: `do`, `eval`, `review`, `auto`, etc. |
+| AGENT | Agent ID (`cc`, `gg`, `cx`, `cu`, …) |
+| SESSION | Full tmux session name |
+| TMUX | Durable tmux session ID, e.g. `$12` (stable across renames) |
+| STATUS | `attached`, `detached`, or `orphan(<reason>)` |
+
+An **orphan** session has a sidecar file but no matching live tmux session (stale sidecar) — or a live session with a deleted sidecar.
+
+## Examples
+
+```bash
+# List all Aigon-managed tmux sessions
+aigon session-list
+```
+
+Sample output:
+
+```
+CATEGORY  ENTITY  ROLE  AGENT  SESSION                              TMUX  STATUS
+--------  ------  ----  -----  -----------------------------------  ----  --------
+entity    f42     do    cc     aigon-f42-do-cc-add-auth-flow        $12   detached
+entity    f42     eval  gg     aigon-f42-eval-gg-add-auth-flow      $13   attached
+entity    r7      do    cx     aigon-r7-do-cx-api-perf-research     $9    detached
+```
+
+## Session sidecar files
+
+Aigon writes a sidecar file at `.aigon/sessions/{sessionName}.json` for each managed session. Since Aigon 2.x (F351) the sidecar includes:
+
+```json
+{
+  "category": "entity",
+  "tmuxId": "$12",
+  "shellPid": 48291,
+  "sessionName": "aigon-f42-do-cc-add-auth-flow",
+  "entityType": "f",
+  "entityId": "42",
+  "agent": "cc",
+  "role": "do",
+  "repoPath": "/Users/you/src/myapp",
+  "worktreePath": "/Users/you/.aigon/worktrees/myapp/feature-42-cc-add-auth-flow",
+  "createdAt": "2026-04-25T10:00:00.000Z"
+}
+```
+
+`tmuxId` is the durable foreign key — stable even if the session is renamed. Internal routing uses `-t $N` instead of the session name string.
+
+## Related
+
+- [`sessions-close`](./sessions-close) — kill all agent sessions for a feature/research ID
+- [`feature-open`](../feature/feature-open) — open a feature worktree and start an agent session
