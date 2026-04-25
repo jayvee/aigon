@@ -48,11 +48,12 @@
       elapsedTimer: null,
       specPath: null, specTitle: null, specStage: null,
       specPoller: null, specContentHash: null,
-      xterm: null, fitAddon: null, sseSource: null,
+      xterm: null, fitAddon: null, sseSource: null, ws: null,
     };
 
     function destroyXterm() {
       if (termState.sseSource) { try { termState.sseSource.close(); } catch (_) {} termState.sseSource = null; }
+      if (termState.ws) { try { termState.ws.close(); } catch (_) {} termState.ws = null; }
       if (termState.xterm) { try { termState.xterm.dispose(); } catch (_) {} termState.xterm = null; }
       termState.fitAddon = null;
     }
@@ -110,6 +111,50 @@
       termState.xterm = term;
       termState.fitAddon = fitAddon;
       return { term, fitAddon };
+    }
+
+    async function connectPtyStream(sessionName) {
+      let token;
+      try {
+        const r = await fetch('/api/pty-token');
+        const d = await r.json();
+        token = d.token;
+      } catch (_) {
+        connectSessionStream(sessionName);
+        return;
+      }
+      const term = termState.xterm;
+      if (!term) return;
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${proto}//${location.host}/api/session/pty/${encodeURIComponent(sessionName)}?token=${encodeURIComponent(token)}`;
+      const ws = new WebSocket(wsUrl);
+      ws.binaryType = 'arraybuffer';
+      termState.ws = ws;
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+      };
+      ws.onmessage = (e) => {
+        if (e.data instanceof ArrayBuffer) {
+          try { term.write(new Uint8Array(e.data)); } catch (_) {}
+        }
+      };
+      ws.onclose = () => {
+        termState.ws = null;
+        if (termState.xterm) termState.xterm.writeln('\r\n\x1b[33m[Session ended]\x1b[0m');
+        const dot = document.getElementById('panel-status-dot');
+        if (dot) dot.className = 'panel-status-dot';
+      };
+      term.onData((data) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(new TextEncoder().encode(data));
+        }
+      });
+      term.onResize(({ cols, rows }) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+        }
+      });
     }
 
     function connectSessionStream(sessionName) {
@@ -229,7 +274,7 @@
       } else if (sessionName && getTerminalClickTarget() === 'dashboard') {
         const xtermResult = createXtermInstance(container);
         if (xtermResult) {
-          connectSessionStream(sessionName);
+          connectPtyStream(sessionName);
           // Resize observer keeps fit in sync
           const ro = new ResizeObserver(() => {
             try { if (termState.fitAddon) termState.fitAddon.fit(); } catch (_) {}
