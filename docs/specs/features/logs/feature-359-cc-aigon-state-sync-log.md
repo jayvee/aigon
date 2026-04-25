@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 1249
+lines_removed: 5
+lines_changed: 1254
+files_touched: 12
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 232
+output_tokens: 112619
+cache_creation_input_tokens: 499400
+cache_read_input_tokens: 14842881
+thinking_tokens: 0
+total_tokens: 15455132
+billable_tokens: 112851
+cost_usd: 40.078
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 359 - aigon-state-sync
 Agent: cc
 
