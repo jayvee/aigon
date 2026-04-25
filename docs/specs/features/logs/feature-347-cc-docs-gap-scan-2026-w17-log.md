@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 272
+lines_removed: 4
+lines_changed: 276
+files_touched: 9
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 131
+output_tokens: 77104
+cache_creation_input_tokens: 282740
+cache_read_input_tokens: 7847205
+thinking_tokens: 0
+total_tokens: 8207180
+billable_tokens: 77235
+cost_usd: 4.5714
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 347 - docs-gap-scan-2026-w17
 Agent: cc
 
