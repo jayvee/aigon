@@ -220,7 +220,10 @@
                         <span class="col-count" x-text="getStageDisplayCount(repo, stage)"></span>
                         <button class="btn btn-primary col-new-feature-btn"
                                 x-show="$store.dashboard.pipelineType === 'features' && stage === 'inbox'"
-                                x-on:click.stop="createNewSpec(repo.path)">+ New Feature</button>
+                                x-on:click.stop="createNewSpec(repo.path, 'features')">+ New Feature</button>
+                        <button class="btn btn-primary col-new-feature-btn"
+                                x-show="$store.dashboard.pipelineType === 'research' && stage === 'inbox'"
+                                x-on:click.stop="createNewSpec(repo.path, 'research')">+ New Research</button>
                       </span>
                     </div>
                     <div class="col-body" x-effect="renderKanbanColCards($el, repo, stage)"></div>
@@ -366,7 +369,7 @@
       </div>
     </div>
   </div>
-  <!-- Create feature modal -->
+  <!-- Create spec modal (features and research) -->
   <div id="create-modal" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
     <div class="modal-box create-modal-box">
       <h3 id="create-modal-title">New Feature</h3>
