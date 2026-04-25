@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-25T09:23:24.311Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: record-agent-session-ids
