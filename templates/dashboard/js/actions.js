@@ -218,17 +218,40 @@ function updateReviewerTripletSelects(agentId, scope = 'autonomous') {
   const effortOpts = agent && Array.isArray(agent.effortOptions) ? agent.effortOptions : [];
 
   modelCell.innerHTML = '';
-  if (modelOpts.length > 0) {
+  if (modelOpts.length > 0 && agent) {
     const sel = document.createElement('select');
     sel.id = prefix + '-model';
     sel.className = 'agent-triplet-model create-input';
     sel.style.cssText = 'padding:8px 10px;width:100%';
+    sel.dataset.agentId = agent.id;
     modelOpts.forEach(opt => {
       const el = document.createElement('option');
       el.value = opt.value == null ? '' : String(opt.value);
       const raw = opt.label || (opt.value == null ? '' : String(opt.value));
-      el.textContent = opt.value == null ? 'Default' : (raw || String(opt.value));
+      el.textContent = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
       sel.appendChild(el);
+    });
+    const recommended = getRecommendedValue(agent.id, 'model');
+    const stored = tripletStorage.read(agent.id);
+    if (recommended && modelOpts.some(o => String(o.value || '') === recommended)) {
+      sel.value = recommended;
+      sel.classList.add('agent-triplet-recommended');
+    } else if (stored.model != null && modelOpts.some(o => String(o.value || '') === stored.model)) {
+      sel.value = stored.model;
+    }
+    const complexityHint = pickerRecommendation && pickerRecommendation.complexity
+      ? ' Suggested for ' + pickerRecommendation.complexity + ' complexity (from the spec).'
+      : '';
+    sel.title = recommended && sel.classList.contains('agent-triplet-recommended') && complexityHint
+      ? complexityHint.trim() + ' Default keeps your global aigon model for this task type.'
+      : recommended && sel.classList.contains('agent-triplet-recommended')
+        ? 'Suggested from spec. Default keeps your global aigon model for this task type.'
+        : 'Default: use the model from aigon config for this task type';
+    sel.addEventListener('click', e => e.stopPropagation());
+    sel.addEventListener('change', e => {
+      e.stopPropagation();
+      sel.classList.remove('agent-triplet-recommended');
+      tripletStorage.write(agent.id, { model: sel.value || null });
     });
     modelCell.appendChild(sel);
   } else {
@@ -236,17 +259,40 @@ function updateReviewerTripletSelects(agentId, scope = 'autonomous') {
   }
 
   effortCell.innerHTML = '';
-  if (effortOpts.length > 0) {
+  if (effortOpts.length > 0 && agent) {
     const sel = document.createElement('select');
     sel.id = prefix + '-effort';
     sel.className = 'agent-triplet-effort create-input';
     sel.style.cssText = 'padding:8px 10px;width:100%';
+    sel.dataset.agentId = agent.id;
     effortOpts.forEach(opt => {
       const el = document.createElement('option');
       el.value = opt.value == null ? '' : String(opt.value);
       const raw = opt.label || (opt.value == null ? '' : String(opt.value));
-      el.textContent = opt.value == null ? 'Default' : (raw || String(opt.value));
+      el.textContent = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
       sel.appendChild(el);
+    });
+    const recommendedEffort = getRecommendedValue(agent.id, 'effort');
+    const stored = tripletStorage.read(agent.id);
+    if (recommendedEffort && effortOpts.some(o => String(o.value || '') === recommendedEffort)) {
+      sel.value = recommendedEffort;
+      sel.classList.add('agent-triplet-recommended');
+    } else if (stored.effort != null && effortOpts.some(o => String(o.value || '') === stored.effort)) {
+      sel.value = stored.effort;
+    }
+    const effortComplexityHint = pickerRecommendation && pickerRecommendation.complexity
+      ? ' Suggested for ' + pickerRecommendation.complexity + ' complexity (from the spec).'
+      : '';
+    sel.title = recommendedEffort && sel.classList.contains('agent-triplet-recommended') && effortComplexityHint
+      ? effortComplexityHint.trim() + ' Default keeps your global aigon effort for this agent.'
+      : recommendedEffort && sel.classList.contains('agent-triplet-recommended')
+        ? 'Suggested from spec. Default keeps your global aigon effort for this agent.'
+        : 'Default: use the effort level from aigon config for this agent';
+    sel.addEventListener('click', e => e.stopPropagation());
+    sel.addEventListener('change', e => {
+      e.stopPropagation();
+      sel.classList.remove('agent-triplet-recommended');
+      tripletStorage.write(agent.id, { effort: sel.value || null });
     });
     effortCell.appendChild(sel);
   } else {
