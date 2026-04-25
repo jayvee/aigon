@@ -1,5 +1,7 @@
 ---
 complexity: medium
+# agent: cc    # optional — id of the agent that owns this research spec;
+#              #   see feature-template.md for precedence rules.
 ---
 
 # Research: {{NAME}}
