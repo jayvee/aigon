@@ -56,6 +56,7 @@ Feature Open:
   feature-open <ID> <ID>... [--agent=<code>]
                                     Open multiple features side-by-side
   sessions-close <ID>               Kill all agent sessions for a feature/research ID and close Warp/tmux sessions
+  session-list                      Print all live tmux sessions Aigon manages (entity + repo categories)
 
 Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-create <name>             Create feature spec in inbox
