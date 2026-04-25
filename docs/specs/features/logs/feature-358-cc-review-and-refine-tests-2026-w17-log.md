@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 57
+lines_removed: 4274
+lines_changed: 4331
+files_touched: 52
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 188
+output_tokens: 75039
+cache_creation_input_tokens: 250361
+cache_read_input_tokens: 11717875
+thinking_tokens: 0
+total_tokens: 12043463
+billable_tokens: 75227
+cost_usd: 25.3209
+sessions: 2
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 358 - review-and-refine-tests-2026-w17
 Agent: cc
 
