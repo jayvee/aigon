@@ -62,7 +62,24 @@ If a grouping scheme is already in place from a prior run, validate it still map
 
 ## Run Log
 
-<!-- Append a new entry here at the top of this section before closing the feature. -->
+### 2026-W17 — 2026-04-26
+- Framework: bare-node test files, custom helper at `tests/_helpers.js`. Pre-push: `npm test` (lint + diagrams check + per-file `node`) + `npm run test:ui` (Playwright via `tests/dashboard-e2e/playwright.config.js`) + `bash scripts/check-test-budget.sh`.
+- Baseline: 100 files (90 `*.test.js` + 10 `*.spec.js`), 9465 / 9500 LOC (99% of budget), `npm test` ~43s, 39 wired files / 210 assertions.
+- After:    52 files (47 `*.test.js` + 5 `*.spec.js`),  5213 / 9500 LOC (54% of budget), `npm test` ~43s, 47 wired files / 264 assertions.
+- Deltas:   −48 files, −4252 LOC, +8 wired files, +54 assertions, ~0s wall-time delta.
+- Deleted:
+  - `tests/commands/` (43 files, ~4140 LOC) — byte-identical duplicate of `tests/integration/` (only delta: missing F365 idleAtPrompt test that already lives in integration). Added 2026-04-25 by cb12847 alongside this recurring spec; never wired into npm test or any other config.
+  - `tests/e2e/` (5 `.spec.js` files, ~369 LOC) — copies of `tests/dashboard-e2e/*.spec.js` without the helpers/setup/teardown/playwright.config.js needed to run them. Never executed.
+  - `playwright.config.js` (root, 19 LOC, outside test budget) — unused; `test:ui` targets `tests/dashboard-e2e/playwright.config.js`.
+- Merged:   none.
+- Rewritten:
+  - `package.json` `scripts.test` — replaced 39-file inline list with directory glob loops; added `test:integration` and `test:workflow` entrypoints, runnable in isolation. Auto-discovers any new `tests/integration/*.test.js` or `tests/workflow-core/*.test.js`. `eslint` lint glob extended to `tests/workflow-core`.
+- Added:    none. Coverage gain came from wiring 8 already-on-disk tests that were orphaned: `dashboard-health-route`, `dashboard-state-render-meta`, `doctor-runs-migrations`, `review-cycle-loopback`, `review-cycle-redesign-states`, `terminal-adapter-registry`, `token-window` (all in integration) plus `workflow-core/review-cycles-projection`. All pass.
+- Deferred for human:
+  - `npm run test:ui` flake on `tests/dashboard-e2e/solo-lifecycle.spec.js` (`>` lines 67/page.waitForResponse '**/api/action'). 7/8 specs pass per run; one of the two solo lifecycle scenarios times out at 15s on each run (different one each time). Reproduces in this worktree only — same test passes on main HEAD checkout. Worktree branch-point lacks 70d43ff8 (`fix(engine): return cancelled spec_review to backlog`) and there are uncommitted lib/ changes in main that this worktree does not see. Not caused by this feature's commits (no `lib/`, `templates/`, or `tests/dashboard-e2e/` edits). Recommend rebasing the worktree onto main before close.
+  - `test:related` change-impact entrypoint not added — bare-node has no native equivalent of `vitest related` / `jest --findRelatedTests`. Directory grouping (`test:integration`, `test:workflow`, `test:ui`) is the native lever; cheaper than introducing a runner.
+- Commits:  6ec8e5c8, 146eda95, plus this run-log commit.
+
 <!-- Format:
 ### {{YYYY-WW}} — <ISO date>
 - Baseline: <N tests, Ts duration> (coverage: <X%> if available)
