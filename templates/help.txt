@@ -126,6 +126,10 @@ Visualization:
 Context-Aware:
   next                              (agent-only) Detect current context and suggest next workflow action
 
+Token Window:
+  token-window [--message=<text>] [--agents=<id1,id2>] [--dry-run]
+                                    Send a kickoff nudge to active agent sessions to align provider usage windows
+
 Examples:
   aigon init                           # Setup specs directory
   aigon install-agent cc gg            # Install Claude and Gemini configs
