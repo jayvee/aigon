@@ -1,5 +1,10 @@
 ---
 complexity: medium
+# agent: cc    # optional — id of the agent that owns this spec. Used as the
+#              #   default reviewer for spec-revise cycles when the operator
+#              #   does not pick one explicitly. Precedence at revision time:
+#              #     event payload nextReviewerId > frontmatter agent:
+#              #     > snapshot.authorAgentId > getDefaultAgent().
 ---
 
 # Feature: {{NAME}}
