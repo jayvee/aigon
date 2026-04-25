@@ -3,7 +3,6 @@
 // REGRESSION F271 `936d2da7`: research read-model tolerates null entityId.
 // REGRESSION F276: detect-only spec drift; AIGON_AUTO_RECONCILE=1 opts into moves.
 'use strict';
-
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -11,14 +10,12 @@ const { test, testAsync, withTempDir, withTempDirAsync, report, ENTITY_STAGE_DIR
 const wrm = require('../../lib/workflow-read-model');
 const board = require('../../lib/board');
 const workflowEngine = require('../../lib/workflow-core/engine');
-
 const seed = (repo) => ['features', 'research-topics'].forEach((kind) => seedEntityDirs(repo, kind));
 const writeFeatureAuto = (repo, id, payload) => {
     const file = path.join(repo, '.aigon', 'state', `feature-${String(id).padStart(2, '0')}-auto.json`);
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify(payload, null, 2));
 };
-
 for (const [kind, getState] of [['features', wrm.getFeatureDashboardState], ['research-topics', wrm.getResearchDashboardState]]) {
     const id = kind === 'features' ? '12' : '21';
     test(`${kind}: snapshot lifecycle overrides visible folder stage`, () => withTempDir('aigon-rm-', (repo) => {
@@ -31,7 +28,6 @@ for (const [kind, getState] of [['features', wrm.getFeatureDashboardState], ['re
         if (kind === 'features') assert.ok(s.validActions.length > 0);
     }));
 }
-
 test('spec drift is detect-only by default; AIGON_AUTO_RECONCILE=1 moves the file', () => withTempDir('aigon-rm-', (repo) => {
     seed(repo);
     writeSpec(repo, 'features', '02-backlog', 'feature-16-x.md');
@@ -44,7 +40,6 @@ test('spec drift is detect-only by default; AIGON_AUTO_RECONCILE=1 moves the fil
         lifecycle: 'implementing',
     });
     assert.ok(fs.existsSync(path.join(repo, 'docs/specs/features/02-backlog/feature-16-x.md')));
-
     writeSpec(repo, 'features', '02-backlog', 'feature-17-x.md');
     writeSnap(repo, 'features', '17', 'implementing');
     process.env.AIGON_AUTO_RECONCILE = '1';
@@ -55,7 +50,6 @@ test('spec drift is detect-only by default; AIGON_AUTO_RECONCILE=1 moves the fil
         assert.ok(fs.existsSync(path.join(repo, 'docs/specs/features/03-in-progress/feature-17-x.md')));
     } finally { delete process.env.AIGON_AUTO_RECONCILE; }
 }));
-
 test('board re-buckets snapshot-backed features and carries spec drift', () => withTempDir('aigon-rm-', (repo) => {
     seed(repo);
     writeSpec(repo, 'features', '02-backlog', 'feature-14-x.md');
@@ -78,7 +72,6 @@ test('board re-buckets snapshot-backed features and carries spec drift', () => w
         lifecycle: 'implementing',
     });
 }));
-
 // REGRESSION F297: autonomous plan shows full stage sequence (valid) or error with doctor hint (broken slug).
 for (const [desc, id, autoPayload, check] of [
     ['valid workflow slug exposes future reviewed stages', '12',
@@ -107,7 +100,6 @@ for (const [desc, id, autoPayload, check] of [
         check(wrm.getFeatureDashboardState(repo, id, 'in-progress', [{ id: 'cc', status: 'implementing' }]));
     }));
 }
-
 // REGRESSION: brewboard-seed backlog specs ship without engine snapshots — Start must still appear.
 test('backlog + MISSING_SNAPSHOT still exposes feature-start and research-start', () => withTempDir('aigon-rm-', (repo) => {
     seed(repo);
@@ -121,7 +113,6 @@ test('backlog + MISSING_SNAPSHOT still exposes feature-start and research-start'
     assert.strictEqual(r.readModelSource, wrm.WORKFLOW_SOURCE.MISSING_SNAPSHOT);
     assert.ok(r.validActions.some((a) => a.action === 'research-start'), 'research-start for backlog without snapshot');
 }));
-
 // REGRESSION feature 295: operator.nudge_sent must survive projection onto the workflow snapshot.
 testAsync('nudge event is recorded and surfaced on snapshot', () => withTempDirAsync('aigon-rm-', async (repo) => {
     const specPath = path.join(repo, 'docs', 'specs', 'features', '03-in-progress', 'feature-07-test.md');
@@ -133,5 +124,4 @@ testAsync('nudge event is recorded and surfaced on snapshot', () => withTempDirA
     const snapshot = await workflowEngine.showFeature(repo, '07');
     assert.deepStrictEqual(snapshot.nudges, [{ agentId: 'cc', role: 'do', text: 'follow up', atISO: at }]);
 }));
-
 report();

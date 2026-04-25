@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 'use strict';
-
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -8,7 +7,6 @@ const { execSync, execFileSync } = require('child_process');
 const { test, testAsync, withTempDir, withTempDirAsync, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 const { snapshotToDashboardActions } = require('../../lib/workflow-snapshot-adapter');
-
 const REPO_DIRS = [
     'docs/specs/features/03-in-progress',
     'docs/specs/features/logs',
@@ -21,29 +19,24 @@ const RESEARCH_REPO_DIRS = [
     'docs/specs/research-topics/05-done',
     'docs/specs/research-topics/logs',
 ];
-
 function withTempRepo(fn) {
     return withTempDirAsync('aigon-lifecycle-', async (dir) => {
         for (const sub of REPO_DIRS) fs.mkdirSync(path.join(dir, sub), { recursive: true });
         return fn(dir);
     });
 }
-
 function writeSpec(repoPath, featureId, name) {
     const specPath = path.join(repoPath, 'docs', 'specs', 'features', '03-in-progress', `feature-${featureId}-${name}.md`);
     fs.writeFileSync(specPath, `# Feature: ${name}\n`);
     return specPath;
 }
-
 function writeResearchSpec(repoPath, researchId, name) {
     const specPath = path.join(repoPath, 'docs', 'specs', 'research-topics', '04-in-evaluation', `research-${researchId}-${name}.md`);
     fs.writeFileSync(specPath, `---\ntitle: ${name}\n---\n\n# Research: ${name}\n`);
     return specPath;
 }
-
 const getActions = (snap, id) => snapshotToDashboardActions('feature', id, snap);
 const hasAction = (actions, name) => actions.validActions.some(a => a.action === name);
-
 for (const [label, agentId, featureId] of [['cc', 'cc', '01'], ['solo', 'solo', '03']]) {
     testAsync(`solo(${label}): start → ready → close transitions cleanly`, () => withTempRepo(async (repo) => {
         writeSpec(repo, featureId, `solo-${label}`);
@@ -57,7 +50,6 @@ for (const [label, agentId, featureId] of [['cc', 'cc', '01'], ['solo', 'solo', 
         assert.strictEqual(getActions(closed, featureId).validActions.length, 0);
     }));
 }
-
 testAsync('canCloseFeature blocks pre-close when no agent has signaled', () => withTempRepo(async (repo) => {
     writeSpec(repo, '04', 'solo-not-ready');
     await engine.startFeature(repo, '04', 'solo_branch', ['solo']);
@@ -65,7 +57,6 @@ testAsync('canCloseFeature blocks pre-close when no agent has signaled', () => w
     assert.strictEqual(closable.ok, false);
     assert.match(closable.reason, /not ready to close/);
 }));
-
 testAsync('canCloseFeature blocks while spec reviews are still pending', () => withTempRepo(async (repo) => {
     writeSpec(repo, '14', 'pending-spec-review');
     await engine.startFeature(repo, '14', 'solo_branch', ['solo']);
@@ -80,7 +71,6 @@ testAsync('canCloseFeature blocks while spec reviews are still pending', () => w
     assert.strictEqual(closable.ok, false);
     assert.match(closable.reason, /feature-spec-revise 14/);
 }));
-
 testAsync('recoverEmptyAgents heals legacy agents:[] features', () => withTempRepo(async (repo) => {
     writeSpec(repo, '05', 'legacy-broken');
     await engine.startFeature(repo, '05', 'solo_branch', []);
@@ -91,7 +81,6 @@ testAsync('recoverEmptyAgents heals legacy agents:[] features', () => withTempRe
     assert.strictEqual(snap.agents.solo.status, 'ready');
     assert.ok((await engine.canCloseFeature(repo, '05')).ok);
 }));
-
 test('prioritise writes workflow snapshot (F270 1c2766bc)', () => withTempDir('aigon-prio-', (repo) => {
     const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-06-x.md');
     fs.mkdirSync(path.dirname(specPath), { recursive: true });
@@ -106,7 +95,6 @@ test('prioritise writes workflow snapshot (F270 1c2766bc)', () => withTempDir('a
     engine.ensureEntityBootstrappedSync(repo, 'feature', '06', 'backlog', specPath);
     assert.strictEqual(fs.readFileSync(path.join(repo, '.aigon/workflows/features/06/events.jsonl'), 'utf8'), eventsBefore);
 }));
-
 testAsync('fleet: start → both ready → eval → select winner → close', () => withTempRepo(async (repo) => {
     writeSpec(repo, '02', 'fleet-test');
     await engine.startFeature(repo, '02', 'fleet', ['cc', 'gg']);
@@ -122,7 +110,6 @@ testAsync('fleet: start → both ready → eval → select winner → close', ()
     const closed = await engine.closeFeatureWithEffects(repo, '02', async () => {});
     assert.strictEqual(closed.lifecycle, 'done');
 }));
-
 testAsync('pause → resume lifecycle', () => withTempRepo(async (repo) => {
     writeSpec(repo, '03', 'pause-test');
     await engine.startFeature(repo, '03', 'solo_branch', ['cc']);
@@ -134,7 +121,6 @@ testAsync('pause → resume lifecycle', () => withTempRepo(async (repo) => {
     assert.strictEqual(resumed.currentSpecState, 'implementing');
     assert.ok(hasAction(getActions(resumed, '03'), 'feature-pause'));
 }));
-
 test('telemetry aggregator keeps feature-close normalization invariants', () => withTempDir('aigon-tel-', (repo) => {
     const telemetry = require('../../lib/telemetry');
     for (const [sessionId, activity, tokenUsage, costUsd] of [['sess-a', 'implement', { input: 100, output: 200, cacheReadInput: 50, cacheCreationInput: 25, thinking: 10, total: 385, billable: 310 }, 0.42], ['sess-b', 'review', { input: 50, output: 80, cacheReadInput: 0, cacheCreationInput: 0, thinking: 0, total: 130, billable: 130 }, 0.13]]) telemetry.writeNormalizedTelemetryRecord({ source: 'claude-transcript', sessionId, entityType: 'feature', featureId: '777', repoPath: repo, agent: 'cc', activity, model: 'claude-opus-4-6', startAt: '2026-04-07T00:00:00Z', endAt: '2026-04-07T01:00:00Z', tokenUsage, costUsd }, { repoPath: repo });
@@ -143,21 +129,17 @@ test('telemetry aggregator keeps feature-close normalization invariants', () => 
     assert.deepStrictEqual([agg.sessions, agg.input_tokens, agg.billable_tokens, agg.cost_usd, agg.model], [2, 150, 440, 0.55, 'claude-opus-4-6']); assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('777', 'solo', { repoPath: repo }).sessions, 2);
     assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('999', 'cc', { repoPath: repo }), null);
 }));
-
 test('research close finalizer stages engine-moved spec and commits it', () => withTempDir('aigon-research-close-', (repo) => {
     for (const sub of RESEARCH_REPO_DIRS) fs.mkdirSync(path.join(repo, sub), { recursive: true });
     execSync('git init -q', { cwd: repo });
     execSync('git config user.email t@t', { cwd: repo });
     execSync('git config user.name t', { cwd: repo });
-
     const initialSpec = writeResearchSpec(repo, '24', 'close-test');
     const findingsPath = path.join(repo, 'docs', 'specs', 'research-topics', 'logs', 'research-24-cc-findings.md');
     fs.writeFileSync(findingsPath, '# Findings\n');
     execSync('git add . && git commit -qm init', { cwd: repo });
-
     const doneSpecPath = path.join(repo, 'docs', 'specs', 'research-topics', '05-done', path.basename(initialSpec));
     fs.renameSync(initialSpec, doneSpecPath);
-
     const script = `
         const entity = require(${JSON.stringify(path.join(__dirname, '../../lib/entity'))});
         const utils = require(${JSON.stringify(path.join(__dirname, '../../lib/utils'))});
@@ -168,7 +150,6 @@ test('research close finalizer stages engine-moved spec and commits it', () => w
         });
     `;
     execFileSync(process.execPath, ['-e', script], { cwd: repo, stdio: 'pipe' });
-
     assert.strictEqual(
         execSync('git log --format=%s -1', { cwd: repo }).toString().trim(),
         'chore: complete research 24 - move spec to done'
@@ -178,7 +159,6 @@ test('research close finalizer stages engine-moved spec and commits it', () => w
     assert.match(nameStatus, /A\tdocs\/specs\/research-topics\/05-done\/research-24-close-test\.md/);
     assert.match(fs.readFileSync(doneSpecPath, 'utf8'), /transitions:\n  - \{ from: "in-evaluation", to: "done"/);
 }));
-
 testAsync('getMainRepoPath returns repo root from a subdirectory', () => withTempDirAsync('aigon-git-', async (dir) => {
     const gitLib = require('../../lib/git');
     execSync('git init -q', { cwd: dir });
@@ -191,5 +171,4 @@ testAsync('getMainRepoPath returns repo root from a subdirectory', () => withTem
     assert.strictEqual(fs.realpathSync(gitLib.getMainRepoPath(path.join(dir, 'a', 'b', 'c'))), fs.realpathSync(dir));
     assert.strictEqual(fs.realpathSync(gitLib.getMainRepoPath(dir)), fs.realpathSync(dir));
 }));
-
 report();

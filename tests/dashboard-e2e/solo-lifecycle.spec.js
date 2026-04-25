@@ -1,6 +1,5 @@
 // @ts-check
 'use strict';
-
 /**
  * E2E: Solo lifecycle via dashboard, parametrized over worktree + branch modes.
  *
@@ -17,7 +16,6 @@
  *
  * Run: npx playwright test --config tests/dashboard-e2e/playwright.config.js solo-lifecycle
  */
-
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
@@ -28,9 +26,7 @@ const {
     gotoPipelineWithMockedSessions, prioritiseInboxFeature, startFeatureWithAgents,
     clickCardAction, expectFeatureClosed, expectConsoleHasAction,
 } = require('./_helpers');
-
 const CLI_PATH = path.join(__dirname, '..', '..', 'aigon-cli.js');
-
 function runCli(args, cwd, extraEnv = {}) {
     const r = spawnSync(process.execPath, [CLI_PATH, ...args], {
         cwd, encoding: 'utf8', stdio: 'pipe',
@@ -39,7 +35,6 @@ function runCli(args, cwd, extraEnv = {}) {
     if (r.status !== 0) throw new Error(`aigon ${args.join(' ')} failed (${r.status}): ${r.stderr || r.stdout}`);
     return r;
 }
-
 async function runSoloBranchMock({ repoPath, featureId, delays }) {
     await new Promise(r => setTimeout(r, delays.implementing));
     fs.writeFileSync(path.join(repoPath, `mock-solo-f${featureId}.js`), `// mock f${featureId}\n`);
@@ -53,7 +48,6 @@ async function runSoloBranchMock({ repoPath, featureId, delays }) {
         AIGON_AGENT_ID: 'solo', AIGON_PROJECT_PATH: repoPath, AIGON_FORCE_PRO: 'true',
     });
 }
-
 const SCENARIOS = [
     {
         mode: 'worktree',
@@ -68,14 +62,12 @@ const SCENARIOS = [
         agentBadge: 'solo',
     },
 ];
-
 for (const s of SCENARIOS) {
     test.describe(`Solo ${s.mode} lifecycle`, () => {
         test(`full solo-${s.mode} lifecycle: inbox → start → submit → close → done`, async ({ page }) => {
             const ctx = readCtx();
             await gotoPipelineWithMockedSessions(page);
             const paddedId = await prioritiseInboxFeature(page, s.featureName);
-
             if (s.mode === 'worktree') {
                 await startFeatureWithAgents(page, s.featureName, ['cc']);
             } else {
@@ -84,14 +76,12 @@ for (const s of SCENARIOS) {
                 await forceRefresh(page);
                 await page.waitForTimeout(500);
             }
-
             const inProgressCol = page.locator('.kanban-col[data-stage="in-progress"]').first();
             await expect(inProgressCol).toContainText(s.featureName, { timeout: 8000 });
             const inProgressCard = inProgressCol.locator('.kcard').filter({ hasText: s.featureName }).first();
             const agentSection = inProgressCard.locator(`.kcard-agent.agent-${s.agentBadge}`);
             await expect(agentSection).toBeVisible({ timeout: 5000 });
             if (s.mode === 'branch') await expect(agentSection).toContainText('Drive');
-
             if (s.mode === 'worktree') {
                 const worktreePath = path.join(ctx.worktreeBase, `feature-${paddedId}-cc-${s.desc}`);
                 await waitForPath(worktreePath, 15000);
@@ -102,16 +92,12 @@ for (const s of SCENARIOS) {
             } else {
                 await runSoloBranchMock({ repoPath: ctx.tmpDir, featureId: paddedId, delays: SOLO_DELAYS });
             }
-
             await forceRefresh(page);
             await page.waitForTimeout(500);
-
             const submittedBadge = inProgressCard.locator(`.kcard-agent.agent-${s.agentBadge} .kcard-agent-status.status-submitted`);
             await expect(submittedBadge).toBeVisible({ timeout: 8000 });
-
             // Solo mode (both variants): no eval action, only close.
             await expect(inProgressCard.locator('.kcard-va-btn[data-va-action="feature-eval"]')).toHaveCount(0);
-
             await clickCardAction(page, inProgressCard, 'feature-close', 'feature-close');
             await expectFeatureClosed(page, s.featureName);
             if (s.mode === 'worktree') await expectConsoleHasAction(page, 'feature-close');

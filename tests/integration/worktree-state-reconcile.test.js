@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 'use strict';
-
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { test, withTempDir, report } = require('../_helpers');
 const { reconcileWorktreeJson, resolveHeartbeatStateDir, buildRawAgentCommand, buildAgentCommand } = require('../../lib/worktree');
-
 test('reconcileWorktreeJson writes or repairs mainRepo pointer', () => withTempDir('aigon-wtjson-', (tmp) => {
     // REGRESSION: feature-start skip branch left no worktree.json; wrong mainRepo broke heartbeat vs dashboard.
     const main = path.join(tmp, 'main');
@@ -19,7 +17,6 @@ test('reconcileWorktreeJson writes or repairs mainRepo pointer', () => withTempD
     reconcileWorktreeJson(wt, main);
     assert.strictEqual(path.resolve(JSON.parse(fs.readFileSync(path.join(wt, '.aigon', 'worktree.json'), 'utf8')).mainRepo), main);
 }));
-
 test('resolveHeartbeatStateDir: AIGON_PROJECT_PATH when no worktree.json; file wins over env', () => withTempDir('aigon-hb-', (tmp) => {
     // REGRESSION: sidecar touched worktree .aigon/state while readers used main repo.
     const mainA = path.join(tmp, 'a');
@@ -46,7 +43,6 @@ test('resolveHeartbeatStateDir: AIGON_PROJECT_PATH when no worktree.json; file w
         else process.env.AIGON_PROJECT_PATH = prev;
     }
 }));
-
 test('Cursor tmux wrapper records agent-status on agent exit then clears EXIT trap', () => {
     // REGRESSION: Composer stayed open after review; EXIT trap never ran so
     // review-complete was missing until a nudge. Same post-success path as op.
@@ -69,7 +65,6 @@ test('Cursor tmux wrapper records agent-status on agent exit then clears EXIT tr
         else process.env.AIGON_TEST_MODE = prev;
     }
 });
-
 test('OpenCode launcher keeps tmux shell open after a successful opencode run', () => {
     // REGRESSION: opencode run exits on completion and tore down the tmux pane before
     // operators could run follow-up opencode commands in the same session.
@@ -86,7 +81,6 @@ test('OpenCode launcher keeps tmux shell open after a successful opencode run', 
         assert.ok(cmd.includes('aigon agent-status submitted'), cmd);
         assert.ok(cmd.includes('trap - EXIT'), cmd);
         assert.ok(cmd.includes('exec bash -l'), cmd);
-
         const reviewCmd = buildAgentCommand({
             agent: 'op',
             featureId: '04',
@@ -100,7 +94,6 @@ test('OpenCode launcher keeps tmux shell open after a successful opencode run', 
         else process.env.AIGON_TEST_MODE = prev;
     }
 });
-
 test('Cursor CLI tmux launch adds --print and --trust (workspace trust in headless)', () => {
     // REGRESSION: dashboard/code-review in tmux hung on "Trust this workspace" — Cursor
     // only honors --trust with --print; interactive agent has no stdin in tmux.
@@ -124,7 +117,6 @@ test('Cursor CLI tmux launch adds --print and --trust (workspace trust in headle
         else process.env.AIGON_TEST_MODE = prev;
     }
 });
-
 test('headless research spec-review launches inline instructions instead of recursive shell guidance', () => {
     // REGRESSION: Gemini spec-review sessions were told to run `aigon research-spec-review`
     // from inside the session, so they edited the spec and made a generic commit
@@ -138,5 +130,4 @@ test('headless research spec-review launches inline instructions instead of recu
     assert.ok(cmd.includes('$(< ') && cmd.includes('gemini'), 'expected inline prompt file + gemini launch');
     assert.ok(!cmd.includes('Then run `aigon research-spec-review 01` in the shell and follow its output.'));
 });
-
 report();
