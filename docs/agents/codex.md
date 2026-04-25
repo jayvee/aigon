@@ -104,7 +104,7 @@ Research follows the same lifecycle shape as features: `start -> do -> submit ->
 2. Run `$aigon-research-do <ID>` to conduct the research
 3. Write findings directly in the main research document
 4. Optionally run `$aigon-research-review <ID>` for a second-agent review pass
-5. Run `aigon agent-status submitted` when your research pass is complete
+5. Run `aigon agent-status submitted` when your research pass is complete (from outside the tmux session, use the explicit form: `aigon agent-status submitted <ID> <agent>`)
 6. Run `$aigon-research-close <ID>` when ready to finish
 
 ### Fleet Mode
