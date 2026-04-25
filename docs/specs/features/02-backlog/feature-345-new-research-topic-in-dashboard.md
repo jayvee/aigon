@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-25T00:06:36.066Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: new-research-topic-in-dashboard
