@@ -41,4 +41,4 @@ Promoted spec review/revision from sidecar context to first-class engine states 
 ### Notes
 - Restored unrelated `research-submit` / `research-draft` churn that had leaked into the branch from other feature work.
 - Fixed the spec-review producer path so recording review/revision completion now emits the matching `*_completed` workflow events and returns the lifecycle to backlog as designed.
-- Verified with `node tests/integration/review-cycle-redesign-states.test.js`.
+- Verified with `node tests/integration/workflow-read-model.test.js` (F341 section).

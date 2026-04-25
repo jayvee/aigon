@@ -5,6 +5,8 @@ complexity: medium
 #              #   does not pick one explicitly. Precedence at revision time:
 #              #     event payload nextReviewerId > frontmatter agent:
 #              #     > snapshot.authorAgentId > getDefaultAgent().
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-25T03:50:17.820Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Token Maxing
