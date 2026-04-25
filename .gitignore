@@ -65,3 +65,7 @@ site/.vercel/
 .aigon/insights-cache.json
 .aigon/budget-cache.json
 .vercel
+
+# Security scan ephemeral output
+.scan/reports/
+.scan/raw/
