@@ -64,6 +64,7 @@ npm test
 
 - May ship **CLI-only** in phase 1 with **no** dashboard HTML changes; optional thin API for later UI does not block merge if unused.
 - May add a **versioned migration** under `lib/migration.js` only if an existing on-disk layout needs a one-time rename; greenfield `scheduled-kickoffs.json` may ship without migration.
+- May raise `scripts/check-test-budget.sh` default **CEILING** after deleting duplicate `tests/commands/token-window.test.js` (integration harness remains canonical), so `bash scripts/check-test-budget.sh` matches the current `tests/**/*.js` tree size.
 
 ## Technical Approach
 
