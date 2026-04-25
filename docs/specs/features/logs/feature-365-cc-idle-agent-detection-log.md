@@ -2,6 +2,7 @@
 Agent: cc
 
 ## Status
+Implemented: agent JSON `idleDetection` blocks for cc/gg (+ comment placeholders for cx/cu); supervisor `captureAndDetectIdle` + per-agent regex cache + idleAtPromptData map; dashboard collector exposes `idleAtPrompt`/`anyIdleAtPrompt`; `awaiting-input` class extended to OR `anyIdleAtPrompt` on feature/research cards.
 
 ## New API Surface
 
