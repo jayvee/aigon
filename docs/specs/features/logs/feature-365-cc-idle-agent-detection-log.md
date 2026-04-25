@@ -1,3 +1,26 @@
+---
+commit_count: 7
+lines_added: 401
+lines_removed: 4
+lines_changed: 405
+files_touched: 13
+fix_commit_count: 1
+fix_commit_ratio: 0.143
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 216
+output_tokens: 51300
+cache_creation_input_tokens: 575331
+cache_read_input_tokens: 16951926
+thinking_tokens: 0
+total_tokens: 17578773
+billable_tokens: 51516
+cost_usd: 40.0661
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 365 - idle-agent-detection
 Agent: cc
 
