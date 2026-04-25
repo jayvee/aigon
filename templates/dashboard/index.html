@@ -108,7 +108,7 @@
                         <template x-for="rs in (feature.reviewSessions || [])" :key="rs.session">
                           <div class="row" :class="rs.running ? 'reviewing' : 'submitted'">
                             <span class="agent">Review</span>
-                            <span :class="rs.running ? 'kcard-agent-status status-reviewing' : 'kcard-agent-status status-review-done'"
+                            <span :class="'kcard-agent-status ' + (rs.statusCls || (rs.running ? 'status-reviewing' : 'status-review-done'))"
                                   x-text="(rs.running ? '● ' : '✓ ') + (AGENT_DISPLAY_NAMES[rs.agent] || rs.agent) + ' — ' + (rs.running ? 'Reviewing' : 'Review complete')"></span>
                           </div>
                         </template>

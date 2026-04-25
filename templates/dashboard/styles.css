@@ -385,6 +385,12 @@
     .kcard-spec-status{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-family:var(--mono);font-weight:700;padding:1px 7px;border-radius:999px;margin-left:5px;vertical-align:middle;letter-spacing:.03em;line-height:1;white-space:nowrap}
     .kcard-spec-reviewing{color:#93c5fd;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18)}
     .kcard-spec-checking{color:#6ee7b7;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18)}
+    .kcard-state-badge.status-reviewing{color:#93c5fd;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18)}
+    .kcard-state-badge.status-review-done{color:#6ee7b7;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18)}
+    .kcard-cycle-history{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:5px;padding:3px 7px;background:rgba(255,255,255,.03);border:1px solid var(--border-subtle);border-radius:4px;font-size:10px;font-family:var(--mono);color:var(--text-secondary)}
+    .kcard-cycle-label{font-weight:600;color:var(--text-tertiary);margin-right:4px}
+    .kcard-cycle-entry{color:var(--text-secondary)}
+    .kcard-cycle-when{color:var(--text-tertiary);font-size:9px}
     .kcard-ready-indicator{display:flex;align-items:center;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(134,239,172,.05);border:1px solid rgba(134,239,172,.18);border-left:3px solid #86efac;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:600;color:#86efac;letter-spacing:.02em}
     .kcard-rebase-warning{display:flex;align-items:center;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.18);border-left:3px solid #fbbf24;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:600;color:#fbbf24;letter-spacing:.02em}
     .kcard-close-failure{display:flex;align-items:flex-start;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(251,113,133,.05);border:1px solid rgba(251,113,133,.2);border-left:3px solid #f87171;border-radius:4px;font-size:10px;font-family:var(--mono);color:#fca5a5;cursor:help}
