@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 1057
+lines_removed: 207
+lines_changed: 1264
+files_touched: 30
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 171
+output_tokens: 66103
+cache_creation_input_tokens: 192539
+cache_read_input_tokens: 13220203
+thinking_tokens: 0
+total_tokens: 13479016
+billable_tokens: 66274
+cost_usd: 28.4007
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 351 - tmux-session-entity-binding
 Agent: cc
 
