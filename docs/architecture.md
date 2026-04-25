@@ -168,6 +168,8 @@ Current shared modules:
   `sendNudge`, `resolveSessions`, `resolveSubmitKey`
 - `lib/entity.js`: entity pipeline — shared feature/research processing, dependency parsing (`depends_on` frontmatter), DFS cycle detection at prioritise time
   `parseFrontMatter`, `resolveDependencies`, `detectCycles`
+- `lib/research-draft.js` (~180 lines): agent-assisted research draft flow — mirrors `lib/feature-draft.js`. Spawns the configured agent with `templates/prompts/research-draft.md`, validates CLI availability, computes a file hash before and after, and reports whether the spec was edited. Called by `entityCreate` when `entityType === 'research'` and `--agent` is passed.
+  `runResearchDraft`
 
 **Thin re-export facades:**
 
@@ -293,6 +295,8 @@ The post-cutover system is easier to reason about if you separate lifecycle trut
 | Feature autonomous conductor runtime (`starting`, `running`, `completed`, `failed`, etc.) | `.aigon/state/feature-{id}-auto.json` plus tmux session presence | Durable proof that autonomous orchestration started, what session it used, and how it ended |
 | Research lifecycle (`backlog`, `implementing`, `evaluating`, `closing`, `done`) | `lib/workflow-core/` snapshot + event log | Sole write path for research lifecycle |
 | Research spec-review pending/acked state | `lib/workflow-core/` event log + snapshot `specReview` projection | Same typed state model as features |
+| Feature code-review lifecycle (`code_review_in_progress`, `code_review_complete`, `code_revision_in_progress`, `code_revision_complete`) | `lib/workflow-core/` snapshot + event log | F342: four states; `*_complete` are transient. AutoConductor polls `currentSpecState === 'code_revision_complete'` from snapshot — not the legacy `review-complete` sidecar |
+| tmux session identity | `.aigon/sessions/{name}.json` sidecar (`tmuxId`, `shellPid`, `category`) | F351: `tmuxId` is the durable FK (stable across renames); `category` is `entity` or `repo`. `aigon session-list` surfaces all live sessions. Internal routing uses `-t $N` via `tmuxId` |
 | Feedback lifecycle | Spec folder location + command logic | Feedback does not use workflow-core |
 
 Important distinction: `.aigon/state/` still exists after the cutover, but it is no longer the coordinator manifest system that decides feature lifecycle.

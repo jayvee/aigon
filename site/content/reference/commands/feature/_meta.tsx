@@ -10,6 +10,7 @@ export default {
   "feature-open": "feature-open",
   "feature-eval": "feature-eval",
   "feature-code-review": "feature-code-review",
+  "feature-code-revise": "feature-code-revise",
   "feature-review": "feature-review (deprecated)",
   "feature-push": "feature-push",
   "feature-close": "feature-close",

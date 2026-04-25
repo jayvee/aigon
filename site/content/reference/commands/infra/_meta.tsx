@@ -10,6 +10,8 @@ export default {
   insights: { title: withPro("insights") },
   "agent-status": "agent-status",
   "sessions-close": "sessions-close",
+  "session-list": "session-list",
+  "token-window": "token-window",
   status: "status",
   repair: "repair",
   workflow: { title: withPro("workflow") },
