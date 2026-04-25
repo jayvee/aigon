@@ -407,9 +407,12 @@
     <div class="drawer-header">
       <span class="panel-status-dot" id="panel-status-dot"></span>
       <span class="drawer-title" id="panel-title">Terminal</span>
+      <button id="panel-copy-session" title="Copy session name" style="display:none;background:none;border:none;padding:2px 4px;cursor:pointer;color:var(--text-tertiary);flex-shrink:0;line-height:1;border-radius:4px;margin-left:-2px" onmouseover="this.style.color='var(--text-secondary)'" onmouseout="this.style.color='var(--text-tertiary)'"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="1.5" width="9" height="11" rx="1.5"/><path d="M5.5 4H3a1.5 1.5 0 00-1.5 1.5v9A1.5 1.5 0 003 16h7a1.5 1.5 0 001.5-1.5V13"/></svg></button>
       <div class="drawer-actions" id="panel-actions-normal">
         <button class="btn" id="panel-back" style="display:none" title="Close both panels and return to dashboard">← Dashboard</button>
         <button class="btn" id="panel-view-spec" style="display:none" title="View the spec file alongside the terminal">View Spec</button>
+        <button class="btn" id="panel-zoom-out" title="Decrease terminal font size" style="padding:4px 8px;font-size:14px;line-height:1">−</button>
+        <button class="btn" id="panel-zoom-in" title="Increase terminal font size" style="padding:4px 8px;font-size:14px;line-height:1">+</button>
         <button class="btn" id="panel-fullscreen" title="Toggle fullscreen (Cmd+Shift+F)">⤢</button>
         <button class="btn btn-warn" id="panel-stop">Stop</button>
         <button class="btn" id="panel-close" aria-label="Detach (keep session running)" title="Detach — hides this panel but keeps the tmux session running">Detach</button>

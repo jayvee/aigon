@@ -735,7 +735,7 @@
     .item-command{font-family:var(--mono);font-size:11px;color:var(--accent);word-break:break-all}
     .item-reason{font-size:11px;color:var(--text-tertiary)}
     /* Terminal panel (reuses spec-drawer positioning) */
-    .terminal-panel{position:fixed;top:0;right:0;bottom:0;width:min(55vw,800px);background:#0a0a0b;z-index:201;transform:translateX(100%);transition:transform .25s ease,width .25s ease,right .25s ease;display:flex;flex-direction:column;border-left:1px solid var(--border-subtle)}
+    .terminal-panel{position:fixed;top:0;right:0;bottom:0;width:min(80vw,1200px);background:#0a0a0b;z-index:201;transform:translateX(100%);transition:transform .25s ease,width .25s ease,right .25s ease;display:flex;flex-direction:column;border-left:1px solid var(--border-subtle)}
     .terminal-panel.open{transform:translateX(0)}
     .terminal-panel.fullscreen{width:100vw;border-left:none;right:0}
     /* Split-view: terminal left, spec drawer right — both headers accessible */

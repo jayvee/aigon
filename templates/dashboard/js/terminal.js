@@ -13,6 +13,12 @@
     function setTerminalFont(val) {
       localStorage.setItem(lsKey('terminalFont'), val);
     }
+    function getTerminalFontSize() {
+      return parseInt(localStorage.getItem(lsKey('terminalFontSize')), 10) || 13;
+    }
+    function setTerminalFontSize(val) {
+      localStorage.setItem(lsKey('terminalFontSize'), String(val));
+    }
 
     // Build xterm.js theme from CSS custom properties
     function buildXtermTheme() {
@@ -64,7 +70,7 @@
 
       const term = new Terminal({
         cursorBlink: true,
-        fontSize: 13,
+        fontSize: getTerminalFontSize(),
         lineHeight: 1.4,
         fontFamily: getTerminalFont(),
         theme: buildXtermTheme(),
@@ -228,6 +234,8 @@
 
       const viewSpecBtn = document.getElementById('panel-view-spec');
       if (viewSpecBtn) viewSpecBtn.style.display = termState.specPath ? '' : 'none';
+      const copyBtn = document.getElementById('panel-copy-session');
+      if (copyBtn) copyBtn.style.display = sessionName ? '' : 'none';
 
       if (termState.specPoller) { clearInterval(termState.specPoller); termState.specPoller = null; }
       termState.specContentHash = null;
@@ -340,6 +348,28 @@
       closeTerminalPanel();
     }
 
+    function zoomTerminal(delta) {
+      if (!termState.xterm) return;
+      const next = Math.max(8, Math.min(24, (termState.xterm.options.fontSize || 13) + delta));
+      termState.xterm.options.fontSize = next;
+      setTerminalFontSize(next);
+      try { if (termState.fitAddon) termState.fitAddon.fit(); } catch (_) {}
+    }
+
+    const _copyIcon = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="1.5" width="9" height="11" rx="1.5"/><path d="M5.5 4H3a1.5 1.5 0 00-1.5 1.5v9A1.5 1.5 0 003 16h7a1.5 1.5 0 001.5-1.5V13"/></svg>';
+
+    async function copySessionName() {
+      const name = termState.sessionName;
+      if (!name) return;
+      const btn = document.getElementById('panel-copy-session');
+      try {
+        await navigator.clipboard.writeText(name);
+        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>';
+        btn.style.color = 'var(--success)';
+        setTimeout(() => { btn.innerHTML = _copyIcon; btn.style.color = ''; }, 1500);
+      } catch (_) {}
+    }
+
     function toggleTerminalFullscreen() {
       const panel = document.getElementById('terminal-panel');
       panel.classList.toggle('fullscreen');
@@ -356,7 +386,10 @@
     document.getElementById('panel-stop').onclick = () => showStopConfirm();
     document.getElementById('panel-stop-cancel').onclick = () => hideStopConfirm();
     document.getElementById('panel-stop-kill').onclick = () => stopTerminalSession();
+    document.getElementById('panel-zoom-out').onclick = () => zoomTerminal(-1);
+    document.getElementById('panel-zoom-in').onclick = () => zoomTerminal(1);
     document.getElementById('panel-fullscreen').onclick = () => toggleTerminalFullscreen();
+    document.getElementById('panel-copy-session').onclick = () => copySessionName();
     document.getElementById('panel-view-spec').onclick = () => {
       if (termState.specPath) {
         openDrawer(termState.specPath, termState.specTitle || 'Spec', termState.specStage || 'inbox');

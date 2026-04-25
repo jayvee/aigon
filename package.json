@@ -37,7 +37,7 @@
     "aigon": "./aigon-cli.js"
   },
   "scripts": {
-    "postinstall": "node ./aigon-cli.js global-setup --non-interactive --quiet || true",
+    "postinstall": "node ./aigon-cli.js global-setup --non-interactive --quiet || true && node scripts/fix-node-pty-perms.js || true",
     "prepublishOnly": "node scripts/check-pack.js",
     "release": "node scripts/publish.js",
     "lint": "eslint \"lib/**/*.js\" tests/integration",
