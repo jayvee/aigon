@@ -38,6 +38,7 @@ let createFeatureCommands, createResearchCommands, createFeedbackCommands;
 let createSetupCommands, createInfraCommands, createMiscCommands, createWorkflowCommands, createSetCommands;
 let createRecurringCommands, createScheduleCommands;
 let checkForUpdate, getCachedUpdateCheck, formatUpdateNotice;
+let createSecurityScanCommands;
 
 try {
     ({ COMMAND_ALIASES } = require('./lib/constants'));
@@ -51,6 +52,7 @@ try {
     ({ createSetCommands } = require('./lib/commands/set'));
     ({ createRecurringCommands } = require('./lib/commands/recurring'));
     ({ createScheduleCommands } = require('./lib/commands/schedule'));
+    ({ createSecurityScanCommands } = require('./lib/commands/security-scan'));
     ({ checkForUpdate, getCachedUpdateCheck, formatUpdateNotice } = require('./lib/npm-update-check'));
 } catch (error) {
     console.error(formatCliError(error));
@@ -76,6 +78,7 @@ const commands = {
     ...createSetCommands(),
     ...createRecurringCommands(),
     ...createScheduleCommands(),
+    ...createSecurityScanCommands(),
 };
 
 const args = process.argv.slice(2);

@@ -31,7 +31,8 @@ set -euo pipefail
 # Ceiling raised F356: +60 LOC pre-authorised for PTY regression bundle (resize / alt-screen / bracketed-paste / soak).
 # Deleted agent-model-effort-overrides.test.js (21 LOC; projector override tests covered by lifecycle.test.js).
 # F367: removed duplicate tests/commands/token-window.test.js; CEILING default aligned to measured tests/**/*.js total.
-CEILING="${CEILING:-9500}"
+# F368: +40 LOC pre-authorised for security-scan-fingerprint.test.js (fingerprint + normalize unit tests).
+CEILING="${CEILING:-9540}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
