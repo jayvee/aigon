@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-25T11:33:02.550Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: idle-agent-detection
