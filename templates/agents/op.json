@@ -35,10 +35,21 @@
       { "value": null, "label": "Default (OpenCode config)" },
       { "value": "openrouter/moonshotai/kimi-k2.6", "label": "Kimi K2.6 via OpenRouter" },
       { "value": "openrouter/z-ai/glm-5.1", "label": "GLM-5.1 via OpenRouter" },
-      { "value": "openrouter/deepseek/deepseek-chat-v3-0324", "label": "DeepSeek V3 via OpenRouter" },
+      { "value": "openrouter/deepseek/deepseek-chat-v3.1", "label": "DeepSeek V3.1 (hybrid) via OpenRouter" },
+      { "value": "openrouter/deepseek/deepseek-v3.2-speciale", "label": "DeepSeek V3.2 Speciale (reasoning) via OpenRouter" },
       { "value": "openrouter/mistralai/codestral-2501", "label": "Codestral 2501 via OpenRouter" },
       { "value": "openrouter/qwen/qwen3-235b-a22b:free", "label": "Qwen3 235B via OpenRouter" },
-      { "value": "openrouter/qwen/qwen3-coder:exacto", "label": "Qwen3 Code (exacto) via OpenRouter" }
+      { "value": "openrouter/qwen/qwen3-coder:exacto", "label": "Qwen3 Code (exacto) via OpenRouter" },
+      {
+        "value": "openrouter/deepseek/deepseek-chat-v3-0324",
+        "label": "DeepSeek V3 (0324) via OpenRouter",
+        "quarantined": {
+          "since": "2026-04-25",
+          "reason": "F358 spec-review: ignored explicit 'do not run the feature' directive and executed feature-do work (ran npm test, started test triage with intent to delete). Instruction-following failure on long structured prompt with a forbidden list.",
+          "evidence": "~/.local/share/opencode/log/2026-04-25T102813.log; agent=build mode=primary modelID=deepseek/deepseek-chat-v3-0324",
+          "supersededBy": ["openrouter/deepseek/deepseek-chat-v3.1", "openrouter/deepseek/deepseek-v3.2-speciale"]
+        }
+      }
     ],
     "effortOptions": [],
     "modelFlag": "--model",
