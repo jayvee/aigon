@@ -401,30 +401,6 @@
       <div class="notif-empty">No notifications yet</div>
     </div>
   </aside>
-  <!-- Peek panel — streaming tmux output viewer -->
-  <div id="peek-panel-overlay" class="drawer-overlay" x-ignore></div>
-  <aside id="peek-panel" class="terminal-panel" x-ignore role="dialog" aria-modal="true" aria-label="Peek">
-    <div class="drawer-header">
-      <span class="panel-status-dot running" id="peek-status-dot"></span>
-      <span class="drawer-title" id="peek-title">Peek</span>
-      <div class="drawer-actions">
-        <button class="btn" id="peek-fullscreen" title="Toggle fullscreen">⤢</button>
-        <button class="btn" id="peek-close">Close</button>
-      </div>
-    </div>
-    <div id="peek-output" style="flex:1;overflow:auto;background:#0a0a0b;padding:8px 12px;font-family:var(--mono);font-size:12px;color:#ededef;white-space:pre-wrap;word-break:break-all;line-height:1.5"></div>
-    <div class="panel-footer" style="flex-direction:column;gap:6px;padding:8px 12px">
-      <form id="peek-input-form" style="display:flex;gap:6px;width:100%">
-        <input id="peek-input" type="text" placeholder="Send command…" autocomplete="off" spellcheck="false"
-          style="flex:1;background:#18181b;border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:#ededef;font-family:var(--mono);font-size:12px;outline:none">
-        <button type="submit" class="btn btn-primary" style="font-size:11px;padding:4px 12px">Send</button>
-      </form>
-      <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
-        <span id="peek-session-name" style="font-family:var(--mono);font-size:11px;color:var(--text-tertiary)"></span>
-        <span id="peek-bytes" style="font-size:11px;color:var(--text-tertiary)"></span>
-      </div>
-    </div>
-  </aside>
   <!-- Terminal panel -->
   <div id="terminal-panel-overlay" class="drawer-overlay" x-ignore></div>
   <aside id="terminal-panel" class="terminal-panel" x-ignore role="dialog" aria-modal="true" aria-label="Terminal">
@@ -495,6 +471,14 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <!-- xterm.js and addons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-webgl@0.18.0/lib/addon-webgl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-unicode11@0.8.0/lib/addon-unicode11.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11.0/lib/addon-web-links.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-image@0.9.0/lib/addon-image.js"></script>
   <!-- Server-injected data (populated by buildDashboardHtml) -->
   <script>
     const INITIAL_DATA = ${INITIAL_DATA};
@@ -519,7 +503,6 @@
   <script src="/js/statistics.js"></script>
 
   <script src="/js/logs.js"></script>
-  <script src="/js/peek.js"></script>
   <script src="/js/init.js"></script>
 </body>
 </html>
