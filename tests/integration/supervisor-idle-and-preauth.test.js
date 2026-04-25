@@ -32,6 +32,36 @@ test('supervisor idle detection: role-aware tmux session and signal clear', () =
     }
 }));
 
+// Feature 365: idle-at-prompt capture-pane detection.
+test('supervisor idleAtPrompt: cc idle prompt fires; workingPattern overrides', () => withTempDir('aigon-idle365-', (repo) => {
+    const repoName = path.basename(repo), session = `${repoName}-f2-do-cc-365`;
+    const hb = path.join(repo, '.aigon', 'state', 'heartbeat-02-cc');
+    const snapshot = { lifecycle: 'in-progress', agents: { cc: { status: 'running' } } };
+    const dash = '─'.repeat(40), prompt = `> hello\n❯ \n${dash}\n`;
+    const working = `⏺ Tool call in progress\n❯ \n${dash}\n`;
+    kill(session);
+    a.strictEqual(tmux(['new-session', '-d', '-s', session, 'tail -f /dev/null']).status, 0);
+    try {
+        w(hb); fs.utimesSync(hb, Date.now() / 1000, Date.now() / 1000);
+        sup._resetIdleDetectionCache();
+        // Stub capture-pane via proxying runTmux is intricate; instead exercise the helper directly
+        // and verify the detection function returns sane values for known buffers.
+        const regexes = sup.getIdleDetectionRegexes('cc');
+        a.ok(regexes && regexes.idle && regexes.working, 'cc has idle + working patterns');
+        a.ok(regexes.idle.test(prompt), 'cc idle pattern matches prompt+border');
+        a.ok(regexes.working.test(working), 'cc working pattern matches ⏺');
+        a.strictEqual(sup.getIdleDetectionRegexes('cu'), null, 'cu has no idleDetection');
+        // Sweep should populate idleAtPrompt key (false here since tmux pane is empty).
+        sup.sweepEntity(repo, 'feature', '02', snapshot, {});
+        const liveness = sup.getAgentLiveness(repo, 'feature', '02', 'cc');
+        a.ok(liveness, 'liveness recorded');
+        a.strictEqual(typeof liveness.idleAtPrompt, 'boolean', 'idleAtPrompt is boolean');
+        a.strictEqual(liveness.idleAtPrompt, false, 'empty pane is not idle');
+    } finally {
+        kill(session);
+    }
+}));
+
 // REGRESSION feature 293: spec pre-authorisations must be readable as plain bullet lines from the spec body.
 test('readSpecSection: returns pre-authorised bullets only', () => withTempDir('aigon-preauth-', (dir) => {
     const spec = path.join(dir, 'feature-1-demo.md');
