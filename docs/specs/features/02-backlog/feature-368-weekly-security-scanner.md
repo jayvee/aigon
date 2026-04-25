@@ -1,6 +1,8 @@
 ---
 complexity: medium
 agent: cc
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-25T22:25:10.658Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: weekly-security-scanner
