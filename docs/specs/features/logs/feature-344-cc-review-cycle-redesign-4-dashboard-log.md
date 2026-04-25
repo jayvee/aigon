@@ -42,3 +42,26 @@ Complete. All acceptance criteria implemented and validated.
 - `tests/dashboard-e2e/review-badges.spec.js` (new): old badge helpers absent, kcard-cycle-history CSS present, no JS errors.
 - `tests/integration/spec-review-status.test.js`: removed trivial no-op test for `applySpecReviewFromSnapshots` shim.
 - `tests/integration/sidecar-migration.test.js`: deleted (F343 migration coverage deferred to event-log dedup).
+
+## Code Review
+
+**Reviewed by**: composer
+**Date**: 2026-04-25
+
+### Fixes Applied
+
+- None needed.
+
+### Residual Issues
+
+- **2.58.0 integration test removed**: Dropping `tests/integration/sidecar-migration.test.js` removes explicit replay+idempotency coverage for the sidecar migration. Mitigation: migration 2.58.0 is unchanged in this branch and logic is in `lib/migration.js` with in-function deduplication. **Recommendation**: reintroduce a compact regression if migration 2.58.0 is ever edited, or if another test is deleted to free budget.
+
+- **`buildAgentStatusHtml` / `AGENT_STATUS_META`**: The acceptance criterion asked for a baseline aligned with `STATE_RENDER_META`. The table correctly replaces string compares for agent *status* strings; it duplicates icon/label mappings rather than reading `stateRenderMeta` (which reflects `currentSpecState`, not per-agent `agent.status`). This is a reasonable model split, not a defect.
+
+- **Alpine `index.html` review row**: Row text is still "Reviewing" / "Review complete"; only classes moved to `statusCls`, which matches the spec focus on badge/class collapse.
+
+### Notes
+
+- The removed spec-review `applySpecReviewFromSnapshots` inbox test is superseded for the slug `readWorkflowSnapshotSync` path by `tests/integration/bootstrap-engine-state.test.js` (`getResearchDashboardState` on slug `wizardry`).
+- Confirmed: no `item.specReview` references in `templates/dashboard/`.
+- Integration tests for `dashboard-state-render-meta` and `spec-review-status` were run; all passed.
