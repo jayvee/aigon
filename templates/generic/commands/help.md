@@ -32,7 +32,6 @@
 | `{{CMD_PREFIX}}research-start <ID> [agents...]` | Setup for Drive or Fleet execution |
 | `{{CMD_PREFIX}}research-open <ID>` | Re-open or attach Fleet research sessions |
 | `{{CMD_PREFIX}}research-do <ID>` | Conduct research (write findings) |
-| `{{CMD_PREFIX}}research-submit [ID]` | Signal research findings complete when using findings files |
 | `{{CMD_PREFIX}}research-spec-review <ID>` | Review the research spec itself before execution |
 | `{{CMD_PREFIX}}research-spec-revise <ID>` | Author-side: process pending research spec reviews in one pass |
 | `{{CMD_PREFIX}}research-eval <ID>` | Evaluate or synthesize parallel findings |
@@ -88,6 +87,6 @@ All commands have top-level short aliases prefixed with `a` (for aigon):
 | `/ab` | board | `/afbc` | feedback-create |
 | `/afbl` | feedback-list | `/afbt` | feedback-triage |
 | `/ads` | dev-server | `/an` | next |
-| `/ah` | help | `/arsb` | research-submit |
+| `/ah` | help | | |
 
 Run `aigon help` in terminal for full CLI reference.

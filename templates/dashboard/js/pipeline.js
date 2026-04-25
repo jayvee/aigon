@@ -150,17 +150,19 @@
       if (!els.modal || !els.nameInput || !els.descriptionInput || !els.submit) return;
       const name = els.nameInput.value.trim();
       const description = els.descriptionInput.value.trim();
+      const entityType = els.modal.getAttribute('data-entity-type') || 'features';
+      const isResearch = entityType === 'research';
       const pickedRepo = els.repoPicker && els.repoPicker.style.display !== 'none'
         ? (els.repoSelect ? String(els.repoSelect.value || '').trim() : '')
         : String(els.modal.getAttribute('data-repo-path') || '').trim();
 
       if (!name) {
-        setCreateModalError('Feature name is required.');
+        setCreateModalError((isResearch ? 'Research topic name' : 'Feature name') + ' is required.');
         els.nameInput.focus();
         return;
       }
       if (name.length > 80) {
-        setCreateModalError('Feature name must be 80 characters or fewer.');
+        setCreateModalError((isResearch ? 'Research topic name' : 'Feature name') + ' must be 80 characters or fewer.');
         els.nameInput.focus();
         return;
       }
@@ -186,7 +188,7 @@
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
-              action: 'feature-create',
+              action: isResearch ? 'research-create' : 'feature-create',
               args: createArgs,
               repoPath: pickedRepo
             })
@@ -200,14 +202,15 @@
           }
           await requestRefresh();
           hideCreateModal();
-          showToast('Created feature: ' + name);
+          showToast((isResearch ? 'Created research topic: ' : 'Created feature: ') + name);
         } else {
           // Agent selected — use that agent's native Aigon command syntax.
           const descContext = description ? `\n\nUser description: "${description}"` : '';
-          const prompt = `${getAgentPromptPrefix(agentId)}feature-create ${name}${descContext}`;
+          const cliCommand = isResearch ? 'research-create' : 'feature-create';
+          const prompt = `${getAgentPromptPrefix(agentId)}${cliCommand} ${name}${descContext}`;
 
           hideCreateModal();
-          showToast('Opening agent to create feature: ' + name);
+          showToast('Opening agent to create ' + (isResearch ? 'research topic' : 'feature') + ': ' + name);
 
           const askRes = await fetch('/api/session/ask', {
             method: 'POST',
@@ -220,15 +223,29 @@
           }
         }
       } catch (e) {
-        setCreateModalError(e.message || 'Failed to create feature.');
+        setCreateModalError(e.message || ('Failed to create ' + (isResearch ? 'research topic' : 'feature') + '.'));
       } finally {
         setCreateModalBusy(false);
       }
     }
 
-    function createNewSpec(preselectedRepoPath) {
+    function createNewSpec(preselectedRepoPath, entityType) {
       const els = getCreateModalElements();
       if (!els.modal || !els.nameInput || !els.repoPicker || !els.repoSelect) return;
+
+      const type = entityType || 'features';
+      els.modal.setAttribute('data-entity-type', type);
+
+      const titleEl = document.getElementById('create-modal-title');
+      if (titleEl) titleEl.textContent = type === 'research' ? 'New Research' : 'New Feature';
+      if (els.nameInput) {
+        els.nameInput.placeholder = type === 'research' ? 'e.g. api-latency-analysis' : 'e.g. dark mode toggle';
+      }
+      if (els.descriptionInput) {
+        els.descriptionInput.placeholder = type === 'research'
+          ? 'What question should this investigation answer? Any known constraints or angles?'
+          : 'What should this feature do? Any technical ideas or constraints?';
+      }
 
       const s = Alpine.store('dashboard');
       const visibleRepos = getVisibleRepos(s.data || { repos: [] });
@@ -1419,7 +1436,7 @@
           return stageItems.length;
         },
         renderKanbanColCards(colBody, repo, stage) { renderKanbanColCards(colBody, repo, stage); },
-        createNewSpec(repoPath) { createNewSpec(repoPath); },
+        createNewSpec(repoPath, entityType) { createNewSpec(repoPath, entityType); },
         onDragOver(e, stage) {
           if (!dragState) return;
           const allowed = dragState.validTargetStages ? dragState.validTargetStages.includes(stage) : false;

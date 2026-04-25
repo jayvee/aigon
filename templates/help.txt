@@ -98,7 +98,6 @@ Research Commands:
   research-start <ID> [agents...]   Start Drive (no agents) or Fleet (with agents) research
   research-open <ID>                Open all Fleet agents side-by-side for parallel research
   research-do <ID>                  Do research (agent writes findings)
-  research-submit [ID] [agent]      (agent-only) Signal research findings complete
   research-eval <ID>                Evaluate Fleet findings and recommend features
   research-close <ID>               Complete research (in-evaluation → done)
   research-autopilot <ID> [agents...] Fleet autopilot: setup + spawn + monitor + evaluate    [Pro]
@@ -188,7 +187,7 @@ Examples:
   aigon research-start 05 cc gg        # Fleet mode (multiple agents)
   aigon research-open 05               # Open all Fleet agents side-by-side
   aigon research-do 05                 # Agent conducts research
-  aigon research-submit 05 cc          # Signal cc's findings are complete
+  aigon agent-status submitted 05 cc   # Signal cc's findings are complete
   aigon research-autopilot 08 cc gg cx cu    # Fleet autopilot: spawn + monitor + evaluate
   aigon research-eval 05               # Evaluate findings (after Fleet)
   aigon research-close 05              # Complete research (in-evaluation → done)

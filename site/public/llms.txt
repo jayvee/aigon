@@ -50,7 +50,6 @@
 - [research-start](https://www.aigon.build/docs/reference/commands/research/research-start): Start research with one or more agents.
 - [research-open](https://www.aigon.build/docs/reference/commands/research/research-open): Open a research worktree session.
 - [research-do](https://www.aigon.build/docs/reference/commands/research/research-do): Send follow-up instructions to a research agent.
-- [research-submit](https://www.aigon.build/docs/reference/commands/research/research-submit): Mark research findings as ready for evaluation.
 - [research-eval](https://www.aigon.build/docs/reference/commands/research/research-eval): Evaluate findings from multiple research agents.
 - [research-close](https://www.aigon.build/docs/reference/commands/research/research-close): Close a completed research topic.
 - [research-autopilot](https://www.aigon.build/docs/reference/commands/research/research-autopilot): Run research in autonomous mode.
