@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 1294
+lines_removed: 412
+lines_changed: 1706
+files_touched: 39
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 288
+output_tokens: 155163
+cache_creation_input_tokens: 343762
+cache_read_input_tokens: 29121309
+thinking_tokens: 0
+total_tokens: 29620522
+billable_tokens: 155451
+cost_usd: 12.3538
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 355 - in-dashboard-terminal-cutover-and-polish
 Agent: cc
 
