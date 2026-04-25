@@ -1,3 +1,26 @@
+---
+commit_count: 9
+lines_added: 555
+lines_removed: 25
+lines_changed: 580
+files_touched: 14
+fix_commit_count: 1
+fix_commit_ratio: 0.111
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 237
+output_tokens: 122229
+cache_creation_input_tokens: 244518
+cache_read_input_tokens: 19774591
+thinking_tokens: 0
+total_tokens: 20141575
+billable_tokens: 122466
+cost_usd: 8.6835
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 356 - in-dashboard-terminal-mvp
 Agent: cc
 
