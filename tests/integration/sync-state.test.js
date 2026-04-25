@@ -125,6 +125,38 @@ testAsync('sync.push then sync.pull replicates state with syncignore enforced', 
     });
 });
 
+testAsync('sync.push refuses when remote has state but this machine never pulled (REGRESSION: silent overwrite)', async () => {
+    await new Promise(resolve => {
+        withTempDir('aigon-sync-nopull-', (tmp) => {
+            const remote = makeBareRemote(tmp);
+            const wsA = makeWorkspace(tmp, 'A', remote);
+            const wsB = makeWorkspace(tmp, 'B', remote);
+            seedAigonState(wsA);
+
+            withRepoCwd(wsA, () => {
+                delete require.cache[require.resolve('../../lib/sync-state')];
+                const sync = require('../../lib/sync-state');
+                sync.configure(remote);
+                sync.push();
+            });
+
+            withRepoCwd(wsB, () => {
+                delete require.cache[require.resolve('../../lib/sync-state')];
+                const sync = require('../../lib/sync-state');
+                sync.configure(remote);
+                let threw = false;
+                try {
+                    sync.push();
+                } catch (e) {
+                    threw = e.code === 'ESYNCCONFLICT' || /sync pull/i.test(e.message);
+                }
+                assert.ok(threw, 'push without prior pull must not replace remote state');
+            });
+            resolve();
+        });
+    });
+});
+
 testAsync('sync.pull surfaces divergence as conflict (both sides have local commits)', async () => {
     await new Promise(resolve => {
         withTempDir('aigon-sync-conf-', (tmp) => {
