@@ -21,7 +21,8 @@ set -euo pipefail
 
 # Ceiling raised F335: suite was 4308 LOC on main (pre-existing overage); deletion of
 # orphaned spec-path-resolver.test.js + F335 migration tests nets to ~4260 LOC.
-CEILING="${CEILING:-4400}"
+# Ceiling raised F353: +60 LOC pre-authorised for doctor-runs-migrations.test.js regression test.
+CEILING="${CEILING:-4460}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
