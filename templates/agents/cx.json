@@ -128,5 +128,8 @@
       ]
     }
   },
+  "idleDetection": {
+    "_todo": "no reliable Codex CLI idle pattern confirmed yet — leave absent so supervisor skips capture-pane"
+  },
   "commandExcludes": []
 }

@@ -263,5 +263,9 @@
       ]
     }
   },
+  "idleDetection": {
+    "idlePattern": "Type your message[\\s\\S]*▄{10,}",
+    "workingPattern": "[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]"
+  },
   "commandExcludes": []
 }
