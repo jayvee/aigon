@@ -6,7 +6,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
-const { applySpecReviewFromSnapshots, clearTierCache } = require('../../lib/dashboard-status-collector');
+const { applySpecReviewFromSnapshots: _applySpecReviewFromSnapshots, clearTierCache } = require('../../lib/dashboard-status-collector');
 const { snapshotToDashboardActions } = require('../../lib/workflow-snapshot-adapter');
 const { runPendingMigrations } = require('../../lib/migration');
 
@@ -15,7 +15,6 @@ const initRepo = (repo) => {
         .forEach((dir) => fs.mkdirSync(path.join(repo, dir), { recursive: true }));
     execSync('git init -q && git config user.email t@t && git config user.name t', { cwd: repo });
 };
-const item = (id, stage, specPath) => [{ id, stage, specPath, updatedAt: new Date().toISOString(), validActions: [], nextActions: [] }];
 const pickSpecReviewLabels = (entityType, pendingCount) => snapshotToDashboardActions(entityType, '12', {
     entityType, featureId: '12', currentSpecState: 'backlog', lifecycle: 'backlog', mode: 'solo_branch',
     agents: {}, winnerAgentId: null, updatedAt: new Date().toISOString(),
@@ -49,17 +48,6 @@ test('feature and research spec-review actions keep distinct labels', () => {
     assert.deepStrictEqual(pickSpecReviewLabels('research', 0), ['Review spec']);
 });
 
-// REGRESSION: inbox research with `id: null` crashed readWorkflowSnapshotSync; fix publishes slug-as-id.
-// F344: applySpecReviewFromSnapshots is a no-op shim — calling it must not throw.
-testAsync('inbox research with slug-as-id is handled without throwing', () => withTempDirAsync('aigon-spec-inbox-', async (repo) => {
-    initRepo(repo);
-    const specPath = path.join(repo, 'docs/specs/research-topics/01-inbox/research-foo.md');
-    fs.writeFileSync(specPath, '# Research: foo\n');
-    const inboxItems = item('research-foo', 'inbox', specPath);
-    clearTierCache(repo);
-    applySpecReviewFromSnapshots(repo, [{ entityType: 'research', item: inboxItems[0] }]);
-    assert.strictEqual(inboxItems[0].specReview, undefined);
-}));
 
 testAsync('migration backfills legacy spec-review commits into workflow state', () => withTempDirAsync('aigon-spec-review-mig-', async (repo) => {
     initRepo(repo);
