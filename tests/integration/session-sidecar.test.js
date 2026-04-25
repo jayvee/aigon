@@ -5,7 +5,10 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { test, withTempDir, report } = require('../_helpers');
-const { parseEnrichedTmuxSessionsOutput } = require('../../lib/worktree');
+const {
+    parseEnrichedTmuxSessionsOutput,
+    writeSessionSidecarRecord,
+} = require('../../lib/worktree');
 
 const SEP = '__AIGON_SEP__';
 
@@ -82,6 +85,49 @@ test('parseEnrichedTmuxSessionsOutput resolves set conductor ...-s<slug>-auto to
     assert.strictEqual(path.resolve(rows[0].repoPath), path.resolve(repo));
     assert.strictEqual(rows[0].orphan, null);
     assert.strictEqual(rows[0].role, 'auto');
+}));
+
+test('writeSessionSidecarRecord persists tmuxId/shellPid; repo category drops entity fields', () => withTempDir('aigon-ss-id-', (tmp) => {
+    writeSessionSidecarRecord({
+        sessionName: 'aigon-f351-do-cc', repoPath: tmp, worktreePath: tmp,
+        entityType: 'f', entityId: '351', agent: 'cc', role: 'do',
+        tmuxId: '$42', shellPid: 99001,
+    });
+    writeSessionSidecarRecord({
+        sessionName: 'ask-myrepo-cc', repoPath: tmp, worktreePath: tmp,
+        category: 'repo', agent: 'cc', tmuxId: '$7',
+    });
+    const ent = JSON.parse(fs.readFileSync(path.join(tmp, '.aigon/sessions/aigon-f351-do-cc.json'), 'utf8'));
+    const repo = JSON.parse(fs.readFileSync(path.join(tmp, '.aigon/sessions/ask-myrepo-cc.json'), 'utf8'));
+    assert.strictEqual(ent.tmuxId, '$42'); assert.strictEqual(ent.shellPid, 99001);
+    assert.strictEqual(ent.category, 'entity'); assert.strictEqual(ent.entityId, '351');
+    assert.strictEqual(repo.category, 'repo'); assert.ok(!('entityType' in repo));
+}));
+
+test('parseEnrichedTmuxSessionsOutput exposes tmuxId/shellPid; repo category preserved; tmuxId set drives prune', () => withTempDir('aigon-ss-row-', (tmp) => {
+    const sessionsDir = path.join(tmp, '.aigon', 'sessions');
+    fs.mkdirSync(sessionsDir, { recursive: true });
+    fs.writeFileSync(path.join(sessionsDir, 'ask-myrepo-cc.json'), JSON.stringify({
+        category: 'repo', sessionName: 'ask-myrepo-cc', repoPath: tmp, agent: 'cc',
+        tmuxId: '$3', createdAt: '2026-04-25T00:00:00.000Z',
+    }));
+    fs.writeFileSync(path.join(sessionsDir, 'stale.json'), JSON.stringify({
+        category: 'entity', sessionName: 'stale', entityType: 'f', entityId: '2',
+        agent: 'cc', role: 'do', repoPath: tmp, worktreePath: tmp,
+        tmuxId: '$99', createdAt: new Date().toISOString(),
+    }));
+    const lines = [
+        `aigon-f351-do-cc${SEP}1000000${SEP}1${SEP}$12${SEP}54321`,
+        `ask-myrepo-cc${SEP}1000000${SEP}0${SEP}$3${SEP}1234`,
+    ].join('\n');
+    const rows = parseEnrichedTmuxSessionsOutput(lines, [tmp]);
+    const byName = Object.fromEntries(rows.map(r => [r.name, r]));
+    assert.strictEqual(byName['aigon-f351-do-cc'].tmuxId, '$12');
+    assert.strictEqual(byName['aigon-f351-do-cc'].shellPid, 54321);
+    assert.strictEqual(byName['ask-myrepo-cc'].category, 'repo');
+    assert.strictEqual(byName['ask-myrepo-cc'].agent, 'cc');
+    assert.strictEqual(byName['ask-myrepo-cc'].entityType, null);
+    assert.ok(!fs.existsSync(path.join(sessionsDir, 'stale.json')), 'sidecar with tmuxId not in live set is pruned');
 }));
 
 report();
