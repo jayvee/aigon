@@ -41,13 +41,10 @@ test('agent picker recommendation banner mounts in index.html (no phantom .modal
     assert.ok(!actions.includes("querySelector('#agent-picker .modal-card')"));
     assert.ok(actions.includes("getElementById(mountId || 'agent-picker-recommendation')"));
 });
-// REGRESSION: SetConductor outer loop (repo-s{slug}-auto) must be viewable from Pipeline group-by-set headers.
-// F355: replaced openPeekPanel with openTerminalPanel — conductor session opens in the dashboard terminal.
+// REGRESSION (F355): SetConductor must wire openTerminalPanel (not openPeekPanel) in pipeline.js
 test('set autonomous conductor view wired in dashboard templates', () => {
-    const root = path.join(__dirname, '../../templates/dashboard/js');
-    const pipeline = fs.readFileSync(path.join(root, 'pipeline.js'), 'utf8');
-    assert.ok(pipeline.includes('View set autonomous conductor output') && pipeline.includes('setConductorSession'));
-    assert.ok(!pipeline.includes('openPeekPanel'), 'peek pipeline must be deleted from pipeline.js');
+    const pipeline = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/pipeline.js'), 'utf8');
+    assert.ok(pipeline.includes('View set autonomous conductor output') && pipeline.includes('setConductorSession') && !pipeline.includes('openPeekPanel'));
 });
 // REGRESSION: solo review → counter-review must not require only `feedback-addressed` or set Conductor waits forever.
 test('AutoConductor accepts re-submit after review feedback', () => {

@@ -336,3 +336,46 @@
       }
     }, true);
 
+    /**
+     * Research findings markdown viewer — replaces the old peek.js file mode (F355).
+     * Opens the terminal drawer shell and renders `/api/spec` content as HTML.
+     */
+    async function openResearchFindingsPeek(findingsPath, title) {
+      openTerminalPanel(title || 'Research findings', null, null, 'Loading…', null);
+      const container = document.getElementById('terminal-container');
+      try {
+        const res = await fetch('/api/spec?path=' + encodeURIComponent(findingsPath), { cache: 'no-store' });
+        const data = await res.json();
+        destroyXterm();
+        container.innerHTML = '';
+        if (!res.ok || data.error) {
+          const pre = document.createElement('pre');
+          pre.style.cssText = 'color:var(--term-fg);padding:12px;font-family:var(--mono);font-size:12px;margin:0;overflow:auto;height:100%;background:var(--term-bg)';
+          pre.textContent = 'No findings file found';
+          container.appendChild(pre);
+          return;
+        }
+        const content = data.content || '';
+        if (typeof marked !== 'undefined') {
+          const wrap = document.createElement('div');
+          wrap.className = 'findings-markdown';
+          wrap.style.cssText = 'padding:16px;overflow:auto;height:100%;background:var(--term-bg);color:var(--text-primary);font-size:13px;line-height:1.5';
+          wrap.innerHTML = marked.parse(content);
+          wrap.querySelectorAll('input[type="checkbox"]').forEach((cb) => { cb.disabled = true; });
+          container.appendChild(wrap);
+        } else {
+          const pre = document.createElement('pre');
+          pre.style.cssText = 'color:var(--term-fg);padding:12px;font-family:var(--mono);font-size:12px;margin:0;overflow:auto;height:100%;background:var(--term-bg)';
+          pre.textContent = content;
+          container.appendChild(pre);
+        }
+      } catch (_) {
+        destroyXterm();
+        container.innerHTML = '';
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'color:var(--term-fg);padding:12px;font-family:var(--mono);font-size:12px;margin:0;overflow:auto;height:100%;background:var(--term-bg)';
+        pre.textContent = 'No findings file found';
+        container.appendChild(pre);
+      }
+    }
+
