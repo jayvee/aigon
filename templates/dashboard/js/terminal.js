@@ -1,11 +1,165 @@
     // ── Terminal panel ────────────────────────────────────────────────────────
 
+    // Per-user prefs (localStorage)
+    function getTerminalClickTarget() {
+      return localStorage.getItem(lsKey('terminalClickTarget')) || 'dashboard';
+    }
+    function setTerminalClickTarget(val) {
+      localStorage.setItem(lsKey('terminalClickTarget'), val);
+    }
+    function getTerminalFont() {
+      return localStorage.getItem(lsKey('terminalFont')) || '"SF Mono","Cascadia Code",ui-monospace,monospace';
+    }
+    function setTerminalFont(val) {
+      localStorage.setItem(lsKey('terminalFont'), val);
+    }
+
+    // Build xterm.js theme from CSS custom properties
+    function buildXtermTheme() {
+      const s = getComputedStyle(document.documentElement);
+      const v = (k) => s.getPropertyValue(k).trim();
+      return {
+        background:       v('--term-bg')            || '#0c0d10',
+        foreground:       v('--term-fg')            || '#e8e9ec',
+        cursor:           v('--term-cursor')        || '#4d9fff',
+        cursorAccent:     v('--term-cursor-accent') || '#0c0d10',
+        selectionBackground: v('--term-selection')  || 'rgba(77,159,255,.22)',
+        black:            v('--term-black')         || '#1c1d21',
+        red:              v('--term-red')           || '#e06c75',
+        green:            v('--term-green')         || '#98c379',
+        yellow:           v('--term-yellow')        || '#e5c07b',
+        blue:             v('--term-blue')          || '#61afef',
+        magenta:          v('--term-magenta')       || '#c678dd',
+        cyan:             v('--term-cyan')          || '#56b6c2',
+        white:            v('--term-white')         || '#abb2bf',
+        brightBlack:      v('--term-bright-black')  || '#3e4452',
+        brightRed:        v('--term-bright-red')    || '#e06c75',
+        brightGreen:      v('--term-bright-green')  || '#98c379',
+        brightYellow:     v('--term-bright-yellow') || '#e5c07b',
+        brightBlue:       v('--term-bright-blue')   || '#61afef',
+        brightMagenta:    v('--term-bright-magenta')|| '#c678dd',
+        brightCyan:       v('--term-bright-cyan')   || '#56b6c2',
+        brightWhite:      v('--term-bright-white')  || '#c8ccd4',
+      };
+    }
+
     const termState = {
       sessionName: null, startedAt: null,
       elapsedTimer: null,
       specPath: null, specTitle: null, specStage: null,
-      specPoller: null, specContentHash: null
+      specPoller: null, specContentHash: null,
+      xterm: null, fitAddon: null, sseSource: null,
     };
+
+    function destroyXterm() {
+      if (termState.sseSource) { try { termState.sseSource.close(); } catch (_) {} termState.sseSource = null; }
+      if (termState.xterm) { try { termState.xterm.dispose(); } catch (_) {} termState.xterm = null; }
+      termState.fitAddon = null;
+    }
+
+    function createXtermInstance(container) {
+      const hasXterm = typeof Terminal !== 'undefined';
+      if (!hasXterm) return null;
+
+      const term = new Terminal({
+        cursorBlink: true,
+        fontSize: 13,
+        lineHeight: 1.4,
+        fontFamily: getTerminalFont(),
+        theme: buildXtermTheme(),
+        allowProposedApi: true,
+        scrollback: 5000,
+        convertEol: true,
+      });
+
+      // FitAddon — resize terminal to container
+      const fitAddon = typeof FitAddon !== 'undefined'
+        ? new FitAddon.FitAddon()
+        : null;
+      if (fitAddon) term.loadAddon(fitAddon);
+
+      // WebGL renderer — fallback to canvas silently
+      if (typeof WebglAddon !== 'undefined') {
+        try {
+          const webgl = new WebglAddon.WebglAddon();
+          webgl.onContextLoss(() => webgl.dispose());
+          term.loadAddon(webgl);
+        } catch (_) {}
+      }
+
+      // Unicode11 — proper wide-character support
+      if (typeof Unicode11Addon !== 'undefined') {
+        const u11 = new Unicode11Addon.Unicode11Addon();
+        term.loadAddon(u11);
+        term.unicode.activeVersion = '11';
+      }
+
+      // WebLinks — URL detection with hover underline
+      if (typeof WebLinksAddon !== 'undefined') {
+        term.loadAddon(new WebLinksAddon.WebLinksAddon());
+      }
+
+      // Image — sixel image rendering
+      if (typeof ImageAddon !== 'undefined') {
+        try { term.loadAddon(new ImageAddon.ImageAddon()); } catch (_) {}
+      }
+
+      term.open(container);
+      if (fitAddon) fitAddon.fit();
+
+      termState.xterm = term;
+      termState.fitAddon = fitAddon;
+      return { term, fitAddon };
+    }
+
+    function connectSessionStream(sessionName) {
+      if (termState.sseSource) { try { termState.sseSource.close(); } catch (_) {} }
+      const term = termState.xterm;
+      if (!term) return;
+
+      let prevOutput = null;
+      const src = new EventSource('/api/session/stream?name=' + encodeURIComponent(sessionName));
+
+      src.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (typeof data.output === 'string' && data.output !== prevOutput) {
+            prevOutput = data.output;
+            term.reset();
+            term.write(data.output);
+          }
+        } catch (_) {}
+      };
+
+      src.addEventListener('end', () => {
+        src.close();
+        termState.sseSource = null;
+        if (termState.xterm) {
+          termState.xterm.writeln('\r\n\x1b[33m[Session ended]\x1b[0m');
+        }
+        const dot = document.getElementById('panel-status-dot');
+        if (dot) dot.className = 'panel-status-dot';
+      });
+
+      src.onerror = () => {
+        if (src.readyState === EventSource.CLOSED) {
+          termState.sseSource = null;
+        }
+      };
+
+      termState.sseSource = src;
+
+      // Wire keyboard input → /api/session/terminal-input
+      term.onKey(({ key }) => {
+        if (!termState.sessionName) return;
+        const isEnter = key === '\r';
+        fetch('/api/session/terminal-input', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name: termState.sessionName, text: isEnter ? '' : key, enter: isEnter }),
+        }).catch(() => {});
+      });
+    }
 
     function openTerminalPanel(label, command, sessionName, staticContent, specContext) {
       const panelOverlay = document.getElementById('terminal-panel-overlay');
@@ -18,6 +172,7 @@
       dot.className = 'panel-status-dot ' + (sessionName ? 'running' : '');
 
       clearInterval(termState.elapsedTimer);
+      destroyXterm();
 
       termState.sessionName = sessionName || null;
       termState.startedAt = Date.now();
@@ -26,11 +181,9 @@
       termState.specStage = specContext ? specContext.stage : null;
       container.innerHTML = '';
 
-      // Show "View Spec" button only when launched with a spec context
       const viewSpecBtn = document.getElementById('panel-view-spec');
       if (viewSpecBtn) viewSpecBtn.style.display = termState.specPath ? '' : 'none';
 
-      // Stop any previous spec poller
       if (termState.specPoller) { clearInterval(termState.specPoller); termState.specPoller = null; }
       termState.specContentHash = null;
 
@@ -40,12 +193,10 @@
       panel.classList.add('open');
       document.body.style.overflow = 'hidden';
 
-      // Split-view: if spec drawer is already open alongside, position panels side by side
       if (document.getElementById('spec-drawer').classList.contains('open')) {
         document.body.classList.add('split-view');
       }
 
-      // Start stale poller: detect when AI edits the spec so user knows to refresh
       if (termState.specPath) {
         termState.specPoller = setInterval(async () => {
           if (!document.getElementById('spec-drawer').classList.contains('open')) return;
@@ -66,18 +217,33 @@
       }
 
       if (staticContent) {
-        // Show command output as preformatted text
-        const pre = document.createElement('pre');
-        pre.style.cssText = 'color:#ededef;padding:12px;font-family:var(--mono);font-size:12px;margin:0;overflow:auto;height:100%;background:#0a0a0b';
-        pre.textContent = staticContent;
-        container.appendChild(pre);
+        const xtermResult = createXtermInstance(container);
+        if (xtermResult) {
+          xtermResult.term.writeln(staticContent);
+        } else {
+          const pre = document.createElement('pre');
+          pre.style.cssText = 'color:var(--term-fg);padding:12px;font-family:var(--mono);font-size:12px;margin:0;overflow:auto;height:100%;background:var(--term-bg)';
+          pre.textContent = staticContent;
+          container.appendChild(pre);
+        }
+      } else if (sessionName && getTerminalClickTarget() === 'dashboard') {
+        const xtermResult = createXtermInstance(container);
+        if (xtermResult) {
+          connectSessionStream(sessionName);
+          // Resize observer keeps fit in sync
+          const ro = new ResizeObserver(() => {
+            try { if (termState.fitAddon) termState.fitAddon.fit(); } catch (_) {}
+          });
+          ro.observe(container);
+        } else {
+          container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:13px;font-family:var(--mono)">xterm.js not loaded — check your network connection</div>';
+        }
       } else {
-        // Session opened in terminal app
-        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:13px;font-family:var(--mono)">Session opened in your terminal</div>';
+        // External terminal mode or no session
+        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:13px;font-family:var(--mono)">Session opened in your terminal</div>';
         dot.className = 'panel-status-dot';
       }
 
-      // Elapsed timer
       termState.elapsedTimer = setInterval(() => {
         const elapsed = Math.floor((Date.now() - termState.startedAt) / 1000);
         const el = document.getElementById('panel-elapsed');
@@ -92,12 +258,12 @@
       panel.classList.remove('open');
       document.body.classList.remove('split-view');
       hideStopConfirm();
-      // Restore overflow only if spec drawer is also closed
       if (!document.getElementById('spec-drawer').classList.contains('open')) {
         document.body.style.overflow = '';
       }
       if (termState.specPoller) { clearInterval(termState.specPoller); termState.specPoller = null; }
       clearInterval(termState.elapsedTimer);
+      destroyXterm();
     }
 
     function showStopConfirm() {
@@ -134,6 +300,10 @@
       panel.classList.toggle('fullscreen');
       const btn = document.getElementById('panel-fullscreen');
       if (btn) btn.textContent = panel.classList.contains('fullscreen') ? '⤡' : '⤢';
+      // Re-fit xterm after fullscreen transition
+      requestAnimationFrame(() => {
+        try { if (termState.fitAddon) termState.fitAddon.fit(); } catch (_) {}
+      });
     }
 
     document.getElementById('panel-close').onclick = () => { hideStopConfirm(); closeTerminalPanel(); };
@@ -149,13 +319,11 @@
     };
     document.getElementById('terminal-panel-overlay').onclick = () => closeTerminalPanel();
 
-    // Keyboard shortcut: Escape closes panels
     document.addEventListener('keydown', (e) => {
       const panel = document.getElementById('terminal-panel');
       if (!panel.classList.contains('open')) return;
       if (e.key === 'Escape') {
         if (document.body.classList.contains('split-view')) {
-          // In split-view: ESC closes both panels at once → back to dashboard
           closeDrawer(); closeTerminalPanel();
         } else if (!document.getElementById('spec-drawer').classList.contains('open')) {
           closeTerminalPanel();

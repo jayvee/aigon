@@ -786,6 +786,85 @@
       loadAndRenderNotifToggles();
       shell.observeSection(notifSection);
 
+      // ── Terminal section ───────────────────────────────────────────────────
+      const termSection = shell.addSection('terminal', 'Terminal', 'Terminal', 'Configure how sessions open and the appearance of the in-dashboard terminal.');
+
+      function renderTerminalSettings() {
+        termSection.querySelectorAll('.term-settings-row').forEach(r => r.remove());
+
+        // terminalClickTarget
+        const targetRow = document.createElement('div');
+        targetRow.className = 'term-settings-row';
+        const targetLabel = document.createElement('div');
+        targetLabel.className = 'term-settings-label';
+        targetLabel.textContent = 'Session click target';
+        const targetHint = document.createElement('div');
+        targetHint.className = 'term-settings-hint';
+        targetHint.textContent = 'Choose whether clicking a session opens it in this dashboard or in your external terminal app.';
+        const targetCtrl = document.createElement('div');
+        targetCtrl.className = 'term-target-control';
+        const currentTarget = getTerminalClickTarget();
+        const btnDash = document.createElement('button');
+        btnDash.className = 'term-target-btn' + (currentTarget === 'dashboard' ? ' active' : '');
+        btnDash.type = 'button';
+        btnDash.textContent = 'In Dashboard';
+        btnDash.dataset.val = 'dashboard';
+        const btnExt = document.createElement('button');
+        btnExt.className = 'term-target-btn' + (currentTarget === 'external' ? ' active' : '');
+        btnExt.type = 'button';
+        btnExt.textContent = 'External App';
+        btnExt.dataset.val = 'external';
+        [btnDash, btnExt].forEach(btn => {
+          btn.onclick = () => {
+            setTerminalClickTarget(btn.dataset.val);
+            showToast('Terminal target: ' + btn.textContent);
+            renderTerminalSettings();
+          };
+        });
+        targetCtrl.appendChild(btnDash);
+        targetCtrl.appendChild(btnExt);
+        targetRow.appendChild(targetLabel);
+        targetRow.appendChild(targetCtrl);
+        targetRow.appendChild(targetHint);
+        termSection.appendChild(targetRow);
+
+        // Font picker
+        const fontRow = document.createElement('div');
+        fontRow.className = 'term-settings-row';
+        const fontLabel = document.createElement('div');
+        fontLabel.className = 'term-settings-label';
+        fontLabel.textContent = 'Terminal font';
+        const fontSelect = document.createElement('select');
+        fontSelect.className = 'term-font-select';
+        const FONT_OPTIONS = [
+          { label: 'SF Mono (system)',  value: '"SF Mono","Cascadia Code",ui-monospace,monospace' },
+          { label: 'Cascadia Code',     value: '"Cascadia Code","SF Mono",ui-monospace,monospace' },
+          { label: 'JetBrains Mono',    value: '"JetBrains Mono","SF Mono",ui-monospace,monospace' },
+          { label: 'Fira Code',         value: '"Fira Code","SF Mono",ui-monospace,monospace' },
+          { label: 'Menlo',             value: 'Menlo,"SF Mono",ui-monospace,monospace' },
+          { label: 'Courier New',       value: '"Courier New",Courier,monospace' },
+        ];
+        const currentFont = getTerminalFont();
+        FONT_OPTIONS.forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt.value;
+          o.textContent = opt.label;
+          o.style.fontFamily = opt.value;
+          if (opt.value === currentFont) o.selected = true;
+          fontSelect.appendChild(o);
+        });
+        fontSelect.onchange = () => {
+          setTerminalFont(fontSelect.value);
+          showToast('Terminal font updated — takes effect on next panel open');
+        };
+        fontRow.appendChild(fontLabel);
+        fontRow.appendChild(fontSelect);
+        termSection.appendChild(fontRow);
+      }
+
+      renderTerminalSettings();
+      shell.observeSection(termSection);
+
       const modelsSection = shell.addSection('models', 'Models', 'Models', 'Set global model defaults first, then choose a repository below to override them and see the effective model.');
       modelsSection.insertAdjacentHTML('beforeend', '<div class="settings-loading">Loading models...</div>');
       shell.observeSection(modelsSection);

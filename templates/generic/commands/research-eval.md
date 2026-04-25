@@ -133,6 +133,8 @@ Present the complete plan in one message:
 >
 > Dependencies are based on: [brief reason — e.g., "feature 2 needs the WS layer from feature 1"].
 >
+> Group these as set `<slug>`? (y/n/edit slug)
+>
 > - Enter or `y` = confirm (creates with `--set <slug>` and wires `depends_on`)
 > - `n` = create without set grouping or dependencies
 > - `edit slug` = adjust the slug before confirming
@@ -143,6 +145,8 @@ Present the complete plan in one message:
 **If confirmed (default):**
 
 ```bash
+aigon feature-create "feature-name" --set <slug>
+# repeat for each feature, e.g.:
 aigon feature-create "prefix-1-name" --set <slug>
 aigon feature-create "prefix-2-name" --set <slug>
 ```

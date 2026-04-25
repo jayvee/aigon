@@ -34,4 +34,11 @@ test('old specReview badge helpers absent; kcard-cycle-history CSS present', asy
 
     // Kanban cards render (confirms buildKanbanCard + buildAgentStatusHtml work)
     await expect(page.locator('.kcard').first()).toBeAttached();
+
+    // F355: xterm.js addons loaded, peek pipeline removed, --term-bg CSS token defined
+    const f355ok = await page.evaluate(() =>
+        [Terminal,FitAddon,WebglAddon,Unicode11Addon,WebLinksAddon,ImageAddon].every(x => typeof x !== 'undefined')
+        && typeof openPeekPanel === 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--term-bg').trim() !== '');
+    expect(f355ok, 'F355 xterm+peek+token').toBe(true);
+    await page.screenshot({ path: 'tests/dashboard-e2e/screenshots/terminal-addons-dark.png' });
 });
