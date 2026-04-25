@@ -45,3 +45,20 @@ The PTY endpoint is live. Cutover feature should:
   - Alt-screen + bracketed-paste transit via real node-pty (REGRESSION F356)
   - Heavy-output soak via real node-pty (REGRESSION F356)
 - Deleted `agent-model-effort-overrides.test.js` (21 LOC; projector override coverage via lifecycle.test.js). Ceiling raised +60 per pre-auth.
+
+## Code Review
+
+**Reviewed by**: cc (Composer code-review pass)
+**Date**: 2026-04-25
+
+### Fixes Applied
+- `fix(review): allow https Origin for PTY WebSocket (Caddy wss)` — `isValidOrigin` rejected `https://` origins while the client correctly uses `wss:` when the page is HTTPS; Caddy-terminated dashboards would fail PTY attach. Extended allow-list to `http:` and `https:` with the same hostname rules; updated `pty-terminal.test.js` accordingly.
+
+### Residual Issues
+- **Branch hygiene**: `main..HEAD` includes commits unrelated to F356 (recurring W17 specs, worktree setup, feedback spec deletion, multiuser spec moves). Recommend rebasing or splitting before merge to `main` so the PR stays scoped to the terminal MVP.
+- **Spec wording vs implementation**: AC says refuse when “dashboard bind” is not loopback; code enforces loopback **client** `remoteAddress` because the listener binds `0.0.0.0` (documented in this log). Behaviour is reasonable; consider aligning the spec sentence with “client must connect from loopback”.
+- **Playwright screenshot AC**: No dedicated e2e capture of the new PTY terminal panel was found in the diff summary; `review-badges` only exercises xterm globals. Residual until a screenshot or targeted e2e is added per spec AC.
+
+### Notes
+- PTY handler module is clear; token single-use + `tmux attach` kill-on-close matches the intended lifecycle.
+- After any `lib/*.js` edit in production, restart `aigon server` per project rules.
