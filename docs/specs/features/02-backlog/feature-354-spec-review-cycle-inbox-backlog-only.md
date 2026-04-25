@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-25T07:04:03.551Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: spec-review-cycle-inbox-backlog-only
