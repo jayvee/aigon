@@ -1,5 +1,90 @@
     // ── Settings view ──────────────────────────────────────────────────────────
 
+    function showDoctorModal(repoPath, displayPath) {
+      const existing = document.getElementById('doctor-modal');
+      if (existing) existing.remove();
+
+      const backdrop = document.createElement('div');
+      backdrop.id = 'doctor-modal';
+      backdrop.className = 'modal-backdrop';
+      backdrop.setAttribute('role', 'dialog');
+      backdrop.setAttribute('aria-modal', 'true');
+      backdrop.setAttribute('aria-labelledby', 'doctor-modal-title');
+
+      const box = document.createElement('div');
+      box.className = 'modal-box doctor-modal-box';
+
+      const header = document.createElement('div');
+      header.className = 'doctor-modal-header';
+      header.innerHTML = '<h3 id="doctor-modal-title"><span class="doctor-modal-icon">✚</span> Aigon Doctor</h3>' +
+        '<span class="doctor-modal-repo">' + escHtml(displayPath) + '</span>';
+
+      const output = document.createElement('pre');
+      output.className = 'doctor-output';
+      output.textContent = 'Running…';
+
+      const actions = document.createElement('div');
+      actions.className = 'modal-actions doctor-modal-actions';
+
+      const fixBtn = document.createElement('button');
+      fixBtn.className = 'btn btn-primary doctor-fix-btn';
+      fixBtn.textContent = 'Fix Issues';
+      fixBtn.style.display = 'none';
+
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'btn';
+      closeBtn.textContent = 'Close';
+      closeBtn.onclick = () => backdrop.remove();
+
+      const rerunBtn = document.createElement('button');
+      rerunBtn.className = 'btn doctor-rerun-btn';
+      rerunBtn.textContent = 'Re-run';
+      rerunBtn.style.display = 'none';
+
+      actions.appendChild(fixBtn);
+      actions.appendChild(rerunBtn);
+      actions.appendChild(closeBtn);
+      box.appendChild(header);
+      box.appendChild(output);
+      box.appendChild(actions);
+      backdrop.appendChild(box);
+      backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.remove(); };
+      document.body.appendChild(backdrop);
+
+      async function runDoctor(fix) {
+        output.textContent = fix ? 'Fixing…' : 'Running…';
+        fixBtn.style.display = 'none';
+        rerunBtn.style.display = 'none';
+        output.className = 'doctor-output doctor-running';
+        try {
+          const res = await fetch('/api/doctor', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ path: repoPath, fix }),
+          });
+          const data = await res.json().catch(() => ({}));
+          output.textContent = data.output || '(no output)';
+          output.className = 'doctor-output' + (data.issueCount > 0 && !fix ? ' doctor-has-issues' : '');
+          if (data.issueCount > 0 && !fix) {
+            fixBtn.textContent = 'Fix ' + data.issueCount + ' Issue' + (data.issueCount === 1 ? '' : 's');
+            fixBtn.style.display = '';
+          }
+          if (fix && data.fixCount > 0) {
+            output.className = 'doctor-output doctor-fixed';
+          }
+          rerunBtn.style.display = '';
+        } catch (e) {
+          output.textContent = 'Error: ' + e.message;
+          output.className = 'doctor-output doctor-has-issues';
+          rerunBtn.style.display = '';
+        }
+      }
+
+      fixBtn.onclick = () => runDoctor(true);
+      rerunBtn.onclick = () => runDoctor(false);
+      runDoctor(false);
+    }
+
     function readConductorReposFromGlobalConfig_client() {
       return (state.data && state.data.repos) ? state.data.repos.map(r => r.path) : [];
     }
@@ -671,7 +756,14 @@
               removeBtn.disabled = false;
             }
           };
+          const doctorBtn = document.createElement('button');
+          doctorBtn.className = 'repo-list-doctor';
+          doctorBtn.title = 'Run Aigon Doctor';
+          doctorBtn.textContent = '✚';
+          doctorBtn.onclick = () => showDoctorModal(repoPath, displayPath);
+
           item.insertBefore(visBtn, item.firstChild);
+          item.appendChild(doctorBtn);
           item.appendChild(removeBtn);
           list.appendChild(item);
         });
