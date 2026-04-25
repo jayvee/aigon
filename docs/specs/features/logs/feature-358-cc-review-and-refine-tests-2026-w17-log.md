@@ -2,6 +2,7 @@
 Agent: cc
 
 ## Status
+Solo Drive worktree; details captured in spec `## Run Log` section.
 
 ## New API Surface
 
