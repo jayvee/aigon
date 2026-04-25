@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-25T12:02:37.690Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: getNextId collision when recurring tasks run inside a feature worktree
