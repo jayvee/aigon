@@ -25,7 +25,10 @@ set -euo pipefail
 # Ceiling raised F344: deleted sidecar-migration.test.js (F343 migration applied globally;
 # idempotency covered by event-signature dedup in the migration itself). Added
 # dashboard-state-render-meta.test.js + review-badges.spec.js (compact). Net ceiling +190.
-CEILING="${CEILING:-4650}"
+# Ceiling raised F357: +120 LOC pre-authorised for agent-session-id-capture.test.js +
+# feature-do-resume.test.js (each needs temp-dir fixture with stub session-storage layout).
+# Deleted dashboard-health.test.js (17 LOC; probe covered by dashboard e2e tests). Net +109 LOC.
+CEILING="${CEILING:-4770}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
