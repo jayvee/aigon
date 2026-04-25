@@ -22,7 +22,7 @@ const pickSpecReviewLabels = (entityType, pendingCount) => snapshotToDashboardAc
     specReview: { pendingCount, pendingAgents: pendingCount ? ['gg'] : [], pendingLabel: pendingCount ? `${pendingCount} pending — gg` : '', pendingReviews: pendingCount ? [{ reviewId: 'sha1', reviewerId: 'gg', summary: 'tighten spec' }] : [] },
 }).validActions.filter((action) => action.action.includes('spec-review') || action.action.includes('spec-revise')).map((action) => action.label);
 
-testAsync('workflow-backed spec-review status drives dashboard badges/actions', () => withTempDirAsync('aigon-spec-review-', async (repo) => {
+testAsync('workflow-backed spec-review status drives dashboard actions', () => withTempDirAsync('aigon-spec-review-', async (repo) => {
     initRepo(repo);
     const featureSpec = path.join(repo, 'docs/specs/features/02-backlog/feature-12-test.md');
     const researchSpec = path.join(repo, 'docs/specs/research-topics/02-backlog/research-21-topic.md');
@@ -31,16 +31,9 @@ testAsync('workflow-backed spec-review status drives dashboard badges/actions', 
     await engine.recordSpecReviewSubmitted(repo, 'feature', '12', { reviewId: 'sha-review-1', reviewerId: 'gg', summary: 'tighten acceptance criteria', commitSha: 'sha-review-1' });
     await engine.recordSpecReviewSubmitted(repo, 'research', '21', { reviewId: 'sha-review-2', reviewerId: 'cc', summary: 'tighten questions', commitSha: 'sha-review-2' });
     await engine.recordSpecReviewAcknowledged(repo, 'research', '21', { commitSha: 'sha-ack-1' });
-    const featureItems = item('12', 'backlog', featureSpec);
-    const researchItems = item('21', 'backlog', researchSpec);
     clearTierCache(repo);
-    applySpecReviewFromSnapshots(repo, [
-        { entityType: 'feature', item: featureItems[0] },
-        { entityType: 'research', item: researchItems[0] },
-    ]);
-    assert.deepStrictEqual([featureItems[0].specReview.pendingCount, featureItems[0].specReview.pendingAgents], [1, ['gg']]);
-    assert.strictEqual(researchItems[0].specReview.pendingCount, 0);
-    // F283 moved action derivation to snapshotToDashboardActions; verify it here.
+    // F344: applySpecReviewFromSnapshots is a no-op shim; badge data now comes from stateRenderMeta.
+    // Verify that snapshotToDashboardActions still derives the correct actions from engine state.
     const featureSnapshot = await engine.showFeatureOrNull(repo, '12');
     const featureActions = snapshotToDashboardActions('feature', '12', featureSnapshot, 'backlog').validActions;
     assert.ok(featureActions.some((a) => a.action === 'feature-spec-revise'));
@@ -57,6 +50,7 @@ test('feature and research spec-review actions keep distinct labels', () => {
 });
 
 // REGRESSION: inbox research with `id: null` crashed readWorkflowSnapshotSync; fix publishes slug-as-id.
+// F344: applySpecReviewFromSnapshots is a no-op shim — calling it must not throw.
 testAsync('inbox research with slug-as-id is handled without throwing', () => withTempDirAsync('aigon-spec-inbox-', async (repo) => {
     initRepo(repo);
     const specPath = path.join(repo, 'docs/specs/research-topics/01-inbox/research-foo.md');
@@ -64,7 +58,7 @@ testAsync('inbox research with slug-as-id is handled without throwing', () => wi
     const inboxItems = item('research-foo', 'inbox', specPath);
     clearTierCache(repo);
     applySpecReviewFromSnapshots(repo, [{ entityType: 'research', item: inboxItems[0] }]);
-    assert.strictEqual(inboxItems[0].specReview.pendingCount, 0);
+    assert.strictEqual(inboxItems[0].specReview, undefined);
 }));
 
 testAsync('migration backfills legacy spec-review commits into workflow state', () => withTempDirAsync('aigon-spec-review-mig-', async (repo) => {

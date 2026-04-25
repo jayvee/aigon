@@ -328,35 +328,32 @@
       '</a>';
     }
 
+    // Baseline icon/label/cls per agent status — mirrors server STATE_RENDER_META for review states.
+    const AGENT_STATUS_META = {
+      'addressing-review': { icon: '●', label: 'Addressing review',   cls: 'status-reviewing'  },
+      'feedback-addressed':{ icon: '✓', label: 'Feedback addressed',  cls: 'status-review-done' },
+      'implementing':      { icon: '○', label: 'Session ended',        cls: 'status-ended'      },
+      'submitted':         { icon: '✓', label: 'Submitted',            cls: 'status-submitted'  },
+      'waiting':           { icon: '⏳', label: 'Needs input',         cls: 'status-waiting'    },
+    };
+    const AGENT_STATUS_DEFAULT = { icon: '○', label: 'Not started', cls: 'status-idle' };
+
     function buildAgentStatusHtml(agent, options) {
       const opts = options || {};
       const status = agent.status || 'idle';
       const tmuxRunning = agent.tmuxRunning || false;
       const drive = isSoloDrive(agent);
       const endedFlag = !!(agent.flags && agent.flags.sessionEnded);
-      let icon, label, cls;
-      if (status === 'addressing-review') {
-        icon = '●'; label = 'Addressing review'; cls = 'status-reviewing';
-      } else if (status === 'feedback-addressed') {
-        icon = '✓'; label = 'Feedback addressed'; cls = 'status-review-done';
-      // tmux alive is the ground truth unless the workflow has a more specific review-loop state
-      } else if (tmuxRunning && status !== 'submitted' && status !== 'waiting') {
+      let { icon, label, cls } = AGENT_STATUS_META[status] || AGENT_STATUS_DEFAULT;
+
+      // Compound overrides: tmux/session-ended state takes priority over workflow status
+      if (tmuxRunning && status !== 'submitted' && status !== 'waiting' &&
+          status !== 'addressing-review' && status !== 'feedback-addressed') {
         icon = '●'; label = drive ? 'Implementing' : 'Running'; cls = 'status-running';
       } else if (drive && status === 'implementing') {
-        // Solo Drive mode runs in the current branch without a tmux session.
-        // Treat the workflow status as the source of truth instead of
-        // interpreting the missing tmux session as a crashed/ended session.
         icon = '●'; label = 'Implementing'; cls = 'status-running';
       } else if (status === 'implementing' && endedFlag) {
         icon = '◐'; label = 'Finished (unconfirmed)'; cls = 'status-flagged';
-      } else if (status === 'implementing' && !tmuxRunning) {
-        icon = '○'; label = 'Session ended'; cls = 'status-ended';
-      } else if (status === 'waiting') {
-        icon = '⏳'; label = 'Needs input'; cls = 'status-waiting';
-      } else if (status === 'submitted') {
-        icon = '✓'; label = 'Submitted'; cls = 'status-submitted';
-      } else {
-        icon = '○'; label = 'Not started'; cls = 'status-idle';
       }
       return { icon, label, cls, devServerUrl: agent.devServerUrl };
     }
@@ -636,6 +633,17 @@
         '</div>';
     }
 
+    function buildReviewCycleHistoryHtml(feature) {
+      const cycles = Array.isArray(feature.reviewCycles) ? feature.reviewCycles.filter(c => c.type === 'code') : [];
+      if (cycles.length === 0) return '';
+      const entries = cycles.map(c => {
+        const name = escHtml(AGENT_DISPLAY_NAMES[c.reviewer] || c.reviewer || '?');
+        const when = c.completedAt || c.counterCompletedAt ? logsDateFmt(c.completedAt || c.counterCompletedAt) : '';
+        return '<span class="kcard-cycle-entry">✓ ' + name + (when ? ' <span class="kcard-cycle-when">' + escHtml(when) + '</span>' : '') + '</span>';
+      }).join('');
+      return '<div class="kcard-cycle-history"><span class="kcard-cycle-label">Reviewed ' + cycles.length + '×</span>' + entries + '</div>';
+    }
+
     function buildCloseFailureHtml(feature) {
       const lcf = feature.lastCloseFailure;
       if (!lcf) return '';
@@ -680,8 +688,6 @@
       const hasAgentSections = !isDone && agents.length > 0 && !isSoloDriveBranch;
 
       const reviews = feature.reviewSessions || [];
-      const specReviews = feature.specReviewSessions || [];
-      const specChecks = feature.specCheckSessions || [];
 
       const hasNumericId = /^\d+$/.test(String(feature.id || ''));
 
@@ -710,7 +716,7 @@
         : '';
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildSpecReviewBadgeHtml(feature) + buildSpecCheckBadgeHtml(feature) + '</div>' +
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildStateRenderBadgeHtml(feature) + '</div>' +
         blockedByHtml +
         autonomousPlanHtml +
         nudgeChipsHtml;
@@ -774,6 +780,7 @@
             innerHtml += buildReviewerSectionHtml('Review', r);
           });
         }
+        innerHtml += buildReviewCycleHistoryHtml(feature);
         innerHtml += buildReadyToCloseHtml(agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         innerHtml += buildCloseFailureHtml(feature);
@@ -798,6 +805,7 @@
             innerHtml += buildReviewerSectionHtml('Review', r);
           });
         }
+        innerHtml += buildReviewCycleHistoryHtml(feature);
         innerHtml += buildReadyToCloseHtml(agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         innerHtml += buildCloseFailureHtml(feature);
@@ -825,9 +833,8 @@
           }
           innerHtml +=
             (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
-            (specChecks.length > 0 ? specChecks.map(r => buildReviewerSectionHtml('Spec Revise', r, { mode: 'spec-check' })).join('') : '') +
-            (specReviews.length > 0 ? specReviews.map(r => buildReviewerSectionHtml('Spec review', r, { mode: 'spec' })).join('') : '') +
             evalStatusHtml +
+            buildReviewCycleHistoryHtml(feature) +
             buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType) +
             (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
         }
