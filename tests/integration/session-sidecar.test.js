@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 'use strict';
-
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -9,9 +8,7 @@ const {
     parseEnrichedTmuxSessionsOutput,
     writeSessionSidecarRecord,
 } = require('../../lib/worktree');
-
 const SEP = '__AIGON_SEP__';
-
 test('parseEnrichedTmuxSessionsOutput reads entity fields from sidecar when name is unparseable', () => withTempDir('aigon-ss-', (tmp) => {
     // REGRESSION: feature 311 — Close-resolve and other roles must not rely on tmux name regex alone.
     const sessionsDir = path.join(tmp, '.aigon', 'sessions');
@@ -38,7 +35,6 @@ test('parseEnrichedTmuxSessionsOutput reads entity fields from sidecar when name
     assert.strictEqual(rows[0].agent, 'cc');
     assert.strictEqual(path.resolve(rows[0].repoPath), path.resolve(tmp));
 }));
-
 test('parseEnrichedTmuxSessionsOutput prunes sidecar files with no live tmux session', () => withTempDir('aigon-ss2-', (tmp) => {
     // REGRESSION: feature 311 — stale JSON must not accumulate when tmux sessions end.
     const sessionsDir = path.join(tmp, '.aigon', 'sessions');
@@ -70,7 +66,6 @@ test('parseEnrichedTmuxSessionsOutput prunes sidecar files with no live tmux ses
     assert.ok(!fs.existsSync(path.join(sessionsDir, 'gone.json')));
     assert.ok(fs.existsSync(path.join(sessionsDir, `${liveName}.json`)));
 }));
-
 test('parseEnrichedTmuxSessionsOutput resolves set conductor ...-s<slug>-auto to repo (no unlinked filter)', () => withTempDir('aigon-set-tmux-', (tmp) => {
     // REGRESSION: set-autonomous-start uses {repo}-s{setSlug}-auto; must not lose repoPath (sessions tab filter).
     const repo = path.join(tmp, 'brewboard');
@@ -86,7 +81,6 @@ test('parseEnrichedTmuxSessionsOutput resolves set conductor ...-s<slug>-auto to
     assert.strictEqual(rows[0].orphan, null);
     assert.strictEqual(rows[0].role, 'auto');
 }));
-
 test('writeSessionSidecarRecord persists tmuxId/shellPid; repo category drops entity fields', () => withTempDir('aigon-ss-id-', (tmp) => {
     writeSessionSidecarRecord({
         sessionName: 'aigon-f351-do-cc', repoPath: tmp, worktreePath: tmp,
@@ -103,7 +97,6 @@ test('writeSessionSidecarRecord persists tmuxId/shellPid; repo category drops en
     assert.strictEqual(ent.category, 'entity'); assert.strictEqual(ent.entityId, '351');
     assert.strictEqual(repo.category, 'repo'); assert.ok(!('entityType' in repo));
 }));
-
 test('parseEnrichedTmuxSessionsOutput exposes tmuxId/shellPid; repo category preserved; tmuxId set drives prune', () => withTempDir('aigon-ss-row-', (tmp) => {
     const sessionsDir = path.join(tmp, '.aigon', 'sessions');
     fs.mkdirSync(sessionsDir, { recursive: true });
@@ -129,5 +122,4 @@ test('parseEnrichedTmuxSessionsOutput exposes tmuxId/shellPid; repo category pre
     assert.strictEqual(byName['ask-myrepo-cc'].entityType, null);
     assert.ok(!fs.existsSync(path.join(sessionsDir, 'stale.json')), 'sidecar with tmuxId not in live set is pruned');
 }));
-
 report();

@@ -1,13 +1,11 @@
 // @ts-check
 'use strict';
-
 const { expect } = require('@playwright/test');
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { GIT_SAFE_ENV } = require('../_helpers');
-
 const CTX_FILE = path.join(os.tmpdir(), 'aigon-dashboard-e2e-ctx.json');
 const FAST = process.env.MOCK_DELAY === 'fast' || !!process.env.CI;
 const SOLO_DELAYS = FAST
@@ -15,11 +13,9 @@ const SOLO_DELAYS = FAST
     : { implementing: 15000, submitted: 5000 };
 const FLEET_CC_DELAYS = { implementing: 3000, submitted: 1500 };
 const FLEET_GG_DELAYS = { implementing: 8000, submitted: 1500 };
-
 function readCtx() {
     return JSON.parse(fs.readFileSync(CTX_FILE, 'utf8'));
 }
-
 function ensureFixtureOnMainBranch() {
     const ctx = readCtx();
     try {
@@ -34,7 +30,6 @@ function ensureFixtureOnMainBranch() {
         // the action response will still surface the real problem.
     }
 }
-
 function waitForPath(p, timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
         const deadline = Date.now() + timeoutMs;
@@ -46,7 +41,6 @@ function waitForPath(p, timeoutMs = 15000) {
         check();
     });
 }
-
 /**
  * Force a server-side poll AND make the frontend re-fetch + re-render.
  *
@@ -64,14 +58,12 @@ async function forceRefresh(page) {
     ]);
     return res;
 }
-
 async function gotoPipelineWithMockedSessions(page) {
     await page.route('**/api/session/**', route => route.fulfill({ json: { ok: true, pid: 0 } }));
     await page.goto('/');
     await page.click('#tab-pipeline');
     await page.waitForSelector('.kanban', { timeout: 10000 });
 }
-
 /** Locate the named feature in the backlog column and return its padded ID. */
 async function prioritiseInboxFeature(page, featureName) {
     ensureFixtureOnMainBranch();
@@ -83,7 +75,6 @@ async function prioritiseInboxFeature(page, featureName) {
     expect(m && m[1], `could not read paddedId from backlog card for "${featureName}"`).toBeTruthy();
     return String(m[1]).padStart(2, '0');
 }
-
 /** Open agent picker from a backlog card, check the given agent codes, submit. */
 async function startFeatureWithAgents(page, featureName, agentIds) {
     const backlogCard = page.locator('.kcard').filter({ hasText: featureName }).first();
@@ -100,7 +91,6 @@ async function startFeatureWithAgents(page, featureName, agentIds) {
     expect(json.ok, `feature-start failed: ${json.error || json.stderr || ''}`).toBe(true);
     await page.waitForResponse('**/api/refresh');
 }
-
 /** Click an action button on a card; assert the action response is ok. */
 async function clickCardAction(page, card, action, label) {
     const btn = card.locator(`.kcard-va-btn[data-va-action="${action}"]`);
@@ -111,21 +101,18 @@ async function clickCardAction(page, card, action, label) {
     await page.waitForResponse('**/api/refresh');
     await page.waitForTimeout(500);
 }
-
 /** Verify the named feature is no longer in any active column. */
 async function expectFeatureClosed(page, featureName, extraStages = []) {
     const stages = ['inbox', 'backlog', 'in-progress', ...extraStages];
     const selector = stages.map(s => `.kanban-col[data-stage="${s}"] .kcard`).join(', ');
     await expect(page.locator(selector).filter({ hasText: featureName })).toHaveCount(0, { timeout: 5000 });
 }
-
 /** Verify the Logs tab shows the named action in its log. */
 async function expectConsoleHasAction(page, action) {
     await page.click('#tab-logs');
     await page.waitForSelector('#logs-view', { timeout: 5000 });
     await expect(page.locator('#logs-view')).toContainText(action, { timeout: 5000 });
 }
-
 module.exports = {
     CTX_FILE, SOLO_DELAYS, FLEET_CC_DELAYS, FLEET_GG_DELAYS, GIT_SAFE_ENV,
     readCtx, waitForPath, forceRefresh,
