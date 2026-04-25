@@ -87,7 +87,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/set-conductor.js` | ~500 | Set-level autonomous orchestration (`set-autonomous-start|stop|resume|reset`): resolves set members with strict cycle checks, starts/resumes per-feature `feature-autonomous-start`, polls `feature-<id>-auto.json`, and persists durable set state in `.aigon/state/set-<slug>-auto.json` |
 | `lib/state-queries.js` | ~250 | Read-only UI helpers: feedback action/transition derivation (pure, no I/O) |
 | `lib/agent-status.js` | ~130 | Per-agent status files (`.aigon/state/{prefix}-{id}-{agent}.json`), atomic writes |
-| `lib/agent-prompt-resolver.js` | ~140 | Resolves launch prompt for agent + verb. Slash-invocable agents (cc/gg/cu) pass through `cliConfig.<verb>Prompt`; non-invocable agents (cx/op) inline the canonical template body directly |
+| `lib/agent-prompt-resolver.js` | ~140 | Resolves launch prompt for agent + verb. Slash-invocable agents (cc/gg/cu) pass through `cliConfig.<verb>Prompt`; non-invocable agents (cx/op/km) inline the canonical template body directly. Membership is derived from `capabilities.resolvesSlashCommands` in `templates/agents/<id>.json` — never hardcode |
 | `lib/agent-launch.js` | ~130 | `resolveLaunchTriplet` + `buildAgentLaunchInvocation`. **Every** spawn path must route through this helper so per-feature `{model, effort}` overrides captured on `feature.started` survive every respawn |
 | `lib/agent-failover.js` | ~140 | Token-exhaustion detection helpers, failover chain selection, handoff prompt builder, `clearTokenExhaustedFlag` (shared by supervisor + dashboard switch) |
 | `lib/stats-aggregate.js` | ~270 | Rolled-up stats cache (`.aigon/cache/stats-aggregate.json`); rebuilt lazily; includes `perTriplet` rollup keyed on `agent\|model\|effort` |
@@ -98,6 +98,14 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/remote-gate-github.js` | ~170 | GitHub PR-aware close helper: `feature-close` gate based on `gh pr list` |
 | `lib/proxy.js` | ~660 | Caddy management, port allocation, dev server utilities |
 | `lib/sync.js` | ~900 | Cross-machine state backup/restore via private git repo |
+| `lib/sync-state.js` | ~571 | F359 git-backed `.aigon/` sync. Stages portable state in `.aigon/.sync/repo`, pushes/pulls a dedicated `aigon-state` branch, never touches the user's working tree or branch. Honors `.aigon/.syncignore`. Drives `aigon sync push`/`pull` |
+| `lib/scheduled-kickoff.js` | ~408 | F367 server-side poller for deferred kickoffs. Persists jobs in `.aigon/state/scheduled-kickoffs.json` (lock-protected, store version 1), polls every 45s, fires `feature_autonomous` / `research_start` once at `runAt` (catch-up if server was down). Job CRUD lives in `lib/commands/schedule.js` |
+| `lib/commands/schedule.js` | ~139 | CLI dispatcher for `aigon schedule add|list|cancel`. Validates payloads through `feature-autonomous-payload`, persists via `scheduled-kickoff` |
+| `lib/feature-autonomous-payload.js` | ~117 | Shared validator + argv builder for `feature-autonomous-start` payloads. Keeps dashboard `POST /api/features/:id/run`, scheduled kickoffs (F367), and the CLI in lockstep |
+| `lib/perf-bench.js` | ~314 | F360 agent perf benchmark harness. Measures end-to-end aigon run time on a seed repo, splits into phases by reading the workflow event log, records a bare `claude -p` baseline so aigon overhead is explicit. Writes JSON for CI regression checks; default threshold 20% |
+| `lib/pty-session-handler.js` | ~120 | F356 in-dashboard terminal helper: short-lived single-use PTY tokens (30 s TTL) gating WebSocket attach, plus loopback-only origin check |
+| `lib/session-sidecar.js` | ~271 | F357 background capture: post-launch resolves the agent's transcript file (Claude UUID / Codex stem / Gemini sessionId), then writes `agentSessionId` + `agentSessionPath` onto `.aigon/sessions/{name}.json`. Used by `feature-do --resume` to deterministically reattach a dead tmux session |
+| `lib/state-render-meta.js` | ~39 | Server-owned render metadata table for every `currentSpecState` (icon, label, css class, optional badge). Dashboard API attaches `stateRenderMeta` per row so the frontend renders status with zero per-state branching |
 | `lib/templates.js` | ~550 | Template loading, scaffolding, COMMAND_REGISTRY |
 | `lib/git.js` | ~700 | Branch, worktree, status, commit helpers, attribution |
 | `lib/security.js` | ~131 | Merge gate scanning (gitleaks + semgrep) |

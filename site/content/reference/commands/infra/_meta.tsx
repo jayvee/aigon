@@ -15,6 +15,8 @@ export default {
   status: "status",
   repair: "repair",
   workflow: { title: withPro("workflow") },
+  schedule: "schedule",
+  sync: "sync",
   help: "help",
   next: "next",
 };
