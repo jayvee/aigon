@@ -98,15 +98,16 @@ Wait for user response before proceeding. The awaiting-input flag clears automat
 
 ### Feature Set Naming
 
-When creating **2+ features** from a single research topic, always derive a proposed set slug from the research topic slug:
+**Default: group as a set.** Features created from the same research topic share context and are almost always related. Unless the user explicitly opts out, stamp every spec with a shared `set:` slug and wire dependencies between them.
 
+#### Step A — Derive the plan (do this before asking anything)
+
+Derive a set slug:
 - lowercase the topic slug
 - trim the leading `research-<id>-` prefix if present
 - keep it short and descriptive (example: `research-34-feature-set` → `feature-set`)
 
-Use that proposed set slug both for the feature-name prefix and, if the user opts in, for the feature spec frontmatter `set:` tag.
-
-When creating multiple features from a single research topic, use a **common prefix with sequence numbers** to group them as a feature set:
+Name features with **common prefix + sequence numbers** in dependency order (feature 1 has no deps, feature 2 depends on 1, etc.):
 
 ```
 <prefix>-1-<specific-name>
@@ -114,48 +115,58 @@ When creating multiple features from a single research topic, use a **common pre
 <prefix>-3-<specific-name>
 ```
 
-The prefix should be a short, descriptive slug derived from the research topic (e.g., research "single source of truth" → prefix `single-source`). The sequence numbers reflect dependency order — feature 1 has no deps, feature 2 depends on 1, etc.
+Analyse the dependency chain across the selected features. For each feature, decide: does it depend on another selected feature? A feature depends on another when it cannot be safely started until that one is merged (shared data model, API contract, etc.). Be concrete — "feature 2 needs the xterm.js bundle from feature 1" — not vague.
 
-If the user selected **2+ features**, ask for explicit opt-in before writing any `set:` frontmatter. Use this exact prompt shape:
+#### Step B — Present the full plan and wait (REQUIRED CHECKPOINT)
 
-> "Group these as set `<slug>`? (y/n/edit slug)"
+**Do not run any `feature-create` command until the user responds to this prompt.**
 
-- `y` = keep the proposed slug and stamp `set: <slug>` into every created feature spec
-- `n` = create the features without any `set:` key
-- `edit slug` = accept grouping, but first let the user replace `<slug>` with a different valid slug
+Present the complete plan in one message:
 
-Then confirm the naming plan. Example prompt:
+> "I’ll group these as set `<slug>`. Here’s the naming and dependency plan:
+>
+> | # | Name | Depends on |
+> |---|------|------------|
+> | 1 | `<prefix>-1-<name>` | — |
+> | 2 | `<prefix>-2-<name>` | #1 |
+> | 3 | `<prefix>-3-<name>` | #2 |
+>
+> Dependencies are based on: [brief reason — e.g., "feature 2 needs the WS layer from feature 1"].
+>
+> - Enter or `y` = confirm (creates with `--set <slug>` and wires `depends_on`)
+> - `n` = create without set grouping or dependencies
+> - `edit slug` = adjust the slug before confirming
+> - Adjust numbering/deps inline if the order is wrong"
 
-> "I’ll use prefix `single-source` and create `single-source-1-engine-only-spec-transitions`, `single-source-2-engine-based-read-paths`, etc. Good, or prefer a different prefix?"
+#### Step C — Create features
 
-This makes it easy to see which features belong together on the board, in `feature-list`, and in git history.
+**If confirmed (default):**
 
-**For each selected feature, run:**
+```bash
+aigon feature-create "prefix-1-name" --set <slug>
+aigon feature-create "prefix-2-name" --set <slug>
+```
+
+**If declined:**
 
 ```bash
 aigon feature-create "feature-name"
 ```
 
-If the user accepted grouping, create each feature with:
+After creating each feature, edit the spec to add:
 
-```bash
-aigon feature-create "feature-name" --set <slug>
-```
-
-After creating each feature:
-
-1. Add a research origin backlink to the new feature spec:
+1. Research origin backlink:
 ```markdown
 ## Related
 - Research: #{ID} {research-name}
 ```
 
-2. If this feature depends on another feature from this research, add `depends_on` to the **Dependencies** section:
+2. For features that depend on another feature in this set, add `depends_on` to the **Dependencies** section:
 ```markdown
 ## Dependencies
-- depends_on: feature-name-it-depends-on
+- depends_on: prefix-1-name
 ```
-This enables Aigon's dependency system to enforce ordering — dependent features cannot be started until their dependencies are done.
+This enables Aigon’s dependency system to enforce ordering — dependent features cannot be started until their dependencies are done. Every feature that has a predecessor **must** have this field; omitting it is a mistake.
 
 ## Step 6: Update Main Research Doc
 
