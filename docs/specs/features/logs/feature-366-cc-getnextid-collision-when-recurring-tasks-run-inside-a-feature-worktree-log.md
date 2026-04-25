@@ -3,6 +3,8 @@ Agent: cc
 
 ## Status
 
+Implemented: worktree guard in `lib/recurring.js` + git-based ID scan in `lib/spec-crud.js`; macOS `/var` vs `/private/var` symlink resolved via `fs.realpathSync`; 2 new regression tests pass.
+
 ## New API Surface
 
 ## Key Decisions
