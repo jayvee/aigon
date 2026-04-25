@@ -216,5 +216,9 @@
       ]
     }
   },
+  "idleDetection": {
+    "idlePattern": "❯\\s*\\n[─]{20,}",
+    "workingPattern": "[⏺✻⏳⏵]"
+  },
   "commandExcludes": []
 }

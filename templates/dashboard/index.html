@@ -82,7 +82,7 @@
                   <!-- Feature cards -->
                   <template x-for="feature in getFeatures(repo)" :key="'f-' + feature.id + '-' + feature.name">
                     <article class="card feature-card"
-                             :class="{ 'waiting': feature.agents.some(a => a.status === 'waiting'), 'evaluating': feature.stage === 'in-evaluation', 'awaiting-input': feature.anyAwaitingInput }"
+                             :class="{ 'waiting': feature.agents.some(a => a.status === 'waiting'), 'evaluating': feature.stage === 'in-evaluation', 'awaiting-input': feature.anyAwaitingInput || feature.anyIdleAtPrompt }"
                              :style="feature.specPath ? 'cursor:pointer' : ''"
                              x-on:click="openFeatureSpec($event, feature)">
                       <div class="card-h">
@@ -118,7 +118,7 @@
                   <!-- Research cards -->
                   <template x-for="item in getResearch(repo)" :key="'r-' + item.id + '-' + item.name">
                     <article class="card research"
-                             :class="{ 'waiting': item.agents.some(a => a.status === 'waiting'), 'awaiting-input': item.anyAwaitingInput }"
+                             :class="{ 'waiting': item.agents.some(a => a.status === 'waiting'), 'awaiting-input': item.anyAwaitingInput || item.anyIdleAtPrompt }"
                              :style="item.specPath ? 'cursor:pointer' : ''"
                              x-on:click="openSpecItem($event, item, 'R#')">
                       <div class="card-h">
