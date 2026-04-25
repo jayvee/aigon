@@ -51,42 +51,37 @@
       return { fm: m[1].trim(), body: md.slice(m[0].length) };
     }
 
-    function fmFormatValue(val) {
-      // ISO date: 2026-03-18T01:28:39.610Z or with quotes
-      const stripped = val.replace(/^["']|["']$/g, '');
-      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(stripped)) {
-        const d = new Date(stripped);
-        if (!isNaN(d)) {
-          return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
-            + ' ' + d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
-        }
-      }
-      return escHtml(val);
+    /**
+     * frontmatter: escaped pre, no two-column table (naive `key:` split is unsafe).
+     * Strips full-line # comments for display only — they are long and misaligned
+     * in the feature template; full file remains on disk / Open in editor.
+     * Inline value#tail comments are kept.
+     */
+    function displayFrontMatterStripped(fmText) {
+      if (!fmText) return '';
+      return fmText
+        .split('\n')
+        .filter((line) => {
+          const t = line.trimStart();
+          return !(t.length > 0 && t.charCodeAt(0) === 35); // starts with # after leading ws
+        })
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
     }
 
     function renderFrontMatterBlock(fmText) {
       if (!fmText) return '';
-      // Parse YAML-like events array into structured rows
-      const lines = fmText.split('\n');
-      const rows = [];
-      let inEvents = false;
-      for (const line of lines) {
-        if (/^events\s*:/.test(line)) { inEvents = true; continue; }
-        if (inEvents) {
-          const evMatch = line.match(/^\s*-\s*\{\s*ts\s*:\s*(.+?),\s*status\s*:\s*(.+?)\s*\}$/);
-          if (evMatch) {
-            rows.push(`<tr><td class="fm-key">${fmFormatValue(evMatch[1])}</td><td class="fm-val"><span class="fm-status">${escHtml(evMatch[2].trim())}</span></td></tr>`);
-            continue;
-          }
-          if (/^\S/.test(line)) inEvents = false; else continue;
-        }
-        const sep = line.indexOf(':');
-        if (sep === -1) { rows.push(`<tr><td colspan="2" class="fm-val">${escHtml(line)}</td></tr>`); continue; }
-        const key = line.slice(0, sep).trim();
-        const val = line.slice(sep + 1).trim();
-        rows.push(`<tr><td class="fm-key">${escHtml(key)}</td><td class="fm-val">${fmFormatValue(val)}</td></tr>`);
-      }
-      return `<details class="fm-details"><summary class="fm-summary">Metadata</summary><table class="fm-table">${rows.join('')}</table></details>`;
+      const stripped = displayFrontMatterStripped(fmText);
+      const body = (stripped && stripped.length) ? stripped : fmText;
+      const pre = escHtml(body);
+      return (
+        '<details class="fm-details">'
+        + '<summary class="fm-summary">Metadata</summary>'
+        + '<pre class="fm-yaml" aria-label="Spec front matter (YAML)">'
+        + pre
+        + '</pre></details>'
+      );
     }
 
     function renderMarkdownPreview(md) {
