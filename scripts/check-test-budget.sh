@@ -28,7 +28,9 @@ set -euo pipefail
 # Ceiling raised F357: +120 LOC pre-authorised for agent-session-id-capture.test.js +
 # feature-do-resume.test.js (each needs temp-dir fixture with stub session-storage layout).
 # Deleted dashboard-health.test.js (17 LOC; probe covered by dashboard e2e tests). Net +109 LOC.
-CEILING="${CEILING:-4770}"
+# Ceiling raised F356: +60 LOC pre-authorised for PTY regression bundle (resize / alt-screen / bracketed-paste / soak).
+# Deleted agent-model-effort-overrides.test.js (21 LOC; projector override tests covered by lifecycle.test.js).
+CEILING="${CEILING:-4830}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
