@@ -97,6 +97,21 @@ Everything else in `~/.aigon/config.json` is included: agent definitions (includ
 - [ ] `aigon doctor` notes if `backup.remote` is not configured (info-level, not error): "Backup not configured — run `aigon backup configure` to protect your aigon data."
 - [ ] First-time `aigon init` (or `aigon doctor --fix`) suggests running `aigon backup configure` as a recommended next step.
 
+### Installation wizard (`aigon onboarding`)
+
+The wizard currently has 5 steps: `prereqs → terminal → agents → seed-repo → server`. Add a 6th step: **`vault`**.
+
+- [ ] Add `'vault'` to `STEP_IDS` in `lib/onboarding/state.js` after `'server'`.
+- [ ] Add Step 6 in `lib/onboarding/wizard.js`:
+  - Check if `backup.remote` is already configured; if so, mark done and skip.
+  - Prompt: "Set up aigon-vault to back up your data? (Recommended)" — skippable.
+  - If yes and `gh` is available and authenticated: offer to create the private repo automatically. Suggest the name `aigon-vault`. Run `gh repo create aigon-vault --private`, parse the returned URL, run `aigon backup configure <url>`.
+  - If yes but `gh` is not available: prompt for a git URL directly; run `aigon backup configure <url>`.
+  - If skipped: note "You can set this up later with: `aigon backup configure`" and mark as `skipped`.
+  - On success: run an initial `aigon backup push` to populate the vault immediately.
+  - Mark step as `done` or `skipped`; wizard continues to outro.
+- [ ] The vault step is skippable without blocking completion of the rest of setup.
+
 ## Technical Approach
 
 ### Replacing `aigon sync`
