@@ -25,15 +25,16 @@ Dev Server (web/api profiles):
   dev-server gc                     Remove entries for dead processes
   dev-server url                    Print URL for current context (for scripting)
 
-Sync (solo multi-laptop):
-  sync init <git-url>               Initialize private sync repo and save sync settings
-  sync register [repo-path]         Register current or provided repo for portable-state sync
-  sync export [--output <file>]     Export portable state bundle for bootstrap migration
-  sync bootstrap-merge <bundle> [--push]
-                                    Merge imported bundle with local state; optional baseline push
-  sync push                         Copy portable state to sync repo, commit, and push
-  sync pull                         Pull sync repo and restore portable state into registered repos
-  sync status                       Show initialization/bootstrap state, repos, and pending changes
+Backup & Sync:
+  sync configure <git-url>          Point this project's backup at a private git remote
+  sync push                         Back up this project's specs and workflow state
+  sync pull                         Restore this project's state from the remote
+  sync status                       Show remote, last backup time, and divergence
+
+  settings configure <git-url>      Point your global settings backup at a private git remote
+  settings push                     Back up your agent config and workflow presets
+  settings pull                     Restore your settings on this machine
+  settings status                   Show remote, last backup time, and divergence
 
 Modes:
   🚗 Drive      One agent, you guide each stage
@@ -181,14 +182,11 @@ Examples:
   aigon dev-server stop               # Deregister current dev server
   BASE_URL=$(aigon dev-server url) npx playwright test  # E2E tests
 
-  # Solo laptop sync
-  aigon sync init git@github.com:user/aigon-sync.git
-  aigon sync register
-  aigon sync export --output ~/Desktop/aigon-sync-A.tgz
-  aigon sync bootstrap-merge ~/Desktop/aigon-sync-A.tgz --push
-  aigon sync push
-  aigon sync pull
-  aigon sync status
+  # Backup & sync (new machine setup)
+  aigon sync configure git@github.com:you/aigon-sync.git  # once per project
+  aigon settings configure git@github.com:you/aigon-sync.git  # once globally
+  aigon sync push && aigon settings push   # back up everything
+  aigon sync pull && aigon settings pull   # restore on another machine
 
   # Research workflow
   aigon research-create "api-design"   # Create new research topic

@@ -95,18 +95,32 @@
     }
 
     function renderSyncPanel(scope, host) {
-      // scope: { id, label, statusUrl, configureCmd, pushCmd, pullCmd, statusCmd, hint }
+      // scope: { id, label, includes, excludes, statusUrl, configureCmd, backupCmd, restoreCmd, statusCmd }
       host.innerHTML = '';
       host.className = 'settings-panel sync-panel';
+
       const h = document.createElement('h4');
       h.className = 'sync-panel-title';
       h.textContent = scope.label;
       host.appendChild(h);
 
-      const hint = document.createElement('p');
-      hint.className = 'sync-panel-hint settings-hint';
-      hint.textContent = scope.hint;
-      host.appendChild(hint);
+      if (scope.includes && scope.includes.length) {
+        const inc = document.createElement('ul');
+        inc.className = 'sync-panel-includes';
+        scope.includes.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = item;
+          inc.appendChild(li);
+        });
+        host.appendChild(inc);
+      }
+
+      if (scope.excludes) {
+        const ex = document.createElement('p');
+        ex.className = 'sync-panel-excludes';
+        ex.textContent = 'Not included: ' + scope.excludes;
+        host.appendChild(ex);
+      }
 
       const meta = document.createElement('div');
       meta.className = 'sync-panel-meta';
@@ -116,9 +130,9 @@
       const actions = document.createElement('div');
       actions.className = 'sync-panel-actions modal-actions';
 
-      function termBtn(label, command) {
+      function termBtn(label, cls, command) {
         const b = document.createElement('button');
-        b.className = 'btn';
+        b.className = 'btn ' + cls;
         b.type = 'button';
         b.textContent = label;
         b.onclick = async () => {
@@ -132,7 +146,7 @@
               const e = await r.json().catch(() => ({}));
               showToast('Failed: ' + (e.error || r.status));
             } else {
-              showToast(label + ' — opened in terminal');
+              showToast('Opened terminal: ' + command);
             }
           } catch (e) {
             showToast('Error: ' + e.message);
@@ -140,9 +154,9 @@
         };
         return b;
       }
-      actions.appendChild(termBtn('Push', scope.pushCmd));
-      actions.appendChild(termBtn('Pull', scope.pullCmd));
-      actions.appendChild(termBtn('Status', scope.statusCmd));
+      actions.appendChild(termBtn('Back up', 'btn-primary', scope.backupCmd));
+      actions.appendChild(termBtn('Restore', 'btn-secondary', scope.restoreCmd));
+      actions.appendChild(termBtn('Status', 'btn-secondary', scope.statusCmd));
       host.appendChild(actions);
 
       fetch(scope.statusUrl)
@@ -153,49 +167,50 @@
             return;
           }
           if (!s.configured) {
-            meta.innerHTML = '<span class="sync-panel-warn">Not configured.</span> Run: <code>' + escHtml(scope.configureCmd) + '</code>';
+            meta.innerHTML = '<span class="sync-panel-warn">Not set up.</span> Configure a remote: <code>' + escHtml(scope.configureCmd) + '</code>';
             return;
           }
           meta.innerHTML =
             '<div class="sync-panel-row"><span class="sync-panel-label">Remote</span><span class="sync-panel-value">' + escHtml(s.remote || '—') + '</span></div>' +
-            '<div class="sync-panel-row"><span class="sync-panel-label">Last push</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPushAt)) + '</span></div>' +
-            '<div class="sync-panel-row"><span class="sync-panel-label">Last pull</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPullAt)) + '</span></div>';
+            '<div class="sync-panel-row"><span class="sync-panel-label">Last backed up</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPushAt)) + '</span></div>' +
+            '<div class="sync-panel-row"><span class="sync-panel-label">Last restored</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPullAt)) + '</span></div>';
         })
         .catch(err => { meta.textContent = 'Status unavailable: ' + err.message; });
     }
 
     function renderSyncPanels(section) {
-      // Two side-by-side panels: Project (existing) and Profile (F380).
       const wrap = document.createElement('div');
       wrap.className = 'sync-panels';
       const projectHost = document.createElement('div');
-      const profileHost = document.createElement('div');
+      const settingsHost = document.createElement('div');
       wrap.appendChild(projectHost);
-      wrap.appendChild(profileHost);
+      wrap.appendChild(settingsHost);
       section.appendChild(wrap);
 
       const projectRepo = getDefaultsSettingsRepo() || '';
       const projectStatusUrl = '/api/sync/status' + (projectRepo ? ('?repoPath=' + encodeURIComponent(projectRepo)) : '');
       renderSyncPanel({
         id: 'project',
-        label: 'Project (.aigon)',
-        hint: 'Syncs this repository’s .aigon/ state across machines.',
+        label: 'This project',
+        includes: ['Feature & research specs', 'Workflow state', 'Board layout', 'Migration history', 'Project config (.aigon/config.json)'],
+        excludes: 'sessions, logs, caches, locks',
         statusUrl: projectStatusUrl,
-        configureCmd: 'aigon sync configure <git-remote-url>',
-        pushCmd: 'aigon sync push',
-        pullCmd: 'aigon sync pull',
+        configureCmd: 'aigon sync configure <git-url>',
+        backupCmd: 'aigon sync push',
+        restoreCmd: 'aigon sync pull',
         statusCmd: 'aigon sync status',
       }, projectHost);
       renderSyncPanel({
-        id: 'profile',
-        label: 'Profile (~/.aigon)',
-        hint: 'Syncs your global aigon profile (agent definitions, model picks, named workflows).',
-        statusUrl: '/api/profile/status',
-        configureCmd: 'aigon profile configure <git-remote-url>',
-        pushCmd: 'aigon profile push',
-        pullCmd: 'aigon profile pull',
-        statusCmd: 'aigon profile status',
-      }, profileHost);
+        id: 'settings',
+        label: 'Your settings',
+        includes: ['Agent definitions & model assignments', 'Named workflow presets', 'Global preferences (~/.aigon/config.json)'],
+        excludes: 'logs, caches, port assignments',
+        statusUrl: '/api/settings-sync/status',
+        configureCmd: 'aigon settings configure <git-url>',
+        backupCmd: 'aigon settings push',
+        restoreCmd: 'aigon settings pull',
+        statusCmd: 'aigon settings status',
+      }, settingsHost);
     }
 
     function readConductorReposFromGlobalConfig_client() {
@@ -1353,6 +1368,40 @@
         return td;
       }
 
+      function buildMatrixLegend() {
+        const SCORE_META = [
+          { score: 1, color: '#ef4444', label: 'Poor' },
+          { score: 2, color: '#f97316', label: 'Below avg' },
+          { score: 3, color: '#eab308', label: 'Average' },
+          { score: 4, color: '#3b82f6', label: 'Strong' },
+          { score: 5, color: '#22c55e', label: 'Best' },
+        ];
+        const legend = document.createElement('div');
+        legend.className = 'matrix-legend';
+        const label = document.createElement('span');
+        label.className = 'matrix-legend-label';
+        label.textContent = 'Score scale:';
+        legend.appendChild(label);
+        SCORE_META.forEach(m => {
+          const item = document.createElement('span');
+          item.className = 'matrix-legend-item';
+          const badge = document.createElement('span');
+          badge.className = 'matrix-score-badge matrix-score-' + m.score;
+          badge.textContent = String(m.score);
+          const desc = document.createElement('span');
+          desc.className = 'matrix-legend-desc';
+          desc.textContent = m.label;
+          item.appendChild(badge);
+          item.appendChild(desc);
+          legend.appendChild(item);
+        });
+        const dash = document.createElement('span');
+        dash.className = 'matrix-legend-item matrix-legend-dash';
+        dash.innerHTML = '<span class="matrix-score-none">—</span><span class="matrix-legend-desc">No data</span>';
+        legend.appendChild(dash);
+        return legend;
+      }
+
       function renderMatrixTable(data) {
         matrixWrap.innerHTML = '';
         const rows = data.rows || [];
@@ -1366,6 +1415,8 @@
           matrixWrap.appendChild(empty);
           return;
         }
+
+        matrixWrap.appendChild(buildMatrixLegend());
 
         const tableWrap = document.createElement('div');
         tableWrap.className = 'matrix-table-wrap';
@@ -1489,9 +1540,9 @@
           matrixWrap.innerHTML = '<div class="matrix-empty">Failed to load matrix: ' + escHtml(err.message) + '</div>';
         });
 
-      // ── Sync section (F359 project + F380 profile) ─────────────────────────
-      const syncSection = shell.addSection('sync', 'Sync', 'Sync',
-        'Move aigon state between machines via a configured git remote. Project sync covers .aigon/ in this repo; Profile sync covers ~/.aigon/ (agent definitions, model picks, named workflows).');
+      // ── Backup & Sync section ──────────────────────────────────────────────
+      const syncSection = shell.addSection('sync', 'Backup & Sync', 'Backup & Sync',
+        'Save aigon state to a private git remote and restore it on any machine. "This project" covers specs and workflow state for this repo. "Your settings" covers your global agent config and workflow presets.');
       shell.observeSection(syncSection);
       renderSyncPanels(syncSection);
 
