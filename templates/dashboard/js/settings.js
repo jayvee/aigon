@@ -158,6 +158,16 @@
       host.appendChild(actions);
 
       function renderConfigured(s) {
+        const scheduleRow = (typeof s.schedule === 'string') ?
+          ('<div class="sync-panel-row"><span class="sync-panel-label">Schedule</span><span class="sync-panel-value">' +
+            '<select class="sync-panel-schedule-select">' +
+              ['daily','hourly','weekly','off'].map(v =>
+                '<option value="' + v + '"' + (s.schedule === v ? ' selected' : '') + '>' + v + '</option>'
+              ).join('') +
+            '</select>' +
+          '</span></div>') : '';
+        const projRow = (typeof s.projectCount === 'number') ?
+          ('<div class="sync-panel-row"><span class="sync-panel-label">Projects in vault</span><span class="sync-panel-value">' + s.projectCount + '</span></div>') : '';
         meta.innerHTML =
           '<div class="sync-panel-row sync-panel-row--remote">' +
             '<span class="sync-panel-label">Remote</span>' +
@@ -165,18 +175,38 @@
             '<button class="btn btn-secondary sync-panel-edit-btn" type="button">Edit</button>' +
           '</div>' +
           '<div class="sync-panel-row"><span class="sync-panel-label">Last backed up</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPushAt)) + '</span></div>' +
-          '<div class="sync-panel-row"><span class="sync-panel-label">Last restored</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPullAt)) + '</span></div>';
+          '<div class="sync-panel-row"><span class="sync-panel-label">Last restored</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPullAt)) + '</span></div>' +
+          projRow +
+          scheduleRow;
         meta.querySelector('.sync-panel-edit-btn').onclick = () => renderRemoteInput(s.remote || '');
+        const sel = meta.querySelector('.sync-panel-schedule-select');
+        if (sel) {
+          sel.onchange = () => {
+            fetch('/api/backup/schedule', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ cadence: sel.value }),
+            }).then(r => r.json().then(d => {
+              if (!r.ok) throw new Error(d.error || r.status);
+              showToast('Schedule: ' + d.schedule);
+            })).catch(e => showToast('Error: ' + e.message));
+          };
+        }
         backupBtn.disabled = false;
         restoreBtn.disabled = false;
       }
 
       function renderRemoteInput(current) {
+        const showCreate = scope.id === 'backup' && !current;
         meta.innerHTML =
           '<div class="sync-panel-configure">' +
-            '<label class="sync-panel-url-label">Git remote URL</label>' +
+            (showCreate ?
+              '<div class="sync-panel-url-actions" style="margin-bottom:8px">' +
+                '<button class="btn btn-primary sync-panel-create-btn" type="button">Create aigon-vault on GitHub</button>' +
+              '</div>' : '') +
+            '<label class="sync-panel-url-label">Or paste a git remote URL</label>' +
             '<div class="sync-panel-url-row">' +
-              '<input class="sync-panel-url-input" type="text" placeholder="git@github.com:you/aigon-sync.git" value="' + escHtml(current) + '" />' +
+              '<input class="sync-panel-url-input" type="text" placeholder="git@github.com:you/aigon-vault.git" value="' + escHtml(current) + '" />' +
             '</div>' +
             '<div class="sync-panel-url-actions">' +
               '<button class="btn btn-primary sync-panel-save-btn" type="button">Save & configure</button>' +
@@ -186,6 +216,7 @@
         const input = meta.querySelector('.sync-panel-url-input');
         const saveBtn = meta.querySelector('.sync-panel-save-btn');
         const cancelBtn = meta.querySelector('.sync-panel-cancel-btn');
+        const createBtn = meta.querySelector('.sync-panel-create-btn');
         input.focus();
         saveBtn.onclick = () => {
           const url = input.value.trim();
@@ -195,6 +226,13 @@
             .catch(e => showToast('Error: ' + e.message));
         };
         if (cancelBtn) cancelBtn.onclick = () => loadStatus();
+        if (createBtn) {
+          createBtn.onclick = () => {
+            openTerm(scope.configureBaseCmd)
+              .then(() => { showToast('Opened terminal — follow the prompts'); setTimeout(() => loadStatus(), 2500); })
+              .catch(e => showToast('Error: ' + e.message));
+          };
+        }
       }
 
       function loadStatus() {
@@ -219,15 +257,15 @@
       const host = document.createElement('div');
       section.appendChild(host);
       renderSyncPanel({
-        id: 'settings',
-        label: 'Your settings',
-        includes: ['Agent definitions & model assignments', 'Named workflow presets', 'Global preferences (~/.aigon/config.json)'],
-        excludes: 'logs, caches, port assignments',
-        statusUrl: '/api/settings-sync/status',
-        configureBaseCmd: 'aigon settings configure',
-        backupCmd: 'aigon settings push',
-        restoreCmd: 'aigon settings pull',
-        statusCmd: 'aigon settings status',
+        id: 'backup',
+        label: 'Backup & Sync',
+        includes: ['All registered projects (specs, workflow state, project config)', 'Global agent definitions & workflow presets', 'Daily auto-push (configurable)'],
+        excludes: 'logs, caches, sessions, machine-specific paths',
+        statusUrl: '/api/backup/status',
+        configureBaseCmd: 'aigon backup configure',
+        backupCmd: 'aigon backup push',
+        restoreCmd: 'aigon backup pull',
+        statusCmd: 'aigon backup status',
       }, host);
     }
 

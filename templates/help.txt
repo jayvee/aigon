@@ -25,16 +25,14 @@ Dev Server (web/api profiles):
   dev-server gc                     Remove entries for dead processes
   dev-server url                    Print URL for current context (for scripting)
 
-Backup & Sync:
-  sync configure <git-url>          Point this project's backup at a private git remote
-  sync push                         Back up this project's specs and workflow state
-  sync pull                         Restore this project's state from the remote
-  sync status                       Show remote, last backup time, and divergence
+Backup & Sync (aigon-vault):
+  backup configure [<git-url>]      Point one private vault repo at all your aigon data (interactive, can create on GitHub)
+  backup push                       Back up every project's state + global settings to the vault
+  backup pull                       Restore settings and project state from the vault on a fresh machine
+  backup status                     Show remote, last push/pull, schedule, and project count
+  backup schedule <cadence>         daily | hourly | weekly | off  (default: daily, runs in the background)
 
-  settings configure <git-url>      Point your global settings backup at a private git remote
-  settings push                     Back up your agent config and workflow presets
-  settings pull                     Restore your settings on this machine
-  settings status                   Show remote, last backup time, and divergence
+  sync …                            Deprecated alias for `backup` — use `aigon backup` instead
 
 Modes:
   🚗 Drive      One agent, you guide each stage
@@ -183,10 +181,10 @@ Examples:
   BASE_URL=$(aigon dev-server url) npx playwright test  # E2E tests
 
   # Backup & sync (new machine setup)
-  aigon sync configure git@github.com:you/aigon-sync.git  # once per project
-  aigon settings configure git@github.com:you/aigon-sync.git  # once globally
-  aigon sync push && aigon settings push   # back up everything
-  aigon sync pull && aigon settings pull   # restore on another machine
+  aigon backup configure                # Interactive — offers to create aigon-vault on GitHub
+  aigon backup push                     # Back up every project + global settings
+  aigon backup pull                     # Restore everything on another machine
+  aigon backup schedule daily           # Default: daily auto-push runs in the background
 
   # Research workflow
   aigon research-create "api-design"   # Create new research topic

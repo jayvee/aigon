@@ -110,7 +110,7 @@ function firstRunComplete() {
     try {
         const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
         const steps = state.steps || {};
-        const STEP_IDS = ['prereqs', 'terminal', 'agents', 'seed-repo', 'server'];
+        const STEP_IDS = ['prereqs', 'terminal', 'agents', 'seed-repo', 'server', 'vault'];
         return STEP_IDS.every(id => steps[id] === 'done' || steps[id] === 'skipped');
     } catch (_) {
         return false;
