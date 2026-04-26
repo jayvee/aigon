@@ -116,11 +116,11 @@ class MockAgent {
             else process.env.AIGON_TEST_MODE = prevTestMode;
         }
 
-        // Single-quote the wrapped script so embedded newlines + `$` survive
-        // tmux's argv → bash -lc handoff. JSON.stringify's `\n` escapes are
-        // *not* interpreted inside bash double-quoted strings, so the trap +
+        // shellQuote produces single-quoted output so embedded newlines + `$`
+        // survive tmux's argv → bash -lc handoff. JSON.stringify's `\n` escapes
+        // are *not* interpreted inside bash double-quoted strings, so the trap +
         // heartbeat lines collapse onto a single line and the wrapper breaks.
-        const quoted = `'${command.replace(/'/g, `'\\''`)}'`;
+        const quoted = require('../../lib/terminal-adapters').shellQuote(command);
         const tmuxArgs = [
             'new-session', '-d', '-s', sessionName, '-c', this.worktreePath,
             '-e', `MOCK_AGENT_SLEEP_SEC=${sleepSec}`,
