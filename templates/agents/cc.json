@@ -42,80 +42,155 @@
       "review": "opus"
     },
     "modelOptions": [
-      { "value": null, "label": "Default" },
       {
-        "value": "claude-haiku-4-5-20251001", "label": "Haiku 4.5 (fast/cheap)",
-        "pricing": { "input": 0.80, "output": 4 },
+        "value": null,
+        "label": "Default"
+      },
+      {
+        "value": "claude-haiku-4-5-20251001",
+        "label": "Haiku 4.5 (fast/cheap)",
+        "pricing": {
+          "input": 0.8,
+          "output": 4
+        },
         "notes": {
           "draft": "Fast for simple spec scaffolding; weaker at nuanced requirements analysis.",
           "spec_review": "Adequate for basic spec checks; may miss subtle gaps in complex specs.",
           "implement": "Solid for straightforward code changes; less reliable on architectural tasks.",
           "review": "Covers obvious issues quickly; less reliable for subtle logic errors."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 2.5,
+          "spec_review": 2.5,
+          "implement": 2.5,
+          "review": 2.5
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
-        "value": "claude-sonnet-4-6", "label": "Sonnet 4.6",
-        "pricing": { "input": 3, "output": 15 },
+        "value": "claude-sonnet-4-6",
+        "label": "Sonnet 4.6",
+        "pricing": {
+          "input": 3,
+          "output": 15
+        },
         "notes": {
           "draft": "Reliable spec drafter; good at identifying acceptance criteria and dependencies.",
           "spec_review": "Strong spec reviewer; catches gaps and ambiguities well.",
           "implement": "Primary implementation model; best cost–quality balance for most features.",
           "review": "Thorough code reviewer; identifies regressions and logic issues."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 4,
+          "spec_review": 4,
+          "implement": 4.5,
+          "review": 4
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
-        "value": "claude-sonnet-4-6[1m]", "label": "Sonnet 4.6 (1M context)",
-        "pricing": { "input": 3, "output": 15 },
+        "value": "claude-sonnet-4-6[1m]",
+        "label": "Sonnet 4.6 (1M context)",
+        "pricing": {
+          "input": 3,
+          "output": 15
+        },
         "notes": {
           "draft": "Same capability as Sonnet 4.6; use for large codebase context.",
           "spec_review": "Same capability as Sonnet 4.6; handles large context windows.",
           "implement": "Preferred for features requiring full-repo context (>200k tokens).",
           "review": "Useful when reviewing across many files simultaneously."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 4,
+          "spec_review": 4,
+          "implement": 4.5,
+          "review": 4
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
-        "value": "claude-opus-4-7", "label": "Opus 4.7",
-        "pricing": { "input": 15, "output": 75 },
+        "value": "claude-opus-4-7",
+        "label": "Opus 4.7",
+        "pricing": {
+          "input": 15,
+          "output": 75
+        },
         "notes": {
           "draft": "Highest quality spec drafting; excellent at surfacing hidden requirements and edge cases.",
           "spec_review": "Best reviewer; catches subtle inconsistencies and design flaws others miss.",
           "implement": "Use for very-high-complexity features; overkill for routine changes.",
           "review": "Most thorough code reviewer; worth the cost on high-risk changes."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 4.5,
+          "spec_review": 4.5,
+          "implement": 5,
+          "review": 4.5
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.582Z"
       },
       {
-        "value": "claude-opus-4-7[1m]", "label": "Opus 4.7 (1M context)",
-        "pricing": { "input": 15, "output": 75 },
+        "value": "claude-opus-4-7[1m]",
+        "label": "Opus 4.7 (1M context)",
+        "pricing": {
+          "input": 15,
+          "output": 75
+        },
         "notes": {
           "draft": "Same capability as Opus 4.7; use for large codebase context.",
           "spec_review": "Same capability as Opus 4.7; handles large context windows.",
           "implement": "Reserved for largest, most complex features with full-repo context.",
           "review": "Most powerful review option; use on architectural or cross-cutting changes."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 4.5,
+          "spec_review": 4.5,
+          "implement": 5,
+          "review": 4.5
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       }
     ],
     "effortOptions": [
-      { "value": null, "label": "Default" },
-      { "value": "low", "label": "Low" },
-      { "value": "medium", "label": "Medium" },
-      { "value": "high", "label": "High" },
-      { "value": "xhigh", "label": "Extra-high" }
+      {
+        "value": null,
+        "label": "Default"
+      },
+      {
+        "value": "low",
+        "label": "Low"
+      },
+      {
+        "value": "medium",
+        "label": "Medium"
+      },
+      {
+        "value": "high",
+        "label": "High"
+      },
+      {
+        "value": "xhigh",
+        "label": "Extra-high"
+      }
     ],
     "complexityDefaults": {
-      "low":       { "model": "claude-haiku-4-5-20251001", "effort": "low" },
-      "medium":    { "model": "claude-sonnet-4-6",          "effort": "medium" },
-      "high":      { "model": "claude-sonnet-4-6[1m]",      "effort": "high" },
-      "very-high": { "model": "claude-opus-4-7[1m]",        "effort": "xhigh" }
+      "low": {
+        "model": "claude-haiku-4-5-20251001",
+        "effort": "low"
+      },
+      "medium": {
+        "model": "claude-sonnet-4-6",
+        "effort": "medium"
+      },
+      "high": {
+        "model": "claude-sonnet-4-6[1m]",
+        "effort": "high"
+      },
+      "very-high": {
+        "model": "claude-opus-4-7[1m]",
+        "effort": "xhigh"
+      }
     },
     "modelFlag": "--model",
     "effortFlag": "--effort",
@@ -129,11 +204,11 @@
     "ARG_SYNTAX": "{{args}}",
     "ARG1_SYNTAX": "{{args}}",
     "CMD_PREFIX": "/aigon:",
-    "AGENT_TEAMS_RESEARCH_NOTE": "\n### Agent Teams (optional)\n\nFor complex research topics with multiple questions, consider creating an agent team. Spawn teammates to investigate different questions in parallel with adversarial debate \u2014 have them challenge each other's findings. Use delegate mode so you coordinate without researching yourself. Reference: https://code.claude.com/docs/en/agent-teams\n",
+    "AGENT_TEAMS_RESEARCH_NOTE": "\n### Agent Teams (optional)\n\nFor complex research topics with multiple questions, consider creating an agent team. Spawn teammates to investigate different questions in parallel with adversarial debate — have them challenge each other's findings. Use delegate mode so you coordinate without researching yourself. Reference: https://code.claude.com/docs/en/agent-teams\n",
     "AGENT_TEAMS_FEATURE_NOTE": "\n### Agent Teams (optional)\n\nFor features with multiple independent acceptance criteria spanning different areas (e.g., frontend, backend, tests), consider creating an agent team. Assign each teammate a distinct slice of the implementation with clear file ownership boundaries to avoid conflicts. Use delegate mode and require plan approval before teammates begin implementing. Reference: https://code.claude.com/docs/en/agent-teams\n",
     "AGENT_DEV_SERVER_NOTE": "",
     "AGENT_PITFALLS": "",
-    "PERMISSION_SAVE_NOTE": "\n## Saving Permissions\n\nWhen the user says \"save that permission\", \"remember that\", or asks you to persist a permission you were just granted:\n\n1. Read `.claude/settings.json`\n2. Add the tool pattern to the `permissions.allow` array\n3. Write the updated file\n4. Confirm what you saved\n\nUse the narrowest pattern that covers the user's intent:\n- Specific: `Bash(npm test)`, `Bash(git push:*)`\n- Broad: `Bash(npm:*)`, `Bash(node:*)`\n\nPrefer specific patterns \u2014 broad Bash allows can be chained to bypass deny rules. Ask the user if unsure whether to save narrowly or broadly.\n"
+    "PERMISSION_SAVE_NOTE": "\n## Saving Permissions\n\nWhen the user says \"save that permission\", \"remember that\", or asks you to persist a permission you were just granted:\n\n1. Read `.claude/settings.json`\n2. Add the tool pattern to the `permissions.allow` array\n3. Write the updated file\n4. Confirm what you saved\n\nUse the narrowest pattern that covers the user's intent:\n- Specific: `Bash(npm test)`, `Bash(git push:*)`\n- Broad: `Bash(npm:*)`, `Bash(node:*)`\n\nPrefer specific patterns — broad Bash allows can be chained to bypass deny rules. Ask the user if unsure whether to save narrowly or broadly.\n"
   },
   "output": {
     "format": "markdown",
@@ -261,7 +336,9 @@
   },
   "failureDetectors": {
     "tokenExhaustion": {
-      "exitCodes": [1],
+      "exitCodes": [
+        1
+      ],
       "stderrPatterns": [
         "usage limit",
         "quota exceeded",

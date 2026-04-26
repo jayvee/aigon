@@ -45,80 +45,155 @@
       "review": "gpt-5.5"
     },
     "modelOptions": [
-      { "value": null, "label": "Default" },
       {
-        "value": "gpt-5.5", "label": "GPT-5.5",
-        "pricing": { "input": 2, "output": 8 },
+        "value": null,
+        "label": "Default"
+      },
+      {
+        "value": "gpt-5.5",
+        "label": "GPT-5.5",
+        "pricing": {
+          "input": 2,
+          "output": 8
+        },
         "notes": {
           "draft": "Latest GPT-5 generation; strong at structured spec drafting.",
           "spec_review": "Good spec reviewer; solid reasoning on requirements and edge cases.",
           "implement": "Strong implementation quality; good tool use and code generation.",
           "review": "Thorough code reviewer; effective at catching logic issues."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "score": {
+          "draft": null,
+          "spec_review": null,
+          "implement": null,
+          "review": null
+        },
         "lastRefreshAt": "2026-04-26T00:00:00.000Z"
       },
       {
-        "value": "gpt-5.4", "label": "GPT-5.4",
-        "pricing": { "input": 2, "output": 8 },
+        "value": "gpt-5.4",
+        "label": "GPT-5.4",
+        "pricing": {
+          "input": 2,
+          "output": 8
+        },
         "notes": {
           "draft": "Reliable spec drafter; good balance of reasoning and speed.",
           "spec_review": "Reliable spec reviewer; covers most issues in typical specs.",
           "implement": "Good implementation quality; well-suited for mid-complexity features.",
           "review": "Good code review; catches common patterns and obvious issues."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 3.5,
+          "spec_review": 3.5,
+          "implement": 4,
+          "review": 3.5
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
-        "value": "gpt-5.4-mini", "label": "GPT-5.4 Mini",
-        "pricing": { "input": 1, "output": 4 },
+        "value": "gpt-5.4-mini",
+        "label": "GPT-5.4 Mini",
+        "pricing": {
+          "input": 1,
+          "output": 4
+        },
         "notes": {
           "draft": "Cost-effective for simple spec drafts; weaker on complex requirements.",
           "spec_review": "Quick spec scan; may miss nuanced issues in complex specs.",
           "implement": "Good for simple to mid-complexity features at lower cost.",
           "review": "Fast review of straightforward changes; less effective on complex code."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 2.5,
+          "spec_review": 2.5,
+          "implement": 3,
+          "review": 2.5
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
-        "value": "gpt-5.3-codex", "label": "GPT-5.3 Codex",
-        "pricing": { "input": 2, "output": 8 },
+        "value": "gpt-5.3-codex",
+        "label": "GPT-5.3 Codex",
+        "pricing": {
+          "input": 2,
+          "output": 8
+        },
         "notes": {
           "draft": "Codex-optimized variant; strong at code-adjacent spec writing.",
           "spec_review": "Good for technical spec review; strong code reasoning.",
           "implement": "Code-optimized; particularly strong at implementation tasks.",
           "review": "Strong code review; focused on technical correctness."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 3.5,
+          "spec_review": 3.5,
+          "implement": 5,
+          "review": 4
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
-        "value": "gpt-5.2", "label": "GPT-5.2",
-        "pricing": { "input": 2, "output": 8 },
+        "value": "gpt-5.2",
+        "label": "GPT-5.2",
+        "pricing": {
+          "input": 2,
+          "output": 8
+        },
         "notes": {
           "draft": "Earlier GPT-5 generation; stable and predictable.",
           "spec_review": "Reliable spec review for standard complexity.",
           "implement": "Solid implementation quality for most features.",
           "review": "Competent code review; well-understood behavior."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 3,
+          "spec_review": 3,
+          "implement": 3.5,
+          "review": 3
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       }
     ],
     "effortOptions": [
-      { "value": null, "label": "Default" },
-      { "value": "minimal", "label": "Minimal" },
-      { "value": "low", "label": "Low" },
-      { "value": "medium", "label": "Medium" },
-      { "value": "high", "label": "High" }
+      {
+        "value": null,
+        "label": "Default"
+      },
+      {
+        "value": "minimal",
+        "label": "Minimal"
+      },
+      {
+        "value": "low",
+        "label": "Low"
+      },
+      {
+        "value": "medium",
+        "label": "Medium"
+      },
+      {
+        "value": "high",
+        "label": "High"
+      }
     ],
     "complexityDefaults": {
-      "low":       { "model": "gpt-5.4-mini",  "effort": "low" },
-      "medium":    { "model": "gpt-5.5",        "effort": "medium" },
-      "high":      { "model": "gpt-5.5",        "effort": "high" },
-      "very-high": { "model": "gpt-5.5",        "effort": "high" }
+      "low": {
+        "model": "gpt-5.4-mini",
+        "effort": "low"
+      },
+      "medium": {
+        "model": "gpt-5.5",
+        "effort": "medium"
+      },
+      "high": {
+        "model": "gpt-5.5",
+        "effort": "high"
+      },
+      "very-high": {
+        "model": "gpt-5.5",
+        "effort": "high"
+      }
     },
     "modelFlag": "--model",
     "effortFlag": "-c model_reasoning_effort=",
@@ -136,7 +211,7 @@
     "AGENT_TEAMS_FEATURE_NOTE": "",
     "PERMISSION_SAVE_NOTE": "",
     "AGENT_PITFALLS": "",
-    "AGENT_DEV_SERVER_NOTE": "\n> **CRITICAL \u2014 Codex dev server rules:**\n>\n> **NEVER run `npm run dev`, `next dev`, or any dev command directly.** Running dev commands directly bypasses port allocation and will cause port conflicts.\n>\n> The PORT is already set in `.env.local` by the worktree setup. If you must start a dev server, use `aigon dev-server start`.\n>\n> Because Codex kills background processes when shell commands exit, use `--register-only` mode:\n>\n> 1. Run `aigon dev-server start --register-only` \u2014 allocates your agent's port and writes it to `.env.local`\n> 2. Read the allocated port: `grep ^PORT= .env.local`\n> 3. Start the server in a **persistent terminal session** using `/terminal`: `PORT=<the-port> npm run dev`\n> 4. Get your app URL: `aigon dev-server url`\n> 5. Use that URL for all testing\n"
+    "AGENT_DEV_SERVER_NOTE": "\n> **CRITICAL — Codex dev server rules:**\n>\n> **NEVER run `npm run dev`, `next dev`, or any dev command directly.** Running dev commands directly bypasses port allocation and will cause port conflicts.\n>\n> The PORT is already set in `.env.local` by the worktree setup. If you must start a dev server, use `aigon dev-server start`.\n>\n> Because Codex kills background processes when shell commands exit, use `--register-only` mode:\n>\n> 1. Run `aigon dev-server start --register-only` — allocates your agent's port and writes it to `.env.local`\n> 2. Read the allocated port: `grep ^PORT= .env.local`\n> 3. Start the server in a **persistent terminal session** using `/terminal`: `PORT=<the-port> npm run dev`\n> 4. Get your app URL: `aigon dev-server url`\n> 5. Use that URL for all testing\n"
   },
   "output": {
     "format": "skill-md",
@@ -171,7 +246,10 @@
   },
   "failureDetectors": {
     "tokenExhaustion": {
-      "exitCodes": [1, 2],
+      "exitCodes": [
+        1,
+        2
+      ],
       "stderrPatterns": [
         "token limit",
         "token budget",

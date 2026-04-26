@@ -38,7 +38,23 @@
     "reviewPrompt": "feature-code-review",
     "reviewCheckPrompt": "feature-code-revise",
     "models": {},
-    "modelOptions": [],
+    "modelOptions": [
+      {
+        "value": null,
+        "label": "Default",
+        "pricing": null,
+        "notes": {},
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null }
+      },
+      {
+        "value": "kimi-k2.6",
+        "label": "Kimi K2.6",
+        "pricing": { "input": 0.14, "output": 0.55 },
+        "notes": {},
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      }
+    ],
     "effortOptions": [],
     "complexityDefaults": {
       "low":       { "model": null, "effort": null },

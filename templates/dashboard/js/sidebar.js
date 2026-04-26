@@ -176,19 +176,6 @@
             else if (label) label.after(badge);
             else row.querySelector('.agent-check-meta') && row.querySelector('.agent-check-meta').appendChild(badge);
           }
-          // Add rank badges from agent matrix (best_value / fastest / highest_quality)
-          if (typeof getAgentRankBadges === 'function') {
-            const rankBadges = getAgentRankBadges(cb.value);
-            if (rankBadges.length > 0) {
-              const meta = row.querySelector('.agent-check-meta') || row.querySelector('.agent-check-label');
-              rankBadges.forEach(key => {
-                if (typeof buildRankBadgeEl === 'function') {
-                  const el = buildRankBadgeEl(key);
-                  if (el && meta) meta.appendChild(el);
-                }
-              });
-            }
-          }
           // Show model name for this task type
           let modelEl = row.querySelector('.agent-check-config-model') || row.querySelector('.agent-check-model');
           const modelName = (models[cb.value] && models[cb.value][taskType]) || '';

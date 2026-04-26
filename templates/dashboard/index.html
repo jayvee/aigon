@@ -249,7 +249,10 @@
   <!-- Agent picker modal -->
   <div id="agent-picker" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="agent-picker-title">
     <div class="modal-box agent-picker-modal-box">
-      <h3 id="agent-picker-title">Select Agents</h3>
+      <div class="agent-picker-header-row">
+        <h3 id="agent-picker-title">Select Agents</h3>
+        <button class="matrix-peek-btn" id="agent-picker-matrix-btn" title="View Agent Capability Matrix" aria-label="View matrix">Matrix ↗</button>
+      </div>
       <p class="modal-desc" id="agent-picker-desc"></p>
       <div id="agent-picker-recommendation" class="agent-picker-recommendation" style="display:none" role="status" aria-live="polite"></div>
       <div id="agent-picker-budget-notice" class="budget-notice" style="display:none"></div>
@@ -271,6 +274,14 @@
       </div>
     </div>
   </div>
+
+  <!-- Matrix peek panel (appears over the start modal) -->
+  <div id="matrix-peek-backdrop" style="display:none" role="dialog" aria-modal="true" aria-label="Agent Capability Matrix">
+    <div id="matrix-peek-panel">
+      <div id="matrix-peek-content">Loading matrix…</div>
+    </div>
+  </div>
+
   <!-- Close & Merge modal (fleet features with winner + adoption) -->
   <div id="close-modal" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="close-modal-title">
     <div class="modal-box">

@@ -48,62 +48,113 @@
       "review": "gemini-2.5-flash"
     },
     "modelOptions": [
-      { "value": null, "label": "Default" },
       {
-        "value": "gemini-2.5-flash", "label": "Gemini 2.5 Flash",
-        "pricing": { "input": 0.15, "output": 0.60 },
+        "value": null,
+        "label": "Default"
+      },
+      {
+        "value": "gemini-2.5-flash",
+        "label": "Gemini 2.5 Flash",
+        "pricing": {
+          "input": 0.15,
+          "output": 0.6
+        },
         "notes": {
           "draft": "Fast and cost-effective for spec drafting; handles structured outputs well.",
           "spec_review": "Good for routine spec checks; may miss nuanced architectural concerns.",
           "implement": "Primary implementation model for Gemini; strong code generation and tool use.",
           "review": "Reliable for most code review tasks; good cost–quality balance."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 2.5,
+          "spec_review": 2.5,
+          "implement": 3.5,
+          "review": 2.5
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
-        "value": "gemini-2.5-pro", "label": "Gemini 2.5 Pro",
-        "pricing": { "input": 1.25, "output": 10 },
+        "value": "gemini-2.5-pro",
+        "label": "Gemini 2.5 Pro",
+        "pricing": {
+          "input": 1.25,
+          "output": 10
+        },
         "notes": {
           "draft": "Strong at complex spec drafting with long-context; handles large codebases well.",
           "spec_review": "Thorough reviewer; particularly strong at reasoning over long specifications.",
           "implement": "Higher quality implementation for complex features; better architectural judgment.",
           "review": "Detailed code review; good at catching subtle bugs and design issues."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 3.5,
+          "spec_review": 3.5,
+          "implement": 4.5,
+          "review": 3.5
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
-        "value": "gemini-2.5-flash-preview-05-20", "label": "Gemini 2.5 Flash Preview",
-        "pricing": { "input": 0.15, "output": 0.60 },
+        "value": "gemini-2.5-flash-preview-05-20",
+        "label": "Gemini 2.5 Flash Preview",
+        "pricing": {
+          "input": 0.15,
+          "output": 0.6
+        },
         "notes": {
           "draft": "Preview build of Gemini 2.5 Flash; similar capabilities, may include newer features.",
           "spec_review": "Same profile as Gemini 2.5 Flash; preview tier may have usage limits.",
           "implement": "Same profile as Gemini 2.5 Flash with potential preview improvements.",
           "review": "Same profile as Gemini 2.5 Flash; useful for testing preview features."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 2.5,
+          "spec_review": 2.5,
+          "implement": 3.5,
+          "review": 2.5
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
-        "value": "gemini-3-flash-preview", "label": "Gemini 3 Flash Preview (free fallback)",
-        "pricing": { "input": 0.15, "output": 0.60 },
+        "value": "gemini-3-flash-preview",
+        "label": "Gemini 3 Flash Preview (free fallback)",
+        "pricing": {
+          "input": 0.15,
+          "output": 0.6
+        },
         "notes": {
           "draft": "Next-gen Flash; free-tier preview, capabilities not yet fully benchmarked.",
           "spec_review": "Next-gen Flash; free-tier preview, capabilities not yet fully benchmarked.",
           "implement": "Next-gen Flash; free-tier preview, capabilities not yet fully benchmarked.",
           "review": "Next-gen Flash; free-tier preview, capabilities not yet fully benchmarked."
         },
-        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": {
+          "draft": 3.5,
+          "spec_review": 3,
+          "implement": 4,
+          "review": 3
+        },
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       }
     ],
     "effortOptions": [],
     "complexityDefaults": {
-      "low":       { "model": "gemini-2.5-flash", "effort": null },
-      "medium":    { "model": "gemini-2.5-flash", "effort": null },
-      "high":      { "model": "gemini-2.5-pro",   "effort": null },
-      "very-high": { "model": "gemini-2.5-pro",   "effort": null }
+      "low": {
+        "model": "gemini-2.5-flash",
+        "effort": null
+      },
+      "medium": {
+        "model": "gemini-2.5-flash",
+        "effort": null
+      },
+      "high": {
+        "model": "gemini-2.5-pro",
+        "effort": null
+      },
+      "very-high": {
+        "model": "gemini-2.5-pro",
+        "effort": null
+      }
     },
     "modelFlag": "--model",
     "effortFlag": null,
@@ -297,7 +348,9 @@
   },
   "failureDetectors": {
     "tokenExhaustion": {
-      "exitCodes": [1],
+      "exitCodes": [
+        1
+      ],
       "stderrPatterns": [
         "quota exceeded",
         "rate limit",
