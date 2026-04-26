@@ -60,16 +60,18 @@
           "output": 0.6
         },
         "notes": {
-          "draft": "Fast and cost-effective for spec drafting; handles structured outputs well.",
           "spec_review": "Good for routine spec checks; may miss nuanced architectural concerns.",
           "implement": "Primary implementation model for Gemini; strong code generation and tool use.",
-          "review": "Reliable for most code review tasks; good cost–quality balance."
+          "review": "Reliable for most code review tasks; good cost–quality balance.",
+          "spec": "Fast and cost-effective for spec drafting; handles structured outputs well.",
+          "research": "Good web-search integration for research; decent synthesis but shallower judgment than Pro."
         },
         "score": {
-          "draft": 2.5,
           "spec_review": 2.5,
           "implement": 3.5,
-          "review": 2.5
+          "review": 2.5,
+          "spec": 2.5,
+          "research": 3
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
@@ -81,16 +83,18 @@
           "output": 10
         },
         "notes": {
-          "draft": "Strong at complex spec drafting with long-context; handles large codebases well.",
           "spec_review": "Thorough reviewer; particularly strong at reasoning over long specifications.",
           "implement": "Higher quality implementation for complex features; better architectural judgment.",
-          "review": "Detailed code review; good at catching subtle bugs and design issues."
+          "review": "Detailed code review; good at catching subtle bugs and design issues.",
+          "spec": "Strong at complex spec drafting with long-context; handles large codebases well.",
+          "research": "Strong research synthesis; 1M context useful for large document sets; good at connecting findings."
         },
         "score": {
-          "draft": 3.5,
           "spec_review": 3.5,
           "implement": 4.5,
-          "review": 3.5
+          "review": 3.5,
+          "spec": 3.5,
+          "research": 4
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
@@ -102,16 +106,18 @@
           "output": 0.6
         },
         "notes": {
-          "draft": "Preview build of Gemini 2.5 Flash; similar capabilities, may include newer features.",
           "spec_review": "Same profile as Gemini 2.5 Flash; preview tier may have usage limits.",
           "implement": "Same profile as Gemini 2.5 Flash with potential preview improvements.",
-          "review": "Same profile as Gemini 2.5 Flash; useful for testing preview features."
+          "review": "Same profile as Gemini 2.5 Flash; useful for testing preview features.",
+          "spec": "Preview build of Gemini 2.5 Flash; similar capabilities, may include newer features.",
+          "research": "Same research profile as Gemini 2.5 Flash; preview tier may have usage limits."
         },
         "score": {
-          "draft": 2.5,
           "spec_review": 2.5,
           "implement": 3.5,
-          "review": 2.5
+          "review": 2.5,
+          "spec": 2.5,
+          "research": 3
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
@@ -123,16 +129,18 @@
           "output": 0.6
         },
         "notes": {
-          "draft": "Next-gen Flash; free-tier preview, capabilities not yet fully benchmarked.",
           "spec_review": "Next-gen Flash; free-tier preview, capabilities not yet fully benchmarked.",
           "implement": "Next-gen Flash; free-tier preview, capabilities not yet fully benchmarked.",
-          "review": "Next-gen Flash; free-tier preview, capabilities not yet fully benchmarked."
+          "review": "Next-gen Flash; free-tier preview, capabilities not yet fully benchmarked.",
+          "spec": "Next-gen Flash; free-tier preview, capabilities not yet fully benchmarked.",
+          "research": "Next-gen Flash; research capabilities not yet fully benchmarked; similar profile to 2.5 Flash."
         },
         "score": {
-          "draft": 3.5,
           "spec_review": 3,
           "implement": 4,
-          "review": 3
+          "review": 3,
+          "spec": 3.5,
+          "research": 3
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       }
