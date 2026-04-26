@@ -6,6 +6,8 @@ complexity: medium
 #              #     event payload nextReviewerId > frontmatter agent:
 #              #     > snapshot.authorAgentId > getDefaultAgent().
 set: agent-matrix
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-26T01:31:03.418Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-matrix-6-qualitative-refresh
