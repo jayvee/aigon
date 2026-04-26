@@ -1,16 +1,4 @@
 # Implementation Log: Feature 385 - mock-agent-tmux-mode
 Agent: cc
 
-## Status
-
-## New API Surface
-
-## Key Decisions
-
-## Gotchas / Known Issues
-
-## Explicitly Deferred
-
-## For the Next Feature in This Set
-
-## Test Coverage
+MockAgent gains `useRealWrapper` mode that drives `buildAgentCommand` via real tmux + `MOCK_AGENT_BIN`, so the shell trap + heartbeat sidecar paths are exercised end-to-end by `tests/integration/mock-agent-tmux.test.js`.
