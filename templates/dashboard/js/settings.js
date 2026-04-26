@@ -815,6 +815,140 @@
       section.appendChild(form);
       shell.observeSection(section);
 
+      // ── Schedule section (deferred kickoffs) ───────────────────────────────
+      const scheduleSection = shell.addSection('schedule', 'Schedule', 'Scheduled kickoffs', 'Pending and past jobs for this dashboard. Jobs use ISO 8601 times with an explicit timezone; the server poller runs them after runAt (catch-up if the server was offline).');
+      const scheduleToolbar = document.createElement('div');
+      scheduleToolbar.className = 'settings-schedule-toolbar';
+      const schedRepoLabel = document.createElement('span');
+      schedRepoLabel.className = 'settings-target-label';
+      schedRepoLabel.textContent = 'Repository';
+      const schedRepoSelect = document.createElement('select');
+      schedRepoSelect.className = 'settings-target-select';
+      const schedAllWrap = document.createElement('label');
+      schedAllWrap.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary)';
+      const schedAll = document.createElement('input');
+      schedAll.type = 'checkbox';
+      const schedAllText = document.createElement('span');
+      schedAllText.textContent = 'Show fired / cancelled / failed';
+      schedAllWrap.appendChild(schedAll);
+      schedAllWrap.appendChild(schedAllText);
+      const schedRefresh = document.createElement('button');
+      schedRefresh.type = 'button';
+      schedRefresh.className = 'btn btn-secondary';
+      schedRefresh.textContent = 'Refresh';
+      scheduleToolbar.appendChild(schedRepoLabel);
+      scheduleToolbar.appendChild(schedRepoSelect);
+      scheduleToolbar.appendChild(schedAllWrap);
+      scheduleToolbar.appendChild(schedRefresh);
+      scheduleSection.appendChild(scheduleToolbar);
+      const scheduleTableHost = document.createElement('div');
+      scheduleTableHost.className = 'schedule-jobs-table-host';
+      scheduleSection.appendChild(scheduleTableHost);
+
+      function scheduleRepoOptions() {
+        const repos = (state.data && state.data.repos) || [];
+        schedRepoSelect.innerHTML = '';
+        if (repos.length === 0) {
+          const o = document.createElement('option');
+          o.value = '';
+          o.textContent = '(no repos — using server cwd)';
+          schedRepoSelect.appendChild(o);
+          schedRepoSelect.disabled = true;
+          return '';
+        }
+        schedRepoSelect.disabled = false;
+        repos.forEach((repo) => {
+          const o = document.createElement('option');
+          o.value = repo.path;
+          o.textContent = repo.displayPath || repo.name || repo.path;
+          schedRepoSelect.appendChild(o);
+        });
+        if (repos.length > 1) {
+          const allOpt = document.createElement('option');
+          allOpt.value = '__all__';
+          allOpt.textContent = 'All repositories';
+          schedRepoSelect.insertBefore(allOpt, schedRepoSelect.firstChild);
+          schedRepoSelect.value = '__all__';
+        } else {
+          schedRepoSelect.value = repos[0].path;
+        }
+        return schedRepoSelect.value;
+      }
+
+      async function loadScheduleJobsTable() {
+        scheduleTableHost.innerHTML = '<div class="settings-loading">Loading jobs…</div>';
+        const all = schedAll.checked ? '1' : '0';
+        const v = schedRepoSelect.value;
+        let url = '/api/schedule/jobs?all=' + all;
+        if (v && v !== '__all__') url += '&repoPath=' + encodeURIComponent(v);
+        try {
+          const res = await fetch(url, { cache: 'no-store' });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || res.statusText);
+          const jobs = data.jobs || [];
+          scheduleTableHost.innerHTML = '';
+          if (jobs.length === 0) {
+            scheduleTableHost.innerHTML = '<p class="settings-empty">No jobs for this filter.</p>';
+            return;
+          }
+          const tbl = document.createElement('table');
+          tbl.className = 'schedule-jobs-table';
+          tbl.innerHTML = '<thead><tr><th>Repository</th><th>Status</th><th>Kind</th><th>ID</th><th>Run at</th><th></th></tr></thead>';
+          const tb = document.createElement('tbody');
+          jobs.forEach((j) => {
+            const tr = document.createElement('tr');
+            const cancelTd = document.createElement('td');
+            if (j.status === 'pending') {
+              const b = document.createElement('button');
+              b.type = 'button';
+              b.className = 'btn';
+              b.textContent = 'Cancel';
+              b.onclick = async () => {
+                if (!confirm('Cancel this scheduled job?')) return;
+                b.disabled = true;
+                try {
+                  const cr = await fetch('/api/schedule/cancel', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ repoPath: j.repoPath, jobId: j.jobId }),
+                  });
+                  const cd = await cr.json().catch(() => ({}));
+                  if (!cr.ok) throw new Error(cd.error || cr.statusText);
+                  showToast('Cancelled job');
+                  await loadScheduleJobsTable();
+                  if (typeof requestRefresh === 'function') requestRefresh();
+                } catch (e) {
+                  showToast('Cancel failed: ' + e.message, null, null, { error: true });
+                  b.disabled = false;
+                }
+              };
+              cancelTd.appendChild(b);
+            } else {
+              cancelTd.textContent = '—';
+            }
+            const err = j.error ? (' ' + String(j.error).slice(0, 80)) : '';
+            tr.innerHTML = '<td>' + escHtml(j.displayPath || j.repoPath || '') + '</td>' +
+              '<td>' + escHtml(j.status || '') + '</td>' +
+              '<td>' + escHtml(j.kind || '') + '</td>' +
+              '<td>#' + escHtml(String(j.entityId || '')) + '</td>' +
+              '<td title="' + escHtml(String(j.runAt || '')) + '">' + escHtml(String(j.runAt || '')) + escHtml(err) + '</td>';
+            tr.appendChild(cancelTd);
+            tb.appendChild(tr);
+          });
+          tbl.appendChild(tb);
+          scheduleTableHost.appendChild(tbl);
+        } catch (e) {
+          scheduleTableHost.innerHTML = '<p class="settings-empty">Failed to load: ' + escHtml(e.message) + '</p>';
+        }
+      }
+
+      scheduleRepoOptions();
+      schedRepoSelect.onchange = () => { loadScheduleJobsTable(); };
+      schedAll.onchange = () => { loadScheduleJobsTable(); };
+      schedRefresh.onclick = () => { loadScheduleJobsTable(); };
+      shell.observeSection(scheduleSection);
+      loadScheduleJobsTable();
+
       // ── Notifications section ─────────────────────────────────────────────
       const NOTIF_TYPE_LABELS = {
         'agent-waiting': 'Agent waiting',
@@ -919,6 +1053,46 @@
         targetRow.appendChild(targetCtrl);
         targetRow.appendChild(targetHint);
         termSection.appendChild(targetRow);
+
+        // Terminal engine (xterm vs wterm — experimental DOM-rendered terminal)
+        const engineRow = document.createElement('div');
+        engineRow.className = 'term-settings-row';
+        const engineLabel = document.createElement('div');
+        engineLabel.className = 'term-settings-label';
+        engineLabel.textContent = 'Terminal engine';
+        const engineHint = document.createElement('div');
+        engineHint.className = 'term-settings-hint';
+        engineHint.textContent = 'xterm.js is the default (canvas/WebGL). wterm is experimental — DOM-rendered, with native text selection and browser Cmd+F search inside the terminal.';
+        const engineCtrl = document.createElement('div');
+        engineCtrl.className = 'term-target-control';
+        const currentEngine = getTerminalEngine();
+        const btnXterm = document.createElement('button');
+        btnXterm.className = 'term-target-btn' + (currentEngine === 'xterm' ? ' active' : '');
+        btnXterm.type = 'button';
+        btnXterm.textContent = 'xterm.js';
+        btnXterm.dataset.val = 'xterm';
+        const btnWterm = document.createElement('button');
+        btnWterm.className = 'term-target-btn' + (currentEngine === 'wterm' ? ' active' : '');
+        btnWterm.type = 'button';
+        btnWterm.textContent = 'wterm (experimental)';
+        btnWterm.dataset.val = 'wterm';
+        if (typeof window.WTerm !== 'function') {
+          btnWterm.disabled = true;
+          btnWterm.title = 'wterm has not finished loading';
+        }
+        [btnXterm, btnWterm].forEach(btn => {
+          btn.onclick = () => {
+            setTerminalEngine(btn.dataset.val);
+            showToast('Terminal engine: ' + btn.textContent + ' — takes effect on next panel open');
+            renderTerminalSettings();
+          };
+        });
+        engineCtrl.appendChild(btnXterm);
+        engineCtrl.appendChild(btnWterm);
+        engineRow.appendChild(engineLabel);
+        engineRow.appendChild(engineCtrl);
+        engineRow.appendChild(engineHint);
+        termSection.appendChild(engineRow);
 
         // Font picker
         const fontRow = document.createElement('div');

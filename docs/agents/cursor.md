@@ -61,6 +61,13 @@ Feature and research work are NOT complete until you run these commands yourself
 
 These are direct lifecycle commands you run yourself in the agent host — slash commands for some agents, skills for Codex, and never auto-invoked. The `aigon agent-status` command writes state to the **main repo** (not the worktree), so you won't see state files locally. Just run the command and trust the output.
 
+> **CRITICAL — Cursor dev server rules:**
+>
+> **NEVER run `npm run dev`, `next dev`, or any dev command directly.** Running dev commands directly bypasses port allocation and will cause port conflicts.
+>
+> Always use `aigon dev-server start` which allocates a unique port and registers with the proxy.
+> Check your URL with `aigon dev-server url`.
+
 ## Critical Rules
 
 1. **Read the active spec first**: Use `aigon feature-spec <ID>` for features. For research, read the spec directly from `docs/specs/research-topics/03-in-progress/`

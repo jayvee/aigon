@@ -95,3 +95,20 @@
       if (!meta || !meta.badge) return '';
       return '<span class="kcard-spec-status kcard-state-badge ' + escHtml(meta.cls) + '" title="' + escHtml(meta.label) + '">' + escHtml(meta.badge) + '</span>';
     }
+
+    const SCHEDULED_CLOCK_SVG = '<svg class="kcard-scheduled-glyph-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M8 4.5V8l2.5 1.5"/></svg>';
+
+    /** Server sets scheduledRunAt on features/research when a pending scheduled kickoff targets that id. */
+    function buildScheduledGlyphHtml(entity) {
+      const runAt = entity && entity.scheduledRunAt;
+      if (!runAt) return '';
+      let title = String(runAt);
+      try {
+        const d = new Date(runAt);
+        if (!Number.isNaN(d.getTime())) {
+          title = 'Scheduled: ' + d.toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' }) + ' (' + String(runAt) + ')';
+        }
+      } catch (_) {}
+      return '<span class="kcard-scheduled-glyph" role="img" aria-label="' + escHtml(title) + '" title="' + escHtml(title) + '">' +
+        SCHEDULED_CLOCK_SVG + '</span>';
+    }

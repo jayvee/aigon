@@ -277,6 +277,8 @@
     .kcard.dragging{opacity:.3;cursor:grabbing}
     .kcard-id{font-size:11px;color:var(--text-tertiary);font-family:var(--mono)}
     .kcard-name{font-size:12px;font-weight:500;margin:2px 0 6px;line-height:1.3;color:var(--text-primary);word-break:break-word}
+    .kcard-scheduled-glyph{display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;color:var(--text-tertiary)}
+    .kcard-scheduled-glyph-svg{width:14px;height:14px;flex-shrink:0;opacity:0.92}
     /* Backlog dependency hint — neutral (not “blocked” / error styling) */
     .kcard-dep-chain{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin:0 0 8px;font-size:11px;color:var(--text-secondary);line-height:1.35}
     .kcard-dep-chain-label{font-weight:600;color:var(--text-tertiary);letter-spacing:.02em;text-transform:none;margin-right:2px}
@@ -1150,11 +1152,44 @@
     .version-state-badge.state-update{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:#fcd34d}
     .version-state-badge.state-prerelease{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35);color:#c4b5fd}
     .version-state-badge.state-unavailable{background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);color:var(--text-tertiary)}
+    /* Settings — scheduled kickoffs table */
+    .settings-schedule-toolbar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-top:8px}
+    .schedule-jobs-table-host{margin-top:4px;overflow-x:auto}
+    .schedule-jobs-table{width:100%;border-collapse:collapse;font-size:12px}
+    .schedule-jobs-table th,.schedule-jobs-table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border-subtle);vertical-align:top}
+    .schedule-jobs-table th{color:var(--text-tertiary);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+    .schedule-jobs-table td{font-family:var(--mono);color:var(--text-secondary)}
     /* ── Terminal CSS tokens ──────────────────────────────────────────────── */
     :root{--term-bg:#0c0d10;--term-fg:#e8e9ec;--term-cursor:#4d9fff;--term-cursor-accent:#0c0d10;--term-selection:rgba(77,159,255,.22);--term-black:#1c1d21;--term-red:#e06c75;--term-green:#98c379;--term-yellow:#e5c07b;--term-blue:#61afef;--term-magenta:#c678dd;--term-cyan:#56b6c2;--term-white:#abb2bf;--term-bright-black:#3e4452;--term-bright-red:#e06c75;--term-bright-green:#98c379;--term-bright-yellow:#e5c07b;--term-bright-blue:#61afef;--term-bright-magenta:#c678dd;--term-bright-cyan:#56b6c2;--term-bright-white:#c8ccd4}
     #terminal-container{flex:1;overflow:hidden;background:var(--term-bg);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);position:relative;display:flex;flex-direction:column}
     #terminal-container .xterm{height:100%}
     #terminal-container .xterm-viewport{background:var(--term-bg) !important}
+    /* wterm theme override — map wterm's CSS variables to our dashboard --term-* tokens.
+       Force the inner grid background to our terminal bg so a stray inline `style="background: var(--term-color-2)"`
+       (set by wterm when tmux paints with a non-default bg) doesn't tint the whole pane green. */
+    #terminal-container.wterm{background:var(--term-bg);height:100%;overflow:auto}
+    #terminal-container.wterm{
+      --term-bg:var(--term-bg);
+      --term-fg:var(--term-fg);
+      --term-cursor:var(--term-cursor);
+      --term-color-0:var(--term-black);
+      --term-color-1:var(--term-red);
+      --term-color-2:var(--term-green);
+      --term-color-3:var(--term-yellow);
+      --term-color-4:var(--term-blue);
+      --term-color-5:var(--term-magenta);
+      --term-color-6:var(--term-cyan);
+      --term-color-7:var(--term-white);
+      --term-color-8:var(--term-bright-black);
+      --term-color-9:var(--term-bright-red);
+      --term-color-10:var(--term-bright-green);
+      --term-color-11:var(--term-bright-yellow);
+      --term-color-12:var(--term-bright-blue);
+      --term-color-13:var(--term-bright-magenta);
+      --term-color-14:var(--term-bright-cyan);
+      --term-color-15:var(--term-bright-white);
+    }
+    #terminal-container.wterm .term-grid{background:var(--term-bg) !important}
     .term-target-control{display:flex;border:1px solid var(--border-default);border-radius:8px;overflow:hidden}
     .term-target-btn{flex:1;padding:6px 12px;font-size:12px;background:transparent;border:none;color:var(--text-secondary);cursor:pointer;transition:background .12s,color .12s}
     .term-target-btn.active{background:var(--accent);color:#fff}

@@ -15,8 +15,10 @@ const assert = require('assert');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
-const { testAsync, withTempDirAsync, report } = require('../_helpers');
+const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
 const { handleSpecReconcileApiRequest } = require('../../lib/dashboard-server');
+const { getSpecPathForEntity } = require('../../lib/workflow-core/paths');
+const os = require('os');
 
 testAsync('POST /api/spec-reconcile returns skipped=unknown-lifecycle without mutating', async () => {
     await withTempDirAsync('aigon-spec-reconcile-', async (repo) => {
@@ -60,6 +62,25 @@ testAsync('POST /api/spec-reconcile returns skipped=unknown-lifecycle without mu
             await new Promise((r) => server.close(r));
         }
     });
+});
+
+// REGRESSION: F366 — same basename in 02-backlog and 03-in-progress; resolver picks path for current lifecycle.
+test('getSpecPathForEntity disambiguates duplicate stage copies via lifecycle dir', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-dup-spec-'));
+    const specRoot = path.join(tmp, 'docs', 'specs', 'features');
+    ['01-inbox', '02-backlog', '03-in-progress'].forEach((d) => {
+        fs.mkdirSync(path.join(specRoot, d), { recursive: true });
+    });
+    const name = 'feature-12-dup-slab.md';
+    const low = path.join(specRoot, '02-backlog', name);
+    const prg = path.join(specRoot, '03-in-progress', name);
+    fs.writeFileSync(low, '---\n---\n# x\n');
+    fs.writeFileSync(prg, '---\n---\n# x\n');
+    const impl = getSpecPathForEntity(tmp, 'feature', '12', 'implementing', { snapshot: {} });
+    const bl = getSpecPathForEntity(tmp, 'feature', '12', 'backlog', { snapshot: {} });
+    assert.strictEqual(path.normalize(impl), path.normalize(prg));
+    assert.strictEqual(path.normalize(bl), path.normalize(low));
+    fs.rmSync(tmp, { recursive: true, force: true });
 });
 
 report();

@@ -125,10 +125,12 @@ test('backlog + MISSING_SNAPSHOT still exposes feature-start and research-start'
     assert.strictEqual(f.readModelSource, wrm.WORKFLOW_SOURCE.MISSING_SNAPSHOT);
     assert.ok(f.validActions.some((a) => a.action === 'feature-start'), 'feature-start for backlog without snapshot');
     assert.ok(f.validActions.some((a) => a.action === 'feature-autonomous-start'), 'autonomous start for backlog without snapshot');
+    assert.ok(!f.validActions.some((a) => a.action === 'feature-schedule'), 'schedule needs engine snapshot');
     writeSpec(repo, 'research-topics', '02-backlog', 'research-88-seed-demo.md');
     const r = wrm.getResearchDashboardState(repo, '88', 'backlog', []);
     assert.strictEqual(r.readModelSource, wrm.WORKFLOW_SOURCE.MISSING_SNAPSHOT);
     assert.ok(r.validActions.some((a) => a.action === 'research-start'), 'research-start for backlog without snapshot');
+    assert.ok(!r.validActions.some((a) => a.action === 'research-schedule'), 'schedule needs engine snapshot');
 }));
 // REGRESSION feature 295: operator.nudge_sent must survive projection onto the workflow snapshot.
 testAsync('nudge event is recorded and surfaced on snapshot', () => withTempDirAsync('aigon-rm-', async (repo) => {
@@ -140,5 +142,41 @@ testAsync('nudge event is recorded and surfaced on snapshot', () => withTempDirA
     await workflowEngine.persistEntityEvents(repo, 'feature', '07', [{ type: 'operator.nudge_sent', featureId: '07', agentId: 'cc', role: 'do', text: 'follow up', at, atISO: at }]);
     const snapshot = await workflowEngine.showFeature(repo, '07');
     assert.deepStrictEqual(snapshot.nudges, [{ agentId: 'cc', role: 'do', text: 'follow up', atISO: at }]);
+}));
+
+// REGRESSION: dashboard pipeline/monitor schedule glyph — pending jobs indexed with earliest runAt; cancelled jobs excluded.
+test('buildPendingScheduleIndex picks earliest pending runAt per feature and research', () => withTempDir('aigon-skidx-', (repo) => {
+    fs.mkdirSync(path.join(repo, '.aigon', 'state'), { recursive: true });
+    const sk = require('../../lib/scheduled-kickoff');
+    const engine = require('../../lib/workflow-core/engine');
+    const early = '2099-01-01T12:00:00Z';
+    const late = '2099-12-01T12:00:00Z';
+    fs.mkdirSync(path.join(repo, 'docs/specs/features/02-backlog'), { recursive: true });
+    const spec358 = path.join(repo, 'docs/specs/features/02-backlog/feature-358-x.md');
+    fs.writeFileSync(spec358, '# x\n');
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '358', 'backlog', spec358);
+    const spec07 = path.join(repo, 'docs/specs/features/02-backlog/feature-07-x.md');
+    fs.writeFileSync(spec07, '# x\n');
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '07', 'backlog', spec07);
+    const f358Actions = wrm.getFeatureDashboardState(repo, '358', 'backlog', []).validActions;
+    assert.ok(f358Actions.some((a) => a.action === 'feature-schedule'), 'backlog snapshot exposes Schedule');
+    assert.strictEqual(sk.addJob(repo, { kind: 'feature_autonomous', entityId: '358', runAt: late, payload: { agents: ['cc'], stopAfter: 'close' } }).ok, true);
+    assert.strictEqual(sk.addJob(repo, { kind: 'feature_autonomous', entityId: '358', runAt: early, payload: { agents: ['cc'], stopAfter: 'close' } }).ok, true);
+    assert.strictEqual(sk.addJob(repo, { kind: 'feature_autonomous', entityId: '07', runAt: early, payload: { agents: ['cu'], stopAfter: 'close' } }).ok, true);
+    const rDir = path.join(repo, 'docs/specs/research-topics/02-backlog');
+    fs.mkdirSync(rDir, { recursive: true });
+    fs.writeFileSync(path.join(rDir, 'research-43-a.md'), '---\ntitle: a\n---\n\n# r\n');
+    fs.writeFileSync(path.join(rDir, 'research-99-b.md'), '---\ntitle: b\n---\n\n# r\n');
+    let idx = sk.buildPendingScheduleIndex(repo);
+    assert.strictEqual(idx.lookupFeature('358').runAt, early);
+    assert.strictEqual(idx.lookupFeature('7').runAt, early);
+    assert.strictEqual(idx.lookupFeature('07').runAt, early);
+    assert.strictEqual(sk.addJob(repo, { kind: 'research_start', entityId: '43', runAt: late, payload: { agents: ['cc'] } }).ok, true);
+    idx = sk.buildPendingScheduleIndex(repo);
+    assert.strictEqual(idx.lookupResearch('43').runAt, late);
+    const cancelled = sk.addJob(repo, { kind: 'research_start', entityId: '99', runAt: early, payload: { agents: ['cc'] } });
+    sk.cancelJob(repo, cancelled.job.jobId);
+    idx = sk.buildPendingScheduleIndex(repo);
+    assert.strictEqual(idx.lookupResearch('99'), null);
 }));
 report();
