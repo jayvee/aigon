@@ -208,7 +208,9 @@ function appendTripletSelects(rowEl, agent) {
 }
 
 function updateReviewerTripletSelects(agentId, scope = 'autonomous') {
-  const prefix = scope === 'picker-set' ? 'agent-picker-review' : 'autonomous-review';
+  const prefix = scope === 'picker-set'
+    ? 'agent-picker-review'
+    : (scope === 'schedule-kickoff' ? 'schedule-kickoff-review' : 'autonomous-review');
   const modelCell = document.getElementById(prefix + '-model-cell');
   const effortCell = document.getElementById(prefix + '-effort-cell');
   if (!modelCell || !effortCell) return;
@@ -544,9 +546,11 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     }
   });
 
-  // If no high-priority actions, promote first normal action to primary
+  // If no high-priority actions, promote first non-schedule normal action to primary
   if (primary.length === 0 && overflow.length > 0) {
-    primary.push(overflow.shift());
+    const idx = overflow.findIndex(va => va.action !== 'feature-schedule' && va.action !== 'research-schedule');
+    if (idx !== -1) primary.push(...overflow.splice(idx, 1));
+    else if (overflow.length > 0) primary.push(overflow.shift());
   }
 
   function actionLabel(va) {
@@ -706,6 +710,12 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       showAutonomousModal(feature, repoPath, btn);
       break;
     }
+    case 'feature-schedule':
+      openScheduleKickoffModal('feature', feature, repoPath, btn);
+      break;
+    case 'research-schedule':
+      openScheduleKickoffModal('research', feature, repoPath, btn);
+      break;
     case 'feature-autopilot': {
       const recommendation = await fetchSpecRecommendation('feature', id, repoPath);
       const triplets = await showAgentPicker(id, feature.name, { title: 'Select Autopilot Agents', submitLabel: 'Autopilot', repoPath, taskType: 'implement', action: va.action, collectTriplet: true, recommendation });
@@ -1212,6 +1222,381 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// ── Schedule kickoff: datetime-local helpers ──
+
+function skBuildRunAtHtml() {
+  return '<div style="margin-bottom:12px">' +
+    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Run at</label>' +
+    '<input type="datetime-local" id="schedule-kickoff-run-at" class="create-input" style="width:100%;padding:8px 10px" />' +
+    '<div style="font-size:11px;color:var(--text-tertiary);margin-top:4px" id="schedule-kickoff-tz-hint"></div>' +
+    '</div>';
+}
+
+function skSetupRunAt(box) {
+  const inp = box.querySelector('#schedule-kickoff-run-at');
+  const hint = box.querySelector('#schedule-kickoff-tz-hint');
+  const d = new Date(Date.now() + 3600000);
+  const pad = n => String(n).padStart(2, '0');
+  inp.value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const off = new Date().getTimezoneOffset();
+  const sign = off <= 0 ? '+' : '-';
+  const abs = Math.abs(off);
+  const tz = sign + pad(Math.floor(abs / 60)) + ':' + pad(abs % 60);
+  if (hint) hint.textContent = 'Times in ' + tzName + ' (' + tz + ')';
+}
+
+function skGetRunAt(box) {
+  const val = String((box.querySelector('#schedule-kickoff-run-at') || {}).value || '').trim();
+  if (!val) return '';
+  const off = new Date().getTimezoneOffset();
+  const sign = off <= 0 ? '+' : '-';
+  const abs = Math.abs(off);
+  const pad = n => String(n).padStart(2, '0');
+  return val + ':00' + sign + pad(Math.floor(abs / 60)) + ':' + pad(abs % 60);
+}
+
+// ── Schedule kickoff modal (dashboard POST /api/schedule/add — parity with `aigon schedule add`) ──
+
+async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
+  const existing = document.getElementById('schedule-kickoff-modal');
+  if (existing) existing.remove();
+
+  const backdrop = document.createElement('div');
+  backdrop.id = 'schedule-kickoff-modal';
+  backdrop.className = 'modal-backdrop';
+  backdrop.setAttribute('role', 'dialog');
+  backdrop.setAttribute('aria-modal', 'true');
+
+  const box = document.createElement('div');
+  box.className = 'modal-box agent-picker-modal-box';
+
+  const title = entityType === 'research' ? 'Schedule research start' : 'Schedule autonomous start';
+  const entityLabel = entityType === 'research' ? 'Research' : 'Feature';
+  const models = await fetchAgentModels(repoPath).catch(() => ({}));
+
+  function closeModal() {
+    backdrop.remove();
+  }
+
+  function skBuildAgentOptions(taskType, opts) {
+    const o = opts || {};
+    const includeNone = !!o.includeNone;
+    const noneLabel = o.noneLabel || 'none';
+    const selectedAgents = Array.isArray(o.selectedAgents) ? o.selectedAgents : [];
+    const rows = [];
+    if (includeNone) rows.push({ value: '', label: noneLabel });
+    AUTONOMOUS_AGENT_IDS.forEach((agentId) => {
+      const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
+      const modelName = (models && models[agentId] && models[agentId][taskType]) || '';
+      const sameAsImplementer = selectedAgents.includes(agentId);
+      const suffix = sameAsImplementer ? ' · implementing' : '';
+      const label = modelName
+        ? (agentId + ' · ' + displayName + ' · ' + modelName + suffix)
+        : (agentId + ' · ' + displayName + suffix);
+      rows.push({ value: agentId, label });
+    });
+    return rows;
+  }
+
+  if (entityType === 'research') {
+    box.innerHTML = '<h3 id="schedule-kickoff-title">' + escHtml(title) + '</h3>' +
+      '<p class="modal-desc">' + escHtml(entityLabel) + ' #' + escHtml(String(feature.id)) + ' ' + escHtml(feature.name || '') + '</p>' +
+      skBuildRunAtHtml() +
+      '<div style="margin-bottom:12px">' +
+      '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Agents (optional — empty uses Drive)</label>' +
+      '<div class="agent-checks" id="schedule-kickoff-research-agent-checks"></div>' +
+      '</div>' +
+      '<div style="margin-bottom:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">' +
+      '<label><input type="checkbox" id="schedule-kickoff-bg" /> Background</label>' +
+      '<label><input type="checkbox" id="schedule-kickoff-fg" /> Foreground</label>' +
+      '</div>' +
+      '<p id="schedule-kickoff-msg" class="settings-empty" style="display:none;margin:8px 0;color:var(--error)"></p>' +
+      '<div class="modal-actions" style="margin-top:16px">' +
+      '<button type="button" class="btn" id="schedule-kickoff-cancel">Cancel</button>' +
+      '<button type="button" class="btn btn-primary" id="schedule-kickoff-submit">Add schedule</button>' +
+      '</div>';
+    backdrop.appendChild(box);
+    document.body.appendChild(backdrop);
+    skSetupRunAt(box);
+
+    const checks = box.querySelector('#schedule-kickoff-research-agent-checks');
+    const rows = AUTONOMOUS_AGENT_IDS.map((agentId) => {
+      const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
+      return buildAgentCheckRow({
+        value: agentId,
+        checked: false,
+        label: agentId,
+        hint: displayName,
+      });
+    });
+    replaceNodeChildren(checks, rows);
+
+    box.querySelector('#schedule-kickoff-cancel').onclick = closeModal;
+    backdrop.onclick = (e) => { if (e.target === backdrop) closeModal(); };
+    box.querySelector('#schedule-kickoff-submit').onclick = async () => {
+      const msg = box.querySelector('#schedule-kickoff-msg');
+      msg.style.display = 'none';
+      const runAt = skGetRunAt(box);
+      if (!runAt) { msg.textContent = 'Select a date and time'; msg.style.display = 'block'; return; }
+      const agents = [...box.querySelectorAll('#schedule-kickoff-research-agent-checks input[type="checkbox"]:checked')].map((c) => c.value);
+      const background = box.querySelector('#schedule-kickoff-bg').checked;
+      const foreground = box.querySelector('#schedule-kickoff-fg').checked;
+      try {
+        const res = await fetch('/api/schedule/add', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            repoPath,
+            kind: 'research_start',
+            entityId: String(feature.id),
+            runAt,
+            payload: { agents, background, foreground },
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          msg.textContent = data.error || res.statusText || 'Failed';
+          msg.style.display = 'block';
+          return;
+        }
+        showToast('Scheduled research #' + feature.id);
+        closeModal();
+        if (typeof requestRefresh === 'function') await requestRefresh();
+      } catch (e) {
+        msg.textContent = e.message || 'Failed';
+        msg.style.display = 'block';
+      }
+    };
+    return;
+  }
+
+  box.innerHTML = '<h3 id="schedule-kickoff-title">' + escHtml(title) + '</h3>' +
+    '<p class="modal-desc">' + escHtml(entityLabel) + ' #' + escHtml(String(feature.id)) + ' ' + escHtml(feature.name || '') + '</p>' +
+    skBuildRunAtHtml() +
+    '<div style="margin-bottom:12px">' +
+    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Workflow (optional)</label>' +
+    '<select id="schedule-kickoff-workflow" class="create-input" style="padding:8px 10px;width:100%">' +
+    '<option value="">(none)</option></select>' +
+    '<div style="font-size:11px;color:var(--text-secondary);margin-top:4px" id="schedule-kickoff-workflow-desc"></div>' +
+    '</div>' +
+    '<div style="margin-bottom:12px">' +
+    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Implementation agents</label>' +
+    '<div class="agent-checks" id="schedule-kickoff-agent-checks"></div>' +
+    '</div>' +
+    '<div id="schedule-kickoff-eval-wrap" style="margin-bottom:12px">' +
+    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Evaluator</label>' +
+    '<select id="schedule-kickoff-eval-agent" class="create-input" style="padding:8px 10px;width:100%"></select>' +
+    '</div>' +
+    '<div id="schedule-kickoff-review-wrap" style="margin-bottom:12px">' +
+    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Reviewer</label>' +
+    '<div class="agent-picker-reviewer-grid">' +
+    '<select id="schedule-kickoff-review-agent" class="create-input" style="padding:8px 10px"></select>' +
+    '<span id="schedule-kickoff-review-model-cell" class="agent-triplet-cell agent-triplet-cell-model"></span>' +
+    '<span id="schedule-kickoff-review-effort-cell" class="agent-triplet-cell agent-triplet-cell-effort"></span>' +
+    '</div></div>' +
+    '<div style="margin-bottom:12px">' +
+    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Stop after</label>' +
+    '<select id="schedule-kickoff-stop-after" class="create-input" style="padding:8px 10px;width:100%">' +
+    '<option value="close">close (default)</option><option value="eval">eval</option><option value="review">review</option><option value="implement">implement</option></select>' +
+    '</div>' +
+    '<p id="schedule-kickoff-msg" class="settings-empty" style="display:none;margin:8px 0;color:var(--error)"></p>' +
+    '<div class="modal-actions" style="margin-top:16px">' +
+    '<button type="button" class="btn" id="schedule-kickoff-cancel">Cancel</button>' +
+    '<button type="button" class="btn btn-primary" id="schedule-kickoff-submit">Add schedule</button>' +
+    '</div>';
+
+  backdrop.appendChild(box);
+  document.body.appendChild(backdrop);
+  skSetupRunAt(box);
+
+  const wfSelect = box.querySelector('#schedule-kickoff-workflow');
+  try {
+    const q = repoPath ? ('?repo=' + encodeURIComponent(repoPath)) : '';
+    const res = await fetch('/api/workflows' + q, { cache: 'no-store' });
+    const data = res.ok ? await res.json() : { workflows: [] };
+    const workflows = Array.isArray(data.workflows) ? data.workflows : [];
+    workflows.forEach((def) => {
+      const o = document.createElement('option');
+      o.value = def.slug;
+      const badge = def.source === 'built-in' ? ' ★' : (def.source === 'global' ? ' [global]' : '');
+      o.textContent = def.slug + badge + ' — ' + (def.label || def.slug);
+      wfSelect.appendChild(o);
+    });
+  } catch (_) { /* ignore */ }
+
+  const checks = box.querySelector('#schedule-kickoff-agent-checks');
+  const autoRows = AUTONOMOUS_AGENT_IDS.map((agentId) => {
+    const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
+    const modelName = (models && models[agentId] && models[agentId].implement) || '';
+    const agent = AIGON_AGENTS.find(a => a.id === agentId) || { id: agentId, modelOptions: [], effortOptions: [] };
+    const row = buildAgentCheckRow({
+      value: agentId,
+      checked: agentId === (window.__AIGON_DEFAULT_AGENT__ || 'cc'),
+      label: agentId,
+      hint: displayName,
+      tripletGrid: true,
+      tripletCheckboxIdPrefix: 'sched-kick',
+    });
+    row.dataset.agentId = agentId;
+    appendTripletSelects(row, agent);
+    const cfg = row.querySelector('.agent-check-config-model');
+    if (cfg) cfg.textContent = modelName || '';
+    return row;
+  });
+  replaceNodeChildren(checks, [buildTripletPickerHeaderRow(), ...autoRows]);
+  checks.classList.add('agent-checks-triplet');
+
+  function skUpdateMode() {
+    const selectedAgents = [...box.querySelectorAll('#schedule-kickoff-agent-checks input[type="checkbox"]:checked')].map((c) => c.value);
+    const isSolo = selectedAgents.length === 1;
+    const evalWrap = box.querySelector('#schedule-kickoff-eval-wrap');
+    const reviewWrap = box.querySelector('#schedule-kickoff-review-wrap');
+    const evalSelect = box.querySelector('#schedule-kickoff-eval-agent');
+    const reviewSelect = box.querySelector('#schedule-kickoff-review-agent');
+    const stopAfter = box.querySelector('#schedule-kickoff-stop-after');
+    if (!evalWrap || !reviewWrap || !evalSelect || !reviewSelect || !stopAfter) return;
+
+    const previousStop = String(stopAfter.value || 'close').trim();
+    evalWrap.style.display = isSolo ? 'none' : '';
+    reviewWrap.style.display = isSolo ? '' : 'none';
+    evalSelect.disabled = isSolo;
+    reviewSelect.disabled = !isSolo;
+
+    const prevEval = String(evalSelect.value || '').trim();
+    replaceSelectOptions(evalSelect, skBuildAgentOptions('evaluate'));
+    if (prevEval && AUTONOMOUS_AGENT_IDS.includes(prevEval)) evalSelect.value = prevEval;
+
+    const prevReview = String(reviewSelect.value || '').trim();
+    replaceSelectOptions(reviewSelect, skBuildAgentOptions('review', {
+      includeNone: true,
+      noneLabel: 'none',
+      selectedAgents,
+    }));
+    if (prevReview && AUTONOMOUS_AGENT_IDS.includes(prevReview)) {
+      reviewSelect.value = prevReview;
+      updateReviewerTripletSelects(reviewSelect.value, 'schedule-kickoff');
+    } else {
+      reviewSelect.value = AUTONOMOUS_AGENT_IDS.find((agentId) => !selectedAgents.includes(agentId)) || '';
+      updateReviewerTripletSelects(reviewSelect.value, 'schedule-kickoff');
+    }
+
+    const stopOptions = isSolo
+      ? [
+        { value: 'close', label: 'close (default)' },
+        { value: 'review', label: 'review' },
+        { value: 'implement', label: 'implement' },
+      ]
+      : [
+        { value: 'close', label: 'close (default)' },
+        { value: 'eval', label: 'eval' },
+        { value: 'implement', label: 'implement' },
+      ];
+    replaceSelectOptions(stopAfter, stopOptions);
+    stopAfter.value = stopOptions.some((opt) => opt.value === previousStop) ? previousStop : 'close';
+  }
+
+  checks.addEventListener('change', (e) => {
+    if (e.target && e.target.matches && e.target.matches('input[type="checkbox"]')) skUpdateMode();
+  });
+  const reviewAgentSelect = box.querySelector('#schedule-kickoff-review-agent');
+  reviewAgentSelect.addEventListener('change', () => {
+    updateReviewerTripletSelects(String(reviewAgentSelect.value || '').trim(), 'schedule-kickoff');
+  });
+  skUpdateMode();
+  try { await fetchBudget(true); } catch (_) { /* best-effort */ }
+
+  box.querySelector('#schedule-kickoff-cancel').onclick = closeModal;
+  backdrop.onclick = (e) => { if (e.target === backdrop) closeModal(); };
+
+  box.querySelector('#schedule-kickoff-submit').onclick = async () => {
+    const msg = box.querySelector('#schedule-kickoff-msg');
+    msg.style.display = 'none';
+    const runAt = skGetRunAt(box);
+    if (!runAt) { msg.textContent = 'Select a date and time'; msg.style.display = 'block'; return; }
+    const selectedAgents = [...box.querySelectorAll('#schedule-kickoff-agent-checks input[type="checkbox"]:checked')].map((c) => c.value);
+    if (selectedAgents.length === 0) {
+      msg.textContent = 'Select at least one implementation agent';
+      msg.style.display = 'block';
+      return;
+    }
+    const evalSelect = box.querySelector('#schedule-kickoff-eval-agent');
+    const reviewSelect = box.querySelector('#schedule-kickoff-review-agent');
+    const stopAfter = box.querySelector('#schedule-kickoff-stop-after');
+    const evalAgent = evalSelect && !evalSelect.disabled ? String(evalSelect.value || '').trim() : '';
+    const reviewAgent = reviewSelect && !reviewSelect.disabled ? String(reviewSelect.value || '').trim() : '';
+    const reviewModelSel = box.querySelector('#schedule-kickoff-review-model');
+    const reviewEffortSel = box.querySelector('#schedule-kickoff-review-effort');
+    const reviewModel = reviewAgent && reviewModelSel ? String(reviewModelSel.value || '').trim() : '';
+    const reviewEffort = reviewAgent && reviewEffortSel ? String(reviewEffortSel.value || '').trim() : '';
+    const stopValue = stopAfter ? String(stopAfter.value || 'close').trim() : 'close';
+    if (stopValue === 'review' && !reviewAgent) {
+      msg.textContent = 'Select a reviewer when stopping after review';
+      msg.style.display = 'block';
+      return;
+    }
+    const triplets = selectedAgents.map((id) => {
+      const row = box.querySelector('#schedule-kickoff-agent-checks input[value="' + id + '"]');
+      const wrap = row && row.closest('.agent-check-row');
+      const modelSel = wrap && wrap.querySelector('.agent-triplet-model');
+      const effortSel = wrap && wrap.querySelector('.agent-triplet-effort');
+      return {
+        id,
+        model: modelSel && modelSel.value ? modelSel.value : null,
+        effort: effortSel && effortSel.value ? effortSel.value : null,
+      };
+    });
+    const triArgs = tripletsToCliArgs(triplets);
+    const modelsCsv = (triArgs.find((a) => a.startsWith('--models=')) || '').slice('--models='.length) || '';
+    const effortsCsv = (triArgs.find((a) => a.startsWith('--efforts=')) || '').slice('--efforts='.length) || '';
+    try {
+      if (typeof fetchBudget === 'function') {
+        await fetchBudget();
+        const warning = budgetWarningForAgents([...selectedAgents, evalAgent, reviewAgent].filter(Boolean));
+        if (warning && !window.confirm(warning)) return;
+      }
+    } catch (_) { /* best-effort */ }
+
+    const workflowSlug = String(wfSelect.value || '').trim();
+    const payload = {
+      agents: selectedAgents,
+      stopAfter: stopValue,
+      evalAgent: evalAgent || undefined,
+      reviewAgent: reviewAgent || undefined,
+      models: modelsCsv || undefined,
+      efforts: effortsCsv || undefined,
+      reviewModel: reviewModel || undefined,
+      reviewEffort: reviewEffort || undefined,
+      workflow: workflowSlug || undefined,
+    };
+    try {
+      const res = await fetch('/api/schedule/add', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          repoPath,
+          kind: 'feature_autonomous',
+          entityId: String(feature.id),
+          runAt,
+          payload,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        msg.textContent = data.error || res.statusText || 'Failed';
+        msg.style.display = 'block';
+        return;
+      }
+      showToast('Scheduled feature #' + feature.id);
+      closeModal();
+      if (typeof requestRefresh === 'function') await requestRefresh();
+    } catch (e) {
+      msg.textContent = e.message || 'Failed';
+      msg.style.display = 'block';
+    }
+  };
+}
 
 // ── Autonomous modal logic ────────────────────────────────────────────────
 
