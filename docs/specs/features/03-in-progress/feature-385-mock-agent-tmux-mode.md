@@ -1,5 +1,6 @@
 ---
 complexity: medium
+set: simulate-agents
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-26T13:10:52.138Z", actor: "cli/feature-prioritise" }
 ---
