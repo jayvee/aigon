@@ -1,7 +1,14 @@
 #!/usr/bin/env node
 // MockAgent — simulates an agent working in a worktree without burning AI tokens.
-// Phases: sleep(implementing) → write + commit dummy file → sleep(submitted) →
-// `aigon agent-status submitted` via real CLI → empty commit.
+//
+// Two modes:
+//   - default (in-process): sleep → write file + commit → sleep → run
+//     `aigon agent-status submitted` directly via the real CLI. Fast and
+//     deterministic; used by solo-lifecycle dashboard e2e.
+//   - useRealWrapper: true (F385): launch a real tmux session running the
+//     full buildAgentCommand wrapper (shell trap + heartbeat sidecar) with
+//     MOCK_AGENT_BIN substituted for the agent binary, so the trap + sidecar
+//     paths get the same coverage as a real agent run.
 //
 // REGRESSION: invokes the real CLI path so that the legacy status file write
 // AND wf.emitSignal() both fire — bypassing with writeAgentStatus once caused
@@ -10,20 +17,22 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const { GIT_SAFE_ENV } = require('../_helpers');
 
 const CLI_PATH = path.join(__dirname, '..', '..', 'aigon-cli.js');
+const MOCK_BIN = path.join(__dirname, 'mock-bin', 'mock-agent-bin.sh');
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 class MockAgent {
-    constructor({ featureId, agentId, desc, repoPath, worktreeBase, delays = {} }) {
+    constructor({ featureId, agentId, desc, repoPath, worktreeBase, delays = {}, useRealWrapper = false }) {
         if (!worktreeBase) throw new Error('MockAgent: worktreeBase is required');
         this.featureId = featureId;
         this.agentId = agentId;
         this.desc = desc;
         this.repoPath = repoPath;
         this.delays = { implementing: 15000, submitted: 10000, ...delays };
+        this.useRealWrapper = useRealWrapper;
         this._abort = false;
         this.worktreePath = path.join(worktreeBase, `feature-${featureId}-${agentId}-${desc}`);
         this.logPath = path.join(this.worktreePath, 'docs', 'specs', 'features', 'logs', `feature-${featureId}-${agentId}-${desc}-log.md`);
@@ -32,6 +41,8 @@ class MockAgent {
     abort() { this._abort = true; }
 
     async run() {
+        if (this.useRealWrapper) return this._runViaTmux();
+
         await sleep(this.delays.implementing);
         if (this._abort) return;
 
@@ -72,6 +83,69 @@ class MockAgent {
                 env: { ...process.env, ...GIT_SAFE_ENV },
             });
         } catch (_) { /* nothing to commit is fine */ }
+    }
+
+    // F385: launch a real tmux session running the full buildAgentCommand
+    // wrapper, with MOCK_AGENT_BIN substituting for the agent binary. The
+    // shell trap + heartbeat sidecar fire end-to-end, so regressions in
+    // either surface here instead of in production.
+    async _runViaTmux() {
+        const padded = String(this.featureId).padStart(2, '0');
+        const sessionName = `aigon-mock-${padded}-${this.agentId}-${process.pid}-${Date.now()}`;
+        const sleepSec = Math.max(1, Math.round((this.delays.implementing || 0) / 1000));
+
+        const prevBin = process.env.MOCK_AGENT_BIN;
+        const prevTestMode = process.env.AIGON_TEST_MODE;
+        process.env.MOCK_AGENT_BIN = MOCK_BIN;
+        delete process.env.AIGON_TEST_MODE;
+        let command;
+        try {
+            const { buildAgentCommand } = require('../../lib/worktree');
+            command = buildAgentCommand({
+                agent: this.agentId,
+                featureId: padded,
+                desc: this.desc,
+                path: this.worktreePath,
+                repoPath: this.repoPath,
+                entityType: 'feature',
+            }, 'do');
+        } finally {
+            if (prevBin === undefined) delete process.env.MOCK_AGENT_BIN;
+            else process.env.MOCK_AGENT_BIN = prevBin;
+            if (prevTestMode === undefined) delete process.env.AIGON_TEST_MODE;
+            else process.env.AIGON_TEST_MODE = prevTestMode;
+        }
+
+        // Single-quote the wrapped script so embedded newlines + `$` survive
+        // tmux's argv → bash -lc handoff. JSON.stringify's `\n` escapes are
+        // *not* interpreted inside bash double-quoted strings, so the trap +
+        // heartbeat lines collapse onto a single line and the wrapper breaks.
+        const quoted = `'${command.replace(/'/g, `'\\''`)}'`;
+        const tmuxArgs = [
+            'new-session', '-d', '-s', sessionName, '-c', this.worktreePath,
+            '-e', `MOCK_AGENT_SLEEP_SEC=${sleepSec}`,
+            `bash -lc ${quoted}`,
+        ];
+        const r = spawnSync('tmux', tmuxArgs, { stdio: 'pipe', encoding: 'utf8' });
+        if (r.status !== 0) throw new Error(`tmux new-session failed: ${r.stderr || r.stdout}`);
+
+        try {
+            const statusPath = path.join(this.repoPath, '.aigon', 'state', `feature-${padded}-${this.agentId}.json`);
+            const deadline = Date.now() + (this.delays.submitted || 10000) + (sleepSec * 1000) + 8000;
+            while (Date.now() < deadline) {
+                if (this._abort) return;
+                if (fs.existsSync(statusPath)) {
+                    try {
+                        const rec = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
+                        if (rec && rec.status === 'submitted') return;
+                    } catch (_) { /* file mid-write */ }
+                }
+                await sleep(150);
+            }
+            throw new Error(`MockAgent tmux mode timed out waiting for submitted status at ${statusPath}`);
+        } finally {
+            spawnSync('tmux', ['kill-session', '-t', sessionName], { stdio: 'ignore' });
+        }
     }
 }
 
