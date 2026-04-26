@@ -3,6 +3,8 @@ Agent: cc
 
 ## Status
 
+Implemented `agent_prompt` scheduler kind + `aigon agent-launch` CLI + 5-field cron parser (no new dep); 16 new unit tests pass; full `npm test` green.
+
 ## New API Surface
 
 ## Key Decisions
