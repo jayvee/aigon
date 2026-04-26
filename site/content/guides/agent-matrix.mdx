@@ -1,0 +1,122 @@
+---
+title: Agent Matrix & Recommender
+description: How Aigon tracks agent benchmark data, surfaces model recommendations in the start modal, and keeps the registry current with automated refresh cycles.
+---
+
+import { Callout } from "nextra/components";
+
+The agent matrix is a read-only capability view that joins the agent registry with your local usage statistics. It powers the recommendation badges you see when starting a feature and feeds the automated refresh cycle that keeps pricing and quality scores current.
+
+## What the matrix contains
+
+For every `(agent, model)` pair registered in `templates/agents/<id>.json`, the matrix tracks:
+
+| Field | Source | Description |
+|-------|--------|-------------|
+| `pricing` | Registry | Public API cost in $/M tokens (`inputPerM`, `outputPerM`) |
+| `notes.<op>` | Registry | Human-readable capability note for each operation |
+| `score.<op>` | Registry | Qualitative score 1–5 for each operation |
+| `lastRefreshAt` | Registry | When this entry was last updated by a refresh agent |
+| `stats` | Local telemetry | Features run, total cost, sessions for this model |
+
+The four **operations** are: `draft`, `spec_review`, `implement`, `review`. Scores and notes can differ per operation — a model that excels at implementation may score lower for spec writing.
+
+## Recommendation badges in the start modal
+
+When you open the start modal for a feature, Aigon calls `/api/recommendation/:type/:id` to rank available agents for the relevant operation. The top candidates are shown alongside the agent/model dropdowns:
+
+- **✨ Best value** — highest score-to-cost ratio
+- **⚡ Fastest** — lowest latency / cost for this operation
+- **🎯 Highest quality** — highest qualitative score for this operation
+
+Badges are suggestions only. The user still picks the agent and model — the recommender never overrides your choice.
+
+<Callout type="info">
+  Cells with no benchmark data (zero sessions) fall back to qualitative score alone and show `confidence: low` in the ranking rationale. The recommender never invents numbers to fill empty cells.
+</Callout>
+
+## How ranking works
+
+The score for each `(agent, model, operation)` triplet is:
+
+```
+score = qualitative_score (1–5) − cost_penalty (normalised $/op)
+```
+
+`qualitative_score` comes from `score.<op>` in the agent registry. `cost_penalty` is derived from actual benchmark session cost in your local telemetry (`stats-aggregate.perTriplet`). Quarantined models are excluded from ranking by default.
+
+## Keeping the matrix current
+
+Three built-in recurring templates handle ongoing maintenance:
+
+### Weekly benchmark (`weekly-agent-matrix-benchmark`)
+
+Runs once per ISO week. For each `(agent, model)` cell that has stale or missing benchmark data, it launches a fresh Brewboard seed reset and runs the canonical implement fixture. Results flow through `feature-close` into `stats.json`, which `stats-aggregate.js` rolls up automatically — no manual step required.
+
+### Weekly pricing refresh (`weekly-agent-matrix-pricing-refresh`)
+
+Runs once per ISO week. Scans vendor pricing pages and release notes, diffs against the current registry, and produces:
+
+- A patch file at `.aigon/matrix-refresh/<YYYY-MM-DD>/proposed.json`
+- One `aigon feedback-create` per change kind (`pricing-update`, `new-model`, `deprecation`, `quarantine-candidate`)
+
+The refresh agent **never mutates the registry directly**. You review the feedback item and then apply it:
+
+```bash
+aigon matrix-apply <feedback-id>
+```
+
+### Quarterly qualitative refresh (`quarterly-agent-matrix-qualitative-refresh`)
+
+Runs once per ISO quarter. Scans SWE-bench Verified, the Aider polyglot leaderboard, LMArena, and community sources to propose updates to `notes.<op>` and `score.<op>`. Uses the same feedback-item + `matrix-apply` flow as the pricing refresh. Quarterly cadence avoids score churn from reacting to every model update announcement.
+
+## Applying a proposed change
+
+When a refresh agent files a feedback item, review it with `aigon feedback-triage <id>` and then apply:
+
+```bash
+# Preview without writing
+aigon matrix-apply <feedback-id> --dry-run
+
+# Apply to templates/agents/<id>.json
+aigon matrix-apply <feedback-id>
+
+# Restart to pick up the change
+aigon server restart
+```
+
+`matrix-apply` only patches the fields in the proposal. Unrelated fields are untouched. See the [`matrix-apply` reference](/reference/commands/infra/matrix-apply) for full details.
+
+## Agent registry fields reference
+
+In `templates/agents/<id>.json`, each entry in `cli.modelOptions[]` can carry:
+
+```json
+{
+  "value": "claude-opus-4-7",
+  "label": "Opus 4.7",
+  "pricing": { "inputPerM": 15.0, "outputPerM": 75.0 },
+  "notes": {
+    "implement": "Strong on multi-file reasoning and architecture decisions.",
+    "review": "Thorough but slow — best for high-stakes reviews."
+  },
+  "score": {
+    "draft": 4,
+    "spec_review": 5,
+    "implement": 5,
+    "review": 5
+  },
+  "lastRefreshAt": "2026-04-20T10:00:00.000Z"
+}
+```
+
+Models with quality or safety issues can be marked quarantined rather than deleted:
+
+```json
+{
+  "value": "some-model",
+  "quarantined": { "reason": "Hallucinated test output in F358", "since": "2026-03-15" }
+}
+```
+
+Quarantined models are excluded from recommendations and shown with a warning in the Settings tab matrix view.

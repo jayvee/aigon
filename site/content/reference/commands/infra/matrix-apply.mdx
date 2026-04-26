@@ -1,0 +1,61 @@
+---
+title: matrix-apply
+description: Apply a reviewed pricing or qualitative refresh proposal to the agent registry.
+---
+
+Apply a reviewed patch entry from a matrix refresh run to `templates/agents/<id>.json`.
+
+## Usage
+
+```bash
+aigon matrix-apply <feedback-id> [--dry-run]
+```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<feedback-id>` | The numeric ID of the feedback item created by a refresh agent |
+| `--dry-run` | Preview the change without writing to disk |
+
+## How it works
+
+Weekly pricing refresh and quarterly qualitative refresh agents never mutate the agent registry directly. Instead, they write a patch file to `.aigon/matrix-refresh/<YYYY-MM-DD>/proposed.json` and create a feedback item for each change. `matrix-apply` performs the actual write after you've reviewed the proposal.
+
+When you run `matrix-apply`:
+
+1. Locates the patch entry matching `<feedback-id>` across all `.aigon/matrix-refresh/` patch files (newest first)
+2. Loads `templates/agents/<agentId>.json`
+3. Applies only the patched fields (`pricing`, `label`, `quarantined`, `deprecated`, `notes`, `score`)
+4. Writes the updated file and sets `lastRefreshAt` to now
+5. Prints the agent file path and patch source so you can verify with `git diff`
+
+## Example
+
+```bash
+# A refresh agent filed feedback #47 proposing a pricing update
+aigon feedback-triage 47              # Review the proposal
+aigon matrix-apply 47 --dry-run       # Preview the change
+aigon matrix-apply 47                 # Apply it
+aigon server restart                  # Pick up the updated registry
+```
+
+## After applying
+
+Run `aigon server restart` to reload the agent registry in the dashboard. The Settings tab matrix view will reflect the updated pricing, scores, and notes immediately after restart.
+
+## Supported change kinds
+
+| `changeKind` | What it patches |
+|---|---|
+| `pricing-update` | `pricing.inputPerM`, `pricing.outputPerM` |
+| `new-model` | Adds a new entry to `cli.modelOptions[]` |
+| `deprecation` | Sets `deprecated: true` on the model option |
+| `quarantine-candidate` | Sets `quarantined: { reason, since }` on the model option |
+| `notes-update` | Updates `notes.<op>` fields |
+| `score-update` | Updates `score.<op>` fields |
+
+## See also
+
+- [Agent Matrix & Recommender guide](/guides/agent-matrix) — full context on the refresh cycle
+- [Agents reference](/reference/agents) — agent registry field reference

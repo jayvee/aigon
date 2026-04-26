@@ -56,3 +56,23 @@ aigon config set --global security.mergeGateStages.featureClose '["gitleaks"]'
 ### ESLint security plugin
 
 For `web` and `api` profiles, `aigon init` recommends installing `eslint-plugin-security` for additional static analysis during development.
+
+## On-demand scanning
+
+The merge gate runs scoped, branch-level scans. For a broader repo-wide scan — across all commits since the last scan — use the on-demand command:
+
+```bash
+aigon security-scan
+```
+
+This runs all configured scanners plus an LLM analysis via the `/security-review` skill, deduplicates findings using fingerprints from previous scans, and auto-creates feedback items for any new HIGH-severity findings. See the [`security-scan` reference](/reference/commands/infra/security-scan) for full options.
+
+## Weekly automated scan
+
+The built-in `security-scan-weekly` recurring template runs `aigon security-scan` every Monday. It fires automatically when the dashboard server starts each week — no configuration required. Each run picks up where the previous left off using the stored scan SHA.
+
+To check whether the weekly scan is due or already ran this week:
+
+```bash
+aigon recurring-list
+```

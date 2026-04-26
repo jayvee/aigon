@@ -1,0 +1,62 @@
+---
+title: security-scan
+description: Run a security scan of the repo on demand, outside of the merge gate.
+---
+
+Run a full security scan against the repository — the same scan that the weekly recurring template runs automatically.
+
+## Usage
+
+```bash
+aigon security-scan [--since <sha>] [--no-feedback]
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `--since <sha>` | Scan only commits after this SHA. Defaults to the SHA from the last recorded scan, or HEAD~50 on first run. |
+| `--no-feedback` | Print findings without creating feedback items |
+
+## What it does
+
+1. Runs **gitleaks** (secrets detection), **osv-scanner** (dependency CVEs), **semgrep** (SAST), and **npm audit** against changed files since `--since`
+2. Invokes the `/security-review` skill via `claude --print` for an LLM-layer analysis of the same diff
+3. Deduplicates findings using fingerprints stored in `.aigon/security-scan-state.json` — repeat findings from previous scans are skipped
+4. For each **HIGH**-severity finding that hasn't been seen before, creates an `aigon feedback-create` item automatically
+5. Prints a summary of findings, skipped duplicates, and feedback items created
+
+## Difference from merge-gate scanning
+
+The merge-gate (`feature-close`, `agent-status submitted`) runs a fast diff-aware scan scoped to the current branch. `aigon security-scan` runs a broader scan across the full commit range since the last scan, including commits from all branches merged to main. Use the on-demand command for repo-wide health checks; the merge gate catches regressions at submission time.
+
+## Suppression
+
+Findings can be suppressed by adding their fingerprint to `.aigon/security-suppressions.json`. Suppressed findings are skipped in future scans without creating feedback items. The weekly recurring scan (`security-scan-weekly`) respects the same suppression file.
+
+## Example
+
+```bash
+# Full scan since last recorded SHA
+aigon security-scan
+
+# Scan a specific range without filing feedback items
+aigon security-scan --since abc1234 --no-feedback
+```
+
+## Required tools
+
+At least one scanner must be installed for non-LLM findings. Install all for full coverage:
+
+```bash
+brew install gitleaks
+brew install semgrep           # or: pip install semgrep
+brew install osv-scanner
+npm install -g npm             # ensures npm audit is current
+```
+
+Missing tools are skipped with a warning — the LLM layer runs regardless.
+
+## See also
+
+- [Security Scanning guide](/guides/security-scanning) — merge gate config, scanner behaviour table

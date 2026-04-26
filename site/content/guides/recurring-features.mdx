@@ -81,7 +81,7 @@ Templates in `docs/specs/recurring/` are never surfaced on the dashboard or boar
 
 ## Built-in templates
 
-Aigon ships two built-in recurring templates that `aigon init` places in `docs/specs/recurring/`:
+Aigon ships several built-in recurring templates that `aigon init` places in `docs/specs/recurring/`:
 
 ### Weekly dependency sweep
 
@@ -98,6 +98,38 @@ Good agent for this: **cc** (Claude Code) or **cx** (Codex) in Autonomous mode w
 Diffs changes to `lib/` and `templates/` since the last authoritative-doc commit (`AGENTS.md`, `docs/architecture.md`, `docs/development_workflow.md`), writes a gap report to `docs/reports/docs-gap-{{YYYY-WW}}.md`, and closes. Surfaces cases where code changed but documentation didn't.
 
 Good agent for this: **cc** (Claude Code) — reading code and writing prose is its strength.
+
+### Weekly security scan
+
+**Slug:** `security-scan-weekly`
+
+Runs `aigon security-scan` across all commits since the last recorded scan SHA. Deduplicates findings using fingerprints and auto-creates feedback items for new HIGH-severity issues. Requires at least one scanner tool installed (`gitleaks`, `semgrep`, `osv-scanner`).
+
+Good agent for this: **cc** (Claude Code) — the LLM layer uses the `/security-review` skill.
+
+### Weekly agent matrix benchmark
+
+**Slug:** `weekly-agent-matrix-benchmark`
+
+For each `(agent, model)` cell with stale or missing benchmark data, runs the canonical implement fixture against a fresh Brewboard seed reset. Results flow through `feature-close` into local telemetry, powering the recommendation badges in the start modal.
+
+Good agent for this: **cc** (Claude Code) in Autonomous mode.
+
+### Weekly agent matrix pricing refresh
+
+**Slug:** `weekly-agent-matrix-pricing-refresh`
+
+Scans vendor pricing pages and release notes, diffs against the current agent registry, and files feedback items for pricing changes, new models, and deprecations. Changes are reviewed and applied with `aigon matrix-apply <feedback-id>` — the refresh agent never writes directly to the registry.
+
+Good agent for this: **cc** (Claude Code) with WebSearch/WebFetch tools.
+
+### Quarterly agent matrix qualitative refresh
+
+**Slug:** `quarterly-agent-matrix-qualitative-refresh`
+
+Scans SWE-bench Verified, the Aider leaderboard, LMArena, and community sources each quarter to propose updates to `notes.<op>` and `score.<op>` fields in the agent registry. Same feedback-item + `matrix-apply` flow as the pricing refresh. Quarterly cadence prevents churn from reacting to every announcement.
+
+Good agent for this: **cc** (Claude Code) with WebSearch/WebFetch tools.
 
 ## CLI commands
 
