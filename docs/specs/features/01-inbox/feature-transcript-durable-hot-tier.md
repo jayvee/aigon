@@ -1,73 +1,51 @@
 ---
-complexity: medium
-# agent: cc    # optional — id of the agent that owns this spec. Used as the
-#              #   default reviewer for spec-revise cycles when the operator
-#              #   does not pick one explicitly. Precedence at revision time:
-#              #     event payload nextReviewerId > frontmatter agent:
-#              #     > snapshot.authorAgentId > getDefaultAgent().
+complexity: high
 ---
 
 # Feature: transcript-durable-hot-tier
 
-<!-- Authoring AI: set `complexity:` using this rubric before writing the spec:
-       low       — config tweaks, doc-only, single-file helpers, trivial bug fixes
-       medium    — standard feature with moderate cross-cutting, one command handler, small refactor
-       high      — multi-file engine edits, new event types, new dashboard surfaces, judgment-heavy deletion work
-       very-high — architectural shifts, write-path-contract changes, new XState transitions, cross-cutting template+engine+frontend
-     At start time, model and effort defaults come from each agent's `cli.complexityDefaults[<complexity>]` in
-     `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
-
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Copy the live native transcript body into a machine-global durable hot tier at finalisation moments (`feature-close`, `agent quarantine`) so transcripts survive worktree deletion and native log rotation. Write a `.meta.json` sibling that joins the existing telemetry record. Extend `migrateEntityWorkflowIdSync` to atomically rename slug→numeric directories at the same moment workflow keys re-key. Second step in the research-43 transcript program — turns the fragile pointer layer into a durable artifact.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As an operator investigating a feature shipped 60 days ago, the transcript is still on disk even though the worktree and native log are long gone.
+- [ ] As a future analytics consumer, I can list transcripts under `~/.aigon/transcripts/<repo>/<entityType>/<entityId>/<agent>/` and join them with telemetry without re-running anything.
+- [ ] As a quarantine flow, when `aigon agent quarantine <id> <model>` fires, all active sessions for that agent get snapshotted under `~/.aigon/transcripts/<repo>/quarantine/<ts>-<model>/` so we have audit evidence.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
-
-## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
-```bash
-# Example: node --check aigon-cli.js
-```
+- [ ] Storage layout: `~/.aigon/transcripts/<repo>/<entityType>/<entityId>/<agent>/<role>-<sessionUuid>.{jsonl,meta.json}`. Machine-global (not under any repo's `.aigon/state/`).
+- [ ] At `feature-close` finalisation, every captured session for the feature gets its native body copied (file copy, not move; native log keeps existing) and a `.meta.json` written joining the telemetry record.
+- [ ] At `agent quarantine`, snapshot active sessions under `quarantine/<timestamp>-<model>/` keyed identically.
+- [ ] `.meta.json` schema: `schemaVersion`, `telemetryRef`, `sessionName`, `tmuxId`, `agentSessionId`, `nativeBodyBytes`, `complete`, `finalisedAt`, `finalisedBy`. Strict superset of telemetry — no parser duplication.
+- [ ] `migrateEntityWorkflowIdSync` extended to rename `<slug>/` → `<numericId>/` directory under `~/.aigon/transcripts/<repo>/<entityType>/` if it exists at prioritise time. Atomic with the workflow re-key.
+- [ ] No native body is ever moved or deleted from the agent's home directory; we only ever copy.
+- [ ] Read path in `transcript-read-model-and-cli` updated to prefer the durable copy when present, fall back to live `agentSessionPath` when not.
+- [ ] Test coverage with `// REGRESSION:` comments for: feature-close → file copied; quarantine → snapshot directory created; prioritise → slug directory renamed.
 
 ## Pre-authorised
-<!-- Optional: standing orders the agent may enact without stopping to ask.
-     Each line is a single bounded permission. The agent cites the matching line
-     in a commit footer `Pre-authorised-by: <slug>` for auditability.
-     Absent or blank = no pre-auths; agent stops on every policy gate as normal.
-     Example lines:
-       - May raise `scripts/check-test-budget.sh` CEILING by up to +40 LOC if regression tests require it.
-       - May skip `npm run test:ui` when this feature touches only `lib/` and no dashboard assets.
--->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+- Hook into `lib/feature-close.js` finalisation phases (after merge, before cleanup). Iterate captured sessions via `readLatestSidecarWithSession` per agent + role.
+- Copy native bodies with `fs.copyFileSync`; write `.meta.json` atomically (use existing `safeWrite` helper).
+- Slug→numeric rename: extend `migrateEntityWorkflowIdSync` in `lib/workflow-core/`. `fs.renameSync` (atomic on same filesystem); on rare collision, append `.collision-<sha>` suffix and log.
+- Quarantine hook: at F358 quarantine fire-point, walk active tmux sessions for the agent (via `lib/session-sidecar.js`) and copy current body state.
+- New module `lib/transcript-store.js` for path resolution and write helpers; consumed by feature-close, quarantine, and the read-model collector.
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- depends_on: transcript-read-model-and-cli
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- `tmux pipe-pane` raw capture (separate feature).
+- Cold tier upload to S3/R2/GCS.
+- Redaction (happens at export time, not capture; lands with cold tier or CLI export).
+- Retention policy / GC of old hot-tier files — defer; decide after 90 days of usage data.
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Should we also copy at `feature-reset` (destructive)? Likely yes — reset is the other point where the worktree disappears.
+- For a session still alive at `feature-close` (Fleet, mid-flight agent), copy the current state; a second pass at the next finalisation will overwrite with the longer body.
+- For Gemini's single-JSON-blob format, is a mid-session snapshot safe? Verify during implementation.
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Set: <!-- set slug if this feature is part of a set; omit line if standalone -->
-- Prior features in set: <!-- feature IDs that precede this one, e.g. F314, F315; omit if standalone -->
+- Research: 43 — session-transcript-capture-and-storage
+- Set: transcript-program
+- Prior features in set: transcript-read-model-and-cli

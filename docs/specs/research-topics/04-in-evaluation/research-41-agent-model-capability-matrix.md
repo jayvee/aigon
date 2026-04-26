@@ -112,14 +112,43 @@ All three phases are in scope **for the research**, because the data model and r
 <!-- to be filled by research agent -->
 
 ## Recommendation
-<!-- to be filled by research agent -->
+
+Three-phase, six-feature decomposition. The matrix is **derived**, not authored: ~70% of the columns already exist in `templates/agents/<id>.json` (`cli.modelOptions[]` + `complexityDefaults` + `quarantined` schema), `lib/telemetry.js` (`PRICING`), and `lib/stats-aggregate.js` (`perTriplet` rollup written on every `feature-close`). Phase A1 ships a join collector + Settings view + new fields on the registry — no new persistence layer. Phase A2 leans on `lib/recurring.js` rather than inventing a benchmark runner. Phase B extends `lib/spec-recommendation.js`. Phase C uses two recurring templates at different cadences (weekly pricing, quarterly qualitative) and respects the dashboard read-only rule by emitting feedback items + a `.aigon/matrix-refresh/<date>/proposed.json` artefact, applied via a separate `aigon matrix-apply` command.
+
+Critical write-path-contract callouts (must land in the implementing specs):
+1. Move PRICING out of `lib/telemetry.js` into `cli.modelOptions[].pricing` in the same commit as F370 — two consumers, one source of truth (avoids the F285→F293 failure mode).
+2. F370 must add the missing telemetry activity tags `draft` and `spec_review`, or the benchmark column is empty for two of four operations.
+3. Phase C never auto-mutates the registry; it produces feedback items + `aigon matrix-apply <feedback-id>` for the manual write step.
+4. Sparse cells: `confidence: 'low'` + honest "no benchmark data" message — never invent numbers to fill empty cells.
+5. Quarantined models render greyed/strikethrough with hover-reason — never silently hidden.
+
+Sequencing: F370 ships first (blocks all others). F371 (benchmark) and F372 (recommender-core) ship concurrently after F370. F373 (recommender-surfaces) follows F372. F374 (pricing-refresh) needs F370 only; F375 (qualitative-refresh) reuses F374's apply infra. Phase B's `excludeOverBudget` filter is a v2 concern — `feature-agent-cost-awareness` (currently paused) is not blocking.
 
 ## Output
 
-The research will recommend the final feature decomposition. Likely shape (to be confirmed):
+### Set Decision
 
-- [ ] Feature: (Phase A — matrix data model + Settings table view, with public-API-pricing cost column)
-- [ ] Feature: (Phase A — internal benchmark runner / capture on Brewboard)
-- [ ] Feature: (Phase B — selection recommender: ranks agent/model for a given operation + complexity, optionally quota-aware)
-- [ ] Feature: (Phase B — recommender integration at selection points: start modal, review prompts, autopilot)
-- [ ] Feature: (Phase C — scheduled deep-web-research refresh as a standard Aigon recurring feature)
+- Proposed Set Slug: `agent-matrix`
+- Chosen Set Slug: `agent-matrix`
+
+### Selected Features
+
+| ID | Feature Name | Description | Priority | Create Command |
+|----|--------------|-------------|----------|----------------|
+| F370 | agent-matrix-1-data-and-view | Phase A1: matrix fields on `cli.modelOptions[]`, move PRICING to registry, `lib/agent-matrix.js` join collector, Settings-tab view, telemetry tags `draft`/`spec_review` | high | `aigon feature-create "agent-matrix-1-data-and-view" --set agent-matrix` |
+| F371 | agent-matrix-2-brewboard-benchmark | Phase A2: Brewboard `docs/benchmarks/*.md` fixtures + `weekly-agent-matrix-benchmark.md` recurring template | high | `aigon feature-create "agent-matrix-2-brewboard-benchmark" --set agent-matrix` |
+| F372 | agent-matrix-3-recommender-core | Phase B core: `rankAgentsForOperation()` in `lib/spec-recommendation.js`, sparse-cell handling, quarantine filter | high | `aigon feature-create "agent-matrix-3-recommender-core" --set agent-matrix` |
+| F373 | agent-matrix-4-recommender-surfaces | Phase B integrations: ranked list in `/api/recommendation`, badges in start modal, CLI suggestion in `agent-prompt-resolver` | medium | `aigon feature-create "agent-matrix-4-recommender-surfaces" --set agent-matrix` |
+| F374 | agent-matrix-5-pricing-refresh | Phase C weekly: vendor pricing/release-notes refresh → feedback items + `.aigon/matrix-refresh/<date>/proposed.json` + `aigon matrix-apply` | medium | `aigon feature-create "agent-matrix-5-pricing-refresh" --set agent-matrix` |
+| F375 | agent-matrix-6-qualitative-refresh | Phase C quarterly: SWE-bench / Aider / LMArena scan → updates to `notes.<op>` and `score.<op>` via the same feedback-item flow | low | `aigon feature-create "agent-matrix-6-qualitative-refresh" --set agent-matrix` |
+
+### Feature Dependencies
+- F371 (brewboard-benchmark) depends on F370 (data-and-view) — needs `cli.modelOptions[]` fields + collector before benchmarks have a place to land
+- F372 (recommender-core) depends on F370 — consumes the collector's read API
+- F373 (recommender-surfaces) depends on F372 — needs `rankAgentsForOperation` to render ranked options
+- F374 (pricing-refresh) depends on F370 — writes to fields added in F370
+- F375 (qualitative-refresh) depends on F374 — reuses F374's `aigon matrix-apply` infrastructure at a different cadence
+
+### Not Selected
+<!-- All consolidated features were selected. -->
+- (none)
