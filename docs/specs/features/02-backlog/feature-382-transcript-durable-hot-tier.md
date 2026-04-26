@@ -1,6 +1,8 @@
 ---
 complexity: high
 set: transcript-program
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-26T13:05:44.318Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: transcript-durable-hot-tier
