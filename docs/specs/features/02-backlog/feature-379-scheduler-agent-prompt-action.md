@@ -1,6 +1,8 @@
 ---
 complexity: high
 agent: cc
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-26T05:01:10.011Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: scheduler-agent-prompt-action
