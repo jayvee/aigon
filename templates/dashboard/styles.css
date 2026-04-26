@@ -472,6 +472,15 @@
     .settings-content{min-width:0}
     .settings-section{margin-bottom:24px}
     .settings-panel{padding:16px 18px;background:rgba(255,255,255,.02);border:1px solid var(--border-subtle);border-radius:14px}
+    .sync-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+    .sync-panel-title{margin:0 0 4px;font-size:13px;font-weight:600;letter-spacing:-.01em}
+    .sync-panel-hint{margin:0 0 10px;font-size:12px;color:var(--text-secondary)}
+    .sync-panel-meta{font-size:12px;color:var(--text-secondary);margin-bottom:10px}
+    .sync-panel-row{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+    .sync-panel-label{color:var(--text-tertiary)}
+    .sync-panel-value{color:var(--text-primary);font-variant-numeric:tabular-nums}
+    .sync-panel-warn{color:#f59e0b}
+    .sync-panel-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
     .settings-section h3{margin:0 0 12px;font-size:15px;font-weight:600;letter-spacing:-.01em}
     .settings-section p{color:var(--text-secondary);font-size:12px;margin:0 0 12px}
     .settings-subsection{margin-top:16px}
