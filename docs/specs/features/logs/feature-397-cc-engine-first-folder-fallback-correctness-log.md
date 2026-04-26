@@ -1,16 +1,4 @@
 # Implementation Log: Feature 397 - engine-first-folder-fallback-correctness
 Agent: cc
 
-## Status
-
-## New API Surface
-
-## Key Decisions
-
-## Gotchas / Known Issues
-
-## Explicitly Deferred
-
-## For the Next Feature in This Set
-
-## Test Coverage
+Engine-first precedence applied via new `lib/workflow-core/entity-lifecycle.js` (`isEntityDone` + `engineDirExists`); 9 violation sites fixed; drift case now distinguished from pre-start via `engineDirExists` flag and recorded as `spec.drift_corrected` event.
