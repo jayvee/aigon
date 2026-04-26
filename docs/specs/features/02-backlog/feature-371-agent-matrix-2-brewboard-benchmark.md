@@ -6,6 +6,8 @@ complexity: medium
 #              #     event payload nextReviewerId > frontmatter agent:
 #              #     > snapshot.authorAgentId > getDefaultAgent().
 set: agent-matrix
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-26T01:30:52.359Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-matrix-2-brewboard-benchmark
