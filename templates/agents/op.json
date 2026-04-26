@@ -25,7 +25,8 @@
   },
   "cli": {
     "command": "opencode",
-    "implementFlag": "run",
+    "implementFlag": "",
+    "injectPromptViaTmux": true,
     "implementPrompt": "feature-do",
     "evalPrompt": "feature-eval",
     "reviewPrompt": "feature-code-review",

@@ -31,8 +31,8 @@
   },
   "cli": {
     "command": "kimi",
-    "implementFlag": "--print",
-    "promptFlag": "-p",
+    "implementFlag": "",
+    "injectPromptViaTmux": true,
     "implementPrompt": "feature-do",
     "evalPrompt": "feature-eval",
     "reviewPrompt": "feature-code-review",

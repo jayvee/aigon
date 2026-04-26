@@ -65,9 +65,13 @@ test('Cursor tmux wrapper records agent-status on agent exit then clears EXIT tr
         else process.env.AIGON_TEST_MODE = prev;
     }
 });
-test('OpenCode launcher keeps tmux shell open after a successful opencode run', () => {
-    // REGRESSION: opencode run exits on completion and tore down the tmux pane before
-    // operators could run follow-up opencode commands in the same session.
+test('OpenCode launches interactive TUI with prompt injected via tmux paste-buffer', () => {
+    // REGRESSION: previously op ran `opencode run "<prompt>"` (one-shot batch) and
+    // wrapped exit in `exec bash -l` to keep the pane alive — that replaced the
+    // agent's own prompt with bash. Contract now: launch `opencode` (TUI, no
+    // subcommand) and paste the slash-command prompt into the TUI via a
+    // backgrounded `tmux paste-buffer` after a delay, so the agent's own prompt
+    // remains the live surface.
     const prev = process.env.AIGON_TEST_MODE;
     delete process.env.AIGON_TEST_MODE;
     try {
@@ -77,18 +81,36 @@ test('OpenCode launcher keeps tmux shell open after a successful opencode run', 
             path: '/tmp/aigon-op-linger-test-wt',
             repoPath: process.cwd(),
         }, 'do');
-        assert.ok(cmd.includes('_aigon_agent_rc=$?'), cmd);
-        assert.ok(cmd.includes('aigon agent-status submitted'), cmd);
-        assert.ok(cmd.includes('trap - EXIT'), cmd);
-        assert.ok(cmd.includes('exec bash -l'), cmd);
-        const reviewCmd = buildAgentCommand({
-            agent: 'op',
-            featureId: '04',
-            path: '/tmp/aigon-op-linger-test-wt',
+        // TUI mode: bare `opencode`, no `run` subcommand, no inline prompt arg.
+        assert.ok(/\bopencode\b/.test(cmd), cmd);
+        assert.ok(!/\bopencode\s+run\b/.test(cmd), `op should not use 'opencode run': ${cmd}`);
+        assert.ok(!cmd.includes('exec bash -l'), `op should not exec bash -l (TUI keeps the pane): ${cmd}`);
+        // Background injection: paste-buffer + send-keys Enter into the TUI
+        assert.ok(cmd.includes('tmux load-buffer'), cmd);
+        assert.ok(cmd.includes('tmux paste-buffer'), cmd);
+        assert.ok(cmd.includes('tmux send-keys'), cmd);
+        // Universal lifecycle still in place
+        assert.ok(cmd.includes('trap _aigon_cleanup EXIT'), cmd);
+    } finally {
+        if (prev === undefined) delete process.env.AIGON_TEST_MODE;
+        else process.env.AIGON_TEST_MODE = prev;
+    }
+});
+test('Kimi launches `kimi term` TUI with prompt injected via tmux paste-buffer', () => {
+    // Same contract as op: TUI mode, no `--print`, prompt pasted via tmux.
+    const prev = process.env.AIGON_TEST_MODE;
+    delete process.env.AIGON_TEST_MODE;
+    try {
+        const cmd = buildAgentCommand({
+            agent: 'km',
+            featureId: '05',
+            path: '/tmp/aigon-km-linger-test-wt',
             repoPath: process.cwd(),
-        }, 'review');
-        assert.ok(reviewCmd.includes('aigon agent-status review-complete'), reviewCmd);
-        assert.ok(reviewCmd.includes('trap - EXIT'), reviewCmd);
+        }, 'do');
+        assert.ok(/\bkimi\s+term\b/.test(cmd), cmd);
+        assert.ok(!cmd.includes('--print'), `km should not use --print: ${cmd}`);
+        assert.ok(!cmd.includes('exec bash -l'), cmd);
+        assert.ok(cmd.includes('tmux paste-buffer'), cmd);
     } finally {
         if (prev === undefined) delete process.env.AIGON_TEST_MODE;
         else process.env.AIGON_TEST_MODE = prev;
