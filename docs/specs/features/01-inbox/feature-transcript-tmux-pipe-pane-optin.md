@@ -1,73 +1,51 @@
 ---
 complexity: medium
-# agent: cc    # optional — id of the agent that owns this spec. Used as the
-#              #   default reviewer for spec-revise cycles when the operator
-#              #   does not pick one explicitly. Precedence at revision time:
-#              #     event payload nextReviewerId > frontmatter agent:
-#              #     > snapshot.authorAgentId > getDefaultAgent().
+set: transcript-program
 ---
 
 # Feature: transcript-tmux-pipe-pane-optin
 
-<!-- Authoring AI: set `complexity:` using this rubric before writing the spec:
-       low       — config tweaks, doc-only, single-file helpers, trivial bug fixes
-       medium    — standard feature with moderate cross-cutting, one command handler, small refactor
-       high      — multi-file engine edits, new event types, new dashboard surfaces, judgment-heavy deletion work
-       very-high — architectural shifts, write-path-contract changes, new XState transitions, cross-cutting template+engine+frontend
-     At start time, model and effort defaults come from each agent's `cli.complexityDefaults[<complexity>]` in
-     `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
-
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Provide an opt-in `tmux pipe-pane` capture path for agents that have no native transcript file (cu, op, km), gated behind `~/.aigon/config.json:transcripts.tmux=true`. Output flows to `~/.aigon/transcripts/<repo>/.../<role>-<sessionUuid>.tmux.log` outside the worktree. Off by default — the conservative position from research-43 (raw ANSI noise + secrets-in-pane risk + 5-10× size cost don't justify a universal default). Final piece of the research-43 transcript program.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As an operator running a Cursor session, I can opt in via `aigon config set transcripts.tmux true` and get a transcript artifact for `cu` even though Cursor has no native log.
+- [ ] As a privacy-conscious user, I can leave the flag off and aigon never spawns a `pipe-pane` — pane content stays ephemeral in tmux as today.
+- [ ] As a debugger, when an `op` (OpenCode) session goes wrong, opt-in capture lets me see what actually rendered in the pane, not just the dispatched router calls.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
-
-## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
-```bash
-# Example: node --check aigon-cli.js
-```
+- [ ] New config key `transcripts.tmux` (boolean, default `false`) in `~/.aigon/config.json`. Documented in `lib/config.js`.
+- [ ] When the flag is true, `createDetachedTmuxSession` in `lib/worktree.js` attaches `tmux pipe-pane -t $TMUXID -O 'cat >> <path>'` immediately after `new-session` succeeds and the sidecar is written.
+- [ ] Capture only fires for agents NOT in `CAPTURABLE_AGENTS` (i.e. cu, op, km, future non-native agents) — agents with native logs continue using the F357 sidecar binding only, no double capture.
+- [ ] Output path: `~/.aigon/transcripts/<repo>/<entityType>/<entityId>/<agent>/<role>-<sessionUuid>.tmux.log`. Same key scheme as `transcript-durable-hot-tier`.
+- [ ] Size cap per file (configurable, default 100 MB) — when exceeded, rotate to `.tmux.log.1` and start fresh; cap retained files at 3 to avoid runaway growth.
+- [ ] Tear-down: when the tmux session ends, the `pipe-pane` cat process exits naturally — verify this in tests, no zombie processes.
+- [ ] Read-model from `transcript-read-model-and-cli` includes `tmuxLogPath` when present.
+- [ ] Test coverage with `// REGRESSION:` comments for: flag-off → no pipe-pane spawned; flag-on + cu → pipe-pane attached; flag-on + cc → no pipe-pane (native takes precedence); rotation triggers at size cap.
 
 ## Pre-authorised
-<!-- Optional: standing orders the agent may enact without stopping to ask.
-     Each line is a single bounded permission. The agent cites the matching line
-     in a commit footer `Pre-authorised-by: <slug>` for auditability.
-     Absent or blank = no pre-auths; agent stops on every policy gate as normal.
-     Example lines:
-       - May raise `scripts/check-test-budget.sh` CEILING by up to +40 LOC if regression tests require it.
-       - May skip `npm run test:ui` when this feature touches only `lib/` and no dashboard assets.
--->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+- Read flag via existing `lib/config.js` getter (no new config infrastructure).
+- Single change site: `lib/worktree.js:createDetachedTmuxSession`. After `runTmux(['new-session', ...])` succeeds and sidecar is written, branch on `(transcriptCaptureEnabled() && !CAPTURABLE_AGENTS.has(agentId))`.
+- Path resolution via `lib/transcript-store.js` (created in `transcript-durable-hot-tier`); reuse the same key scheme.
+- Size cap implementation: a tiny shell wrapper script that wraps `cat` and rotates at threshold — or use `logrotate`-style external rotation via a periodic check (decide during implementation; first pass can ship without rotation if simpler, with a TODO).
+- No daemon, no long-lived process beyond what tmux already spawns for `pipe-pane`.
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- depends_on: transcript-durable-hot-tier
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- Universal `pipe-pane` for cc/gg/cx (those have native logs; double-capture is wasteful and adds privacy surface).
+- Redaction at capture time — output is verbatim, matches Claude's own behaviour. Redaction happens at export.
+- Stuck-detection signal from byte growth (separate future feature; deferred per research synthesis).
+- ANSI sanitisation / pretty rendering — raw stream only; rendering can be a follow-up reader.
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Should the size cap rotate or simply truncate? Rotate is more useful for forensic work; truncate is simpler. Default to rotate-with-cap-3.
+- Should we expose a per-agent override (`transcripts.tmux.cu = true` while `transcripts.tmux = false`)? Probably yes via deep-key config, but only if implementation cost is trivial — otherwise defer.
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Set: <!-- set slug if this feature is part of a set; omit line if standalone -->
-- Prior features in set: <!-- feature IDs that precede this one, e.g. F314, F315; omit if standalone -->
+- Research: 43 — session-transcript-capture-and-storage
+- Set: transcript-program
+- Prior features in set: transcript-read-model-and-cli, transcript-durable-hot-tier

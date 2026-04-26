@@ -1,5 +1,6 @@
 ---
 complexity: medium
+set: transcript-program
 ---
 
 # Feature: transcript-read-model-and-cli
