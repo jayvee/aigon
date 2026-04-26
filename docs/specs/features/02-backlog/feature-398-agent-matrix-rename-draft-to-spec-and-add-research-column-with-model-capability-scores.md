@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-26T23:29:36.169Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Agent Matrix — Rename "draft" → "spec" and Add Research Column
