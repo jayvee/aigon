@@ -2861,8 +2861,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (score == null) { td.style.color = 'var(--text-tertiary)'; td.textContent = '—'; return td; }
       const s = Math.max(1, Math.min(5, Math.round(score)));
       const span = document.createElement('span');
-      span.style.cssText = 'display:inline-block;width:20px;height:20px;line-height:20px;border-radius:4px;font-weight:700;font-size:11px;background:' + SCORE_COLORS[s] + '22;color:' + SCORE_COLORS[s] + ';border:1px solid ' + SCORE_COLORS[s] + '55';
-      span.textContent = String(s);
+      const hasDecimal = !Number.isInteger(score);
+      span.style.cssText = 'display:inline-block;min-width:20px;height:20px;line-height:20px;padding:0 3px;border-radius:4px;font-weight:700;font-size:11px;background:' + SCORE_COLORS[s] + '22;color:' + SCORE_COLORS[s] + ';border:1px solid ' + SCORE_COLORS[s] + '55';
+      span.textContent = hasDecimal ? score.toFixed(1) : String(score);
       td.appendChild(span);
       return td;
     }

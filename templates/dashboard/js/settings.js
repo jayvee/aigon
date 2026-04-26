@@ -1340,7 +1340,7 @@
           const badge = document.createElement('span');
           const s = Math.max(1, Math.min(5, Math.round(score)));
           badge.className = 'matrix-score-badge matrix-score-' + s;
-          badge.textContent = String(s);
+          badge.textContent = Number.isInteger(score) ? String(score) : score.toFixed(1);
           td.appendChild(badge);
         }
         if (note) {
