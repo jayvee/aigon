@@ -75,6 +75,50 @@ testAsync('nudge delivery failure includes pane tail', async () => {
     } }), (error) => (assert.match(error.message, /Nudge text not found in pane after delivery/), assert.strictEqual(error.paneTail, 'stale pane output'), true));
 });
 
+// REGRESSION: GET /api/budget cc — parseClaudeStatus misread 0% used when % is on progress-bar line above Resets.
+test('parseClaudeStatus handles pct on separate progress-bar line (new Claude format)', () => {
+    const { parseClaudeStatus } = require('../../lib/budget-poller');
+
+    // New format: % used appears on the progress-bar line, Resets on the next line.
+    const newFormat = `
+  Current session
+  ███████████████████                                38% used
+  Resets 11:50am (Australia/Melbourne)
+
+  Current week (all models)
+  █                                                  2% used
+  Resets May 4 at 8:59am (Australia/Melbourne)
+
+  Current week (Sonnet only)
+  █▌                                                 3% used
+  Resets May 4 at 8:59am (Australia/Melbourne)
+`;
+    const r1 = parseClaudeStatus(newFormat);
+    assert.strictEqual(r1.session.pct_used, 38, 'session pct_used');
+    assert.strictEqual(r1.week_all.pct_used, 2, 'week_all pct_used');
+    assert.strictEqual(r1.week_sonnet.pct_used, 3, 'week_sonnet pct_used');
+
+    // Old format: % used on same line as Resets — must still work.
+    const oldFormat = `
+  Current session
+  Resets 5pm (Australia/Melbourne)    8% used
+
+  Current week (all models)
+  Resets 9am (Australia/Melbourne)████ 100% used
+`;
+    const r2 = parseClaudeStatus(oldFormat);
+    assert.strictEqual(r2.session.pct_used, 8, 'old-format session pct_used');
+    assert.strictEqual(r2.week_all.pct_used, 100, 'old-format week_all pct_used');
+
+    // Fully available — no bar, no % used line — defaults to 0.
+    const fullFormat = `
+  Current session
+  Resets 5pm (Australia/Melbourne)
+`;
+    const r3 = parseClaudeStatus(fullFormat);
+    assert.strictEqual(r3.session.pct_used, 0, 'fully available defaults to 0% used');
+});
+
 // REGRESSION: GET /api/budget gg — parse Gemini CLI /model "Model usage" rows (Flash / Flash Lite / Pro).
 test('parseGeminiModelUsage extracts tier pct and reset labels', () => {
     const { parseGeminiModelUsage, parseGeminiFooterPlanQuota, stripAnsi } = require('../../lib/budget-poller');
