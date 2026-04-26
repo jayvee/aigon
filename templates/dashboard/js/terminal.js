@@ -551,3 +551,6 @@
       }
     }
 
+    if (typeof window !== 'undefined' && typeof openTerminalPanel === 'function') {
+      window.openTerminalPanel = openTerminalPanel;
+    }

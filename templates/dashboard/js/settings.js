@@ -130,28 +130,100 @@
       const actions = document.createElement('div');
       actions.className = 'sync-panel-actions modal-actions';
 
-      function openTerm(command) {
+      function openTerm(command, cwd) {
+        const body = { command };
+        if (cwd) body.cwd = cwd;
         return fetch('/api/open-terminal', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command })
+          body: JSON.stringify(body)
         }).then(r => { if (!r.ok) return r.json().then(e => { throw new Error(e.error || r.status); }); });
       }
 
-      function termBtn(label, cls, command) {
-        const b = document.createElement('button');
-        b.className = 'btn ' + cls;
-        b.type = 'button';
-        b.textContent = label;
-        b.onclick = () => openTerm(command).then(() => showToast('Opened terminal')).catch(e => showToast('Error: ' + e.message));
-        return b;
+      function sessionCwdForBackup() {
+        const repos = (state.data && state.data.repos) || [];
+        return (repos[0] && repos[0].path) ? repos[0].path : '';
       }
 
-      const backupBtn = termBtn('Back up', 'btn-primary', scope.backupCmd);
-      const restoreBtn = termBtn('Restore', 'btn-secondary', scope.restoreCmd);
-      const statusBtn = termBtn('Status', 'btn-secondary', scope.statusCmd);
+      /**
+       * Runs aigon via /api/session/run and shows the real CLI output in the
+       * in-dashboard terminal drawer (same idea as other “agent mode” actions).
+       */
+      function runAigonBackupInPanel(aigonArgvRest, panelTitle, busyBtn) {
+        const cwd = sessionCwdForBackup();
+        const command = 'aigon ' + aigonArgvRest;
+        const head = 'Running the same command as in a normal shell. Full output below.\n\n$ ' + command + '\n' + (cwd ? '(working directory: ' + cwd + ')\n' : '(working directory: server default)\n');
+        if (typeof openTerminalPanel === 'function') {
+          openTerminalPanel(panelTitle, command, null, head.trimEnd(), null);
+        }
+        const prev = busyBtn.textContent;
+        backupBtn.disabled = true;
+        restoreBtn.disabled = true;
+        statusBtn.disabled = true;
+        busyBtn.textContent = '…';
+        return fetch('/api/session/run', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ command, cwd })
+        })
+          .then(r => r.json().then(d => {
+            if (!r.ok) {
+              const err = (d && d.error) ? d.error : ('HTTP ' + r.status);
+              throw new Error(err);
+            }
+            return d;
+          }))
+          .then(data => {
+            let text = (data.stdout || '').replace(/\n$/, '');
+            const serr = (data.stderr || '').replace(/\n$/, '');
+            if (serr) {
+              text += (text ? '\n\n' : '') + '— stderr —\n' + serr;
+            }
+            if (!text) {
+              text = '(no stdout/stderr from aigon)';
+            }
+            text += '\n\n[exit ' + (data.exitCode != null ? data.exitCode : '?') + '] ' + (data.ok ? 'OK' : 'FAILED');
+            if (typeof openTerminalPanel === 'function') {
+              openTerminalPanel(panelTitle, command, null, text, null);
+            }
+            if (data.ok) {
+              showToast(panelTitle + ' done');
+            } else {
+              showToast(panelTitle + ' failed — see the output panel', null, null, { error: true });
+            }
+            loadStatus();
+          })
+          .catch(e => {
+            if (typeof openTerminalPanel === 'function') {
+              openTerminalPanel(panelTitle, command, null, 'Request or run failed: ' + e.message, null);
+            }
+            showToast('Error: ' + e.message, null, null, { error: true });
+          })
+          .finally(() => {
+            busyBtn.textContent = prev;
+            backupBtn.disabled = false;
+            restoreBtn.disabled = false;
+            statusBtn.disabled = false;
+          });
+      }
+
+      const backupBtn = document.createElement('button');
+      backupBtn.className = 'btn btn-primary';
+      backupBtn.type = 'button';
+      backupBtn.textContent = 'Back up';
       backupBtn.disabled = true;
+      const restoreBtn = document.createElement('button');
+      restoreBtn.className = 'btn btn-secondary';
+      restoreBtn.type = 'button';
+      restoreBtn.textContent = 'Restore';
       restoreBtn.disabled = true;
+      const statusBtn = document.createElement('button');
+      statusBtn.className = 'btn btn-secondary';
+      statusBtn.type = 'button';
+      statusBtn.textContent = 'Status';
+      statusBtn.onclick = () => { runAigonBackupInPanel('backup status', 'Backup — status', statusBtn); };
+      backupBtn.onclick = () => { runAigonBackupInPanel('backup push', 'Backup — push', backupBtn); };
+      restoreBtn.onclick = () => { runAigonBackupInPanel('backup pull', 'Backup — pull', restoreBtn); };
       actions.appendChild(backupBtn);
       actions.appendChild(restoreBtn);
       actions.appendChild(statusBtn);
@@ -204,9 +276,9 @@
               '<div class="sync-panel-url-actions" style="margin-bottom:8px">' +
                 '<button class="btn btn-primary sync-panel-create-btn" type="button">Create aigon-vault on GitHub</button>' +
               '</div>' : '') +
-            '<label class="sync-panel-url-label">Or paste a git remote URL</label>' +
+            '<label class="sync-panel-url-label">Paste vault URL (HTTPS + <code>gh auth login</code> avoids SSH passphrases)</label>' +
             '<div class="sync-panel-url-row">' +
-              '<input class="sync-panel-url-input" type="text" placeholder="git@github.com:you/aigon-vault.git" value="' + escHtml(current) + '" />' +
+              '<input class="sync-panel-url-input" type="text" placeholder="https://github.com/you/aigon-vault.git" value="' + escHtml(current) + '" />' +
             '</div>' +
             '<div class="sync-panel-url-actions">' +
               '<button class="btn btn-primary sync-panel-save-btn" type="button">Save & configure</button>' +
@@ -221,15 +293,19 @@
         saveBtn.onclick = () => {
           const url = input.value.trim();
           if (!url) { showToast('Enter a git remote URL'); return; }
-          openTerm(scope.configureBaseCmd + ' ' + url)
-            .then(() => { showToast('Configuring remote — check the terminal'); setTimeout(() => loadStatus(), 1500); })
-            .catch(e => showToast('Error: ' + e.message));
+          if (/\s/.test(url)) { showToast('Use a URL without spaces (or paste a quoted form in a real terminal)'); return; }
+          runAigonBackupInPanel('backup configure ' + url, 'Backup — configure', backupBtn);
         };
         if (cancelBtn) cancelBtn.onclick = () => loadStatus();
         if (createBtn) {
+          const cwd = sessionCwdForBackup();
           createBtn.onclick = () => {
-            openTerm(scope.configureBaseCmd)
-              .then(() => { showToast('Opened terminal — follow the prompts'); setTimeout(() => loadStatus(), 2500); })
+            const cmd = scope.configureBaseCmd;
+            openTerm(cmd, cwd || undefined)
+              .then(() => {
+                showToast('Interactive setup should open in your default terminal. If it does not, run: ' + cmd);
+                setTimeout(() => loadStatus(), 2500);
+              })
               .catch(e => showToast('Error: ' + e.message));
           };
         }
