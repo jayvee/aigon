@@ -489,6 +489,15 @@
     .sync-panel-value{color:var(--text-primary);font-variant-numeric:tabular-nums}
     .sync-panel-warn{color:#f59e0b}
     .sync-panel-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .sync-panel-configure{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
+    .sync-panel-url-label{font-size:11px;font-weight:600;color:var(--text-tertiary);letter-spacing:.04em;text-transform:uppercase}
+    .sync-panel-url-row{display:flex}
+    .sync-panel-url-input{width:100%;padding:7px 10px;background:var(--bg-base);border:1px solid var(--border-default);border-radius:8px;color:var(--text-primary);font-family:var(--mono);font-size:12px;outline:none;box-sizing:border-box}
+    .sync-panel-url-input:focus{border-color:rgba(59,130,246,.55);box-shadow:0 0 0 2px rgba(59,130,246,.1)}
+    .sync-panel-url-actions{display:flex;gap:8px}
+    .sync-panel-row--remote{align-items:center}
+    .sync-panel-remote-val{font-family:var(--mono);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+    .sync-panel-edit-btn{flex-shrink:0;font-size:11px;padding:2px 8px}
     .settings-section h3{margin:0 0 12px;font-size:15px;font-weight:600;letter-spacing:-.01em}
     .settings-section p{color:var(--text-secondary);font-size:12px;margin:0 0 12px}
     .settings-subsection{margin-top:16px}

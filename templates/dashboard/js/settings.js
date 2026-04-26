@@ -130,52 +130,89 @@
       const actions = document.createElement('div');
       actions.className = 'sync-panel-actions modal-actions';
 
+      function openTerm(command) {
+        return fetch('/api/open-terminal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command })
+        }).then(r => { if (!r.ok) return r.json().then(e => { throw new Error(e.error || r.status); }); });
+      }
+
       function termBtn(label, cls, command) {
         const b = document.createElement('button');
         b.className = 'btn ' + cls;
         b.type = 'button';
         b.textContent = label;
-        b.onclick = async () => {
-          try {
-            const r = await fetch('/api/open-terminal', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ command })
-            });
-            if (!r.ok) {
-              const e = await r.json().catch(() => ({}));
-              showToast('Failed: ' + (e.error || r.status));
-            } else {
-              showToast('Opened terminal: ' + command);
-            }
-          } catch (e) {
-            showToast('Error: ' + e.message);
-          }
-        };
+        b.onclick = () => openTerm(command).then(() => showToast('Opened terminal')).catch(e => showToast('Error: ' + e.message));
         return b;
       }
-      actions.appendChild(termBtn('Back up', 'btn-primary', scope.backupCmd));
-      actions.appendChild(termBtn('Restore', 'btn-secondary', scope.restoreCmd));
-      actions.appendChild(termBtn('Status', 'btn-secondary', scope.statusCmd));
+
+      const backupBtn = termBtn('Back up', 'btn-primary', scope.backupCmd);
+      const restoreBtn = termBtn('Restore', 'btn-secondary', scope.restoreCmd);
+      const statusBtn = termBtn('Status', 'btn-secondary', scope.statusCmd);
+      backupBtn.disabled = true;
+      restoreBtn.disabled = true;
+      actions.appendChild(backupBtn);
+      actions.appendChild(restoreBtn);
+      actions.appendChild(statusBtn);
       host.appendChild(actions);
 
-      fetch(scope.statusUrl)
-        .then(r => r.json())
-        .then(s => {
-          if (!s || s.error) {
-            meta.textContent = 'Status unavailable';
-            return;
-          }
-          if (!s.configured) {
-            meta.innerHTML = '<span class="sync-panel-warn">Not set up.</span> Configure a remote: <code>' + escHtml(scope.configureCmd) + '</code>';
-            return;
-          }
-          meta.innerHTML =
-            '<div class="sync-panel-row"><span class="sync-panel-label">Remote</span><span class="sync-panel-value">' + escHtml(s.remote || '—') + '</span></div>' +
-            '<div class="sync-panel-row"><span class="sync-panel-label">Last backed up</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPushAt)) + '</span></div>' +
-            '<div class="sync-panel-row"><span class="sync-panel-label">Last restored</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPullAt)) + '</span></div>';
-        })
-        .catch(err => { meta.textContent = 'Status unavailable: ' + err.message; });
+      function renderConfigured(s) {
+        meta.innerHTML =
+          '<div class="sync-panel-row sync-panel-row--remote">' +
+            '<span class="sync-panel-label">Remote</span>' +
+            '<span class="sync-panel-value sync-panel-remote-val">' + escHtml(s.remote || '') + '</span>' +
+            '<button class="btn btn-secondary sync-panel-edit-btn" type="button">Edit</button>' +
+          '</div>' +
+          '<div class="sync-panel-row"><span class="sync-panel-label">Last backed up</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPushAt)) + '</span></div>' +
+          '<div class="sync-panel-row"><span class="sync-panel-label">Last restored</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPullAt)) + '</span></div>';
+        meta.querySelector('.sync-panel-edit-btn').onclick = () => renderRemoteInput(s.remote || '');
+        backupBtn.disabled = false;
+        restoreBtn.disabled = false;
+      }
+
+      function renderRemoteInput(current) {
+        meta.innerHTML =
+          '<div class="sync-panel-configure">' +
+            '<label class="sync-panel-url-label">Git remote URL</label>' +
+            '<div class="sync-panel-url-row">' +
+              '<input class="sync-panel-url-input" type="text" placeholder="git@github.com:you/aigon-sync.git" value="' + escHtml(current) + '" />' +
+            '</div>' +
+            '<div class="sync-panel-url-actions">' +
+              '<button class="btn btn-primary sync-panel-save-btn" type="button">Save & configure</button>' +
+              (current ? '<button class="btn btn-secondary sync-panel-cancel-btn" type="button">Cancel</button>' : '') +
+            '</div>' +
+          '</div>';
+        const input = meta.querySelector('.sync-panel-url-input');
+        const saveBtn = meta.querySelector('.sync-panel-save-btn');
+        const cancelBtn = meta.querySelector('.sync-panel-cancel-btn');
+        input.focus();
+        saveBtn.onclick = () => {
+          const url = input.value.trim();
+          if (!url) { showToast('Enter a git remote URL'); return; }
+          openTerm(scope.configureBaseCmd + ' ' + url)
+            .then(() => { showToast('Configuring remote — check the terminal'); setTimeout(() => loadStatus(), 1500); })
+            .catch(e => showToast('Error: ' + e.message));
+        };
+        if (cancelBtn) cancelBtn.onclick = () => loadStatus();
+      }
+
+      function loadStatus() {
+        meta.textContent = 'Loading…';
+        fetch(scope.statusUrl)
+          .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+          })
+          .then(s => {
+            if (!s || s.error) { meta.textContent = 'Status unavailable'; return; }
+            if (!s.configured) { renderRemoteInput(''); return; }
+            renderConfigured(s);
+          })
+          .catch(() => { meta.textContent = 'Not available'; });
+      }
+
+      loadStatus();
     }
 
     function renderSyncPanels(section) {
@@ -195,7 +232,7 @@
         includes: ['Feature & research specs', 'Workflow state', 'Board layout', 'Migration history', 'Project config (.aigon/config.json)'],
         excludes: 'sessions, logs, caches, locks',
         statusUrl: projectStatusUrl,
-        configureCmd: 'aigon sync configure <git-url>',
+        configureBaseCmd: 'aigon sync configure',
         backupCmd: 'aigon sync push',
         restoreCmd: 'aigon sync pull',
         statusCmd: 'aigon sync status',
@@ -206,7 +243,7 @@
         includes: ['Agent definitions & model assignments', 'Named workflow presets', 'Global preferences (~/.aigon/config.json)'],
         excludes: 'logs, caches, port assignments',
         statusUrl: '/api/settings-sync/status',
-        configureCmd: 'aigon settings configure <git-url>',
+        configureBaseCmd: 'aigon settings configure',
         backupCmd: 'aigon settings push',
         restoreCmd: 'aigon settings pull',
         statusCmd: 'aigon settings status',
