@@ -11,8 +11,8 @@ const FAST = process.env.MOCK_DELAY === 'fast' || !!process.env.CI;
 const SOLO_DELAYS = FAST
     ? { implementing: 600, submitted: 300 }
     : { implementing: 15000, submitted: 5000 };
-const FLEET_CC_DELAYS = { implementing: 3000, submitted: 1500 };
-const FLEET_GG_DELAYS = { implementing: 8000, submitted: 1500 };
+const FLEET_CC_DELAYS = FAST ? { implementing: 800, submitted: 400 } : { implementing: 3000, submitted: 1500 };
+const FLEET_GG_DELAYS = FAST ? { implementing: 1500, submitted: 400 } : { implementing: 8000, submitted: 1500 };
 function readCtx() {
     return JSON.parse(fs.readFileSync(CTX_FILE, 'utf8'));
 }
