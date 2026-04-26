@@ -31,3 +31,18 @@ Submitted. All 105 unit tests pass.
 
 ## Test Coverage
 All 105 unit tests pass. The new recurring template is verified by `lib/recurring.js`'s `scanTemplates()` (no new test needed — the parser already has coverage; integration confirmed by direct node invocation).
+
+## Code Review
+
+**Reviewed by**: cu  
+**Date**: 2026-04-26
+
+### Fixes Applied
+- `74a3afe5` — `fix(review): apply week placeholder to recurring instance body` — `createAndPrioritiseFromTemplate` now runs `renderPattern` on the instance body so `{{YYYY-WW}}` in report paths and commit messages is replaced when a weekly template is instantiated. Without this, `weekly-agent-matrix-benchmark` would have produced specs with literal placeholders. Added `tests/integration/recurring-instance-body-week-placeholder.test.js`.
+
+### Residual Issues
+- Brewboard fixture files live in `~/src/brewboard`; they must be pushed on the seed remote or `seed-reset` drops them (called out in implementation log already).
+- The checked-in feature spec `feature-371-agent-matrix-2-brewboard-benchmark.md` still has empty **User Stories** / **Acceptance Criteria** in the body; the shipped work is described in the recurring template and this log. Filling the spec for audit consistency is a small follow-up if desired.
+
+### Notes
+- Scope diff was docs-only for the feature branch until the review; the `lib/recurring.js` change is a targeted producer fix required for the new template to be viable when `recurring-run` instantiates it.
