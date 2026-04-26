@@ -1159,3 +1159,39 @@
     .term-settings-label{font-size:12px;color:var(--text-secondary);font-weight:500}
     .term-settings-hint{font-size:11px;color:var(--text-tertiary)}
     .terminal-stream-status{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-tertiary);font-family:var(--mono);padding:4px 8px;border-top:1px solid var(--border-subtle)}
+
+    /* ── Agent Capability Matrix ─────────────────────────────────────────────── */
+    .matrix-section{margin-top:0}
+    .matrix-table-wrap{overflow-x:auto;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-surface)}
+    .matrix-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:auto}
+    .matrix-table th{padding:8px 10px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);border-bottom:1px solid var(--border-subtle);white-space:nowrap;background:var(--bg-elevated)}
+    .matrix-table td{padding:7px 10px;border-bottom:1px solid var(--border-subtle);vertical-align:middle;color:var(--text-primary)}
+    .matrix-table tr:last-child td{border-bottom:none}
+    .matrix-table tr:hover td{background:var(--bg-hover)}
+    .matrix-agent-group td:first-child{border-left:3px solid transparent}
+    .matrix-row-quarantined td{opacity:.45}
+    .matrix-row-quarantined .matrix-model-label{text-decoration:line-through;color:var(--text-tertiary)}
+    .matrix-agent-badge{display:inline-flex;align-items:center;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+    .matrix-model-label{font-family:var(--mono);font-size:11px}
+    .matrix-model-default{color:var(--text-tertiary);font-style:italic;font-family:inherit;font-size:12px}
+    .matrix-score-cell{position:relative;text-align:center;cursor:default;white-space:nowrap}
+    .matrix-score-cell .matrix-notes-tip{display:none;position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);min-width:220px;max-width:320px;padding:8px 10px;background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:8px;color:var(--text-primary);font-size:11px;font-weight:400;line-height:1.45;white-space:normal;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:20;text-align:left}
+    .matrix-score-cell:hover .matrix-notes-tip{display:block}
+    .matrix-score-badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 5px;border-radius:4px;font-size:11px;font-weight:600;font-family:var(--mono);border:1px solid transparent}
+    .matrix-score-none{color:var(--text-tertiary);font-family:var(--mono);font-size:11px}
+    .matrix-score-1{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.35);color:#fca5a5}
+    .matrix-score-2{background:rgba(249,115,22,.14);border-color:rgba(249,115,22,.35);color:#fdba74}
+    .matrix-score-3{background:rgba(234,179,8,.13);border-color:rgba(234,179,8,.35);color:#fde047}
+    .matrix-score-4{background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.35);color:#93c5fd}
+    .matrix-score-5{background:rgba(34,197,94,.13);border-color:rgba(34,197,94,.35);color:#86efac}
+    .matrix-pricing-cell{font-family:var(--mono);font-size:11px;color:var(--text-secondary);white-space:nowrap}
+    .matrix-pricing-free{color:var(--success);font-weight:600}
+    .matrix-pricing-na{color:var(--text-tertiary)}
+    .matrix-stats-cell{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);white-space:nowrap}
+    .matrix-quarantine-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.35);color:#fca5a5;margin-left:5px;cursor:help;position:relative}
+    .matrix-quarantine-badge .matrix-notes-tip{display:none;position:absolute;top:calc(100% + 6px);right:0;min-width:240px;max-width:340px;padding:8px 10px;background:var(--bg-elevated);border:1px solid rgba(239,68,68,.4);border-radius:8px;color:var(--text-primary);font-size:11px;font-weight:400;line-height:1.45;white-space:normal;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:20;text-align:left}
+    .matrix-quarantine-badge:hover .matrix-notes-tip{display:block}
+    .matrix-refresh-date{font-size:10px;color:var(--text-tertiary);font-family:var(--mono);white-space:nowrap}
+    .matrix-loading{padding:20px;text-align:center;color:var(--text-tertiary);font-size:12px}
+    .matrix-empty{padding:20px;text-align:center;color:var(--text-tertiary);font-size:12px}
+    .matrix-agent-group-header td{background:var(--bg-elevated);padding:5px 10px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-tertiary);border-bottom:1px solid var(--border-subtle)}

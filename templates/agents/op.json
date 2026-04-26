@@ -33,16 +33,102 @@
     "models": {},
     "modelOptions": [
       { "value": null, "label": "Default (OpenCode config)" },
-      { "value": "openrouter/moonshotai/kimi-k2.6", "label": "Kimi K2.6 via OpenRouter" },
-      { "value": "openrouter/z-ai/glm-5.1", "label": "GLM-5.1 via OpenRouter" },
-      { "value": "openrouter/deepseek/deepseek-chat-v3.1", "label": "DeepSeek V3.1 (hybrid) via OpenRouter" },
-      { "value": "openrouter/deepseek/deepseek-v3.2-speciale", "label": "DeepSeek V3.2 Speciale (reasoning) via OpenRouter" },
-      { "value": "openrouter/mistralai/codestral-2501", "label": "Codestral 2501 via OpenRouter" },
-      { "value": "openrouter/qwen/qwen3-235b-a22b:free", "label": "Qwen3 235B via OpenRouter" },
-      { "value": "openrouter/qwen/qwen3-coder:exacto", "label": "Qwen3 Code (exacto) via OpenRouter" },
+      {
+        "value": "openrouter/moonshotai/kimi-k2.6", "label": "Kimi K2.6 via OpenRouter",
+        "pricing": { "input": 0.14, "output": 0.55 },
+        "notes": {
+          "draft": "Strong at structured output; competitive for spec drafting at low cost.",
+          "spec_review": "Good reasoning on requirements; capable of nuanced spec review.",
+          "implement": "Strong code generation; performs well on implementation tasks.",
+          "review": "Reliable code review; good instruction following."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/z-ai/glm-5.1", "label": "GLM-5.1 via OpenRouter",
+        "pricing": { "input": 0.14, "output": 0.55 },
+        "notes": {
+          "draft": "Cost-effective spec drafting; strong multilingual support.",
+          "spec_review": "Adequate for routine spec checks; less benchmarked on Aigon tasks.",
+          "implement": "Good code generation quality for cost tier.",
+          "review": "Adequate code review; less benchmarked on Aigon tasks."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/deepseek/deepseek-chat-v3.1", "label": "DeepSeek V3.1 (hybrid) via OpenRouter",
+        "pricing": { "input": 0.27, "output": 1.10 },
+        "notes": {
+          "draft": "Strong reasoning at low cost; good spec drafting quality.",
+          "spec_review": "Capable spec reviewer; good at identifying edge cases.",
+          "implement": "Strong implementation quality; good balance of cost and capability.",
+          "review": "Solid code review; catches technical issues reliably."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/deepseek/deepseek-v3.2-speciale", "label": "DeepSeek V3.2 Speciale (reasoning) via OpenRouter",
+        "pricing": { "input": 0.27, "output": 1.10 },
+        "notes": {
+          "draft": "Extended reasoning version; stronger at complex spec analysis.",
+          "spec_review": "Reasoning-enhanced; more thorough at spec gap analysis.",
+          "implement": "Reasoning model; better at architectural decisions, slower for simple tasks.",
+          "review": "Reasoning-enhanced; more thorough at subtle code issues."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/mistralai/codestral-2501", "label": "Codestral 2501 via OpenRouter",
+        "pricing": { "input": 0.30, "output": 0.90 },
+        "notes": {
+          "draft": "Code-focused model; better for technical spec sections than high-level requirements.",
+          "spec_review": "Strong technical spec review; weaker on business requirements.",
+          "implement": "Specialized for code generation; competitive implementation quality.",
+          "review": "Strong code review; optimized for technical correctness."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/qwen/qwen3-235b-a22b:free", "label": "Qwen3 235B via OpenRouter",
+        "pricing": { "input": 0, "output": 0 },
+        "notes": {
+          "draft": "Very large free-tier model; capable but rate-limited.",
+          "spec_review": "Capable reviewer at zero cost; subject to OpenRouter free-tier limits.",
+          "implement": "Capable implementer at zero cost; subject to OpenRouter free-tier limits.",
+          "review": "Capable reviewer at zero cost; subject to OpenRouter free-tier limits."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/qwen/qwen3-coder:exacto", "label": "Qwen3 Code (exacto) via OpenRouter",
+        "pricing": { "input": 0.07, "output": 0.28 },
+        "notes": {
+          "draft": "Code-focused Qwen3 variant; best for technical spec sections.",
+          "spec_review": "Strong on technical spec review; weaker on requirements reasoning.",
+          "implement": "Coder-optimized; strong implementation at very low cost.",
+          "review": "Strong code review; optimized for code correctness."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
       {
         "value": "openrouter/deepseek/deepseek-chat-v3-0324",
         "label": "DeepSeek V3 (0324) via OpenRouter",
+        "pricing": { "input": 0.27, "output": 1.10 },
+        "notes": {
+          "draft": "Capable spec drafter; superseded by V3.1 for new tasks.",
+          "spec_review": "Capable spec reviewer; quarantined due to instruction-following failure on F358.",
+          "implement": "Capable implementer; quarantined due to instruction-following failure on F358.",
+          "review": "Capable reviewer; quarantined due to instruction-following failure on F358."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z",
         "quarantined": {
           "since": "2026-04-25",
           "reason": "F358 spec-review: ignored explicit 'do not run the feature' directive and executed feature-do work (ran npm test, started test triage with intent to delete). Instruction-following failure on long structured prompt with a forbidden list.",

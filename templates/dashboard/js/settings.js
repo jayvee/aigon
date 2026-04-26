@@ -995,6 +995,213 @@
           restoreDetailScrollTop(scrollTop);
         });
 
+      // ── Agent Matrix section ───────────────────────────────────────────────
+      const matrixSection = shell.addSection('agent-matrix', 'Agent Matrix', 'Agent Capability Matrix',
+        'Read-only view of all agents and models. Rows: (agent, model). Columns: qualitative score per operation. Pricing is public API equivalent (value-for-money signal, not billing). Scores are populated by benchmarks (F371); — means no data yet. Quarantined models are greyed.');
+
+      const matrixWrap = document.createElement('div');
+      matrixWrap.className = 'matrix-section';
+      const matrixLoading = document.createElement('div');
+      matrixLoading.className = 'matrix-loading';
+      matrixLoading.textContent = 'Loading matrix…';
+      matrixWrap.appendChild(matrixLoading);
+      matrixSection.appendChild(matrixWrap);
+
+      const AGENT_COLORS = {
+        cc: { bg: 'rgba(59,130,246,.18)', color: '#93c5fd', border: 'rgba(59,130,246,.45)' },
+        gg: { bg: 'rgba(34,197,94,.16)',  color: '#86efac', border: 'rgba(34,197,94,.4)' },
+        cx: { bg: 'rgba(168,85,247,.16)', color: '#d8b4fe', border: 'rgba(168,85,247,.4)' },
+        cu: { bg: 'rgba(249,115,22,.16)', color: '#fdba74', border: 'rgba(249,115,22,.4)' },
+        op: { bg: 'rgba(6,182,212,.15)',  color: '#67e8f9', border: 'rgba(6,182,212,.4)' },
+        km: { bg: 'rgba(124,58,237,.18)', color: '#c4b5fd', border: 'rgba(124,58,237,.45)' },
+      };
+
+      function renderAgentBadge(agentId, displayName) {
+        const c = AGENT_COLORS[agentId] || { bg: 'rgba(255,255,255,.08)', color: 'var(--text-secondary)', border: 'var(--border-default)' };
+        const badge = document.createElement('span');
+        badge.className = 'matrix-agent-badge';
+        badge.style.cssText = 'background:' + c.bg + ';color:' + c.color + ';border:1px solid ' + c.border;
+        badge.textContent = agentId.toUpperCase();
+        badge.title = displayName;
+        return badge;
+      }
+
+      function renderScoreCell(score, note) {
+        const td = document.createElement('td');
+        td.className = 'matrix-score-cell';
+        if (score == null) {
+          const dash = document.createElement('span');
+          dash.className = 'matrix-score-none';
+          dash.textContent = '—';
+          td.appendChild(dash);
+        } else {
+          const badge = document.createElement('span');
+          const s = Math.max(1, Math.min(5, Math.round(score)));
+          badge.className = 'matrix-score-badge matrix-score-' + s;
+          badge.textContent = String(s);
+          td.appendChild(badge);
+        }
+        if (note) {
+          const tip = document.createElement('div');
+          tip.className = 'matrix-notes-tip';
+          tip.textContent = note;
+          td.appendChild(tip);
+        }
+        return td;
+      }
+
+      function renderPricingCell(pricing) {
+        const td = document.createElement('td');
+        td.className = 'matrix-pricing-cell';
+        if (!pricing) {
+          td.innerHTML = '<span class="matrix-pricing-na">—</span>';
+        } else if (pricing.inputPerM === 0 && pricing.outputPerM === 0) {
+          td.innerHTML = '<span class="matrix-pricing-free">free</span>';
+        } else {
+          td.innerHTML =
+            '$' + pricing.inputPerM.toFixed(2) + ' / ' +
+            '$' + pricing.outputPerM.toFixed(2);
+          td.title = '$' + pricing.inputPerM + '/M input · $' + pricing.outputPerM + '/M output';
+        }
+        return td;
+      }
+
+      function renderMatrixTable(data) {
+        matrixWrap.innerHTML = '';
+        const rows = data.rows || [];
+        const ops = data.operations || ['draft', 'spec_review', 'implement', 'review'];
+        const opLabels = data.operationLabels || {};
+
+        if (rows.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'matrix-empty';
+          empty.textContent = 'No agent models registered.';
+          matrixWrap.appendChild(empty);
+          return;
+        }
+
+        const tableWrap = document.createElement('div');
+        tableWrap.className = 'matrix-table-wrap';
+        const table = document.createElement('table');
+        table.className = 'matrix-table';
+
+        // Header
+        const thead = document.createElement('thead');
+        const hrow = document.createElement('tr');
+        ['Agent', 'Model'].concat(ops.map(op => opLabels[op] || op), ['Pricing ($/M in/out)', 'Sessions', 'Refreshed']).forEach(label => {
+          const th = document.createElement('th');
+          th.textContent = label;
+          hrow.appendChild(th);
+        });
+        thead.appendChild(hrow);
+        table.appendChild(thead);
+
+        // Body — group rows by agent
+        const tbody = document.createElement('tbody');
+        let lastAgent = null;
+        for (const row of rows) {
+          // Agent group header when agent changes
+          if (row.agentId !== lastAgent) {
+            const ghrow = document.createElement('tr');
+            ghrow.className = 'matrix-agent-group-header';
+            const gtd = document.createElement('td');
+            gtd.colSpan = 2 + ops.length + 3;
+            gtd.appendChild(renderAgentBadge(row.agentId, row.agentDisplayName));
+            const gname = document.createElement('span');
+            gname.style.marginLeft = '8px';
+            gname.textContent = row.agentDisplayName;
+            gtd.appendChild(gname);
+            ghrow.appendChild(gtd);
+            tbody.appendChild(ghrow);
+            lastAgent = row.agentId;
+          }
+
+          const tr = document.createElement('tr');
+          tr.className = 'matrix-agent-group' + (row.quarantined ? ' matrix-row-quarantined' : '');
+
+          // Agent cell (empty — agent shown in group header)
+          const agentTd = document.createElement('td');
+          agentTd.style.paddingLeft = '24px';
+          if (row.quarantined) {
+            const qbadge = document.createElement('span');
+            qbadge.className = 'matrix-quarantine-badge';
+            qbadge.textContent = 'Q';
+            const qtip = document.createElement('div');
+            qtip.className = 'matrix-notes-tip';
+            qtip.textContent = row.quarantined.reason || 'Quarantined';
+            qbadge.appendChild(qtip);
+            agentTd.appendChild(qbadge);
+          }
+          tr.appendChild(agentTd);
+
+          // Model cell
+          const modelTd = document.createElement('td');
+          if (row.modelValue === null) {
+            const span = document.createElement('span');
+            span.className = 'matrix-model-default';
+            span.textContent = row.modelLabel;
+            modelTd.appendChild(span);
+          } else {
+            const span = document.createElement('span');
+            span.className = 'matrix-model-label' + (row.quarantined ? ' matrix-row-quarantined' : '');
+            span.textContent = row.modelLabel;
+            modelTd.appendChild(span);
+          }
+          tr.appendChild(modelTd);
+
+          // Operation score cells
+          for (const op of ops) {
+            const score = (row.score && row.score[op] != null) ? row.score[op] : null;
+            const note = (row.notes && row.notes[op]) || null;
+            tr.appendChild(renderScoreCell(score, note));
+          }
+
+          // Pricing cell
+          tr.appendChild(renderPricingCell(row.pricing));
+
+          // Sessions cell
+          const statsTd = document.createElement('td');
+          statsTd.className = 'matrix-stats-cell';
+          const sessions = row.stats ? (row.stats.features + row.stats.research) : 0;
+          statsTd.textContent = sessions > 0 ? String(sessions) : '—';
+          if (row.stats && sessions > 0) {
+            statsTd.title = row.stats.features + ' features · ' + row.stats.research + ' research · $' + (row.stats.cost || 0).toFixed(4);
+          }
+          tr.appendChild(statsTd);
+
+          // Refreshed cell
+          const refreshTd = document.createElement('td');
+          refreshTd.className = 'matrix-refresh-date';
+          if (row.lastRefreshAt) {
+            const d = new Date(row.lastRefreshAt);
+            refreshTd.textContent = Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+            refreshTd.title = row.lastRefreshAt;
+          } else {
+            refreshTd.textContent = '—';
+          }
+          tr.appendChild(refreshTd);
+
+          tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+        tableWrap.appendChild(table);
+        matrixWrap.appendChild(tableWrap);
+      }
+
+      // Fetch matrix data (best-effort — non-fatal on failure)
+      const matrixRepoPath = repoPath || '';
+      const matrixUrl = '/api/agent-matrix' + (matrixRepoPath ? '?repoPath=' + encodeURIComponent(matrixRepoPath) : '');
+      fetch(matrixUrl)
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+        .then(data => {
+          if (renderToken !== settingsUiState.renderToken) return;
+          renderMatrixTable(data);
+        })
+        .catch(err => {
+          if (renderToken !== settingsUiState.renderToken) return;
+          matrixWrap.innerHTML = '<div class="matrix-empty">Failed to load matrix: ' + escHtml(err.message) + '</div>';
+        });
+
       // Version section
       const versionSection = shell.addSection('version', 'Version', 'Version', 'Installed version and npm registry update status.');
       const uc = (state.data || {}).updateCheck;
