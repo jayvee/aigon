@@ -1,6 +1,8 @@
 ---
 complexity: medium
 set: transcript-program
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-26T13:05:45.033Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: transcript-tmux-pipe-pane-optin
