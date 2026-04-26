@@ -96,8 +96,9 @@ test('OpenCode launches interactive TUI with prompt injected via tmux paste-buff
         else process.env.AIGON_TEST_MODE = prev;
     }
 });
-test('Kimi launches `kimi term` TUI with prompt injected via tmux paste-buffer', () => {
-    // Same contract as op: TUI mode, no `--print`, prompt pasted via tmux.
+test('Kimi launches bare `kimi` TUI with prompt injected via tmux paste-buffer', () => {
+    // REGRESSION: `kimi term` was tried first but requires Python 3.14; bare
+    // `kimi` is the native interactive TUI ("Welcome to Kimi Code CLI!").
     const prev = process.env.AIGON_TEST_MODE;
     delete process.env.AIGON_TEST_MODE;
     try {
@@ -107,7 +108,9 @@ test('Kimi launches `kimi term` TUI with prompt injected via tmux paste-buffer',
             path: '/tmp/aigon-km-linger-test-wt',
             repoPath: process.cwd(),
         }, 'do');
-        assert.ok(/\bkimi\s+term\b/.test(cmd), cmd);
+        // Bare `kimi` (no `term`, no `--print`)
+        assert.ok(/&&\s+kimi\s*$/m.test(cmd) || /&&\s+kimi\s*\n/.test(cmd), `expected bare 'kimi' launch: ${cmd}`);
+        assert.ok(!/\bkimi\s+term\b/.test(cmd), `km should not use 'kimi term' (Python 3.14 dep): ${cmd}`);
         assert.ok(!cmd.includes('--print'), `km should not use --print: ${cmd}`);
         assert.ok(!cmd.includes('exec bash -l'), cmd);
         assert.ok(cmd.includes('tmux paste-buffer'), cmd);
