@@ -24,6 +24,8 @@ Every write path must produce the state its read path assumes. Full rule, incide
 
 **F296:** `feature-create` / `research-create` bootstrap slug-keyed inbox workflow state in the same write path as the spec; `doctor --fix` scans feature and research `01-inbox/` for snapshotless specs. Prioritise re-keys slug → numeric via `migrateEntityWorkflowIdSync` (F294/b1db12d3 incident: deleting compat read paths without fixing producers).
 
+**F397:** Engine-first lifecycle precedence is now enforced via the shared `isEntityDone(repoPath, entityType, id, folderFallback)` helper in `lib/workflow-core/entity-lifecycle.js`. Snapshot is the source of truth; folder is consulted only when no engine dir exists (pre-start or pre-engine legacy). Sites updated: `set-conductor.isFeatureDone`, `feature-dependencies.checkUnmetDependencies`, `analytics.buildFeatureAnalytics` (UNION enumeration + `feature.closed` event timestamp), `dashboard-status-collector.collectDoneSpecs`, `workflow-read-model.buildMissingSnapshotState` (drift vs pre-start discriminator via `engineDirExists`), `entity.pause/resumePrestartEntity`, `entity.entityCloseFinalize` drift correction (now emits `spec.drift_corrected`), and the dependency-graph node colour helper.
+
 ## Reading order
 1. `AGENTS.md` — orientation
 2. `docs/architecture.md` — full module docs
