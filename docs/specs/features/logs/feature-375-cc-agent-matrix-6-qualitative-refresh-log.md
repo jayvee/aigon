@@ -28,3 +28,17 @@ Submitted. All tests pass (0 failures). Budget 56% (unchanged).
 ## Test Coverage
 - Existing `lib/matrix-apply.js` tests cover applyFeedback end-to-end; notes/score paths are additive — no new tests required at current budget level.
 - All 105+ unit tests pass, budget at 56%.
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-04-26
+
+### Fixes Applied
+- `fix(review): quarterly recurring scan, placeholder rendering, new-model score merge` (7153a5ee) — The quarterly recurring template was invisible to `scanTemplates` (`schedule: quarterly` and `{{YYYY-Q}}` were rejected). Recurring run now supports weekly and quarterly templates, `renderTemplateString` fills `{{YYYY-WW}}`, `{{YYYY-Q}}`, and `{{YYYY-MM-DD}}` in spawned instance bodies, state dedupes quarters via `lastQuarter`, and `aigon recurring-list` shows the right last period. Also merged `patch.score` for `new-model` entries. Extended `recurring-instance-body-week-placeholder` integration test.
+
+### Residual Issues
+- None. The in-repo feature spec `feature-375-agent-matrix-6-qualitative-refresh.md` still has empty user stories / acceptance criteria; that predates this branch and was not in scope for the code-review patch.
+
+### Notes
+- The qualitative refresh file is now included in `scanTemplates` results; the first `recurring-run` in a new quarter (with no open instance) will create the instance as intended.
