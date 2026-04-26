@@ -803,10 +803,10 @@
       document.getElementById('settings-view').style.display = 'none';
       document.getElementById('empty').style.display = 'none';
 
-      if (!statsState.data) {
+      if (!statsState.data || !statsState.commitsData) {
         container.innerHTML = '<div class="stats-empty-msg">Loading statistics…</div>';
-        await loadAnalytics();
-        await loadCommits();
+        if (!statsState.data) await loadAnalytics();
+        if (!statsState.commitsData) await loadCommits();
       }
       const analytics = statsState.data;
 
