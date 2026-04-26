@@ -1,3 +1,26 @@
+---
+commit_count: 7
+lines_added: 846
+lines_removed: 172
+lines_changed: 1018
+files_touched: 9
+fix_commit_count: 1
+fix_commit_ratio: 0.143
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 138
+output_tokens: 60717
+cache_creation_input_tokens: 184029
+cache_read_input_tokens: 8208039
+thinking_tokens: 0
+total_tokens: 8452923
+billable_tokens: 60855
+cost_usd: 20.3184
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 380 - aigon-profile-sync
 Agent: cc
 
