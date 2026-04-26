@@ -46,11 +46,66 @@
     },
     "modelOptions": [
       { "value": null, "label": "Default" },
-      { "value": "gpt-5.5", "label": "GPT-5.5" },
-      { "value": "gpt-5.4", "label": "GPT-5.4" },
-      { "value": "gpt-5.4-mini", "label": "GPT-5.4 Mini" },
-      { "value": "gpt-5.3-codex", "label": "GPT-5.3 Codex" },
-      { "value": "gpt-5.2", "label": "GPT-5.2" }
+      {
+        "value": "gpt-5.5", "label": "GPT-5.5",
+        "pricing": { "input": 2, "output": 8 },
+        "notes": {
+          "draft": "Latest GPT-5 generation; strong at structured spec drafting.",
+          "spec_review": "Good spec reviewer; solid reasoning on requirements and edge cases.",
+          "implement": "Strong implementation quality; good tool use and code generation.",
+          "review": "Thorough code reviewer; effective at catching logic issues."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "gpt-5.4", "label": "GPT-5.4",
+        "pricing": { "input": 2, "output": 8 },
+        "notes": {
+          "draft": "Reliable spec drafter; good balance of reasoning and speed.",
+          "spec_review": "Reliable spec reviewer; covers most issues in typical specs.",
+          "implement": "Good implementation quality; well-suited for mid-complexity features.",
+          "review": "Good code review; catches common patterns and obvious issues."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "gpt-5.4-mini", "label": "GPT-5.4 Mini",
+        "pricing": { "input": 1, "output": 4 },
+        "notes": {
+          "draft": "Cost-effective for simple spec drafts; weaker on complex requirements.",
+          "spec_review": "Quick spec scan; may miss nuanced issues in complex specs.",
+          "implement": "Good for simple to mid-complexity features at lower cost.",
+          "review": "Fast review of straightforward changes; less effective on complex code."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "gpt-5.3-codex", "label": "GPT-5.3 Codex",
+        "pricing": { "input": 2, "output": 8 },
+        "notes": {
+          "draft": "Codex-optimized variant; strong at code-adjacent spec writing.",
+          "spec_review": "Good for technical spec review; strong code reasoning.",
+          "implement": "Code-optimized; particularly strong at implementation tasks.",
+          "review": "Strong code review; focused on technical correctness."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "gpt-5.2", "label": "GPT-5.2",
+        "pricing": { "input": 2, "output": 8 },
+        "notes": {
+          "draft": "Earlier GPT-5 generation; stable and predictable.",
+          "spec_review": "Reliable spec review for standard complexity.",
+          "implement": "Solid implementation quality for most features.",
+          "review": "Competent code review; well-understood behavior."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      }
     ],
     "effortOptions": [
       { "value": null, "label": "Default" },

@@ -43,11 +43,66 @@
     },
     "modelOptions": [
       { "value": null, "label": "Default" },
-      { "value": "claude-haiku-4-5-20251001", "label": "Haiku 4.5 (fast/cheap)" },
-      { "value": "claude-sonnet-4-6", "label": "Sonnet 4.6" },
-      { "value": "claude-sonnet-4-6[1m]", "label": "Sonnet 4.6 (1M context)" },
-      { "value": "claude-opus-4-7", "label": "Opus 4.7" },
-      { "value": "claude-opus-4-7[1m]", "label": "Opus 4.7 (1M context)" }
+      {
+        "value": "claude-haiku-4-5-20251001", "label": "Haiku 4.5 (fast/cheap)",
+        "pricing": { "input": 0.80, "output": 4 },
+        "notes": {
+          "draft": "Fast for simple spec scaffolding; weaker at nuanced requirements analysis.",
+          "spec_review": "Adequate for basic spec checks; may miss subtle gaps in complex specs.",
+          "implement": "Solid for straightforward code changes; less reliable on architectural tasks.",
+          "review": "Covers obvious issues quickly; less reliable for subtle logic errors."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "claude-sonnet-4-6", "label": "Sonnet 4.6",
+        "pricing": { "input": 3, "output": 15 },
+        "notes": {
+          "draft": "Reliable spec drafter; good at identifying acceptance criteria and dependencies.",
+          "spec_review": "Strong spec reviewer; catches gaps and ambiguities well.",
+          "implement": "Primary implementation model; best cost–quality balance for most features.",
+          "review": "Thorough code reviewer; identifies regressions and logic issues."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "claude-sonnet-4-6[1m]", "label": "Sonnet 4.6 (1M context)",
+        "pricing": { "input": 3, "output": 15 },
+        "notes": {
+          "draft": "Same capability as Sonnet 4.6; use for large codebase context.",
+          "spec_review": "Same capability as Sonnet 4.6; handles large context windows.",
+          "implement": "Preferred for features requiring full-repo context (>200k tokens).",
+          "review": "Useful when reviewing across many files simultaneously."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "claude-opus-4-7", "label": "Opus 4.7",
+        "pricing": { "input": 15, "output": 75 },
+        "notes": {
+          "draft": "Highest quality spec drafting; excellent at surfacing hidden requirements and edge cases.",
+          "spec_review": "Best reviewer; catches subtle inconsistencies and design flaws others miss.",
+          "implement": "Use for very-high-complexity features; overkill for routine changes.",
+          "review": "Most thorough code reviewer; worth the cost on high-risk changes."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      },
+      {
+        "value": "claude-opus-4-7[1m]", "label": "Opus 4.7 (1M context)",
+        "pricing": { "input": 15, "output": 75 },
+        "notes": {
+          "draft": "Same capability as Opus 4.7; use for large codebase context.",
+          "spec_review": "Same capability as Opus 4.7; handles large context windows.",
+          "implement": "Reserved for largest, most complex features with full-repo context.",
+          "review": "Most powerful review option; use on architectural or cross-cutting changes."
+        },
+        "score": { "draft": null, "spec_review": null, "implement": null, "review": null },
+        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+      }
     ],
     "effortOptions": [
       { "value": null, "label": "Default" },
