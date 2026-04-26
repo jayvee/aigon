@@ -163,9 +163,8 @@
           cb.type = pickerSingleMode ? 'radio' : 'checkbox';
           cb.name = pickerSingleMode ? 'agent-pick' : '';
           if (opts.preselect && cb.value === opts.preselect) cb.checked = true;
-          // Remove any existing badge
-          const existing = row.querySelector('.agent-check-badge');
-          if (existing) existing.remove();
+          // Remove any existing badges (implemented + rank)
+          row.querySelectorAll('.agent-check-badge, .rank-badge').forEach(b => b.remove());
           // Add implementing badge if applicable
           if (implAgents.includes(cb.value)) {
             const badge = document.createElement('span');
@@ -176,6 +175,19 @@
             if (hint) hint.before(badge);
             else if (label) label.after(badge);
             else row.querySelector('.agent-check-meta') && row.querySelector('.agent-check-meta').appendChild(badge);
+          }
+          // Add rank badges from agent matrix (best_value / fastest / highest_quality)
+          if (typeof getAgentRankBadges === 'function') {
+            const rankBadges = getAgentRankBadges(cb.value);
+            if (rankBadges.length > 0) {
+              const meta = row.querySelector('.agent-check-meta') || row.querySelector('.agent-check-label');
+              rankBadges.forEach(key => {
+                if (typeof buildRankBadgeEl === 'function') {
+                  const el = buildRankBadgeEl(key);
+                  if (el && meta) meta.appendChild(el);
+                }
+              });
+            }
           }
           // Show model name for this task type
           let modelEl = row.querySelector('.agent-check-config-model') || row.querySelector('.agent-check-model');

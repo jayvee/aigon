@@ -67,4 +67,49 @@ console.log('  ✓ excludeOverBudget is no-op');
 a.strictEqual(typeof r.rankAgentsForOperation, 'function', 'exported from spec-recommendation');
 console.log('  ✓ export');
 
+// --- F373: rankAgentsForOperation now returns qualScore and avgCostPerSession ---
+for (const item of results) {
+    a.ok('qualScore' in item, `missing qualScore on ${item.agentId}`);
+    a.ok('avgCostPerSession' in item, `missing avgCostPerSession on ${item.agentId}`);
+    a.ok(item.qualScore === null || typeof item.qualScore === 'number', 'qualScore is number or null');
+    a.ok(item.avgCostPerSession === null || typeof item.avgCostPerSession === 'number', 'avgCostPerSession is number or null');
+}
+console.log('  ✓ F373: qualScore + avgCostPerSession fields');
+
+// --- F373: applyRankBadges adds badge arrays ---
+a.strictEqual(typeof r.applyRankBadges, 'function', 'applyRankBadges exported');
+
+// Simple synthetic ranked list for badge logic
+const synthetic = [
+    { agentId: 'cc', score: 4.5, qualScore: 5, avgCostPerSession: 0.10 },
+    { agentId: 'gg', score: 4.0, qualScore: 4, avgCostPerSession: 0.05 },
+    { agentId: 'cx', score: 3.8, qualScore: 3, avgCostPerSession: 0.20 },
+];
+const badged = r.applyRankBadges(synthetic);
+a.ok(Array.isArray(badged), 'applyRankBadges returns array');
+// best_value: cc (highest score = first non-null in sorted list)
+a.ok(badged.find(b => b.agentId === 'cc').badges.includes('best_value'), 'cc gets best_value');
+// highest_quality: cc (highest qualScore = 5)
+a.ok(badged.find(b => b.agentId === 'cc').badges.includes('highest_quality'), 'cc gets highest_quality (qualScore 5)');
+// fastest: gg (lowest avgCostPerSession = 0.05)
+a.ok(badged.find(b => b.agentId === 'gg').badges.includes('fastest'), 'gg gets fastest');
+// cx gets no badges
+a.deepStrictEqual(badged.find(b => b.agentId === 'cx').badges, [], 'cx gets no badges');
+console.log('  ✓ F373: applyRankBadges badge assignment');
+
+// Empty input → no throw
+a.deepStrictEqual(r.applyRankBadges([]), [], 'empty input returns []');
+a.strictEqual(r.applyRankBadges(null), null, 'null input returns null');
+console.log('  ✓ F373: applyRankBadges edge cases');
+
+// No benchmark data (avgCostPerSession null) → fastest badge suppressed
+const noData = [
+    { agentId: 'cc', score: 4.5, qualScore: 4, avgCostPerSession: null },
+    { agentId: 'gg', score: 3.0, qualScore: 3, avgCostPerSession: null },
+];
+r.applyRankBadges(noData);
+a.ok(!noData[0].badges.includes('fastest'), 'fastest suppressed when no benchmark data');
+a.ok(!noData[1].badges.includes('fastest'), 'fastest suppressed on all when no data');
+console.log('  ✓ F373: fastest suppressed when no benchmark data');
+
 console.log('  ✓ feature 372 rank-agents-for-operation tests passed');
