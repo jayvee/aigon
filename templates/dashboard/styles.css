@@ -436,6 +436,12 @@
     .agent-check-row-triplet .agent-check-hint{font-size:11px;color:var(--text-tertiary);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .agent-check-row-triplet .agent-check-config-model{font-size:10px;color:var(--text-tertiary);opacity:.95;font-family:var(--mono);min-width:0;max-width:100%;justify-self:stretch;text-align:right;align-self:center;line-height:1.25;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
     .agent-check-row-triplet .agent-check-badge{margin-left:0;margin-top:1px}
+    /* Rank badges — amber(value) · cyan(speed) · violet(quality) */
+    .rank-badge{font-size:9px;border-radius:4px;padding:1px 5px;letter-spacing:.03em;font-weight:600;line-height:1.5;flex-shrink:0;white-space:nowrap}
+    .rank-badge-best-value{background:rgba(245,158,11,.13);color:#fbbf24;border:1px solid rgba(245,158,11,.35)}
+    .rank-badge-fastest{background:rgba(6,182,212,.12);color:#22d3ee;border:1px solid rgba(6,182,212,.32)}
+    .rank-badge-quality{background:rgba(139,92,246,.13);color:#a78bfa;border:1px solid rgba(139,92,246,.35)}
+    .agent-check-row-triplet .rank-badge{margin-left:0;margin-top:1px}
     .agent-triplet-cell{display:flex;align-items:center;min-width:0;min-height:30px}
     .agent-triplet-cell .agent-triplet-model,.agent-triplet-cell .agent-triplet-effort{font:11px var(--mono);padding:6px 28px 6px 8px;background:var(--bg-root);color:var(--text-secondary);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;width:100%;min-width:0;max-width:100%;box-sizing:border-box;min-height:32px;line-height:1.25}
     .agent-triplet-cell select:hover{border-color:var(--border-default);color:var(--text-primary)}

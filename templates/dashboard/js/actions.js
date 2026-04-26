@@ -104,10 +104,13 @@ function buildTripletPickerHeaderRow() {
 }
 
 // Feature 313: recommendation for the currently-open agent picker.
-// Shape: { complexity, agents: { <id>: { model, effort, modelSource, effortSource } } }
+// Shape: { complexity, agents: { <id>: { model, effort, modelSource, effortSource } }, _ranked?: [] }
 // Pre-selects dropdowns; user can still override.
 let pickerRecommendation = null;
-function setPickerRecommendation(rec) { pickerRecommendation = rec || null; }
+function setPickerRecommendation(rec) {
+  pickerRecommendation = rec || null;
+  setPickerRanked((rec && rec._ranked) || []);
+}
 
 function getRecommendedValue(agentId, field) {
   if (!pickerRecommendation || !pickerRecommendation.agents) return null;
@@ -331,8 +334,35 @@ function renderPickerRecommendationBanner(recommendation, mountId) {
   banner.innerHTML = html;
 }
 
+// Feature 373: ranked list from agent matrix, keyed by agentId.
+// Shape: { [agentId]: string[] } where strings are badge keys (best_value, fastest, highest_quality)
+let pickerRanked = {};
+function setPickerRanked(ranked) {
+  pickerRanked = {};
+  (ranked || []).forEach(r => { if (r.agentId) pickerRanked[r.agentId] = r.badges || []; });
+}
+function getAgentRankBadges(agentId) {
+  return pickerRanked[agentId] || [];
+}
+
+const RANK_BADGE_META = {
+  best_value:      { cls: 'rank-badge rank-badge-best-value',  label: '✨ best value' },
+  fastest:         { cls: 'rank-badge rank-badge-fastest',     label: '⚡ fastest' },
+  highest_quality: { cls: 'rank-badge rank-badge-quality',     label: '🎯 top quality' },
+};
+
+function buildRankBadgeEl(badgeKey) {
+  const meta = RANK_BADGE_META[badgeKey];
+  if (!meta) return null;
+  const span = document.createElement('span');
+  span.className = meta.cls;
+  span.textContent = meta.label;
+  return span;
+}
+
 // Feature 313: fetch the spec-frontmatter recommendation for an entity.
-// Returns the `resolved` payload (with per-agent fallback chain applied) or null.
+// Returns the `resolved` payload (with per-agent fallback chain applied)
+// merged with `ranked` from the agent matrix, or null.
 async function fetchSpecRecommendation(type, id, repoPath) {
   try {
     const url = '/api/recommendation/' + encodeURIComponent(type) + '/' + encodeURIComponent(id)
@@ -340,7 +370,11 @@ async function fetchSpecRecommendation(type, id, repoPath) {
     const res = await fetch(url, { headers: { 'accept': 'application/json' } });
     if (!res.ok) return null;
     const body = await res.json();
-    return body && body.resolved ? body.resolved : null;
+    if (!body || !body.resolved) return null;
+    // Attach ranked list onto resolved so callers can pass it through as one object
+    const result = Object.assign({}, body.resolved);
+    if (Array.isArray(body.ranked) && body.ranked.length > 0) result._ranked = body.ranked;
+    return result;
   } catch (_) { return null; }
 }
 
@@ -1227,6 +1261,12 @@ async function showAutonomousModal(feature, repoPath, btn) {
     appendTripletSelects(row, agent);
     const cfg = row.querySelector('.agent-check-config-model');
     if (cfg) cfg.textContent = modelName || '';
+    // Add rank badges from agent matrix
+    const rankBadges = getAgentRankBadges(agentId);
+    if (rankBadges.length > 0) {
+      const meta = row.querySelector('.agent-check-meta');
+      if (meta) rankBadges.forEach(key => { const el = buildRankBadgeEl(key); if (el) meta.appendChild(el); });
+    }
     return row;
   });
   replaceNodeChildren(checks, [buildTripletPickerHeaderRow(), ...autoRows]);
