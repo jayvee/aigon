@@ -1,6 +1,7 @@
 ---
 complexity: high
 transitions:
+  - { from: "in-evaluation", to: "done", at: "2026-04-26T01:44:09.996Z", actor: "cli/research-close" }
   - { from: "inbox", to: "backlog", at: "2026-04-25T13:26:43.164Z", actor: "cli/research-prioritise" }
 ---
 
@@ -96,5 +97,6 @@ Typical Claude JSONL: 200KB–2MB; p99 ~50MB. tmux pipe-pane: 5-10× larger, p99
 Cold tier (S3/R2/GCS), stuck-detection signal, side-by-side reasoning compare, and spec→outcome dashboards all wait until at least 90 days of hot-tier data exists.
 
 ## Output
-<!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Link the newly created files below. -->
-- [ ] Feature:
+- [ ] Feature: [transcript-read-model-and-cli](../../features/01-inbox/feature-transcript-read-model-and-cli.md)
+- [ ] Feature: [transcript-durable-hot-tier](../../features/01-inbox/feature-transcript-durable-hot-tier.md)
+- [ ] Feature: [transcript-tmux-pipe-pane-optin](../../features/01-inbox/feature-transcript-tmux-pipe-pane-optin.md)
