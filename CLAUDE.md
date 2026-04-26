@@ -11,7 +11,7 @@ The full orientation lives in **`AGENTS.md`**. Read that first — it is the sin
 3. After any `lib/*.js` edit, run `aigon server restart`.
 4. After any `templates/dashboard/index.html` edit, take a Playwright screenshot.
 5. Never move spec files manually — use `aigon` CLI commands for state transitions.
-6. `npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh` must pass before any `git push`.
+6. **Pre-push gate** (before `git push`): `npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh`. **Iterate-loop gate** (per autopilot iteration) is `npm run test:iterate` — scoped, fast, NO Playwright, NO budget check. Don't run `npm run test:ui` mid-iteration unless the iteration touched dashboard files (`templates/dashboard/**`, `lib/dashboard*.js`, `lib/server*.js`). The two gates are deliberately distinct — keep them so.
 7. Use `Skill(frontend-design)` before any visual change.
 8. To start a feature over: `aigon feature-reset <ID>` — never stitch raw cleanup commands.
 9. Check `## Pre-authorised` before stopping on a policy gate — if the gate matches a listed line, proceed and add `Pre-authorised-by: <slug>` in the commit footer.
