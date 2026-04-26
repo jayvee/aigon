@@ -1,5 +1,10 @@
 ---
 complexity: medium
+# agent: cc    # optional — id of the agent that owns this spec. Used as the
+#              #   default reviewer for spec-revise cycles when the operator
+#              #   does not pick one explicitly. Precedence at revision time:
+#              #     event payload nextReviewerId > frontmatter agent:
+#              #     > snapshot.authorAgentId > getDefaultAgent().
 ---
 
 # Feature: {{NAME}}
@@ -9,8 +14,8 @@ complexity: medium
        medium    — standard feature with moderate cross-cutting, one command handler, small refactor
        high      — multi-file engine edits, new event types, new dashboard surfaces, judgment-heavy deletion work
        very-high — architectural shifts, write-path-contract changes, new XState transitions, cross-cutting template+engine+frontend
-     Model/effort defaults at start come from each agent's `cli.complexityDefaults[<complexity>]` in shipped
-     agent JSON — not from this spec. -->
+     At start time, model and effort defaults come from each agent's `cli.complexityDefaults[<complexity>]` in
+     `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
 <!-- One paragraph describing what this feature does and why -->
@@ -35,14 +40,16 @@ complexity: medium
 ```
 
 ## Pre-authorised
-<!-- Optional: standing orders the agent may enact without stopping to ask.
+<!-- Standing orders the agent may enact without stopping to ask.
      Each line is a single bounded permission. The agent cites the matching line
      in a commit footer `Pre-authorised-by: <slug>` for auditability.
-     Absent or blank = no pre-auths; agent stops on every policy gate as normal.
-     Example lines:
+     The first line below is a project-wide default — keep it unless the feature
+     explicitly demands Playwright runs mid-iterate. Add or remove other lines
+     per feature.
+     Example extras:
        - May raise `scripts/check-test-budget.sh` CEILING by up to +40 LOC if regression tests require it.
-       - May skip `npm run test:ui` when this feature touches only `lib/` and no dashboard assets.
 -->
+- May skip `npm run test:ui` mid-iteration when this iteration touches no dashboard assets (`templates/dashboard/**`, `lib/dashboard*.js`, `lib/server*.js`). Playwright still runs at the pre-push gate.
 
 ## Technical Approach
 <!-- High-level approach, key decisions, constraints, non-functional requirements -->
@@ -63,4 +70,6 @@ complexity: medium
 
 ## Related
 <!-- Links to research topics, other features, or external docs -->
-- Research:
+- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
+- Set: <!-- set slug if this feature is part of a set; omit line if standalone -->
+- Prior features in set: <!-- feature IDs that precede this one, e.g. F314, F315; omit if standalone -->
