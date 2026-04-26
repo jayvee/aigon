@@ -111,10 +111,10 @@ For each accepted change:
 
 **Phase 4 — Verify:**
 
-After all adoptions are applied, run the project's test suite. If tests fail:
+After all adoptions are applied, run the iterate gate (`npm run test:iterate`) — scoped, <30s. The full pre-push gate runs automatically as part of the merge sequence below; don't run it manually here. If the iterate gate fails:
 - Diagnose whether the failure is caused by an adopted change
 - Fix the adaptation or revert that specific adoption
-- Re-run tests until green
+- Re-run `npm run test:iterate` until green
 - If no adoptions can be made to pass, revert all and note what was attempted
 
 **Phase 5 — Commit (one commit per adopted agent):**

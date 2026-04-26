@@ -84,15 +84,16 @@ Pick **one** of these three options. Be honest — your job is correctness, not 
   git commit -m "fix(post-review): <what you changed and why>"
   ```
 
-## Step 4.5: Run tests if you made code changes
+## Step 4.5: Run the iterate gate if you made code changes
 
 - **Accept**: no code changed — skip this step entirely.
-- **Revert or Modify**: run the tests that cover the files you changed.
+- **Revert or Modify**:
 
-1. List the files you changed: `git diff --name-only main..HEAD`
-2. For each changed `lib/foo.js`, check if `tests/integration/foo.test.js` exists and run it: `node tests/integration/foo.test.js`
-3. Use your judgment: if the change is cross-cutting or touches shared state, run `npm test` instead
-4. Fix any failures before reporting in Step 5
+```bash
+npm run test:iterate
+```
+
+Scoped to your changes, <30s. Do NOT run `npm test` or `npm run test:ui` here; the pre-push gate catches the rest. Fix any failures before reporting in Step 5. See `docs/testing.md` for the full rationale.
 
 ## Step 5: Report
 

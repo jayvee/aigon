@@ -101,16 +101,17 @@ Examples: `fix(review): handle null user in profile lookup`, `fix(review): escap
 **If the implementation is solid, commit nothing for code.** A clean review is a valid outcome.
 If you report an issue without fixing it, explain why it was not safe or appropriate to patch in this review pass. Do not hand the implementer a to-do list for issues you could have fixed yourself.
 
-## Step 3.5: Run tests if you made code fixes
+## Step 3.5: Run the iterate gate if you made code fixes
 
 **If you committed no code fixes** (clean review or findings-only): skip this step entirely.
 
-**If you committed code fixes:** run the tests that cover the files you changed — not the full suite.
+**If you committed code fixes:**
 
-1. List files you changed in this review pass: `git diff --name-only main..${FEATURE_BRANCH:-HEAD}`
-2. For each changed `lib/foo.js`, check if `tests/integration/foo.test.js` exists and run it: `node tests/integration/foo.test.js`
-3. Use your judgment: if the fix is cross-cutting or touches shared state, run `npm test` instead
-4. Fix any failures before moving to Step 4
+```bash
+npm run test:iterate
+```
+
+That's it — scoped to your changes, <30s. Do NOT run `npm test` or `npm run test:ui` here; the pre-push gate catches the rest. Fix any failures before moving to Step 4. See `docs/testing.md` for the full rationale.
 
 ## Step 4: Update the implementation log and commit
 
