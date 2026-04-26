@@ -1,5 +1,7 @@
 ---
 complexity: very-high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-26T23:30:45.954Z", actor: "cli/research-prioritise" }
 ---
 
 # Research: competitive-positioning-and-landscape
