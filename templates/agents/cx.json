@@ -57,16 +57,18 @@
           "output": 8
         },
         "notes": {
-          "draft": "Latest GPT-5 generation; strong at structured spec drafting.",
           "spec_review": "Good spec reviewer; solid reasoning on requirements and edge cases.",
           "implement": "Strong implementation quality; good tool use and code generation.",
-          "review": "Thorough code reviewer; effective at catching logic issues."
+          "review": "Thorough code reviewer; effective at catching logic issues.",
+          "spec": "Latest GPT-5 generation; strong at structured spec drafting.",
+          "research": null
         },
         "score": {
-          "draft": null,
           "spec_review": null,
           "implement": null,
-          "review": null
+          "review": null,
+          "spec": null,
+          "research": null
         },
         "lastRefreshAt": "2026-04-26T00:00:00.000Z"
       },
@@ -78,16 +80,18 @@
           "output": 8
         },
         "notes": {
-          "draft": "Reliable spec drafter; good balance of reasoning and speed.",
           "spec_review": "Reliable spec reviewer; covers most issues in typical specs.",
           "implement": "Good implementation quality; well-suited for mid-complexity features.",
-          "review": "Good code review; catches common patterns and obvious issues."
+          "review": "Good code review; catches common patterns and obvious issues.",
+          "spec": "Reliable spec drafter; good balance of reasoning and speed.",
+          "research": "Strong research synthesis at GPT-5 tier; good at structured multi-source analysis."
         },
         "score": {
-          "draft": 3.5,
           "spec_review": 3.5,
           "implement": 4,
-          "review": 3.5
+          "review": 3.5,
+          "spec": 3.5,
+          "research": 3.5
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
@@ -99,16 +103,18 @@
           "output": 4
         },
         "notes": {
-          "draft": "Cost-effective for simple spec drafts; weaker on complex requirements.",
           "spec_review": "Quick spec scan; may miss nuanced issues in complex specs.",
           "implement": "Good for simple to mid-complexity features at lower cost.",
-          "review": "Fast review of straightforward changes; less effective on complex code."
+          "review": "Fast review of straightforward changes; less effective on complex code.",
+          "spec": "Cost-effective for simple spec drafts; weaker on complex requirements.",
+          "research": "Limited depth for open-ended research synthesis; better for targeted lookups."
         },
         "score": {
-          "draft": 2.5,
           "spec_review": 2.5,
           "implement": 3,
-          "review": 2.5
+          "review": 2.5,
+          "spec": 2.5,
+          "research": 2.5
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
@@ -120,16 +126,18 @@
           "output": 8
         },
         "notes": {
-          "draft": "Codex-optimized variant; strong at code-adjacent spec writing.",
           "spec_review": "Good for technical spec review; strong code reasoning.",
           "implement": "Code-optimized; particularly strong at implementation tasks.",
-          "review": "Strong code review; focused on technical correctness."
+          "review": "Strong code review; focused on technical correctness.",
+          "spec": "Codex-optimized variant; strong at code-adjacent spec writing.",
+          "research": "Code-optimised; poor at open-ended research synthesis and judgment tasks."
         },
         "score": {
-          "draft": 3.5,
           "spec_review": 3.5,
           "implement": 5,
-          "review": 4
+          "review": 4,
+          "spec": 3.5,
+          "research": 2
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
@@ -141,16 +149,18 @@
           "output": 8
         },
         "notes": {
-          "draft": "Earlier GPT-5 generation; stable and predictable.",
           "spec_review": "Reliable spec review for standard complexity.",
           "implement": "Solid implementation quality for most features.",
-          "review": "Competent code review; well-understood behavior."
+          "review": "Competent code review; well-understood behavior.",
+          "spec": "Earlier GPT-5 generation; stable and predictable.",
+          "research": "Solid research capability; earlier generation but well-understood behavior."
         },
         "score": {
-          "draft": 3,
           "spec_review": 3,
           "implement": 3.5,
-          "review": 3
+          "review": 3,
+          "spec": 3,
+          "research": 3
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       }

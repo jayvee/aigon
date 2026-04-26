@@ -54,16 +54,18 @@
           "output": 4
         },
         "notes": {
-          "draft": "Fast for simple spec scaffolding; weaker at nuanced requirements analysis.",
           "spec_review": "Adequate for basic spec checks; may miss subtle gaps in complex specs.",
           "implement": "Solid for straightforward code changes; less reliable on architectural tasks.",
-          "review": "Covers obvious issues quickly; less reliable for subtle logic errors."
+          "review": "Covers obvious issues quickly; less reliable for subtle logic errors.",
+          "spec": "Fast for simple spec scaffolding; weaker at nuanced requirements analysis.",
+          "research": "Shallow synthesis; misses cross-source connections and nuanced judgment."
         },
         "score": {
-          "draft": 2.5,
           "spec_review": 2.5,
           "implement": 2.5,
-          "review": 2.5
+          "review": 2.5,
+          "spec": 2.5,
+          "research": 2
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
@@ -75,16 +77,18 @@
           "output": 15
         },
         "notes": {
-          "draft": "Reliable spec drafter; good at identifying acceptance criteria and dependencies.",
           "spec_review": "Strong spec reviewer; catches gaps and ambiguities well.",
           "implement": "Primary implementation model; best cost–quality balance for most features.",
-          "review": "Thorough code reviewer; identifies regressions and logic issues."
+          "review": "Thorough code reviewer; identifies regressions and logic issues.",
+          "spec": "Reliable spec drafter; good at identifying acceptance criteria and dependencies.",
+          "research": "Solid research synthesis; follows structured frameworks and produces actionable outputs."
         },
         "score": {
-          "draft": 4,
           "spec_review": 4,
           "implement": 4.5,
-          "review": 4
+          "review": 4,
+          "spec": 4,
+          "research": 3.5
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
@@ -96,16 +100,18 @@
           "output": 15
         },
         "notes": {
-          "draft": "Same capability as Sonnet 4.6; use for large codebase context.",
           "spec_review": "Same capability as Sonnet 4.6; handles large context windows.",
           "implement": "Preferred for features requiring full-repo context (>200k tokens).",
-          "review": "Useful when reviewing across many files simultaneously."
+          "review": "Useful when reviewing across many files simultaneously.",
+          "spec": "Same capability as Sonnet 4.6; use for large codebase context.",
+          "research": "Same synthesis quality as Sonnet 4.6; useful for large document corpora."
         },
         "score": {
-          "draft": 4,
           "spec_review": 4,
           "implement": 4.5,
-          "review": 4
+          "review": 4,
+          "spec": 4,
+          "research": 3.5
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
@@ -117,16 +123,18 @@
           "output": 75
         },
         "notes": {
-          "draft": "Highest quality spec drafting; excellent at surfacing hidden requirements and edge cases.",
           "spec_review": "Best reviewer; catches subtle inconsistencies and design flaws others miss.",
           "implement": "Use for very-high-complexity features; overkill for routine changes.",
-          "review": "Most thorough code reviewer; worth the cost on high-risk changes."
+          "review": "Most thorough code reviewer; worth the cost on high-risk changes.",
+          "spec": "Highest quality spec drafting; excellent at surfacing hidden requirements and edge cases.",
+          "research": "Best-in-class research synthesis; exceptional at connecting disparate findings and judgment."
         },
         "score": {
-          "draft": 4.5,
           "spec_review": 4.5,
           "implement": 5,
-          "review": 4.5
+          "review": 4.5,
+          "spec": 4.5,
+          "research": 5
         },
         "lastRefreshAt": "2026-04-26T06:38:18.582Z"
       },
@@ -138,16 +146,18 @@
           "output": 75
         },
         "notes": {
-          "draft": "Same capability as Opus 4.7; use for large codebase context.",
           "spec_review": "Same capability as Opus 4.7; handles large context windows.",
           "implement": "Reserved for largest, most complex features with full-repo context.",
-          "review": "Most powerful review option; use on architectural or cross-cutting changes."
+          "review": "Most powerful review option; use on architectural or cross-cutting changes.",
+          "spec": "Same capability as Opus 4.7; use for large codebase context.",
+          "research": "Same as Opus 4.7; ideal for very large research corpora requiring full context."
         },
         "score": {
-          "draft": 4.5,
           "spec_review": 4.5,
           "implement": 5,
-          "review": 4.5
+          "review": 4.5,
+          "spec": 4.5,
+          "research": 5
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       }

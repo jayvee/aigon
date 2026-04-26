@@ -2850,8 +2850,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderMatrixPeek(data) {
     const rows = data.rows || [];
-    const ops  = data.operations || ['draft', 'spec_review', 'implement', 'review'];
-    const opLabels = data.operationLabels || { draft: 'Draft', spec_review: 'Spec Review', implement: 'Implement', review: 'Review' };
+    const ops  = data.operations || ['spec', 'spec_review', 'implement', 'review', 'research'];
+    const opLabels = data.operationLabels || { spec: 'Spec', spec_review: 'Spec Review', implement: 'Implement', review: 'Review', research: 'Research' };
 
     const SCORE_COLORS = ['','#ef4444','#f97316','#eab308','#3b82f6','#22c55e'];
 
