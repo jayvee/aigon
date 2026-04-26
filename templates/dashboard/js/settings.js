@@ -85,6 +85,119 @@
       runDoctor(false);
     }
 
+    function fmtSyncTime(iso) {
+      if (!iso) return 'never';
+      try {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return iso;
+        return d.toLocaleString();
+      } catch (_) { return iso; }
+    }
+
+    function renderSyncPanel(scope, host) {
+      // scope: { id, label, statusUrl, configureCmd, pushCmd, pullCmd, statusCmd, hint }
+      host.innerHTML = '';
+      host.className = 'settings-panel sync-panel';
+      const h = document.createElement('h4');
+      h.className = 'sync-panel-title';
+      h.textContent = scope.label;
+      host.appendChild(h);
+
+      const hint = document.createElement('p');
+      hint.className = 'sync-panel-hint settings-hint';
+      hint.textContent = scope.hint;
+      host.appendChild(hint);
+
+      const meta = document.createElement('div');
+      meta.className = 'sync-panel-meta';
+      meta.textContent = 'Loading…';
+      host.appendChild(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'sync-panel-actions modal-actions';
+
+      function termBtn(label, command) {
+        const b = document.createElement('button');
+        b.className = 'btn';
+        b.type = 'button';
+        b.textContent = label;
+        b.onclick = async () => {
+          try {
+            const r = await fetch('/api/open-terminal', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ command })
+            });
+            if (!r.ok) {
+              const e = await r.json().catch(() => ({}));
+              showToast('Failed: ' + (e.error || r.status));
+            } else {
+              showToast(label + ' — opened in terminal');
+            }
+          } catch (e) {
+            showToast('Error: ' + e.message);
+          }
+        };
+        return b;
+      }
+      actions.appendChild(termBtn('Push', scope.pushCmd));
+      actions.appendChild(termBtn('Pull', scope.pullCmd));
+      actions.appendChild(termBtn('Status', scope.statusCmd));
+      host.appendChild(actions);
+
+      fetch(scope.statusUrl)
+        .then(r => r.json())
+        .then(s => {
+          if (!s || s.error) {
+            meta.textContent = 'Status unavailable';
+            return;
+          }
+          if (!s.configured) {
+            meta.innerHTML = '<span class="sync-panel-warn">Not configured.</span> Run: <code>' + escHtml(scope.configureCmd) + '</code>';
+            return;
+          }
+          meta.innerHTML =
+            '<div class="sync-panel-row"><span class="sync-panel-label">Remote</span><span class="sync-panel-value">' + escHtml(s.remote || '—') + '</span></div>' +
+            '<div class="sync-panel-row"><span class="sync-panel-label">Last push</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPushAt)) + '</span></div>' +
+            '<div class="sync-panel-row"><span class="sync-panel-label">Last pull</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPullAt)) + '</span></div>';
+        })
+        .catch(err => { meta.textContent = 'Status unavailable: ' + err.message; });
+    }
+
+    function renderSyncPanels(section) {
+      // Two side-by-side panels: Project (existing) and Profile (F380).
+      const wrap = document.createElement('div');
+      wrap.className = 'sync-panels';
+      const projectHost = document.createElement('div');
+      const profileHost = document.createElement('div');
+      wrap.appendChild(projectHost);
+      wrap.appendChild(profileHost);
+      section.appendChild(wrap);
+
+      const projectRepo = getDefaultsSettingsRepo() || '';
+      const projectStatusUrl = '/api/sync/status' + (projectRepo ? ('?repoPath=' + encodeURIComponent(projectRepo)) : '');
+      renderSyncPanel({
+        id: 'project',
+        label: 'Project (.aigon)',
+        hint: 'Syncs this repository’s .aigon/ state across machines.',
+        statusUrl: projectStatusUrl,
+        configureCmd: 'aigon sync configure <git-remote-url>',
+        pushCmd: 'aigon sync push',
+        pullCmd: 'aigon sync pull',
+        statusCmd: 'aigon sync status',
+      }, projectHost);
+      renderSyncPanel({
+        id: 'profile',
+        label: 'Profile (~/.aigon)',
+        hint: 'Syncs your global aigon profile (agent definitions, model picks, named workflows).',
+        statusUrl: '/api/profile/status',
+        configureCmd: 'aigon profile configure <git-remote-url>',
+        pushCmd: 'aigon profile push',
+        pullCmd: 'aigon profile pull',
+        statusCmd: 'aigon profile status',
+      }, profileHost);
+    }
+
     function readConductorReposFromGlobalConfig_client() {
       return (state.data && state.data.repos) ? state.data.repos.map(r => r.path) : [];
     }
@@ -1375,6 +1488,12 @@
           if (renderToken !== settingsUiState.renderToken) return;
           matrixWrap.innerHTML = '<div class="matrix-empty">Failed to load matrix: ' + escHtml(err.message) + '</div>';
         });
+
+      // ── Sync section (F359 project + F380 profile) ─────────────────────────
+      const syncSection = shell.addSection('sync', 'Sync', 'Sync',
+        'Move aigon state between machines via a configured git remote. Project sync covers .aigon/ in this repo; Profile sync covers ~/.aigon/ (agent definitions, model picks, named workflows).');
+      shell.observeSection(syncSection);
+      renderSyncPanels(syncSection);
 
       // Version section
       const versionSection = shell.addSection('version', 'Version', 'Version', 'Installed version and npm registry update status.');
