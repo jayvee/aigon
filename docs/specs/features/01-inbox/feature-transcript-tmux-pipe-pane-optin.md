@@ -7,7 +7,7 @@ complexity: medium
 #              #     > snapshot.authorAgentId > getDefaultAgent().
 ---
 
-# Feature: --help
+# Feature: transcript-tmux-pipe-pane-optin
 
 <!-- Authoring AI: set `complexity:` using this rubric before writing the spec:
        low       — config tweaks, doc-only, single-file helpers, trivial bug fixes
