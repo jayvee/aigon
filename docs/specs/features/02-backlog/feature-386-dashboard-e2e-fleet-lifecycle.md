@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-26T13:10:59.698Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: dashboard-e2e-fleet-lifecycle
