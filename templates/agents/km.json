@@ -31,7 +31,7 @@
   },
   "cli": {
     "command": "kimi",
-    "implementFlag": "",
+    "implementFlag": "--yolo",
     "injectPromptViaTmux": true,
     "implementPrompt": "feature-do",
     "evalPrompt": "feature-eval",
