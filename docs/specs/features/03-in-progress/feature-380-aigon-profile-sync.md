@@ -8,27 +8,31 @@ transitions:
 
 ## Summary
 
-Aigon state lives in three buckets: project state (`.aigon/`), user profile (`~/.aigon/`), and ephemeral runtime. The existing `aigon sync` command covers project state only. This feature adds `aigon settings` — a parallel sync command for the global user profile (`~/.aigon/config.json` and `~/.aigon/workflow-definitions/`) — so that the full meaningful state can be moved between machines or restored after data loss. The dashboard Sync section is extended to show both project and profile sync scopes side by side.
+Aigon state falls into two meaningful categories: global user settings (`~/.aigon/`) and per-project workflow state (`.aigon/`). The existing `aigon sync` covers project state. This feature adds `aigon settings` — backup/restore for the global user profile (`~/.aigon/config.json`, `~/.aigon/workflow-definitions/`) — so agent definitions, model assignments, and workflow presets survive machine loss and transfer to new machines.
+
+**Architecture decisions made 2026-04-26:**
+- Settings panel in the dashboard is a global view (no project in context), so only the settings backup lives there. Per-project sync has no home in this UI — it belongs in a project-contextual surface (see separate feature for one-global-backup-repo architecture).
+- Suggested default repo name: `aigon-settings` (private GitHub repo).
+- Branch: `aigon-settings` (parallel to `aigon-state` used by project sync).
 
 ## User Stories
 
-- [ ] As a user setting up aigon on a new machine, I can run `aigon settings pull` to restore my agent definitions, model assignments, and named workflow presets without reconfiguring from scratch.
-- [ ] As a user with two machines, I can push profile changes from one and pull them on the other with a single command each.
-- [ ] As a user, I can see the status of both project and profile sync at a glance in the dashboard Settings → Sync panel.
-- [ ] As a user, I can trigger profile push/pull from the dashboard without opening a terminal.
+- [ ] As a user setting up aigon on a new machine, I can run `aigon settings pull` to restore my agent definitions, model assignments, and workflow presets without reconfiguring from scratch.
+- [ ] As a user with two machines, I can back up settings changes on one and restore them on the other with a single command each.
+- [ ] As a user, I can configure the backup remote, trigger back up, and restore directly from the dashboard Settings → Backup & Sync panel without opening a terminal.
 
 ## Acceptance Criteria
 
-- [ ] `aigon settings configure <git-url>` — writes `sync.profileRemote` into `~/.aigon/config.json`; creates `~/.aigon/.syncignore` with sensible defaults if absent.
-- [ ] `aigon settings push` — commits `config.json` + `workflow-definitions/` from `~/.aigon/` to a dedicated `aigon-profile` branch on the configured remote; records `lastPushAt` in `~/.aigon/.sync/sync-meta.json`.
-- [ ] `aigon settings pull` — fetches and fast-forward merges from `aigon-profile` branch; copies files into `~/.aigon/`; records `lastPullAt`.
-- [ ] `aigon settings status` — prints configured remote, last push/pull timestamps, and local-vs-remote divergence (same shape as `aigon sync status`).
-- [ ] Default profile syncignore excludes: `logs/`, `backups/`, `*.log`, `*.log.*`, `ports.json`, `action-logs.jsonl`, `conductor.pid`, `radar.log`, `dashboard.log*`, `.sync/`, `worktrees/`, `instances/`, `tmp/`, `sync/`.
+- [ ] `aigon settings configure <git-url>` — writes `sync.settingsRemote` into `~/.aigon/config.json`; creates `~/.aigon/.syncignore` with sensible defaults if absent.
+- [ ] `aigon settings push` — commits `config.json` + `workflow-definitions/` from `~/.aigon/` to branch `aigon-settings` on the configured remote; records `lastPushAt` in `~/.aigon/.sync/sync-meta.json`.
+- [ ] `aigon settings pull` — fetches and fast-forward merges from `aigon-settings` branch; copies files into `~/.aigon/`; records `lastPullAt`.
+- [ ] `aigon settings status` — prints configured remote, last push/pull timestamps, and local-vs-remote divergence.
+- [ ] Default syncignore excludes: `logs/`, `backups/`, `*.log`, `*.log.*`, `ports.json`, `action-logs.jsonl`, `conductor.pid`, `radar.log`, `dashboard.log*`, `.sync/`, `worktrees/`, `instances/`, `tmp/`, `sync/`.
 - [ ] `aigon settings` subcommands are registered in `aigon-cli.js` under the `infra` domain alongside `aigon sync`.
-- [ ] `GET /api/profile/status` dashboard route returns `{ configured, remote, lastPushAt, lastPullAt }` from local metadata (no git fetch, fast).
-- [ ] Dashboard Settings → Sync section shows two panels: **Project** (existing) and **Profile** (new), each with Push / Pull / Status buttons and last-synced timestamp.
-- [ ] `aigon doctor` notes if profile sync is unconfigured (info-level, not error).
-- [ ] Implementation reuses `sync-state.js` helpers (helper repo pattern, syncignore matcher, meta read/write) — no duplication. Extract shared logic into a new `lib/sync-core.js` if needed.
+- [ ] `GET /api/settings-sync/status` dashboard route returns `{ configured, remote, lastPushAt, lastPullAt }` from local metadata only (no git fetch). Stub already exists; replace it with the real implementation.
+- [ ] Dashboard Settings → Backup & Sync panel shows "Your settings" with inline URL input, Back up / Restore / Status buttons, and last-synced timestamps. (Panel already exists in the dashboard with a stub; wire it up.)
+- [ ] `aigon doctor` notes if settings backup is unconfigured (info-level, not error).
+- [ ] Implementation reuses `sync-state.js` helpers — extract shared logic into `lib/sync-core.js` to avoid duplication.
 
 ## Validation
 
