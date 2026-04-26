@@ -2,6 +2,7 @@
 Agent: cc
 
 ## Status
+Implemented: extracted `lib/sync-core.js`, added `lib/profile-state.js` + `aigon profile {configure,push,pull,status}`, `/api/profile/status` + `/api/sync/status`, dashboard Sync section with Project/Profile panels, doctor info notice.
 
 ## New API Surface
 
