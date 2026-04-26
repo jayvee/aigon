@@ -244,14 +244,22 @@ When `origin` is GitHub and `gh` is available, `feature-close` does a best-effor
 
 ## Testing Discipline (non-negotiable)
 
-### T1 — run the test suite before pushing
-Before any `git push` of a feature branch to `origin`, run:
+### T1 — two distinct gates: iterate vs. pre-push
+The test suite runs at two tiers; do not collapse them into one.
 
+**Pre-push gate** (before `git push` / `aigon agent-status submitted` / `feature-close`):
 ```bash
 npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh
 ```
+All three must pass. Do NOT push with a failing suite. Do NOT skip hooks with `--no-verify`.
 
-All three must pass. Do NOT push with a failing suite. Do NOT skip hooks with `--no-verify`. Applies to `aigon agent-status submitted`, `feature-close`, and any direct `git push`.
+**Iterate-loop gate** (per autopilot iteration; `aigon feature-do <ID> --iterate`):
+```bash
+npm run test:iterate
+```
+Scoped: lint on changed `lib/` files, integration/workflow tests whose filename matches keywords from `git diff`, plus a 5-test smoke fallback. **No Playwright. No budget check.** Implementation lives in `lib/test-loop/scoped.js` and `scripts/iterate-validate.js`. Wall-time target <30s.
+
+**Agents must NOT manually run `npm run test:ui` mid-iteration** unless the iteration touched `templates/dashboard/**`, `lib/dashboard*.js`, or `lib/server*.js`. The scoped runner will invoke Playwright automatically when those paths are in the diff. The `## Pre-authorised` template default authorises this skip.
 
 ### T2 — new code ships with a test
 New modules, new exported functions with non-trivial logic, and bug fixes ship with a test in the same commit. Exceptions: pure config, pure docs, pure template edits, system-integration code (launchd, signals, sockets) — and state the exception in the commit message. Every new test includes a one-line comment naming the specific regression it prevents (`// REGRESSION: ...`).
