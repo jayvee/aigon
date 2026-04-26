@@ -216,27 +216,8 @@
     }
 
     function renderSyncPanels(section) {
-      const wrap = document.createElement('div');
-      wrap.className = 'sync-panels';
-      const projectHost = document.createElement('div');
-      const settingsHost = document.createElement('div');
-      wrap.appendChild(projectHost);
-      wrap.appendChild(settingsHost);
-      section.appendChild(wrap);
-
-      const projectRepo = getDefaultsSettingsRepo() || '';
-      const projectStatusUrl = '/api/sync/status' + (projectRepo ? ('?repoPath=' + encodeURIComponent(projectRepo)) : '');
-      renderSyncPanel({
-        id: 'project',
-        label: 'This project',
-        includes: ['Feature & research specs', 'Workflow state', 'Board layout', 'Migration history', 'Project config (.aigon/config.json)'],
-        excludes: 'sessions, logs, caches, locks',
-        statusUrl: projectStatusUrl,
-        configureBaseCmd: 'aigon sync configure',
-        backupCmd: 'aigon sync push',
-        restoreCmd: 'aigon sync pull',
-        statusCmd: 'aigon sync status',
-      }, projectHost);
+      const host = document.createElement('div');
+      section.appendChild(host);
       renderSyncPanel({
         id: 'settings',
         label: 'Your settings',
@@ -247,7 +228,7 @@
         backupCmd: 'aigon settings push',
         restoreCmd: 'aigon settings pull',
         statusCmd: 'aigon settings status',
-      }, settingsHost);
+      }, host);
     }
 
     function readConductorReposFromGlobalConfig_client() {
@@ -1579,7 +1560,7 @@
 
       // ── Backup & Sync section ──────────────────────────────────────────────
       const syncSection = shell.addSection('sync', 'Backup & Sync', 'Backup & Sync',
-        'Save aigon state to a private git remote and restore it on any machine. "This project" covers specs and workflow state for this repo. "Your settings" covers your global agent config and workflow presets.');
+        'Back up your global aigon settings — agent definitions, model assignments, and workflow presets — to a private git remote. Restore them instantly on any machine.');
       shell.observeSection(syncSection);
       renderSyncPanels(syncSection);
 
