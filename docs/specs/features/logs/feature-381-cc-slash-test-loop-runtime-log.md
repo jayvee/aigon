@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 523
+lines_removed: 86
+lines_changed: 609
+files_touched: 11
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 183
+output_tokens: 57649
+cache_creation_input_tokens: 212059
+cache_read_input_tokens: 12256149
+thinking_tokens: 0
+total_tokens: 12526040
+billable_tokens: 57832
+cost_usd: 26.6867
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 381 - slash-test-loop-runtime
 Agent: cc
 
