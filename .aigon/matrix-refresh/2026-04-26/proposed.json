@@ -1,0 +1,349 @@
+{
+  "date": "2026-04-26",
+  "quarter": "2026-Q2",
+  "sources": {
+    "swe_bench": "https://www.swebench.com/",
+    "aider_leaderboard": "https://aider.chat/docs/leaderboards/",
+    "lmarena": "https://arena.ai/leaderboard/text",
+    "community": [
+      "https://tokenmix.ai/blog/swe-bench-2026-claude-opus-4-7-wins",
+      "https://www.marc0.dev/en/leaderboard"
+    ]
+  },
+  "changes": [
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "cc",
+      "modelValue": "claude-opus-4-7",
+      "patch": {
+        "score": { "implement": 5.0 }
+      },
+      "rationale": "SWE-bench Verified April 2026: Claude Opus 4.7 ranks #1 at 87.6% resolved, top 5% of all models."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "cc",
+      "modelValue": "claude-opus-4-7[1m]",
+      "patch": {
+        "score": { "implement": 5.0 }
+      },
+      "rationale": "Same underlying model as claude-opus-4-7; identical SWE-bench result (87.6%, rank #1)."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "cc",
+      "modelValue": "claude-sonnet-4-6",
+      "patch": {
+        "score": { "implement": 4.5 }
+      },
+      "rationale": "SWE-bench Verified April 2026: Claude Sonnet 4.6 at 79.6%, placing it in the top ~15% — maps to 4.5 on the score scale."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "cc",
+      "modelValue": "claude-sonnet-4-6[1m]",
+      "patch": {
+        "score": { "implement": 4.5 }
+      },
+      "rationale": "Same underlying model as claude-sonnet-4-6; identical SWE-bench result (79.6%)."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "cc",
+      "modelValue": "claude-haiku-4-5-20251001",
+      "patch": {
+        "score": { "implement": 2.5 }
+      },
+      "rationale": "Aider polyglot proxy: claude-3-5-haiku-20241022 at 28%, placing it below median — Haiku 4.5 expected similar range; maps to 2.5."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "cx",
+      "modelValue": "gpt-5.3-codex",
+      "patch": {
+        "score": { "implement": 5.0 }
+      },
+      "rationale": "SWE-bench Verified April 2026: GPT-5.3-Codex ranks #2 at 85.0% resolved, code-specialized model in top 5%."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-pro",
+      "patch": {
+        "score": { "implement": 4.5 }
+      },
+      "rationale": "Aider polyglot leaderboard: gemini-2.5-pro at 76.9–83.1%, top 10–20% range — maps to 4.5."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-flash-preview-05-20",
+      "patch": {
+        "score": { "implement": 3.5 }
+      },
+      "rationale": "Aider polyglot: gemini-2.5-flash-preview-05-20 at 44–55% (no-think to 24k-think), median range — maps to 3.5."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-flash",
+      "patch": {
+        "score": { "implement": 3.5 }
+      },
+      "rationale": "Aider polyglot proxy via gemini-2.5-flash variant at 44–55%, median range — maps to 3.5."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.2-speciale",
+      "patch": {
+        "score": { "implement": 4.5 }
+      },
+      "rationale": "Aider polyglot: DeepSeek V3.2 reasoning variant at 74%, top ~15% — maps to 4.5."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-chat-v3.1",
+      "patch": {
+        "score": { "implement": 4.0 }
+      },
+      "rationale": "Aider polyglot: DeepSeek V3 (0324) at 55.1%; V3.1 is an incremental upgrade, estimated ~60–65% — maps to 4.0."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-235b-a22b:free",
+      "patch": {
+        "score": { "implement": 3.5 }
+      },
+      "rationale": "Aider polyglot: Qwen3 235B A22B at 59.6%, slightly above median — maps to 3.5."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-coder:exacto",
+      "patch": {
+        "score": { "implement": 3.5 }
+      },
+      "rationale": "Coder-optimized Qwen3 variant; no direct Aider data, estimated comparable to Qwen3 235B base at 3.5."
+    },
+    {
+      "feedbackId": "6",
+      "changeKind": "benchmark-update",
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/codestral-2501",
+      "patch": {
+        "score": { "implement": 2.0 }
+      },
+      "rationale": "Aider polyglot: Codestral 25.01 at 11.1%, bottom 10% for agentic coding — maps to 2.0."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "cc",
+      "modelValue": "claude-opus-4-7",
+      "patch": {
+        "score": { "draft": 4.5, "spec_review": 4.5, "review": 4.5 }
+      },
+      "rationale": "Arena.ai leaderboard rank #4 (score 1494), top tier globally — maps to 4.5 for quality ops."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "cc",
+      "modelValue": "claude-opus-4-7[1m]",
+      "patch": {
+        "score": { "draft": 4.5, "spec_review": 4.5, "review": 4.5 }
+      },
+      "rationale": "Same underlying model as claude-opus-4-7; Arena rank #4 applies equally."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "cc",
+      "modelValue": "claude-sonnet-4-6",
+      "patch": {
+        "score": { "draft": 4.0, "spec_review": 4.0, "review": 4.0 }
+      },
+      "rationale": "Arena.ai leaderboard rank #21 (score 1463), above average — maps to 4.0 for quality ops."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "cc",
+      "modelValue": "claude-sonnet-4-6[1m]",
+      "patch": {
+        "score": { "draft": 4.0, "spec_review": 4.0, "review": 4.0 }
+      },
+      "rationale": "Same underlying model as claude-sonnet-4-6; Arena rank #21 applies equally."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "cc",
+      "modelValue": "claude-haiku-4-5-20251001",
+      "patch": {
+        "score": { "draft": 2.5, "spec_review": 2.5, "review": 2.5 }
+      },
+      "rationale": "Fast/cheap tier; Arena ELO for Haiku-class models is below median — maps to 2.5 for quality ops."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "cx",
+      "modelValue": "gpt-5.4",
+      "patch": {
+        "score": { "draft": 3.5, "spec_review": 3.5, "review": 3.5, "implement": 4.0 }
+      },
+      "rationale": "Arena.ai rank #18 (score 1467), above average — implement 4.0, quality ops 3.5."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "cx",
+      "modelValue": "gpt-5.3-codex",
+      "patch": {
+        "score": { "draft": 3.5, "spec_review": 3.5, "review": 4.0 }
+      },
+      "rationale": "Code-specialized model; strong for review/implement, slightly below top generalist models for drafting — draft/spec_review 3.5, review 4.0."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "cx",
+      "modelValue": "gpt-5.4-mini",
+      "patch": {
+        "score": { "draft": 2.5, "spec_review": 2.5, "review": 2.5, "implement": 3.0 }
+      },
+      "rationale": "Mini-class model; smaller capability tier — below average for all ops, maps to 2.5/3.0."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "cx",
+      "modelValue": "gpt-5.2",
+      "patch": {
+        "score": { "draft": 3.0, "spec_review": 3.0, "review": 3.0, "implement": 3.5 }
+      },
+      "rationale": "Arena.ai rank #11 (score 1476) for gpt-5.2-chat-latest; solid mid-tier — maps to 3.0–3.5."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-pro",
+      "patch": {
+        "score": { "draft": 3.5, "spec_review": 3.5, "review": 3.5 }
+      },
+      "rationale": "Arena.ai rank #38 (score 1448), above average but below top tier — maps to 3.5 for quality ops."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-flash",
+      "patch": {
+        "score": { "draft": 2.5, "spec_review": 2.5, "review": 2.5 }
+      },
+      "rationale": "Arena.ai rank #87 (score 1411), below median for a fast/cheap tier model — maps to 2.5 for quality ops."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-flash-preview-05-20",
+      "patch": {
+        "score": { "draft": 2.5, "spec_review": 2.5, "review": 2.5 }
+      },
+      "rationale": "Preview variant of gemini-2.5-flash; Arena proxy rank ~87 applies — maps to 2.5 for quality ops."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "gg",
+      "modelValue": "gemini-3-flash-preview",
+      "patch": {
+        "score": { "draft": 3.5, "spec_review": 3.0, "review": 3.0, "implement": 4.0 }
+      },
+      "rationale": "Arena.ai: gemini-3-flash ranks #13 (score 1474), significantly above gemini-2.5-flash — implement 4.0, quality ops 3.0–3.5."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.2-speciale",
+      "patch": {
+        "score": { "draft": 4.0, "spec_review": 4.0, "review": 4.0 }
+      },
+      "rationale": "Reasoning-enhanced variant; Arena deepseek-v3.2 rank ~64 (1424) but reasoning mode notably better — draft/review 4.0."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-chat-v3.1",
+      "patch": {
+        "score": { "draft": 3.5, "spec_review": 3.5, "review": 3.5 }
+      },
+      "rationale": "Arena deepseek-v3.2 rank ~64 (1424) as proxy for v3.1; solid mid-tier — maps to 3.5."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-235b-a22b:free",
+      "patch": {
+        "score": { "draft": 3.5, "spec_review": 3.0, "review": 3.0 }
+      },
+      "rationale": "Arena qwen3-max-preview rank #52 (1435) as proxy; above median — draft 3.5, spec_review/review 3.0."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-coder:exacto",
+      "patch": {
+        "score": { "draft": 2.5, "spec_review": 2.5, "review": 3.0 }
+      },
+      "rationale": "Coder-optimized variant; stronger on review/implement, weaker on general drafting — review 3.0, draft/spec_review 2.5."
+    },
+    {
+      "feedbackId": "7",
+      "changeKind": "score-update",
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/codestral-2501",
+      "patch": {
+        "score": { "draft": 2.0, "spec_review": 2.0, "review": 2.5 }
+      },
+      "rationale": "FIM/completion-specialized model; weak on agentic drafting and spec review — draft/spec_review 2.0, review 2.5."
+    },
+    {
+      "feedbackId": "8",
+      "changeKind": "notes-update",
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/codestral-2501",
+      "patch": {
+        "notes": {
+          "implement": "Code-completion specialist (FIM); Aider polyglot at 11.1% (bottom 10%) — not competitive for agentic implementation tasks despite strong FIM benchmark results.",
+          "draft": "FIM-optimized model; weak at open-ended spec drafting and requirements reasoning.",
+          "review": "Adequate for syntax-level code review; poor at higher-level architectural analysis."
+        }
+      },
+      "rationale": "Aider polyglot 11.1% contradicts prior 'competitive implementation quality' note; Codestral excels at FIM/completion but not agentic coding."
+    }
+  ]
+}
