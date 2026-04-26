@@ -1,6 +1,8 @@
 ---
 complexity: high
 agent: cc
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-26T06:36:44.678Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: slash-test-loop-runtime
