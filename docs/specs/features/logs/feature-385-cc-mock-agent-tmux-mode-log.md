@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 196
+lines_removed: 4
+lines_changed: 200
+files_touched: 5
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 150
+output_tokens: 83587
+cache_creation_input_tokens: 257248
+cache_read_input_tokens: 12582157
+thinking_tokens: 0
+total_tokens: 12923142
+billable_tokens: 83737
+cost_usd: 29.2057
+sessions: 2
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 385 - mock-agent-tmux-mode
 Agent: cc
 
