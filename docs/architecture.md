@@ -416,6 +416,16 @@ Components:
 - `{agent}` — agent short code (`cc`, `gg`, `cx`, `cu`)
 - `{desc}` — kebab-case feature description from the spec filename
 
+## Scheduler (`aigon schedule add`) — when to use which kind
+
+The scheduler (`lib/scheduled-kickoff.js`) supports three job kinds. Pick by what you want to *fire*:
+
+- **`feature_autonomous` <id>** — start an autonomous run on a specific spec that already exists in `02-backlog/` or `03-in-progress/`. Use this to defer/queue a known feature; the scheduler validates the spec is present and dispatches `feature-autonomous-start` at `runAt`.
+- **`research_start` <id>** — start a research run on a spec already in `02-backlog/` or `03-in-progress/`. Same shape as `feature_autonomous` but for research entities.
+- **`agent_prompt`** — spawn a fresh agent session (no entity required) carrying an arbitrary prompt or slash command (e.g. `--prompt=/security-review`). Optional `--cron=<expr>` re-arms the job after each fire, so this is the right kind for **periodic agent tasks** like a weekly security digest, an architecture audit, or a TODO sweep. The scheduler shells into `aigon agent-launch` (a dedicated internal CLI) which opens a tmux tab in the target repo. The agent is responsible for everything that happens in-session, including filing follow-up features via `afc` for any work it discovers.
+
+`agent_prompt` jobs use the `--label` slug as their `entityId` (since there is no backing entity); the dashboard schedule glyph index ignores them. They appear only in `aigon schedule list`.
+
 ## Aigon Pro (`@aigon/pro`)
 
 Aigon has a **free/pro split**. The free tier (this repo) is open source under Apache 2.0. The commercial Pro tier is a separate package that augments aigon with deeper insights, AI coaching, and the autonomous-mode "AutoConductor" — **Pro is in development and not yet available for purchase**, and gate messages in the CLI explicitly say so.
