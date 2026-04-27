@@ -1,16 +1,4 @@
 # Implementation Log: Feature 404 - agent-lifecycle-signal-rename
 Agent: cc
 
-## Status
-
-## New API Surface
-
-## Key Decisions
-
-## Gotchas / Known Issues
-
-## Explicitly Deferred
-
-## For the Next Feature in This Set
-
-## Test Coverage
+Renamed completion signals (`implementation-complete` / `revision-complete` / `spec-review-complete` / `research-complete`) with deprecation aliases for `submitted` + `feedback-addressed`; added `revising`/`spec-reviewing` start signals; trap + start signal now record `taskType` for mismatch detection in `lib/commands/misc.js`.
