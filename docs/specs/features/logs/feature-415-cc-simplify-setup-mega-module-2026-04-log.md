@@ -1,3 +1,26 @@
+---
+commit_count: 7
+lines_added: 1003
+lines_removed: 778
+lines_changed: 1781
+files_touched: 11
+fix_commit_count: 3
+fix_commit_ratio: 0.429
+rework_thrashing: false
+rework_fix_cascade: true
+rework_scope_creep: true
+input_tokens: 139
+output_tokens: 57211
+cache_creation_input_tokens: 225869
+cache_read_input_tokens: 9123063
+thinking_tokens: 0
+total_tokens: 9406282
+billable_tokens: 57350
+cost_usd: 22.2125
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 415 - simplify-setup-mega-module-2026-04
 Agent: cc
 
