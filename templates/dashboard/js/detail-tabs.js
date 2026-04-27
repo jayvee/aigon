@@ -256,7 +256,9 @@
           const fmt = n => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
           const fmtCost = n => '$' + (Math.round(Number(n) * 10000) / 10000);
           let totalInputTokens = 0;
+          let totalCacheReadTokens = 0;
           let totalOutputTokens = 0;
+          let totalThinkingTokens = 0;
           let totalCostUsd = 0;
           let anyReal = false;
           const rowsHtml = costAgentIds.map(id => {
@@ -265,19 +267,25 @@
             if (hasReal) {
               anyReal = true;
               totalInputTokens += Number(a.inputTokens) || 0;
+              totalCacheReadTokens += Number(a.cachedInputTokens) || 0;
               totalOutputTokens += Number(a.outputTokens) || 0;
+              totalThinkingTokens += Number(a.thinkingTokens) || 0;
               totalCostUsd += Number(a.costUsd) || 0;
             }
             const displayAgent = (a.agent || id).toUpperCase();
             const modelCell = escHtml(a.model || '—');
             const inputCell = hasReal ? fmt(a.inputTokens) : '<span class="cost-na">n/a</span>';
+            const cacheCell = hasReal ? (Number(a.cachedInputTokens) > 0 ? fmt(a.cachedInputTokens) : '0') : '<span class="cost-na">n/a</span>';
             const outputCell = hasReal ? fmt(a.outputTokens) : '<span class="cost-na">n/a</span>';
+            const thinkCell = hasReal ? (Number(a.thinkingTokens) > 0 ? fmt(a.thinkingTokens) : '0') : '<span class="cost-na">n/a</span>';
             const costCell = hasReal ? escHtml(fmtCost(a.costUsd || 0)) : '<span class="cost-na">n/a</span>';
             return '<tr>' +
               '<td><span class="agent-mono">' + escHtml(displayAgent) + '</span></td>' +
               '<td>' + modelCell + '</td>' +
               '<td>' + inputCell + '</td>' +
+              '<td>' + cacheCell + '</td>' +
               '<td>' + outputCell + '</td>' +
+              '<td>' + thinkCell + '</td>' +
               '<td>' + costCell + '</td>' +
               '</tr>';
           }).join('');
@@ -286,13 +294,15 @@
               '<td><strong>Total</strong></td>' +
               '<td></td>' +
               '<td><strong>' + fmt(totalInputTokens) + '</strong></td>' +
+              '<td><strong>' + fmt(totalCacheReadTokens) + '</strong></td>' +
               '<td><strong>' + fmt(totalOutputTokens) + '</strong></td>' +
+              '<td><strong>' + fmt(totalThinkingTokens) + '</strong></td>' +
               '<td><strong>' + escHtml(fmtCost(totalCostUsd)) + '</strong></td>' +
               '</tr>'
             : '';
           costHtml = '<h5 class="stats-section-heading">Cost by Agent</h5>' +
             '<table class="stats-token-table">' +
-            '<thead><tr><th>Agent</th><th>Model</th><th>Input Tokens</th><th>Output Tokens</th><th>Estimated Cost</th></tr></thead>' +
+            '<thead><tr><th>Agent</th><th>Model</th><th>Input</th><th>Cache Read</th><th>Output</th><th>Thinking</th><th>Estimated Cost</th></tr></thead>' +
             '<tbody>' + rowsHtml + totalRow + '</tbody>' +
             '</table>';
         }
