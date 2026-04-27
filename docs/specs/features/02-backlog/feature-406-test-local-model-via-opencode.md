@@ -1,5 +1,7 @@
 ---
 complexity: low
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-27T02:28:18.098Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: test-local-model-via-opencode
