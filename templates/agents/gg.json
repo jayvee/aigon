@@ -323,12 +323,12 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "aigon check-version",
+                "command": "aigon check-version --json",
                 "timeout": 30
               },
               {
                 "type": "command",
-                "command": "aigon project-context",
+                "command": "aigon project-context --json",
                 "timeout": 10
               }
             ]
@@ -340,7 +340,7 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "aigon check-agent-signal",
+                "command": "aigon check-agent-signal --json",
                 "timeout": 5
               }
             ]
