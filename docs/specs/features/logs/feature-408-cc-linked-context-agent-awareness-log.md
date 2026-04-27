@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 281
+lines_removed: 5
+lines_changed: 286
+files_touched: 6
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 115
+output_tokens: 53605
+cache_creation_input_tokens: 153940
+cache_read_input_tokens: 6876925
+thinking_tokens: 0
+total_tokens: 7084585
+billable_tokens: 53720
+cost_usd: 17.2239
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 408 - linked-context-agent-awareness
 Agent: cc
 
