@@ -1,6 +1,6 @@
 # Aigon
 
-> Aigon is a spec-driven AI development tool with a Kanban dashboard, a full CLI, and slash commands inside Claude, Gemini, and Codex — one workflow at every level of control.
+> Aigon: spec-driven multi-agent harness. Feature lifecycle, git-worktree isolation, slash-command orchestration of Claude Code / Gemini CLI / Codex CLI. Workflow state in `.aigon/workflows/`, specs in `docs/specs/`, dashboard at `aigon server start`.
 
 ## Getting Started
 

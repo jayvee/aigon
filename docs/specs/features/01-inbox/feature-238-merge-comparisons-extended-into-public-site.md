@@ -1,5 +1,11 @@
 # Feature: rewrite comparisons page
 
+> **SUPERSEDED — 2026-04-27 by F399 (`competitive-positioning-foundation`).**
+>
+> F399 delivers everything F238 proposed (rewritten `site/content/comparisons.mdx`, deletion of `docs/comparisons-extended.md`) plus the surrounding internal source of truth (`docs/competitive/`) and canonical positioning copy (`docs/marketing/positioning.md`). The two were folded together so the public page is grounded in an internal matrix rather than re-derived from scratch each time.
+>
+> This spec stays in inbox as a historical artifact. Do not start it.
+
 ## Summary
 
 Rewrite `site/content/comparisons.mdx` from scratch with a simpler, more defensible comparison model, a curated tool list, and an honest "what Aigon doesn't do" section. Delete `docs/comparisons-extended.md` afterward — single source of truth.

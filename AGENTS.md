@@ -1,5 +1,7 @@
 # Aigon — Codebase Orientation
 
+> Aigon is a spec-driven multi-agent harness — feature lifecycle, git-worktree isolation, and slash-command orchestration of Claude Code, Gemini CLI, and Codex CLI.
+
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)

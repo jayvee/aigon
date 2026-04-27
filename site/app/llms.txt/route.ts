@@ -32,7 +32,7 @@ export async function GET() {
   const lines = [
     "# Aigon",
     "",
-    "> Spec-driven development and multi-agent orchestration.",
+    "> Aigon: spec-driven multi-agent harness. Feature lifecycle, git-worktree isolation, slash-command orchestration of Claude Code / Gemini CLI / Codex CLI.",
     "",
     "## Docs",
     "",
