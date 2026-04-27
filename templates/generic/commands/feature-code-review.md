@@ -45,6 +45,37 @@ The spec body was printed inline by the launching CLI — use that copy for acce
 
 If you are on the feature branch, review files directly. If you are on main, use `git diff main..$FEATURE_BRANCH` / `git show $FEATURE_BRANCH:path` — do NOT `cd` into the worktree. Commit fixes with `git -C "$WORKTREE" add ... && git -C "$WORKTREE" commit -m "fix(review): ..."` (review commits on main cause conflicts at `feature-close`).
 
+## Step 1.25: Research context (skip when none)
+
+If the spec frontmatter has a `research:` field, read the linked findings before evaluating the implementation — they describe what the feature was supposed to deliver and why. If no `research:` field is present, skip this step.
+
+```bash
+SPEC_PATH=$(aigon feature-spec {{ARG1_SYNTAX}} 2>/dev/null || true)
+RESEARCH_IDS=""
+if [ -n "$SPEC_PATH" ] && [ -f "$SPEC_PATH" ]; then
+  RESEARCH_IDS=$(awk '/^---[[:space:]]*$/{f=!f;next} f && /^research:/{
+    sub(/^research:[[:space:]]*/,"")
+    gsub(/[\[\]]/,"")
+    gsub(/,/," ")
+    print
+  }' "$SPEC_PATH")
+fi
+if [ -n "$RESEARCH_IDS" ]; then
+  for ID in $RESEARCH_IDS; do
+    echo "=== Research $ID findings ==="
+    for f in docs/specs/research-topics/logs/research-${ID}-*-findings.md; do
+      [ -e "$f" ] || continue
+      echo "--- $f ---"
+      cat "$f"
+    done
+  done
+else
+  echo "(no research linked — skipping)"
+fi
+```
+
+Use the findings to judge whether the implementation faithfully addresses the conclusions and constraints the research surfaced.
+
 ## Step 1.5: Scope baseline check
 
 Before reviewing correctness, check for out-of-scope deletions. The scope snapshot at `.aigon/state/feature-{{ARG1_SYNTAX}}-file-snapshot.txt` (in the main repo) lists every tracked file at feature-start time.

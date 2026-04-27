@@ -33,6 +33,31 @@ Read the spec before editing:
 cat "$SPEC_PATH"
 ```
 
+## Research context (skip when none)
+
+If the spec frontmatter has a `research:` field, read the linked findings before reviewing — the spec is supposed to be grounded in those conclusions. Evaluate whether the acceptance criteria and technical approach reflect what the research actually surfaced. Skip when no `research:` field is present.
+
+```bash
+RESEARCH_IDS=$(awk '/^---[[:space:]]*$/{f=!f;next} f && /^research:/{
+  sub(/^research:[[:space:]]*/,"")
+  gsub(/[\[\]]/,"")
+  gsub(/,/," ")
+  print
+}' "$SPEC_PATH")
+if [ -n "$RESEARCH_IDS" ]; then
+  for ID in $RESEARCH_IDS; do
+    echo "=== Research $ID findings ==="
+    for f in docs/specs/research-topics/logs/research-${ID}-*-findings.md; do
+      [ -e "$f" ] || continue
+      echo "--- $f ---"
+      cat "$f"
+    done
+  done
+else
+  echo "(no research linked — skipping)"
+fi
+```
+
 ## Review rubric
 
 {{SPEC_REVIEW_RUBRIC}}
