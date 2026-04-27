@@ -903,11 +903,23 @@
 
       // Wire "View Review" buttons
       card.querySelectorAll('[data-view-review]').forEach(btn => {
-        btn.onclick = (e) => {
+        btn.onclick = async (e) => {
           e.stopPropagation();
           closeAllKcardOverflowMenus();
           const reviewSession = btn.getAttribute('data-view-review');
-          if (reviewSession) openTerminalPanel(reviewSession, null, reviewSession, null, null);
+          if (!reviewSession) return;
+          try {
+            const res = await fetch('/api/session/view', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ sessionName: reviewSession, repoPath }),
+            });
+            const payload = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+            showToast(payload.message || 'Session opened in terminal');
+          } catch (err) {
+            showToast('Could not open session: ' + err.message, null, null, { error: true });
+          }
         };
       });
 
@@ -1064,10 +1076,22 @@
       });
 
       card.querySelectorAll('.kcard-review-open').forEach(btn => {
-        btn.onclick = (e) => {
+        btn.onclick = async (e) => {
           e.stopPropagation();
           const sessionName = btn.getAttribute('data-review-session');
-          if (sessionName) openTerminalPanel(sessionName, null, sessionName, null, null);
+          if (!sessionName) return;
+          try {
+            const res = await fetch('/api/session/view', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ sessionName, repoPath }),
+            });
+            const payload = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+            showToast(payload.message || 'Session opened in terminal');
+          } catch (err) {
+            showToast('Could not open session: ' + err.message, null, null, { error: true });
+          }
         };
       });
 
