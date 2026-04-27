@@ -831,9 +831,15 @@
               evalStatusHtml += '<button class="btn btn-secondary kcard-eval-btn" data-view-eval>View Eval</button>';
             }
           }
+          const specReviews = feature.specReviewSessions || [];
+          const specChecks = feature.specCheckSessions || [];
+          let specReviewHtml = '';
+          specReviews.forEach(r => { specReviewHtml += buildReviewerSectionHtml('Spec Review', r, { mode: 'spec' }); });
+          specChecks.forEach(r => { specReviewHtml += buildReviewerSectionHtml('Spec Check', r, { mode: 'spec-check' }); });
           innerHtml +=
             (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
             evalStatusHtml +
+            specReviewHtml +
             buildReviewCycleHistoryHtml(feature) +
             buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType) +
             (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
