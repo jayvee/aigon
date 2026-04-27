@@ -653,6 +653,11 @@
     .drawer-detail-content{display:grid;gap:12px}
     .drawer-empty{font-size:12px;color:var(--text-tertiary);padding:16px;border:1px dashed var(--border-subtle);border-radius:8px;background:var(--bg-elevated)}
     .drawer-empty-error{color:#fca5a5;border-color:rgba(239,68,68,.3)}
+    .log-picker{display:flex;gap:0;border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden;width:fit-content;margin-bottom:10px}
+    .log-picker-btn{padding:5px 14px;font-size:12px;font-weight:500;background:var(--bg-surface);color:var(--text-secondary);border:none;cursor:pointer;transition:background .12s,color .12s}
+    .log-picker-btn:not(:last-child){border-right:1px solid var(--border-subtle)}
+    .log-picker-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
+    .log-picker-btn.active{background:var(--accent);color:#fff}
     .detail-timeline{list-style:none;margin:0;padding:0 0 0 4px;display:grid;gap:10px}
     .timeline-item{display:grid;grid-template-columns:170px 14px minmax(0,1fr);gap:10px;align-items:start}
     .timeline-time{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);padding-top:1px}

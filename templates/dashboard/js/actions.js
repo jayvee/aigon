@@ -1855,7 +1855,6 @@ function updateAutonomousEvalOptions() {
   if (!evalSelect) return;
   const previousValue = String(evalSelect.value || '').trim();
 
-  evalSelect.disabled = false;
   replaceSelectOptions(evalSelect, buildAutonomousAgentOptions('evaluate'));
 
   if (previousValue && AUTONOMOUS_AGENT_IDS.includes(previousValue)) {
