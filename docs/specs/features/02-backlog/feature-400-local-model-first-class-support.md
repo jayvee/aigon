@@ -1,6 +1,8 @@
 ---
 complexity: medium
 set: competitive-positioning
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-27T00:58:37.631Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: local-model-first-class-support
