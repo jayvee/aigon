@@ -95,6 +95,61 @@ test('prioritise writes workflow snapshot (F270 1c2766bc)', () => withTempDir('a
     engine.ensureEntityBootstrappedSync(repo, 'feature', '06', 'backlog', specPath);
     assert.strictEqual(fs.readFileSync(path.join(repo, '.aigon/workflows/features/06/events.jsonl'), 'utf8'), eventsBefore);
 }));
+test('listVisibleEntitySpecs matches unprioritised feature-slug.md (REGRESSION: pause/reconcile drift)', () => withTempDir('aigon-slug-visible-', (repo) => {
+    const { seedEntityDirs } = require('../_helpers');
+    const fr = require('../../lib/feature-spec-resolver');
+    seedEntityDirs(repo, 'features');
+    const inbox = path.join(repo, 'docs/specs/features/01-inbox');
+    fs.writeFileSync(path.join(inbox, 'feature-my-slug-pause.md'), '# spec\n');
+    const m = fr.listVisibleEntitySpecs(repo, 'feature', 'my-slug-pause');
+    assert.strictEqual(m.length, 1);
+    assert.ok(m[0].path.includes('01-inbox'), m[0].path);
+    const m2 = fr.listVisibleEntitySpecs(repo, 'feature', 'feature-my-slug-pause');
+    assert.strictEqual(m2.length, 1);
+}));
+test('feature-prioritise bootstraps missing slug workflow before migrate', () => withTempDir('aigon-prio-missing-snap-', (repo) => {
+    // REGRESSION: inbox spec with no .aigon/workflows/<slug> (import / pre-F296) must not require `doctor --fix` before prioritise.
+    const { execFileSync } = require('child_process');
+    const { GIT_SAFE_ENV, seedEntityDirs } = require('../_helpers');
+    execFileSync('git', ['init', '-q'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+    execFileSync('git', ['config', 'user.email', 't@t'], { cwd: repo, stdio: 'pipe' });
+    execFileSync('git', ['config', 'user.name', 't'], { cwd: repo, stdio: 'pipe' });
+    seedEntityDirs(repo, 'features');
+    const inbox = path.join(repo, 'docs/specs/features/01-inbox');
+    fs.writeFileSync(path.join(inbox, 'feature-orphan-import.md'), '# Feature: orphan-import\n');
+    execFileSync('git', ['add', 'docs/'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+    execFileSync('git', ['commit', '-m', 'inbox'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+    const cli = path.join(__dirname, '../../aigon-cli.js');
+    execFileSync(process.execPath, [cli, 'feature-prioritise', 'orphan-import'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+    const snap = JSON.parse(fs.readFileSync(path.join(repo, '.aigon/workflows/features/01/snapshot.json'), 'utf8'));
+    assert.strictEqual(snap.featureId, '01');
+    assert.strictEqual(snap.currentSpecState, 'backlog');
+    assert.ok(fs.existsSync(path.join(repo, 'docs/specs/features/02-backlog/feature-01-orphan-import.md')));
+}));
+test('feature-unprioritise re-keys workflow id and strips numeric filename prefix', () => withTempDir('aigon-unprio-', (repo) => {
+    // REGRESSION: unprioritise must migrate engine dir numeric → slug and rename spec to inbox slug form.
+    execSync('git init -q', { cwd: repo });
+    execSync('git config user.email t@t', { cwd: repo });
+    execSync('git config user.name t', { cwd: repo });
+    const inboxDir = path.join(repo, 'docs/specs/features/01-inbox');
+    const backlogDir = path.join(repo, 'docs/specs/features/02-backlog');
+    fs.mkdirSync(inboxDir, { recursive: true });
+    fs.mkdirSync(backlogDir, { recursive: true });
+    const specPath = path.join(backlogDir, 'feature-99-unprio-slug-test.md');
+    fs.writeFileSync(specPath, '---\ncomplexity: low\n---\n\n# Feature: unprio-slug-test\n');
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '99', 'backlog', specPath);
+    execSync('git add . && git commit -qm init', { cwd: repo });
+    const cli = path.join(__dirname, '../../aigon-cli.js');
+    execSync(`${JSON.stringify(process.execPath)} ${JSON.stringify(cli)} feature-unprioritise 99`, { cwd: repo, stdio: 'pipe' });
+    const inboxSpec = path.join(inboxDir, 'feature-unprio-slug-test.md');
+    assert.ok(fs.existsSync(inboxSpec), 'inbox spec should be slug-only filename');
+    assert.ok(!fs.existsSync(specPath), 'backlog spec should be gone');
+    assert.ok(!fs.existsSync(path.join(repo, '.aigon/workflows/features/99')), 'numeric workflow dir should be migrated away');
+    const slugSnap = JSON.parse(fs.readFileSync(path.join(repo, '.aigon/workflows/features/unprio-slug-test/snapshot.json'), 'utf8'));
+    assert.strictEqual(slugSnap.featureId, 'unprio-slug-test');
+    assert.strictEqual(slugSnap.lifecycle, 'inbox');
+    assert.strictEqual(fs.realpathSync(slugSnap.specPath), fs.realpathSync(inboxSpec));
+}));
 testAsync('fleet: start → both ready → eval → select winner → close', () => withTempRepo(async (repo) => {
     writeSpec(repo, '02', 'fleet-test');
     await engine.startFeature(repo, '02', 'fleet', ['cc', 'gg']);

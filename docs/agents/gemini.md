@@ -104,7 +104,7 @@ Research follows the same lifecycle shape as features: `start -> do -> submit ->
 2. Run `/aigon:research-do <ID>` to conduct the research
 3. Write findings directly in the main research document
 4. Optionally run `/aigon:research-review <ID>` for a second-agent review pass
-5. Run `aigon agent-status research-complete` when your research pass is complete (from outside the tmux session, use the explicit form: `aigon agent-status research-complete <ID> <agent>`)
+5. Run `aigon agent-status implementation-complete` when your research pass is complete (from outside the tmux session, use the explicit form: `aigon agent-status implementation-complete <ID> <agent>`)
 6. Run `/aigon:research-close <ID>` when ready to finish
 
 ### Fleet Mode
@@ -159,7 +159,7 @@ These are recurring mistakes that derail Gemini sessions. Check yourself against
 **Symptom**: Dashboard shows agent as idle when it's actually working, or work is never marked as done.
 **Prevention**: Run these in order, every time:
 1. `aigon agent-status implementing` — before you start work
-2. `aigon agent-status implementation-complete` — after your final commit
+2. `aigon agent-status implementation-complete` — after your final commit (or `revision-complete` after addressing review feedback; `research-complete` for research findings)
 These are NOT optional. They are mandatory signals.
 
 ### 3. Modifying files you don't own (research)

@@ -73,7 +73,3 @@
 - [insights](https://www.aigon.build/docs/reference/commands/infra/insights): View workflow insights and analytics.
 - [next](https://www.aigon.build/docs/reference/commands/infra/next): Show suggested next action.
 - [help](https://www.aigon.build/docs/reference/commands/infra/help): Show help information.
-
-## Comparisons
-
-- [Comparisons](https://www.aigon.build/docs/comparisons): How Aigon compares to Cursor, Copilot Workspace, Kiro, and other AI development tools.

@@ -144,6 +144,20 @@ testAsync('nudge event is recorded and surfaced on snapshot', () => withTempDirA
     assert.deepStrictEqual(snapshot.nudges, [{ agentId: 'cc', role: 'do', text: 'follow up', atISO: at }]);
 }));
 
+// REGRESSION: dashboard validActions must include unprioritise for real backlog engine rows (API + pipeline).
+test('backlog snapshot exposes feature-unprioritise validAction', () => withTempDir('aigon-unprio-va-', (repo) => {
+    seed(repo);
+    const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-51-unprio-dash.md');
+    fs.mkdirSync(path.dirname(specPath), { recursive: true });
+    fs.writeFileSync(specPath, '# x\n');
+    workflowEngine.ensureEntityBootstrappedSync(repo, 'feature', '51', 'backlog', specPath);
+    const f = wrm.getFeatureDashboardState(repo, '51', 'backlog', []);
+    assert.ok(
+        (f.validActions || []).some((a) => a.action === 'feature-unprioritise'),
+        'feature-unprioritise on backlog snapshot',
+    );
+}));
+
 // buildPendingScheduleIndex regression test moved to @aigon/pro with feature
 // 236 alongside the scheduled-kickoff engine.
 

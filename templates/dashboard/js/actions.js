@@ -751,6 +751,22 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       });
       break;
     }
+    case 'feature-unprioritise':
+    case 'research-unprioritise': {
+      const unprioCmd = va.action === 'research-unprioritise' ? 'research-unprioritise' : 'feature-unprioritise';
+      const entityLabel = pipelineType === 'research' ? 'research topic' : 'feature';
+      const msg = (va.metadata && va.metadata.confirmationMessage)
+        || (`Move this ${entityLabel} back to the inbox? It will use a slug filename until you prioritise again.`);
+      const ok = await showConfirm({
+        title: 'Move #' + id + (feature.name ? ' — ' + feature.name : '') + ' to inbox?',
+        message: msg,
+        confirmLabel: 'Move to inbox',
+        cancelLabel: 'Cancel',
+      });
+      if (!ok) return;
+      await requestAction(unprioCmd, [id], repoPath, btn);
+      break;
+    }
     case 'feature-prioritise':
     case 'research-prioritise':
       await requestAction(pCmd('prioritise'), [feature.name], repoPath, btn);
