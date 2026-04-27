@@ -5,6 +5,9 @@ const os = require('os');
 
 const PORT = 4119;
 
+// Compress supervisor sweep interval for failure-modes idle-state tests.
+process.env.AIGON_SUPERVISOR_SWEEP_MS = process.env.AIGON_SUPERVISOR_SWEEP_MS || '2000';
+
 module.exports = defineConfig({
     testDir: path.join(__dirname),
     // Lifecycle tests can take up to 2 minutes (MockAgent delays + poll cycles)
