@@ -1,9 +1,16 @@
 <!-- description: Do feature <ID> - works in both Drive and Fleet modes -->
 # aigon-feature-do
 
+> **RUN THIS FIRST — no preamble, no --help, no file searches:**
+> ```bash
+> aigon feature-do {{ARG1_SYNTAX}}
+> ```
+> This prints the feature spec inline. Read the output, then follow the steps below.
+> Do NOT search for spec files, do NOT run `aigon --help`, do NOT run `./aigon-cli.js`. Just run the command above.
+
 Implement a feature. Works in Drive mode (branch), Drive worktree, and Fleet mode (competition).
 
-> **Worktree invariant (1 line):** you are already inside the correct repo — run `pwd && git branch --show-current` once to confirm a `feature-<ID>-...` branch in a worktree path, then use paths relative to cwd. If `aigon` fails, read the error — do NOT hunt for `aigon-cli.js`. See `docs/development_workflow.md` § "Worktree discipline" if you hit an edge case.
+> **Worktree invariant:** you are already inside the correct repo. If `aigon` fails, read the error — do NOT hunt for `aigon-cli.js`.
 
 ## Argument Resolution
 If no ID is provided or it doesn't match an active feature, run `aigon feature-list --active`, filter to matches, and ask the user which one.
