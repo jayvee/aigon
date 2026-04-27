@@ -1,3 +1,26 @@
+---
+commit_count: 7
+lines_added: 2143
+lines_removed: 2037
+lines_changed: 4180
+files_touched: 11
+fix_commit_count: 1
+fix_commit_ratio: 0.143
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 173
+output_tokens: 131000
+cache_creation_input_tokens: 289667
+cache_read_input_tokens: 17121112
+thinking_tokens: 0
+total_tokens: 17541952
+billable_tokens: 131173
+cost_usd: 40.9405
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 413 - simplify-dashboard-routes-2026-04
 Agent: cc
 
