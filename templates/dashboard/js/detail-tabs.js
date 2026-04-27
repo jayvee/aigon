@@ -423,13 +423,35 @@
         '</section>';
       }
 
+      function buildRelatedFeaturesMarkdown(features) {
+        const list = Array.isArray(features) ? features : [];
+        if (list.length === 0) return '_No features link to this research yet._';
+        return list.map(f => {
+          const id = f && f.id ? '#' + f.id : '#?';
+          const name = f && f.name ? f.name : '(unnamed)';
+          const stage = f && f.stage ? f.stage : 'unknown';
+          const set = f && f.set ? ' — set: `' + f.set + '`' : '';
+          return '- **' + id + '** ' + name + ' — *' + stage + '*' + set;
+        }).join('\n');
+      }
+
       function renderLog(payload) {
-        const logs = (payload && payload.agentLogs) || {};
-        const ids = Object.keys(logs).sort();
+        const logs = Object.assign({}, (payload && payload.agentLogs) || {});
+        const related = (payload && Array.isArray(payload.relatedFeatures)) ? payload.relatedFeatures : [];
+        const hasFeaturesTab = related.length > 0;
+        if (hasFeaturesTab) {
+          logs._features = {
+            path: null,
+            content: buildRelatedFeaturesMarkdown(related),
+          };
+        }
+        const agentIds = Object.keys(logs).filter(k => k !== '_features').sort();
+        const ids = hasFeaturesTab ? [...agentIds, '_features'] : agentIds;
         if (ids.length === 0) {
           detailEl.innerHTML = '<div class="drawer-empty">No agent log written yet.</div>';
           return;
         }
+        const labelFor = (id) => id === '_features' ? 'FEATURES' : id.toUpperCase();
         // Default the picker to the first agent (or keep prior selection if still present)
         if (!state.logSelectedAgent || !logs[state.logSelectedAgent]) {
           state.logSelectedAgent = ids[0];
@@ -441,7 +463,7 @@
             : '<div class="drawer-empty">No agent log written yet.</div>';
           const pickerHtml = ids.length > 1
             ? '<div class="log-picker">' + ids.map(id =>
-                '<button type="button" class="log-picker-btn' + (id === state.logSelectedAgent ? ' active' : '') + '" data-log-agent="' + escHtml(id) + '">' + escHtml(id.toUpperCase()) + '</button>'
+                '<button type="button" class="log-picker-btn' + (id === state.logSelectedAgent ? ' active' : '') + '" data-log-agent="' + escHtml(id) + '">' + escHtml(labelFor(id)) + '</button>'
               ).join('') + '</div>'
             : '';
           const pathHtml = entry.path

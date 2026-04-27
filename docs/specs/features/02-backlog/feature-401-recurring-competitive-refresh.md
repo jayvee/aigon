@@ -1,6 +1,7 @@
 ---
 complexity: medium
 set: competitive-positioning
+research: 44
 depends_on:
   [399]
 transitions:

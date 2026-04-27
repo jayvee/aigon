@@ -1,5 +1,6 @@
 ---
 complexity: medium
+research: 44
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-27T01:27:19.173Z", actor: "cli/feature-prioritise" }
 ---
