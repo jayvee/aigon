@@ -145,4 +145,24 @@ Model usage
     assert.strictEqual(foot.pct_used, 15);
 });
 
+// REGRESSION: GET /api/budget km — parse Kimi CLI /usage output.
+test('parseKimiUsage extracts tier pct remaining and reset hints', () => {
+    const { parseKimiUsage } = require('../../lib/budget-poller');
+    const tiers = parseKimiUsage(`
+╭────────────────────────────── API Usage ──────────────────────────────╮
+│  Weekly limit  ━━━╺━━━━━━━━━━━━━━━━  85% left  (resets in 5d 1h 27m)  │
+│  5h limit      ━━━╺━━━━━━━━━━━━━━━━  93% left  (resets in 3h 27m)     │
+╰───────────────────────────────────────────────────────────────────────╯
+`);
+    assert.strictEqual(tiers.length, 2);
+    assert.strictEqual(tiers[0].tier, 'weekly_limit');
+    assert.strictEqual(tiers[0].label, 'Weekly limit');
+    assert.strictEqual(tiers[0].pct_used, 15);
+    assert.strictEqual(tiers[0].resets_at, 'resets in 5d 1h 27m');
+    assert.strictEqual(tiers[1].tier, '5h_limit');
+    assert.strictEqual(tiers[1].label, '5h limit');
+    assert.strictEqual(tiers[1].pct_used, 7);
+    assert.strictEqual(tiers[1].resets_at, 'resets in 3h 27m');
+});
+
 report();

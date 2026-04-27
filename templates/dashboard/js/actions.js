@@ -2036,9 +2036,9 @@ function budgetClassFor(pctRemaining, polledAt) {
 function fetchBudget(force) {
   if (_budgetFetchPromise && !force) return _budgetFetchPromise;
   _budgetFetchPromise = fetch('/api/budget', { cache: 'no-store' })
-    .then(r => r.ok ? r.json() : { cc: null, cx: null, gg: null })
-    .catch(() => ({ cc: null, cx: null, gg: null }))
-    .then(data => { _budgetCache = data || { cc: null, cx: null, gg: null }; _budgetFetchPromise = null; return _budgetCache; });
+    .then(r => r.ok ? r.json() : { cc: null, cx: null, gg: null, km: null })
+    .catch(() => ({ cc: null, cx: null, gg: null, km: null }))
+    .then(data => { _budgetCache = data || { cc: null, cx: null, gg: null, km: null }; _budgetFetchPromise = null; return _budgetCache; });
   return _budgetFetchPromise;
 }
 
@@ -2068,7 +2068,7 @@ function budgetAgentEnabled(agentId) {
 
 function hasAnyBudgetData(data) {
   const entry = data || _budgetCache || {};
-  return !!(entry.cc || entry.cx || entry.gg);
+  return !!(entry.cc || entry.cx || entry.gg || entry.km);
 }
 
 function collectBudgetPctValues(data) {
@@ -2100,6 +2100,15 @@ function collectBudgetPctValues(data) {
       }
     }
   }
+  if (budgetAgentEnabled('km') && data.km && Array.isArray(data.km.tiers)) {
+    touchPoll(data.km.polled_at);
+    for (const t of data.km.tiers) {
+      if (t && t.pct_used != null) {
+        const rem = 100 - t.pct_used;
+        if (Number.isFinite(rem)) values.push(rem);
+      }
+    }
+  }
   return { values, polledAt };
 }
 
@@ -2119,7 +2128,7 @@ function budgetOverallAriaLabel(summaryClass) {
 
 function budgetCollapsedSummaryLine(data) {
   const parts = [];
-  for (const id of ['cc', 'cx', 'gg']) {
+  for (const id of ['cc', 'cx', 'gg', 'km']) {
     if (!budgetAgentEnabled(id)) continue;
     const s = budgetSummaryForAgent(id, data[id]);
     parts.push(`${s.name}: ${s.summaryText}`);
@@ -2409,7 +2418,7 @@ function ccRemaining(entry) {
 }
 
 function budgetSummaryForAgent(agentId, entry) {
-  const name = agentId === 'cc' ? 'Claude Code' : agentId === 'cx' ? 'Codex' : 'Gemini';
+  const name = agentId === 'cc' ? 'Claude Code' : agentId === 'cx' ? 'Codex' : agentId === 'km' ? 'Kimi' : 'Gemini';
   if (!entry) {
     return {
       id: agentId,
@@ -2426,7 +2435,7 @@ function budgetSummaryForAgent(agentId, entry) {
   let metrics = [];
   let values = [];
   let summaryText = 'usage unavailable';
-  if (agentId === 'gg') {
+  if (agentId === 'gg' || agentId === 'km') {
     if (!entry.tiers || !entry.tiers.length) {
       return {
         id: agentId,
@@ -2553,10 +2562,11 @@ function updateAutonomousBudgetNotice() {
 function renderBudgetWidget() {
   const el = document.getElementById('budget-widget');
   if (!el) return;
-  const data = _budgetCache || { cc: null, cx: null, gg: null };
+  const data = _budgetCache || { cc: null, cx: null, gg: null, km: null };
   const cc = data.cc;
   const cx = data.cx;
   const gg = data.gg;
+  const km = data.km;
   if (!hasAnyBudgetData(data)) {
     el.style.display = 'none';
     el.classList.remove('budget-widget--collapsed');
@@ -2570,7 +2580,7 @@ function renderBudgetWidget() {
 
   const children = [];
 
-  const latest = [cc && cc.polled_at, cx && cx.polled_at, gg && gg.polled_at].filter(Boolean).sort().pop();
+  const latest = [cc && cc.polled_at, cx && cx.polled_at, gg && gg.polled_at, km && km.polled_at].filter(Boolean).sort().pop();
   const head = createEl('div', { className: 'budget-widget-head' });
   head.appendChild(buildBudgetStatusDot(overallClass));
   const headTitles = createEl('div', { className: 'budget-widget-head-titles' });
@@ -2691,6 +2701,28 @@ function renderBudgetWidget() {
     }
     agentsWrap.appendChild(row);
   }
+  if (budgetAgentEnabled('km')) {
+    const row = createEl('span', { className: 'budget-agent' });
+    const head = createEl('span', { className: 'budget-agent-head' });
+    head.appendChild(createEl('span', { className: 'budget-agent-name', text: 'Kimi' }));
+    row.appendChild(head);
+    if (km && Array.isArray(km.tiers) && km.tiers.length) {
+      for (const t of km.tiers) {
+        const pctRem = t.pct_used != null ? 100 - t.pct_used : null;
+        row.appendChild(buildBudgetMetric({
+          label: (t.label || t.tier || 'tier') + ' remaining',
+          pctRemaining: pctRem,
+          resetsAt: t.resets_at || null,
+          resetsDate: t.resets_date || null,
+          resetsAtEpoch: t.resets_at_epoch || null,
+          polledAt: km.polled_at,
+        }));
+      }
+    } else {
+      row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'usage unavailable' }));
+    }
+    agentsWrap.appendChild(row);
+  }
 
   if (agentsWrap.childNodes.length) children.push(agentsWrap);
 
@@ -2709,7 +2741,7 @@ function renderBudgetWidget() {
 }
 
 function annotateAgentPickerBudget() {
-  const data = _budgetCache || { cc: null, cx: null, gg: null };
+  const data = _budgetCache || { cc: null, cx: null, gg: null, km: null };
   const picker = document.getElementById('agent-picker');
   if (!picker || picker.style.display === 'none') return;
   const rows = picker.querySelectorAll('.agent-check-row');
@@ -2717,7 +2749,7 @@ function annotateAgentPickerBudget() {
     const cb = row.querySelector('input');
     if (!cb) return;
     const id = cb.value;
-    if (id !== 'cc' && id !== 'cx' && id !== 'gg') return;
+    if (id !== 'cc' && id !== 'cx' && id !== 'gg' && id !== 'km') return;
     const existing = row.querySelector('.agent-check-budget');
     if (existing) existing.remove();
 
@@ -2733,7 +2765,7 @@ function annotateAgentPickerBudget() {
 
 /** Same compact per-row quota line as the Start agent picker (F322). */
 function annotateAutonomousAgentBudget() {
-  const data = _budgetCache || { cc: null, cx: null, gg: null };
+  const data = _budgetCache || { cc: null, cx: null, gg: null, km: null };
   const modal = document.getElementById('autonomous-modal');
   if (!modal || modal.style.display === 'none') return;
   const rows = modal.querySelectorAll('#autonomous-agent-checks .agent-check-row');
@@ -2741,7 +2773,7 @@ function annotateAutonomousAgentBudget() {
     const cb = row.querySelector('input');
     if (!cb) return;
     const id = cb.value;
-    if (id !== 'cc' && id !== 'cx' && id !== 'gg') return;
+    if (id !== 'cc' && id !== 'cx' && id !== 'gg' && id !== 'km') return;
     const existing = row.querySelector('.agent-check-budget');
     if (existing) existing.remove();
 
@@ -2773,7 +2805,7 @@ function budgetWarningForAgents(agentIds) {
       const wk = entry.weekly && entry.weekly.pct_remaining;
       if (fh != null && fh < 20) { worst = fh; label = '5-hour window'; }
       if (wk != null && wk < 20 && (worst == null || wk < worst)) { worst = wk; label = 'weekly window'; }
-    } else if (id === 'gg' && Array.isArray(entry.tiers)) {
+    } else if ((id === 'gg' || id === 'km') && Array.isArray(entry.tiers)) {
       for (const t of entry.tiers) {
         const rem = t.pct_used != null ? 100 - t.pct_used : null;
         const tierLabel = t.label || t.tier || 'tier';
@@ -2784,7 +2816,7 @@ function budgetWarningForAgents(agentIds) {
       }
     }
     if (worst != null) {
-      const name = id === 'cc' ? 'Claude Code' : id === 'cx' ? 'Codex' : 'Gemini';
+      const name = id === 'cc' ? 'Claude Code' : id === 'cx' ? 'Codex' : id === 'km' ? 'Kimi' : 'Gemini';
       warnings.push(`${name} has only ${worst}% remaining in its ${label}.`);
     }
   }
