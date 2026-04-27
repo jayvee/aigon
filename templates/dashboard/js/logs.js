@@ -1048,6 +1048,49 @@
         html.push('</div>');
       }
 
+      // ── Free-tier Cost section ──
+      const costTrend7d = buildDailyMetricTrend(filteredFeatures, 'costUsd', 7);
+      const costTrend30d = buildDailyMetricTrend(filteredFeatures, 'costUsd', 30);
+      const total7d = costTrend7d.reduce((s, v) => s + (v || 0), 0);
+      const total30d = costTrend30d.reduce((s, v) => s + (v || 0), 0);
+      const agentCostRows = (analytics.costByAgent || []);
+      const hasCostData = total30d > 0 || agentCostRows.length > 0;
+      html.push('<div class="stats-section-title" style="margin-top:16px">Cost</div>');
+      html.push('<div class="stats-cards">');
+      html.push(buildStatCard('Spend (7d)', total7d > 0 ? fmtUsd(total7d) : 'n/a', null, null,
+        'Total estimated AI compute cost for features closed in the last 7 days.'));
+      html.push(buildStatCard('Spend (30d)', total30d > 0 ? fmtUsd(total30d) : 'n/a', null, null,
+        'Total estimated AI compute cost for features closed in the last 30 days.'));
+      html.push('</div>');
+      if (hasCostData) {
+        const costSpark7 = buildSparklineSvg(costTrend7d, '#f59e0b');
+        const costSpark30 = buildSparklineSvg(costTrend30d, '#f97316');
+        if (costSpark7 || costSpark30) {
+          html.push('<div class="stats-row" style="margin-top:8px">');
+          if (costSpark7) html.push('<div class="stats-block"><div class="stats-block-title">Spend trend (7d)</div><div class="sparkline-wrap">' + costSpark7 + '</div></div>');
+          if (costSpark30) html.push('<div class="stats-block"><div class="stats-block-title">Spend trend (30d)</div><div class="sparkline-wrap">' + costSpark30 + '</div></div>');
+          html.push('</div>');
+        }
+        if (agentCostRows.length > 0) {
+          const fmtTok = n => n >= 1000000 ? (n / 1000000).toFixed(1) + 'M' : n >= 1000 ? Math.round(n / 1000) + 'k' : String(n);
+          html.push('<div class="stats-block" style="margin-top:8px;overflow-x:auto">');
+          html.push('<div class="stats-block-title">Cost by Agent (30d)</div>');
+          html.push('<table class="stats-leaderboard"><thead><tr><th>Agent</th><th>Sessions</th><th>Tokens</th><th>USD</th></tr></thead><tbody>');
+          agentCostRows.forEach(row => {
+            const costCell = row.costUsd > 0 ? fmtUsd(row.costUsd) : 'n/a';
+            const tokCell = row.billableTokens > 0 ? fmtTok(row.billableTokens) : 'n/a';
+            html.push('<tr>' +
+              '<td><span class="agent-mono">' + escHtml((row.agent || '?').toUpperCase()) + '</span></td>' +
+              '<td>' + escHtml(String(row.sessions || 0)) + '</td>' +
+              '<td>' + escHtml(tokCell) + '</td>' +
+              '<td>' + escHtml(costCell) + '</td>' +
+              '</tr>');
+          });
+          html.push('</tbody></table>');
+          html.push('</div>');
+        }
+      }
+
       if (totalCompleted === 0 && allAgentIds.length === 0) {
         html.push('<div class="stats-empty-msg">No completed features found. Statistics will appear here once features are closed.</div>');
       }
