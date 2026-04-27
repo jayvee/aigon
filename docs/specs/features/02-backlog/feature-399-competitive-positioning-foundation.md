@@ -1,6 +1,8 @@
 ---
 complexity: very-high
 set: competitive-positioning
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-27T00:58:36.948Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: competitive-positioning-foundation
