@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const { test, withTempDir, report } = require('../_helpers');
 const { wrapAigonCommand, migrateAigonHookCommand } = require('../../lib/commands/setup')._test;
+const { pathsFromGitStatusPorcelain } = require('../../lib/commands/setup/gitignore-and-hooks');
 const userShell = process.env.SHELL || '/bin/bash';
 test('wrap/migrate hook command cases', () => {
     const wrapped = `${userShell} -l -c "aigon check-version"`;
@@ -125,4 +126,9 @@ test('non-aigon hook entry is left byte-for-byte identical', () => withTempDir('
         'non-aigon hook command must be byte-for-byte identical after migration'
     );
 }));
+test('pathsFromGitStatusPorcelain lists paths for explicit git add (F307 seed-reset)', () => {
+    // REGRESSION: seed-reset provision must not use `git add -A`; parser must cover rename + untracked.
+    const got = pathsFromGitStatusPorcelain(' M docs/foo.md\n?? .claude/x\nR  a.md -> b.md\n').sort();
+    assert.deepStrictEqual(got, ['.claude/x', 'a.md', 'b.md', 'docs/foo.md'].sort());
+});
 report();
