@@ -1,5 +1,5 @@
 ---
-complexity: high
+complexity: medium
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-27T02:25:02.570Z", actor: "cli/feature-prioritise" }
 ---
@@ -30,9 +30,9 @@ When an agent completes its work but fails to emit the required lifecycle signal
   - `spec-review-complete` — agent session role `spec-review`, no `spec-review-complete` signal recorded
   - `research-complete` — research entity role `do`, no `research-complete`/`submitted` signal recorded
 - [ ] Menu item label uses "Mark": "Mark review complete", "Mark implementation complete", etc.
-- [ ] The menu item is absent (not disabled, not greyed — absent) when the working spinner is active for that agent
+- [ ] The menu item is absent (not disabled, not greyed — absent) when the working spinner is active for that agent (`isWorking` is true)
 - [ ] The menu item is absent when the completion signal has already been emitted
-- [ ] After clicking, the dashboard row updates within one polling cycle (≤ 5 s) to reflect the new state — no manual refresh required
+- [ ] After clicking, the dashboard row updates within one polling cycle (≤ 5 s) to reflect the new state — no manual refresh required. The update is silent; the row state change acts as the confirmation (no separate toast/dialog).
 - [ ] The action is logged as `source: 'dashboard/mark-complete'` in the workflow event, distinguishable from agent-emitted signals in the event log
 - [ ] API rejects unknown signal values with 400; only the five listed signals are accepted
 - [ ] Playwright test: renders the menu item when signal is missing and spinner is not active; does not render it when signal is present; clicking it advances the displayed state
@@ -40,7 +40,7 @@ When an agent completes its work but fails to emit the required lifecycle signal
 ## Validation
 
 ```bash
-node -c lib/server-routes.js
+node -c lib/dashboard-routes.js
 npm run test:iterate
 ```
 
@@ -59,40 +59,34 @@ POST /api/research/:id/mark-complete
 Body: { signal: 'implementation-complete' | 'revision-complete' | 'review-complete' | 'spec-review-complete' | 'research-complete', agentId: string }
 ```
 
-Handler in `lib/server-routes.js`: validate signal is one of the five allowed values (400 otherwise), resolve entity, then call the same `wf.*` function that `aigon agent-status` calls — e.g. `wf.recordCodeReviewCompleted(...)` for `review-complete`. Set `source: 'dashboard/mark-complete'`.
+Handler in `lib/dashboard-routes.js`: validate signal is one of the five allowed values (400 otherwise), resolve entity, then call the same workflow function that `aigon agent-status` calls to record completion. Set `source: 'dashboard/mark-complete'`.
+
+### Detecting "signal missing" via Server (`lib/dashboard-status-collector.js`)
+
+To prevent a second source of truth for workflow state logic in the frontend, `lib/dashboard-status-collector.js` must compute whether an escape hatch is applicable.
+It should append a `pendingCompletionSignal` property (e.g. `'implementation-complete'`, or `null`) to the agent object sent to the frontend, based on the agent's role and current workflow state.
 
 ### Dashboard UI (`templates/dashboard/js/`)
 
-In the overflow menu builder (wherever `···` actions are assembled per agent row), add a conditional entry:
+In the overflow menu builder (wherever `···` actions are assembled per agent row), add a conditional entry based on the server-provided property:
 
 ```js
-const pendingSignal = getPendingCompletionSignal(agent, entity);
-if (pendingSignal && !agent.isWorking) {
+if (agent.pendingCompletionSignal && !agent.isWorking) {
+  const labelMap = {
+    'implementation-complete': 'implementation',
+    'revision-complete': 'revision',
+    'review-complete': 'review',
+    'spec-review-complete': 'spec review',
+    'research-complete': 'research'
+  };
   menuItems.push({
-    label: `Mark ${pendingSignal.label} complete`,
-    action: () => postMarkComplete(entity.id, entity.type, pendingSignal.signal, agent.id),
+    label: `Mark ${labelMap[agent.pendingCompletionSignal]} complete`,
+    action: () => postMarkComplete(entity.id, entity.type, agent.pendingCompletionSignal, agent.id),
   });
 }
 ```
 
-`getPendingCompletionSignal` returns `null` if the signal was already emitted or the session role doesn't map to one of the five scenarios. It reads from the status data already present on the row — no extra API call.
-
-Signal → label mapping:
-| signal | label |
-|---|---|
-| `implementation-complete` | "implementation" |
-| `revision-complete` | "revision" |
-| `review-complete` | "review" |
-| `spec-review-complete` | "spec review" |
-| `research-complete` | "research" |
-
-### Detecting "signal missing" without extra API calls
-
-The dashboard status collector already surfaces agent `status` on each row. Use it directly: if `status` is one of the in-progress values (`reviewing`, `implementing`, `revising`, `spec-reviewing`) the completion signal has not been emitted; show the menu item. If `status` is the corresponding complete value, hide it.
-
-### "Agent is working" detection
-
-Use the existing working-spinner / `isWorking` flag already computed for each agent row (based on the heartbeat or working pattern). When `isWorking` is true, omit the menu item entirely.
+This ensures the frontend remains a dumb presentation layer regarding workflow eligibility.
 
 ## Dependencies
 
@@ -107,10 +101,6 @@ Use the existing working-spinner / `isWorking` flag already computed for each ag
 - Clearing `awaiting-input` state
 - Clearing error state / retry
 - Confirmation dialog on click (single-click is sufficient for a recoverable action)
-
-## Open Questions
-
-- Should clicking open a brief toast/confirmation ("Marked review complete") or is silent state update sufficient? Recommended: silent update — the row state change IS the confirmation.
 
 ## Related
 
