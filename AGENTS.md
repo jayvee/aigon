@@ -137,7 +137,7 @@ Supporting state:
 - **Recurring templates** (`docs/specs/recurring/`) — weekly feature templates; scanned by `lib/recurring.js` at server startup and every 24 h; excluded from the Kanban board and dashboard discovery
 - **Agent status files** (`.aigon/state/feature-{id}-{agent}.json`) — managed by `lib/agent-status.js`
 - **Per-agent overrides** (`snapshot.agents[id].modelOverride` / `effortOverride`) — optional `{model, effort}` captured on `feature.started` and honoured by every respawn path via `lib/agent-launch.js:buildAgentLaunchInvocation`. Precedence: event override > workflow stage triplet > `aigon config models` > agent JSON default > null. Never read `cliConfig.models[...]` directly in a new spawn site
-- **Shell trap signals**: `buildAgentCommand()` wraps agent commands with a bash `trap EXIT` that fires `agent-status submitted` / `review-complete` / `error`. A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. Controlled by `signals` in `templates/agents/*.json`.
+- **Shell trap signals**: `buildAgentCommand()` wraps agent commands with a bash `trap EXIT` that fires `agent-status implementation-complete` / `review-complete` / `error`. A heartbeat sidecar touches `.aigon/state/heartbeat-{featureId}-{agentId}` every 30s. Controlled by `signals` in `templates/agents/*.json`.
 - **Review state**: `.aigon/workflows/features/{id}/review-state.json` tracks `current` + `history[]`. Writers deprecated (F342) — AutoConductor now polls `currentSpecState === 'code_revision_complete'` from the engine snapshot; `review-complete` sidecar still accepted as a synonym during migration.
 - **AutoConductor** (`feature-autonomous-start __run-loop`): detached tmux session. Solo: polls allReady → review session (if `--review-agent`) → waits for `review-complete` → `feature-close`. Fleet: polls allReady → eval session → polls eval file for `**Winner:**` → `feature-close <winner>`. Kills its own tmux session on completion.
 - **SetConductor** (`set-autonomous-start __run-loop`): detached tmux session `<repo>-s<slug>-auto` that runs set members sequentially in topological order, delegates each member to `feature-autonomous-start`, and persists durable set state at `.aigon/state/set-<slug>-auto.json` (lock-protected writes).
@@ -236,7 +236,7 @@ When `origin` is GitHub and `gh` is available, `feature-close` does a best-effor
 
 ## Rules Before Editing
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
-2. **Filter `.env.local`** — never let it block `feature-close` or `aigon agent-status submitted`
+2. **Filter `.env.local`** — never let it block `feature-close` or `aigon agent-status implementation-complete`
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit
 4. **Restart after backend edits** — after changing any `lib/*.js`, run `aigon server restart`
 5. **Don't move spec files manually** — always use `aigon` CLI commands to transition state
@@ -251,7 +251,7 @@ When `origin` is GitHub and `gh` is available, `feature-close` does a best-effor
 ### T1 — two distinct gates: iterate vs. pre-push
 The test suite runs at two tiers; do not collapse them into one.
 
-**Pre-push gate** (before `git push` / `aigon agent-status submitted` / `feature-close`):
+**Pre-push gate** (before `git push` / `aigon agent-status implementation-complete` / `feature-close`):
 ```bash
 npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh
 ```

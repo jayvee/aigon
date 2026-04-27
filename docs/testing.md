@@ -29,7 +29,7 @@ npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh
 ```
 
 - **What it runs**: full integration + workflow suite (parallelised, ~12s), full Playwright UI suite (~76s), LOC budget check (~0.1s). Total: ~90s.
-- **When it fires**: before `git push`, before `aigon agent-status submitted`, before `feature-close` merges to main. Catches everything the iterate gate skipped.
+- **When it fires**: before `git push`, before `aigon agent-status implementation-complete`, before `feature-close` merges to main. Catches everything the iterate gate skipped.
 - **Failures here block the push.** Do not skip with `--no-verify`. Do not proceed past a real failure — fix it.
 
 The pre-push gate is the safety net that lets the iterate gate be aggressive. Trust it.

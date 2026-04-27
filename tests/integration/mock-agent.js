@@ -131,7 +131,19 @@ class MockAgent {
         // survive tmux's argv → bash -lc handoff. JSON.stringify's `\n` escapes
         // are *not* interpreted inside bash double-quoted strings, so the trap +
         // heartbeat lines collapse onto a single line and the wrapper breaks.
-        const quoted = require('../../lib/terminal-adapters').shellQuote(command);
+        // Make the trap's `aigon ...` resolve to *this* worktree's CLI rather
+        // than the globally installed binary (which may be out of sync when
+        // we're iterating in a feature worktree).
+        const shimDir = path.join(this.repoPath, '.aigon', 'test-bin');
+        fs.mkdirSync(shimDir, { recursive: true });
+        const shimPath = path.join(shimDir, 'aigon');
+        fs.writeFileSync(shimPath, `#!/usr/bin/env sh\nexec node ${JSON.stringify(CLI_PATH)} "$@"\n`);
+        fs.chmodSync(shimPath, 0o755);
+
+        // Inject the shim PATH inside the command body so it survives bash
+        // login-shell profile sourcing (which would otherwise reset PATH).
+        const wrappedCommand = `export PATH=${require('../../lib/terminal-adapters').shellQuote(shimDir)}:"$PATH"\n${command}`;
+        const quoted = require('../../lib/terminal-adapters').shellQuote(wrappedCommand);
         const tmuxArgs = [
             'new-session', '-d', '-s', sessionName, '-c', this.worktreePath,
             '-e', `MOCK_AGENT_SLEEP_SEC=${sleepSec}`,
@@ -163,7 +175,7 @@ class MockAgent {
                 if (fs.existsSync(statusPath)) {
                     try {
                         const rec = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
-                        if (rec && rec.status === targetStatus) return;
+                        if (rec && (rec.status === targetStatus || rec.status === 'implementation-complete')) return;
                     } catch (_) { /* file mid-write */ }
                 }
                 await sleep(150);

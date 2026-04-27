@@ -243,7 +243,7 @@ Then tell the user:
 
 > "Evaluation complete. Selected features have been created with research backlinks. Run `/aigon:research-close {ID}` when ready."
 
-Do **not** run `aigon agent-status submitted` — that signal is for the per-agent findings phase (`03-in-progress`). Closing out the evaluation is a user decision; they run `research-close` when they're satisfied with the output.
+Do **not** run `aigon agent-status research-complete` — that signal is for the per-agent findings phase (`03-in-progress`). Closing out the evaluation is a user decision; they run `research-close` when they're satisfied with the output.
 
 **STAY in the session.** The user may want to review the evaluation or ask for changes.
 

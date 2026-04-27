@@ -78,7 +78,7 @@ for (const file of fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.json'))) 
             assert.ok(prompt.includes(`${prefix}feature-code-revise 07`), prompt);
         } else {
             const dir = cfg.output?.commandDir || '.agents/skills';
-            assert.ok(prompt.includes(`${dir}/`) && prompt.includes('feature-code-revise') && /\bRead\b/.test(prompt) && prompt.includes('aigon agent-status feedback-addressed'), prompt);
+            assert.ok(prompt.includes(`${dir}/`) && prompt.includes('feature-code-revise') && /\bRead\b/.test(prompt) && prompt.includes('aigon agent-status revision-complete'), prompt);
             assert.ok(!/\$aigon-feature-code-revise\b/.test(prompt) && !/ aigon feature-code-revise /.test(prompt), prompt);
         }
     });

@@ -90,7 +90,7 @@ Thin facades (re-exports only): `lib/constants.js`, `lib/dashboard.js`, `lib/dev
 
 ## Five Rules Before Editing
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
-2. **Filter `.env.local`** — never let it block `feature-close` or `aigon agent-status submitted`; ignore in git checks
+2. **Filter `.env.local`** — never let it block `feature-close` or `aigon agent-status implementation-complete`; ignore in git checks
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit
 4. **Restart after backend edits** — after changing any `lib/*.js`, restart `aigon server restart`
 5. **Don't move spec files manually** — always use `aigon` CLI commands to transition state

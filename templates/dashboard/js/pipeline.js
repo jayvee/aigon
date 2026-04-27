@@ -330,11 +330,19 @@
 
     // Baseline icon/label/cls per agent status — mirrors server STATE_RENDER_META for review states.
     const AGENT_STATUS_META = {
-      'addressing-review': { icon: '●', label: 'Addressing review',   cls: 'status-reviewing'  },
-      'feedback-addressed':{ icon: '✓', label: 'Feedback addressed',  cls: 'status-review-done' },
-      'implementing':      { icon: '○', label: 'Session ended',        cls: 'status-ended'      },
-      'submitted':         { icon: '✓', label: 'Submitted',            cls: 'status-submitted'  },
-      'waiting':           { icon: '⏳', label: 'Needs input',         cls: 'status-waiting'    },
+      'addressing-review':    { icon: '●', label: 'Addressing review',    cls: 'status-reviewing'  },
+      'feedback-addressed':   { icon: '✓', label: 'Revision complete',    cls: 'status-review-done' },
+      'revision-complete':    { icon: '✓', label: 'Revision complete',    cls: 'status-review-done' },
+      'revising':             { icon: '●', label: 'Revising',             cls: 'status-reviewing'  },
+      'reviewing':            { icon: '●', label: 'Reviewing',            cls: 'status-reviewing'  },
+      'review-complete':      { icon: '✓', label: 'Review complete',      cls: 'status-review-done' },
+      'spec-reviewing':       { icon: '●', label: 'Spec reviewing',       cls: 'status-reviewing'  },
+      'spec-review-complete': { icon: '✓', label: 'Spec review complete', cls: 'status-review-done' },
+      'implementing':         { icon: '○', label: 'Session ended',        cls: 'status-ended'      },
+      'implementation-complete': { icon: '✓', label: 'Implementation complete', cls: 'status-submitted' },
+      'research-complete':    { icon: '✓', label: 'Research complete',    cls: 'status-submitted'  },
+      'submitted':            { icon: '✓', label: 'Submitted',            cls: 'status-submitted'  },
+      'waiting':              { icon: '⏳', label: 'Needs input',         cls: 'status-waiting'    },
     };
     const AGENT_STATUS_DEFAULT = { icon: '○', label: 'Not started', cls: 'status-idle' };
 
@@ -347,7 +355,10 @@
       let { icon, label, cls } = AGENT_STATUS_META[status] || AGENT_STATUS_DEFAULT;
 
       // Compound overrides: tmux/session-ended state takes priority over workflow status
-      if (tmuxRunning && status !== 'submitted' && status !== 'waiting' &&
+      if (tmuxRunning && status !== 'submitted' && status !== 'implementation-complete' &&
+          status !== 'revision-complete' && status !== 'research-complete' &&
+          status !== 'review-complete' && status !== 'spec-review-complete' &&
+          status !== 'waiting' &&
           status !== 'addressing-review' && status !== 'feedback-addressed') {
         icon = '●'; label = drive ? 'Implementing' : 'Running'; cls = 'status-running';
       } else if (drive && status === 'implementing') {
