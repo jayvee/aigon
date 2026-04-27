@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 336
+lines_removed: 17
+lines_changed: 353
+files_touched: 8
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 266
+output_tokens: 123696
+cache_creation_input_tokens: 415866
+cache_read_input_tokens: 30638041
+thinking_tokens: 0
+total_tokens: 31177869
+billable_tokens: 123962
+cost_usd: 12.6071
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 405 - dashboard-workflow-escape-hatches
 Agent: cc
 
