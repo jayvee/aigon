@@ -68,7 +68,8 @@ testAsync('submit command fails before writing stale cache when engine write fai
     const preload = path.join(repo, 'force-submit-failure.js');
     write(repo, 'force-submit-failure.js', `const engine = require(${JSON.stringify(path.join(__dirname, '..', '..', 'lib', 'workflow-core', 'engine.js'))}); engine.emitSignal = async () => { throw new Error('forced signal failure'); };`);
     const result = await cli(['agent-status', 'submitted', '34', 'cc'], repo, {}, preload);
-    assert.notStrictEqual(result.status, 0); assert.match(result.stderr || result.stdout, /Failed to record submitted state for research 34 \(cc\): forced signal failure/);
+    assert.notStrictEqual(result.status, 0);
+    assert.match(result.stderr || result.stdout, /Failed to record '(?:submitted|research-complete)' for research 34 \(cc\): forced signal failure/);
     assert.ok(!fs.existsSync(path.join(repo, '.aigon', 'state', 'research-34-cc.json'))); assert.strictEqual(readEvents(repo, '.aigon/workflows/research/34/events.jsonl', 'signal.agent_ready').length, 0);
 }));
 
