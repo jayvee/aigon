@@ -1,5 +1,7 @@
 ---
 complexity: very-high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-27T02:23:14.834Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent lifecycle signal rename
