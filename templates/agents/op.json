@@ -26,7 +26,7 @@
   "cli": {
     "command": "opencode",
     "implementFlag": "",
-    "injectPromptViaTmux": true,
+    "promptFlag": "--prompt",
     "implementPrompt": "feature-do",
     "evalPrompt": "feature-eval",
     "reviewPrompt": "feature-code-review",
@@ -38,165 +38,113 @@
         "label": "Default (OpenCode config)"
       },
       {
-        "value": "openrouter/moonshotai/kimi-k2.6",
-        "label": "Kimi K2.6 via OpenRouter",
-        "pricing": {
-          "input": 0.14,
-          "output": 0.55
-        },
+        "value": "openrouter/meta-llama/llama-3.3-70b-instruct",
+        "label": "Llama 3.3 70B via OpenRouter (cheapest)",
+        "pricing": { "input": 0.1, "output": 0.32 },
         "notes": {
-          "spec_review": "Good reasoning on requirements; capable of nuanced spec review.",
-          "implement": "Strong code generation; performs well on implementation tasks.",
-          "review": "Reliable code review; good instruction following.",
-          "spec": "Strong at structured output; competitive for spec drafting at low cost.",
-          "research": null
+          "implement": "Ultra-cheap general-purpose. Capable for routine implementation; weaker on complex reasoning."
         },
-        "score": {
-          "spec_review": null,
-          "implement": null,
-          "review": null,
-          "spec": null,
-          "research": null
+        "score": { "implement": 3 },
+        "lastRefreshAt": "2026-04-27T11:30:00.000Z"
+      },
+      {
+        "value": "openrouter/deepseek/deepseek-chat-v3.1",
+        "label": "DeepSeek V3.1 via OpenRouter",
+        "pricing": { "input": 0.15, "output": 0.75 },
+        "notes": {
+          "implement": "Strong code at low cost; reliable tool-use; good default for cost-sensitive runs."
         },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "score": { "implement": 4 },
+        "lastRefreshAt": "2026-04-27T11:30:00.000Z"
+      },
+      {
+        "value": "openrouter/x-ai/grok-code-fast-1",
+        "label": "Grok Code Fast 1 via OpenRouter",
+        "pricing": { "input": 0.2, "output": 1.5 },
+        "notes": {
+          "implement": "Code-optimised, low latency; strong on agentic loops and tool use."
+        },
+        "score": { "implement": 3.5 },
+        "lastRefreshAt": "2026-04-27T11:30:00.000Z"
+      },
+      {
+        "value": "openrouter/qwen/qwen3-235b-a22b-2507",
+        "label": "Qwen3 235B (2507) via OpenRouter",
+        "pricing": { "input": 0.07, "output": 0.1 },
+        "notes": {
+          "implement": "Alibaba flagship MoE; 256K ctx; excellent cost/perf — strong general + code at sub-cent input."
+        },
+        "score": { "implement": 4 },
+        "lastRefreshAt": "2026-04-27T12:00:00.000Z"
+      },
+      {
+        "value": "openrouter/qwen/qwen3-coder-30b-a3b-instruct",
+        "label": "Qwen3 Coder 30B via OpenRouter",
+        "pricing": { "input": 0.07, "output": 0.27 },
+        "notes": {
+          "implement": "Code-specialist MoE; 156K ctx; strong on agentic loops and tool use at very low cost."
+        },
+        "score": { "implement": 3.5 },
+        "lastRefreshAt": "2026-04-27T12:00:00.000Z"
+      },
+      {
+        "value": "openrouter/qwen/qwen3-next-80b-a3b-thinking",
+        "label": "Qwen3 Next 80B Thinking via OpenRouter",
+        "pricing": { "input": 0.1, "output": 0.78 },
+        "notes": {
+          "implement": "Reasoning variant; spends tokens to think before answering; suits architectural tasks."
+        },
+        "score": { "implement": 4 },
+        "lastRefreshAt": "2026-04-27T12:00:00.000Z"
+      },
+      {
+        "value": "openrouter/mistralai/devstral-small",
+        "label": "Devstral Small via OpenRouter",
+        "pricing": { "input": 0.1, "output": 0.3 },
+        "notes": {
+          "implement": "Mistral's coding-agent specialist; tuned for SWE-bench style tool use; 128K ctx."
+        },
+        "score": { "implement": 3.5 },
+        "lastRefreshAt": "2026-04-27T12:00:00.000Z"
+      },
+      {
+        "value": "openrouter/nvidia/nemotron-3-super-120b-a12b",
+        "label": "Nemotron 3 Super 120B via OpenRouter",
+        "pricing": { "input": 0.09, "output": 0.45 },
+        "notes": {
+          "implement": "Nvidia 120B MoE; 256K ctx; strong instruction following and structured-output discipline."
+        },
+        "score": { "implement": 4 },
+        "lastRefreshAt": "2026-04-27T12:00:00.000Z"
       },
       {
         "value": "openrouter/z-ai/glm-5.1",
         "label": "GLM-5.1 via OpenRouter",
-        "pricing": {
-          "input": 0.14,
-          "output": 0.55
-        },
+        "pricing": { "input": 1.05, "output": 3.5 },
         "notes": {
-          "spec_review": "Adequate for routine spec checks; less benchmarked on Aigon tasks.",
-          "implement": "Good code generation quality for cost tier.",
-          "review": "Adequate code review; less benchmarked on Aigon tasks.",
-          "spec": "Cost-effective spec drafting; strong multilingual support.",
-          "research": null
+          "implement": "Capable general-purpose model with reliable tool use."
         },
-        "score": {
-          "spec_review": null,
-          "implement": null,
-          "review": null,
-          "spec": null,
-          "research": null
-        },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
-      },
-      {
-        "value": "openrouter/deepseek/deepseek-chat-v3.1",
-        "label": "DeepSeek V3.1 (hybrid) via OpenRouter",
-        "pricing": {
-          "input": 0.27,
-          "output": 1.1
-        },
-        "notes": {
-          "spec_review": "Capable spec reviewer; good at identifying edge cases.",
-          "implement": "Strong implementation quality; good balance of cost and capability.",
-          "review": "Solid code review; catches technical issues reliably.",
-          "spec": "Strong reasoning at low cost; good spec drafting quality.",
-          "research": "Good multi-hop reasoning; capable of open-ended synthesis and structured research output."
-        },
-        "score": {
-          "spec_review": 3.5,
-          "implement": 4,
-          "review": 3.5,
-          "spec": 3.5,
-          "research": 3.5
-        },
-        "lastRefreshAt": "2026-04-26T06:38:18.584Z"
+        "score": { "implement": 3.5 },
+        "lastRefreshAt": "2026-04-27T11:30:00.000Z"
       },
       {
         "value": "openrouter/deepseek/deepseek-v3.2-speciale",
-        "label": "DeepSeek V3.2 Speciale (reasoning) via OpenRouter",
-        "pricing": {
-          "input": 0.27,
-          "output": 1.1
-        },
+        "label": "DeepSeek V3.2 Speciale via OpenRouter",
+        "pricing": { "input": 0.27, "output": 1.1 },
         "notes": {
-          "spec_review": "Reasoning-enhanced; more thorough at spec gap analysis.",
-          "implement": "Reasoning model; better at architectural decisions, slower for simple tasks.",
-          "review": "Reasoning-enhanced; more thorough at subtle code issues.",
-          "spec": "Extended reasoning version; stronger at complex spec analysis.",
-          "research": "Extended reasoning enhances research depth; strong at synthesis across multiple sources."
+          "implement": "Capable reasoning model; quarantined — OpenRouter routing reports no tool-use endpoints (2026-04-27)."
         },
-        "score": {
-          "spec_review": 4,
-          "implement": 4.5,
-          "review": 4,
-          "spec": 4,
-          "research": 4
-        },
-        "lastRefreshAt": "2026-04-26T06:38:18.584Z"
-      },
-      {
-        "value": "openrouter/mistralai/codestral-2501",
-        "label": "Codestral 2501 via OpenRouter",
-        "pricing": {
-          "input": 0.3,
-          "output": 0.9
-        },
-        "notes": {
-          "spec_review": "Strong technical spec review; weaker on business requirements.",
-          "implement": "Code-completion specialist (FIM); Aider polyglot at 11.1% (bottom 10%) — not competitive for agentic implementation tasks despite strong FIM benchmark results.",
-          "review": "Adequate for syntax-level code review; poor at higher-level architectural analysis.",
-          "spec": "FIM-optimized model; weak at open-ended spec drafting and requirements reasoning.",
-          "research": "FIM code specialist; poor at open-ended research synthesis and cross-source judgment."
-        },
-        "score": {
-          "spec_review": 2,
-          "implement": 2,
-          "review": 2.5,
-          "spec": 2,
-          "research": 1.5
-        },
-        "lastRefreshAt": "2026-04-26T06:38:18.584Z"
-      },
-      {
-        "value": "openrouter/qwen/qwen3-235b-a22b:free",
-        "label": "Qwen3 235B via OpenRouter",
-        "pricing": {
-          "input": 0,
-          "output": 0
-        },
-        "notes": {
-          "spec_review": "Capable reviewer at zero cost; subject to OpenRouter free-tier limits.",
-          "implement": "Capable implementer at zero cost; subject to OpenRouter free-tier limits.",
-          "review": "Capable reviewer at zero cost; subject to OpenRouter free-tier limits.",
-          "spec": "Very large free-tier model; capable but rate-limited.",
-          "research": "Large capable model; adequate research synthesis at zero cost; rate-limited."
-        },
-        "score": {
-          "spec_review": 3,
-          "implement": 3.5,
-          "review": 3,
-          "spec": 3.5,
-          "research": 3
-        },
-        "lastRefreshAt": "2026-04-26T06:38:18.584Z"
-      },
-      {
-        "value": "openrouter/qwen/qwen3-coder:exacto",
-        "label": "Qwen3 Code (exacto) via OpenRouter",
-        "pricing": {
-          "input": 0.07,
-          "output": 0.28
-        },
-        "notes": {
-          "spec_review": "Strong on technical spec review; weaker on requirements reasoning.",
-          "implement": "Coder-optimized; strong implementation at very low cost.",
-          "review": "Strong code review; optimized for code correctness.",
-          "spec": "Code-focused Qwen3 variant; best for technical spec sections.",
-          "research": "Code-optimised; weak at open-ended research synthesis."
-        },
-        "score": {
-          "spec_review": 2.5,
-          "implement": 3.5,
-          "review": 3,
-          "spec": 2.5,
-          "research": 2
-        },
-        "lastRefreshAt": "2026-04-26T06:38:18.584Z"
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-04-27T11:30:00.000Z",
+        "quarantined": {
+          "since": "2026-04-27",
+          "reason": "OpenRouter /api/v1/models reports model exists but supported_parameters does not include 'tools'. OpenCode tool-use sessions return 'No endpoints found that support tool use'.",
+          "evidence": "~/.local/share/opencode/log/2026-04-27T112829.log; modelID=deepseek/deepseek-v3.2-speciale agent=build mode=primary",
+          "supersededBy": [
+            "openrouter/deepseek/deepseek-chat-v3.1",
+            "openrouter/anthropic/claude-sonnet-4.6"
+          ]
+        }
       },
       {
         "value": "openrouter/deepseek/deepseek-chat-v3-0324",
