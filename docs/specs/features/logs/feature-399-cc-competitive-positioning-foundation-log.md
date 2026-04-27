@@ -1,16 +1,4 @@
 # Implementation Log: Feature 399 - competitive-positioning-foundation
 Agent: cc
 
-## Status
-
-## New API Surface
-
-## Key Decisions
-
-## Gotchas / Known Issues
-
-## Explicitly Deferred
-
-## For the Next Feature in This Set
-
-## Test Coverage
+Landed `docs/competitive/` (landscape, 10-axis matrix, 10 per-tool entries, weaknesses), `docs/marketing/positioning.md` (one-liner / one-paragraph / one-page + 7 copy chunks; category claim "spec-driven multi-agent harness"), rewrote `site/content/comparisons.mdx` around the public 5 axes × 11 tools (GSD as tier-1 row), propagated chunks verbatim to README, AGENTS.md opener, `site/public/llms.txt`, `site/public/home.html` (title/meta/og/twitter/eyebrow), and the `site/app/llms{,-full}.txt` routes; updated memory `project_standard_descriptor`; superseded F238 in place and deleted `docs/comparisons-extended.md`. **GitHub repo description still needs to be set manually** to the `bio` chunk: `gh repo edit jayvee/aigon --description "Spec-driven multi-agent coding harness for Claude Code, Gemini CLI, and Codex CLI — one Kanban, many agents, real worktrees."`
