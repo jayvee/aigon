@@ -19,19 +19,19 @@ Three orthogonal terms — and Aigon sits at the intersection of all three:
 
 Each row is one tool. Each column is one observable axis — answerable from a quick scan of the tool's own docs. Cells are concrete values, not full / partial / empty dots.
 
-| Tool | Unit of work | Source of truth | Multi-agent posture | Model flexibility | Pricing |
+| Tool | Unit of work | Evaluation / QA | Multi-agent posture | Model flexibility | Pricing |
 |---|---|---|---|---|---|
-| **Aigon** | Feature spec (Markdown) | Markdown specs in git | Parallel competition + sequential, with cross-agent eval | BYO Claude / Gemini / Codex / Cursor / OpenCode | Free OSS + BYO |
-| **Cline Kanban** | Task card | Hosted board state | Sequential dependency chains | BYO Claude Code / Codex / Cline | Free OSS + BYO |
-| **Google Scion** | Task graph node | Hosted graph (or local) | Parallel + sequential, declarative graph | BYO Claude Code / Gemini / OpenCode / Codex | Free OSS + BYO |
-| **GSD** | Markdown plan | `.planning/` Markdown in git | Sequential waves (sub-agents) within one runtime | 14+ runtimes (one at a time) | Free OSS + BYO |
-| **GitHub Spec Kit** | Spec | Markdown specs in git | Single-agent (delegates) | Any of 30+ agents (one at a time) | Free OSS + BYO |
-| **Cursor 3 Agents Window** | Prompt | Chat history (per agent) | Up to 8 parallel agents | Curated (Cursor + frontier) | $20/mo + overages |
-| **Aider** | Chat message | Git commit history | Single-agent | BYO any LLM | Free OSS + BYO |
-| **OpenCode (anomalyco)** | TUI session | Chat history | Single-agent | 75+ providers incl. local Ollama | $10/mo Go, PAYG Zen, BYO |
-| **Crush (charmbracelet)** | TUI session | `crush.json` + chat | Single-agent | Multi-provider via LSP / MCP | Free OSS + BYO |
-| **Devin 2.0** | Issue | Hosted workspace | Multiple cloud "Devins" in parallel | Cognition-locked | $20/mo + $2.25/ACU |
-| **Jules** | Issue | Hosted workspace | Single-agent (async) | Gemini-locked | Google AI tiers |
+| **Aigon** | Feature spec (Markdown) | Cross-agent diff review (Fleet) | Parallel competition + sequential, with cross-agent eval | BYO Claude / Gemini / Codex / Cursor / OpenCode | Free OSS + BYO |
+| **Cline Kanban** | Task card | GUI PR-style review on each card | Sequential dependency chains | BYO Claude Code / Codex / Cline | Free OSS + BYO |
+| **Google Scion** | Task graph node | None built-in | Parallel + sequential, declarative graph | BYO Claude Code / Gemini / OpenCode / Codex | Free OSS + BYO |
+| **GSD** | Markdown plan | Plan-checker + verifier sub-agents | Sequential waves (sub-agents) within one runtime | 14+ runtimes (one at a time) | Free OSS + BYO |
+| **GitHub Spec Kit** | Spec | None built-in (delegates to host agent) | Single-agent (delegates) | Any of 30+ agents (one at a time) | Free OSS + BYO |
+| **Cursor 3 Agents Window** | Prompt | Aggregated diff view | Up to 8 parallel agents | Curated (Cursor + frontier) | $20/mo + overages |
+| **Aider** | Chat message | None (auto-commits per change) | Single-agent | BYO any LLM | Free OSS + BYO |
+| **OpenCode (anomalyco)** | TUI session | None built-in | Single-agent | 75+ providers incl. local Ollama | $10/mo Go, PAYG Zen, BYO |
+| **Crush (charmbracelet)** | TUI session | None built-in | Single-agent | Multi-provider via LSP / MCP | Free OSS + BYO |
+| **Devin 2.0** | Issue | PR review + visual QA | Multiple cloud "Devins" in parallel | Cognition-locked | $20/mo + $2.25/ACU |
+| **Jules** | Issue | None built-in | Single-agent (async) | Gemini-locked | Google AI tiers |
 
 ## Trade-offs, axis by axis
 
@@ -41,12 +41,12 @@ For each axis, where is Aigon's choice genuinely a trade-off — not a unilatera
 **Aigon picks it because** reasoning against an artifact beats reasoning against chat history; specs survive context resets and are diffable in PR review.
 **It costs** upfront friction; Aigon is hostile to vibe-coding. If you want to start typing prompts, use Aider or OpenCode.
 
-### Source of truth — Markdown specs in git
-**Aigon picks it because** diffs, blames, PRs, and review tools all just work. Nothing is hosted; nothing is proprietary.
-**It costs** no rich linking, no semantic search, no GUI comments on cards. Cline Kanban's hosted board state is more ergonomic for live review.
+### Evaluation / QA — cross-agent diff review
+**Aigon picks it because** different models catch different issues (R21 finding).
+**It costs** slower than no-review; needs eval-capable agent.
 
 ### Multi-agent posture — parallel competition + cross-agent eval
-**Aigon picks it because** different models catch different issues; the best implementation wins on its own diff merits.
+**Aigon picks it because** best implementation wins; reviewers diverse.
 **It costs** N× the tokens on Fleet runs. Only worth it for high-stakes features. Solo Drive mode is the cheaper default.
 
 ### Model flexibility — BYO subscriptions

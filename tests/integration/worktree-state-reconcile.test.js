@@ -108,8 +108,8 @@ test('Kimi launches bare `kimi` TUI with prompt injected via tmux paste-buffer',
             path: '/tmp/aigon-km-linger-test-wt',
             repoPath: process.cwd(),
         }, 'do');
-        // Bare `kimi` (no `term`, no `--print`)
-        assert.ok(/&&\s+kimi\s*$/m.test(cmd) || /&&\s+kimi\s*\n/.test(cmd), `expected bare 'kimi' launch: ${cmd}`);
+        // Bare `kimi` (no `term`, no `--print`, but may have generic flags like `--yolo`)
+        assert.ok(/&&\s+kimi(?:\s+--[a-z-]+)?\s*$/m.test(cmd) || /&&\s+kimi(?:\s+--[a-z-]+)?\s*\n/.test(cmd), `expected bare 'kimi' launch: ${cmd}`);
         assert.ok(!/\bkimi\s+term\b/.test(cmd), `km should not use 'kimi term' (Python 3.14 dep): ${cmd}`);
         assert.ok(!cmd.includes('--print'), `km should not use --print: ${cmd}`);
         assert.ok(!cmd.includes('exec bash -l'), cmd);
