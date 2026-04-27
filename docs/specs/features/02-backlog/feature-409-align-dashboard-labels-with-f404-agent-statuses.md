@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-27T12:19:24.990Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: align-dashboard-labels-with-f404-agent-statuses
