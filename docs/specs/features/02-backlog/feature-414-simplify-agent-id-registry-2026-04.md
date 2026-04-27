@@ -9,6 +9,8 @@ complexity: medium
 #              #   spawned this feature. Stamped automatically by `research-eval`
 #              #   on features it creates. Surfaced in the dashboard research
 #              #   detail panel under Agent Log → FEATURES.
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-27T14:59:02.259Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: simplify-agent-id-registry-2026-04
