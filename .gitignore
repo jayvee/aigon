@@ -49,8 +49,8 @@ next-env.d.ts
 .cursor/
 .agents/
 
-# Temp
-temp/
+# Scratch — agent-referenced files that shouldn't ship (screenshots, local tarballs, etc.)
+tmp/
 
 # Promotional GIF workflow
 docs/media/raw/

@@ -5,7 +5,8 @@
 # update notifications, and packaged server lifecycle.
 set -euo pipefail
 
-TARBALL="/home/dev/src/aigon/aigon-cli-2.54.5.tgz"
+REPO_ROOT="/home/dev/src/aigon"
+TARBALL_DIR="$REPO_ROOT/tmp"
 PASS=0
 FAIL=0
 
@@ -23,8 +24,15 @@ npm --version  >/dev/null && ok "npm $(npm --version)"
 
 # ── step 2: install aigon from tarball ───────────────────────────────────────
 section "Step 2: Install aigon globally from tarball (F326)"
+mkdir -p "$TARBALL_DIR"
+PKG_VERSION=$(node -p "require('$REPO_ROOT/package.json').version")
+TARBALL="$TARBALL_DIR/aigon-cli-${PKG_VERSION}.tgz"
 if [[ ! -f "$TARBALL" ]]; then
-  fail "tarball not found at $TARBALL"
+  echo "  packing $TARBALL..."
+  (cd "$REPO_ROOT" && npm pack --pack-destination "$TARBALL_DIR" >/dev/null)
+fi
+if [[ ! -f "$TARBALL" ]]; then
+  fail "tarball not found at $TARBALL after npm pack"
   exit 1
 fi
 sudo npm install -g "$TARBALL" 2>&1 | tail -3
