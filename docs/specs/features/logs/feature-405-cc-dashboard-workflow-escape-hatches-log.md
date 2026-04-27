@@ -3,6 +3,8 @@ Agent: cc
 
 ## Status
 
+Implemented: 5-signal escape hatch via `POST /api/{features|research}/:id/mark-complete`, `pendingCompletionSignal`/`isWorking` on agent objects, overflow menu item in pipeline.js, Playwright test covering present/absent/click cases.
+
 ## New API Surface
 
 ## Key Decisions
