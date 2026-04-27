@@ -1461,7 +1461,7 @@
       function renderMatrixTable(data) {
         matrixWrap.innerHTML = '';
         const rows = data.rows || [];
-        const ops = data.operations || ['spec', 'spec_review', 'implement', 'review', 'research'];
+        const ops = data.operations || ['research', 'spec', 'spec_review', 'implement', 'review'];
         const opLabels = data.operationLabels || {};
 
         if (rows.length === 0) {
