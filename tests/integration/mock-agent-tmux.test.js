@@ -57,7 +57,7 @@ testAsync('MockAgent tmux mode: heartbeat sidecar + trap-driven submitted fire e
     const hb = path.join(repo, '.aigon', 'state', 'heartbeat-01-cc');
     a.ok(fs.existsSync(hb), `heartbeat sidecar should have touched ${hb}`);
     const status = JSON.parse(fs.readFileSync(path.join(repo, '.aigon', 'state', 'feature-01-cc.json'), 'utf8'));
-    a.strictEqual(status.status, 'submitted', 'EXIT trap should have run agent-status submitted');
+    a.strictEqual(status.status, 'implementation-complete', 'EXIT trap should have run agent-status implementation-complete');
 }));
 
 report();
