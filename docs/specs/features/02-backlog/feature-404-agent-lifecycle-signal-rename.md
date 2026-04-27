@@ -24,10 +24,12 @@ The `submitted` signal is legacy terminology from a removed workflow stage (`04-
 - [ ] `aigon agent-status spec-review-complete` accepted for spec-review sessions
 - [ ] `aigon agent-status research-complete` accepted for research finding submissions
 - [ ] `aigon agent-status submitted` still works as a deprecated alias (exits 0, emits a deprecation warning, advances workflow correctly)
-- [ ] `aigon agent-status feedback-addressed` still works as a deprecated no-op alias (exits 0, emits deprecation warning, does NOT advance workflow — the agent must still call `revision-complete` or `submitted`)
+- [ ] `aigon agent-status feedback-addressed` still works as a deprecated no-op alias (exits 0, emits deprecation warning, does NOT advance workflow — the agent must still call `revision-complete` to end the revision pass)
 - [ ] In-flight agents calling `submitted` during a `revise` session correctly advance the revision workflow (backward compatibility)
-- [ ] The CLI rejects mismatched completion signals (e.g., calling `revision-complete` during a `do` session) with a non-zero exit and helpful error
+- [ ] The CLI rejects mismatched completion signals (e.g., calling `revision-complete` during a `do` session) with a non-zero exit and helpful error; mismatch is detected by reading `taskType` from the agent-status file written at session start by `buildAgentCommand`
 - [ ] Shell EXIT trap in `buildAgentCommand` emits `implementation-complete` for `taskType='do'` and `revision-complete` for `taskType='revise'`
+- [ ] Shell START trap in `buildAgentCommand` emits `implementing` for `taskType='do'`, `revising` for `taskType='revise'`, `reviewing` for `taskType='review'`, and `spec-reviewing` for `taskType='spec-review'`
+- [ ] `aigon agent-status revising` and `aigon agent-status spec-reviewing` accepted as valid start-of-session signals (added to `validStatuses`)
 - [ ] A new `revise` taskType is accepted by `buildAgentCommand` and `createDetachedTmuxSession`; the tmux session role for revision sessions is `revise`
 - [ ] `VALID_TMUX_ROLES` updated to include `revise`
 - [ ] `check-agent-submitted` CC Stop hook accepts both `submitted` and `implementation-complete` as valid submitted states
@@ -37,7 +39,7 @@ The `submitted` signal is legacy terminology from a removed workflow stage (`04-
 - [ ] `templates/generic/commands/feature-do.md`, `feature-code-review.md`, `feature-code-revise.md`, `research-do.md`, and all other relevant slash command templates updated
 - [ ] `AGENTS.md` lifecycle section updated to new signal names
 - [ ] `npm test` passes; no snapshot tests fail due to renamed signals
-- [ ] A live snapshot that contains old `submitted`/`feedback-addressed`-based events reads correctly under the new code (read-path backward compat)
+- [ ] A live snapshot that contains old `submitted`/`feedback-addressed`-based events reads correctly under the new code (read-path backward compat); verify by running `aigon feature-status <ID>` against a fixture workflow snapshot that contains `signal.agent_submitted` events — must not error or produce malformed output
 
 ## Validation
 
@@ -107,6 +109,10 @@ Note: `spec-reviewing` and `revising` are new start-of-session statuses — add 
 
 Keep internal event types (`signal.agent_ready`, `signal.agent_submitted`, etc.) stable. Only the CLI surface renames. The `misc.js` handler maps new names to the same `wf.*` calls. No snapshot migration needed. Dashboard event display strings update separately.
 
+### Mismatch detection (`lib/commands/misc.js`)
+
+When a completion signal is received, `misc.js` reads the `taskType` field written to the agent-status file by `buildAgentCommand` at session start. If the signal doesn't match the recorded taskType (e.g., `revision-complete` during a `do` session), exit non-zero with: `"Signal 'revision-complete' is not valid for a 'do' session. Expected: 'implementation-complete'."` If `taskType` is absent (legacy in-flight session), accept the signal without mismatch checking — fall through to alias logic.
+
 ### `check-agent-submitted` (`lib/commands/misc.js`)
 
 Update condition from:
@@ -129,7 +135,7 @@ Files to update (search for `agent-status submitted` and `feedback-addressed`):
 - `templates/generic/commands/feature-code-revise.md`
 - `templates/generic/commands/feature-code-review.md`
 - `templates/generic/commands/research-do.md`
-- `templates/generic/commands/research-review.md` (if it references submitted)
+- `templates/generic/commands/research-review.md` (grep for `submitted` before starting — include only if it matches)
 - All `AGENT_PITFALLS`, `AGENT_TEAMS_FEATURE_NOTE`, `AGENT_TEAMS_RESEARCH_NOTE` blocks in `templates/agents/*.json`
 
 Also update `AGENTS.md` lifecycle section, and the `gemini.md` / `cc.md` agent-specific notes under `docs/agents/`.
@@ -144,10 +150,10 @@ None — this is the foundation feature. The dashboard escape-hatch feature (F_N
 - Changing the dashboard display labels for existing events (separate cosmetic pass).
 - Migrating existing on-disk snapshots — backward compat aliases make this unnecessary.
 
-## Open Questions
+## Decisions
 
-- Should `revising` (the start-of-revision-session signal) be added? It adds symmetry but also adds a new status to validate/display. Recommended: yes, for parity with `reviewing`.
-- Does `spec-reviewing` similarly need a start signal? Same answer — add for parity.
+- **`revising` start signal:** Added. Required for parity with `reviewing`; without it, revision sessions appear stuck at `implementing` in the dashboard.
+- **`spec-reviewing` start signal:** Added. Same reasoning; omitting it leaves spec-review sessions indistinguishable from do sessions at start.
 
 ## Related
 
