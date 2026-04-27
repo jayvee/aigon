@@ -193,7 +193,7 @@ Examples:
   aigon research-start 05 cc gg        # Fleet mode (multiple agents)
   aigon research-open 05               # Open all Fleet agents side-by-side
   aigon research-do 05                 # Agent conducts research
-  aigon agent-status submitted 05 cc   # Signal cc's findings are complete
+  aigon agent-status research-complete 05 cc   # Signal cc's findings are complete
   aigon research-autopilot 08 cc gg cx cu    # Fleet autopilot: spawn + monitor + evaluate
   aigon research-eval 05               # Evaluate findings (after Fleet)
   aigon research-close 05              # Complete research (in-evaluation → done)

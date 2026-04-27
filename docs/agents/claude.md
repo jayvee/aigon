@@ -57,7 +57,7 @@
 Feature and research work are NOT complete until you run these commands yourself:
 
 1. `aigon agent-status implementing` — when you start coding or begin active research
-2. `aigon agent-status submitted` — after committing all code, log updates, or research findings
+2. `aigon agent-status implementation-complete` — after committing all code, log updates, or research findings
 
 These are direct lifecycle commands you run yourself in the agent host — slash commands for some agents, skills for Codex, and never auto-invoked. The `aigon agent-status` command writes state to the **main repo** (not the worktree), so you won't see state files locally. Just run the command and trust the output.
 
@@ -104,7 +104,7 @@ Research follows the same lifecycle shape as features: `start -> do -> submit ->
 2. Run `/aigon:research-do <ID>` to conduct the research
 3. Write findings directly in the main research document
 4. Optionally run `/aigon:research-review <ID>` for a second-agent review pass
-5. Run `aigon agent-status submitted` when your research pass is complete (from outside the tmux session, use the explicit form: `aigon agent-status submitted <ID> <agent>`)
+5. Run `aigon agent-status research-complete` when your research pass is complete (from outside the tmux session, use the explicit form: `aigon agent-status research-complete <ID> <agent>`)
 6. Run `/aigon:research-close <ID>` when ready to finish
 
 ### Fleet Mode

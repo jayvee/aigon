@@ -61,7 +61,7 @@ aigon research-autopilot stop {{ARG_SYNTAX}}      # Stop all agents
 Each spawned agent will:
 1. Run `research-do` to conduct their research
 2. Write findings to their findings file
-3. Run `agent-status submitted` to signal completion
+3. Run `agent-status research-complete` to signal completion
 
 ## Prompt Suggestion
 

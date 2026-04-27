@@ -10,7 +10,7 @@ This is a standard git hook — it can be bypassed with `git commit --no-verify`
 
 ## Layer 2: Aigon Merge Gate (Local, Un-bypassable)
 
-At `feature-close`, `aigon agent-status submitted`, and `research-close`, aigon runs gitleaks on all changed files (diff vs default branch). This is an aigon command, not a git hook — it cannot be bypassed.
+At `feature-close`, `aigon agent-status implementation-complete`, and `research-close`, aigon runs gitleaks on all changed files (diff vs default branch). This is an aigon command, not a git hook — it cannot be bypassed.
 
 Modes: `enforce` (block), `warn` (log and continue), `off` (skip). Configured in `.aigon/config.json`:
 
