@@ -486,3 +486,20 @@
         if (btn) { btn.disabled = false; btn.textContent = origText; }
       }
     }
+
+    async function postMarkComplete(entityId, entityType, signal, agentId, repoPath) {
+      const entityPath = entityType === 'research' ? 'research' : 'features';
+      const url = '/api/' + entityPath + '/' + encodeURIComponent(String(entityId || '')) + '/mark-complete';
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ signal, agentId, repoPath }),
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+        await requestRefresh();
+      } catch (e) {
+        showToast('Mark complete failed: ' + e.message, null, null, { error: true });
+      }
+    }

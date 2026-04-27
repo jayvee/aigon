@@ -576,11 +576,30 @@
         const label = typeof labelOverride === 'function' ? labelOverride(va, { agents: [agent] }) : (labelOverride || va.label);
         actionsHtml += '<button class="' + btnCls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">' + escHtml(label) + '</button>';
       }
-      if (overflowActions.length > 0) {
-        const items = overflowActions.map(va =>
+      const markCompleteItem = (agent.pendingCompletionSignal && !agent.isWorking)
+        ? (() => {
+            const labelMap = {
+              'implementation-complete': 'implementation',
+              'revision-complete': 'revision',
+              'review-complete': 'review',
+              'spec-review-complete': 'spec review',
+              'research-complete': 'research',
+            };
+            const label = 'Mark ' + (labelMap[agent.pendingCompletionSignal] || agent.pendingCompletionSignal) + ' complete';
+            return '<button class="kcard-overflow-item kcard-mark-complete-btn"' +
+              ' data-signal="' + escHtml(agent.pendingCompletionSignal) + '"' +
+              ' data-entity-type="' + escHtml(entityType) + '"' +
+              ' data-entity-id="' + escHtml(String(feature.id || '')) + '"' +
+              ' data-agent-id="' + escHtml(agent.id) + '"' +
+              ' data-repo-path="' + escHtml(repoPath || '') + '">' +
+              escHtml(label) + '</button>';
+          })()
+        : '';
+      if (overflowActions.length > 0 || markCompleteItem) {
+        const stopItems = overflowActions.map(va =>
           '<button class="kcard-overflow-item kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">End Session</button>'
         ).join('');
-        actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
+        actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + stopItems + markCompleteItem + '</div></div>';
       }
       // Peek button — only shown when agent has a tmux session
       const peekBtn = agent.tmuxSession
@@ -1025,6 +1044,22 @@
           const targetFeatureId = btn.getAttribute('data-feature-id') || feature.id;
           const targetAgentId = btn.getAttribute('data-agent-id') || '';
           await requestAgentDevServerPoke(targetRepoPath, targetFeatureId, targetAgentId, btn);
+        };
+      });
+
+      // F405: wire "Mark X complete" escape hatch buttons
+      card.querySelectorAll('.kcard-mark-complete-btn').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          closeAllKcardOverflowMenus();
+          const signal = btn.getAttribute('data-signal');
+          const btnEntityType = btn.getAttribute('data-entity-type');
+          const entityId = btn.getAttribute('data-entity-id');
+          const agentId = btn.getAttribute('data-agent-id');
+          const btnRepoPath = btn.getAttribute('data-repo-path') || repoPath || '';
+          btn.disabled = true;
+          await postMarkComplete(entityId, btnEntityType, signal, agentId, btnRepoPath);
+          btn.disabled = false;
         };
       });
 
