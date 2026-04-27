@@ -34,6 +34,12 @@
     "transcriptTelemetry": true,
     "resolvesSlashCommands": true
   },
+  "runtime": {
+    "sessionStrategy": "gemini-chats",
+    "telemetryStrategy": "gemini-transcript",
+    "trustInstallScope": "worktree-base",
+    "resume": { "kind": "append", "flag": "--resume" }
+  },
   "cli": {
     "command": "gemini",
     "implementFlag": "--yolo",

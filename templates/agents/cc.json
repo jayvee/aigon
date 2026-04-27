@@ -28,6 +28,12 @@
     "transcriptTelemetry": true,
     "resolvesSlashCommands": true
   },
+  "runtime": {
+    "sessionStrategy": "claude-jsonl",
+    "telemetryStrategy": "claude-transcript",
+    "trustInstallScope": "worktree-base",
+    "resume": { "kind": "append", "flag": "--resume" }
+  },
   "cli": {
     "command": "claude",
     "implementFlag": "--permission-mode acceptEdits",

@@ -31,6 +31,12 @@
     "transcriptTelemetry": true,
     "resolvesSlashCommands": false
   },
+  "runtime": {
+    "sessionStrategy": "codex-sessions",
+    "telemetryStrategy": "codex-transcript",
+    "trustInstallScope": "all-existing-worktrees",
+    "resume": { "kind": "subcommand", "args": ["resume"] }
+  },
   "cli": {
     "command": "codex",
     "implementFlag": "",
