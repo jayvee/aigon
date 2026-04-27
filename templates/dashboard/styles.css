@@ -403,12 +403,12 @@
     .col-empty{padding:12px 8px;color:var(--text-tertiary);font-size:12px;text-align:center}
     /* Agent picker modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:flex;align-items:center;justify-content:center}
-    .modal-box{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius);padding:20px 24px;min-width:280px;max-width:400px;width:100%}
+    .modal-box{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius);padding:20px 24px;min-width:280px;max-width:400px;width:100%;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain}
     .modal-box:has(.agent-checks-triplet){max-width:880px;min-width:460px;width:min(880px,calc(100vw - 24px))}
     .modal-box:has(#nudge-modal-message){max-width:640px}
     .modal-box h3{margin:0 0 14px;font-size:15px;letter-spacing:-.01em}
     .modal-desc{color:var(--text-secondary);font-size:12px;margin:0 0 14px}
-    .agent-checks{display:grid;gap:8px;margin-bottom:18px}
+    .agent-checks{display:grid;gap:4px;margin-bottom:14px}
     .agent-checks.agent-checks-triplet{--agent-triplet-gutter:24px;--agent-triplet-cols:minmax(0,1.05fr) minmax(210px,1fr) 200px 200px}
     .agent-picker-modal-box{max-width:min(820px,96vw)}
     .agent-picker-header-row{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px}
@@ -437,7 +437,7 @@
     .agent-check-badge{font-size:9px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;margin-left:6px;letter-spacing:.02em;opacity:.8}
     .agent-check-model{font-size:10px;color:var(--text-tertiary);opacity:.45;font-family:var(--mono);margin-left:6px}
     /* Triplet picker: agent (cb+meta) | config label | model | effort — explicit cells so columns line up */
-    .agent-check-row.agent-check-row-triplet{display:grid;grid-template-columns:var(--agent-triplet-cols);column-gap:12px;align-items:center;padding:8px 12px;box-sizing:border-box}
+    .agent-check-row.agent-check-row-triplet{display:grid;grid-template-columns:var(--agent-triplet-cols);column-gap:12px;align-items:center;padding:4px 12px;box-sizing:border-box}
     .agent-check-row-triplet .agent-check-primary{display:grid;grid-template-columns:var(--agent-triplet-gutter) minmax(0,1fr);column-gap:10px;align-items:center;min-width:0}
     .agent-check-row-triplet .agent-check-primary>input[type=checkbox],.agent-check-row-triplet .agent-check-primary>input[type=radio]{width:18px;height:18px;margin:0;justify-self:start;align-self:center;flex-shrink:0}
     .agent-check-row-triplet .agent-check-meta{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;line-height:1.2}
@@ -445,12 +445,6 @@
     .agent-check-row-triplet .agent-check-hint{font-size:11px;color:var(--text-tertiary);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .agent-check-row-triplet .agent-check-config-model{font-size:10px;color:var(--text-tertiary);opacity:.95;font-family:var(--mono);min-width:0;max-width:100%;justify-self:stretch;text-align:right;align-self:center;line-height:1.25;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
     .agent-check-row-triplet .agent-check-badge{margin-left:0;margin-top:1px}
-    /* Rank badges — amber(value) · cyan(speed) · violet(quality) */
-    .rank-badge{font-size:9px;border-radius:4px;padding:1px 5px;letter-spacing:.03em;font-weight:600;line-height:1.5;flex-shrink:0;white-space:nowrap}
-    .rank-badge-best-value{background:rgba(245,158,11,.13);color:#fbbf24;border:1px solid rgba(245,158,11,.35)}
-    .rank-badge-fastest{background:rgba(6,182,212,.12);color:#22d3ee;border:1px solid rgba(6,182,212,.32)}
-    .rank-badge-quality{background:rgba(139,92,246,.13);color:#a78bfa;border:1px solid rgba(139,92,246,.35)}
-    .agent-check-row-triplet .rank-badge{margin-left:0;margin-top:1px}
     .agent-triplet-cell{display:flex;align-items:center;min-width:0;min-height:30px}
     .agent-triplet-cell .agent-triplet-model,.agent-triplet-cell .agent-triplet-effort{font:11px var(--mono);padding:6px 28px 6px 8px;background:var(--bg-root);color:var(--text-secondary);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;width:100%;min-width:0;max-width:100%;box-sizing:border-box;min-height:32px;line-height:1.25}
     .agent-triplet-cell select:hover{border-color:var(--border-default);color:var(--text-primary)}
@@ -1269,7 +1263,6 @@
     .matrix-pricing-cell{font-family:var(--mono);font-size:11px;color:var(--text-secondary);white-space:nowrap}
     .matrix-pricing-free{color:var(--success);font-weight:600}
     .matrix-pricing-na{color:var(--text-tertiary)}
-    .matrix-stats-cell{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);white-space:nowrap}
     .matrix-quarantine-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.35);color:#fca5a5;margin-left:5px;cursor:help;position:relative}
     .matrix-quarantine-badge .matrix-notes-tip{display:none;position:absolute;top:calc(100% + 6px);right:0;min-width:240px;max-width:340px;padding:8px 10px;background:var(--bg-elevated);border:1px solid rgba(239,68,68,.4);border-radius:8px;color:var(--text-primary);font-size:11px;font-weight:400;line-height:1.45;white-space:normal;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:20;text-align:left}
     .matrix-quarantine-badge:hover .matrix-notes-tip{display:block}

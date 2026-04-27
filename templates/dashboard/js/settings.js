@@ -1482,7 +1482,7 @@
         // Header
         const thead = document.createElement('thead');
         const hrow = document.createElement('tr');
-        ['Agent', 'Model'].concat(ops.map(op => opLabels[op] || op), ['Pricing ($/M in/out)', 'Sessions', 'Refreshed']).forEach(label => {
+        ['Agent', 'Model'].concat(ops.map(op => opLabels[op] || op), ['Pricing ($/M in/out)', 'Refreshed']).forEach(label => {
           const th = document.createElement('th');
           th.textContent = label;
           hrow.appendChild(th);
@@ -1553,16 +1553,6 @@
           // Pricing cell
           tr.appendChild(renderPricingCell(row.pricing));
 
-          // Sessions cell
-          const statsTd = document.createElement('td');
-          statsTd.className = 'matrix-stats-cell';
-          const sessions = row.stats ? (row.stats.features + row.stats.research) : 0;
-          statsTd.textContent = sessions > 0 ? String(sessions) : '—';
-          if (row.stats && sessions > 0) {
-            statsTd.title = row.stats.features + ' features · ' + row.stats.research + ' research · $' + (row.stats.cost || 0).toFixed(4);
-          }
-          tr.appendChild(statsTd);
-
           // Refreshed cell
           const refreshTd = document.createElement('td');
           refreshTd.className = 'matrix-refresh-date';
@@ -1583,9 +1573,7 @@
       }
 
       // Fetch matrix data (best-effort — non-fatal on failure)
-      const matrixRepoPath = repoPath || '';
-      const matrixUrl = '/api/agent-matrix' + (matrixRepoPath ? '?repoPath=' + encodeURIComponent(matrixRepoPath) : '');
-      fetch(matrixUrl)
+      fetch('/api/agent-matrix')
         .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
         .then(data => {
           if (renderToken !== settingsUiState.renderToken) return;

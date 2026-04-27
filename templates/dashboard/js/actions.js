@@ -109,7 +109,6 @@ function buildTripletPickerHeaderRow() {
 let pickerRecommendation = null;
 function setPickerRecommendation(rec) {
   pickerRecommendation = rec || null;
-  setPickerRanked((rec && rec._ranked) || []);
 }
 
 function getRecommendedValue(agentId, field) {
@@ -334,32 +333,6 @@ function renderPickerRecommendationBanner(recommendation, mountId) {
       + agentBits.join(' · ') + '</div>';
   }
   banner.innerHTML = html;
-}
-
-// Feature 373: ranked list from agent matrix, keyed by agentId.
-// Shape: { [agentId]: string[] } where strings are badge keys (best_value, fastest, highest_quality)
-let pickerRanked = {};
-function setPickerRanked(ranked) {
-  pickerRanked = {};
-  (ranked || []).forEach(r => { if (r.agentId) pickerRanked[r.agentId] = r.badges || []; });
-}
-function getAgentRankBadges(agentId) {
-  return pickerRanked[agentId] || [];
-}
-
-const RANK_BADGE_META = {
-  best_value:      { cls: 'rank-badge rank-badge-best-value',  label: '✨ best value' },
-  fastest:         { cls: 'rank-badge rank-badge-fastest',     label: '⚡ fastest' },
-  highest_quality: { cls: 'rank-badge rank-badge-quality',     label: '🎯 top quality' },
-};
-
-function buildRankBadgeEl(badgeKey) {
-  const meta = RANK_BADGE_META[badgeKey];
-  if (!meta) return null;
-  const span = document.createElement('span');
-  span.className = meta.cls;
-  span.textContent = meta.label;
-  return span;
 }
 
 // Feature 313: fetch the spec-frontmatter recommendation for an entity.
@@ -1646,12 +1619,6 @@ async function showAutonomousModal(feature, repoPath, btn) {
     appendTripletSelects(row, agent);
     const cfg = row.querySelector('.agent-check-config-model');
     if (cfg) cfg.textContent = modelName || '';
-    // Add rank badges from agent matrix
-    const rankBadges = getAgentRankBadges(agentId);
-    if (rankBadges.length > 0) {
-      const meta = row.querySelector('.agent-check-meta');
-      if (meta) rankBadges.forEach(key => { const el = buildRankBadgeEl(key); if (el) meta.appendChild(el); });
-    }
     return row;
   });
   replaceNodeChildren(checks, [buildTripletPickerHeaderRow(), ...autoRows]);
