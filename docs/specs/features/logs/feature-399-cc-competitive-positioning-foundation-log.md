@@ -1,3 +1,26 @@
+---
+commit_count: 7
+lines_added: 849
+lines_removed: 519
+lines_changed: 1368
+files_touched: 27
+fix_commit_count: 1
+fix_commit_ratio: 0.143
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 179
+output_tokens: 161805
+cache_creation_input_tokens: 895499
+cache_read_input_tokens: 10426512
+thinking_tokens: 0
+total_tokens: 11483995
+billable_tokens: 161984
+cost_usd: 44.5684
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 399 - competitive-positioning-foundation
 Agent: cc
 
