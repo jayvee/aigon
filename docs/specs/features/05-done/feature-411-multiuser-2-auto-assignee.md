@@ -50,7 +50,7 @@ npm test
 
 ## Dependencies
 
-- none — pulled out of the multiuser series as standalone on 2026-04-25; F250 (state-consolidation) is paused. The `assignee` field is written into the existing `snapshot.json` rather than the consolidated `state.json` originally proposed in F250. ACs below referring to `state.json` should be read as "the engine's state file (today: `snapshot.json`)" until/unless F250 is resumed. Recommend an `afsr 251` pass before starting.
+- none — pulled out of the multiuser series as standalone on 2026-04-25; F250 (state-consolidation) is paused. The `assignee` field is written into the existing `snapshot.json` rather than the consolidated `state.json` originally proposed in F250. ACs below referring to `state.json` should be read as "the engine's state file (today: `snapshot.json`)" until/unless F250 is resumed. Recommend a spec-re review pass (F411) before starting a follow-up.
 
 ## Out of Scope
 
