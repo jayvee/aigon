@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-27T09:46:19.103Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: linked-context-agent-awareness
