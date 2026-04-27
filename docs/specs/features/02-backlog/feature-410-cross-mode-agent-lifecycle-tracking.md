@@ -1,82 +1,60 @@
 ---
 complexity: medium
-# agent: cc    # optional — id of the agent that owns this spec. Used as the
-#              #   default reviewer for spec-revise cycles when the operator
-#              #   does not pick one explicitly. Precedence at revision time:
-#              #     event payload nextReviewerId > frontmatter agent:
-#              #     > snapshot.authorAgentId > getDefaultAgent().
-# research: 44 # optional — id (or list of ids) of the research topic that
-#              #   spawned this feature. Stamped automatically by `research-eval`
-#              #   on features it creates. Surfaced in the dashboard research
-#              #   detail panel under Agent Log → FEATURES.
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-27T13:05:01.862Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: cross-mode-agent-lifecycle-tracking
 
-<!-- Authoring AI: set `complexity:` using this rubric before writing the spec:
-       low       — config tweaks, doc-only, single-file helpers, trivial bug fixes
-       medium    — standard feature with moderate cross-cutting, one command handler, small refactor
-       high      — multi-file engine edits, new event types, new dashboard surfaces, judgment-heavy deletion work
-       very-high — architectural shifts, write-path-contract changes, new XState transitions, cross-cutting template+engine+frontend
-     At start time, model and effort defaults come from each agent's `cli.complexityDefaults[<complexity>]` in
-     `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
-
 ## Summary
 
 Surface execution mode badge in dashboard monitor view for Drive branch, Drive worktree, and Fleet modes.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+
+- [ ] As a fleet operator, I can see at a glance whether a feature is running in Drive or Fleet mode from the monitor view.
+- [ ] As a solo developer, I can confirm my feature is in Drive mode (branch or worktree) from the dashboard card.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+
+- [ ] `lib/dashboard-status-collector.js` includes `mode` (from the workflow snapshot) in the feature object sent to the dashboard API.
+- [ ] `templates/dashboard/js/monitor.js` renders a mode badge next to the feature title when `feature.mode` is present.
+- [ ] The mode badge displays "Drive" for `drive`, `drive-wt`, `solo_branch`, and `solo_worktree` modes; "Fleet" for `fleet` mode.
+- [ ] `templates/dashboard/styles.css` includes `.mode-badge` styling consistent with other badges (complexity, autonomous).
+- [ ] `node --check` passes for all modified dashboard JS files.
+- [ ] `npm test` passes.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
+
 ```bash
-# Example: node --check aigon-cli.js
+node --check templates/dashboard/js/monitor.js
+node --check lib/dashboard-status-collector.js
 ```
 
 ## Pre-authorised
-<!-- Standing orders the agent may enact without stopping to ask.
-     Each line is a single bounded permission. The agent cites the matching line
-     in a commit footer `Pre-authorised-by: <slug>` for auditability.
-     The first line below is a project-wide default — keep it unless the feature
-     explicitly demands Playwright runs mid-iterate. Add or remove other lines
-     per feature.
-     Example extras:
-       - May raise `scripts/check-test-budget.sh` CEILING by up to +40 LOC if regression tests require it.
--->
+
 - May skip `npm run test:ui` mid-iteration when this iteration touches no dashboard assets (`templates/dashboard/**`, `lib/dashboard*.js`, `lib/server*.js`). Playwright still runs at the pre-push gate.
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+
+The workflow snapshot already stores `mode` (e.g. `drive`, `drive-wt`, `fleet`, `solo_branch`, `solo_worktree`). The dashboard status collector does not currently pass this field through to the frontend. Adding it is a one-line change in the feature object builder. The monitor view's `featureTitle()` helper already renders badges (complexity, autonomous, eval); adding a mode badge follows the same pattern.
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
+
 -
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+
+- Research mode badges (research topics don't have the same mode concept).
+- Changing the pipeline view (only monitor view gets the badge).
+- Any engine or workflow state changes.
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
+
 -
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Set: <!-- set slug if this feature is part of a set; omit line if standalone -->
-- Prior features in set: <!-- feature IDs that precede this one, e.g. F314, F315; omit if standalone -->
+
+- Research: —
+- Set: —
+- Prior features in set: —

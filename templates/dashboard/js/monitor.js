@@ -208,7 +208,11 @@
             ? '<span class="autonomous-badge">Running autonomously</span>'
             : '';
           const complexityBadge = typeof complexityBadgeHtml === 'function' ? complexityBadgeHtml(feature.complexity) : '';
-          return (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + complexityBadge + autoBadge + evalBadge + buildScheduledGlyphHtml(feature);
+          const modeLabels = { drive: 'Drive', 'drive-wt': 'Drive', fleet: 'Fleet', solo_branch: 'Drive', solo_worktree: 'Drive' };
+          const modeBadge = feature.mode && modeLabels[feature.mode]
+            ? '<span class="mode-badge">' + escHtml(modeLabels[feature.mode]) + '</span>'
+            : '';
+          return (feature.id ? '#' + escHtml(feature.id) + ' ' : '') + escHtml(feature.name) + complexityBadge + modeBadge + autoBadge + evalBadge + buildScheduledGlyphHtml(feature);
         },
         researchTitle(item) {
           const readyToEval = (item.validActions || []).some(a => a.action === 'research-eval');
