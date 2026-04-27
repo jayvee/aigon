@@ -17,7 +17,7 @@ This project uses the Aigon development workflow. Read these docs before startin
 1. **Never commit to main** — always work on the feature branch or in the worktree
 2. **Use `aigon` CLI for all state transitions** — never move spec files manually
 3. **Use `aigon dev-server start` for dev servers** — never run `npm run dev` directly (bypasses port allocation)
-4. **Signal when done** — run `aigon agent-status submitted` when implementation is complete
+4. **Signal when done** — run `aigon agent-status implementation-complete` when implementation is complete
 5. **Read the spec first** — run `aigon feature-spec <ID>` to find and read the feature spec before coding
 6. **Run tests before submitting** — run `npm test` to verify your changes
 

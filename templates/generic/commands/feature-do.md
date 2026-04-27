@@ -76,7 +76,7 @@ Stage and commit using conventional commits (`feat:`, `fix:`, `chore:`). Verify 
 After committing, run **immediately**:
 
 ```bash
-aigon agent-status submitted
+aigon agent-status implementation-complete
 ```
 
 Hard rules:

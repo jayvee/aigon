@@ -98,18 +98,18 @@ This updates your agent state in the main repo so the dashboard and coordinator 
 
 3. **Signal completion immediately after the commit:**
    ```bash
-   aigon agent-status submitted
+   aigon agent-status research-complete
    ```
    If this exits non-zero because the session context wasn't detected (e.g. you're on `main`), run it with explicit args:
    ```bash
-   aigon agent-status submitted <ID> {{AGENT_ID}}
+   aigon agent-status research-complete <ID> {{AGENT_ID}}
    ```
    Replace `<ID>` with the numeric research ID (e.g. `36`).
 
    The command **must exit 0** before you can claim your research is submitted.
 
    Hard rules:
-   - Your findings are **not** submitted until `agent-status submitted` returns exit 0
+   - Your findings are **not** submitted until `agent-status research-complete` returns exit 0
    - Do **not** say "done", "complete", "findings written", or "ready for evaluation" before it exits 0
    - Do **not** summarise, narrate, or describe your output instead of running the command — the command IS the completion signal; prose is not a substitute
    - **Submitting your signal has nothing to do with `research-eval`.** That is a separate coordinator step run by the user AFTER all agents submit. You must submit before you stop — regardless of what comes next.

@@ -123,7 +123,7 @@ Implement the feature according to the spec. Commit with conventional commits (`
 
 **Signal that implementation is complete:**
 ```bash
-aigon agent-status submitted
+aigon agent-status implementation-complete
 ```
 
 {{LOGGING_SECTION}}
