@@ -48,6 +48,21 @@ testAsync('explicit feature agent-status submitted works from main (no branch ev
     assert.deepStrictEqual(readJson(repo, '.aigon/workflows/features/01/snapshot.json').agents.cc.status, 'ready');
 }));
 
+testAsync('explicit research submit succeeds when a done feature with same ID exists', () => withTempDirAsync('aigon-research-done-feature-collision-', async (repo) => {
+    // REGRESSION: F339 disambiguation errored immediately when both feature-N (done) and
+    // research-N (active) snapshots existed. Fix: read lifecycle and prefer the active one.
+    await initResearchRepo(repo); // creates research-34 as active fleet
+    write(repo, 'docs/specs/research-topics/logs/research-34-cc-findings.md', '# findings\n');
+    // Simulate a done feature-34 (write snapshot directly — bypasses lifecycle engine)
+    const featureSnapDir = path.join(repo, '.aigon', 'workflows', 'features', '34');
+    fs.mkdirSync(featureSnapDir, { recursive: true });
+    fs.writeFileSync(path.join(featureSnapDir, 'snapshot.json'), JSON.stringify({ featureId: '34', lifecycle: 'done', agents: {}, currentSpecState: 'done' }));
+    const r = await cli(['agent-status', 'submitted', '34', 'cc'], repo, { AIGON_TEST_MODE: '1', AIGON_FORCE_PRO: 'true' });
+    assert.strictEqual(r.status, 0, r.stderr || r.stdout);
+    assert.match(r.stdout, /research-34-cc/);
+    assert.deepStrictEqual(readJson(repo, '.aigon/workflows/research/34/snapshot.json').agents.cc.status, 'ready');
+}));
+
 testAsync('submit command fails before writing stale cache when engine write fails', () => withTempDirAsync('aigon-submit-fail-', async (repo) => {
     await initResearchRepo(repo);
     const preload = path.join(repo, 'force-submit-failure.js');

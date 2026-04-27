@@ -16,6 +16,7 @@ const globals = {
     setInterval: 'readonly',
     setTimeout: 'readonly',
     URL: 'readonly',
+    URLSearchParams: 'readonly',
 };
 
 module.exports = [
