@@ -29,6 +29,10 @@
     "transcriptTelemetry": false,
     "resolvesSlashCommands": true
   },
+  "runtime": {
+    "telemetryStrategy": "no-telemetry-cursor",
+    "trustInstallScope": "worktree-base"
+  },
   "legacy": {
     "rootFile": null,
     "promptFile": null
