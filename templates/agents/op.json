@@ -34,8 +34,14 @@
     "models": {},
     "modelOptions": [
       {
-        "value": null,
-        "label": "Default (OpenCode config)"
+        "value": "openrouter/deepseek/deepseek-chat-v3.1",
+        "label": "DeepSeek V3.1 via OpenRouter (default)",
+        "pricing": { "input": 0.15, "output": 0.75 },
+        "notes": {
+          "implement": "Strong code at low cost; reliable tool-use; aigon-curated default. Removed null 'Default (OpenCode config)' entry on 2026-04-28 because it silently fell through to whatever model opencode had configured locally — including quarantined ones (e.g. deepseek-v3.2-speciale)."
+        },
+        "score": { "implement": 4 },
+        "lastRefreshAt": "2026-04-27T11:30:00.000Z"
       },
       {
         "value": "openrouter/meta-llama/llama-3.3-70b-instruct",
@@ -45,16 +51,6 @@
           "implement": "Ultra-cheap general-purpose. Capable for routine implementation; weaker on complex reasoning."
         },
         "score": { "implement": 3 },
-        "lastRefreshAt": "2026-04-27T11:30:00.000Z"
-      },
-      {
-        "value": "openrouter/deepseek/deepseek-chat-v3.1",
-        "label": "DeepSeek V3.1 via OpenRouter",
-        "pricing": { "input": 0.15, "output": 0.75 },
-        "notes": {
-          "implement": "Strong code at low cost; reliable tool-use; good default for cost-sensitive runs."
-        },
-        "score": { "implement": 4 },
         "lastRefreshAt": "2026-04-27T11:30:00.000Z"
       },
       {

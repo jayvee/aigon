@@ -338,6 +338,13 @@
     ]);
     function isCompleteStatus(s) { return COMPLETION_STATUSES.has(s); }
 
+    // Implementer "done" signals — the agent has finished its work and is idling at its prompt.
+    // Used to suppress the tmux-alive "Running" override so the card doesn't lie about active work.
+    const IMPLEMENTER_DONE_STATUSES = new Set([
+      'ready', 'submitted', 'feedback-addressed',
+      'implementation-complete', 'revision-complete', 'research-complete',
+    ]);
+
     // Baseline icon/label/cls per agent status — mirrors server STATE_RENDER_META for review states.
     const AGENT_STATUS_META = {
       'revision-complete':    { icon: '✓', label: 'Revision complete',    cls: 'status-review-done' },
@@ -347,7 +354,10 @@
       'spec-reviewing':       { icon: '●', label: 'Spec reviewing',       cls: 'status-reviewing'  },
       'spec-review-complete': { icon: '✓', label: 'Spec review complete', cls: 'status-review-done' },
       'implementing':         { icon: '●', label: 'Implementing',         cls: 'status-running'    },
-      'implementation-complete': { icon: '✓', label: 'Implementation complete', cls: 'status-submitted' },
+      'implementation-complete': { icon: '✓', label: 'Complete',          cls: 'status-submitted' },
+      'ready':                { icon: '✓', label: 'Complete',             cls: 'status-submitted' },
+      'submitted':            { icon: '✓', label: 'Complete',             cls: 'status-submitted' },
+      'feedback-addressed':   { icon: '✓', label: 'Complete',             cls: 'status-submitted' },
       'research-complete':    { icon: '✓', label: 'Research complete',    cls: 'status-submitted'  },
       'waiting':              { icon: '⏳', label: 'Needs input',         cls: 'status-waiting'    },
     };
@@ -361,8 +371,10 @@
       const endedFlag = !!(agent.flags && agent.flags.sessionEnded);
       let { icon, label, cls } = AGENT_STATUS_META[status] || AGENT_STATUS_DEFAULT;
 
-      // Compound overrides: tmux/session-ended state takes priority over workflow status
-      if (tmuxRunning && !isCompleteStatus(status) && status !== 'waiting') {
+      // Compound overrides: tmux-alive only means "Running" when the agent has not signaled done.
+      // Once the implementer is in a *_DONE_STATUSES state, the pane is just idling at its prompt —
+      // showing "Running" would lie about active work.
+      if (tmuxRunning && !IMPLEMENTER_DONE_STATUSES.has(status) && !isCompleteStatus(status) && status !== 'waiting') {
         icon = '●'; label = drive ? 'Implementing' : 'Running'; cls = 'status-running';
       } else if (drive && status === 'implementing') {
         icon = '●'; label = 'Implementing'; cls = 'status-running';
