@@ -1,5 +1,5 @@
 ---
-complexity: very-high
+complexity: medium
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-27T02:23:14.834Z", actor: "cli/feature-prioritise" }
 ---
@@ -24,7 +24,9 @@ The `submitted` signal is legacy terminology from a removed workflow stage (`04-
 - [ ] `aigon agent-status spec-review-complete` accepted for spec-review sessions
 - [ ] `aigon agent-status research-complete` accepted for research finding submissions
 - [ ] `aigon agent-status submitted` still works as a deprecated alias (exits 0, emits a deprecation warning, advances workflow correctly)
-- [ ] `aigon agent-status feedback-addressed` still works as a deprecated no-op alias (exits 0, emits deprecation warning, does NOT advance workflow — the agent must still call `revision-complete`)
+- [ ] `aigon agent-status feedback-addressed` still works as a deprecated no-op alias (exits 0, emits deprecation warning, does NOT advance workflow — the agent must still call `revision-complete` or `submitted`)
+- [ ] In-flight agents calling `submitted` during a `revise` session correctly advance the revision workflow (backward compatibility)
+- [ ] The CLI rejects mismatched completion signals (e.g., calling `revision-complete` during a `do` session) with a non-zero exit and helpful error
 - [ ] Shell EXIT trap in `buildAgentCommand` emits `implementation-complete` for `taskType='do'` and `revision-complete` for `taskType='revise'`
 - [ ] A new `revise` taskType is accepted by `buildAgentCommand` and `createDetachedTmuxSession`; the tmux session role for revision sessions is `revise`
 - [ ] `VALID_TMUX_ROLES` updated to include `revise`
@@ -103,11 +105,7 @@ Note: `spec-reviewing` and `revising` are new start-of-session statuses — add 
 
 ### Workflow engine (`lib/workflow-core/engine.js`)
 
-Two options — choose Option A for lower risk:
-
-**Option A (preferred):** Keep internal event types (`signal.agent_ready`, `signal.agent_submitted`, etc.) stable. Only the CLI surface renames. The `misc.js` handler maps new names to the same `wf.*` calls. No snapshot migration needed. Dashboard event display strings update separately.
-
-**Option B:** Rename internal events to `feature.implementation.completed`, `feature.revision.completed` etc. Requires snapshot migration script and updates to all event consumers (supervisor, heartbeat, analytics, dashboard). Do not choose this unless Option A proves insufficient.
+Keep internal event types (`signal.agent_ready`, `signal.agent_submitted`, etc.) stable. Only the CLI surface renames. The `misc.js` handler maps new names to the same `wf.*` calls. No snapshot migration needed. Dashboard event display strings update separately.
 
 ### `check-agent-submitted` (`lib/commands/misc.js`)
 
@@ -142,9 +140,9 @@ None — this is the foundation feature. The dashboard escape-hatch feature (F_N
 
 ## Out of Scope
 
-- Renaming internal workflow event types (`signal.agent_ready` etc.) — that is Option B above and is deferred
-- Changing the dashboard display labels for existing events (separate cosmetic pass)
-- Migrating existing on-disk snapshots — backward compat aliases make this unnecessary
+- Renaming internal workflow event types (`signal.agent_ready` etc.) — this is deferred.
+- Changing the dashboard display labels for existing events (separate cosmetic pass).
+- Migrating existing on-disk snapshots — backward compat aliases make this unnecessary.
 
 ## Open Questions
 
