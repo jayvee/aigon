@@ -24,9 +24,9 @@ test('token-window config defaults and command registry', () => {
 
 // REGRESSION: /api/budget must include lastTokenKickoffAt when state file exists.
 test('budget route includes lastTokenKickoffAt source', () => {
-    const src = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-routes.js'), 'utf8');
-    assert.ok(src.includes('last-token-kickoff'), 'dashboard-routes must reference last-token-kickoff');
-    assert.ok(src.includes('lastTokenKickoffAt'), 'dashboard-routes must include lastTokenKickoffAt in response');
+    const src = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-routes/analytics.js'), 'utf8');
+    assert.ok(src.includes('last-token-kickoff'), 'dashboard-routes analytics must reference last-token-kickoff');
+    assert.ok(src.includes('lastTokenKickoffAt'), 'dashboard-routes analytics must include lastTokenKickoffAt in response');
 });
 
 // REGRESSION: token-window command handler must exist in misc commands.
