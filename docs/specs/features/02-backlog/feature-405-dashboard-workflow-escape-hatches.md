@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-27T02:25:02.570Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: dashboard workflow escape hatches
