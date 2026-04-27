@@ -15,22 +15,18 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+
+/** REGRESSION: F405 escape hatch is hidden while tmux is up — kill session to simulate ended shell without completion signal. */
+function killTmuxSession(sessionName) {
+    if (!sessionName) return;
+    spawnSync('tmux', ['kill-session', '-t', sessionName], { stdio: 'ignore' });
+}
 const {
-    GIT_SAFE_ENV, readCtx, forceRefresh,
+    readCtx, forceRefresh,
     gotoPipelineWithMockedSessions, startFeatureWithAgents,
 } = require('./_helpers');
-const CLI_PATH = path.join(__dirname, '..', '..', 'aigon-cli.js');
 
 const FEATURE_NAME = 'e2e mark complete feature';
-
-function runCli(args, cwd, extraEnv = {}) {
-    const r = spawnSync(process.execPath, [CLI_PATH, ...args], {
-        cwd, encoding: 'utf8', stdio: 'pipe',
-        env: { ...process.env, ...GIT_SAFE_ENV, ...extraEnv },
-    });
-    if (r.status !== 0) throw new Error(`aigon ${args.join(' ')} failed (${r.status}): ${r.stderr || r.stdout}`);
-    return r;
-}
 
 function writeStatusFile(repoPath, featureId, agentId, data) {
     const stateDir = path.join(repoPath, '.aigon', 'state');
@@ -60,8 +56,7 @@ test('mark-complete: renders menu item when signal missing; absent when present;
     const ipCard = inProgressCol.locator('.kcard').filter({ hasText: FEATURE_NAME }).first();
     await expect(ipCard.locator('.kcard-agent.agent-cc')).toBeVisible({ timeout: 5000 });
 
-    // ── Test 1: menu item ABSENT when no status file (no session) ─────────────
-    // (status file doesn't exist yet — pendingCompletionSignal is null)
+    // ── Test 1: while tmux is up, escape hatch is hidden (isWorking = tmuxRunning) ─
     await forceRefresh(page);
     const overflowToggle = ipCard.locator('.kcard-agent.agent-cc .kcard-overflow-toggle');
     if (await overflowToggle.isVisible({ timeout: 1000 }).catch(() => false)) {
@@ -69,6 +64,13 @@ test('mark-complete: renders menu item when signal missing; absent when present;
         await expect(ipCard.locator('.kcard-mark-complete-btn')).toHaveCount(0);
         await overflowToggle.click(); // close
     }
+
+    const peekBtn = ipCard.locator('.kcard-agent.agent-cc .kcard-peek-btn[data-peek-session]');
+    await expect(peekBtn).toBeVisible({ timeout: 8000 });
+    const tmuxSession = await peekBtn.getAttribute('data-peek-session');
+    killTmuxSession(tmuxSession);
+    // Wait for tmux list cache to expire (TTL=3s) so dashboard sees the dead session.
+    await page.waitForTimeout(3500);
 
     // ── Test 2: menu item PRESENT when taskType='do', status='implementing' ───
     writeStatusFile(ctx.tmpDir, paddedId, 'cc', { status: 'implementing', taskType: 'do', flags: {} });
