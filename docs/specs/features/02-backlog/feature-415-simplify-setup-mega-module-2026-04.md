@@ -9,6 +9,8 @@ complexity: medium
 #              #   spawned this feature. Stamped automatically by `research-eval`
 #              #   on features it creates. Surfaced in the dashboard research
 #              #   detail panel under Agent Log → FEATURES.
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-27T14:59:12.121Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: simplify-setup-mega-module-2026-04
