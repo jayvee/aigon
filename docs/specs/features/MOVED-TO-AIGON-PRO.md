@@ -33,6 +33,20 @@ disambiguated by repo name.
 | 221 | pro-gate-infrastructure                            |
 | 222 | pro-gate-research-autopilot                        |
 | 226 | pro-availability-is-global-not-project-scoped      |
+| 320 | recurring-features                                 |
+| 359 | aigon-state-sync                                   |
+| 367 | server-scheduled-kickoff-for-features-and-research |
+| 379 | scheduler-agent-prompt-action                      |
+| 380 | aigon-profile-sync                                 |
+| 388 | aigon-vault                                        |
+
+The 2026-04-27 batch (feature 236) moves the Backup & Sync (F359, F380, F388)
+and Scheduling (F320, F367, F379) capability bundles. OSS keeps thin CLI verb
+stubs (`aigon backup`, `aigon vault`, `aigon sync`, `aigon recurring`,
+`aigon schedule`) that delegate to Pro when installed and otherwise print the
+standard "Pro feature — coming later" notice. The dashboard keeps two empty
+target divs (`#backup-sync-view`, `#scheduled-features-view`) populated by
+Pro's dashboard JS, identical to the existing `insights` pattern.
 
 ## Moved features (inbox — never started)
 

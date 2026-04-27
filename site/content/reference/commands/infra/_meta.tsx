@@ -14,13 +14,9 @@ export default {
   "token-window": "token-window",
   status: "status",
   repair: "repair",
-  "recurring-run": "recurring-run",
-  "recurring-list": "recurring-list",
   "matrix-apply": "matrix-apply",
   "security-scan": "security-scan",
   workflow: { title: withPro("workflow") },
-  schedule: "schedule",
-  sync: "sync",
   help: "help",
   next: "next",
 };

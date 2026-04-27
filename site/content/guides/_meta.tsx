@@ -7,12 +7,10 @@ export default {
   "drive-mode": "Drive Mode",
   "fleet-mode": "Fleet Mode",
   "autopilot-mode": { title: withPro("Autonomous Mode") },
-  "recurring-features": "Recurring Features",
   "research-workflow": "Research Workflow",
   "feedback-workflow": "Feedback Workflow",
   "feature-sets-autonomous": { title: withPro("Feature Sets in Autonomous Mode") },
   telemetry: "Telemetry & Analytics",
-  schedules: "Scheduled kickoffs",
   "pipeline-quota": "Usage limits (Pipeline)",
   "agent-matrix": "Agent Matrix & Recommender",
 

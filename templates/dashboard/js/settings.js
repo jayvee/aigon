@@ -85,16 +85,12 @@
       runDoctor(false);
     }
 
-    function fmtSyncTime(iso) {
-      if (!iso) return 'never';
-      try {
-        const d = new Date(iso);
-        if (Number.isNaN(d.getTime())) return iso;
-        return d.toLocaleString();
-      } catch (_) { return iso; }
-    }
+    // The renderSyncPanel / renderSyncPanels code moved to @aigon/pro with
+    // feature 236 (see aigon-pro/dashboard/backup-sync.js). The Settings tab
+    // no longer renders Backup & Sync; that lives in its own top-level tab.
 
-    function renderSyncPanel(scope, host) {
+    /* eslint-disable no-unused-vars */
+    function _renderSyncPanel_REMOVED(scope, host) {
       // scope: { id, label, includes, excludes, statusUrl, configureCmd, backupCmd, restoreCmd, statusCmd }
       host.innerHTML = '';
       host.className = 'settings-panel sync-panel';
@@ -253,21 +249,8 @@
       loadStatus();
     }
 
-    function renderSyncPanels(section) {
-      const host = document.createElement('div');
-      section.appendChild(host);
-      renderSyncPanel({
-        id: 'backup',
-        label: 'Backup & Sync',
-        includes: ['All registered projects (specs, workflow state, project config)', 'Global agent definitions & workflow presets', 'Daily auto-push (configurable)'],
-        excludes: 'logs, caches, sessions, machine-specific paths',
-        statusUrl: '/api/backup/status',
-        configureBaseCmd: 'aigon backup configure',
-        backupCmd: 'aigon backup push',
-        restoreCmd: 'aigon backup pull',
-        statusCmd: 'aigon backup status',
-      }, host);
-    }
+    // renderSyncPanels removed with feature 236; Backup & Sync now lives in
+    // its own top-level dashboard tab populated by @aigon/pro.
 
     function readConductorReposFromGlobalConfig_client() {
       return (state.data && state.data.repos) ? state.data.repos.map(r => r.path) : [];
@@ -1584,11 +1567,8 @@
           matrixWrap.innerHTML = '<div class="matrix-empty">Failed to load matrix: ' + escHtml(err.message) + '</div>';
         });
 
-      // ── Backup & Sync section ──────────────────────────────────────────────
-      const syncSection = shell.addSection('sync', 'Backup & Sync', 'Backup & Sync',
-        'Back up your global aigon settings — agent definitions, model assignments, and workflow presets — to a private git remote. Restore them instantly on any machine.');
-      shell.observeSection(syncSection);
-      renderSyncPanels(syncSection);
+      // Backup & Sync section moved to @aigon/pro (feature 236) and now
+      // surfaces as its own top-level "Backup & Sync (PRO)" tab.
 
       // Version section
       const versionSection = shell.addSection('version', 'Version', 'Version', 'Installed version and npm registry update status.');

@@ -144,39 +144,7 @@ testAsync('nudge event is recorded and surfaced on snapshot', () => withTempDirA
     assert.deepStrictEqual(snapshot.nudges, [{ agentId: 'cc', role: 'do', text: 'follow up', atISO: at }]);
 }));
 
-// REGRESSION: dashboard pipeline/monitor schedule glyph — pending jobs indexed with earliest runAt; cancelled jobs excluded.
-test('buildPendingScheduleIndex picks earliest pending runAt per feature and research', () => withTempDir('aigon-skidx-', (repo) => {
-    fs.mkdirSync(path.join(repo, '.aigon', 'state'), { recursive: true });
-    const sk = require('../../lib/scheduled-kickoff');
-    const engine = require('../../lib/workflow-core/engine');
-    const early = '2099-01-01T12:00:00Z';
-    const late = '2099-12-01T12:00:00Z';
-    fs.mkdirSync(path.join(repo, 'docs/specs/features/02-backlog'), { recursive: true });
-    const spec358 = path.join(repo, 'docs/specs/features/02-backlog/feature-358-x.md');
-    fs.writeFileSync(spec358, '# x\n');
-    engine.ensureEntityBootstrappedSync(repo, 'feature', '358', 'backlog', spec358);
-    const spec07 = path.join(repo, 'docs/specs/features/02-backlog/feature-07-x.md');
-    fs.writeFileSync(spec07, '# x\n');
-    engine.ensureEntityBootstrappedSync(repo, 'feature', '07', 'backlog', spec07);
-    const f358Actions = wrm.getFeatureDashboardState(repo, '358', 'backlog', []).validActions;
-    assert.ok(f358Actions.some((a) => a.action === 'feature-schedule'), 'backlog snapshot exposes Schedule');
-    assert.strictEqual(sk.addJob(repo, { kind: 'feature_autonomous', entityId: '358', runAt: late, payload: { agents: ['cc'], stopAfter: 'close' } }).ok, true);
-    assert.strictEqual(sk.addJob(repo, { kind: 'feature_autonomous', entityId: '358', runAt: early, payload: { agents: ['cc'], stopAfter: 'close' } }).ok, true);
-    assert.strictEqual(sk.addJob(repo, { kind: 'feature_autonomous', entityId: '07', runAt: early, payload: { agents: ['cu'], stopAfter: 'close' } }).ok, true);
-    const rDir = path.join(repo, 'docs/specs/research-topics/02-backlog');
-    fs.mkdirSync(rDir, { recursive: true });
-    fs.writeFileSync(path.join(rDir, 'research-43-a.md'), '---\ntitle: a\n---\n\n# r\n');
-    fs.writeFileSync(path.join(rDir, 'research-99-b.md'), '---\ntitle: b\n---\n\n# r\n');
-    let idx = sk.buildPendingScheduleIndex(repo);
-    assert.strictEqual(idx.lookupFeature('358').runAt, early);
-    assert.strictEqual(idx.lookupFeature('7').runAt, early);
-    assert.strictEqual(idx.lookupFeature('07').runAt, early);
-    assert.strictEqual(sk.addJob(repo, { kind: 'research_start', entityId: '43', runAt: late, payload: { agents: ['cc'] } }).ok, true);
-    idx = sk.buildPendingScheduleIndex(repo);
-    assert.strictEqual(idx.lookupResearch('43').runAt, late);
-    const cancelled = sk.addJob(repo, { kind: 'research_start', entityId: '99', runAt: early, payload: { agents: ['cc'] } });
-    sk.cancelJob(repo, cancelled.job.jobId);
-    idx = sk.buildPendingScheduleIndex(repo);
-    assert.strictEqual(idx.lookupResearch('99'), null);
-}));
+// buildPendingScheduleIndex regression test moved to @aigon/pro with feature
+// 236 alongside the scheduled-kickoff engine.
+
 report();
