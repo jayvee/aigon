@@ -26,6 +26,7 @@
   "cli": {
     "command": "opencode",
     "implementFlag": "",
+    "injectPromptViaTmux": true,
     "promptFlag": "--prompt",
     "implementPrompt": "feature-do",
     "evalPrompt": "feature-eval",
