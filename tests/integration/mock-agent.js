@@ -25,7 +25,7 @@ const MOCK_BIN = path.join(__dirname, 'mock-bin', 'mock-agent-bin.sh');
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 class MockAgent {
-    constructor({ featureId, agentId, desc, repoPath, worktreeBase, delays = {}, useRealWrapper = false }) {
+    constructor({ featureId, agentId, desc, repoPath, worktreeBase, delays = {}, useRealWrapper = false, profile = 'happy', useOfficialSessionName = false }) {
         if (!worktreeBase) throw new Error('MockAgent: worktreeBase is required');
         this.featureId = featureId;
         this.agentId = agentId;
@@ -33,7 +33,10 @@ class MockAgent {
         this.repoPath = repoPath;
         this.delays = { implementing: 15000, submitted: 10000, ...delays };
         this.useRealWrapper = useRealWrapper;
+        this.profile = profile;
+        this.useOfficialSessionName = useOfficialSessionName;
         this._abort = false;
+        this.sessionName = null;
         this.worktreePath = path.join(worktreeBase, `feature-${featureId}-${agentId}-${desc}`);
         this.logPath = path.join(this.worktreePath, 'docs', 'specs', 'features', 'logs', `feature-${featureId}-${agentId}-${desc}-log.md`);
     }
@@ -91,12 +94,18 @@ class MockAgent {
     // either surface here instead of in production.
     async _runViaTmux() {
         const padded = String(this.featureId).padStart(2, '0');
-        const sessionName = `aigon-mock-${padded}-${this.agentId}-${process.pid}-${Date.now()}`;
+        const repoName = path.basename(path.resolve(this.repoPath));
+        const sessionName = this.useOfficialSessionName
+            ? `${repoName}-f${parseInt(this.featureId, 10)}-do-${this.agentId}-${this.desc}`
+            : `aigon-mock-${padded}-${this.agentId}-${process.pid}-${Date.now()}`;
+        this.sessionName = sessionName;
         const sleepSec = Math.max(1, Math.round((this.delays.implementing || 0) / 1000));
 
         const prevBin = process.env.MOCK_AGENT_BIN;
         const prevTestMode = process.env.AIGON_TEST_MODE;
+        const prevProfile = process.env.MOCK_AGENT_PROFILE;
         process.env.MOCK_AGENT_BIN = MOCK_BIN;
+        process.env.MOCK_AGENT_PROFILE = this.profile;
         delete process.env.AIGON_TEST_MODE;
         let command;
         try {
@@ -114,6 +123,8 @@ class MockAgent {
             else process.env.MOCK_AGENT_BIN = prevBin;
             if (prevTestMode === undefined) delete process.env.AIGON_TEST_MODE;
             else process.env.AIGON_TEST_MODE = prevTestMode;
+            if (prevProfile === undefined) delete process.env.MOCK_AGENT_PROFILE;
+            else process.env.MOCK_AGENT_PROFILE = prevProfile;
         }
 
         // shellQuote produces single-quoted output so embedded newlines + `$`
@@ -124,11 +135,26 @@ class MockAgent {
         const tmuxArgs = [
             'new-session', '-d', '-s', sessionName, '-c', this.worktreePath,
             '-e', `MOCK_AGENT_SLEEP_SEC=${sleepSec}`,
+            '-e', `MOCK_AGENT_PROFILE=${this.profile}`,
             `bash -lc ${quoted}`,
         ];
+
+        // If using the official session name, kill any existing session first
+        if (this.useOfficialSessionName) {
+            spawnSync('tmux', ['kill-session', '-t', sessionName], { stdio: 'ignore' });
+        }
+
         const r = spawnSync('tmux', tmuxArgs, { stdio: 'pipe', encoding: 'utf8' });
         if (r.status !== 0) throw new Error(`tmux new-session failed: ${r.stderr || r.stdout}`);
 
+        if (this.profile === 'never-submit') {
+            // Wait briefly to confirm session started, then return without
+            // waiting for a submitted status that will never come.
+            await sleep(500);
+            return;
+        }
+
+        const targetStatus = this.profile === 'error-mid' ? 'error' : 'submitted';
         try {
             const statusPath = path.join(this.repoPath, '.aigon', 'state', `feature-${padded}-${this.agentId}.json`);
             const deadline = Date.now() + (this.delays.submitted || 10000) + (sleepSec * 1000) + 8000;
@@ -137,14 +163,16 @@ class MockAgent {
                 if (fs.existsSync(statusPath)) {
                     try {
                         const rec = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
-                        if (rec && rec.status === 'submitted') return;
+                        if (rec && rec.status === targetStatus) return;
                     } catch (_) { /* file mid-write */ }
                 }
                 await sleep(150);
             }
-            throw new Error(`MockAgent tmux mode timed out waiting for submitted status at ${statusPath}`);
+            throw new Error(`MockAgent tmux mode timed out waiting for ${targetStatus} status at ${statusPath}`);
         } finally {
-            spawnSync('tmux', ['kill-session', '-t', sessionName], { stdio: 'ignore' });
+            if (!this.useOfficialSessionName) {
+                spawnSync('tmux', ['kill-session', '-t', sessionName], { stdio: 'ignore' });
+            }
         }
     }
 }
