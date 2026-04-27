@@ -5,9 +5,9 @@
 <h1 align="center">Aigon</h1>
 
 <p align="center">
-  <strong>Spec-driven AI development and multi-agent orchestration.</strong>
+  <strong>Aigon is a spec-driven multi-agent harness — orchestrate Claude Code, Gemini CLI, and Codex CLI from one Kanban board, one CLI, or one slash command.</strong>
   <br/>
-  Run Claude, Gemini, Codex, and Cursor as a team on the same feature — then ship the best result.
+  One Kanban for many agents — on real branches, in real worktrees, against real specs.
 </p>
 
 <p align="center">
@@ -27,7 +27,7 @@
 
 ## What is Aigon?
 
-Aigon is an open-source, spec-driven orchestration system for AI coding agents — run them head-to-head on the same feature, then score their work so you can ship with confidence.
+Aigon is a spec-driven harness for orchestrating multiple AI coding agents on the same codebase. Each feature is a Markdown spec in git; each agent runs in its own git worktree under tmux; the lifecycle moves through inbox → backlog → in-progress → review → done on a local Kanban board. Aigon doesn't try to be a model — it orchestrates Claude Code, Gemini CLI, and Codex CLI as engines.
 
 You work with Aigon from wherever you already are: **slash commands** inside your agent (Claude Code, Gemini CLI, Codex CLI, Cursor), a **web dashboard** on `localhost`, or direct **CLI commands** in your terminal. All three surfaces read and write the same Markdown specs in your repo — no SaaS account, no vendor lock-in, no proprietary state.
 
