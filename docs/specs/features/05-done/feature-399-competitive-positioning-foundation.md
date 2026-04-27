@@ -1,6 +1,7 @@
 ---
 complexity: very-high
 set: competitive-positioning
+research: 44
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-27T00:58:36.948Z", actor: "cli/feature-prioritise" }
 ---
