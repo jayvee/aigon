@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Note on entries from v2.19 onwards:** the changelog was backfilled in bulk from git history on 2026-04-07 ahead of the public launch. Entries are grouped by theme and dated by month rather than per-patch. For commit-level detail, see `git log v2.18.0..HEAD` or browse the [git tags](https://github.com/jayvee/aigon/tags).
 
+## [2.55.0] — 2026-04-28
+
+PTY terminal in the dashboard, agent lifecycle signal rename (F404), research-context awareness across feature/review commands, and dashboard escape hatches for stalled signals. ~75 commits since v2.54.6.
+
+### Added
+
+- **PTY terminal via WebSocket (F356 MVP)** — interactive terminal panel in the dashboard backed by `node-pty` over WebSocket. Includes zoom, copy, wider panel, and a 300 ms repaint nudge for full-screen TUIs.
+- **Agent session IDs recorded in tmux sidecars (F357)** — session sidecar JSON now carries the agent's session ID so future tooling can correlate dashboard rows to live panes deterministically.
+- **Weekly security scanner (F368)** — recurring feature that audits the codebase for vulnerabilities and files findings as inbox features.
+- **Monthly top-3 simplifications recurring feature** — audits the codebase for highest-leverage simplifications across maintainability, readability, AI-agent clarity, extensibility, and performance; auto-files the top three to inbox for triage. First run: F412 (`top-3-simplifications-2026-04`).
+- **Monthly competitive refresh recurring feature** — periodic scan of the competitive landscape, auto-filed for triage.
+- **Dashboard escape hatches for stalled agent completion signals (F405)** — operator-facing buttons to unblock features when an agent has stopped emitting progress signals; backend owns the escape-hatch logic, dashboard surfaces it.
+- **Research context wired into feature-do, code-review, and spec-review (F408)** — features can declare a `research:` frontmatter link to research topics; `feature-do`, `feature-code-review`, and `feature-spec-review` now inject that research synthesis into the agent's context.
+- **Per-agent cost data surfaced in dashboard (F402)** — agent-level cost figures are pulled into the dashboard view.
+- **Execution mode badge in dashboard monitor view (F409)** — at-a-glance distinction between Drive / Fleet / autonomous runs on monitor cards.
+- **Sync conflict detection** — `aigon sync` now detects and logs conflicts; register test added.
+- **Scoped iterate runner + smoke set + parallel test runner (WIP)** — foundation for the `npm run test:iterate` per-iteration gate distinct from the pre-push gate.
+- **Gemini `approvalMode = yolo` set globally and via `install-agent`** — removes the per-prompt approval friction for Gemini sessions.
+- **Mock-agent profiles + dashboard E2E failure-mode spec** — exercises the new escape-hatch and signal paths.
+
+### Changed
+
+- **BREAKING: agent lifecycle completion signals renamed (F404)** — terminal vocabulary across the agent-status pipeline was unified. Dashboard labels were aligned to the new vocabulary in F410. If you have external tooling that grep'd the old signal names, update it; in-repo consumers were migrated in the same release.
+- **`feature-do` front-loads its run instruction** — stops agents from "pre-flighting" the spec before getting the directive to act on it.
+- **Backlog cards restore spec-review session info** — and the server-restart cascade no longer drops it.
+- **Test discovery** — integration and workflow tests are now auto-discovered via globs; `review` test globs are guarded against empty-directory literal expansion.
+
+### Fixed
+
+- **Gemini hooks emit proper JSON** — `check-version`, `project-context`, and `check-agent-signal` `--json` modes now emit `{ systemMessage }` / `{ hookSpecificOutput: { additionalContext } }` so context actually reaches the LLM rather than just the UI. `install-agent` pre-trusts hooks in `~/.gemini/trusted_hooks.json` to silence the "project-level hooks detected" startup warning. Hook merge upserts by base command name so re-installs replace old commands instead of duplicating them.
+- **OpenCode prompt routing** — `--model` is preserved and prompts route via `opencode --prompt` (was being silently dropped).
+- **Recurring tasks blocked in worktrees** — and `getNextId` hardened with a git-based ID scan to avoid ID collisions when multiple worktrees coexist.
+- **PTY full-screen TUI repaint** — restored the 300 ms repaint nudge that was lost in an earlier refactor.
+- **`node-pty` spawn-helper permissions** on macOS.
+- **`seed-reset` provisioning** — awaits async `install-agent` and uses `git add -A` so the seed demo repo settles deterministically.
+- **F405 escape-hatch read-model and E2E** — corrected the read-side projection so the dashboard surfaces the right escape-hatch state.
+- **Dashboard agent picker** shrunk and the matrix stats join dropped to keep the modal lightweight.
+- **Dead ternary** removed in `buildResearchContextSection`.
+
 ## [2.54.6] — 2026-04-24
 
 ### Fixed
