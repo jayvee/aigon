@@ -9,6 +9,8 @@ complexity: medium
 #              #   spawned this feature. Stamped automatically by `research-eval`
 #              #   on features it creates. Surfaced in the dashboard research
 #              #   detail panel under Agent Log → FEATURES.
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-27T14:58:55.777Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: simplify-dashboard-routes-2026-04
