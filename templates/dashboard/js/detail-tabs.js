@@ -448,17 +448,17 @@
             ? '<div class="log-path mono">' + escHtml(entry.path) + '</div>'
             : '';
           detailEl.innerHTML = pickerHtml + pathHtml + '<div class="markdown-body log-body">' + bodyHtml + '</div>';
+          // Re-wire picker on every render — innerHTML replacement destroys prior listeners.
+          if (ids.length > 1) {
+            detailEl.querySelectorAll('.log-picker-btn').forEach(btn => {
+              btn.addEventListener('click', () => {
+                state.logSelectedAgent = btn.dataset.logAgent;
+                renderBody();
+              });
+            });
+          }
         };
         renderBody();
-        // Wire picker clicks (Fleet only). Re-renders the body without re-fetching.
-        if (ids.length > 1) {
-          detailEl.querySelectorAll('.log-picker-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-              state.logSelectedAgent = btn.dataset.logAgent;
-              renderBody();
-            });
-          });
-        }
       }
 
       function renderControl(payload) {
