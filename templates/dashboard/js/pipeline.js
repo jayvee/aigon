@@ -328,20 +328,27 @@
       '</a>';
     }
 
+    // Completion-signal set — single source of truth for all complete-like statuses.
+    const COMPLETION_STATUSES = new Set([
+      'implementation-complete',
+      'revision-complete',
+      'research-complete',
+      'review-complete',
+      'spec-review-complete',
+    ]);
+    function isCompleteStatus(s) { return COMPLETION_STATUSES.has(s); }
+
     // Baseline icon/label/cls per agent status — mirrors server STATE_RENDER_META for review states.
     const AGENT_STATUS_META = {
-      'addressing-review':    { icon: '●', label: 'Addressing review',    cls: 'status-reviewing'  },
-      'feedback-addressed':   { icon: '✓', label: 'Revision complete',    cls: 'status-review-done' },
       'revision-complete':    { icon: '✓', label: 'Revision complete',    cls: 'status-review-done' },
       'revising':             { icon: '●', label: 'Revising',             cls: 'status-reviewing'  },
       'reviewing':            { icon: '●', label: 'Reviewing',            cls: 'status-reviewing'  },
       'review-complete':      { icon: '✓', label: 'Review complete',      cls: 'status-review-done' },
       'spec-reviewing':       { icon: '●', label: 'Spec reviewing',       cls: 'status-reviewing'  },
       'spec-review-complete': { icon: '✓', label: 'Spec review complete', cls: 'status-review-done' },
-      'implementing':         { icon: '○', label: 'Session ended',        cls: 'status-ended'      },
+      'implementing':         { icon: '●', label: 'Implementing',         cls: 'status-running'    },
       'implementation-complete': { icon: '✓', label: 'Implementation complete', cls: 'status-submitted' },
       'research-complete':    { icon: '✓', label: 'Research complete',    cls: 'status-submitted'  },
-      'submitted':            { icon: '✓', label: 'Submitted',            cls: 'status-submitted'  },
       'waiting':              { icon: '⏳', label: 'Needs input',         cls: 'status-waiting'    },
     };
     const AGENT_STATUS_DEFAULT = { icon: '○', label: 'Not started', cls: 'status-idle' };
@@ -355,11 +362,7 @@
       let { icon, label, cls } = AGENT_STATUS_META[status] || AGENT_STATUS_DEFAULT;
 
       // Compound overrides: tmux/session-ended state takes priority over workflow status
-      if (tmuxRunning && status !== 'submitted' && status !== 'implementation-complete' &&
-          status !== 'revision-complete' && status !== 'research-complete' &&
-          status !== 'review-complete' && status !== 'spec-review-complete' &&
-          status !== 'waiting' &&
-          status !== 'addressing-review' && status !== 'feedback-addressed') {
+      if (tmuxRunning && !isCompleteStatus(status) && status !== 'waiting') {
         icon = '●'; label = drive ? 'Implementing' : 'Running'; cls = 'status-running';
       } else if (drive && status === 'implementing') {
         icon = '●'; label = 'Implementing'; cls = 'status-running';
@@ -486,7 +489,7 @@
       if (!feature || !feature.stage || feature.stage === 'done' || feature.stage === 'inbox' || feature.stage === 'backlog') return '';
       // Only show after an agent has submitted/is ready (branch likely pushed)
       const agents = feature.agents || [];
-      if (!agents.some(function(a) { return a.status === 'submitted' || a.status === 'ready'; })) return '';
+      if (!agents.some(function(a) { return isCompleteStatus(a.status) || a.status === 'ready'; })) return '';
 
       const key = prStatusKey(repoPath, feature);
       const loading = prStatusLoading.has(key);
@@ -622,7 +625,7 @@
 
     function buildReadyToCloseHtml(agents, reviews) {
       const reviewDone = reviews.length > 0 && reviews.every(r => !r.running);
-      const implementerReady = agents.some(a => a.status === 'submitted' || a.status === 'ready');
+      const implementerReady = agents.some(a => isCompleteStatus(a.status) || a.status === 'ready');
       if (!reviewDone || !implementerReady) return '';
       return '<div class="kcard-ready-indicator">✓ Ready to close</div>';
     }

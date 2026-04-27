@@ -1119,9 +1119,9 @@
       // ── Notifications section ─────────────────────────────────────────────
       const NOTIF_TYPE_LABELS = {
         'agent-waiting': 'Agent waiting',
-        'agent-submitted': 'Agent submitted',
-        'all-submitted': 'All agents submitted (features)',
-        'all-research-submitted': 'All agents submitted (research)',
+        'agent-submitted': 'Agent complete',
+        'all-submitted': 'All agents complete (features)',
+        'all-research-submitted': 'All agents complete (research)',
         'error': 'Errors'
       };
       const notifSection = shell.addSection('notifications', 'Notifications', 'Notifications', 'macOS notifications are delivered only while the dashboard is running.');

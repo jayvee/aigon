@@ -66,7 +66,7 @@
             <button class="pill pill-filter" :class="{ active: $store.dashboard.filter === 'all' }" x-on:click.stop="setFilter('all')">All</button>
             <button class="pill pill-filter" :class="{ active: $store.dashboard.filter === 'implementing' }" x-on:click.stop="setFilter('implementing')" x-text="computedSummary.implementing + ' implementing'"></button>
             <button class="pill pill-filter waiting" :class="{ active: $store.dashboard.filter === 'waiting' }" x-on:click.stop="setFilter('waiting')" x-text="computedSummary.waiting + ' waiting'"></button>
-            <button class="pill pill-filter" :class="{ active: $store.dashboard.filter === 'submitted' }" x-on:click.stop="setFilter('submitted')" x-text="computedSummary.submitted + ' submitted'"></button>
+            <button class="pill pill-filter" :class="{ active: $store.dashboard.filter === 'complete' }" x-on:click.stop="setFilter('complete')" x-text="computedSummary.complete + ' complete'"></button>
             <button class="pill pill-filter" :class="{ active: $store.dashboard.filter === 'error' }" x-on:click.stop="setFilter('error')" x-text="computedSummary.error + ' error'"></button>
           </div>
           <!-- Repos grid -->

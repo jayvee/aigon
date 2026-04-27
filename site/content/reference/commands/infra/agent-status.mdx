@@ -17,22 +17,47 @@ The status is written to `.aigon/state/feature-{id}-{agent}.json` in the main re
 
 ## Valid statuses
 
+### Active
+
 | Status | Meaning |
 |--------|---------|
 | `implementing` | Agent is actively working on the feature |
-| `waiting` | Agent needs human input before continuing |
-| `submitted` | Agent has finished and committed its work |
-| `error` | Agent encountered an error |
 | `reviewing` | Agent is conducting a code review |
+| `revising` | Agent is addressing review feedback |
+| `spec-reviewing` | Agent is reviewing the spec |
+
+### Completion
+
+| Status | Meaning |
+|--------|---------|
+| `implementation-complete` | Agent has finished initial implementation |
+| `revision-complete` | Agent has finished addressing review feedback |
 | `review-complete` | Agent has finished the code review |
-| `feedback-addressed` | Agent has addressed feedback from a review |
+| `spec-review-complete` | Agent has finished the spec review |
+| `research-complete` | Agent has finished research findings |
+
+### Other
+
+| Status | Meaning |
+|--------|---------|
+| `waiting` | Agent needs human input before continuing |
+| `error` | Agent encountered an error |
 | `awaiting-input` | Agent is blocked waiting for a specific prompt response |
+
+## Deprecated aliases
+
+The CLI still accepts the following legacy signals for backward compatibility, but remaps them to the canonical names above before any state is written.
+
+| Alias | Remap rule |
+|-------|------------|
+| `submitted` | Remapped to `implementation-complete` by default, or `revision-complete` if the recorded session `taskType` is `revise`, or `research-complete` if the entity type is `research`. |
+| `feedback-addressed` | No-op alias; agents must call `revision-complete` to advance state. |
 
 ## Usage
 
 ```bash
 # From inside a feature worktree:
-aigon agent-status submitted
+aigon agent-status implementation-complete
 
 # Signal review completion:
 aigon agent-status review-complete

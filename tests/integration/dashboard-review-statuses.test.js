@@ -49,16 +49,17 @@ testAsync('spec-review lifecycle drives card status from events, not tmux', () =
     assert.strictEqual(state.specReviewSessions.length, 0);
     assert.strictEqual(state.specCheckSessions.length, 0);
 }));
-test('dashboard status helpers preserve review-check states', () => {
-    assert.strictEqual(normalizeDashboardStatus('feedback-addressed'), 'feedback-addressed');
-    assert.strictEqual(normalizeDashboardStatus('addressing-review'), 'addressing-review');
+test('dashboard status helpers preserve revision-complete state', () => {
+    assert.strictEqual(normalizeDashboardStatus('revision-complete'), 'revision-complete');
+    assert.strictEqual(
+        deriveFeatureDashboardStatus('revision-complete', { reviewStatus: 'done', tmuxRunning: true }),
+        'revision-complete'
+    );
+    // addressing-review and feedback-addressed are deprecated aliases removed in F409;
+    // they normalize through to their underlying canonical names or fall through.
     assert.strictEqual(
         deriveFeatureDashboardStatus('implementing', { reviewStatus: 'done', tmuxRunning: true }),
-        'addressing-review'
-    );
-    assert.strictEqual(
-        deriveFeatureDashboardStatus('feedback-addressed', { reviewStatus: 'done', tmuxRunning: true }),
-        'feedback-addressed'
+        'implementing'
     );
 });
 testAsync('workflow read model derives completed feature review state from engine events', () => withTempDirAsync('aigon-review-status-', async (repo) => {
@@ -76,23 +77,23 @@ testAsync('workflow read model derives completed feature review state from engin
     assert.strictEqual(second.reviewSessions.length, 1);
     assert.strictEqual(second.reviewSessions[0].agent, 'gg');
 }));
-testAsync('collectRepoStatus surfaces feedback-addressed from per-agent status file', () => withTempDirAsync('aigon-feedback-addressed-', async (repo) => {
-    const specPath = path.join(repo, 'docs', 'specs', 'features', '03-in-progress', 'feature-77-fb-addressed.md');
+testAsync('collectRepoStatus surfaces revision-complete from per-agent status file', () => withTempDirAsync('aigon-revision-complete-', async (repo) => {
+    const specPath = path.join(repo, 'docs', 'specs', 'features', '03-in-progress', 'feature-77-revision-complete.md');
     fs.mkdirSync(path.dirname(specPath), { recursive: true });
     fs.writeFileSync(specPath, '# fb\n');
     await engine.startFeature(repo, '77', 'solo_branch', ['cc']);
-    // Per-agent file is the only producer of `feedback-addressed` — the workflow
-    // snapshot still reports the agent as `implementing`, so the dashboard must
+    // Per-agent file is the source of truth for `revision-complete` — the workflow
+    // snapshot reports engine states (idle/running/...), so the dashboard must
     // read the status file rather than collapse to the snapshot value.
-    ast.writeAgentStatusAt(repo, '77', 'cc', { status: 'feedback-addressed' }, 'feature');
+    ast.writeAgentStatusAt(repo, '77', 'cc', { status: 'revision-complete' }, 'feature');
     clearTierCache(repo);
-    const response = { summary: { implementing: 0, waiting: 0, submitted: 0, error: 0, total: 0 } };
+    const response = { summary: { implementing: 0, waiting: 0, complete: 0, error: 0, total: 0 } };
     const st = collectRepoStatus(repo, response);
     const feature = st.features.find(f => String(f.id) === '77');
     assert.ok(feature, 'feature 77 missing from dashboard payload');
     const cc = feature.agents.find(a => a.id === 'cc');
     assert.ok(cc, 'cc agent missing from feature 77');
-    assert.strictEqual(cc.status, 'feedback-addressed', `expected feedback-addressed, got ${cc.status}`);
+    assert.strictEqual(cc.status, 'revision-complete', `expected revision-complete, got ${cc.status}`);
 }));
 // REGRESSION: spec-review-check author selection should default from workflow bootstrap state.
 testAsync('collectRepoStatus includes authorAgentId for backlog research items', () => withTempDirAsync('aigon-author-agent-dashboard-', async (repo) => {
@@ -101,7 +102,7 @@ testAsync('collectRepoStatus includes authorAgentId for backlog research items',
     fs.writeFileSync(specPath, '# Research: author default\n');
     engine.ensureEntityBootstrappedSync(repo, 'research', '36', 'backlog', specPath, { authorAgentId: 'cc' });
     clearTierCache(repo);
-    const response = { summary: { implementing: 0, waiting: 0, submitted: 0, error: 0, total: 0 } };
+    const response = { summary: { implementing: 0, waiting: 0, complete: 0, error: 0, total: 0 } };
     const status = collectRepoStatus(repo, response);
     const research = status.research.find(item => String(item.id) === '36');
     assert.ok(research, 'research 36 missing from dashboard payload');

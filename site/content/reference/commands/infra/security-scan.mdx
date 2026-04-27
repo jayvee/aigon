@@ -28,7 +28,7 @@ aigon security-scan [--since <sha>] [--no-feedback]
 
 ## Difference from merge-gate scanning
 
-The merge-gate (`feature-close`, `agent-status submitted`) runs a fast diff-aware scan scoped to the current branch. `aigon security-scan` runs a broader scan across the full commit range since the last scan, including commits from all branches merged to main. Use the on-demand command for repo-wide health checks; the merge gate catches regressions at submission time.
+The merge-gate (`feature-close`, `agent-status implementation-complete` / `revision-complete`) runs a fast diff-aware scan scoped to the current branch. `aigon security-scan` runs a broader scan across the full commit range since the last scan, including commits from all branches merged to main. Use the on-demand command for repo-wide health checks; the merge gate catches regressions at submission time.
 
 ## Suppression
 

@@ -601,8 +601,8 @@
 
     const NOTIF_TYPE_LABELS_DISPLAY = {
       'agent-waiting': 'Waiting',
-      'agent-submitted': 'Submitted',
-      'all-submitted': 'All Submitted',
+      'agent-submitted': 'Complete',
+      'all-submitted': 'All complete',
       'all-research-submitted': 'Research Done',
       'error': 'Error'
     };

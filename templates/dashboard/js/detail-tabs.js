@@ -137,7 +137,7 @@
         if (!byType.submitted && !byType['all-submitted'] && !byType['feature-submitted']) {
           const agentFiles = payload.agentFiles || {};
           Object.values(agentFiles).forEach(af => {
-            if (af && af.status === 'submitted' && af.updatedAt) {
+            if (af && isCompleteStatus(af.status) && af.updatedAt) {
               if (!agentSubmitTs || af.updatedAt < agentSubmitTs) agentSubmitTs = af.updatedAt;
             }
           });
@@ -243,7 +243,7 @@
         const timelineRows = [
           ['Created', stats.createdAt ? formatIso(stats.createdAt) : 'n/a'],
           ['Started', stats.startedAt ? formatIso(stats.startedAt) : 'n/a'],
-          ['Submitted', stats.submittedAt ? formatIso(stats.submittedAt) : 'n/a'],
+          ['Completed', stats.submittedAt ? formatIso(stats.submittedAt) : 'n/a'],
           stats.reviewedAt ? ['Reviewed', formatIso(stats.reviewedAt)] : null,
           ['Evaluated', stats.evaluatedAt ? formatIso(stats.evaluatedAt) : 'n/a']
         ].filter(Boolean);

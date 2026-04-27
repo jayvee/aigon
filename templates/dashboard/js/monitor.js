@@ -147,13 +147,13 @@
         get visibleRepos() { return getVisibleRepos(Alpine.store('dashboard').data || { repos: [] }); },
         get computedSummary() {
           const s = Alpine.store('dashboard');
-          const data = s.data || { repos: [], summary: { implementing: 0, waiting: 0, submitted: 0, error: 0 } };
-          if (s.selectedRepo === 'all') return data.summary || { implementing: 0, waiting: 0, submitted: 0, error: 0 };
-          const summary = { implementing: 0, waiting: 0, submitted: 0, error: 0 };
+          const data = s.data || { repos: [], summary: { implementing: 0, waiting: 0, complete: 0, error: 0 } };
+          if (s.selectedRepo === 'all') return data.summary || { implementing: 0, waiting: 0, complete: 0, error: 0 };
+          const summary = { implementing: 0, waiting: 0, complete: 0, error: 0 };
           const monitorType = s.monitorType || 'all';
           const itemTypes = monitorType === 'all' ? ['features', 'research', 'feedback'] : [monitorType];
           this.visibleRepos.forEach(repo => {
-            itemTypes.forEach(t => { (repo[t] || []).forEach(item => { (item.agents || []).forEach(a => { if (summary[a.status] !== undefined) summary[a.status]++; }); }); });
+            itemTypes.forEach(t => { (repo[t] || []).forEach(item => { (item.agents || []).forEach(a => { if (isCompleteStatus(a.status)) summary.complete++; else if (summary[a.status] !== undefined) summary[a.status]++; }); }); });
           });
           return summary;
         },
@@ -177,21 +177,27 @@
           const mt = s.monitorType || 'all';
           if (mt !== 'all' && mt !== 'features') return [];
           const raw = [...(repo.features || [])].filter(f => f.stage === 'in-progress' || f.stage === 'in-evaluation').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
-          return s.filter === 'all' ? raw : raw.filter(f => f.agents.some(a => a.status === s.filter));
+          if (s.filter === 'all') return raw;
+          if (s.filter === 'complete') return raw.filter(f => f.agents.some(a => isCompleteStatus(a.status)));
+          return raw.filter(f => f.agents.some(a => a.status === s.filter));
         },
         getResearch(repo) {
           const s = Alpine.store('dashboard');
           const mt = s.monitorType || 'all';
           if (mt !== 'all' && mt !== 'research') return [];
           const raw = [...(repo.research || [])].filter(r => r.stage === 'in-progress' || r.stage === 'in-evaluation').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
-          return s.filter === 'all' ? raw : raw.filter(r => r.agents.some(a => a.status === s.filter));
+          if (s.filter === 'all') return raw;
+          if (s.filter === 'complete') return raw.filter(r => r.agents.some(a => isCompleteStatus(a.status)));
+          return raw.filter(r => r.agents.some(a => a.status === s.filter));
         },
         getFeedback(repo) {
           const s = Alpine.store('dashboard');
           const mt = s.monitorType || 'all';
           if (mt !== 'all' && mt !== 'feedback') return [];
           const raw = [...(repo.feedback || [])].filter(f => f.stage === 'in-progress').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
-          return s.filter === 'all' ? raw : raw.filter(f => (f.agents || []).some(a => a.status === s.filter));
+          if (s.filter === 'all') return raw;
+          if (s.filter === 'complete') return raw.filter(f => (f.agents || []).some(a => isCompleteStatus(a.status)));
+          return raw.filter(f => (f.agents || []).some(a => a.status === s.filter));
         },
         getTotalItems(repo) { return this.getFeatures(repo).length + this.getResearch(repo).length + this.getFeedback(repo).length; },
         sortedAgents(agents) { return [...(agents || [])].sort((a, b) => statusRank(a.status) - statusRank(b.status) || a.id.localeCompare(b.id)); },
@@ -217,7 +223,7 @@
         researchEvalBtn(item) {
           if (!(item.validActions || []).some(a => a.action === 'research-eval')) return '';
           const evalCmd = '/are ' + String(item.id).padStart(2, '0');
-          return '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(evalCmd) + '" title="All agents submitted — evaluate findings">Copy next</button>';
+          return '<button class="copy btn btn-primary next-copy" data-copy="' + escHtml(evalCmd) + '" title="All agents complete — evaluate findings">Copy next</button>';
         },
         buildNextActionHtml(feature, repoPath) { return buildMonitorActionHtml(feature, repoPath); },
         buildAgentOverflowHtml(agent, feature, repoPath) {
