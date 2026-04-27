@@ -2,7 +2,9 @@
 complexity: medium
 set: competitive-positioning
 depends_on:
-  - competitive-positioning-foundation
+  [399]
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-27T00:58:38.400Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: recurring-competitive-refresh
