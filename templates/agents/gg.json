@@ -196,6 +196,9 @@
     "settings": {
       "enabled": true,
       "path": ".gemini/settings.json",
+      "topLevelSettings": {
+        "approvalMode": "yolo"
+      },
       "policyPath": "~/.gemini/policies/aigon.toml",
       "policies": [
         {
