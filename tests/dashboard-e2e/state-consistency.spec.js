@@ -33,7 +33,7 @@ test.describe('Dashboard state consistency', () => {
         const data = await resp.json();
 
         for (const key of ['repos', 'generatedAt', 'summary']) expect(data).toHaveProperty(key);
-        for (const key of ['implementing', 'submitted', 'waiting', 'error']) expect(data.summary).toHaveProperty(key);
+        for (const key of ['implementing', 'complete', 'waiting', 'error']) expect(data.summary).toHaveProperty(key);
 
         for (const repo of data.repos) {
             for (const key of ['path', 'name', 'features']) expect(repo).toHaveProperty(key);

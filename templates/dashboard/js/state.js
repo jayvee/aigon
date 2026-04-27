@@ -17,7 +17,7 @@
       collapsed: JSON.parse(localStorage.getItem(lsKey('collapsed')) || '{}'),
       hiddenRepos: JSON.parse(localStorage.getItem(lsKey('hiddenRepos')) || '[]'),
       sidebarHidden: localStorage.getItem(lsKey('sidebarHidden')) === 'true',
-      filter: localStorage.getItem(lsKey('filter')) || 'all',
+      filter: (() => { const stored = localStorage.getItem(lsKey('filter')) || 'all'; return stored === 'submitted' ? 'complete' : stored; })(),
       view: initialView,
       selectedRepo: localStorage.getItem(lsKey('selectedRepo')) || 'all',
       settingsRepo: storedSettingsRepo,

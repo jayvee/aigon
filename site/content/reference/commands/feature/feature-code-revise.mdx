@@ -33,7 +33,7 @@ Both states are first-class engine states. AutoConductor polls `currentSpecState
 1. Reads the review diff and the reviewer's findings log
 2. For each reviewer fix commit: accept (cherry-pick), revert, or modify per spec acceptance criteria
 3. Commits the revision result with `fix(revise): ...` messages
-4. Signals `code_revision_complete` to the engine via `aigon agent-status submitted`
+4. Signals `code_revision_complete` to the engine via `aigon agent-status revision-complete`
 
 ## Examples
 

@@ -20,7 +20,7 @@ aigon feature-do <ID> [--agent=<cc|gg|cx|cu>] [--iterate] [--max-iterations=N] [
 | `--agent=<cc\|gg\|cx\|cu>` | Override agent detection (useful when branch name is ambiguous) |
 | `--iterate` | Run in Autopilot mode: implement → validate → repeat until passing or max iterations |
 | `--max-iterations=N` | Max iterations for `--iterate` mode (default: 5) |
-| `--auto-submit` | Automatically run `agent-status submitted` when done |
+| `--auto-submit` | Automatically run `agent-status implementation-complete` when done |
 | `--no-auto-submit` | Suppress auto-submit even if configured |
 | `--dry-run` | Print what would happen without executing |
 
@@ -36,7 +36,7 @@ You typically don't call this from the CLI directly. `feature-start` opens the a
 2. Prints the spec inline so the agent can work from it without further reads
 3. Signals `implementing` status to the dashboard
 4. Agent implements the spec, commits incrementally, and runs validation
-5. Agent calls `aigon agent-status submitted` when done
+5. Agent calls `aigon agent-status implementation-complete` when done
 
 ## Iterate mode
 
