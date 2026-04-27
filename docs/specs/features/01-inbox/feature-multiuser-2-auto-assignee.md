@@ -9,7 +9,7 @@ Always write an `assignee` field into `state.json` when an entity is started or 
 This is **feature 2 of 5** in the `multiuser-` series:
 1. `multiuser-migration-framework` — versioned migration infrastructure
 2. `multiuser-state-consolidation` — single `state.json` per entity
-3. `multiuser-auto-assignee` ← this feature
+3. `multiuser-2-auto-assignee` ← this feature
 4. `multiuser-committed-state` — relocates state to git-tracked sibling files
 5. `multiuser-team-mode-sync` — push/pull sync with assignment locking
 

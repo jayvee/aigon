@@ -53,7 +53,7 @@ npm test
 
 ## Dependencies
 
-- depends_on: multiuser-auto-assignee
+- depends_on: multiuser-2-auto-assignee
 
 ## Out of Scope
 
