@@ -46,3 +46,20 @@ Done
   - REGRESSION: flag-on + cc (native) → uses native path, no tmuxLogPath
   - Default config: `transcripts.tmux` defaults to false, tmuxMaxBytes > 0
   - Rotation: log.1 created when size cap exceeded, no log.4+ files
+
+## Code Review
+
+**Reviewed by**: composer (code-review pass)
+**Date**: 2026-04-28
+
+### Fixes Applied
+- `fix(review): align tmux pipe-pane log role default with sidecar (do)` — `createDetachedTmuxSession` used `meta.role || 'implement'` for the tmux log basename while `writeSessionSidecarRecord` defaults entity role to `'do'`. Any caller omitting `role` would have produced `implement-<uuid>.tmux.log` alongside a sidecar claiming `role: do`; aligned defaults to `'do'`.
+
+### Residual Issues
+- **Rotation test vs shipped script**: `transcript-tmux-pipe-pane.test.js` embeds a simplified shell snippet (`check_every=1`) rather than executing `~/.aigon/scripts/aigon-tmux-pipe-pane.sh`, so drift in the real script would not be caught by CI. Acceptable for v1 but worth tightening later if this script churns.
+- **Implementation log wording**: “rotates every 500 lines that exceed cap” is imprecise — production checks file **size** against `CAP` every 500 **lines** read (batching), not line-count-based rotation.
+- **`npm run test:iterate`**: `transcript-read.test.js` exited with `spawn code -w ENOENT` after passing assertions (environment missing VS Code CLI); unrelated to F430.
+
+### Notes
+- Acceptance criteria are largely met: global `transcripts.*` defaults, `getCapturableAgentIds()` matches “native capture” vs tmux-only agents, path matches transcript-store layout, read-model exposes `tmuxLogPath`, rotation keeps `.1`–`.3` with configurable cap.
+- Repo-scoped “ask” tmux sessions omit `entityType`/`entityId`, so pipe-pane correctly does not attach there.
