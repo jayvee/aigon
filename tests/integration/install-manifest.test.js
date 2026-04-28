@@ -111,7 +111,6 @@ testAsync('aigon uninstall --dry-run lists files without deleting', () => withTe
     fs.mkdirSync(path.join(repo, 'docs', 'specs'), { recursive: true });
     runInstallAgent(repo);
     const manifest = installManifestLib.readManifest(repo);
-    const fileCount = manifest.files.length;
 
     const output = runUninstall(repo, ['--dry-run']);
     assert.ok(output.includes('dry-run'), `output should mention dry-run: ${output}`);
