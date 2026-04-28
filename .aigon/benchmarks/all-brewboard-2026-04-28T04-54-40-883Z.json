@@ -1,0 +1,82 @@
+{
+  "pairs": [
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-flash",
+      "modelLabel": "Gemini 2.5 Flash",
+      "ok": true,
+      "totalMs": 57113
+    },
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-pro",
+      "modelLabel": "Gemini 2.5 Pro",
+      "ok": true,
+      "totalMs": 51605
+    },
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-3-flash-preview",
+      "modelLabel": "Gemini 3 Flash Preview (free fallback)",
+      "ok": true,
+      "totalMs": 42389
+    },
+    {
+      "agentId": "km",
+      "modelValue": "kimi-k2.6",
+      "modelLabel": "Kimi K2.6",
+      "ok": false,
+      "error": "Timed out waiting for km to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-chat-v3.1",
+      "modelLabel": "DeepSeek V3.1 via OpenRouter (default)",
+      "ok": true,
+      "totalMs": 470364
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/x-ai/grok-code-fast-1",
+      "modelLabel": "Grok Code Fast 1 via OpenRouter",
+      "ok": false,
+      "error": "feature-start failed (exit 1)"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-235b-a22b-07-25",
+      "modelLabel": "Qwen3 235B (2507) via OpenRouter",
+      "ok": true,
+      "totalMs": 460592
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-next-80b-a3b-thinking",
+      "modelLabel": "Qwen3 Next 80B Thinking via OpenRouter",
+      "ok": false,
+      "error": "spawnSync aigon ENOENT"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-small-2507",
+      "modelLabel": "Devstral Small via OpenRouter",
+      "ok": false,
+      "error": "Seed repo not found at /Users/jviner/src/brewboard. Run 'aigon seed-reset brewboard' first."
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/nvidia/nemotron-3-super-120b-a12b",
+      "modelLabel": "Nemotron 3 Super 120B via OpenRouter",
+      "ok": false,
+      "error": "Seed repo not found at /Users/jviner/src/brewboard. Run 'aigon seed-reset brewboard' first."
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/z-ai/glm-5.1",
+      "modelLabel": "GLM-5.1 via OpenRouter",
+      "ok": false,
+      "error": "Seed repo not found at /Users/jviner/src/brewboard. Run 'aigon seed-reset brewboard' first."
+    }
+  ],
+  "timestamp": "2026-04-28T04:54:40.883Z"
+}

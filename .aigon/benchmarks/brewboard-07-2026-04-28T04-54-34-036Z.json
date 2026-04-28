@@ -1,0 +1,24 @@
+{
+  "seed": "brewboard",
+  "featureId": "07",
+  "taskType": "do",
+  "agent": "op",
+  "model": "openrouter/qwen/qwen3-235b-a22b-07-25",
+  "effort": null,
+  "aigonVersion": "2.55.0",
+  "timestamp": "2026-04-28T04:46:53.419Z",
+  "totalMs": 460592,
+  "baselineMs": null,
+  "overheadMs": null,
+  "phases": [
+    {
+      "name": "cli-start",
+      "ms": 78
+    },
+    {
+      "name": "agent-boot",
+      "ms": 7079
+    }
+  ],
+  "ok": true
+}
