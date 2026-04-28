@@ -108,4 +108,19 @@ testAsync('collectRepoStatus includes authorAgentId for backlog research items',
     assert.ok(research, 'research 36 missing from dashboard payload');
     assert.strictEqual(research.authorAgentId, 'cc');
 }));
+// REGRESSION feature 439: solo_branch Drive cards must surface which CLI agent is
+// implementing so the kanban card header can show "Drive  Claude Code" etc.
+testAsync('collectRepoStatus sets driveToolAgentId for solo_branch from tool agent status file', () => withTempDirAsync('aigon-drive-tool-agent-', async (repo) => {
+    const specPath = path.join(repo, 'docs', 'specs', 'features', '03-in-progress', 'feature-88-drive-tool-agent.md');
+    fs.mkdirSync(path.dirname(specPath), { recursive: true });
+    fs.writeFileSync(specPath, '# drive tool agent\n');
+    await engine.startFeature(repo, '88', 'solo_branch', ['solo']);
+    ast.writeAgentStatusAt(repo, '88', 'op', { status: 'implementing' }, 'feature');
+    clearTierCache(repo);
+    const response = { summary: { implementing: 0, waiting: 0, complete: 0, error: 0, total: 0 } };
+    const st = collectRepoStatus(repo, response);
+    const feature = st.features.find(f => String(f.id) === '88');
+    assert.ok(feature, 'feature 88 missing from dashboard payload');
+    assert.strictEqual(feature.driveToolAgentId, 'op', `expected driveToolAgentId 'op', got ${feature.driveToolAgentId}`);
+}));
 report();
