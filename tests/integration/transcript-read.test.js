@@ -6,6 +6,7 @@ const path = require('path');
 const { test, withTempDir, report } = require('../_helpers');
 const {
     collectTranscriptRecords,
+    resolveTranscriptDownload,
     formatTranscriptCliOutput,
     openTranscriptPath,
 } = require('../../lib/transcript-read');
@@ -150,9 +151,63 @@ test('formatTranscriptCliOutput includes captured and not-captured rows', () => 
 });
 
 test('openTranscriptPath returns ok with platform command', () => {
-    const result = openTranscriptPath('/tmp/fake-transcript.jsonl');
-    assert.strictEqual(result.ok, true);
-    assert.ok(result.openedWith);
+    // REGRESSION: EDITOR with spaces (e.g. "code -w") is not parsed by openTranscriptPath — clear for deterministic spawn.
+    const prev = process.env.EDITOR;
+    delete process.env.EDITOR;
+    try {
+        const result = openTranscriptPath('/tmp/fake-transcript.jsonl');
+        assert.strictEqual(result.ok, true);
+        assert.ok(result.openedWith);
+    } finally {
+        if (prev === undefined) delete process.env.EDITOR;
+        else process.env.EDITOR = prev;
+    }
 });
+
+test('resolveTranscriptDownload returns path from read-model only', () => withTempDir('aigon-tr-', (tmp) => {
+    // REGRESSION: dashboard download must resolve only via collectTranscriptRecords, never trust client paths.
+    const transcriptFile = path.join(tmp, 'sess.jsonl');
+    fs.writeFileSync(transcriptFile, '{"msg":"x"}\n');
+    const sessionsDir = path.join(tmp, '.aigon', 'sessions');
+    fs.mkdirSync(sessionsDir, { recursive: true });
+    fs.writeFileSync(path.join(sessionsDir, 'aigon-f42-do-cc.json'), JSON.stringify({
+        sessionName: 'aigon-f42-do-cc',
+        entityType: 'f',
+        entityId: '42',
+        agent: 'cc',
+        role: 'do',
+        repoPath: tmp,
+        worktreePath: tmp,
+        createdAt: '2026-04-28T00:00:00.000Z',
+        agentSessionId: 'uuid-abc',
+        agentSessionPath: transcriptFile,
+    }));
+    const r = resolveTranscriptDownload(tmp, 'feature', '42', { agent: 'cc', sessionId: 'uuid-abc' });
+    assert.strictEqual(r.ok, true);
+    assert.strictEqual(r.absPath, transcriptFile);
+    assert.strictEqual(r.downloadBaseName, 'sess.jsonl');
+}));
+
+test('resolveTranscriptDownload 404 when sessionId mismatch', () => withTempDir('aigon-tr-', (tmp) => {
+    const transcriptFile = path.join(tmp, 'sess.jsonl');
+    fs.writeFileSync(transcriptFile, 'x');
+    const sessionsDir = path.join(tmp, '.aigon', 'sessions');
+    fs.mkdirSync(sessionsDir, { recursive: true });
+    fs.writeFileSync(path.join(sessionsDir, 'aigon-f42-do-cc.json'), JSON.stringify({
+        sessionName: 'aigon-f42-do-cc',
+        entityType: 'f',
+        entityId: '42',
+        agent: 'cc',
+        role: 'do',
+        repoPath: tmp,
+        worktreePath: tmp,
+        createdAt: '2026-04-28T00:00:00.000Z',
+        agentSessionId: 'uuid-abc',
+        agentSessionPath: transcriptFile,
+    }));
+    const r = resolveTranscriptDownload(tmp, 'feature', '42', { agent: 'cc', sessionId: 'wrong-id' });
+    assert.strictEqual(r.ok, false);
+    assert.strictEqual(r.status, 404);
+}));
 
 report();
