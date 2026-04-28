@@ -654,7 +654,7 @@
       const planRenderer = window.AIGON_AUTONOMOUS_PLAN;
       if (!planRenderer || typeof planRenderer.buildAutonomousPlanHtml !== 'function') return '';
       return planRenderer.buildAutonomousPlanHtml(feature.autonomousPlan, {
-        agentDisplayNames: AGENT_DISPLAY_NAMES,
+        agentDisplayNames: AGENT_SHORT_NAMES,
         peekButtonHtml: autonomousPeekBtn || ''
       });
     }
