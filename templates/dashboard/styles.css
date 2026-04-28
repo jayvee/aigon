@@ -1323,7 +1323,8 @@
     .bench-cell{position:relative;text-align:right;font-family:var(--mono);font-size:12px;min-width:110px;cursor:default}
     .bench-cell .bench-bar{position:absolute;left:8px;right:8px;top:50%;height:18px;transform:translateY(-50%);background:rgba(255,255,255,.025);border-radius:3px;overflow:hidden;pointer-events:none}
     .bench-cell .bench-bar-fill{display:block;height:100%;width:0;background:currentColor;opacity:.14;transition:width .25s ease}
-    .bench-cell .bench-time{position:relative;display:inline-block;padding:2px 6px;font-weight:600;letter-spacing:-.01em;z-index:1}
+    .bench-cell .bench-time{position:relative;display:inline-block;padding:1px 6px 0;font-weight:600;letter-spacing:-.01em;z-index:1}
+    .bench-cell .bench-token-line{position:relative;display:block;padding:0 6px 2px;font-size:10px;color:var(--text-secondary);z-index:1}
     .bench-cell-fast{color:#86efac}
     .bench-cell-mid{color:#93c5fd}
     .bench-cell-slow{color:#fdba74}
