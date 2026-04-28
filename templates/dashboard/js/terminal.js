@@ -58,6 +58,19 @@
       specPoller: null, specContentHash: null,
       xterm: null, fitAddon: null, sseSource: null, ws: null,
     };
+    const PTY_AUTH_CLOSE_CODE = 4001;
+
+    async function getPtyToken() {
+      if (window.__ptyToken) return window.__ptyToken;
+      const r = await fetch('/api/pty-token');
+      const d = await r.json();
+      window.__ptyToken = d.token;
+      return window.__ptyToken;
+    }
+
+    function clearPtyToken() {
+      window.__ptyToken = null;
+    }
 
     function destroyXterm() {
       if (termState.sseSource) { try { termState.sseSource.close(); } catch (_) {} termState.sseSource = null; }
@@ -121,13 +134,83 @@
       return { term, fitAddon };
     }
 
+    // wterm path — DOM-rendered terminal. Returns a thin adapter shaped like
+    // createXtermInstance so the rest of the panel can be agnostic. Async because
+    // wterm.init() loads the WASM bridge.
+    async function createWtermInstance(container) {
+      if (typeof window.WTerm !== 'function') return null;
+      // Approximate cell metrics so the initial cols/rows roughly fit the panel.
+      // wterm's ResizeObserver will correct after layout.
+      const cellW = 8.4;
+      const cellH = 17;
+      const rect = container.getBoundingClientRect();
+      const cols = Math.max(40, Math.floor((rect.width - 24) / cellW));
+      const rows = Math.max(10, Math.floor((rect.height - 24) / cellH));
+      const term = new window.WTerm(container, {
+        wasmUrl: window.__WTERM_WASM_URL,
+        cols, rows,
+        autoResize: true,
+        cursorBlink: true,
+      });
+      try {
+        await term.init();
+      } catch (_) {
+        return null;
+      }
+      termState.wterm = term;
+      return { term };
+    }
 
-    async function connectPtyStream(sessionName) {
+    async function connectPtyStreamWterm(sessionName, retryCount = 0) {
       let token;
       try {
-        const r = await fetch('/api/pty-token');
-        const d = await r.json();
-        token = d.token;
+        token = await getPtyToken();
+      } catch (_) {
+        return; // no SSE fallback for wterm spike — flip back to xterm if PTY token unavailable
+      }
+      const term = termState.wterm;
+      if (!term) return;
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${proto}//${location.host}/api/session/pty/${encodeURIComponent(sessionName)}?token=${encodeURIComponent(token)}`;
+      const ws = new WebSocket(wsUrl);
+      ws.binaryType = 'arraybuffer';
+      termState.ws = ws;
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+      };
+      ws.onmessage = (e) => {
+        if (e.data instanceof ArrayBuffer) {
+          try { term.write(new Uint8Array(e.data)); } catch (_) {}
+        }
+      };
+      ws.onclose = (e) => {
+        termState.ws = null;
+        if (e && e.code === PTY_AUTH_CLOSE_CODE && retryCount < 1) {
+          clearPtyToken();
+          connectPtyStreamWterm(sessionName, retryCount + 1);
+          return;
+        }
+        const dot = document.getElementById('panel-status-dot');
+        if (dot) dot.className = 'panel-status-dot';
+      };
+      // Forward typed input back to the PTY (input handler set during WTerm init).
+      term.onData = (data) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(new TextEncoder().encode(data));
+        }
+      };
+      term.onResize = (cols, rows) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+        }
+      };
+    }
+
+    async function connectPtyStream(sessionName, retryCount = 0) {
+      let token;
+      try {
+        token = await getPtyToken();
       } catch (_) {
         connectSessionStream(sessionName);
         return;
@@ -148,8 +231,13 @@
           try { term.write(new Uint8Array(e.data)); } catch (_) {}
         }
       };
-      ws.onclose = () => {
+      ws.onclose = (e) => {
         termState.ws = null;
+        if (e && e.code === PTY_AUTH_CLOSE_CODE && retryCount < 1) {
+          clearPtyToken();
+          connectPtyStream(sessionName, retryCount + 1);
+          return;
+        }
         if (termState.xterm) termState.xterm.writeln('\r\n\x1b[33m[Session ended]\x1b[0m');
         const dot = document.getElementById('panel-status-dot');
         if (dot) dot.className = 'panel-status-dot';
