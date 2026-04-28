@@ -13,39 +13,70 @@ Install manifest tracking (F422). The aigon installer now records every
 file it writes (path + sha256 + version + timestamp) under
 `.aigon/install-manifest.json`, and a migration backfills the manifest for
 repos installed before this version. Lays the groundwork for `aigon
-uninstall` (cleanly removes only aigon-owned files) and drift detection
-(warn when an installed file diverges from the shipped template).
+uninstall` (cleanly removes only aigon-owned files), drift detection
+(warn when an installed file diverges from the shipped template), and the
+brewboard-seed install-contract refresh queued behind it (F423, backlog).
 
 ### Added
 
-- **`.aigon/install-manifest.json`** — tracks every file written by `install-agent` / `update`. Each entry: `{ path, sha256, version, installedAt }`.
-- **`aigon uninstall [--dry-run]`** — uses the manifest to remove aigon-owned files cleanly. `--dry-run` prints the list without deleting.
-- **2.61.0 migration** — backfills the manifest for legacy installs by scanning the standard install-path roots (`.aigon/docs/`, `.agents/`, `.claude/{commands/aigon,skills}/`, `.cursor/{commands,rules}/`, `.codex/`, `.gemini/`) and hashing each file with the current `aigonVersion`.
+- **`.aigon/install-manifest.json`** — tracks every file written by `install-agent` / `update`. Each entry: `{ path, sha256, version, installedAt }`. Written by the existing `safeWrite` / `safeWriteWithStatus` helpers — no separate writer path to keep in sync.
+- **`aigon uninstall [--dry-run]`** — uses the manifest to remove aigon-owned files cleanly (only files aigon wrote, leaving any user additions in the same dirs alone). `--dry-run` prints the list without deleting; the regular path prompts for confirmation.
+- **2.61.0 migration** — backfills the manifest for legacy installs by scanning the standard install-path roots (`.aigon/docs/`, `.agents/`, `.claude/{commands/aigon,skills}/`, `.cursor/{commands,rules}/`, `.codex/`, `.gemini/`, plus alias files directly under `.claude/`) and hashing each file with the current `aigonVersion`. Idempotent: skips silently if `.aigon/install-manifest.json` already exists.
+
+### Internal
+
+- Both repos that dogfood aigon (`aigon`, `aigon-pro`) had their `.aigon/version` lagging behind the registered migrations because each migration version-bump never reached `package.json`. This release brings package.json, `.aigon/version`, and the highest registered migration into a single coherent number again.
 
 ## [2.60.0] — 2026-04-28
 
-Vendored-docs layout (F421), no more consumer AGENTS.md scaffolding (F420), and
-follow-on planning/transcript work (F424–F429). Version bump aligns
-`package.json` with the `2.60.0` migration that already shipped in `lib/migration.js`.
+Vendored-docs layout (F421), no more consumer AGENTS.md scaffolding (F420),
+the `aigon onboarding` → `aigon setup` rename (F416), the perf-bench
+matrix sweep, and follow-on planning/transcript work (F424–F429).
+Version bump aligns `package.json` with the `2.60.0` migration that already
+shipped in `lib/migration.js`. ~110 commits since v2.55.0 (also cut today).
 
 ### Added
 
-- **Vendored docs at `.aigon/docs/` (F421)** — `install-agent` and `update` now write `development_workflow.md`, `feature-sets.md`, and per-agent notes (`agents/<id>.md`) under `.aigon/docs/` instead of co-mingling with the consumer's `docs/` folder. The consumer's own `docs/` is never touched.
+#### Docs layout (F421)
+
+- **Vendored docs at `.aigon/docs/`** — `install-agent` and `update` now write `development_workflow.md`, `feature-sets.md`, and per-agent notes (`agents/<id>.md`) under `.aigon/docs/` instead of co-mingling with the consumer's `docs/` folder. The consumer's own `docs/` is never touched.
 - **`doctor --fix` 2.60.0 migration** — moves legacy `docs/development_workflow.md`, `docs/feature-sets.md`, and pristine `docs/agents/<id>.md` (anything carrying the `<!-- AIGON_START -->` marker) into `.aigon/docs/`. Edited copies are left in place with a manual-merge warning. Idempotent.
-- **Spec planning-context capture (F425)** — `feature-create` / `research-create` accept a `planning_context:` frontmatter pointer and `feature-start` copies it into the implementation log so the agent's plan-mode reasoning is preserved across hand-off.
+
+#### Onboarding (F416, F418, F426)
+
+- **`aigon onboarding` → `aigon setup` (F416)** — the user-facing command renamed for parity with the spec ("setup wizard"). The legacy `onboarding` command stays as a deprecated alias for one more release; remove on next major.
+- **Brewboard demo step in the onboarding wizard (F418)** — the wizard now offers to clone a small reference seed repo and run a real `feature-do` against it, so a first-time user sees Aigon end-to-end without writing their own spec first.
+- **Onboarding decision tree + smoke test (F426)** — guided picker for "which agent should I install" + a quick smoke test that confirms the agent CLI is reachable and emits the right hooks before the wizard reports success.
+
+#### Planning + transcripts (F424, F425, F427, F428, F429)
+
 - **Auto plan-mode on spec creation (F424)** — `afc` / `arc` prompt for Shift+Tab plan-mode before drafting and persist the plan path in the new spec.
-- **Transcript read model + CLI (F427)** and **live log panel for `feature-close` (F428)** — first surface for the new transcript hot tier (F429) which adds a durable on-disk store fed by the existing tmux session sidecar.
-- **Agent onboarding decision tree + smoke test (F426)**.
+- **Spec planning-context capture (F425)** — `feature-create` / `research-create` accept a `planning_context:` frontmatter pointer; `feature-start` copies it into the implementation log so the agent's plan-mode reasoning is preserved across hand-off.
+- **Transcript read model + CLI (F427)** — `aigon transcripts list / show <id>` surfaces captured agent sessions joined with telemetry. Backed by a session-strategy registry per agent, so agents that don't expose a transcript path return a "not-captured" record rather than a hard error.
+- **Live log panel for `feature-close` (F428)** — dashboard panel that streams the close-out log live during the merge step. Dismisses cleanly on network/HTTP failure rather than getting stuck on an empty frame.
+- **Durable hot-tier transcript store (F429)** — the tmux sidecar's transcript snapshot is now persisted under `.aigon/state/transcripts/<feature>/<agent>.jsonl`, so transcripts survive past the live tmux pane and can be replayed later.
+
+#### Performance + diagnostics
+
+- **`aigon perf-bench --model / --effort / --all`** — single command can now sweep an agent matrix (every model × every effort) against the brewboard seed and emit aggregate `all-<seed>-*.json` artifacts. Pro reads these as a fallback when no per-pair JSON exists, so failure context (errors, timeouts) is preserved even when individual runs aborted before writing their own file.
+- **Brewboard-review seed** — second deterministic seed repo with planted weaknesses, used for benchmarking the review path (not just implement).
+- **`aigon agent-probe`** — on-demand agent/model health check. Confirms the CLI is reachable, the requested model is callable, and that hooks fire before scheduling real work.
+
+#### Dashboard
+
+- **Per-domain dashboard routes (F410)** — split the monolithic `lib/dashboard-server.js` into `lib/dashboard-routes/{config,benchmarks,transcripts,...}.js`. Pro layers its own routes on top of the same registry without touching OSS code.
+- **Pro benchmark matrix UI** — agent stripe colours, fast/mid/slow buckets, relative-speed bars, fail pills, summary stat grid, source-repo banner with a yellow fallback variant when the requested repo had no benchmark JSON and Pro fell back to the first conductor-registered repo with data.
 
 ### Changed
 
 - **BREAKING: aigon no longer scaffolds consumer `AGENTS.md` (F420)** — the `<!-- AIGON_START -->...<!-- AIGON_END -->` block is removed by the 2.59.0 migration; consumer `AGENTS.md` is now fully user-owned. `docs/aigon-project.md` is also removed (2.59.1) — aigon no longer reads it.
-- **`feature-template-agent-onboard.md`, `templates/generic/agents-md.md`, `cursor-rule.mdc`, `prompt.md`, `skill.md`, `docs/agent.md`** — every reference to `docs/development_workflow.md` / `docs/agents/<id>.md` rewritten to `.aigon/docs/...` so freshly generated agent install artifacts point at the new layout.
+- **All shipped templates retargeted to `.aigon/docs/`** — `feature-template-agent-onboard.md`, `templates/generic/{agents-md.md,cursor-rule.mdc,prompt.md,skill.md,docs/agent.md}` and the per-agent doc template have every reference to `docs/development_workflow.md` / `docs/agents/<id>.md` rewritten so freshly generated agent install artifacts point at the new layout.
 
 ### Migration notes
 
 - Existing repos pick up the new layout automatically on the next `aigon install-agent` or `aigon update` run (the 2.60.0 migration runs first).
 - If `docs/development_workflow.md` was hand-edited, the migration leaves it in place and prints a warning — reconcile manually, then move it to `.aigon/docs/`.
+- The `aigon onboarding` alias is preserved this release; scripts that call it will continue to work but should switch to `aigon setup`.
 
 ## [2.55.0] — 2026-04-28
 
