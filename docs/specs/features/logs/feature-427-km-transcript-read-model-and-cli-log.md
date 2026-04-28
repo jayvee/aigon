@@ -1,3 +1,16 @@
+---
+commit_count: 4
+lines_added: 483
+lines_removed: 0
+lines_changed: 483
+files_touched: 6
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "km-cli"
+---
 # Implementation Log: Feature 427 - transcript-read-model-and-cli
 Agent: km
 
