@@ -1,3 +1,26 @@
+---
+commit_count: 3
+lines_added: 397
+lines_removed: 3
+lines_changed: 400
+files_touched: 4
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 227
+output_tokens: 89947
+cache_creation_input_tokens: 390081
+cache_read_input_tokens: 20592620
+thinking_tokens: 0
+total_tokens: 21072875
+billable_tokens: 90174
+cost_usd: 44.9524
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 434 - workflow-e2e-regression-harness
 Agent: cc
 
