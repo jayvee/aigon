@@ -1,9 +1,9 @@
 ---
-commit_count: 1
-lines_added: 282
-lines_removed: 9
-lines_changed: 291
-files_touched: 6
+commit_count: 2
+lines_added: 290
+lines_removed: 17
+lines_changed: 307
+files_touched: 7
 fix_commit_count: 0
 fix_commit_ratio: 0
 rework_thrashing: false
@@ -38,3 +38,7 @@ Done
 
 ## Test Coverage
 - `tests/integration/transcript-read.test.js` — `resolveTranscriptDownload` happy path + session mismatch 404; `openTranscriptPath` test clears `EDITOR` (REGRESSION comments in file).
+
+## Wrap-up
+- Spec checkboxes updated (`docs/specs/features/03-in-progress/feature-431-transcript-dashboard-surface.md`).
+- `aigon agent-status implementation-complete` succeeded from worktree `feature-431-cu-transcript-dashboard-surface` (branch-derived feature **431**, agent **cu**).
