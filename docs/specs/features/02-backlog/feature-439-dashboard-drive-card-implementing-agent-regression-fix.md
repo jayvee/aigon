@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T13:46:44.300Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: dashboard-drive-card-implementing-agent-regression-fix
