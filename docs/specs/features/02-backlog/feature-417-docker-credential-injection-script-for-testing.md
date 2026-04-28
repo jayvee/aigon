@@ -1,5 +1,7 @@
 ---
 complexity: low
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T00:10:33.304Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: docker credential injection script for testing
