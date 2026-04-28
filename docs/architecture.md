@@ -38,7 +38,7 @@ Current command families:
 | `lib/commands/entity-commands.js` | Shared factory for parallel feature/research lifecycle commands parameterised by `FEATURE_DEF` / `RESEARCH_DEF` from `lib/entity.js`. Exposes `createEntityCommands(def, ctx)` (create, prioritise, spec-review quartet) and `entityResetBase(def, id, ctx, hooks)` for reset plumbing. New parallel commands are added here — not in feature.js/research.js — so both entities pick them up by construction, eliminating the "defined but not whitelisted" drift class |
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
 | `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile`, `sync` |
-| `lib/commands/setup.js` | `init`, `install-agent`, `check-version`, `update`, `project-context`, `doctor` |
+| `lib/commands/setup.js` | `init`, `install-agent`, `uninstall`, `check-version`, `update`, `project-context`, `doctor` |
 | `lib/commands/misc.js` | `agent-status`, `nudge`, `status`, `deploy`, `next`, `help` |
 
 ### The ctx pattern
@@ -386,6 +386,41 @@ So the architecture after F171 → F283 → F294 is:
 **Surface split:** `getFeatureDashboardState` / `getResearchDashboardState` do not throw for a missing snapshot — they return the `MISSING_SNAPSHOT` row shape so the HTTP dashboard can load the full table. Interactive CLI commands (`feature-list`, `feature-status`, research equivalents, close helpers) **error** with the same migration hint (`aigon doctor --fix`).
 
 **Migration for pre-cutover entities:** Commands bootstrap lifecycle history via `aigon doctor --fix` before normal engine operations continue. A future F-series may swap that in for `aigon workflow --migrate-from-legacy` once Phase 2 ships.
+
+### Install manifest (`lib/install-manifest.js`)
+
+`install-agent` records every aigon-owned file it writes into `.aigon/install-manifest.json`. The schema is:
+
+```json
+{
+  "version": "1.0",
+  "aigonVersion": "<semver>",
+  "files": [
+    { "path": ".claude/commands/aigon/feature-create.md",
+      "sha256": "<hex64>",
+      "version": "<aigonVersion at write time>",
+      "installedAt": "<ISO 8601>" }
+  ]
+}
+```
+
+**Lifecycle:**
+- Created/updated atomically on every `install-agent` run (write to `.tmp`, then rename).
+- Pre-install check: if any tracked file's on-disk sha256 differs from the manifest, the user is warned; interactive mode prompts for confirmation; `AIGON_NONINTERACTIVE=1` or `--force` skips the prompt.
+- `aigon uninstall [--dry-run] [--force]`: reads the manifest, lists all files, deletes them (with confirmation), removes empty parent dirs, deletes the manifest. Never removes `.aigon/workflows/`, `.aigon/state/`, `.aigon/sessions/`, `.aigon/config.json`.
+- Migration 2.61.0 (`migrate_initialize_install_manifest`): synthesizes a manifest for repos installed before F422 by scanning standard aigon dirs. Idempotent — skips if manifest already exists.
+- `aigon doctor` reports: missing files (in manifest but not on disk), modified files (sha256 differs), untracked aigon-pattern files. `aigon doctor --fix` triggers migration 2.61.0.
+
+**Module API (`lib/install-manifest.js`):**
+- `readManifest(repoRoot)` — returns parsed manifest or null; throws on corrupt JSON.
+- `writeManifest(repoRoot, manifest)` — atomic write via tmp rename.
+- `recordFile(manifest, absPath, repoRoot, aigonVersion)` — adds or updates entry (computes sha256, normalizes relative path).
+- `removeFile(manifest, relPath)` — removes entry.
+- `getModifiedFiles(manifest, repoRoot)` — returns entries whose on-disk sha256 differs.
+- `getMissingFiles(manifest, repoRoot)` — returns entries not on disk.
+- `createEmptyManifest(aigonVersion)` — returns a fresh manifest skeleton.
+
+**Tracked files** (fully aigon-owned, full overwrite): `.aigon/docs/*.md`, command files (`.claude/commands/aigon/*.md`, aliases), skill files (`.claude/skills/aigon/SKILL.md`, `.codex/skills/aigon-*/SKILL.md`), cursor rules (`.cursor/rules/aigon.mdc`). **Not tracked**: merged config files (`.claude/settings.json`, `.gemini/settings.json`, `.codex/config.toml`), hooks file, upserted agent docs (user can add content after marker blocks).
 
 ## Where To Make Changes
 
