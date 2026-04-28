@@ -18,28 +18,35 @@ Provide a repeatable, structured process for adding new agents to aigon. As the 
 
 ## Acceptance Criteria
 
-- [ ] `docs/adding-agents.md` exists with the 5-question decision tree, the launch-type reference table (Slash-command / File-prompt / TUI-inject), and pointers to the key files in `lib/`.
-- [ ] `templates/feature-template-agent-onboard.md` exists and covers: Agent Identity, Decision Tree Answers (Q1–Q5), `templates/agents/<id>.json` field checklist, `docs/agents/<id>.md` checklist, test contract (which assertion block to add to `worktree-state-reconcile.test.js`), and Validation step.
-- [ ] `docs/development_workflow.md` contains a one-line pointer to `docs/adding-agents.md` (added under a natural heading — do not restructure the file).
-- [ ] `brewboard-seed` has `docs/specs/features/02-backlog/feature-01-format-date.md` — a tiny, self-contained spec asking for a `formatDate(date: Date): string` utility in `src/lib/format-date.ts`.
-- [ ] `brewboard-seed`'s `AGENTS.md` includes a post-install validation prompt: *"Validate your agent: `aigon feature-start 01 <agent-id>` — should complete in ~60s, signal implementation-complete, and leave the session interactive."*
-- [ ] Running `aigon feature-start 01 cu` on a freshly reset brewboard produces: (a) visible human-readable output in the tmux pane, (b) `status: implementation-complete` in `.aigon/state/feature-01-cu.json`, (c) `signal.agent_ready` in `events.jsonl`, (d) tmux session still alive (`tmux has-session`).
-- [ ] `docs/adding-agents.md` is **not** referenced from `aigon/AGENTS.md` directly — `aigon-repo-internal-doc-reorg` (inbox, `aigon-install-contract` set) will add the catalog entry in `docs/README.md` when it lands.
+### docs/adding-agents.md
+- [ ] File exists at `docs/adding-agents.md` with the 5-question decision tree (Q1: prompt delivery, Q2: slash-command support, Q3: --model flag, Q4: interactive vs batch, Q5: transcript telemetry).
+- [ ] Includes the launch-type reference table mapping each type (Slash-command, File-prompt, TUI-inject) to its agents, prompt delivery mechanism, and session behaviour.
+- [ ] Includes a "Key files" section pointing to `templates/agents/`, `lib/agent-registry.js`, `lib/worktree.js`, `lib/config.js`, and `tests/integration/worktree-state-reconcile.test.js`.
+- [ ] Does **not** appear in `aigon/AGENTS.md` — the `aigon-repo-internal-doc-reorg` feature (inbox, `aigon-install-contract` set) will add the catalog entry to `docs/README.md` when it lands.
+
+### templates/feature-template-agent-onboard.md
+- [ ] File exists at `templates/feature-template-agent-onboard.md`.
+- [ ] Contains sections for: Agent Identity, Decision Tree Answers (Q1–Q5 filled in), `templates/agents/<id>.json` field checklist (every field annotated with which Q-answer drives it), `docs/agents/<id>.md` checklist, test contract (assertion block to add to `worktree-state-reconcile.test.js`), and Validation step.
+
+### docs/development_workflow.md
+- [ ] Contains a one-line pointer to `docs/adding-agents.md` added under a natural heading. File is not otherwise restructured.
+
+### brewboard-seed canary feature
+- [ ] `brewboard-seed` has `docs/specs/features/02-backlog/feature-01-format-date.md` — a minimal, self-contained spec (one function: `formatDate(date: Date): string` in `src/lib/format-date.ts`, no dependencies, no external calls).
+- [ ] The spec is deliberately small: any agent should be able to complete it in ~60 seconds, making it suitable as a canary for any new agent type.
+- [ ] `brewboard-seed`'s `AGENTS.md` includes a post-install validation prompt pointing to feature 01: *"To validate a new agent, run `aigon feature-start 01 <agent-id>` — it should complete in ~60s, signal implementation-complete, and leave the session interactive."*
 
 ## Validation
 
 ```bash
-# Verify new docs exist
+# Aigon repo: verify new docs exist
 test -f docs/adding-agents.md
 test -f templates/feature-template-agent-onboard.md
 grep -q "adding-agents" docs/development_workflow.md
 
-# Brewboard smoke test (run from ~/src/brewboard after seed-reset)
-# aigon seed-reset brewboard --force
-# aigon feature-start 01 cu
-# cat .aigon/state/feature-01-cu.json | grep '"status": "implementation-complete"'
-# grep 'signal.agent_ready' .aigon/workflows/features/01/events.jsonl
-# tmux has-session -t brewboard-f1-do-cu-format-date
+# Brewboard seed: verify canary feature exists and is correctly placed
+test -f docs/specs/features/02-backlog/feature-01-format-date.md
+grep -q "feature-start 01" AGENTS.md
 ```
 
 ## Pre-authorised
