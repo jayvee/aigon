@@ -840,8 +840,12 @@
         const soloStatus = buildAgentStatusHtml(soloAgent, { showDevLink: true });
         const soloDevLink = buildDevServerLinkHtml(soloStatus.devServerUrl);
         const soloDevSlot = soloDevLink ? '<span class="kcard-dev-slot">' + soloDevLink + '</span>' : '';
+        const driveToolId = feature.driveToolAgentId || null;
+        const driveAgentSpan = driveToolId
+          ? '<span class="kcard-agent-triplet">' + escHtml(AGENT_DISPLAY_NAMES[driveToolId] || driveToolId) + '</span>'
+          : '';
         innerHtml += '<div class="kcard-agent agent-solo">' +
-          '<div class="kcard-agent-header"><span class="kcard-agent-name">Drive</span>' + soloDevSlot + '</div>' +
+          '<div class="kcard-agent-header"><span class="kcard-agent-name">Drive</span>' + driveAgentSpan + soloDevSlot + '</div>' +
           '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + soloStatus.cls + '">' + soloStatus.icon + ' ' + soloStatus.label + '</span></div>' +
           '</div>';
         // Review section for solo mode
