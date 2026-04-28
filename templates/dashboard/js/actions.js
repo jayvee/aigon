@@ -362,6 +362,7 @@ function replaceSelectOptions(select, options) {
     const el = document.createElement('option');
     el.value = String(option.value || '');
     el.textContent = String(option.label || '');
+    if (option.role) el.dataset.role = option.role;
     return el;
   });
   replaceNodeChildren(select, opts);
@@ -963,8 +964,26 @@ const AUTONOMOUS_AGENT_IDS = getAutonomousAgentIds();
 
 function getNudgeCandidates(feature) {
   const agents = Array.isArray(feature && feature.agents) ? feature.agents : [];
-  const running = agents.filter(agent => agent && agent.id && agent.tmuxRunning);
-  return (running.length > 0 ? running : agents).filter(agent => agent && agent.id && agent.id !== 'solo');
+  const reviewSessions = Array.isArray(feature && feature.reviewSessions) ? feature.reviewSessions : [];
+
+  // Running review sessions always take priority — they need nudges most
+  const reviewCandidates = reviewSessions
+    .filter(s => s && s.agent && s.running)
+    .map(s => ({ id: s.agent, tmuxRunning: true, role: 'review' }));
+
+  const runningImpl = agents.filter(a => a && a.id && a.tmuxRunning && a.id !== 'solo');
+  const allImpl = agents.filter(a => a && a.id && a.id !== 'solo');
+  const implCandidates = (runningImpl.length > 0 ? runningImpl : allImpl)
+    .map(a => ({ ...a, role: a.role || 'do' }));
+
+  const all = [...reviewCandidates, ...implCandidates];
+  const seen = new Set();
+  return all.filter(c => {
+    const key = c.id + ':' + (c.role || 'do');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function renderNudgeHistory(feature) {
@@ -1000,11 +1019,20 @@ function showNudgeModal(feature, repoPath, btn) {
   const candidates = getNudgeCandidates(feature);
   replaceSelectOptions(agentSelect, candidates.map(agent => ({
     value: agent.id,
-    label: agent.id + ' · ' + (AGENT_DISPLAY_NAMES[agent.id] || agent.id)
+    label: agent.id + ' · ' + (AGENT_DISPLAY_NAMES[agent.id] || agent.id),
+    role: agent.role || 'do',
   })));
-  if (candidates.length === 1) agentSelect.value = candidates[0].id;
-  else agentSelect.value = '';
-  roleSelect.value = 'do';
+  agentSelect.onchange = function() {
+    const sel = agentSelect.options[agentSelect.selectedIndex];
+    if (sel && sel.dataset.role) roleSelect.value = sel.dataset.role;
+  };
+  if (candidates.length === 1) {
+    agentSelect.value = candidates[0].id;
+    roleSelect.value = candidates[0].role || 'do';
+  } else {
+    agentSelect.value = '';
+    roleSelect.value = 'do';
+  }
   messageInput.value = '';
   renderNudgeHistory(feature);
   modal.style.display = 'flex';

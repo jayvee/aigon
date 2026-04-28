@@ -60,7 +60,7 @@
     "modelFlag": null,
     "effortFlag": null,
     "effortEnv": null,
-    "submitKey": null
+    "submitKey": "Enter"
   },
   "placeholders": {
     "AGENT_ID": "cu",
