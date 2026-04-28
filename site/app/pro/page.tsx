@@ -373,6 +373,13 @@ export default function ProPage() {
               description="You set the clock time once when you schedule. When that time arrives, the server launches the autonomous run for you — you do not need to be at the machine to press Start Autonomously."
             />
           </div>
+
+          <ScreenshotFrame
+            src="/img/schedule_autonomous_start.png"
+            alt="Start Autonomously modal — agents, workflow, and Run at (local) to schedule a deferred full autonomous run"
+            caption="Schedule from the same Start Autonomously flow: choose your workflow, then set Run at instead of starting immediately."
+            figureClassName="mx-auto max-w-2xl lg:max-w-3xl"
+          />
         </div>
       </section>
 
