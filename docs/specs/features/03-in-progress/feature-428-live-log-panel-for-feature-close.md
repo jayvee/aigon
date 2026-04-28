@@ -1,5 +1,6 @@
 ---
 complexity: high
+planning_context: ~/.claude/plans/peaceful-moseying-metcalfe.md
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-28T02:12:00.302Z", actor: "cli/feature-prioritise" }
 ---

@@ -26,9 +26,9 @@ Explore the codebase to understand the existing architecture, patterns, and code
 
 Use this understanding to write a well-informed spec — especially the **Technical Approach**, **Dependencies**, and **Acceptance Criteria** sections.
 
-### Set the spec frontmatter (`complexity` only)
+### Set the spec frontmatter
 
-The template ships with a `complexity:` field in YAML frontmatter. You **must** set it — it drives the per-agent {model, effort} **defaults** in the dashboard start modal (resolved from each agent’s `cli.complexityDefaults[<complexity>]` in `templates/agents/<id>.json`, then `aigon config`). **Do not put model names or effort levels in the spec**; those SKUs change over time and belong only in agent templates + config.
+**`complexity:` (required)** — drives the per-agent {model, effort} **defaults** in the dashboard start modal (resolved from each agent’s `cli.complexityDefaults[<complexity>]` in `templates/agents/<id>.json`, then `aigon config`). **Do not put model names or effort levels in the spec**; those SKUs change over time and belong only in agent templates + config.
 
 Use this rubric:
 
@@ -36,6 +36,14 @@ Use this rubric:
 - **medium** — standard feature with moderate cross-cutting; one command handler, small refactor, a new API route with clear shape.
 - **high** — multi-file engine edits, new event types, new dashboard surfaces, judgment-heavy deletion work, anything that requires careful reasoning about invariants.
 - **very-high** — architectural shifts, write-path-contract changes, new workflow transitions, cross-cutting template+engine+frontend. Reserve for work where a smaller model is likely to miss load-bearing detail.
+
+**`planning_context:` (set this when you ran plan mode)** — if you entered plan mode (`EnterPlanMode` / Shift+Tab) before writing this spec and a plan file was written to `~/.claude/plans/`, set this field to that path:
+
+```yaml
+planning_context: ~/.claude/plans/your-plan-file.md
+```
+
+The implementing agent will read the plan before writing any code, and the content is copied into the implementation log at start time so it’s durable even if the plan file is later deleted. Skipping this means the agent has to re-derive all the context from the spec alone.
 
 ## After writing the spec
 
