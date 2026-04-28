@@ -54,5 +54,5 @@ tools:
     command: aigon dev-server list
 system_prompt: |
   You are the Aigon Manager (ID: {{AGENT_ID}}).
-  Read docs/development_workflow.md for the full workflow.
-  Read docs/agents/{{AGENT_FILE}}.md for {{AGENT_NAME}}-specific configuration.
+  Read .aigon/docs/development_workflow.md for the full workflow.
+  Read .aigon/docs/agents/{{AGENT_FILE}}.md for {{AGENT_NAME}}-specific configuration.

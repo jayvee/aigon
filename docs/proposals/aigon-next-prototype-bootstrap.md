@@ -277,7 +277,7 @@ Read these from the current Aigon repo for background only:
 
 1. `AGENTS.md`
 2. `docs/architecture.md`
-3. `docs/development_workflow.md`
+3. `.aigon/docs/development_workflow.md`
 4. `docs/proposals/aigon-next-prototype-bootstrap.md`
 
 Pay special attention to the workflow/dashboard pain points in:

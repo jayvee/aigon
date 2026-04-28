@@ -31,7 +31,7 @@ The seed repo contains the application source and aigon specs. Aigon runtime sta
 **Tracked (persisted in seed):**
 - `src/` — application source code
 - `docs/specs/` — feature and research specs
-- `docs/agents/` — agent instructions
+- `.aigon/docs/agents/` — vendored per-agent notes from `install-agent` (F421)
 - `.claude/`, `.agents/` etc. — agent config (written by `aigon install-agent`)
 
 **Gitignored (rebuilt at reset time):**

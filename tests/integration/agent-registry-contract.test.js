@@ -33,9 +33,42 @@ test('help template renders exactly the registry agents', () => {
     assertExactAgentSet(rendered.split('\n').map(line => line.match(/^\s{2}([a-z0-9]+) \(/i)).filter(Boolean).map(match => match[1]), 'help output drifted');
 });
 test('dashboard bootstrap payload renders exactly the registry agents', () => {
-    const match = dashboardServer.buildDashboardHtml({ repos: [] }, 'test').match(/window\.__AIGON_AGENTS__ = (.+?);/);
-    assert.ok(match, 'dashboard payload was not injected');
-    assertExactAgentSet(JSON.parse(match[1]).map(agent => agent.id), 'dashboard HTML payload drifted');
+    // REGRESSION: JSON may contain `;` inside string values (e.g. model label text) — do not split on the first `;`.
+    const html = dashboardServer.buildDashboardHtml({ repos: [] }, 'test');
+    const prefix = 'window.__AIGON_AGENTS__ = ';
+    const start = html.indexOf(prefix);
+    assert.ok(start >= 0, 'dashboard payload was not injected');
+    let i = start + prefix.length;
+    assert.strictEqual(html[i], '[', 'expected JSON array after __AIGON_AGENTS__');
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (; i < html.length; i++) {
+        const c = html[i];
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+        if (c === '\\' && inString) {
+            escaped = true;
+            continue;
+        }
+        if (c === '"') {
+            inString = !inString;
+            continue;
+        }
+        if (inString) continue;
+        if (c === '[') depth++;
+        if (c === ']') {
+            depth--;
+            if (depth === 0) {
+                i++;
+                break;
+            }
+        }
+    }
+    const jsonStr = html.slice(start + prefix.length, i);
+    assertExactAgentSet(JSON.parse(jsonStr).map(agent => agent.id), 'dashboard HTML payload drifted');
 });
 test('parseDashboardActionRequest allows feature-delete and research-delete', () => {
     // REGRESSION: engine manual actions must pass /api/action allowlist (not only SM_INVOCABLE_ACTIONS).
