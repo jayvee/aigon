@@ -476,6 +476,20 @@
       <span id="panel-elapsed" style="font-size:11px;color:var(--text-tertiary)">0s</span>
     </div>
   </aside>
+  <!-- Close-log panel (feature 428) -->
+  <div id="close-log-overlay" class="close-log-overlay" x-ignore></div>
+  <aside id="close-log-panel" class="close-log-panel" x-ignore role="dialog" aria-modal="true" aria-label="Close Progress">
+    <div class="close-log-header">
+      <div class="close-log-state-bar" id="close-log-state-bar"></div>
+      <span class="close-log-dot" id="close-log-dot"></span>
+      <span class="close-log-title" id="close-log-title">Closing…</span>
+      <button class="close-log-x" id="close-log-x" aria-label="Dismiss" style="display:none">&times;</button>
+    </div>
+    <div class="close-log-body">
+      <pre class="close-log-output" id="close-log-output" aria-live="polite"></pre>
+    </div>
+    <div class="close-log-footer" id="close-log-footer" style="display:none"></div>
+  </aside>
   <!-- AI session picker modal -->
   <!-- Spec drawer -->
   <div id="drawer-overlay" class="drawer-overlay" x-ignore></div>
@@ -565,6 +579,7 @@
   <script src="/js/statistics.js"></script>
 
   <script src="/js/logs.js"></script>
+  <script src="/js/close-log-panel.js"></script>
   <script src="/js/init.js"></script>
 </body>
 </html>

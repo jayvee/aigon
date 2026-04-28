@@ -62,9 +62,22 @@
       }
       const label = (action || '').replace(/^(feature|research)-/, '');
       const processingToast = showToast('Processing ' + label + '…', null, null, { processing: true });
+
+      // For feature-close: open the live-log panel before the fetch so the user
+      // sees feedback within 200ms, before the HTTP response arrives.
+      const isClose = action === 'feature-close';
+      const actionId = isClose
+        ? (action + '-' + ((args || [])[0] || '') + '-' + Date.now())
+        : null;
+      if (isClose && actionId && window.openCloseLogPanel) {
+        const featureLabel = ((args || [])[0] || '');
+        window.openCloseLogPanel(actionId, featureLabel);
+      }
+
       try {
         const body = { action, args: args || [] };
         if (repoPath) body.repoPath = repoPath;
+        if (actionId) body.actionId = actionId;
         let res;
         try {
           res = await fetch('/api/action', {
@@ -84,13 +97,25 @@
         const stderrError = !exitFailed && stderrStr && /^fatal:|❌/m.test(stderrStr) && !/failed to push some refs/i.test(stderrStr);
         if (exitFailed) {
           showToast('Action failed (exit ' + payload.exitCode + ') — check Logs', 'Logs', () => { state.view = 'logs'; localStorage.setItem(lsKey('view'), 'logs'); render(); }, { error: true });
+          if (isClose && actionId && window.finalizeCloseLogPanel) {
+            window.finalizeCloseLogPanel(actionId, { ok: false, error: payload.error || 'exit ' + payload.exitCode });
+          }
         } else if (payload.agentWarning) {
           showToast('Warning: ' + payload.agentWarning, 'Logs', () => { state.view = 'logs'; localStorage.setItem(lsKey('view'), 'logs'); render(); }, { error: true });
+          if (isClose && actionId && window.finalizeCloseLogPanel) {
+            window.finalizeCloseLogPanel(actionId, { ok: true });
+          }
         } else if (stderrError) {
           showToast('Done with warnings — check Logs', 'Logs', () => { state.view = 'logs'; localStorage.setItem(lsKey('view'), 'logs'); render(); });
+          if (isClose && actionId && window.finalizeCloseLogPanel) {
+            window.finalizeCloseLogPanel(actionId, { ok: true });
+          }
         } else {
           if (action === 'feature-close') state.closeFailedFeatures.delete(String((args || [])[0]));
           showToast('Done: ' + (payload.command || action));
+          if (isClose && actionId && window.finalizeCloseLogPanel) {
+            window.finalizeCloseLogPanel(actionId, { ok: true });
+          }
         }
         // feature 234: when the backend signals it is about to restart (lib/*.js
         // changes merged), show a transient "Reloading backend…" banner. The
@@ -121,8 +146,14 @@
             agentId = window.__AIGON_DEFAULT_AGENT__ || 'cc';
           }
           state.closeFailedFeatures.set(String(featureId), { agentId, repoPath });
+          if (actionId && window.finalizeCloseLogPanel) {
+            window.finalizeCloseLogPanel(actionId, {
+              ok: false, error: e.message,
+              _featureId: featureId, _agentId: agentId, _repoPath: repoPath
+            });
+          }
           showToast(
-            'Close failed — use "Close with agent" on the card or in Logs',
+            'Close failed — see log panel or use "Close with agent" on the card',
             null, null,
             { error: true, persistent: true }
           );
