@@ -132,14 +132,19 @@ test('docker-inject-creds.sh parses (bash -n) and exits non-zero with no args', 
     assert.notStrictEqual(noArgs.status, 0);
     assert.ok(String(noArgs.stderr + noArgs.stdout).includes('Usage'));
 });
-// REGRESSION F420 cross-repo: Pro benchmark matrix must load before settings.js and OSS must stub /api/benchmarks without Pro.
-test('dashboard wires perf-bench settings (script order + server stubs)', () => {
+// REGRESSION F420: Pro benchmark matrix wiring is OSS-thin — script tag, settings mount, asset proxy.
+// Pro owns the data + UI; OSS must NOT register /api/benchmarks/latest.
+test('dashboard wires perf-bench settings (script order + Pro asset proxy + no OSS API)', () => {
     const idx = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/index.html'), 'utf8');
     const iBench = idx.indexOf('/js/benchmark-matrix.js');
     const iSettings = idx.indexOf('/js/settings.js');
     assert.ok(iBench > 0 && iSettings > iBench, 'benchmark-matrix.js must precede settings.js');
     const ds = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-server.js'), 'utf8');
-    assert.ok(ds.includes("reqPath === '/js/benchmark-matrix.js'"), 'static route for benchmark-matrix.js');
-    assert.ok(ds.includes("reqPath.startsWith('/api/benchmarks')"), 'proRequired stub for benchmarks API');
+    assert.ok(ds.includes("reqPath === '/js/benchmark-matrix.js'"), 'dashboard-server must serve /js/benchmark-matrix.js via resolveProDashboardAsset');
+    const settings = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/settings.js'), 'utf8');
+    assert.ok(settings.includes("addSection('perf-benchmarks'"), 'settings.js must add the perf-benchmarks section');
+    assert.ok(settings.includes('AigonProBenchmarkMatrix'), 'settings.js must mount via window.AigonProBenchmarkMatrix');
+    const cfg = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-routes/config.js'), 'utf8');
+    assert.ok(!cfg.includes('/api/benchmarks'), 'OSS must not register /api/benchmarks — Pro owns it via pro-bridge');
 });
 report();

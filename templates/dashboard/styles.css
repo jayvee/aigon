@@ -1307,6 +1307,52 @@
     .matrix-legend-dash .matrix-score-none{font-size:14px;line-height:1}
     .matrix-agent-group-header td{background:var(--bg-elevated);padding:5px 10px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-tertiary);border-bottom:1px solid var(--border-subtle)}
 
+    /* ── Agent benchmarks (Pro, F420) ─────────────────────────────────────── */
+    .bench-section{margin-top:0}
+    .bench-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--border-subtle);border:1px solid var(--border-subtle);border-radius:8px;overflow:hidden;margin-bottom:14px}
+    .bench-summary-stat{display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:var(--bg-surface)}
+    .bench-summary-num{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--text-primary);line-height:1.1;letter-spacing:-.01em}
+    .bench-summary-label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-tertiary)}
+    .bench-table-wrap{overflow-x:auto;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-surface)}
+    .bench-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;table-layout:auto}
+    .bench-table th{padding:9px 12px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-tertiary);border-bottom:1px solid var(--border-subtle);white-space:nowrap;background:var(--bg-elevated);position:sticky;top:0;z-index:1}
+    .bench-table th.bench-col-num{text-align:right}
+    .bench-table td{padding:10px 12px;border-bottom:1px solid var(--border-subtle);vertical-align:middle;color:var(--text-primary)}
+    .bench-row-group-end td{border-bottom:1px solid var(--border-default)}
+    .bench-table tbody tr:last-child td{border-bottom:none}
+    .bench-row-alt td{background:rgba(255,255,255,.012)}
+    .bench-row:hover td{background:var(--bg-hover)}
+
+    .bench-agent-cell{position:relative;padding-left:18px !important;width:1%;white-space:nowrap;vertical-align:middle;background:var(--bg-elevated)}
+    .bench-agent-stripe{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--agent-stripe,#64748b)}
+    .bench-agent-body{display:flex;flex-direction:column;gap:2px;padding:2px 0}
+    .bench-agent-id{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--text-primary);text-transform:uppercase}
+    .bench-agent-name{font-size:12px;font-weight:500;color:var(--text-secondary)}
+    .bench-agent-count{font-size:10px;color:var(--text-tertiary);letter-spacing:.04em}
+
+    .bench-model-cell{min-width:200px}
+    .bench-model-name{font-size:12px;font-weight:500;color:var(--text-primary);line-height:1.3}
+    .bench-model-id{font-family:var(--mono);font-size:10px;color:var(--text-tertiary);margin-top:2px;line-height:1.2;word-break:break-all}
+
+    .bench-cell{position:relative;text-align:right;font-family:var(--mono);font-size:12px;min-width:110px;cursor:default}
+    .bench-cell .bench-bar{position:absolute;left:8px;right:8px;top:50%;height:18px;transform:translateY(-50%);background:rgba(255,255,255,.025);border-radius:3px;overflow:hidden;pointer-events:none}
+    .bench-cell .bench-bar-fill{display:block;height:100%;width:0;background:currentColor;opacity:.14;transition:width .25s ease}
+    .bench-cell .bench-time{position:relative;display:inline-block;padding:2px 6px;font-weight:600;letter-spacing:-.01em;z-index:1}
+    .bench-cell-fast{color:#86efac}
+    .bench-cell-mid{color:#93c5fd}
+    .bench-cell-slow{color:#fdba74}
+    .bench-cell-fail{color:#fca5a5;text-align:center}
+    .bench-cell-fail .bench-bar{display:none}
+    .bench-pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-family:var(--mono)}
+    .bench-pill-fail{background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.35);color:#fca5a5}
+    .bench-empty{color:var(--text-tertiary);font-family:var(--mono);font-size:11px}
+
+    .bench-last-cell{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);white-space:nowrap;text-align:right}
+    .bench-ago{font-variant-numeric:tabular-nums}
+
+    .bench-footnote{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:10px;padding:0 4px;font-size:11px;color:var(--text-tertiary)}
+    .bench-foot-key{display:inline-block;width:10px;height:10px;border-radius:2px;background:currentColor;opacity:.5;margin-right:2px;vertical-align:middle}
+
     /* ── Nudge modal agent/role grid ─────────────────────────────────────── */
     .nudge-agent-role-grid{display:grid;grid-template-columns:1fr 180px;gap:10px;margin-bottom:12px}
 

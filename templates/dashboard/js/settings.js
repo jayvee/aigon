@@ -1591,9 +1591,9 @@
           matrixWrap.innerHTML = '<div class="matrix-empty">Failed to load matrix: ' + escHtml(err.message) + '</div>';
         });
 
-      // ── Agent benchmarks (Pro) — directly under Agent Matrix; F420 aigon-pro + OSS wiring
+      // Agent benchmarks (Pro) — F420. OSS only mounts; data + UI live in @aigon/pro.
       const perfBenchSection = shell.addSection('perf-benchmarks', 'Agent benchmarks', 'Agent benchmarks',
-        'Latest run times from aigon perf-bench (brewboard implement vs brewboard-review). JSON lives under .aigon/benchmarks/ in the repo chosen for defaults in Repository Settings above.',
+        'Latest run times from aigon perf-bench. JSON lives under .aigon/benchmarks/ in the repo selected for defaults above.',
         { proBadge: true });
       if (window.AigonProBenchmarkMatrix && typeof window.AigonProBenchmarkMatrix.mount === 'function') {
         try {
@@ -1602,7 +1602,7 @@
           perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Benchmark UI failed: ' + escHtml(e.message) + '</p>');
         }
       } else {
-        perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Benchmark UI did not load. Install <code>@aigon/pro</code>, ensure the dashboard can serve <code>/js/benchmark-matrix.js</code>, then hard-refresh.</p>');
+        perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Install <code>@aigon/pro</code> and restart the dashboard so <code>dashboard/benchmark-matrix.js</code> loads.</p>');
       }
 
       // Version section
