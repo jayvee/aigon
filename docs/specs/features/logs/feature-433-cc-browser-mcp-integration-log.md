@@ -195,3 +195,21 @@ function readSnapshot(repoPath, paddedId): object | null
 2. **Spec 2 next** (workflow E2E harness, ~2–3 days, medium complexity). Author can use the freshly-installed Playwright MCP to interactively explore the dashboard while writing helpers — dogfooding Spec 1 while building Spec 2.
 
 Both specs ship via the standard `aigon feature-create` → `feature-prioritise` → `feature-start` flow. Per project memory, this is agent-discovered work, so use `afc` (feature-create), not `afbc` (feedback-create reserved for actual user voice).
+
+## Code Review
+
+**Reviewed by**: composer (Cursor agent)
+**Date**: 2026-04-28
+
+### Fixes Applied
+
+- **strip out-of-scope branch drift** — The branch had been cut from behind `main` and bundled destructive reversions unrelated to browser MCP: removal of F422 install manifest (`lib/install-manifest.js`, tests, `setup.js` wiring), rollback of `package.json`/`.aigon/version`, CHANGELOG truncation, duplicate/wrong spec paths, site Pro page drift, and dashboard close-log tweaks. Restored those paths from `main` and re-applied only `.mcp.json`, CLAUDE.md hot rule #4, CONTRIBUTING.md Browser MCP section, and this log. Net diff vs `main` should be `.mcp.json`, `CLAUDE.md`, `CONTRIBUTING.md`, and this log.
+
+### Residual Issues
+
+- None — acceptance criteria remain manual (CC `/mcp`, live dashboard `browser_navigate` + `browser_snapshot`); no code change required for those checks.
+
+### Notes
+
+- `.gitignore` already contains `.playwright-mcp/`; no further change needed for that criterion.
+- Before merge, rebase this branch onto current `main` so history is linear and `feature-close` does not replay the drift class.
