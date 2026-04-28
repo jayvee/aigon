@@ -1,0 +1,64 @@
+---
+title: Aigon Sync
+description: Push portable Aigon state to a private Git vault — multi-machine sync via @aigon/pro (dashboard Settings → Aigon Sync).
+---
+
+import { Callout } from "nextra/components";
+
+<Callout type="info">
+  **Aigon Pro feature.** The vault engine (`aigon backup`, `aigon vault`), dashboard **Settings → Aigon Sync**, and deprecated `aigon sync` aliases ship in **`@aigon/pro`**. Open-source Aigon prints a gate notice for those commands when Pro is not installed. Ordinary backups — `git`, archives, clones, Time Machine — **do not** require Pro. See [aigon.build/pro](/pro).
+</Callout>
+
+**Aigon Sync** is how you keep **portable Aigon state** in a **private Git repository** (the *vault*) so you can move between laptops or teammates without losing workflow metadata. It snapshots each registered project’s `.aigon/` tree (filtered) plus a stripped copy of `~/.aigon/config.json`, then pushes to a remote you control.
+
+This is **not** “you can’t back up without Pro”: you can always copy repos, zip folders, or rely on host backups. Aigon Sync adds **hosted Git coordination** for Aigon-specific state — optional and Pro-gated in OSS.
+
+## What gets synced
+
+The vault is a normal Git repo you configure once (`aigon backup configure <git-url>`). On **push**, Aigon rebuilds content from your machine, commits, and pushes. Typical layout includes:
+
+- **`projects/<name>/`** — portable subtree from each registered repo’s `.aigon/` (sessions, locks, and disposable caches are excluded)
+- **`settings/`** — sanitized global config plus workflow definitions paths as implemented by `@aigon/pro`
+
+**Pull** restores compatible settings and project `.aigon/` slices onto machines where those repos exist.
+
+## CLI (requires `@aigon/pro`)
+
+| Command | Purpose |
+|---------|---------|
+| `aigon backup configure <url>` | Point the vault at a private HTTPS or SSH remote |
+| `aigon backup push` | Snapshot local state and push to the vault |
+| `aigon backup pull` | Fetch from the vault and restore where repos resolve locally |
+| `aigon backup status` | Remote URL, last push/pull, schedule, project counts |
+| `aigon backup schedule <daily\|hourly\|weekly\|off>` | Cadence for automated pushes (server checks hourly when Pro is loaded) |
+
+**`aigon vault`** is an alias for the same engine as `aigon backup`.
+
+Legacy **`aigon sync`** without subcommands is deprecated — Pro routes it to the backup engine with a migration hint; use **`aigon backup`** for new workflows.
+
+## Dashboard (Settings → Aigon Sync)
+
+With Pro installed and the dashboard running, open **[Settings](/docs/guides/dashboard)** and choose **Aigon Sync** (labeled with **PRO** in the sidebar). You can:
+
+- See vault remote, last push/pull, and schedule
+- Change the Git remote URL
+- Trigger **Sync now (push)** without opening a terminal
+
+If the panel shows an install message, ensure `@aigon/pro` is linked or installed and **`aigon server restart`** so the dashboard loads `dashboard/backup-sync.js` from Pro.
+
+## Prerequisites
+
+- **`git`** and network access to your vault remote
+- Optional: **`gh`** for `gh repo create` flows during interactive configure
+- Repos you care about should appear under **`aigon server list`** / global config **repos** so they are included in snapshots
+
+## Security & hygiene
+
+- Use a **private** repository you trust — the vault holds workflow state and stripped config, not your application secrets by design, but treat it like sensitive infra.
+- Avoid putting `~/.aigon` itself inside iCloud/Dropbox-style synced folders; use Git as the transport.
+
+## Related topics
+
+- **[Scheduling features](/docs/guides/scheduling-features)** — deferred kickoffs (separate from vault sync; shares portable `.aigon/state` concepts)
+- **[Dashboard](/docs/guides/dashboard)** — registering repos and running the server
+- **[Getting started](/docs/getting-started)** — linking `@aigon/pro` for beta builds

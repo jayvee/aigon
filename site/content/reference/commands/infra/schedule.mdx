@@ -63,7 +63,7 @@ Cancel a pending job by its id (printed by `add` and `list`). Already-fired jobs
 
 ## How it's stored
 
-Scheduled jobs live in `.aigon/state/scheduled-kickoffs.json` (lock-protected, store version `1`). The store is part of the portable state covered by [`aigon sync`](/docs/reference/commands/infra/sync), so a job scheduled on one laptop fires from whichever machine has its server running at `runAt`.
+Scheduled jobs live in `.aigon/state/scheduled-kickoffs.json` (lock-protected, store version `1`). The store lives under `.aigon/state/` and travels with the rest of your portable Aigon data — see **[Aigon Sync](/docs/guides/aigon-sync)** for pushing that state to a private vault across machines.
 
 ## See also
 

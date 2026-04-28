@@ -1215,6 +1215,9 @@
     .version-state-badge.state-update{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:#fcd34d}
     .version-state-badge.state-prerelease{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35);color:#c4b5fd}
     .version-state-badge.state-unavailable{background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);color:var(--text-tertiary)}
+    /* Settings — Pro subsection headings */
+    .settings-pro-badge{font-size:8px;font-weight:700;opacity:0.65;margin-left:5px;vertical-align:super;letter-spacing:0.06em;color:var(--text-tertiary)}
+    .settings-nav-btn .settings-pro-badge{margin-left:6px;flex-shrink:0}
     /* Settings — scheduled kickoffs table */
     .settings-schedule-toolbar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-top:8px}
     .schedule-jobs-table-host{margin-top:4px;overflow-x:auto}

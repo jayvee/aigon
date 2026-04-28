@@ -1,17 +1,19 @@
     // ── Insights view ──────────────────────────────────────────────────────────
-    async function renderInsights() {
+    async function renderInsights(opts) {
+      var embedded = opts && opts.embedded;
       var c = document.getElementById('insights-view');
       if (!c) return;
 
-      document.getElementById('monitor-summary').style.display = 'none';
-      document.getElementById('repo-header').style.display = 'none';
-      document.getElementById('settings-view').style.display = 'none';
-      document.getElementById('empty').style.display = 'none';
+      if (!embedded) {
+        document.getElementById('monitor-summary').style.display = 'none';
+        document.getElementById('repo-header').style.display = 'none';
+        document.getElementById('settings-view').style.display = 'none';
+        document.getElementById('empty').style.display = 'none';
+      }
 
       // Gate entire Insights view when Pro is not active
       if (!isProActive()) {
-        c.innerHTML = '<div class="amp-empty" style="padding:40px;text-align:center"><div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Insights is a Pro feature — coming later</div><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:12px">AI-powered observations, coaching, and quality analytics. Pro is in development and not yet available for purchase.</div><div style="font-size:11px;color:var(--text-tertiary)">Free alternative: <code>aigon board</code>, <code>aigon commits</code>, <code>aigon feature-status</code></div></div>';
-        c.style.display = '';
+        c.innerHTML = '<div class="amp-empty" style="padding:28px 0;text-align:center"><div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Insights is a Pro feature — coming later</div><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:12px">AI-powered observations, coaching, and quality analytics. Pro is in development and not yet available for purchase.</div><div style="font-size:11px;color:var(--text-tertiary)">Free alternative: <code>aigon board</code>, <code>aigon commits</code>, <code>aigon feature-status</code></div></div>';
         return;
       }
 
@@ -294,6 +296,10 @@
     }
 
     function render() {
+      if (state.view === 'backup-sync' || state.view === 'scheduled-features') {
+        state.view = 'settings';
+        localStorage.setItem(lsKey('view'), 'settings');
+      }
       updateViewTabs();
       updateSidebarToggle();
       const sidebar = document.getElementById('repo-sidebar');
@@ -304,11 +310,9 @@
         document.getElementById('settings-view').style.display = '';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('insights-view').style.display = 'none';
         document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
-        var _bsv = document.getElementById('backup-sync-view'); if (_bsv) _bsv.style.display = 'none';
-        var _sfv = document.getElementById('scheduled-features-view'); if (_sfv) _sfv.style.display = 'none';
+        var _ivSet = document.getElementById('insights-view'); if (_ivSet) _ivSet.style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         renderSettings();
       } else if (state.view === 'sessions') {
@@ -318,11 +322,9 @@
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = '';
         document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('insights-view').style.display = 'none';
         document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
-        var _bsv = document.getElementById('backup-sync-view'); if (_bsv) _bsv.style.display = 'none';
-        var _sfv = document.getElementById('scheduled-features-view'); if (_sfv) _sfv.style.display = 'none';
+        var _ivSes = document.getElementById('insights-view'); if (_ivSes) _ivSes.style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         const allRepos = ((state.data || {}).repos || []);
         renderSidebar(allRepos);
@@ -335,11 +337,9 @@
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = '';
-        document.getElementById('insights-view').style.display = 'none';
         document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
-        var _bsv = document.getElementById('backup-sync-view'); if (_bsv) _bsv.style.display = 'none';
-        var _sfv = document.getElementById('scheduled-features-view'); if (_sfv) _sfv.style.display = 'none';
+        var _ivStat = document.getElementById('insights-view'); if (_ivStat) _ivStat.style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         const allRepos = ((state.data || {}).repos || []);
         renderSidebar(allRepos);
@@ -354,40 +354,8 @@
         document.getElementById('insights-view').style.display = '';
         document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
-        var _bsv = document.getElementById('backup-sync-view'); if (_bsv) _bsv.style.display = 'none';
-        var _sfv = document.getElementById('scheduled-features-view'); if (_sfv) _sfv.style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         renderInsights();
-      } else if (state.view === 'backup-sync') {
-        sidebar.style.display = 'none';
-        mobileSelect.style.display = 'none';
-        document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('empty').style.display = 'none';
-        document.getElementById('sessions-view').style.display = 'none';
-        document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('insights-view').style.display = 'none';
-        document.getElementById('all-items-view').style.display = 'none';
-        document.getElementById('logs-view').style.display = 'none';
-        var _sfv2 = document.getElementById('scheduled-features-view'); if (_sfv2) _sfv2.style.display = 'none';
-        var _bsvShow = document.getElementById('backup-sync-view'); if (_bsvShow) _bsvShow.style.display = '';
-        document.getElementById('repo-header').style.display = 'none';
-        if (typeof renderBackupSync === 'function') { renderBackupSync(); }
-        else if (_bsvShow) { _bsvShow.innerHTML = '<div class="amp-empty" style="padding:40px 20px;text-align:center"><div style="font-size:18px;font-weight:600;margin-bottom:8px">Backup &amp; Sync (Pro — coming later)</div><div style="color:var(--text-secondary)">Multi-machine state sync, profile sync, and scheduled vault backups.</div><div style="color:var(--text-tertiary);font-size:12px;margin-top:12px">Pro is in development and not yet available for purchase.</div></div>'; }
-      } else if (state.view === 'scheduled-features') {
-        sidebar.style.display = 'none';
-        mobileSelect.style.display = 'none';
-        document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('empty').style.display = 'none';
-        document.getElementById('sessions-view').style.display = 'none';
-        document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('insights-view').style.display = 'none';
-        document.getElementById('all-items-view').style.display = 'none';
-        document.getElementById('logs-view').style.display = 'none';
-        var _bsv2 = document.getElementById('backup-sync-view'); if (_bsv2) _bsv2.style.display = 'none';
-        var _sfvShow = document.getElementById('scheduled-features-view'); if (_sfvShow) _sfvShow.style.display = '';
-        document.getElementById('repo-header').style.display = 'none';
-        if (typeof renderScheduledFeatures === 'function') { renderScheduledFeatures(); }
-        else if (_sfvShow) { _sfvShow.innerHTML = '<div class="amp-empty" style="padding:40px 20px;text-align:center"><div style="font-size:18px;font-weight:600;margin-bottom:8px">Scheduled Features (Pro — coming later)</div><div style="color:var(--text-secondary)">Recurring weekly/quarterly batches, server-scheduled feature kickoffs, and agent_prompt cron actions.</div><div style="color:var(--text-tertiary);font-size:12px;margin-top:12px">Pro is in development and not yet available for purchase.</div></div>'; }
       } else if (state.view === 'all-items') {
         sidebar.style.display = 'none';
         mobileSelect.style.display = 'none';
@@ -395,11 +363,9 @@
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('insights-view').style.display = 'none';
         document.getElementById('all-items-view').style.display = '';
         document.getElementById('logs-view').style.display = 'none';
-        var _bsv3 = document.getElementById('backup-sync-view'); if (_bsv3) _bsv3.style.display = 'none';
-        var _sfv3 = document.getElementById('scheduled-features-view'); if (_sfv3) _sfv3.style.display = 'none';
+        var _ivAi = document.getElementById('insights-view'); if (_ivAi) _ivAi.style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         renderAllItemsView();
       } else if (state.view === 'logs') {
@@ -409,11 +375,9 @@
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('insights-view').style.display = 'none';
         document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = '';
-        var _bsv4 = document.getElementById('backup-sync-view'); if (_bsv4) _bsv4.style.display = 'none';
-        var _sfv4 = document.getElementById('scheduled-features-view'); if (_sfv4) _sfv4.style.display = 'none';
+        var _ivLogs = document.getElementById('insights-view'); if (_ivLogs) _ivLogs.style.display = 'none';
         document.getElementById('repo-header').style.display = 'none';
         renderLogs();
       } else {
@@ -424,11 +388,9 @@
         document.getElementById('empty').style.display = 'none';
         document.getElementById('sessions-view').style.display = 'none';
         document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('insights-view').style.display = 'none';
         document.getElementById('all-items-view').style.display = 'none';
         document.getElementById('logs-view').style.display = 'none';
-        var _bsv = document.getElementById('backup-sync-view'); if (_bsv) _bsv.style.display = 'none';
-        var _sfv = document.getElementById('scheduled-features-view'); if (_sfv) _sfv.style.display = 'none';
+        var _ivMon = document.getElementById('insights-view'); if (_ivMon) _ivMon.style.display = 'none';
         // Sidebar + header are shared between monitor and pipeline
         const allRepos = ((state.data || {}).repos || []);
         renderSidebar(allRepos);

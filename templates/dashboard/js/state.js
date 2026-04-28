@@ -4,7 +4,18 @@
     const TS_MS = 30000;
     function lsKey(k) { return 'aigon-' + INSTANCE_NAME + '-' + k; }
     // _rawState is the plain JS object; state becomes the Alpine proxy after init
-    const storedView = localStorage.getItem(lsKey('view')) || 'monitor';
+    let storedView = localStorage.getItem(lsKey('view')) || 'monitor';
+    /** Legacy top-level Pro tabs (feature 236) — remap to Settings subsection scroll */
+    let settingsInitialSectionId = null;
+    const LEGACY_PRO_TAB_TO_SETTINGS_SECTION = {
+      'backup-sync': 'aigon-sync',
+      'scheduled-features': 'schedule',
+    };
+    if (LEGACY_PRO_TAB_TO_SETTINGS_SECTION[storedView]) {
+      settingsInitialSectionId = LEGACY_PRO_TAB_TO_SETTINGS_SECTION[storedView];
+      storedView = 'settings';
+      localStorage.setItem(lsKey('view'), 'settings');
+    }
     const initialView = storedView === 'console'
       ? 'logs'
       : (storedView === 'logs' ? 'all-items' : (storedView === 'config' ? 'settings' : storedView));
@@ -31,7 +42,8 @@
       pendingDevServerPokes: new Set(),
       closeFailedFeatures: new Map(),
       // feature 234: true while the backend is restarting after a lib/*.js merge
-      serverRestarting: false
+      serverRestarting: false,
+      settingsInitialSectionId: settingsInitialSectionId,
     };
 
     function isRepoHidden(repoPath) {

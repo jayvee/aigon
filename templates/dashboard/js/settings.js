@@ -85,9 +85,8 @@
       runDoctor(false);
     }
 
-    // The renderSyncPanel / renderSyncPanels code moved to @aigon/pro with
-    // feature 236 (see aigon-pro/dashboard/backup-sync.js). The Settings tab
-    // no longer renders Backup & Sync; that lives in its own top-level tab.
+    // Pro sync UI (`renderBackupSync` from @aigon/pro) targets `#backup-sync-view`, now
+    // embedded in Settings → Aigon Sync (feature 236 batch).
 
     /* eslint-disable no-unused-vars */
     function _renderSyncPanel_REMOVED(scope, host) {
@@ -364,11 +363,15 @@
       content.className = 'settings-content';
 
       const sections = [];
-      function addSection(id, label, title, description) {
+      function addSection(id, label, title, description, sectionOpts) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'settings-nav-btn';
-        btn.textContent = label;
+        if (sectionOpts && sectionOpts.proBadge) {
+          btn.innerHTML = escHtml(label) + '<sup class="settings-pro-badge" title="Pro feature">PRO</sup>';
+        } else {
+          btn.textContent = label;
+        }
         btn.onclick = () => {
           setActiveSection(id);
           scrollSettingsSection(id);
@@ -381,7 +384,11 @@
         section.dataset.settingsSection = id;
 
         const heading = document.createElement('h3');
-        heading.textContent = title;
+        if (sectionOpts && sectionOpts.proBadge) {
+          heading.innerHTML = escHtml(title) + '<sup class="settings-pro-badge" title="Pro feature">PRO</sup>';
+        } else {
+          heading.textContent = title;
+        }
         section.appendChild(heading);
 
         if (description) {
@@ -865,6 +872,12 @@
       const inputWasFocused = existingInput && document.activeElement === existingInput;
       const inputValue = existingInput ? existingInput.value : '';
 
+      const detachedProViews = {};
+      ['backup-sync-view', 'scheduled-features-view'].forEach(function (vid) {
+        const el = document.getElementById(vid);
+        if (el && el.parentNode) detachedProViews[vid] = el.parentNode.removeChild(el);
+      });
+
       const reposRoot = document.getElementById('settings-view');
       const empty = document.getElementById('empty');
       reposRoot.className = '';
@@ -982,8 +995,15 @@
       section.appendChild(form);
       shell.observeSection(section);
 
-      // ── Schedule section (deferred kickoffs) ───────────────────────────────
-      const scheduleSection = shell.addSection('schedule', 'Schedule', 'Scheduled kickoffs', 'Pending and past jobs for this dashboard. Jobs use ISO 8601 times with an explicit timezone; the server poller runs them after runAt (catch-up if the server was offline).');
+      // ── Aigon Sync (Pro) — backup-sync-view filled by @aigon/pro dashboard JS (Insights stays a top-level tab)
+      const aigonSyncSection = shell.addSection('aigon-sync', 'Aigon Sync', 'Aigon Sync', 'Remote push/pull to a GitHub configuration repository (Pro). You can always back up this machine with git, archives, or clones — that does not require Pro.', { proBadge: true });
+      if (detachedProViews['backup-sync-view']) {
+        detachedProViews['backup-sync-view'].style.cssText = 'padding:0 0 28px';
+        aigonSyncSection.appendChild(detachedProViews['backup-sync-view']);
+      }
+
+      // ── Schedule section (deferred kickoffs + Pro recurring UI) ─────────────
+      const scheduleSection = shell.addSection('schedule', 'Schedule', 'Scheduled kickoffs', 'Pending and past jobs for this dashboard. Jobs use ISO 8601 times with an explicit timezone; the server poller runs them after runAt (catch-up if the server was offline).', { proBadge: true });
       const scheduleToolbar = document.createElement('div');
       scheduleToolbar.className = 'settings-schedule-toolbar';
       const schedRepoLabel = document.createElement('span');
@@ -1115,6 +1135,10 @@
       schedRefresh.onclick = () => { loadScheduleJobsTable(); };
       shell.observeSection(scheduleSection);
       loadScheduleJobsTable();
+      if (detachedProViews['scheduled-features-view']) {
+        detachedProViews['scheduled-features-view'].style.cssText = 'padding:12px 0 28px';
+        scheduleSection.appendChild(detachedProViews['scheduled-features-view']);
+      }
 
       // ── Notifications section ─────────────────────────────────────────────
       const NOTIF_TYPE_LABELS = {
@@ -1567,9 +1591,6 @@
           matrixWrap.innerHTML = '<div class="matrix-empty">Failed to load matrix: ' + escHtml(err.message) + '</div>';
         });
 
-      // Backup & Sync section moved to @aigon/pro (feature 236) and now
-      // surfaces as its own top-level "Backup & Sync (PRO)" tab.
-
       // Version section
       const versionSection = shell.addSection('version', 'Version', 'Version', 'Installed version and npm registry update status.');
       const uc = (state.data || {}).updateCheck;
@@ -1607,4 +1628,25 @@
       reposRoot.appendChild(area);
       restoreDetailScrollTop(scrollTop);
       restoreSettingsUiState(reposRoot);
+
+      (function finalizeProSettingsPanels() {
+        if (typeof renderBackupSync === 'function') {
+          renderBackupSync();
+        } else if (detachedProViews['backup-sync-view']) {
+          detachedProViews['backup-sync-view'].innerHTML =
+            '<div class="amp-empty" style="padding:28px 0;text-align:center">' +
+            '<div style="font-size:15px;font-weight:600;margin-bottom:8px">Aigon Sync <span style="font-size:10px;opacity:0.7">(Pro)</span></div>' +
+            '<div style="color:var(--text-secondary);font-size:12px">Install <code>@aigon/pro</code> for remote GitHub sync. Manual backup does not require Pro.</div>' +
+            '</div>';
+        }
+        if (typeof renderScheduledFeatures === 'function') {
+          renderScheduledFeatures();
+        }
+      })();
+
+      if (state.settingsInitialSectionId) {
+        const sid = state.settingsInitialSectionId;
+        state.settingsInitialSectionId = null;
+        requestAnimationFrame(function () { scrollSettingsSection(sid); });
+      }
     }

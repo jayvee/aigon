@@ -340,6 +340,55 @@ export default function ProPage() {
         </div>
       </section>
 
+      {/* Aigon Sync — vault */}
+      <section className="px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-6">
+            <p className="mb-2 text-xs font-medium tracking-widest text-aigon-teal uppercase">
+              State &amp; backup
+            </p>
+            <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-gray-900 dark:text-[hsl(0_0%_94%)]">
+              Aigon Sync
+            </h2>
+            <p className="mt-3 max-w-2xl text-gray-600 dark:text-gray-400">
+              Keep portable <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm dark:bg-white/10">.aigon</code>{" "}
+              state in a <strong>private Git vault</strong> — push snapshots of workflow metadata and stripped global
+              settings, pull on another machine, and optionally schedule pushes. Ordinary backups (git clones, zip,
+              Time Machine) remain yours without Pro; Aigon Sync is the optional Git-coordinated path for Aigon&apos;s own
+              trees across laptops and teammates.
+            </p>
+            <p className="mt-4 max-w-2xl text-sm text-gray-600 dark:text-gray-400">
+              Use <strong>Dashboard → Settings → Aigon Sync</strong> for remote URL, last sync times, cadence, and{" "}
+              <strong>Sync now</strong>, or the <code className="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-white/10">aigon backup</code> /{" "}
+              <code className="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-white/10">aigon vault</code> CLI.
+            </p>
+            <p className="mt-6">
+              <a
+                href="/docs/guides/aigon-sync"
+                className="inline-flex items-center gap-2 rounded-lg bg-aigon-orange px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-aigon-orange/90 no-underline"
+              >
+                Read the Aigon Sync guide
+              </a>
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            <FeatureCard
+              title="Private vault repo"
+              description="Configure one HTTPS or SSH remote; snapshots land in a structured layout Pro can pull and merge safely."
+            />
+            <FeatureCard
+              title="CLI + dashboard"
+              description="Same engine from terminal (`aigon backup push`) or Settings → Aigon Sync when the server runs with @aigon/pro linked."
+            />
+            <FeatureCard
+              title="Scheduled pushes"
+              description="Optional daily, hourly, weekly, or off — the server tick checks whether a vault push is due when Pro is installed."
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Integrations Direction */}
       <section className="px-6 pb-4 md:pb-6">
         <div className="mx-auto max-w-3xl text-center">
