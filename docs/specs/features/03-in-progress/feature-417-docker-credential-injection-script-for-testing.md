@@ -10,16 +10,16 @@ transitions:
 Add `scripts/docker-inject-creds.sh` — a one-command helper that copies host agent credentials into a running clean-room Docker container. Today, testing the onboarding wizard end-to-end requires manually authenticating Claude Code, Gemini, Codex, and GitHub inside the container, which takes 10–15 minutes per run. This script reduces that to ~5 seconds by tar-piping the relevant credential directories from the host into the container after startup but before the Brewboard test run. Also adds a "Skip auth during testing" section to `docker/clean-room/README.md`.
 
 ## User Stories
-- [ ] As a developer running Docker-based onboarding tests, I run `bash scripts/docker-inject-creds.sh <container_id>` after starting the container and all agent auth steps are pre-populated so I can proceed directly to testing Brewboard.
-- [ ] As a developer who only has some agents installed (e.g. Claude but not Codex), the script copies what exists and silently skips what doesn't, with a clear summary of what was copied vs skipped.
+- [x] As a developer running Docker-based onboarding tests, I run `bash scripts/docker-inject-creds.sh <container_id>` after starting the container and all agent auth steps are pre-populated so I can proceed directly to testing Brewboard.
+- [x] As a developer who only has some agents installed (e.g. Claude but not Codex), the script copies what exists and silently skips what doesn't, with a clear summary of what was copied vs skipped.
 
 ## Acceptance Criteria
-- [ ] `bash scripts/docker-inject-creds.sh` with no args prints usage and exits non-zero
-- [ ] `bash scripts/docker-inject-creds.sh <id>` with a non-running container prints a clear error and exits non-zero
-- [ ] Running the script against a live container copies all present credential paths and skips absent ones without erroring
-- [ ] After injection, `claude --version` and `gh auth status` succeed inside the container without re-auth
-- [ ] Script is idempotent — running it twice doesn't break anything
-- [ ] `docker/clean-room/README.md` documents the script in a "Skip auth during testing" section
+- [x] `bash scripts/docker-inject-creds.sh` with no args prints usage and exits non-zero
+- [x] `bash scripts/docker-inject-creds.sh <id>` with a non-running container prints a clear error and exits non-zero
+- [x] Running the script against a live container copies all present credential paths and skips absent ones without erroring
+- [x] After injection, `claude --version` and `gh auth status` succeed inside the container without re-auth
+- [x] Script is idempotent — running it twice doesn't break anything
+- [x] `docker/clean-room/README.md` documents the script in a "Skip auth during testing" section
 
 ## Validation
 ```bash
