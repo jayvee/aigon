@@ -1,6 +1,6 @@
 {
   "name": "@aigon/cli",
-  "version": "2.61.0",
+  "version": "2.62.0",
   "description": "CLI for the Aigon Spec-Driven AI Dev Flow",
   "license": "Apache-2.0",
   "author": "Sen Labs (https://senlabs.ai)",

@@ -9,9 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.62.0] — 2026-04-28
+
+Transcript program completion (F430, F431), workflow close-recovery as a
+first-class state (F432), brewboard seed refresh as the F2/F3/F4 migration
+end-to-end test (F423), an unattended Docker install test (F435), a
+dashboard-driven workflow E2E harness (F434), browser MCP integration (F433),
+dashboard terminal cleanup (F436 + F437), and a token/cost + LLM-judged
+quality axis for `perf-bench` (F440).
+
 ### Added
 
-- **Close-recovery as a first-class workflow state (F432)** — when an `aigon feature-close` fails and the operator clicks "Close with agent" / "Resolve & close" on the dashboard, the engine now appends `feature.close_recovery.started` before spawning the `role: 'close'` tmux session. `currentSpecState` becomes `close_recovery_in_progress`, a `closeRecovery` context blob is stored on the snapshot (`agentId`, `startedAt`, `returnSpecState`, `sessionName`, `source`), and `lib/state-render-meta.js` surfaces a "Close recovery" badge with a status spinner. The dashboard now exposes a `recoveryTmuxSession` for attach/peek and the snapshot adapter swaps `feature-close` for `feature-resolve-and-close` while `lastCloseFailure.kind === 'merge-conflict'` and the feature is in any close-eligible state (including `close_recovery_in_progress`). Recovery exits via `feature.close_recovery.ended` / `.cancelled` (back to `submitted`, keeping `lastCloseFailure` for forensics) or via successful `feature.close_requested` → `closing` → `done`. Engine-first ordering means the dashboard never observes a "close session running but no recovery state" half-state. `parseTmuxSessionName` now recognises the `close` role round-trip.
+- **Workflow close-recovery as a first-class lifecycle state (F432)** — when `aigon feature-close` fails and the operator clicks "Close with agent" / "Resolve & close", the engine now appends `feature.close_recovery.started` before spawning the `role: 'close'` tmux session. `currentSpecState` becomes `close_recovery_in_progress`, a `closeRecovery` context blob is stored on the snapshot (`agentId`, `startedAt`, `returnSpecState`, `sessionName`, `source`), and `lib/state-render-meta.js` surfaces a "Close recovery" badge with a status spinner. The dashboard now exposes a `recoveryTmuxSession` for attach/peek and the snapshot adapter swaps `feature-close` for `feature-resolve-and-close` while `lastCloseFailure.kind === 'merge-conflict'` and the feature is in any close-eligible state (including `close_recovery_in_progress`). Recovery exits via `feature.close_recovery.ended` / `.cancelled` (back to `submitted`, keeping `lastCloseFailure` for forensics) or via successful `feature.close_requested` → `closing` → `done`. Engine-first ordering means the dashboard never observes a "close session running but no recovery state" half-state. `parseTmuxSessionName` now recognises the `close` role round-trip.
+
+- **Opt-in `tmux pipe-pane` transcript capture (F430)** — agents with no native transcript file (`cu`, `op`, `km`) can now have their pane piped to `~/.aigon/transcripts/<repo>/.../<role>-<sessionUuid>.tmux.log`, gated behind `~/.aigon/config.json:transcripts.tmux=true`. Off by default — research-43's conservative position (raw ANSI noise, secrets-in-pane risk, 5–10× size cost). Final piece of the research-43 transcript program.
+
+- **Transcript dashboard surface (F431)** — per-agent **Open transcript** entry points on feature/research cards, backed by `GET /api/features/:id/transcripts` (and research analogue) plus a new `/transcripts/download/...` server route — the browser never sees `file://`. Reflects native pointers (F357), durable hot-tier paths (F429), and `tmuxLogPath` (F430) where present.
+
+- **Brewboard seed refresh + F2/F3/F4 migration end-to-end test (F423)** — brewboard's canonical seed now reflects the new install contract (no `AGENTS.md` aigon block, vendored `.aigon/docs/`, install-manifest present). A migration test runs a copy of the *legacy* seed through `aigon doctor --fix` and asserts byte-equality with the new seed (modulo manifest timestamps), exercising the F2/F3/F4 doctor migrations end-to-end against a real-world repo rather than synthetic temp dirs.
+
+- **`docker/clean-room/run-e2e.sh` — unattended Linux install test (F435)** — single host-side orchestrator runs the full cold-start path (Docker → image → container → cred injection → prerequisites → agent CLIs → aigon → brewboard clone → init → install-agent → server → dashboard responds on :4100). Must-pass core ends at "dashboard responds"; the best-effort tail drives one autonomous BrewBoard feature and checks artifacts, but failure logs loudly without failing the script (install regressions are deterministic, agent runs aren't). One command validates every install change before release.
+
+- **Workflow E2E regression harness (F434)** — `tests/dashboard-e2e/workflow-e2e.spec.js` drives the full feature lifecycle in the dashboard UI (create → backlog → in-progress → submitted → closed) and asserts at every transition across four layers: DOM (kanban column), spec on disk (file moved), engine snapshot (`.aigon/workflows/<id>/snapshot.json` state field), and **real tmux pane content** (capture-pane output matches expected agent prompt fragments). Catches a class of write-path/read-path divergence that mocked-API tests cannot see.
+
+- **`@playwright/mcp` project-scope MCP server (F433)** — installs the Playwright MCP server at project scope so Claude Code can drive the dashboard via MCP tool calls and a11y-tree snapshots instead of one-off Playwright scripts and PNG reads. Validating any dashboard change drops from ~3 tool turns (write script → run node → read PNG) to 1 tool call returning structured a11y text — ~10× cheaper.
+
+- **Token/cost + LLM-judged quality axes for `perf-bench` (F440)** — each per-pair benchmark JSON now carries `tokenUsage` (input / cached-input / output / thinking, billable, costUsd, sessions) aggregated from the agent's `.aigon/telemetry/feature-<id>-*.json` snapshots, and an `implementationArtifact` (changedFiles, diffStat, diffText, specBody) captured from the worktree. With `aigon perf-bench ... --judge`, a judge agent (default `claude -p`, configurable via `--judge-binary`) scores the artifact against `IMPLEMENTATION_RUBRIC_V1` (5 weighted criteria — requirements 0.35, correctness 0.25, minimality 0.15, code_quality 0.15, risk 0.10) on a 0–10 scale; the result is merged back into the same JSON file under `quality:` so dashboards and CI gates have a single read-path for time, cost, and quality. Codex telemetry sweeps now accept an `afterMs` cutoff so a benchmark only counts sessions that started after the run began — no double-counting older sessions for the same worktree.
+
+### Changed
+
+- **Dashboard terminal: xterm.js becomes the only engine (F436)** — removed the experimental wterm (Vercel Labs DOM-rendered terminal) integration. Drops a CDN dependency on every dashboard page load (`@wterm/dom` + `@wterm/core` WASM via `esm.sh`/`jsdelivr`), ~150 LOC of dual-engine branching across `templates/dashboard/index.html`, `templates/dashboard/js/terminal.js`, and `templates/dashboard/js/settings.js`, and the engine-toggle UI in Settings → Terminal. wterm was an 11-day-old spike for native selection + Cmd+F; not in real use.
+
+- **Faster dashboard PTY terminal startup (F437)** — four small independent edits to `lib/pty-session-handler.js` and `templates/dashboard/js/terminal.js` that together remove ~50% of initial byte volume and at least one network round-trip when opening the terminal panel for tmux sessions with dense TUI content (Claude Code, kimi, opencode). No architectural change.
+
+### Fixed
+
+- **Gemini tmux nudges hardened** — guard against pane-detached / wrapped-input edge cases that produced spurious nudges.
+- **Empty close-log panel dismisses on network/HTTP failure** — F428 follow-up; the live close-out log panel no longer gets stuck on an empty frame when the stream fails.
+- **Autonomous reviewer triplet selects reach implement-picker parity** — `updateReviewerTripletSelects` now applies spec recommendations, reads/writes `tripletStorage` for last-used model+effort, attaches tooltips and `change` handlers, and recognises the `'schedule-kickoff'` scope (latent bug: callers passed it but the function fell through to the default prefix). A static-guard test in `tests/integration/static-guards.test.js` keeps the reviewer block in sync with `appendTripletSelects` going forward.
 
 ## [2.61.0] — 2026-04-28
 
