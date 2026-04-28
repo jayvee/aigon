@@ -2,7 +2,7 @@
 
 The full grid. The public page in `site/content/comparisons.mdx` is the **5-axis projection** of this file (axes 1–5 below).
 
-**Last refreshed:** 2026-04-27 (R44).
+**Last refreshed:** 2026-04-28 (added Superpowers, OpenSpec, Beads; refreshed GSD).
 **Source citations:** see `entries/<slug>.md` per tool. Cell values that are observable from public docs at time of writing.
 
 ---
@@ -37,9 +37,12 @@ Order: closest to furthest from Aigon. Aigon row first.
 |---|---|---|---|---|---|
 | **Aigon** | Feature spec (Markdown) | Markdown specs in git | Parallel competition + sequential, with cross-agent eval | BYO Claude / Gemini / Codex / Cursor / OpenCode | Free OSS + BYO |
 | **Cline Kanban** | Task card | Hosted board state | Sequential dependency chains | BYO Claude Code / Codex / Cline | Free OSS + BYO |
+| **Superpowers** | Skill-orchestrated plan | Markdown plans in git | Parallel sub-agents + sequential pipeline (single host runtime) | 6+ runtimes (Claude Code / Codex / Cursor / OpenCode / Copilot / Gemini) | Free OSS + BYO |
 | **Google Scion** | Task graph node | Hosted graph (or local) | Parallel + sequential, declarative graph | BYO Claude Code / Gemini / OpenCode / Codex | Free OSS + BYO |
-| **GSD (Get Shit Done)** | Markdown plan | `.planning/` markdown in git | Sequential waves (sub-agents) within one runtime | 14+ runtimes (one at a time) | Free OSS + BYO |
+| **GSD (Get Shit Done)** | Markdown plan | `.planning/` markdown in git | Sequential waves (sub-agents) within one runtime | 14 runtimes (one at a time) | Free OSS + BYO |
+| **OpenSpec** | Delta spec proposal | `openspec/` markdown in git (propose → apply → archive) | Single-agent (delegates to one of 20+) | 20+ host agents (one at a time) | Free OSS + BYO |
 | **GitHub Spec Kit** | Spec | Markdown specs in git | Single-agent (delegates to one of 30+) | Any of 30+ agents (one at a time) | Free OSS + BYO |
+| **Beads (`bd`)** | Issue / graph node | `.beads/` Dolt + JSONL in git | Agent-agnostic memory layer (n/a — not an orchestrator) | Agent-agnostic | Free OSS + BYO |
 | **Cursor 3 Agents Window** | Prompt | Chat history (per agent) | Up to 8 parallel agents | Curated (Cursor Composer + frontier) | $20/mo + overages |
 | **Claude Code (alone)** | Prompt session | Chat history | Single-agent w/ sub-agents | Anthropic-locked | Anthropic subscription |
 | **Aider** | Chat message | Git commit history | Single-agent | BYO any LLM | Free OSS + BYO |
@@ -57,9 +60,12 @@ Order: closest to furthest from Aigon. Aigon row first.
 |---|---|---|---|---|---|
 | **Aigon** | Local CLI in tmux + git worktrees | Per-feature git worktree | Cross-agent diff review (Fleet) + structured rubric (Arena) | Interactive (Drive) → supervised (Fleet) → autonomous (Autopilot) | CLI + web dashboard + slash commands |
 | **Cline Kanban** | Local CLI + ephemeral worktrees | Ephemeral worktree per card | GUI PR-style review on each card | Supervised | CLI + Kanban GUI + IDE sidecar |
+| **Superpowers** | Host runtime + git worktrees | Git worktree per task / branch | Two-stage code review skill (spec compliance → code quality) + RED-GREEN-REFACTOR | Supervised | Slash commands within host runtime |
 | **Google Scion** | Local / VM / Kubernetes containers | Container per agent + worktree | None built-in | Supervised | CLI + hub UI |
-| **GSD (Get Shit Done)** | Local CLI inside any of 14 runtimes | Optional git worktrees | Plan-checker + verifier sub-agents | Supervised | CLI (host agent's UI) |
+| **GSD (Get Shit Done)** | Local CLI inside any of 14 runtimes | Git worktrees (configurable, default on) | Plan-checker + `/gsd-verify-work` UAT + `/gsd-secure-phase` security gate | Supervised | CLI (host agent's UI) |
+| **OpenSpec** | Local CLI bootstrapping any agent | Repo / branch | `/opsx:verify` alignment checkpoint | Supervised | CLI + slash commands |
 | **GitHub Spec Kit** | Local CLI bootstrapping any agent | Repo / branch | None built-in (delegates to host agent) | Supervised | CLI + slash commands |
+| **Beads (`bd`)** | n/a — sits beside any runtime | n/a (embedded = single-writer; server = multi-writer) | n/a — provides memory decay, not code review | n/a (orthogonal) | `bd` CLI + `CLAUDE.md` / `AGENTS.md` integration |
 | **Cursor 3 Agents Window** | IDE-embedded + cloud VMs | Worktree or cloud machine per agent | Aggregated diff view | Supervised | IDE (tiled panes) |
 | **Claude Code (alone)** | Local CLI | In-place | None built-in | Interactive / supervised | CLI |
 | **Aider** | Local CLI | In-place | None (auto-commits per change) | Interactive pair | CLI |
@@ -93,9 +99,12 @@ This is the section the public page projects honestly. Each axis is "Aigon picks
 ## Notes on cells
 
 - **GSD's "Sequential waves"** — wave-based execution with auto-dependency ordering, but all within one runtime at a time. Not parallel-multi-agent in Aigon's sense.
+- **Superpowers' "Parallel sub-agents"** — fresh sub-agents per task, dispatched concurrently, but all within the same host runtime (e.g. multiple Claude Code instances). Not multi-vendor competition like Aigon Fleet. Closest *shape* match to Aigon overall.
 - **Cursor 3's "8 parallel agents"** — parallel inside the IDE shell; single vendor (Cursor) on the model side.
 - **Devin's "Multiple cloud Devins"** — all the same agent, replicated. Not multi-vendor competition.
 - **Cline Kanban's "GUI PR-style review"** — first-class diff review on cards, with comments agents read. Aigon's review flow is CLI/dashboard split; the GUI is read-only — see `weaknesses.md`.
+- **OpenSpec vs Spec Kit** — both are spec-driven workflow tools (Tier B). OpenSpec is brownfield-native with delta semantics (ADDED / MODIFIED / REMOVED); Spec Kit targets greenfield. Listed as separate rows.
+- **Beads is a different shape.** It's agent *memory* infrastructure, not an orchestrator — n/a values reflect that the axis doesn't apply, not that Beads is weak there. It's a complement to Aigon, not a substitute. See `entries/beads.md` "Strategic note".
 - **OpenCode lineage** — only `anomalyco/opencode` is the row in this matrix. `sst/opencode` is superseded; see `landscape.md`.
 
 For per-cell sourcing and last-verified dates, see `entries/<slug>.md`.
