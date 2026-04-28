@@ -403,7 +403,7 @@ export default function ProPage() {
           </div>
 
           <ScreenshotFrame
-            src="/img/agent-benchmarks-pro.png"
+            src="/img/agent_benchmarks.png"
             alt="Aigon Pro agent benchmarks — implementation timings across CC, Codex, Gemini, OpenRouter and Kimi models on a deterministic seed repo"
             caption="Agent benchmarks panel — runs grouped by agent with relative-speed bars and per-row failure context"
           />
