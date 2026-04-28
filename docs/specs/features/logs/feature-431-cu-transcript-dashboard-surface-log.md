@@ -1,15 +1,16 @@
 ---
-commit_count: 2
-lines_added: 290
-lines_removed: 17
-lines_changed: 307
-files_touched: 7
-fix_commit_count: 0
-fix_commit_ratio: 0
+commit_count: 7
+lines_added: 609
+lines_removed: 19
+lines_changed: 628
+files_touched: 11
+fix_commit_count: 1
+fix_commit_ratio: 0.143
 rework_thrashing: false
 rework_fix_cascade: false
-rework_scope_creep: false
-model: "composer"
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
 ---
 # Implementation Log: Feature 431 - transcript-dashboard-surface
 Agent: cu
