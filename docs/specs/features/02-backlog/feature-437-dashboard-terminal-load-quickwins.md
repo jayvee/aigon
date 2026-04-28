@@ -1,5 +1,7 @@
 ---
 complexity: low
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T08:40:52.710Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: dashboard-terminal-load-quickwins
