@@ -27,9 +27,9 @@ Surface per-agent and per-feature cost data prominently in the dashboard. The te
 
 ## Technical Approach
 - `lib/analytics.js` already builds `costTrend7d`, `costTrend30d`, `telemetryAgent30d` — verify these fields are present in the `/api/analytics` response and add any missing ones.
-- `templates/dashboard/js/logs.js` already imports `buildDailyMetricTrend` and computes cost sparklines (lines 612–617) — these are currently rendered only in the Amplification (Pro) section. Move or duplicate the cost section to the free-tier statistics view so it renders for all users.
+- `templates/dashboard/js/logs.js` already imports `buildDailyMetricTrend` and computes cost sparklines (lines 612–617) — these are currently rendered only in the Insights metrics section. Move or duplicate the cost section to the free-tier statistics view so it renders for all users.
 - `lib/dashboard-routes.js` already serves `costByAgent` in the detail payload (lines 252–300). Check if `cacheReadTokens` and `thinkingTokens` fields are present per agent; if not, add them from `lib/telemetry.js parseTelemetryFromJsonl` which already tracks them.
-- Keep the existing Amplification section cost sparklines untouched — the free-tier cost section is additive, not a replacement.
+- Keep the existing Insights metrics section cost sparklines untouched — the free-tier cost section is additive, not a replacement.
 
 ## Dependencies
 - depends_on: none

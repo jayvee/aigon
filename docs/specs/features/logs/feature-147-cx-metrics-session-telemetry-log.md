@@ -32,7 +32,7 @@ Agent: cx
 - Updated `collectAnalyticsData()` in `lib/utils.js` to:
   - read `.aigon/telemetry/*.json`,
   - fall back to normalized telemetry for `costUsd` and `billableTokens` when frontmatter is missing,
-  - add `amplification.crossAgentCost30d` for cross-agent session cost reporting.
+  - add `insightsMetrics.crossAgentCost30d` for cross-agent session cost reporting.
 - Added tests:
   - `lib/telemetry.test.js`: normalized record writing, transcript session parsing, non-transcript fallback writer
   - `aigon-cli.test.js`: analytics fallback to normalized telemetry + cross-agent rollup assertion
