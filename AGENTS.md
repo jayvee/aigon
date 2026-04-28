@@ -164,7 +164,7 @@ Recent incidents — every one of these is a case of a read path paving over a m
 **Rule:** When adding a new read path, grep for every parallel write path that produces the state it now assumes, and pin the invariant with a test. When a read path can't find the state it needs, **fail loudly and cite the repair command** (`aigon doctor --fix`) — do not add a silent fallback or a half-state.
 
 ## Install Architecture
-`aigon install-agent` writes **only aigon-owned files** — it never touches `CLAUDE.md` or `AGENTS.md` (after initial scaffold).
+`aigon install-agent` writes **only aigon-owned files** — it does not write or modify `AGENTS.md`, `CLAUDE.md`, or `README.md`. These are user-owned. Discovery happens via per-agent skill descriptions and always-loaded rule files installed under `.claude/`, `.cursor/`, etc. At the end of a successful install, aigon prints a one-line snippet the user MAY paste into their `AGENTS.md` if they want a top-level pointer — but aigon does not edit it.
 
 **Per-agent outputs:**
 - **cc**: `.claude/commands/aigon/*.md`, `.claude/settings.json` (permissions + hooks), `.claude/skills/aigon/SKILL.md`
@@ -173,7 +173,7 @@ Recent incidents — every one of these is a case of a read path paving over a m
 - **cu**: `.cursor/commands/aigon-*.md`, `.cursor/cli.json`, `.cursor/hooks.json`, `.cursor/rules/aigon.mdc`
 - **op**: `.agents/skills/aigon-*/SKILL.md` (project-local). OpenCode is a router/harness; Aigon does not own its config or hardcode a default model — model/provider selection stays in the user's OpenCode config. Aigon-spawned sessions use `opencode run "<inline prompt body>"` via the shared non-slash launch path (see `lib/agent-prompt-resolver.js`).
 
-**Shared:** `AGENTS.md` (scaffolded on first install only, never overwritten), `docs/agents/{agent}.md` (marker blocks), `docs/development_workflow.md` (full overwrite)
+**Shared:** `docs/agents/{agent}.md` (marker blocks), `docs/development_workflow.md` (full overwrite). `AGENTS.md` is **not** managed by aigon (F420). Existing aigon marker blocks are stripped on `aigon doctor --fix`.
 
 **Context delivery** (no root file injection):
 - CC/GG: SessionStart hook `aigon project-context` prints doc pointers to stdout → agent ingests as conversation context

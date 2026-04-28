@@ -14,7 +14,7 @@ This document gives agents and contributors a fast map of the Aigon codebase. It
 - `tests/`: automated test suites. `tests/dashboard/` contains Playwright tests for the dashboard.
 - `docs/specs/`: workflow state for features, research, feedback, logs, and evaluations.
 - `docs/agents/`: agent-specific operational notes installed into projects (marker blocks updated by `install-agent`).
-- `docs/aigon-project.md`: committed project-specific agent instructions. Read by `install-agent` and used when scaffolding `AGENTS.md` on first install. Edit this file to give all agents persistent project context.
+- `AGENTS.md`, `CLAUDE.md`, `README.md`: user-owned. Aigon does not write or modify these (F420). Discovery happens via per-agent skill descriptions and always-loaded rule files installed under `.claude/`, `.cursor/`, etc.
 
 ## CLI Structure
 
@@ -475,7 +475,7 @@ If a future contribution to aigon needs to make a coordinated change with the Pr
 - Keep command handlers grouped by domain, not one file per command.
 - Avoid circular dependencies between `lib/*.js` modules.
 - Treat `templates/` as source-of-truth for generated agent docs and prompts.
-- Project-specific agent instructions belong in `AGENTS.md` and/or `CLAUDE.md` (user-owned, never overwritten by aigon). `docs/aigon-project.md` provides committed defaults used when scaffolding `AGENTS.md` on first install.
+- Project-specific agent instructions belong in `AGENTS.md` and/or `CLAUDE.md` (user-owned, never written by aigon — F420). Per-agent context is delivered via skills and rule files under `.claude/`, `.cursor/`, etc.
 - The AIGON server is the foreground HTTP process. It serves the dashboard UI at `localhost:4100`. Named URLs (`aigon.localhost`, `cc-71.aigon.localhost`) are provided by the optional Caddy reverse proxy.
 - The proxy uses Caddy (`brew install caddy`). `aigon proxy install` sets it up as a system service on port 80. Routes are written to a Caddyfile at `~/.aigon/dev-proxy/Caddyfile` — they survive process crashes (Caddy returns 502 until the backend recovers). No PID tracking or registration lifecycle.
 
