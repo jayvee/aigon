@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T13:34:32.803Z", actor: "cli/research-prioritise" }
 ---
 
 # Research: per-repo-learned-recommender-from-transcripts
