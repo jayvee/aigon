@@ -1,6 +1,7 @@
 ---
 complexity: medium
 set: aigon-install-contract
+depends_on: aigon-repo-internal-doc-reorg
 ---
 
 # Feature: stop-scaffolding-consumer-agents-md

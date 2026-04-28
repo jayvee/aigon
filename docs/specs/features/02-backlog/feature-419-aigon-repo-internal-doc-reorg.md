@@ -1,6 +1,8 @@
 ---
 complexity: medium
 set: aigon-install-contract
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T00:20:49.246Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: aigon-repo-internal-doc-reorg
@@ -26,6 +28,9 @@ Reorganize aigon-the-repo's `docs/` folder for clarity and add a single catalog 
 - [ ] `docs/architecture.md` line 369 updated to remove the "old monolith delegation" wording.
 - [ ] All cross-references inside the moved files (e.g. relative links between `aigon-next-*` files, internal links in `modularity-review`) are updated to the new paths.
 - [ ] No dead links: `grep -rE 'docs/(aigon-next|modularity-review|demo-guide|media)' --include="*.md"` returns zero results outside `docs/specs/`.
+- [ ] **Feature Sets doc landed at `templates/docs/feature-sets.md`** (canonical, installs into consumer repos) and dogfooded at `docs/feature-sets.md`. Created in this conversation as part of the design pass — the implementation step is to verify it exists, list it in the catalog, and confirm its cross-references are intact. Covers: what a set is, when to use one, `--set` flag, `depends_on:` frontmatter, `set-prioritise` topological-order ID assignment, `set list` / `set show`, set state derivation, Pro autonomous-set commands, common patterns, frontmatter reference.
+- [ ] **`templates/docs/development_workflow.md` and the dogfooded `docs/development_workflow.md` cross-reference `docs/feature-sets.md`** in the file header (one line). Already added in the design pass — implementation verifies it survives.
+- [ ] `docs/README.md` catalog lists `feature-sets.md` under the "Engineering" group with hook: "What feature sets are, when to use them, how `set-prioritise` assigns IDs in dependency order."
 
 ## Validation
 ```bash

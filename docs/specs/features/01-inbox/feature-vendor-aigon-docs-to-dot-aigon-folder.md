@@ -1,6 +1,7 @@
 ---
 complexity: medium
 set: aigon-install-contract
+depends_on: stop-scaffolding-consumer-agents-md
 ---
 
 # Feature: vendor-aigon-docs-to-dot-aigon-folder
@@ -16,18 +17,18 @@ Today aigon installs two aigon-owned doc trees into the consumer's `docs/` folde
 - As an existing aigon user, I want `aigon doctor --fix` to move my legacy `docs/development_workflow.md` and `docs/agents/` into the new location with a clear notice.
 
 ## Acceptance Criteria
-- [ ] `lib/commands/setup.js` install logic: `templates/docs/development_workflow.md` content is now written to `.aigon/docs/development_workflow.md` (was: `docs/development_workflow.md`). Three call sites currently reference the old path: lines 260, 1303, 1439 — all updated.
+- [ ] `lib/commands/setup.js` install logic: **every `templates/docs/*.md` file** is now written to `.aigon/docs/*.md` (was: `docs/*.md`). Today this means `development_workflow.md` AND `feature-sets.md` (added by F1). Three call sites currently reference the old `development_workflow.md` path explicitly: lines 260, 1303, 1439 — generalize to iterate `templates/docs/` so future additions are picked up automatically.
 - [ ] `lib/commands/setup.js` install logic: `templates/generic/docs/agent.md` per-agent content is now written to `.aigon/docs/agents/{id}.md` (was: `docs/agents/{id}.md`).
 - [ ] `lib/commands/setup.js` install paths string at line 946 updated: `'docs/development_workflow.md docs/agents/'` → `'.aigon/docs/'`.
 - [ ] All slash command and skill bodies that reference the old paths updated. Run `grep -rE "docs/development_workflow\.md|docs/agents/" templates/ .claude/ .cursor/ .codex/ .gemini/ .agents/ 2>/dev/null` and update each match. Likely files: every command body that mentions the workflow doc.
 - [ ] Aigon-the-repo dogfoods the new layout: its own `docs/development_workflow.md` and `docs/agents/` move to `.aigon/docs/development_workflow.md` and `.aigon/docs/agents/`. Use `git mv` to preserve history.
 - [ ] `aigon doctor --fix` migration step `migrate_vendored_docs_to_dot_aigon`:
-  - Detects `docs/development_workflow.md` in the consumer repo.
+  - For every file in `templates/docs/` (currently `development_workflow.md`, `feature-sets.md`), detects the legacy copy at `docs/<name>.md` in the consumer repo.
   - Verifies its content matches the current template (sha256 check or substring match on a stable header) — if it differs significantly, prints a warning and asks the user to confirm rather than auto-moving.
-  - Moves to `.aigon/docs/development_workflow.md`.
+  - Moves each to `.aigon/docs/<name>.md`.
   - Same logic for `docs/agents/{id}.md` files.
-  - Prints `✅ Migrated: docs/development_workflow.md → .aigon/docs/development_workflow.md` per file moved.
-  - Idempotent: skip silently if `.aigon/docs/development_workflow.md` already exists and old path is gone.
+  - Prints `✅ Migrated: docs/<name>.md → .aigon/docs/<name>.md` per file moved.
+  - Idempotent: skip silently if `.aigon/docs/<name>.md` already exists and old path is gone.
   - Tracked via doctor migration counter so it runs at most once per repo.
 - [ ] `templates/docs/development_workflow.md` source content updated if it contains internal links that assume `docs/agents/`-relative paths — update to `.aigon/docs/agents/`.
 - [ ] Tests: any test that asserts presence of `docs/development_workflow.md` or `docs/agents/` in install output updated to the new paths.

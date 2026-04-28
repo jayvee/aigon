@@ -1,81 +1,107 @@
 ---
 complexity: medium
-# agent: cc    # optional — id of the agent that owns this spec. Used as the
-#              #   default reviewer for spec-revise cycles when the operator
-#              #   does not pick one explicitly. Precedence at revision time:
-#              #     event payload nextReviewerId > frontmatter agent:
-#              #     > snapshot.authorAgentId > getDefaultAgent().
-# research: 44 # optional — id (or list of ids) of the research topic that
-#              #   spawned this feature. Stamped automatically by `research-eval`
-#              #   on features it creates. Surfaced in the dashboard research
-#              #   detail panel under Agent Log → FEATURES.
 set: aigon-install-contract
+depends_on: vendor-aigon-docs-to-dot-aigon-folder
 ---
 
 # Feature: install-manifest-tracked-files
 
-<!-- Authoring AI: set `complexity:` using this rubric before writing the spec:
-       low       — config tweaks, doc-only, single-file helpers, trivial bug fixes
-       medium    — standard feature with moderate cross-cutting, one command handler, small refactor
-       high      — multi-file engine edits, new event types, new dashboard surfaces, judgment-heavy deletion work
-       very-high — architectural shifts, write-path-contract changes, new XState transitions, cross-cutting template+engine+frontend
-     At start time, model and effort defaults come from each agent's `cli.complexityDefaults[<complexity>]` in
-     `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
-
 ## Summary
 
-Promote the static install-paths string in lib/commands/setup.js to a tracked .aigon/install-manifest.json with path version sha256 per file. Enables clean uninstall, partial reinstall recovery, and detection of user-modified aigon files. Matches OpenSpec/BMAD/Spec Kit pattern.
+Today the canonical list of files aigon writes during `install-agent` is a hardcoded space-separated string at `lib/commands/setup.js:946`. There's no record of which version wrote them, no way to detect when a user has hand-edited a tool-owned file, and no clean uninstall. OpenSpec, BMAD, and Spec Kit all maintain a tracked manifest for this purpose. This feature promotes the install paths string to a real manifest file — `.aigon/install-manifest.json` — with `{path, sha256, version, installedAt}` per file. Enables clean `aigon uninstall`, partial reinstall recovery, and warning when an aigon-managed file has been modified outside the install path.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- As a consumer who decides to remove aigon, I want `aigon uninstall` to delete every file aigon wrote and leave my own files alone.
+- As an aigon maintainer doing a version upgrade, I want to know which aigon-managed files in a consumer repo have been hand-edited so we can warn the user before overwriting their changes.
+- As a debugger investigating "where did this file come from?", I want to look up any path in the manifest and see when aigon wrote it and at which version.
+- As a future feature that adds or removes installed files, I want the manifest to be the single source of truth for "what does aigon own in this repo?"
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] Manifest schema (`.aigon/install-manifest.json`):
+  ```json
+  {
+    "version": "1.0",
+    "aigonVersion": "<from package.json>",
+    "files": [
+      { "path": ".claude/commands/aigon/feature-create.md",
+        "sha256": "<hex>",
+        "version": "<aigonVersion at write time>",
+        "installedAt": "<ISO 8601>" }
+    ]
+  }
+  ```
+- [ ] New module `lib/install-manifest.js` exposing: `readManifest(repoRoot)`, `writeManifest(repoRoot, manifest)`, `recordFile(manifest, absPath, repoRoot, aigonVersion)` (computes sha256, normalizes to relative path), `removeFile(manifest, relPath)`, `getModifiedFiles(manifest, repoRoot)` (returns paths whose on-disk sha256 differs from manifest entry).
+- [ ] `lib/commands/setup.js` install paths: every `safeWrite` / `safeWriteWithStatus` call site that writes an aigon-owned file calls `manifest.recordFile()` after a successful write. Audit existing call sites in `lib/commands/setup.js` and `lib/commands/setup/*.js` and the `lib/templates.js` install helpers.
+- [ ] On every `install-agent` run, manifest is written/updated atomically (write to `.aigon/install-manifest.json.tmp` then rename).
+- [ ] Pre-install check: if manifest exists, run `getModifiedFiles()` and warn if any aigon-managed file has been modified. Output:
+  ```
+  ⚠ The following aigon-managed files have been modified outside install:
+    - .claude/commands/aigon/feature-create.md
+  Proceed with overwrite? [y/N]
+  ```
+  Skip the prompt if `--force` is passed; abort if user declines.
+- [ ] New command `aigon uninstall [--dry-run]`:
+  - Reads `.aigon/install-manifest.json`.
+  - Lists every file it would delete (always, even without --dry-run, before confirmation).
+  - With `--dry-run`: prints the list and exits.
+  - Without `--dry-run`: prompts for confirmation, deletes every listed file, removes empty parent directories, deletes the manifest itself, prints summary.
+  - Refuses to delete files whose on-disk sha256 differs from manifest (user-modified) unless `--force` is passed.
+  - Does NOT delete `.aigon/workflows/`, `.aigon/state/`, `.aigon/sessions/`, `.aigon/config.json` — those are runtime state, not install footprint. Document this clearly in the command's `--help`.
+  - Prints final reminder: "Aigon uninstalled. Your `AGENTS.md`, `CLAUDE.md`, `README.md`, and project files were not touched."
+- [ ] `aigon doctor --fix` migration step `migrate_initialize_install_manifest`:
+  - If `.aigon/install-manifest.json` does not exist, scan the standard install paths (post-F2/F3 set: `.claude/commands/aigon/`, `.claude/skills/aigon/`, `.cursor/commands/aigon-*.md`, `.cursor/rules/aigon.mdc`, `.codex/`, `.gemini/`, `.agents/skills/aigon-*/`, `.aigon/docs/`) and synthesize a manifest entry for each found file (sha256 of current content, version=current aigonVersion, installedAt=now).
+  - Idempotent: skip if manifest exists.
+  - Print `✅ Initialized install manifest at .aigon/install-manifest.json (N files tracked)`.
+- [ ] `aigon doctor` (without `--fix`) reports manifest health: missing files (in manifest but not on disk), modified files (sha256 differs), untracked aigon-pattern files (e.g. files in `.claude/commands/aigon/` not in manifest).
+- [ ] Tests:
+  - Unit tests for `lib/install-manifest.js` covering each exposed function.
+  - Integration test: `install-agent cc` in temp repo → assert manifest written with correct entries.
+  - Integration test: `install-agent cc` twice → assert idempotent (manifest doesn't grow duplicates, sha256s update if templates changed).
+  - Integration test: hand-edit an installed file → re-run `install-agent` → assert warning printed.
+  - Integration test: `aigon uninstall --dry-run` → assert correct file list, no deletions.
+  - Integration test: `aigon uninstall` → assert all manifest files removed, runtime state preserved.
+  - Integration test: `doctor --fix` on legacy repo without manifest → assert manifest synthesized.
+- [ ] `AGENTS.md` § "Install Architecture" updated to mention the manifest.
+- [ ] `docs/architecture.md` adds a new sub-section "Install manifest" describing the schema and lifecycle.
+- [ ] `docs/README.md` (from F1) lists `lib/install-manifest.js` as a new module with one-line description.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+node --check lib/install-manifest.js
+node --check lib/commands/setup.js
+node aigon-cli.js uninstall --dry-run  # in a repo with manifest, should list files
+node scripts/run-tests-parallel.js "tests/integration/install-manifest-*.test.js"
 ```
 
 ## Pre-authorised
-<!-- Standing orders the agent may enact without stopping to ask.
-     Each line is a single bounded permission. The agent cites the matching line
-     in a commit footer `Pre-authorised-by: <slug>` for auditability.
-     The first line below is a project-wide default — keep it unless the feature
-     explicitly demands Playwright runs mid-iterate. Add or remove other lines
-     per feature.
-     Example extras:
-       - May raise `scripts/check-test-budget.sh` CEILING by up to +40 LOC if regression tests require it.
--->
-- May skip `npm run test:ui` mid-iteration when this iteration touches no dashboard assets (`templates/dashboard/**`, `lib/dashboard*.js`, `lib/server*.js`). Playwright still runs at the pre-push gate.
+- May skip `npm run test:ui` mid-iteration when this iteration touches no dashboard assets. Playwright still runs at the pre-push gate.
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+
+The manifest module is small (~150 lines): JSON read/write, sha256 helper, modified-file detection. Atomic writes via tempfile + rename to avoid partial manifests on crash.
+
+Integration into `install-agent` is the riskier part — every existing write site must be threaded through `manifest.recordFile()`. Audit pass: grep `safeWrite\|safeWriteWithStatus\|fs.writeFileSync` in `lib/commands/setup.js` and `lib/commands/setup/*.js`. Each call that writes a file aigon owns must record it. Each call that writes user-owned content (none should remain after F2) must NOT record it.
+
+The pre-install modification warning is interactive — design the prompt to be skippable via `AIGON_NONINTERACTIVE=1` env var or `--force` flag for CI/automation contexts. Check for an existing convention in `lib/commands/setup.js`.
+
+`aigon uninstall` is a new command surface — register in `lib/commands/setup.js` (or wherever uninstall most logically lives — possibly its own domain file `lib/commands/uninstall.js` if substantial). Reuse `safeWrite` / file deletion helpers if they exist; otherwise add the necessary primitives to `lib/utils.js`.
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- depends_on: vendor-aigon-docs-to-dot-aigon-folder
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- Pre-install modification warning blocking re-installs in CI by default — add the `AIGON_NONINTERACTIVE` / `--force` escape hatch but don't change CI behavior here.
+- Manifest schema migrations across aigon major versions — version field is in the manifest; future schema changes get a separate feature.
+- Brewboard seed refresh (F5 — but F5 will exercise the manifest end-to-end).
+- Removing `.aigon/workflows/`, `.aigon/state/`, `.aigon/sessions/`, `.aigon/config.json` during `aigon uninstall` — these are user-generated runtime state, not install footprint.
+- Detecting and warning about manually-added files in aigon-namespaced directories (e.g. user adds `.claude/commands/aigon/my-custom.md`) — `doctor` reports them, but no enforcement.
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Should `aigon uninstall` print a summary of "files preserved" (the runtime state in `.aigon/workflows/`, etc.) so the user knows their feature history isn't deleted? **Default:** yes, brief one-line summary.
+- What happens if manifest exists but is corrupted (invalid JSON)? **Default:** print error, refuse to install/uninstall, suggest `aigon doctor --fix` to regenerate.
+- Should the manifest be in `.aigon/install-manifest.json` or `.aigon/state/install-manifest.json`? **Default:** root of `.aigon/` for discoverability — it's a contract artifact, not runtime state.
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Set: <!-- set slug if this feature is part of a set; omit line if standalone -->
-- Prior features in set: <!-- feature IDs that precede this one, e.g. F314, F315; omit if standalone -->
+- Set: aigon-install-contract
+- Prior features in set: F-aigon-repo-internal-doc-reorg, F-stop-scaffolding-consumer-agents-md, F-vendor-aigon-docs-to-dot-aigon-folder
+- Industry alignment: matches OpenSpec (`update` regenerates from manifest), BMAD (`_bmad/_config/manifest.yaml`), Spec Kit (manifest-tracked teardown).
