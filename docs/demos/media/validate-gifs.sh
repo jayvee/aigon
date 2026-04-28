@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-GIF_DIR="$ROOT_DIR/docs/media/gifs"
+GIF_DIR="$ROOT_DIR/docs/demos/media/gifs"
 MAX_BYTES=$((3 * 1024 * 1024))
 EXPECTED=(
   "01-board-at-a-glance.gif"

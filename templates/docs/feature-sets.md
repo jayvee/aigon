@@ -1,157 +1,102 @@
 # Feature Sets
 
-A **feature set** groups related features that share scope — typically a multi-step initiative, a refactor with several stages, or a research-derived bundle of work that should land in a coordinated way. Sets are tagged via a single line of YAML frontmatter and tied together by `depends_on` edges between members.
-
-Aigon derives all set state from the members' workflow state — there is no separate "set engine." This means sets are cheap: tag a spec with `set: <slug>` and the dashboard, CLI, and prioritisation workflow pick it up automatically.
+A **feature set** is a group of related features that ship together as one initiative. Sets are derived state — they exist whenever two or more feature specs share the same `set:` slug in their frontmatter. There is no separate "set" file, no engine record, and no manual create/destroy step.
 
 ## When to use a set
 
-Use a set when:
+Use a set when you have a small group of features (typically 2–6) that:
+- Share an architectural goal that no single feature spec can hold
+- Have inter-dependencies you want enforced at prioritise time and at autonomous-run time
+- Will be implemented in a known order
 
-- Several specs share a common scope and must land in a coordinated order (e.g. a refactor split into reorg → cleanup → migration → test).
-- You want the dashboard to render members as a single card with progress, deps, and bulk actions.
-- You want `aigon set-prioritise <slug>` to assign sequential IDs in dependency order so the board reflects execution order at a glance.
-- You want `aigon set-autonomous-start` (Pro) to drive the whole set through autopilot.
+Do **not** use a set for unrelated work, for one feature, or to track a long-running theme. A set is a delivery unit, not a product area.
 
-Don't use a set for:
+## Tagging a feature into a set
 
-- A single feature with no peers — sets are a grouping mechanism; one feature is just a feature.
-- Loosely related work that doesn't share dependencies — tag with similar names instead.
-
-## Creating set members
-
-Pass `--set <slug>` when creating each feature:
-
-```bash
-aigon feature-create my-feature-name --set my-set-slug
-```
-
-The slug must match `[a-z0-9][a-z0-9-]*` (no slashes or whitespace). Aigon writes `set: <slug>` into the spec's frontmatter automatically.
-
-You can also tag an existing spec by adding the line manually to its frontmatter:
+Add `set:` to the spec frontmatter:
 
 ```yaml
 ---
 complexity: medium
-set: my-set-slug
+set: aigon-install-contract
 ---
 ```
 
-## Declaring intra-set dependencies
-
-Use `depends_on:` in frontmatter to express ordering between set members. The value can be a slug (for inbox peers) or a numeric ID (for already-prioritised features):
-
-```yaml
----
-complexity: medium
-set: my-set-slug
-depends_on: earlier-feature-slug
----
-```
-
-For multiple dependencies, use a list:
-
-```yaml
-depends_on:
-  - earlier-feature-slug
-  - feature-42
-```
-
-Slug references resolve against:
-
-1. **Inbox peers in the same set** — the prioritisation workflow assigns IDs in topological order.
-2. **Already-prioritised features** (any set, by slug or numeric ID) — useful when a set member depends on prior backlog work.
-
-A `depends_on` slug that doesn't match either of these will fail at `feature-prioritise` time with a clear error, so typos surface early.
-
-## Bulk-prioritising a set
-
-Once all members are tagged and their `depends_on` edges declared, prioritise the entire set in one command:
+You can do this at create time:
 
 ```bash
-aigon set-prioritise my-set-slug
-# alias:
-aigon asp my-set-slug
+aigon feature-create vendor-aigon-docs --set aigon-install-contract
 ```
 
-This:
+Or by editing the inbox spec file directly before prioritise.
 
-1. Runs Kahn's topological sort over the set's intra-set `depends_on` graph.
-2. Calls `feature-prioritise` once per member, in dependency order.
-3. Assigns sequential numeric IDs — **roots get the lowest IDs, leaves get the highest** — so the board reflects execution order at a glance.
-4. Moves each spec from `01-inbox/` to `02-backlog/`.
+The slug must match `[a-z0-9][a-z0-9-]*` (no slashes or whitespace) so it is safe as a CLI arg, URL value, and DOM id. Invalid slugs are silently dropped from set membership.
 
-If the graph has a cycle, or a `depends_on` doesn't resolve, the command fails before any side effects.
+## Dependencies inside a set
 
-You can still prioritise members one-by-one with `feature-prioritise <slug>`, but you must do so in dependency order yourself; aigon will refuse to prioritise a member whose deps are not yet resolved.
+The standard `depends_on:` frontmatter still applies — sets do not introduce a new edge type. Inside a set, `depends_on` may reference:
 
-## Inspecting set state
+- **Other inbox peers** by slug (e.g. `depends_on: [vendor-aigon-docs-to-dot-aigon-folder]`)
+- **Backlog or later features** by numeric ID (e.g. `depends_on: [415]`)
+
+`set-prioritise` uses intra-set edges to assign IDs in dependency order. Cross-set deps are checked against the existing prioritised features via the standard resolver.
+
+## Prioritising a set
 
 ```bash
-aigon set list                 # all sets with stage counts (inbox/backlog/in-progress/done)
-aigon set list --all --json    # machine-readable
-aigon set show <slug>          # members in topological order + intra-set edges
-aigon set show <slug> --json   # full set state
+aigon set-prioritise <slug>
 ```
 
-`set show` displays members in topological order once they have IDs; until prioritisation assigns IDs, the listing is alphabetical. The DEPS column populates after prioritisation.
+Topologically orders all inbox members and runs `feature-prioritise` for each, so dependents always get higher IDs than what they depend on. Errors loudly when the intra-set graph is cyclic or when a `depends_on` slug names something that is neither an inbox peer nor an existing prioritised feature.
+
+After prioritise, members live in the backlog with stable numeric IDs.
+
+## Inspecting sets
+
+```bash
+aigon set list                 # incomplete sets only (default)
+aigon set list --all           # include completed sets
+aigon set list --json
+aigon set show <slug>          # members in dependency order, edges, autonomous state
+aigon set show <slug> --json
+```
+
+`set show` also prints the dashboard-equivalent autonomous state: paused-on-failure, current member, completed/failed lists.
 
 ## Set state derivation
 
-Set state is **derived**, not stored:
+Set state is **derived** from member workflow state — the dashboard never persists set status independently. The rollup is computed by `lib/feature-sets.js` (`summarizeSets`, `getSetMembersSorted`, `getSetDependencyEdges`) and consumed by `lib/dashboard-status-collector.js` for the per-set card payload. Action eligibility (`set-autonomous-{start,stop,resume,reset}`) lives in `lib/feature-set-workflow-rules.js`; the frontend renders only what the server emits.
 
-- **Set status** = aggregate of member statuses. A set is "done" when every member is in `05-done/`; "in progress" when any member is in `03-in-progress/`; "blocked" when a member's `depends_on` predecessor is not yet done.
-- **Set autonomous availability** = computed by `lib/feature-set-workflow-rules.js` from member states and snapshot data. The dashboard renders only the actions the server-side rules return; never infer eligibility from the frontend.
-- **Set membership** = scan of every spec's `set:` frontmatter; no separate index file.
+## Autonomous sets (Pro)
 
-This means there is no "wrong" set state to clean up — fix any member's spec or workflow state and the set's derivation updates on the next read.
-
-## Pro: autonomous set execution
-
-`aigon set-autonomous-start <slug> [agents...]` (Pro tier) drives every backlog member through autopilot in dependency order:
+The set conductor (`lib/set-conductor.js`) runs members sequentially in topological order:
 
 ```bash
-aigon set-autonomous-start my-set-slug cc --mode=sequential --stop-after=close
+aigon set-autonomous-start <slug>
+aigon set-autonomous-stop <slug>
+aigon set-autonomous-resume <slug>     # after fixing a failed member
+aigon set-autonomous-reset <slug>      # discard durable conductor state
 ```
 
-Modes:
-
-- `sequential` (default) — one member at a time, each starting only after its deps are `05-done`.
-- Other modes — see `aigon set-autonomous-start --help`.
-
-Pause, resume, and reset:
-
-```bash
-aigon set-autonomous-stop my-set-slug
-aigon set-autonomous-resume my-set-slug
-aigon set-autonomous-reset my-set-slug
-```
+Each member is delegated to `feature-autonomous-start`, polled, and recorded in `.aigon/state/set-<slug>-auto.json`. A member failure pauses the whole set; resume restarts at the failed member.
 
 ## Common patterns
 
-**Research-derived feature sets.** When `aigon research-eval` recommends multiple features, it groups them under a set slug derived from the research topic. The eval prompt explicitly instructs the agent to assign `--set <slug>` and prioritise in dependency order so IDs reflect execution order. See `templates/generic/commands/research-eval.md` for the canonical guidance.
-
-**Refactors split into stages.** A multi-step refactor (e.g. "extract module → migrate callers → delete legacy → add migration test") fits naturally as a set with a linear `depends_on` chain.
-
-**Coordinated rollouts.** A feature with database migration, server-side change, frontend change, and rollback test can use a set so the dashboard surfaces all four under one card.
+- **Install contract bundle**: a set of 5 features that together change install behaviour. Tag all five with the same slug, declare deps on each side of the contract change, and `set-prioritise` to keep IDs in build order.
+- **Refactor with seed-repo follow-up**: `[refactor]` → `[refresh-seed]`. Two-member set; the seed feature `depends_on:` the refactor.
+- **Documentation reorg followed by code change**: doc-only first feature, code feature `depends_on:` the doc one, single set so they land in order.
 
 ## Frontmatter reference
 
-```yaml
----
-complexity: low | medium | high | very-high
-set: optional-set-slug                # tag a spec into a set
-depends_on: optional-slug-or-id       # single dep, or:
-depends_on:                            # list:
-  - earlier-slug
-  - feature-123
-agent: optional-default-agent-id       # default reviewer for spec-revise
-research: optional-research-id         # auto-stamped by research-eval
----
-```
+| Field | Type | Notes |
+|-------|------|-------|
+| `set` | string | Slug, `[a-z0-9][a-z0-9-]*`. Optional. |
+| `depends_on` | string[] | Each entry is either a numeric feature ID or an inbox-peer slug. |
+
+`set:` and `depends_on:` are independent: a feature can sit in a set without depending on anyone, and a feature can `depends_on` a non-set feature.
 
 ## See also
 
-- `aigon set --help` — full set command list with flags
-- `templates/generic/commands/set-prioritise.md` — `set-prioritise` command details
-- `templates/generic/commands/research-eval.md` — research-eval workflow that creates sets from recommended features
+- `docs/development_workflow.md` — feature lifecycle (`feature-create` → `feature-prioritise` → `feature-do` → `feature-close`)
+- `lib/feature-sets.js` — derived-state scanner (no engine writes)
+- `lib/set-conductor.js` — autonomous-set sequencer (Pro)
