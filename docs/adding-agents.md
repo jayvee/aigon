@@ -20,7 +20,7 @@ Based on the answers above, map the agent to one of the following launch types:
 | --- | --- | --- | --- |
 | **Slash-command** | `cu` (Cursor), `cc` (Claude Code) | File-based or injected | Persistent interactive session, supports commands |
 | **File-prompt** | `gg` (Gemini CLI) | Reads spec/prompt file | Batch execution or continuous, relies on file changes |
-| **TUI-inject** | `op` (OpenDevin) | TUI interaction/injection | Terminal User Interface, session managed via UI |
+| **TUI-inject** | `op` (OpenCode) | TUI interaction/injection | Terminal User Interface, session managed via UI |
 
 ## Key Files
 

@@ -81,9 +81,9 @@ The dashboard is the most visual way to interact with Aigon. Open [http://localh
 
 ### Drive mode
 
-In the Pipeline view, find feature **01 — Dark Mode** in the Backlog column. Click **Start** on the card — a picker appears where you select one agent to drive the implementation.
+In the Pipeline view, find feature **01 — Format Date** in the Backlog column. Click **Start** on the card — a picker appears where you select one agent to drive the implementation.
 
-<img src="/img/tutorial-drive-mode.png" alt="Drive mode agent picker — feature 01 dark-mode with Claude Code selected" width="420" style={{borderRadius:"8px",margin:"12px 0"}} />
+<img src="/img/tutorial-drive-mode.png" alt="Drive mode agent picker — feature 01 format-date with Claude Code selected" width="420" style={{borderRadius:"8px",margin:"12px 0"}} />
 
 Click **Start**. Aigon creates a worktree, opens a tmux session, and begins implementation.
 
@@ -176,10 +176,10 @@ All Aigon operations are available as CLI commands — useful for scripting, CI,
 aigon feature-start 01 cc
 ```
 
-This creates an isolated worktree at `~/src/brewboard-worktrees/feature-01-cc-dark-mode/`, launches Claude Code in a tmux session, and runs `feature-do` automatically inside it. Attach to watch:
+This creates an isolated worktree at `~/src/brewboard-worktrees/feature-01-cc-format-date/`, launches Claude Code in a tmux session, and runs `feature-do` automatically inside it. Attach to watch:
 
 ```bash
-tmux attach -t brewboard-f1-cc-dark-mode
+tmux attach -t brewboard-f1-cc-format-date
 ```
 
 When the agent signals submitted, close from the terminal:

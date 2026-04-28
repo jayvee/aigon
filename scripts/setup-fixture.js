@@ -194,7 +194,7 @@ function addGitHubRemote(repoDir, repoName, ghUser) {
  * instructions suited to seed/test repos. This keeps agent implementations
  * fast by skipping tests, plan mode, verbose logs, and doc updates.
  */
-function writeSeedAgentsMd(repoDir) {
+function writeSeedAgentsMd(repoDir, extraTail = '') {
     const content = `# Project Instructions
 
 ## Testing
@@ -228,9 +228,23 @@ This project uses the Aigon development workflow.
 - Architecture overview: \`docs/architecture.md\`
 - Development workflow: \`docs/development_workflow.md\`
 <!-- AIGON_END -->
-`;
+${extraTail}`;
     write(path.join(repoDir, 'AGENTS.md'), content);
 }
+
+/** Appended to brewboard seed AGENTS.md — F426 agent smoke-test path. */
+const BREWBOARD_AGENTS_COMMANDS_TAIL = `
+
+## Commands
+
+Smoke-test a newly configured agent on backlog feature **01** (format date):
+
+\`\`\`bash
+aigon feature-start 01 <agent-id>   # e.g. cc, gg, cu, op
+\`\`\`
+
+Finish with \`aigon agent-status implementation-complete\`, then \`aigon feature-close 01\`.
+`;
 
 // ─── feature spec helpers ─────────────────────────────────────────────────────
 // Seed specs carry `complexity:` so the dashboard start modal demos the ladder (F313).
@@ -531,7 +545,7 @@ export default config;
     // Initialize aigon
     runAigon(['init'], repoDir);
     writeFixtureConfig(repoDir);
-    writeSeedAgentsMd(repoDir);
+    writeSeedAgentsMd(repoDir, BREWBOARD_AGENTS_COMMANDS_TAIL);
     runAigon(['install-agent', 'cc'], repoDir);
     commit(repoDir, 'chore: initialize aigon spec structure');
 
@@ -558,14 +572,13 @@ export default config;
     // ── features/02-backlog (2 items, with IDs) ──────────────────────────────
     const backlogDir = path.join(repoDir, 'docs', 'specs', 'features', '02-backlog');
 
-    write(path.join(backlogDir, 'feature-01-dark-mode.md'),
-        featureBacklogContent('01', 'Dark Mode',
-            'Add a dark mode toggle. Read OS preference, persist choice in localStorage, apply via CSS class on <html>.',
-            ['Add a `dark` class toggle to `src/app/layout.tsx` that reads `prefers-color-scheme`',
-             'Add a `ThemeToggle` button component in `src/components/theme-toggle.tsx`',
-             'Persist theme choice to localStorage under key `brewboard-theme`'],
-            'Add a small client component for the toggle. Use `useEffect` to read localStorage on mount. Apply `className="dark"` to `<html>`.',
-            'medium'));
+    write(path.join(backlogDir, 'feature-01-format-date.md'),
+        featureBacklogContent('01', 'Format Date',
+            'Add a single date-formatting helper for the UI (brewboard smoke-test feature).',
+            ['Create `src/lib/format-date.ts` exporting `function formatDate(d: Date): string` returning `YYYY-MM-DD`',
+             'One file, one exported function, no new dependencies'],
+            'Trivial pure function. No tests. End with `aigon agent-status implementation-complete`.',
+            'low'));
 
     // Three backlog features share `set: brewboard-data` with a simple chain so the
     // dashboard Set card + set-autonomous-start demo works after seed-reset.

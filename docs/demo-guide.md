@@ -77,7 +77,7 @@ A small, visually obvious feature for demonstrating the full lifecycle.
 1. cd <path-to-brewboard>
 
 2. aigon feature-start 01
-   → Creates branch feature-01-dark-mode (no worktree)
+   → Creates branch feature-01-format-date (no worktree)
    → You stay in the main repo on the feature branch
 
 3. /aigon:feature-do 01
