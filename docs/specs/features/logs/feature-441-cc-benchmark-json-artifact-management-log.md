@@ -25,3 +25,18 @@ The `CONTRIBUTING.md` release step is the contract. Any future feature that chan
 
 ## Test Coverage
 `node --check aigon-cli.js` passes; `npm test` 61/62 (2 pre-existing Cursor failures).
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-04-29
+
+### Fixes Applied
+- `8749e8bd` — `fix(review): add perf-bench help text`
+
+### Residual Issues
+- None
+
+### Notes
+- `aigon perf-bench --help` now prints command usage and the shipped-reference-data note required by the spec instead of starting a benchmark run.
+- `npm run test:iterate` passed after the review fix.
