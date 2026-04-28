@@ -4,11 +4,11 @@ transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-28T00:36:59.826Z", actor: "cli/feature-prioritise" }
 ---
 
-# Feature: agent-onboarding-decision-tree-and-smoke-test
+# Feature: agent-onboarding-decision-tree-and-template
 
 ## Summary
 
-Provide a repeatable, structured process for adding new agents to aigon. As the platform scales toward 10–20 agents, there is no decision tree for classifying a new agent's launch type, no guided template for producing a correct `templates/agents/<id>.json`, and no real-agent smoke test. This feature delivers all three without touching `aigon/AGENTS.md` (reserved for the `aigon-install-contract` set's doc-reorg feature).
+Provide a repeatable, structured process for adding new agents to aigon. As the platform scales toward 10–20 agents, there is no decision tree for classifying a new agent's launch type and no guided template for producing a correct `templates/agents/<id>.json`. If the decision tree is followed and the JSON is filled in correctly, the agent works — the launch path is already battle-tested. This feature delivers the decision tree and template without touching `aigon/AGENTS.md` (reserved for the `aigon-install-contract` set's doc-reorg feature).
 
 ## User Stories
 
@@ -31,22 +31,14 @@ Provide a repeatable, structured process for adding new agents to aigon. As the 
 ### docs/development_workflow.md
 - [ ] Contains a one-line pointer to `docs/adding-agents.md` added under a natural heading. File is not otherwise restructured.
 
-### brewboard-seed canary feature
-- [ ] `brewboard-seed` has `docs/specs/features/02-backlog/feature-01-format-date.md` — a minimal, self-contained spec (one function: `formatDate(date: Date): string` in `src/lib/format-date.ts`, no dependencies, no external calls).
-- [ ] The spec is deliberately small: any agent should be able to complete it in ~60 seconds, making it suitable as a canary for any new agent type.
-- [ ] `brewboard-seed`'s `AGENTS.md` includes a post-install validation prompt pointing to feature 01: *"To validate a new agent, run `aigon feature-start 01 <agent-id>` — it should complete in ~60s, signal implementation-complete, and leave the session interactive."*
 
 ## Validation
 
 ```bash
-# Aigon repo: verify new docs exist
+# Verify new docs exist in the aigon repo
 test -f docs/adding-agents.md
 test -f templates/feature-template-agent-onboard.md
 grep -q "adding-agents" docs/development_workflow.md
-
-# Brewboard seed: verify canary feature exists and is correctly placed
-test -f docs/specs/features/02-backlog/feature-01-format-date.md
-grep -q "feature-start 01" AGENTS.md
 ```
 
 ## Pre-authorised
@@ -75,16 +67,12 @@ No `lib/` code changes required. No `aigon/AGENTS.md` changes.
 
 ## Out of Scope
 
-- Automated CI test spawning a real agent binary (requires all agents installed; out of scope for CI).
-- Changes to `lib/agent-registry.js` or `lib/worktree.js` — those are correct after today's cursor fixes; this feature only documents them.
+- Any runtime validation or test harness — following the decision tree correctly is sufficient; the first real feature run validates the agent.
+- Changes to `lib/agent-registry.js` or `lib/worktree.js` — this feature only documents them.
 - Modifications to `aigon/AGENTS.md` — reserved for `aigon-repo-internal-doc-reorg`.
-- Adding `worktree-state-reconcile.test.js` assertions for a specific new agent (belongs in each individual agent-onboarding feature, guided by the template produced here).
-
-## Open Questions
-
-- Should `feature-01-format-date` replace the existing brewboard `feature-02-brewery-import` as the smoke test, or sit alongside it as a separate feature 01? **Default:** sit alongside — brewery-import is good for testing CSV handling; format-date is simpler and purpose-built as a canary.
+- Adding `worktree-state-reconcile.test.js` assertions for a specific new agent — that belongs in each individual agent-onboarding feature, guided by the template produced here.
 
 ## Related
 
-- `aigon-repo-internal-doc-reorg` (inbox, `aigon-install-contract` set) — picks up the `docs/adding-agents.md` catalog entry
-- Direct motivation: cursor agent `implementFlag` misconfiguration that caused multi-day blank-screen debugging (2026-04-28)
+- `aigon-repo-internal-doc-reorg` (inbox, `aigon-install-contract` set) — will add `docs/adding-agents.md` to the `docs/README.md` catalog when it lands
+- Direct motivation: cursor agent `implementFlag` misconfiguration, 2026-04-28
