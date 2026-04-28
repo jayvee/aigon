@@ -53,6 +53,17 @@ aigon feature-create dark-mode
 
 This is a conversation — you describe the feature, the agent asks clarifying questions, explores your codebase, and writes a detailed spec with acceptance criteria. The spec lands in `docs/specs/features/01-inbox/`.
 
+:::tip Carry a planning session forward
+If you designed this feature in a Claude Code planning session, add `planning_context:` to the spec frontmatter before running `feature-start`. The implementing agent will read that plan before writing any code, and the content is copied into the implementation log for permanent, repo-resident context.
+
+```yaml
+---
+complexity: medium
+planning_context: ~/.claude/plans/dark-mode-plan.md
+---
+```
+:::
+
 ### 2. Prioritise
 
 ```bash
