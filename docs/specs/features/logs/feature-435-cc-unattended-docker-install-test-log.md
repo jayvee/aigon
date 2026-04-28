@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 475
+lines_removed: 2
+lines_changed: 477
+files_touched: 5
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 73
+output_tokens: 15449
+cache_creation_input_tokens: 98358
+cache_read_input_tokens: 2563806
+thinking_tokens: 0
+total_tokens: 2677686
+billable_tokens: 15522
+cost_usd: 1.3699
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 435 - unattended-docker-install-test
 Agent: cc
 
