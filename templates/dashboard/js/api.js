@@ -153,7 +153,7 @@
             });
           }
           showToast(
-            'Close failed — see log panel or use "Close with agent" on the card',
+            'Close failed — use "Close with agent" on the card',
             null, null,
             { error: true, persistent: true }
           );

@@ -9,6 +9,11 @@ complexity: medium
 #              #   spawned this feature. Stamped automatically by `research-eval`
 #              #   on features it creates. Surfaced in the dashboard research
 #              #   detail panel under Agent Log → FEATURES.
+# planning_context: ~/.claude/plans/your-plan.md  # optional — path(s) to plan file(s)
+#              #   generated during an interactive planning session (e.g. EnterPlanMode).
+#              #   Content is injected into the agent's context at feature-do time and
+#              #   copied into the implementation log at feature-start for durability.
+#              #   Set this whenever you ran plan mode before writing the spec.
 ---
 
 # Feature: {{NAME}}

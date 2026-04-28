@@ -74,6 +74,11 @@
       })
       .catch(() => {})
       .finally(() => {
+        if (!success && _seenLines === 0) {
+          // No logs to show — empty panel obscures the card; toast + card handle failure UX
+          window.dismissCloseLogPanel && window.dismissCloseLogPanel();
+          return;
+        }
         setState(success ? 'success' : 'failure');
         const t = $id('close-log-title');
         if (t) t.textContent = success ? 'Done' : 'Close failed';

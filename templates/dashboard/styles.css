@@ -1309,6 +1309,11 @@
 
     /* ── Agent benchmarks (Pro, F420) ─────────────────────────────────────── */
     .bench-section{margin-top:0}
+    .bench-source-banner{padding:8px 12px;margin-bottom:10px;border-radius:6px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:11px;color:var(--text-secondary)}
+    .bench-source-banner code{font-family:var(--mono);font-size:11px;color:var(--text-primary);background:rgba(255,255,255,.04);padding:1px 5px;border-radius:3px}
+    .bench-source-banner .bench-source-label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-tertiary);margin-right:4px}
+    .bench-source-banner .bench-source-note{color:var(--text-tertiary)}
+    .bench-source-banner-fallback{background:rgba(234,179,8,.08);border-color:rgba(234,179,8,.25)}
     .bench-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--border-subtle);border:1px solid var(--border-subtle);border-radius:8px;overflow:hidden;margin-bottom:14px}
     .bench-summary-stat{display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:var(--bg-surface)}
     .bench-summary-num{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--text-primary);line-height:1.1;letter-spacing:-.01em}

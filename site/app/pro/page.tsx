@@ -264,75 +264,6 @@ export default function ProPage() {
         </div>
       </section>
 
-      {/* Agent Benchmarks */}
-      <section className="px-6 py-16 md:py-20">
-        <div className="mx-auto max-w-5xl">
-          <div className="mb-6">
-            <p className="mb-2 text-xs font-medium tracking-widest text-aigon-teal uppercase">
-              Agent Benchmarks
-            </p>
-            <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-gray-900 dark:text-[hsl(0_0%_94%)]">
-              How fast is each agent — on <em>your</em> machine?
-            </h2>
-            <p className="mt-3 max-w-2xl text-gray-600 dark:text-gray-400">
-              The benchmarks panel runs every supported agent and model against
-              a small, deterministic seed repository (<code className="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-white/10">brewboard</code>)
-              and records end-to-end wall time, per-phase timing, and any
-              failures. You see a clean matrix of CC, Codex, Gemini, OpenRouter
-              and Kimi runs side by side, sortable by speed.
-            </p>
-          </div>
-
-          <ScreenshotFrame
-            src="/img/agent-benchmarks-pro.png"
-            alt="Aigon Pro agent benchmarks — implementation timings across CC, Codex, Gemini, OpenRouter and Kimi models on a deterministic seed repo"
-            caption="Agent benchmarks panel — runs grouped by agent with relative-speed bars and per-row failure context"
-          />
-
-          <div className="mt-10 grid gap-4 sm:grid-cols-2">
-            <FeatureCard
-              title="Local-first by design"
-              description="Benchmarks always run on your machine, with your API keys, against your installed Aigon. The numbers reflect the experience you actually get — not someone else's network or quota."
-            />
-            <FeatureCard
-              title="One command to refresh"
-              description="aigon perf-bench brewboard <agent> runs a single pair; aigon perf-bench brewboard --all sweeps every non-quarantined agent and model. JSON lands in .aigon/benchmarks/ and the dashboard re-reads it on the next load."
-            />
-            <FeatureCard
-              title="Failure context, not just dashes"
-              description="When a model errors out — timeout, missing seed, provider rate-limit — the failure reason is captured and shown in the row, so you can tell &lsquo;not yet run&rsquo; from &lsquo;tried but failed&rsquo; at a glance."
-            />
-            <FeatureCard
-              title="Reference baseline (planned)"
-              description="A curated reference matrix — the maintainer&rsquo;s last sweep — will ship with future Aigon updates so you have a starting point for new agents before running your own. Local runs always take precedence and overwrite the reference for that pair."
-            />
-          </div>
-
-          <div className="mt-10 rounded-xl border border-gray-200 bg-gray-50 p-6 dark:border-white/6 dark:bg-white/3">
-            <h3 className="mb-2 font-[family-name:var(--font-sora)] text-lg font-semibold text-gray-900 dark:text-[hsl(0_0%_94%)]">
-              Aigon&rsquo;s own overhead — measured, not assumed
-            </h3>
-            <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-              A fair question: how much time does Aigon&rsquo;s setup,
-              instructions, and skill-loading add on top of the raw agent? The
-              harness answers this explicitly. Each benchmark records four
-              phases — <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">cli-start</code>,{" "}
-              <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">agent-boot</code>,{" "}
-              <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">agent-work</code>,{" "}
-              <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">agent-signal</code>{" "}
-              — and a single-pair run also captures a bare{" "}
-              <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">claude -p</code>{" "}
-              baseline against the same task with no Aigon scaffolding. The
-              difference, surfaced as <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">overheadMs</code>,
-              is the cost you pay for the workflow engine on your hardware.
-              Pro&rsquo;s upcoming overhead column promotes those numbers from
-              the raw JSON to a first-class table view, so this signal stays
-              visible — not buried.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* AI Insights */}
       <section className="px-6 py-16 md:py-20">
         <div className="mx-auto max-w-5xl">
@@ -449,6 +380,75 @@ export default function ProPage() {
             caption="Schedule from the same Start Autonomously flow: choose your workflow, then set Run at instead of starting immediately."
             figureClassName="mx-auto max-w-2xl lg:max-w-3xl"
           />
+        </div>
+      </section>
+
+      {/* Agent Benchmarks */}
+      <section className="px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-6">
+            <p className="mb-2 text-xs font-medium tracking-widest text-aigon-teal uppercase">
+              Agent Benchmarks
+            </p>
+            <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-gray-900 dark:text-[hsl(0_0%_94%)]">
+              How fast is each agent — on <em>your</em> machine?
+            </h2>
+            <p className="mt-3 max-w-2xl text-gray-600 dark:text-gray-400">
+              The benchmarks panel runs every supported agent and model against
+              a small, deterministic seed repository (<code className="rounded bg-gray-100 px-1.5 py-0.5 dark:bg-white/10">brewboard</code>)
+              and records end-to-end wall time, per-phase timing, and any
+              failures. You see a clean matrix of CC, Codex, Gemini, OpenRouter
+              and Kimi runs side by side, sortable by speed.
+            </p>
+          </div>
+
+          <ScreenshotFrame
+            src="/img/agent_benchmarks.png"
+            alt="Aigon Pro agent benchmarks — implementation timings across CC, Codex, Gemini, OpenRouter and Kimi models on a deterministic seed repo"
+            caption="Agent benchmarks panel — runs grouped by agent with relative-speed bars and per-row failure context"
+          />
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            <FeatureCard
+              title="Local-first by design"
+              description="Benchmarks always run on your machine, with your API keys, against your installed Aigon. The numbers reflect the experience you actually get — not someone else's network or quota."
+            />
+            <FeatureCard
+              title="One command to refresh"
+              description="aigon perf-bench brewboard <agent> runs a single pair; aigon perf-bench brewboard --all sweeps every non-quarantined agent and model. JSON lands in .aigon/benchmarks/ and the dashboard re-reads it on the next load."
+            />
+            <FeatureCard
+              title="Failure context, not just dashes"
+              description="When a model errors out — timeout, missing seed, provider rate-limit — the failure reason is captured and shown in the row, so you can tell &lsquo;not yet run&rsquo; from &lsquo;tried but failed&rsquo; at a glance."
+            />
+            <FeatureCard
+              title="Reference baseline (planned)"
+              description="A curated reference matrix — the maintainer&rsquo;s last sweep — will ship with future Aigon updates so you have a starting point for new agents before running your own. Local runs always take precedence and overwrite the reference for that pair."
+            />
+          </div>
+
+          <div className="mt-10 rounded-xl border border-gray-200 bg-gray-50 p-6 dark:border-white/6 dark:bg-white/3">
+            <h3 className="mb-2 font-[family-name:var(--font-sora)] text-lg font-semibold text-gray-900 dark:text-[hsl(0_0%_94%)]">
+              Aigon&rsquo;s own overhead — measured, not assumed
+            </h3>
+            <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+              A fair question: how much time does Aigon&rsquo;s setup,
+              instructions, and skill-loading add on top of the raw agent? The
+              harness answers this explicitly. Each benchmark records four
+              phases — <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">cli-start</code>,{" "}
+              <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">agent-boot</code>,{" "}
+              <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">agent-work</code>,{" "}
+              <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">agent-signal</code>{" "}
+              — and a single-pair run also captures a bare{" "}
+              <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">claude -p</code>{" "}
+              baseline against the same task with no Aigon scaffolding. The
+              difference, surfaced as <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">overheadMs</code>,
+              is the cost you pay for the workflow engine on your hardware.
+              Pro&rsquo;s upcoming overhead column promotes those numbers from
+              the raw JSON to a first-class table view, so this signal stays
+              visible — not buried.
+            </p>
+          </div>
         </div>
       </section>
 
