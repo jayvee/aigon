@@ -5,8 +5,8 @@ Single entry point for every doc under `docs/`. One line per file: what's in it,
 ## Engineering
 
 - [architecture.md](architecture.md) — Full module docs, the `ctx` pattern, state architecture, write-path contract. Read when changing how `lib/` modules fit together.
-- [development_workflow.md](development_workflow.md) — Feature/research lifecycle, Solo vs Arena modes, spec-driven discipline. Read when working a feature for the first time.
-- [feature-sets.md](feature-sets.md) — What feature sets are, when to use them, how `set-prioritise` assigns IDs in dependency order.
+- [../.aigon/docs/development_workflow.md](../.aigon/docs/development_workflow.md) — Feature/research lifecycle, Solo vs Arena modes, spec-driven discipline. Read when working a feature for the first time. Vendored from `templates/docs/`; aigon-the-repo dogfoods it from `.aigon/docs/` (F421).
+- [../.aigon/docs/feature-sets.md](../.aigon/docs/feature-sets.md) — What feature sets are, when to use them, how `set-prioritise` assigns IDs in dependency order. Vendored from `templates/docs/` (F421).
 - [dashboard.md](dashboard.md) — Dashboard surface map: tabs, server-owned `validActions`, read-only rule.
 - [workflow-rules.md](workflow-rules.md) — Action registry contract for feature/research/set workflow rules.
 - [autonomous-mode.md](autonomous-mode.md) — AutoConductor loop, supervisor rules, what is and is not auto-decided.
@@ -18,7 +18,7 @@ Single entry point for every doc under `docs/`. One line per file: what's in it,
 - [security.md](security.md) — Merge-gate scanning (gitleaks + semgrep), what blocks a close.
 - [security-scanner.md](security-scanner.md) — Standalone `aigon security-scan` CLI surface.
 - [linux-install.md](linux-install.md) — Linux-specific install caveats (terminal detection, tmux, signals).
-- [agents/](agents/) — Per-agent notes (`cc.md`, `gg.md`, `cx.md`, `cu.md`, etc.). Read the one for the agent you're operating.
+- [../.aigon/docs/agents/](../.aigon/docs/agents/) — Per-agent notes (`cc.md`, `gg.md`, `cx.md`, `cu.md`, etc.). Vendored from `templates/generic/docs/agent.md`; aigon-the-repo dogfoods them from `.aigon/docs/agents/` (F421). Read the one for the agent you're operating.
 
 ## Reference
 

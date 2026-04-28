@@ -134,9 +134,9 @@ Create `templates/agents/<id>.json`. Every field below must be set; derive value
 }
 ```
 
-## `docs/agents/<id>.md` Checklist
+## `.aigon/docs/agents/<id>.md` Checklist
 
-- [ ] Copy structure from an existing agent doc (e.g. `docs/agents/claude.md`)
+- [ ] Copy structure from an existing agent doc (e.g. `.aigon/docs/agents/claude.md`)
 - [ ] Fill in agent-specific commands table
 - [ ] Document any non-standard flags or trust setup
 - [ ] Note the launch type at the top (Slash-command / File-prompt / TUI-inject)
@@ -152,6 +152,6 @@ Add an assertion block to `tests/integration/worktree-state-reconcile.test.js` m
 ## Acceptance Criteria
 
 - [ ] `templates/agents/<id>.json` exists and `node -e "require('./lib/agent-registry').getAgent('<id>')"` exits 0
-- [ ] `docs/agents/<id>.md` exists
+- [ ] `.aigon/docs/agents/<id>.md` exists
 - [ ] `aigon install-agent <id>` completes without error in a test repo
 - [ ] Assertion block added to `worktree-state-reconcile.test.js` and `npm test` passes

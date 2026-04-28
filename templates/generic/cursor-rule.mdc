@@ -9,8 +9,8 @@ This project uses the Aigon development workflow. Read these docs before startin
 
 - **Agent instructions**: `AGENTS.md` — codebase orientation, module map, coding rules
 - **Architecture**: `docs/architecture.md` — full module docs, state management, testing
-- **Development workflow**: `docs/development_workflow.md` — feature/research lifecycle
-- **Agent-specific notes**: `docs/agents/cursor.md`
+- **Development workflow**: `.aigon/docs/development_workflow.md` — feature/research lifecycle
+- **Agent-specific notes**: `.aigon/docs/agents/cursor.md`
 
 ## Key Rules
 

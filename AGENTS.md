@@ -173,7 +173,7 @@ Recent incidents — every one of these is a case of a read path paving over a m
 - **cu**: `.cursor/commands/aigon-*.md`, `.cursor/cli.json`, `.cursor/hooks.json`, `.cursor/rules/aigon.mdc`
 - **op**: `.agents/skills/aigon-*/SKILL.md` (project-local). OpenCode is a router/harness; Aigon does not own its config or hardcode a default model — model/provider selection stays in the user's OpenCode config. Aigon-spawned sessions use `opencode run "<inline prompt body>"` via the shared non-slash launch path (see `lib/agent-prompt-resolver.js`).
 
-**Shared:** `docs/agents/{agent}.md` (marker blocks), `docs/development_workflow.md` (full overwrite). `AGENTS.md` is **not** managed by aigon (F420). Existing aigon marker blocks are stripped on `aigon doctor --fix`.
+**Shared:** `.aigon/docs/agents/{agent}.md` (marker blocks), `.aigon/docs/development_workflow.md` (full overwrite), and any other `templates/docs/*.md` files vendored to `.aigon/docs/` (F421). The consumer's own `docs/` folder is never touched. `AGENTS.md` is **not** managed by aigon (F420). Existing aigon marker blocks are stripped on `aigon doctor --fix`; legacy `docs/development_workflow.md` and `docs/agents/` are migrated to `.aigon/docs/` on `aigon doctor --fix`.
 
 **Context delivery** (no root file injection):
 - CC/GG: SessionStart hook `aigon project-context` prints doc pointers to stdout → agent ingests as conversation context
