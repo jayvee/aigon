@@ -142,7 +142,7 @@ async function main() {
     const isInteractiveEnv = process.stdin.isTTY && process.stdout.isTTY && !process.env.CI && !process.env.AIGON_SKIP_FIRST_RUN;
     if (isInteractiveEnv && !SKIP_FIRST_RUN.has(resolvedCommand) && !firstRunComplete()) {
         try {
-            await commands['onboarding']([]);
+            await commands['setup']([]);
         } catch (error) {
             console.error(formatCliError(error));
             process.exit(1);
