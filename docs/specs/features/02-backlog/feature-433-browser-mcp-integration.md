@@ -1,6 +1,9 @@
 ---
 complexity: low
+set: dashboard-feedback-loop
 planning_context: ~/.claude/plans/reflective-giggling-grove.md
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T06:25:48.904Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: browser-mcp-integration

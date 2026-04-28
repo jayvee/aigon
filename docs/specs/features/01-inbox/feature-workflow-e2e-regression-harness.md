@@ -1,5 +1,6 @@
 ---
 complexity: medium
+set: dashboard-feedback-loop
 planning_context: ~/.claude/plans/reflective-giggling-grove.md
 depends_on: browser-mcp-integration
 ---
