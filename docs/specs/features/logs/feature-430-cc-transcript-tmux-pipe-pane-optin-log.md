@@ -1,11 +1,25 @@
 ---
-commit_count: 1
-lines_added: 366
-lines_removed: 1
-files_touched: 4
-fix_commit_count: 0
-fix_commit_ratio: 0
+commit_count: 6
+lines_added: 433
+lines_removed: 3
+files_touched: 6
+fix_commit_count: 1
+fix_commit_ratio: 0.167
 rework_thrashing: false
+lines_changed: 436
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 136
+output_tokens: 41125
+cache_creation_input_tokens: 149125
+cache_read_input_tokens: 7385648
+thinking_tokens: 0
+total_tokens: 7576034
+billable_tokens: 41261
+cost_usd: 3.3922
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
 ---
 # Implementation Log: Feature 430 - transcript-tmux-pipe-pane-optin
 Agent: cc
