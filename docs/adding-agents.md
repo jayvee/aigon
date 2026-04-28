@@ -1,33 +1,54 @@
-# Adding Agents
-
-This guide provides a repeatable, structured process for adding new agents to aigon.
+# Adding Agents to Aigon
 
 ## Decision Tree
 
-When classifying a new agent's launch type, answer the following 5 questions to determine the correct configuration:
+Answer these 5 questions in order to determine the correct configuration for any new agent.
 
-1. **Prompt Delivery**: How does the agent receive its instructions? Does it read a file, or does it require prompt text injected via CLI arguments or TUI?
-2. **Slash-command Support**: Does the agent support executing operations via a native slash-command in its chat/TUI interface (e.g., `/feature-do`)?
-3. **--model Flag**: Does the agent's CLI support a flag for specifying the underlying LLM model to use?
-4. **Interactive vs Batch**: Is the agent meant to run in a continuous interactive session (like a chat interface), or does it execute a batch task and exit?
-5. **Transcript Telemetry**: Does the agent provide a way to export or stream its session transcript/telemetry for analysis?
+---
 
-## Launch Types
+**Q1: Does the CLI accept an initial prompt as a command-line argument?**
 
-Based on the answers above, map the agent to one of the following launch types:
+- **NO** → type: **TUI-inject** — set `cli.injectPromptViaTmux: true`, `capabilities.resolvesSlashCommands: false`. The agent's TUI is launched bare; aigon pastes the prompt into the live pane after auth. Examples: `op` (opencode), `km` (kimi)
+- **YES** → go to Q2
 
-| Launch Type | Agents | Prompt Delivery | Session Behaviour |
-| --- | --- | --- | --- |
-| **Slash-command** | `cu` (Cursor), `cc` (Claude Code) | File-based or injected | Persistent interactive session, supports commands |
-| **File-prompt** | `gg` (Gemini CLI) | Reads spec/prompt file | Batch execution or continuous, relies on file changes |
-| **TUI-inject** | `op` (OpenCode) | TUI interaction/injection | Terminal User Interface, session managed via UI |
+**Q2: Does the CLI understand `/slash-command` syntax natively?**
+
+- **YES** → type: **Slash-command** — set `capabilities.resolvesSlashCommands: true`. The prompt is passed as `/aigon-feature-do {featureId}` directly on the command line. Examples: `cc` (claude), `gg` (gemini), `cu` (agent/cursor)
+- **NO** → type: **File-prompt** — set `capabilities.resolvesSlashCommands: false`. The full prompt body is written to a temp file and passed as `$(< /path/to/file)` shell expansion. Example: `cx` (codex)
+
+**Q3: Does `--model <id>` work as a CLI flag?**
+
+- **YES** → `capabilities.supportsModelFlag: true`
+- **NO** → `capabilities.supportsModelFlag: false` — aigon strips `--model` from the launch command to avoid errors
+
+**Q4: Does the agent stay at its own interactive prompt after completing a task?**
+
+- **YES** (all current agents) → no `exec bash -l`; the tmux session stays at the agent's own prompt and remains interactive
+- **NO** (batch/headless) → `shellTrap` becomes the primary signal path; document this clearly in the `signals` section and note it in `docs/agents/<id>.md`
+
+**Q5: Can aigon read the agent's transcript or session file?**
+
+- **YES** → `capabilities.transcriptTelemetry: true`; also set `runtime.sessionStrategy` to the appropriate value (e.g. `claude-jsonl`, `gemini-chats`)
+- **NO** → `capabilities.transcriptTelemetry: false`
+
+---
+
+## Launch Type Reference
+
+| Type | Agents | Prompt delivery | Session after work |
+|---|---|---|---|
+| Slash-command | `cc` (claude), `gg` (gemini), `cu` (agent/cursor) | `/aigon-feature-do XX` as CLI arg | Stays at agent's interactive prompt |
+| File-prompt | `cx` (codex) | `$(< /tmp/aigon-prompt-XX.md)` shell expansion | Stays at agent's interactive prompt |
+| TUI-inject | `op` (opencode), `km` (kimi) | Pasted via `tmux paste-buffer` after TUI is ready | Stays at agent's interactive prompt |
+
+---
 
 ## Key Files
 
-When onboarding an agent, the following files and directories are critical:
+Read these before adding a new agent:
 
-- `templates/agents/`: Use `templates/feature-template-agent-onboard.md` to correctly fill out the `<id>.json` template.
-- `lib/agent-registry.js`: Registers the agent configuration and its launch type within the workflow engine.
-- `lib/worktree.js`: Manages the isolation environment (worktrees vs branches) based on the agent's requirements.
-- `lib/config.js`: Parses and manages the tool's runtime settings, including agent-specific flags.
-- `tests/integration/worktree-state-reconcile.test.js`: Add your test assertions here to ensure the agent's state reconciliation behaves correctly in the worktree environment.
+- **`templates/agents/<id>.json`** — source of truth for all agent config; use `templates/feature-template-agent-onboard.md` as a checklist when creating a new one
+- **`lib/agent-registry.js`** — queries capabilities at runtime (`supportsModelFlag`, `isSlashCommandInvocable`, `getProcessDetectionMap`, etc.)
+- **`lib/worktree.js`** `buildRawAgentCommand` / `buildAgentCommand` — how the config drives the tmux launch; the `injectPromptViaTmux` path and the slash-command path diverge here
+- **`lib/config.js`** `getAgentLaunchFlagTokens` — flag injection logic per launch type
+- **`tests/integration/worktree-state-reconcile.test.js`** — add one assertion block per new agent covering its launch command shape; see existing blocks for `cc`, `cu`, `op`, `km`, `gg` as examples
