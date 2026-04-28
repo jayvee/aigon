@@ -121,17 +121,13 @@ Current shared modules:
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
 - `lib/dashboard-routes.js` (~60 lines): thin aggregator — composes the per-domain route modules in `lib/dashboard-routes/` and exposes the dispatcher
   `createDashboardRouteDispatcher`
-
-#### Dashboard route modules
-The aggregator delegates to seven focused sub-files under `lib/dashboard-routes/`:
-
-- `analytics.js` — analytics, telemetry, weekly autonomy trend endpoints
-- `config.js` — config read/write endpoints (`/api/config/*`)
-- `entities.js` — feature/research/feedback CRUD endpoints
-- `recommendations.js` — `/api/recommendation/*` (spec-frontmatter-driven start-modal defaults)
-- `sessions.js` — tmux/session endpoints, PTY token issuance
-- `system.js` — health, version, repo metadata
-- `util.js` — shared response helpers + the route-table builder consumed by the aggregator
+  - `analytics.js` — analytics, telemetry, weekly autonomy trend endpoints
+  - `config.js` — config read/write endpoints (`/api/config/*`)
+  - `entities.js` — feature/research/feedback CRUD endpoints
+  - `recommendations.js` — `/api/recommendation/*` (spec-frontmatter-driven start-modal defaults)
+  - `sessions.js` — tmux/session endpoints, PTY token issuance
+  - `system.js` — health, version, repo metadata
+  - `util.js` — shared response helpers + the route-table builder consumed by the aggregator
 - `lib/worktree.js` (~1,300 lines): worktree creation, permissions, git attribution metadata bootstrap, tmux sessions
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
 - `lib/set-conductor.js` (~500 lines): detached set-level autonomous sequencer (`set-autonomous-start|stop|resume|reset`) that resolves set members in topo order, delegates each member to `feature-autonomous-start`, and persists `.aigon/state/set-<slug>-auto.json`
