@@ -207,18 +207,31 @@
     "AGENT_PITFALLS": "",
     "AGENT_DEV_SERVER_NOTE": ""
   },
-  "output": {
-    "format": "skill-md",
-    "commandDir": ".agents/skills",
-    "commandFilePrefix": "aigon-",
-    "commandFileExtension": "",
-    "skillFileName": "SKILL.md",
-    "frontmatter": [
-      "name",
-      "description"
-    ],
-    "global": false
-  },
+  "outputs": [
+    {
+      "format": "markdown",
+      "commandDir": ".opencode/commands",
+      "commandFilePrefix": "aigon-",
+      "commandFileExtension": ".md",
+      "frontmatter": [
+        "description",
+        "argument-hint"
+      ],
+      "global": false
+    },
+    {
+      "format": "skill-md",
+      "commandDir": ".agents/skills",
+      "commandFilePrefix": "aigon-",
+      "commandFileExtension": "",
+      "skillFileName": "SKILL.md",
+      "frontmatter": [
+        "name",
+        "description"
+      ],
+      "global": false
+    }
+  ],
   "rootFile": null,
   "supportsAgentsMd": true,
   "agentFile": "opencode.md",
