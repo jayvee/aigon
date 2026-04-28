@@ -40,6 +40,7 @@
   "cli": {
     "command": "codex",
     "implementFlag": "",
+    "planFlag": null,
     "implementPrompt": "feature-do",
     "evalPrompt": "feature-eval",
     "reviewPrompt": "feature-code-review",
