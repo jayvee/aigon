@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T02:12:00.302Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: live-log panel for feature close
