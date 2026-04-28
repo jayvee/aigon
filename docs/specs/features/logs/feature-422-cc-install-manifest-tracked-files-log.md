@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 884
+lines_removed: 7
+lines_changed: 891
+files_touched: 9
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 708
+output_tokens: 63015
+cache_creation_input_tokens: 252752
+cache_read_input_tokens: 11457673
+thinking_tokens: 0
+total_tokens: 11774148
+billable_tokens: 63723
+cost_usd: 5.3324
+sessions: 2
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 422 - install-manifest-tracked-files
 Agent: cc
 
