@@ -53,3 +53,4 @@ Copy the live native transcript body into a machine-global durable hot tier at f
 - Research: 43 — session-transcript-capture-and-storage
 - Set: transcript-program
 - Prior features in set: transcript-read-model-and-cli
+- Later in set: **431 — transcript-dashboard-surface** (after `transcript-tmux-pipe-pane-optin`; consumes read-model including durable preference)

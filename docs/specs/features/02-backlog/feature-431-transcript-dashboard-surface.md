@@ -1,86 +1,48 @@
 ---
-complexity: medium
-# agent: cc    # optional — id of the agent that owns this spec. Used as the
-#              #   default reviewer for spec-revise cycles when the operator
-#              #   does not pick one explicitly. Precedence at revision time:
-#              #     event payload nextReviewerId > frontmatter agent:
-#              #     > snapshot.authorAgentId > getDefaultAgent().
-# research: 44 # optional — id (or list of ids) of the research topic that
-#              #   spawned this feature. Stamped automatically by `research-eval`
-#              #   on features it creates. Surfaced in the dashboard research
-#              #   detail panel under Agent Log → FEATURES.
-# planning_context: ~/.claude/plans/your-plan.md  # optional — path(s) to plan file(s)
-#              #   generated during an interactive planning session (e.g. EnterPlanMode).
-#              #   Content is injected into the agent's context at feature-do time and
-#              #   copied into the implementation log at feature-start for durability.
-#              #   Set this whenever you ran plan mode before writing the spec.
+complexity: high
+set: transcript-program
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-28T04:19:58.788Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: transcript-dashboard-surface
 
-<!-- Authoring AI: set `complexity:` using this rubric before writing the spec:
-       low       — config tweaks, doc-only, single-file helpers, trivial bug fixes
-       medium    — standard feature with moderate cross-cutting, one command handler, small refactor
-       high      — multi-file engine edits, new event types, new dashboard surfaces, judgment-heavy deletion work
-       very-high — architectural shifts, write-path-contract changes, new XState transitions, cross-cutting template+engine+frontend
-     At start time, model and effort defaults come from each agent's `cli.complexityDefaults[<complexity>]` in
-     `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
-
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Render transcript visibility in the dashboard: per-agent **Open transcript** entry points that use the existing server read-model (`GET /api/features/:id/transcripts` and research analogue) — never direct `file://` from the browser. Optionally extend the API with a bounded **head/tail preview** of transcript bytes for quick inspection without leaving the dashboard. This feature lands **after** the rest of the transcript stack so one implementation pass reflects native pointers (F357), durable hot-tier paths (429), and `tmuxLogPath` (430) where applicable.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As a dashboard user, I see a clear **Open transcript** control on each agent/session row when the read-model reports a resolvable path (native, durable, or tmux log); when nothing is captured, I see the same structured explanation the API already returns — never a stack trace.
+- [ ] As an operator, I can optionally view a **short preview** (last N lines or bytes) in-dashboard or via a server-mediated fetch, without the dashboard parsing sidecar or engine files itself.
+- [ ] As a maintainer, transcript UI behaviour is driven only from **server-owned** payloads already exposed by `lib/transcript-read.js` / route modules — no new dashboard read paths that bypass the read-model contract.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
-
-## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
-```bash
-# Example: node --check aigon-cli.js
-```
+- [ ] Feature and research detail views (or the surfaces where agent rows already appear) expose **Open transcript** when `collectTranscriptRecords` / API returns a path for that agent; controls stay disabled or hidden with inline reason when `captured: false`.
+- [ ] Opening a transcript uses a **server-mediated** pattern consistent with the dashboard read-only rule (e.g. download route, `Content-Disposition`, or documented proxy pattern) — never raw `file://` URLs built in static HTML from absolute filesystem paths.
+- [ ] If **preview** is in scope: new or extended API returns bounded head/tail (size limits enforced server-side); if preview is **out of scope** for this pass, the spec explicitly defers it and ships pointer-only UI — no half-implemented preview.
+- [ ] After any `templates/dashboard/index.html` change, capture a **Playwright screenshot** per project workflow; extend or add tests only where they catch regressions (`// REGRESSION:` naming the scenario).
+- [ ] Invoke **Skill(frontend-design)** before visual edits; match existing dashboard patterns (spacing, typography, action placement).
 
 ## Pre-authorised
-<!-- Standing orders the agent may enact without stopping to ask.
-     Each line is a single bounded permission. The agent cites the matching line
-     in a commit footer `Pre-authorised-by: <slug>` for auditability.
-     The first line below is a project-wide default — keep it unless the feature
-     explicitly demands Playwright runs mid-iterate. Add or remove other lines
-     per feature.
-     Example extras:
-       - May raise `scripts/check-test-budget.sh` CEILING by up to +40 LOC if regression tests require it.
--->
-- May skip `npm run test:ui` mid-iteration when this iteration touches no dashboard assets (`templates/dashboard/**`, `lib/dashboard*.js`, `lib/server*.js`). Playwright still runs at the pre-push gate.
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+- Consume existing `/api/(features|research)/:id/transcripts` responses; extend payloads only in `lib/transcript-read.js` / `lib/dashboard-routes/transcripts.js` if preview or extra fields are required — never parse session sidecars in `dashboard-server.js` or inline in frontend JS.
+- Join ordering: **depends_on `transcript-tmux-pipe-pane-optin`** ensures `tmuxLogPath` (and durable preference from 429) are stable before UI ships.
+- If preview ships: stream or read bounded bytes from the resolved path server-side; cap total response size; redaction remains out of scope (verbatim slice only).
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- depends_on: transcript-tmux-pipe-pane-optin
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- Cold tier export, redaction-at-export, side-by-side compare UIs.
+- Replacing CLI (`feature-transcript` / `research-transcript`) — already shipped in F427.
+- New workflow-engine actions or `validActions` entries unless the dashboard pattern for links explicitly requires registry wiring — prefer infra/read-model-driven links where possible.
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Preview: ship in F431 or leave pointer-only and close with “Open” only? Decide before implementation; default is pointer-only if preview slips schedule.
+- Which panel shows the control first — feature grid detail, session row, or both feature and research parity?
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Set: <!-- set slug if this feature is part of a set; omit line if standalone -->
-- Prior features in set: <!-- feature IDs that precede this one, e.g. F314, F315; omit if standalone -->
+- Research: 43 — session-transcript-capture-and-storage
+- Set: transcript-program
+- Prior features in set: transcript-read-model-and-cli (427), transcript-durable-hot-tier (429), transcript-tmux-pipe-pane-optin (430)
+- Completes deferred scope from: transcript-read-model-and-cli (427) — dashboard surface explicitly deferred there

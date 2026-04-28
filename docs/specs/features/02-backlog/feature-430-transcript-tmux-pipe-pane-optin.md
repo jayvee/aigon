@@ -52,3 +52,4 @@ Provide an opt-in `tmux pipe-pane` capture path for agents that have no native t
 - Research: 43 — session-transcript-capture-and-storage
 - Set: transcript-program
 - Prior features in set: transcript-read-model-and-cli, transcript-durable-hot-tier
+- Follow-on in set: **431 — transcript-dashboard-surface** (dashboard UI consumes final read-model including `tmuxLogPath`)
