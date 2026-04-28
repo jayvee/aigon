@@ -32,3 +32,18 @@ None.
 ## Test Coverage
 
 Validation: `bash -n run-e2e.sh && shellcheck run-e2e.sh` — both pass. Full live run requires Docker + OrbStack + API key; per spec, one live run is pre-authorised during implementation.
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-04-28
+
+### Fixes Applied
+- `fix(review): preserve feature_id for assertions after it leaves the inbox` (Fixed a bug where the dynamically found `feature_id` was lost after stage 6 moved it out of the inbox, causing stage 7 assertions to fail or pick the wrong feature).
+
+### Residual Issues
+- None
+
+### Notes
+- The implementation cleanly matches the requirements and `docker/clean-room/run-e2e.sh` provides a solid orchestration over the container lifecycle.
+- Great use of `feature-autonomous-start --stop-after` flag over manual duration timeouts, shifting the timeout responsibility safely to the orchestrator layer.
