@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T00:36:59.826Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-onboarding-decision-tree-and-smoke-test
