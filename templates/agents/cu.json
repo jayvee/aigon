@@ -39,7 +39,7 @@
   },
   "cli": {
     "command": "agent",
-    "implementFlag": "--print --force --trust --output-format stream-json",
+    "implementFlag": "--force",
     "planFlag": "--plan",
     "implementPrompt": "/aigon-feature-do {featureId}",
     "evalPrompt": "/aigon-feature-eval {featureId}",
