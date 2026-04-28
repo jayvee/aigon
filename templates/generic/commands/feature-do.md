@@ -37,6 +37,8 @@ The spec body was printed inline by `feature-do` above. **Use that copy.** Do no
 
 {{RESEARCH_CONTEXT_SECTION}}
 
+{{PLANNING_CONTEXT_SECTION}}
+
 {{WORKTREE_DEP_CHECK}}
 
 ## Step 3: Implement
