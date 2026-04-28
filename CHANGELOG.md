@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Note on entries from v2.19 onwards:** the changelog was backfilled in bulk from git history on 2026-04-07 ahead of the public launch. Entries are grouped by theme and dated by month rather than per-patch. For commit-level detail, see `git log v2.18.0..HEAD` or browse the [git tags](https://github.com/jayvee/aigon/tags).
 
+## [2.61.0] — 2026-04-28
+
+Install manifest tracking (F422). The aigon installer now records every
+file it writes (path + sha256 + version + timestamp) under
+`.aigon/install-manifest.json`, and a migration backfills the manifest for
+repos installed before this version. Lays the groundwork for `aigon
+uninstall` (cleanly removes only aigon-owned files) and drift detection
+(warn when an installed file diverges from the shipped template).
+
+### Added
+
+- **`.aigon/install-manifest.json`** — tracks every file written by `install-agent` / `update`. Each entry: `{ path, sha256, version, installedAt }`.
+- **`aigon uninstall [--dry-run]`** — uses the manifest to remove aigon-owned files cleanly. `--dry-run` prints the list without deleting.
+- **2.61.0 migration** — backfills the manifest for legacy installs by scanning the standard install-path roots (`.aigon/docs/`, `.agents/`, `.claude/{commands/aigon,skills}/`, `.cursor/{commands,rules}/`, `.codex/`, `.gemini/`) and hashing each file with the current `aigonVersion`.
+
 ## [2.60.0] — 2026-04-28
 
 Vendored-docs layout (F421), no more consumer AGENTS.md scaffolding (F420), and
