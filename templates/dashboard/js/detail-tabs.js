@@ -199,7 +199,7 @@
         detailEl.innerHTML = '<ol class="detail-timeline">' + rows + '</ol>';
       }
 
-      function renderAgents(payload) {
+      function renderAgents(payload, transcriptBundle) {
         const files = payload.agentFiles || {};
         const excerpts = payload.logExcerpts || {};
         const ids = Object.keys(files).sort();
@@ -222,6 +222,7 @@
               '<div><dt>Worktree</dt><dd class="mono">' + escHtml(file.worktreePath || 'n/a') + '</dd></div>' +
               '<div><dt>Flags</dt><dd>' + escHtml(flags.length ? flags.join(', ') : 'none') + '</dd></div>' +
               '<div><dt>Session</dt><dd>' + escHtml(file.tmuxSession || (file.flags && file.flags.sessionName) || 'n/a') + '</dd></div>' +
+              '<div><dt>Transcript</dt><dd>' + transcriptControlsHtml(id, transcriptBundle) + '</dd></div>' +
             '</dl>' +
             (excerpt ? '<details class="agent-excerpt"><summary>Log excerpt</summary><pre>' + escHtml(excerpt) + '</pre></details>' : '<div class="agent-no-excerpt">No excerpt available.</div>') +
           '</section>';
@@ -330,6 +331,68 @@
         return data;
       }
 
+      async function fetchTranscriptsBundle() {
+        const drawer = getDrawerState();
+        if (drawer.type === 'feedback') return { records: [] };
+        const parsed = parseEntityFromSpecPath(drawer.path, drawer.type);
+        if (!parsed.id) return { records: [] };
+        const q = new URLSearchParams();
+        if (drawer.repoPath) q.set('repoPath', drawer.repoPath);
+        const prefix = parsed.type === 'research' ? 'research' : 'features';
+        const res = await fetch(`/api/${prefix}/${encodeURIComponent(parsed.id)}/transcripts?${q.toString()}`, { cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+        return data;
+      }
+
+      function buildTranscriptDownloadHref(agentId, record) {
+        const drawer = getDrawerState();
+        const parsed = parseEntityFromSpecPath(drawer.path, drawer.type);
+        if (!parsed.id) return '#';
+        const q = new URLSearchParams({ agent: String(agentId || '').toLowerCase() });
+        if (drawer.repoPath) q.set('repoPath', drawer.repoPath);
+        if (record.agentSessionId) q.set('sessionId', record.agentSessionId);
+        else if (record.sessionName) q.set('sessionName', record.sessionName);
+        const seg = parsed.type === 'research' ? 'research' : 'features';
+        return '/api/' + seg + '/' + encodeURIComponent(parsed.id) + '/transcripts/download?' + q.toString();
+      }
+
+      function transcriptControlsHtml(agentId, transcriptBundle) {
+        const bundle = transcriptBundle || { records: [] };
+        const records = Array.isArray(bundle.records) ? bundle.records : [];
+        const forAgent = records.filter(r => String(r.agent || '').toLowerCase() === String(agentId || '').toLowerCase());
+        if (forAgent.length === 0) {
+          if (bundle._error) {
+            return '<div class="transcript-row"><span class="transcript-note">Transcript list unavailable.</span></div>';
+          }
+          return '<div class="transcript-row"><span class="transcript-note">No indexed session for this agent.</span></div>';
+        }
+        const lines = forAgent.map(r => {
+          if (r.captured) {
+            const href = buildTranscriptDownloadHref(agentId, r);
+            const label = r.sessionName
+              ? String(r.sessionName)
+              : (r.agentSessionId ? 'session ' + String(r.agentSessionId).slice(0, 12) : 'transcript');
+            return '<div class="transcript-row">' +
+              '<a class="btn btn-sm btn-secondary transcript-open-btn" href="' + href + '" download>Open transcript</a>' +
+              ' <span class="mono transcript-sess">' + escHtml(label) + '</span></div>';
+          }
+          return '<div class="transcript-row"><span class="transcript-note">' + escHtml(r.reason || 'Not captured') + '</span></div>';
+        });
+        return '<div class="transcript-block">' + lines.join('') + '</div>';
+      }
+
+      function transcriptInlineOpenHtml(agentId, transcriptBundle) {
+        const bundle = transcriptBundle || { records: [] };
+        const records = Array.isArray(bundle.records) ? bundle.records : [];
+        const forAgent = records.filter(r => String(r.agent || '').toLowerCase() === String(agentId || '').toLowerCase());
+        const captured = forAgent.filter(r => r.captured);
+        if (captured.length === 0) return '';
+        const href = buildTranscriptDownloadHref(agentId, captured[0]);
+        const extra = captured.length > 1 ? ' <span class="transcript-note">(+' + String(captured.length - 1) + ')</span>' : '';
+        return '<a class="transcript-inline-link" href="' + href + '" download>Open transcript</a>' + extra;
+      }
+
       function formatUptime(seconds) {
         if (!Number.isFinite(seconds) || seconds < 0) return 'n/a';
         const h = Math.floor(seconds / 3600);
@@ -357,10 +420,11 @@
         return '<div class="deep-status-section"><h4 class="deep-status-heading">' + escHtml(title) + '</h4>' + body + '</div>';
       }
 
-      function renderStatus(data) {
+      function renderStatus(data, transcriptBundle) {
         const s = data.session || {};
         const p = data.progress || {};
         const sp = data.spec || {};
+        const parsed = parseEntityFromSpecPath(getDrawerState().path, getDrawerState().type);
 
         const sessionRows = s.completed
           ? [
@@ -374,6 +438,9 @@
               ['Uptime', formatUptime(s.uptimeSeconds)],
               s.pid ? ['PID', escHtml(String(s.pid))] : null,
             ];
+        if (parsed.id && data.primaryAgent) {
+          sessionRows.push(['Transcript', transcriptControlsHtml(data.primaryAgent, transcriptBundle)]);
+        }
         const sessionHtml = statusSection('Session', sessionRows);
 
         const progressHtml = statusSection('Progress', [
@@ -402,7 +469,10 @@
         if (agentIds.length > 1) {
           const rows = agentIds.map(id => {
             const as = agentSessions[id] || {};
-            return [escHtml(id), statusIndicator(as.tmuxAlive) + (as.uptimeSeconds != null ? ' · ' + formatUptime(as.uptimeSeconds) : '')];
+            const inlineTx = transcriptInlineOpenHtml(id, transcriptBundle);
+            const upt = as.uptimeSeconds != null ? ' · ' + formatUptime(as.uptimeSeconds) : '';
+            const mid = inlineTx ? ' · ' + inlineTx : '';
+            return [escHtml(id), statusIndicator(as.tmuxAlive) + mid + upt];
           });
           agentSessionsHtml = statusSection('Agent Sessions', rows);
         }
@@ -517,16 +587,30 @@
           state.loading = true;
           if (tab === 'status') {
             const deepStatus = await fetchDeepStatus();
+            let transcriptBundle = { records: [] };
+            try {
+              transcriptBundle = await fetchTranscriptsBundle();
+            } catch (_) {
+              transcriptBundle = { records: [], _error: true };
+            }
             state.loadedTabs[tab] = true;
-            renderStatus(deepStatus);
+            renderStatus(deepStatus, transcriptBundle);
           } else {
             const payload = await fetchDetailPayload();
+            let transcriptBundle = { records: [] };
+            if (tab === 'agents') {
+              try {
+                transcriptBundle = await fetchTranscriptsBundle();
+              } catch (_) {
+                transcriptBundle = { records: [], _error: true };
+              }
+            }
             if (tab === 'stats') {
               try { payload.deepStatus = await fetchDeepStatus(); } catch (_) {}
             }
             state.loadedTabs[tab] = true;
             if (tab === 'events') renderEvents(payload);
-            else if (tab === 'agents') renderAgents(payload);
+            else if (tab === 'agents') renderAgents(payload, transcriptBundle);
             else if (tab === 'stats') renderStats(payload);
             else if (tab === 'log') renderLog(payload);
             else if (tab === 'control') renderControl(payload);

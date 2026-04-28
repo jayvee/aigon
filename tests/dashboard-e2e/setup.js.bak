@@ -100,7 +100,7 @@ module.exports = async function globalSetup() {
         env: dashEnv, cwd: tmpDir, stdio: ['ignore', 'pipe', 'pipe'], detached: false,
     });
     dashProc.stdout.on('data', (d) => process.stdout.write('[dashboard] ' + d));
-    dashProc.stderr.on('data', (d) => process.stderr.write('[dashboard] ' + d));
+    dashProc.stderr.on('data', (d) => process.env.AIGON_E2E_VERBOSE && process.stderr.write('[dashboard] ' + d));
     await waitForServer(`http://127.0.0.1:${PORT}`);
     fs.writeFileSync(CTX_FILE, JSON.stringify({
         tmpDir, tempHome, worktreeBase, port: PORT, dashPid: dashProc.pid,
