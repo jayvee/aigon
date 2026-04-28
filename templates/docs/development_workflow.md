@@ -3,6 +3,7 @@
 This project uses **Aigon**, a spec-driven development workflow for AI agents.
 
 For codebase structure and CLI module boundaries, read `docs/architecture.md`.
+For grouping related features into a coordinated initiative, read `docs/feature-sets.md`.
 
 ## Overview
 
