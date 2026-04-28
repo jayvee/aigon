@@ -167,10 +167,10 @@ Don't try to dissolve `utils.js` in one move. Instead, extract the orphans into 
 
 The current Pro integration is exemplary [contract coupling](https://coupling.dev/posts/dimensions-of-coupling/integration-strength/): a 24-line `lib/pro.js` that lazy-requires `@aigon/pro`, exposes `isProAvailable()` and `getPro()`, and lets every consumer gracefully degrade when Pro isn't installed. Today there's exactly one Pro-gated route in the dashboard (`GET /api/insights`) plus a couple of references in `commands/misc.js` and `dashboard-status-collector.js`. The `forcePro` config override even lets you simulate the free tier when Pro is installed, which is a great testability lever.
 
-The risk is not in the current code — it's in the trajectory. The user has identified the Pro tier as the next strategic priority. Pro features (insights, amplification dashboard, AI coaching) will need to:
+The risk is not in the current code — it's in the trajectory. The user has identified the Pro tier as the next strategic priority. Pro features (Insights tab, extended analytics, AI coaching) will need to:
 
 - Read more data from the workflow engine (snapshot fields, event log, telemetry)
-- Hook into more dashboard routes (`/api/insights/*`, `/api/coaching/*`, `/api/amplification/*`)
+- Hook into more dashboard routes (`/api/insights/*`, `/api/coaching/*`, and other Pro-registered extensions)
 - Subscribe to lifecycle events (when a feature closes, run insights generation)
 - Possibly add new entity types or new lifecycle stages
 

@@ -10,7 +10,7 @@ The user regularly exhausts their 5-hour token-usage window when driving Aigon w
 4. **Aigon CLI output verbosity** — commands like `aigon feature-spec`, `aigon board`, `aigon research-spec` print long formatted output that agents then ingest into context.
 5. **Codex-specific waste** — awaiters (now partially mitigated by `a092ef27`/`3db70a7a`), log-writing ceremony (partially mitigated by the same commits), re-reading specs from disk, and running discovery commands (`find`, `glob`, `ls`) when the spec already names the relevant files.
 6. **Target-repo shape** — in repos the user is editing (aigon itself, aigon-pro, farline, brewboard, jvbot), what files are agents actually reading per feature? Are there large files, auto-loaded configs, or wide imports that pull in more than needed?
-7. **Autonomous-loop amplification** — AutoConductor spawns fresh agent sessions every iteration in Autopilot mode. Every retry pays the full context-load cost again. Are there easy wins in carrying forward a distilled context vs. cold-starting each iteration?
+7. **Autonomous-loop cold-start penalty** — AutoConductor spawns fresh agent sessions every iteration in Autopilot mode. Every retry pays the full context-load cost again. Are there easy wins in carrying forward a distilled context vs. cold-starting each iteration?
 
 This research should produce a **ranked, concrete list of quick wins and medium-effort wins** to cut tokens-per-feature, with rough expected savings for each.
 

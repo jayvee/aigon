@@ -54,7 +54,7 @@ This feature is a natural fit for **Aigon Pro** and the **"for Teams"** tier. Th
 - This cleanly delineates free vs Pro: free Aigon gives you the full spec-driven loop locally; Pro adds the collaboration layer that teams require.
 
 ### Marketing angle: "Aigon for Teams"
-- [ ] How does "PR workflow" fit into a broader "Teams" package alongside other Pro features (insights, coaching, amplification)?
+- [ ] How does "PR workflow" fit into a broader "Teams" package alongside other Pro features (insights, coaching, scheduling)?
 - [ ] What's the elevator pitch? e.g. "Your agents already write the code — now your team can review it the way they review everything else: pull requests."
 - [ ] Does enabling PRs unlock a natural upsell path? (Solo user tries Aigon free → joins a team → team requires PRs → needs Pro)
 - [ ] How do competitors position this? (Cursor Teams, Copilot Enterprise, Windsurf Teams — do they gate PR/collaboration features behind paid tiers?)

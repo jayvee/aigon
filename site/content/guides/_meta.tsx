@@ -20,7 +20,7 @@ export default {
   "agent-quota-awareness": "Agent Quota Awareness",
   "github-integration": "GitHub Integration",
   "security-scanning": "Security Scanning",
-  amplification: { title: withPro("Insights") },
+  insights: { title: withPro("Insights") },
   nudge: "Nudging a Running Agent",
   troubleshooting: "Troubleshooting",
 };

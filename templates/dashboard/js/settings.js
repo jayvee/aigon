@@ -1591,6 +1591,20 @@
           matrixWrap.innerHTML = '<div class="matrix-empty">Failed to load matrix: ' + escHtml(err.message) + '</div>';
         });
 
+      // ── Agent benchmarks (Pro) — directly under Agent Matrix; F420 aigon-pro + OSS wiring
+      const perfBenchSection = shell.addSection('perf-benchmarks', 'Agent benchmarks', 'Agent benchmarks',
+        'Latest run times from aigon perf-bench (brewboard implement vs brewboard-review). JSON lives under .aigon/benchmarks/ in the repo chosen for defaults in Repository Settings above.',
+        { proBadge: true });
+      if (window.AigonProBenchmarkMatrix && typeof window.AigonProBenchmarkMatrix.mount === 'function') {
+        try {
+          window.AigonProBenchmarkMatrix.mount(perfBenchSection, getDefaultsSettingsRepo);
+        } catch (e) {
+          perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Benchmark UI failed: ' + escHtml(e.message) + '</p>');
+        }
+      } else {
+        perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Benchmark UI did not load. Install <code>@aigon/pro</code>, ensure the dashboard can serve <code>/js/benchmark-matrix.js</code>, then hard-refresh.</p>');
+      }
+
       // Version section
       const versionSection = shell.addSection('version', 'Version', 'Version', 'Installed version and npm registry update status.');
       const uc = (state.data || {}).updateCheck;
@@ -1641,6 +1655,10 @@
         }
         if (typeof renderScheduledFeatures === 'function') {
           renderScheduledFeatures();
+        } else if (detachedProViews['scheduled-features-view']) {
+          detachedProViews['scheduled-features-view'].innerHTML =
+            '<p class="settings-empty" style="margin-top:4px;font-size:12px;color:var(--text-tertiary)">' +
+            'Install <code>@aigon/pro</code> and restart the dashboard so <code>dashboard/scheduled-features.js</code> loads.</p>';
         }
       })();
 

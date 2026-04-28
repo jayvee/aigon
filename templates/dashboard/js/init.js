@@ -17,7 +17,7 @@
         return;
       }
 
-      // Load analytics data for the amplification section
+      // Load analytics data for the Insights metrics section (Reports embed)
       if (!statsState.data) {
         c.innerHTML = '<div class="amp-empty" style="padding:20px"><span class="toast-spinner"></span>Loading insights…</div>';
         await loadAnalytics();
@@ -31,10 +31,10 @@
       var analytics = statsState.data;
       var filteredFeatures = analytics ? analytics.features || [] : [];
 
-      // Build amplification section (reuses function from logs.js)
+      // Build Insights metrics section (reuses function from logs.js)
       var ampHtml = '';
-      if (typeof buildAmplificationSection === 'function') {
-        ampHtml = buildAmplificationSection(filteredFeatures);
+      if (typeof buildInsightsMetricsSection === 'function') {
+        ampHtml = buildInsightsMetricsSection(filteredFeatures);
       }
 
       // Build insights observations

@@ -12,6 +12,15 @@ const withNextra = nextra({
 const config = {
   reactStrictMode: true,
   outputFileTracingRoot: resolve(__dirname),
+  async redirects() {
+    return [
+      {
+        source: "/docs/guides/amplification",
+        destination: "/docs/guides/insights",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

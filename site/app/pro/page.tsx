@@ -291,8 +291,8 @@ export default function ProPage() {
               description="Specific, actionable recommendations tailored to your workflow and agent mix."
             />
             <FeatureCard
-              title="Amplification"
-              description="Identify which practices amplify your output so you can double down on what works."
+              title="Patterns"
+              description="See which habits and workflows correlate with better outcomes so you can double down on what works."
             />
           </div>
 
@@ -340,6 +340,42 @@ export default function ProPage() {
         </div>
       </section>
 
+      {/* Scheduled features */}
+      <section className="px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-6">
+            <p className="mb-2 text-xs font-medium tracking-widest text-aigon-orange uppercase">
+              Scheduled Features
+            </p>
+            <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-gray-900 dark:text-[hsl(0_0%_94%)]">
+              Run when it actually works for you
+            </h2>
+            <p className="mt-3 max-w-2xl text-gray-600 dark:text-gray-400">
+              Schedule when <strong>Start Autonomously</strong> runs &mdash; the same
+              predefined workflow from kickoff through completion, just at a wall
+              time you choose. That way autonomous work can span the night, or start
+              right after your provider quota or budget window refreshes, without
+              camping on the dashboard.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            <FeatureCard
+              title="Overnight runs"
+              description="Queue a feature to start later and let long implement / eval cycles finish while you are away, instead of losing evening hours to babysitting sessions."
+            />
+            <FeatureCard
+              title="Align with quota refresh"
+              description="If you are rate-limited or waiting on a rolling budget reset, schedule the kickoff for the moment your allowance comes back so the run does not stall on day-one limits."
+            />
+            <FeatureCard
+              title="Starts on its own"
+              description="You set the clock time once when you schedule. When that time arrives, the server launches the autonomous run for you — you do not need to be at the machine to press Start Autonomously."
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Aigon Sync — vault */}
       <section className="px-6 py-16 md:py-20">
         <div className="mx-auto max-w-5xl">
@@ -352,10 +388,7 @@ export default function ProPage() {
             </h2>
             <p className="mt-3 max-w-2xl text-gray-600 dark:text-gray-400">
               Keep portable <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm dark:bg-white/10">.aigon</code>{" "}
-              state in a <strong>private Git vault</strong> — push snapshots of workflow metadata and stripped global
-              settings, pull on another machine, and optionally schedule pushes. Ordinary backups (git clones, zip,
-              Time Machine) remain yours without Pro; Aigon Sync is the optional Git-coordinated path for Aigon&apos;s own
-              trees across laptops and teammates.
+              state in a <strong>private Git vault</strong> — push snapshots of workflow metadata, and pull down to another machine to resume your work.
             </p>
             <p className="mt-4 max-w-2xl text-sm text-gray-600 dark:text-gray-400">
               Use <strong>Dashboard → Settings → Aigon Sync</strong> for remote URL, last sync times, cadence, and{" "}

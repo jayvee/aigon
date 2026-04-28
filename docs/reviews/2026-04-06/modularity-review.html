@@ -545,11 +545,11 @@
 
 <p>The current Pro integration is exemplary <a href="https://coupling.dev/posts/dimensions-of-coupling/integration-strength/">contract coupling</a>: a 24-line <code>lib/pro.js</code> that lazy-requires <code>@aigon/pro</code>, exposes <code>isProAvailable()</code> and <code>getPro()</code>, and lets every consumer gracefully degrade when Pro isn't installed. Today there's exactly one Pro-gated route in the dashboard (<code>GET /api/insights</code>) plus a couple of references in <code>commands/misc.js</code> and <code>dashboard-status-collector.js</code>. The <code>forcePro</code> config override even lets you simulate the free tier when Pro is installed, which is a great testability lever.</p>
 
-<p>The risk is not in the current code — it's in the trajectory. The user has identified the Pro tier as the next strategic priority. Pro features (insights, amplification dashboard, AI coaching) will need to:</p>
+<p>The risk is not in the current code — it's in the trajectory. The user has identified the Pro tier as the next strategic priority. Pro features (Insights tab, extended analytics, AI coaching) will need to:</p>
 
 <ul>
 <li>Read more data from the workflow engine (snapshot fields, event log, telemetry)</li>
-<li>Hook into more dashboard routes (<code>/api/insights/*</code>, <code>/api/coaching/*</code>, <code>/api/amplification/*</code>)</li>
+<li>Hook into more dashboard routes (<code>/api/insights/*</code>, <code>/api/coaching/*</code>, and other Pro-registered extensions)</li>
 <li>Subscribe to lifecycle events (when a feature closes, run insights generation)</li>
 <li>Possibly add new entity types or new lifecycle stages</li>
 </ul>

@@ -220,12 +220,12 @@ Single-source-of-truth refactor, spec-review workflow, and a hard-fought round o
 ### Changed
 - **`feature-do --autonomous` / `--ralph` renamed to `--iterate`** — old flags print a migration hint and exit 1.
 - **`docs/architecture.md` "Aigon Pro" section** trimmed to remove implementation surface (helper API contract details, Pro-side repo structure tree).
-- **`site/content/guides/amplification.mdx`** rewritten to remove the "Setting up Pro" install instructions that referenced the private aigon-pro repo path.
+- **`site/content/guides/insights.mdx`** (formerly `amplification.mdx`) rewritten to remove the "Setting up Pro" install instructions that referenced the private aigon-pro repo path.
 
 ### Removed
 - **AADE wording** purged from public-facing docs (`README.md`, `docs/architecture.md`, `site/content/comparisons.mdx`, `site/content/guides/_meta.js`) — feature 232.
 - **Dead submit-command doc page** rewritten as a deprecation page pointing at `feature-do` and `aigon agent-status submitted`.
-- **Two broken image references** in `site/content/guides/amplification.mdx`.
+- **Two broken image references** in the Insights guide (`site/content/guides/insights.mdx`).
 - **GA4 placeholder tracking** from `site/public/home.html` — relies on Vercel Analytics now.
 - **19 root-level dev artifacts** — 16 orphan PNG screenshots, `reproduce_bug.js`, `worktree_link` (broken symlink), and stale `COMPARISONS.md` (the public version at `site/content/comparisons.mdx` is canonical now).
 

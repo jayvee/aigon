@@ -80,5 +80,5 @@ The existing data already supports an aggregate-only version (demonstrated manua
 - Builds on: F370-378 (agent-matrix static recommender), F313 (recommended-model-on-create), F398 (model capability scores), F291 (dashboard agent-model picker), F332 (implementation log format)
 - Depends on: `transcript-program` set (transcript-read-model-and-cli, transcript-durable-hot-tier, transcript-tmux-pipe-pane-optin, transcript-dashboard-surface)
 - Predecessor research: `research-43` (the transcript program itself)
-- Commercial framing: candidate for AADE / Amplification Pro tier per project memory
+- Commercial framing: candidate for AADE / Insights (Pro) tier per project memory
 - Originating conversation: 2026-04-28 design session that produced the `aigon-install-contract` feature set; manual aggregate-metric recommendation for F381-415 demonstrated the floor of what's possible without transcripts

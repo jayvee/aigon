@@ -232,7 +232,7 @@ Sources:
 | **Cloud Team** | $99/month + credits | Unlimited users, shared config, Slack/Linear integrations |
 | **Enterprise** | Custom | SAML/SCIM, large deployments |
 
-**Comparison to Aigon:** Aigon is fully open source (free CLI + dashboard). Aigon Pro is the planned commercial tier with insights engine, amplification dashboard, and AI coaching. Both use a freemium model: open-source core + paid advanced features.
+**Comparison to Aigon:** Aigon is fully open source (free CLI + dashboard). Aigon Pro is the planned commercial tier with an insights engine, the Insights tab and extended analytics, and AI coaching. Both use a freemium model: open-source core + paid advanced features.
 
 Source: https://roocode.com/pricing
 

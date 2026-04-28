@@ -132,4 +132,14 @@ test('docker-inject-creds.sh parses (bash -n) and exits non-zero with no args', 
     assert.notStrictEqual(noArgs.status, 0);
     assert.ok(String(noArgs.stderr + noArgs.stdout).includes('Usage'));
 });
+// REGRESSION F420 cross-repo: Pro benchmark matrix must load before settings.js and OSS must stub /api/benchmarks without Pro.
+test('dashboard wires perf-bench settings (script order + server stubs)', () => {
+    const idx = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/index.html'), 'utf8');
+    const iBench = idx.indexOf('/js/benchmark-matrix.js');
+    const iSettings = idx.indexOf('/js/settings.js');
+    assert.ok(iBench > 0 && iSettings > iBench, 'benchmark-matrix.js must precede settings.js');
+    const ds = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-server.js'), 'utf8');
+    assert.ok(ds.includes("reqPath === '/js/benchmark-matrix.js'"), 'static route for benchmark-matrix.js');
+    assert.ok(ds.includes("reqPath.startsWith('/api/benchmarks')"), 'proRequired stub for benchmarks API');
+});
 report();

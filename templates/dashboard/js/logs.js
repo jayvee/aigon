@@ -588,7 +588,7 @@
       return tags.join('');
     }
 
-    function buildAmplificationSection(filteredFeatures) {
+    function buildInsightsMetricsSection(filteredFeatures) {
       const analytics = statsState.data || {};
       const withAade = filteredFeatures.filter(f => f.hasAadeData);
       const withCost = filteredFeatures.filter(f => f.costUsd !== null && f.costUsd !== undefined);
@@ -641,12 +641,12 @@
       })();
 
       return `
-        <details class="stats-block amplification-section" open>
-          <summary class="amplification-summary">
-            <span>Amplification</span>
-            <span class="amplification-count">${withAade.length} features with amplification data</span>
+        <details class="stats-block insights-metrics-section" open>
+          <summary class="insights-metrics-summary">
+            <span>Insights metrics</span>
+            <span class="insights-metrics-count">${withAade.length} features with quality &amp; cost signals</span>
           </summary>
-          <div class="amplification-body">
+          <div class="insights-metrics-body">
             <div class="stats-cards amp-top-cards">
               ${buildStatCard('First-Pass Rate (No Rework)', fmtPct(firstPassNoRework), null, withReworkSignals.length > 0 ? `${withReworkSignals.length} features` : 'No rework signal data',
                 'Percentage of features completed without triggering any rework flags. Rework flags include: thrashing (repeated back-and-forth edits), fix cascades (one fix causing another), and scope creep (implementation exceeding spec). Higher is better — it means the agent got it right the first time.')}
