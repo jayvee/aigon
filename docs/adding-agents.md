@@ -1,5 +1,32 @@
 # Adding Agents to Aigon
 
+## When to add a new agent
+
+Not every CLI earns a slot. Before starting the onboarding process, a candidate CLI must clear at least one of these bars:
+
+1. **Unlocks a model with no other CLI route** — the model is genuinely inaccessible via the existing agents. Example: `km` (Kimi K2) earns its slot because Kimi K2 has no other natural CLI path and has a strong performance/cost ratio for code work.
+
+2. **Native CLI for a major foundation model provider** — the agent is the first-party CLI for a provider whose models are already in high demand. Example: `cc` (Claude Code), `gg` (Gemini CLI), `cx` (Codex CLI). A router CLI (Aider, Cline, etc.) wrapping the same model does *not* clear this bar — the native CLI will always be better optimised.
+
+3. **Genuinely superior workflow for Aigon's use case** — the CLI offers a fundamentally different and better workflow than existing agents for feature implementation specifically.
+
+**Hard disqualifiers** — a CLI fails immediately if:
+- It exits after completing a task (one-shot / batch mode). Aigon requires the agent to stay at its own interactive prompt so the tmux session remains observable and interactable.
+- It cannot reliably execute shell commands (e.g. `aigon agent-status implementation-complete`) from inside the agent session.
+- Context delivery requires manual configuration per repo with no auto-discovery path.
+
+**Evaluated candidates (as of 2026-04-28):**
+
+| CLI | Verdict | Reason |
+|---|---|---|
+| GitHub Copilot | ❌ Skip | Wraps foundation models already covered by native CLIs (cc, gg, cx); no unique model access |
+| Aider | ❌ Disqualified | Exits after each task; shell execution unreliable; no auto-context discovery |
+| Cline CLI 2.0 | ⏳ Monitor | Too new (Feb 2026); context delivery conventions unknown; revisit Q3 2026 |
+| Amazon Q | ❌ Low priority | ~50–66% SWE-bench (below current roster); Nova models reachable via op/Bedrock |
+| Goose | 🤔 Possible | OSS, model-agnostic; overlaps heavily with op (OpenCode); only adds value if op proves insufficient |
+
+---
+
 ## Decision Tree
 
 Answer these 5 questions in order to determine the correct configuration for any new agent.
