@@ -424,6 +424,7 @@
     .agent-picker-reviewer-title{font-size:12px;font-weight:600;color:var(--text-secondary);letter-spacing:.02em}
     .agent-picker-reviewer-hint{font-size:12px;color:var(--text-secondary);margin:0 0 10px;line-height:1.45}
     .agent-picker-reviewer-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,200px) minmax(130px,200px);gap:8px;align-items:center}
+    .autonomous-review-triplet-hint{font-size:11px;color:var(--text-tertiary);margin:0 0 8px;line-height:1.45;max-width:52em}
     .agent-picker-triplet-header-row{display:grid;grid-template-columns:var(--agent-triplet-cols);column-gap:12px;align-items:end;padding:0 12px 8px;margin:0 0 2px;border-bottom:1px solid var(--border-subtle)}
     .agent-picker-th-agent{display:grid;grid-template-columns:var(--agent-triplet-gutter) minmax(0,1fr);column-gap:10px;align-items:end;min-width:0}
     .agent-picker-th-gutter{width:var(--agent-triplet-gutter);min-width:var(--agent-triplet-gutter)}

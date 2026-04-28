@@ -41,6 +41,19 @@ test('agent picker recommendation banner mounts in index.html (no phantom .modal
     assert.ok(!actions.includes("querySelector('#agent-picker .modal-card')"));
     assert.ok(actions.includes("getElementById(mountId || 'agent-picker-recommendation')"));
 });
+// REGRESSION: Start Autonomously reviewer row must reuse the same triplet wiring as implement rows (spec recommendations + localStorage), not dead selects.
+test('autonomous reviewer triplet uses recommendation and tripletStorage like implement rows', () => {
+    const actions = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions.js'), 'utf8');
+    const block = actions.match(/function updateReviewerTripletSelects\([\s\S]*?\n}\n\n\/\/ Convert picker triplets/);
+    assert.ok(block, 'updateReviewerTripletSelects block present');
+    const body = block[0];
+    assert.ok(body.includes('getRecommendedValue(agent.id, \'model\')'), 'reviewer model select applies spec recommendation');
+    assert.ok(body.includes('tripletStorage.read(agent.id)'), 'reviewer model select reads last-used triplet');
+    assert.ok(body.includes('getRecommendedValue(agent.id, \'effort\')'), 'reviewer effort select applies spec recommendation');
+    assert.ok(body.includes('tripletStorage.write(agent.id, { effort:'), 'reviewer effort persists');
+    const idx = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/index.html'), 'utf8');
+    assert.ok(idx.includes('id="autonomous-review-triplet-hint"'), 'autonomous reviewer hint documents picker parity');
+});
 // REGRESSION (F355): SetConductor must wire openTerminalPanel (not openPeekPanel) in pipeline.js
 test('set autonomous conductor view wired in dashboard templates', () => {
     const pipeline = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/pipeline.js'), 'utf8');
