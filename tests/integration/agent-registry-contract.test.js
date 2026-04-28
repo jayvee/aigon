@@ -51,6 +51,25 @@ test('profile templates derive ports from basePort plus registry offsets', () =>
         assertExactAgentSet(Object.keys(buildAgentPortMap(profiles.profiles[profileName].devServer.basePort)), `${profileName} port map drifted`);
     });
 });
+test('cursor agent project slug and trust marker match Cursor CLI layout', () => withTempDir('aigon-cu-trust-', tmpDir => {
+    // REGRESSION: Cursor Agent ignores security.workspace.trust.* and gates on ~/.cursor/projects/<slug>/.workspace-trusted.
+    const { cursorAgentProjectSlug, ensureCursorAgentWorkspaceTrustedMarkers } = agentRegistry._test;
+    const wt = '/Users/jviner/.aigon/worktrees/aigon/feature-425-cc-planning-context-injection-via-spec-frontmatter';
+    assert.strictEqual(
+        cursorAgentProjectSlug(wt),
+        'Users-jviner-aigon-worktrees-aigon-feature-425-cc-planning-context-injection-via-spec-frontmatter',
+        'slug drift breaks pre-trust markers'
+    );
+    const projectsRoot = path.join(tmpDir, 'cursor-projects');
+    const absWt = path.join(tmpDir, 'wt', 'feature-425-cu-x');
+    fs.mkdirSync(absWt, { recursive: true });
+    assert.ok(ensureCursorAgentWorkspaceTrustedMarkers(projectsRoot, [absWt]), 'expected first write');
+    const slug = cursorAgentProjectSlug(absWt);
+    const marker = fs.readFileSync(path.join(projectsRoot, slug, '.workspace-trusted'), 'utf8');
+    assert.ok(marker.includes(`"workspacePath": ${JSON.stringify(absWt)}`), 'marker must record absolute workspace path');
+    assert.ok(!ensureCursorAgentWorkspaceTrustedMarkers(projectsRoot, [absWt]), 'idempotent second call');
+}));
+
 test('codex trust writes exact worktree sections and cleans them up', () => withTempDir('aigon-cx-trust-', tmpDir => {
     // REGRESSION: prevents cx worktree trust from only covering the parent dir and leaking stale entries on cleanup.
     const originalHome = process.env.HOME;
