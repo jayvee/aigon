@@ -1,0 +1,13 @@
+{
+  "agents": {
+    "cc": {
+      "models": {}
+    }
+  },
+  "devProxy": {
+    "basePort": 4200
+  },
+  "instructions": {
+    "rigor": "light"
+  }
+}
