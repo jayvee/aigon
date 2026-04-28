@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T00:10:33.557Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: onboarding demo feature run on brewboard
