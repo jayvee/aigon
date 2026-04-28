@@ -70,3 +70,6 @@ site/.vercel/
 # Security scan ephemeral output
 .scan/reports/
 .scan/raw/
+
+# E2E test forensics log — written on every run, inspect locally
+docker/clean-room/last-run.log
