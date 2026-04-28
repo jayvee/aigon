@@ -1,0 +1,24 @@
+{
+  "seed": "brewboard",
+  "featureId": "07",
+  "taskType": "do",
+  "agent": "gg",
+  "model": "gemini-2.5-flash",
+  "effort": null,
+  "aigonVersion": "2.55.0",
+  "timestamp": "2026-04-28T04:19:34.689Z",
+  "totalMs": 37457,
+  "baselineMs": null,
+  "overheadMs": null,
+  "phases": [
+    {
+      "name": "cli-start",
+      "ms": 180
+    },
+    {
+      "name": "agent-boot",
+      "ms": 1983
+    }
+  ],
+  "ok": true
+}

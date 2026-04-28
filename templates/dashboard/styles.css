@@ -1303,3 +1303,69 @@
     .matrix-legend-desc{color:var(--text-secondary)}
     .matrix-legend-dash .matrix-score-none{font-size:14px;line-height:1}
     .matrix-agent-group-header td{background:var(--bg-elevated);padding:5px 10px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-tertiary);border-bottom:1px solid var(--border-subtle)}
+
+    /* ── Nudge modal agent/role grid ─────────────────────────────────────── */
+    .nudge-agent-role-grid{display:grid;grid-template-columns:1fr 180px;gap:10px;margin-bottom:12px}
+
+    /* ── Drawer close button — always a direct flex child, never clipped ── */
+    .drawer-close-x{flex-shrink:0;padding:5px 10px;font-size:16px}
+
+    /* ── Drawer tabs must scroll on narrow widths ────────────────────────── */
+    .drawer-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .drawer-tab{white-space:nowrap;flex-shrink:0}
+
+    /* ── Matrix peek close button ────────────────────────────────────────── */
+    .matrix-peek-close-btn{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:20px;line-height:1;padding:4px 6px;border-radius:4px;z-index:1}
+    .matrix-peek-close-btn:hover{color:var(--text-primary);background:var(--bg-elevated)}
+    #matrix-peek-panel{position:relative}
+
+    /* ── Modal actions can wrap on very narrow screens ───────────────────── */
+    .modal-actions{flex-wrap:wrap}
+
+    /* ══ Mobile phone overrides (≤600px) ══════════════════════════════════ */
+    @media(max-width:600px){
+      /* Spec drawer header: collapse secondary actions, keep title + close */
+      .spec-drawer .drawer-header{flex-wrap:wrap;gap:4px 8px;padding:10px 12px 8px}
+      .spec-drawer .drawer-id,.spec-drawer .drawer-copy-name,.spec-drawer .drawer-stage{display:none}
+      .spec-drawer .drawer-actions .btn{display:none}
+      .drawer-close-x{min-width:40px;min-height:38px;font-size:20px;display:flex!important;align-items:center;justify-content:center}
+      /* Drawer footer: stack font controls below save status */
+      .drawer-footer{flex-wrap:wrap;gap:6px;padding:8px 12px}
+      /* Modal overrides for mobile viewport */
+      .modal-box{min-width:0!important;max-height:calc(100dvh - 20px)}
+      /* Nudge modal: stack agent + role selects vertically */
+      .nudge-agent-role-grid{grid-template-columns:1fr}
+      /* Agent picker reviewer triplet: stack columns vertically */
+      .agent-picker-reviewer-grid{grid-template-columns:1fr!important}
+      /* Session rows: show name + badges + buttons, hide meta age */
+      .session-row{grid-template-columns:minmax(0,1fr) auto}
+      .session-meta{display:none}
+      /* Notification dropdown: full-width on phone */
+      .notif-dropdown{width:100vw}
+      /* Close-log panel: full-width on phone */
+      .close-log-panel{width:100vw;border-left:none}
+      /* Matrix peek: slide up as bottom sheet */
+      #matrix-peek-backdrop{padding-top:0;align-items:flex-end}
+      #matrix-peek-panel{width:100vw;max-height:85dvh;border-radius:var(--radius) var(--radius) 0 0}
+      /* Autonomous modal bottom action row: wrap Save button onto its own line */
+      #autonomous-modal .modal-actions{flex-direction:column;gap:10px}
+      #autonomous-modal .modal-actions>div{justify-content:flex-end}
+      /* Updated text: hide to save header space */
+      #updated-text{display:none}
+      /* Terminal panel: hide zoom/fullscreen on mobile to keep Stop+Detach reachable */
+      #terminal-panel #panel-zoom-out,
+      #terminal-panel #panel-zoom-in,
+      #terminal-panel #panel-fullscreen,
+      #terminal-panel #panel-copy-session{display:none!important}
+      /* Ensure Stop / Detach / Kill-confirm buttons are easily tappable */
+      #panel-stop,#panel-close{min-height:38px;padding:6px 14px;font-size:13px}
+      #panel-stop-cancel,#panel-stop-kill{min-height:38px;padding:6px 14px;font-size:13px}
+      /* Kill-confirm label: shorten to save space */
+      #panel-kill-label{font-size:11px;white-space:nowrap}
+    }
+
+    /* ══ Narrow tablet overrides (≤768px) ════════════════════════════════ */
+    @media(max-width:768px){
+      /* Notification dropdown: full-width on tablets too */
+      .notif-dropdown{width:min(100vw,380px)}
+    }

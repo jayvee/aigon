@@ -3012,6 +3012,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btn.addEventListener('click', openPeek);
 
+  const closeBtn = document.getElementById('matrix-peek-close');
+  if (closeBtn) closeBtn.addEventListener('click', closePeek);
+
   backdrop.addEventListener('click', e => { if (e.target === backdrop) closePeek(); });
 
   document.addEventListener('keydown', e => {

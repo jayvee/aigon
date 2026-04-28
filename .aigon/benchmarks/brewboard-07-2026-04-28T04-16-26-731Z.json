@@ -1,0 +1,24 @@
+{
+  "seed": "brewboard",
+  "featureId": "07",
+  "taskType": "do",
+  "agent": "cc",
+  "model": "claude-opus-4-7[1m]",
+  "effort": null,
+  "aigonVersion": "2.55.0",
+  "timestamp": "2026-04-28T04:16:00.013Z",
+  "totalMs": 26717,
+  "baselineMs": null,
+  "overheadMs": null,
+  "phases": [
+    {
+      "name": "cli-start",
+      "ms": 159
+    },
+    {
+      "name": "agent-boot",
+      "ms": 2599
+    }
+  ],
+  "ok": true
+}
