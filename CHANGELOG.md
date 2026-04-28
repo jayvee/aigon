@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Note on entries from v2.19 onwards:** the changelog was backfilled in bulk from git history on 2026-04-07 ahead of the public launch. Entries are grouped by theme and dated by month rather than per-patch. For commit-level detail, see `git log v2.18.0..HEAD` or browse the [git tags](https://github.com/jayvee/aigon/tags).
 
+## [Unreleased]
+
+### Added
+
+- **Close-recovery as a first-class workflow state (F432)** — when an `aigon feature-close` fails and the operator clicks "Close with agent" / "Resolve & close" on the dashboard, the engine now appends `feature.close_recovery.started` before spawning the `role: 'close'` tmux session. `currentSpecState` becomes `close_recovery_in_progress`, a `closeRecovery` context blob is stored on the snapshot (`agentId`, `startedAt`, `returnSpecState`, `sessionName`, `source`), and `lib/state-render-meta.js` surfaces a "Close recovery" badge with a status spinner. The dashboard now exposes a `recoveryTmuxSession` for attach/peek and the snapshot adapter swaps `feature-close` for `feature-resolve-and-close` while `lastCloseFailure.kind === 'merge-conflict'` and the feature is in any close-eligible state (including `close_recovery_in_progress`). Recovery exits via `feature.close_recovery.ended` / `.cancelled` (back to `submitted`, keeping `lastCloseFailure` for forensics) or via successful `feature.close_requested` → `closing` → `done`. Engine-first ordering means the dashboard never observes a "close session running but no recovery state" half-state. `parseTmuxSessionName` now recognises the `close` role round-trip.
+
 ## [2.61.0] — 2026-04-28
 
 Install manifest tracking (F422). The aigon installer now records every
