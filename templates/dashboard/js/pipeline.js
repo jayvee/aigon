@@ -910,9 +910,15 @@
           if (!isOpen && menu) {
             // Position fixed menu relative to toggle button
             const rect = toggle.getBoundingClientRect();
-            menu.style.right = (window.innerWidth - rect.right) + 'px';
+            menu.style.right = Math.max(4, window.innerWidth - rect.right) + 'px';
+            menu.style.left = '';
             menu.style.bottom = (window.innerHeight - rect.top + 3) + 'px';
             menu.classList.add('open');
+            // Clamp left overflow after browser renders the menu width
+            requestAnimationFrame(() => {
+              const mRect = menu.getBoundingClientRect();
+              if (mRect.left < 4) { menu.style.right = ''; menu.style.left = '4px'; }
+            });
           }
         };
       });

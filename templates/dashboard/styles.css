@@ -1352,6 +1352,14 @@
       #autonomous-modal .modal-actions>div{justify-content:flex-end}
       /* Updated text: hide to save header space */
       #updated-text{display:none}
+      /* Agent picker: drop model/effort columns — too wide at 610px min for mobile.
+         Users select agents by name; model overrides require desktop. */
+      .agent-checks.agent-checks-triplet{--agent-triplet-cols:1fr}
+      .agent-check-row.agent-check-row-triplet{grid-template-columns:1fr}
+      .agent-picker-triplet-header-row{display:none}
+      .agent-check-row-triplet .agent-check-config-model,
+      .agent-check-row-triplet .agent-triplet-cell{display:none!important}
+      .agent-check-row-triplet .agent-check-primary{grid-column:1}
       /* Terminal panel: hide zoom/fullscreen on mobile to keep Stop+Detach reachable */
       #terminal-panel #panel-zoom-out,
       #terminal-panel #panel-zoom-in,

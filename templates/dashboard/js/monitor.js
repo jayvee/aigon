@@ -342,7 +342,15 @@
             const isOpen = menu && menu.classList.contains('open');
             document.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
             if (!isOpen && menu) {
+              const rect = btn.getBoundingClientRect();
+              menu.style.right = Math.max(4, window.innerWidth - rect.right) + 'px';
+              menu.style.left = '';
+              menu.style.bottom = (window.innerHeight - rect.top + 3) + 'px';
               menu.classList.add('open');
+              requestAnimationFrame(() => {
+                const mRect = menu.getBoundingClientRect();
+                if (mRect.left < 4) { menu.style.right = ''; menu.style.left = '4px'; }
+              });
               setTimeout(() => document.addEventListener('click', function close(ev) {
                 if (!btn.parentElement.contains(ev.target)) { menu.classList.remove('open'); document.removeEventListener('click', close); }
               }), 0);
