@@ -1,16 +1,1 @@
-# Implementation Log: Feature 438 - benchmark-token-axis-and-judge
-Agent: cc
-
-## Status
-
-## New API Surface
-
-## Key Decisions
-
-## Gotchas / Known Issues
-
-## Explicitly Deferred
-
-## For the Next Feature in This Set
-
-## Test Coverage
+Token-usage axis + IMPLEMENTATION_RUBRIC_V1 judge wired into perf-bench (CLI flag `--judge`); `findCodexSessionFiles` now accepts `afterMs` cutoff; pro-bridge null-guard so test:ui boots without `@aigon/pro` installed.
