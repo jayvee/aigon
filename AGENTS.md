@@ -180,6 +180,8 @@ Recent incidents — every one of these is a case of a read path paving over a m
 - CU: `.cursor/rules/aigon.mdc` with `alwaysApply: true`
 - CX: `.codex/prompt.md` with marker blocks; aigon-spawned Codex sessions inline template bodies directly
 
+**Install manifest** (F422): every file written by `install-agent` is recorded in `.aigon/install-manifest.json` with `{path, sha256, version, installedAt}`. On re-install, files whose sha256 differs from the manifest are warned about (prompt in interactive mode; `AIGON_NONINTERACTIVE=1` or `--force` skips). `aigon uninstall [--dry-run] [--force]` reads the manifest and deletes every tracked file; it never touches `.aigon/workflows/`, `.aigon/state/`, `.aigon/sessions/`, or `.aigon/config.json`. Migration 2.61.0 (`migrate_initialize_install_manifest`) synthesizes the manifest for legacy repos. `aigon doctor` reports missing/modified/untracked files; `aigon doctor --fix` triggers the migration.
+
 **Auto-update**: SessionStart hook `aigon check-version` detects version mismatch → runs `aigon update` → re-runs `install-agent` for all detected agents
 
 ## Aigon Pro (`@aigon/pro`)
