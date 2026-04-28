@@ -2,6 +2,7 @@
 complexity: medium
 set: transcript-program
 transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T01:15:42.319Z", actor: "cli/feature-prioritise" }
   - { from: "inbox", to: "backlog", at: "2026-04-26T13:05:44.697Z", actor: "cli/feature-prioritise" }
 ---
 
