@@ -89,6 +89,24 @@ testAsync('recordCloseRecoveryEnded: returns lifecycle to submitted and clears c
     assert.ok(snap.lastCloseFailure, 'lastCloseFailure should not be cleared by recovery exit');
 }));
 
+testAsync('recordCloseRecoveryEnded: restores returnSpecState implementing (projector + machine)', () => withTempRepo(async (repo) => {
+    writeSpec(repo, '05', 'recovery-return-impl');
+    await engine.startFeature(repo, '05', 'solo_branch', ['cc']);
+    await engine.signalAgentReady(repo, '05', 'cc');
+    await engine.pauseFeature(repo, '05');
+    await engine.resumeFeature(repo, '05');
+    let snap = await wf.showFeature(repo, '05');
+    assert.strictEqual(snap.currentSpecState, 'implementing');
+    await recordCloseFailure(repo, '05', 'CONFLICT (content): Merge conflict in z.js', 1);
+    await engine.recordCloseRecoveryStarted(repo, '05', { agentId: 'cc', returnSpecState: 'implementing' });
+    snap = await wf.showFeature(repo, '05');
+    assert.strictEqual(snap.currentSpecState, 'close_recovery_in_progress');
+    await engine.recordCloseRecoveryEnded(repo, '05', { agentId: 'cc' });
+    snap = await wf.showFeature(repo, '05');
+    assert.strictEqual(snap.currentSpecState, 'implementing', 'REGRESSION: ended must restore returnSpecState not hardcoded submitted');
+    assert.strictEqual(snap.closeRecovery, null);
+}));
+
 testAsync('full round-trip: failed → recovery → retry close → done clears failure + closeRecovery', () => withTempRepo(async (repo) => {
     writeSpec(repo, '03', 'recovery-roundtrip');
     await engine.startFeature(repo, '03', 'solo_branch', ['cc']);
