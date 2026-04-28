@@ -30,6 +30,7 @@ LOG_FILE="$SCRIPT_DIR/last-run.log"
 
 INSTALL_RESULT="PENDING"
 FEATURE_RUN_RESULT="SKIPPED"
+RUN_FEATURE_ID=""
 
 # ---------- helpers ----------
 
@@ -232,6 +233,7 @@ stage_run_feature() {
       return 0
     fi
   fi
+  RUN_FEATURE_ID="$feature_id"
   log "Using feature ID: $feature_id"
 
   # Restart aigon server (smoke-test kills it at the end of scenario 2)
@@ -281,11 +283,10 @@ stage_assert() {
     return 0
   fi
 
-  local feature_id="${AIGON_E2E_FEATURE_ID:-}"
+  local feature_id="${RUN_FEATURE_ID:-}"
   if [[ -z "$feature_id" ]]; then
-    feature_id="$(docker exec -u dev "$CONTAINER_NAME" bash -c \
-      "ls ~/src/brewboard/docs/specs/features/01-inbox/feature-*.md 2>/dev/null \
-        | sort | head -1 | sed 's/.*feature-//;s/-.*//' " 2>/dev/null || echo "")"
+    log "No feature ID available for assertions."
+    return 0
   fi
 
   local pass_count=0
