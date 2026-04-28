@@ -30,3 +30,19 @@ Complete. All 7 new integration tests pass; full suite 61/62 (pre-existing workt
 - op flat output written, skill tree preserved, equal command counts, idempotent
 - cc single-output regression (normalization doesn't break it)
 - registry normalization contract: `outputs.length === 2` for op, `outputs.length === 1` for cc, `output === outputs[0]` for both
+
+## Code Review
+
+**Reviewed by**: composer  
+**Date**: 2026-04-28
+
+### Fixes Applied
+- None needed — no additional commits from this review pass.
+
+### Residual Issues
+- **Manual OpenCode palette check (AC)**: End-to-end verification in `opencode` with `/aigon-help`, etc., remains operator-owned per **Explicitly Deferred** above; not a code defect.
+
+### Notes
+- `templates/agents/op.json` diff vs `main` is output-config only; `modelOptions` unchanged — matches spec constraint.
+- `setup.js` uses a per-output loop with `outputConfig` shim; no `op`-specific branches. Codex legacy cleanup stays outside the loop (once per agent).
+- Minor nit (not patched): alias removals populate `removedAliases` but are not logged separately; behaviour matches prior single-output path.
