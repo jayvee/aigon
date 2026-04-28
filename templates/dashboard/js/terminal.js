@@ -19,16 +19,8 @@
     function setTerminalFontSize(val) {
       localStorage.setItem(lsKey('terminalFontSize'), String(val));
     }
-    // Engine: 'xterm' (default, canvas/WebGL — what we've shipped for years) vs
-    // 'wterm' (experimental DOM-rendered, gives native selection + Cmd+F at the
-    // cost of being 11 days old as of writing). Toggle in Settings → Terminal.
-    function getTerminalEngine() {
-      const v = localStorage.getItem(lsKey('terminalEngine'));
-      return (v === 'wterm' && typeof window.WTerm === 'function') ? 'wterm' : 'xterm';
-    }
-    function setTerminalEngine(val) {
-      localStorage.setItem(lsKey('terminalEngine'), val === 'wterm' ? 'wterm' : 'xterm');
-    }
+    // Legacy migration: clear stale engine preference key if present.
+    localStorage.removeItem(lsKey('terminalEngine'));
 
     // Build xterm.js theme from CSS custom properties
     function buildXtermTheme() {
@@ -65,15 +57,12 @@
       specPath: null, specTitle: null, specStage: null,
       specPoller: null, specContentHash: null,
       xterm: null, fitAddon: null, sseSource: null, ws: null,
-      wterm: null, wtermResizeObserver: null,
     };
 
     function destroyXterm() {
       if (termState.sseSource) { try { termState.sseSource.close(); } catch (_) {} termState.sseSource = null; }
       if (termState.ws) { try { termState.ws.close(); } catch (_) {} termState.ws = null; }
       if (termState.xterm) { try { termState.xterm.dispose(); } catch (_) {} termState.xterm = null; }
-      if (termState.wterm) { try { termState.wterm.destroy(); } catch (_) {} termState.wterm = null; }
-      if (termState.wtermResizeObserver) { try { termState.wtermResizeObserver.disconnect(); } catch (_) {} termState.wtermResizeObserver = null; }
       termState.fitAddon = null;
     }
 
@@ -132,75 +121,6 @@
       return { term, fitAddon };
     }
 
-    // wterm path — DOM-rendered terminal. Returns a thin adapter shaped like
-    // createXtermInstance so the rest of the panel can be agnostic. Async because
-    // wterm.init() loads the WASM bridge.
-    async function createWtermInstance(container) {
-      if (typeof window.WTerm !== 'function') return null;
-      // Approximate cell metrics so the initial cols/rows roughly fit the panel.
-      // wterm's ResizeObserver will correct after layout.
-      const cellW = 8.4;
-      const cellH = 17;
-      const rect = container.getBoundingClientRect();
-      const cols = Math.max(40, Math.floor((rect.width - 24) / cellW));
-      const rows = Math.max(10, Math.floor((rect.height - 24) / cellH));
-      const term = new window.WTerm(container, {
-        wasmUrl: window.__WTERM_WASM_URL,
-        cols, rows,
-        autoResize: true,
-        cursorBlink: true,
-      });
-      try {
-        await term.init();
-      } catch (_) {
-        return null;
-      }
-      termState.wterm = term;
-      return { term };
-    }
-
-    async function connectPtyStreamWterm(sessionName) {
-      let token;
-      try {
-        const r = await fetch('/api/pty-token');
-        const d = await r.json();
-        token = d.token;
-      } catch (_) {
-        return; // no SSE fallback for wterm spike — flip back to xterm if PTY token unavailable
-      }
-      const term = termState.wterm;
-      if (!term) return;
-      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${proto}//${location.host}/api/session/pty/${encodeURIComponent(sessionName)}?token=${encodeURIComponent(token)}`;
-      const ws = new WebSocket(wsUrl);
-      ws.binaryType = 'arraybuffer';
-      termState.ws = ws;
-
-      ws.onopen = () => {
-        ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
-      };
-      ws.onmessage = (e) => {
-        if (e.data instanceof ArrayBuffer) {
-          try { term.write(new Uint8Array(e.data)); } catch (_) {}
-        }
-      };
-      ws.onclose = () => {
-        termState.ws = null;
-        const dot = document.getElementById('panel-status-dot');
-        if (dot) dot.className = 'panel-status-dot';
-      };
-      // Forward typed input back to the PTY (input handler set during WTerm init).
-      term.onData = (data) => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(new TextEncoder().encode(data));
-        }
-      };
-      term.onResize = (cols, rows) => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'resize', cols, rows }));
-        }
-      };
-    }
 
     async function connectPtyStream(sessionName) {
       let token;
@@ -363,27 +283,16 @@
           container.appendChild(pre);
         }
       } else if (sessionName && getTerminalClickTarget() === 'dashboard') {
-        if (getTerminalEngine() === 'wterm') {
-          // wterm path (DOM-rendered, native selection / Cmd+F).
-          createWtermInstance(container).then(result => {
-            if (result) {
-              connectPtyStreamWterm(sessionName);
-            } else {
-              container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:13px;font-family:var(--mono)">wterm failed to load — flip back to xterm.js in Settings → Terminal</div>';
-            }
+        const xtermResult = createXtermInstance(container);
+        if (xtermResult) {
+          connectPtyStream(sessionName);
+          // Resize observer keeps fit in sync
+          const ro = new ResizeObserver(() => {
+            try { if (termState.fitAddon) termState.fitAddon.fit(); } catch (_) {}
           });
+          ro.observe(container);
         } else {
-          const xtermResult = createXtermInstance(container);
-          if (xtermResult) {
-            connectPtyStream(sessionName);
-            // Resize observer keeps fit in sync
-            const ro = new ResizeObserver(() => {
-              try { if (termState.fitAddon) termState.fitAddon.fit(); } catch (_) {}
-            });
-            ro.observe(container);
-          } else {
-            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:13px;font-family:var(--mono)">xterm.js not loaded — check your network connection</div>';
-          }
+          container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:13px;font-family:var(--mono)">xterm.js not loaded — check your network connection</div>';
         }
       } else {
         // External terminal mode or no session
@@ -550,4 +459,3 @@
         container.appendChild(pre);
       }
     }
-

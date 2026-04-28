@@ -1245,46 +1245,6 @@
         targetRow.appendChild(targetHint);
         termSection.appendChild(targetRow);
 
-        // Terminal engine (xterm vs wterm — experimental DOM-rendered terminal)
-        const engineRow = document.createElement('div');
-        engineRow.className = 'term-settings-row';
-        const engineLabel = document.createElement('div');
-        engineLabel.className = 'term-settings-label';
-        engineLabel.textContent = 'Terminal engine';
-        const engineHint = document.createElement('div');
-        engineHint.className = 'term-settings-hint';
-        engineHint.textContent = 'xterm.js is the default (canvas/WebGL). wterm is experimental — DOM-rendered, with native text selection and browser Cmd+F search inside the terminal.';
-        const engineCtrl = document.createElement('div');
-        engineCtrl.className = 'term-target-control';
-        const currentEngine = getTerminalEngine();
-        const btnXterm = document.createElement('button');
-        btnXterm.className = 'term-target-btn' + (currentEngine === 'xterm' ? ' active' : '');
-        btnXterm.type = 'button';
-        btnXterm.textContent = 'xterm.js';
-        btnXterm.dataset.val = 'xterm';
-        const btnWterm = document.createElement('button');
-        btnWterm.className = 'term-target-btn' + (currentEngine === 'wterm' ? ' active' : '');
-        btnWterm.type = 'button';
-        btnWterm.textContent = 'wterm (experimental)';
-        btnWterm.dataset.val = 'wterm';
-        if (typeof window.WTerm !== 'function') {
-          btnWterm.disabled = true;
-          btnWterm.title = 'wterm has not finished loading';
-        }
-        [btnXterm, btnWterm].forEach(btn => {
-          btn.onclick = () => {
-            setTerminalEngine(btn.dataset.val);
-            showToast('Terminal engine: ' + btn.textContent + ' — takes effect on next panel open');
-            renderTerminalSettings();
-          };
-        });
-        engineCtrl.appendChild(btnXterm);
-        engineCtrl.appendChild(btnWterm);
-        engineRow.appendChild(engineLabel);
-        engineRow.appendChild(engineCtrl);
-        engineRow.appendChild(engineHint);
-        termSection.appendChild(engineRow);
-
         // Font picker
         const fontRow = document.createElement('div');
         fontRow.className = 'term-settings-row';

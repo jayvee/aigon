@@ -1230,32 +1230,6 @@
     #terminal-container{flex:1;overflow:hidden;background:var(--term-bg);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);position:relative;display:flex;flex-direction:column}
     #terminal-container .xterm{height:100%}
     #terminal-container .xterm-viewport{background:var(--term-bg) !important}
-    /* wterm theme override — map wterm's CSS variables to our dashboard --term-* tokens.
-       Force the inner grid background to our terminal bg so a stray inline `style="background: var(--term-color-2)"`
-       (set by wterm when tmux paints with a non-default bg) doesn't tint the whole pane green. */
-    #terminal-container.wterm{background:var(--term-bg);height:100%;overflow:auto}
-    #terminal-container.wterm{
-      --term-bg:var(--term-bg);
-      --term-fg:var(--term-fg);
-      --term-cursor:var(--term-cursor);
-      --term-color-0:var(--term-black);
-      --term-color-1:var(--term-red);
-      --term-color-2:var(--term-green);
-      --term-color-3:var(--term-yellow);
-      --term-color-4:var(--term-blue);
-      --term-color-5:var(--term-magenta);
-      --term-color-6:var(--term-cyan);
-      --term-color-7:var(--term-white);
-      --term-color-8:var(--term-bright-black);
-      --term-color-9:var(--term-bright-red);
-      --term-color-10:var(--term-bright-green);
-      --term-color-11:var(--term-bright-yellow);
-      --term-color-12:var(--term-bright-blue);
-      --term-color-13:var(--term-bright-magenta);
-      --term-color-14:var(--term-bright-cyan);
-      --term-color-15:var(--term-bright-white);
-    }
-    #terminal-container.wterm .term-grid{background:var(--term-bg) !important}
     .term-target-control{display:flex;border:1px solid var(--border-default);border-radius:8px;overflow:hidden}
     .term-target-btn{flex:1;padding:6px 12px;font-size:12px;background:transparent;border:none;color:var(--text-secondary);cursor:pointer;transition:background .12s,color .12s}
     .term-target-btn.active{background:var(--accent);color:#fff}
