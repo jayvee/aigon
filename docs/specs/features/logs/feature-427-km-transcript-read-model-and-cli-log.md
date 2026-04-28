@@ -2,7 +2,7 @@
 Agent: km
 
 ## Status
-In progress
+Done
 
 ## New API Surface
 - `lib/transcript-read.js` — `collectTranscriptRecords`, `formatTranscriptCliOutput`, `openTranscriptPath`
