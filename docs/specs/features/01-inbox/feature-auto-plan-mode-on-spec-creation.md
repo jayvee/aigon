@@ -1,79 +1,85 @@
 ---
 complexity: medium
-# agent: cc    # optional — id of the agent that owns this spec. Used as the
-#              #   default reviewer for spec-revise cycles when the operator
-#              #   does not pick one explicitly. Precedence at revision time:
-#              #     event payload nextReviewerId > frontmatter agent:
-#              #     > snapshot.authorAgentId > getDefaultAgent().
-# research: 44 # optional — id (or list of ids) of the research topic that
-#              #   spawned this feature. Stamped automatically by `research-eval`
-#              #   on features it creates. Surfaced in the dashboard research
-#              #   detail panel under Agent Log → FEATURES.
 ---
 
 # Feature: auto-plan-mode-on-spec-creation
 
-<!-- Authoring AI: set `complexity:` using this rubric before writing the spec:
-       low       — config tweaks, doc-only, single-file helpers, trivial bug fixes
-       medium    — standard feature with moderate cross-cutting, one command handler, small refactor
-       high      — multi-file engine edits, new event types, new dashboard surfaces, judgment-heavy deletion work
-       very-high — architectural shifts, write-path-contract changes, new XState transitions, cross-cutting template+engine+frontend
-     At start time, model and effort defaults come from each agent's `cli.complexityDefaults[<complexity>]` in
-     `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
-
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+When `feature-create` or `research-create` spawns an agent to draft a spec (via `--agent <id>`, the dashboard "Create with agent" path, or the equivalent slash command), the agent must launch in its native plan / read-only mode if the agent supports a programmatic flag for it. Plan mode is only applied to *initial spec drafting*. Spec-review, spec-revise, and all implementation phases continue using `implementFlag` unchanged — those phases must Edit the spec, run `aigon ...-record` CLIs, and `git commit`, all of which plan mode would block.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As an operator running `aigon feature-create <name> --agent cc`, the spawned Claude Code session starts in plan mode so the agent explores the codebase and proposes the spec before writing anything.
+- [ ] As an operator running `aigon research-create <name> --agent cc`, the spawned session starts in plan mode for the same reason — the artifact is a research brief, not code.
+- [ ] As an operator using an agent without a programmatic plan flag (cx, gg today), behaviour is unchanged — no spurious flags, no broken launches.
+- [ ] As an operator running `feature-spec-review`, `feature-spec-revise`, `research-spec-review`, or `research-spec-revise`, plan mode is **not** applied — those agents continue to launch with `implementFlag` so they can Edit + commit + record state transitions.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] `templates/agents/cc.json` adds `cli.planFlag: "--permission-mode plan"`.
+- [ ] `templates/agents/cu.json` adds `cli.planFlag: "--mode=plan"` (verify the exact Cursor CLI flag during implementation; if cursor-agent does not yet expose a stable plan-mode flag, leave `planFlag: null` and document it in the spec-revise loop).
+- [ ] `templates/agents/cx.json` and `templates/agents/gg.json` either omit `planFlag` or set it to `null` — these resolve to "no flag" at launch.
+- [ ] `lib/config.js` surfaces `planFlag` on the resolved CLI config alongside `implementFlag`, with the same project/global override precedence.
+- [ ] `lib/feature-draft.js` `draftSpecWithAgent()` (currently line 117) builds its argv as `[...planFlagTokens, contextMessage]` using `getAgentLaunchFlagTokens(binary, cliConfig.planFlag, { autonomous: false })`. When `planFlag` is empty/null, behaviour matches today exactly.
+- [ ] `lib/research-draft.js` `draftSpecWithAgent()` (line 71) gets the same change.
+- [ ] No code path in `lib/commands/entity-commands.js` (spec-review / spec-revise launchers) is altered — `implementFlag` continues to gate those.
+- [ ] `feature-do.js`, `feature-eval.js`, `worktree.js`, `validation.js`, `dashboard-server.js`, `dashboard-routes/sessions.js`, `agent-registry.js` are NOT touched — implementation/eval/worktree paths are out of scope.
+- [ ] If a dashboard "Create" button exists that spawns a draft agent (verify during implementation), it routes through `draftSpecWithAgent` so it inherits the change for free; if it has its own spawn path, gate it the same way.
+- [ ] `templates/generic/commands/feature-create.md` and `.../research-create.md` get a one-line operator nudge: in your own session (not a spawned agent), Shift+Tab into plan mode before drafting.
+- [ ] Unit test in `tests/` covers: (a) cc resolves `planFlag` and the argv includes `--permission-mode plan` ahead of the prompt, (b) cx with no `planFlag` produces the current argv unchanged, (c) `feature-spec-review` launches still use `implementFlag` not `planFlag`.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
-     All commands must exit 0 for the iteration to be considered successful.
--->
 ```bash
-# Example: node --check aigon-cli.js
+node --check lib/feature-draft.js
+node --check lib/research-draft.js
+node --check lib/config.js
+npm test
 ```
 
 ## Pre-authorised
-<!-- Standing orders the agent may enact without stopping to ask.
-     Each line is a single bounded permission. The agent cites the matching line
-     in a commit footer `Pre-authorised-by: <slug>` for auditability.
-     The first line below is a project-wide default — keep it unless the feature
-     explicitly demands Playwright runs mid-iterate. Add or remove other lines
-     per feature.
-     Example extras:
-       - May raise `scripts/check-test-budget.sh` CEILING by up to +40 LOC if regression tests require it.
--->
 - May skip `npm run test:ui` mid-iteration when this iteration touches no dashboard assets (`templates/dashboard/**`, `lib/dashboard*.js`, `lib/server*.js`). Playwright still runs at the pre-push gate.
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+
+**The seam.** Two functions spawn the spec-drafting agent:
+- `lib/feature-draft.js:117` — `spawnSync(binary, [contextMessage], ...)` for `aigon feature-create <name> --agent <id>`
+- `lib/research-draft.js` (same shape) — for `aigon research-create <name> --agent <id>`
+
+Both currently pass **zero flags** to the agent. Change argv construction to:
+
+```js
+const flagTokens = getAgentLaunchFlagTokens(binary, cliConfig.planFlag, { autonomous: false });
+const result = spawnSync(binary, [...flagTokens, contextMessage], { ... });
+```
+
+When `planFlag` is empty or null (cx, gg, or any agent without a programmatic plan flag), `getAgentLaunchFlagTokens` already returns `[]`, so the call is a no-op for unsupported agents. This is the entire enforcement story.
+
+**Config resolution.** `lib/config.js:888` already merges per-agent CLI config from template + global + project layers for `implementFlag`. Add identical handling for `planFlag` (lines ~888, ~901–902, ~926–927). `lib/agent-registry.js:187` exposes the resolved config to the registry consumer — add `planFlag` there too.
+
+**Why not gate on command name.** I considered putting the plan-mode decision inside `launchPromptCommand()` and switching on the command name. But `feature-draft` doesn't go through that path — it spawns directly. The cleanest model is: there are **two distinct verbs** (draft vs. review/implement), and they live in two distinct functions. `feature-draft` / `research-draft` always plan. Everything else always implements. No conditional logic, no command-name switch.
+
+**What plan mode blocks (and why review/revise must stay out).** Claude Code's plan mode blocks `Edit`, `Write`, `Bash`, and `NotebookEdit`. Spec-review and spec-revise agents must Edit the spec, run `aigon feature-spec-review-record`, and `git commit` with trailers. Putting them in plan mode would deadlock the workflow. This is the load-bearing reason the gate is per-function, not per-session.
+
+**Cursor CLI flag verification.** Earlier research indicated `--mode=plan` was added to cursor-agent in Jan 2026. Implementation must verify this against the installed `cursor-agent --help` before shipping; if the flag doesn't exist or has a different name, set `planFlag: null` for cu and document it in the spec-revise round (note: feature-spec-revise, not this spec — leave a placeholder in Open Questions for the implementer).
+
+**Operator's own session.** When the operator runs `afc <name>` *without* `--agent`, this Claude Code session (or whichever agent the operator is using) drafts the spec. We can't programmatically force the operator's session into plan mode from a CLI-spawned child — the operator already owns that process. The mitigation is a one-line nudge in the `feature-create.md` skill template instructing the operator to Shift+Tab before drafting.
+
+**Codex/Gemini fallback (out of scope for v1).** A prompt-prefix fallback ("READ-ONLY: propose the spec, do not edit yet") was considered for cx/gg. Skipped here — it's advisory at best, easily ignored by the model, and adds a code path with no enforcement guarantee. Filed as a future open question rather than scoped in.
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
 -
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- Plan mode for `feature-spec-review`, `feature-spec-revise`, `research-spec-review`, `research-spec-revise` — those must stay out of plan mode (load-bearing rationale in Technical Approach).
+- Plan mode for `feature-do`, `feature-eval`, `feature-code-review`, `feature-code-revise`, autopilot, fleet — implementation phases are unchanged.
+- Prompt-prefix fallback for agents without a programmatic plan flag (cx, gg). Tracked in Open Questions.
+- Forcing the operator's own interactive session into plan mode — not addressable from a child process. Mitigated by a skill-template nudge only.
+- Dashboard UI changes beyond inheriting the gate via the existing draft path.
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- Does `cursor-agent` v1.x expose a stable `--mode=plan` (or equivalent) flag? Implementer should verify against `cursor-agent --help` before setting `cu.cli.planFlag`. If absent, leave `null` and add a note to AGENTS.md.
+- Should there be a config knob to *disable* auto-plan-mode (e.g. for power users who want straight-to-edit)? Default to "always on when supported"; revisit if friction emerges.
+- Prompt-prefix fallback for cx/gg — worth a separate feature later, or not worth the noise given lack of enforcement?
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Set: <!-- set slug if this feature is part of a set; omit line if standalone -->
-- Prior features in set: <!-- feature IDs that precede this one, e.g. F314, F315; omit if standalone -->
+- Research:
+- Set:
+- Prior features in set:
