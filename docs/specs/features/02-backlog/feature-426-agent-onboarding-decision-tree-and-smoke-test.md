@@ -31,7 +31,6 @@ Provide a repeatable, structured process for adding new agents to aigon. As the 
 ### docs/development_workflow.md
 - [ ] Contains a one-line pointer to `docs/adding-agents.md` added under a natural heading. File is not otherwise restructured.
 
-
 ## Validation
 
 ```bash
