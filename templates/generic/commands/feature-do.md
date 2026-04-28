@@ -92,7 +92,9 @@ aigon agent-status implementation-complete
 
 Hard rules:
 - Implementation is **not** complete until this succeeds. Don't say "done" before it exits 0.
-- If it fails, report the exact error output and stop for user guidance. Don't substitute `feature-close` or other commands.
+- If it fails, diagnose whether it is **scope uncertainty** or an **infrastructure blockage**:
+  - **Scope uncertainty** (ambiguous criterion, missing information, decision required): report the error and stop for user guidance. Don't substitute `feature-close` or other commands.
+  - **Infrastructure blockage** (pre-existing bug in the submission gate — security scanner, test runner, validation script — that is clearly diagnosable and fixable in ≤10 lines, unrelated to your feature's scope): apply the minimal fix, commit it with message `fix: unblock agent-status gate — <one-line description>`, and retry. Document the fix in your implementation log.
 - Ship within 60 seconds of green tests — don't re-run validation "to be sure" or pre-expand the log.
 
 After it succeeds, tell the user: "Implementation complete — ready for review."
