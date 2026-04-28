@@ -41,7 +41,10 @@
   "cli": {
     "command": "agent",
     "implementFlag": "--force",
+<<<<<<< Updated upstream
     "planFlag": "--plan",
+=======
+>>>>>>> Stashed changes
     "implementPrompt": "/aigon-feature-do {featureId}",
     "evalPrompt": "/aigon-feature-eval {featureId}",
     "reviewPrompt": "/aigon-feature-code-review {featureId}",

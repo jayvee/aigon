@@ -5,6 +5,10 @@ complexity: medium
 #              #   does not pick one explicitly. Precedence at revision time:
 #              #     event payload nextReviewerId > frontmatter agent:
 #              #     > snapshot.authorAgentId > getDefaultAgent().
+# research: 44 # optional — id (or list of ids) of the research topic that
+#              #   spawned this feature. Stamped automatically by `research-eval`
+#              #   on features it creates. Surfaced in the dashboard research
+#              #   detail panel under Agent Log → FEATURES.
 ---
 
 # Feature: {{NAME}}

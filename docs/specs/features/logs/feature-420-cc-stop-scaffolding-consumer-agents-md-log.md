@@ -1,16 +1,7 @@
 # Implementation Log: Feature 420 - stop-scaffolding-consumer-agents-md
 Agent: cc
 
-## Status
-
-## New API Surface
-
-## Key Decisions
-
-## Gotchas / Known Issues
-
-## Explicitly Deferred
+Solo Drive worktree — install-agent stripped of all AGENTS.md scaffolding; deleted `syncAgentsMdFile`/`getProjectInstructions`/`getRootFileContent`/`getScaffoldContent` from `lib/templates.js`, removed callers + `if (config.rootFile)` block in `lib/commands/setup.js`, dropped `templates/scaffold.md`, `templates/root-file.md`, `docs/aigon-project.md`. Registered idempotent `doctor --fix` migrations (2.59.0 strips legacy `<!-- AIGON_START -->…<!-- AIGON_END -->` block from AGENTS.md, 2.59.1 deletes `docs/aigon-project.md`) — both leverage existing `lib/migration.js` per-version manifest tracking so each runs at most once per repo. End-of-install now prints an optional snippet the user MAY paste into AGENTS.md, but aigon never edits it. Updated `AGENTS.md`, `docs/architecture.md`, `docs/README.md` to match. New tests in `tests/integration/install-agent-no-agents-md-scaffold.test.js` cover: install with/without prior AGENTS.md (byte-identical assert), both migrations (strip block + delete file + idempotent re-run), drift guard for removed exports.
 
 ## For the Next Feature in This Set
-
-## Test Coverage
+F421 (vendor docs to `.aigon/docs/`) and F422 (manifest-tracked install) build on the now-narrow contract: aigon writes only into `.aigon/`, `.claude/`, `.cursor/`, `.codex/`, `.gemini/`, `.agents/`. The install-paths string in `lib/commands/setup.js` (search `installPaths` / `aigonPaths`) is the canonical list — keep it in lock-step when adding new aigon-owned roots. The end-of-install snippet (printed from `install-agent`) is the only user-visible nudge toward AGENTS.md; future features should not regress this back to a write. F423 (brewboard seed refresh) will exercise both 2.59.x migrations as its end-to-end test.
