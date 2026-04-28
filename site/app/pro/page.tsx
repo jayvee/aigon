@@ -391,7 +391,7 @@ export default function ProPage() {
               Agent Benchmarks
             </p>
             <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-gray-900 dark:text-[hsl(0_0%_94%)]">
-              How fast is each agent — on <em>your</em> machine?
+              How fast is each agent — across providers and models?
             </h2>
             <p className="mt-3 max-w-2xl text-gray-600 dark:text-gray-400">
               The benchmarks panel runs every supported agent and model against
@@ -410,8 +410,8 @@ export default function ProPage() {
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             <FeatureCard
-              title="Local-first by design"
-              description="Benchmarks always run on your machine, with your API keys, against your installed Aigon. The numbers reflect the experience you actually get — not someone else's network or quota."
+              title="Authoritative, reproducible numbers"
+              description="Benchmark JSONs are captured on a deterministic seed repo and committed to the release. Because the models run provider-side, the same provider call produces the same numbers for any user — the results are identical regardless of who runs them."
             />
             <FeatureCard
               title="One command to refresh"
@@ -422,8 +422,8 @@ export default function ProPage() {
               description="When a model errors out — timeout, missing seed, provider rate-limit — the failure reason is captured and shown in the row, so you can tell &lsquo;not yet run&rsquo; from &lsquo;tried but failed&rsquo; at a glance."
             />
             <FeatureCard
-              title="Reference baseline (planned)"
-              description="A curated reference matrix — the maintainer&rsquo;s last sweep — will ship with future Aigon updates so you have a starting point for new agents before running your own. Local runs always take precedence and overwrite the reference for that pair."
+              title="Ships with every release"
+              description="A fresh benchmark sweep runs before each release tag and the JSON artifacts land in the release commit. You get authoritative numbers from day one — no provider costs, no wait, no setup."
             />
           </div>
 
@@ -443,12 +443,16 @@ export default function ProPage() {
               <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">claude -p</code>{" "}
               baseline against the same task with no Aigon scaffolding. The
               difference, surfaced as <code className="rounded bg-white px-1 py-0.5 text-xs dark:bg-white/10">overheadMs</code>,
-              is the cost you pay for the workflow engine on your hardware.
+              is the cost Aigon&rsquo;s orchestration adds on top of the bare provider call.
               Pro&rsquo;s upcoming overhead column promotes those numbers from
               the raw JSON to a first-class table view, so this signal stays
               visible — not buried.
             </p>
           </div>
+
+          <p className="mt-6 text-xs text-gray-400 dark:text-gray-500">
+            Reproducibility holds while models run provider-side. When aigon adds support for local model providers (Ollama, LM Studio, etc.), benchmarks for those entries will be machine-dependent and labelled accordingly.
+          </p>
         </div>
       </section>
 
