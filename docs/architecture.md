@@ -593,9 +593,29 @@ npm run test:e2e:mock-fleet     # Fleet lifecycle with mock agents
 npm run test:e2e                # Full CLI E2E with real git repos
 npm run test:dashboard          # Dashboard Playwright tests only
 npm run test:dashboard:e2e      # Dashboard E2E lifecycle tests
+npm run test:migration          # Brewboard legacy→current migration test (see below)
 node -c aigon-cli.js            # Quick syntax check (no tests)
 node -c lib/<module>.js         # Quick syntax check for a module
 ```
+
+### Migration testing
+
+`scripts/test-brewboard-migration.sh` runs the F420–F422 doctor migrations (2.59.0 / 2.59.1 / 2.60.0 / 2.61.0) end-to-end against a real legacy fixture committed in `legacy-fixtures/brewboard/`. This verifies:
+
+1. Migration 2.59.0 strips the `<!-- AIGON_START -->...<!-- AIGON_END -->` block from `AGENTS.md`.
+2. Migration 2.59.1 deletes `docs/aigon-project.md`.
+3. Migration 2.60.0 moves `docs/development_workflow.md` and `docs/agents/*.md` to `.aigon/docs/`.
+4. Migration 2.61.0 creates `.aigon/install-manifest.json` from the aigon-owned files it discovers.
+5. Running `doctor --fix` a second time is a no-op (idempotent).
+
+To run locally:
+```bash
+npm run test:migration
+# or directly:
+bash scripts/test-brewboard-migration.sh
+```
+
+The fixture lives in `legacy-fixtures/brewboard/` — update it when you add a new migration that should be exercised in this suite.
 ### Read Models
 
 There are currently two read-side paths:

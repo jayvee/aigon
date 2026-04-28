@@ -44,6 +44,7 @@
     "test": "npm run lint && node scripts/generate-workflow-diagrams.js --check && npm run test:integration && npm run test:workflow",
     "test:integration": "node scripts/run-tests-parallel.js \"tests/integration/*.test.js\"",
     "test:workflow": "node scripts/run-tests-parallel.js \"tests/workflow-core/*.test.js\"",
+    "test:migration": "bash scripts/test-brewboard-migration.sh",
     "test:iterate": "node scripts/iterate-validate.js",
     "test:ui": "npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list",
     "test:all": "npm test && npm run test:ui",

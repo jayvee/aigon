@@ -13,6 +13,7 @@ Single entry point for every doc under `docs/`. One line per file: what's in it,
 - [testing.md](testing.md) — Unit/integration discipline, the 2,500-LOC test ceiling, REGRESSION-comment rule.
 - [testing-dashboard.md](testing-dashboard.md) — Playwright harness, when `npm run test:ui` runs, mid-iteration skip rule.
 - [testing-linux-docker.md](testing-linux-docker.md) — End-to-end Linux install verification via Docker/OrbStack.
+- [`scripts/test-brewboard-migration.sh`](../scripts/test-brewboard-migration.sh) — End-to-end migration test: applies the F420–F422 doctor migrations (2.59.0/2.59.1/2.60.0/2.61.0) against a committed legacy fixture and asserts the resulting state matches the post-install contract. Run with `npm run test:migration`.
 - [prompt-caching-policy.md](prompt-caching-policy.md) — Anthropic-prompt-cache discipline for Claude API code in this repo.
 - [token-maxing.md](token-maxing.md) — Rolling-window mental model and the `aigon token-window` scheduler.
 - [security.md](security.md) — Merge-gate scanning (gitleaks + semgrep), what blocks a close.
