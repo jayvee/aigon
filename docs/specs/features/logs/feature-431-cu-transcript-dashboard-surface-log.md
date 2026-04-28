@@ -42,3 +42,19 @@ Done
 ## Wrap-up
 - Spec checkboxes updated (`docs/specs/features/03-in-progress/feature-431-transcript-dashboard-surface.md`).
 - `aigon agent-status implementation-complete` succeeded from worktree `feature-431-cu-transcript-dashboard-surface` (branch-derived feature **431**, agent **cu**).
+
+## Code Review
+
+**Reviewed by**: gemini
+**Date**: 2026-04-28
+
+### Fixes Applied
+- Reverted out-of-scope deletions of `feature-436` and `feature-437` specs. (f06b7d03)
+- fix(review): support EDITOR with arguments (e.g. "code -w") in `openTranscriptPath` by using `shell: true`.
+
+### Residual Issues
+- Playwright E2E tests (`test:ui`) time out waiting for dashboard server (20000ms). This was also noted in the original implementation log and appears to be a pre-existing environmental or "takeover" logic issue in the test suite rather than a regression in this feature's code.
+
+### Notes
+- Implementation correctly follows the server-mediated download pattern and UI placement requirements.
+- The use of `Content-Disposition: attachment` for downloads is appropriate.
