@@ -1,16 +1,4 @@
 # Implementation Log: Feature 421 - vendor-aigon-docs-to-dot-aigon-folder
 Agent: cc
 
-## Status
-
-## New API Surface
-
-## Key Decisions
-
-## Gotchas / Known Issues
-
-## Explicitly Deferred
-
-## For the Next Feature in This Set
-
-## Test Coverage
+Solo Drive worktree — install-agent + update-mode now iterate `templates/docs/` and vendor each file to `.aigon/docs/<name>.md`; per-agent docs go to `.aigon/docs/agents/<id>.md`. Aigon-the-repo dogfoods via `git mv` (history preserved). New 2.60.0 doctor migration moves pristine legacy `docs/development_workflow.md` / `docs/feature-sets.md` / `docs/agents/<id>.md` to `.aigon/docs/` (sha256 + AIGON_START marker check); diverged or user-owned files stay put with a warning. Updated AGENTS.md, docs/architecture.md, docs/README.md, scripts/setup-fixture.js, every `templates/generic/*` reference. New test `tests/integration/install-agent-vendored-docs-to-dot-aigon.test.js` covers install footprint + 4 migration paths.
