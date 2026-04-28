@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 209
+lines_removed: 237
+lines_changed: 446
+files_touched: 24
+fix_commit_count: 2
+fix_commit_ratio: 0.4
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 197
+output_tokens: 88844
+cache_creation_input_tokens: 313321
+cache_read_input_tokens: 11398914
+thinking_tokens: 0
+total_tokens: 11801276
+billable_tokens: 89041
+cost_usd: 24.2481
+sessions: 2
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 419 - aigon-repo-internal-doc-reorg
 Agent: cc
 
