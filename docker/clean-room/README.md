@@ -5,6 +5,66 @@ Validates Aigon's installation and getting-started docs end-to-end from a fresh 
 - **Manual mode** — interactive shell on a clean OS; step through the flow as a new user
 - **Automated mode** — non-interactive smoke test; exits non-zero on any failure
 
+## Unattended end-to-end
+
+`docker/clean-room/run-e2e.sh` is a host-side orchestrator that runs the full install test
+without any human input. One command is enough to validate every install change before release.
+
+### Prerequisites
+
+| Requirement | Notes |
+|-------------|-------|
+| OrbStack (macOS) | Provides the Docker daemon; `brew install orbstack`. Must be open before running. |
+| `ANTHROPIC_API_KEY` | Required. The autonomous agent inside the container uses it. |
+| Claude Code host auth | `~/.claude` must exist. The script injects it into the container via `docker-inject-creds.sh`. |
+
+### Usage
+
+```bash
+bash docker/clean-room/run-e2e.sh
+```
+
+The script exits 0 on success and non-zero with a stage-tagged error on any must-pass failure.
+Container logs are always dumped to `docker/clean-room/last-run.log` (gitignored) before teardown.
+
+### Expected runtime
+
+| Phase | Time |
+|-------|------|
+| Must-pass core (preflight → build → install → dashboard) | ~10–15 min |
+| Best-effort feature run (autonomous agent, 1 iteration) | +~5–15 min |
+
+### Expected cost
+
+The best-effort feature run uses one Claude Code autonomous iteration with a 5-minute budget.
+Typical cost: **<$0.50** of Anthropic API credits per run.
+
+### Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ANTHROPIC_API_KEY` | — | Required. |
+| `GOOGLE_API_KEY` | — | Forwarded if set. |
+| `OPENAI_API_KEY` | — | Forwarded if set. |
+| `AIGON_E2E_SKIP_FEATURE_RUN` | `0` | Set to `1` to skip the best-effort autonomous feature run. |
+| `AIGON_E2E_FEATURE_ID` | auto | Override the brewboard feature ID used in the autonomous run. |
+| `AIGON_E2E_STOP_AFTER` | `300` | Wall-clock seconds before the host kills the agent session. |
+| `AIGON_E2E_ALLOW_REMOTE` | `0` | Must be `1` to run against a non-local Docker daemon. |
+
+### Inspecting a failure
+
+1. Check the final summary line printed at the end:
+   ```
+   INSTALL: PASS|FAIL  FEATURE-RUN: PASS|FAIL|SKIPPED  EXIT: 0|N
+   ```
+2. For must-pass failures, the stage tag in the error message (e.g. `STAGE 4 FAILED:`) shows exactly where it stopped.
+3. Container logs are always written to `docker/clean-room/last-run.log`. Open it to see every command the container ran:
+   ```bash
+   open docker/clean-room/last-run.log
+   # or
+   less docker/clean-room/last-run.log
+   ```
+
 ## Prerequisites (macOS host)
 
 - OrbStack (provides the Docker daemon): `brew install orbstack`
