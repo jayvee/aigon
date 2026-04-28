@@ -71,10 +71,6 @@ This runs all configured scanners plus an LLM analysis via the `/security-review
 
 ## Weekly automated scan
 
-The built-in `security-scan-weekly` recurring template runs `aigon security-scan` every Monday. It fires automatically when the dashboard server starts each week — no configuration required. Each run picks up where the previous left off using the stored scan SHA.
+**Automated recurring templates** (including a `security-scan-weekly` style job that runs `aigon security-scan` on a cadence) require **[Aigon Pro](/pro)** and the [recurring-features](/docs/guides/recurring-features) engine. Without Pro, run `aigon security-scan` on demand whenever you want a full-repo pass.
 
-To check whether the weekly scan is due or already ran this week:
-
-```bash
-aigon recurring-list
-```
+With Pro installed, `aigon recurring-list` shows whether a weekly scan is due; see the [recurring-features guide](/docs/guides/recurring-features) for how cadence batches work.

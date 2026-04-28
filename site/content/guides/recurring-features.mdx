@@ -1,0 +1,32 @@
+---
+title: Recurring Features
+description: Cadence-driven feature batches from repo templates — implemented in Aigon Pro.
+---
+
+import { Callout } from "nextra/components";
+
+<Callout type="info">
+  **Aigon Pro feature.** The recurring-features engine — weekly/quarterly (and similar) template batches, `aigon recurring-run`, `aigon recurring-list`, and the dashboard poller that keeps cadence — lives in **`@aigon/pro`** (historical feature 236, replacing the older OSS recurring stack). Open-source Aigon ships **thin CLI stubs** that print a Pro notice and exit non-zero when Pro is not installed. See [aigon.build/pro](/pro).
+</Callout>
+
+## What “recurring features” means
+
+**Recurring features** are **repeatable rolls of work** driven by Markdown templates under something like `docs/specs/recurring/` in your repo: each cycle can create or refresh specs, assign IDs, move lanes, and commit — so maintenance work (dependency sweeps, benchmark refresh, scheduled security passes tied to recurring, etc.) stays structured instead of ad-hoc.
+
+That is separate from **[one-shot scheduling](/docs/guides/scheduling-features)** (`aigon schedule`), which fires a **single** kickoff at a wall time.
+
+## OSS vs Pro
+
+| Capability | Open-source Aigon | With Aigon Pro |
+|------------|-------------------|----------------|
+| `aigon schedule …` | Stub (Pro notice) | Server-polled scheduled kickoffs |
+| `aigon recurring-run` / `recurring-list` | Stub (Pro notice) | Full recurring engine |
+| On-demand [`aigon security-scan`](/docs/reference/commands/infra/security-scan) | Available | Same |
+
+Merge-gate scanning and manual `security-scan` remain available in OSS; **automated weekly template runs** described in older docs require the Pro recurring stack.
+
+## See also
+
+- [`schedule` command](/docs/reference/commands/infra/schedule) — one-shot deferred starts
+- [Security scanning](/docs/guides/security-scanning) — merge gate and on-demand `security-scan`
+- Repo list of Pro-moved features: `docs/specs/features/MOVED-TO-AIGON-PRO.md` in the Aigon tree

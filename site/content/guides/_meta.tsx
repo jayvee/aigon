@@ -9,6 +9,8 @@ export default {
   "autopilot-mode": { title: withPro("Autonomous Mode") },
   "research-workflow": "Research Workflow",
   "feedback-workflow": "Feedback Workflow",
+  "scheduling-features": { title: withPro("Scheduling Features") },
+  "recurring-features": { title: withPro("Recurring Features") },
   "feature-sets-autonomous": { title: withPro("Feature Sets in Autonomous Mode") },
   telemetry: "Telemetry & Analytics",
   "pipeline-quota": "Usage limits (Pipeline)",

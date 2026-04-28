@@ -1,0 +1,59 @@
+---
+title: Scheduling Features
+description: Queue one-shot autonomous feature runs and research starts for a future wall time (requires Aigon Pro).
+---
+
+import { Callout } from "nextra/components";
+
+<Callout type="info">
+  **Aigon Pro feature.** One-shot scheduled kickoffs via [`aigon schedule`](/docs/reference/commands/infra/schedule) — including `feature_autonomous` and `research_start` jobs polled by the dashboard server — ship in **Aigon Pro**. In open-source Aigon the CLI prints a gate message and exits non-zero; install `@aigon/pro` when available for your organization. See [aigon.build/pro](/pro) for launch updates.
+</Callout>
+
+Scheduling lets you **defer** a kickoff to an explicit clock time instead of starting immediately. The server wakes jobs from `.aigon/state/scheduled-kickoffs.json` on a short poll interval; if no server is running at `runAt`, the job stays pending until a server comes back online.
+
+You can schedule:
+
+- **`feature_autonomous`** — runs [`feature-autonomous-start`](/docs/reference/commands/feature/feature-autonomous-start) at `--run-at`
+- **`research_start`** — runs [`research-start`](/docs/reference/commands/research/research-start) at `--run-at`
+
+Full syntax, flags, and storage semantics are documented on the [`schedule` command reference](/docs/reference/commands/infra/schedule).
+
+## How to schedule a feature
+
+Use the dashboard flow to pick an entity, agents, optional workflow definition, and **Run at** — or call `aigon schedule add` from the CLI with an ISO 8601 timestamp that includes a timezone (`Z` or `±hh:mm`).
+
+<img
+  src="/img/schedule_autonomous_start.png"
+  alt="Start Autonomously modal with Run at (local) and schedule for local time options"
+  width="480"
+  style={{ borderRadius: "8px", margin: "12px 0" }}
+/>
+
+```bash
+aigon schedule add feature_autonomous 142 \
+  --run-at=2026-04-28T09:30:00-07:00 cc \
+  --stop-after=eval --eval-agent=gg
+```
+
+You need [`aigon server start`](/docs/reference/commands/infra/server) (or equivalent) running so jobs actually fire.
+
+## The list of scheduled features
+
+Pending and completed jobs are visible in the UI and via `aigon schedule list`. Use **`--all`** to include completed and cancelled rows when debugging.
+
+<img
+  src="/img/current_schedule.png"
+  alt="Scheduled kickoffs drawer listing pending jobs with entity, agents, workflow, run time, and cancel"
+  width="480"
+  style={{ borderRadius: "8px", margin: "12px 0" }}
+/>
+
+```bash
+aigon schedule list
+aigon schedule list --all
+```
+
+## Related topics
+
+- **[Recurring features](/docs/guides/recurring-features)** — repeating cadence from templates (`aigon recurring-run` / `recurring-list`), also Pro-gated in OSS.
+- **[Autonomous mode](/docs/guides/autopilot-mode)** — what fires when a `feature_autonomous` job runs.
