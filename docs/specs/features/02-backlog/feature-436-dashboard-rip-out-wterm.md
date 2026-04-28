@@ -1,5 +1,7 @@
 ---
 complexity: low
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T08:36:39.813Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: dashboard-rip-out-wterm
