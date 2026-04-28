@@ -60,7 +60,7 @@
           "output": 0.55
         },
         "notes": {
-          "research": null
+          "implement": "Quarantined — hangs indefinitely during perf-bench implementation run, never signals completion."
         },
         "score": {
           "spec_review": null,
@@ -69,7 +69,13 @@
           "spec": null,
           "research": null
         },
-        "lastRefreshAt": "2026-04-26T00:00:00.000Z"
+        "lastRefreshAt": "2026-04-28T00:00:00.000Z",
+        "quarantined": {
+          "since": "2026-04-28",
+          "reason": "Hangs indefinitely on feature implementation — never signals implementation-complete. Session had to be manually killed during perf-bench run.",
+          "evidence": "perf-bench brewboard km kimi-k2.6 (2026-04-28): timed out, user killed session",
+          "supersededBy": []
+        }
       }
     ],
     "effortOptions": [],
