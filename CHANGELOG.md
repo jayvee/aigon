@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Note on entries from v2.19 onwards:** the changelog was backfilled in bulk from git history on 2026-04-07 ahead of the public launch. Entries are grouped by theme and dated by month rather than per-patch. For commit-level detail, see `git log v2.18.0..HEAD` or browse the [git tags](https://github.com/jayvee/aigon/tags).
 
+## [2.60.0] — 2026-04-28
+
+Vendored-docs layout (F421), no more consumer AGENTS.md scaffolding (F420), and
+follow-on planning/transcript work (F424–F429). Version bump aligns
+`package.json` with the `2.60.0` migration that already shipped in `lib/migration.js`.
+
+### Added
+
+- **Vendored docs at `.aigon/docs/` (F421)** — `install-agent` and `update` now write `development_workflow.md`, `feature-sets.md`, and per-agent notes (`agents/<id>.md`) under `.aigon/docs/` instead of co-mingling with the consumer's `docs/` folder. The consumer's own `docs/` is never touched.
+- **`doctor --fix` 2.60.0 migration** — moves legacy `docs/development_workflow.md`, `docs/feature-sets.md`, and pristine `docs/agents/<id>.md` (anything carrying the `<!-- AIGON_START -->` marker) into `.aigon/docs/`. Edited copies are left in place with a manual-merge warning. Idempotent.
+- **Spec planning-context capture (F425)** — `feature-create` / `research-create` accept a `planning_context:` frontmatter pointer and `feature-start` copies it into the implementation log so the agent's plan-mode reasoning is preserved across hand-off.
+- **Auto plan-mode on spec creation (F424)** — `afc` / `arc` prompt for Shift+Tab plan-mode before drafting and persist the plan path in the new spec.
+- **Transcript read model + CLI (F427)** and **live log panel for `feature-close` (F428)** — first surface for the new transcript hot tier (F429) which adds a durable on-disk store fed by the existing tmux session sidecar.
+- **Agent onboarding decision tree + smoke test (F426)**.
+
+### Changed
+
+- **BREAKING: aigon no longer scaffolds consumer `AGENTS.md` (F420)** — the `<!-- AIGON_START -->...<!-- AIGON_END -->` block is removed by the 2.59.0 migration; consumer `AGENTS.md` is now fully user-owned. `docs/aigon-project.md` is also removed (2.59.1) — aigon no longer reads it.
+- **`feature-template-agent-onboard.md`, `templates/generic/agents-md.md`, `cursor-rule.mdc`, `prompt.md`, `skill.md`, `docs/agent.md`** — every reference to `docs/development_workflow.md` / `docs/agents/<id>.md` rewritten to `.aigon/docs/...` so freshly generated agent install artifacts point at the new layout.
+
+### Migration notes
+
+- Existing repos pick up the new layout automatically on the next `aigon install-agent` or `aigon update` run (the 2.60.0 migration runs first).
+- If `docs/development_workflow.md` was hand-edited, the migration leaves it in place and prints a warning — reconcile manually, then move it to `.aigon/docs/`.
+
 ## [2.55.0] — 2026-04-28
 
 PTY terminal in the dashboard, agent lifecycle signal rename (F404), research-context awareness across feature/review commands, and dashboard escape hatches for stalled signals. ~75 commits since v2.54.6.
