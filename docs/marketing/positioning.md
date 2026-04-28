@@ -59,6 +59,22 @@ Each chunk is a self-contained string. Copy verbatim into the named surface — 
 
 > One Kanban for many agents — on real branches, in real worktrees, against real specs.
 
+### Hero candidates — two-payoff wedge (pending selection, 2026-04-28)
+
+These three are drafted from the two-payoff frame in `aigon-vs.md`. Each leads with both halves of the wedge (reviewer diversity + quota arbitrage). **John's preference: candidate A.** None has propagated to surfaces yet — pick one, then ship in a single PR that updates the `hero` chunk above and every surface in the surface map.
+
+**A — favoured (three-sentence punch)**
+
+> Race the agents you already pay for. Catch what one model misses. Stop hitting quota walls.
+
+**B — extends the existing "One Kanban" hero**
+
+> One Kanban for many agents — different vendors for diversity, pooled quotas for headroom.
+
+**C — benefit-led, longest**
+
+> Use every subscription you pay for. Get every vendor's perspective. Stop waiting on a single quota wall.
+
 ### `bio` — social bio, GitHub repo description
 
 > Spec-driven multi-agent coding harness for Claude Code, Gemini CLI, and Codex CLI — one Kanban, many agents, real worktrees.
