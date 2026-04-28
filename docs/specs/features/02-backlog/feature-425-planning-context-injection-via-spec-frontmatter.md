@@ -22,6 +22,8 @@ Add a `planning_context:` frontmatter field to feature specs. When `feature-do` 
 - [ ] If the plan file path doesn't exist at `feature-do` time (file deleted after start), the section falls back gracefully to pointing at the implementation log's `## Planning Context` section instead
 - [ ] `planning_context:` accepts a single path or a list of paths
 - [ ] `npm test` passes
+- [ ] `site/content/getting-started.mdx` — the "Context that compounds" bullet (~line 12) is updated to mention that planning mode artifacts carry forward: something like "specs, implementation summaries, and planning session notes feed forward — context from an interactive session is never lost when work moves to an isolated agent"
+- [ ] `site/content/guides/drive-mode.mdx` — a tip/callout is added after the "Create a feature" code block (~line 47) explaining that if you designed the feature in a Claude Code planning session, you can add `planning_context: ~/.claude/plans/<file>.md` to the spec frontmatter and the implementing agent will read that plan before writing any code; include a one-line example showing the frontmatter field
 
 ## Validation
 ```bash
@@ -70,6 +72,8 @@ Add `{{PLANNING_CONTEXT_SECTION}}` placeholder between `{{RESEARCH_CONTEXT_SECTI
 - `lib/feature-do.js` — context section builder + placeholder wiring
 - `lib/feature-start.js` — implementation log appender
 - `templates/generic/commands/feature-do.md` — placeholder slot
+- `site/content/getting-started.mdx` — update "Context that compounds" bullet (~line 12)
+- `site/content/guides/drive-mode.mdx` — add tip after "Create a feature" code block (~line 47)
 
 ## Dependencies
 - none
