@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-MEDIA_DIR="$ROOT_DIR/docs/media"
+MEDIA_DIR="$ROOT_DIR/docs/demos/media"
 RAW_DIR="$MEDIA_DIR/raw"
 OUT_DIR="$MEDIA_DIR/gifs"
 MAX_BYTES=$((3 * 1024 * 1024))

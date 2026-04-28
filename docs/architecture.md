@@ -119,8 +119,19 @@ Current shared modules:
   `writeCaddyfile`, `addCaddyRoute`, `removeCaddyRoute`, `reloadCaddy`, `allocatePort`
 - `lib/dashboard-server.js` (~1,980 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, static assets, and OSS/Pro route dispatch. It should not parse engine-state/spec/log files directly.
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
-- `lib/dashboard-routes.js` (~1,660 lines): OSS dashboard API route table and dispatcher — owns `/api/...` route matching plus extracted handlers that receive request/response objects and server context
+- `lib/dashboard-routes.js` (~60 lines): thin aggregator — composes the per-domain route modules in `lib/dashboard-routes/` and exposes the dispatcher
   `createDashboardRouteDispatcher`
+
+#### Dashboard route modules
+The aggregator delegates to seven focused sub-files under `lib/dashboard-routes/`:
+
+- `analytics.js` — analytics, telemetry, weekly autonomy trend endpoints
+- `config.js` — config read/write endpoints (`/api/config/*`)
+- `entities.js` — feature/research/feedback CRUD endpoints
+- `recommendations.js` — `/api/recommendation/*` (spec-frontmatter-driven start-modal defaults)
+- `sessions.js` — tmux/session endpoints, PTY token issuance
+- `system.js` — health, version, repo metadata
+- `util.js` — shared response helpers + the route-table builder consumed by the aggregator
 - `lib/worktree.js` (~1,300 lines): worktree creation, permissions, git attribution metadata bootstrap, tmux sessions
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
 - `lib/set-conductor.js` (~500 lines): detached set-level autonomous sequencer (`set-autonomous-start|stop|resume|reset`) that resolves set members in topo order, delegates each member to `feature-autonomous-start`, and persists `.aigon/state/set-<slug>-auto.json`
@@ -366,7 +377,7 @@ Feature writes go through the engine, but the read side is still mixed:
 - `lib/feature-set-workflow-rules.js` owns set-card action eligibility; dashboard frontend code must not infer when `set-autonomous-*` is allowed.
 - `templates/dashboard/js/autonomous-plan.js` renders the dashboard card's autonomous timeline from the server-provided `autonomousPlan` payload. It does not infer stage state; `workflow-read-model.js` owns that read-side derivation.
 - `templates/dashboard/js/set-cards.js` renders set-card body/graph markup from the server-provided `sets[]` payload. It does not derive status or action eligibility; `dashboard-status-collector.js` and `feature-set-workflow-rules.js` own those read-side derivations.
-- `lib/dashboard-server.js` now focuses more narrowly on HTTP transport, polling orchestration, notifications, static serving, and delegating API requests to `lib/dashboard-routes.js`. It remains read-only with respect to both mutations and engine-state/spec/log file access.
+- `lib/dashboard-server.js` owns HTTP transport, polling orchestration, notifications, static serving, and dispatches API requests through `lib/dashboard-routes.js`. It is read-only with respect to both mutations and engine-state/spec/log file access.
 
 So the architecture after F171 → F283 → F294 is:
 

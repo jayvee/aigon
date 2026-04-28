@@ -54,7 +54,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 
 | Module | ~Lines | Owns |
 |--------|--------|------|
-| `lib/agent-registry.js` | ~280 | Agent registry: scans `templates/agents/*.json`, provides lookup maps (display names, ports, providers, trust, capabilities). Zero hardcoded agent logic in `lib/` |
+| `lib/agent-registry.js` | ~655 | Agent registry: scans `templates/agents/*.json`, provides lookup maps (display names, ports, providers, trust, capabilities). Zero hardcoded agent logic in `lib/`. F414 runtime-dispatch helpers live here: `getSessionStrategy`, `getTelemetryStrategy`, `getTrustInstallScope`, `getResumeConfig` — all consumers read these instead of branching on agent id |
 | `lib/commands/feature.js` | ~1950 | Thin dispatcher for `feature-*` handlers + `sessions-close`. Fat handlers (`feature-start`, `feature-eval`, `feature-do`, `feature-autonomous-start`) delegate to dedicated `lib/feature-*.js` modules. Entity-agnostic handlers come from `./entity-commands`. Uses `withActionDelegate` from `action-scope` for the main-repo delegation guard |
 | `lib/feature-start.js` / `lib/feature-eval.js` / `lib/feature-do.js` / `lib/feature-autonomous.js` | ~800/~450/~250/~830 | Extracted handlers — each exports `run(args, deps)` where `deps` bundles ctx + local closures (`persistAndRunEffects`, `resolveFeatureMode`, etc.) from the parent dispatcher. Add new commands here when the body exceeds ~100 lines |
 | `lib/feature-command-helpers.js` | ~95 | Shared helpers for feature handlers: `parseLogFrontmatterForBackfill`, `estimateExpectedScopeFiles`, `upsertLogFrontmatterScalars` |
@@ -62,9 +62,9 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/research-draft.js` | ~180 | Agent-assisted research draft flow — mirrors `lib/feature-draft.js`; spawns the configured agent with `templates/prompts/research-draft.md`, validates CLI availability, and reports whether the spec was edited. Consumed by `entityCreate` when `entityType === 'research'` and `--agent` is set |
 | `lib/commands/entity-commands.js` | ~295 | Shared factory for parallel feature/research lifecycle commands. `createEntityCommands(FEATURE_DEF\|RESEARCH_DEF, ctx)` returns `${prefix}-{create,prioritise,spec-review,spec-revise,spec-review-record,spec-revise-record}`. `entityResetBase` drives feature-reset/research-reset with entity-specific pre/post-cleanup hooks. **When adding a new parallel command, put it here — not in feature.js/research.js — so both entities pick it up by construction** |
 | `lib/commands/infra.js` | ~1460 | `aigon server` command, board, config, proxy-setup, dev-server |
-| `lib/commands/setup.js` | ~1212 | init, install-agent, check-version, update, doctor + state reconciliation |
+| `lib/commands/setup.js` | ~3492 | init, install-agent, check-version, update, doctor + state reconciliation. Composed from extracted helpers in `lib/commands/setup/`: `seed-reset.js` (seed-repo full reset), `worktree-cleanup.js` (orphan worktree GC), `gitignore-and-hooks.js` (.gitignore + git hooks scaffolding), `pid-utils.js` (server PID file helpers), `agent-trust.js` (per-agent trust install scope routing) |
 | `lib/dashboard-server.js` | ~2660 | HTTP/UI module: dashboard, API, WebSocket relay, HTTP action dispatch. Never mutates engine state directly and never reads engine-state/spec/log files directly |
-| `lib/dashboard-routes.js` | ~1660 | OSS dashboard API route table and dispatcher |
+| `lib/dashboard-routes.js` | ~60 | Thin aggregator — composes per-domain route modules and exposes the dispatcher (`createDashboardRouteDispatcher`). Composed from `lib/dashboard-routes/`: `analytics.js` (analytics + telemetry endpoints), `config.js` (config read/write endpoints), `entities.js` (feature/research/feedback CRUD endpoints), `recommendations.js` (`/api/recommendation/*`), `sessions.js` (tmux/session endpoints), `system.js` (health, version, repo metadata), `util.js` (shared response helpers + route-table builders) |
 | `lib/dashboard-status-collector.js` | ~900 | Read-side collector: repo/feature/research/feedback/summary status, log/detail reads, plus derived set-card payloads (progress/current feature/dep graph/validActions) |
 | `lib/utils.js` | ~183 | Cross-cutting re-exports (config, proxy, dashboard, worktree, templates, git) + feedback constants, dev-server URL, terminal title, safeWrite |
 | `lib/hooks.js` | ~146 | Hook lifecycle: parseHooksFile, getDefinedHooks, executeHook, runPreHook, runPostHook |
@@ -283,8 +283,5 @@ Process: invoke the skill → use shadcn/ui components where available → verif
 - **Shipping architecture changes without docs**: adding modules, repos, or patterns without updating `AGENTS.md` / `docs/architecture.md` → next agent has no awareness of the change
 
 ## Reading Order
-1. `AGENTS.md` (this file) — quick orientation
-2. `docs/architecture.md` — full module docs, ctx details, design rules
-3. `docs/development_workflow.md` — feature/research lifecycle
-4. Active feature spec: `aigon feature-spec <ID>`
-5. Agent-specific notes: `docs/agents/{id}.md`
+1. `AGENTS.md` (this file) — orientation
+2. `docs/README.md` — catalog of all other docs

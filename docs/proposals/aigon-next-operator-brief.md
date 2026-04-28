@@ -6,11 +6,11 @@ Use this as the short handoff prompt for a new Codex session in a separate proto
 
 Read this file for the brief:
 
-- `/Users/jviner/src/aigon/docs/aigon-next-operator-brief.md`
+- `/Users/jviner/src/aigon/docs/proposals/aigon-next-operator-brief.md`
 
 Then read the full bootstrap:
 
-- `/Users/jviner/src/aigon/docs/aigon-next-prototype-bootstrap.md`
+- `/Users/jviner/src/aigon/docs/proposals/aigon-next-prototype-bootstrap.md`
 
 Optional background:
 
@@ -24,8 +24,8 @@ Optional background:
 Build a proof-of-concept for a new Aigon workflow core in this repo.
 
 Read these files from the current Aigon repo first:
-- /Users/jviner/src/aigon/docs/aigon-next-operator-brief.md
-- /Users/jviner/src/aigon/docs/aigon-next-prototype-bootstrap.md
+- /Users/jviner/src/aigon/docs/proposals/aigon-next-operator-brief.md
+- /Users/jviner/src/aigon/docs/proposals/aigon-next-prototype-bootstrap.md
 
 This prototype should:
 - use XState

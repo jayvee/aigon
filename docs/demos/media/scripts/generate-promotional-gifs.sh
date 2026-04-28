@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-RAW_DIR="$ROOT_DIR/docs/media/raw"
+RAW_DIR="$ROOT_DIR/docs/demos/media/raw"
 mkdir -p "$RAW_DIR"
 
 if ! command -v ffmpeg >/dev/null 2>&1; then
