@@ -278,7 +278,7 @@ Read these from the current Aigon repo for background only:
 1. `AGENTS.md`
 2. `docs/architecture.md`
 3. `docs/development_workflow.md`
-4. `docs/aigon-next-prototype-bootstrap.md`
+4. `docs/proposals/aigon-next-prototype-bootstrap.md`
 
 Pay special attention to the workflow/dashboard pain points in:
 
@@ -297,7 +297,7 @@ Paste this into the new Codex session:
 Build a proof-of-concept for a new Aigon workflow core in this repo.
 
 Read the bootstrap document from the current Aigon repo:
-/Users/jviner/src/aigon/docs/aigon-next-prototype-bootstrap.md
+/Users/jviner/src/aigon/docs/proposals/aigon-next-prototype-bootstrap.md
 
 This prototype should:
 - use XState

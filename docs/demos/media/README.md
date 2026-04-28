@@ -17,15 +17,15 @@ All deliverables are optimized to:
 ## Rebuild Workflow
 1. Regenerate raw clips:
    ```bash
-   docs/media/scripts/generate-promotional-gifs.sh
+   docs/demos/media/scripts/generate-promotional-gifs.sh
    ```
 2. Optimize all raw GIFs with `gifsicle`:
    ```bash
-   docs/media/optimize-gifs.sh
+   docs/demos/media/optimize-gifs.sh
    ```
 3. Validate size/width/fps constraints:
    ```bash
-   docs/media/validate-gifs.sh
+   docs/demos/media/validate-gifs.sh
    ```
 
 ## Recording Notes For Future Captures
