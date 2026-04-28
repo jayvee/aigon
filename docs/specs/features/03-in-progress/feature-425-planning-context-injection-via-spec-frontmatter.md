@@ -85,6 +85,7 @@ Add `{{PLANNING_CONTEXT_SECTION}}` placeholder between `{{RESEARCH_CONTEXT_SECTI
 
 ## Open Questions
 - Should the plan content be *inlined* in the feature-do output (like the spec is), or just referenced as a path? Inlining increases token cost but removes a file-read step. Recommendation: reference as a path (consistent with how research/set context works — the agent reads the file, it's not dumped wholesale).
+- **No backfill path needed.** The log-copy step is intentionally forward-only (fires at `feature-start`). For in-flight features, a user can manually add `planning_context:` to the spec and `feature-do` will pick it up at next run — the live file path works fine without the log copy. Do not add any backfill or migration logic.
 
 ## Related
 - Research: none
