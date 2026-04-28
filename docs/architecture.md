@@ -13,7 +13,7 @@ This document gives agents and contributors a fast map of the Aigon codebase. It
 - `templates/dashboard/index.html`: the dashboard UI — read fresh on every request, no restart needed for frontend changes.
 - `tests/`: automated test suites. `tests/dashboard/` contains Playwright tests for the dashboard.
 - `docs/specs/`: workflow state for features, research, feedback, logs, and evaluations.
-- `docs/agents/`: agent-specific operational notes installed into projects (marker blocks updated by `install-agent`).
+- `.aigon/docs/`: aigon-vendored documentation installed into consumer projects (F421). Includes `development_workflow.md`, `feature-sets.md`, and `agents/<id>.md` per installed agent. Marker blocks in `agents/<id>.md` are updated by `install-agent`. The consumer's own `docs/` folder is never touched.
 - `AGENTS.md`, `CLAUDE.md`, `README.md`: user-owned. Aigon does not write or modify these (F420). Discovery happens via per-agent skill descriptions and always-loaded rule files installed under `.claude/`, `.cursor/`, etc.
 
 ## CLI Structure
@@ -494,7 +494,7 @@ When orienting to the repo, read in this order:
 
 1. `AGENTS.md`
 2. `docs/architecture.md`
-3. `docs/development_workflow.md`
+3. `.aigon/docs/development_workflow.md`
 4. the active spec under `docs/specs/...`
 5. the relevant command module under `lib/commands/`
 

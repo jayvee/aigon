@@ -16,7 +16,7 @@ Optional background:
 
 - `/Users/jviner/src/aigon/AGENTS.md`
 - `/Users/jviner/src/aigon/docs/architecture.md`
-- `/Users/jviner/src/aigon/docs/development_workflow.md`
+- `/Users/jviner/src/aigon/.aigon/docs/development_workflow.md`
 
 ## Prompt
 

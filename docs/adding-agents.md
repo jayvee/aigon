@@ -51,7 +51,7 @@ Answer these 5 questions in order to determine the correct configuration for any
 **Q4: Does the agent stay at its own interactive prompt after completing a task?**
 
 - **YES** (all current agents) → no `exec bash -l`; the tmux session stays at the agent's own prompt and remains interactive
-- **NO** (batch/headless) → `shellTrap` becomes the primary signal path; document this clearly in the `signals` section and note it in `docs/agents/<id>.md`
+- **NO** (batch/headless) → `shellTrap` becomes the primary signal path; document this clearly in the `signals` section and note it in `.aigon/docs/agents/<id>.md`
 
 **Q5: Can aigon read the agent's transcript or session file?**
 

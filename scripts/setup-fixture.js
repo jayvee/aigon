@@ -224,9 +224,9 @@ This is a simple seed repo used for testing the Aigon workflow. Features are int
 
 This project uses the Aigon development workflow.
 
-- Agent-specific notes: \`docs/agents/*.md\`
+- Agent-specific notes: \`.aigon/docs/agents/*.md\`
 - Architecture overview: \`docs/architecture.md\`
-- Development workflow: \`docs/development_workflow.md\`
+- Development workflow: \`.aigon/docs/development_workflow.md\`
 <!-- AIGON_END -->
 ${extraTail}`;
     write(path.join(repoDir, 'AGENTS.md'), content);

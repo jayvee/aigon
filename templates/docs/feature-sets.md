@@ -97,6 +97,6 @@ Each member is delegated to `feature-autonomous-start`, polled, and recorded in 
 
 ## See also
 
-- `docs/development_workflow.md` — feature lifecycle (`feature-create` → `feature-prioritise` → `feature-do` → `feature-close`)
+- `.aigon/docs/development_workflow.md` — feature lifecycle (`feature-create` → `feature-prioritise` → `feature-do` → `feature-close`)
 - `lib/feature-sets.js` — derived-state scanner (no engine writes)
 - `lib/set-conductor.js` — autonomous-set sequencer (Pro)
