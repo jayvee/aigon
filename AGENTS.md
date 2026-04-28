@@ -12,7 +12,7 @@
 - **Interrupting agents**: `aigon nudge <ID> [agent] "message"` is the canonical way to message a running session — do not handcraft `tmux send-keys`
 - **Tests**: `npm test` · syntax: `node -c aigon-cli.js`
 - **Version bumps**: after every commit — `npm version patch|minor|major && git push --tags`
-- **Seed reset**: `aigon seed-reset ~/src/<repo> --force` — resets seed repos to initial state
+- **Seed reset**: `aigon seed-reset ~/src/<repo> --force` — resets seed repos to initial state. If you are making changes to a seed repo, read `docs/seeds.md` first — the two-repo architecture means a common mistake will silently wipe your work.
 - **Cross-machine sync** (Pro): `aigon backup`, `aigon vault`, `aigon sync`, `aigon profile configure|push|pull|status` and the dashboard's Backup & Sync tab live in @aigon/pro (feature 236 moved F359, F380, F388 there). OSS keeps thin verb stubs that delegate to Pro when installed and otherwise print the standard "Pro feature — coming later" notice.
 - **Spec frontmatter (F313)**: `complexity:` (low/medium/high/very-high) in feature/research specs drives the dashboard start modal's per-agent `{model, effort}` pre-selection via each agent's `cli.complexityDefaults[<complexity>]` in `templates/agents/<id>.json`, then `aigon config models`. Specs do not store model IDs. Parser + resolver live in `lib/spec-recommendation.js`; API `/api/recommendation/:type/:id`.
 - **Spec review states (F341)**: spec review/revision is modelled as first-class engine states (`spec_review_in_progress`, `spec_review_complete`, `spec_revision_in_progress`, `spec_revision_complete`). The two `*_complete` states are transient (xstate `always:` → `backlog`) — declared in `TRANSIENT_STATES` inside `lib/feature-workflow-rules.js` / `lib/research-workflow-rules.js`. Owning-agent for spec revision resolves as: event-payload `nextReviewerId` > frontmatter `agent:` > `snapshot.authorAgentId` > `getDefaultAgent()` (see `resolveSpecRevisionAgent` in `lib/commands/entity-commands.js`). Sidecar `specReview` state on a backlog snapshot triggers a `MISSING_MIGRATION` read-model tag — `aigon doctor --fix` (migration 2.56.0) repairs it.
@@ -285,3 +285,4 @@ Process: invoke the skill → use shadcn/ui components where available → verif
 ## Reading Order
 1. `AGENTS.md` (this file) — orientation
 2. `docs/README.md` — catalog of all other docs
+3. `docs/seeds.md` — **read this if you are working with brewboard or any seed repo**; covers the two-repo architecture and the rule that pushes must go to both `brewboard.git` and `brewboard-seed.git`
