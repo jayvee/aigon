@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 159
+lines_removed: 226
+lines_changed: 385
+files_touched: 14
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 179
+output_tokens: 56480
+cache_creation_input_tokens: 308625
+cache_read_input_tokens: 15950873
+thinking_tokens: 0
+total_tokens: 16316157
+billable_tokens: 56659
+cost_usd: 33.9517
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 420 - stop-scaffolding-consumer-agents-md
 Agent: cc
 
