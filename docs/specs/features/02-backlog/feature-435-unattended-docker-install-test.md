@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T06:52:33.256Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: unattended-docker-install-test
