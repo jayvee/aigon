@@ -44,15 +44,26 @@ test('branch with committed implementation files is accepted', () => withTempDir
 // REGRESSION feature 295: multiline nudges with quotes must go through tmux load-buffer verbatim.
 testAsync('nudge delivery keeps multiline quoted text intact', async () => {
     const message = "line one\nline 'two'\nline \"three\""; const ops = []; let recorded = null;
+    let captureCount = 0;
     const result = await sendNudge('/repo', '295', message, { _deps: {
         resolveEntity: () => ({ entityType: 'feature', entityId: '295', snapshot: { agents: { cc: {} } }, desc: 'demo' }),
         resolveSessions: () => ({ agentId: 'cc', role: 'do', sessionName: 'repo-f295-do-cc-demo' }),
-        resolveSubmitKey: () => 'Enter',
+        resolveNudgeTransport: () => ({ submitKey: 'Enter', submitAttempts: 1, retryDelayMs: 0, successPatterns: ['Thinking...'], promptPlaceholder: 'Type your message or @path/to/file' }),
         assertBelowRateLimit: async () => {},
         persistEntityEvents: async (_repo, _type, _id, events) => { recorded = events[0]; },
-        runTmux: (args, opts = {}) => (ops.push({ args, input: opts.input || null }), args[0] === 'capture-pane' ? { status: 0, stdout: message, stderr: '' } : { status: 0, stdout: '', stderr: '' }),
+        runTmux: (args, opts = {}) => {
+            ops.push({ args, input: opts.input || null });
+            if (args[0] === 'capture-pane') {
+                captureCount += 1;
+                return { status: 0, stdout: captureCount === 1 ? `> ${message}` : '⠼ Thinking...', stderr: '' };
+            }
+            return { status: 0, stdout: '', stderr: '' };
+        },
     } });
-    assert.strictEqual(ops[0].args[0], 'load-buffer'); assert.strictEqual(ops[0].input, message); assert.strictEqual(ops[1].args[0], 'paste-buffer'); assert.strictEqual(ops[2].args[0], 'send-keys');
+    assert.strictEqual(ops[0].args[0], 'load-buffer');
+    assert.strictEqual(ops[0].input, message);
+    assert.strictEqual(ops[1].args[0], 'paste-buffer');
+    assert.strictEqual(ops.some(op => op.args[0] === 'send-keys'), true);
     assert.strictEqual(recorded.text, message); assert.strictEqual(result.agentId, 'cc');
 });
 
@@ -63,16 +74,66 @@ test('nudge session inference + repoPath-derived session name', () => {
     assert.strictEqual(s.sessionName, 'some-other-repo-f295-do-cc-demo');
 });
 
+// REGRESSION: review nudges must resolve the active reviewer even when the reviewer
+// is not present in snapshot.agents (solo implementation + separate review agent).
+test('nudge review session resolves active reviewer from codeReview state', () => {
+    const session = resolveSessions({
+        entityType: 'feature',
+        entityId: '436',
+        desc: 'dashboard-rip-out-wterm',
+        repoPath: '/tmp/aigon',
+        snapshot: {
+            agents: { cx: {} },
+            codeReview: { activeReviewerId: 'gg' },
+        },
+    }, 'review', 'gg', {
+        tmuxSessionExists: (name) => name === 'aigon-f436-review-gg-dashboard-rip-out-wterm',
+    });
+    assert.strictEqual(session.agentId, 'gg');
+    assert.strictEqual(session.sessionName, 'aigon-f436-review-gg-dashboard-rip-out-wterm');
+});
+
 // REGRESSION feature 295: failed delivery confirmation must return pane tail for diagnosis.
 testAsync('nudge delivery failure includes pane tail', async () => {
     await assert.rejects(() => sendNudge('/repo', '295', 'hello', { _deps: {
         resolveEntity: () => ({ entityType: 'feature', entityId: '295', snapshot: { agents: { cc: {} } }, desc: 'demo' }),
         resolveSessions: () => ({ agentId: 'cc', role: 'do', sessionName: 'repo-f295-do-cc-demo' }),
-        resolveSubmitKey: () => 'Enter',
+        resolveNudgeTransport: () => ({ submitKey: 'Enter', submitAttempts: 1, retryDelayMs: 0, successPatterns: ['Thinking...'], promptPlaceholder: 'Type your message or @path/to/file' }),
         assertBelowRateLimit: async () => {},
         persistEntityEvents: async () => {},
         runTmux: (args) => args[0] === 'capture-pane' ? { status: 0, stdout: 'stale pane output', stderr: '' } : { status: 0, stdout: '', stderr: '' },
     } }), (error) => (assert.match(error.message, /Nudge text not found in pane after delivery/), assert.strictEqual(error.paneTail, 'stale pane output'), true));
+});
+
+testAsync('nudge retries submit when Gemini prompt still contains the injected text', async () => {
+    const ops = [];
+    let captureCount = 0;
+    const result = await sendNudge('/repo', '436', 'hello repo attached test', { _deps: {
+        resolveEntity: () => ({ entityType: 'feature', entityId: '436', snapshot: { agents: { gg: {} } }, desc: 'demo' }),
+        resolveSessions: () => ({ agentId: 'gg', role: 'review', sessionName: 'repo-f436-review-gg-demo' }),
+        resolveNudgeTransport: () => ({
+            submitKey: 'Enter',
+            submitAttempts: 2,
+            retryDelayMs: 0,
+            successPatterns: ['Thinking...', '✦ '],
+            promptPlaceholder: 'Type your message or @path/to/file',
+        }),
+        assertBelowRateLimit: async () => {},
+        persistEntityEvents: async () => {},
+        runTmux: (args, opts = {}) => {
+            ops.push({ args, input: opts.input || null });
+            if (args[0] === 'capture-pane') {
+                captureCount += 1;
+                if (captureCount === 1) return { status: 0, stdout: '> hello repo attached test', stderr: '' };
+                if (captureCount === 2) return { status: 0, stdout: '> hello repo attached test', stderr: '' };
+                return { status: 0, stdout: '⠼ Thinking... (esc to cancel, 6s)\n>   Type your message or @path/to/file', stderr: '' };
+            }
+            return { status: 0, stdout: '', stderr: '' };
+        },
+    } });
+
+    assert.strictEqual(result.ok, true);
+    assert.strictEqual(ops.filter(op => op.args[0] === 'send-keys').length, 2);
 });
 
 // REGRESSION: GET /api/budget cc — parseClaudeStatus misread 0% used when % is on progress-bar line above Resets.

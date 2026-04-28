@@ -1026,7 +1026,7 @@ function showNudgeModal(feature, repoPath, btn) {
     const sel = agentSelect.options[agentSelect.selectedIndex];
     if (sel && sel.dataset.role) roleSelect.value = sel.dataset.role;
   };
-  if (candidates.length === 1) {
+  if (candidates.length > 0) {
     agentSelect.value = candidates[0].id;
     roleSelect.value = candidates[0].role || 'do';
   } else {

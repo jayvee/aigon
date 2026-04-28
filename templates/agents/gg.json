@@ -180,7 +180,17 @@
     "modelFlag": "--model",
     "effortFlag": null,
     "effortEnv": null,
-    "submitKey": "Enter"
+    "submitKey": "Enter",
+    "nudgeTransport": {
+      "submitKey": "Enter",
+      "submitAttempts": 2,
+      "retryDelayMs": 700,
+      "successPatterns": [
+        "Thinking...",
+        "✦ "
+      ],
+      "promptPlaceholder": "Type your message or @path/to/file"
+    }
   },
   "placeholders": {
     "AGENT_ID": "gg",
