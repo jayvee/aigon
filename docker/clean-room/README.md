@@ -27,6 +27,23 @@ docker/clean-room/run.sh --auto --all
 docker/clean-room/run.sh --auto --scenario 1
 ```
 
+## Skip auth during testing
+
+End-to-end Brewboard tests normally require authenticating Claude Code, Gemini, Codex, and GitHub CLI inside the container (about 10–15 minutes). To reuse your host logins instead:
+
+1. Start the clean-room container (`docker/clean-room/run.sh`) and note the container ID from another terminal: `docker ps`.
+2. From the **host**, run:
+
+   ```bash
+   bash scripts/docker-inject-creds.sh <container_id>
+   ```
+
+   The script copies credential paths that exist on your Mac/Linux home directory into the container’s `dev` user home (`~`), and skips anything you do not have installed. Only `.codex/config.toml` is copied for Codex (not session caches). You can run it again safely if you refresh credentials on the host.
+
+3. Continue with `aigon setup` / Brewboard testing inside the container — `claude --version` and `gh auth status` should work without repeating browser OAuth.
+
+Cursor credentials are not supported (macOS app data under `~/Library` does not map into the Linux container). API keys are still forwarded by `run.sh` via `--env` when needed.
+
 ## Manual Mode
 
 Drops you into a bash shell on a minimal Ubuntu 24.04 container. No Node.js, git, tmux, or aigon are pre-installed — you start from zero. User is `dev` with passwordless sudo.

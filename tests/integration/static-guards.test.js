@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-const assert = require('assert'), fs = require('fs'), path = require('path');
+const assert = require('assert'), fs = require('fs'), path = require('path'), { spawnSync } = require('child_process');
 const { implAgentReadyForAutonomousClose } = require('../../lib/feature-autonomous');
 const { test, withTempDir, withRepoCwd, report } = require('../_helpers');
 // REGRESSION: keep the GA4 placeholder leak and Pro env/config drift covered even under the hard LOC budget.
@@ -122,5 +122,14 @@ test('LOGGING_SECTION constants: Step 4.5 label, no AFTER-submit wording', () =>
             assert.ok(!LOGGING_SECTION.includes('AFTER submit') && !LOGGING_SECTION.includes('do this AFTER'), `${variant} must not say AFTER submit`);
         }
     }
+});
+// REGRESSION F417: clean-room cred injection helper must parse and fail closed without container id.
+test('docker-inject-creds.sh parses (bash -n) and exits non-zero with no args', () => {
+    const sh = path.join(__dirname, '../../scripts/docker-inject-creds.sh');
+    const syn = spawnSync('bash', ['-n', sh], { encoding: 'utf8' });
+    assert.strictEqual(syn.status, 0, syn.stderr || '');
+    const noArgs = spawnSync('bash', [sh], { encoding: 'utf8' });
+    assert.notStrictEqual(noArgs.status, 0);
+    assert.ok(String(noArgs.stderr + noArgs.stdout).includes('Usage'));
 });
 report();
