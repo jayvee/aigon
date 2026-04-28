@@ -67,6 +67,19 @@
       xterm: null, fitAddon: null, sseSource: null, ws: null,
       wterm: null, wtermResizeObserver: null,
     };
+    const PTY_AUTH_CLOSE_CODE = 4001;
+
+    async function getPtyToken() {
+      if (window.__ptyToken) return window.__ptyToken;
+      const r = await fetch('/api/pty-token');
+      const d = await r.json();
+      window.__ptyToken = d.token;
+      return window.__ptyToken;
+    }
+
+    function clearPtyToken() {
+      window.__ptyToken = null;
+    }
 
     function destroyXterm() {
       if (termState.sseSource) { try { termState.sseSource.close(); } catch (_) {} termState.sseSource = null; }
@@ -159,12 +172,10 @@
       return { term };
     }
 
-    async function connectPtyStreamWterm(sessionName) {
+    async function connectPtyStreamWterm(sessionName, retryCount = 0) {
       let token;
       try {
-        const r = await fetch('/api/pty-token');
-        const d = await r.json();
-        token = d.token;
+        token = await getPtyToken();
       } catch (_) {
         return; // no SSE fallback for wterm spike — flip back to xterm if PTY token unavailable
       }
@@ -184,8 +195,13 @@
           try { term.write(new Uint8Array(e.data)); } catch (_) {}
         }
       };
-      ws.onclose = () => {
+      ws.onclose = (e) => {
         termState.ws = null;
+        if (e && e.code === PTY_AUTH_CLOSE_CODE && retryCount < 1) {
+          clearPtyToken();
+          connectPtyStreamWterm(sessionName, retryCount + 1);
+          return;
+        }
         const dot = document.getElementById('panel-status-dot');
         if (dot) dot.className = 'panel-status-dot';
       };
@@ -202,12 +218,10 @@
       };
     }
 
-    async function connectPtyStream(sessionName) {
+    async function connectPtyStream(sessionName, retryCount = 0) {
       let token;
       try {
-        const r = await fetch('/api/pty-token');
-        const d = await r.json();
-        token = d.token;
+        token = await getPtyToken();
       } catch (_) {
         connectSessionStream(sessionName);
         return;
@@ -228,8 +242,13 @@
           try { term.write(new Uint8Array(e.data)); } catch (_) {}
         }
       };
-      ws.onclose = () => {
+      ws.onclose = (e) => {
         termState.ws = null;
+        if (e && e.code === PTY_AUTH_CLOSE_CODE && retryCount < 1) {
+          clearPtyToken();
+          connectPtyStream(sessionName, retryCount + 1);
+          return;
+        }
         if (termState.xterm) termState.xterm.writeln('\r\n\x1b[33m[Session ended]\x1b[0m');
         const dot = document.getElementById('panel-status-dot');
         if (dot) dot.className = 'panel-status-dot';
@@ -550,4 +569,3 @@
         container.appendChild(pre);
       }
     }
-
