@@ -75,7 +75,7 @@ function getModelOptions(agentConfig) {
 }
 
 function isQuarantined(opt) {
-    return Boolean(opt && opt.quarantined);
+    return Boolean(opt && (opt.quarantined || opt.archived));
 }
 
 function runProbe(agentConfig, modelValue, modelLabel) {

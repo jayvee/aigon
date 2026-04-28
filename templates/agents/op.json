@@ -51,8 +51,14 @@
         "notes": {
           "implement": "Ultra-cheap general-purpose. Capable for routine implementation; weaker on complex reasoning."
         },
-        "score": { "implement": 3 },
-        "lastRefreshAt": "2026-04-27T11:30:00.000Z"
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-04-28T00:00:00.000Z",
+        "archived": {
+          "since": "2026-04-28",
+          "reason": "ID does not exist in opencode's internal model registry. Only the :free variant (openrouter/meta-llama/llama-3.3-70b-instruct:free) is registered, which is rate-limited and unsuitable for agentic work. No paid equivalent routable via opencode.",
+          "evidence": "aigon agent-probe op --model returned empty response in 961ms; research confirmed ProviderModelNotFoundError fires locally before any API call.",
+          "supersededBy": []
+        }
       },
       {
         "value": "openrouter/x-ai/grok-code-fast-1",
@@ -65,7 +71,7 @@
         "lastRefreshAt": "2026-04-27T11:30:00.000Z"
       },
       {
-        "value": "openrouter/qwen/qwen3-235b-a22b-2507",
+        "value": "openrouter/qwen/qwen3-235b-a22b-07-25",
         "label": "Qwen3 235B (2507) via OpenRouter",
         "pricing": { "input": 0.07, "output": 0.1 },
         "notes": {
@@ -79,10 +85,16 @@
         "label": "Qwen3 Coder 30B via OpenRouter",
         "pricing": { "input": 0.07, "output": 0.27 },
         "notes": {
-          "implement": "Code-specialist MoE; 156K ctx; strong on agentic loops and tool use at very low cost."
+          "implement": "Code-specialist MoE; 156K ctx; quarantined — consistently times out on simple prompts."
         },
-        "score": { "implement": 3.5 },
-        "lastRefreshAt": "2026-04-27T12:00:00.000Z"
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-04-28T00:00:00.000Z",
+        "quarantined": {
+          "since": "2026-04-28",
+          "reason": "Consistently times out (>45s) on a trivial one-shot PONG probe via opencode run. Likely no healthy endpoints on OpenRouter at time of testing.",
+          "evidence": "aigon agent-probe op --model returned TIMEOUT on two consecutive runs (2026-04-28).",
+          "supersededBy": ["openrouter/qwen/qwen3-235b-a22b-07-25"]
+        }
       },
       {
         "value": "openrouter/qwen/qwen3-next-80b-a3b-thinking",
@@ -95,7 +107,7 @@
         "lastRefreshAt": "2026-04-27T12:00:00.000Z"
       },
       {
-        "value": "openrouter/mistralai/devstral-small",
+        "value": "openrouter/mistralai/devstral-small-2507",
         "label": "Devstral Small via OpenRouter",
         "pricing": { "input": 0.1, "output": 0.3 },
         "notes": {
