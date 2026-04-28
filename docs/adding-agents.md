@@ -20,10 +20,10 @@ Not every CLI earns a slot. Before starting the onboarding process, a candidate 
 | CLI | Verdict | Reason |
 |---|---|---|
 | GitHub Copilot | ❌ Skip | Wraps foundation models already covered by native CLIs (cc, gg, cx); no unique model access |
-| Aider | ❌ Disqualified | Exits after each task; shell execution unreliable; no auto-context discovery |
-| Cline CLI 2.0 | ⏳ Monitor | Too new (Feb 2026); context delivery conventions unknown; revisit Q3 2026 |
+| Aider | ❌ Disqualified | Exits after each task (one-shot); cannot call `aigon agent-status` reliably; no auto-context discovery |
+| Cline CLI 2.0 | ✅ Add when ready | CLI only launched Feb 2026 (previously IDE-only); 5M installs is VS Code extension history, not CLI users. Add once context delivery conventions stabilise. Current BYOK slot is `op` (OpenCode: 132k stars, 650k MAU — proven). |
 | Amazon Q | ❌ Low priority | ~50–66% SWE-bench (below current roster); Nova models reachable via op/Bedrock |
-| Goose | 🤔 Possible | OSS, model-agnostic; overlaps heavily with op (OpenCode); only adds value if op proves insufficient |
+| Goose | ❌ Skip | Overlaps entirely with op (OpenCode); no differentiated model access or workflow |
 
 ---
 
