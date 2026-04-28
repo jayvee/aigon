@@ -102,6 +102,18 @@ If you genuinely need to bump the ceiling, mention it in your PR and explain why
 - Don't add validation, error handling, or fallbacks for scenarios that can't happen
 - Don't over-engineer — the simplest thing that works wins
 
+## Release: refresh benchmarks before tagging
+
+Before cutting a release tag, run a full benchmark sweep so the committed JSONs describe the version users install:
+
+```bash
+aigon perf-bench brewboard --all --judge
+git add .aigon/benchmarks/
+git commit -m "chore: refresh benchmark data for vX.Y.Z"
+```
+
+**Why this matters:** benchmark JSONs in `.aigon/benchmarks/` are authoritative shipped artifacts, not per-user data. The models run provider-side, so the numbers are reproducible for any user calling the same provider models — there is no reason for users to re-run the sweep themselves. Every historical run is intentionally kept (no pruning); `git log .aigon/benchmarks/` gives a full record across releases.
+
 ## Aigon Pro
 
 The commercial Pro tier lives in a separate private repo and is **not yet available for purchase**. PRs to aigon (this repo) should only touch open-source code. If a feature needs to coordinate with Pro, that's documented in `CLAUDE.md` and is rare — open an issue first.
