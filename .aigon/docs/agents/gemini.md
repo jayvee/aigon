@@ -4,7 +4,7 @@
 ## Agent Identity
 - **Agent ID**: `gg`
 - **Worktree Pattern**: `../feature-NN-gg-description`
-- **Implementation Log**: Mode-conditional — Fleet requires a short log under `./docs/specs/features/logs/`; solo Drive (branch) skips it by default; solo Drive worktree uses a one-line log when a starter file exists. Override with `"logging_level": "fleet-only" | "always" | "never"` in `.aigon/config.json` (see `docs/development_workflow.md`).
+- **Implementation Log**: Mode-conditional — Fleet requires a short log under `./docs/specs/features/logs/`; solo Drive (branch) skips it by default; solo Drive worktree uses a one-line log when a starter file exists. Override with `"logging_level": "fleet-only" | "always" | "never"` in `.aigon/config.json` (see `.aigon/docs/development_workflow.md`).
 
 ## Commands
 
