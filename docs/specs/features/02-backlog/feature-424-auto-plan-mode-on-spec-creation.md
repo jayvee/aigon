@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-28T00:22:11.852Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: auto-plan-mode-on-spec-creation
