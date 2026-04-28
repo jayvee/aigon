@@ -18,7 +18,8 @@
     "type": "vscode-settings-bool",
     "path": "~/Library/Application Support/Cursor/User/settings.json",
     "key": "security.workspace.trust.enabled",
-    "value": false
+    "value": false,
+    "cursorProjectsRoot": "~/.cursor/projects"
   },
   "worktreeEnv": {},
   "git": {
