@@ -58,6 +58,19 @@ Key directories:
 - `tests/` — unit + integration tests (kept under a 2,000-LOC ceiling)
 - `site/` — Next.js + Nextra documentation site published at [aigon.build](https://www.aigon.build)
 
+## Browser MCP
+
+The repo ships a project-scope `.mcp.json` that registers the [Playwright MCP](https://github.com/microsoft/playwright-mcp) server. On your first Claude Code session in this repo, CC will prompt you to enable the `playwright` server — accept it to give the agent cheap, structured access to the dashboard via accessibility-tree snapshots instead of one-off Playwright scripts and PNGs.
+
+Verify it loaded:
+
+```bash
+# In a Claude Code session
+/mcp           # should list `playwright` with non-zero tools
+```
+
+Once enabled, agents prefer `mcp__playwright__browser_snapshot` (a11y tree, ~10× cheaper than pixels) and only fall back to `browser_take_screenshot` for pixel-fidelity checks. Declining the prompt is harmless — the old Playwright-script flow still works.
+
 ## Submitting a PR
 
 1. Fork the repo, create a feature branch from `main`
