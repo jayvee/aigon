@@ -37,6 +37,7 @@
   "cli": {
     "command": "claude",
     "implementFlag": "--permission-mode acceptEdits",
+    "planFlag": "--permission-mode plan",
     "implementPrompt": "/aigon:feature-do {featureId}",
     "evalPrompt": "/aigon:feature-eval {featureId}",
     "reviewPrompt": "/aigon:feature-code-review {featureId}",

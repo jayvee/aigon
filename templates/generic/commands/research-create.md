@@ -9,6 +9,8 @@ aigon research-create {{ARG_SYNTAX}}
 
 This creates a new research topic in `./docs/specs/research-topics/01-inbox/`.
 
+> **Tip:** If you are running this command in your own Claude Code session (no `--agent` flag), press **Shift+Tab** now to enter plan mode before drafting — this keeps your session read-only while you frame the research brief.
+
 ## Important: Create the document only — do NOT conduct research
 
 Your job is ONLY to create a research topic document. You are NOT researching, investigating, or answering questions. You are writing down what SHOULD be researched later by a different agent (or yourself in a later step).

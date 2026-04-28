@@ -16,6 +16,8 @@ This creates a new feature spec in `./docs/specs/features/01-inbox/`.
 
 ## Before writing the spec
 
+> **Tip:** If you are running this command in your own Claude Code session (no `--agent` flag), press **Shift+Tab** now to enter plan mode before drafting — this keeps your session read-only while you explore the codebase and propose the spec.
+
 Explore the codebase to understand the existing architecture, patterns, and code relevant to this feature. Plan your approach before writing. Consider:
 
 - What existing code will this feature interact with?
