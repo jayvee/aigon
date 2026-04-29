@@ -1,6 +1,8 @@
 ---
 complexity: medium
 planning_context: ~/.claude/plans/woolly-stirring-waterfall.md
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T10:23:04.145Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: tighten-prioritise-commit-staging
