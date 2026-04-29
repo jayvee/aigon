@@ -10,11 +10,13 @@ const runner = require('../../lib/aigon-eval-runner');
 const command = require('../../lib/commands/aigon-eval');
 
 const fixture = {
+    id: '991',
     allowedFiles: ['eval-fixture.txt'],
     expectedSignals: ['implementing', 'implementation-complete'],
     expectedFinalState: 'submitted',
     expectedFolder: '03-in-progress',
     slaSeconds: 10,
+    finalSpecPath: 'docs/specs/features/03-in-progress/feature-991-aigon-eval-fixture.md',
 };
 
 test('aigon-eval check matrix passes when mock agent emits expected signals', () => {
@@ -25,9 +27,9 @@ test('aigon-eval check matrix passes when mock agent emits expected signals', ()
             { kind: 'signal-emitted', status: 'implementation-complete', t: '2026-04-29T00:00:04.000Z', elapsedSec: 4 },
         ],
         finalEngineSnapshot: { currentSpecState: 'submitted' },
-        finalSpecPath: 'docs/specs/features/03-in-progress/feature-99-aigon-eval-fixture.md',
+        finalSpecPath: 'docs/specs/features/03-in-progress/feature-991-aigon-eval-fixture.md',
         gitDiff: { changedFiles: ['eval-fixture.txt'] },
-        commandEvents: [{ command: 'aigon feature-do 99' }],
+        commandEvents: [{ command: 'aigon feature-do 991' }],
     });
 
     assert.strictEqual(result.pass, true);
@@ -41,7 +43,7 @@ test('aigon-eval fails lifecycle check when implementation-complete is skipped',
             { kind: 'signal-emitted', status: 'implementing', t: '2026-04-29T00:00:00.000Z', elapsedSec: 1 },
         ],
         finalEngineSnapshot: { currentSpecState: 'submitted' },
-        finalSpecPath: 'docs/specs/features/03-in-progress/feature-99-aigon-eval-fixture.md',
+        finalSpecPath: 'docs/specs/features/03-in-progress/feature-991-aigon-eval-fixture.md',
         gitDiff: { changedFiles: ['eval-fixture.txt'] },
         commandEvents: [],
     });
@@ -59,9 +61,9 @@ test('aigon-eval fails forbidden command check when agent runs feature-close', (
             { kind: 'signal-emitted', status: 'implementation-complete', t: '2026-04-29T00:00:01.000Z' },
         ],
         finalEngineSnapshot: { currentSpecState: 'submitted' },
-        finalSpecPath: 'docs/specs/features/03-in-progress/feature-99-aigon-eval-fixture.md',
+        finalSpecPath: 'docs/specs/features/03-in-progress/feature-991-aigon-eval-fixture.md',
         gitDiff: { changedFiles: ['eval-fixture.txt'] },
-        commandEvents: [{ command: 'aigon feature-close 99' }],
+        commandEvents: [{ command: 'aigon feature-close 991' }],
     });
 
     assert.strictEqual(result.pass, false);
@@ -77,7 +79,7 @@ test('aigon-eval writes per-run result and matrix from injected runs', async () 
                     { kind: 'signal-emitted', status: 'implementation-complete', t: '2026-04-29T00:00:01.000Z' },
                 ],
                 finalEngineSnapshot: { currentSpecState: 'submitted' },
-                finalSpecPath: 'docs/specs/features/03-in-progress/feature-99-aigon-eval-fixture.md',
+                finalSpecPath: 'docs/specs/features/03-in-progress/feature-991-aigon-eval-fixture.md',
                 gitDiff: { changedFiles: ['eval-fixture.txt'] },
                 commandEvents: [],
             },

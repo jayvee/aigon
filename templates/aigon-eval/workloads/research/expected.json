@@ -1,9 +1,14 @@
 {
-  "id": "99",
+  "id": "991",
   "entityType": "research",
-  "allowedFiles": ["docs/specs/research/logs/research-99-cx-findings.md"],
+  "finalSpecPath": "docs/specs/research-topics/03-in-progress/research-991-aigon-eval-fixture.md",
+  "allowedFiles": [
+    "docs/specs/research-topics/logs/research-991-cc-findings.md",
+    "docs/specs/research-topics/logs/research-991-cx-findings.md",
+    "docs/specs/research-topics/logs/research-991-gg-findings.md"
+  ],
   "expectedSignals": ["implementing", "research-complete"],
-  "expectedFinalState": "synthesis",
+  "expectedFinalState": "submitted",
   "expectedFolder": "03-in-progress",
   "slaSeconds": 600,
   "timeoutMs": 300000
