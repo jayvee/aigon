@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 451
+lines_removed: 3
+lines_changed: 454
+files_touched: 8
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 187
+output_tokens: 105746
+cache_creation_input_tokens: 316077
+cache_read_input_tokens: 12305089
+thinking_tokens: 0
+total_tokens: 12727099
+billable_tokens: 105933
+cost_usd: 32.3178
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 462 - benchmark-matrix-per-op-restructure
 Agent: cc
 
