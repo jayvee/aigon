@@ -99,10 +99,16 @@
         "label": "DeepSeek V4 Flash via OpenRouter",
         "pricing": { "input": 0.14, "output": 0.28 },
         "notes": {
-          "implement": "Newest DeepSeek (Apr 2026); 1M context, 13B active params; cost-efficient flash variant. Probe-passed (warm: ~22s) but bench timed out at 10m on 2026-04-29 — flash-tier may struggle with multi-turn agentic loops. Use with caution until a clean bench lands."
+          "implement": "Newest DeepSeek (Apr 2026); 1M context, 13B active params; cost-efficient flash variant. Probe-passed (warm: ~22s) but bench timed out at 10m on 2026-04-29 — flash-tier cannot sustain multi-turn agentic loops."
         },
         "score": { "implement": null },
-        "lastRefreshAt": "2026-04-29T12:00:00.000Z"
+        "lastRefreshAt": "2026-04-29T12:00:00.000Z",
+        "quarantined": {
+          "since": "2026-04-30",
+          "reason": "0/1 on brewboard bench (10m timeout 2026-04-29). Flash-tier active-param count too small for sustained agentic tool-use loops; superseded by deepseek-v4-pro for agentic work.",
+          "evidence": "all-brewboard-2026-04-29T11-59-07-090Z.json",
+          "supersededBy": ["openrouter/deepseek/deepseek-v4-pro"]
+        }
       },
       {
         "value": "openrouter/deepseek/deepseek-v4-pro",
@@ -187,10 +193,16 @@
         "label": "Qwen3 Next 80B Thinking via OpenRouter",
         "pricing": { "input": 0.1, "output": 0.78 },
         "notes": {
-          "implement": "Reasoning variant; spends tokens to think before answering; suits architectural tasks."
+          "implement": "Reasoning variant; thinking mode causes token runaway on multi-turn agentic loops — consistently times out."
         },
-        "score": { "implement": 4 },
-        "lastRefreshAt": "2026-04-27T12:00:00.000Z"
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-04-30T00:00:00.000Z",
+        "quarantined": {
+          "since": "2026-04-30",
+          "reason": "0/3 on brewboard bench (2 timeout, 1 error). Thinking mode triggers unbounded token spend on multi-turn tool-use loops; never signals completion within 10m ceiling.",
+          "evidence": "all-brewboard-2026-04-29T11-59-07-090Z.json; all-brewboard-2026-04-28T04-54-40-883Z.json; all-brewboard-2026-04-29T04-44-27-508Z.json",
+          "supersededBy": ["openrouter/qwen/qwen3-235b-a22b-07-25"]
+        }
       },
       {
         "value": "openrouter/mistralai/devstral-small-2507",
@@ -217,20 +229,32 @@
         "label": "Nemotron 3 Super 120B via OpenRouter",
         "pricing": { "input": 0.09, "output": 0.45 },
         "notes": {
-          "implement": "Nvidia 120B MoE; 256K ctx; strong instruction following and structured-output discipline."
+          "implement": "Nvidia 120B MoE; 256K ctx — quarantined; consistently times out on agentic bench across 3 runs."
         },
-        "score": { "implement": 4 },
-        "lastRefreshAt": "2026-04-27T12:00:00.000Z"
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-04-30T00:00:00.000Z",
+        "quarantined": {
+          "since": "2026-04-30",
+          "reason": "0/3 on brewboard bench (2 timeout, 1 error). Despite strong single-turn instruction following, the model does not complete multi-turn agentic tool-use loops within the 10m ceiling.",
+          "evidence": "all-brewboard-2026-04-29T11-59-07-090Z.json; all-brewboard-2026-04-28T04-54-40-883Z.json; all-brewboard-2026-04-29T04-44-27-508Z.json",
+          "supersededBy": []
+        }
       },
       {
         "value": "openrouter/z-ai/glm-5.1",
         "label": "GLM-5.1 via OpenRouter",
         "pricing": { "input": 1.05, "output": 3.5 },
         "notes": {
-          "implement": "Capable general-purpose model with reliable tool use."
+          "implement": "Quarantined — 0/3 bench, sessions hang for hours and drain OpenRouter credits to monthly limit."
         },
-        "score": { "implement": 3.5 },
-        "lastRefreshAt": "2026-04-27T11:30:00.000Z"
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-04-30T00:00:00.000Z",
+        "quarantined": {
+          "since": "2026-04-30",
+          "reason": "0/3 on brewboard bench (2 timeout, 1 error). High pricing ($1.05/$3.50 per MTok) combined with hung sessions caused a 10-hour stuck process that consumed the full OpenRouter monthly credit limit. Do not run until endpoint stability is confirmed.",
+          "evidence": "all-brewboard-2026-04-29T11-59-07-090Z.json; all-brewboard-2026-04-28T04-54-40-883Z.json; all-brewboard-2026-04-29T04-44-27-508Z.json; PID 51163 ran 10h25m before manual kill on 2026-04-30",
+          "supersededBy": []
+        }
       },
       {
         "value": "openrouter/deepseek/deepseek-v3.2-speciale",
