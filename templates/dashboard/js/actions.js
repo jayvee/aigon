@@ -1375,8 +1375,15 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
   const entityLabel = entityType === 'research' ? 'Research' : 'Feature';
   const models = await fetchAgentModels(repoPath).catch(() => ({}));
 
+  let scheduleKickoffBusy = false;
+
   function closeModal() {
     backdrop.remove();
+  }
+
+  function closeModalUnlessBusy() {
+    if (scheduleKickoffBusy) return;
+    closeModal();
   }
 
   function skBuildAgentOptions(taskType, opts) {
@@ -1432,16 +1439,25 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
     });
     replaceNodeChildren(checks, rows);
 
-    box.querySelector('#schedule-kickoff-cancel').onclick = closeModal;
-    backdrop.onclick = (e) => { if (e.target === backdrop) closeModal(); };
+    box.querySelector('#schedule-kickoff-cancel').onclick = closeModalUnlessBusy;
+    backdrop.onclick = (e) => { if (e.target === backdrop) closeModalUnlessBusy(); };
     box.querySelector('#schedule-kickoff-submit').onclick = async () => {
       const msg = box.querySelector('#schedule-kickoff-msg');
+      const submitBtn = box.querySelector('#schedule-kickoff-submit');
+      const cancelBtn = box.querySelector('#schedule-kickoff-cancel');
       msg.style.display = 'none';
       const runAt = skGetRunAt(box);
       if (!runAt) { msg.textContent = 'Select a date and time'; msg.style.display = 'block'; return; }
       const agents = [...box.querySelectorAll('#schedule-kickoff-research-agent-checks input[type="checkbox"]:checked')].map((c) => c.value);
       const background = box.querySelector('#schedule-kickoff-bg').checked;
       const foreground = box.querySelector('#schedule-kickoff-fg').checked;
+      let processingToast = null;
+      const origSubmitLabel = submitBtn.textContent;
+      scheduleKickoffBusy = true;
+      submitBtn.disabled = true;
+      cancelBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origSubmitLabel);
+      processingToast = showToast('Scheduling…', null, null, { processing: true });
       try {
         const res = await fetch('/api/schedule/add', {
           method: 'POST',
@@ -1466,6 +1482,14 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
       } catch (e) {
         msg.textContent = e.message || 'Failed';
         msg.style.display = 'block';
+      } finally {
+        if (processingToast) processingToast.remove();
+        scheduleKickoffBusy = false;
+        if (backdrop.parentNode) {
+          submitBtn.disabled = false;
+          cancelBtn.disabled = false;
+          submitBtn.textContent = origSubmitLabel;
+        }
       }
     };
     return;
@@ -1606,11 +1630,13 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
   skUpdateMode();
   try { await fetchBudget(true); } catch (_) { /* best-effort */ }
 
-  box.querySelector('#schedule-kickoff-cancel').onclick = closeModal;
-  backdrop.onclick = (e) => { if (e.target === backdrop) closeModal(); };
+  box.querySelector('#schedule-kickoff-cancel').onclick = closeModalUnlessBusy;
+  backdrop.onclick = (e) => { if (e.target === backdrop) closeModalUnlessBusy(); };
 
   box.querySelector('#schedule-kickoff-submit').onclick = async () => {
     const msg = box.querySelector('#schedule-kickoff-msg');
+    const submitBtn = box.querySelector('#schedule-kickoff-submit');
+    const cancelBtn = box.querySelector('#schedule-kickoff-cancel');
     msg.style.display = 'none';
     const runAt = skGetRunAt(box);
     if (!runAt) { msg.textContent = 'Select a date and time'; msg.style.display = 'block'; return; }
@@ -1669,6 +1695,13 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
       reviewEffort: reviewEffort || undefined,
       workflow: workflowSlug || undefined,
     };
+    let processingToast = null;
+    const origSubmitLabel = submitBtn.textContent;
+    scheduleKickoffBusy = true;
+    submitBtn.disabled = true;
+    cancelBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origSubmitLabel);
+    processingToast = showToast('Scheduling…', null, null, { processing: true });
     try {
       const res = await fetch('/api/schedule/add', {
         method: 'POST',
@@ -1693,6 +1726,14 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
     } catch (e) {
       msg.textContent = e.message || 'Failed';
       msg.style.display = 'block';
+    } finally {
+      if (processingToast) processingToast.remove();
+      scheduleKickoffBusy = false;
+      if (backdrop.parentNode) {
+        submitBtn.disabled = false;
+        cancelBtn.disabled = false;
+        submitBtn.textContent = origSubmitLabel;
+      }
     }
   };
 }
