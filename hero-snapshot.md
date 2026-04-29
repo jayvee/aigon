@@ -1,0 +1,70 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "Aigon" [ref=e5] [cursor=pointer]:
+        - /url: "#top"
+      - navigation "Primary" [ref=e7]
+      - link "GitHub" [ref=e21] [cursor=pointer]:
+        - /url: https://github.com/jayvee/aigon
+  - main [ref=e22]:
+    - generic [ref=e24]:
+      - generic [ref=e25]: Pro
+      - generic [ref=e26]: Agent quality metrics, trend charts & AI-powered coaching
+      - link "See what’s coming →" [ref=e27] [cursor=pointer]:
+        - /url: /pro
+    - generic [ref=e28]:
+      - generic [ref=e30]
+      - generic [ref=e87]
+    - generic [ref=e103]:
+      - generic [ref=e104]
+      - paragraph [ref=e107]
+      - generic [ref=e109]
+    - generic [ref=e123]:
+      - generic [ref=e124]
+      - generic [ref=e127]
+    - generic [ref=e141]:
+      - generic [ref=e142]
+      - generic [ref=e145]
+    - generic [ref=e165]:
+      - generic [ref=e166]
+      - generic [ref=e169]
+    - generic [ref=e191]:
+      - generic [ref=e192]
+      - generic [ref=e195]
+    - generic [ref=e221]:
+      - generic [ref=e222]
+      - 'img "Aigon lifecycle: Research and Feedback feed into Features, which flow through Build, Evaluate, and Ship, then loop back as user feedback" [ref=e225]'
+      - generic [ref=e248]
+      - generic [ref=e281]
+    - generic [ref=e306]:
+      - generic [ref=e307]
+      - paragraph [ref=e310]: The Aigon Dashboard is the visual way into your spec-driven workflow. Same pipeline, same agents — but managed through a browser UI instead of CLI commands. Drag features across columns, launch agent sessions with one click, and watch your pipeline move in real time. No terminal required.
+      - generic [ref=e311]
+      - generic [ref=e320]
+    - generic [ref=e346]:
+      - generic [ref=e347]
+      - img "Aigon Reports — five aligned charts showing features completed, commits, cycle time, commits per feature, and rework ratio" [ref=e351]
+      - generic [ref=e352]
+    - generic [ref=e363]:
+      - generic [ref=e364]
+      - generic [ref=e373]
+    - generic [ref=e381]:
+      - generic [ref=e382]
+      - list [ref=e388]
+    - generic [ref=e402]:
+      - generic [ref=e403]
+      - generic [ref=e407]
+    - generic [ref=e412]:
+      - generic [ref=e413]
+      - img "Aigon Pro — AI-powered insights and coaching dashboard" [ref=e425]
+  - contentinfo [ref=e426]:
+    - generic [ref=e427]:
+      - paragraph [ref=e428]: Aigon
+      - paragraph [ref=e429]: The spec-driven orchestration layer for AI development.
+      - paragraph [ref=e430]: MIT License
+      - paragraph [ref=e431]: Copyright 2026
+      - paragraph [ref=e432]
+  - dialog:
+    - button: ×
