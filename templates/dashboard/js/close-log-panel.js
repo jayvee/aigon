@@ -2,6 +2,7 @@
 // Live-streaming log panel for feature-close actions. Opens immediately on
 // click, polls /api/action-log/:actionId every 800ms, auto-dismisses on
 // success after 3s, stays open on failure with "Close with agent" button.
+// Dismissing the panel only hides the drawer; it never cancels the close action.
 (function () {
   'use strict';
 
@@ -10,6 +11,7 @@
   let _actionId = null;
   let _seenLines = 0;
   let _panelDone = false;
+  let _dismissed = false;
 
   function $id(id) { return document.getElementById(id); }
 
@@ -87,7 +89,9 @@
           f.style.display = 'flex';
           if (success) {
             f.innerHTML = '<span class="close-log-done-label">Done ✓</span>';
-            setTimeout(() => window.dismissCloseLogPanel && window.dismissCloseLogPanel(), 3000);
+            if (!_dismissed) {
+              setTimeout(() => window.dismissCloseLogPanel && window.dismissCloseLogPanel(), 3000);
+            }
           } else {
             const featureId = result && result._featureId;
             const agentId   = result && result._agentId;
@@ -114,11 +118,12 @@
     _actionId = actionId;
     _seenLines = 0;
     _panelDone = false;
+    _dismissed = false;
     stopPoll();
 
     const pre = $id('close-log-output'); if (pre) pre.innerHTML = '';
     const f = $id('close-log-footer'); if (f) { f.style.display = 'none'; f.innerHTML = ''; }
-    const x = $id('close-log-x'); if (x) x.style.display = 'none';
+    const x = $id('close-log-x'); if (x) x.style.display = '';
     const t = $id('close-log-title'); if (t) t.textContent = 'Closing ' + (label || '…');
     setState('running');
 
@@ -139,9 +144,11 @@
   };
 
   window.dismissCloseLogPanel = function () {
-    if (!_panelDone && _actionId) return;
-    stopPoll();
-    _actionId = null;
+    _dismissed = true;
+    if (_panelDone || !_actionId) {
+      stopPoll();
+      _actionId = null;
+    }
     const overlay = $id('close-log-overlay'), panel = $id('close-log-panel');
     if (overlay) overlay.classList.remove('open');
     if (panel)   panel.classList.remove('open');
@@ -150,16 +157,17 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       const panel = $id('close-log-panel');
-      if (panel && panel.classList.contains('open') && _panelDone) {
+      if (panel && panel.classList.contains('open')) {
+        e.preventDefault();
         window.dismissCloseLogPanel();
       }
     }
-  });
+  }, true);
 
   document.addEventListener('DOMContentLoaded', function () {
     const overlay = $id('close-log-overlay');
     if (overlay) overlay.addEventListener('click', function () {
-      if (_panelDone) window.dismissCloseLogPanel();
+      window.dismissCloseLogPanel();
     });
     const x = $id('close-log-x');
     if (x) x.addEventListener('click', function () {
