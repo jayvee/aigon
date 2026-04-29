@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 1024
+lines_removed: 69
+lines_changed: 1093
+files_touched: 24
+fix_commit_count: 2
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 216
+output_tokens: 103497
+cache_creation_input_tokens: 661986
+cache_read_input_tokens: 22001532
+thinking_tokens: 0
+total_tokens: 22767231
+billable_tokens: 103713
+cost_usd: 53.1801
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 454 - dashboard-eventloop-stalls-and-modal-parallelise
 Agent: cc
 
