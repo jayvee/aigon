@@ -93,28 +93,46 @@ function runProbe(agentConfig, modelValue, modelLabel) {
         env: process.env,
     });
     const elapsed = Date.now() - start;
+    // Capture both streams so the quota classifier can match patterns even when
+    // a CLI (e.g. opencode) exits with empty stdout because the upstream error
+    // ("Key limit exceeded (monthly limit)") only surfaced on stderr.
+    const stderr = (result.stderr || '').trim().slice(0, 4000);
 
     if (result.error) {
         const isTimeout = result.error.code === 'ETIMEDOUT' || result.error.killed;
-        return { ok: false, elapsed, error: isTimeout ? `TIMEOUT (>${Math.round(TIMEOUT_MS / 1000)}s)` : result.error.message };
+        return {
+            ok: false,
+            elapsed,
+            error: isTimeout ? `TIMEOUT (>${Math.round(TIMEOUT_MS / 1000)}s)` : result.error.message,
+            stderr,
+        };
     }
     if (result.status !== 0) {
-        const stderr = (result.stderr || '').trim();
-        const stdout = (result.stdout || '').trim();
-        const firstLine = (stderr || stdout).split('\n')[0];
+        const stdoutTrim = (result.stdout || '').trim();
+        const firstLine = (stderr || stdoutTrim).split('\n')[0];
         return {
             ok: false,
             elapsed,
             error: firstLine || `exit ${result.status}`,
-            stderr: stderr.slice(0, 4000),
-            stdout: stdout.slice(0, 4000),
+            stderr,
+            stdout: stdoutTrim.slice(0, 4000),
         };
     }
     const stdout = (result.stdout || '').trim();
     if (!stdout) {
-        return { ok: false, elapsed, error: 'empty response' };
+        return {
+            ok: false,
+            elapsed,
+            error: 'empty response',
+            stderr,
+        };
     }
-    return { ok: true, elapsed, output: stdout.slice(0, 100) };
+    return {
+        ok: true,
+        elapsed,
+        output: stdout.slice(0, 100),
+        stderr,
+    };
 }
 
 function fmtMs(ms) {
