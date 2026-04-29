@@ -2,6 +2,7 @@
 Agent: cc
 
 ## Status
+Implemented all 7 ordered changes; activity-gated quota scan + chunked dep-graph rebuild + fingerprint-gated render + parallelised autonomous modal. New dedup-skip test added at tests/integration/quota-mid-run-f446.test.js.
 
 ## New API Surface
 
