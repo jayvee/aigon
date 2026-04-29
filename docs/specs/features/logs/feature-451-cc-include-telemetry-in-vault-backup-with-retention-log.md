@@ -26,3 +26,32 @@ Implemented across aigon-pro (backup.js, sync-merge.js, tests/backup.test.js) an
 
 ## Test Coverage
 9 tests in `aigon-pro/tests/backup.test.js`: PROJECT_EXCLUDES change, default retention values, compress >90d, drop >365d, disabled via 0, disabled via null, signal-health jsonl retention by filename date, jsonl merge sort+dedup, jsonl merge error tolerance.
+
+## Code review (2026-04-29, reviewer: cu)
+
+**Verdict:** Request changes on the OSS side before treating F451 as fully closed against the spec. Pro behavior was not reviewed in this worktree.
+
+### Strengths
+- `readTelemetryFile()` in `lib/telemetry.js` correctly gunzips `*.json.gz` and is used by `aggregateNormalizedTelemetryRecords()`.
+- `lib/feature-status.js` (`collectCost`) includes `.json.gz` in the filter and reads via `readTelemetryFile`.
+
+### Gaps (acceptance: gzip-tolerant readers “everywhere” for per-session JSON)
+These sites still filter to `.json` only and use `fs.readFileSync` without decompression; after vault retention compresses old files, they can miss data or under-report cost/tokens:
+- `lib/analytics.js` — `readTelemetryRecords` (dashboard analytics).
+- `lib/perf-bench.js` — `readBenchmarkTelemetryUsage` (aigon-eval style reads).
+- `lib/transcript-read.js` and `lib/transcript-store.js` — telemetry join for sessions.
+- `lib/feature-close.js` — two paths scanning `.aigon/telemetry` for existing records and cost.
+- `lib/commands/research.js` — research close cost snapshot from telemetry.
+
+### Tests
+- No OSS regression test for `readTelemetryFile` / `.json.gz` (T2 would expect at least one small test).
+
+### Deferred (already logged)
+- `lib/signal-health.js` and `.jsonl.gz` remains out of scope until retention affects those files in practice.
+
+### Follow-ups for implementer
+1. Route remaining per-session telemetry reads through `readTelemetryFile` (or equivalent) and accept both `.json` and `.json.gz` in directory listings.
+2. Add a minimal test that round-trips gzipped telemetry JSON.
+3. Confirm Pro retention removes the uncompressed `.json` when writing `.json.gz` to avoid duplicate counting if both extensions are ever globbed.
+
+**Review status:** `aigon agent-status review-complete` recorded for feature 451 (cu).
