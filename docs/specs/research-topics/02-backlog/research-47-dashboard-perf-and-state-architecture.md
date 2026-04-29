@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T22:06:18.420Z", actor: "cli/research-prioritise" }
 ---
 
 # Research: dashboard-perf-and-state-architecture
