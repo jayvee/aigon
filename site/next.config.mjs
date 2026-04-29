@@ -19,6 +19,11 @@ const config = {
         destination: "/docs/guides/insights",
         permanent: true,
       },
+      {
+        source: "/docs/guides/autopilot-mode",
+        destination: "/docs/guides/autonomous-mode",
+        permanent: true,
+      },
     ];
   },
   async rewrites() {

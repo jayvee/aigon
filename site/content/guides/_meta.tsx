@@ -6,7 +6,7 @@ export default {
   "brewboard-feature-set": { title: withPro("Tutorial: Brewboard Feature Set") },
   "drive-mode": "Drive Mode",
   "fleet-mode": "Fleet Mode",
-  "autopilot-mode": { title: withPro("Autonomous Mode") },
+  "autonomous-mode": { title: withPro("Autonomous Mode") },
   "research-workflow": "Research Workflow",
   "feedback-workflow": "Feedback Workflow",
   "scheduling-features": { title: withPro("Scheduling Features") },

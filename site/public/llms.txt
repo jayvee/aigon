@@ -16,7 +16,7 @@
 
 - [Drive Mode](https://www.aigon.build/docs/guides/drive-mode): Hands-on implementation with a single agent — the default way to build features.
 - [Fleet Mode](https://www.aigon.build/docs/guides/fleet-mode): Orchestrate competing implementations across multiple agents in parallel.
-- [Autopilot Mode](https://www.aigon.build/docs/guides/autopilot-mode): Autonomous retry loop until validation passes.
+- [Autonomous Mode](https://www.aigon.build/docs/guides/autonomous-mode): Hands-off feature execution with the AutoConductor — implement, review, evaluate, and close without intervention.
 - [Dashboard](https://www.aigon.build/docs/guides/dashboard): Visual pipeline for monitoring features, agents, and statistics across repos.
 - [Research Workflow](https://www.aigon.build/docs/guides/research-workflow): Investigate options with one or more agents before committing to a feature approach.
 - [Feedback Workflow](https://www.aigon.build/docs/guides/feedback-workflow): Capture user input and route it back into your product workflow.
