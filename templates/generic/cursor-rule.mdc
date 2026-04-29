@@ -14,7 +14,7 @@ This project uses the Aigon development workflow. Read these docs before startin
 
 ## Key Rules
 
-1. **Never commit to main** — always work on the feature branch or in the worktree
+1. **`main` vs implementation work.** Land **implementation** (non-trivial `lib/`, dashboard, tests tied to active feature/research implementation) via the repo’s usual **feature branch or worktree** — not silently on `main` when isolation is intended. **`aigon feature-create` / `research-create`**, which produce **`docs/specs/*/01-inbox/*.md`**, normally **do** commit to **`main`** (or whatever the default integration branch is); **do not** create a disposable Git branch only to commit a fresh inbox spec.
 2. **Use `aigon` CLI for all state transitions** — never move spec files manually
 3. **Use `aigon dev-server start` for dev servers** — never run `npm run dev` directly (bypasses port allocation)
 4. **Signal when done** — run `aigon agent-status implementation-complete` when implementation is complete

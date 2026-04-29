@@ -6,7 +6,7 @@
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
 - **Commands**: 6 domain files in `lib/commands/` (feature, research, feedback, infra, setup, misc)
 - **Shared logic**: `lib/*.js` — ~21 modules; see Module Map below
-- **Template source of truth**: `templates/generic/commands/` — sync via `aigon install-agent cc` (or any agent)
+- **Template source of truth**: `templates/generic/commands/` (slash commands); **`templates/generic/cursor-rule.mdc`** (Cursor **`.cursor/rules/aigon.mdc`** on `aigon install-agent cu`). Sync via `aigon install-agent <id>` — do not treat installed `.cursor` / `.claude` paths as the edit target; they are overwritten.
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
 - **Interrupting agents**: `aigon nudge <ID> [agent] "message"` is the canonical way to message a running session — do not handcraft `tmux send-keys`
@@ -254,6 +254,9 @@ When `origin` is GitHub and `gh` is available, `feature-close` does a best-effor
 - Merged PR found: syncs `main`, writes close-state commit, pushes, cleans up
 
 ## Rules Before Editing
+
+**Git (agents):** Put **implemented** changes for an active numbered feature/research entity on **that entity’s integration branch/worktree**, not unsolicited bulk commits onto `main` when isolation is intended. **New inbox specs only** (`aigon feature-create` / `research-create` → `docs/specs/features/01-inbox/` or research/feedback equivalents) are **normally committed on `main`** (default branch)—that is workflow-scaffolding, not "feature implementation".
+
 1. **Run args verbatim** — pass exactly the args the user gave; never add agents/flags from context
 2. **Filter `.env.local`** — never let it block `feature-close` or `aigon agent-status implementation-complete`
 3. **Screenshot dashboard changes** — take a Playwright screenshot after any `templates/dashboard/index.html` edit

@@ -7,7 +7,7 @@ The full orientation lives in **`AGENTS.md`**. Read that first — it is the sin
 
 
 1. Run args verbatim — never add agents/flags from context.
-2. Template source of truth is `templates/generic/commands/`. Never edit `.claude/commands/` working copies.
+2. Slash commands: `templates/generic/commands/` — never edit `.claude/commands/` copies. Cursor always-on rule: **`templates/generic/cursor-rule.mdc`** → install to **`.cursor/rules/aigon.mdc`** via **`aigon install-agent cu`**; do not edit the installed file as source (re-install overwrites).
 3. After any `lib/*.js` edit, run `aigon server restart`.
 4. After any `templates/dashboard/index.html` edit, take an MCP `browser_snapshot` (a11y tree) — fall back to `browser_take_screenshot` only when the change is purely visual (CSS, layout, color). See `CONTRIBUTING.md` § Browser MCP.
 5. Never move spec files manually — use `aigon` CLI commands for state transitions.
