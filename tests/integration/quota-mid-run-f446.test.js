@@ -12,7 +12,8 @@ const { test, testAsync, withTempDir, withTempDirAsync, report } = require('../_
 
 const quotaProbe = require('../../lib/quota-probe');
 const agentRegistry = require('../../lib/agent-registry');
-const { emittedDedupe } = require('../../lib/quota-mid-run-detector');
+const quotaMidRun = require('../../lib/quota-mid-run-detector');
+const { emittedDedupe, lastActivityByName } = quotaMidRun;
 const { appendQuotaPausedDashboardActions } = require('../../lib/quota-dashboard-actions');
 
 test('mergeMidRunDepletion skips duplicate quota.json churn', () => withTempDir((dir) => {
@@ -129,6 +130,45 @@ testAsync('agent-resume refuses when quota.json still depleted', async () => wit
         if (prevPath !== undefined) process.env.AIGON_PROJECT_PATH = prevPath;
         else delete process.env.AIGON_PROJECT_PATH;
     }
+}));
+
+testAsync('F454: scanActiveSessions skips capture-pane when activity epoch is unchanged', async () => withTempDirAsync(async (dir) => {
+    // Seed a sidecar so scanActiveSessions has work to do.
+    const sessionsDir = path.join(dir, '.aigon', 'sessions');
+    fs.mkdirSync(sessionsDir, { recursive: true });
+    const sessionName = 'aigon-feature-77-cc';
+    fs.writeFileSync(path.join(sessionsDir, `${sessionName}.json`), JSON.stringify({
+        sessionName,
+        agent: 'cc',
+        entityType: 'f',
+        entityId: '77',
+        role: 'do',
+        category: 'entity',
+    }));
+
+    // Reset the module-level cache so prior tests don't leak in.
+    lastActivityByName.clear();
+
+    let captureCalls = 0;
+    const fixedActivityMap = new Map([[sessionName, 1714000000]]);
+    const stubDeps = {
+        listSessionActivities: () => fixedActivityMap,
+        tmuxSessionExists: () => true,
+        capturePaneText: () => { captureCalls += 1; return 'idle pane output'; },
+        persistQuotaPause: () => false,
+    };
+
+    await quotaMidRun.scanActiveSessions(dir, stubDeps);
+    assert.strictEqual(captureCalls, 1, 'first scan must read the pane');
+    await quotaMidRun.scanActiveSessions(dir, stubDeps);
+    assert.strictEqual(captureCalls, 1, 'second scan with same activity epoch must skip capture-pane');
+
+    // Bump the activity epoch — capture-pane should run again.
+    fixedActivityMap.set(sessionName, 1714000001);
+    await quotaMidRun.scanActiveSessions(dir, stubDeps);
+    assert.strictEqual(captureCalls, 2, 'capture-pane re-runs once activity epoch advances');
+
+    lastActivityByName.clear();
 }));
 
 test('appendQuotaPausedDashboardActions emits quota Resume and Skip (F446 dashboard validActions)', () => withTempDir((dir) => {

@@ -111,7 +111,6 @@
     function openDrawer(specPath, title, stage, repoPath, options) {
       if (!specPath) return;
       const opts = options || {};
-      console.trace('openDrawer called:', title, specPath);
       drawerState.path = specPath;
       drawerState.title = title;
       drawerState.stage = stage;
@@ -270,10 +269,3 @@
       }
     });
 
-    // Close drawer when the page regains focus from another tab
-    // Prevents the drawer from appearing to "pop out" when returning to the dashboard
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && drawerEl.classList.contains('open')) {
-        closeDrawer();
-      }
-    });
