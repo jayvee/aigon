@@ -207,6 +207,32 @@ Poll log output shows exactly what the AutoConductor sees on each cycle:
 
 ---
 
+## Lifecycle states &amp; card badges
+
+As the AutoConductor moves a feature through implement → review → revision → close, the dashboard card reflects the current **lifecycle state** with a coloured chip in the card header. The state is canonical — it lives on the workflow snapshot, not in frontend heuristics — and the badge maps one-to-one from the [`STATE_RENDER_META`](https://github.com/jpv-aigon/aigon/blob/main/lib/state-render-meta.js) table the server attaches to every dashboard row.
+
+The active states you'll see during an autonomous run:
+
+| State | Card badge | Meaning |
+|-------|------------|---------|
+| `inbox` / `backlog` | — | Pre-start. No badge. |
+| `spec_review_in_progress` | 📋 Spec review | A reviewer agent is reading the spec before implementation begins. |
+| `spec_revision_in_progress` | 📋 Revising spec | The author agent is addressing spec-review feedback. |
+| `implementing` | 🔨 Implementing | Implementation agent is writing code in the worktree. |
+| `submitted` | — (agent row shows ✓ Complete) | Implementation agent has signalled `implementation-complete`. |
+| `code_review_in_progress` | 👀 Code review | A reviewer agent is reading the diff and writing review notes. |
+| `code_revision_in_progress` | ✍️ Addressing review | The implementer is addressing code-review feedback. Healthy productive state — not a warning. |
+| `evaluating` | ⚖️ Evaluating | Fleet mode only — the evaluator is comparing implementations and picking a winner. |
+| `closing` | 🚀 Closing | `feature-close` is running. |
+| `close_recovery_in_progress` | 🛠 Close recovery | An earlier close failed and a recovery pass is underway. |
+| `done` | — (card moves to Done column) | Feature merged and closed. |
+
+Why some states have no badge: states that are already obvious from the column the card sits in (`inbox`, `backlog`, `done`, `paused`) or from the per-agent status row (`submitted`, `ready_for_review`, the various `*_complete` states) skip the badge to avoid double-signalling. Active in-progress stages all carry a chip so it's clear at a glance which sub-stage of an autonomous run is currently live.
+
+Colour conventions: blue chips (`📋`, `👀`, `✍️`) mark productive review/revision passes; green chips (`🔨`, `⚖️`, `🚀`) mark the headline running stages (implement / evaluate / close). Amber `🛠 Close recovery` is the one chip that intentionally signals "human attention may be needed."
+
+---
+
 ## Resilience
 
 If the AutoConductor dies mid-run, implementation, review, and eval sessions continue unaffected. Complete the feature manually from wherever it stopped:
