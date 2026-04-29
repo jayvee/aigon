@@ -70,6 +70,32 @@ test('aigon-eval fails forbidden command check when agent runs feature-close', (
     assert.strictEqual(result.checks.forbiddenCommandGuard.pass, false);
 });
 
+test('aigon-eval extracts forbidden commands from captured session sidecars', () => {
+    withTempDir('aigon-eval-', (repo) => {
+        const transcriptPath = path.join(repo, 'session.jsonl');
+        fs.mkdirSync(path.join(repo, '.aigon', 'sessions'), { recursive: true });
+        fs.writeFileSync(transcriptPath, [
+            '{"type":"assistant","message":"working"}',
+            '{"type":"tool","command":"aigon feature-close 991"}',
+            '',
+        ].join('\n'));
+        fs.writeFileSync(path.join(repo, '.aigon', 'sessions', 'aigon-f991-do-cx.json'), JSON.stringify({
+            entityType: 'f',
+            entityId: '991',
+            agent: 'cx',
+            sessionName: 'aigon-f991-do-cx',
+            agentSessionPath: transcriptPath,
+        }, null, 2));
+
+        const events = runner.collectCommandEventsFromSessionSidecars(repo, 'feature', fixture, 'cx');
+        assert.strictEqual(events.length, 1);
+        assert.match(events[0].command, /aigon feature-close 991/);
+
+        const guard = checks.checkForbiddenCommands(fixture, events);
+        assert.strictEqual(guard.pass, false);
+    });
+});
+
 test('aigon-eval writes per-run result and matrix from injected runs', async () => {
     await withTempDir('aigon-eval-', async (repo) => {
         const injectedRuns = [
