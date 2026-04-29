@@ -1,5 +1,6 @@
 ---
 complexity: high
+set: agent-benchmarks
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-29T22:03:15.665Z", actor: "cli/feature-prioritise" }
 ---
@@ -86,7 +87,9 @@ Non-functional constraints:
 
 ## Related
 
+- Set: agent-benchmarks
+- Prior features in set: F461 (perf-bench-claude-tokens-in-fix)
 - Surfaced via dashboard agent-benchmarks discussion 2026-04-30.
-- Depends on: `feature-perf-bench-claude-tokens-in-fix`.
+- Depends on: `feature-perf-bench-claude-tokens-in-fix` (F461).
 - Follow-up: pop-out / fullscreen-overlay for benchmarks panel using URL-routable hash routing.
 - Quality rubric: F371 (implementation-v1 rubric); symmetric review rubric work if/when it lands.

@@ -1,5 +1,6 @@
 ---
 complexity: medium
+set: agent-benchmarks
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-29T22:03:12.712Z", actor: "cli/feature-prioritise" }
 ---
@@ -65,5 +66,7 @@ The dashboard rendering code (`@aigon/pro` → `dashboard/benchmark-matrix.js`) 
 
 ## Related
 
+- Set: agent-benchmarks
+- Prior features in set: (none — this is the foundation)
 - Surfaced via dashboard agent-benchmarks discussion 2026-04-30.
-- Sibling feature: `benchmark-matrix-per-op-restructure` (column reshape; depends on this fix being live so the Tokens In data is real before the columns get split per-operation).
+- Sibling feature: `benchmark-matrix-per-op-restructure` (F462 — column reshape; depends on this fix being live so the Tokens In data is real before the columns get split per-operation).
