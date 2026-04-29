@@ -2,6 +2,7 @@
 complexity: medium
 set: signal-health
 transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T05:03:43.017Z", actor: "cli/feature-prioritise" }
   - { from: "inbox", to: "backlog", at: "2026-04-29T04:59:23.771Z", actor: "cli/feature-prioritise" }
 ---
 
