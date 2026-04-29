@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 823
+lines_removed: 4
+lines_changed: 827
+files_touched: 9
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 329
+output_tokens: 118312
+cache_creation_input_tokens: 847954
+cache_read_input_tokens: 33509074
+thinking_tokens: 0
+total_tokens: 34475669
+billable_tokens: 118641
+cost_usd: 69.35
+sessions: 2
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 458 - card-current-activity-headline
 Agent: cc
 
