@@ -41,8 +41,12 @@ testAsync('spec-review lifecycle drives card status from events, not tmux', () =
     await engine.recordSpecReviewCheckStarted(repo, 'feature', '50', { checkerId: 'cc' });
     state = wrm.getFeatureDashboardState(repo, '50', 'backlog', []);
     assert.deepStrictEqual(
+        state.specRevisionSessions.map(s => ({ agent: s.agent, running: s.running, status: s.status })),
+        [{ agent: 'cc', running: true, status: 'revising' }],
+    );
+    assert.deepStrictEqual(
         state.specCheckSessions.map(s => ({ agent: s.agent, running: s.running, status: s.status })),
-        [{ agent: 'cc', running: true, status: 'checking' }],
+        [{ agent: 'cc', running: true, status: 'revising' }],
     );
     await engine.recordSpecReviewAcknowledged(repo, 'feature', '50', { ackedBy: 'cc', reviewIds: ['cx-1'] });
     state = wrm.getFeatureDashboardState(repo, '50', 'backlog', []);

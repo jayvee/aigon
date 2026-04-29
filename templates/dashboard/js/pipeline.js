@@ -692,8 +692,8 @@
       const isRunning = reviewer.running === true;
       const statusIcon = isRunning ? '●' : '✓';
       const statusLabel = isRunning
-        ? (mode === 'spec-check' ? 'Checking' : 'Reviewing')
-        : (mode === 'spec' ? 'Review submitted' : mode === 'spec-check' ? 'Review check complete' : 'Review complete');
+        ? (mode === 'spec-revise' ? 'Revising' : mode === 'spec-check' ? 'Checking' : 'Reviewing')
+        : (mode === 'spec' ? 'Review submitted' : mode === 'spec-revise' ? 'Spec revised' : mode === 'spec-check' ? 'Review check complete' : 'Review complete');
       const statusCls = isRunning ? 'status-reviewing' : 'status-review-done';
       const peekBtn = reviewer.session
         ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(reviewer.session) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
@@ -908,10 +908,10 @@
             }
           }
           const specReviews = feature.specReviewSessions || [];
-          const specChecks = feature.specCheckSessions || [];
+          const specRevisions = feature.specRevisionSessions || feature.specCheckSessions || [];
           let specReviewHtml = '';
           specReviews.forEach(r => { specReviewHtml += buildReviewerSectionHtml('Spec Review', r, { mode: 'spec' }); });
-          specChecks.forEach(r => { specReviewHtml += buildReviewerSectionHtml('Spec Check', r, { mode: 'spec-check' }); });
+          specRevisions.forEach(r => { specReviewHtml += buildReviewerSectionHtml('Spec Revision', r, { mode: 'spec-revise' }); });
           innerHtml +=
             (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
             evalStatusHtml +
