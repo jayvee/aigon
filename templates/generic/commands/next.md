@@ -126,9 +126,9 @@ Count the worktrees for each in-progress feature (from board output — look for
 
 **Drive mode** (1 agent, no agent code in branch name): Check whether implementation has been done.
 
-Look at the board output for agent status. If the agent shows `submitted` or `done`, suggest close. Otherwise suggest do. Note: Drive mode requires the user to manually run `feature-do`; it is NOT run automatically.
+Look at the board output for agent status. If the agent shows `complete` or `done`, suggest close. Otherwise suggest do. Note: Drive mode requires the user to manually run `feature-do`; it is NOT run automatically.
 
-**If not yet submitted**:
+**If not yet complete**:
 > Feature `#<ID> <name>` is in progress (Drive mode).
 >
 > **Suggested next step:**
@@ -136,8 +136,8 @@ Look at the board output for agent status. If the agent shows `submitted` or `do
 >
 > This starts the implementation session on the Drive branch.
 
-**If submitted/done**:
-> Feature `#<ID> <name>` is implemented and submitted.
+**If complete/done**:
+> Feature `#<ID> <name>` is implemented and complete.
 >
 > **Suggested next step:**
 > `{{CMD_PREFIX}}feature-close <ID>`

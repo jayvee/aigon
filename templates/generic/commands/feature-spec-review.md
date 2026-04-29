@@ -10,7 +10,7 @@ If `git log` shows no prior `spec-review:` commits on this spec, that is expecte
 You are already inside the spec-review task for this feature.
 
 - Do not run `aigon feature-spec-review {{ARG1_SYNTAX}}` again.
-- Do not run `aigon feature-spec-revise {{ARG1_SYNTAX}}` — that is a different command for a later stage, run by the feature author after reviewers have submitted. It is not your job here.
+- Do not run `aigon feature-spec-revise {{ARG1_SYNTAX}}` — that is a different command for a later stage, run by the feature author after reviewers have completed their review. It is not your job here.
 - Do not ask the shell to start the same command recursively.
 - Use the resolved spec path below, edit that spec in place, then make the required `spec-review:` commit and run `aigon feature-spec-review-record {{ARG1_SYNTAX}}`.
 - If you cannot complete the commit or record step, stop and report the blocker instead of making a generic commit.

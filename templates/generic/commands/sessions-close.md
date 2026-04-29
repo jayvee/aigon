@@ -14,7 +14,7 @@ Kill all running agent processes for a given feature or research ID, and close t
 
 ## When to Use
 
-Use this after agents have **submitted** their work (research findings or feature implementation) and you want to tear down the Fleet run quickly without typing `exit` in each pane.
+Use this after agents have **completed** their work (research findings or feature implementation) and you want to tear down the Fleet run quickly without typing `exit` in each pane.
 
 ## What It Does
 
@@ -26,7 +26,7 @@ Works for both **feature** Fleet runs (`arena-feature-55`) and **research** Flee
 
 ## Example
 
-After agents have submitted:
+After agents have completed:
 ```bash
 aigon sessions-close 55
 ```

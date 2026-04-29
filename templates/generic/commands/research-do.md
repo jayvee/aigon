@@ -106,16 +106,16 @@ This updates your agent state in the main repo so the dashboard and coordinator 
    ```
    Replace `<ID>` with the numeric research ID (e.g. `36`).
 
-   The command **must exit 0** before you can claim your research is submitted.
+   The command **must exit 0** before you can claim your research is complete.
 
    Hard rules:
-   - Your findings are **not** submitted until `agent-status research-complete` returns exit 0
+   - Your findings are **not** complete until `agent-status research-complete` returns exit 0
    - Do **not** say "done", "complete", "findings written", or "ready for evaluation" before it exits 0
    - Do **not** summarise, narrate, or describe your output instead of running the command — the command IS the completion signal; prose is not a substitute
-   - **Submitting your signal has nothing to do with `research-eval`.** That is a separate coordinator step run by the user AFTER all agents submit. You must submit before you stop — regardless of what comes next.
+   - **Recording completion has nothing to do with `research-eval`.** That is a separate coordinator step run by the user AFTER all agents are complete. You must record completion before you stop — regardless of what comes next.
    - If it still fails after the explicit form, report the exact error output and stop for user guidance
 
-4. **Post-submit:** output exactly one line — `Findings submitted — ready for evaluation.` — then STAY in the session in case the user has follow-up questions.
+4. **Post-completion:** output exactly one line — `Findings complete — ready for evaluation.` — then STAY in the session in case the user has follow-up questions.
 
 **If Drive mode (no findings file):**
 - Run `aigon research-close {{ARG_SYNTAX}}` when the research pass is complete and ready to close
