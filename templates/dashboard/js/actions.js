@@ -139,6 +139,12 @@ function appendTripletSelects(rowEl, agent) {
         el.disabled = true;
         label = '🔒 ' + label;
         el.title = quotaTooltip(quotaEntry);
+      } else {
+        const benchTip = benchTooltip(quotaEntry);
+        if (benchTip) {
+          label = '⚠ ' + label;
+          el.title = benchTip;
+        }
       }
       el.textContent = label;
       sel.appendChild(el);
@@ -161,6 +167,10 @@ function appendTripletSelects(rowEl, agent) {
         : 'Default: use the model from aigon config for this task type';
     const selectedQuota = quotaEntryForModel(agent.id, sel.value || null);
     if (selectedQuota && selectedQuota.verdict === 'depleted') sel.title = quotaTooltip(selectedQuota);
+    else {
+      const selectedBenchTip = benchTooltip(selectedQuota);
+      if (selectedBenchTip) sel.title = selectedBenchTip;
+    }
     sel.addEventListener('click', e => e.stopPropagation());
     sel.addEventListener('change', e => {
       e.stopPropagation();
@@ -243,6 +253,12 @@ function updateReviewerTripletSelects(agentId, scope = 'autonomous') {
         el.disabled = true;
         label = '🔒 ' + label;
         el.title = quotaTooltip(quotaEntry);
+      } else {
+        const benchTip = benchTooltip(quotaEntry);
+        if (benchTip) {
+          label = '⚠ ' + label;
+          el.title = benchTip;
+        }
       }
       el.textContent = label;
       sel.appendChild(el);
@@ -2153,6 +2169,29 @@ function quotaTooltip(entry) {
     : 'Reset time unknown';
   const probed = entry.lastProbedAt ? (' Last probed ' + fmtRelAgo(entry.lastProbedAt) + '.') : '';
   return 'Out of quota — ' + resetLabel + '.' + probed;
+}
+
+// F456: probe alone is necessary but not sufficient — a model can pass the
+// single-turn API probe and still time out on a multi-turn agent loop. Yellow
+// signals "API responds but never bench-validated (or last bench failed)".
+function benchTooltip(entry) {
+  if (!entry || entry.verdict === 'depleted' || !entry.probeOk) return '';
+  if (entry.benchVerdict === 'passed') return '';
+  if (entry.benchVerdict === 'failed' && entry.lastBenchAt) {
+    return 'Bench failed ' + fmtRelAgo(entry.lastBenchAt) + ' — may time out on real agent work.';
+  }
+  if (entry.benchVerdict === 'failed') return 'Bench failed — may time out on real agent work.';
+  return 'Never bench-tested — single-turn probe ok, but multi-turn run not verified.';
+}
+
+// Pair signal: green = probe ok + bench passed; yellow = probe ok + bench
+// missing/failed; red handled by existing depleted/probe-fail logic.
+function pairSignalClass(entry) {
+  if (!entry) return 'budget-stale';
+  if (entry.verdict === 'depleted') return 'budget-red';
+  if (!entry.probeOk) return 'budget-red';
+  if (entry.benchVerdict === 'passed') return 'budget-green';
+  return 'budget-yellow';
 }
 
 function budgetClassFor(pctRemaining, polledAt) {

@@ -1,16 +1,4 @@
 # Implementation Log: Feature 456 - agent-bench-health-signal
 Agent: cc
 
-## Status
-
-## New API Surface
-
-## Key Decisions
-
-## Gotchas / Known Issues
-
-## Explicitly Deferred
-
-## For the Next Feature in This Set
-
-## Test Coverage
+`lib/bench-hydrate.js` indexes `.aigon/benchmarks/` (all-pairs trumps per-run) and `/api/quota` merges `benchVerdict` into each model entry; picker labels probe-ok-but-not-bench-passed pairs with `⚠` + tooltip, and `agent-probe --include-bench` adds a bench column.
