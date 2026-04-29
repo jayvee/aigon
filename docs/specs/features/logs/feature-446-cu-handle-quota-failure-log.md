@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 1157
+lines_removed: 45
+lines_changed: 1202
+files_touched: 22
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 446 - handle-quota-failure
 Agent: cu
 
