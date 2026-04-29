@@ -38,6 +38,7 @@ let createFeatureCommands, createResearchCommands, createFeedbackCommands;
 let createSetupCommands, createInfraCommands, createMiscCommands, createWorkflowCommands, createSetCommands;
 let createRecurringCommands, createScheduleCommands;
 let createAgentLaunchCommands;
+let createSignalHealthCommands;
 let checkForUpdate, getCachedUpdateCheck, formatUpdateNotice;
 let createSecurityScanCommands;
 
@@ -54,6 +55,7 @@ try {
     ({ createRecurringCommands } = require('./lib/commands/recurring'));
     ({ createScheduleCommands } = require('./lib/commands/schedule'));
     ({ createAgentLaunchCommands } = require('./lib/commands/agent-launch'));
+    ({ createSignalHealthCommands } = require('./lib/commands/signal-health'));
     ({ createSecurityScanCommands } = require('./lib/commands/security-scan'));
     ({ checkForUpdate, getCachedUpdateCheck, formatUpdateNotice } = require('./lib/npm-update-check'));
 } catch (error) {
@@ -81,6 +83,7 @@ const commands = {
     ...createRecurringCommands(),
     ...createScheduleCommands(),
     ...createAgentLaunchCommands(),
+    ...createSignalHealthCommands(),
     ...createSecurityScanCommands(),
 };
 
