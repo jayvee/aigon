@@ -326,8 +326,11 @@
     .kcard-agent-header{display:flex;align-items:center;gap:6px;margin-bottom:2px;min-width:0}
     .kcard-agent-name{font-size:11px;font-weight:700;font-family:var(--mono);color:var(--text-secondary);flex-shrink:0;letter-spacing:.03em}
     .kcard-agent-triplet{font-size:9px;font-family:var(--mono);color:var(--text-tertiary);opacity:.7;letter-spacing:.02em;padding:1px 5px;border:1px solid var(--border-subtle);border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
-    .kcard-agent-status-row{margin-bottom:3px}
+    .kcard-agent-status-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px}
+    .kcard-agent-status-row.is-idle-ladder{opacity:.72}
     .kcard-agent-status{font-size:10px;color:var(--text-tertiary);white-space:nowrap}
+    .kcard-idle-chip{display:inline-flex;align-items:center;gap:3px;max-width:100%;padding:1px 6px;border-radius:999px;border:1px dashed rgba(251,191,36,.5);background:rgba(251,191,36,.1);color:#fcd34d;font:600 10px/1.4 var(--mono);white-space:nowrap}
+    .kcard-idle-chip-attention{border-color:rgba(248,113,113,.65);background:rgba(248,113,113,.12);color:#fca5a5}
     .kcard-agent-status.status-running{color:#4ADE80}
     .kcard-agent-status.status-waiting{color:#FCD34D}
     .kcard-agent-status.status-complete{color:#86EFAC}
