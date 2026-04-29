@@ -1,0 +1,1 @@
+Provider returned 429: rate limit exceeded for free model. Try again in 30 seconds.

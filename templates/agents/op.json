@@ -23,6 +23,19 @@
     "transcriptTelemetry": false,
     "resolvesSlashCommands": false
   },
+  "quota": {
+    "errorPatterns": [
+      {
+        "id": "openrouter-free-model-rate-limit",
+        "match": "rate.{0,3}limit exceeded for free model|free model.{0,40}rate.{0,3}limit|429|too many requests",
+        "verdict": "depleted",
+        "confidence": "high",
+        "resetExtractor": "(reset|retry|try again).{0,40}(\\d{1,2}:\\d{2}|in\\s+\\d+\\s+(?:hour|min|second)s?)"
+      }
+    ],
+    "successPatterns": ["^PONG$", "PONG"],
+    "unknownPolicy": "permit"
+  },
   "cli": {
     "command": "opencode",
     "implementFlag": "",

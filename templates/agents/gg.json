@@ -40,6 +40,19 @@
     "trustInstallScope": "worktree-base",
     "resume": { "kind": "append", "flag": "--resume" }
   },
+  "quota": {
+    "errorPatterns": [
+      {
+        "id": "google-resource-exhausted",
+        "match": "RESOURCE_EXHAUSTED|quota exceeded|rate.{0,3}limit|429|too many requests",
+        "verdict": "depleted",
+        "confidence": "high",
+        "resetExtractor": "(reset|retry|try again).{0,40}(\\d{1,2}:\\d{2}|in\\s+\\d+\\s+(?:hour|min|second)s?|\\d{10,13})"
+      }
+    ],
+    "successPatterns": ["^PONG$", "PONG"],
+    "unknownPolicy": "permit"
+  },
   "cli": {
     "command": "gemini",
     "implementFlag": "--yolo",

@@ -127,59 +127,70 @@ function fmtResult(status, result) {
 
 // ── argument parsing ─────────────────────────────────────────────────────────
 
-const argv = process.argv.slice(2);
-const allAgentsFlag = argv.includes('--all-agents');
-const allModelsFlag = argv.includes('--all') || argv.includes('--all-models');
-const modelArgIdx = argv.indexOf('--model');
-const explicitModel = modelArgIdx >= 0 ? argv[modelArgIdx + 1] : null;
-const positional = argv.find(a => !a.startsWith('-') && argv[argv.indexOf(a) - 1] !== '--model');
-
-const targetAgentId = positional || null;
-
-const agentIds = allAgentsFlag
-    ? listAllAgentIds()
-    : targetAgentId
-    ? [targetAgentId]
-    : ['cc', 'op', 'gg', 'cx']; // default: all probeable agents
-
-// ── run probes ───────────────────────────────────────────────────────────────
-
-const rows = [];
-const colW = { agent: 4, model: 44 };
-
-for (const agentId of agentIds) {
-    const config = loadAgent(agentId);
-    if (!config) {
-        console.error(`Unknown agent: ${agentId}`);
-        process.exit(1);
-    }
-
+function resolveTargets(config, { explicitModel = null, allModels = false } = {}) {
     const allOpts = getModelOptions(config);
-
-    let targets;
-    if (explicitModel) {
-        targets = [{ value: explicitModel, label: explicitModel }];
-    } else if (allModelsFlag) {
-        targets = allOpts.filter(o => !isQuarantined(o));
-        if (targets.length === 0) targets = [{ value: null, label: '(agent default)' }];
-    } else {
-        const first = allOpts.find(o => !isQuarantined(o) && o.value !== null);
-        targets = [first || { value: null, label: '(agent default)' }];
+    if (explicitModel) return [{ value: explicitModel, label: explicitModel }];
+    if (allModels) {
+        const targets = allOpts.filter(o => !isQuarantined(o));
+        return targets.length === 0 ? [{ value: null, label: '(agent default)' }] : targets;
     }
-
-    for (const target of targets) {
-        const label = target.label || target.value || '(agent default)';
-        process.stdout.write(`  ${agentId.padEnd(4)}  ${label.slice(0, colW.model).padEnd(colW.model)}  `);
-        const result = runProbe(config, target.value, label);
-        const status = result.skipped ? 'SKIP' : result.ok ? 'PASS' : 'FAIL';
-        console.log(fmtResult(status, result));
-        rows.push({ agentId, model: target.value, label, status, result });
-    }
+    const first = allOpts.find(o => !isQuarantined(o) && o.value !== null);
+    return [first || { value: null, label: '(agent default)' }];
 }
 
-const failed = rows.filter(r => r.status === 'FAIL');
-const passed = rows.filter(r => r.status === 'PASS');
-const skipped = rows.filter(r => r.status === 'SKIP');
+function main(argv = process.argv.slice(2)) {
+    const allAgentsFlag = argv.includes('--all-agents');
+    const allModelsFlag = argv.includes('--all') || argv.includes('--all-models');
+    const modelArgIdx = argv.indexOf('--model');
+    const explicitModel = modelArgIdx >= 0 ? argv[modelArgIdx + 1] : null;
+    const positional = argv.find(a => !a.startsWith('-') && argv[argv.indexOf(a) - 1] !== '--model');
+    const targetAgentId = positional || null;
+    const agentIds = allAgentsFlag
+        ? listAllAgentIds()
+        : targetAgentId
+        ? [targetAgentId]
+        : ['cc', 'op', 'gg', 'cx']; // default: all probeable agents
 
-console.log(`\n${passed.length} passed  ${failed.length} failed  ${skipped.length} skipped`);
-process.exit(failed.length > 0 ? 1 : 0);
+    const rows = [];
+    const colW = { agent: 4, model: 44 };
+
+    for (const agentId of agentIds) {
+        const config = loadAgent(agentId);
+        if (!config) {
+            console.error(`Unknown agent: ${agentId}`);
+            return 1;
+        }
+
+        for (const target of resolveTargets(config, { explicitModel, allModels: allModelsFlag })) {
+            const label = target.label || target.value || '(agent default)';
+            process.stdout.write(`  ${agentId.padEnd(4)}  ${label.slice(0, colW.model).padEnd(colW.model)}  `);
+            const result = runProbe(config, target.value, label);
+            const status = result.skipped ? 'SKIP' : result.ok ? 'PASS' : 'FAIL';
+            console.log(fmtResult(status, result));
+            rows.push({ agentId, model: target.value, label, status, result });
+        }
+    }
+
+    const failed = rows.filter(r => r.status === 'FAIL');
+    const passed = rows.filter(r => r.status === 'PASS');
+    const skipped = rows.filter(r => r.status === 'SKIP');
+
+    console.log(`\n${passed.length} passed  ${failed.length} failed  ${skipped.length} skipped`);
+    return failed.length > 0 ? 1 : 0;
+}
+
+module.exports = {
+    buildCmd,
+    loadAgent,
+    listAllAgentIds,
+    getModelOptions,
+    isQuarantined,
+    runProbe,
+    resolveTargets,
+    fmtMs,
+    main,
+};
+
+if (require.main === module) {
+    process.exit(main());
+}
