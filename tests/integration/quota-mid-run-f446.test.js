@@ -36,6 +36,41 @@ test('emit dedupe map tracks composite key', () => {
     assert.strictEqual(emittedDedupe.has(k), true);
 });
 
+testAsync('agent-resume refuses when sidecar is missing', async () => withTempDirAsync(async (dir) => {
+    const prevPath = process.env.AIGON_PROJECT_PATH;
+    delete process.env.AIGON_PROJECT_PATH;
+    const id = '43';
+    const padded = id.padStart(2, '0');
+    const wfDir = path.join(dir, '.aigon', 'workflows', 'features', padded);
+    fs.mkdirSync(wfDir, { recursive: true });
+    fs.writeFileSync(path.join(wfDir, 'snapshot.json'), JSON.stringify({
+        featureId: padded,
+        currentSpecState: 'implementing',
+        agents: { gg: { status: 'running' } },
+    }));
+    fs.mkdirSync(path.join(dir, '.aigon', 'state'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.aigon', 'state', `feature-${padded}-gg.json`), JSON.stringify({
+        agent: 'gg',
+        status: 'quota-paused',
+        priorQuotaStatus: 'implementing',
+        updatedAt: new Date().toISOString(),
+    }));
+    const resume = require('../../lib/agent-resume');
+    let code;
+    try {
+        try {
+            await resume.runAgentResume([id, 'gg'], { cwd: dir });
+        } catch (e) {
+            code = e.code;
+            assert.strictEqual(code, 'NO_SIDECAR');
+        }
+        assert.ok(code, 'expected NO_SIDECAR');
+    } finally {
+        if (prevPath !== undefined) process.env.AIGON_PROJECT_PATH = prevPath;
+        else delete process.env.AIGON_PROJECT_PATH;
+    }
+}));
+
 testAsync('agent-resume refuses when quota.json still depleted', async () => withTempDirAsync(async (dir) => {
     const prevPath = process.env.AIGON_PROJECT_PATH;
     delete process.env.AIGON_PROJECT_PATH;
