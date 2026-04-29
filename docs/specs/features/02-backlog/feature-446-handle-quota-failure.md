@@ -1,5 +1,5 @@
 ---
-complexity: medium
+complexity: high
 set: quota
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-29T05:03:43.795Z", actor: "cli/feature-prioritise" }
@@ -12,7 +12,7 @@ transitions:
 
 `feature-agent-quota-awareness` covers the pre-flight case: probe periodically, refuse to start work that has no chance of running, grey out depleted (agent, model) pairs in the dashboard. This feature covers the orthogonal mid-run case: an agent that was *available* at session-start but hits its quota cap *during* a session — minute 7 of a 30-minute feature run, or one Fleet member depleting while the other two carry on. The 2026-04-28 r45-gg / r46-gg incidents are the canonical examples: Gemini Pro daily limit tripped after the agent had already started work, and the tmux session sat at the *"Switch to flash / Upgrade / Stop"* choice screen indefinitely with no signal back to Aigon.
 
-This feature reuses the regex packs, data model, and probe primitives that `agent-quota-awareness` establishes; it does **not** redefine them. The new contribution is mid-run-only: detection during an active session, a `quota-paused` lifecycle signal, autopilot integration, and a resume path. Second feature in the `quota` set; depends on the foundation.
+This feature reuses the regex packs, data model, and probe primitives that `agent-quota-awareness` establishes; it does **not** redefine them. The new contribution is mid-run-only: detection during an active session, a per-agent `quota-paused` status signal, autopilot integration, and a resume path. It does not add a new feature/research `currentSpecState`; any entity-level pause is represented by the existing autopilot/run status plus per-agent status files. Second feature in the `quota` set; depends on the foundation.
 
 ## User Stories
 
@@ -26,13 +26,14 @@ This feature reuses the regex packs, data model, and probe primitives that `agen
 ### Detection (mid-run only — pre-flight is awareness's job)
 
 - [ ] **Reuse `quota.errorPatterns[]` from `feature-agent-quota-awareness`** — this feature does not define its own patterns. The pre-flight probe and the mid-run detector consume the same regex pack from `templates/agents/<id>.json:quota.errorPatterns[]`.
-- [ ] **New scope: pane buffer scanning during active sessions.** Awareness's probe sees stdout/stderr from a one-shot PONG call. This feature additionally scans the live tmux pane buffer of *running* agent sessions every 5 seconds (re-using the existing `lib/dashboard-status-collector.js` poll cadence) for the same patterns. Quota messages frequently render in TUI choice boxes (e.g., Gemini's "Switch to flash / Upgrade / Stop") — pane scan is the only surface that catches this.
-- [ ] **Promote a pane-scan match to a `quota-failure-detected` event** that carries `{ agent, sessionName, pattern.id, resetAt? (parsed via shared `resetExtractor`), detectedAt }`.
+- [ ] **New scope: pane buffer scanning during active sessions.** Awareness's probe sees stdout/stderr from a one-shot PONG call. This feature additionally scans the live tmux pane buffer of *running Aigon-managed agent sessions* every 5 seconds (re-using the existing `lib/dashboard-status-collector.js` poll cadence) for the same patterns. Quota messages frequently render in TUI choice boxes (e.g., Gemini's "Switch to flash / Upgrade / Stop") — pane scan is the only surface that catches this. Session targeting must use the session sidecar / `tmuxId` path where available, not parse tmux names.
+- [ ] **Promote a pane-scan match to a workflow event** named `feature.agent_quota_paused` or `research.agent_quota_paused`. Payload carries `{ entityType, entityId, agentId, role, sessionName, tmuxId?, modelValue?, patternId, resetAt?, detectedAt, paneSampleHash }`. Store a hash/short debug excerpt only; do not persist full pane buffers into the event log.
+- [ ] **Deduplicate detections.** Once an agent session has been marked `quota-paused` for a matched `(entity, agent, sessionName, patternId)`, later polls do not append duplicate workflow events or repeatedly rewrite `quota.json` unless the `resetAt` value changes.
 
 ### Lifecycle signal
 
-- [ ] **New `quota-paused` agent-status value** in `lib/agent-status.js`'s valid-values set, and added to `AWAITING_INPUT_CLEARED_BY` (the agent isn't waiting on the user, it's waiting on the provider clock).
-- [ ] **Per-agent flag, not entity-level state.** `feature-workflow-rules.js` and `research-workflow-rules.js` keep the entity in `implementing` if other agents in the Fleet are still running; only when *all* live agents are quota-paused does the entity-level state shift. Pattern mirrors the existing per-agent `agentRecoverable` / `agentDroppable` flags.
+- [ ] **New `quota-paused` agent-status value** in `lib/agent-status.js`, and added to `AWAITING_INPUT_CLEARED_BY` (the agent isn't waiting on the user, it's waiting on the provider clock). `lib/auto-nudge.js` already treats this status as a nudge-skip signal; keep that behaviour covered.
+- [ ] **Per-agent signal, not a new entity lifecycle state.** `feature-workflow-rules.js` and `research-workflow-rules.js` do not gain a `quota_paused` `currentSpecState` in this feature. The entity stays in its existing lifecycle while other agents continue; if every live agent is quota-paused, the autonomous run exits with a durable run status of `quota-paused` and a clear resume action, without moving the spec folder.
 - [ ] **Update `quota.json`** (the data file owned by awareness) when a mid-run detection fires — flip the (agent, model) pair to `verdict: "depleted"` so the next pre-flight check is consistent. Single source of truth, populated by both probe paths.
 
 ### Autopilot integration
@@ -46,9 +47,10 @@ This feature reuses the regex packs, data model, and probe primitives that `agen
 
 - [ ] **New CLI: `aigon agent-resume <id> <agent>`** (and dashboard "Resume" button calling the same path):
       - Reads the paused session's metadata sidecar (`.aigon/sessions/<sessionName>.json`).
-      - Reconstructs the tmux launch command from saved `prompt + agent + worktree + model + effort` — same path `createDetachedTmuxSession` uses for fresh launches.
+      - Reconstructs the tmux launch command through `lib/agent-launch.js:buildAgentLaunchInvocation` and the existing worktree/session launch helpers, preserving saved `prompt + agent + worktree + model + effort`.
       - Writes status back to whatever the pre-quota status was (typically `implementing`).
       - Records a `feature.agent_quota_resumed` / `research.agent_quota_resumed` event for analytics.
+- [ ] **Resume validates session ownership and state.** It refuses if the sidecar is missing, belongs to another entity/agent, has no resumable prompt/worktree, or the current status is not `quota-paused`; each refusal exits non-zero with a specific repair hint.
 - [ ] **Resume refuses early if the (agent, model) pair is still depleted** per `quota.json`. Prints the next probe time and "Try `aigon agent-probe --quota <agent>` to check now" hint.
 
 ### Dashboard surface
@@ -62,8 +64,10 @@ This feature reuses the regex packs, data model, and probe primitives that `agen
 
 ### Tests
 
-- [ ] **Integration test (mid-run detection):** mock provider that returns success at session-start, then emits a quota error to the pane buffer at minute 2; verify the detector fires `quota-paused`, autopilot drops the agent, and `quota.json` flips to `depleted`.
+- [ ] **Integration test (mid-run detection):** mock provider that returns success at session-start, then emits a quota error to the pane buffer at minute 2; verify the detector writes `quota-paused`, appends one `*.agent_quota_paused` event with the expected payload, autopilot drops the agent, and `quota.json` flips to `depleted`.
+- [ ] **Integration test (duplicate suppression):** leave the same quota message in the pane buffer across multiple collector polls; verify only one workflow event is appended and `quota.json` is not rewritten repeatedly.
 - [ ] **Integration test (resume):** spin up a session, force `quota-paused`, simulate quota.json flipping back to `available`, run `aigon agent-resume`; verify the session reconstructs with the original prompt and worktree.
+- [ ] **Integration test (resume refusal):** keep quota.json depleted and verify `aigon agent-resume` exits non-zero with the next-probe hint, without launching tmux or changing agent status.
 - [ ] **Integration test (Fleet survival):** three-agent Fleet, force one to `quota-paused` mid-run, verify the other two complete and `feature-eval` is offered with the surviving two.
 
 ## Validation
@@ -100,11 +104,11 @@ npm test -- --testPathPattern='(quota|agent-status|autonomous)'
 
 ### Single new module
 
-`lib/quota-mid-run-detector.js` — runs in the existing dashboard-status-collector poll loop. For each active agent session:
+`lib/quota-mid-run-detector.js` — runs in the existing dashboard-status-collector poll loop and receives active-session metadata from the collector, rather than reading workflow/spec files directly. For each active agent session:
 
-1. Read the live tmux pane buffer via the existing pipe-pane capture (F430).
+1. Read the live tmux pane buffer via the existing pipe-pane capture (F430), addressed by `tmuxId` when present.
 2. Match against `loadAgentConfig(agentId).quota.errorPatterns` (read from disk on each poll for hot-reloadability — patterns are JSON data, not code, per awareness's design).
-3. On match: extract `resetAt` if present, write `quota-paused` agent-status, update `quota.json` in coordination with awareness's writer (file lock or single-writer convention TBD during implementation), emit `*.agent_quota_paused` event.
+3. On match: extract `resetAt` if present, write `quota-paused` agent-status with enough metadata to restore the previous status on resume, update `quota.json` through awareness's writer/lock convention, emit `*.agent_quota_paused`, and remember the detection key so the next poll is idempotent.
 
 Total new code estimate: ~150 lines for the detector + ~80 lines for `agent-resume` CLI + autopilot edits = ~300 lines.
 
