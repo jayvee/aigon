@@ -66,15 +66,15 @@
       const label = (action || '').replace(/^(feature|research)-/, '');
       const processingToast = showToast('Processing ' + label + '…', null, null, { processing: true });
 
-      // For feature-close: open the live-log panel before the fetch so the user
-      // sees feedback within 200ms, before the HTTP response arrives.
-      const isClose = action === 'feature-close';
+      // For feature-close / research-close: open the live-log panel before the
+      // fetch so the user sees feedback within 200ms, before the HTTP response.
+      const isClose = action === 'feature-close' || action === 'research-close';
       const actionId = isClose
         ? (action + '-' + ((args || [])[0] || '') + '-' + Date.now())
         : null;
       if (isClose && actionId && window.openCloseLogPanel) {
-        const featureLabel = ((args || [])[0] || '');
-        window.openCloseLogPanel(actionId, featureLabel);
+        const entityLabel = ((args || [])[0] || '');
+        window.openCloseLogPanel(actionId, entityLabel);
       }
 
       try {
@@ -163,6 +163,9 @@
           render();
         } else {
           showToast('Action failed: ' + e.message, null, null, {error:true});
+          if (isClose && actionId && window.finalizeCloseLogPanel) {
+            window.finalizeCloseLogPanel(actionId, { ok: false, error: e.message });
+          }
         }
         if (btn) { btn.disabled = false; btn.textContent = origText || btn._origText || action; }
       } finally {
