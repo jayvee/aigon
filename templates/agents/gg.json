@@ -83,6 +83,29 @@
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
+        "value": "gemini-3.1-pro-preview",
+        "label": "Gemini 3.1 Pro Preview",
+        "pricing": {
+          "input": 1.25,
+          "output": 10
+        },
+        "notes": {
+          "spec_review": "Most capable Gemini model; strongest reasoning and long-context analysis for spec review.",
+          "implement": "Top-tier implementation quality; best architectural judgment across the Gemini family.",
+          "review": "Deepest code review; catches subtle design issues and cross-file consistency problems.",
+          "spec": "Excellent for complex spec drafting; superior reasoning over ambiguous requirements.",
+          "research": "Best research synthesis in the Gemini family; strong at connecting disparate findings and drawing conclusions."
+        },
+        "score": {
+          "spec_review": 4,
+          "implement": 5,
+          "review": 4,
+          "spec": 4,
+          "research": 4.5
+        },
+        "lastRefreshAt": "2026-04-29T00:00:00.000Z"
+      },
+      {
         "value": "gemini-2.5-pro",
         "label": "Gemini 2.5 Pro",
         "pricing": {
@@ -169,11 +192,11 @@
         "effort": null
       },
       "high": {
-        "model": "gemini-2.5-pro",
+        "model": "gemini-3.1-pro-preview",
         "effort": null
       },
       "very-high": {
-        "model": "gemini-2.5-pro",
+        "model": "gemini-3.1-pro-preview",
         "effort": null
       }
     },

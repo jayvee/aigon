@@ -576,6 +576,12 @@
       const overflowActions = workflowActions.filter(va => va.action === 'feature-stop' || va.action === 'research-stop');
       let actionsHtml = '';
 
+      // When mark-submitted is present it is the exclusive primary CTA.
+      // All secondary infra actions and session-open actions collapse into the ⋯ overflow
+      // so the card matches the one-button-inline pattern used by feature cards.
+      const hasMarkSubmitted = infraActions.some(va => va.action === 'mark-submitted');
+      let secondaryInfraOverflow = '';
+
       // Render infra actions from validActions (server-driven eligibility)
       const pokeStateKey = `${repoPath || ''}:${feature.id}:${agent.id}`;
       const pokePending = state.pendingDevServerPokes && state.pendingDevServerPokes.has(pokeStateKey);
@@ -589,21 +595,44 @@
           actionsHtml += '<button class="btn btn-secondary kcard-dev-poke-btn' + (pokePending ? ' is-pending' : '') + '"' + attrs + (pokePending ? ' disabled' : '') + '>' +
             (pokePending ? pendingLabel : escHtml(va.label)) +
             '</button>';
-        } else if (va.action === 'mark-submitted' || va.action === 'reopen-agent' || va.action === 'view-work') {
+        } else if (va.action === 'mark-submitted') {
           const flagAction = (va.metadata && va.metadata.flagAction) || va.action;
           const attrs = ' data-flag-entity="' + escHtml(entityType) + '"' +
             ' data-flag-id="' + escHtml(feature.id) + '"' +
             ' data-flag-agent="' + escHtml(agent.id) + '"' +
             ' data-flag-repo="' + escHtml(repoPath || '') + '"';
-          const btnCls = va.action === 'mark-submitted' ? 'btn btn-primary kcard-flag-btn' : 'btn btn-secondary kcard-flag-btn';
-          actionsHtml += '<button class="' + btnCls + '" data-flag-action="' + escHtml(flagAction) + '"' + attrs + '>' + escHtml(va.label) + '</button>';
+          actionsHtml += '<button class="btn btn-primary kcard-flag-btn" data-flag-action="' + escHtml(flagAction) + '"' + attrs + '>' + escHtml(va.label) + '</button>';
+        } else if (va.action === 'reopen-agent' || va.action === 'view-work') {
+          const flagAction = (va.metadata && va.metadata.flagAction) || va.action;
+          const attrs = ' data-flag-entity="' + escHtml(entityType) + '"' +
+            ' data-flag-id="' + escHtml(feature.id) + '"' +
+            ' data-flag-agent="' + escHtml(agent.id) + '"' +
+            ' data-flag-repo="' + escHtml(repoPath || '') + '"';
+          if (hasMarkSubmitted) {
+            secondaryInfraOverflow += '<button class="kcard-overflow-item kcard-flag-btn" data-flag-action="' + escHtml(flagAction) + '"' + attrs + '>' + escHtml(va.label) + '</button>';
+          } else {
+            actionsHtml += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="' + escHtml(flagAction) + '"' + attrs + '>' + escHtml(va.label) + '</button>';
+          }
         } else if (va.action === 'view-findings') {
-          actionsHtml += '<button class="btn btn-secondary kcard-view-findings-btn" data-findings-path="' + escHtml(agent.findingsPath || '') + '" data-findings-agent="' + escHtml(agent.id) + '" data-findings-id="' + escHtml(feature.id) + '">' + escHtml(va.label) + '</button>';
+          const findingsAttrs = ' data-findings-path="' + escHtml(agent.findingsPath || '') + '" data-findings-agent="' + escHtml(agent.id) + '" data-findings-id="' + escHtml(feature.id) + '"';
+          if (hasMarkSubmitted) {
+            secondaryInfraOverflow += '<button class="kcard-overflow-item kcard-view-findings-btn"' + findingsAttrs + '>' + escHtml(va.label) + '</button>';
+          } else {
+            actionsHtml += '<button class="btn btn-secondary kcard-view-findings-btn"' + findingsAttrs + '>' + escHtml(va.label) + '</button>';
+          }
         }
       });
 
-      // Render workflow actions
-      if (primaryActions.length > 0) {
+      // Render workflow primary action inline only when mark-submitted is not the CTA.
+      // When mark-submitted is present, session-open and other primary actions go to overflow.
+      let sessionOverflow = '';
+      if (hasMarkSubmitted) {
+        primaryActions.forEach(va => {
+          const labelOverride = AGENT_ACTION_LABELS[va.action];
+          const label = typeof labelOverride === 'function' ? labelOverride(va, { agents: [agent] }) : (labelOverride || va.label);
+          sessionOverflow += '<button class="kcard-overflow-item kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">' + escHtml(label) + '</button>';
+        });
+      } else if (primaryActions.length > 0) {
         const va = primaryActions[0];
         const btnCls = (va.priority === 'high') ? 'btn btn-primary' : 'btn btn-secondary';
         const labelOverride = AGENT_ACTION_LABELS[va.action];
@@ -637,11 +666,11 @@
           ' data-session-name="' + escHtml(agent.tmuxSession || '') + '"' +
           ' data-repo-path="' + escHtml(repoPath || '') + '">Pause auto-nudge for this session</button>'
         : '';
-      if (overflowActions.length > 0 || markCompleteItem || pauseAutoNudgeItem) {
+      if (overflowActions.length > 0 || secondaryInfraOverflow || sessionOverflow || markCompleteItem || pauseAutoNudgeItem) {
         const stopItems = overflowActions.map(va =>
           '<button class="kcard-overflow-item kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">End Session</button>'
         ).join('');
-        actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + stopItems + markCompleteItem + pauseAutoNudgeItem + '</div></div>';
+        actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + stopItems + secondaryInfraOverflow + sessionOverflow + markCompleteItem + pauseAutoNudgeItem + '</div></div>';
       }
       // Peek button — only shown when agent has a tmux session
       const peekBtn = agent.tmuxSession
