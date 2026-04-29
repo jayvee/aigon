@@ -96,6 +96,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/agent-launch.js` | ~130 | `resolveLaunchTriplet` + `buildAgentLaunchInvocation`. **Every** spawn path must route through this helper so per-feature `{model, effort}` overrides captured on `feature.started` survive every respawn |
 | `lib/agent-failover.js` | ~140 | Token-exhaustion detection helpers, failover chain selection, handoff prompt builder, `clearTokenExhaustedFlag` (shared by supervisor + dashboard switch) |
 | `lib/stats-aggregate.js` | ~270 | Rolled-up stats cache (`.aigon/cache/stats-aggregate.json`); rebuilt lazily; includes `perTriplet` rollup keyed on `agent\|model\|effort` |
+| `lib/aigon-eval-runner.js` / `lib/aigon-eval-checks.js` | ~360/~190 | Internal `aigon eval` model-qualification harness. Runs canned feature/research workloads, writes `.aigon/benchmarks/aigon-eval/*`, scores lifecycle/scope/forbidden-command/final-state/no-nudge checks, and updates per-model quarantine annotations |
 | `lib/migration.js` | ~300 | Versioned state migrations with backup/restore/validate lifecycle |
 | `lib/global-config-migration.js` | ~150 | Machine-wide `~/.aigon/config.json` migrations: versioned registry, backup/write-once runner, terminal settings rename (`terminal`/`tmuxApp` → `terminalApp`) |
 | `lib/pro.js` | ~25 | Pro gate: lazy-require `@aigon/pro`. Only `lib/pro-bridge.js` calls it |
