@@ -23,9 +23,9 @@ const cxCli = getAgentCliConfig('cx');
 a.ok(cxCli.planFlag === null || cxCli.planFlag === '' || cxCli.planFlag === undefined,
     'cx planFlag must be null/empty');
 const cxTokens = getAgentLaunchFlagTokens('codex', cxCli.planFlag, { autonomous: false });
-a.deepStrictEqual(cxTokens, [], 'cx plan tokens must be empty');
+a.deepStrictEqual(cxTokens, ['--dangerously-bypass-approvals-and-sandbox'], 'cx plan tokens must only have the sandbox bypass flag');
 const cxArgv = [...cxTokens, prompt];
-a.deepStrictEqual(cxArgv, [prompt], 'cx argv is just the prompt — unchanged from today');
+a.deepStrictEqual(cxArgv, ['--dangerously-bypass-approvals-and-sandbox', prompt], 'cx argv gets bypass flag but no plan flags');
 
 // gg also has no planFlag
 const ggCli = getAgentCliConfig('gg');
