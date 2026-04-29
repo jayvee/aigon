@@ -48,54 +48,54 @@
     "models": {},
     "modelOptions": [
       {
-        "value": "openrouter/deepseek/deepseek-chat-v3.1",
-        "label": "DeepSeek V3.1 via OpenRouter (default)",
-        "pricing": { "input": 0.15, "output": 0.75 },
+        "value": "openrouter/deepseek/deepseek-v3.1-terminus",
+        "label": "DeepSeek V3.1 Terminus via OpenRouter (default)",
+        "pricing": { "input": 0.21, "output": 0.79 },
         "notes": {
-          "implement": "Strong code at low cost; reliable tool-use; aigon-curated default. Removed null 'Default (OpenCode config)' entry on 2026-04-28 because it silently fell through to whatever model opencode had configured locally — including quarantined ones (e.g. deepseek-v3.2-speciale)."
+          "implement": "Updated V3.1 addressing language-consistency issues; supports thinking/non-thinking modes; 164K ctx. Aigon-curated default as of 2026-04-29 — passed brewboard bench in 3m51s and was the fastest probe across the V3.x family. Promoted from a candidate slot after the previous default (deepseek-chat-v3.1) timed out at 10m on the same bench task today."
         },
         "score": { "implement": 4 },
-        "lastRefreshAt": "2026-04-27T11:30:00.000Z"
+        "lastRefreshAt": "2026-04-29T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/deepseek/deepseek-chat-v3.1",
+        "label": "DeepSeek V3.1 via OpenRouter",
+        "pricing": { "input": 0.15, "output": 0.75 },
+        "notes": {
+          "implement": "Original V3.1; was the curated default until 2026-04-29 when it failed the brewboard bench (10-minute timeout) despite passing single-turn probes. Kept active for backward-compatible benchmark continuity; pick deepseek-v3.1-terminus instead for new work."
+        },
+        "score": { "implement": 2 },
+        "lastRefreshAt": "2026-04-29T12:00:00.000Z"
       },
       {
         "value": "openrouter/deepseek/deepseek-v4-flash",
         "label": "DeepSeek V4 Flash via OpenRouter",
         "pricing": { "input": 0.14, "output": 0.28 },
         "notes": {
-          "implement": "Newest DeepSeek (Apr 2026); 1M context, 13B active params; cost-efficient flash variant. Cold-start can be slow (~22s); warm calls are fast."
+          "implement": "Newest DeepSeek (Apr 2026); 1M context, 13B active params; cost-efficient flash variant. Probe-passed (warm: ~22s) but bench timed out at 10m on 2026-04-29 — flash-tier may struggle with multi-turn agentic loops. Use with caution until a clean bench lands."
         },
         "score": { "implement": null },
-        "lastRefreshAt": "2026-04-29T00:00:00.000Z"
+        "lastRefreshAt": "2026-04-29T12:00:00.000Z"
       },
       {
         "value": "openrouter/deepseek/deepseek-v4-pro",
         "label": "DeepSeek V4 Pro via OpenRouter",
         "pricing": { "input": 0.435, "output": 0.87 },
         "notes": {
-          "implement": "Newest premium DeepSeek (Apr 2026); 1M context, 49B active params; advanced reasoning + long-horizon agent workflows. Probed PASS in 15.9s."
+          "implement": "Newest premium DeepSeek (Apr 2026); 1M context, 49B active params; advanced reasoning + long-horizon agent workflows. Bench-passed in 3m27s on 2026-04-29 — the fastest of the V4 candidates."
         },
-        "score": { "implement": null },
-        "lastRefreshAt": "2026-04-29T00:00:00.000Z"
-      },
-      {
-        "value": "openrouter/deepseek/deepseek-v3.1-terminus",
-        "label": "DeepSeek V3.1 Terminus via OpenRouter",
-        "pricing": { "input": 0.21, "output": 0.79 },
-        "notes": {
-          "implement": "Updated V3.1 addressing language-consistency issues; supports thinking/non-thinking modes; 164K ctx. Probed PASS in 3.3s — fastest of the V3.x family."
-        },
-        "score": { "implement": null },
-        "lastRefreshAt": "2026-04-29T00:00:00.000Z"
+        "score": { "implement": 4 },
+        "lastRefreshAt": "2026-04-29T12:00:00.000Z"
       },
       {
         "value": "openrouter/deepseek/deepseek-v3.2",
         "label": "DeepSeek V3.2 via OpenRouter",
         "pricing": { "input": 0.252, "output": 0.378 },
         "notes": {
-          "implement": "DeepSeek Sparse Attention (DSA); configurable reasoning; 131K ctx. Stable production V3.2 (NOT the quarantined Speciale variant). Probed PASS in 4.7s."
+          "implement": "DeepSeek Sparse Attention (DSA); configurable reasoning; 131K ctx. Stable production V3.2 (NOT the quarantined Speciale variant). Bench-passed in 6m52s on 2026-04-29 — slower than terminus but cheaper output."
         },
-        "score": { "implement": null },
-        "lastRefreshAt": "2026-04-29T00:00:00.000Z"
+        "score": { "implement": 3 },
+        "lastRefreshAt": "2026-04-29T12:00:00.000Z"
       },
       {
         "value": "openrouter/meta-llama/llama-3.3-70b-instruct",
