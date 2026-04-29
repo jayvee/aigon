@@ -1,0 +1,82 @@
+{
+  "pairs": [
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-chat-v3.1",
+      "modelLabel": "DeepSeek V3.1 via OpenRouter (default)",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v4-flash",
+      "modelLabel": "DeepSeek V4 Flash via OpenRouter",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v4-pro",
+      "modelLabel": "DeepSeek V4 Pro via OpenRouter",
+      "ok": true,
+      "totalMs": 206640
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.1-terminus",
+      "modelLabel": "DeepSeek V3.1 Terminus via OpenRouter",
+      "ok": true,
+      "totalMs": 171039
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.2",
+      "modelLabel": "DeepSeek V3.2 via OpenRouter",
+      "ok": true,
+      "totalMs": 352352
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-235b-a22b-07-25",
+      "modelLabel": "Qwen3 235B (2507) via OpenRouter",
+      "ok": true,
+      "totalMs": 68351
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-next-80b-a3b-thinking",
+      "modelLabel": "Qwen3 Next 80B Thinking via OpenRouter",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-small-2507",
+      "modelLabel": "Devstral Small (2507) via OpenRouter",
+      "ok": true,
+      "totalMs": 215543
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-2512",
+      "modelLabel": "Devstral 2 (2512) via OpenRouter",
+      "ok": true,
+      "totalMs": 159304
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/nvidia/nemotron-3-super-120b-a12b",
+      "modelLabel": "Nemotron 3 Super 120B via OpenRouter",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/z-ai/glm-5.1",
+      "modelLabel": "GLM-5.1 via OpenRouter",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    }
+  ],
+  "timestamp": "2026-04-29T11:59:07.092Z"
+}
