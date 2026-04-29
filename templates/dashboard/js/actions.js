@@ -2951,7 +2951,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (autonomousModalEl) {
     const autoObs = new MutationObserver(() => {
       if (autonomousModalEl.style.display === 'flex') {
-        fetchBudget().then(() => { updateAutonomousBudgetNotice(); });
+        Promise.all([fetchBudget(), fetchQuota()]).then(() => { updateAutonomousBudgetNotice(); });
       }
     });
     autoObs.observe(autonomousModalEl, { attributes: true, attributeFilter: ['style'] });

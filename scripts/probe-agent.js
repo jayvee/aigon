@@ -99,8 +99,16 @@ function runProbe(agentConfig, modelValue, modelLabel) {
         return { ok: false, elapsed, error: isTimeout ? `TIMEOUT (>${Math.round(TIMEOUT_MS / 1000)}s)` : result.error.message };
     }
     if (result.status !== 0) {
-        const stderr = (result.stderr || '').trim().split('\n')[0]; // first line only
-        return { ok: false, elapsed, error: stderr || `exit ${result.status}` };
+        const stderr = (result.stderr || '').trim();
+        const stdout = (result.stdout || '').trim();
+        const firstLine = (stderr || stdout).split('\n')[0];
+        return {
+            ok: false,
+            elapsed,
+            error: firstLine || `exit ${result.status}`,
+            stderr: stderr.slice(0, 4000),
+            stdout: stdout.slice(0, 4000),
+        };
     }
     const stdout = (result.stdout || '').trim();
     if (!stdout) {
