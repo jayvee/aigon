@@ -1,6 +1,8 @@
 ---
 complexity: high
 set: signal-health
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T04:59:24.293Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: aigon-eval
