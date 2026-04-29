@@ -76,7 +76,7 @@ This feature reuses the regex packs, data model, and probe primitives that `agen
 node --check lib/quota-mid-run-detector.js
 node --check lib/agent-status.js
 node --check lib/feature-autonomous.js
-node --check lib/commands/agent-resume.js
+node --check lib/agent-resume.js
 npm test -- --testPathPattern='(quota|agent-status|autonomous)'
 ```
 
