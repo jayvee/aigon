@@ -27,3 +27,18 @@ None — this is standalone hardening.
 
 ## Test Coverage
 Added two regression tests: Fix A (trap uses `_aigon_run_timed`, AIGON_STATUS_TIMEOUT_SECS present) and Fix B (three guards: `kill -0 $$`, `AIGON_HEARTBEAT_MAX_SECS`, `tmux has-session`). Total: 9 passing in worktree-state-reconcile.test.js.
+
+## Code Review
+
+**Reviewed by**: cc (Cursor code-review pass)
+**Date**: 2026-04-29
+
+### Fixes Applied
+- `fix(review): tighten F450 hardening edge cases` (9d18dd1f) — `--reap-orphans` now walks descendants for hanging `aigon agent-status` roots (not only PPID=1 wrappers); Homebrew “symlink missing” hint only when a standard brew `tmux` bin path failed with ENOENT; `--min-age` NaN/negative falls back to 3600; `runShellCapture` throws on EAGAIN/EMFILE like `runShell`; reverted accidental `feature-442` spec folder move off `main`.
+
+### Residual Issues
+- **Start-path `agent-status`**: the pre-trap `AIGON_TASK_TYPE=… aigon agent-status <start>` line is still unbounded; the spec’s recurrence vector was the EXIT trap, so this is lower risk but a long-hang edge remains if the server never responds on start.
+- **`--reap-orphans` UX**: spec called for interactive confirmation before kill; implementation remains dry-run vs destructive only (already noted as deferred in the implementation log).
+
+### Notes
+- Implementation otherwise matches the spec’s A/B/C/D bundle: timed trap, triple heartbeat guards, fork/symlink diagnostics, reap tooling, and integration test updates.
