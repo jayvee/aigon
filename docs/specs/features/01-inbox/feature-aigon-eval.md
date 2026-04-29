@@ -95,6 +95,8 @@ It needs `signal-health-telemetry` to exist (events to assert against) and benef
 
 depends_on: signal-health-telemetry, auto-nudge-with-visible-idle
 
+Soft dependency (recommended, not blocking): `agent-quota-awareness` — when present, the eval runner pre-checks `.aigon/state/quota.json` and skips depleted (agent, model) pairs with a `quota-skipped` outcome rather than burning a run on a doomed start. When absent, the eval runs against every (agent, model) pair regardless and any quota cap mid-run is classified via `feature-handle-quota-failure`'s `quota-paused` event (also a soft dep — both are infrastructure that improves eval signal quality without being required for a first-cut implementation).
+
 ## Out of Scope
 
 - A model leaderboard published to docs/marketing. The matrix is internal; surfacing it externally is a marketing decision, not an engineering one.
@@ -114,5 +116,5 @@ depends_on: signal-health-telemetry, auto-nudge-with-visible-idle
 
 - Set: signal-health
 - Prior features in set: signal-health-telemetry, auto-nudge-with-visible-idle
-- Adjacent: feature-handle-quota-failure (quota cap during an `aigon-eval` run is itself a signal — the eval should record it as a quota-related fail rather than a generic SLA fail).
+- Cross-set soft deps: feature-agent-quota-awareness (skip pre-known-depleted pairs); feature-handle-quota-failure (classify mid-run quota events as `quota-skipped`, not as model failures).
 - The existing `perf-bench` answers a different question (speed on real specs); `aigon-eval` answers contract-following on canned workloads.

@@ -1,6 +1,8 @@
 ---
 complexity: high
 set: quota
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T04:59:14.258Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-quota-awareness
