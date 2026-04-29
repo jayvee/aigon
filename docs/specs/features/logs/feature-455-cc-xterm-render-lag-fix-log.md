@@ -17,6 +17,22 @@ Implemented all 5 changes: @xterm/xterm@5.5.0 pin + ImageAddon removal, lineHeig
 
 ## Test Coverage
 
+## Code Review
+
+**Reviewed by**: cu (Cursor agent)
+**Date**: 2026-04-29
+
+### Fixes Applied
+- `7d1c5bea` — `fix(review): revert out-of-scope quota probe.stderr regression from feature branch` — Restored `scripts/probe-agent.js`, `tests/integration/quota-probe.test.js`, and `tests/fixtures/quota/op-openrouter-key-monthly-limit.txt` from `main`. The implementer had removed stderr plumbing and two quota regression tests unrelated to F455; that would have broken F444-style opencode stderr-only classification against the spec’s out-of-scope deletion rule.
+- `8ab37685` — `fix(review): teardown terminal resize observer and transition listeners on reopen` — Registers `ResizeObserver` + panel `transition*` handlers with an `AbortController`, stores `termState.resizeWatchCleanup`, runs it from `destroyXterm()` so repeated `openTerminal` does not stack listeners on `#terminal-panel`.
+
+### Escalated Issues (exceptions only)
+- **ESCALATE:ambiguous** — Acceptance criteria still list a temporary `console.count('fit')` probe and MCP console verification; probe was not left in the branch (correct for merge hygiene) — implementer should confirm ≤2 `fit()`/slide once manually or in a one-off perf pass if KPI sign-off matters.
+
+### Notes
+- Scoped `npm run test:iterate` passed integration tests then Playwright was interrupted locally (dashboard server churn on port); re-run full `MOCK_DELAY=fast npm run test:ui` in a quiet environment before push.
+- Root `npm test` showed one unrelated flaky/env failure in `tests/integration/plan-flag-draft.test.js` (Codex plan tokens assertion); not attributable to this feature branch.
+
 ## Planning Context
 
 ### ~/.claude/plans/crispy-riding-knuth.md
