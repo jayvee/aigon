@@ -2313,22 +2313,26 @@ pre code {
 .hero h1.hero-wedge {
   margin: 0 0 clamp(1.25rem, 2.6vw, 1.85rem);
   font-family: "Sora", sans-serif;
-  font-size: clamp(1.65rem, 3.3vw, 2.65rem);
-  line-height: 1.15;
-  letter-spacing: -0.024em;
-  font-weight: 600;
+  font-size: clamp(1.5rem, 2.8vw, 2.25rem);
+  line-height: 1.22;
+  letter-spacing: -0.018em;
+  font-weight: 500;
   text-wrap: balance;
   max-width: 100%;
-}
-
-.hero-wedge-pain,
-.hero-wedge-turn {
-  display: block;
   color: var(--text);
 }
 
-.hero-wedge-pain {
-  margin-bottom: 0.5em;
+.hero-wedge-line {
+  display: block;
+}
+
+.hero-wedge-line + .hero-wedge-line {
+  margin-top: 0.6em;
+}
+
+.hero-wedge-aside {
+  font-size: 0.85em;
+  font-weight: 400;
 }
 
 /* === What-it-is subtitle === */
