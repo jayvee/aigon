@@ -2,6 +2,7 @@
 complexity: high
 set: quota
 transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T05:03:43.278Z", actor: "cli/feature-prioritise" }
   - { from: "inbox", to: "backlog", at: "2026-04-29T04:59:14.258Z", actor: "cli/feature-prioritise" }
 ---
 
