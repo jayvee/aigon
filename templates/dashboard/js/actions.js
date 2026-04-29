@@ -914,6 +914,10 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await requestAction('feature-push', [id], repoPath, btn);
       break;
     }
+    case 'drop-agent':
+    case 'agent-resume':
+      await requestAction(va.action, [id, ...(agentId ? [agentId] : [])], repoPath, btn);
+      break;
     case 'feature-nudge':
       showNudgeModal(feature, repoPath, btn);
       break;
