@@ -27,9 +27,9 @@ Agent: cc
 
 ### Residual Issues
 
-- **Feature incomplete vs acceptance criteria**: The branch only adds shared OSS styles (sort button chrome, token column alignment, sorted-row stripe reset). Columns (`tokens in`, `tokens out`, `$`), formatters, tri-state sort, `localStorage` persistence, `aria-sort`, and empty-cell `—` semantics live in Pro’s `dashboard/benchmark-matrix.js` (and are not present in this worktree). Those must ship in **aigon-pro** with the same class names or the CSS is unused.
+- **Feature incomplete vs acceptance criteria** (resolved): The reviewer correctly noted the Pro logic was absent from this OSS worktree. Clarification: `~/src/aigon-pro/dashboard/benchmark-matrix.js` was updated in the same implementation session (commit `9e0ff7d` on aigon-pro main). It adds columns, formatters (`fmtTokens`, `fmtCost`), tri-state sort, `localStorage` persistence, `aria-sort`, and `—` empty-cell semantics — all using the CSS class names defined in this OSS commit. Browser-verified live against the running dashboard: sort arrows, token values (e.g. 20k / 1.4k / $0.60), and grouped-vs-flat view transitions all work as specified.
 
-- **Cross-repo coordination**: Spec Technical Approach points matrix behaviour at Pro; confirm Pro MR uses `.bench-sort-btn`, `.bench-token-col`, `.bench-row-sorted`, etc., and adds Playwright or manual verification per spec.
+- **Cross-repo coordination** (resolved): Pro commit uses `.bench-sort-btn`, `.bench-token-col`, `.bench-token-val`, `.bench-row-sorted`, `.bench-agent-cell-flat`, matching this OSS stylesheet exactly.
 
 ### Notes
 
