@@ -1377,6 +1377,19 @@
     .bench-agent-cell-flat .bench-agent-body{flex-direction:row;align-items:center;gap:6px}
     .bench-row-sorted td{background:transparent}
 
+    /* ── Per-operation column blocks (F462) ──────────────────────────────── */
+    .bench-table thead .bench-head-top th{padding:6px 12px;font-size:11px;text-align:left;border-bottom:1px solid var(--border-default);background:var(--bg-elevated)}
+    .bench-table thead .bench-head-top th.bench-head-fixed{vertical-align:bottom;padding:0}
+    .bench-table thead .bench-head-top th.bench-head-op{text-align:center;font-weight:700;letter-spacing:.08em;color:var(--text-secondary);text-transform:uppercase}
+    .bench-table thead .bench-head-top th.bench-head-op-a{background:rgba(59,130,246,.06)}
+    .bench-table thead .bench-head-top th.bench-head-op-b{background:rgba(168,85,247,.06)}
+    .bench-table thead .bench-head-sub th.bench-head-op-first{border-left:1px solid var(--border-default)}
+    .bench-table thead .bench-head-sub th.bench-head-op-last{border-right:1px solid var(--border-subtle)}
+    .bench-table tbody td.bench-op-first{border-left:1px solid var(--border-default)}
+    .bench-table tbody td.bench-op-last{border-right:1px solid var(--border-subtle)}
+    .bench-table colgroup.bench-cg-op-a + colgroup.bench-cg-op-b{border-left:2px solid var(--border-default)}
+    .bench-sort-btn-num{justify-content:flex-end}
+
     .bench-last-cell{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);white-space:nowrap;text-align:right}
     .bench-ago{font-variant-numeric:tabular-nums}
 
