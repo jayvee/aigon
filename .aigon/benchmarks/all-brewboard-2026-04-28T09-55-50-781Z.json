@@ -1,0 +1,40 @@
+{
+  "pairs": [
+    {
+      "agentId": "cx",
+      "modelValue": "gpt-5.5",
+      "modelLabel": "GPT-5.5",
+      "ok": true,
+      "totalMs": 59187
+    },
+    {
+      "agentId": "cx",
+      "modelValue": "gpt-5.4",
+      "modelLabel": "GPT-5.4",
+      "ok": true,
+      "totalMs": 62696
+    },
+    {
+      "agentId": "cx",
+      "modelValue": "gpt-5.4-mini",
+      "modelLabel": "GPT-5.4 Mini",
+      "ok": true,
+      "totalMs": 48041
+    },
+    {
+      "agentId": "cx",
+      "modelValue": "gpt-5.3-codex",
+      "modelLabel": "GPT-5.3 Codex",
+      "ok": true,
+      "totalMs": 45048
+    },
+    {
+      "agentId": "cx",
+      "modelValue": "gpt-5.2",
+      "modelLabel": "GPT-5.2",
+      "ok": true,
+      "totalMs": 54100
+    }
+  ],
+  "timestamp": "2026-04-28T09:55:50.781Z"
+}

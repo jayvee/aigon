@@ -1,0 +1,40 @@
+{
+  "pairs": [
+    {
+      "agentId": "cc",
+      "modelValue": "claude-haiku-4-5-20251001",
+      "modelLabel": "Haiku 4.5 (fast/cheap)",
+      "ok": true,
+      "totalMs": 51562
+    },
+    {
+      "agentId": "cc",
+      "modelValue": "claude-sonnet-4-6",
+      "modelLabel": "Sonnet 4.6",
+      "ok": true,
+      "totalMs": 22949
+    },
+    {
+      "agentId": "cc",
+      "modelValue": "claude-sonnet-4-6[1m]",
+      "modelLabel": "Sonnet 4.6 (1M context)",
+      "ok": true,
+      "totalMs": 35082
+    },
+    {
+      "agentId": "cc",
+      "modelValue": "claude-opus-4-7",
+      "modelLabel": "Opus 4.7",
+      "ok": true,
+      "totalMs": 29110
+    },
+    {
+      "agentId": "cc",
+      "modelValue": "claude-opus-4-7[1m]",
+      "modelLabel": "Opus 4.7 (1M context)",
+      "ok": true,
+      "totalMs": 29120
+    }
+  ],
+  "timestamp": "2026-04-29T10:03:26.315Z"
+}
