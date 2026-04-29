@@ -1,0 +1,1 @@
+Error: Key limit exceeded (monthly limit). Manage it using https://openrouter.ai/settings/keys

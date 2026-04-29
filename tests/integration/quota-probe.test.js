@@ -38,4 +38,32 @@ test('quota classifier: successful PONG is available', () => {
     assert.strictEqual(result.verdict, 'available');
 });
 
+// REGRESSION (2026-04-29): opencode exited 0 with empty stdout when an
+// OpenRouter "Key limit exceeded (monthly limit)" error landed only on
+// stderr. The probe used to lose the stderr content and classify as
+// 'unknown'; runProbe now returns stderr in the result object so the
+// classifier can match it.
+test('quota classifier: op key-limit error on stderr only', () => {
+    const stderr = fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'quota', 'op-openrouter-key-monthly-limit.txt'), 'utf8');
+    const result = quotaProbe.classifyProbeResult(agentRegistry.getAgent('op'), {
+        ok: false,
+        error: 'empty response',
+        stderr,
+        elapsed: 1500,
+    });
+    assert.strictEqual(result.verdict, 'depleted');
+    assert.strictEqual(result.matchedPatternId, 'openrouter-key-monthly-limit');
+});
+
+test('quota classifier: op insufficient-credits on stderr only', () => {
+    const result = quotaProbe.classifyProbeResult(agentRegistry.getAgent('op'), {
+        ok: false,
+        error: 'empty response',
+        stderr: 'Error: Insufficient credits to make this request',
+        elapsed: 900,
+    });
+    assert.strictEqual(result.verdict, 'depleted');
+    assert.strictEqual(result.matchedPatternId, 'openrouter-insufficient-credits');
+});
+
 report();
