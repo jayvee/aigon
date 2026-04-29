@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // FEATURE 357: post-launch capture binds agent session file to sidecar via cwd matching.
-// Covers: cc (Claude project-dir slug), gg (Gemini SHA256 hash dir), cx (Codex session_meta.cwd),
+// Covers: cc (Claude project-dir slug), gg (Gemini .project_root marker), cx (Codex session_meta.cwd),
 //         old-file guard (returns null when no file is new enough), sidecar patch atomicity.
+// F453: gg case rewritten — Gemini does not hash dir names with SHA256;
+//       resolver scans for .project_root contents instead.
 'use strict';
-const a = require('assert'), fs = require('fs'), path = require('path'), os = require('os'), crypto = require('crypto');
+const a = require('assert'), fs = require('fs'), path = require('path'), os = require('os');
 const { findNewAgentSession, updateSessionSidecar } = require('../../lib/session-sidecar');
 const claudeSlug = p => p.replace(/[/.]/g, '-');
-const geminiHash = p => crypto.createHash('sha256').update(p).digest('hex');
 const tmp = (pf) => fs.mkdtempSync(path.join(os.tmpdir(), pf));
 const mkp = p => fs.mkdirSync(p, { recursive: true });
 const writeF = (p, c = '{}') => { mkp(path.dirname(p)); fs.writeFileSync(p, c); };
@@ -24,10 +25,12 @@ const now = () => Date.now();
     fs.rmSync(wt, { recursive: true, force: true }); fs.rmSync(fh, { recursive: true, force: true });
 }
 
-{ // gg: newest chats/*.json in gemini SHA256 hash dir
+{ // gg: newest chats/*.json in gemini dir keyed by .project_root content
     const wt = tmp('aigon-gg-wt-'), fh = tmp('aigon-gg-home-'), orig = process.env.HOME;
     process.env.HOME = fh;
-    const chatsDir = path.join(fh, '.gemini', 'tmp', geminiHash(wt), 'chats'); mkp(chatsDir);
+    const ggDir = path.join(fh, '.gemini', 'tmp', path.basename(wt));
+    const chatsDir = path.join(ggDir, 'chats'); mkp(chatsDir);
+    fs.writeFileSync(path.join(ggDir, '.project_root'), path.resolve(wt));
     const sessFile = path.join(chatsDir, '2026-04-25T12-00-00-000Z.json');
     writeF(sessFile, JSON.stringify({ sessionId: 'gemini-abc', messages: [] }));
     const r = findNewAgentSession('gg', wt, now() - 2000);

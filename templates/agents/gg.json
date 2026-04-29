@@ -401,6 +401,11 @@
                 "type": "command",
                 "command": "aigon check-agent-signal --json",
                 "timeout": 5
+              },
+              {
+                "type": "command",
+                "command": "aigon capture-gemini-telemetry",
+                "timeout": 15
               }
             ]
           }

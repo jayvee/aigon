@@ -20,8 +20,11 @@
   },
   "capabilities": {
     "supportsModelFlag": true,
-    "transcriptTelemetry": false,
+    "transcriptTelemetry": true,
     "resolvesSlashCommands": false
+  },
+  "runtime": {
+    "telemetryStrategy": "opencode-db"
   },
   "quota": {
     "errorPatterns": [
