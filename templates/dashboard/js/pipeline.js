@@ -360,6 +360,7 @@
       'feedback-addressed':   { icon: '✓', label: 'Complete',             cls: 'status-submitted' },
       'research-complete':    { icon: '✓', label: 'Research complete',    cls: 'status-submitted'  },
       'waiting':              { icon: '⏳', label: 'Needs input',         cls: 'status-waiting'    },
+      'quota-paused':         { icon: '⏸', label: 'Quota paused',        cls: 'status-waiting'    },
     };
     const AGENT_STATUS_DEFAULT = { icon: '○', label: 'Not started', cls: 'status-idle' };
 
@@ -374,7 +375,7 @@
       // Compound overrides: tmux-alive only means "Running" when the agent has not signaled done.
       // Once the implementer is in a *_DONE_STATUSES state, the pane is just idling at its prompt —
       // showing "Running" would lie about active work.
-      if (tmuxRunning && !IMPLEMENTER_DONE_STATUSES.has(status) && !isCompleteStatus(status) && status !== 'waiting') {
+      if (tmuxRunning && status !== 'quota-paused' && !IMPLEMENTER_DONE_STATUSES.has(status) && !isCompleteStatus(status) && status !== 'waiting') {
         icon = '●'; label = drive ? 'Implementing' : 'Running'; cls = 'status-running';
       } else if (drive && status === 'implementing') {
         icon = '●'; label = 'Implementing'; cls = 'status-running';
@@ -569,11 +570,27 @@
       const devSlot = devServerLink ? '<span class="kcard-dev-slot">' + devServerLink + '</span>' : '';
       const entityType = pipelineType === 'research' ? 'research' : 'feature';
 
+      const isQuotaChipVa = va => va.metadata && va.metadata.quotaPaused &&
+        (va.action === 'agent-resume' || va.action === 'drop-agent');
+
       // Partition actions: infra actions first, then workflow primary, then overflow (stop)
       const infraActions = agentValidActions.filter(va => va.category === 'infra' || va.category === 'view');
       const workflowActions = agentValidActions.filter(va => va.category !== 'infra' && va.category !== 'view');
-      const primaryActions = workflowActions.filter(va => va.action !== 'feature-stop' && va.action !== 'research-stop');
-      const overflowActions = workflowActions.filter(va => va.action === 'feature-stop' || va.action === 'research-stop');
+      const workflowRows = workflowActions.filter(va => !isQuotaChipVa(va));
+      const quotaResumeVa = agentValidActions.find(va => va.action === 'agent-resume' && va.metadata && va.metadata.quotaPaused);
+      const quotaResetChip = (quotaResumeVa && quotaResumeVa.metadata && quotaResumeVa.metadata.quotaResetLabel) || '';
+      const quotaChipHtml = (agent.status === 'quota-paused' && quotaResumeVa)
+        ? '<div class="kcard-quota-chip" title="Waiting on provider quota window">' +
+          '<span class="kcard-quota-chip-text">⏸ Quota — resets ' + escHtml(quotaResetChip || '…') + '</span> ' +
+          '<button type="button" class="btn btn-secondary kcard-quota-chip-btn kcard-va-btn" data-va-action="agent-resume" data-agent="' + escHtml(agent.id) + '">Resume</button>' +
+          (agentValidActions.some(va => va.action === 'drop-agent' && va.metadata && va.metadata.quotaPaused)
+            ? '<button type="button" class="btn btn-secondary kcard-quota-chip-btn kcard-va-btn" data-va-action="drop-agent" data-agent="' + escHtml(agent.id) + '">Skip</button>'
+            : '') +
+          '</div>'
+        : '';
+
+      const primaryActions = workflowRows.filter(va => va.action !== 'feature-stop' && va.action !== 'research-stop');
+      const overflowActions = workflowRows.filter(va => va.action === 'feature-stop' || va.action === 'research-stop');
       let actionsHtml = '';
 
       // When mark-submitted is present it is the exclusive primary CTA.
@@ -684,6 +701,7 @@
           peekBtn +
           devSlot +
         '</div>' +
+        quotaChipHtml +
         '<div class="kcard-agent-status-row' + ((agent.idleLadder && agent.idleLadder.state !== 'active') ? ' is-idle-ladder' : '') + '">' + buildLivenessIndicator(agent) + '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span>' + buildIdleLadderChip(agent) + '</div>' +
         (actionsHtml ? '<div class="kcard-agent-actions">' + actionsHtml + '</div>' : '') +
         '</div>';
