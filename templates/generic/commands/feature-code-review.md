@@ -123,14 +123,27 @@ Revert out-of-scope deletions before reviewing the rest of the diff.
 
 **Targeted fixes, not a rewrite.**
 
+## Step 2.5: Classify every issue before writing the log
+
+For each issue you found, assign it explicitly to one category:
+
+- **FIX_NOW** — falls under the "You MUST fix now" list (bugs, missing edge cases, failing tests, missing wiring, etc.)
+- **ESCALATE:architectural** — fix would change architecture or expand feature scope
+- **ESCALATE:ambiguous** — correct behavior is genuinely unclear from the spec
+- **ESCALATE:subsystem** — spans a separate subsystem, not safely patchable in this pass
+- **ESCALATE:blocked** — missing infrastructure, permissions, or context you cannot resolve
+
+**Every issue must be classified before you proceed to Step 3.** An issue you cannot assign to an ESCALATE category is a FIX_NOW — go fix it. If you find yourself labelling a fixable bug as ESCALATE to avoid the edit, that is a mistake.
+
 ## Step 3: Make fixes and commit
 
-For each issue you can safely patch: make the minimal fix in the worktree, commit with `fix(review): <description>` (use `git -C "$WORKTREE"` if you're on main).
+For each FIX_NOW issue: make the minimal fix in the worktree, commit with `fix(review): <description>` (use `git -C "$WORKTREE"` if you're on main).
 
 Examples: `fix(review): handle null user in profile lookup`, `fix(review): escape HTML in user-provided content`, `fix(review): add missing await on async call`.
 
-**If the implementation is solid, commit nothing for code.** A clean review is a valid outcome.
-If you report an issue without fixing it, explain why it was not safe or appropriate to patch in this review pass. Do not hand the implementer a to-do list for issues you could have fixed yourself.
+**If the implementation is solid and you classified no issues as FIX_NOW, commit nothing for code.** A clean review is a valid outcome.
+
+**Sanity check before moving on:** run `git -C "$WORKTREE" log --oneline -5`. If you classified any issues as FIX_NOW but see no `fix(review):` commits, stop and fix them now. Do not hand the implementer a to-do list for issues you could have fixed yourself.
 
 ## Step 3.5: Run the iterate gate if you made code fixes
 
@@ -155,10 +168,12 @@ Append:
 **Date**: <date>
 
 ### Fixes Applied
-- <commits made, or "None needed">
+- <commit SHA + message for each fix, or "None — implementation was clean">
 
-### Residual Issues
-- <only issues not fixed, with reason left unresolved, or "None">
+### Escalated Issues (exceptions only)
+- <ESCALATE:category — issue description. If none, write "None".>
+  Each entry MUST cite one of: architectural / ambiguous / subsystem / blocked.
+  An issue without a category belongs in Fixes Applied, not here.
 
 ### Notes
 - <observations for the user>
@@ -170,9 +185,9 @@ Commit with `docs(review): add review notes to implementation log` (via `git -C 
 
 **First, report to the user:**
 
-Say: "Code review done. [N] fix(es) committed." (or "Code review done. No fixes needed.") and show:
-- Fixes committed (commit message + SHA for each)
-- Residual unfixed issues with reason each was left unresolved, or "None"
+Say: "Code review done. [N] fix(es) committed." (or "Code review done. Implementation was clean.") and show:
+- Fixes committed (commit SHA + message for each)
+- Escalated issues with ESCALATE category for each, or "None"
 
 **CRITICAL — do NOT run `aigon feature-close`, `aigon feature-eval`, or any other command. Your job ends with the signal below. The implementing agent handles everything after this.**
 
