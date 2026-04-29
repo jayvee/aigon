@@ -2137,6 +2137,68 @@ function budgetClassFor(pctRemaining, polledAt) {
   return 'budget-green';
 }
 
+// F444 verdict → existing budget-status-dot colour class.
+function quotaVerdictClass(verdict) {
+  if (verdict === 'depleted') return 'budget-red';
+  if (verdict === 'unknown') return 'budget-yellow';
+  if (verdict === 'error') return 'budget-amber';
+  if (verdict === 'available') return 'budget-green';
+  return 'budget-stale'; // not-probeable / no data
+}
+
+// Roll an agent's per-model F444 verdicts into a single panel-level state.
+function agentQuotaRollup(agentId) {
+  const agent = _quotaCache && _quotaCache.agents && _quotaCache.agents[agentId];
+  if (!agent || !agent.models) return { verdict: null, total: 0, depleted: 0, available: 0, unknown: 0, error: 0, probeable: false };
+  const models = Object.values(agent.models).filter(m => !(m && m.probeMethod === 'not-probeable'));
+  const probeable = models.length > 0;
+  const total = probeable ? models.length : Object.values(agent.models).length;
+  let depleted = 0, available = 0, unknown = 0, error = 0;
+  for (const m of models) {
+    if (m.verdict === 'depleted') depleted++;
+    else if (m.verdict === 'available') available++;
+    else if (m.verdict === 'error') error++;
+    else unknown++;
+  }
+  let verdict;
+  if (!probeable) verdict = 'not-probeable';
+  else if (depleted > 0 && available === 0) verdict = 'depleted';
+  else if (depleted > 0) verdict = 'mixed';
+  else if (error > 0 && available === 0) verdict = 'error';
+  else if (unknown > 0 && available === 0) verdict = 'unknown';
+  else verdict = 'available';
+  return { verdict, total, depleted, available, unknown, error, probeable };
+}
+
+function quotaRollupClass(rollup) {
+  if (!rollup || rollup.verdict === 'not-probeable') return 'budget-stale';
+  if (rollup.verdict === 'depleted') return 'budget-red';
+  if (rollup.verdict === 'mixed') return 'budget-amber';
+  if (rollup.verdict === 'error') return 'budget-amber';
+  if (rollup.verdict === 'unknown') return 'budget-yellow';
+  return 'budget-green';
+}
+
+// Pick the most-explanatory error string from the depleted models for display.
+function quotaReasonText(agentId) {
+  const agent = _quotaCache && _quotaCache.agents && _quotaCache.agents[agentId];
+  if (!agent || !agent.models) return null;
+  const depleted = Object.values(agent.models).find(m => m && m.verdict === 'depleted' && m.lastProbeOutput);
+  if (depleted && depleted.lastProbeOutput) {
+    const text = String(depleted.lastProbeOutput).split('\n')[0].slice(0, 90);
+    if (depleted.resetAt) {
+      const reset = new Date(depleted.resetAt);
+      if (!Number.isNaN(reset.getTime())) {
+        return text + ' · resets ' + reset.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+    }
+    return text + (depleted.resetAt ? '' : ' · reset unknown');
+  }
+  const unknown = Object.values(agent.models).find(m => m && m.verdict === 'unknown');
+  if (unknown) return 'classifier did not match probe output';
+  return null;
+}
+
 function fetchBudget(force) {
   if (_budgetFetchPromise && !force) return _budgetFetchPromise;
   _budgetFetchPromise = fetch('/api/budget', { cache: 'no-store' })
@@ -2172,7 +2234,15 @@ function budgetAgentEnabled(agentId) {
 
 function hasAnyBudgetData(data) {
   const entry = data || _budgetCache || {};
-  return !!(entry.cc || entry.cx || entry.gg || entry.km);
+  if (entry.cc || entry.cx || entry.gg || entry.km) return true;
+  // Show panel even when only F444 quota data exists (e.g. op/cu only).
+  const quotaAgents = _quotaCache && _quotaCache.agents;
+  if (quotaAgents) {
+    for (const id of ['cc', 'cx', 'gg', 'km', 'op', 'cu']) {
+      if (quotaAgents[id] && quotaAgents[id].models && Object.keys(quotaAgents[id].models).length > 0) return true;
+    }
+  }
+  return false;
 }
 
 function collectBudgetPctValues(data) {
@@ -2218,9 +2288,17 @@ function collectBudgetPctValues(data) {
 
 function budgetOverallSummaryClass(data) {
   const { values, polledAt } = collectBudgetPctValues(data);
-  if (values.length === 0) return 'budget-stale';
-  const worst = values.reduce((a, b) => Math.min(a, b), 100);
-  return budgetClassFor(worst, polledAt);
+  // Worst class across F445 numeric bars …
+  let cls = values.length === 0 ? 'budget-stale' : budgetClassFor(values.reduce((a, b) => Math.min(a, b), 100), polledAt);
+  // … and F444 verdicts (so op-depleted alone turns the panel red even when cc/cx are healthy).
+  const severity = { 'budget-red': 4, 'budget-amber': 3, 'budget-yellow': 2, 'budget-stale': 1, 'budget-green': 0 };
+  for (const id of ['cc', 'cx', 'gg', 'km', 'op', 'cu']) {
+    const rollup = agentQuotaRollup(id);
+    if (!rollup.probeable) continue;
+    const rcls = quotaRollupClass(rollup);
+    if ((severity[rcls] || 0) > (severity[cls] || 0)) cls = rcls;
+  }
+  return cls;
 }
 
 function budgetOverallAriaLabel(summaryClass) {
@@ -2248,6 +2326,45 @@ function buildBudgetStatusDot(summaryClass) {
       'aria-label': budgetOverallAriaLabel(summaryClass),
     },
   });
+}
+
+// Per-agent dot strip for the collapsed view: one tiny coloured dot + agent
+// code per agent so the user can scan all six without expanding.
+function buildCollapsedDotsRow(data) {
+  const wrap = createEl('div', { className: 'budget-collapsed-dots', attrs: { 'aria-label': 'Per-agent quota state' } });
+  const agentMeta = [
+    ['cc', 'cc'], ['cx', 'cx'], ['gg', 'gg'], ['op', 'op'], ['cu', 'cu'], ['km', 'km'],
+  ];
+  for (const [id, code] of agentMeta) {
+    if (!budgetAgentEnabled(id)) continue;
+    // Prefer F444 verdict if present; else fall back to F445-style worst-of-bars.
+    const rollup = agentQuotaRollup(id);
+    let cls;
+    let title;
+    if (rollup && rollup.verdict) {
+      cls = quotaRollupClass(rollup);
+      if (rollup.verdict === 'depleted') title = `${id}: out of quota (${rollup.depleted}/${rollup.total} models)`;
+      else if (rollup.verdict === 'mixed') title = `${id}: mixed (${rollup.depleted}/${rollup.total} depleted)`;
+      else if (rollup.verdict === 'unknown') title = `${id}: probe output didn't match any pattern`;
+      else if (rollup.verdict === 'not-probeable') title = `${id}: no headless CLI`;
+      else if (rollup.verdict === 'error') title = `${id}: probe error`;
+      else title = `${id}: available (${rollup.available}/${rollup.total} models)`;
+    } else if (data && data[id]) {
+      // Has F445 budget bars but no F444 verdict — derive class from bars.
+      const sub = collectBudgetPctValues({ [id]: data[id] });
+      const worst = sub.values.length ? sub.values.reduce((a, b) => Math.min(a, b), 100) : null;
+      cls = worst != null ? budgetClassFor(worst, sub.polledAt) : 'budget-stale';
+      title = `${id}: ${cls === 'budget-green' ? 'available' : cls === 'budget-amber' ? 'low headroom' : cls === 'budget-red' ? 'critical' : 'stale'}`;
+    } else {
+      cls = 'budget-stale';
+      title = `${id}: no data`;
+    }
+    const dotWrap = createEl('span', { className: 'budget-collapsed-dot', attrs: { title } });
+    dotWrap.appendChild(createEl('span', { className: 'budget-status-dot ' + cls, attrs: { role: 'img', 'aria-label': title } }));
+    dotWrap.appendChild(createEl('span', { className: 'budget-collapsed-dot-code', text: code }));
+    wrap.appendChild(dotWrap);
+  }
+  return wrap;
 }
 
 function buildBudgetCollapseControl(collapsed) {
@@ -2709,6 +2826,7 @@ function renderBudgetWidget() {
   children.push(head);
 
   if (collapsed) {
+    children.push(buildCollapsedDotsRow(data));
     replaceNodeChildren(el, children);
     return;
   }
@@ -2828,6 +2946,36 @@ function renderBudgetWidget() {
     agentsWrap.appendChild(row);
   }
 
+  // OpenCode (op) — F444 verdict only; no F445 numeric bars from the OpenRouter CLI.
+  if (budgetAgentEnabled('op')) {
+    const rollup = agentQuotaRollup('op');
+    if (rollup.total > 0 || _quotaCache) {
+      const row = createEl('span', { className: 'budget-agent' });
+      const head = createEl('span', { className: 'budget-agent-head' });
+      head.appendChild(createEl('span', { className: 'budget-agent-name', text: 'OpenCode' }));
+      const support = rollup.probeable
+        ? `${rollup.available} / ${rollup.total} available`
+        : 'not probeable';
+      head.appendChild(createEl('span', { className: 'budget-agent-support', text: support }));
+      row.appendChild(head);
+      const reason = quotaReasonText('op');
+      if (reason) row.appendChild(createEl('span', { className: 'budget-agent-reason', text: reason }));
+      else if (!rollup.probeable) row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'no headless CLI' }));
+      agentsWrap.appendChild(row);
+    }
+  }
+
+  // Cursor (cu) — no headless CLI; status is permanently 'not probeable' per F444.
+  if (budgetAgentEnabled('cu')) {
+    const row = createEl('span', { className: 'budget-agent' });
+    const head = createEl('span', { className: 'budget-agent-head' });
+    head.appendChild(createEl('span', { className: 'budget-agent-name', text: 'Cursor' }));
+    head.appendChild(createEl('span', { className: 'budget-agent-support', text: 'not probeable' }));
+    row.appendChild(head);
+    row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'no headless CLI' }));
+    agentsWrap.appendChild(row);
+  }
+
   if (agentsWrap.childNodes.length) children.push(agentsWrap);
 
   const meta = createEl('span', { className: 'budget-meta' });
@@ -2929,7 +3077,9 @@ function budgetWarningForAgents(agentIds) {
 
 document.addEventListener('DOMContentLoaded', () => {
   fetchBudget().then(renderBudgetWidget);
-  fetchQuota().catch(() => {});
+  // Re-render the widget once F444 quota data lands so op/cu cards + the
+  // collapsed-state dot strip light up without waiting for the 2-min interval.
+  fetchQuota().then(() => renderBudgetWidget()).catch(() => {});
   // Refresh widget every 2 minutes to keep "updated Xmin ago" accurate and pick up fresh polls.
   setInterval(() => {
     Promise.all([fetchBudget(true), fetchQuota(true)]).then(() => {
