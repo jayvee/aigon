@@ -84,12 +84,11 @@
       if (!hasXterm) return null;
 
       const term = new Terminal({
-        cursorBlink: true,
+        cursorBlink: localStorage.getItem('aigon.term.cursorBlink') === '1',
         fontSize: getTerminalFontSize(),
-        lineHeight: 1.4,
+        lineHeight: 1.0,
         fontFamily: getTerminalFont(),
         theme: buildXtermTheme(),
-        allowProposedApi: true,
         scrollback: 5000,
         convertEol: true,
       });
@@ -119,11 +118,6 @@
       // WebLinks — URL detection with hover underline
       if (typeof WebLinksAddon !== 'undefined') {
         term.loadAddon(new WebLinksAddon.WebLinksAddon());
-      }
-
-      // Image — sixel image rendering
-      if (typeof ImageAddon !== 'undefined') {
-        try { term.loadAddon(new ImageAddon.ImageAddon()); } catch (_) {}
       }
 
       term.open(container);
@@ -374,11 +368,25 @@
         const xtermResult = createXtermInstance(container);
         if (xtermResult) {
           connectPtyStream(sessionName);
-          // Resize observer keeps fit in sync
-          const ro = new ResizeObserver(() => {
-            try { if (termState.fitAddon) termState.fitAddon.fit(); } catch (_) {}
+          // Debounced ResizeObserver: skip tiny deltas, skip during CSS transitions
+          let roLastSize = { w: 0, h: 0 };
+          let roRafHandle = null;
+          let roPanelTransitioning = false;
+          const roFit = () => { try { if (termState.fitAddon) termState.fitAddon.fit(); } catch (_) {} };
+          const ro = new ResizeObserver((entries) => {
+            const { width: w, height: h } = entries[0].contentRect;
+            if (Math.abs(w - roLastSize.w) < 4 && Math.abs(h - roLastSize.h) < 4) return;
+            if (roRafHandle) { cancelAnimationFrame(roRafHandle); roRafHandle = null; }
+            if (roPanelTransitioning) return;
+            roRafHandle = requestAnimationFrame(() => { roLastSize = { w, h }; roFit(); roRafHandle = null; });
           });
           ro.observe(container);
+          const termPanel = document.getElementById('terminal-panel');
+          if (termPanel) {
+            termPanel.addEventListener('transitionrun', () => { roPanelTransitioning = true; });
+            termPanel.addEventListener('transitionend', () => { roPanelTransitioning = false; roFit(); });
+            termPanel.addEventListener('transitioncancel', () => { roPanelTransitioning = false; roFit(); });
+          }
         } else {
           container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:13px;font-family:var(--mono)">xterm.js not loaded — check your network connection</div>';
         }

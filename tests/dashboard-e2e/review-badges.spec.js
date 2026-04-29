@@ -28,6 +28,6 @@ test('old specReview badge helpers absent; kcard-cycle-history CSS present', asy
     // Kanban cards render (confirms buildKanbanCard + buildAgentStatusHtml work)
     await expect(page.locator('.kcard').first()).toBeAttached();
 
-    expect(await page.evaluate(() => [Terminal,FitAddon,WebglAddon,Unicode11Addon,WebLinksAddon,ImageAddon].every(x => typeof x !== 'undefined') && typeof openPeekPanel === 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--term-bg').trim() !== ''), 'F355').toBe(true);
+    expect(await page.evaluate(() => [Terminal,FitAddon,WebglAddon,Unicode11Addon,WebLinksAddon].every(x => typeof x !== 'undefined') && typeof openPeekPanel === 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--term-bg').trim() !== ''), 'F355').toBe(true);
     await page.screenshot({ path: 'tests/dashboard-e2e/screenshots/terminal-addons-dark.png' });
 });
