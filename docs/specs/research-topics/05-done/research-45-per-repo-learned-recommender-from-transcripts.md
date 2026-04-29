@@ -1,6 +1,7 @@
 ---
 complexity: high
 transitions:
+  - { from: "in-evaluation", to: "done", at: "2026-04-29T11:00:59.304Z", actor: "cli/research-close" }
   - { from: "inbox", to: "backlog", at: "2026-04-28T13:34:32.803Z", actor: "cli/research-prioritise" }
 ---
 
