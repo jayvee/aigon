@@ -1,6 +1,8 @@
 ---
 complexity: medium
 set: signal-health
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T04:59:24.034Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: auto-nudge-with-visible-idle
