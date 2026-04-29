@@ -8,235 +8,147 @@
 
 ## Key Findings
 
-### A. Where the 2.5s actually goes (codebase profile)
+### Current-state measurements
 
-I read `lib/dashboard-status-collector.js`, `lib/dashboard-server.js`, `lib/workflow-read-model.js`, and `lib/proxy.js` end-to-end. The 2.5s floor is **not** one fat call — it's the cumulative cost of an unparallelised loop over hundreds of features doing un-mtime-gated reads. The "no surgical strike left" hypothesis from the spec is **disprovable**. There is meaningful low-risk headroom.
+I profiled `lib/dashboard-status-collector.js:collectRepoStatus()` against the configured 7 conductor repos from `~/.aigon/config.json`, with filesystem write methods disabled in-process so the pass could not mutate `.aigon/state` or specs. The first read-only pass took **1,834.5 ms** total, with the local `aigon` repo dominating at **1,365.1 ms** for **422 features / 21 research / 8 feedback**. Across all repos that pass made **7,872 `readFileSync` calls**, **21,115 `readdirSync` calls**, **1,817 `statSync` calls**, and **8 `execSync` calls**.
 
-**Per-poll structure (`pollStatus` → `collectRepoStatus`):**
+The biggest surprise was not stat/read cost but repeated directory enumeration. A path-level pass showed `~/src/aigon/docs/specs/features/{01-inbox,02-backlog,03-in-progress,04-in-evaluation,05-done,06-paused}` each being read **2,105 times** in one status collection. The code explains it:
 
-1. Repos collected **sequentially** via `.forEach()` (`dashboard-status-collector.js:1385`). Repos are independent — there is no semantic reason for serial iteration. Wrapping in `Promise.all` collapses wall time toward `max(per-repo)` instead of `sum(per-repo)`.
+- `collectFeatures()` iterates every workflow feature id, then `resolveFeatureIdentity()` calls `featureSpecResolver.resolveFeatureSpec()`.
+- `resolveFeatureSpec()` calls `listVisibleEntitySpecs()`, which scans all 6 visible stage dirs for each entity id.
+- Set cards also rescan: `collectFeatures()` calls `featureSets.scanFeatureSets()` once, then `featureSets.summarizeSets()` rescans, and every set card calls `getSetMembersSorted()` and `getSetDependencyEdges()`, both of which rescan and rebuild dependency data.
+- Backlog dependency annotation calls `checkUnmetDependencies()` feature-by-feature; when a spec has dependencies it rebuilds the feature index inside the hot collector path.
 
-2. **`parseCaddyRoutes()`** is called for every repo on every poll (`dashboard-status-collector.js:1301` → `proxy.js:202`). Single Caddyfile read+parse per repo per tick, with no mtime cache. The Caddyfile changes only on dev-server lifecycle events.
+So the "many small synchronous reads" hypothesis is directionally right, but there are still surgical wins. The highest-ROI one is to build a per-repo **visible spec index** once per poll/cache invalidation and share it across identity resolution, set summaries, set cards, dependency checks, and done/recent rows.
 
-3. **Per-feature reads** in `collectFeatures` (lines 621–991) for each of ~667 features:
-   - `getFeatureDashboardState()` reads snapshot JSON + filtered events. F460 dedups the *second* call within the same poll (passes `baseState`); it does **not** dedup across polls. Same snapshot is re-read every 20s even when nothing changed.
-   - Per-agent status file (`feature-N-AGENTID.json`) read unconditionally per agent (line 533).
-   - `readFeatureEvalState`, `readFeatureAutoState`, `readSpecReviewSessions` called per feature unconditionally regardless of stage. F344 turned `applySpecReviewFromSnapshots` into a no-op shim but the per-feature spec-review session read remains.
+### Short-term wins still available
 
-4. **Per-research reads** in `collectResearch` (lines 998–1240): no F460-style dedup at all (only one `getResearchDashboardState()` call per item, vs. two for features), AND active research has **no mtime gate** — every active research dir is re-listed every poll even if untouched. `research-N-AGENTID.json` read unconditionally.
+1. **Build one repo-visible spec index per repo pass.** Replace per-feature `featureSpecResolver` stage scans with a single index keyed by `{entityType,id,slug,path}`. This should remove thousands of `readdirSync` calls from the largest repo. Expected impact: drop warm poll p95 from ~2.5 s toward **700-1,000 ms** at current scale.
 
-5. **Feedback** (`collectFeedback`, lines 1242–1286): full re-enumeration every poll; reconciliation can trigger a *second* `collectFeedbackItems()`. `feedbackDoneTotal` is computed but **never rendered** — dead work per poll.
+2. **Memoise set/dependency scans inside one collector pass.** `featureSets.scanFeatureSets()`, `buildFeatureIndex()`, and `buildDependencyGraph()` are deterministic for a repo snapshot. Compute once in `collectFeatures()` and pass a derived context to set-card and blocked-by helpers. Expected impact: smaller than #1 but low-risk; likely **100-300 ms** on the large repo and removes quadratic growth as sets expand.
 
-6. **Response payload**: `/api/status` returns a **full snapshot** every poll. No deltas, no ETag, no fingerprint-based 304. F454 added a *frontend* fingerprint (skip render if unchanged) but the wire payload itself is still a fat object every cycle.
+3. **Split `collectRepoStatus()` into hot/warm/cold tiers with explicit TTLs.** Today `parseCaddyRoutes()`, `getDevServerState()` port probes, `detectDefaultBranch()`, GitHub remote detection, profile/config reads, feedback reconciliation, and schedule decoration live in the same status pass. Caddy/dev-server and remote/config checks can tolerate 60-300 s TTLs. Expected impact depends on active dev-server count; it also reduces event-loop variance.
 
-7. **Active vs idle cadence**: F460 set 20s active, 60s idle. There's no adaptive throttling (e.g. when no `events.jsonl` append in N ticks, slow further).
+4. **Add server-side status fingerprints/deltas.** F454 added frontend fingerprint-gated rendering, but `/api/status` still serializes and transfers the full model. Keep a server cache `{fingerprint,payload}` and support `/api/status?since=<fingerprint>` returning `304` or `{unchanged:true}`. This does not reduce collector CPU by itself, but cuts browser JSON parse/network work and composes with event push.
 
-What F454/F459/F460 *did* address: async quota scan moved post-status, second snapshot read deduped within a single poll, frontend fingerprint to skip render, cadence halved. What they **didn't** address: cross-poll snapshot caching, parallel repo collection, Caddy route caching, dead computation, and full-snapshot payload semantics.
+5. **Adaptive polling.** F460 moved active polling from 10 s to 20 s. Add an idle backoff ladder: after N unchanged fingerprints, stretch to 60-120 s; collapse to 1-2 s briefly after a user action or engine event. Expected impact: not lower p95 per poll, but lower total background load and better laptop/battery behavior.
 
-### B. Transport options (push vs pull)
+6. **Parallel repo collection only after cache cleanup.** Repos are independent, so `Promise.all` looks attractive. But the collector is mostly synchronous filesystem/child-process work; wrapping sync work in promises will not parallelize it on the Node event loop. Worker threads or child processes would help but add complexity. Do #1-#3 first; then consider workerized per-repo collection if the remaining hot path is still CPU-bound.
 
-Citation-backed comparison on the table:
+### Targets: what "fast enough" means
 
-| Option | p95 (warm) | Complexity (1-5) | Local-failure mode |
-|---|---|---|---|
-| Long-polling (tuned) | 150–450ms | 1 | Reconnect cost dominates |
-| **SSE** | 5–20ms LAN | 2 | Proxy buffering — N/A on loopback |
-| WebSockets | ~1 RTT | 3 | Stateful; needs reconnect glue |
-| FS watcher (chokidar) → push | 5–50ms FSEvents | 2 | Rename storms; macOS FSEvents instance limit |
-| Append-only event-log tail (`events.jsonl`) | 1–10ms | 2–3 | Truncation/rotation handling |
-| Replicache/Automerge CRDT | <50ms (Linear) | 5 | Schema migrations harder; "distributed state cost" |
-| Hybrid: push-invalidate + pull-content (SWR shape) | invalidate ping ~5ms, refetch 20–100ms | 3 | Invalidation key derivation |
+For the dashboard workflows the user named:
 
-**The relevant insight for Aigon:** the engine already writes `events.jsonl`. The Write-path Contract in CLAUDE.md is essentially "every state mutation goes through that log." Tailing the log is therefore not a new source of truth — it's reading from the one we already have. SSE on loopback dodges every documented SSE failure mode (proxy buffering, HTTP/1.1 origin cap, idle-proxy timeouts). CRDTs solve a problem Aigon doesn't have (concurrent offline edits — git already merges).
+- Spec drawer open: p95 **<150 ms warm**, p99 **<300 ms**. This path must not wait behind full status collection.
+- Terminal handshake: p95 **<250 ms** to first paint, p99 **<500 ms**. F455 already attacked xterm/PTY buffering.
+- Kanban refresh after state mutation: p95 **<500 ms** to visible update, with push target **<100 ms** when the server observes the event.
+- Autonomous modal open: first paint **<100 ms**, complete hydrated controls **<700 ms** warm.
+- Background poll: p95 **<500 ms** in current filesystem architecture; structural target **<100 ms** for warm read-model queries.
 
-**Linear-style local-first** (Replicache/Automerge/IndexedDB) is the conventional reference architecture but is **the wrong reference class for Aigon today**. Linear's complexity is justified by multi-tenant collaboration with offline edits; Aigon is single-user with git as the merge layer.
+Sub-200 ms for a full cold filesystem sweep across 7 repos / 700+ entities is the wrong target. Sub-200 ms is realistic for user-facing reads when the server maintains a warm read model.
 
-### C. State backend options
+### Transport: polling vs push
 
-Hard numbers (sourced):
+Polling is an artifact of the CLI-first design. It is still a good reconciliation safety net, but it should not be the primary latency mechanism. The engine already writes append-only workflow events. The dashboard should move toward:
 
-- **Filesystem (current)**: SQLite is 35% faster than direct FS reads on Android, 2x on macOS, 10x on Windows for 100k blob workloads (sqlite.org/fasterthanfs). APFS `readdir` takes a global kernel lock that serialises parallel reads (Tempel). HTree on ext4 helps past 32k entries.
-- **SQLite (WAL)**: Concurrent readers + one writer; `BEGIN IMMEDIATE` + busy-timeout handles multi-process CLI fine; "database is locked" only fires if a write txn is held across user think-time. Doesn't work over network filesystems (irrelevant locally). Litestream gives 11-nines durability for ~$1/mo.
-- **DuckDB**: 10-100x faster on aggregations, but 1-2 orders of magnitude **slower** on indexed point lookups. Wrong choice as primary; right choice as analytics adjunct.
-- **Embedded KV (LMDB/RocksDB/BoltDB/sled)**: Sled itself documents instability ("APIs and on-disk format changing rapidly"). All KV stores require building a query layer for kanban-shape joins. Not worth the build vs SQLite.
-- **Hosted (GitHub Issues / Linear / Notion)**: Aigon's read pattern (~245k reads/min at 7 repos × 700 features × 20s tick) exceeds every hosted rate limit immediately. Plus offline breaks. Plus lock-in. Rate-limit table:
+- file-watcher or write-path invalidation on `.aigon/workflows/**/events.jsonl`, `.aigon/state/*.json`, and spec folders;
+- in-process read-model cache invalidation;
+- SSE to browsers for one-way "repo/entity changed" notifications;
+- periodic full reconciliation as a fallback.
 
-| | Limit | Source |
-|---|---|---|
-| GitHub REST | 5,000 req/hr per PAT | docs.github.com/rate-limits |
-| Linear | 250k complexity-pts/hr per user | developers.linear.app |
-| Notion | ~3 req/sec, 2,700/15min | developers.notion.com/request-limits |
+SSE is the best first push transport because the dashboard mostly needs server-to-browser updates. MDN documents native `EventSource` reconnection and event IDs, which gives Aigon a straightforward missed-event repair hook. WebSockets are already in the dependency tree via `ws` and are appropriate for interactive PTY sessions, but MDN notes the stable browser `WebSocket` API has no backpressure, so it is unnecessary complexity for status updates. Node's own `fs.watch()` docs also warn that file watching can be unreliable on network filesystems and virtualization, so push must be paired with reconciliation polling, not replace it completely.
 
-**Hybrid (markdown specs in FS + derived state in SQLite)** is the tested pattern. Obsidian's `obsidian-index-service`, Logseq DB-mode, Joplin, Fossil all do shapes of this. Joplin keeps notes+settings+cache in SQLite per-device, exports flat files for sync. Fossil bundles tickets/wiki/code in **one self-contained SQLite file** per project — the closest topological match to Aigon.
+### State backend options
 
-### D. Comparable tool lessons
+**Filesystem as authority, optimized read model.** Best near-term choice. It preserves human-readable markdown specs, git history, current repair semantics, and offline behavior. Weakness: cold scans get expensive and ad-hoc reads are easy to reintroduce.
 
-The closest analogues are **Fossil SCM** (single-user developer tool, all project state in one SQLite, optional server) and **lazygit** (local dashboard over filesystem state, polling-vs-watcher tradeoff).
+**SQLite as derived read model.** Best medium-term local backend. Keep specs/events/status files authoritative; project a query-optimized SQLite database under `.aigon/cache/dashboard.sqlite`. SQLite WAL is a good fit for one local daemon and multiple dashboards: official SQLite docs state WAL lets readers and writers proceed concurrently, with the important caveat that WAL is same-host, not network-filesystem friendly. This gives Aigon fast indexed reads without migrating the workflow engine's write path.
 
-The single biggest cross-tool lesson — read **Taskwarrior 3.0 + lazygit pending refactor** together:
+**SQLite as authoritative state.** Not recommended yet. It would improve query speed but would be a trapdoor for git-readable state, manual repair, and current CLI compatibility. Consider only after the derived cache has proven stable.
 
-- **Taskwarrior 3.0**: moved from text files to SQLite — got **25× slower** at 744 tasks because the access pattern stayed N+1 (>160k syscalls). SQLite was fine; the per-task query was the bottleneck (issue #3329).
-- **Lazygit**: massive CPU win comes from replacing blanket `git status`-every-10s polling with **fsnotify-routed targeted refreshes** scoped per pane (`.git/refs/heads/` → branches pane only). Storage didn't change.
+**Server-side SQL/Postgres.** Good for team/cloud mode later. Postgres `LISTEN/NOTIFY` can wake app servers, and SQL solves cross-user query patterns. It adds operations, auth, migration, backup, and cloud assumptions that are wrong for the solo/local default today.
 
-**The bottleneck is the access pattern, not the storage engine.** Replacing FS with SQLite without batching reads would slow Aigon down. Replacing polling with fsnotify+SSE without changing storage would speed it up dramatically. This sequencing matters.
+**Embedded KV/LSM stores.** RocksDB/LMDB can be fast, but the dashboard needs relational queries over entities, stages, agents, sets, dependencies, and timestamps. KV stores would push indexing/query semantics into Aigon code. SQLite is the simpler embedded store unless profiling proves otherwise.
 
-Also notable: lazygit polls `git status` at 10s and `git fetch` at 60s **regardless of changes** — exactly Aigon's current shape. Its proposed fix is the same shape this research recommends.
+**Hosted services: GitHub Issues / Linear / Notion.** Useful as integrations, not core state. GitHub's authenticated REST limit is generally 5,000 requests/hour but has secondary limits; Notion's official API limit is about 3 requests/sec with 429 handling. Linear offers GraphQL, webhooks, and realtime clients, but using Linear/GitHub/Notion as the primary backend creates lock-in, weaker offline behavior, and a mismatch with Aigon's agent-local workflows.
 
-### Synthesis
+### Personas and topology
 
-The 2.5s poll floor has multiple compounding causes; no single change closes the entire gap, but a ranked punch list of small, low-risk changes can plausibly drop poll p95 below 500ms while preserving all current behaviour. Beyond that floor lies the architectural shift: **an event-driven invalidation channel over the existing `events.jsonl` write log + a derived-state SQLite cache**. That move sequence is monotone — every quick win below also makes the structural move easier, not harder.
+In 12 months, Aigon should still be primarily a **CLI + local dashboard** for solo developers and power users, with credible support for:
+
+- one user with multiple read-only dashboards/screens;
+- pair mode on one shared repo/workstation;
+- small-team mode through an optional central server or Pro sync layer.
+
+Org/cloud-multi-tenant should remain aspirational unless product strategy changes. The correct topology is therefore:
+
+- default: local daemon + local filesystem authority + derived SQLite/read-model cache;
+- optional: multiple browser dashboards connected to the same local daemon;
+- later: central server consuming the same event/read-model contract, not a forked dashboard architecture.
+
+### Multi-dashboard and multi-user sync
+
+Multiple local dashboards are easy once status is evented: all clients subscribe to the same daemon and occasionally reconcile with `/api/status`. Two collaborators sharing one workspace is harder because writes need identity, authorization, and conflict policy. A team of 5-20 requires central-authoritative state, per-user auth, and explicit write boundaries.
+
+CRDTs are not the right first team abstraction for Aigon workflow state. Engine events are already command/event shaped, so central-authoritative op-log replay is a better fit. CRDT ideas may help collaborative markdown editing, but lifecycle transitions should stay engine-validated.
+
+### Doors vs trapdoors
+
+Doors:
+
+- One repo-visible spec index per collector pass.
+- Read-model facade/cache behind `collectRepoStatus()`.
+- SSE change stream with periodic full reconciliation.
+- Derived SQLite cache populated from existing filesystem/event sources.
+- Server-owned `validActions` and state render metadata continuing to be the frontend contract.
+
+Trapdoors:
+
+- Making SQLite authoritative before the projection layer is proven.
+- Adding hosted backends as first-class storage before there is an adapter contract.
+- Making the browser compose raw specs/snapshots directly.
+- Replacing polling with file-watch-only push and no reconciliation.
+- Parallelizing sync filesystem work with promises and assuming it is real parallelism.
 
 ## Sources
 
-**Codebase (read directly):**
-- `lib/dashboard-status-collector.js` — sequential `.forEach()` at line 1385, sub-collector call sites
-- `lib/dashboard-server.js` — `pollStatus()`, quota scan
-- `lib/workflow-read-model.js` — `getFeatureDashboardState`, F460 dedup site
-- `lib/proxy.js:202` — `parseCaddyRoutes()`
-
-**Transport / push:**
-- https://ably.com/blog/websockets-vs-long-polling
-- https://dev.to/haraf/server-sent-events-sse-vs-websockets-vs-long-polling-whats-best-in-2025-5ep8
-- https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
-- https://html.spec.whatwg.org/multipage/server-sent-events.html
-- https://dev.to/miketalbot/server-sent-events-are-still-not-production-ready-after-a-decade-a-lesson-for-me-a-warning-for-you-2gie
-- https://jvns.ca/blog/2021/01/12/day-36--server-sent-events-are-cool--and-a-fun-bug/
-- https://github.com/paulmillr/chokidar
-- https://github.com/lucagrulla/node-tail
-- https://www.fujimon.com/blog/linear-sync-engine
-- https://github.com/wzhudev/reverse-linear-sync-engine
-- https://replicache.dev/
-- https://dev.to/isaachagoel/are-sync-engines-the-future-of-web-applications-1bbi
-- https://web.dev/articles/stale-while-revalidate
-
-**State backends:**
-- https://sqlite.org/fasterthanfs.html
-- https://sqlite.org/wal.html
-- https://tenthousandmeters.com/blog/sqlite-concurrent-writes-and-database-is-locked-errors/
-- http://blog.tempel.org/2019/04/dir-read-performance.html
-- https://fossil-scm.org/home/technote/be8f2f3447ef2ea3344f8058b6733aa08c08336f
-- https://github.com/GothenburgBitFactory/taskwarrior/issues/3329
-- https://hypermode.com/blog/badger-lmdb-boltdb/
-- https://www.getgalaxy.io/learn/glossary/duckdb-vs-sqlite-databases
-- https://github.com/pmmvr/obsidian-index-service
-- https://joplinapp.org/help/dev/spec/architecture/
-- https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api
-- https://developers.linear.app/docs/graphql/working-with-the-graphql-api/rate-limiting
-- https://developers.notion.com/reference/request-limits
-- https://litestream.io/
-- https://airbyte.com/data-engineering-resources/sqlite-vs-postgresql
-
-**Comparable tools:**
-- https://www.atlassian.com/blog/trello/the-trello-tech-stack
-- https://www.atlassian.com/blog/atlassian-engineering/how-we-unlocked-performance-at-scale-with-jira-platform
-- https://www.notion.com/blog/how-we-made-notion-available-offline
-- https://plane.so/blog/introducing-plane-simple-extensible-open-source-project-management-tool
-- https://taskwarrior.org/docs/upgrade-3/
-- https://fossil-scm.org/home/doc/tip/www/tech_overview.wiki
-- https://github.com/jesseduffield/lazygit/issues/5278
-- https://forum.obsidian.md/t/indexing-large-number-of-files/47397
-- https://deepwiki.com/logseq/logseq
+- Local code: `lib/dashboard-status-collector.js`, `lib/feature-spec-resolver.js`, `lib/feature-sets.js`, `lib/feature-dependencies.js`, `lib/dashboard-server.js`, `templates/dashboard/js/init.js`.
+- Recent local perf logs: F454, F459, F460 under `docs/specs/features/logs/`.
+- SQLite WAL docs: https://www.sqlite.org/wal.html
+- MDN SSE docs: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
+- MDN WebSocket API docs: https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API
+- Node.js `fs.watch()` caveats: https://nodejs.org/api/fs.html
+- Linear API/webhooks docs: https://linear.app/docs/api-and-webhooks
+- Linear sync-engine talk page: https://linear.app/now/scaling-the-linear-sync-engine
+- GitHub REST API rate limits: https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api
+- Notion request limits: https://developers.notion.com/reference/request-limits
+- Ink & Switch local-first paper: https://www.inkandswitch.com/essay/local-first/local-first.pdf
 
 ## Recommendation
 
-### (a) Short-term punch list (current architecture) — ranked by ROI
+Ship the short-term collector fixes first. The single highest-ROI change is **repo-visible status indexing**: one stage-dir scan per repo, per entity type, per collector invalidation, with feature/research identity resolution reading from that index instead of scanning all stage dirs per workflow id. Follow it with pass-scoped set/dependency memoization and TTL separation for cold infra probes.
 
-Each item is small, ships in 1–2 weeks, preserves all current behaviour, and (critically) **does not foreclose** the longer-term direction below. Estimates are best-guess deltas at the user's scale (7 repos / 667 features); each should be measured before committing.
+For the longer term, build an **evented local read-model service**:
 
-1. **Parallelise the repo loop.** `Promise.all` across repos in `collectRepoStatus` (`dashboard-status-collector.js:1385`). Each repo's collection is independent. Expected: drops poll p95 by roughly `(repos − 1)/repos × per-repo cost`. At 7 repos that's a multiple-second tier reduction without changing semantics.
-   - File: `lib/dashboard-status-collector.js`
-   - Implementation sketch: convert `.forEach()` to `await Promise.all(repos.map(async (r) => …))`.
-   - Risk: shared state writes during collection — audit any module-level mutation in sub-collectors first.
+1. Keep workflow events, snapshots, agent status files, and markdown specs as the authoritative write model.
+2. Add a dashboard read-model cache with an internal adapter API.
+3. Project that cache into memory first, then SQLite when query shape and invalidation semantics are stable.
+4. Push invalidations/status deltas to browsers via SSE, with a slow reconciliation poll as the safety net.
+5. Leave WebSockets for PTY/interactive terminal use.
 
-2. **Add cross-poll snapshot cache keyed by mtime.** Today F460 dedups the second `getFeatureDashboardState()` call within one poll; extend to dedup across polls. If `feature-N.json` snapshot mtime + per-agent status mtimes haven't changed, return the previous tick's `baseState`.
-   - File: `lib/workflow-read-model.js` (introduce a per-feature memo keyed by `{snapshotMtime, eventsMtime, agentStatusMtimes}`)
-   - Expected: at 667 features and a low mutation rate, ~99% of features skip JSON parse + events filter every tick.
-
-3. **Add F460-style dedup to `collectResearch`.** Research collector currently has no per-tick or cross-poll caching. Mirror the feature-side optimisations.
-   - File: `lib/dashboard-status-collector.js:998–1240`
-
-4. **Cache `parseCaddyRoutes` behind Caddyfile mtime.** One read+parse per poll per repo today; Caddyfile changes only on dev-server lifecycle events.
-   - File: `lib/proxy.js`
-
-5. **Skip per-feature `readSpecReviewSessions`/`readFeatureEvalState`/`readFeatureAutoState` for done-stage features.** F344 left these called unconditionally. Done features can't change these; gate by stage.
-   - File: `lib/dashboard-status-collector.js:551,560,566`
-
-6. **Drop dead computation: `feedbackDoneTotal`.** Computed every poll; never rendered. Delete.
-   - File: `lib/dashboard-status-collector.js:1284`
-
-7. **Add ETag / 304 to `/api/status`.** Server hashes the response payload and returns `304 Not Modified` if the client's `If-None-Match` matches. Server still does the work but skips the over-the-wire payload + frontend re-render path.
-   - File: `lib/dashboard-server.js` (status route)
-   - Expected: significant payload reduction in low-mutation periods; orthogonal to #2.
-
-8. **Move slow-tier work off the 20s tick.** Caddy routes parse, npm-update check, GitHub remote detection — none of these need 20s freshness. Promote to a 5-minute side-tier, keep the cached value on the snapshot.
-   - File: `lib/dashboard-server.js`
-
-9. **Adaptive cadence.** When `events.jsonl` hasn't appended in N ticks, slow active poll from 20s → 60s; reset on next append. Trivially safe with the structural move below; even without it, mtime-watching `events.jsonl` is a 5-line change.
-   - File: `lib/dashboard-server.js`
-
-10. **Mtime-gate active research stage listings.** Active research dirs re-listed every tick today; gate behind dir mtime.
-    - File: `lib/dashboard-status-collector.js:1012-1018`
-
-Highest-ROI single change is #1 (parallelise repos). Combined, items 1–6 plausibly drop poll p95 below 500ms; item 7 plus the structural move below get to <50ms perceived.
-
-### (b) Longer-term structural direction
-
-**Recommended destination:** `events.jsonl` becomes the source of truth for *change*. A single chokidar watcher over `events.jsonl` (per repo) drives an in-process EventEmitter. The dashboard subscribes via SSE; on every appended event the server emits a tiny `{type:'invalidate', keys:[…]}` ping; the dashboard refetches only the affected slice via existing REST routes. Polling stays as the safety-net fallback (e.g. 5-minute cadence) for transport failure.
-
-In parallel: derived state (kanban positions, snapshots, agent statuses, feedback rows) migrates to a single `.aigon/state.db` (SQLite, WAL). Markdown specs stay in git — diffable, mergeable, portable. Spec is still authoritative; SQLite is a deterministic projection rebuildable from FS via `aigon doctor --fix`. This is exactly the Joplin/Logseq-DB/Obsidian-index pattern.
-
-The two halves compose. Together they enable:
-- <50ms perceived latency for any UI action that's downstream of an event
-- Multiple dashboards subscribing to one server (door for the "central server / multiple dashboards" capability the user flagged)
-- Bidirectional adapter shape: a `StateBackend` interface (read/apply/subscribe) lets the same client UI talk to SQLite today, Postgres tomorrow, GitHub Issues / Linear as a mirror later — without callsite changes
-- Closes the "Write-path Contract" bug class (F294, b1db12d3 incident): one SQL transaction replaces N rename-dance steps
-
-**Contingencies that would change this:**
-- If an Aigon Pro/cloud tier ships first, the destination shifts to authoritative server + Replicache-shape sync. That's a Linear-class architecture; the SQLite hybrid above is its natural local cache, so the move composes.
-- If single-user-tier scale never crosses 5k features, the FS-only path with quick wins #1–10 may be sufficient indefinitely. The SQLite migration is then optional optimisation, not necessity.
-
-**What I am NOT recommending:**
-- Replicache/CRDTs as the primary path (overkill for single-user; git is the merge layer)
-- Hosted SaaS as primary state backend (rate limits + offline-break + lock-in, all three; viable only as mirrors)
-- Postgres as primary (operational cost not justified until multi-writer)
-- Embedded KV (LMDB/sled) (would force a custom query layer)
-- DuckDB as primary (wrong access pattern; viable as analytics adjunct via `ATTACH`)
-
-### (c) Composition (short-term × long-term)
-
-Every short-term item below preserves or improves long-term optionality:
-
-| # | Change | Long-term effect |
-|---|---|---|
-| 1 | Parallelise repos | Improves: same shape works whether each repo loads from FS or SQLite |
-| 2 | Cross-poll snapshot cache | Improves: this *is* the prototype of the SQLite-backed in-memory index |
-| 3 | Research dedup | Improves: removes a divergent code path, easier to migrate uniformly |
-| 4 | Caddy routes mtime cache | Neutral: orthogonal |
-| 5 | Stage-gate per-feature reads | Improves: identifies and removes dead reads, fewer call sites to migrate |
-| 6 | Drop `feedbackDoneTotal` | Neutral: dead code removal |
-| 7 | ETag / 304 on `/api/status` | Improves: ETag becomes the natural fingerprint key for SSE invalidation |
-| 8 | Move slow-tier off 20s tick | Improves: tier separation is what the structural move enforces |
-| 9 | Adaptive cadence on `events.jsonl` mtime | Improves: this is half of the chokidar-over-events.jsonl shape; the watcher just replaces the mtime poll |
-| 10 | Mtime-gate active research listings | Neutral: same shape post-migration |
-
-There is no foreclosure. Every item is on the path.
+This composition preserves current behavior and opens the future doors: multiple dashboards, central server, alternate backends, and hosted-service integrations can all target the same read-model/event contract later.
 
 ## Suggested Features
 
 | Feature Name | Description | Priority | Depends On |
 |--------------|-------------|----------|------------|
-| dashboard-parallel-repo-collection | Replace sequential `.forEach()` in `collectRepoStatus` with `Promise.all` across repos | high | none |
-| dashboard-cross-poll-snapshot-cache | Memoise `getFeatureDashboardState` results keyed by snapshot+events+agent-status mtimes | high | none |
-| dashboard-research-collector-dedup | Mirror F460-style dedup + mtime gates for `collectResearch` | medium | none |
-| dashboard-caddy-routes-mtime-cache | Cache `parseCaddyRoutes` output behind Caddyfile mtime | medium | none |
-| dashboard-stage-gate-per-feature-sidecars | Skip `readSpecReviewSessions`/`readFeatureEvalState`/`readFeatureAutoState` for done-stage features | medium | none |
-| dashboard-drop-dead-feedback-total | Remove unused `feedbackDoneTotal` computation | low | none |
-| dashboard-status-etag-304 | Add ETag + `If-None-Match`/304 to `/api/status` | high | none |
-| dashboard-slow-tier-side-collector | Move Caddy parse, npm update check, GitHub remote detection to a 5-minute side-tier | medium | none |
-| dashboard-adaptive-cadence-on-events | Slow active poll when `events.jsonl` mtime hasn't changed in N ticks | medium | none |
-| dashboard-mtime-gate-active-research | Gate active-stage research listings behind dir mtime | low | none |
-| dashboard-sse-invalidation-channel | Add SSE endpoint emitting `{type:'invalidate', keys:[…]}` pings driven by chokidar over `events.jsonl` | high | dashboard-status-etag-304 |
-| state-backend-adapter-interface | Introduce `StateBackend` abstraction (read/apply/subscribe) over current FS implementation | high | none |
-| derived-state-sqlite-projection | Migrate kanban positions, snapshots, agent statuses, feedback rows to `.aigon/state.db` (SQLite WAL); keep specs in FS | high | state-backend-adapter-interface |
-| doctor-fix-rebuild-sqlite-from-fs | `aigon doctor --fix` rebuilds `state.db` deterministically from FS specs | medium | derived-state-sqlite-projection |
-| dashboard-targeted-refetch-on-invalidate | Frontend subscribes to SSE; on invalidate ping, refetches only affected slice via REST | medium | dashboard-sse-invalidation-channel |
+| dashboard-visible-spec-index | Build a per-repo feature/research spec index once per status pass and route identity resolution through it instead of rescanning stage dirs per entity. | high | none |
+| dashboard-set-dependency-memoization | Compute set membership, feature index, and dependency graph once per repo collector pass and pass the memoized context to set cards and blocked-by annotation. | high | dashboard-visible-spec-index |
+| dashboard-cold-probe-ttl-cache | Move Caddy route parsing, dev-server port probes, default-branch detection, GitHub remote detection, and schedule decoration onto explicit warm/cold TTL caches. | high | none |
+| dashboard-status-delta-api | Add server-side status fingerprints so `/api/status` can return unchanged/delta responses instead of full payloads on every poll. | medium | dashboard-visible-spec-index |
+| dashboard-adaptive-poll-cadence | Back off polling after unchanged fingerprints and briefly accelerate after user actions or observed workflow events. | medium | dashboard-status-delta-api |
+| dashboard-sse-change-stream | Add an SSE endpoint that broadcasts repo/entity invalidation events with event IDs and browser reconnection, while retaining reconciliation polling. | high | dashboard-status-delta-api |
+| dashboard-read-model-adapter | Introduce a narrow dashboard read-model adapter behind `collectRepoStatus()` so filesystem, memory-cache, SQLite, and future remote backends share one contract. | high | dashboard-visible-spec-index |
+| dashboard-sqlite-derived-cache | Project workflow snapshots, status sidecars, spec identity, sets, dependencies, and feedback summaries into a local SQLite cache for indexed dashboard reads. | medium | dashboard-read-model-adapter |
+| dashboard-multi-client-daemon | Treat the local dashboard server as the canonical multi-client daemon, allowing several browser dashboards to subscribe to the same read model and SSE stream. | medium | dashboard-sse-change-stream |
+| dashboard-hosted-backend-spike | Prototype GitHub Issues, Linear, and Notion as import/export or mirror adapters, explicitly not as authoritative storage, to validate lock-in and offline tradeoffs. | low | dashboard-read-model-adapter |
