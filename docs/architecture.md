@@ -118,6 +118,8 @@ Current shared modules:
   `launchDashboardServer`, `stopDashboardProcess`
 - `lib/validation.js` (~1,045 lines): Iterate (Autopilot) loop and smart validation helpers
   `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`, `runFeatureValidateCommand`
+- `lib/quota-probe.js` / `lib/quota-poller.js` (~340/~95 lines): agent quota availability layer. Wraps `scripts/probe-agent.js`, classifies probe output via per-agent JSON regex packs, caches `.aigon/state/quota.json`, gates `feature-start`, filters depleted `perf-bench --all` pairs, and exposes dashboard/server refreshes without touching workflow-core state.
+  `classifyProbeResult`, `probePair`, `readQuotaState`, `startQuotaPoller`
 
 **Domain modules** (logic lives in the module itself):
 

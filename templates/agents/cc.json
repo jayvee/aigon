@@ -34,6 +34,19 @@
     "trustInstallScope": "worktree-base",
     "resume": { "kind": "append", "flag": "--resume" }
   },
+  "quota": {
+    "errorPatterns": [
+      {
+        "id": "anthropic-rate-limit",
+        "match": "rate.{0,3}limit|429|too many requests|you.?ve hit your limit",
+        "verdict": "depleted",
+        "confidence": "high",
+        "resetExtractor": "(reset|retry|try again).{0,40}(\\d{1,2}:\\d{2}|in\\s+\\d+\\s+(?:hour|min|second)s?)"
+      }
+    ],
+    "successPatterns": ["^PONG$", "PONG"],
+    "unknownPolicy": "permit"
+  },
   "cli": {
     "command": "claude",
     "implementFlag": "--permission-mode acceptEdits",

@@ -37,6 +37,19 @@
     "trustInstallScope": "all-existing-worktrees",
     "resume": { "kind": "subcommand", "args": ["resume"] }
   },
+  "quota": {
+    "errorPatterns": [
+      {
+        "id": "openai-quota-exceeded",
+        "match": "exceeded your current quota|insufficient_quota|rate.{0,3}limit|429|too many requests|used\\s+\\d+\\s+of\\s+your\\s+\\d+\\s+messages",
+        "verdict": "depleted",
+        "confidence": "high",
+        "resetExtractor": "(reset|retry|try again).{0,40}(\\d{1,2}:\\d{2}|in\\s+\\d+\\s+(?:hour|min|second)s?)"
+      }
+    ],
+    "successPatterns": ["^PONG$", "PONG"],
+    "unknownPolicy": "permit"
+  },
   "cli": {
     "command": "codex",
     "implementFlag": "",
