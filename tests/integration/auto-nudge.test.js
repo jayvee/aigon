@@ -42,7 +42,7 @@ testAsync('auto-nudge idle ladder: T1 chip, one T2 nudge, T3 escalation', () => 
     assert.strictEqual(events.filter(e => e.kind === 'signal-abandoned' && e.source === 'auto-nudge-escalated').length, 1);
 }));
 
-test('auto-nudge is off by default and skips quota-paused agents', () => withTempDir('aigon-auto-nudge-default-', (repo) => {
+test('auto-nudge is on by default, opt-out via enabled:false, and skips quota-paused agents', () => withTempDir('aigon-auto-nudge-default-', (repo) => {
     autoNudge._resetForTests();
     let nudges = 0;
     const deps = {
@@ -50,9 +50,16 @@ test('auto-nudge is off by default and skips quota-paused agents', () => withTem
         sendNudge: async () => { nudges += 1; return { ok: true }; },
         nowMs: Date.parse('2026-04-29T00:05:00.000Z'),
     };
-    const visible = autoNudge.computeIdleLadder(repo, baseInput(), deps);
-    assert.strictEqual(visible.state, 'needs-attention');
-    assert.strictEqual(visible.autoNudgeEnabled, false);
+    const onByDefault = autoNudge.computeIdleLadder(repo, baseInput(), deps);
+    assert.strictEqual(onByDefault.state, 'needs-attention');
+    assert.strictEqual(onByDefault.autoNudgeEnabled, true);
+
+    autoNudge._resetForTests();
+    const optedOut = autoNudge.computeIdleLadder(repo, baseInput(), {
+        ...deps,
+        loadProjectConfig: () => ({ autoNudge: { enabled: false } }),
+    });
+    assert.strictEqual(optedOut.autoNudgeEnabled, false);
     assert.strictEqual(nudges, 0);
 
     const quota = autoNudge.computeIdleLadder(repo, { ...baseInput(), status: 'quota-paused' }, {
