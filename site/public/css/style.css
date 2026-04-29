@@ -2313,7 +2313,7 @@ pre code {
 .hero h1.hero-wedge {
   margin: 0 0 clamp(1.25rem, 2.6vw, 1.85rem);
   font-family: "Sora", sans-serif;
-  font-size: clamp(1.5rem, 2.8vw, 2.25rem);
+  font-size: clamp(1.35rem, 2.5vw, 2.05rem);
   line-height: 1.22;
   letter-spacing: -0.018em;
   font-weight: 500;
@@ -2338,8 +2338,8 @@ pre code {
 /* === What-it-is subtitle === */
 .hero-subtitle {
   margin: 0 0 clamp(1.1rem, 2.2vw, 1.55rem);
-  max-width: 56ch;
-  font-size: clamp(1.05rem, 1.55vw, 1.2rem);
+  max-width: 60ch;
+  font-size: clamp(1.15rem, 1.8vw, 1.4rem);
   line-height: 1.5;
   color: var(--text);
   font-weight: 400;
@@ -2523,8 +2523,8 @@ figure.hero-preview figcaption {
 
 /* === Reveal stagger on first paint === */
 .hero-kicker { animation: hero-rise 540ms cubic-bezier(0.25, 0.46, 0.25, 1) 0ms both; }
-.hero h1.hero-wedge { animation: hero-rise 720ms cubic-bezier(0.25, 0.46, 0.25, 1) 100ms both; }
-.hero-subtitle { animation: hero-rise 580ms cubic-bezier(0.25, 0.46, 0.25, 1) 280ms both; }
+.hero-subtitle { animation: hero-rise 580ms cubic-bezier(0.25, 0.46, 0.25, 1) 100ms both; }
+.hero h1.hero-wedge { animation: hero-rise 720ms cubic-bezier(0.25, 0.46, 0.25, 1) 280ms both; }
 .hero-facts { animation: hero-rise 540ms cubic-bezier(0.25, 0.46, 0.25, 1) 380ms both; }
 .hero-why { animation: hero-rise 600ms cubic-bezier(0.25, 0.46, 0.25, 1) 480ms both; }
 
