@@ -1,0 +1,75 @@
+---
+title: How Aigon Compares
+description: Aigon vs single-agent tools, intra-vendor harnesses, and autonomous cloud agents — the honest delta.
+---
+
+## The wedge
+
+> **Most coding tools give you one model's opinion and stop when its quota runs out. Aigon coordinates Claude, Codex, Gemini (and more...) on the same spec — multiple coding agents implement, a different coding agent reviews, and work continues on whichever subscription still has quota.**
+
+Most coding tools give you one model's perspective on each change. A growing class of harnesses give you several copies of *the same* model racing each other. Aigon races **different vendors** against each other, and uses a fourth vendor as the reviewer. That one architectural choice yields two things nobody else delivers together: **reviewer diversity** (quality) and **quota arbitrage** (economics).
+
+## The market in three buckets
+
+By April 2026, every serious peer ships Markdown specs in git, git-worktree isolation, parallel agents, and built-in code review. Those features no longer differentiate. The split that remains is whether your parallelism crosses vendors — and whether your quotas pool across them.
+
+| Posture | Tools | Reviewer diversity | Quota arbitrage |
+|---|---|:---:|:---:|
+| **Single agent** | Cursor, Claude Code (alone), Aider, Codex CLI | — | — |
+| **Intra-vendor parallel** | Superpowers, Cursor 3 Agents Window, Cline Kanban, GSD, Devin | — *(same model racing itself)* | — *(one quota pool)* |
+| **Cross-vendor parallel** | **Aigon** | ✓ | ✓ |
+
+## Three buyer questions
+
+### "Why not just use my one favourite tool?"
+
+*Cursor, Claude Code, Aider, Codex CLI on their own.*
+
+**Quality.** You're betting that one model is right. On routine work, that's fine. On anything ambitious — a tricky migration, a security-sensitive change, a refactor with unclear blast radius — you want a second and third opinion *before* you ship, not in code review after.
+
+**Economics.** If you already pay for Claude Pro *and* a Gemini key *and* Codex, your single favourite tool only spends one of those quotas. The other two sit idle. When that one quota hits its 5-hour wall, you stop. Aigon spreads the load — and when Claude's quota is exhausted, work continues on Gemini automatically.
+
+For one-off scripts and small fixes on a single subscription, your favourite tool is the right answer. Aigon is for harder work, or wider budgets.
+
+### "Why not Superpowers / GSD / Cline Kanban — they have parallel agents too?"
+
+**Quality.** Their parallelism is *intra-vendor*. Superpowers spawns multiple Claude Codes. Cursor 3 Agents Window runs multiple Cursors. Cline Kanban runs multiple Clines. You get faster execution, not different perspectives. When all three Claudes miss the same edge case, the reviewer (also Claude) misses it too.
+
+**Economics.** Intra-vendor parallelism shares **one quota pool**. Three Claude Codes burn three times your Claude quota for the same wall-clock window — and when that pool is gone, all of them stop. Aigon's three vendors share *zero* quota; one running out doesn't slow the others, and auto-failover routes to whichever vendor still has headroom.
+
+If you don't care about reviewer diversity *and* you only have one subscription, pick Superpowers. It's lighter, has a much larger community, and ships everything else Aigon does.
+
+### "Why not Devin / Jules — they're fully autonomous?"
+
+Different shape entirely. Devin is cloud + autonomous + per-task billing. Aigon is local + supervised + uses subscriptions you already own.
+
+**Pick Devin or Jules** if zero local setup matters more than control; you bill per-ACU happily; your tasks are well-bounded enough that fire-and-forget works; you want a single web app to live in.
+
+**Pick Aigon** if you want to watch the work happen (`tmux attach`, dashboard); your existing Claude / Gemini / Codex subscriptions should be the budget; you want the option to escalate to autonomous mode without giving up the supervised default.
+
+## The minimum-viable grid
+
+If you want a comparison table, this is the only one that matters. Everything else is detail.
+
+| | One model races | Multiple of the *same* model race | Multiple **different** models race | Reviewer is a different model | Quotas pool across vendors |
+|---|:---:|:---:|:---:|:---:|:---:|
+| **Cursor / Claude Code (alone) / Aider** | ✓ | — | — | — | — |
+| **Superpowers / GSD / Cline Kanban / Cursor 3** | ✓ | ✓ | — | — | — |
+| **Devin (multiple Devins)** | ✓ | ✓ | — | — | — |
+| **Aigon Fleet** | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+The last column isn't just a posture claim — it's a feature claim. Aigon ships a quota poller that checks Claude Code, Codex, Gemini CLI, and Kimi every 30 minutes, surfaces headroom on the dashboard and at feature-start, and auto-fails over to a vendor with quota when one runs out.
+
+## When *not* to use Aigon
+
+The honest list. We'd rather you pick the right tool than the wrong one.
+
+- **You don't have multiple agent subscriptions.** Both payoffs require at least two vendors. With one subscription you'll get more value from a single-vendor harness like Superpowers.
+- **You live in your IDE.** Aigon is CLI + web dashboard. No Cursor sidebar, no VS Code panel. If you rarely open a terminal, this isn't the tool.
+- **You want zero-setup cloud autonomy.** Devin and Jules exist for that.
+- **You want inline completions.** Cursor's Composer is sub-second; nothing in Aigon is.
+- **You're allergic to spec files.** Aigon centres the Markdown spec. If "agree on what to build before code" feels like overhead instead of leverage, the chat-first tools (Aider, Cline non-Kanban) will fit your hand better.
+
+## Going deeper
+
+For the full breakdown across 10 axes and ~14 tracked tools, with per-cell sourcing and last-verified dates, see `docs/competitive/matrix.md` in the Aigon repo. The same directory contains per-tool deep-dives (`entries/<slug>.md`) and an honest "where each competitor beats Aigon" file (`weaknesses.md`).

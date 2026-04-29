@@ -11,7 +11,7 @@ It deliberately refuses to be a 10-axis × 14-tool grid. The full grid lives in 
 
 ## The wedge — one sentence
 
-> **Aigon turns the Claude, Gemini, and Codex subscriptions you already pay for into one fleet — racing different vendors when work is hard (reviewer diversity catches bugs no single model sees) and routing around whichever quotas you've burned the rest of the time.**
+> **Most coding tools give you one model's opinion and stop when its quota runs out. Aigon coordinates Claude, Codex, Gemini (and more...) on the same spec — multiple coding agents implement, a different coding agent reviews, and work continues on whichever subscription still has quota.**
 
 That's the entire defensible delta. One posture — **cross-vendor orchestration of subscriptions you already own** — yields two payoffs nobody else delivers together: **reviewer diversity** (quality) and **quota arbitrage** (economics). Every other feature — Markdown specs, Kanban lifecycle, git worktrees, slash commands, dashboard, local-first — is **support for that wedge**, not the wedge itself. Public copy must lead with the wedge and treat the rest as evidence.
 

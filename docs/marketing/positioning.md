@@ -59,21 +59,25 @@ Each chunk is a self-contained string. Copy verbatim into the named surface — 
 
 > One Kanban for many agents — on real branches, in real worktrees, against real specs.
 
-### Hero candidates — two-payoff wedge (pending selection, 2026-04-28)
+### Hero candidates — short tagline slot (open, 2026-04-29)
 
-These three are drafted from the two-payoff frame in `aigon-vs.md`. Each leads with both halves of the wedge (reviewer diversity + quota arbitrage). **John's preference: candidate A.** None has propagated to surfaces yet — pick one, then ship in a single PR that updates the `hero` chunk above and every surface in the surface map.
+The candidates below were drafted on 2026-04-28 for the short `hero` slot (one-line tagline used in landing hero, social bio, GitHub repo description). All three lean on the verb "race" — which was rejected on 2026-04-29 when picking the longer **wedge sentence** for `index.mdx` / `compare.mdx` / `aigon-vs.md` (see below). These short variants therefore need a re-draft before any are promoted to the live `hero` chunk.
 
-**A — favoured (three-sentence punch)**
+> ~~Race the agents you already pay for. Catch what one model misses. Stop hitting quota walls.~~ *(rejected: "race" metaphor)*
+>
+> ~~One Kanban for many agents — different vendors for diversity, pooled quotas for headroom.~~ *(carry-over from earlier hero, uses "race" indirectly via the same metaphor family)*
+>
+> ~~Use every subscription you pay for. Get every vendor's perspective. Stop waiting on a single quota wall.~~ *(closer, but still flagged for re-draft to match the literal-mechanism tone of the wedge)*
 
-> Race the agents you already pay for. Catch what one model misses. Stop hitting quota walls.
+### Wedge sentence — selected 2026-04-29
 
-**B — extends the existing "One Kanban" hero**
+The longer thesis statement that opens `index.mdx`, `compare.mdx`, and `aigon-vs.md`:
 
-> One Kanban for many agents — different vendors for diversity, pooled quotas for headroom.
+> Most coding tools give you one model's opinion and stop when its quota runs out. Aigon coordinates Claude, Codex, Gemini (and more...) on the same spec — multiple coding agents implement, a different coding agent reviews, and work continues on whichever subscription still has quota.
 
-**C — benefit-led, longest**
+**Why C won.** Pain-first framing names two real frustrations (one model's bias; the 5-hour wall) before introducing Aigon. Verb is literal (`coordinates`), not metaphorical (`races`). Both halves of the wedge — reviewer diversity and quota arbitrage — appear as natural consequences without forcing the reader to know the term "intra-vendor parallelism."
 
-> Use every subscription you pay for. Get every vendor's perspective. Stop waiting on a single quota wall.
+**Vocabulary note.** "Quota" is the customer-facing term (matches what users see in Claude Pro / Codex / Gemini UIs). Internal feature names like "budget poller" are kept in code (`lib/budget-poller.js`) but public copy says "quota". A/B test candidate.
 
 ### `bio` — social bio, GitHub repo description
 
@@ -97,7 +101,7 @@ These three are drafted from the two-payoff frame in `aigon-vs.md`. Each leads w
 
 ### `elevator` — verbal elevator pitch
 
-> You know how each AI coding tool works in isolation? Aigon runs them together on the same task — each in its own git worktree, each against the same spec — and you ship the best diff. Claude, Gemini, and Codex compete; you pick the winner.
+> You know how each AI coding tool works in isolation? Aigon runs them together on the same task — each in its own git worktree, each against the same spec — and you ship the best diff. Claude, Codex, Gemini (and more) compete; you pick the winner.
 
 ---
 

@@ -1,42 +1,44 @@
 ---
 title: Aigon Documentation
-description: Open-source, spec-driven orchestration for AI coding agents — your subscriptions, your repo, your workflow.
+description: Race the AI coding agents you already pay for — catch what one model misses, route around quota limits.
 ---
 
-## What is Aigon?
+## One spec, every vendor you pay for
 
-Aigon is an **open-source, spec-driven workflow system** for building software with AI coding agents. You describe work in **Markdown specs** that live in your repository; Aigon coordinates **create → implement → review → evaluate → merge** (and research/feedback flows) so progress is **tracked, repeatable, and resettable** instead of ad hoc chat.
+> **Most coding tools give you one model's opinion and stop when its quota runs out. Aigon coordinates Claude, Codex, Gemini (and more...) on the same spec — multiple coding agents implement, a different coding agent reviews, and work continues on whichever subscription still has quota.**
 
-You drive it from **slash commands** inside Claude Code, Gemini CLI, Codex, Cursor, and similar tools, from a **local web dashboard**, or from the **`aigon` CLI**. Every surface reads and writes the **same specs and workflow state** in your repo. There is **no required SaaS account** and **no proprietary lock-in** — you bring the AI products you already use.
+Aigon is an open-source, spec-driven harness for multi-agent coding. Each feature is a Markdown spec in your repo. Each agent runs in its own git worktree under tmux. You merge the diff that survives review. No SaaS account, no token resale, no lock-in.
 
 ![Aigon Dashboard — Reports Charts](/img/aigon-dashboard-reports-charts.png)
 
-## Why Aigon
+## What you get
 
-Feature lists describe mechanics; **why Aigon** is about how you want to work day to day:
+**Catch what one model misses.** Different model families catch different classes of bug. When Claude reviews Claude, the reviewer shares the implementer's blind spots. Aigon Fleet runs Claude, Codex, Gemini (and more...) in parallel against the same spec, with a different coding agent as the merge reviewer. Reviewer diversity is the wedge.
 
-- **Bring your own subscriptions** — use your subscription quotas through Claude, Codex, Gemini, Cursor CLIs directly. Aigon does not sell tokens or sit in the billing path.
-- **Stay in the flow when a plan runs out** — swap agent, account, or provider instead of stopping mid-feature when a subscription hits its limit.
-- **Specs you can build, ship, reset, and rebuild** — one durable brief in git, a defined lifecycle, and a clean reset when you need a do-over.
-- **Autonomous runs you can leave unattended** — kick off long implement/evaluate loops and let them run overnight while you are away from the keyboard.
-- **Multi-agent lanes you design** — for example: shape a spec with one model, implement with another, run multi-agent code review, then land on `main` through a **pre-built workflow** instead of stitching steps by hand.
-- **Context that compounds in the repo** — specs, logs, and implementation summaries feed the next session so you are not starting from a blank chat every time.
-- **Move off token limits without drama** — when a Claude subscription is exhausted, **fail over or switch** to Codex (or another agent) on the same feature using the same spec and state.
+**Stop hitting quota walls.** Every Pro-plan user hits 5-hour quota limits. Single-agent tools leave you stuck — wait, switch laptops, or pay overage. Aigon polls your Claude / Codex / Gemini / Kimi quotas every 30 minutes, shows headroom on the dashboard, and auto-fails over to whichever coding agent still has quota. Three subscriptions, one elastic pool.
+
+## How you drive it
+
+Three surfaces, one state. **Slash commands** inside your existing CLIs (Claude Code, Gemini CLI, Codex, Cursor). A **local web dashboard** for the Kanban view. The **`aigon` CLI** for everything else. Every surface reads and writes the same specs and workflow state in your repo. Lifecycle: inbox → backlog → in-progress → review → done.
 
 ## Sections
 
 <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-  <a href="/docs/concepts" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
-    <h3 className="text-lg font-semibold mb-1">Concepts</h3>
-    <p className="text-sm text-gray-400 m-0">Three workflows, four execution modes, and how Aigon organises your work.</p>
-  </a>
   <a href="/docs/getting-started" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
     <h3 className="text-lg font-semibold mb-1">Getting Started</h3>
     <p className="text-sm text-gray-400 m-0">Install Aigon and run your first feature loop in under five minutes.</p>
   </a>
+  <a href="/docs/concepts" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Concepts</h3>
+    <p className="text-sm text-gray-400 m-0">Three workflows, four execution modes, and how Aigon organises your work.</p>
+  </a>
   <a href="/docs/guides" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
     <h3 className="text-lg font-semibold mb-1">Guides</h3>
     <p className="text-sm text-gray-400 m-0">Step-by-step walkthroughs for Drive, Fleet, Research, and Dashboard.</p>
+  </a>
+  <a href="/docs/compare" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Compare</h3>
+    <p className="text-sm text-gray-400 m-0">How Aigon differs from single-agent tools, intra-vendor harnesses, and cloud agents.</p>
   </a>
   <a href="/docs/reference" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
     <h3 className="text-lg font-semibold mb-1">Reference</h3>

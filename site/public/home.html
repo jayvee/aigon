@@ -78,50 +78,40 @@
       <section class="hero section reveal" id="top">
         <div class="container hero-grid">
           <div class="hero-copy">
-            <p class="eyebrow">Spec-driven multi-agent harness · One Kanban for many agents — on real branches, in real worktrees, against real specs.</p>
-            <div class="what-aigon-is">
-              <h2 class="what-aigon-title">What Aigon is</h2>
-              <p>
-                <strong>Open-source orchestration</strong> for AI coding agents: <strong>Markdown specs in your repo</strong>, a full <strong>create → merge</strong> lifecycle (plus research/feedback), and workflows you can <strong>repeat or reset</strong>. Drive it from <strong>slash commands</strong>, a <strong>local dashboard</strong>, or the <strong><code>aigon</code> CLI</strong> — one pipeline, no required SaaS, <strong>bring your own agents and subscriptions</strong>.
-              </p>
-            </div>
-            <div
-              class="analogy-carousel"
-              role="region"
-              aria-label="Aigon explained"
-              aria-roledescription="carousel"
-            >
-              <div class="analogy-slides">
-                <div class="analogy-slide is-active" data-analogy="copilot">
-                  <h1>Aigon ... if Trello and GitHub Copilot had a baby ... but you choose your agents.</h1>
-                  <p class="hero-summary">
-                    You bring your own API keys and models, run multiple agents in parallel, and use LLMs to judge and refine each task—on your terms.
-                  </p>
-                </div>
-                <div class="analogy-slide" data-analogy="cursor">
-                  <h1>Aigon ... if Trello and Cursor had a baby ... but you're in full control.</h1>
-                  <p class="hero-summary">
-                    You bring your own model subscriptions and run tasks through multiple agents in parallel, comparing and refining outcomes.
-                  </p>
-                </div>
-                <div class="analogy-slide" data-analogy="claude_code">
-                  <h1>Aigon ... if Linear and Claude Code had a baby ... and they had triplets.</h1>
-                  <p class="hero-summary">
-                    You can stick with Claude Code as the star sibling, or bring in more brothers, sisters, and cousins—Aigon coordinates them all, making your workflow a true family effort.
-                  </p>
-                </div>
-              </div>
-              <div class="analogy-nav" role="group" aria-label="Analogy navigation">
-                <button type="button" class="analogy-arrow analogy-prev" aria-label="Previous analogy">&#8249;</button>
-                <div class="analogy-dots">
-                  <button type="button" class="analogy-dot is-active" data-index="0" aria-label="Analogy 1"></button>
-                  <button type="button" class="analogy-dot" data-index="1" aria-label="Analogy 2"></button>
-                  <button type="button" class="analogy-dot" data-index="2" aria-label="Analogy 3"></button>
-                </div>
-                <button type="button" class="analogy-arrow analogy-next" aria-label="Next analogy">&#8250;</button>
+            <p class="hero-kicker">
+              <span class="hero-kicker-mark" aria-hidden="true"></span>
+              <span class="hero-kicker-brand">Aigon</span>
+              <span class="hero-kicker-divider" aria-hidden="true">/</span>
+              <span class="hero-kicker-tag">Multi-agent coding harness</span>
+            </p>
+            <h1 class="hero-wedge">
+              <span class="hero-wedge-pain">Most coding tools give you one model's opinion and stop when its quota runs out.</span>
+              <span class="hero-wedge-turn">Aigon coordinates <em>Claude</em>, <em>Codex</em>, <em>Gemini</em> <span class="hero-wedge-andmore">(and more&hellip;)</span> on the same spec — multiple coding agents implement, a different coding agent reviews, and work continues on whichever subscription still has quota.</span>
+            </h1>
+            <p class="hero-subtitle">An open-source, spec-driven harness that orchestrates <strong>agent CLIs</strong> like Claude Code, Codex, and Gemini CLI — not raw model APIs. Specs live in git, agents run in worktrees, the diff that survives review wins.</p>
+            <ul class="hero-facts">
+              <li>Open-source</li>
+              <li>Spec-driven</li>
+              <li>BYO subscriptions</li>
+              <li>No SaaS lock-in</li>
+              <li>Local-first</li>
+            </ul>
+            <div class="hero-why">
+              <p class="hero-why-eyebrow">Why Use Aigon</p>
+              <div class="hero-why-grid">
+                <article class="hero-payoff">
+                  <p class="hero-payoff-num">01</p>
+                  <h2 class="hero-payoff-title">Catch what one model misses.</h2>
+                  <p class="hero-payoff-body">Different model families catch different classes of bug. When Claude reviews Claude, the reviewer shares the implementer's blind spots. Aigon Fleet runs Claude, Codex, Gemini (and more&hellip;) in parallel against the same spec, with a different coding agent as the merge reviewer.</p>
+                </article>
+                <article class="hero-payoff">
+                  <p class="hero-payoff-num">02</p>
+                  <h2 class="hero-payoff-title">Stop hitting quota walls.</h2>
+                  <p class="hero-payoff-body">Every Pro-plan user hits 5-hour quota limits. Aigon polls your quotas every 30 minutes, surfaces headroom on the dashboard, and auto-fails over to whichever coding agent still has quota. Three subscriptions, one elastic pool.</p>
+                </article>
               </div>
             </div>
-            <div class="hero-preview">
+            <figure class="hero-preview">
               <img
                 src="img/aigon-dashboard-kanban.png?v=1"
                 alt="Aigon Dashboard Kanban board — feature cards across inbox, backlog, in-progress, evaluation, and done columns"
@@ -130,36 +120,13 @@
                 loading="eager"
                 decoding="async"
               >
-            </div>
-            <div class="why-aigon-hero">
-              <h2 class="why-aigon-hero-title">Why Aigon</h2>
-              <p class="why-aigon-intro">
-                You already pay for the models — Aigon turns them into a <strong>repeatable system</strong>, not a pile of chats.
-              </p>
-              <ul class="why-aigon-points">
-                <li><strong>BYO subscriptions</strong> — Claude, Codex, Gemini, Cursor; Aigon does not sell tokens.</li>
-                <li><strong>Plans cap, work does not</strong> — swap agent or account mid-feature.</li>
-                <li><strong>Specs in git</strong> — ship, reset, and rebuild without losing the thread.</li>
-                <li><strong>Overnight autonomy</strong> — long implement/eval loops while you are away.</li>
-                <li><strong>Your mix of models</strong> — spec, build, review, merge on <code>main</code> through one workflow.</li>
-                <li><strong>Context stays in-repo</strong> — logs and summaries feed the next session.</li>
-                <li><strong>Hit token limits?</strong> Fail over (e.g. Claude → Codex) on the same feature state.</li>
-              </ul>
-            </div>
-            <p class="eyebrow hero-at-a-glance-eyebrow">At a glance</p>
-            <p class="hero-at-a-glance-lead">Capabilities and surfaces — the mechanics behind the &ldquo;why&rdquo; above.</p>
-            <ul class="hero-points">
-              <li>Work visually with a Kanban board, drop to the CLI for scripting, or drive from slash commands inside your agent — one workflow at every level of control</li>
-              <li>Four clear modes: Drive, Fleet, Autopilot, and Swarm</li>
-              <li>Specs, logs, and research findings in Git — searchable, portable, permanent</li>
-              <li>Works with Claude, Gemini, Cursor, and Codex — swap freely or run them head-to-head</li>
-              <li>Optional GitHub PR workflow — publish branches manually, let GitHub merge, then finalize cleanly in Aigon</li>
-              <li>No required SaaS account, plain files in Git, no proprietary formats</li>
-            </ul>
+              <figcaption>The Aigon dashboard — Kanban for multi-agent coding work.</figcaption>
+            </figure>
           </div>
         </div>
         <div class="container">
           <div class="hero-fleet-showcase">
+            <p class="hero-fleet-modes">Aigon ships four modes — <strong>Drive</strong>, <strong>Fleet</strong>, <strong>Autopilot</strong>, and <strong>Swarm</strong>. Here's Fleet in 30 seconds:</p>
             <p class="hero-fleet-intro">Claude Code and Cursor compete, Codex evaluates — best implementation wins.</p>
             <div class="fleet-demo-steps">
               <div class="fleet-demo-step">
