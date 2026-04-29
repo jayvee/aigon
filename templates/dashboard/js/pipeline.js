@@ -28,6 +28,18 @@
       document.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
     }
 
+    // Global outside-click dismiss for card popovers. Bound once on script load
+    // so a click anywhere on the page (not just on the originating card) closes
+    // an open overflow menu or drift-detail popover.
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.kcard-overflow-toggle') && !e.target.closest('.kcard-overflow-menu')) {
+        closeAllKcardOverflowMenus();
+      }
+      if (!e.target.closest('.spec-drift-wrap')) {
+        document.querySelectorAll('.spec-drift-wrap.open').forEach(el => el.classList.remove('open'));
+      }
+    });
+
     function pipelineCommand(pipelineType, action) {
       const prefix = pipelineType === 'research' ? 'research' : pipelineType === 'feedback' ? 'feedback' : 'feature';
       return prefix + '-' + action;
@@ -1032,6 +1044,7 @@
       card.querySelectorAll('[data-open-nudge-modal]').forEach(btn => {
         btn.onclick = (e) => {
           e.stopPropagation();
+          closeAllKcardOverflowMenus();
           showNudgeModal(feature, repoPath, btn);
         };
       });
@@ -1085,13 +1098,6 @@
       card.style.cursor = 'pointer';
       card.addEventListener('click', (e) => {
         if (wasDragged) { wasDragged = false; return; }
-        // Close overflow menus when clicking outside them
-        if (!e.target.closest('.kcard-overflow-toggle') && !e.target.closest('.kcard-overflow-menu')) {
-          closeAllKcardOverflowMenus();
-        }
-        if (!e.target.closest('.spec-drift-wrap')) {
-          card.querySelectorAll('.spec-drift-wrap.open').forEach(el => el.classList.remove('open'));
-        }
         if (e.target.closest('button') || e.target.closest('.btn')) return;
         if (feature.specPath) {
           const displayName = feature.name.replace(/-/g, ' ');
@@ -1109,6 +1115,7 @@
         btn._origText = btn.textContent;
         btn.onclick = async (e) => {
           e.stopPropagation();
+          closeAllKcardOverflowMenus();
           await handleFeatureAction(va, feature, repoPath, btn, pipelineType);
         };
       });
@@ -1127,6 +1134,7 @@
         btn._origText = btn.textContent;
         btn.onclick = async (e) => {
           e.stopPropagation();
+          closeAllKcardOverflowMenus();
           const action = btn.getAttribute('data-flag-action');
           const entityType = btn.getAttribute('data-flag-entity');
           const id = btn.getAttribute('data-flag-id');
