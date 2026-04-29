@@ -64,18 +64,92 @@ The existing data already supports an aggregate-only version (demonstrated manua
 - Model-side fine-tuning or any kind of model training (this is an empirical recommender, not an ML pipeline).
 
 ## Findings
-<!-- Filled in during research execution after transcript-program ships. -->
+
+Two of three agents produced findings: cc and gg. cu's findings file is the unedited template (no research conducted) — discount.
+
+### Consensus (cc + gg)
+
+- **Storage**: per-repo `.aigon/recommender/index.json` for OSS; cross-repo aggregation reserved for Pro.
+- **Similarity heuristic**: hybrid — Jaccard file-overlap on `lib/*` modules + complexity bucket. TF-IDF / keyword cosine deferred (low marginal value on this codebase).
+- **Surfaces**: spec-create, spec-start (recommended default + "✨ Recommended" badge), dashboard explain panel, `feature-start --explain` CLI flag.
+- **Reviewer pairing**: separate signal scored on meaningful `fix(review)` commits — implementer effectiveness ≠ reviewer effectiveness.
+- **Cost prediction**: confidence band / percentile range, never a point estimate.
+- **Explain UX**: structured payload with similar specs + sample size + confidence + stumbles for rejected alternatives.
+- **Stumble taxonomy seeds** (sampled from real transcripts): orientation-thrashing, scope/spec-drift, abandoned-approach. cc adds stalled-review-loop, cold-start over-reading, premature-close. gg adds ignored-failing-test, judgment-loop-debate.
+- **Outlier flag**: warn when candidate spec resembles a high-stumble historical feature; do not auto-disable the option.
+
+### Divergent Views
+
+| Topic | cc | gg |
+|---|---|---|
+| Min corpus N | n=3 medium / n=10 high with Bayesian shrinkage `k=5` | Hard switch at N=5 |
+| Cold-start blend | Bayesian shrinkage (continuous prior pull) | Hard switch V1, sigmoid V2 |
+| Similarity weighting | File-overlap primary, complexity as tiebreaker | Complexity as hard filter, file-overlap as soft ranker |
+| Stumble classifier | Rule-based first, LLM discovery deferred until n≥30 | Doesn't specify implementation path |
+| Outlier threshold | Jaccard ≥ 0.5 + ≥2 stumbles | >80% file overlap + critical stumble |
+| Two-tier corpus | Explicit: aggregate-now (130 features) + transcript-when-ready | Treats transcript corpus as the only corpus |
+| Calibration window | Land corpus + API silently first, ship UX after ~50 closed features | Ship UX immediately |
+| API shape | Single endpoint w/ `?include=ranked,similar,stumbles,cost` | Less specific; "extend the endpoint + dashboard badges" |
+
+cc's framing is materially deeper on architecture (two-tier corpus, Bayesian shrinkage, calibration window). gg's is sharper on the user-facing rule (hard N=5, "✨ Recommended" badge). The load-bearing call where they conflict is the **two-tier corpus**: waiting for the transcript corpus alone leaves the recommender useless for ~6 months given current capture pace (~1–2 features/day).
 
 ## Recommendation
-<!-- Filled in during research-eval. Expected output: 3–6 features in a "learned-recommender" set, ordered roots → leaves. -->
+
+Ship a per-repo learned recommender as a **thin extension** of the existing static recommender (`lib/spec-recommendation.js:rankAgentsForOperation`), not a parallel pipeline.
+
+1. **Two-tier corpus** from day one. Aggregate (telemetry + log frontmatter, broad but shallow, ~130 features today) for cold-start coverage now. Transcript-derived (per-turn fidelity, narrow but deep) layered in as transcript coverage grows. Same external API; both feed the same ranking interface.
+2. **Bayesian shrinkage** cold-start with `k=5` against the existing static `cli.modelOptions[].score[op]` priors. Confidence bands match the existing `low/medium/high` convention. (gg's hard N=5 switch is a special case of this with `k=∞`.)
+3. **Hybrid spec-shape similarity**: file-overlap (Jaccard on `lib/*` modules) + complexity bucket. Keyword cosine deferred.
+4. **Rule-based stumble classifier** first (six initial categories from real transcripts), LLM-based discovery deferred until n≥30 transcripts/category.
+5. **Reviewer pairing** learned as a separate (reviewer, implementer)-pair signal scored on real-fix commits (>5-line diffs in flagged files).
+6. **Cost prediction** as a 25th/75th-percentile band (or 90% CI per gg), not a point estimate.
+7. **Storage** in `.aigon/recommender/` (per-repo, gitignored). Per-repo only in OSS; cross-repo aggregation as a Pro feature; anonymised contribution explicitly deferred.
+8. **Single API endpoint extension** (`/api/recommendation/:type/:id?include=...`); three surfaces (start modal, dashboard explain panel, `feature-start --explain` CLI flag).
+9. **Explain UX** returns a structured payload with similar features, sample size, confidence, stumbles for rejected alternatives, cost band — never a bare score.
+
+Critical risk to flag: shipping the explain panel before the corpus is large enough makes the recommender feel unreliable. Land the corpus index + API silently first; turn on the user-visible UX after a calibration window of ~50 closed features (~3 weeks at current rate).
 
 ## Output
-- [ ] Feature: <!-- e.g. learned-recommender-corpus-index -->
-- [ ] Feature: <!-- e.g. learned-recommender-similarity-heuristic -->
-- [ ] Feature: <!-- e.g. learned-recommender-api-and-dashboard -->
-- [ ] Feature: <!-- e.g. learned-recommender-reviewer-pairing -->
-- [ ] Feature: <!-- e.g. learned-recommender-cost-prediction -->
-- [ ] Feature: <!-- e.g. learned-recommender-explain-ux -->
+
+### Set Decision
+
+- Proposed Set Slug: `learned-recommender`
+- Chosen Set Slug: **deferred** — user is preserving the evaluation but not creating features yet; will reassess in a few weeks.
+
+### Consolidated Features (deferred — not created)
+
+| # | Feature Name | Description | Priority | Agents | Status |
+|---|---|---|---|---|---|
+| 1 | learned-recommender-corpus-index | Index closed features into `.aigon/recommender/index.json` (telemetry + log frontmatter + scope-files); incremental rebuild on `feature-close`, full rebuild via `aigon doctor`. Two-tier: aggregate now, transcript-derived layered in as coverage grows. | high | cc, gg | Consensus |
+| 2 | learned-recommender-bucket-aggregates | Roll the corpus index into per-bucket aggregates (`buckets.json`); compute Bayesian-shrunk score against static `cli.modelOptions[].score[op]` priors with `k=5`. | high | cc | Unique to cc |
+| 3 | learned-recommender-similarity-spec-shape | Hybrid file-overlap (Jaccard on `lib/*` modules) + complexity bucket; expose `findSimilar(spec)` returning ranked similar features with Jaccard scores. | high | cc, gg | Consensus |
+| 4 | learned-recommender-stumble-classifier-rules | Rule-based detector for the taxonomy categories (orientation-thrashing, spec-drift, stalled-review-loop, abandoned-approach, cold-start over-reading, premature-close, ignored-failing-test, judgment-loop-debate); writes labels into the corpus index. LLM-based discovery deferred. | medium | cc | Unique to cc |
+| 5 | learned-recommender-api-extension | Extend `/api/recommendation/:type/:id` with `?include=ranked,similar,stumbles,cost`; integrate ranked output into existing F313 frontmatter resolver path; add "✨ Recommended" badge in dashboard agent picker. | high | cc, gg | Merged |
+| 6 | learned-recommender-explain-ux | Dashboard explain panel + `feature-start --explain` CLI flag; renders ranked alternatives, matched similar features, confidence band, cost band, stumbles for rejected agents. Gate behind ~50-feature calibration window. | medium | cc, gg | Consensus |
+| 7 | learned-recommender-reviewer-pairing | Separate (reviewer-agent, implementer-agent)-pair score based on meaningful `fix(review)` commits (>5-line diff intersecting flagged files); expose in API and start-modal review-agent slot. | medium | cc, gg | Consensus |
+| 8 | learned-recommender-cost-prediction | Per-bucket `costUsd` and `turnCount` percentile bands (25/50/75 — or 90% CI per gg); surface as expected-cost range in explain UX. | medium | cc, gg | Consensus |
+| 9 | learned-recommender-outlier-flag | Detect candidate-spec similarity to high-stumble historical features above threshold; surface single-line ⚠ in start modal (do not auto-disable the option). | low | cc, gg | Consensus |
+| 10 | learned-recommender-pro-cross-repo | Pro-tier: opt-in cross-repo aggregation of bucket scores, syncing per-bucket aggregates (not raw transcripts) into a user-owned aigon-pro vault. | low | cc, gg | Consensus |
+
+### Feature Dependencies (for future prioritisation)
+
+- `learned-recommender-corpus-index` — root, no deps
+- `learned-recommender-bucket-aggregates` → corpus-index
+- `learned-recommender-similarity-spec-shape` → corpus-index
+- `learned-recommender-stumble-classifier-rules` → corpus-index
+- `learned-recommender-api-extension` → bucket-aggregates, similarity-spec-shape
+- `learned-recommender-reviewer-pairing` → bucket-aggregates
+- `learned-recommender-cost-prediction` → bucket-aggregates
+- `learned-recommender-outlier-flag` → similarity-spec-shape, stumble-classifier-rules
+- `learned-recommender-explain-ux` → api-extension, stumble-classifier-rules
+- `learned-recommender-pro-cross-repo` → bucket-aggregates
+
+### Reassessment notes (for future-you)
+
+- Re-check transcript corpus size when revisiting — recommendation depth scales with it.
+- The two-tier vs transcript-only architectural call is load-bearing; reaffirm or revise based on corpus growth.
+- gg's hard-N=5 switch is simpler and may be the right V1 if Bayesian shrinkage feels overengineered when you come back.
+- cc's calibration-window risk (don't ship explain UX until ~50 closed features) only matters if explain panel is in V1.
 
 ## Related
 
