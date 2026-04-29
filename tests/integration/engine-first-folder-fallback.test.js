@@ -103,10 +103,12 @@ test('set-conductor.isFeatureDone: refuses to advance for drift case (engine dir
 }));
 
 // ---------------------------------------------------------------------------
-// collectDoneSpecs — engine-done UNION legacy folder
+// collectDoneSpecs — F459 folder-only display (F397 isEntityDone unchanged)
 // ---------------------------------------------------------------------------
 
-test('collectDoneSpecs: engine-done feature whose spec is missing from 05-done is still enumerated', () => withTempDir('aigon-done-engine-', (repo) => {
+test('collectDoneSpecs: filename-only — 05-done only; engine-done without folder file omitted', () => withTempDir('aigon-done-f459-', (repo) => {
+    // REGRESSION: F459 drops per-poll snapshot/events reads; kanban done list is 05-done filenames.
+    // Engine-first lifecycle for deps/set-conductor remains isEntityDone() (tests above).
     seedEntityDirs(repo, 'features');
     writeSnap(repo, 'features', '40', 'done');
     const eventsPath = path.join(repo, '.aigon', 'workflows', 'features', '40', 'events.jsonl');
@@ -114,10 +116,10 @@ test('collectDoneSpecs: engine-done feature whose spec is missing from 05-done i
     writeSpec(repo, 'features', '05-done', 'feature-41-legacy.md');
 
     const doneDir = path.join(repo, 'docs', 'specs', 'features', '05-done');
-    const out = collectDoneSpecs(doneDir, /^feature-\d+-.+\.md$/, 10, { repoPath: repo, entityType: 'feature' });
+    const out = collectDoneSpecs(doneDir, /^feature-\d+-.+\.md$/, 10, { entityType: 'feature' });
     const ids = out.all.map(item => (item.file.match(/^feature-(\d+)/) || [])[1]).filter(Boolean);
-    assert.ok(ids.includes('40'), `engine-done feature 40 missing: ${ids.join(',')}`);
-    assert.ok(ids.includes('41'), `legacy done feature 41 missing: ${ids.join(',')}`);
+    assert.ok(!ids.includes('40'), `transient engine-only done 40 should not appear: ${ids.join(',')}`);
+    assert.ok(ids.includes('41'), `folder done feature 41 missing: ${ids.join(',')}`);
 }));
 
 // ---------------------------------------------------------------------------
