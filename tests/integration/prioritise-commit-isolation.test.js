@@ -98,7 +98,10 @@ test('prioritise commit excludes unrelated untracked inbox specs', () => withTem
     assert.ok(names.some(n => n.includes('feature-01-main-spec')), names.join(','));
     assert.ok(!names.some(n => n.includes('stranger-untracked')), names.join(','));
     assert.ok(fs.existsSync(strangerAbs), 'stranger file should remain');
-    const st = execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8', env: { ...process.env, ...GIT_SAFE_ENV } });
+    // -uall: prioritise's move now stages the source-deletion (Phase 1 producer fix), so
+    // 01-inbox/ has no tracked files left and `git status --porcelain` would collapse to
+    // `?? <dir>/`. Use -uall to force per-file output so we can assert on the stranger.
+    const st = execFileSync('git', ['status', '--porcelain', '-uall'], { cwd: root, encoding: 'utf8', env: { ...process.env, ...GIT_SAFE_ENV } });
     assert.ok(/^\?\?\s+docs\/specs\/features\/01-inbox\/feature-stranger-untracked\.md$/m.test(st),
         `expected ?? stranger, got:\n${st}`);
 }));
