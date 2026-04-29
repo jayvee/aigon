@@ -2119,7 +2119,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// ── Agent budget widget (F322) ──────────────────────────────────────────────
+// ── Agent budget widget (F322; extended for op + cu coverage in F457) ──────
 
 const BUDGET_STALE_MS = 90 * 60 * 1000;
 const BUDGET_WIDGET_HIDDEN_KEY = 'aigon:budget-widget-hidden';
