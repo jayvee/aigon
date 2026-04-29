@@ -1687,7 +1687,10 @@ async function showAutonomousModal(feature, repoPath, btn) {
   autonomousModalFeature = feature;
   autonomousModalRepoPath = repoPath;
   autonomousModalBtn = btn || null;
-  autonomousModalModels = await fetchAgentModels(repoPath).catch(() => ({}));
+  // F454: do NOT await /api/agent-models here. Skeleton rows are built from
+  // AIGON_AGENTS[i].defaultImplementModel (resolved at server bootstrap from
+  // project → global → built-in defaults). This makes first paint immediate.
+  autonomousModalModels = null;
 
   const desc = document.getElementById('autonomous-modal-desc');
   const checks = document.getElementById('autonomous-agent-checks');
@@ -1697,13 +1700,7 @@ async function showAutonomousModal(feature, repoPath, btn) {
   const modal = document.getElementById('autonomous-modal');
   if (!desc || !checks || !evalSelect || !reviewSelect || !stopAfter || !modal) return;
 
-  let autonomousRec = null;
-  try {
-    autonomousRec = await fetchSpecRecommendation('feature', String(feature.id), repoPath);
-  } catch (_) { autonomousRec = null; }
-  setPickerRecommendation(autonomousRec);
-  renderPickerRecommendationBanner(autonomousRec, 'autonomous-picker-recommendation');
-
+  // Build the skeleton synchronously so we can show the modal immediately.
   desc.textContent = '';
   desc.appendChild(document.createTextNode('#' + feature.id + ' ' + (feature.name || '')));
   if (feature.set) {
@@ -1715,8 +1712,8 @@ async function showAutonomousModal(feature, repoPath, btn) {
   }
   const autoRows = AUTONOMOUS_AGENT_IDS.map(agentId => {
     const displayName = AGENT_DISPLAY_NAMES[agentId] || agentId;
-    const modelName = (autonomousModalModels && autonomousModalModels[agentId] && autonomousModalModels[agentId].implement) || '';
     const agent = AIGON_AGENTS.find(a => a.id === agentId) || { id: agentId, modelOptions: [], effortOptions: [] };
+    const modelName = agent.defaultImplementModel || '';
     const row = buildAgentCheckRow({
       value: agentId,
       checked: agentId === (window.__AIGON_DEFAULT_AGENT__ || 'cc'),
@@ -1736,10 +1733,39 @@ async function showAutonomousModal(feature, repoPath, btn) {
 
   stopAfter.value = 'close';
   updateAutonomousModeControls();
-  try { await fetchBudget(true); } catch (_) { /* best-effort */ }
-  updateAutonomousBudgetNotice();
-  await populateAutonomousWorkflowDropdown(repoPath);
+
+  // First paint — show the modal immediately. Banner + workflow dropdown
+  // hydrate in the background.
   modal.style.display = 'flex';
+
+  // F454: cache-hit budget read; only kick a refresh if the cached entry is
+  // older than 5 minutes (or absent entirely). Mid-run refreshes are not
+  // critical to the "Start Autonomously" flow — the budget widget already
+  // refreshes on its own cadence.
+  const BUDGET_REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
+  fetchBudget(false).then(cache => {
+    let newest = 0;
+    if (cache && typeof cache === 'object') {
+      Object.values(cache).forEach(v => {
+        const polled = v && v.polled_at ? new Date(v.polled_at).getTime() : 0;
+        if (polled > newest) newest = polled;
+      });
+    }
+    if (!newest || (Date.now() - newest) > BUDGET_REFRESH_THRESHOLD_MS) {
+      fetchBudget(true).then(() => updateAutonomousBudgetNotice()).catch(() => {});
+    }
+    updateAutonomousBudgetNotice();
+  }).catch(() => { updateAutonomousBudgetNotice(); });
+
+  // Hydrate banner + workflow dropdown in parallel; each updates the modal
+  // when it resolves so the user sees progressive completion.
+  Promise.all([
+    fetchSpecRecommendation('feature', String(feature.id), repoPath).catch(() => null),
+    populateAutonomousWorkflowDropdown(repoPath).catch(() => undefined),
+  ]).then(([autonomousRec]) => {
+    setPickerRecommendation(autonomousRec || null);
+    renderPickerRecommendationBanner(autonomousRec || null, 'autonomous-picker-recommendation');
+  });
 }
 
 let autonomousModalWorkflows = [];

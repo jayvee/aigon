@@ -436,6 +436,39 @@
       return false;
     }
 
+    // F454: cheap structural fingerprint of /api/status used to skip the
+    // kanban re-render when nothing material has changed. Includes per-feature
+    // idleLadder.state so the auto-nudge ladder still updates visibly, and
+    // lastCloseFailure so a freshly-failed close re-renders.
+    function statusFingerprint(data) {
+      if (!data) return '';
+      const parts = [];
+      const summary = data.summary || {};
+      parts.push((summary.waiting || 0) + ',' + (summary.inProgress || 0) + ',' + (summary.inEval || 0));
+      (data.repos || []).forEach(repo => {
+        const features = repo.features || [];
+        const research = repo.research || [];
+        const feedback = repo.feedback || [];
+        parts.push(repo.path + ':' + features.length + '/' + research.length + '/' + feedback.length);
+        features.forEach(f => {
+          const agents = (f.agents || []).map(a => {
+            const ladder = (a.idleLadder && a.idleLadder.state) || '';
+            return a.id + ':' + a.status + ':' + ladder;
+          }).join('|');
+          const closeFail = f.lastCloseFailure ? '!' : '';
+          parts.push('F' + f.id + ':' + (f.stage || '') + ':' + (f.currentSpecState || '') + ':' + agents + closeFail);
+        });
+        research.forEach(r => {
+          const agents = (r.agents || []).map(a => {
+            const ladder = (a.idleLadder && a.idleLadder.state) || '';
+            return a.id + ':' + a.status + ':' + ladder;
+          }).join('|');
+          parts.push('R' + r.id + ':' + (r.stage || '') + ':' + agents);
+        });
+      });
+      return parts.join('\n');
+    }
+
     async function poll() {
       const previous = flattenStatuses(state.data || {});
       const previousData = state.data || {};
@@ -454,12 +487,17 @@
           if (prev.status !== 'error' && v.status === 'error') showToast('Agent entered error state', null, null, {error:true});
         });
         state.data = applyForceProOverride(next);
+        // Always refresh timestamp + title; gate kanban re-render on fingerprint.
+        document.getElementById('updated-text').textContent = 'Updated ' + relTime((state.data || {}).generatedAt || new Date().toISOString());
+        updateTitleAndFavicon(((state.data || {}).summary || {}).waiting || 0);
         if (state.view === 'settings') {
           if (settingsNeedsRerender(previousData, state.data)) renderSettings();
-          document.getElementById('updated-text').textContent = 'Updated ' + relTime((state.data || {}).generatedAt || new Date().toISOString());
-          updateTitleAndFavicon(((state.data || {}).summary || {}).waiting || 0);
         } else {
-          render();
+          const nextFp = statusFingerprint(state.data);
+          if (nextFp !== state.lastFingerprint) {
+            state.lastFingerprint = nextFp;
+            render();
+          }
         }
         setHealth();
         renderUpdateBadge();
