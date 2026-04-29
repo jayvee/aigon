@@ -34,6 +34,30 @@
         "verdict": "depleted",
         "confidence": "high",
         "resetExtractor": "(reset|retry|try again).{0,40}(\\d{1,2}:\\d{2}|in\\s+\\d+\\s+(?:hour|min|second)s?)"
+      },
+      {
+        "id": "openrouter-key-monthly-limit",
+        "match": "key limit exceeded.{0,40}monthly limit|monthly limit.{0,40}key limit",
+        "verdict": "depleted",
+        "confidence": "high"
+      },
+      {
+        "id": "openrouter-insufficient-credits",
+        "match": "insufficient credits|insufficient[_\\s]+balance|account balance.{0,30}insufficient",
+        "verdict": "depleted",
+        "confidence": "high"
+      },
+      {
+        "id": "openrouter-credit-required",
+        "match": "402|payment required|requires credits|please add credits",
+        "verdict": "depleted",
+        "confidence": "high"
+      },
+      {
+        "id": "openrouter-no-endpoints",
+        "match": "no endpoints found|no providers? available",
+        "verdict": "error",
+        "confidence": "medium"
       }
     ],
     "successPatterns": ["^PONG$", "PONG"],
