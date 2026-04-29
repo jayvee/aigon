@@ -1,6 +1,8 @@
 ---
 complexity: medium
 set: quota
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T04:59:17.810Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: handle-quota-failure
