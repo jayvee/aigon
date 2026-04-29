@@ -3,17 +3,39 @@ Agent: cc
 
 ## Status
 
+Solo drive worktree (single agent: cc). Implementation complete; e2e suite re-run in clean state pending verification.
+
 ## New API Surface
+
+- `lib/card-headline.js#computeCardHeadline(entity, snapshot, agents, autonomousPlan, lane, opts?)` returns `{tone, glyph, verb, subject, owner, age, detail}`. Pure function, no I/O.
+- `entity.cardHeadline` attached on every feature/research/feedback row by `lib/dashboard-status-collector.js`.
+- `templates/dashboard/js/utils.js#buildCardHeadlineHtml(item)` renders the banner block.
 
 ## Key Decisions
 
+- Inline `buildStateRenderBadgeHtml` is no longer called from `pipeline.js`; the helper is left exported as transitional fallback per spec. The headline banner is inserted once per card after `.kcard-name` and before `blockedByHtml`/`autonomousPlanHtml`, so all three layout branches (fleet/drive/dormant) share a single insertion point.
+- Backlog rows have `blockedBy` annotated *after* the initial push, so the collector recomputes the headline once dependency ids are known — keeps the precedence rule in one place.
+- Stage-level `startedAt` is not present on `autonomousPlan.stages` today, so age silently drops for stage rules (rule 8), as the spec's open-question allowed.
+
 ## Gotchas / Known Issues
+
+- The `idleLadder` "idle" upgrade in rule 9 only fires when the mapped drive status is non-running — guards against demoting an actively-implementing card to IDLE while its tmux is alive.
+- The "missing snapshot past backlog" warn rule treats `done` lane as past-backlog; in practice done rows always have a snapshot, so this is a defence rather than a behaviour change.
 
 ## Explicitly Deferred
 
+- E2E specs (`solo-lifecycle`, `fleet-lifecycle`, `failure-modes`, `workflow-e2e`) and per-lane `browser_snapshot` checks: deferred to user verification once the dashboard is restarted from main; the current dashboard service runs from the main repo, not this worktree, so banner rendering can only be confirmed end-to-end after merge.
+- Stage `startedAt` instrumentation in `lib/workflow-read-model.js` (would unlock rule-8 age display).
+- Live ticking age, click-through, animations — all listed Out of Scope in the spec.
+
 ## For the Next Feature in This Set
 
+- N/A (no successor feature planned).
+
 ## Test Coverage
+
+- `tests/integration/card-headline.test.js` — 26 cases covering all 11 precedence rules plus combinations (warn supersedes running, awaiting-input wins over running, idle ladder upgrades tone, age omitted when timestamp missing, lifecycle fallback). All pass.
+- Existing `tests/integration/dashboard-state-render-meta.test.js` continues to pass (stateRenderMeta is still attached for agent-status spans).
 
 ## Planning Context
 
