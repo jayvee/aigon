@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 249
+lines_removed: 23
+lines_changed: 272
+files_touched: 8
+fix_commit_count: 2
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 80
+output_tokens: 27161
+cache_creation_input_tokens: 180206
+cache_read_input_tokens: 3336556
+thinking_tokens: 0
+total_tokens: 3544003
+billable_tokens: 27241
+cost_usd: 2.0844
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 455 - xterm-render-lag-fix
 Agent: cc
 
