@@ -1,19 +1,6 @@
 ---
 complexity: high
-# agent: cc    # optional — id of the agent that owns this spec. Used as the
-#              #   default reviewer for spec-revise cycles when the operator
-#              #   does not pick one explicitly. Precedence at revision time:
-#              #     event payload nextReviewerId > frontmatter agent:
-#              #     > snapshot.authorAgentId > getDefaultAgent().
-# research: 44 # optional — id (or list of ids) of the research topic that
-#              #   spawned this feature. Stamped automatically by `research-eval`
-#              #   on features it creates. Surfaced in the dashboard research
-#              #   detail panel under Agent Log → FEATURES.
-# planning_context: ~/.claude/plans/your-plan.md  # optional — path(s) to plan file(s)
-#              #   generated during an interactive planning session (e.g. EnterPlanMode).
-#              #   Content is injected into the agent's context at feature-do time and
-#              #   copied into the implementation log at feature-start for durability.
-#              #   Set this whenever you ran plan mode before writing the spec.
+set: quota
 ---
 
 # Feature: agent-quota-awareness
@@ -258,6 +245,10 @@ Ran `aigon agent-probe --all-agents --all` against the user's actual environment
 - For agents where the CLI does not expose API headers to stdout, should we also experiment with a **direct API call** (bypass the CLI) for richer signal? E.g., a curl to Anthropic with `Authorization: Bearer $ANTHROPIC_API_KEY` would expose `anthropic-ratelimit-tokens-reset` even on a successful response. This would give us "remaining tokens" visibility today, not just binary state. Cost: each agent grows a second auth path to maintain. Probably v2.
 
 ## Related
+- Set: quota
+- Prior features in set: (none — this is the foundation)
+- Adjacent: feature-handle-quota-failure (mid-run quota recovery — depends on this spec for shared regex packs, `quota.json` schema, and probe primitives).
+- Adjacent: feature-aigon-eval (the conformance bench should soft-skip depleted (agent, model) pairs to avoid wasting runs).
 - Research: F360 perf-bench harness — same probe primitive.
 - F438 — token/judge axes — same "server runs trivial CLI calls" pattern.
 - F441 — benchmark JSON artifact policy — surfaced the "we burned quota benchmarking depleted agents" pain that triggered this.
