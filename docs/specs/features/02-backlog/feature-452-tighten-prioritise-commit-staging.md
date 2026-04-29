@@ -29,6 +29,7 @@ This feature replaces the broad-stage anti-pattern at all five known sites with 
 - [ ] `lib/commands/research.js research-unprioritise` stages only the moved spec path. The broad `git add` is removed.
 - [ ] `lib/feature-start.js` (the `movedFromBacklog` branch) stages only: the moved spec, the implementation log if newly created, and any `updatedPaths`. The broad `git add` is removed.
 - [ ] Each of the five converted sites carries a one-line comment explaining that directory-level `git add` is not allowed and stage-list must be updated when new file-writing steps are added.
+- [ ] `lib/feature-close.js` is updated to import `stagePaths` from the new `lib/git-staging.js` module instead of using `ctx.utils.stagePaths`.
 - [ ] New integration test `tests/integration/prioritise-commit-isolation.test.js` covers four cases:
     1. `feature-prioritise` with an unrelated untracked file in `01-inbox/` — stranger file is NOT in the commit and remains untracked after.
     2. `feature-prioritise` with a pre-staged unrelated deletion — deletion is NOT in the commit and remains staged after.
@@ -82,8 +83,8 @@ Worktree path concern: `stagePaths` already calls `path.relative(repoPath, p)` a
 
 ## Open Questions
 
-- Should the `lib/feature-close.js` import of `stagePaths` switch to the new `lib/git-staging.js` module, or keep the existing `ctx.utils.stagePaths` plumbing? Both work; implementer picks based on which leaves a cleaner call site. Default: import directly from the new module to remove one layer of indirection.
-- Worktree-mode coverage in the new test file: scaffold a `git worktree add` and run the prioritise from there, or rely on existing worktree integration tests to catch staging regressions transitively? Default: document as deferred follow-up if scaffolding adds >50 LOC; otherwise include.
+- (Resolved) `lib/feature-close.js` must import `stagePaths` directly from the new `lib/git-staging.js` module to remove one layer of indirection and maintain consistency across the codebase.
+- (Resolved) Worktree-mode coverage in the new test file: if scaffolding `git worktree add` adds <50 LOC, include it in the automated test. Otherwise, skip worktree coverage in the automated test but manually verify it during implementation and document the manual test result in the PR.
 
 ## Related
 - Set:
