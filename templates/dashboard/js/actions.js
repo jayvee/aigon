@@ -133,7 +133,14 @@ function appendTripletSelects(rowEl, agent) {
       const el = document.createElement('option');
       el.value = opt.value == null ? '' : String(opt.value);
       const raw = opt.label || (opt.value == null ? '' : String(opt.value));
-      el.textContent = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
+      let label = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
+      const quotaEntry = quotaEntryForModel(agent.id, opt.value);
+      if (quotaEntry && quotaEntry.verdict === 'depleted') {
+        el.disabled = true;
+        label = '🔒 ' + label;
+        el.title = quotaTooltip(quotaEntry);
+      }
+      el.textContent = label;
       sel.appendChild(el);
     });
     const recommended = getRecommendedValue(agent.id, 'model');
@@ -152,6 +159,8 @@ function appendTripletSelects(rowEl, agent) {
       : recommended && sel.classList.contains('agent-triplet-recommended')
         ? 'Suggested from spec. Default keeps your global aigon model for this task type.'
         : 'Default: use the model from aigon config for this task type';
+    const selectedQuota = quotaEntryForModel(agent.id, sel.value || null);
+    if (selectedQuota && selectedQuota.verdict === 'depleted') sel.title = quotaTooltip(selectedQuota);
     sel.addEventListener('click', e => e.stopPropagation());
     sel.addEventListener('change', e => {
       e.stopPropagation();
@@ -228,7 +237,14 @@ function updateReviewerTripletSelects(agentId, scope = 'autonomous') {
       const el = document.createElement('option');
       el.value = opt.value == null ? '' : String(opt.value);
       const raw = opt.label || (opt.value == null ? '' : String(opt.value));
-      el.textContent = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
+      let label = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
+      const quotaEntry = quotaEntryForModel(agent.id, opt.value);
+      if (quotaEntry && quotaEntry.verdict === 'depleted') {
+        el.disabled = true;
+        label = '🔒 ' + label;
+        el.title = quotaTooltip(quotaEntry);
+      }
+      el.textContent = label;
       sel.appendChild(el);
     });
     const recommended = getRecommendedValue(agent.id, 'model');
@@ -2080,6 +2096,34 @@ const BUDGET_WIDGET_HIDDEN_KEY = 'aigon:budget-widget-hidden';
 const BUDGET_WIDGET_COLLAPSED_KEY = 'aigon:budget-widget-collapsed';
 let _budgetCache = null;
 let _budgetFetchPromise = null;
+let _quotaCache = null;
+let _quotaFetchPromise = null;
+
+function fetchQuota(force) {
+  if (_quotaFetchPromise && !force) return _quotaFetchPromise;
+  _quotaFetchPromise = fetch('/api/quota', { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : { agents: {} })
+    .catch(() => ({ agents: {} }))
+    .then(data => { _quotaCache = data || { agents: {} }; _quotaFetchPromise = null; return _quotaCache; });
+  return _quotaFetchPromise;
+}
+
+function quotaEntryForModel(agentId, modelValue) {
+  const agent = _quotaCache && _quotaCache.agents && _quotaCache.agents[agentId];
+  const models = agent && agent.models;
+  if (!models) return null;
+  return models[modelValue || '__default__'] || null;
+}
+
+function quotaTooltip(entry) {
+  if (!entry || entry.verdict !== 'depleted') return '';
+  const reset = entry.resetAt ? new Date(entry.resetAt) : null;
+  const resetLabel = reset && !Number.isNaN(reset.getTime())
+    ? ('resets at ' + reset.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+    : 'Reset time unknown';
+  const probed = entry.lastProbedAt ? (' Last probed ' + fmtRelAgo(entry.lastProbedAt) + '.') : '';
+  return 'Out of quota — ' + resetLabel + '.' + probed;
+}
 
 function budgetClassFor(pctRemaining, polledAt) {
   if (polledAt && Date.now() - new Date(polledAt).getTime() > BUDGET_STALE_MS) return 'budget-stale';
@@ -2881,15 +2925,22 @@ function budgetWarningForAgents(agentIds) {
 
 document.addEventListener('DOMContentLoaded', () => {
   fetchBudget().then(renderBudgetWidget);
+  fetchQuota().catch(() => {});
   // Refresh widget every 2 minutes to keep "updated Xmin ago" accurate and pick up fresh polls.
-  setInterval(() => { fetchBudget(true).then(() => { renderBudgetWidget(); updatePickerBudgetNotice(); updateAutonomousBudgetNotice(); }); }, 2 * 60 * 1000);
+  setInterval(() => {
+    Promise.all([fetchBudget(true), fetchQuota(true)]).then(() => {
+      renderBudgetWidget();
+      updatePickerBudgetNotice();
+      updateAutonomousBudgetNotice();
+    });
+  }, 2 * 60 * 1000);
 
   // Annotate agent picker rows whenever it is opened.
   const picker = document.getElementById('agent-picker');
   if (picker) {
     const observer = new MutationObserver(() => {
       if (picker.style.display === 'flex') {
-        fetchBudget().then(() => { updatePickerBudgetNotice(); });
+        Promise.all([fetchBudget(), fetchQuota()]).then(() => { updatePickerBudgetNotice(); });
       }
     });
     observer.observe(picker, { attributes: true, attributeFilter: ['style'] });
