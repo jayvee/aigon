@@ -279,6 +279,47 @@ test('feature-prioritise --set unknown-set exits non-zero with known sets listed
 }));
 
 // ---------------------------------------------------------------------------
+// Integration: cross-set dep still in inbox causes refusal
+// ---------------------------------------------------------------------------
+
+test('feature-prioritise --set stops when cross-set parent is still in inbox', () => withTempDir('aigon-cross-set-', (root) => {
+    initRepo(root);
+    const specRoot = mkSpecRoot(root);
+
+    // parent-from-other-set is in inbox with no set tag
+    writeInboxSpec(specRoot, 'parent-from-other-set');
+
+    // child-spec is in set 'my-set' and depends on that parent
+    writeInboxSpec(specRoot, 'child-spec', { set: 'my-set', depends_on: 'parent-from-other-set' });
+
+    const result = runCli(root, ['feature-prioritise', '--set', 'my-set', '--yes']);
+    assert.notStrictEqual(result.code, 0, 'Should exit non-zero when cross-set parent is in inbox');
+    const combined = result.stdout + result.stderr;
+    assert.ok(
+        combined.includes('parent-from-other-set') || combined.includes('Cannot prioritise'),
+        `Error should name the blocking parent: ${combined}`
+    );
+
+    const backlog = fs.readdirSync(path.join(specRoot, '02-backlog'));
+    assert.strictEqual(backlog.length, 0, 'No specs should be moved when a cross-set dep is unmet');
+}));
+
+// ---------------------------------------------------------------------------
+// Integration: --set missing slug treated as error not silent wrong-slug
+// ---------------------------------------------------------------------------
+
+test('feature-prioritise --set with missing slug exits non-zero', () => withTempDir('aigon-missing-slug-', (root) => {
+    initRepo(root);
+    mkSpecRoot(root);
+
+    // --set with no following slug (another flag follows instead)
+    const result = runCli(root, ['feature-prioritise', '--set', '--dry-run']);
+    assert.notStrictEqual(result.code, 0, 'Should exit non-zero when slug is missing after --set');
+    const combined = result.stdout + result.stderr;
+    assert.ok(combined.includes('Usage') || combined.includes('slug'), `Usage hint missing: ${combined}`);
+}));
+
+// ---------------------------------------------------------------------------
 // Regression: existing single-slug behaviour unchanged
 // ---------------------------------------------------------------------------
 
