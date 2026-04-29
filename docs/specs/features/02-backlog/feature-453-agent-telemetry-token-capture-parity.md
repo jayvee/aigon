@@ -14,6 +14,8 @@ complexity: medium
 #              #   Content is injected into the agent's context at feature-do time and
 #              #   copied into the implementation log at feature-start for durability.
 #              #   Set this whenever you ran plan mode before writing the spec.
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T10:23:57.500Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-telemetry-token-capture-parity
