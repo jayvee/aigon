@@ -8,7 +8,14 @@ complexity: high
 
 The recent perf features (F454, F455, F456, F459, F460) cut the dashboard poll cycle from ~5.8 s to ~2.5 s and dropped its cadence from 10 s to 20 s — about a 60 % reduction in per-poll work and a halving of how often the loop is busy. That's a real, measurable win: most clicks now feel instant, where they used to hang multi-second on every spec drawer open and terminal handshake.
 
-But it didn't hit the original sub-200 ms target. The remaining 2.5 s isn't one fat function; it's the cumulative cost of `collectRepoStatus` doing many small synchronous file reads (snapshots, manifests, set indexes, profile config, Caddy routes) across 7 repos × 667 features at this user's scale. There's no surgical strike left. To go further we need a structural change.
+But it didn't hit the original sub-200 ms target. The remaining 2.5 s appeared to me to be the cumulative cost of `collectRepoStatus` doing many small synchronous file reads (snapshots, manifests, set indexes, profile config, Caddy routes) across 7 repos × 667 features at this user's scale — i.e. spread across many calls rather than one fat one. **That assessment is itself a research question**, not a settled fact. A senior reviewer might find quick wins I missed: batched stat calls, derived caches keyed by mtime, deferring work to a background tier, dropping work that's not actually consumed by the UI, parallelising independent repo collections, and so on. This research should explicitly try to disprove the "no surgical strike left" claim before accepting it.
+
+This research therefore has two distinct horizons, and the output must address **both**:
+
+1. **Short-term, current-architecture wins.** What high-ROI changes can we still make within the existing polling + filesystem model that we've missed so far? These should be small, low-risk, and shippable as discrete features over the next 1–2 weeks.
+2. **Long-term, structural direction.** Where should the architecture go so that we stop patching the polling model — and what near-term decisions preserve the most optionality for that destination?
+
+The framing matters: quick wins shouldn't lock us into the current architecture, and the long-term direction shouldn't block easy short-term wins. Both should compose.
 
 At the same time, the user has flagged several future capabilities that bear on **architecture**, not just perf:
 
@@ -29,6 +36,19 @@ This research topic asks that broader question from first principles. The user e
 - [ ] Is "polling for state every N seconds" the right model at all, or is it an artefact of the original CLI-first design that we're now paying for?
 - [ ] What does "fast enough" mean for this dashboard? Define target percentiles for the operations the user cares about: spec drawer open, terminal handshake, kanban refresh, autonomous modal open.
 - [ ] Are there architectures used by comparable tools (Linear, Shortcut, GitHub Projects, Trello, Jira, Notion, Plane.so, Taskwarrior) that solve the equivalent at single-user-tier without the costs we're hitting? Which are the closest analogues?
+
+### Short-term wins within the current architecture (high-ROI, ship in 1–2 weeks)
+This cluster is **explicitly required to produce a punch list of concrete, low-risk improvements** to the existing polling + filesystem model — independent of any longer-term direction. Treat the 2.5 s poll floor as a hypothesis to disprove, not an accepted fact.
+- [ ] Profile `collectRepoStatus` end-to-end at the user's actual scale (7 repos / 667 features / 39 research). Where exactly does the 2.5 s go, ms by ms? Cite measurements, not estimates.
+- [ ] Are repos collected sequentially? They're independent — could `Promise.all` across repos parallelise the per-poll work without changing semantics?
+- [ ] Could expensive sub-collectors (`applySpecReviewFromSnapshots`, `parseCaddyRoutes`, `getDevServerState`, manifest reads) be cached behind their own mtime gates and recomputed only when their input directory's mtime ticks? F454 partially did this; check what was missed.
+- [ ] Are any sub-collectors producing data the UI doesn't actually render? Dead computation per poll is a free win to remove.
+- [ ] Can directory listings be batched? `fs.readdir` per stage per repo per poll is dozens of syscalls. Could one `readdir` per repo-spec-root + a stage-from-path filter replace them?
+- [ ] Could the dashboard skip the per-feature snapshot read entirely for active features whose snapshot mtime hasn't changed since last poll, rebuilding only what's stale (extending F459's "skip done content" pattern to all features that haven't moved)?
+- [ ] Is `pollStatus` doing work that should be on a slower tier? Caddy routes, npm-update check, GitHub remote detection — could any of these run every 5 minutes instead of every 20 seconds without UX impact?
+- [ ] Is the response payload to the browser larger than necessary? Could `/api/status` send a delta-since-fingerprint instead of a full snapshot? F454's frontend-side fingerprint already exists; could the server-side equivalent shrink the over-the-wire size?
+- [ ] Is the auto-poll cadence right? F460 set it to 20 s active. Is there evidence to drop it further when no state has changed for N cycles? An adaptive cadence based on observed mutation rate?
+- [ ] What's the smallest change that drops poll p95 below 500 ms? Below 200 ms? Identify the highest-ROI single change first, then the next, then the next — produce a ranked list.
 
 ### Transport: pull vs push
 - [ ] Could the dashboard be event-driven — server pushes changes when state mutates — and what would that look like? SSE, WebSockets, append-only event log fan-out, file-watcher-driven invalidation, something else?
@@ -62,6 +82,7 @@ This research topic asks that broader question from first principles. The user e
 ## Scope
 
 ### In Scope
+- **Short-term, high-ROI wins within the current polling + filesystem architecture** — a ranked, shippable punch list. Required deliverable, independent of any structural direction.
 - Architecture options for the dashboard ↔ state ↔ user relationship
 - Transport: pull vs push, which mechanisms, what tradeoffs
 - State backend options: filesystem, SQLite, server-side SQL, embedded KV, hosted services
@@ -71,6 +92,7 @@ This research topic asks that broader question from first principles. The user e
 - How recent F454/F459/F460 changes constrain or enable future moves
 - Comparable tools at similar scale and what we can learn from them
 - A recommended **near-term move** that preserves the most future optionality, plus a **longer-term direction** if it's coherent enough to commit to
+- Explicit reasoning about how short-term wins compose with (and don't foreclose) the longer-term direction
 
 ### Out of Scope
 - Implementing any chosen approach (each direction will be its own feature spec)
@@ -93,9 +115,25 @@ This research topic asks that broader question from first principles. The user e
 
 ## Recommendation
 
-<!-- Researchers fill. Include both: (a) recommended near-term move that preserves the most optionality, with concrete acceptance criteria; (b) longer-term direction if a coherent picture emerges, with the contingencies that would change it. -->
+<!-- Researchers fill. The recommendation must address BOTH horizons:
+
+(a) **Short-term punch list (current architecture)** — a ranked list of concrete, low-risk, high-ROI changes that ship within 1–2 weeks each. Each item should name the file/function, the expected impact (e.g. "drops poll p95 from 2.5 s to ~800 ms"), and the implementation sketch. Order by ROI, biggest win first.
+
+(b) **Longer-term structural direction** — where the architecture should head so that we stop patching the polling model. State the recommended destination (transport, backend, server topology, sync model) with reasoning. Include the contingencies that would change it. If the picture isn't coherent enough yet to commit, say so plainly and identify what additional research would clarify it.
+
+(c) **Composition** — for each short-term item, briefly note whether it preserves, improves, or constrains optionality for the long-term direction. Quick wins must not foreclose structural moves; structural moves shouldn't block the quick wins. -->
 
 ## Output
 
-<!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Link the newly created files below. -->
+<!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Expect two buckets of features:
+
+  • **Short-term tuning features** — one per high-ROI item from the punch list. Small scope, ship-now.
+  • **Structural features** — bigger, longer-term work to move toward the recommended architecture. May include preparatory features (e.g. an adapter layer) that unlock later moves without committing to any single destination.
+
+Link the newly created files below, grouped by bucket. -->
+
+### Short-term tuning features
+- [ ] Feature:
+
+### Structural features
 - [ ] Feature:
