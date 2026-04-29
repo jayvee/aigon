@@ -1,6 +1,8 @@
 ---
 complexity: medium
 set: prioritise-correctness
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T05:10:41.377Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: prioritise-set-flag
