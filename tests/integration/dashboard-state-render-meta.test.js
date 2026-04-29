@@ -24,10 +24,10 @@ test('STATE_RENDER_META: complete coverage, required fields, cls and badge invar
     assert.strictEqual(STATE_RENDER_META.code_review_complete.cls, 'status-review-done');
     assert.strictEqual(STATE_RENDER_META.spec_review_in_progress.cls, 'status-reviewing');
     assert.strictEqual(STATE_RENDER_META.spec_review_complete.cls, 'status-review-done');
-    assert.strictEqual(STATE_RENDER_META.code_revision_in_progress.cls, 'status-reviewing');
+    assert.strictEqual(STATE_RENDER_META.code_revision_in_progress.cls, 'status-running');
     assert.ok(STATE_RENDER_META.code_review_in_progress.badge, 'code review needs badge');
     assert.ok(STATE_RENDER_META.spec_review_in_progress.badge, 'spec review needs badge');
-    assert.strictEqual(STATE_RENDER_META.implementing.badge, undefined);
+    assert.strictEqual(STATE_RENDER_META.implementing.badge, '🔨 Implementing');
     assert.strictEqual(getStateRenderMeta('unknown_state').cls, 'status-idle');
 });
 

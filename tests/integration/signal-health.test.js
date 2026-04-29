@@ -35,6 +35,23 @@ test('signal-health records emitted status writes and reports via CLI', () => wi
     assert.strictEqual(payload.summary[0].emitted, 2);
 }));
 
+test('signal-recovered-via-nudge is recorded only after status advances post-nudge', () => withTempDir('aigon-signal-nudge-rec-', (repo) => {
+    // REGRESSION: feature 443 — recovered-via-nudge must not fire on nudge dispatch alone (spec AC).
+    agentStatus.writeAgentStatusAt(repo, '01', 'cx', { status: 'implementing' }, 'feature');
+    signalHealth.writeNudgeRecoveryPending(repo, {
+        entityType: 'feature',
+        entityId: '01',
+        agent: 'cx',
+        stuckStatus: 'implementing',
+        sessionName: 'demo-sess',
+    });
+    agentStatus.writeAgentStatusAt(repo, '01', 'cx', { status: 'implementation-complete' }, 'feature');
+
+    const events = signalHealth.readSignalEvents({ repoPath: repo, since: '2000-01-01', agent: 'cx' });
+    assert.strictEqual(events.filter(e => e.kind === 'signal-recovered-via-nudge').length, 1);
+    assert.strictEqual(events.filter(e => e.kind === 'signal-emitted').length, 2);
+}));
+
 test('signal-health records a missed signal once per status timestamp', () => withTempDir('aigon-signal-missed-', (repo) => {
     const old = new Date(Date.now() - 20 * 60 * 1000).toISOString();
     signalHealth.recordMissedSignalIfDue({
