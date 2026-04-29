@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T22:03:12.712Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: perf-bench-claude-tokens-in-fix
