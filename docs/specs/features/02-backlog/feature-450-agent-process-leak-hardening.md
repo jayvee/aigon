@@ -14,6 +14,8 @@ complexity: medium
 #              #   Content is injected into the agent's context at feature-do time and
 #              #   copied into the implementation log at feature-start for durability.
 #              #   Set this whenever you ran plan mode before writing the spec.
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T05:13:01.458Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-process-leak-hardening
@@ -83,3 +85,16 @@ Fix the worktree launch lifecycle so agent processes don't accumulate as multi-w
 - Research: <!-- ID and title of the research topic that spawned this feature, if any -->
 - Set: <!-- set slug if this feature is part of a set; omit line if standalone -->
 - Prior features in set: <!-- feature IDs that precede this one, e.g. F314, F315; omit if standalone -->
+
+## Addendum 2026-04-29 — third tmux failure mode discovered
+
+While killing the orphans we observed the actual reason `tmux not on PATH` fired during today's bench sweep: the Homebrew Cellar still contained `tmux/3.6a`, but `/opt/homebrew/bin/tmux` was a missing symlink. So `resolveTmuxBinary` correctly failed every candidate (ENOENT), but the resulting message — `"tmux is not installed or not available in PATH"` — undersold the real fix (`brew link --overwrite tmux`). Fix C should detect this case explicitly:
+
+- If every candidate failed with ENOENT, also probe `/opt/homebrew/Cellar/tmux/*/bin/tmux` (and the equivalent `/usr/local/Cellar/tmux/*/bin/tmux` on Intel macOS). If a Cellar binary exists but the bin symlink does not, the error message should say:
+
+  ```
+  tmux is installed via Homebrew but the bin symlink is missing.
+  Fix: brew link --overwrite tmux
+  ```
+
+This is the third sub-case of fix C alongside ENOENT-genuine-not-installed and EAGAIN/EMFILE-fork-starvation.
