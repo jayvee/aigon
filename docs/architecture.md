@@ -85,6 +85,8 @@ Current shared modules:
   `readAgentStatus`, `writeAgentStatus`, `writeAgentStatusAt`, `agentStatusPath`, `getStateDir`, `getLocksDir`
 - `lib/signal-health.js` (~280 lines): append-only signal reliability telemetry in `.aigon/telemetry/signal-health/*.jsonl`, summary reads, missed-signal de-duplication, and doctor GC helpers
   `recordSignalEvent`, `readSignalEvents`, `summarizeSignalEvents`, `recordMissedSignalIfDue`, `gcSignalHealth`
+- `lib/auto-nudge.js` (~190 lines): dashboard-side idle ladder. Combines idle-at-prompt detection with stale agent status writes, derives visible idle / nudged / needs-attention state, optionally sends one nudge per session, and records signal-health telemetry.
+  `computeIdleLadder`, `pauseAutoNudgeForSession`
 - `lib/agent-prompt-resolver.js` (~140 lines): shared feature prompt resolution for agent launches; preserves configured slash-command prompts for slash-invocable agents (cc/gg/cu) and inlines the canonical `templates/generic/commands/feature-*.md` body for non-invocable agents (cx/op/km). Membership is derived from `capabilities.resolvesSlashCommands` in each `templates/agents/<id>.json`, so adding a new agent requires no code change here
   `resolveAgentPromptBody`, `resolveCxPromptBody`
 - `lib/state-queries.js` (~250 lines): read-only UI helpers — feedback action/transition derivation (pure, no I/O). Feature/research constants retained for diagram generation only; action derivation for features/research lives in workflow-core.

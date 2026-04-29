@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Visible idle ladder + opt-in auto-nudge (F445)** — dashboard agent rows now show amber idle and red needs-attention chips when an idle-at-prompt agent also has stale status writes. Project config `autoNudge` adds default-off automatic nudging (`enabled: false`, thresholds 60/180/300 seconds, per-agent overrides), dispatches at most one nudge per session via `lib/nudge.js`, records signal-health events, and exposes a dashboard overflow action to pause auto-nudge for a live session.
+
 ## [2.62.0] — 2026-04-28
 
 Transcript program completion (F430, F431), workflow close-recovery as a
