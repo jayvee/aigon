@@ -139,3 +139,19 @@ After this plan is approved:
 1. Create the two specs via the Aigon CLI: `afc dashboard-eventloop-stalls-and-modal-parallelise` (Feature A) and `afc xterm-render-lag-fix` (Feature B). The user runs `afp` to prioritise and `afs`/`afn` to implement at their cadence.
 2. Per CLAUDE.md hot rules: after any `lib/*.js` edit run `aigon server restart`. After any `templates/dashboard/index.html` edit, take an MCP `browser_snapshot`. Use the `frontend-design` skill before any visual change (Feature B's terminal styling).
 3. Commit cadence: ship Feature A first — its server-side fixes unblock measurement of Feature B's gains.
+
+## Code Review
+
+**Reviewed by**: Cursor (Composer)
+**Date**: 2026-04-29
+
+### Fixes Applied
+- `0ee4c818` — fix(review): restore unrelated specs; keep F454 off xterm/quota regressions (restored feature-455/456 specs and log, op-openrouter quota fixture, main-line xterm/pty/budget/probe paths accidentally reverted on the branch; corrected quota-mid-run module header).
+- `2a9edda8` — fix(review): sync status fingerprint after refresh and initial render (`window.__aigonSyncStatusFingerprint` from `requestRefresh` + first paint so poll skip stays consistent).
+
+### Escalated Issues (exceptions only)
+- None.
+
+### Notes
+- Root branch had **out-of-scope deletions** (other features’ specs, a quota fixture) and **reverts of unrelated main-line work** (F444 stderr plumbing, F455 xterm stack). Restored from `main` so 454 stays scoped to event-loop + modal work.
+- `npm run test:iterate` integration phase passed; Playwright in this environment hit port-harness churn and brewboard fixture warnings (duplicate feature#01). Re-run `MOCK_DELAY=fast npm run test:ui` locally if needed before push.
