@@ -39,6 +39,7 @@ let createSetupCommands, createInfraCommands, createMiscCommands, createWorkflow
 let createRecurringCommands, createScheduleCommands;
 let createAgentLaunchCommands;
 let createSignalHealthCommands;
+let createAigonEvalCommands;
 let checkForUpdate, getCachedUpdateCheck, formatUpdateNotice;
 let createSecurityScanCommands;
 
@@ -56,6 +57,7 @@ try {
     ({ createScheduleCommands } = require('./lib/commands/schedule'));
     ({ createAgentLaunchCommands } = require('./lib/commands/agent-launch'));
     ({ createSignalHealthCommands } = require('./lib/commands/signal-health'));
+    ({ createAigonEvalCommands } = require('./lib/commands/aigon-eval'));
     ({ createSecurityScanCommands } = require('./lib/commands/security-scan'));
     ({ checkForUpdate, getCachedUpdateCheck, formatUpdateNotice } = require('./lib/npm-update-check'));
 } catch (error) {
@@ -84,6 +86,7 @@ const commands = {
     ...createScheduleCommands(),
     ...createAgentLaunchCommands(),
     ...createSignalHealthCommands(),
+    ...createAigonEvalCommands(),
     ...createSecurityScanCommands(),
 };
 

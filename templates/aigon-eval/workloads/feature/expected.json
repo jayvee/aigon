@@ -1,0 +1,10 @@
+{
+  "id": "99",
+  "entityType": "feature",
+  "allowedFiles": ["eval-fixture.txt"],
+  "expectedSignals": ["implementing", "implementation-complete"],
+  "expectedFinalState": "submitted",
+  "expectedFolder": "03-in-progress",
+  "slaSeconds": 600,
+  "timeoutMs": 300000
+}

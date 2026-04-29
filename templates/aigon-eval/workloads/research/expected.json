@@ -1,0 +1,10 @@
+{
+  "id": "99",
+  "entityType": "research",
+  "allowedFiles": ["docs/specs/research/logs/research-99-cx-findings.md"],
+  "expectedSignals": ["implementing", "research-complete"],
+  "expectedFinalState": "synthesis",
+  "expectedFolder": "03-in-progress",
+  "slaSeconds": 600,
+  "timeoutMs": 300000
+}

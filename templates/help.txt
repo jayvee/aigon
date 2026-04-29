@@ -129,6 +129,10 @@ Token Window:
   token-window [--message=<text>] [--agents=<id1,id2>] [--dry-run]
                                     Send a kickoff nudge to active agent sessions to align provider usage windows
 
+Internal Evaluation:
+  eval [--agent <id>] [--model <id>] [--workload feature|research|both] [--runs N] [--all] [--report]
+                                    Run aigon-eval contract checks and update the model reliability matrix
+
 Scheduled kickoffs (server poller; requires aigon server):
   schedule add feature_autonomous <id> --run-at=<iso8601> <agents...> [--stop-after=] [--repo=]
   schedule add research_start <id> --run-at=<iso8601> [agents...] [--repo=]
