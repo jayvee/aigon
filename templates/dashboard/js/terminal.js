@@ -57,6 +57,7 @@
       specPath: null, specTitle: null, specStage: null,
       specPoller: null, specContentHash: null,
       xterm: null, fitAddon: null, sseSource: null, ws: null,
+      resizeWatchCleanup: null,
     };
     const PTY_AUTH_CLOSE_CODE = 4001;
 
@@ -73,6 +74,10 @@
     }
 
     function destroyXterm() {
+      if (termState.resizeWatchCleanup) {
+        try { termState.resizeWatchCleanup(); } catch (_) {}
+        termState.resizeWatchCleanup = null;
+      }
       if (termState.sseSource) { try { termState.sseSource.close(); } catch (_) {} termState.sseSource = null; }
       if (termState.ws) { try { termState.ws.close(); } catch (_) {} termState.ws = null; }
       if (termState.xterm) { try { termState.xterm.dispose(); } catch (_) {} termState.xterm = null; }
@@ -374,7 +379,9 @@
           let roPanelTransitioning = false;
           const roFit = () => { try { if (termState.fitAddon) termState.fitAddon.fit(); } catch (_) {} };
           const ro = new ResizeObserver((entries) => {
-            const { width: w, height: h } = entries[0].contentRect;
+            const e0 = entries[0];
+            if (!e0) return;
+            const { width: w, height: h } = e0.contentRect;
             if (Math.abs(w - roLastSize.w) < 4 && Math.abs(h - roLastSize.h) < 4) return;
             if (roRafHandle) { cancelAnimationFrame(roRafHandle); roRafHandle = null; }
             if (roPanelTransitioning) return;
@@ -382,11 +389,17 @@
           });
           ro.observe(container);
           const termPanel = document.getElementById('terminal-panel');
+          const transitCtrl = new AbortController();
           if (termPanel) {
-            termPanel.addEventListener('transitionrun', () => { roPanelTransitioning = true; });
-            termPanel.addEventListener('transitionend', () => { roPanelTransitioning = false; roFit(); });
-            termPanel.addEventListener('transitioncancel', () => { roPanelTransitioning = false; roFit(); });
+            termPanel.addEventListener('transitionrun', () => { roPanelTransitioning = true; }, { signal: transitCtrl.signal });
+            termPanel.addEventListener('transitionend', () => { roPanelTransitioning = false; roFit(); }, { signal: transitCtrl.signal });
+            termPanel.addEventListener('transitioncancel', () => { roPanelTransitioning = false; roFit(); }, { signal: transitCtrl.signal });
           }
+          termState.resizeWatchCleanup = () => {
+            try { transitCtrl.abort(); } catch (_) {}
+            try { ro.disconnect(); } catch (_) {}
+            if (roRafHandle) cancelAnimationFrame(roRafHandle);
+          };
         } else {
           container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:13px;font-family:var(--mono)">xterm.js not loaded — check your network connection</div>';
         }
