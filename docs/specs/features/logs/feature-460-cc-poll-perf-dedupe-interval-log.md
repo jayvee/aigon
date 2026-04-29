@@ -1,16 +1,4 @@
 # Implementation Log: Feature 460 - poll-perf-dedupe-interval
 Agent: cc
 
-## Status
-
-## New API Surface
-
-## Key Decisions
-
-## Gotchas / Known Issues
-
-## Explicitly Deferred
-
-## For the Next Feature in This Set
-
-## Test Coverage
+cc (solo): Added `options.baseState` to `getFeatureDashboardState` / `getResearchDashboardState` so the collector's empty-agents → full-agents bridge skips a duplicate snapshot+events read; bumped `POLL_INTERVAL_ACTIVE_MS` and browser `POLL_MS` from 10s → 20s.
