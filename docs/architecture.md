@@ -81,8 +81,10 @@ Current shared modules:
   `normalizeFeedbackMetadata`, `collectFeedbackItems`, `findDuplicateFeedbackCandidates`, `buildFeedbackTriageRecommendation`
 - `lib/git.js` (~700+ lines): git helpers — branch/worktree/status, feature metrics, AI-attribution classification, commit analytics
   `getCurrentBranch`, `getFeatureGitSignals`, `classifyCommitAttributionRange`, `getFileLineAttribution`, `getCommitAnalytics`, `filterCommitAnalytics`, `buildCommitSeries`
-- `lib/agent-status.js` (~130 lines): per-agent status file I/O in `.aigon/state/`, atomic JSON writes, candidate ID resolution, and dashboard-facing state reads
+- `lib/agent-status.js` (~130 lines): per-agent status file I/O in `.aigon/state/`, atomic JSON writes, signal-health observation, candidate ID resolution, and dashboard-facing state reads
   `readAgentStatus`, `writeAgentStatus`, `writeAgentStatusAt`, `agentStatusPath`, `getStateDir`, `getLocksDir`
+- `lib/signal-health.js` (~280 lines): append-only signal reliability telemetry in `.aigon/telemetry/signal-health/*.jsonl`, summary reads, missed-signal de-duplication, and doctor GC helpers
+  `recordSignalEvent`, `readSignalEvents`, `summarizeSignalEvents`, `recordMissedSignalIfDue`, `gcSignalHealth`
 - `lib/agent-prompt-resolver.js` (~140 lines): shared feature prompt resolution for agent launches; preserves configured slash-command prompts for slash-invocable agents (cc/gg/cu) and inlines the canonical `templates/generic/commands/feature-*.md` body for non-invocable agents (cx/op/km). Membership is derived from `capabilities.resolvesSlashCommands` in each `templates/agents/<id>.json`, so adding a new agent requires no code change here
   `resolveAgentPromptBody`, `resolveCxPromptBody`
 - `lib/state-queries.js` (~250 lines): read-only UI helpers — feedback action/transition derivation (pure, no I/O). Feature/research constants retained for diagram generation only; action derivation for features/research lives in workflow-core.
@@ -121,7 +123,7 @@ Current shared modules:
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
 - `lib/dashboard-routes.js` (~60 lines): thin aggregator — composes the per-domain route modules in `lib/dashboard-routes/` and exposes the dispatcher
   `createDashboardRouteDispatcher`
-  - `analytics.js` — analytics, telemetry, weekly autonomy trend endpoints
+  - `analytics.js` — analytics, telemetry, signal-health, weekly autonomy trend endpoints
   - `config.js` — config read/write endpoints (`/api/config/*`)
   - `entities.js` — feature/research/feedback CRUD endpoints
   - `recommendations.js` — `/api/recommendation/*` (spec-frontmatter-driven start-modal defaults)
