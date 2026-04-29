@@ -18,12 +18,12 @@ transitions:
 
 ## Summary
 
-Continuously sense each agent's API quota state so the dashboard, CLI, and scheduler can refuse to start work that has no chance of running, and proactively suggest a scheduled run for after the next quota reset. Server-side cron probes each (agent, model) pair via a tiny hello command at a tunable interval (default 5 minutes; longer when a known reset time is in the future), classifies stdout/stderr against per-agent regex packs in templates/agents/<id>.json:quota.errorPatterns[], extracts a reset timestamp where the provider exposes one, caches the verdict at (agent, model) granularity, and rolls the per-model verdicts up to an agent-level enabled flag (agent disabled iff every model is depleted). The dashboard greys the agent picker, shows a 'next reset at HH:MM' tooltip, and offers a 'schedule for after reset' action; feature-start refuses to launch an out-of-quota pair with a clear error and a one-line 'aigon schedule …' suggestion. Pattern packs are JSON-data, not code, so adding a new error-message variant when a vendor changes copy is a one-line edit followed by aigon update. English-only at first; multi-language deferred. Out-of-band probe results emit quota.refreshed events so the dashboard can re-render without polling. Triggered by 2026-04-29 release-prep where 13 of 24 benchmark runs predate F438, op runs are clearly broken, and we need to re-run safely without burning quota on agents that can't run.
+Continuously sense each agent's API quota state so the dashboard, CLI, and scheduler can refuse to start work that has no chance of running, and proactively suggest a scheduled run for after the next quota reset. Server-side quota polling probes each (agent, model) pair via a tiny hello command at a tunable interval (default 5 minutes; longer when a known reset time is in the future), classifies stdout/stderr against per-agent regex packs in templates/agents/<id>.json:quota.errorPatterns[], extracts a reset timestamp where the provider exposes one, caches the verdict at (agent, model) granularity, and rolls the per-model verdicts up to an agent-level enabled flag (agent disabled iff every model is depleted). The dashboard greys the agent picker, shows a 'next reset at HH:MM' tooltip, and offers a 'schedule for after reset' action when the Pro schedule bridge is installed; feature-start refuses to launch an out-of-quota pair with a clear error and a one-line 'aigon schedule ...' suggestion. Pattern packs are JSON-data, not code, so adding a new error-message variant when a vendor changes copy is a one-line edit followed by aigon update. English-only at first; multi-language deferred. Out-of-band probe results emit quota.refreshed server events so the dashboard can re-render without polling. Triggered by 2026-04-29 release-prep where 13 of 24 benchmark runs predate F438, op runs are clearly broken, and we need to re-run safely without burning quota on agents that can't run.
 
 ## User Stories
 
 - As a user picking an agent in the dashboard, I want depleted (agent, model) combinations greyed out with a tooltip explaining when they reset, so I never start work that will fail in the first 5 seconds.
-- As a user whose preferred model is depleted, I want a one-click "schedule for after reset" action that creates a cron entry firing 1 minute past the known reset time.
+- As a user whose preferred model is depleted, I want a one-click "schedule for after reset" action that creates a schedule entry firing 1 minute past the known reset time when Pro scheduling is available, or clearly tells me scheduling is unavailable when it is not.
 - As a user running `aigon feature-start <id> <agent>` from the CLI, I want the command to refuse with a clear "out of quota until HH:MM, run `aigon schedule …` to retry" message — not start an agent that immediately errors.
 - As a maintainer who notices a vendor changed the wording of "rate-limit exceeded", I want to add a new regex line to `templates/agents/<id>.json:quota.errorPatterns[]` and have it pick up after `aigon update` — no engine code change.
 - As a Pro user benchmarking the matrix, I want `aigon perf-bench --all` to skip depleted pairs by default (with `--skip-quota-check` to override) so a 3-hour sweep doesn't waste 40 minutes failing on a single depleted agent.
@@ -48,18 +48,18 @@ Continuously sense each agent's API quota state so the dashboard, CLI, and sched
       }
       ```
       `unknownPolicy: 'permit'` means an unclassified output does NOT block feature-start (better to let the user try than block falsely).
-- [ ] **Verdict per (agent, model) pair**: one of `available` / `depleted` / `unknown` / `error`. Stored under `.aigon/state/quota.json` with `lastProbedAt`, `resetAt`, `probeMethod`, `lastProbeOutput` (truncated to 500 chars for debug), `unit` (`requests` | `tokens` | `usd` | null), `remaining` (number | null).
+- [ ] **Verdict per (agent, model) pair**: one of `available` / `depleted` / `unknown` / `error`. Stored under `.aigon/state/quota.json` with `lastProbedAt`, `resetAt`, `probeMethod`, `probeOk`, `lastProbeOutput` (truncated to 500 chars for debug), `remainingUnit` (`requests` | `tokens` | `usd` | null), `remaining` (number | null).
 - [ ] **Agent-level rollup**: `agentEnabled = models.some(m => m.verdict === 'available' || m.verdict === 'unknown')`. Agent disabled iff every model is depleted.
 
 ### Caching + scheduler
 - [ ] **Default poll interval: 5 minutes**, configurable via `~/.aigon/config.json:quota.pollIntervalSeconds`.
 - [ ] **Adaptive backoff**: when `resetAt` is known and in the future, skip probes until `resetAt - 30s`. When `resetAt` is unknown but verdict was `depleted` on last probe, double the next interval up to a `maxBackoffSeconds` (default 1 hour).
 - [ ] **On-demand refresh** via `aigon agent-probe --quota [agent[/model]]` — extends the existing `aigon agent-probe` command rather than introducing a new top-level `quota` command. The dashboard's "Refresh quota" button calls the same path. Probe is the right framing — we are sensing the agent's health, of which quota availability is one dimension.
-- [ ] **Server runs the cron** (existing scheduler — see `aigon schedule list`) — not a separate daemon. One job per agent; the job itself iterates that agent's models in sequence with a 1-second sleep so we never burst-probe a provider.
+- [ ] **Server runs quota polling** from the OSS dashboard/server process — not a separate daemon and not the Pro-only user schedule engine. One poll task per agent iterates that agent's models in sequence with a 1-second sleep so we never burst-probe a provider.
 
 ### Dashboard + CLI integration
-- [ ] **Dashboard agent picker**: depleted models render greyed with a `🔒` icon and a tooltip showing `Out of quota — resets at HH:MM (in 23m)`. Hover reveals `Last probed 2 min ago`.
-- [ ] **"Schedule for after reset" action** in the picker dropdown for any depleted entry. Clicking it pre-fills the schedule modal with `runAt = resetAt + 60s`.
+- [ ] **Dashboard agent picker**: depleted models render greyed with a `🔒` icon and a tooltip showing `Out of quota — resets at HH:MM (in 23m)`. Hover reveals `Last probed 2 min ago`. When `resetAt` is null but an estimated provider reset window exists, label it as `estimated`; when neither exists, show `Reset time unknown`.
+- [ ] **"Schedule for after reset" action** in the picker dropdown for any depleted entry with a measured or estimated reset time. Clicking it pre-fills the schedule modal with `runAt = resetAt + 60s`; if Pro scheduling is unavailable, keep the action disabled and show the standard Pro feature notice instead of trying to create a schedule entry.
 - [ ] **`aigon feature-start <id> <agent>` gate**: if the chosen (agent, model) pair is depleted, refuse with a non-zero exit and print:
       ```
       ❌ <agent>/<model> is out of quota.
@@ -68,7 +68,7 @@ Continuously sense each agent's API quota state so the dashboard, CLI, and sched
          Force start anyway: aigon feature-start <id> <agent> --skip-quota-check
       ```
 - [ ] **`aigon perf-bench`** filters out depleted pairs in `--all` sweeps by default; `--skip-quota-check` opts back in.
-- [ ] **New event type**: `quota.refreshed { agentId, modelValue, verdict, resetAt, probedAt }` emitted on every state change. Dashboard subscribes via existing SSE (no polling).
+- [ ] **New server event type**: `quota.refreshed { agentId, modelValue, verdict, resetAt, probedAt }` emitted on every quota state change. Dashboard subscribes via existing SSE (no polling). This is not a workflow-core lifecycle event and must not mutate feature/research snapshots.
 - [ ] **`aigon agent-probe --quota`** prints a summary table extending the existing PASS/FAIL probe output: agent, model, verdict (`available` / `depleted` / `unknown` / `error`), resets-at, last-probed-at. Exits non-zero if any agent is fully depleted. Existing `aigon agent-probe` output stays compatible — `--quota` adds the verdict + reset columns; without the flag, the legacy PASS/FAIL framing is preserved.
 
 ### Pattern maintenance
@@ -101,7 +101,7 @@ Provider behaviour is wildly inconsistent. Anyone implementing this should treat
 | `gg` (Gemini) | `RESOURCE_EXHAUSTED` / *"Quota exceeded for…"* with daily and per-minute buckets. Free tier vs paid tier behave differently. | Sometimes shows a Unix timestamp in the error; otherwise inferred (daily reset at midnight Pacific). | Medium — multiple quota tiers, dailies are guessable. |
 | `op` (OpenCode → OpenRouter) | OpenRouter free models: *"rate limit exceeded for free model"*. Paid models: pay-per-token, no quota wall — but per-model failure modes (auth, model-not-found, provider down) need separate classification. | OpenRouter exposes `X-Free-Models-Per-Day` and similar headers on 429s. | Medium — only meaningful for free models; paid models always "available". |
 | `cu` (Cursor) | Cursor Premium quota is in-app, no headless CLI. **Out of scope** for v1 — `quota.errorPatterns` simply omitted; verdict is permanently `unknown` and `unknownPolicy: permit`. | N/A | N/A — flagged as not-probeable. |
-| `km` (Kimi) | Moonshot API has rate limits; standard 429 shape. | Standard `x-ratelimit-reset` style headers. | Low — fewer real-world transcripts to draw from initially. |
+| `km` (Kimi) | No confirmed headless probe path in the current Aigon harness. **Out of scope** for v1 unless `scripts/probe-agent.js` gains a Kimi command builder first; verdict is permanently `unknown` and `unknownPolicy: permit`. | N/A | N/A — flagged as not-probeable. |
 
 ### Data model
 
@@ -173,11 +173,11 @@ Each pattern entry has:
 - `resetExtractor` — optional regex with capture groups to pull a wall-clock or duration
 - `resetUnit` — optional `iso8601` | `wallclock-utc` | `relative-seconds` to interpret the extracted value
 
-Adding a new vendor message is a one-line append. The `aigon quota --debug` flag prints the raw output and the missing match, so a maintainer can craft the regex against actual evidence.
+Adding a new vendor message is a one-line append. The `aigon agent-probe --quota --debug` flag prints the raw output and the missing match, so a maintainer can craft the regex against actual evidence.
 
 ### Server-side hosting
 
-Reuse the existing scheduler infra. One scheduled job per agent, fires at the agent's current backoff interval, iterates models with 1-second sleep, writes results to `quota.json`, emits `quota.refreshed` events. Dashboard subscribes via the existing SSE channel (no new transport).
+Reuse the dashboard/server process for quota polling. One quota poll task per agent fires at the agent's current backoff interval, iterates models with 1-second sleep, writes results to `quota.json`, emits `quota.refreshed` server events, and leaves workflow-core state untouched. Dashboard subscribes via the existing SSE channel (no new transport). User-facing "schedule after reset" still routes through `aigon schedule` when the Pro bridge is installed; OSS without Pro must show the standard Pro notice.
 
 ### Why agent-level rollup is computed, not stored
 
@@ -186,7 +186,8 @@ Race condition: if we cached the rollup, a model becoming available wouldn't lif
 ## Dependencies
 - F438 — token + judge axes — establishes the precedent for "the server runs probes against real provider CLIs". Same pattern, different goal.
 - The existing `aigon agent-probe` / `scripts/probe-agent.js` — quota probe wraps it.
-- The existing scheduler (`aigon schedule`) — quota cron is a job in this scheduler, not a new daemon.
+- The dashboard/server process — quota polling is an OSS in-process poller, not a new daemon and not dependent on Pro scheduling.
+- Pro scheduling (`aigon schedule`) — only for the optional user-facing "schedule after reset" action.
 
 ## Out of Scope
 - **Pricing / cost tracking.** Tokens consumed and dollars spent are observable via existing `lib/telemetry.js`, not via this probe path. This feature only gates on quota availability.
@@ -195,9 +196,6 @@ Race condition: if we cached the rollup, a model becoming available wouldn't lif
 - **Multi-language pattern matching.** English-only at v1. Multi-locale is a JSON-pack expansion later, not engine work.
 - **Predicting provider outages** versus quota-depletion. If an agent CLI errors with a non-quota error (e.g., 503 Service Unavailable), classify as `error` (not `depleted`), log, and let the `unknownPolicy: permit` rule pass through.
 - **Per-organisation / multi-account quota.** This feature reads the user's currently-configured CLI auth; if a user has multiple accounts they switch between, the quota state is whichever account is currently authenticated.
-
-## Open Questions
-- _(filled in after the prototype run; see "Prototype findings" appended at the bottom of this spec)_
 
 ## Prototype findings — live probe 2026-04-29
 
