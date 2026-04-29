@@ -393,6 +393,29 @@
     .kcard-spec-checking{color:#6ee7b7;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18)}
     .kcard-state-badge.status-reviewing{color:#93c5fd;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18)}
     .kcard-state-badge.status-review-done{color:#6ee7b7;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18)}
+    /* Card headline banner — replaces inline kcard-state-badge with a prominent block under the title */
+    .kcard-headline{margin:6px 0 4px;padding:5px 8px 5px 9px;border-left:3px solid var(--border-default);background:rgba(255,255,255,.025);border-radius:0 4px 4px 0;font-family:var(--mono);line-height:1.2}
+    .kcard-headline-top{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.04em}
+    .kcard-headline-glyph{font-size:11px;line-height:1;display:inline-block;width:10px;text-align:center}
+    .kcard-headline-verb{color:var(--text-primary)}
+    .kcard-headline-meta{margin-top:2px;font-size:10px;color:var(--text-secondary);letter-spacing:.02em}
+    .kcard-headline-detail{margin-top:2px;font-size:10px;color:var(--text-tertiary);letter-spacing:.01em;word-break:break-word}
+    .kcard-headline.tone-running{border-left-color:#4ADE80;background:rgba(74,222,128,.05)}
+    .kcard-headline.tone-running .kcard-headline-verb,.kcard-headline.tone-running .kcard-headline-glyph{color:#4ADE80}
+    .kcard-headline.tone-waiting{border-left-color:#fbbf24;background:rgba(251,191,36,.04)}
+    .kcard-headline.tone-waiting .kcard-headline-verb,.kcard-headline.tone-waiting .kcard-headline-glyph{color:#fbbf24}
+    .kcard-headline.tone-attention{border-left-color:#fbbf24;background:rgba(251,191,36,.09)}
+    .kcard-headline.tone-attention .kcard-headline-verb,.kcard-headline.tone-attention .kcard-headline-glyph{color:#fde68a}
+    .kcard-headline.tone-blocked{border-left-color:#f87171;background:rgba(248,113,113,.05)}
+    .kcard-headline.tone-blocked .kcard-headline-verb,.kcard-headline.tone-blocked .kcard-headline-glyph{color:#fca5a5}
+    .kcard-headline.tone-warn{border-left-color:#f87171;background:rgba(248,113,113,.1)}
+    .kcard-headline.tone-warn .kcard-headline-verb,.kcard-headline.tone-warn .kcard-headline-glyph{color:#fca5a5}
+    .kcard-headline.tone-ready{border-left-color:#6ee7b7;background:rgba(110,231,183,.05)}
+    .kcard-headline.tone-ready .kcard-headline-verb,.kcard-headline.tone-ready .kcard-headline-glyph{color:#6ee7b7}
+    .kcard-headline.tone-done{border-left-color:var(--border-subtle);background:transparent}
+    .kcard-headline.tone-done .kcard-headline-verb,.kcard-headline.tone-done .kcard-headline-glyph{color:var(--text-tertiary)}
+    .kcard-headline.tone-idle{border-left-color:var(--border-subtle);background:transparent}
+    .kcard-headline.tone-idle .kcard-headline-verb,.kcard-headline.tone-idle .kcard-headline-glyph{color:var(--text-secondary)}
     .kcard-cycle-history{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:5px;padding:3px 7px;background:rgba(255,255,255,.03);border:1px solid var(--border-subtle);border-radius:4px;font-size:10px;font-family:var(--mono);color:var(--text-secondary)}
     .kcard-cycle-label{font-weight:600;color:var(--text-tertiary);margin-right:4px}
     .kcard-cycle-entry{color:var(--text-secondary)}

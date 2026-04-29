@@ -96,6 +96,37 @@
       return '<span class="kcard-spec-status kcard-state-badge ' + escHtml(meta.cls) + '" title="' + escHtml(meta.label) + '">' + escHtml(meta.badge) + '</span>';
     }
 
+    function _formatHeadlineAge(sec) {
+      if (sec == null || !Number.isFinite(sec)) return '';
+      if (sec < 60) return sec + 's';
+      if (sec < 3600) return Math.floor(sec / 60) + 'm';
+      if (sec < 86400) return Math.floor(sec / 3600) + 'h';
+      return Math.floor(sec / 86400) + 'd';
+    }
+
+    function buildCardHeadlineHtml(item) {
+      const h = item && item.cardHeadline;
+      if (!h || !h.verb) return '';
+      const tone = escHtml(h.tone || 'idle');
+      const glyph = escHtml(h.glyph || '');
+      const verb = escHtml(h.verb);
+      const meta = [];
+      if (h.subject) meta.push(escHtml(h.subject));
+      if (h.owner) meta.push(escHtml(String(h.owner).toUpperCase()));
+      const ageStr = _formatHeadlineAge(h.age);
+      if (ageStr) meta.push(escHtml(ageStr));
+      const metaLine = meta.length ? '<div class="kcard-headline-meta">' + meta.join(' · ') + '</div>' : '';
+      const detailLine = h.detail ? '<div class="kcard-headline-detail">' + escHtml(h.detail) + '</div>' : '';
+      return '<div class="kcard-headline tone-' + tone + '" data-headline-tone="' + tone + '">' +
+        '<div class="kcard-headline-top">' +
+          '<span class="kcard-headline-glyph" aria-hidden="true">' + glyph + '</span>' +
+          '<span class="kcard-headline-verb">' + verb + '</span>' +
+        '</div>' +
+        metaLine +
+        detailLine +
+      '</div>';
+    }
+
     const SCHEDULED_CLOCK_SVG = '<svg class="kcard-scheduled-glyph-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M8 4.5V8l2.5 1.5"/></svg>';
 
     /** Server sets scheduledRunAt on features/research when a pending scheduled kickoff targets that id. */
