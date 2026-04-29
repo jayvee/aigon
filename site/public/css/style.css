@@ -2321,38 +2321,14 @@ pre code {
   max-width: 100%;
 }
 
-.hero-wedge-pain {
-  display: block;
-  color: var(--muted);
-  margin-bottom: 0.4em;
-}
-
+.hero-wedge-pain,
 .hero-wedge-turn {
   display: block;
   color: var(--text);
 }
 
-.hero-wedge-turn em {
-  font-style: normal;
-  font-weight: 700;
-  background-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    transparent 62%,
-    color-mix(in oklab, var(--accent) 36%, transparent) 62%,
-    color-mix(in oklab, var(--accent) 36%, transparent) 92%,
-    transparent 92%
-  );
-  padding: 0 0.06em 0.04em;
-}
-
-.hero-wedge-andmore {
-  font-style: normal;
-  color: var(--muted);
-  font-size: 0.7em;
-  font-weight: 500;
-  letter-spacing: -0.005em;
-  margin-left: 0.05em;
+.hero-wedge-pain {
+  margin-bottom: 0.5em;
 }
 
 /* === What-it-is subtitle === */

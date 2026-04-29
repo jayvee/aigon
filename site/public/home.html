@@ -52,7 +52,6 @@
         </a>
         <nav aria-label="Primary">
           <ul class="site-nav">
-            <li><a href="#problem" class="nav-link">Problem</a></li>
             <li><a href="#workflow" class="nav-link">Workflow</a></li>
             <li><a href="#dashboard" class="nav-link">Dashboard</a></li>
             <li><a href="/docs" class="nav-link">Docs</a></li>
@@ -85,10 +84,9 @@
               <span class="hero-kicker-tag">Multi-agent coding harness</span>
             </p>
             <h1 class="hero-wedge">
-              <span class="hero-wedge-pain">Most coding tools give you one model's opinion and stop when its quota runs out.</span>
-              <span class="hero-wedge-turn">Aigon coordinates <em>Claude</em>, <em>Codex</em>, <em>Gemini</em> <span class="hero-wedge-andmore">(and more&hellip;)</span> on the same spec — multiple coding agents implement, a different coding agent reviews, and work continues on whichever subscription still has quota.</span>
+              <span class="hero-wedge-turn">Aigon coordinates Claude, Codex, Gemini (and more&hellip;) on the same spec — multiple coding agents implement, a different coding agent reviews, and work continues on whichever subscription still has quota.</span>
             </h1>
-            <p class="hero-subtitle">An open-source, spec-driven harness that orchestrates <strong>agent CLIs</strong> like Claude Code, Codex, and Gemini CLI — not raw model APIs. Specs live in git, agents run in worktrees, the diff that survives review wins.</p>
+            <p class="hero-subtitle">Aigon is an open-source, spec-driven harness that orchestrates <strong>agent CLIs</strong> like Claude Code, Codex, and Gemini CLI — not raw model APIs. Specs live in git, agents run in worktrees, the diff that survives review wins.</p>
             <ul class="hero-facts">
               <li>Open-source</li>
               <li>Spec-driven</li>
@@ -182,71 +180,24 @@
         </div>
       </section>
 
-      <section class="section reveal" id="problem">
-        <div class="container">
-          <div class="section-head">
-            <p class="eyebrow">The problem</p>
-            <h2>AI agents multiply output fast, but coordination breaks down even faster.</h2>
-          </div>
-          <div class="problem-grid">
-            <article class="problem-card">
-              <h3>Terminal tabs everywhere</h3>
-              <p>
-                Parallel agents generate momentum, but tracking what each one did and why becomes manual overhead.
-              </p>
-            </article>
-            <article class="problem-card">
-              <h3>Decisions get lost</h3>
-              <p>
-                Without spec-linked workflows, merge decisions and implementation tradeoffs disappear into chat history.
-              </p>
-            </article>
-            <article class="problem-card">
-              <h3>No clean comparison step</h3>
-              <p>
-                Teams rarely compare multiple implementations side-by-side before merging the best approach.
-              </p>
-            </article>
-            <article class="problem-card">
-              <h3>Feedback loops stay disconnected</h3>
-              <p>
-                User feedback, research, and implementation often live in separate tools with no shared lifecycle.
-              </p>
-            </article>
-          </div>
-        </div>
-      </section>
-
       <section class="section reveal" id="why-aigon">
         <div class="container">
           <div class="section-head">
-            <p class="eyebrow">How it shows up</p>
-            <h2>Six workflow advantages behind the same ideas.</h2>
+            <p class="eyebrow">On disk, in your repo</p>
+            <h2>Where your work lives &mdash; in plain files, in git.</h2>
           </div>
           <div class="advantage-grid">
             <article class="advantage-card">
-              <h3>Bring your own subscriptions</h3>
-              <p>Use the AI products you already pay for — Claude, Codex, Gemini, Cursor. No separate Aigon AI billing, no token packs, no markup. You choose which provider handles which stage.</p>
+              <h3>The spec is the durable unit of work.</h3>
+              <p>Each feature is a Markdown spec in your repo &mdash; not session state, not chat history. Build a feature, ship it, then run the same spec through a different agent if you want a fresh take. The spec is the constant; implementations come and go.</p>
             </article>
             <article class="advantage-card">
-              <h3>Stay in the flow when a sub lapses</h3>
-              <p>If one subscription runs out mid-session, switch agents or accounts and keep going — you are not stuck on a single vendor's meter, so momentum survives.</p>
+              <h3>Source code, plus the &ldquo;why&rdquo; behind it.</h3>
+              <p>Aigon doesn&rsquo;t just store specs &mdash; it links them into a graph. Research findings feed feature specs. Feature implementations feed evaluations. Evaluations feed the next round. By the tenth feature, the eleventh agent doesn&rsquo;t start cold &mdash; it reads the source code AND the full chain of intent that led to it.</p>
             </article>
             <article class="advantage-card">
-              <h3>Spec-driven development you control</h3>
-              <p>Features and research live as specs that can be built, shipped, reset, and rebuilt. Repeatable structure means clean handoffs and clean retries — less tribal knowledge buried in chat history.</p>
-            </article>
-            <article class="advantage-card">
-              <h3>Autonomous and multi-agent workflows</h3>
-              <p>Kick off long runs and walk away. Configure who drafts, who implements, and who reviews, then follow a pre-built lifecycle through push and merge instead of hand-orchestrating every step.</p>
-            </article>
-            <article class="advantage-card">
-              <h3>Context that compounds</h3>
-              <p>Specs and implementation summaries feed forward into what agents see next, so work accrues as durable project context rather than disappearing when a session ends.</p>
-            </article>
-            <article class="advantage-card">
-              <h3>Transparent, local, team-aligned</h3>
-              <p>Agents run in plain tmux sessions you can attach to, read, and take over. CLI + git on your machine — no required hosted platform, and it fits GitHub PRs and team review cleanly.</p>
+              <h3>Three workflows, one loop.</h3>
+              <p>Most coding tools only handle &ldquo;write the code.&rdquo; Aigon ships three workflows that link: research investigates open questions, features deliver shipped code, feedback triages user input. Research findings become feature specs. User feedback becomes prioritised work. The loop before and after the build, not just the build.</p>
             </article>
           </div>
         </div>
@@ -265,42 +216,6 @@
               <button class="agent-tab" data-agent-demo="gg-research" data-ps1="gemini> " aria-pressed="false">Gemini CLI</button>
             </div>
             <div class="hero-terminal" id="hero-terminal" aria-label="Agent demo cycling through Claude Code, Codex, and Gemini CLI"></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section reveal" id="value">
-        <div class="container">
-          <div class="section-head">
-            <p class="eyebrow">Value proposition</p>
-            <h2>Aigon turns multi-agent output into an auditable delivery system.</h2>
-          </div>
-          <div class="feature-grid">
-            <article class="feature-card">
-              <p class="feature-tag">Traceability</p>
-              <h3>Specs and decisions live in your repo</h3>
-              <p>Research, feature specs, implementation logs, and evaluations stay in Markdown files your team can review and version.</p>
-              <pre><code>docs/specs/features/03-in-progress/
-docs/specs/features/logs/</code></pre>
-            </article>
-            <article class="feature-card">
-              <p class="feature-tag">Vendor independent</p>
-              <h3>Use the agents you already prefer</h3>
-              <p>Run the same workflow with Claude, Gemini, Cursor, and Codex without rewriting your process around one tool.</p>
-              <pre><code>aigon install-agent cc gg cx cu</code></pre>
-            </article>
-            <article class="feature-card">
-              <p class="feature-tag">Shared lifecycle</p>
-              <h3>Research, delivery, and feedback connect end to end</h3>
-              <p>Aigon links discovery, implementation, review, and follow-up so each cycle improves the next one.</p>
-              <pre><code>research -> feature -> eval -> close</code></pre>
-            </article>
-            <article class="feature-card">
-              <p class="feature-tag">Operational clarity</p>
-              <h3>Mode-based commands reduce team confusion</h3>
-              <p>Pick the right execution mode for each task and make expected behavior explicit before coding starts.</p>
-              <pre><code>aigon feedback-triage 14</code></pre>
-            </article>
           </div>
         </div>
       </section>
@@ -875,28 +790,6 @@ position of the menu bar</code></pre>
               <h3>CLI Commands</h3>
               <p>Every Aigon CLI command, organised by feature, research, feedback, and infrastructure.</p>
             </a>
-          </div>
-        </div>
-      </section>
-
-      <section class="section reveal" id="philosophy">
-        <div class="container philosophy-grid">
-          <div>
-            <div class="section-head">
-              <p class="eyebrow">Tech &amp; philosophy</p>
-              <h2>Open source, git-native, and intentionally simple.</h2>
-            </div>
-            <p class="lead">
-              Aigon is built for teams who want disciplined AI-assisted engineering, not opaque automation.
-            </p>
-          </div>
-          <div>
-            <ul class="principles">
-              <li><strong>Open Source</strong><span>MIT licensed, no paid-tier lockouts.</span></li>
-              <li><strong>Repo-Native Context</strong><span>Specs, logs, and evaluations stay as plain Markdown in your repository.</span></li>
-              <li><strong>Agent-Agnostic</strong><span>Works with whichever coding agents your team chooses.</span></li>
-              <li><strong>Adapts to Your Stack</strong><span>Workflow templates and defaults adjust for web apps, APIs, iOS, Android, and libraries.</span></li>
-            </ul>
           </div>
         </div>
       </section>
