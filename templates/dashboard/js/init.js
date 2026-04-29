@@ -469,6 +469,10 @@
       return parts.join('\n');
     }
 
+    window.__aigonSyncStatusFingerprint = function () {
+      state.lastFingerprint = statusFingerprint(state.data);
+    };
+
     async function poll() {
       const previous = flattenStatuses(state.data || {});
       const previousData = state.data || {};
@@ -538,6 +542,7 @@
 
     applyForceProOverride(state.data);
     render();
+    if (typeof window.__aigonSyncStatusFingerprint === 'function') window.__aigonSyncStatusFingerprint();
     // Docs link — detect dev mode (localhost) vs production
     const docsLink = document.getElementById('docs-link');
     if (docsLink) {

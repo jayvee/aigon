@@ -24,6 +24,9 @@
         const next = await res.json();
         state.failures = 0;
         state.data = applyForceProOverride(next);
+        if (typeof window.__aigonSyncStatusFingerprint === 'function') {
+          window.__aigonSyncStatusFingerprint();
+        }
         render();
       } catch (e) {
         state.failures += 1;
