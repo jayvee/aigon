@@ -58,6 +58,46 @@
         "lastRefreshAt": "2026-04-27T11:30:00.000Z"
       },
       {
+        "value": "openrouter/deepseek/deepseek-v4-flash",
+        "label": "DeepSeek V4 Flash via OpenRouter",
+        "pricing": { "input": 0.14, "output": 0.28 },
+        "notes": {
+          "implement": "Newest DeepSeek (Apr 2026); 1M context, 13B active params; cost-efficient flash variant. Cold-start can be slow (~22s); warm calls are fast."
+        },
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-04-29T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/deepseek/deepseek-v4-pro",
+        "label": "DeepSeek V4 Pro via OpenRouter",
+        "pricing": { "input": 0.435, "output": 0.87 },
+        "notes": {
+          "implement": "Newest premium DeepSeek (Apr 2026); 1M context, 49B active params; advanced reasoning + long-horizon agent workflows. Probed PASS in 15.9s."
+        },
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-04-29T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/deepseek/deepseek-v3.1-terminus",
+        "label": "DeepSeek V3.1 Terminus via OpenRouter",
+        "pricing": { "input": 0.21, "output": 0.79 },
+        "notes": {
+          "implement": "Updated V3.1 addressing language-consistency issues; supports thinking/non-thinking modes; 164K ctx. Probed PASS in 3.3s — fastest of the V3.x family."
+        },
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-04-29T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/deepseek/deepseek-v3.2",
+        "label": "DeepSeek V3.2 via OpenRouter",
+        "pricing": { "input": 0.252, "output": 0.378 },
+        "notes": {
+          "implement": "DeepSeek Sparse Attention (DSA); configurable reasoning; 131K ctx. Stable production V3.2 (NOT the quarantined Speciale variant). Probed PASS in 4.7s."
+        },
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-04-29T00:00:00.000Z"
+      },
+      {
         "value": "openrouter/meta-llama/llama-3.3-70b-instruct",
         "label": "Llama 3.3 70B via OpenRouter (cheapest)",
         "pricing": { "input": 0.1, "output": 0.32 },
@@ -81,7 +121,13 @@
           "implement": "Code-optimised, low latency; strong on agentic loops and tool use."
         },
         "score": { "implement": 3.5 },
-        "lastRefreshAt": "2026-04-27T11:30:00.000Z"
+        "lastRefreshAt": "2026-04-27T11:30:00.000Z",
+        "quarantined": {
+          "since": "2026-04-29",
+          "reason": "Probe timed out at 45s on a trivial PONG prompt; bench sweeps consistently hang past the 10-minute per-pair ceiling. OpenRouter routing for this model appears unhealthy or the upstream is consistently slow — distinct from the quota/credit issues that affected the other op models on the same date.",
+          "evidence": "aigon agent-probe op --all on 2026-04-29 returned FAIL TIMEOUT (>45s) for grok-code-fast-1 while every other op model PASSed in 2.7-5.3s on the same run. Prior bench sweeps on 2026-04-28 also showed grok-code-fast-1 at 461s (vs ~30-60s for healthy agents).",
+          "supersededBy": []
+        }
       },
       {
         "value": "openrouter/qwen/qwen3-235b-a22b-07-25",
@@ -121,13 +167,23 @@
       },
       {
         "value": "openrouter/mistralai/devstral-small-2507",
-        "label": "Devstral Small via OpenRouter",
+        "label": "Devstral Small (2507) via OpenRouter",
         "pricing": { "input": 0.1, "output": 0.3 },
         "notes": {
-          "implement": "Mistral's coding-agent specialist; tuned for SWE-bench style tool use; 128K ctx."
+          "implement": "Mistral's coding-agent specialist (July 2025 build); tuned for SWE-bench style tool use; 128K ctx. Superseded by devstral-2512 for new work but kept active for backward-compat benchmark continuity."
         },
         "score": { "implement": 3.5 },
         "lastRefreshAt": "2026-04-27T12:00:00.000Z"
+      },
+      {
+        "value": "openrouter/mistralai/devstral-2512",
+        "label": "Devstral 2 (2512) via OpenRouter",
+        "pricing": { "input": 0.4, "output": 2.0 },
+        "notes": {
+          "implement": "Newest Devstral (Dec 2025); state-of-the-art open-source agentic coding; 256K ctx. Probed PASS in 4.1s. More expensive than devstral-small-2507 but a genuine generational jump for agentic coding."
+        },
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-04-29T00:00:00.000Z"
       },
       {
         "value": "openrouter/nvidia/nemotron-3-super-120b-a12b",
