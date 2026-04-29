@@ -1,6 +1,8 @@
 ---
 complexity: medium
 set: signal-health
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-29T04:59:23.771Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: signal-health-telemetry
