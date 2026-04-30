@@ -31,6 +31,7 @@ CONTAINER_ID="$1"
 # history. Only copy the auth token file and settings — not the whole directory.
 CREDENTIAL_RELS=(
   '.claude.json'
+  '.claude/.credentials.json'
   '.claude/settings.json'
   '.gemini'
   '.codex/config.toml'
