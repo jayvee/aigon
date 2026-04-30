@@ -130,6 +130,7 @@
           showServerRestartBanner();
           return; // skip refresh — the server is about to die
         }
+        if (processingToast) processingToast.remove();
         await requestRefresh();
       } catch (e) {
         if (action === 'feature-close') {
