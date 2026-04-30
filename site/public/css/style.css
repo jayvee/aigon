@@ -2312,6 +2312,22 @@ pre code {
   text-transform: uppercase;
 }
 
+.hero-kicker-beta {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: rgba(213, 95, 42, 0.08);
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
 /* === The wedge — display headline (the actual hero) === */
 .hero h1 {
   margin: 0 0 clamp(1.25rem, 2.6vw, 1.85rem);
