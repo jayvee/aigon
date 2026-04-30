@@ -89,13 +89,24 @@ install_agent_clis() {
 }
 
 install_aigon() {
-  # Install from npm @next so the smoke test validates the published package
-  # (local npm link skips native builds and misses missing-files-allowlist bugs).
-  step "Install aigon from npm (@next)"
-  if [[ "$PLATFORM" == "linux" ]]; then
-    sudo npm install -g @senlabs/aigon@next 2>&1 | tail -3
+  # Prefer a local tarball (npm pack output) so packaging bugs can be caught
+  # without publishing. Falls back to @next from the registry.
+  local tgz
+  tgz="$(ls "$REPO_ROOT"/senlabs-aigon-*.tgz 2>/dev/null | sort -V | tail -1)"
+  if [[ -n "$tgz" ]]; then
+    step "Install aigon from local tarball: $(basename "$tgz")"
+    if [[ "$PLATFORM" == "linux" ]]; then
+      sudo npm install -g "$tgz" 2>&1 | tail -3
+    else
+      npm install -g "$tgz" 2>&1 | tail -3
+    fi
   else
-    npm install -g @senlabs/aigon@next 2>&1 | tail -3
+    step "Install aigon from npm (@next)"
+    if [[ "$PLATFORM" == "linux" ]]; then
+      sudo npm install -g @senlabs/aigon@next 2>&1 | tail -3
+    else
+      npm install -g @senlabs/aigon@next 2>&1 | tail -3
+    fi
   fi
   check_command aigon
   aigon --version

@@ -73,3 +73,4 @@ site/.vercel/
 
 # E2E test forensics log — written on every run, inspect locally
 docker/clean-room/last-run.log
+senlabs-aigon-*.tgz
