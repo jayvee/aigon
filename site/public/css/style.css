@@ -378,32 +378,6 @@ a {
   }
 }
 
-.hero-preview {
-  margin: 1.75rem 0 0;
-  max-width: 960px;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--line);
-  box-shadow:
-    0 6px 28px rgba(0, 0, 0, 0.09),
-    0 1px 4px rgba(0, 0, 0, 0.04);
-  cursor: zoom-in;
-  transition: box-shadow 200ms ease-out, transform 200ms ease-out;
-}
-
-.hero-preview:hover {
-  box-shadow:
-    0 10px 36px rgba(0, 0, 0, 0.14),
-    0 2px 8px rgba(0, 0, 0, 0.06);
-  transform: translateY(-2px);
-}
-
-.hero-preview img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
 .hero-actions {
   margin-top: 1.55rem;
   display: flex;
@@ -1572,28 +1546,41 @@ pre code {
 
 .docs-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 1.25rem;
   align-items: start;
 }
 
-.quickstart {
-  margin-top: 1.5rem;
+.docs-head {
+  max-width: 42rem;
 }
 
-.quickstart-then {
-  margin-top: 1.25rem;
-  margin-bottom: -0.25rem;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
+.quickstart {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-soft);
+  overflow-x: auto;
+}
+
+.quickstart code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.95rem;
 }
 
 .docs-links {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.85rem;
 }
 
 .docs-link {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow-soft);
+  padding: 1rem;
   text-decoration: none;
   transition: transform 180ms ease-out, box-shadow 180ms ease-out, border-color 180ms ease-out;
 }
@@ -1603,6 +1590,20 @@ pre code {
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(25, 20, 10, 0.08);
   border-color: rgba(213, 95, 42, 0.5);
+}
+
+.docs-link h3 {
+  margin: 0;
+  font-family: "Sora", sans-serif;
+  font-size: 1rem;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.docs-link p {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
 }
 
 .philosophy-grid {
@@ -2310,44 +2311,31 @@ pre code {
 }
 
 /* === The wedge — display headline (the actual hero) === */
-.hero h1.hero-wedge {
+.hero h1 {
   margin: 0 0 clamp(1.25rem, 2.6vw, 1.85rem);
   font-family: "Sora", sans-serif;
-  font-size: clamp(1.2rem, 2vw, 1.65rem);
-  line-height: 1.3;
-  letter-spacing: -0.014em;
-  font-weight: 500;
+  font-size: clamp(2rem, 4.1vw, 3.65rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  font-weight: 800;
   text-wrap: balance;
-  max-width: 100%;
+  max-width: 18ch;
   color: var(--text);
-}
-
-.hero-wedge-line {
-  display: block;
-}
-
-.hero-wedge-line + .hero-wedge-line {
-  margin-top: 0.6em;
-}
-
-.hero-wedge-aside {
-  font-size: 0.85em;
-  font-weight: 400;
 }
 
 /* === What-it-is subtitle === */
 .hero-subtitle {
   margin: 0 0 clamp(1.1rem, 2.2vw, 1.55rem);
-  max-width: 60ch;
-  font-size: clamp(1.15rem, 1.8vw, 1.4rem);
-  line-height: 1.5;
-  color: var(--text);
-  font-weight: 400;
+  max-width: 54ch;
+  font-size: clamp(1rem, 1.7vw, 1.26rem);
+  line-height: 1.55;
+  color: var(--muted);
+  font-weight: 500;
 }
 
 /* === Fact chips === */
 .hero-facts {
-  margin: 0 0 clamp(2.5rem, 4.5vw, 3.25rem);
+  margin: 0 0 clamp(2rem, 4vw, 2.6rem);
   padding: 0;
   list-style: none;
   display: flex;
@@ -2377,37 +2365,11 @@ pre code {
 }
 
 /* === Why use it: 2-card grid === */
-.hero-why {
-  margin: 0 0 clamp(2rem, 4vw, 2.75rem);
-  padding-top: clamp(1.5rem, 2.8vw, 2.1rem);
-  border-top: 1px solid var(--line);
-  position: relative;
-}
-
-.hero-why::before {
-  content: "";
-  position: absolute;
-  top: -1px;
-  left: 0;
-  width: clamp(3rem, 5vw, 4.25rem);
-  height: 2px;
-  background: var(--accent);
-}
-
-.hero-why-eyebrow {
-  margin: 0 0 clamp(1.1rem, 2vw, 1.55rem);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent-2);
-}
-
 .hero-why-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(1.15rem, 2.2vw, 1.65rem);
+  margin-top: 2rem;
 }
 
 @media (min-width: 720px) {
@@ -2446,7 +2408,7 @@ pre code {
 .hero-payoff-title {
   margin: 0;
   font-family: "Sora", sans-serif;
-  font-size: clamp(1.3rem, 2.1vw, 1.55rem);
+  font-size: clamp(1.2rem, 1.8vw, 1.45rem);
   font-weight: 600;
   letter-spacing: -0.018em;
   line-height: 1.2;
@@ -2458,30 +2420,6 @@ pre code {
   color: var(--muted);
   font-size: 0.97rem;
   line-height: 1.55;
-}
-
-/* === Hero preview reframe (now a <figure> with caption) === */
-figure.hero-preview {
-  margin: clamp(2rem, 3.5vw, 2.75rem) 0 clamp(1.5rem, 2.5vw, 2rem);
-  padding: 0;
-}
-
-figure.hero-preview img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border: 1px solid var(--line);
-  border-radius: 0.85rem;
-  box-shadow: 0 24px 48px -28px rgba(40, 25, 10, 0.22);
-}
-
-figure.hero-preview figcaption {
-  margin-top: 0.85rem;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-  text-align: center;
 }
 
 /* === Analogy strip — demoted to "or, put another way" === */
@@ -2522,11 +2460,43 @@ figure.hero-preview figcaption {
 }
 
 /* === Reveal stagger on first paint === */
+.hero-actions {
+  margin: 0 0 0.9rem;
+}
+
+.hero-install-cta {
+  gap: 0.65rem;
+}
+
+.hero-install-cta-label,
+.hero-install-cta-state {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.hero-install-cta-state {
+  font-size: 0.74rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.hero-install-cta[data-copied="true"] {
+  box-shadow: 0 0 0 3px rgba(15, 119, 117, 0.18), var(--shadow-tight);
+}
+
+.hero-copy-status {
+  min-height: 1.35rem;
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .hero-kicker { animation: hero-rise 540ms cubic-bezier(0.25, 0.46, 0.25, 1) 0ms both; }
-.hero-subtitle { animation: hero-rise 580ms cubic-bezier(0.25, 0.46, 0.25, 1) 100ms both; }
-.hero h1.hero-wedge { animation: hero-rise 720ms cubic-bezier(0.25, 0.46, 0.25, 1) 280ms both; }
-.hero-facts { animation: hero-rise 540ms cubic-bezier(0.25, 0.46, 0.25, 1) 380ms both; }
-.hero-why { animation: hero-rise 600ms cubic-bezier(0.25, 0.46, 0.25, 1) 480ms both; }
+.hero h1 { animation: hero-rise 720ms cubic-bezier(0.25, 0.46, 0.25, 1) 120ms both; }
+.hero-subtitle { animation: hero-rise 580ms cubic-bezier(0.25, 0.46, 0.25, 1) 220ms both; }
+.hero-actions { animation: hero-rise 540ms cubic-bezier(0.25, 0.46, 0.25, 1) 320ms both; }
+.hero-facts { animation: hero-rise 540ms cubic-bezier(0.25, 0.46, 0.25, 1) 420ms both; }
 
 @keyframes hero-rise {
   from {
@@ -2541,10 +2511,10 @@ figure.hero-preview figcaption {
 
 @media (prefers-reduced-motion: reduce) {
   .hero-kicker,
-  .hero h1.hero-wedge,
+  .hero h1,
   .hero-subtitle,
+  .hero-actions,
   .hero-facts,
-  .hero-why,
   .hero-kicker-mark {
     animation: none;
   }
