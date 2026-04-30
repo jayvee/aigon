@@ -1,8 +1,6 @@
 // ── State & constants ─────────────────────────────────────────────────────
 // INITIAL_DATA and INSTANCE_NAME are defined in the inline <script> in index.html
-    // F460: 10s → 20s. Aligned with server's POLL_INTERVAL_ACTIVE_MS so the
-    // browser doesn't request /api/status twice per server poll cycle.
-    const POLL_MS = 20000;
+    const POLL_MS = 10000;
     const TS_MS = 30000;
     function lsKey(k) { return 'aigon-' + INSTANCE_NAME + '-' + k; }
     // _rawState is the plain JS object; state becomes the Alpine proxy after init
