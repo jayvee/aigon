@@ -174,13 +174,12 @@ stage_run_detached() {
 
 stage_inject_creds() {
   log "=== Stage 4: Inject credentials ==="
-  local inject_output
-  inject_output="$(bash "$REPO_ROOT/scripts/docker-inject-creds.sh" "$CONTAINER_NAME" 2>&1)"
-  echo "$inject_output"
+  bash "$REPO_ROOT/scripts/docker-inject-creds.sh" "$CONTAINER_NAME" || \
+    stage_fail 4 "docker-inject-creds.sh exited non-zero."
 
-  # Fail if nothing was copied (only skipped: lines)
-  if ! echo "$inject_output" | grep -q "^  copied:"; then
-    stage_fail 4 "No credentials were copied into the container. Cannot proceed unattended."
+  # Verify the critical credential actually landed in the container.
+  if ! docker exec -u dev "$CONTAINER_NAME" bash -c 'test -f ~/.claude.json' 2>/dev/null; then
+    stage_fail 4 "~/.claude.json not found in container after injection — check docker-inject-creds.sh output above."
   fi
   log "Credentials injected."
 }
