@@ -89,13 +89,13 @@ install_agent_clis() {
 }
 
 install_aigon() {
-  step "Install aigon from local source"
-  cd "$REPO_ROOT"
-  npm ci --ignore-scripts 2>&1 | tail -1
+  # Install from npm @next so the smoke test validates the published package
+  # (local npm link skips native builds and misses missing-files-allowlist bugs).
+  step "Install aigon from npm (@next)"
   if [[ "$PLATFORM" == "linux" ]]; then
-    sudo npm link 2>&1 | tail -1
+    sudo npm install -g @senlabs/aigon@next 2>&1 | tail -3
   else
-    npm link 2>&1 | tail -1
+    npm install -g @senlabs/aigon@next 2>&1 | tail -3
   fi
   check_command aigon
   aigon --version
