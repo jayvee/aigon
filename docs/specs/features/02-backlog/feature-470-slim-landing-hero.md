@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-30T00:33:32.231Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: slim landing hero
