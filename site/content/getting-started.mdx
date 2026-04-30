@@ -31,22 +31,16 @@ If you don't already have Node.js, Git, and tmux, install them first — see [Pr
 
 ### Prerequisites
 
-You must have Node.js, Git, and tmux installed before `npm install` will work. The setup wizard checks them on first run and reports what's missing, but it does not install Node or Git itself. (The wizard *does* offer to install tmux and the GitHub CLI on Linux/macOS.)
+You only need two things on your machine before `npm install` will work — **Node.js 18+** and **Git**. Everything else (`tmux`, `gh`, agent CLIs) is installed by the setup wizard.
 
-| Prerequisite | Required | Why |
-|---|---|---|
-| **Node.js 18+** | Yes | Aigon is a Node.js CLI |
-| **Git** | Yes | Spec files are tracked in Git |
-| **tmux** | Yes | All agent sessions run inside tmux |
-
-If any are missing, install them:
-
-| Platform | Command |
+| Platform | Install Node and Git |
 |---|---|
-| **macOS (Homebrew)** | `brew install node git tmux` |
-| **Ubuntu / Debian** | `curl -fsSL https://deb.nodesource.com/setup_22.x \| sudo bash - && sudo apt-get install -y nodejs git tmux lsof` |
-| **Fedora** | `sudo dnf install nodejs npm git tmux lsof` |
-| **Arch** | `sudo pacman -S nodejs npm git tmux lsof` |
+| **macOS (Homebrew)** | `brew install node git` |
+| **Ubuntu / Debian** | `curl -fsSL https://deb.nodesource.com/setup_22.x \| sudo bash - && sudo apt-get install -y nodejs git` |
+| **Fedora** | `sudo dnf install nodejs npm git` |
+| **Arch** | `sudo pacman -S nodejs npm git` |
+
+> **Already have Node?** Check the version with `node -v`. Aigon needs 18 or higher.
 
 ### What the setup wizard does
 
@@ -59,7 +53,7 @@ If any are missing, install them:
 5. **Repo scan** — scans your `~/src` directory for Git repositories and offers to register them with the dashboard (so they show up on the kanban without you running `aigon server add` yourself).
 6. **Dashboard server** — opt-in start. The wizard does NOT start the server by default; you have to confirm.
 7. **Brewboard demo** — opt-in walkthrough that drives an autonomous feature against the seed repo.
-8. **Aigon Pro vault** — Pro users only; sets up encrypted backups for spec history.
+8. **Aigon Pro vault** — Pro users only; sets up encrypted backups for spec history. See [Aigon Pro (beta access)](#aigon-pro-beta-access) below for how to request access and install it.
 
 ## Add Aigon to a project
 

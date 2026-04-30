@@ -1,8 +1,23 @@
 @import "tailwindcss";
 
-/* Hide the # anchor symbol on headings completely */
+/* Heading anchor: hidden by default, appears on heading hover so readers
+   can grab a shareable # link by hovering and right-click → copy. */
 .subheading-anchor {
-  display: none !important;
+  opacity: 0 !important;
+  transition: opacity 120ms ease-in-out;
+  margin-left: 0.35rem;
+  text-decoration: none;
+}
+
+h1:hover > .subheading-anchor,
+h2:hover > .subheading-anchor,
+h3:hover > .subheading-anchor,
+h4:hover > .subheading-anchor,
+h5:hover > .subheading-anchor,
+h6:hover > .subheading-anchor,
+.subheading-anchor:focus,
+.subheading-anchor:hover {
+  opacity: 0.5 !important;
 }
 
 /* Aigon custom colors */
