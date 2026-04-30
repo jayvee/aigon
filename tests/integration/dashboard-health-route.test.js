@@ -7,6 +7,7 @@ const { createDashboardRouteDispatcher } = require('../../lib/dashboard-routes')
 
 // REGRESSION: /api/health must be a cheap liveness probe that reads the
 // already-cached status snapshot. It MUST NOT call collectDashboardStatusData()
+// or collectDashboardStatusDataAsync()
 // — at scale that path takes 2–3s, blows the `aigon server status` 3s probe
 // timeout, and surfaces as a false "Health: unavailable" / "server crashed".
 //
@@ -39,6 +40,11 @@ function buildStubServerCtx(latestStatus, { onCollect } = {}) {
             collectDashboardStatusData: () => {
                 if (onCollect) onCollect();
                 throw new Error('collectDashboardStatusData must not be called from /api/health (use the cached snapshot)');
+            },
+            // F471/R8: ctx.routes exposes both; health must use cache only.
+            collectDashboardStatusDataAsync: async () => {
+                if (onCollect) onCollect();
+                throw new Error('collectDashboardStatusDataAsync must not be called from /api/health (use the cached snapshot)');
             },
         },
         options: {},
@@ -86,7 +92,7 @@ test('/api/health does not invoke the heavy status collector', () => {
 
     dispatcher.dispatchOssRoute('GET', '/api/health', req, res);
 
-    assert.strictEqual(collectCalls, 0, 'collectDashboardStatusData must not be called from /api/health');
+    assert.strictEqual(collectCalls, 0, 'no status collector may run from /api/health');
 });
 
 report();
