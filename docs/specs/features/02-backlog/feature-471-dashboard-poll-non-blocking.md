@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-04-30T04:29:16.364Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Non-blocking Dashboard Status Poll
