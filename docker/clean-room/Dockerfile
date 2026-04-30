@@ -11,7 +11,8 @@ RUN apt-get update && \
       sudo \
       ca-certificates \
       curl \
-      git && \
+      git \
+      zsh && \
     rm -rf /var/lib/apt/lists/*
 
 # Create non-root user with sudo access
