@@ -1,366 +1,119 @@
 # Aigon Clean-Room Test Environment
 
-Validates Aigon's installation and getting-started docs end-to-end from a fresh machine. Two modes:
+Validates Aigon's installation and getting-started docs end-to-end from a fresh Linux machine. Two modes:
 
-- **Manual mode** — interactive shell on a clean OS; step through the flow as a new user
-- **Automated mode** — non-interactive smoke test; exits non-zero on any failure
+- **Manual mode** — interactive shell on a clean Ubuntu container; step through the flow as a new user
+- **Automated mode** — unattended smoke test; exits non-zero on any failure
 
 ## Unattended end-to-end
 
-`docker/clean-room/run-e2e.sh` is a host-side orchestrator that runs the full install test
-without any human input. One command is enough to validate every install change before release.
-
-### Prerequisites
-
-| Requirement | Notes |
-|-------------|-------|
-| OrbStack (macOS) | Provides the Docker daemon; `brew install orbstack`. Must be open before running. |
-| `ANTHROPIC_API_KEY` | Required. The autonomous agent inside the container uses it. |
-| Claude Code host auth | `~/.claude` must exist. The script injects it into the container via `docker-inject-creds.sh`. |
-
-### Usage
+`docker/clean-room/run-e2e.sh` is a host-side orchestrator that runs the full install test without human input. One command validates every install change before release. Your Claude Code credentials (`~/.claude.json`, `~/.claude/settings.json`) are injected automatically — no API key needed.
 
 ```bash
 bash docker/clean-room/run-e2e.sh
 ```
 
-The script exits 0 on success and non-zero with a stage-tagged error on any must-pass failure.
-Container logs are always dumped to `docker/clean-room/last-run.log` (gitignored) before teardown.
+The script exits 0 on success and non-zero with a stage-tagged error on any must-pass failure. Container logs are always written to `docker/clean-room/last-run.log` before teardown.
 
 ### Expected runtime
 
 | Phase | Time |
 |-------|------|
 | Must-pass core (preflight → build → install → dashboard) | ~10–15 min |
-| Best-effort feature run (autonomous agent, 1 iteration) | +~5–15 min |
-
-### Expected cost
-
-The best-effort feature run uses one Claude Code autonomous iteration with a 5-minute budget.
-Typical cost: **<$0.50** of Anthropic API credits per run.
+| Best-effort feature run (autonomous agent) | +~5–15 min |
 
 ### Environment variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | — | Required. |
-| `GOOGLE_API_KEY` | — | Forwarded if set. |
-| `OPENAI_API_KEY` | — | Forwarded if set. |
-| `AIGON_E2E_SKIP_FEATURE_RUN` | `0` | Set to `1` to skip the best-effort autonomous feature run. |
-| `AIGON_E2E_FEATURE_ID` | auto | Override the brewboard feature ID used in the autonomous run. |
-| `AIGON_E2E_STOP_AFTER` | `300` | Wall-clock seconds before the host kills the agent session. |
-| `AIGON_E2E_ALLOW_REMOTE` | `0` | Must be `1` to run against a non-local Docker daemon. |
+| `AIGON_E2E_SKIP_FEATURE_RUN` | `0` | Set to `1` to skip the autonomous feature run. |
+| `AIGON_E2E_FEATURE_ID` | auto | Override the brewboard feature ID used in the run. |
+| `AIGON_E2E_STOP_AFTER` | `300` | Seconds before the host kills the agent session. |
+| `ANTHROPIC_API_KEY` | — | Optional. Required only for the autonomous feature run in Stage 6. Subscription auth (via injected `~/.claude.json`) is enough for the core install test. |
 
-### Inspecting a failure
+---
 
-1. Check the final summary line printed at the end:
-   ```
-   INSTALL: PASS|FAIL  FEATURE-RUN: PASS|FAIL|SKIPPED  EXIT: 0|N
-   ```
-2. For must-pass failures, the stage tag in the error message (e.g. `STAGE 4 FAILED:`) shows exactly where it stopped.
-3. Container logs are always written to `docker/clean-room/last-run.log`. Open it to see every command the container ran:
-   ```bash
-   open docker/clean-room/last-run.log
-   # or
-   less docker/clean-room/last-run.log
-   ```
+## Manual mode
 
-## Prerequisites (macOS host)
-
-- OrbStack (provides the Docker daemon): `brew install orbstack`
-- Open OrbStack at least once to complete setup
-- OrbStack should be set to **start at login** (Preferences → General) so Docker is always available
-
-## Quick Start
+### Step 0: Launch the container
 
 ```bash
-# Build the image
 docker build -t aigon-clean-room docker/clean-room/
-
-# Manual mode — interactive shell
-docker/clean-room/run.sh
-
-# Automated mode — run all scenarios
-docker/clean-room/run.sh --auto --all
-
-# Automated mode — specific scenario
-docker/clean-room/run.sh --auto --scenario 1
+docker run --rm -it -v ~/src/aigon:/home/dev/src/aigon -p 4102:4100 --hostname clean-room aigon-clean-room bash
 ```
 
-## Skip auth during testing
+You are now `dev` inside Ubuntu 24.04. Nothing is pre-installed.
 
-End-to-end Brewboard tests normally require authenticating Claude Code, Gemini, Codex, and GitHub CLI inside the container (about 10–15 minutes). To reuse your host logins instead:
-
-1. Start the clean-room container (`docker/clean-room/run.sh`) and note the container ID from another terminal: `docker ps`.
-2. From the **host**, run:
-
-   ```bash
-   bash scripts/docker-inject-creds.sh <container_id>
-   ```
-
-   The script copies credential paths that exist on your Mac/Linux home directory into the container’s `dev` user home (`~`), and skips anything you do not have installed. Only `.codex/config.toml` is copied for Codex (not session caches). You can run it again safely if you refresh credentials on the host.
-
-3. Continue with `aigon setup` / Brewboard testing inside the container — `claude --version` and `gh auth status` should work without repeating browser OAuth.
-
-Cursor credentials are not supported (macOS app data under `~/Library` does not map into the Linux container). API keys are still forwarded by `run.sh` via `--env` when needed.
-
-## Manual Mode
-
-Drops you into a bash shell on a minimal Ubuntu 24.04 container. No Node.js, git, tmux, or aigon are pre-installed — you start from zero. User is `dev` with passwordless sudo.
-
-The aigon source is bind-mounted at `~/src/aigon`. Follow the steps below:
-
-### Step 1: Install system prerequisites
+### Step 1: Inject your credentials (from a second terminal on your Mac)
 
 ```bash
-# Node.js 22 from NodeSource (Ubuntu's nodejs package pulls in 650+ deps)
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash -
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs git tmux lsof
+bash scripts/docker-inject-creds.sh $(docker ps -qf ancestor=aigon-clean-room)
 ```
 
-Set up git identity and GitHub auth:
+This copies `~/.claude.json`, `~/.claude/settings.json`, Gemini, Codex, and GitHub CLI credentials into the container. Skip anything you don't have.
+
+### Step 2: Install system prerequisites
 
 ```bash
-git config --global user.name "Dev User"
-git config --global user.email "dev@example.com"
-git config --global init.defaultBranch main
-
-# Install GitHub CLI
-(type -p wget >/dev/null || sudo apt-get install wget -y) \
-  && sudo mkdir -p -m 755 /etc/apt/keyrings \
-  && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-  && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-  && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-  && sudo apt-get update && sudo apt-get install gh -y
-
-# Log in — this also configures git credentials for GitHub
-gh auth login
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash - && sudo apt-get install -y nodejs git tmux lsof
 ```
 
-> **Note:** `gh auth login` will print a device code URL. Open it in your Mac browser, enter the code, and approve.
-
-### Step 2: Install agent CLIs
+### Step 3: Install Aigon from npm
 
 ```bash
-sudo npm i -g @anthropic-ai/claude-code
-sudo npm i -g @google/gemini-cli
-```
-
-Verify and authenticate:
-
-```bash
-mkdir -p ~/.gemini   # workaround: Gemini CLI bug on first run
-
-claude --version
-gemini --version
-```
-
-**Authenticate each CLI before continuing:**
-
-```bash
-# Claude Code — run once to log in
-claude
-# Follow the prompts (opens a browser URL — copy to your Mac browser, approve, paste code back)
-# Exit with /exit once authenticated
-
-# Gemini — run once to log in
-gemini
-# Prints an OAuth URL — copy to your Mac browser, authenticate with Google, paste code back
-# Exit with Ctrl+C or /exit once authenticated
-```
-
-Alternatively, skip interactive auth by setting API keys: `ANTHROPIC_API_KEY` for Claude, `GOOGLE_API_KEY` for Gemini.
-
-### Step 3: Install aigon
-
-```bash
-cd ~/src/aigon && npm install && sudo npm link
+sudo npm install -g @senlabs/aigon@next
 aigon --version
 ```
 
-### Step 3b: Install Aigon Pro
-
-Aigon Pro is automatically bind-mounted at `~/src/aigon-pro` if it exists on your Mac at `~/src/aigon-pro`.
+Or to test from local source instead:
 
 ```bash
-cd ~/src/aigon-pro
-npm install
-sudo npm link
-cd ~/src/aigon
-sudo npm link @aigon/pro
+cd ~/src/aigon && npm ci --ignore-scripts && sudo npm link
 ```
 
-> **Note:** If `~/src/aigon-pro` doesn't exist in the container, you need to clone it on your Mac first: `git clone https://github.com/jayvee/aigon-pro.git ~/src/aigon-pro`, then restart the container.
-
-### Step 4: Clone a test repo (simulates someone's existing project)
-
-### Step 4: Clone a test repo (simulates someone's existing project)
+### Step 4: Clone the test repo
 
 ```bash
-git clone https://github.com/jayvee/brewboard-seed.git ~/src/brewboard
-cd ~/src/brewboard
-npm install
+git clone https://github.com/jayvee/brewboard-seed.git ~/src/brewboard && cd ~/src/brewboard && npm install
 ```
 
-### Step 5: Install aigon into the repo
+### Step 5: Initialise Aigon in the repo
 
 ```bash
-aigon init
-aigon install-agent cc gg
+aigon init && aigon install-agent cc gg && aigon board && aigon doctor
 ```
 
-Verify:
+### Step 6: Start the server and open the dashboard
 
 ```bash
-aigon board
-aigon doctor
+nohup aigon server start > /dev/null 2>&1 & sleep 2 && aigon server add ~/src/brewboard
 ```
 
-### Step 6: Start the aigon server
-
-```bash
-nohup aigon server start > /dev/null 2>&1 &
-aigon server add ~/src/brewboard
-```
-
-Then open http://localhost:4100 on your Mac browser.
-
-> **Note:** Use `nohup` to prevent the server from getting suspended by shell job control in Docker.
-
-### Step 7: Open the dashboard
-
-Open http://localhost:4100 on your Mac browser. Verify brewboard appears in the Pipeline view.
-
-### Step 8: Run a feature with Gemini
-
-From inside the container (`cd ~/src/brewboard`):
-
-```bash
-# Start a feature with Gemini
-aigon feature-start 02 gg
-
-# Attach to watch the agent work (Ctrl+B D to detach)
-tmux attach -t brewboard-f2-do-gg-brewery-import
-
-# Check status on dashboard or CLI
-aigon board
-
-# After agent submits, close the feature
-aigon feature-close 02
-```
-
-### Step 9: Run a feature with Claude Code
-
-```bash
-# Start a different feature with Claude Code
-aigon feature-start 03 cc
-
-# Attach to watch (Ctrl+B D to detach)
-tmux attach -t brewboard-f3-do-cc-*
-
-# Check status
-aigon board
-
-# After agent submits, close the feature
-aigon feature-close 03
-```
-
-### Step 10: Run a research topic
-
-```bash
-# Create and start research
-aigon research-create "evaluate auth libraries"
-aigon research-prioritise "evaluate auth libraries"
-aigon board   # note the research ID
-aigon research-start <ID> gg
-
-# After agent submits findings
-aigon research-eval <ID>
-aigon research-close <ID>
-```
-
-> **Note:** Features and research require API keys (`GOOGLE_API_KEY` for Gemini, `ANTHROPIC_API_KEY` for Claude).
-> Pass them via environment variables when launching the container, or export them inside the shell.
+Open **http://localhost:4102** in your Mac browser (note: host port 4102 maps to container 4100).
 
 ### Verification checklist
 
-- [ ] Node, git, tmux installed
-- [ ] `claude --version` prints a version
-- [ ] `gemini --version` prints a version (after `mkdir -p ~/.gemini`)
+- [ ] `node --version` prints 18+
 - [ ] `aigon --version` prints a version
-- [ ] `aigon init` rebuilt manifests for seed features
-- [ ] `aigon install-agent cc gg` wrote configs for both agents
-- [ ] `aigon board` shows seeded features
-- [ ] `aigon doctor` shows green checks for Node, git, tmux
-- [ ] Dashboard responds at localhost:4100 with brewboard visible
+- [ ] `aigon board` shows seeded brewboard features
+- [ ] `aigon doctor` passes Node, git, tmux checks
+- [ ] Dashboard at localhost:4102 shows brewboard in the Pipeline view
 
-Ports forwarded to the host:
-- **4100** — Aigon dashboard
-- **3000** — Dev server (e.g., brewboard)
+---
 
-## Automated Mode (Smoke Test)
-
-Runs `smoke-test.sh` inside the container. Each scenario follows the real getting-started flow.
-
-### Scenarios
-
-| # | Name | What it tests |
-|---|------|---------------|
-| 1 | Full install | Prerequisites → agent CLIs → aigon → brewboard clone → init → install-agent → board → doctor |
-| 2 | Full install + server | Scenario 1 + aigon server start + dashboard HTTP check |
+## Opening a second shell into a running container
 
 ```bash
-# Run one scenario
-docker/clean-room/run.sh --auto --scenario 1
-
-# Run all
-docker/clean-room/run.sh --auto --all
+docker exec -it $(docker ps -qf ancestor=aigon-clean-room) bash
 ```
 
-### Platform support
+---
 
-The smoke test script detects Linux vs macOS and uses the appropriate package manager (`apt` vs `brew`). On macOS, run `smoke-test.sh` directly (no Docker needed):
-
-```bash
-# On a clean Mac (or GitHub Actions runner):
-docker/clean-room/smoke-test.sh --all
-```
-
-The script resolves the checked-out aigon repo from its own location, so the same file works both inside the Docker bind mount and on a GitHub Actions macOS checkout.
-
-## Environment Variables
-
-API keys are forwarded to the container if set:
-
-- `ANTHROPIC_API_KEY`
-- `GOOGLE_API_KEY`
-- `OPENAI_API_KEY`
-
-These are not required for the smoke test (no agent sessions are run), but are available if you want to test further in manual mode.
-
-## What the Smoke Test Does NOT Cover
-
-- Running actual agent sessions (requires API keys + agent CLI auth)
-- Full feature lifecycle (feature-start, feature-do, feature-close)
-- Dashboard UI verification beyond HTTP response
-- Windows
-
-## macOS CI
-
-The GitHub Actions workflow at `.github/workflows/clean-room-macos.yml` runs the smoke test on `macos-latest`. It triggers on:
-- Manual dispatch (`workflow_dispatch`)
-- Changes to docs or the clean-room scripts
-
-## Teardown
-
-The container is created with `--rm`, so exiting the shell destroys it. To start fresh, just run `docker/clean-room/run.sh` again.
-
-## Known Issues
+## Known issues
 
 | Issue | Workaround |
 |-------|-----------|
-| `npm i -g` needs sudo | Always use `sudo` for global installs on Linux |
-| Gemini CLI fails if `~/.gemini/` doesn't exist | `mkdir -p ~/.gemini` before first `gemini` command — this is a Gemini CLI bug |
-| Dashboard "View" button can't open tmux | Use `docker exec -it <container> tmux attach -t <session>` from Mac |
-| `aigon server start &` gets suspended | Use `nohup aigon server start > /dev/null 2>&1 &` |
+| `npm i -g` needs sudo on Linux | Always prefix with `sudo` inside the container |
+| Gemini CLI fails if `~/.gemini/` doesn't exist | `mkdir -p ~/.gemini` before first `gemini` run |
+| `aigon server start &` gets suspended by job control | Use `nohup aigon server start > /dev/null 2>&1 &` |
+| Dashboard port | Host port **4102** maps to container 4100 (4100 may be in use on your Mac) |
