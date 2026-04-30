@@ -63,7 +63,7 @@ Three rules from the survey:
 - `@clack/prompts` + `@clack/core` is ~4 KB gzipped and imports lazily; startup impact on `aigon` is negligible (well under a frame).
 - `@inquirer/prompts` ships per-prompt sub-packages, so you only pay for what you import, but the baseline render engine is heavier and ESM-only (v9+) — fine for Aigon which is Node-only, but heavier than clack.
 - `ink` would add ~200 KB of React + reconciler + yoga-layout to the install footprint. That's the wrong tradeoff for a wizard that runs once.
-- The dominant latency cost on `npm i -g @aigon/cli` comes from *other* deps (npm resolver, install itself); the prompt library choice is a rounding error.
+- The dominant latency cost on `npm i -g @senlabs/aigon` comes from *other* deps (npm resolver, install itself); the prompt library choice is a rounding error.
 
 ## Sources
 

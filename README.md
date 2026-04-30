@@ -55,7 +55,7 @@ Mix and match. Aigon doesn't care which model writes the code — it just manage
 
 ```bash
 # Install aigon globally
-npm install -g @aigon/cli
+npm install -g @senlabs/aigon
 
 # Set up your project
 cd /path/to/your/project

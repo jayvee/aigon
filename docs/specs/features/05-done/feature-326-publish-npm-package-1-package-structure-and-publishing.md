@@ -16,14 +16,14 @@ transitions:
      `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-Define the npm package boundary for Aigon so the CLI can be published and installed as `@aigon/cli` without leaking internal workspace content. This feature establishes the allowlisted publish surface, the entrypoints that remain public, and the safeguards that prevent accidental release of unsupported files.
+Define the npm package boundary for Aigon so the CLI can be published and installed as `@senlabs/aigon` without leaking internal workspace content. This feature establishes the allowlisted publish surface, the entrypoints that remain public, and the safeguards that prevent accidental release of unsupported files.
 
 ## User Stories
 - As a maintainer, I want to publish only the runtime files needed by the CLI so the npm package stays small and predictable.
 - As a maintainer, I want a dry-run and allowlist check before publish so accidental file drift is caught before release.
 
 ## Acceptance Criteria
-- The package name, bin entrypoint, and public runtime surface are defined for `@aigon/cli`.
+- The package name, bin entrypoint, and public runtime surface are defined for `@senlabs/aigon`.
 - The publish path rejects unallowlisted files and fails before a release is created.
 - `npm pack --dry-run` shows only the intended runtime artifacts, not repo-local docs, tests, or workflow state.
 - The package documents the supported install and execution entrypoints so downstream release work can rely on them.

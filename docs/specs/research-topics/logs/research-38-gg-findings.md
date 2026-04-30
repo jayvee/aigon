@@ -22,7 +22,7 @@ status: submitted
 
 ### Dual-Release Strategy (stable vs. next)
 - **Implementation:** Utilize NPM tags. Stable releases use the default `latest` tag (`npm publish`). Beta or release candidates should be published using the `next` tag (`npm publish --tag next`).
-- **Installation:** Users install the stable version via `npm i -g @aigon/cli` and the beta via `npm i -g @aigon/cli@next`.
+- **Installation:** Users install the stable version via `npm i -g @senlabs/aigon` and the beta via `npm i -g @senlabs/aigon@next`.
 
 ### Interactive Installation UI
 - **Tooling:** Using a lightweight interactive prompt library like `@inquirer/prompts` or `prompts` is recommended for initial setup (`aigon init`). These libraries have minimal dependencies and provide a clean terminal UI.
