@@ -63,7 +63,7 @@ if [[ ${#paths_to_tar[@]} -eq 0 ]]; then
   exit 0
 fi
 
-tar -czf - -C "$HOME" "${paths_to_tar[@]}" \
+tar -czf - -C "$HOME" "${paths_to_tar[@]}" 2>/dev/null \
   | docker exec -i -u dev "$CONTAINER_ID" bash -c 'set -euo pipefail; cd ~ && mkdir -p .codex .config/gh && tar -xzf -'
 
 echo 'docker-inject-creds: done.'
