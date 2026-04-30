@@ -9,7 +9,7 @@ transitions:
 
 ## Context
 
-Aigon is now distributed as a global npm package (`npm install -g @aigon/cli`). The current first-run setup (`aigon global-setup`) only captures a single preference (terminal app) and does not guide users through installing prerequisites, agent CLIs, or initialising a project. This creates a steep onboarding cliff: users must read documentation and run a sequence of manual commands.
+Aigon is now distributed as a global npm package (`npm install -g @senlabs/aigon`). The current first-run setup (`aigon global-setup`) only captures a single preference (terminal app) and does not guide users through installing prerequisites, agent CLIs, or initialising a project. This creates a steep onboarding cliff: users must read documentation and run a sequence of manual commands.
 
 The goal is to replace this with a **guided onboarding wizard** — a step-by-step interactive TUI that runs automatically on first install and walks the user through: prerequisite detection and remediation, agent CLI selection and install, project init, and server start. Tools like Gemini CLI, `create-react-app`, Laravel Installer, and Vercel CLI demonstrate that a well-crafted wizard dramatically reduces time-to-first-success.
 

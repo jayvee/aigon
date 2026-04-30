@@ -8,10 +8,10 @@ transitions:
 # Research: publish-npm-package
 
 ## Context
-Aigon is currently installed by cloning the repository. To improve accessibility and user experience, we want to allow users to install and update Aigon as a global NPM package (e.g., `npm i -g @aigon/cli`). This requires research into NPM publishing workflows, update notification mechanisms across different interfaces, and a robust interactive installation experience.
+Aigon is currently installed by cloning the repository. To improve accessibility and user experience, we want to allow users to install and update Aigon as a global NPM package (e.g., `npm i -g @senlabs/aigon`). This requires research into NPM publishing workflows, update notification mechanisms across different interfaces, and a robust interactive installation experience.
 
 ## Questions to Answer
-- [ ] How should the `@aigon/cli` package be structured for global installation?
+- [ ] How should the `@senlabs/aigon` package be structured for global installation?
 - [ ] What is the best strategy for update notifications in the CLI, slash commands (when used within other agents), and the Aigon dashboard?
 - [ ] How can we implement a dual-release strategy (stable vs. `next` tag) using NPM?
 - [ ] What are the best practices for an interactive terminal UI for initial setup (e.g., using `inquirer` or `enquirer`)?
@@ -39,7 +39,7 @@ Aigon is currently installed by cloning the repository. To improve accessibility
 - Comparison with `@openai/codex` or Gemini CLI installation flows.
 
 ## Findings
-- The package boundary has to come first. If Aigon is going to ship as `@aigon/cli`, the published artifact must be tightly allowlisted so internal docs, templates, tests, and workflow state never leak into npm.
+- The package boundary has to come first. If Aigon is going to ship as `@senlabs/aigon`, the published artifact must be tightly allowlisted so internal docs, templates, tests, and workflow state never leak into npm.
 - Release automation needs explicit tag discipline. `latest` and `next` should be treated as separate lanes, not a single publish path with a flag bolted on later.
 - Update detection should be shared across surfaces. CLI notices, slash-command output, and dashboard state should read from the same registry/version check so users do not see conflicting upgrade guidance.
 - First-run setup should be interactive only when a TTY is available. Non-interactive installs still need a deterministic fallback path so CI, scripts, and agent-driven installs do not hang.
@@ -48,7 +48,7 @@ Aigon is currently installed by cloning the repository. To improve accessibility
 - The selected feature set is coherent and dependency-ordered. Package structure unlocks release channels and server lifecycle support; those in turn support update notifications and guided setup.
 
 ## Recommendation
-Use a staged implementation plan centered on publish safety first, then release/process maturity. Start with a strict package boundary and publish controls (`@aigon/cli`, `files` allowlist, dry-run validation), then add explicit `latest`/`next` release automation, followed by a shared update-status path used by CLI/slash/dashboard, and finally complete first-run onboarding plus prereq remediation and packaged server lifecycle support. This sequencing keeps risk low, delivers user-visible value early, and preserves clean dependency ordering for implementation.
+Use a staged implementation plan centered on publish safety first, then release/process maturity. Start with a strict package boundary and publish controls (`@senlabs/aigon`, `files` allowlist, dry-run validation), then add explicit `latest`/`next` release automation, followed by a shared update-status path used by CLI/slash/dashboard, and finally complete first-run onboarding plus prereq remediation and packaged server lifecycle support. This sequencing keeps risk low, delivers user-visible value early, and preserves clean dependency ordering for implementation.
 
 ## Output
 
@@ -61,7 +61,7 @@ Use a staged implementation plan centered on publish safety first, then release/
 
 | Feature Name | Description | Priority | Create Command |
 |--------------|-------------|----------|----------------|
-| publish-npm-package-1-package-structure-and-publishing | Make Aigon publishable as `@aigon/cli` with strict package allowlisting and publish safeguards. | high | `aigon feature-create "publish-npm-package-1-package-structure-and-publishing" --set publish-npm-package` |
+| publish-npm-package-1-package-structure-and-publishing | Make Aigon publishable as `@senlabs/aigon` with strict package allowlisting and publish safeguards. | high | `aigon feature-create "publish-npm-package-1-package-structure-and-publishing" --set publish-npm-package` |
 | publish-npm-package-2-release-channels | Add automated `latest`/`next` npm release flow with dist-tag discipline. | high | `aigon feature-create "publish-npm-package-2-release-channels" --set publish-npm-package` |
 | publish-npm-package-3-update-notifications-and-dashboard-status | Build one shared npm-registry update checker for CLI, slash output, and dashboard. | high | `aigon feature-create "publish-npm-package-3-update-notifications-and-dashboard-status" --set publish-npm-package` |
 | publish-npm-package-4-interactive-global-setup | Add guided first-run setup with non-interactive fallback. | medium | `aigon feature-create "publish-npm-package-4-interactive-global-setup" --set publish-npm-package` |

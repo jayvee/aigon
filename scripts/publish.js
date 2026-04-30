@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// Publishes @aigon/cli to npm with the correct dist-tag for the current version.
+// Publishes @senlabs/aigon to npm with the correct dist-tag for the current version.
 // Stable versions (2.x.y) → latest; prerelease versions (2.x.y-next.N) → next.
 // Replaces bare `npm publish` to ensure the wrong channel can never be tagged.
 

@@ -8,7 +8,7 @@
 
 ## Key Findings
 
-### 1. Package structure for `@aigon/cli`
+### 1. Package structure for `@senlabs/aigon`
 
 The current repo is structurally close to a publishable CLI package already:
 
@@ -35,7 +35,7 @@ Options considered:
 Recommendation:
 
 - Start with option 2.
-- Rename the package to `@aigon/cli`.
+- Rename the package to `@senlabs/aigon`.
 - Keep the command name `aigon`.
 - Add a strict `files` allowlist covering only runtime material:
   - `aigon-cli.js`
@@ -63,7 +63,7 @@ There are two implementation shapes:
 Recommendation:
 
 - Use option 2 as the primary architecture.
-- Reuse the existing `lib/version.js` ownership boundary, but switch the remote source for packaged installs from git-origin checks to npm registry metadata (`npm view @aigon/cli version dist-tags --json` or equivalent registry fetch).
+- Reuse the existing `lib/version.js` ownership boundary, but switch the remote source for packaged installs from git-origin checks to npm registry metadata (`npm view @senlabs/aigon version dist-tags --json` or equivalent registry fetch).
 - Cache the last check in `~/.aigon/` with a TTL like 24 hours.
 - Surface it differently by context:
   - CLI TTY: one concise footer/banner only when stale
@@ -88,7 +88,7 @@ Options considered:
    Cons: no safe preview channel.
 
 2. `latest` + `next`.
-   Pros: standard npm pattern; users can opt in with `npm i -g @aigon/cli@next`; easy promotion model.
+   Pros: standard npm pattern; users can opt in with `npm i -g @senlabs/aigon@next`; easy promotion model.
    Cons: requires disciplined CI/release rules.
 
 3. More channels (`alpha`, `beta`, nightly).
@@ -238,7 +238,7 @@ This matches Node’s documented requirements for background processes: a detach
 
 Ship the npm transition in phases, not as one large rewrite.
 
-Phase 1 should make the package safely publishable from the repo root: rename to `@aigon/cli`, add a strict `files` allowlist, set `publishConfig.access = "public"`, and gate releases with `npm pack --dry-run`. That removes the biggest immediate risk, which is shipping the entire repository as a global package.
+Phase 1 should make the package safely publishable from the repo root: rename to `@senlabs/aigon`, add a strict `files` allowlist, set `publishConfig.access = "public"`, and gate releases with `npm pack --dry-run`. That removes the biggest immediate risk, which is shipping the entire repository as a global package.
 
 Phase 2 should introduce a shared npm-registry-based update-status module for all surfaces. The CLI, slash commands, and dashboard should all read the same cached update result instead of duplicating checks or tying the product to a terminal-only notifier abstraction.
 
@@ -252,7 +252,7 @@ For server lifecycle, keep the binary globally installed but the running server 
 
 | Feature Name | Description | Priority | Depends On |
 |--------------|-------------|----------|------------|
-| npm-package-structure-and-publishing | Make Aigon publishable as `@aigon/cli` with a strict package file allowlist, public scoped publish config, and release validation via `npm pack --dry-run`. | high | none |
+| npm-package-structure-and-publishing | Make Aigon publishable as `@senlabs/aigon` with a strict package file allowlist, public scoped publish config, and release validation via `npm pack --dry-run`. | high | none |
 | npm-release-channels | Add automated `latest` and `next` npm release flows, including prerelease versioning and dist-tag management. | high | npm-package-structure-and-publishing |
 | npm-update-notifications-and-dashboard-status | Add one shared npm-registry-based update checker with cached status for CLI, slash-command output, and dashboard UI. | high | npm-package-structure-and-publishing |
 | interactive-global-setup | Add a first-run interactive setup flow using `@inquirer/prompts` with safe non-interactive fallback behavior. | medium | npm-package-structure-and-publishing |

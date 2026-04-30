@@ -13,7 +13,7 @@ Build `aigon onboarding` — a first-run wizard powered by `@clack/prompts` that
 
 ## User Stories
 
-- [ ] As a brand-new user who just ran `npm i -g @aigon/cli`, when I run any `aigon` command for the first time, the wizard launches automatically and guides me from zero to a running project.
+- [ ] As a brand-new user who just ran `npm i -g @senlabs/aigon`, when I run any `aigon` command for the first time, the wizard launches automatically and guides me from zero to a running project.
 - [ ] As a user who interrupted setup, I run `aigon onboarding --resume` and the wizard skips completed steps and starts at the first incomplete one.
 - [ ] As a CI script, I run `aigon onboarding --yes` and it applies defaults, writes the config and state files, and exits 0 without prompting.
 - [ ] As a user who wants a playground project immediately, I accept the "clone brewboard seed repo" offer and have a ready-to-use aigon project at the end of setup.

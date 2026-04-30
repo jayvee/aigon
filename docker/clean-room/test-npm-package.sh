@@ -26,7 +26,7 @@ npm --version  >/dev/null && ok "npm $(npm --version)"
 section "Step 2: Install aigon globally from tarball (F326)"
 mkdir -p "$TARBALL_DIR"
 PKG_VERSION=$(node -p "require('$REPO_ROOT/package.json').version")
-TARBALL="$TARBALL_DIR/aigon-cli-${PKG_VERSION}.tgz"
+TARBALL="$TARBALL_DIR/senlabs-aigon-${PKG_VERSION}.tgz"
 if [[ ! -f "$TARBALL" ]]; then
   echo "  packing $TARBALL..."
   (cd "$REPO_ROOT" && npm pack --pack-destination "$TARBALL_DIR" >/dev/null)
@@ -45,7 +45,7 @@ fi
 
 # ── step 3: release channel (F327) ───────────────────────────────────────────
 section "Step 3: Release channel detection (F327)"
-CHANNEL=$(node -e "const rc = require('/usr/lib/node_modules/@aigon/cli/lib/release-channel'); console.log(rc.channel)")
+CHANNEL=$(node -e "const rc = require('/usr/lib/node_modules/@senlabs/aigon/lib/release-channel'); console.log(rc.channel)")
 if [[ "$CHANNEL" == "latest" ]]; then
   ok "channel = latest (stable version, correct)"
 else
@@ -64,7 +64,7 @@ else
 fi
 # Verify the JS module itself returns a structured result (not a thrown error)
 node - <<'EOF'
-const { checkForUpdate } = require('/usr/lib/node_modules/@aigon/cli/lib/npm-update-check');
+const { checkForUpdate } = require('/usr/lib/node_modules/@senlabs/aigon/lib/npm-update-check');
 checkForUpdate({ force: true }).then(r => {
   if (!r || !r.state) { process.stderr.write('no state field\n'); process.exit(1); }
   console.log('  update-check state: ' + r.state + (r.error ? ' (' + r.error + ')' : ''));
@@ -90,8 +90,34 @@ git config --global user.email "test@example.com"
 git config --global init.defaultBranch main
 aigon global-setup --non-interactive --quiet 2>&1 && ok "global-setup --non-interactive --quiet exited 0" || fail "global-setup exited non-zero"
 
-# ── step 7: server lifecycle from a non-repo directory (F331) ─────────────────
-section "Step 7: Server lifecycle from global install path (F331)"
+# ── step 7: onboarding repo discovery ────────────────────────────────────────
+section "Step 7: Onboarding repo discovery"
+SCAN_ROOT="/tmp/aigon-src"
+rm -rf "$SCAN_ROOT"
+mkdir -p "$SCAN_ROOT/demo-one" "$SCAN_ROOT/demo-two" "$SCAN_ROOT/not-a-repo"
+git -C "$SCAN_ROOT/demo-one" init -q
+git -C "$SCAN_ROOT/demo-two" init -q
+echo "demo one" > "$SCAN_ROOT/demo-one/README.md"
+echo "demo two" > "$SCAN_ROOT/demo-two/README.md"
+
+AIGON_ONBOARDING_REPO_SCAN_DIR="$SCAN_ROOT" \
+AIGON_ONBOARDING_REPO_SELECT_ALL=1 \
+aigon setup --yes >/tmp/aigon-setup.log 2>&1 || {
+  fail "aigon setup --yes failed during repo discovery"
+  cat /tmp/aigon-setup.log
+  exit 1
+}
+
+SERVER_LIST=$(aigon server list 2>&1 || true)
+if echo "$SERVER_LIST" | grep -q "$SCAN_ROOT/demo-one" && echo "$SERVER_LIST" | grep -q "$SCAN_ROOT/demo-two" && ! echo "$SERVER_LIST" | grep -q "$SCAN_ROOT/not-a-repo"; then
+  ok "setup scanned and registered dummy Git repos only"
+else
+  fail "setup repo discovery did not register expected repos"
+  echo "$SERVER_LIST"
+fi
+
+# ── step 8: server lifecycle from a non-repo directory (F331) ─────────────────
+section "Step 8: Server lifecycle from global install path (F331)"
 
 # Create a throw-away test repo in /tmp — NOT inside ~/src/aigon
 TEST_REPO=$(mktemp -d)

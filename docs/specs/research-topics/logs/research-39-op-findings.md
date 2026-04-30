@@ -185,7 +185,7 @@ Comparing with peer tools:
 
 ### 7. Bundle Size / Startup Latency — `npm install -g` Impact
 
-The dominant cost of `npm install -g @aigon/cli` is npm's own resolver + network I/O, not the JS payload. Current Aigon has exactly one runtime dependency (`xstate`). Adding `@clack/prompts` + `picocolors` adds:
+The dominant cost of `npm install -g @senlabs/aigon` is npm's own resolver + network I/O, not the JS payload. Current Aigon has exactly one runtime dependency (`xstate`). Adding `@clack/prompts` + `picocolors` adds:
 
 - `@clack/prompts`: 13 KB gzip
 - `@clack/core`: ~5 KB gzip (shared dep)
