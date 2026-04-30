@@ -64,7 +64,7 @@ npm install -g @senlabs/aigon@next
 # run it explicitly:
 aigon setup
 
-# Set up your project
+# Install aigon into your project
 cd /path/to/your/project
 aigon init
 aigon install-agent cc        # Install the Claude Code agent
