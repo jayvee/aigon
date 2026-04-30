@@ -108,17 +108,15 @@ test('rule 6: feedback inbox → NEEDS TRIAGE', () => {
 });
 
 // Rule 7
-test('rule 7: backlog with blockedBy → BLOCKED with detail', () => {
+test('rule 7: backlog with blockedBy → no headline (dependency shown in dep chain)', () => {
     const entity = { blockedBy: [{ id: 12 }, { id: 34 }] };
     const h = computeCardHeadline(entity, null, [], null, 'backlog', opts());
-    assert.strictEqual(h.verb, 'BLOCKED');
-    assert.strictEqual(h.tone, 'blocked');
-    assert.strictEqual(h.detail, 'waiting on #12, #34');
+    assert.strictEqual(h, null);
 });
 
-test('rule 7: backlog ready → READY TO START', () => {
+test('rule 7: backlog ready → no headline', () => {
     const h = computeCardHeadline({}, null, [], null, 'backlog', opts());
-    assert.strictEqual(h.verb, 'READY TO START');
+    assert.strictEqual(h, null);
 });
 
 // Rule 8 — autonomous stages
@@ -172,10 +170,10 @@ test('rule 9: drive implementing → RUNNING with owner', () => {
     assert.strictEqual(h.tone, 'running');
 });
 
-test('rule 9: drive submitted → attention / SUBMITTED', () => {
+test('rule 9: drive submitted → attention / COMPLETE', () => {
     const agents = [{ id: 'solo', status: 'submitted', isWorking: false }];
     const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'SUBMITTED');
+    assert.strictEqual(h.verb, 'COMPLETE');
     assert.strictEqual(h.tone, 'attention');
 });
 

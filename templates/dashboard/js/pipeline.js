@@ -833,7 +833,7 @@
       const blockedByHtml = (feature.stage === 'backlog' && feature.blockedBy && feature.blockedBy.length > 0)
         ? (function() {
           const bits = ['<div class="kcard-dep-chain" role="note">',
-            '<span class="kcard-dep-chain-label">Depends on</span>',
+            '<span class="kcard-dep-chain-label">after</span>',
             '<div class="kcard-dep-wires" aria-hidden="true">'];
           feature.blockedBy.forEach((d, i) => {
             if (i > 0) bits.push('<span class="kcard-dep-wire"></span>');
