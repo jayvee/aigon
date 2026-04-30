@@ -94,6 +94,8 @@
         lineHeight: 1.0,
         fontFamily: getTerminalFont(),
         theme: buildXtermTheme(),
+        allowProposedApi: true,
+        minimumContrastRatio: 4.5,
         scrollback: 5000,
         convertEol: true,
       });
@@ -115,9 +117,11 @@
 
       // Unicode11 — proper wide-character support
       if (typeof Unicode11Addon !== 'undefined') {
-        const u11 = new Unicode11Addon.Unicode11Addon();
-        term.loadAddon(u11);
-        term.unicode.activeVersion = '11';
+        try {
+          const u11 = new Unicode11Addon.Unicode11Addon();
+          term.loadAddon(u11);
+          term.unicode.activeVersion = '11';
+        } catch (_) {}
       }
 
       // WebLinks — URL detection with hover underline
