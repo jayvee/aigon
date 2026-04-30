@@ -115,11 +115,6 @@ stage_preflight() {
     fi
   fi
 
-  # Verify ANTHROPIC_API_KEY
-  if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
-    stage_fail 1 "ANTHROPIC_API_KEY is not set. The autonomous agent requires it."
-  fi
-
   # Verify ~/.claude exists (docker-inject-creds.sh copies it)
   if [[ ! -e "$HOME/.claude" ]]; then
     stage_fail 1 "$HOME/.claude not found on host. Claude Code credentials are required for unattended auth."
