@@ -10,7 +10,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       sudo \
       ca-certificates \
-      curl && \
+      curl \
+      git && \
     rm -rf /var/lib/apt/lists/*
 
 # Create non-root user with sudo access
