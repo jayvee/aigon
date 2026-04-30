@@ -6,13 +6,13 @@
     <title>Aigon | Spec-Driven Multi-Agent Harness for Claude Code, Gemini CLI, Codex CLI</title>
     <meta
       name="description"
-      content="Aigon is a spec-driven multi-agent harness — orchestrate Claude Code, Gemini CLI, and Codex CLI from one Kanban board, one CLI, or one slash command."
+      content="Write a spec once, launch competing implementations, let one agent judge another, and merge the diff that survives review."
     >
     <link rel="canonical" href="https://www.aigon.build/">
     <meta property="og:title" content="Aigon | Spec-Driven Multi-Agent Harness">
     <meta
       property="og:description"
-      content="Aigon is a spec-driven multi-agent harness — orchestrate Claude Code, Gemini CLI, and Codex CLI from one Kanban board, one CLI, or one slash command."
+      content="Write a spec once, launch competing implementations, let one agent judge another, and merge the diff that survives review."
     >
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.aigon.build/">
@@ -23,7 +23,7 @@
     <meta property="og:site_name" content="Aigon">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Aigon | Spec-Driven Multi-Agent Harness">
-    <meta name="twitter:description" content="One Kanban for many agents — on real branches, in real worktrees, against real specs.">
+    <meta name="twitter:description" content="Write a spec once, launch competing implementations, let one agent judge another, and merge the diff that survives review.">
     <meta name="twitter:image" content="https://www.aigon.build/img/og-image.png">
     <meta name="theme-color" content="#f7f2e8">
     <link rel="icon" href="favicon.ico" sizes="any">
@@ -83,11 +83,20 @@
               <span class="hero-kicker-divider" aria-hidden="true">/</span>
               <span class="hero-kicker-tag">Multi-agent coding harness</span>
             </p>
-            <p class="hero-subtitle">Aigon is an open-source, spec-driven harness that orchestrates <strong>agent CLIs</strong> like Claude Code, Codex, and Gemini CLI — not raw model APIs. Specs live in git, agents run in worktrees, the diff that survives review wins.</p>
-            <h1 class="hero-wedge">
-              <span class="hero-wedge-line">Aigon orchestrates Claude Code, Codex, Cursor CLI <span class="hero-wedge-aside">(and more)</span> to implement your specs in parallel, judged by an LLM, or through pre-defined review stages.</span>
-              <span class="hero-wedge-line">Schedule your specs to run when you have quota <span class="hero-wedge-aside">(the dreaded 5hr window)</span>, or when you are asleep, avoiding FONUT &mdash; Fear Of Not Using Tokens.</span>
-            </h1>
+            <h1>A spec-driven harness that orchestrates Claude Code, Codex, and Gemini CLI -- in parallel, on real branches, in real worktrees.</h1>
+            <p class="hero-subtitle">Write a spec once. Launch competing implementations. Let one agent judge another. Merge the diff that survives review.</p>
+            <div class="hero-actions">
+              <a href="#get-started" class="button hero-install-cta" id="hero-install-cta" data-copy-text="npx aigon install">
+                <span class="hero-install-cta-label">$ npx aigon install</span>
+                <span class="hero-install-cta-state" aria-hidden="true">Copy</span>
+              </a>
+              <a href="https://github.com/jayvee/aigon" class="button button-ghost" target="_blank" rel="noopener noreferrer">
+                <span aria-hidden="true">&#9733;</span>
+                <span>Star on GitHub</span>
+              </a>
+              <!-- TODO: add aigon init CTA -->
+            </div>
+            <p class="hero-copy-status" id="hero-copy-status" aria-live="polite"></p>
             <ul class="hero-facts">
               <li>Open-source</li>
               <li>Spec-driven</li>
@@ -95,42 +104,6 @@
               <li>No SaaS lock-in</li>
               <li>Local-first</li>
             </ul>
-            <div class="hero-why">
-              <p class="hero-why-eyebrow">Why Use Aigon</p>
-              <div class="hero-why-grid">
-                <article class="hero-payoff">
-                  <p class="hero-payoff-num">01</p>
-                  <h2 class="hero-payoff-title">Catch what one model misses.</h2>
-                  <p class="hero-payoff-body">Different model families catch different classes of bug. When Claude reviews Claude, the reviewer shares the implementer's blind spots. Aigon Fleet runs Claude Code, Codex, Cursor CLI (and more) in parallel against the same spec, with a different coding agent as the merge reviewer.</p>
-                </article>
-                <article class="hero-payoff">
-                  <p class="hero-payoff-num">02</p>
-                  <h2 class="hero-payoff-title">Stop hitting quota walls.</h2>
-                  <p class="hero-payoff-body">Every Pro-plan user hits 5-hour quota limits. Aigon polls your quotas every 30 minutes, surfaces headroom on the dashboard, and auto-fails over to whichever coding agent still has quota. Three subscriptions, one elastic pool.</p>
-                </article>
-                <article class="hero-payoff">
-                  <p class="hero-payoff-num">03</p>
-                  <h2 class="hero-payoff-title">Use the subscriptions you already own.</h2>
-                  <p class="hero-payoff-body">Aigon never sits in your billing path. Spend the Claude Pro, ChatGPT Plus, and Cursor Pro subscriptions you already have &mdash; Aigon orchestrates the agent CLIs, not their underlying model APIs. No tokens, no markup, no metering.</p>
-                </article>
-                <article class="hero-payoff">
-                  <p class="hero-payoff-num">04</p>
-                  <h2 class="hero-payoff-title">Watch the work happen, locally.</h2>
-                  <p class="hero-payoff-body">Each agent runs in its own git worktree under tmux &mdash; <code>tmux attach</code> to any session and watch the work happen live. Specs live in your repo as Markdown; every workflow move is a git diff. No cloud sandbox, no opaque execution.</p>
-                </article>
-              </div>
-            </div>
-            <figure class="hero-preview">
-              <img
-                src="img/aigon-dashboard-kanban.png?v=1"
-                alt="Aigon Dashboard Kanban board — feature cards across inbox, backlog, in-progress, evaluation, and done columns"
-                width="2472"
-                height="1300"
-                loading="eager"
-                decoding="async"
-              >
-              <figcaption>The Aigon dashboard — Kanban for multi-agent coding work.</figcaption>
-            </figure>
           </div>
         </div>
         <div class="container">
@@ -157,6 +130,37 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section reveal" id="why">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">Why a multi-agent harness</p>
+            <h2>Four reasons one agent isn't enough.</h2>
+          </div>
+          <div class="hero-why-grid">
+            <article class="hero-payoff">
+              <p class="hero-payoff-num">01</p>
+              <h3 class="hero-payoff-title">Catch what one model misses.</h3>
+              <p class="hero-payoff-body">Different model families catch different classes of bug. When Claude reviews Claude, the reviewer shares the implementer's blind spots. Aigon Fleet runs Claude Code, Codex, Cursor CLI (and more) in parallel against the same spec, with a different coding agent as the merge reviewer.</p>
+            </article>
+            <article class="hero-payoff">
+              <p class="hero-payoff-num">02</p>
+              <h3 class="hero-payoff-title">Stop hitting quota walls.</h3>
+              <p class="hero-payoff-body">Every Pro-plan user hits 5-hour quota limits. Aigon polls your quotas every 30 minutes, surfaces headroom on the dashboard, and auto-fails over to whichever coding agent still has quota. Three subscriptions, one elastic pool. Schedule specs to run when you have quota or while you sleep -- no more FONUT (Fear Of Not Using Tokens).</p>
+            </article>
+            <article class="hero-payoff">
+              <p class="hero-payoff-num">03</p>
+              <h3 class="hero-payoff-title">Use the subscriptions you already own.</h3>
+              <p class="hero-payoff-body">Aigon never sits in your billing path. Spend the Claude Pro, ChatGPT Plus, and Cursor Pro subscriptions you already have &mdash; Aigon orchestrates the agent CLIs, not their underlying model APIs. No tokens, no markup, no metering.</p>
+            </article>
+            <article class="hero-payoff">
+              <p class="hero-payoff-num">04</p>
+              <h3 class="hero-payoff-title">Watch the work happen, locally.</h3>
+              <p class="hero-payoff-body">Each agent runs in its own git worktree under tmux &mdash; <code>tmux attach</code> to any session and watch the work happen live. Specs live in your repo as Markdown; every workflow move is a git diff. No cloud sandbox, no opaque execution.</p>
+            </article>
           </div>
         </div>
       </section>
@@ -736,70 +740,37 @@
         <terminal-line data="output">  Research complete · waiting for synthesis.</terminal-line>
       </template>
 
-      <section class="section reveal" id="docs">
+      <section class="section reveal" id="get-started">
         <div class="container docs-grid">
-          <div>
-            <div class="section-head">
-              <p class="eyebrow">Documentation</p>
-              <h2>Install in minutes, then run your first end-to-end loop.</h2>
-            </div>
-            <pre class="quickstart"><code>git clone https://github.com/jayvee/aigon.git
-cd aigon
-npm install
-npm link
-cd /path/to/your/project
-aigon init
-aigon install-agent cc gg cx cu</code></pre>
-            <p class="quickstart-then">Then, in Claude Code:</p>
-            <pre class="quickstart"><code>/aigon:feature-now dark-mode
-Implement a dark mode capability to the website,
-with dark mode/light mode toggle in the top right
-position of the menu bar</code></pre>
+          <div class="section-head docs-head">
+            <p class="eyebrow">Get started</p>
+            <h2>Install in one command. Read what you need.</h2>
           </div>
+          <pre class="quickstart"><code>npx aigon install</code></pre>
           <div class="docs-links">
-            <a
-              href="/docs/concepts"
-              class="docs-link"
-            >
-              <h3>Workflow Guide</h3>
-              <p>Research, specs, implementation, evaluation, and completion flow.</p>
-            </a>
-            <a
-              href="/docs/reference/commands"
-              class="docs-link"
-            >
-              <h3>CLI Commands</h3>
-              <p>Every Aigon CLI command, organised by feature, research, feedback, and infrastructure.</p>
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section class="section reveal" id="explore-docs">
-        <div class="container">
-          <div class="section-head">
-            <p class="eyebrow">Documentation</p>
-            <h2>Explore the documentation</h2>
-          </div>
-          <p class="lead explore-docs-lead">
-            The same entry points as the <a href="/docs">docs home</a> — concepts, install, guides, and full CLI reference.
-          </p>
-          <div class="feature-grid">
-            <a href="/docs/concepts" class="docs-link">
-              <h3>Concepts</h3>
-              <p>Three workflows, four execution modes, and how Aigon organises your work.</p>
-            </a>
             <a href="/docs/getting-started" class="docs-link">
               <h3>Getting Started</h3>
               <p>Install Aigon and run your first feature loop in under five minutes.</p>
+            </a>
+            <a href="/docs/concepts" class="docs-link">
+              <h3>Concepts</h3>
+              <p>Three workflows, four execution modes, and how Aigon organises your work.</p>
             </a>
             <a href="/docs/guides" class="docs-link">
               <h3>Guides</h3>
               <p>Step-by-step walkthroughs for Drive, Fleet, Research, and Dashboard.</p>
             </a>
+            <a href="/docs/reference/commands" class="docs-link">
+              <h3>CLI Commands</h3>
+              <p>Every Aigon CLI command, organised by feature, research, feedback, and infrastructure.</p>
+            </a>
             <a href="/docs/reference" class="docs-link">
               <h3>Reference</h3>
               <p>CLI commands, configuration, agents, and file structure.</p>
+            </a>
+            <a href="/docs" class="docs-link">
+              <h3>Docs Home</h3>
+              <p>Browse the full docs site when you want the whole map in one place.</p>
             </a>
           </div>
         </div>
@@ -1180,6 +1151,39 @@ position of the menu bar</code></pre>
 
       })();
 
+      // Hero install CTA clipboard
+      (function () {
+        var cta = document.getElementById("hero-install-cta");
+        var status = document.getElementById("hero-copy-status");
+        var state = cta ? cta.querySelector(".hero-install-cta-state") : null;
+        var resetTimer = null;
+        if (!cta || !status || !state) return;
+
+        function setCopied(message) {
+          cta.setAttribute("data-copied", "true");
+          state.textContent = "Copied";
+          status.textContent = message;
+          window.clearTimeout(resetTimer);
+          resetTimer = window.setTimeout(function () {
+            cta.removeAttribute("data-copied");
+            state.textContent = "Copy";
+            status.textContent = "";
+          }, 2200);
+        }
+
+        cta.addEventListener("click", function (event) {
+          var text = cta.getAttribute("data-copy-text");
+          if (!text || !navigator.clipboard || !navigator.clipboard.writeText) return;
+          event.preventDefault();
+          navigator.clipboard.writeText(text).then(function () {
+            setCopied("Copied install command to clipboard.");
+          }).catch(function () {
+            status.textContent = "Copy failed. The install section is just below.";
+            state.textContent = "Copy";
+          });
+        });
+      })();
+
       const navLinks = document.querySelectorAll(".nav-link");
       const observedSections = document.querySelectorAll("main section[id]");
       const revealItems = document.querySelectorAll(".reveal");
@@ -1258,7 +1262,7 @@ position of the menu bar</code></pre>
           if (lastTrigger) { lastTrigger.focus(); lastTrigger = null; }
         }
 
-        document.querySelectorAll(".fleet-demo-frame, .hero-preview").forEach(function (frame) {
+        document.querySelectorAll(".fleet-demo-frame").forEach(function (frame) {
           frame.setAttribute("role", "button");
           frame.setAttribute("tabindex", "0");
           var img = frame.querySelector("img");
