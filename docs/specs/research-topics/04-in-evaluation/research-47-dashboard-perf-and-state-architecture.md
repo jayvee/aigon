@@ -117,25 +117,81 @@ This cluster is **explicitly required to produce a punch list of concrete, low-r
 
 ## Recommendation
 
-<!-- Researchers fill. The recommendation must address BOTH horizons:
+### Short-term punch list (ships now, current architecture)
 
-(a) **Short-term punch list (current architecture)** — a ranked list of concrete, low-risk, high-ROI changes that ship within 1–2 weeks each. Each item should name the file/function, the expected impact (e.g. "drops poll p95 from 2.5 s to ~800 ms"), and the implementation sketch. Order by ROI, biggest win first.
+After synthesis with the user, the ranked, simplified short-term plan is **3 features** rather than 7. Drift risk and complexity were weighted heavily — features that maintain in-memory mirrors of source-of-truth state were either consolidated (with explicit watchdog defenses) or deferred until the consolidated one earns trust in production.
 
-(b) **Longer-term structural direction** — where the architecture should head so that we stop patching the polling model. State the recommended destination (transport, backend, server topology, sync model) with reasoning. Include the contingencies that would change it. If the picture isn't coherent enough yet to commit, say so plainly and identify what additional research would clarify it.
+1. **`dashboard-perf-1-cold-probe-ttl`** — TTL caches over `parseCaddyRoutes`, `getDevServerState`, `detectGitHubRemote`, default-branch detection, schedule index. None of this is workflow state; drift surface is zero. Lowest-risk, ship first.
+2. **`dashboard-perf-2-status-cache`** — Per-repo visible spec index built once per `collectRepoStatus` pass and reused across polls behind stage-dir + per-file mtime gates. Snapshot.json reads cached behind per-file mtime. **Watchdog every Nth poll asserts cached index `deepEqual`s a cold rebuild** — converts "we hope mtime invalidation is reliable" into "we'd know within minutes if it isn't." `AIGON_DISABLE_STATUS_CACHE=1` env var as fast rollback. Profiled impact: warm wall-time ~1,000 ms → ~300–400 ms.
+3. **`dashboard-payload-list-vs-detail-split`** — Strip `workflowEvents`, `autonomousPlan`, agent log excerpts, full `reviewSessions` from `/api/status`; serve from new `/api/feature/:id/details` on drawer-open. Not a cache — just less data over the wire + lazy detail fetch. No drift surface.
 
-(c) **Composition** — for each short-term item, briefly note whether it preserves, improves, or constrains optionality for the long-term direction. Quick wins must not foreclose structural moves; structural moves shouldn't block the quick wins. -->
+**Deferred from the original 7-item punch list:**
+- *Stage-mtime memoization (cross-poll)* — folded into #2 as the cross-poll layer.
+- *Snapshot mtime cache* — folded into #2.
+- *Status fingerprint short-circuit + adaptive cadence* — both rely on accurate change detection, which means more in-memory mirroring of source-of-truth. Deferred until #2's watchdog has earned trust over a month or so. Cheap to add later if the substrate proves reliable.
+
+**Excluded:**
+- *Parallelise repo collection via `Promise.all`* (gg's suggestion) — the collector is synchronous filesystem + child-process work; wrapping it in promises does not parallelize on Node's event loop. cc and cx both flagged this as a trapdoor.
+
+### Longer-term structural direction
+
+All three agents converge on the same destination, framed differently (cc/cx: "evented local read-model service"; gg: "CQRS Hybrid"):
+
+- **Authoritative state stays on the filesystem.** Markdown specs in `docs/specs/`, workflow events in `.aigon/workflows/<entity>/<id>/events.jsonl`, snapshots in `.aigon/state/`. Git remains the audit log for specs.
+- **Read-model facade** behind `collectRepoStatus`. A narrow `getDashboardState(repoPath)` adapter — same return shape, swappable backend (in-memory now → SQLite later → optional remote daemon further out).
+- **Transport: SSE for invalidation, polling as reconciliation.** Server emits `{repo, fingerprint, changedEntityIds[]}` events on read-model rebuild. Clients consume those for instant updates, fall back to polling when disconnected. WebSockets reserved for PTY/terminal interactivity.
+- **SQLite as projection target only**, never authoritative. Promoting SQLite to authoritative would close more doors than it opens (kills `git diff` over state, kills `aigon doctor --fix` repair semantics).
+- **Hosted backends (Linear / GitHub Issues / Notion)** = mirror adapters at most, never authoritative. Validate with one time-boxed spike behind a feature flag.
+
+**Contingency that would change it:** if real-time team collaboration becomes a near-term primary use case (rather than power-user solo + optional pair), the destination shifts toward central-authoritative earlier. That's a product decision, not a technical one.
+
+### Composition: short-term × long-term
+
+Each short-term feature preserves or actively prepares the shape of the long-term direction:
+
+| Short-term | Effect on long-term |
+|------------|--------------------|
+| #1 cold-probe TTL | Neutral — bounded helper, no architectural commitment |
+| #2 status cache | Door — exact data shape the read-model facade needs as its first projection; mtime invalidation pattern previews SSE invalidation |
+| #3 list/detail split | Door — establishes the "list view vs detail view" split any future backend needs |
+
+No item closes any architectural door. This was a deliberate test applied at selection time.
 
 ## Output
 
-<!-- Based on your recommendation, create the necessary feature specs by running the `aigon feature-create "<name>"` command. Expect two buckets of features:
+### Set Decision
 
-  • **Short-term tuning features** — one per high-ROI item from the punch list. Small scope, ship-now.
-  • **Structural features** — bigger, longer-term work to move toward the recommended architecture. May include preparatory features (e.g. an adapter layer) that unlock later moves without committing to any single destination.
+- Proposed Set Slug: `dashboard-perf`
+- Chosen Set Slug: `dashboard-perf`
 
-Link the newly created files below, grouped by bucket. -->
+### Selected Features
 
-### Short-term tuning features
-- [ ] Feature:
+| Feature ID | Name | Description | Priority | Status |
+|------------|------|-------------|----------|--------|
+| F467 | `dashboard-perf-1-cold-probe-ttl` | TTL caches for Caddy/dev-server/git-remote/default-branch/schedule probes | high | Done |
+| F468 | `dashboard-perf-2-status-cache` | Per-repo visible spec index + snapshot mtime cache + watchdog | high | Done |
+| F469 | `dashboard-perf-3-list-vs-detail-split` | Strip heavy fields from `/api/status`, lazy-load via `/api/feature/:id/details` | medium | Done |
 
-### Structural features
-- [ ] Feature:
+All three created with `--set dashboard-perf` and stamped with `research: 47` frontmatter. Implemented and merged by cx; closed earlier on 2026-04-30.
+
+### Feature Dependencies
+
+None — all three are technically independent. Sequence numbers reflect recommended ship order (lowest-risk first), not dependency chains.
+
+### Not Selected
+
+- `dashboard-perf-stage-mtime-memoization` — folded into F468.
+- `dashboard-perf-snapshot-mtime-cache` — folded into F468.
+- `dashboard-perf-status-fingerprint` + `dashboard-adaptive-poll-cadence` — deferred until F468's watchdog has earned trust in production.
+- `dashboard-perf-parallelise-repo-collection` (gg) — excluded; sync I/O does not parallelize via `Promise.all`.
+
+### Structural / Long-term features
+
+Not yet created. To be discussed in a follow-up session with the user. Candidate list from synthesis:
+
+- `dashboard-read-model-facade` — narrow adapter behind `collectRepoStatus`; the keystone door
+- `dashboard-sse-invalidation-stream` — SSE endpoint emitting invalidation events
+- `dashboard-write-path-event-tap` — engine write-path publishes in-process invalidation events
+- `dashboard-sqlite-projection` — derived SQLite cache populated from filesystem
+- `dashboard-multi-client-daemon` — multiple browser clients subscribe to the same daemon
+- `dashboard-hosted-backend-spike` — time-boxed Linear/GitHub Issues/Notion mirror prototype
