@@ -7,7 +7,7 @@
   "homepage": "https://www.aigon.build",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jayvee/aigon.git"
+    "url": "git+https://github.com/jayvee/aigon.git"
   },
   "bugs": {
     "url": "https://github.com/jayvee/aigon/issues"
@@ -35,7 +35,7 @@
     "access": "public"
   },
   "bin": {
-    "aigon": "./aigon-cli.js"
+    "aigon": "aigon-cli.js"
   },
   "scripts": {
     "postinstall": "node ./aigon-cli.js global-setup --non-interactive --quiet || true && node scripts/fix-node-pty-perms.js || true",
