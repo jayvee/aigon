@@ -63,6 +63,8 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origText);
       }
+      const startingCard = btn ? btn.closest('.card') : null;
+      if (startingCard) startingCard.classList.add('card-starting');
       const label = (action || '').replace(/^(feature|research)-/, '');
       const processingToast = showToast('Processing ' + label + '…', null, null, { processing: true });
 
@@ -171,6 +173,7 @@
       } finally {
         if (processingToast) processingToast.remove();
         state.pendingActions.delete(key);
+        if (startingCard) startingCard.classList.remove('card-starting');
       }
     }
 
@@ -238,6 +241,8 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origText);
       }
+      const startingCard = btn ? btn.closest('.card') : null;
+      if (startingCard) startingCard.classList.add('card-starting');
       const processingToast = showToast('Starting autonomous run…', null, null, { processing: true });
       try {
         const body = { agents, stopAfter };
@@ -266,6 +271,7 @@
           btn.disabled = false;
           btn.textContent = origText || 'Start autonomously';
         }
+        if (startingCard) startingCard.classList.remove('card-starting');
       }
     }
 

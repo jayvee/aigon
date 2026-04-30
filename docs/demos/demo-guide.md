@@ -108,9 +108,10 @@ After `npm run fixture:seed`, brewboard has these in backlog (each feature spec 
 
 | ID  | Name            | Notes                                      |
 |-----|-----------------|--------------------------------------------|
-| #01 | dark mode       | Standalone backlog item                    |
+| #01 | format date     | Standalone smoke-test fixture (`low`)      |
 | #02 | brewery import  | Head of **brewboard-data** set (`high`)    |
-| #03 | user profiles   | Set member, depends on **02**            |
+| #03 | user profiles   | Set member, depends on **02**              |
 | #04 | rating system   | Set member, depends on **03**              |
+| #09 | dark mode       | Standalone backlog item                    |
 
 And 2 features in inbox (beer style filters, social sharing) for create/prioritise demos.
