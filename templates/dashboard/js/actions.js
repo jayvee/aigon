@@ -1046,7 +1046,9 @@ const AUTONOMOUS_AGENT_IDS = getAutonomousAgentIds();
 
 function getNudgeCandidates(feature) {
   const agents = Array.isArray(feature && feature.agents) ? feature.agents : [];
-  const reviewSessions = Array.isArray(feature && feature.reviewSessions) ? feature.reviewSessions : [];
+  const reviewSessions = Array.isArray(feature && feature.reviewSessionSummary)
+    ? feature.reviewSessionSummary
+    : (Array.isArray(feature && feature.reviewSessions) ? feature.reviewSessions : []);
 
   // Running review sessions always take priority — they need nudges most
   const reviewCandidates = reviewSessions

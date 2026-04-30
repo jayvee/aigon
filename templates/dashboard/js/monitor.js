@@ -176,7 +176,7 @@
           const s = Alpine.store('dashboard');
           const mt = s.monitorType || 'all';
           if (mt !== 'all' && mt !== 'features') return [];
-          const raw = [...(repo.features || [])].filter(f => f.stage === 'in-progress' || f.stage === 'in-evaluation').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
+          const raw = [...(repo.features || [])].map(f => Object.assign({ repoPath: repo.path }, f)).filter(f => f.stage === 'in-progress' || f.stage === 'in-evaluation').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
           if (s.filter === 'all') return raw;
           if (s.filter === 'complete') return raw.filter(f => f.agents.some(a => isCompleteStatus(a.status)));
           return raw.filter(f => f.agents.some(a => a.status === s.filter));
@@ -185,7 +185,7 @@
           const s = Alpine.store('dashboard');
           const mt = s.monitorType || 'all';
           if (mt !== 'all' && mt !== 'research') return [];
-          const raw = [...(repo.research || [])].filter(r => r.stage === 'in-progress' || r.stage === 'in-evaluation').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
+          const raw = [...(repo.research || [])].map(r => Object.assign({ repoPath: repo.path }, r)).filter(r => r.stage === 'in-progress' || r.stage === 'in-evaluation').sort((a, b) => featureRank(a) - featureRank(b) || Number(a.id) - Number(b.id));
           if (s.filter === 'all') return raw;
           if (s.filter === 'complete') return raw.filter(r => r.agents.some(a => isCompleteStatus(a.status)));
           return raw.filter(r => r.agents.some(a => a.status === s.filter));
@@ -271,12 +271,18 @@
         openFeatureSpec(e, feature) {
           if (e.target.closest('button') || e.target.closest('.btn')) return;
           if (!feature.specPath) return;
-          openDrawer(feature.specPath, feature.name, feature.stage);
+          openDrawer(feature.specPath, feature.name, feature.stage, feature.repoPath || null, {
+            entityId: feature.id,
+            detailFingerprint: feature.detailFingerprint || null
+          });
         },
         openSpecItem(e, item, prefix) {
           if (e.target.closest('button') || e.target.closest('.btn')) return;
           if (!item.specPath) return;
-          openDrawer(item.specPath, item.name, 'in-progress');
+          openDrawer(item.specPath, item.name, item.stage || 'in-progress', item.repoPath || null, {
+            entityId: item.id,
+            detailFingerprint: item.detailFingerprint || null
+          });
         },
         copyCmd(text) { copyText(text).then(ok => showToast(ok ? 'Copied: ' + text : 'Copy failed')); },
         attachAgent(repoPath, featureId, agentId, tmuxSession) { requestAttach(repoPath, featureId, agentId, tmuxSession); },

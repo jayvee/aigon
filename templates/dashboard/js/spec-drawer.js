@@ -2,7 +2,7 @@
 
     const drawerState = {
       path: null, content: '',
-      title: '', stage: '', type: 'feature', repoPath: null, entityId: null,
+      title: '', stage: '', type: 'feature', repoPath: null, entityId: null, detailFingerprint: null,
       fontSize: Number(localStorage.getItem(lsKey('drawerFontSize')) || '13')
     };
     const drawerOverlay = document.getElementById('drawer-overlay');
@@ -117,6 +117,7 @@
       drawerState.type = specTypeFromPath(specPath);
       drawerState.repoPath = repoPath || null;
       drawerState.entityId = opts.entityId || specIdFromPath(specPath);
+      drawerState.detailFingerprint = opts.detailFingerprint || null;
       drawerState._initialTab = opts.initialTab || null;
       drawerTitle.textContent = title;
       if (drawerId) {
@@ -159,6 +160,7 @@
       }
       drawerState.path = null;
       drawerState.entityId = null;
+      drawerState.detailFingerprint = null;
       if (drawerId) {
         drawerId.textContent = '';
         drawerId.style.display = 'none';
@@ -268,4 +270,3 @@
         toggleDrawerFullscreen();
       }
     });
-

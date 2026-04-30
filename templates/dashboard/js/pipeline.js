@@ -818,7 +818,7 @@
       const isSoloDriveBranch = agents.length === 1 && agents[0].id === 'solo' && !agents[0].tmuxSession;
       const hasAgentSections = !isDone && agents.length > 0 && !isSoloDriveBranch;
 
-      const reviews = feature.reviewSessions || [];
+      const reviews = feature.reviewSessionSummary || feature.reviewSessions || [];
 
       const hasNumericId = /^\d+$/.test(String(feature.id || ''));
 
@@ -1102,7 +1102,10 @@
         if (e.target.closest('button') || e.target.closest('.btn')) return;
         if (feature.specPath) {
           const displayName = feature.name.replace(/-/g, ' ');
-          openDrawer(feature.specPath, displayName, feature.stage, repoPath);
+          openDrawer(feature.specPath, displayName, feature.stage, repoPath, {
+            entityId: feature.id,
+            detailFingerprint: feature.detailFingerprint || null
+          });
         }
       });
 

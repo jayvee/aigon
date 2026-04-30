@@ -9,6 +9,8 @@
       const onToggleSpecView = opts.onToggleSpecView || (() => {});
 
       const TAB_ORDER = ['spec', 'status', 'events', 'agents', 'stats', 'log', 'control'];
+      const detailCache = window.__aigonEntityDetailCache || new Map();
+      window.__aigonEntityDetailCache = detailCache;
       const state = {
         active: 'spec',
         loading: false,
@@ -107,14 +109,27 @@
         const drawer = getDrawerState();
         const parsed = parseEntityFromSpecPath(drawer.path, drawer.type);
         if (!parsed.id) throw new Error('This item has no numeric ID yet.');
+        const fingerprint = drawer.detailFingerprint || 'unknown';
+        const cacheKey = [
+          drawer.repoPath || '',
+          parsed.type,
+          parsed.id,
+          fingerprint
+        ].join('|');
+        if (detailCache.has(cacheKey)) {
+          state.payload = detailCache.get(cacheKey);
+          return state.payload;
+        }
         const q = new URLSearchParams({
           specPath: drawer.path || ''
         });
         if (drawer.repoPath) q.set('repoPath', drawer.repoPath);
-        const res = await fetch(`/api/detail/${parsed.type}/${parsed.id}?${q.toString()}`, { cache: 'no-store' });
+        const segment = parsed.type === 'research' ? 'research' : 'features';
+        const res = await fetch(`/api/${segment}/${parsed.id}/details?${q.toString()}`, { cache: 'no-store' });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
         state.payload = data;
+        detailCache.set(cacheKey, data);
         return data;
       }
 
@@ -648,6 +663,7 @@
         onDrawerRefresh() {
           state.payload = null;
           state.loadedTabs = {};
+          detailCache.clear();
           if (state.active !== 'spec') renderTab(state.active);
         }
       };
