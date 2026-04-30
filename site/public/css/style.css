@@ -230,13 +230,13 @@ a {
 
 .hero-grid {
   display: block;
-  max-width: 52rem;
+  max-width: 58rem;
 }
 
 .hero h1 {
   margin: 0.9rem 0 0;
   font-family: "Sora", sans-serif;
-  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  font-size: clamp(1.05rem, 1.54vw, 1.4rem);
   line-height: 1.2;
   letter-spacing: -0.022em;
   max-width: none;
@@ -1560,6 +1560,7 @@ pre code {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.7);
+  color: var(--text);
   box-shadow: var(--shadow-soft);
   overflow-x: auto;
 }
@@ -1567,6 +1568,7 @@ pre code {
 .quickstart code {
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.95rem;
+  color: var(--text);
 }
 
 .docs-links {
@@ -2326,7 +2328,7 @@ pre code {
 /* === What-it-is subtitle === */
 .hero-subtitle {
   margin: 0 0 clamp(1.1rem, 2.2vw, 1.55rem);
-  max-width: 54ch;
+  max-width: none;
   font-size: clamp(1rem, 1.7vw, 1.26rem);
   line-height: 1.55;
   color: var(--muted);
