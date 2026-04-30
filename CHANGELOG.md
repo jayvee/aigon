@@ -9,9 +9,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.63.0] — 2026-04-30
+
+Dashboard performance overhaul (F459, F460, F467–F469, F471), agent quota
+awareness and mid-run pause/resume (F444, F446), signal health telemetry and
+auto-nudge (F443, F445), benchmark infrastructure improvements (F453, F456,
+F461, F462), feature lifecycle hardening (F448–F452), and a round of
+dashboard UX polish.
+
 ### Added
 
-- **Visible idle ladder + opt-in auto-nudge (F445)** — dashboard agent rows now show amber idle and red needs-attention chips when an idle-at-prompt agent also has stale status writes. Project config `autoNudge` adds default-off automatic nudging (`enabled: false`, thresholds 60/180/300 seconds, per-agent overrides), dispatches at most one nudge per session via `lib/nudge.js`, records signal-health events, and exposes a dashboard overflow action to pause auto-nudge for a live session.
+- **Non-blocking dashboard background poll (F471)** — `collectDashboardStatusDataAsync` yields the event loop between repo scans via `setImmediate`. The server's background `pollStatus()` loop and the `/api/refresh` handler both use the async variant, so status collection no longer blocks `/api/action` POSTs for 750ms–1.1s under large repo sets.
+
+- **Split dashboard list and detail payloads (F469)** — `/api/status` now returns a lightweight list payload (no per-feature detail data); detail is fetched separately on demand. Reduces the hot poll path to only the data the kanban board needs and moves the heavier per-card detail fetch out of the poll cycle.
+
+- **Spec index cache for status polling (F468)** — the dashboard status collector now caches the spec directory index across poll cycles rather than re-scanning on every tick, eliminating repeated `readdirSync` calls against the full spec tree.
+
+- **TTL cache for dashboard cold probes (F467)** — quota and agent health probes that previously ran on every `/api/status` call are now gated behind a TTL, so cold-start probes no longer dominate poll latency after the first result is cached.
+
+- **Agent quota probe classification (F444)** — `lib/quota-probe.js` runs a cache-only Claude probe on each polling cycle and classifies the exit as `ok`, `quota_exceeded`, `rate_limited`, or `error`. Result is surfaced on the dashboard server payload and drives the in-flight quota indicator on agent cards.
+
+- **Quota-paused mid-run detection, resume CLI, and dashboard actions (F446)** — when a running agent hits its quota limit mid-session, the engine appends a `quota.paused` event; `aigon agent-resume <id>` sends the resume prompt and records `quota.resumed`. The dashboard exposes pause/resume overflow actions on cards in the `quota_paused` state and prevents re-pausing agents already in a terminal state.
+
+- **Signal health telemetry (F443)** — `lib/signal-health.js` records per-agent signal-health events (`signal_recovered_via_nudge`, `signal_stale`, etc.) to the telemetry store so trends in idle-detection quality are queryable and recoveries are distinguishable from genuine terminal states.
+
+- **Visible idle ladder + opt-in auto-nudge (F445)** — dashboard agent rows show amber idle and red needs-attention chips when an idle-at-prompt agent has stale status writes. Project config `autoNudge` enables automatic nudging (thresholds 60/180/300 s, per-agent overrides, at most one nudge per session via `lib/nudge.js`) with a dashboard overflow action to pause auto-nudge for a live session. Default is now `enabled: true` (flipped from original off-by-default spec).
+
+- **`feature-prioritise --set / --all-sets` with toposort (F449)** — batch-prioritise features belonging to a named set or all sets at once; ordering respects `depends_on` so dependents never land in the backlog ahead of their parents.
+
+- **Refuse `feature-prioritise` when depends_on parent is in inbox (F448)** — `aigon feature-prioritise` exits non-zero with a clear message when any `body-level depends_on` parent spec is still in `01-inbox`, preventing dependency inversions before they enter the engine.
+
+- **Precise spec-auto-commit staging (F452)** — `feature-close` and related paths now use path-scoped `git add` rather than `git add -A`, preventing out-of-scope files from entering close commits when the worktree has unrelated staged changes.
+
+- **`readTelemetryFile` helper with gzip-transparent reads (F451)** — all per-session telemetry reads now go through `lib/telemetry.js:readTelemetryFile`, which transparently decompresses `.jsonl.gz` alongside plain `.jsonl`. Eliminates a class of silent read failure for compressed archives.
+
+- **Card headline wired into dashboard collector and renderer (F458)** — `lib/card-headline.js` applies a precedence-ordered rule set to produce a single human-readable status line per card; `lib/dashboard-status-collector.js` emits it on every feature and research row; the kanban renderer displays it below the card title.
+
+- **Bench telemetry parity for Gemini and Opus (F453)** — `aigon perf-bench` now collects `tokenUsage` and `costUsd` for `gg` and `op` sessions with the same fidelity as `cc` and `cx`, bringing all four agents to full cost-visibility in benchmark output.
+
+- **Benchmark health signal in quota model (F456)** — `benchVerdict` (pass/fail/timeout from the most recent `perf-bench` run) is surfaced alongside the quota classification so operators can see agent reliability at a glance without opening the benchmark matrix.
+
+- **Benchmark matrix per-op restructure and dashboard styles (F461, F462)** — token columns (`input`, `cached`, `output`, `thinking`) split into individual cells; sort buttons added to each column header; `cc` token shape fixed to report total input (fresh + cached). New CSS classes `bench-sort-btn`, `bench-tok-cell`, and per-op header blocks (`bench-matrix-header-op`) land in the Pro dashboard stylesheet.
+
+- **OpenCode flat slash commands for `op` agent (F439)** — `install-agent op` now emits a flat-file slash-command tree alongside the existing `skill.md` index so OpenCode's `/<cmd>` picker can discover all aigon commands without reading markdown.
+
+- **Peek tmux session from close-with-agent launcher** — "Close with agent" in the dashboard opens a quick peek at the spawned tmux pane so operators can confirm the agent landed before switching windows.
+
+- **Close-log panel for `research-close`** — the live close-out log panel now streams for research entities as well as features.
+
+- **Remove noise badges from inbox and backlog cards** — dependency and effort badges are suppressed on cards that have not yet started, reducing visual clutter before a feature is active.
+
+### Changed
+
+- **Dashboard poll interval reverted to 10s** — F460 raised it to 20s to align with the server's `POLL_INTERVAL_ACTIVE_MS` and avoid double-reads of a stale cache. F471 (non-blocking collection), F469 (split payloads), and F468 (spec index cache) remove the conditions that made 20s necessary; 10s is restored to reduce the lag after UI actions like clicking Eval.
+
+- **Deduplicated two-pass dashboard read-model (F460)** — `baseState` is now computed once and shared across the list and detail read paths, eliminating a second full scan that was occurring on every `/api/status` request.
+
+- **Skip engine reads in `collectDoneSpecs` (F459)** — done-spec enumeration now reads the `05-done` folder directly rather than probing each entity's engine snapshot, cutting the number of filesystem reads on the hot poll path proportionally to the number of closed features.
+
+### Fixed
+
+- **Agent process leak hardening (F450)** — four independent fixes (A: orphan-check before kill, B: PID file validated before use, C: teardown guard on session reopen, D: SIGTERM before SIGKILL with wait) prevent ghost agent processes from accumulating across session restarts.
+
+- **Dashboard event loop unblocked + autonomous modal parallelised (F454)** — the `/api/status` handler no longer holds the event loop during autonomous-mode model probing; probe calls are now fire-and-forget with results merged on the next tick. The autonomous start modal pre-fetches recommendation and spec data in parallel rather than sequentially.
+
+- **xterm.js render lag (F455)** — pinned xterm.js to a version without the resize-loop regression; added a `ResizeObserver` debounce (16ms) and raised the PTY flush ceiling to 32 KB so dense TUI output (Claude Code, kimi) renders in one pass rather than flicker-scrolling.
+
+- **Terminal contrast and Unicode11 addon hardening** — enforces minimum contrast ratio on xterm.js theme colours and wraps the Unicode11 addon load in a try/catch so a missing addon doesn't crash the terminal panel.
+
+- **Fleet submission headline corrected** — card headline for a fleet feature in the `submitted` state now reads "awaiting evaluation" rather than "awaiting review" (review is a solo-mode concept).
+
+- **Cache-only quota probe and in-flight card indicator** — the quota probe uses `cache-control: only-if-cached` so it never triggers a real API call; an in-flight spinner appears on the card while the probe result is pending.
+
+- **`feature-close` progress surfaces immediately** — the close-out log panel now shows the first log line within one render cycle rather than waiting for the first SSE flush; respects the global `prCheck` setting when determining whether to run pre-close checks.
+
+- **Dependency and completion UX softened on kanban cards** — dependency chips no longer flash red on cards that are merely waiting (not blocked); completion percentage is omitted on cards with no measurable progress.
+
+- **Processing toast dismissed before refresh on feature-close** — the "processing…" toast is removed before triggering the post-close `/api/refresh` call, preventing the stale toast from reappearing after the board re-renders.
+
+- **Active spec synced into new worktrees on `feature-start`** — if the spec was edited on `main` after the worktree was created, `feature-start` now copies the current spec into the worktree before launching the agent.
+
+- **Spec-move commits stage source deletion** — `git add` for spec lifecycle moves now explicitly stages the deleted source path, preventing "file not found" errors in post-move diff outputs.
+
+- **`aigon feature-review` mandatory issue classification and git sanity check** — the review command now requires the reviewer to classify each finding as `critical`, `major`, or `minor` before emitting the review summary, and verifies the worktree is on the correct branch before writing review artefacts.
+
+- **OpenRouter quota error patterns expanded** — `lib/op.js` now matches the full set of OpenRouter quota exhaustion messages including rate-limit variants, so the quota classifier correctly pauses agents on all error shapes.
 
 ## [2.62.0] — 2026-04-28
 
