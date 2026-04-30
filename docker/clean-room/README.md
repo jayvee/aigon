@@ -55,7 +55,7 @@ This copies `~/.claude.json`, `~/.claude/settings.json`, Gemini, Codex, and GitH
 ### Step 2: Install system prerequisites
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash - && sudo apt-get install -y nodejs git tmux lsof
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash - && sudo apt-get install -y nodejs git tmux lsof build-essential python3
 ```
 
 ### Step 3: Install Aigon from npm

@@ -53,7 +53,7 @@ install_prerequisites() {
   step "Install system prerequisites (node, git, tmux)"
   if [[ "$PLATFORM" == "linux" ]]; then
     curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash -
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs git tmux lsof
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs git tmux lsof build-essential python3
   else
     # macOS — assume brew is available (GitHub Actions runners have it)
     brew install node git tmux 2>/dev/null || true
