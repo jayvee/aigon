@@ -22,6 +22,7 @@ const ALLOWED_PREFIXES = [
     'templates/',
     'assets/icon/',
     'scripts/fix-node-pty-perms.js',
+    'scripts/probe-agent.js',
 ];
 
 function isAllowed(filePath) {

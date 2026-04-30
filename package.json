@@ -29,7 +29,8 @@
     "lib",
     "templates",
     "assets/icon",
-    "scripts/fix-node-pty-perms.js"
+    "scripts/fix-node-pty-perms.js",
+    "scripts/probe-agent.js"
   ],
   "publishConfig": {
     "access": "public"
