@@ -28,7 +28,8 @@
     "aigon-cli.js",
     "lib",
     "templates",
-    "assets/icon"
+    "assets/icon",
+    "scripts/fix-node-pty-perms.js"
   ],
   "publishConfig": {
     "access": "public"

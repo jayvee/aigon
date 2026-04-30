@@ -21,6 +21,7 @@ const ALLOWED_PREFIXES = [
     'lib/',
     'templates/',
     'assets/icon/',
+    'scripts/fix-node-pty-perms.js',
 ];
 
 function isAllowed(filePath) {
