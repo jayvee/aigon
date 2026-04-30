@@ -2312,20 +2312,20 @@ pre code {
   text-transform: uppercase;
 }
 
-.hero-kicker-beta {
+.hero-install-beta {
   display: inline-flex;
   align-items: center;
-  margin-left: 0.5rem;
-  padding: 0.15rem 0.5rem;
+  padding: 0.1rem 0.4rem;
   border: 1px solid var(--accent);
   border-radius: 999px;
   background: rgba(213, 95, 42, 0.08);
   color: var(--accent);
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   line-height: 1;
+  align-self: center;
 }
 
 /* === The wedge — display headline (the actual hero) === */
