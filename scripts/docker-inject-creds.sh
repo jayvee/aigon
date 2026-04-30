@@ -27,9 +27,11 @@ fi
 
 CONTAINER_ID="$1"
 
+# ~/.claude is the full Claude Code data dir and can be many GB of conversation
+# history. Only copy the auth token file and settings — not the whole directory.
 CREDENTIAL_RELS=(
   '.claude.json'
-  '.claude'
+  '.claude/settings.json'
   '.gemini'
   '.codex/config.toml'
   '.config/gh'
