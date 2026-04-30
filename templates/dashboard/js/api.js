@@ -288,6 +288,9 @@
         const payload = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
         showToast(payload.message || 'Agent started');
+        if (mode === 'close-resolve' && payload.sessionName) {
+          openTerminalPanel('Closing F' + featureId + ' with agent', '', payload.sessionName);
+        }
       } catch (e) {
         showToast('Start agent failed: ' + e.message, null, null, {error:true});
       } finally {
