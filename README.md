@@ -21,6 +21,8 @@
   <img src="site/public/img/aigon-dashboard-kanban.png" alt="Aigon Dashboard — kanban view" width="880"/>
 </p>
 
+> **Beta:** Aigon is early-access software. APIs and config formats may change between releases. Use it, file issues, and expect rough edges. Stable release coming soon.
+
 > Aigon is an open source project by [Sen Labs](https://senlabs.ai). Follow [aigon.build](https://www.aigon.build) for updates.
 
 ---
@@ -54,8 +56,8 @@ Mix and match. Aigon doesn't care which model writes the code — it just manage
 **Prerequisites:** Node.js 18+, Git 2.20+, and tmux (for Fleet/worktree mode). See the [Getting Started guide](https://www.aigon.build/docs/getting-started) for platform-specific install instructions.
 
 ```bash
-# Install aigon globally
-npm install -g @senlabs/aigon
+# Install aigon globally (beta)
+npm install -g @senlabs/aigon@next
 
 # Set up your project
 cd /path/to/your/project

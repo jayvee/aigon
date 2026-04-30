@@ -3,6 +3,12 @@ title: Getting Started
 description: Install Aigon and run your first spec-driven feature loop.
 ---
 
+import { Callout } from 'nextra/components'
+
+<Callout type="warning">
+**Beta software.** Aigon is early access — APIs and config formats may change between releases. Stable release coming soon. File bugs at [github.com/jayvee/aigon/issues](https://github.com/jayvee/aigon/issues).
+</Callout>
+
 ## Why Aigon
 
 - **Bring your own subscriptions** — use the AI products you already pay for (Claude, Codex, Gemini, Cursor); no separate Aigon billing, no token packs, no markup.
@@ -53,18 +59,18 @@ sudo pacman -S nodejs npm git tmux
 
 ## Installation
 
-Install Aigon globally with npm:
+Install the current beta globally with npm:
 
 **macOS:**
 
 ```bash
-npm install -g @senlabs/aigon
+npm install -g @senlabs/aigon@next
 ```
 
 **Linux:**
 
 ```bash
-sudo npm install -g @senlabs/aigon
+sudo npm install -g @senlabs/aigon@next
 ```
 
 Then run the setup wizard:
