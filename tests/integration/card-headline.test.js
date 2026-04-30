@@ -44,7 +44,7 @@ test('rule 1: missing snapshot past backlog → NO ENGINE STATE', () => {
 
 test('rule 1: missing snapshot in inbox does NOT trigger NO ENGINE STATE', () => {
     const h = computeCardHeadline({}, null, [], null, 'inbox', opts());
-    assert.notStrictEqual(h.verb, 'NO ENGINE STATE');
+    assert.strictEqual(h, null);
 });
 
 // Rule 2 — terminal lanes
@@ -97,10 +97,9 @@ test('rule 5: evalStatus=pick winner → PICK WINNER', () => {
 });
 
 // Rule 6
-test('rule 6: feature inbox → NEEDS PRIORITISATION', () => {
+test('rule 6: feature inbox → no headline (lane label already conveys prioritisation)', () => {
     const h = computeCardHeadline({}, null, [], null, 'inbox', opts());
-    assert.strictEqual(h.verb, 'NEEDS PRIORITISATION');
-    assert.strictEqual(h.tone, 'idle');
+    assert.strictEqual(h, null);
 });
 
 test('rule 6: feedback inbox → NEEDS TRIAGE', () => {
