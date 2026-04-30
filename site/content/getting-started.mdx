@@ -9,83 +9,184 @@ import { Callout } from 'nextra/components'
 **Beta software.** Aigon is early access — APIs and config formats may change between releases. Stable release coming soon. File bugs at [github.com/jayvee/aigon/issues](https://github.com/jayvee/aigon/issues).
 </Callout>
 
-## Why Aigon
+## Quick install
 
-- **Bring your own subscriptions** — use the AI products you already pay for (Claude, Codex, Gemini, Cursor); no separate Aigon billing, no token packs, no markup.
-- **Stay in the flow when a subscription lapses** — switch agents or accounts mid-session instead of being stuck on one vendor's meter.
-- **Spec-driven development you control** — features and research live as specs that can be built, shipped, reset, and rebuilt for clean handoffs and retries.
-- **Autonomous and multi-agent workflows** — configure who drafts, implements, and reviews, then run long loops through a pre-built push/merge lifecycle.
-- **Context that compounds** — specs, implementation summaries, and planning session notes feed forward; context from an interactive planning session is never lost when work moves to an isolated agent.
-- **Transparent, local, team-aligned** — agents run in plain tmux sessions you can attach to; it is CLI + git on your machine, with no required hosted platform, and fits GitHub PR review cleanly.
-
-## Prerequisites
-
-Before installing Aigon, make sure you have:
-
-| Prerequisite | Required | Check | Why |
-|---|---|---|---|
-| **Node.js 18+** | Yes | `node -v` | Aigon is a Node.js CLI |
-| **Git 2.20+** | Yes | `git --version` | Spec files are tracked in Git |
-| **tmux** | For Fleet/worktree mode | `tmux -V` | Persistent agent sessions that survive terminal closes. Optional if you only use single-agent Drive mode on a branch. |
-
-### Install prerequisites
-
-**macOS (Homebrew):**
-
-```bash
-brew install node git tmux
-```
-
-**Ubuntu / Debian:**
-
-```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash -
-sudo apt-get install -y nodejs git tmux lsof
-```
-
-**Fedora:**
-
-```bash
-sudo dnf install nodejs npm git tmux
-```
-
-**Arch:**
-
-```bash
-sudo pacman -S nodejs npm git tmux
-```
-
-> **Note:** On Ubuntu/Debian, `nodejs` 18+ is required — the NodeSource script above installs the correct version.
-
-## Installation
-
-Install the current beta globally with npm:
+Two commands and the wizard takes over from there:
 
 **macOS:**
 
 ```bash
 npm install -g @senlabs/aigon@next
+aigon setup
 ```
 
 **Linux:**
 
 ```bash
 sudo npm install -g @senlabs/aigon@next
-```
-
-Then run the setup wizard:
-
-```bash
 aigon setup
 ```
 
-The wizard walks you through prerequisites, terminal preference, agent CLI installation, an optional seed project, and starting the dashboard — all in one guided flow. It runs automatically the first time you use any `aigon` command, so you can also just skip straight to [Initialize a project](#initialize-a-project) and the wizard will launch on its own.
+The setup wizard walks you through everything: prerequisite checks, agent CLI installation and authentication (Claude Code, Gemini, Codex), terminal preference, git identity, an optional seed project, and starting the dashboard. It runs automatically the first time you use any `aigon` command, so even if you skip straight to [Initialize a project](#initialize-a-project), the wizard launches on its own.
 
 To re-run it at any time: `aigon setup --resume`
 
+### Prerequisites
+
+Aigon needs three things on your machine before `npm install` will work. The wizard checks these first and tells you what's missing:
+
+| Prerequisite | Required | Why |
+|---|---|---|
+| **Node.js 18+** | Yes | Aigon is a Node.js CLI |
+| **Git 2.20+** | Yes | Spec files are tracked in Git |
+| **tmux** | For Fleet/worktree mode | Persistent agent sessions |
+
+Install all three:
+
+| Platform | Command |
+|---|---|
+| **macOS (Homebrew)** | `brew install node git tmux` |
+| **Ubuntu / Debian** | `curl -fsSL https://deb.nodesource.com/setup_22.x \| sudo bash - && sudo apt-get install -y nodejs git tmux lsof` |
+| **Fedora** | `sudo dnf install nodejs npm git tmux` |
+| **Arch** | `sudo pacman -S nodejs npm git tmux` |
+
+> **Git identity:** if you've never set up Git on this machine, the wizard will prompt you. Or set it manually: `git config --global user.name "Your Name" && git config --global user.email "you@example.com"`.
+
+## Initialize a project
+
+**New to Aigon?** Start with the [Brewboard Tutorial](/docs/guides/brewboard-tutorial). It clones a seed project, walks through the full feature loop, and confirms your install is working — takes about 10 minutes. Come back here when you're ready to use Aigon on your own project.
+
+**Have your own project ready?** Navigate to any Git repository and run:
+
+```bash
+cd /path/to/your/project
+aigon init
+aigon install-agent cc gg          # Install Claude Code + Gemini agents
+```
+
+`aigon init` creates the `docs/specs/` folder structure with Kanban lanes for features, research, and feedback. `aigon install-agent` writes per-agent slash commands and config into your repo.
+
+| Code | Agent | Aigon command prefix |
+|------|-------|----------------------|
+| `cc` | Claude Code | `/aigon:` |
+| `gg` | Gemini CLI | `/aigon:` |
+| `cx` | Codex CLI | `$aigon-` (skill mention) |
+| `cu` | Cursor | `/aigon-` |
+
+Install only the agents you have access to. You can add more later with `aigon install-agent`.
+
+> **Tip:** `install-agent` checks whether the agent CLI binary is in your PATH and warns you if it's missing, so you'll know immediately if you need to install something first.
+
+## Three ways to interact
+
+The dashboard is the recommended starting point — it gives you a visual overview of the pipeline and lets you start, monitor, and close features with a click. Agent slash commands and the CLI are there when you want more control or want to script things.
+
+| | Dashboard | Agent Commands | CLI |
+|---|---|---|---|
+| **Where** | Browser UI | Inside an agent session | Terminal / shell |
+| **Best for** | Visual overview, monitoring, starting features | Writing specs, implementing features | Orchestration, setup, scripting |
+| **Example** | Click "Start" on a kanban card | `/aigon:feature-do 07` | `aigon feature-start 07 cc gg` |
+
+All three surfaces drive the same underlying workflow. Mix them freely.
+
+### Start the dashboard
+
+Register your project and start the server (the wizard does both for you, but you can re-run them manually):
+
+```bash
+aigon server add /path/to/your/project
+aigon server start
+```
+
+Open [http://localhost:4100](http://localhost:4100). The Pipeline view shows your features across Kanban lanes; clicking **Start** on a card launches an agent session directly.
+
+#### Persistent mode (survives reboots)
+
+**macOS** — installs a launchd service:
+
+```bash
+aigon server start --persistent
+```
+
+**Linux with systemd:**
+
+```bash
+aigon server start --persistent
+```
+
+> **Note:** On a headless Linux server, systemd user services need lingering enabled: `sudo loginctl enable-linger $USER`. Then run `aigon server start --persistent`.
+
+**Linux without systemd (containers, WSL, minimal installs):**
+
+```bash
+nohup aigon server start > ~/.aigon/logs/server.log 2>&1 &
+```
+
+## Your first feature
+
+The fastest path from idea to implementation is `feature-now`. Describe what you want — the agent creates a spec, assigns an ID, sets up the workspace, and starts implementing:
+
+```
+/aigon:feature-now dark-mode
+Add a dark mode toggle to the top-right of the site header.
+Use CSS custom properties for theming. Default to system preference.
+Store the user's choice in localStorage.
+```
+
+This is a normal agent conversation — you can go back and forth, refine requirements, ask questions, and iterate on the spec before the agent starts coding. The difference is that the conversation is anchored to a feature spec with acceptance criteria, so decisions are captured rather than lost in chat history.
+
+### Step by step (the full loop)
+
+For more control, use the individual commands:
+
+```
+# 1. Create a feature — describe what you want
+/aigon:feature-create dark-mode
+Add a dark/light mode toggle with system preference detection...
+
+# 2. Prioritise — assigns an ID, moves to backlog
+/aigon:feature-prioritise dark-mode
+# → Assigned ID: 07
+
+# 3. Start — creates the branch and moves the spec to in-progress
+/aigon:feature-start 07
+
+# 4. Do the feature — the agent reads the spec and implements it
+/aigon:feature-do 07
+
+# 5. Agent implements the spec...
+#    → explores the codebase, writes code
+#    → commits, writes implementation log
+#    → signals "submitted" when done
+
+# 6. Merge to main
+/aigon:feature-close 07
+```
+
+Each step moves the feature through the pipeline: `inbox → backlog → in-progress → done`.
+
+## Updating Aigon
+
+```bash
+npm update -g @senlabs/aigon
+```
+
+Project templates and agent configs update automatically the next time you start an agent session. To force a sync immediately:
+
+```bash
+cd /path/to/your/project
+aigon update
+```
+
+> If the dashboard is running, `aigon update` restarts it automatically to pick up the changes.
+
+## Manual setup (advanced)
+
+The setup wizard handles all of this — these sections are reference material if you'd rather configure things yourself or hit a wizard step that didn't work for you.
+
 ### Agent CLIs (manual install)
 
-If you prefer to install agent CLIs yourself rather than through the wizard:
+If you want to install agent CLIs yourself rather than through the wizard:
 
 | Agent | Binary | macOS | Linux |
 |-------|--------|-------|-------|
@@ -142,39 +243,17 @@ sudo npm link && cd ~/src/aigon && sudo npm link @aigon/pro
   && sudo apt install gh -y
 ```
 
-Then authenticate:
+Then authenticate: `gh auth login`.
 
-```bash
-gh auth login
-```
+### Configure your terminal manually
 
-### Verify your setup
-
-Run the doctor command to check that everything is configured correctly:
-
-```bash
-aigon doctor
-```
-
-Doctor checks Node.js version, Git availability, tmux, and which agent CLIs are in your PATH.
-
-> **Git identity:** Aigon commits spec moves on your behalf. If you've never set up Git on this machine, do it now — otherwise your first feature start will fail:
-> ```bash
-> git config --global user.name "Your Name"
-> git config --global user.email "you@example.com"
-> ```
-
-### Configure your terminal
-
-Aigon launches agent sessions in terminal windows. First, create your global config:
+The wizard sets this up for you. To change it later:
 
 ```bash
 aigon config init --global
 ```
 
 #### macOS
-
-Pick the terminal you use:
 
 | Terminal | Command |
 |----------|---------|
@@ -186,7 +265,7 @@ Pick the terminal you use:
 
 #### Linux
 
-Aigon auto-detects your terminal on Linux — you can skip this step if you're happy with auto-detection. To set one explicitly:
+Aigon auto-detects your terminal on Linux. To set one explicitly:
 
 | Terminal | Command |
 |----------|---------|
@@ -196,129 +275,15 @@ Aigon auto-detects your terminal on Linux — you can skip this step if you're h
 
 > **Headless / server Linux:** No terminal config is needed. Agent sessions run inside tmux and you connect to them with `tmux attach -t <session-name>`.
 
-## Initialize a project
-
-**New to Aigon?** Start with the [Brewboard Tutorial](/docs/guides/brewboard-tutorial). It clones a seed project, walks through the full feature loop, and confirms your install is working — takes about 10 minutes. Come back here when you're ready to use Aigon on your own project.
-
-**Have your own project ready?** Continue below.
-
----
-
-Navigate to any Git repository and run:
+### Verify your setup
 
 ```bash
-cd /path/to/your/project
-aigon init
+aigon doctor
 ```
 
-This creates the `docs/specs/` folder structure with Kanban lanes for features, research, and feedback.
+Doctor checks Node.js version, Git availability, tmux, and which agent CLIs are in your PATH.
 
-Then install the agents you want to use:
-
-```bash
-aigon install-agent cc gg          # Claude Code + Gemini CLI
-```
-
-| Code | Agent | Aigon command prefix |
-|------|-------|----------------------|
-| `cc` | Claude Code | `/aigon:` |
-| `gg` | Gemini CLI | `/aigon:` |
-| `cx` | Codex CLI | `$aigon-` (skill mention) |
-| `cu` | Cursor | `/aigon-` |
-
-Install only the agents you have access to. You can add more later with `aigon install-agent`.
-
-> **Tip:** `install-agent` checks whether the agent CLI binary is in your PATH and warns you if it's missing, so you'll know immediately if you need to install something first.
-
-## Three ways to interact
-
-The dashboard is the recommended starting point — it gives you a visual overview of the pipeline and lets you start, monitor, and close features with a click. Agent slash commands and the CLI are there when you want more control or want to script things.
-
-| | Dashboard | Agent Commands | CLI |
-|---|---|---|---|
-| **Where** | Browser UI | Inside an agent session | Terminal / shell |
-| **Best for** | Visual overview, monitoring, starting features | Writing specs, implementing features | Orchestration, setup, scripting |
-| **Example** | Click "Start" on a kanban card | `/aigon:feature-do 07` | `aigon feature-start 07 cc gg` |
-
-All three surfaces drive the same underlying workflow. Mix them freely.
-
-### Start the dashboard
-
-Register your project and start the server:
-
-```bash
-aigon server add /path/to/your/project
-aigon server start
-```
-
-Open [http://localhost:4100](http://localhost:4100). The Pipeline view shows your features across Kanban lanes; clicking **Start** on a card launches an agent session directly.
-
-#### Persistent mode (survives reboots)
-
-**macOS** — installs a launchd service, starts automatically:
-
-```bash
-aigon server start --persistent
-```
-
-**Linux with systemd (desktop or server with an active user session):**
-
-```bash
-aigon server start --persistent
-```
-
-> **Note:** On a headless Linux server, systemd user services require lingering to be enabled so the service survives logout: `sudo loginctl enable-linger $USER`. Then run `aigon server start --persistent`.
-
-**Linux without systemd (containers, WSL, minimal installs)** — run in the background instead:
-
-```bash
-nohup aigon server start > ~/.aigon/logs/server.log 2>&1 &
-```
-
-## Your first feature
-
-The fastest path from idea to implementation is `feature-now`. Describe what you want — the agent creates a spec, assigns an ID, sets up the workspace, and starts implementing:
-
-```
-/aigon:feature-now dark-mode
-Add a dark mode toggle to the top-right of the site header.
-Use CSS custom properties for theming. Default to system preference.
-Store the user's choice in localStorage.
-```
-
-This is a normal agent conversation — you can go back and forth, refine requirements, ask questions, and iterate on the spec before the agent starts coding. The difference is that the conversation is anchored to a feature spec with acceptance criteria, so decisions are captured rather than lost in chat history.
-
-### Step by step (the full loop)
-
-For more control, use the individual commands:
-
-```
-# 1. Create a feature — describe what you want
-/aigon:feature-create dark-mode
-Add a dark/light mode toggle with system preference detection...
-
-# 2. Prioritise — assigns an ID, moves to backlog
-/aigon:feature-prioritise dark-mode
-# → Assigned ID: 07
-
-# 3. Start — creates the branch and moves the spec to in-progress
-/aigon:feature-start 07
-
-# 4. Do the feature — the agent reads the spec and implements it
-/aigon:feature-do 07
-
-# 5. Agent implements the spec...
-#    → explores the codebase, writes code
-#    → commits, writes implementation log
-#    → signals "submitted" when done
-
-# 6. Merge to main
-/aigon:feature-close 07
-```
-
-Each step moves the feature through the pipeline: `inbox → backlog → in-progress → done`.
-
-## Set up the local proxy (optional)
+### Local proxy (optional)
 
 Aigon can route `.localhost` subdomains to its services, giving you clean URLs instead of `localhost:PORT`:
 
@@ -332,46 +297,12 @@ This is especially useful in Fleet mode, where each agent gets its own dev serve
 
 The proxy uses [RFC 6761](https://www.rfc-editor.org/rfc/rfc6761) `.localhost` domains, which resolve to `127.0.0.1` automatically — no DNS or `/etc/hosts` changes needed.
 
-### Quick start (runs until you stop it)
-
 ```bash
-aigon proxy start
+aigon proxy start              # runs until you stop it
+aigon proxy install            # persistent install — requires sudo
+aigon proxy-setup              # verify it's running
+aigon proxy uninstall          # remove the daemon
 ```
-
-### Persistent install (survives reboots, recommended)
-
-This installs a lightweight system daemon on port 80:
-
-```bash
-aigon proxy install          # requires sudo — installs a LaunchDaemon (macOS) or systemd unit (Linux)
-```
-
-Verify it's running:
-
-```bash
-aigon proxy-setup
-```
-
-You should see `✅ aigon-proxy: running`. If port 80 is in use by another service (Apache, nginx), you'll see a warning — stop that service first or the proxy will fall back to a non-standard port.
-
-> **Tip:** If you set up the proxy before running the [Brewboard Tutorial](/docs/guides/brewboard-tutorial), the dashboard and dev server previews will use the clean `.localhost` URLs automatically.
-
-To remove the daemon later: `aigon proxy uninstall`.
-
-## Updating Aigon
-
-```bash
-npm update -g @senlabs/aigon
-```
-
-Project templates and agent configs update automatically the next time you start an agent session. To force a sync immediately:
-
-```bash
-cd /path/to/your/project
-aigon update
-```
-
-> If the dashboard is running, `aigon update` restarts it automatically to pick up the changes.
 
 ## What's next
 
