@@ -3,6 +3,6 @@ export default {
   "getting-started": "Getting Started",
   concepts: "Concepts",
   guides: "Guides",
-  compare: "Compare",
+  compare: { display: "hidden" },
   reference: "Reference",
 };

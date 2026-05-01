@@ -3,9 +3,12 @@ import { withPro } from "../../../../components/pro-badge";
 export default {
   board: "board",
   server: "server",
+  config: "config",
   set: "set",
   nudge: "nudge",
   "dev-server": "dev-server",
+  proxy: "proxy",
+  "proxy-setup": "proxy-setup",
   deploy: "deploy",
   insights: { title: withPro("insights") },
   "agent-status": "agent-status",

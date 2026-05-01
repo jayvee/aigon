@@ -3,27 +3,26 @@ title: File Structure
 description: How Aigon organises features, research, and feedback in your repository.
 ---
 
-Aigon stores all workflow state as files in your repository. Features, research topics, and feedback items move through folders that represent their lifecycle stage.
+Aigon stores workflow state as local files. Human-readable specs live in your repository under `docs/specs/`; the authoritative feature/research lifecycle is the workflow-core event log and snapshot under `.aigon/workflows/`.
 
 ## Core principles
 
-- **State-as-Folders**: Task status is defined by *where it lives* (`inbox`, `backlog`, `in-progress`), not by database records
+- **Engine-first lifecycle**: feature and research status comes from workflow-core snapshots; folders are the committed projection users can inspect.
 - **Decoupled Lifecycles**: Research explores *what* to build; Features define *how* to build it
-- **Traceable History**: All agent conversations and implementation attempts are preserved as Markdown files
+- **Traceable History**: workflow events, snapshots, telemetry, specs, and logs stay on disk in the repo checkout.
 
 ## Directory layout
 
 ```
 your-repo/
 ├── .agents/              # Codex Skills (.agents/skills/aigon-*/SKILL.md)
-├── .aigon/               # Local runtime state (gitignored)
+├── .aigon/               # Local runtime state + Aigon-owned docs (mostly gitignored)
 ├── .claude/              # Claude Code config + aigon commands
 ├── .codex/               # Codex config (config.toml only)
 ├── .cursor/              # Cursor config + aigon commands
 ├── .gemini/              # Gemini CLI config + aigon commands
 ├── .githooks/            # Git hooks (merge gate scanning)
 ├── docs/
-│   ├── agents/           # Per-agent orientation notes
 │   └── specs/
 │       ├── features/     # Delivery pipeline
 │       │   ├── 01-inbox/
@@ -49,7 +48,8 @@ your-repo/
 │           ├── 04-done/
 │           ├── 05-wont-fix/
 │           └── 06-duplicate/
-└── AGENTS.md             # Shared agent orientation (all agents read this)
+├── AGENTS.md             # Optional user-owned shared agent orientation
+└── CLAUDE.md             # Optional user-owned Claude Code instructions
 ```
 
 ### Lifecycle folders (Kanban)
@@ -78,7 +78,9 @@ your-repo/
 
 ### Supporting files
 
-- **`logs/`** — Implementation logs (selected winners + alternatives)
+- **`.aigon/docs/`** — Aigon-installed operational docs, including `development_workflow.md` and `agents/<id>.md`
+- **`.aigon/install-manifest.json`** — manifest of Aigon-owned installed files
+- **`logs/`** — implementation logs (selected winners + alternatives)
 - **`evaluations/`** — Fleet comparison reports
 
 ## Naming conventions
@@ -91,7 +93,7 @@ your-repo/
 
 ## State machine
 
-Specs transition through states via the `requestTransition()` gatekeeper. You cannot skip steps — the state machine enforces valid transitions.
+Feature and research specs transition through workflow-core. Events are appended to `.aigon/workflows/<type>/<id>/events.jsonl`; snapshots are derived from those events; the XState machine validates lifecycle transitions and derives valid actions.
 
 ```mermaid
 flowchart LR
@@ -104,7 +106,7 @@ flowchart LR
     paused --> in-progress
 ```
 
-All transitions go through the CLI — never move spec files manually.
+All transitions should go through Aigon commands or dashboard actions. Do not move spec files manually to change state; that creates folder/snapshot drift. If drift appears, run `aigon doctor --fix`.
 
 ## The `.aigon/` directory
 
@@ -113,7 +115,8 @@ Local runtime state lives in `.aigon/` (gitignored). Spec folders in `docs/specs
 | Path | Purpose |
 |------|---------|
 | `.aigon/config.json` | Project-level configuration |
-| `.aigon/state/feature-{id}.json` | Per-feature status (created by CLI) |
+| `.aigon/docs/` | Aigon-owned docs installed into consumer projects |
+| `.aigon/install-manifest.json` | Tracks Aigon-owned installed files |
 | `.aigon/state/feature-{id}-{agent}.json` | Per-agent status files (heartbeat, session metadata) |
 | `.aigon/workflows/features/{id}/events.jsonl` | Append-only workflow event log |
 | `.aigon/workflows/features/{id}/snapshot.json` | Derived workflow snapshot |

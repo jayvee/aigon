@@ -1,0 +1,39 @@
+---
+title: "install-agent"
+description: "Install Aigon commands, skills, hooks, and context files for one or more agents."
+---
+
+# `aigon install-agent`
+
+Installs Aigon-owned integration files for the selected agents.
+
+```bash
+aigon install-agent cc gg
+aigon install-agent cx
+aigon install-agent cc gg cx cu op km --force
+```
+
+Agent IDs come from `templates/agents/*.json` in the Aigon package. Current bundled IDs include `cc`, `gg`, `cx`, `cu`, `op`, and `km`.
+
+## What it writes
+
+`install-agent` writes only Aigon-owned files, such as:
+
+- `.aigon/docs/` shared Aigon documentation
+- `.aigon/docs/agents/<agent>.md` per-agent notes
+- `.claude/`, `.gemini/`, `.cursor/`, `.codex/`, `.agents/`, or `.opencode/` integration files as required by the selected agent
+- `.aigon/install-manifest.json`, which records Aigon-owned file hashes for later repair/uninstall checks
+
+It does **not** write or modify `AGENTS.md`, `CLAUDE.md`, `README.md`, or your application source.
+
+## Flags
+
+| Flag | Meaning |
+|------|---------|
+| `--force` | Overwrite modified Aigon-managed files without prompting. |
+
+## See also
+
+- [Agents](/docs/reference/agents)
+- [`update`](./update)
+- [`doctor`](./doctor)

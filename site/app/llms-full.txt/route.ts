@@ -38,7 +38,7 @@ export async function GET() {
   const content = [
     "# Aigon — Full Documentation",
     "",
-    "Aigon is a spec-driven multi-agent harness — orchestrate Claude Code, Gemini CLI, and Codex CLI from one Kanban board, one CLI, or one slash command.",
+    "Aigon is a spec-driven multi-agent harness — orchestrate local agent CLIs such as Claude Code, Gemini CLI, Codex CLI, Cursor, OpenCode, and Kimi from one Kanban board, one CLI, or one agent command.",
     "",
     ...sections,
   ].join("\n");

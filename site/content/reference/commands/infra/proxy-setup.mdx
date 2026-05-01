@@ -1,0 +1,18 @@
+---
+title: "proxy-setup"
+description: "Inspect and guide setup for the optional local .localhost proxy."
+---
+
+# `aigon proxy-setup`
+
+Prints the local proxy setup status and next actions.
+
+```bash
+aigon proxy-setup
+```
+
+It checks Caddy availability, whether Caddy is running, and which port the proxy can use. If Caddy is missing, it prints the install command for your platform. If Caddy is installed but stopped, it points you to `aigon proxy start`.
+
+## See also
+
+- [`proxy`](./proxy)

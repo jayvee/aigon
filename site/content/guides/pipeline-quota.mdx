@@ -1,16 +1,18 @@
 ---
 title: Usage limits on the Pipeline
-description: Cached Claude Code and Codex quota readouts on the dashboard — what they mean and how they update.
+description: Cached agent quota readouts on the dashboard — what they mean and how they update.
 ---
 
 The **Pipeline** tab shows a **Remaining quota before reset** panel: a read-only snapshot of how much headroom you have in each vendor’s rolling windows before throttling. It is **not** the same as [token telemetry](./telemetry) (post-session spend); it is the live subscription / rate-limit style data those CLIs expose.
 
-![Pipeline quota panel with Claude Code and Codex bars](/img/subscription-quota-status.png)
+![Pipeline quota panel with agent quota bars](/img/subscription-quota-status.png)
 
 ## What you see
 
 - **Claude Code** — session, weekly, and (when present) Sonnet-specific remaining percentages, plus reset hints from the CLI output.
 - **Codex** — short-window (e.g. five-hour) and weekly remaining percentages, plus plan / credit hints when the Codex app-server returns them.
+- **Gemini CLI** — model usage and plan quota rows when the CLI exposes them.
+- **Kimi Code CLI** — usage tiers when the CLI exposes them.
 
 Each **bar** is *remaining* headroom for that window (not “used”). **0%** means that window is already exhausted until it resets.
 
@@ -37,10 +39,10 @@ Use **Collapse** / **Expand** on the panel header to reclaim vertical space. Whe
 
 Roughly every **30 minutes** the Aigon server:
 
-- Polls **Claude Code** via a short-lived tmux session that drives the CLI usage view.
+- Polls **Claude Code**, **Gemini CLI**, and **Kimi Code CLI** via short-lived tmux sessions that drive their usage views.
 - Reads **Codex** limits from the local Codex app-server (`account/rateLimits/read`).
 
-Results are written to **`.aigon/budget-cache.json`** in the repo the server runs from; the UI reads **`GET /api/budget`**. If `tmux`, the `claude` binary, or the Codex stack is missing, that agent’s card shows **usage unavailable** and polling is skipped — no error spam.
+Results are written to **`.aigon/budget-cache.json`** in the repo the server runs from; the UI reads **`GET /api/budget`**. If `tmux`, an agent binary, or the Codex stack is missing, that agent’s card shows **usage unavailable** and polling is skipped — no error spam.
 
 Polls older than about **90 minutes** are treated as **stale** (gray) so you are not misled by an old snapshot.
 

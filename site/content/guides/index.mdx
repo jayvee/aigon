@@ -16,10 +16,6 @@ Practical guides for using Aigon in different modes and workflows.
     <h3 className="text-lg font-semibold mb-1">Fleet Mode</h3>
     <p className="text-sm text-gray-400 m-0">Multiple agents compete on the same feature in parallel worktrees.</p>
   </a>
-  <a href="/docs/guides/autonomous-mode" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
-    <h3 className="text-lg font-semibold mb-1">Autopilot Mode</h3>
-    <p className="text-sm text-gray-400 m-0">Autonomous retry loops — spawn, validate, repeat until done.</p>
-  </a>
   <a href="/docs/guides/research-workflow" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
     <h3 className="text-lg font-semibold mb-1">Research Workflow</h3>
     <p className="text-sm text-gray-400 m-0">Multi-agent research with evaluation and feature creation.</p>
@@ -31,6 +27,23 @@ Practical guides for using Aigon in different modes and workflows.
   <a href="/docs/guides/dashboard" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
     <h3 className="text-lg font-semibold mb-1">Dashboard</h3>
     <p className="text-sm text-gray-400 m-0">The centralised command centre for all repos and agents.</p>
+  </a>
+  <a href="/docs/guides/pipeline-quota" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Usage limits (Pipeline)</h3>
+    <p className="text-sm text-gray-400 m-0">Agent quota bars, status dot, collapse, and how polling works.</p>
+  </a>
+  <a href="/docs/guides/agent-quota-awareness" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Agent Quota Awareness</h3>
+    <p className="text-sm text-gray-400 m-0">Use live quota context to decide which agent should take the implementation work.</p>
+  </a>
+</div>
+
+## Aigon Pro guides
+
+<div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <a href="/docs/guides/autonomous-mode" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">{withPro("Autonomous Mode")}</h3>
+    <p className="text-sm text-gray-400 m-0">Hands-off feature runs with AutoConductor: implement, review or evaluate, then close.</p>
   </a>
   <a href="/docs/guides/insights" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
     <h3 className="text-lg font-semibold mb-1">{withPro("Insights")}</h3>
@@ -47,14 +60,6 @@ Practical guides for using Aigon in different modes and workflows.
   <a href="/docs/guides/aigon-sync" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
     <h3 className="text-lg font-semibold mb-1">{withPro("Aigon Sync")}</h3>
     <p className="text-sm text-gray-400 m-0">Private Git vault for portable .aigon state — push/pull across machines (CLI + dashboard Settings).</p>
-  </a>
-  <a href="/docs/guides/pipeline-quota" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
-    <h3 className="text-lg font-semibold mb-1">Usage limits (Pipeline)</h3>
-    <p className="text-sm text-gray-400 m-0">Claude Code and Codex quota bars, status dot, collapse, and how polling works.</p>
-  </a>
-  <a href="/docs/guides/agent-quota-awareness" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
-    <h3 className="text-lg font-semibold mb-1">Agent Quota Awareness</h3>
-    <p className="text-sm text-gray-400 m-0">Use live quota context to decide which agent should take the implementation work.</p>
   </a>
   <a href="/docs/guides/feature-sets-autonomous" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
     <h3 className="text-lg font-semibold mb-1">{withPro("Feature Sets in Autonomous Mode")}</h3>

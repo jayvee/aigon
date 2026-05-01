@@ -1,0 +1,28 @@
+---
+title: "doctor"
+description: "Detect and repair common Aigon project state problems."
+---
+
+# `aigon doctor`
+
+Checks the current repository for Aigon install and workflow-state health.
+
+```bash
+aigon doctor
+aigon doctor --fix
+aigon doctor --reap-orphans --dry-run
+```
+
+`doctor --fix` is the front-door repair command. It runs pending schema migrations, repairs safe workflow/install drift, bootstraps missing workflow snapshots where possible, and updates the install manifest.
+
+## Common uses
+
+- After upgrading Aigon across several versions
+- When a dashboard row reports missing or drifted workflow state
+- After a failed install-agent or interrupted migration
+- To inspect orphaned agent processes before reaping them
+
+## See also
+
+- [File Structure](/docs/reference/file-structure)
+- [`install-agent`](./install-agent)

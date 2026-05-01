@@ -1,0 +1,38 @@
+---
+title: "config"
+description: "Read and write Aigon global and project configuration."
+---
+
+# `aigon config`
+
+Manages Aigon configuration at project and global scopes.
+
+```bash
+aigon config init --global
+aigon config init --project
+aigon config show
+aigon config show --global
+aigon config get profile
+aigon config set profile web
+aigon config set --global terminalApp iterm2
+aigon config models
+aigon config restore
+```
+
+## Subcommands
+
+| Subcommand | Purpose |
+|------------|---------|
+| `init` | Create a global or project config file. |
+| `set` | Set a nested config key. Values that look like JSON, booleans, null, or numbers are parsed. |
+| `get` | Print the resolved value for a key and where it came from. |
+| `show` | Print effective, global, or project config. |
+| `models` | Show resolved model defaults by agent and task. |
+| `restore` | Restore a global config backup. |
+
+Precedence is project config over global config over built-in defaults.
+
+## See also
+
+- [Configuration](/docs/reference/configuration)
+- [Agents](/docs/reference/agents#spec-complexity-and-model-defaults)

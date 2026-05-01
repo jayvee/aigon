@@ -1,0 +1,23 @@
+---
+title: "init"
+description: "Initialize Aigon in the current Git repository."
+---
+
+# `aigon init`
+
+Initializes the current Git repository for Aigon.
+
+```bash
+cd /path/to/project
+aigon init
+```
+
+`init` creates the spec folders under `docs/specs/`, creates `.aigon/` runtime config/state scaffolding, installs project git hooks, allocates a port block, detects a project profile, and bootstraps the workflow engine for new specs.
+
+Run it once per repository before installing agents or creating features.
+
+## See also
+
+- [`install-agent`](./install-agent)
+- [`config`](/docs/reference/commands/infra/config)
+- [File Structure](/docs/reference/file-structure)

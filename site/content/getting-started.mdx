@@ -27,7 +27,7 @@ sudo npm install -g @senlabs/aigon@next
 aigon setup
 ```
 
-If you don't already have Node.js, Git, and tmux, install them first — see [Prerequisites](#prerequisites) below.
+If you don't already have Node.js and Git, install them first — see [Prerequisites](#prerequisites) below. The setup wizard checks optional tools such as `tmux`, `gh`, and agent CLIs.
 
 ### Prerequisites
 
@@ -47,7 +47,7 @@ You only need two things on your machine before `npm install` will work — **No
 `aigon setup` walks through eight steps. Each is skippable. The wizard remembers your progress, so you can resume later with `aigon setup --resume`, or force a full re-run with `aigon global-setup --force`.
 
 1. **Prerequisites** — verifies Node, npm, Git, GitHub CLI (`gh`), and tmux are installed; offers to install missing optional ones (`gh`, `tmux`); prompts for Git identity if not configured; runs `gh auth login` if needed.
-2. **Terminal preference** (macOS only) — pick from iTerm2, Warp, Terminal.app, Ghostty, or cmux. Linux falls through to runtime auto-detection of GNOME Terminal / Kitty / xterm.
+2. **Terminal preference** (macOS only) — pick from iTerm2, Warp, Terminal.app, Ghostty, or cmux. Linux uses tmux for persistent sessions and can auto-detect GNOME Terminal / Kitty / xterm for foreground launches.
 3. **Agent install** — multi-select from Claude Code, Gemini CLI, Codex CLI, Cursor, OpenCode, and Kimi. Aigon installs each binary you select; for Claude Code, Gemini, and Codex it also runs the auth flow (Cursor / OpenCode / Kimi need to be authenticated separately).
 4. **Optional seed clone** — clones the [brewboard-seed](https://github.com/jayvee/brewboard-seed) demo repo, runs `aigon init` and `aigon update`, and registers it with the dashboard.
 5. **Repo scan** — scans your `~/src` directory for Git repositories and offers to register them with the dashboard (so they show up on the kanban without you running `aigon server add` yourself).
@@ -65,7 +65,7 @@ aigon init
 aigon install-agent cc gg          # Install Claude Code + Gemini agents
 ```
 
-`aigon init` writes the kanban folder structure under `docs/specs/`, installs a pre-commit hook, allocates a port block for that repo, and bootstraps the workflow engine. The kanban has six lanes — features and research move through `01-inbox` → `02-backlog` → `03-in-progress` → `04-in-evaluation` → `05-done`, with `06-paused` for paused work.
+`aigon init` writes the kanban folder structure under `docs/specs/`, installs project git hooks, allocates a port block for that repo, and bootstraps the workflow engine. The kanban has six lanes — features and research move through `01-inbox` → `02-backlog` → `03-in-progress` → `04-in-evaluation` → `05-done`, with `06-paused` for paused work.
 
 `aigon install-agent` writes per-agent slash commands and config into your repo. Pass any combination of these codes:
 
@@ -308,7 +308,7 @@ aigon config init --global
 
 #### Linux
 
-Linux is not auto-detected — set the terminal you use explicitly:
+Linux terminals are auto-detected in common desktop environments. Set one explicitly only if you want to override detection:
 
 | Terminal | Command |
 |----------|---------|
@@ -352,6 +352,6 @@ aigon proxy-setup              # one-shot setup helper (verifies and configures)
 - **[Drive Mode](/docs/guides/drive-mode)** — hands-on implementation with one agent
 - **[Fleet Mode](/docs/guides/fleet-mode)** — multiple agents competing in parallel against the same spec
 - **[Autonomous Mode](/docs/guides/autonomous-mode)** — hands-off long-running loops
-- **[Research Workflow](/docs/guides/research-mode)** — answer open questions before turning them into features
-- **[Feedback Workflow](/docs/guides/feedback-mode)** — triage user feedback into prioritised work
+- **[Research Workflow](/docs/guides/research-workflow)** — answer open questions before turning them into features
+- **[Feedback Workflow](/docs/guides/feedback-workflow)** — triage user feedback into prioritised work
 - **[Execution Modes](/docs/concepts/execution-modes)** — Drive, Fleet, Autopilot, and Swarm

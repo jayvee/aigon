@@ -1,0 +1,26 @@
+---
+title: "setup"
+description: "Run or resume the first-run onboarding wizard."
+---
+
+# `aigon setup`
+
+Runs the interactive onboarding wizard for machine-level setup: prerequisite checks, terminal preference, agent CLI installation, optional seed repo clone, repo registration, dashboard start, demo walkthrough, and Pro vault setup when available.
+
+```bash
+aigon setup
+aigon setup --resume
+aigon setup --yes
+```
+
+## Notes
+
+- `--resume` starts from the first incomplete or skipped wizard step.
+- `--yes` is intended for non-interactive defaults.
+- To force machine-level config regeneration, use `aigon global-setup --force`.
+
+## See also
+
+- [`init`](./init) — initialize a repository
+- [`install-agent`](./install-agent) — install agent commands and context files
+- [`doctor`](./doctor) — verify and repair an Aigon-enabled repo

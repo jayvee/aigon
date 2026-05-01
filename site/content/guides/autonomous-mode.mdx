@@ -6,7 +6,7 @@ description: Hands-off feature execution with the AutoConductor — implement, r
 import { Callout } from "nextra/components";
 
 <Callout type="info">
-  **Aigon Pro feature.** Autonomous mode — including `feature-autonomous-start`, `research-autopilot`, and the workflow-definition layer — is part of [Aigon Pro](/pro). Without Pro installed, running these commands prints a gate message pointing you to the free alternative (`feature-start` + `feature-do`). Pro is coming soon; see [aigon.build/pro](/pro) for launch updates.
+  **Aigon Pro feature.** Autonomous launch commands — including `feature-autonomous-start` and `research-autopilot` — require [Aigon Pro](/pro). You can create, list, and inspect workflow definitions in OSS, but launching a workflow is Pro-gated. Without Pro installed, launch commands print a gate message pointing you to the free alternative (`feature-start` + `feature-do`). Pro is coming soon; see [aigon.build/pro](/pro) for launch updates.
 </Callout>
 
 Autonomous mode lets you start a feature and walk away. The **AutoConductor** — a dedicated background tmux session — watches workflow state and triggers the next stage automatically.
@@ -209,7 +209,7 @@ Poll log output shows exactly what the AutoConductor sees on each cycle:
 
 ## Lifecycle states &amp; card badges
 
-As the AutoConductor moves a feature through implement → review → revision → close, the dashboard card reflects the current **lifecycle state** with a coloured chip in the card header. The state is canonical — it lives on the workflow snapshot, not in frontend heuristics — and the badge maps one-to-one from the [`STATE_RENDER_META`](https://github.com/jpv-aigon/aigon/blob/main/lib/state-render-meta.js) table the server attaches to every dashboard row.
+As the AutoConductor moves a feature through implement → review → revision → close, the dashboard card reflects the current **lifecycle state** with a coloured chip in the card header. The state is canonical — it lives on the workflow snapshot, not in frontend heuristics — and the badge maps one-to-one from the [`STATE_RENDER_META`](https://github.com/jayvee/aigon/blob/main/lib/state-render-meta.js) table the server attaches to every dashboard row.
 
 The active states you'll see during an autonomous run:
 

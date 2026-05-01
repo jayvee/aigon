@@ -3,7 +3,13 @@ title: "schedule"
 description: "Schedule a feature autonomous run or research start for a specific time. Polled by the aigon server."
 ---
 
+import { Callout } from "nextra/components";
+
 # `aigon schedule`
+
+<Callout type="info">
+  **Aigon Pro command.** The schedule engine lives in `@aigon/pro`. In open-source Aigon, `aigon schedule` is a thin stub that prints a Pro notice and exits non-zero unless Pro is installed.
+</Callout>
 
 Defer a kickoff to a specific clock time. The aigon server (`aigon server start`) polls the schedule store every ~45 seconds and fires each job once at or after its `--run-at`. If the server is offline at that moment, the job stays pending and fires on the next poll after the server starts (catch-up: it fires once when `runAt <= now`).
 

@@ -1,0 +1,33 @@
+---
+title: "proxy"
+description: "Manage the optional Caddy-based .localhost reverse proxy."
+---
+
+# `aigon proxy`
+
+Manages the optional local reverse proxy that maps `.localhost` hostnames to Aigon services and worktree dev servers.
+
+```bash
+aigon proxy start
+aigon proxy status
+aigon proxy stop
+aigon proxy install
+aigon proxy uninstall
+```
+
+The proxy uses Caddy. Foreground `start` runs until stopped. `install` creates a persistent system service and may require administrator privileges.
+
+## Subcommands
+
+| Subcommand | Purpose |
+|------------|---------|
+| `start` | Start Caddy with Aigon's generated Caddyfile. |
+| `status` | Show whether Caddy is installed and running. |
+| `stop` | Stop a foreground proxy. |
+| `install` | Install a persistent daemon, typically on port 80. |
+| `uninstall` | Remove the persistent daemon. |
+
+## See also
+
+- [`proxy-setup`](./proxy-setup)
+- [Getting Started](/docs/getting-started#local-proxy-optional)

@@ -1,0 +1,18 @@
+---
+title: "seed-reset"
+description: "Reset a demo seed repository back to its canonical state."
+---
+
+# `aigon seed-reset`
+
+Resets an Aigon seed/demo repository, such as Brewboard or Trailhead, back to the canonical seed state.
+
+```bash
+aigon seed-reset brewboard --dry-run
+aigon seed-reset brewboard --force
+aigon seed-reset /path/to/brewboard --force
+```
+
+This is intentionally destructive for the target seed repo. Use `--dry-run` first unless you are certain the repo contains no work you need to keep.
+
+If you are editing seed repo source, read `docs/seeds.md` in the Aigon repo before running this command. Seed repos use a two-repo architecture, and resetting the wrong checkout can wipe local changes.
