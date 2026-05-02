@@ -116,6 +116,27 @@ This cluster is **explicitly required to produce a punch list of concrete, low-r
 
 <!-- Researchers fill this section. Document discoveries, options evaluated, pros/cons. Per Fleet convention, include a "Divergent Views" subsection if multi-agent and they disagree, then a "Synthesis Decision" that resolves it before recommendations. -->
 
+### Post-hoc: Kimi (km) — 2026-05-02
+
+A post-hoc independent pass was run after the research closed to bring a fresh perspective on the post-F467/F468/F469 state. Full findings are in `docs/specs/research-topics/logs/research-47-km-findings.md`. Key independent observations:
+
+1. **Payload duplication is a free win.** `validActions` and `nextActions` are near-identical (~193 KB each). `allFeatures` duplicates data already in `features` (~297 KB). Removing these and moving `cardHeadline`/`stateRenderMeta` to client-side derivation would cut the `/api/status` payload by **~35–40 %** without reducing collector CPU.
+2. **Event logs are tiny.** 6,336 events total across 424 features; average 14.9 per feature. This makes event-driven push extremely cheap — replaying the entire event corpus is trivial.
+3. **The bottleneck is not I/O volume.** Snapshot reads are ~0.08 ms each. The 625 ms `features` step is dominated by per-feature orchestration (agent rows, tmux checks, liveness, action derivation), not `readdirSync`/`readFileSync` count.
+4. **F471 yields between repos, not within them.** The aigon repo alone blocks HTTP for ~650 ms. Yielding every N features inside `collectFeatures` would bound per-chunk latency to ~50–80 ms.
+5. **Don't build SQLite until profiling proves it.** At current scale, an in-memory LRU + mtime cache (F468) is sufficient. SQLite becomes worth it only for query flexibility or >2,000 active features.
+
+**Post-hoc suggested features (not in original synthesis):**
+
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| `dashboard-payload-dedup-next-actions` | Derive `nextActions` client-side from `validActions`; remove from `/api/status` | high |
+| `dashboard-all-features-opt-in` | Move `allFeatures` out of default `/api/status`; serve on demand | high |
+| `dashboard-intra-repo-yield` | Extend F471 `setImmediate` yielding inside `collectFeatures` every N features | medium |
+| `dashboard-client-side-headline` | Compute `cardHeadline` and `stateRenderMeta` in dashboard JS | medium |
+| `dashboard-done-short-circuit` | Return minimal stub for done features instead of full snapshot+agent build | low |
+| `dashboard-payload-audit` | Systematic audit: every field in `/api/status` must justify its bytes | low |
+
 ## Recommendation
 
 ### Short-term punch list (ships now, current architecture)
