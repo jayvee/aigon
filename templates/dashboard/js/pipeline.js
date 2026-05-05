@@ -649,6 +649,14 @@
           } else {
             actionsHtml += '<button class="btn btn-secondary kcard-view-findings-btn"' + findingsAttrs + '>' + escHtml(va.label) + '</button>';
           }
+        } else if (va.action === 'switch-agent') {
+          const nextAgent = (va.metadata && va.metadata.nextAgentId) || '';
+          const disabled = (va.metadata && va.metadata.chainExhausted) ? ' disabled title="No agents left in failover chain"' : '';
+          const failoverAttrs = ' data-failover-feature="' + escHtml(String(feature.id || '')) + '"' +
+            ' data-failover-agent="' + escHtml(agent.id) + '"' +
+            ' data-failover-next="' + escHtml(nextAgent) + '"' +
+            ' data-failover-repo="' + escHtml(repoPath || '') + '"';
+          secondaryInfraOverflow += '<button class="kcard-overflow-item kcard-failover-btn"' + failoverAttrs + disabled + '>' + escHtml(va.label) + '</button>';
         }
       });
 
@@ -1145,6 +1153,39 @@
           const agentId = btn.getAttribute('data-flag-agent');
           const targetRepoPath = btn.getAttribute('data-flag-repo') || repoPath;
           await requestAgentFlagAction(action, { entityType, id, agentId, repoPath: targetRepoPath }, btn);
+        };
+      });
+
+      // Failover now button — delegates to /api/feature-failover (Pro endpoint)
+      card.querySelectorAll('.kcard-failover-btn').forEach(btn => {
+        btn._origText = btn.textContent;
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          closeAllKcardOverflowMenus();
+          if (btn.disabled) return;
+          const featureId = btn.getAttribute('data-failover-feature') || feature.id;
+          const agentId = btn.getAttribute('data-failover-agent') || '';
+          const nextAgent = btn.getAttribute('data-failover-next') || '';
+          const targetRepoPath = btn.getAttribute('data-failover-repo') || repoPath || '';
+          const origText = btn._origText || btn.textContent;
+          btn.disabled = true;
+          btn.innerHTML = '<span class="run-next-spinner"></span>' + escHtml(origText);
+          try {
+            const res = await fetch('/api/feature-failover', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ featureId, agentId, repoPath: targetRepoPath })
+            });
+            const payload = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+            showToast(payload.message || ('Switched ' + agentId + (nextAgent ? ' → ' + nextAgent : '')));
+            await requestRefresh();
+          } catch (err) {
+            showToast('Failover failed: ' + err.message, null, null, { error: true });
+          } finally {
+            btn.disabled = false;
+            btn.textContent = origText;
+          }
         };
       });
 

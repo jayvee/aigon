@@ -197,17 +197,38 @@
           detailEl.innerHTML = '<div class="drawer-empty">No events recorded.</div>';
           return;
         }
+        const fmtEvTime = (ts) => {
+          const d = new Date(ts);
+          if (isNaN(d)) return '';
+          return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        };
         const rows = events.map(ev => {
           const ts = ev.at || ev.ts || ev.timestamp || '';
           const kind = ev.type || ev.status || 'event';
           const actor = ev.actor || ev.agent || ev.agentId || 'system';
           const summary = ev.message || ev.detail || '';
-          return '<li class="timeline-item">' +
+          let dotClass = 'timeline-dot';
+          let titleHtml = '<span class="timeline-kind">' + escHtml(kind) + '</span><span class="timeline-actor">' + escHtml(actor) + '</span>';
+          let itemClass = 'timeline-item';
+          if (kind === 'agent.token_exhausted') {
+            dotClass = 'timeline-dot timeline-dot-warn';
+            itemClass = 'timeline-item timeline-item-warn';
+            const src = ev.source || 'usage limit';
+            titleHtml = '<span class="timeline-kind">🟡 ' + escHtml(actor) + ' hit token limit</span><span class="timeline-actor"> · ' + escHtml(src) + ' · ' + escHtml(fmtEvTime(ts)) + '</span>';
+          } else if (kind === 'agent.failover_switched') {
+            dotClass = 'timeline-dot timeline-dot-ok';
+            itemClass = 'timeline-item timeline-item-ok';
+            const prev = ev.previousAgentId || ev.agentId || actor;
+            const next = ev.replacementAgentId || '?';
+            const commit = ev.lastCommit ? 'last commit ' + ev.lastCommit : '';
+            titleHtml = '<span class="timeline-kind">🟢 Failover</span><span class="timeline-actor"> · ' + escHtml(prev) + ' → ' + escHtml(next) + (commit ? ' · ' + escHtml(commit) : '') + ' · ' + escHtml(fmtEvTime(ts)) + '</span>';
+          }
+          return '<li class="' + itemClass + '">' +
             '<div class="timeline-time">' + escHtml(formatIso(ts)) + '</div>' +
-            '<div class="timeline-dot"></div>' +
+            '<div class="' + dotClass + '"></div>' +
             '<div class="timeline-content">' +
-              '<div class="timeline-title"><span class="timeline-kind">' + escHtml(kind) + '</span><span class="timeline-actor">' + escHtml(actor) + '</span></div>' +
-              (summary ? '<div class="timeline-summary">' + escHtml(summary) + '</div>' : '') +
+              '<div class="timeline-title">' + titleHtml + '</div>' +
+              (summary && kind !== 'agent.token_exhausted' && kind !== 'agent.failover_switched' ? '<div class="timeline-summary">' + escHtml(summary) + '</div>' : '') +
             '</div>' +
           '</li>';
         }).join('');
