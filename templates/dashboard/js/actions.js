@@ -1041,8 +1041,29 @@ let autonomousModalRepoPath = null;
 let autonomousModalBtn = null;
 let autonomousModalModels = null;
 let autonomousModalWorkflowSlug = '';
+let autonomousModalSubmitting = false;
 
 const AUTONOMOUS_AGENT_IDS = getAutonomousAgentIds();
+
+function setAutonomousSubmitLoading(loading) {
+  const btn = document.getElementById('autonomous-modal-submit');
+  if (!btn) return;
+  if (loading) {
+    if (!btn.dataset.originalLabel) btn.dataset.originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.textContent = '';
+    const spinner = document.createElement('span');
+    spinner.className = 'run-next-spinner';
+    btn.appendChild(spinner);
+    btn.appendChild(document.createTextNode('Starting…'));
+  } else {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    btn.textContent = btn.dataset.originalLabel || 'Start Autonomously';
+    delete btn.dataset.originalLabel;
+  }
+}
 
 function getNudgeCandidates(feature) {
   const agents = Array.isArray(feature && feature.agents) ? feature.agents : [];
@@ -1963,6 +1984,8 @@ function hideAutonomousModal() {
   autonomousModalBtn = null;
   autonomousModalModels = null;
   autonomousModalWorkflowSlug = '';
+  autonomousModalSubmitting = false;
+  setAutonomousSubmitLoading(false);
 }
 
 function buildAutonomousAgentOptions(taskType, options) {
@@ -2082,6 +2105,7 @@ function updateAutonomousModeControls() {
 }
 
 async function submitAutonomousModal() {
+  if (autonomousModalSubmitting) return;
   if (!autonomousModalFeature) return;
   const selectedAgents = [...document.querySelectorAll('#autonomous-agent-checks input[type="checkbox"]:checked')].map(cb => cb.value);
   if (selectedAgents.length === 0) {
@@ -2104,6 +2128,9 @@ async function submitAutonomousModal() {
     return;
   }
 
+  autonomousModalSubmitting = true;
+  setAutonomousSubmitLoading(true);
+
   const triplets = selectedAgents.map(id => {
     const row = document.querySelector('#autonomous-agent-checks input[value="' + id + '"]');
     const wrap = row && row.closest('.agent-check-row');
@@ -2124,7 +2151,11 @@ async function submitAutonomousModal() {
     if (typeof fetchBudget === 'function') {
       await fetchBudget();
       const warning = budgetWarningForAgents([...selectedAgents, evalAgent, reviewAgent].filter(Boolean));
-      if (warning && !window.confirm(warning)) return;
+      if (warning && !window.confirm(warning)) {
+        autonomousModalSubmitting = false;
+        setAutonomousSubmitLoading(false);
+        return;
+      }
     }
   } catch (_) { /* budget check is best-effort */ }
 
