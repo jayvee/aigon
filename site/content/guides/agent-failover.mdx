@@ -17,14 +17,20 @@ Aigon's failover chain lets the work continue automatically. When the supervisor
 
 ## How it works
 
-The supervisor runs a sweep every 30 seconds. For each active feature agent slot it checks two inputs:
+The supervisor runs a sweep every 30 seconds. For each active feature agent slot it checks three inputs, in this order:
 
-1. **Stderr patterns** — exit code 1 and terminal output matching known quota-limit strings (`usage limit`, `quota exceeded`, `rate limit`, etc.).
-2. **Telemetry over-limit** — the session's `perSessionBillableTokens` counter exceeds the configured threshold.
+1. **Live tmux pane** — the supervisor captures the agent's tmux pane each sweep and matches its content against the agent's quota strings (`usage limit`, `quota exceeded`, `rate limit`, etc.). This is the primary path. Most CLIs print a quota message and stay at their REPL prompt instead of exiting, so they never trigger an exit-code path. Live-pane scanning catches them anyway.
+2. **Stderr patterns + exit code** — for the rare CLIs that *do* exit with code 1 on quota, the post-mortem agent-status file is matched against the same patterns.
+3. **Telemetry over-limit** — the session's `perSessionBillableTokens` counter exceeds the configured threshold.
 
-When either fires and the agent slot has not yet been flagged as exhausted, the supervisor writes an `agent.token_exhausted` event and records the `tokenExhausted` flag on the snapshot.
+When any of these fires and the agent slot has not yet been flagged as exhausted, the supervisor writes an `agent.token_exhausted` event with a `source` field (`live_pane_pattern`, `stderr_pattern`, or `telemetry_limit`), flips the slot's status to `needs_attention`, and records the `tokenExhausted` flag on the snapshot.
 
-Then, if `agentFailover.policy` is `switch` (Pro required), it calls the registered exhaustion handler, which:
+Auto-failover then fires **only when both conditions hold**:
+
+- `agentFailover.policy` is `switch`, AND
+- the feature is running in autonomous (autopilot) mode.
+
+Manual / Drive / Fleet runs **never** auto-swap — the operator is at the wheel and clicks the "Failover now →" button when they're ready. With those conditions met, Pro's exhaustion handler:
 
 1. Calls `chooseNextAgent(chain, currentAgentId, [currentAgentId])` to pick the replacement.
 2. Kills the current tmux session.
@@ -60,15 +66,15 @@ Add an `agentFailover` block to your repo's `.aigon/config.json`:
 
 You can set a per-agent model override in `.aigon/agents/<id>/config.json`. When the failover handler spawns a replacement, it resolves the replacement agent's CLI config independently — each agent uses its own model preference.
 
-## Auto-failover
+## Auto-failover (autonomous runs only)
 
 The full auto path, step by step:
 
-1. Feature is running on `cc` with chain `[cc, cx, gg]` and `policy: switch`.
-2. `cc` hits its quota. Its session exits with code 1 and the pane tail contains a quota string.
-3. The supervisor sweep (runs every 30 s) detects both signals.
-4. `agent.token_exhausted` is appended to `events.jsonl` for the feature.
-5. The Pro exhaustion handler fires. It selects `cx` (next in chain after `cc`).
+1. Feature is started in autonomous mode (e.g. via `aigon feature-autonomous-start`) on `cc` with chain `[cc, cx, gg]` and `policy: switch`.
+2. `cc` hits its quota. The CLI prints "usage limit" and returns to its REPL prompt — it does **not** exit.
+3. The supervisor sweep (runs every 30 s) reads the live tmux pane, matches the quota string, fires.
+4. `agent.token_exhausted` is appended to `events.jsonl` (source: `live_pane_pattern`). The slot's status flips to `needs_attention`.
+5. Because the feature is autonomous and `policy: switch`, the Pro exhaustion handler fires. It selects `cx` (next in chain after `cc`).
 6. The `cc` tmux session is killed.
 7. A new session is spawned for `cx` in the **same worktree**, with a handoff prompt referencing the last commit.
 8. `agent.failover_switched` is appended.
@@ -76,24 +82,36 @@ The full auto path, step by step:
 
 If `cx` later exhausts, the process repeats with `gg`. When `gg` exhausts with no next agent, `agent.token_exhausted` is recorded but no switch fires.
 
+> **Manual runs never auto-swap.** A feature started with `aigon feature-start` (Drive / Fleet / solo) records the exhaustion event, flips the card to "Token limit hit", and waits for you to click the failover button. The autonomy gate is intentional — the operator is at the wheel.
+
 ## Manual failover
 
-The dashboard shows a **"Failover now → `<next-agent>`"** item in the agent slot's overflow menu when:
+When a slot has been flagged exhausted, its card shows:
+
+- a yellow **⚠ Token limit hit** badge in place of "Implementing"
+- a yellow **"Failover now → `<next-agent>`"** button as the slot's primary action
+
+Both appear when:
 
 - `entityType` is `feature`
 - The agent slot has `tokenExhausted` set (i.e. exhaustion was recorded server-side)
 - The failover chain has a candidate remaining
 
-When the chain is fully exhausted, the item appears **disabled** with the tooltip "No agents left in failover chain". When the slot is healthy (no exhaustion recorded), the item is hidden entirely — it does not appear as a disabled entry.
+When the chain is fully exhausted, the button appears **disabled** with the tooltip "No agents left in failover chain". When the slot is healthy (no exhaustion recorded), the button is hidden entirely.
 
-Clicking the item sends a `POST /api/feature-failover` request. The server validates that `tokenExhausted` is set and that a chain candidate exists before executing the switch. On success a green toast confirms `Switched cc → cx`; on failure (e.g. 409 chain exhausted) a red toast shows the server's error.
+Clicking sends a `POST /api/feature-failover` request. The server validates that `tokenExhausted` is set and that a chain candidate exists before executing the switch. On success a green toast confirms `Switched cc → cx`; on failure (e.g. 409 chain exhausted) a red toast shows the server's error.
 
-> **Gate:** The manual button only appears *after* exhaustion has been recorded server-side. You cannot trigger a pre-emptive switch before the supervisor has flagged the slot.
+> **Gate:** The button only appears *after* exhaustion has been recorded server-side. You cannot trigger a pre-emptive switch before the supervisor has flagged the slot.
 
 ## Verifying it ran
 
-**Dashboard activity feed** — open the feature detail panel. The timeline shows:
-- 🟡 `cc hit token limit · usage limit · 14:02` for each `agent.token_exhausted` event
+**Dashboard slot card** — when exhaustion is recorded, the card visibly changes:
+- The status badge flips from green "Implementing" to yellow **⚠ Token limit hit**
+- A yellow **"Failover now → `<next-agent>`"** button appears as the slot's primary action
+- After a swap, the agent label updates to **`<new-agent>` (was `<old-agent>`)** so the history is legible
+
+**Activity feed** — open the feature detail panel. The timeline shows:
+- 🟡 `cc hit token limit · live_pane_pattern · 14:02` for each `agent.token_exhausted` event
 - 🟢 `Failover · cc → cx · last commit a1b2c3d · 14:02` for each `agent.failover_switched` event
 
 **events.jsonl** — events are stored at `.aigon/workflows/features/<id>/events.jsonl`. To grep for both types:
