@@ -2,7 +2,7 @@
 'use strict';
 const a = require('assert');
 const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
-const fo = require('../../lib/agent-failover');
+const fo = require('../../lib/agent-exhaustion-detect');
 const wf = require('../../lib/workflow-core');
 const { writeAgentStatusAt, readAgentStatusRecordAt } = require('../../lib/agent-status');
 const { projectContext } = require('../../lib/workflow-core/projector');
