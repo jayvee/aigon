@@ -77,3 +77,8 @@ These tools sit *beside* a coding agent and give it durable, queryable state. Th
 - **Crush**: independent project by Charm. Often described informally as a Go-lineage successor to the original `sst/opencode` TUI niche, but is not a fork — separate codebase, separate team. Listed as its own row.
 - **GSD**: fully named *Get Shit Done* (`gsd-build/get-shit-done`), authored by developer **TÂCHES**. The `GSD` shorthand collides with several other tools — always use the full name in long copy. (Note: "GSD (Taches)" disambiguates by author handle, not by pointing to a separate tool.)
 - **Superpowers**: created by Jesse Vincent (`obra`), *not* by Anthropic. The Anthropic plugin marketplace acceptance (2026-01-15) is distribution, not authorship. Multiple downstream forks exist (`pcvelz/superpowers` etc.) — `obra/superpowers` is canonical.
+
+
+# Articles
+- https://specdriven.com/
+
