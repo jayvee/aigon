@@ -149,8 +149,9 @@
     .awaiting-badge .awaiting-tip-cmd{display:flex;align-items:center;gap:6px}
     .awaiting-badge .awaiting-tip-cmd button{font-size:11px}
     /* workflow idle — supervisor: alive tmux but no progress signals (distinct dashed ring from hook awaiting-input) */
-    .workflow-idle-badge{position:relative;display:inline-flex;align-items:center;gap:6px;margin-left:6px;padding:2px 8px 2px 7px;border-radius:999px;background:rgba(251,191,36,.1);border:1px dashed rgba(251,191,36,.55);color:#fde68a;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;cursor:help;user-select:none;white-space:nowrap}
-    .workflow-idle-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:#fbbf24;opacity:.9}
+    .workflow-idle-badge,.kcard-workflow-idle-badge{position:relative;display:inline-flex;align-items:center;gap:6px;margin-left:6px;padding:2px 8px 2px 7px;border-radius:999px;background:rgba(251,191,36,.1);border:1px dashed rgba(251,191,36,.55);color:#fde68a;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;cursor:help;user-select:none;white-space:nowrap}
+    .kcard-workflow-idle-badge{margin:6px 0 0 0}
+    .workflow-idle-badge::before,.kcard-workflow-idle-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:#fbbf24;opacity:.9}
     .workflow-idle-badge .workflow-idle-tip{position:absolute;top:calc(100% + 6px);right:0;min-width:240px;max-width:360px;padding:8px 10px;background:var(--bg-surface);border:1px solid rgba(251,191,36,.45);border-radius:8px;color:var(--text-primary);font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;line-height:1.4;white-space:normal;box-shadow:0 10px 24px rgba(0,0,0,.35);opacity:0;pointer-events:none;transform:translateY(-4px);transition:opacity .12s,transform .12s;z-index:10}
     .workflow-idle-badge:hover .workflow-idle-tip,.workflow-idle-badge:focus-within .workflow-idle-tip{opacity:1;pointer-events:auto;transform:translateY(0)}
     .workflow-idle-badge .workflow-idle-tip-title{display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#fcd34d;margin-bottom:4px}
@@ -188,6 +189,9 @@
     .btn-warn:hover{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.65);color:#fde68a}
     .btn-secondary{background:transparent;border:1px solid var(--border-subtle);color:var(--text-tertiary)}
     .btn-secondary:hover{border-color:var(--border-default);color:var(--text-secondary)}
+    .btn-failover{background:rgba(251,191,36,.14);border-color:rgba(251,191,36,.55);color:#fde68a;font-weight:600}
+    .btn-failover:hover{background:rgba(251,191,36,.22);border-color:rgba(251,191,36,.8);color:#fef3c7}
+    .btn-failover[disabled]{opacity:.5;cursor:not-allowed}
     .btn-danger{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.35);color:#fca5a5}
     .btn-danger:hover{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.6);color:#fca5a5}
     .next-copy{font-size:11px}
@@ -341,6 +345,7 @@
     .kcard-agent-status.status-submitted{color:#86EFAC}
     .kcard-agent-status.status-ended,.kcard-agent-status.status-idle{color:var(--text-tertiary)}
     .kcard-agent-status.status-flagged{color:#FB923C}
+    .kcard-agent-status.status-needs-attention{color:#fbbf24;font-weight:600}
     .liveness-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle;flex-shrink:0}
     .liveness-dot.liveness-alive{background:#4ADE80;box-shadow:0 0 3px rgba(74,222,128,.5)}
     .liveness-dot.liveness-stale{background:#FCD34D;box-shadow:0 0 3px rgba(252,211,77,.5)}

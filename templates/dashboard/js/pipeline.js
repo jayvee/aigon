@@ -373,6 +373,7 @@
       'research-complete':    { icon: '✓', label: 'Research complete',    cls: 'status-submitted'  },
       'waiting':              { icon: '⏳', label: 'Needs input',         cls: 'status-waiting'    },
       'quota-paused':         { icon: '⏸', label: 'Quota paused',        cls: 'status-waiting'    },
+      'needs-attention':      { icon: '⚠', label: 'Token limit hit',     cls: 'status-needs-attention' },
     };
     const AGENT_STATUS_DEFAULT = { icon: '○', label: 'Not started', cls: 'status-idle' };
 
@@ -384,11 +385,13 @@
       const endedFlag = !!(agent.flags && agent.flags.sessionEnded);
       let { icon, label, cls } = AGENT_STATUS_META[status] || AGENT_STATUS_DEFAULT;
 
-      // Compound overrides: tmux-alive only means "Running" when the agent has not signaled done.
+      // Compound overrides: tmux-alive only means "Implementing" when the agent has not signaled done.
       // Once the implementer is in a *_DONE_STATUSES state, the pane is just idling at its prompt —
-      // showing "Running" would lie about active work.
-      if (tmuxRunning && status !== 'quota-paused' && !IMPLEMENTER_DONE_STATUSES.has(status) && !isCompleteStatus(status) && status !== 'waiting') {
-        icon = '●'; label = drive ? 'Implementing' : 'Running'; cls = 'status-running';
+      // showing "Implementing" would lie about active work.
+      // `needs-attention` (token-exhausted) is excluded from the override too —
+      // tmux is alive but the agent is stuck at its prompt because of quota.
+      if (tmuxRunning && status !== 'quota-paused' && status !== 'needs-attention' && !IMPLEMENTER_DONE_STATUSES.has(status) && !isCompleteStatus(status) && status !== 'waiting') {
+        icon = '●'; label = 'Implementing'; cls = 'status-running';
       } else if (drive && status === 'implementing') {
         icon = '●'; label = 'Implementing'; cls = 'status-running';
       } else if (status === 'implementing' && endedFlag) {
@@ -430,6 +433,22 @@
       }
       const suffix = idle.paused ? ' · paused' : (idle.nudged ? ' · nudged' : '');
       return '<span class="kcard-idle-chip" title="Agent appears idle at its prompt">💤 idle ' + escHtml(duration + suffix) + '</span>';
+    }
+
+    /**
+     * Supervisor-derived workflow idle badge ("Awaiting input"). Shows when
+     * any agent on the feature has gone N minutes without a workflow progress
+     * event despite tmux still being alive. Mirrored from the Monitor view.
+     */
+    function buildWorkflowIdleBadgeHtml(item) {
+      if (!item || !Array.isArray(item.agents)) return '';
+      const agent = item.agents.find(a => a && a.idleState && a.idleState.level);
+      if (!agent) return '';
+      const name = (window.AGENT_DISPLAY_NAMES && window.AGENT_DISPLAY_NAMES[agent.id]) || agent.id;
+      const mins = agent.idleState.idleMinutes;
+      const lvl = agent.idleState.level;
+      const tip = name + ' — no workflow progress for ~' + mins + ' min (tmux still running). Threshold: ' + lvl + '.';
+      return '<span class="kcard-workflow-idle-badge" role="status" tabindex="0" title="' + escHtml(tip) + '">Awaiting input</span>';
     }
 
     // Agent-specific action label overrides (keyed by action name)
@@ -563,6 +582,13 @@
     // only show the badge when an override was explicitly captured on
     // `feature.started`, so the card stays quiet for default runs.
     function buildAgentTripletBadge(agent) {
+      // Suppress the captured-at-start override badge after a failover. The
+      // override (e.g. gpt-5.4 / medium) was for the original slot agent;
+      // post-swap, the new runtime agent has its own model/effort defaults
+      // and the stale badge would be actively misleading.
+      const slotId = agent && agent.id;
+      const runtimeId = agent && agent.runtimeAgentId ? agent.runtimeAgentId : slotId;
+      if (slotId && runtimeId && slotId !== runtimeId) return '';
       const model = agent && agent.modelOverride ? String(agent.modelOverride) : '';
       const effort = agent && agent.effortOverride ? String(agent.effortOverride) : '';
       if (!model && !effort) return '';
@@ -576,7 +602,17 @@
     // Actions rendered from API — do not add action eligibility logic here.
     // All actions (workflow + infra) are derived server-side via the action registry.
     function buildAgentSectionHtml(agent, agentValidActions, feature, repoPath, pipelineType) {
-      const displayName = AGENT_DISPLAY_NAMES[agent.id] || agent.id;
+      // After a failover the slot id (agent.id) stays as the original agent
+      // for routing/file-keying, but `runtimeAgentId` reflects who's actually
+      // running now. Render the runtime so the card visibly changes after a
+      // swap; if it differs from the slot, append "(was cx)" so the history
+      // is still legible.
+      const runtimeId = agent.runtimeAgentId || agent.id;
+      const slotId = agent.id;
+      const runtimeName = AGENT_DISPLAY_NAMES[runtimeId] || runtimeId;
+      const displayName = runtimeId !== slotId
+        ? runtimeName + ' (was ' + (AGENT_DISPLAY_NAMES[slotId] || slotId) + ')'
+        : runtimeName;
       const s = buildAgentStatusHtml(agent, { showDevLink: true });
       const devServerLink = buildDevServerLinkHtml(s.devServerUrl);
       const devSlot = devServerLink ? '<span class="kcard-dev-slot">' + devServerLink + '</span>' : '';
@@ -587,7 +623,10 @@
 
       // Partition actions: infra actions first, then workflow primary, then overflow (stop)
       const infraActions = agentValidActions.filter(va => va.category === 'infra' || va.category === 'view');
-      const workflowActions = agentValidActions.filter(va => va.category !== 'infra' && va.category !== 'view');
+      // switch-agent is rendered separately as a dedicated failover button
+      // (see below). Exclude it here so it can't double-render or block
+      // primary workflow actions from showing.
+      const workflowActions = agentValidActions.filter(va => va.category !== 'infra' && va.category !== 'view' && va.action !== 'switch-agent');
       const workflowRows = workflowActions.filter(va => !isQuotaChipVa(va));
       const quotaResumeVa = agentValidActions.find(va => va.action === 'agent-resume' && va.metadata && va.metadata.quotaPaused);
       const quotaResetChip = (quotaResumeVa && quotaResumeVa.metadata && quotaResumeVa.metadata.quotaResetLabel) || '';
@@ -649,16 +688,25 @@
           } else {
             actionsHtml += '<button class="btn btn-secondary kcard-view-findings-btn"' + findingsAttrs + '>' + escHtml(va.label) + '</button>';
           }
-        } else if (va.action === 'switch-agent') {
-          const nextAgent = (va.metadata && va.metadata.nextAgentId) || '';
-          const disabled = (va.metadata && va.metadata.chainExhausted) ? ' disabled title="No agents left in failover chain"' : '';
-          const failoverAttrs = ' data-failover-feature="' + escHtml(String(feature.id || '')) + '"' +
-            ' data-failover-agent="' + escHtml(agent.id) + '"' +
-            ' data-failover-next="' + escHtml(nextAgent) + '"' +
-            ' data-failover-repo="' + escHtml(repoPath || '') + '"';
-          secondaryInfraOverflow += '<button class="kcard-overflow-item kcard-failover-btn"' + failoverAttrs + disabled + '>' + escHtml(va.label) + '</button>';
         }
       });
+
+      // Failover button — render BEFORE the workflow primary action so it
+      // can't be buried by category-based filters. Pulled directly from
+      // agentValidActions so it's category-independent. This is the slot's
+      // recovery lever when a token limit is hit; it must be the most
+      // visible thing on the card in that state.
+      const switchVa = agentValidActions.find(va => va.action === 'switch-agent');
+      if (switchVa) {
+        const nextAgent = (switchVa.metadata && switchVa.metadata.nextAgentId) || '';
+        const chainExhausted = !!(switchVa.metadata && switchVa.metadata.chainExhausted);
+        const disabled = chainExhausted ? ' disabled title="No agents left in failover chain"' : '';
+        const failoverAttrs = ' data-failover-feature="' + escHtml(String(feature.id || '')) + '"' +
+          ' data-failover-agent="' + escHtml(agent.id) + '"' +
+          ' data-failover-next="' + escHtml(nextAgent) + '"' +
+          ' data-failover-repo="' + escHtml(repoPath || '') + '"';
+        actionsHtml += '<button class="btn btn-failover kcard-failover-btn"' + failoverAttrs + disabled + '>' + escHtml(switchVa.label) + '</button>';
+      }
 
       // Render workflow primary action inline only when mark-submitted is not the CTA.
       // When mark-submitted is present, session-open and other primary actions go to overflow.
@@ -859,6 +907,7 @@
         buildCardHeadlineHtml(feature) +
         blockedByHtml +
         autonomousPlanHtml +
+        buildWorkflowIdleBadgeHtml(feature) +
         nudgeChipsHtml;
 
       if (hasAgentSections) {

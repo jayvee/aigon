@@ -29,6 +29,36 @@ test('buildTokenExhaustionSignal: generic non-zero exit stays a normal failure',
 test('buildTokenExhaustionSignal: listed exit code without exhaustion stderr is ignored', () =>
     a.strictEqual(sig({ statusRecord: { lastExitCode: 1, lastPaneTail: 'build failed' } }), null));
 
+// Live-pane detection: alive agent that printed quota and stayed at REPL.
+// Status file is empty (lastExitCode/lastPaneTail null) because the shell
+// trap only fires on exit. Most CLIs (codex, cc, gemini) print and wait —
+// detection MUST work without the agent crashing.
+test('buildTokenExhaustionSignal: fires on live-pane match for alive agent', () => {
+    const s = sig({
+        statusRecord: { lastExitCode: null, lastPaneTail: null },
+        livePaneTail: '\n\nYou\'ve hit your usage limit. Upgrade to Pro or try again at 6:38 PM.\n>',
+    });
+    a.ok(s, 'expected a signal from live pane match');
+    a.strictEqual(s.source, 'live_pane_pattern');
+    a.strictEqual(s.exitCode, null, 'live source has no exit code');
+});
+test('buildTokenExhaustionSignal: live pane without pattern does not fire', () =>
+    a.strictEqual(sig({
+        statusRecord: { lastExitCode: null, lastPaneTail: null },
+        livePaneTail: 'thinking...\n>',
+    }), null));
+test('buildTokenExhaustionSignal: live pane source does not require listed exit code', () => {
+    // exit code 0 (clean) but pane has the quota string — still fires.
+    const s = sig({
+        statusRecord: { lastExitCode: 0, lastPaneTail: '' },
+        livePaneTail: 'Error: rate limit exceeded',
+        agentState: { currentAgentId: 'cx' },
+        slotAgentId: 'cx',
+    });
+    a.ok(s);
+    a.strictEqual(s.source, 'live_pane_pattern');
+});
+
 // REGRESSION: dashboard manual switch must clear the same status flags as auto-switch or supervisor never re-detects exhaustion for that slot.
 testAsync('clearTokenExhaustedFlag: clears supervisor flags so a slot can exhaust again', () => withTempDirAsync(async (repo) => {
     await wf.startFeature(repo, '79', 'solo_worktree', ['cx'], { agentFailover: { chain: ['cx', 'cc'] } });
