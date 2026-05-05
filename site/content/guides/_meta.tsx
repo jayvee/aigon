@@ -29,4 +29,5 @@ export default {
   "feature-sets-autonomous": { title: withPro("Feature Sets in Autonomous Mode") },
   "brewboard-feature-set": { title: withPro("Tutorial: Brewboard Feature Set") },
   insights: { title: withPro("Insights") },
+  "agent-failover": { title: withPro("Agent Failover") },
 };
