@@ -14,3 +14,17 @@ Agent: cc
 ## For the Next Feature in This Set
 
 ## Test Coverage
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-05-07
+
+### Fixes Applied
+- c4bf29c9 fix(review): clarify agent-context detection docs
+
+### Escalated Issues (exceptions only)
+- None.
+
+### Notes
+- `npm run test:iterate` passed after the review fix.
