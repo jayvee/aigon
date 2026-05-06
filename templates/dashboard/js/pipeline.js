@@ -784,14 +784,6 @@
       return '<div class="kcard-ready-indicator">✓ Ready to close</div>';
     }
 
-    function buildRebaseWarningHtml(feature) {
-      if (!feature || feature.rebaseNeeded !== true || feature.stage !== 'in-progress') return '';
-      const closeReady = Array.isArray(feature.validActions) &&
-        feature.validActions.some(a => a.action === 'feature-close' || a.action === 'feature-rebase');
-      if (!closeReady) return '';
-      return '<div class="kcard-rebase-warning">⚠ Rebase conflict — rebase before closing</div>';
-    }
-
     function buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn) {
       const planRenderer = window.AIGON_AUTONOMOUS_PLAN;
       if (!planRenderer || typeof planRenderer.buildAutonomousPlanHtml !== 'function') return '';
