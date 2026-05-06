@@ -69,14 +69,20 @@ fi
 3. Make targeted edits in place.
 4. Preserve author intent unless it is ambiguous, contradictory, or clearly under-specified.
 5. Prefer tightening acceptance criteria, execution order, ownership, and edge cases over adding net-new scope.
-6. Verify `AIGON_AGENT_ID` is set before committing.
+6. Verify or bootstrap `AIGON_AGENT_ID` before committing.
 7. Commit with the exact `spec-review: feature ...` format below.
 8. Run `aigon feature-spec-review-record {{ARG1_SYNTAX}}`.
 9. Do not create any other commit message format.
 
-Before committing, confirm the reviewer identity is available:
+Before committing, confirm the reviewer identity is available. Dashboard/tmux launches
+set `AIGON_AGENT_ID` before the agent starts; direct slash-command use inside an
+already-running agent may need to derive it from the current agent process:
 
 ```bash
+if [ -z "${AIGON_AGENT_ID:-}" ]; then
+  AIGON_AGENT_ID=$(aigon agent-context --id-only 2>/dev/null || true)
+  export AIGON_AGENT_ID
+fi
 test -n "${AIGON_AGENT_ID:-}" || { echo "AIGON_AGENT_ID is required for spec-review commits"; exit 1; }
 ```
 

@@ -41,14 +41,20 @@ cat "$SPEC_PATH"
 3. Tighten the research questions, scope, evidence expectations, and output shape.
 4. Keep edits targeted and in-place.
 5. Clarify what a good findings document must contain without broadening the topic.
-6. Verify `AIGON_AGENT_ID` is set before committing.
+6. Verify or bootstrap `AIGON_AGENT_ID` before committing.
 7. Commit with the exact `spec-review: research ...` format below.
 8. Run `aigon research-spec-review-record {{ARG1_SYNTAX}}`.
 9. Do not create any other commit message format.
 
-Before committing, confirm the reviewer identity is available:
+Before committing, confirm the reviewer identity is available. Dashboard/tmux launches
+set `AIGON_AGENT_ID` before the agent starts; direct slash-command use inside an
+already-running agent may need to derive it from the current agent process:
 
 ```bash
+if [ -z "${AIGON_AGENT_ID:-}" ]; then
+  AIGON_AGENT_ID=$(aigon agent-context --id-only 2>/dev/null || true)
+  export AIGON_AGENT_ID
+fi
 test -n "${AIGON_AGENT_ID:-}" || { echo "AIGON_AGENT_ID is required for spec-review commits"; exit 1; }
 ```
 

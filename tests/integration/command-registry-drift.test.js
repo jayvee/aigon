@@ -51,6 +51,11 @@ test('shared factory emits the spec-review sextet for both entities', () => {
     });
 });
 
+test('agent-context plumbing command is registered for slash-command identity bootstrap', () => {
+    const all = require('../../lib/commands/shared').createAllCommands();
+    assert.strictEqual(typeof all['agent-context'], 'function');
+});
+
 test('canonical code-review and code-revise commands are registered with correct aliases', () => {
     const templates = require('../../lib/templates');
     const all = require('../../lib/commands/shared').createAllCommands();

@@ -68,6 +68,7 @@ try {
 // Commands that emit machine-readable output or are called programmatically — suppress update notices for these.
 const PLUMBING_COMMANDS = new Set([
     'feature-spec-review-record',
+    'agent-context',
     'sync-heartbeat',
     'session-hook',
     'agent-status',
