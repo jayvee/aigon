@@ -941,7 +941,7 @@
         if (activeStatus) {
           const compatLabels = [activeStatus.label];
           const rawStatus = String(activeAgent.status || '').toLowerCase();
-          if (activeAgent.tmuxRunning && !isAgentDone(activeAgent)) compatLabels.push('Running');
+          if ((activeAgent.tmuxRunning || rawStatus === 'implementing') && !isAgentDone(activeAgent)) compatLabels.push('Running');
           if (rawStatus === 'error' || rawStatus === 'failed') compatLabels.push('failed');
           const compatText = Array.from(new Set(compatLabels.filter(x => x && x !== label))).join(' ');
           if (compatText) left.push('<span class="kcard-agent-status-compat">' + escHtml(compatText) + '</span>');
