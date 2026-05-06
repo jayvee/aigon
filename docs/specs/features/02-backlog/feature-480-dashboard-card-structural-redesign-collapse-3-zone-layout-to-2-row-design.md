@@ -28,18 +28,22 @@ reference is `docs/card-design-wireframe.html` — read it in full before touchi
 ## Acceptance Criteria
 
 - [ ] Each non-fleet, non-autonomous card shell renders exactly 2–3 rows maximum: title row, status row, optional detail line. Fleet rows, autonomous stage tracks, and expanded set member cards are the only permitted extra rows.
-- [ ] No `.kcard-headline` banner DOM renders inside pipeline cards — state info from `feature.cardHeadline` / server read models is mapped into the status row only.
+- [ ] The new status row consumes the existing `feature.cardHeadline` server payload (`{tone, verb, subject, owner, age, detail, glyph}`) — no new server read-model fields are introduced.
+- [ ] No `.kcard-headline` (or any of its sub-classes: `-top`, `-glyph`, `-verb`, `-meta`, `-detail`, and the `tone-*` variants) renders in the DOM. All `.kcard-headline*` CSS rules in `templates/dashboard/styles.css` are deleted in the same commit that removes the last consumer.
 - [ ] The separate primary agent-status row below the banner is gone — the active agent chip is inline in the status row. Dedicated fleet/review/GitHub subrows remain only where an explicit criterion below allows them.
-- [ ] The standalone action-button row is gone for the primary CTA — CTA and overflow are inline in the status row right side and still come from `validActions`.
-- [ ] `>_` button (not 👁) appears only when the relevant read model exposes a live tmux session (`agent.tmuxSession`/equivalent session field backed by `tmuxRunning` or `tmuxSessionExists`); it opens the existing dashboard terminal panel for that session.
+- [ ] The standalone `.kcard-actions` row is gone for the primary CTA — CTA and overflow are inline in the status row right side and still come from `validActions` via `renderActionButtons`. The `.kcard-actions` CSS rule is deleted in the same commit that removes the last consumer.
+- [ ] The existing SVG peek button (`.kcard-peek-btn`) is replaced everywhere with a `>_` text glyph button; the glyph is monospace text, not an SVG or emoji.
+- [ ] `>_` button appears only when the relevant agent's `tmuxRunning === true` (and `tmuxSession` is set); clicking it calls `openTerminalPanel(...)` with the same arguments the current peek button uses.
 - [ ] Multi-agent sequential pipeline: inline chips `CC ✓ · GG ●` where done = muted, active = liveness dot; detail line names the active action.
 - [ ] Fleet cards: the summary uses the new title/status shell; per-agent rows render below it, each with liveness dot + `>_` only for a live session.
 - [ ] Research fleet (RF1/RF2): same fleet row pattern, "Research ready" label, Evaluate CTA when all done.
 - [ ] Autonomous stage track is visible whenever `feature.autonomousPlan` or `feature.autonomousSession` is present, shows `✓ Stage · Agent` per completed stage, and exposes the conductor `>_` only for a live conductor session.
-- [ ] Dependency chips: `after #XX` — teal when dep closed, plain when pending. Start is disabled only via existing `validActions`/disabled-action rendering; do not add a second frontend eligibility rule.
-- [ ] Feature set wrapper: teal-bordered container; expanded view shows full feature cards (not compact rows).
-- [ ] Playwright screenshots verified for: implementing, implemented, code-reviewed, fleet-running, fleet-all-done, sequential-reviewing, autonomous-running, autonomous-all-done, blocked-dep, feature-set-expanded.
-- [ ] `npm test` passes. No visual regressions on other dashboard surfaces.
+- [ ] Dependency chips: `after #XX` — teal when dep closed, plain when pending. Source of truth is `feature.blockedBy` (already populated by the server). Start enable/disable is **only** controlled by `validActions` / disabled-action rendering; the chips are display-only.
+- [ ] **MISSING_SNAPSHOT inbox/backlog rows** (F294/F296 — synthetic state from `buildMissingSnapshotState`) render correctly in the new shell with their server-supplied actions (Prioritise / Start). No special-case branch in the new card builder.
+- [ ] **Feedback cards** (`pipelineType === 'feedback'`) render in the new shell using the same status-row mapping; the `cardHeadline` server payload already covers feedback.
+- [ ] Feature set wrapper: teal-bordered container; expanded view shows full feature cards (not compact rows). Existing `set-autonomous-{start,stop,resume,reset}` `validActions` continue to render via `renderActionButtons`.
+- [ ] Playwright screenshots verified for: implementing, implemented, code-reviewed, fleet-running, fleet-all-done, sequential-reviewing, autonomous-running, autonomous-all-done, blocked-dep, feature-set-expanded, missing-snapshot-inbox, feedback-card.
+- [ ] `npm test` passes. No visual regressions on other dashboard surfaces (spec drawer, monitor view, detail tabs).
 
 ## Validation
 
@@ -68,14 +72,20 @@ discussing with the user first.
 - `lib/card-headline.js` — vocabulary/source data only; do not change server headline derivation unless a missing read-model field blocks the UI
 
 **Migration strategy (safe, incremental):**
-1. Add all new CSS classes first (no rendering changes) — verify no regressions
-2. Migrate `buildSoloAgentCard` (simplest, single-agent) — screenshot gate
-3. Migrate `buildFeatureCard` for single-agent states — screenshot gate
-4. Add sequential pipeline multi-agent chip rendering — screenshot gate
-5. Migrate fleet card headline to new structure (per-agent rows already correct) — screenshot gate
-6. Add autonomous stage track with per-stage agent attribution — screenshot gate
-7. Add dependency chip rendering (`after #XX`, teal/plain states) — screenshot gate
-8. Remove dead CSS/HTML from old 3-zone layout once all card types migrated
+
+The single entry point is `buildKanbanCard(feature, repoPath, pipelineType, repoMeta)` in `pipeline.js:848`.
+It currently calls `buildCardHeadlineHtml(feature)` (the banner), then iterates agents calling
+`buildAgentSectionHtml(...)`, then renders `renderActionButtons(...)` as a footer row. The
+migration replaces these in place rather than introducing new card builders.
+
+1. **CSS first** — add `.kcard-shell`, `.kcard-status-row`, `.machip`, `.dep`, `.dep-id`, `.term`, `.cstages`, `.set-wrap`, `.set-body` to `styles.css`. No rendering changes. Restart server, screenshot baseline.
+2. **Status row mapping** — in `buildKanbanCard`, build a new `buildStatusRowHtml(feature)` helper that consumes `feature.cardHeadline` + the primary agent + `validActions` and emits the new 2-row shell. Render it BEHIND a feature flag (`?cards=v2` query param) so old and new can be A/B'd. Screenshot gate covering all single-agent states.
+3. **Sequential pipeline chips** — extend `buildStatusRowHtml` to detect 2-agent done+active scenarios and render `.machip` chips inline. Screenshot gate.
+4. **Fleet rows** — rewrite the agent loop in `buildKanbanCard` so the headline uses the new shell and per-agent rows use a slimmer `buildAgentRowHtml(...)` (replaces `buildAgentSectionHtml` for fleet). Screenshot gate. Research fleet falls out of this naturally.
+5. **Autonomous stage track** — render the stage track from `feature.autonomousPlan.stages` with per-stage agent attribution. Conductor `>_` from `feature.autonomousSession`. Screenshot gate.
+6. **Dependency chips** — replace the existing `blockedByHtml` block (`pipeline.js:881`) with the new `.dep-id` chip rendering. Screenshot gate.
+7. **Feature set wrapper** — wrap set member cards in `.set-wrap` with the teal header + progress bar. Screenshot gate.
+8. **Flip default and clean up** — remove the `?cards=v2` flag, delete `buildCardHeadlineHtml` from `utils.js`, delete `.kcard-headline*` and `.kcard-actions` CSS rules, delete `.kcard-peek-btn` CSS, remove the SVG peek button, run `npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh`.
 
 **Key invariant**: the `validActions` server payload drives all CTA buttons — never
 invent button logic client-side. Dependency chips may use `feature.blockedBy` for display,
@@ -94,14 +104,17 @@ but Start enablement/disablement must remain tied to the server-owned action pay
 
 ## Out of Scope
 
-- Feature set autonomous start button (separate feature)
-- ▾ expand detail drawer implementation (separate feature)
-- Server-side changes to `lib/card-headline.js` (already done)
-- Any changes to the kanban column/lane layout
+- Feature set autonomous start button rewiring (existing `set-autonomous-*` `validActions` continue to render unchanged)
+- ▾ expand detail drawer implementation — the toggle is rendered but its drawer is a separate feature
+- Server-side changes to `lib/card-headline.js` or `lib/dashboard-status-collector.js` (vocabulary already merged; new fields not needed)
+- Any changes to the kanban column/lane layout, the spec drawer, the monitor view, or the detail tabs panel
+- Replacement of `openTerminalPanel(...)` transport — only the launching glyph and placement change
 
 ## Open Questions
 
-- None — wireframe is approved.
+- **▾ toggle behaviour during this feature**: render as a static affordance only (no drawer wired), or hide it entirely until the drawer feature lands? Default: render static, no-op click — establishes the visual slot for the follow-on feature.
+- **MISSING_SNAPSHOT cards have no `cardHeadline.owner` (no agent yet)** — do we render the agent chip slot empty or omit the separator? Default: omit chip + adjacent `·` separator when `owner` is null.
+- **Fleet research evaluator session** — when `evalStatus === 'pick winner'` is set but no eval session is live yet, where does the headline `>_` point? Default: hide the headline `>_` until an evaluator session exists.
 
 ## Related
 
