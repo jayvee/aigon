@@ -929,13 +929,18 @@
       const opts = options || {};
       const headline = feature.cardHeadline || null;
       const activeAgent = primaryAgentForStatus(feature);
+      const activeStatus = activeAgent ? buildAgentStatusHtml(activeAgent, { showDevLink: true }) : null;
       const label = headlineLabel(headline);
       const tone = headline ? toneClass(headline.tone || 'idle') : 'idle';
       const labelCls = headline ? labelClass(headline.tone || 'idle') : 'idle';
+      const agentCls = activeAgent ? ' kcard-agent agent-' + escHtml(activeAgent.id) : '';
       const left = [];
       if (label) {
         left.push('<span class="si">' + escHtml(headline.glyph || '') + '</span>');
-        left.push('<span class="sl ' + labelCls + '">' + escHtml(label) + '</span>');
+        left.push('<span class="sl kcard-agent-status ' + labelCls + (activeStatus ? ' ' + activeStatus.cls : '') + '">' + escHtml(label) + '</span>');
+        if (activeStatus && activeStatus.label !== label) {
+          left.push('<span class="kcard-agent-status-compat">' + escHtml(activeStatus.label) + '</span>');
+        }
         const chips = buildAgentChipsHtml(feature, activeAgent);
         if (chips) left.push('<span class="ssep">·</span>' + chips);
         const age = _formatHeadlineAge(headline.age);
@@ -949,7 +954,7 @@
       }
       const actions = renderActionButtons(feature, repoPath, pipelineType);
       if (actions) right.push(actions);
-      return '<div class="kcard-status-row cs ' + tone + '">' +
+      return '<div class="kcard-status-row cs ' + tone + agentCls + '">' +
         '<div class="cs-l">' + left.join('') + '</div>' +
         '<div class="cs-r">' + right.join('') + '</div>' +
       '</div>';
@@ -959,8 +964,8 @@
       const hasNumericId = /^\d+$/.test(String(feature.id || ''));
       const id = hasNumericId ? '#' + formatFeatureIdForDisplay(feature.id) : String(feature.id || '#—');
       return '<div class="kcard-title-row ct">' +
-        '<span class="ct-id">' + escHtml(id) + '</span>' +
-        '<span class="ct-name">' + escHtml(String(feature.name || '').replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildScheduledGlyphHtml(feature) + '</span>' +
+        '<span class="ct-id kcard-id">' + escHtml(id) + '</span>' +
+        '<span class="ct-name kcard-name">' + escHtml(String(feature.name || '').replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildScheduledGlyphHtml(feature) + '</span>' +
         '<span class="ct-ov" aria-hidden="true">▾</span>' +
       '</div>';
     }
@@ -981,10 +986,10 @@
       const rowCls = isAgentDone(agent) ? ' dim' : '';
       const liveBtn = isLiveSessionAgent(agent) ? terminalButtonHtml(agent.tmuxSession, 'Open ' + agentShortName(agent.runtimeAgentId || agent.id) + ' session') : '';
       const dev = buildDevServerLinkHtml(s.devServerUrl);
-      return '<div class="cfrow' + rowCls + '">' +
+      return '<div class="cfrow kcard-agent agent-' + escHtml(agent.id) + rowCls + '">' +
         livenessDotHtml(agent) +
         '<span class="cfagent">' + escHtml(agentShortName(agent.runtimeAgentId || agent.id)) + '</span>' +
-        '<span class="sl ' + (s.cls === 'status-running' ? 'run' : isAgentDone(agent) ? 'done' : s.cls === 'status-waiting' ? 'wait' : s.cls === 'status-needs-attention' ? 'attn' : 'idle') + '">' + escHtml(s.label) + '</span>' +
+        '<span class="sl kcard-agent-status ' + s.cls + ' ' + (s.cls === 'status-running' ? 'run' : isAgentDone(agent) ? 'done' : s.cls === 'status-waiting' ? 'wait' : s.cls === 'status-needs-attention' ? 'attn' : 'idle') + '">' + escHtml(s.label) + '</span>' +
         (age ? '<span class="ssep">·</span><span class="sdur">' + escHtml(age) + '</span>' : '') +
         '<span class="cfspacer"></span>' +
         (dev ? '<span class="kcard-dev-slot">' + dev + '</span>' : '') +
