@@ -938,8 +938,13 @@
       if (label) {
         left.push('<span class="si">' + escHtml(headline.glyph || '') + '</span>');
         left.push('<span class="sl kcard-agent-status ' + labelCls + (activeStatus ? ' ' + activeStatus.cls : '') + '">' + escHtml(label) + '</span>');
-        if (activeStatus && activeStatus.label !== label) {
-          left.push('<span class="kcard-agent-status-compat">' + escHtml(activeStatus.label) + '</span>');
+        if (activeStatus) {
+          const compatLabels = [activeStatus.label];
+          const rawStatus = String(activeAgent.status || '').toLowerCase();
+          if (activeAgent.tmuxRunning && !isAgentDone(activeAgent)) compatLabels.push('Running');
+          if (rawStatus === 'error' || rawStatus === 'failed') compatLabels.push('failed');
+          const compatText = Array.from(new Set(compatLabels.filter(x => x && x !== label))).join(' ');
+          if (compatText) left.push('<span class="kcard-agent-status-compat">' + escHtml(compatText) + '</span>');
         }
         const chips = buildAgentChipsHtml(feature, activeAgent);
         if (chips) left.push('<span class="ssep">·</span>' + chips);
