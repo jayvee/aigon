@@ -121,6 +121,15 @@ body { font-family: var(--sans); background: var(--bg); color: var(--ink);
 .btn.r  { background: var(--rbg); color: var(--red); border-color: var(--rbr); }
 .btn.a  { background: var(--abg); color: var(--amber); border-color: var(--abr); }
 .btn.q  { border-color: transparent; color: var(--ink3); }
+.btn.off { color: var(--ink4); border-color: var(--border2); background: transparent; opacity: .55; }
+
+/* dependency chip */
+.dep { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono);
+       font-size: 11px; color: var(--ink3); font-style: italic; }
+.dep-id  { background: var(--bg); border: 1px solid var(--border2); border-radius: 4px;
+           padding: 1px 6px; font-style: normal; font-size: 10px; color: var(--ink2); }
+.dep-id.done { color: var(--teal); border-color: var(--tbr); background: var(--tbg); }
+.dep-id.run  { color: var(--green); border-color: var(--gbr); background: var(--gbg); }
 /* terminal peek button — >_ glyph */
 .term { font-family: var(--mono); font-size: 11px; border: 1px solid var(--border2);
         border-radius: 5px; padding: 2px 7px; background: var(--bg);
@@ -346,16 +355,38 @@ body { font-family: var(--sans); background: var(--bg); color: var(--ink);
   </div>
   <div class="note">No label. CTA only. Column header says "Backlog".</div></div>
 
-  <div><div class="lbl">A3 · Backlog — blocked</div>
+  <div><div class="lbl">A3a · Backlog — blocked (dep pending)</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#03</span><span class="ct-name">user profiles</span><span class="ct-ov">▾</span></div>
+    <div class="cs idle">
+      <div class="cs-l"></div>
+      <div class="cs-r"><span class="btn off">Start</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd"><span class="dep">after <span class="dep-id">#02</span></span></div>
+  </div>
+  <div class="note">Start greyed — dep not done. "after" matches spec frontmatter language. No override CTA on the card; override goes in ···.</div></div>
+
+  <div><div class="lbl">A3b · Backlog — partially unblocked</div>
   <div class="card">
     <div class="ct"><span class="ct-id">#05</span><span class="ct-name">recipe recommendations</span><span class="ct-ov">▾</span></div>
     <div class="cs idle">
       <div class="cs-l"></div>
-      <div class="cs-r"><span class="btn">Start ↗</span><span class="btn q">···</span></div>
+      <div class="cs-r"><span class="btn off">Start</span><span class="btn q">···</span></div>
     </div>
-    <div class="cd">blocked by #02, #03</div>
+    <div class="cd"><span class="dep">after <span class="dep-id done">#02 ✓</span> · <span class="dep-id">#03</span></span></div>
   </div>
-  <div class="note">Deps in detail line. Start ↗ = override available.</div></div>
+  <div class="note">#02 is closed (teal chip), #03 still pending (plain chip). Start stays greyed until ALL deps are resolved.</div></div>
+
+  <div><div class="lbl">A3c · Backlog — all deps resolved</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#05</span><span class="ct-name">recipe recommendations</span><span class="ct-ov">▾</span></div>
+    <div class="cs idle">
+      <div class="cs-l"></div>
+      <div class="cs-r"><span class="btn p">Start</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd"><span class="dep">after <span class="dep-id done">#02 ✓</span> · <span class="dep-id done">#03 ✓</span></span></div>
+  </div>
+  <div class="note">All deps closed — Start activates. Dep chips stay visible so the chain is auditable.</div></div>
 
   <div><div class="lbl">A4 · Paused</div>
   <div class="card">
