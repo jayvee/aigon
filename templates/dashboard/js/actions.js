@@ -520,7 +520,7 @@ function showDangerConfirm(opts) {
  * Implements 3-tier hierarchy:
  *   Primary: first high-priority action → btn-primary
  *   Secondary: other high-priority actions → btn-secondary
- *   Overflow: everything else → hidden in ⋯ dropdown
+ *   Overflow: everything else → hidden in ··· dropdown
  *
  * Special eval-done logic: when evalStatus === 'pick winner' and winnerAgent
  * exists, primary button becomes "Close & Merge [winner]".
@@ -662,7 +662,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
         + (disabledReason ? ' title="' + escHtml(disabledReason) + '"' : '')
         + '>' + escHtml(actionLabel(va)) + '</button>';
     }).join('');
-    html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
+    html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">···</button><div class="kcard-overflow-menu">' + items + '</div></div>';
   }
 
   return html;
