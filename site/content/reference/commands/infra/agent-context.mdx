@@ -1,0 +1,50 @@
+---
+title: "agent-context"
+description: "Report the current agent session identity"
+---
+
+## Synopsis
+
+```bash
+aigon agent-context [--id-only] [--json]
+```
+
+## Description
+
+Detects and prints the current Aigon agent host, such as `cc`, `gg`, `cx`, or `cu`. This is useful inside agent prompts and slash commands that need to bootstrap `AIGON_AGENT_ID` without parsing process names themselves.
+
+Agent launchers also export `AIGON_AGENT_ID`, `AIGON_ENTITY_TYPE`, `AIGON_ENTITY_ID`, and `AIGON_PROJECT_PATH` for commands that need feature or research context. `agent-context` reports only the agent identity; callers that need entity values should read those environment variables directly.
+
+## Options
+
+| Flag | Description |
+|------|-------------|
+| `--id-only` | Print only the agent ID (e.g. `cc`), exit 1 if no agent host is detected |
+| `--json` | Print detection JSON; exit 1 if no agent host is detected |
+
+Default (no flags): prints `<agentId>\t<agentName>` on stdout; exits 1 if no agent host is detected.
+
+## Usage
+
+```bash
+# Print agent ID and name (tab-separated)
+aigon agent-context
+
+# Get just the ID for scripting
+AGENT=$(aigon agent-context --id-only)
+
+# Bootstrap AIGON_AGENT_ID if it isn't set (used in spec-review templates)
+if [ -z "${AIGON_AGENT_ID:-}" ]; then
+  AIGON_AGENT_ID=$(aigon agent-context --id-only 2>/dev/null || true)
+  export AIGON_AGENT_ID
+fi
+
+# Full JSON for debugging
+aigon agent-context --json
+```
+
+## Notes
+
+- Returns exit code 1 when no active agent host is detected; callers that use `|| true` get an empty string rather than a hard failure.
+- Uses process ancestry and runtime hints for detection. It does not resolve the current feature or research ID.
+- The spec-review slash commands (`/aigon:feature-spec-review`, `/aigon:research-spec-review`) call this automatically to bootstrap `AIGON_AGENT_ID` when it is not already set.
