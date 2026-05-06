@@ -60,11 +60,9 @@ aigon feature-cleanup <ID> --push   # push branches to origin first, then delete
 
 ## Rebase needed before close
 
-**You want to:** close a feature, but the dashboard card shows a rebase warning because `main` has moved ahead of the feature branch.
+**You want to:** close a feature, but `feature-close` fails because `main` has moved ahead of the feature branch.
 
-**What it means:** Aigon detected commits on `main` that are not present on the feature branch, so `feature-close` will block until you bring the worktree up to date.
-
-The warning appears directly on the dashboard card so you can catch the problem before starting the close flow.
+**What it means:** `feature-close` requires the feature branch to be rebased onto the latest `main` before merging.
 
 **Use:**
 

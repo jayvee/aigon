@@ -1,0 +1,49 @@
+---
+title: "agent-context"
+description: "Report the current agent session identity"
+---
+
+## Synopsis
+
+```bash
+aigon agent-context [--id-only] [--json]
+```
+
+## Description
+
+Detects and prints the current active Aigon agent session. This is useful inside agent prompts and slash commands that need to know which agent is running without parsing branch names or environment variables directly.
+
+When launched via the dashboard or `feature-open`, the agent process already has `AIGON_AGENT_ID`, `AIGON_ENTITY_TYPE`, `AIGON_ENTITY_ID`, and `AIGON_PROJECT_PATH` set as environment variables. `agent-context` reads those values and falls back to tmux session name parsing when they are absent.
+
+## Options
+
+| Flag | Description |
+|------|-------------|
+| `--id-only` | Print only the agent ID (e.g. `cc`), exit 1 if no session detected |
+| `--json` | Print full session JSON; exit 1 if not detected |
+
+Default (no flags): prints `<agentId>\t<agentName>` on stdout; exits 1 if no session is detected.
+
+## Usage
+
+```bash
+# Print agent ID and name (tab-separated)
+aigon agent-context
+
+# Get just the ID for scripting
+AGENT=$(aigon agent-context --id-only)
+
+# Bootstrap AIGON_AGENT_ID if it isn't set (used in spec-review templates)
+if [ -z "${AIGON_AGENT_ID:-}" ]; then
+  AIGON_AGENT_ID=$(aigon agent-context --id-only 2>/dev/null || true)
+  export AIGON_AGENT_ID
+fi
+
+# Full JSON for debugging
+aigon agent-context --json
+```
+
+## Notes
+
+- Returns exit code 1 when no active session is detected; callers that use `|| true` get an empty string rather than a hard failure.
+- The spec-review slash commands (`/aigon:feature-spec-review`, `/aigon:research-spec-review`) call this automatically to bootstrap `AIGON_AGENT_ID` when it is not already set.

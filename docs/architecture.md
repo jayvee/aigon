@@ -39,7 +39,7 @@ Current command families:
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
 | `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile`, `sync` |
 | `lib/commands/setup.js` | `init`, `install-agent`, `uninstall`, `check-version`, `update`, `project-context`, `doctor` |
-| `lib/commands/misc.js` | `agent-status`, `nudge`, `status`, `deploy`, `next`, `help` |
+| `lib/commands/misc.js` | `agent-status`, `agent-context`, `nudge`, `status`, `deploy`, `next`, `help` |
 
 ### The ctx pattern
 

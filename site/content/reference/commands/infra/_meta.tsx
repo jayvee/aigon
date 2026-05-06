@@ -12,6 +12,7 @@ export default {
   deploy: "deploy",
   insights: { title: withPro("insights") },
   "agent-status": "agent-status",
+  "agent-context": "agent-context",
   "sessions-close": "sessions-close",
   "session-list": "session-list",
   "token-window": "token-window",
