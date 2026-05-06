@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline Card — Design Wireframe v3</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #f4f1ed;
+  --paper:    #fff;
+  --ink:      #18181b;
+  --ink2:     #52525b;
+  --ink3:     #a1a1aa;
+  --ink4:     #d4d4d8;
+  --border:   #d1ccc4;
+  --border2:  #e8e4de;
+  --green:    #15803d;
+  --gbg:      #dcfce7;
+  --gbr:      #86efac;
+  --teal:     #0f766e;
+  --tbg:      #ccfbf1;
+  --tbr:      #5eead4;
+  --amber:    #92400e;
+  --abg:      #fef3c7;
+  --abr:      #fcd34d;
+  --red:      #991b1b;
+  --rbg:      #fee2e2;
+  --rbr:      #fca5a5;
+  --orange:   #9a3412;
+  --obg:      #ffedd5;
+  --obr:      #fdba74;
+  --mono:     'SF Mono','Cascadia Code','Fira Code',ui-monospace,monospace;
+  --sans:     -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+body { font-family: var(--sans); background: var(--bg); color: var(--ink);
+       padding: 60px 48px; line-height: 1.5; }
+.page { max-width: 1200px; margin: 0 auto; }
+
+/* ── typography ── */
+.page-title { font-size: 28px; font-weight: 800; letter-spacing: -.03em; margin-bottom: 6px; }
+.page-sub   { font-size: 14px; color: var(--ink3); margin-bottom: 56px; }
+.sec-title  { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+              color: var(--ink3); margin: 64px 0 24px; padding-bottom: 10px;
+              border-bottom: 1.5px solid var(--border2); }
+.group-title { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+               color: var(--ink4); margin: 36px 0 14px; }
+.lbl  { font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+        color: var(--ink3); margin-bottom: 8px; }
+.note { font-size: 12px; color: var(--ink3); margin-top: 8px; max-width: 360px; line-height: 1.4; }
+
+/* ── card shell ── */
+.card { border: 1.5px solid var(--border); border-radius: 10px; background: var(--paper);
+        font-family: var(--mono); overflow: hidden; width: 380px; }
+.card.wide  { width: 500px; }
+.card.wider { width: 560px; }
+
+/* title row */
+.ct { display: flex; align-items: center; gap: 8px; padding: 10px 13px 9px;
+      border-bottom: 1px solid var(--border2); }
+.ct-id   { font-size: 11px; color: var(--ink3); flex-shrink: 0; }
+.ct-name { font-size: 12px; font-weight: 700; flex: 1; white-space: nowrap;
+           overflow: hidden; text-overflow: ellipsis; }
+.ct-ov   { font-size: 10px; color: var(--ink3); border: 1px solid var(--border);
+           border-radius: 4px; padding: 1px 6px; flex-shrink: 0; }
+.ct-cnt  { font-size: 10px; color: var(--ink4); background: var(--bg);
+           border: 1px solid var(--border2); border-radius: 10px; padding: 1px 7px; flex-shrink: 0; }
+
+/* status row */
+.cs { display: flex; align-items: center; padding: 8px 13px; min-height: 36px; }
+.cs-l { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.cs-r { display: flex; align-items: center; gap: 5px; flex-shrink: 0; margin-left: 8px; }
+
+/* tone border */
+.cs.run  { border-left: 3px solid #4ade80; }
+.cs.rdy  { border-left: 3px solid var(--tbr); }
+.cs.wait { border-left: 3px solid var(--abr); }
+.cs.attn { border-left: 3px solid var(--obr); }
+.cs.warn { border-left: 3px solid var(--rbr); }
+.cs.done { border-left: 3px solid var(--border2); }
+.cs.idle { border-left: 3px solid var(--border2); }
+
+/* status label */
+.si  { font-size: 11px; width: 12px; text-align: center; flex-shrink: 0; }
+.sl  { font-size: 12px; font-weight: 700; letter-spacing: .03em; white-space: nowrap; }
+.sl.run  { color: var(--green); }
+.sl.rdy  { color: var(--teal); }
+.sl.wait { color: var(--amber); }
+.sl.attn { color: var(--orange); }
+.sl.warn { color: var(--red); }
+.sl.done { color: var(--ink3); }
+.sl.idle { color: var(--ink3); }
+
+.ssep { font-size: 11px; color: var(--border); margin: 0 1px; }
+.sagt { font-size: 11px; color: var(--ink3); white-space: nowrap; }
+.sdur { font-size: 11px; color: var(--ink4); white-space: nowrap; }
+
+/* liveness dot */
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+       background: var(--ink4); vertical-align: middle; margin-right: 2px; flex-shrink: 0; }
+.dot.live  { background: #22c55e; }
+.dot.stale { background: #f59e0b; }
+.dot.dead  { background: #ef4444; }
+
+/* multi-agent inline chips (sequential pipeline) */
+.machip      { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; white-space: nowrap; }
+.machip.done { color: var(--ink4); }
+.machip.act  { color: var(--ink2); }
+
+/* detail line */
+.cd { padding: 0 13px 9px 29px; font-size: 11px; color: var(--ink3); font-style: italic; }
+.cd.amber { color: var(--amber); }
+.cd.red   { color: var(--red); }
+
+/* buttons */
+.btn { font-family: var(--mono); font-size: 11px; border: 1px solid var(--border);
+       border-radius: 5px; padding: 3px 8px; background: transparent;
+       color: var(--ink2); cursor: default; white-space: nowrap; flex-shrink: 0; }
+.btn.p  { background: var(--ink); color: #fff; border-color: var(--ink); }
+.btn.g  { background: var(--gbg); color: var(--green); border-color: var(--gbr); }
+.btn.r  { background: var(--rbg); color: var(--red); border-color: var(--rbr); }
+.btn.a  { background: var(--abg); color: var(--amber); border-color: var(--abr); }
+.btn.q  { border-color: transparent; color: var(--ink3); }
+.btn.off { color: var(--ink4); border-color: var(--border2); background: transparent; opacity: .55; }
+
+/* dependency chip */
+.dep { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono);
+       font-size: 11px; color: var(--ink3); font-style: italic; }
+.dep-id  { background: var(--bg); border: 1px solid var(--border2); border-radius: 4px;
+           padding: 1px 6px; font-style: normal; font-size: 10px; color: var(--ink2); }
+.dep-id.done { color: var(--teal); border-color: var(--tbr); background: var(--tbg); }
+.dep-id.run  { color: var(--green); border-color: var(--gbr); background: var(--gbg); }
+/* terminal peek button — >_ glyph */
+.term { font-family: var(--mono); font-size: 11px; border: 1px solid var(--border2);
+        border-radius: 5px; padding: 2px 7px; background: var(--bg);
+        color: var(--ink3); cursor: default; white-space: nowrap; flex-shrink: 0;
+        letter-spacing: -.04em; }
+
+/* fleet rows */
+.cfleet { border-top: 1px solid var(--border2); padding: 6px 13px 8px; display: flex; flex-direction: column; gap: 4px; }
+.cfrow  { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; }
+.cfrow.dim { opacity: .45; }
+
+/* stage track */
+.cstages { border-top: 1px solid var(--border2); padding: 5px 13px 6px;
+           display: flex; flex-wrap: wrap; gap: 0; font-family: var(--mono); font-size: 10px; }
+.st     { color: var(--ink4); white-space: nowrap; }
+.st.ok  { color: var(--green); }
+.st.act { background: var(--ink); color: #fff; padding: 1px 6px; border-radius: 3px; }
+.st.gt  { color: var(--amber); font-weight: 700; }
+.st-sep { margin: 0 5px; color: var(--border); }
+
+/* feature set container */
+.set-wrap { border: 1.5px solid var(--tbr); border-radius: 12px;
+            background: color-mix(in srgb, var(--tbg) 10%, var(--paper));
+            overflow: hidden; width: 430px; }
+.set-hdr  { display: flex; align-items: center; gap: 8px; padding: 10px 14px 9px;
+            font-family: var(--mono); }
+.set-id   { font-size: 11px; color: var(--teal); font-weight: 700; flex-shrink: 0; }
+.set-name { font-size: 12px; font-weight: 700; flex: 1; }
+.set-cnt  { font-size: 10px; color: var(--teal); background: var(--tbg);
+            border: 1px solid var(--tbr); border-radius: 10px; padding: 1px 7px; flex-shrink: 0; }
+.set-ov   { font-size: 10px; color: var(--ink3); border: 1px solid var(--border);
+            border-radius: 4px; padding: 1px 6px; flex-shrink: 0; }
+.set-cs   { display: flex; align-items: center; padding: 6px 14px; gap: 6px;
+            font-family: var(--mono); font-size: 11px;
+            border-top: 1px solid var(--tbr); border-bottom: 1px solid var(--tbr);
+            background: color-mix(in srgb, var(--tbg) 8%, transparent); }
+.set-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.set-body .card { width: 100%; }
+.set-prog { padding: 6px 14px 9px; border-top: 1px solid var(--border2); }
+.prog-track { height: 3px; background: var(--border2); border-radius: 2px; overflow: hidden; margin-bottom: 4px; }
+.prog-fill  { height: 3px; background: var(--teal); border-radius: 2px; }
+.prog-lbl   { font-size: 10px; color: var(--ink3); font-family: var(--mono); }
+
+/* ── layout ── */
+.row  { display: flex; gap: 16px; flex-wrap: wrap; align-items: start; }
+
+/* ── before/after ── */
+.ba-grid { display: grid; grid-template-columns: 1fr 60px 1fr; gap: 0; align-items: center;
+           max-width: 920px; margin: 0 auto; }
+.ba-arrow { text-align: center; font-size: 28px; color: var(--ink4); }
+
+/* annotation box */
+.ann { border-radius: 0 6px 6px 0; padding: 11px 16px; font-size: 13px;
+       margin: 16px 0; max-width: 920px; line-height: 1.6; }
+.ann.warn { background: var(--abg); border-left: 3px solid var(--abr); color: var(--amber); }
+.ann.good { background: var(--gbg); border-left: 3px solid var(--gbr); color: var(--green); }
+.ann.blue { background: var(--tbg); border-left: 3px solid var(--tbr); color: var(--teal); }
+
+/* problem tags */
+.ptag { font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+        background: var(--rbg); color: var(--red); border: 1px solid var(--rbr);
+        border-radius: 3px; padding: 1px 5px; vertical-align: middle; margin-left: 4px; }
+
+/* OLD card zones (before) */
+.old-banner  { margin: 6px 12px 4px; border: 1px dashed var(--border);
+               border-left: 3px solid var(--tbr); border-radius: 0 5px 5px 0;
+               background: color-mix(in srgb, var(--tbg) 40%, transparent);
+               padding: 6px 10px; font-family: var(--mono); font-size: 11px; }
+.old-agent   { display: flex; align-items: center; gap: 8px; padding: 8px 13px;
+               border-top: 1px solid var(--border2); font-family: var(--mono); font-size: 11px; }
+.old-actions { display: flex; gap: 6px; padding: 8px 13px; border-top: 1px solid var(--border2); }
+
+/* vocab table */
+.vtable { border-collapse: collapse; font-size: 13px; max-width: 780px; margin: 0 0 20px; width: 100%; }
+.vtable th { font-family: var(--sans); font-size: 10px; font-weight: 700; letter-spacing: .09em;
+             text-transform: uppercase; color: var(--ink3); border-bottom: 2px solid var(--border);
+             padding: 8px 14px; text-align: left; }
+.vtable td { padding: 8px 14px; border-bottom: 1px solid var(--border2); vertical-align: top; font-family: var(--mono); }
+.vtable td.why { font-family: var(--sans); font-size: 12px; color: var(--ink2); }
+.vtable td.old { color: var(--ink4); text-decoration: line-through; }
+.vtable td.new { color: var(--ink); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="page-title">Pipeline Card — Design Wireframe</div>
+<div class="page-sub">v3 · 40+ states across 10 groups · branch design/card-redesign</div>
+
+<!-- ═══════════════════════════════════════════════ SECTION 1 -->
+<div class="sec-title">1 · The Problem — Redundancy</div>
+
+<p style="font-size:14px;color:var(--ink2);max-width:640px;margin-bottom:28px;">
+  Every card currently renders <strong>3 separate zones</strong> that repeat the same 2 facts.
+  State (e.g. "Implemented") and agent ("CC") each appear twice. Action buttons are a third row
+  when they could sit inline.
+</p>
+
+<div class="ba-grid">
+  <div>
+    <div class="lbl" style="margin-bottom:12px;">Before — current (3 zones)</div>
+    <div class="card">
+      <div class="ct"><span class="ct-id">#02</span><span class="ct-name">brewery import</span><span class="ct-ov">▾</span></div>
+      <div class="old-banner">
+        <div style="font-weight:700;color:var(--teal);display:flex;align-items:center;gap:6px;">✓ IMPLEMENTED <span class="ptag">state ①</span></div>
+        <div style="color:var(--ink3);margin-top:3px;font-size:10px;">CC <span class="ptag">agent ①</span> · 1m</div>
+        <div style="color:var(--ink4);margin-top:2px;font-size:10px;">needs code review</div>
+      </div>
+      <div class="old-agent">
+        <span style="color:var(--ink2)">Claude Code</span><span class="ptag">agent ②</span>
+        <span style="color:var(--ink4)">C…</span>
+        <span style="color:#888">👁</span>
+        <span style="flex:1"></span>
+        <span style="color:var(--teal)">✓ Implemented</span><span class="ptag">state ②</span>
+        <span style="color:var(--ink4)">···</span>
+      </div>
+      <div class="old-actions"><span class="btn p">Close</span><span class="btn">···</span></div>
+    </div>
+    <div class="note" style="color:var(--red)">3 zones · state twice · agent twice · action bar separate</div>
+  </div>
+  <div class="ba-arrow">→</div>
+  <div>
+    <div class="lbl" style="margin-bottom:12px;">After — proposed (2 rows)</div>
+    <div class="card">
+      <div class="ct"><span class="ct-id">#02</span><span class="ct-name">brewery import</span><span class="ct-ov">▾</span></div>
+      <div class="cs rdy">
+        <div class="cs-l"><span class="si">✓</span><span class="sl rdy">Implemented</span><span class="ssep">·</span><span class="sagt">CC</span><span class="ssep">·</span><span class="sdur">1m</span></div>
+        <div class="cs-r"><span class="term">&gt;_</span><span class="btn p">Close</span><span class="btn q">···</span></div>
+      </div>
+      <div class="cd">→ needs code review</div>
+    </div>
+    <div class="note" style="color:var(--green)">2 rows · state once · agent once · CTA inline</div>
+  </div>
+</div>
+
+<div class="ann warn" style="margin-top:24px;">
+  <strong>&gt;_ button</strong> = open the tmux session for that agent. Replaces 👁 — the &gt;_ glyph is the
+  universal terminal symbol (VS Code terminal tab, iTerm2 icon, xterm.js). Only shown when an active session exists.
+</div>
+
+<!-- ═══════════════════════════════════════════════ SECTION 2 -->
+<div class="sec-title">2 · Vocabulary — precise verbs only</div>
+
+<table class="vtable">
+  <tr><th>Old</th><th>New</th><th>Why</th></tr>
+  <tr><td class="old">COMPLETE</td><td class="new">Implemented</td><td class="why">Implemented = agent wrote and pushed code. "Complete" says nothing about what was done.</td></tr>
+  <tr><td class="old">REVISION DONE</td><td class="new">Revised</td><td class="why">Agent addressed review feedback. Revised is the specific act.</td></tr>
+  <tr><td class="old">REVIEW DONE</td><td class="new">Code reviewed</td><td class="why">A reviewer read and annotated the code. The next actor is the implementing agent, not the user.</td></tr>
+  <tr><td class="old">SPEC REVIEW DONE</td><td class="new">Spec reviewed</td><td class="why">A reviewer read the spec. The next actor is the spec owner agent, not the user.</td></tr>
+  <tr><td class="old">RESEARCH DONE</td><td class="new">Research ready</td><td class="why">Findings exist and are ready to evaluate. "Done" doesn't say what to do next.</td></tr>
+  <tr><td class="old">Done (terminal)</td><td class="new">Closed</td><td class="why">aigon feature-close ran. Worktree gone. "Closed" is the precise terminal event.</td></tr>
+  <tr><td class="old">awaiting review</td><td class="new">→ needs code review</td><td class="why">Imperative. "Awaiting" is passive and vague about what kind of review.</td></tr>
+  <tr><td class="old">Finished (unconfirmed)</td><td class="new">Unconfirmed</td><td class="why">Session ended without a signal. State is unknown — human must verify.</td></tr>
+  <tr><td class="old">All complete</td><td class="new">All implemented</td><td class="why">Each agent finished their implementation independently.</td></tr>
+  <tr><td class="old">Spec drift</td><td class="new">State drift</td><td class="why">Drift is between engine snapshot and folder — not just in the spec.</td></tr>
+  <tr><td class="old">Close recovery</td><td class="new">Rollback</td><td class="why">System is undoing a partial close (git cleanup etc). The user just waits — this names the action.</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════ SECTION 3 -->
+<div class="sec-title">3 · Card anatomy</div>
+
+<div style="display:grid;grid-template-columns:380px 1fr;gap:40px;align-items:start;max-width:900px;">
+  <div>
+    <div class="lbl">Structure (max 3 rows per card)</div>
+    <div class="card" style="margin-top:8px;">
+      <div class="ct">
+        <span class="ct-id">[ID]</span>
+        <span class="ct-name">[Feature name]</span>
+        <span class="ct-ov">▾</span>
+      </div>
+      <div class="cs" style="border-left:3px solid var(--border);opacity:.7;">
+        <div class="cs-l">
+          <span class="si" style="color:var(--ink3)">[icon]</span>
+          <span class="sl" style="color:var(--ink2)">[State label]</span>
+          <span class="ssep">·</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;"><span class="dot"></span><span class="sagt">[Agent]</span></span>
+          <span class="ssep">·</span>
+          <span class="sdur">[Duration]</span>
+        </div>
+        <div class="cs-r"><span class="term">&gt;_</span><span class="btn">[CTA]</span><span class="btn q">···</span></div>
+      </div>
+      <div class="cd" style="color:var(--ink4)">[detail — only when it adds new info]</div>
+    </div>
+  </div>
+  <div style="font-size:13px;color:var(--ink2);line-height:2.0;padding-top:24px;">
+    <div><strong>▾ expand toggle</strong> (top-right of every card) — opens the detail drawer: spec summary, full activity log, dependency graph, session transcript links.</div>
+    <div><strong>Left border colour</strong> = urgency at a glance · Green = running · Teal = handoff · Amber = waiting · Red = error · Grey = static</div>
+    <div><strong>Liveness dot</strong> (in agent token) · Green = alive · Amber = stale (&gt;5m silent) · Red = dead · no dot = session ended</div>
+    <div><strong>&gt;_ button</strong> = open the agent's tmux session · only shown when an active session exists</div>
+    <div><strong>Detail line</strong> = italic line below status · only when it adds genuinely new info (next-action hint, agent question, dep list, error context)</div>
+    <div><strong>Multi-agent chips</strong> (sequential pipeline) · done agent muted · active agent has liveness dot · duration belongs to active agent</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ SECTION 4 -->
+<div class="sec-title">4 · All States</div>
+
+<!-- ── A: PRE-START ── -->
+<div class="group-title">A — Pre-start · no agent assigned</div>
+<div class="ann blue" style="margin-bottom:16px;">
+  No lane label on inbox/backlog cards — the column header already identifies the lane.
+  "Paused" is kept because it signals a deliberate state change, not just queue position.
+</div>
+<div class="row">
+
+  <div><div class="lbl">A1 · Inbox</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#—</span><span class="ct-name">beer style filters</span><span class="ct-ov">▾</span></div>
+    <div class="cs idle">
+      <div class="cs-l"></div>
+      <div class="cs-r"><span class="btn p">Prioritise</span><span class="btn q">···</span></div>
+    </div>
+  </div>
+  <div class="note">No label. CTA only. Column header says "Inbox".</div></div>
+
+  <div><div class="lbl">A2 · Backlog</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#03</span><span class="ct-name">user profiles</span><span class="ct-ov">▾</span></div>
+    <div class="cs idle">
+      <div class="cs-l"></div>
+      <div class="cs-r"><span class="btn p">Start</span><span class="btn q">···</span></div>
+    </div>
+  </div>
+  <div class="note">No label. CTA only. Column header says "Backlog".</div></div>
+
+  <div><div class="lbl">A3a · Backlog — blocked (dep pending)</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#03</span><span class="ct-name">user profiles</span><span class="ct-ov">▾</span></div>
+    <div class="cs idle">
+      <div class="cs-l"></div>
+      <div class="cs-r"><span class="btn off">Start</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd"><span class="dep">after <span class="dep-id">#02</span></span></div>
+  </div>
+  <div class="note">Start greyed — dep not done. "after" matches spec frontmatter language. No override CTA on the card; override goes in ···.</div></div>
+
+  <div><div class="lbl">A3b · Backlog — partially unblocked</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#05</span><span class="ct-name">recipe recommendations</span><span class="ct-ov">▾</span></div>
+    <div class="cs idle">
+      <div class="cs-l"></div>
+      <div class="cs-r"><span class="btn off">Start</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd"><span class="dep">after <span class="dep-id done">#02 ✓</span> · <span class="dep-id">#03</span></span></div>
+  </div>
+  <div class="note">#02 is closed (teal chip), #03 still pending (plain chip). Start stays greyed until ALL deps are resolved.</div></div>
+
+  <div><div class="lbl">A3c · Backlog — all deps resolved</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#05</span><span class="ct-name">recipe recommendations</span><span class="ct-ov">▾</span></div>
+    <div class="cs idle">
+      <div class="cs-l"></div>
+      <div class="cs-r"><span class="btn p">Start</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd"><span class="dep">after <span class="dep-id done">#02 ✓</span> · <span class="dep-id done">#03 ✓</span></span></div>
+  </div>
+  <div class="note">All deps closed — Start activates. Dep chips stay visible so the chain is auditable.</div></div>
+
+  <div><div class="lbl">A4 · Paused</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#07</span><span class="ct-name">keg tracking</span><span class="ct-ov">▾</span></div>
+    <div class="cs idle">
+      <div class="cs-l"><span class="si">⏸</span><span class="sl idle">Paused</span></div>
+      <div class="cs-r"><span class="btn">Resume</span><span class="btn q">···</span></div>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- ── B: RUNNING (single agent) ── -->
+<div class="group-title">B — Running · single agent active</div>
+<div class="row">
+
+  <div><div class="lbl">B1 · Implementing</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#01</span><span class="ct-name">format-date</span><span class="ct-ov">▾</span></div>
+    <div class="cs run">
+      <div class="cs-l"><span class="si">●</span><span class="sl run">Implementing</span><span class="ssep">·</span><span class="dot live"></span><span class="sagt">CC</span><span class="ssep">·</span><span class="sdur">14m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+  </div></div>
+
+  <div><div class="lbl">B2 · Reviewing code</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#08</span><span class="ct-name">rating filter</span><span class="ct-ov">▾</span></div>
+    <div class="cs run">
+      <div class="cs-l"><span class="si">●</span><span class="sl run">Reviewing code</span><span class="ssep">·</span><span class="dot live"></span><span class="sagt">GG</span><span class="ssep">·</span><span class="sdur">6m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+  </div></div>
+
+  <div><div class="lbl">B3 · Reviewing spec</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#12</span><span class="ct-name">batch import</span><span class="ct-ov">▾</span></div>
+    <div class="cs run">
+      <div class="cs-l"><span class="si">●</span><span class="sl run">Reviewing spec</span><span class="ssep">·</span><span class="dot live"></span><span class="sagt">CC</span><span class="ssep">·</span><span class="sdur">3m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+  </div></div>
+
+  <div><div class="lbl">B4 · Researching</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">R·09</span><span class="ct-name">ble sensor options</span><span class="ct-ov">▾</span></div>
+    <div class="cs run">
+      <div class="cs-l"><span class="si">●</span><span class="sl run">Researching</span><span class="ssep">·</span><span class="dot live"></span><span class="sagt">CC</span><span class="ssep">·</span><span class="sdur">22m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+  </div></div>
+
+  <div><div class="lbl">B5 · Revising</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#04</span><span class="ct-name">auth flow</span><span class="ct-ov">▾</span></div>
+    <div class="cs run">
+      <div class="cs-l"><span class="si">●</span><span class="sl run">Revising</span><span class="ssep">·</span><span class="dot live"></span><span class="sagt">GG</span><span class="ssep">·</span><span class="sdur">9m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+  </div>
+  <div class="note">Revising = addressing code-review feedback. Distinct from Implementing.</div></div>
+
+  <div><div class="lbl">B6 · Evaluating</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#06</span><span class="ct-name">search autocomplete</span><span class="ct-ov">▾</span></div>
+    <div class="cs run">
+      <div class="cs-l"><span class="si">●</span><span class="sl run">Evaluating</span><span class="ssep">·</span><span class="dot live"></span><span class="sagt">CC</span><span class="ssep">·</span><span class="sdur">11m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+  </div></div>
+
+  <div><div class="lbl">B7 · Closing</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#02</span><span class="ct-name">brewery import</span><span class="ct-ov">▾</span></div>
+    <div class="cs run">
+      <div class="cs-l"><span class="si">●</span><span class="sl run">Closing</span><span class="ssep">·</span><span class="dot live"></span><span class="sagt">CC</span><span class="ssep">·</span><span class="sdur">1m</span></div>
+      <div class="cs-r"><span class="btn q">···</span></div>
+    </div>
+  </div></div>
+
+  <div><div class="lbl">B8 · Rollback (close failed → auto-cleanup)</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#02</span><span class="ct-name">brewery import</span><span class="ct-ov">▾</span></div>
+    <div class="cs warn">
+      <div class="cs-l"><span class="si">●</span><span class="sl warn">Rollback</span><span class="ssep">·</span><span class="dot live"></span><span class="sagt">CC</span><span class="ssep">·</span><span class="sdur">2m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd red">cleaning up after failed close — wait</div>
+  </div>
+  <div class="note">System auto-recovering partial close. User just waits. Red border = warn, not fatal.</div></div>
+
+  <div><div class="lbl">B9 · Implementing — stale (idle ladder)</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#11</span><span class="ct-name">export CSV</span><span class="ct-ov">▾</span></div>
+    <div class="cs run">
+      <div class="cs-l"><span class="si">●</span><span class="sl run">Implementing</span><span class="ssep">·</span><span class="dot stale"></span><span class="sagt" style="color:var(--amber)">CC</span><span class="ssep">·</span><span class="sdur">47m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd amber">no output 12m — nudge?</div>
+  </div>
+  <div class="note">Amber dot + amber id = stale. Detail line at idle-ladder threshold.</div></div>
+
+</div>
+
+<!-- ── B-MULTI: SEQUENTIAL PIPELINE ── -->
+<div class="group-title" style="margin-top:24px;">B-seq — Sequential pipeline · one agent done, next agent active</div>
+<div class="ann blue" style="margin-bottom:16px;">
+  <strong>Inline chip pattern.</strong> State label = the active action.
+  Each agent has a compact chip: done agents are muted (grey, no dot), active agents have a liveness dot.
+  Duration belongs to the active agent. No user action needed while pipeline is running.
+</div>
+<div class="row">
+
+  <div><div class="lbl">BS1 · CC implemented → GG reviewing code</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#08</span><span class="ct-name">rating filter</span><span class="ct-ov">▾</span></div>
+    <div class="cs run">
+      <div class="cs-l">
+        <span class="si">●</span><span class="sl run">Reviewing code</span>
+        <span class="ssep">·</span>
+        <span class="machip done">CC ✓</span>
+        <span class="ssep">·</span>
+        <span class="machip act"><span class="dot live"></span>GG</span>
+        <span class="ssep">·</span><span class="sdur">6m</span>
+      </div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd">→ GG reviewing CC's implementation — no action needed yet</div>
+  </div>
+  <div class="note"><code>CC ✓</code> muted (done). <code>● GG</code> live. Duration = GG's session age. &gt;_ opens GG's session.</div></div>
+
+  <div><div class="lbl">BS2 · CC code reviewed → GG revising</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#04</span><span class="ct-name">auth flow</span><span class="ct-ov">▾</span></div>
+    <div class="cs run">
+      <div class="cs-l">
+        <span class="si">●</span><span class="sl run">Revising</span>
+        <span class="ssep">·</span>
+        <span class="machip done">CC ✓</span>
+        <span class="ssep">·</span>
+        <span class="machip act"><span class="dot live"></span>GG</span>
+        <span class="ssep">·</span><span class="sdur">11m</span>
+      </div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd">→ GG addressing CC's review feedback</div>
+  </div></div>
+
+  <div><div class="lbl">BS3 · Code reviewed → implementing agent will revise</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#08</span><span class="ct-name">rating filter</span><span class="ct-ov">▾</span></div>
+    <div class="cs rdy">
+      <div class="cs-l">
+        <span class="si">✓</span><span class="sl rdy">Code reviewed</span>
+        <span class="ssep">·</span>
+        <span class="machip done">CC ✓</span>
+        <span class="ssep">·</span>
+        <span class="machip done">GG ✓</span>
+        <span class="ssep">·</span><span class="sdur">4m</span>
+      </div>
+      <div class="cs-r"><span class="btn q">···</span></div>
+    </div>
+    <div class="cd">→ CC will revise based on findings</div>
+  </div>
+  <div class="note">Both agents done. No user-facing Apply/Reject — the implementing agent picks up findings automatically. Teal border signals handoff stage.</div></div>
+
+</div>
+
+<!-- ── C: AGENT SILENT ── -->
+<div class="group-title">C — Liveness escalated · agent silent or session gone</div>
+<div class="row">
+
+  <div><div class="lbl">C1 · Agent silent (escalated)</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#11</span><span class="ct-name">export CSV</span><span class="ct-ov">▾</span></div>
+    <div class="cs attn">
+      <div class="cs-l"><span class="si">⚠</span><span class="sl attn">Agent silent</span><span class="ssep">·</span><span class="dot dead"></span><span class="sagt" style="color:var(--red)">CC</span><span class="ssep">·</span><span class="sdur">1h 4m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn a">Nudge</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd red">no output since start — may be stuck</div>
+  </div></div>
+
+  <div><div class="lbl">C2 · Session lost (tmux dead)</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#08</span><span class="ct-name">rating filter</span><span class="ct-ov">▾</span></div>
+    <div class="cs warn">
+      <div class="cs-l"><span class="si">⚠</span><span class="sl warn">Session lost</span><span class="ssep">·</span><span class="dot dead"></span><span class="sagt" style="color:var(--red)">GG</span></div>
+      <div class="cs-r"><span class="btn r">Restart</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd red">tmux session not found</div>
+  </div></div>
+
+</div>
+
+<!-- ── D: WAITING ── -->
+<div class="group-title">D — Waiting · agent stopped, human action needed</div>
+<div class="row">
+
+  <div><div class="lbl">D1 · Needs input</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#01</span><span class="ct-name">format-date</span><span class="ct-ov">▾</span></div>
+    <div class="cs wait">
+      <div class="cs-l"><span class="si">◐</span><span class="sl wait">Needs input</span><span class="ssep">·</span><span class="dot stale"></span><span class="sagt">CC</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn a">Respond</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd amber">"Which date format — ISO 8601 or locale-aware?"</div>
+  </div>
+  <div class="note">Agent's question truncated in detail line. Full text via &gt;_.</div></div>
+
+  <div><div class="lbl">D2 · Quota paused</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#08</span><span class="ct-name">rating filter</span><span class="ct-ov">▾</span></div>
+    <div class="cs wait">
+      <div class="cs-l"><span class="si">⏸</span><span class="sl wait">Quota paused</span><span class="ssep">·</span><span class="sagt">CC</span></div>
+      <div class="cs-r"><span class="btn q">···</span></div>
+    </div>
+    <div class="cd">resets Wed 6 May · 3 pm</div>
+  </div></div>
+
+  <div><div class="lbl">D3 · Token limit</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#14</span><span class="ct-name">batch export</span><span class="ct-ov">▾</span></div>
+    <div class="cs attn">
+      <div class="cs-l"><span class="si">⚠</span><span class="sl attn">Token limit</span><span class="ssep">·</span><span class="dot dead"></span><span class="sagt">CC</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn a">Nudge</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd red">context window full — agent cannot continue</div>
+  </div></div>
+
+  <div><div class="lbl">D4 · Unconfirmed</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#09</span><span class="ct-name">tap list UI</span><span class="ct-ov">▾</span></div>
+    <div class="cs attn">
+      <div class="cs-l"><span class="si">◐</span><span class="sl attn">Unconfirmed</span><span class="ssep">·</span><span class="dot stale"></span><span class="sagt">GG</span><span class="ssep">·</span><span class="sdur">18m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn a">Confirm</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd amber">session ended without completion signal</div>
+  </div></div>
+
+</div>
+
+<!-- ── E: HANDOFF ── -->
+<div class="group-title">E — Handoff · specific work done, your move</div>
+<div class="ann blue" style="margin-bottom:16px;">
+  <strong>Code reviewed / Spec reviewed have no user-facing Accept/Reject.</strong>
+  The implementing agent reads findings automatically and decides whether to revise.
+  The user only acts when the overall feature is implemented and ready to close.
+</div>
+<div class="row">
+
+  <div><div class="lbl">E1 · Implemented → needs code review</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#02</span><span class="ct-name">brewery import</span><span class="ct-ov">▾</span></div>
+    <div class="cs rdy">
+      <div class="cs-l"><span class="si">✓</span><span class="sl rdy">Implemented</span><span class="ssep">·</span><span class="sagt">CC</span><span class="ssep">·</span><span class="sdur">7m</span></div>
+      <div class="cs-r"><span class="btn p">Close</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd">→ needs code review</div>
+  </div>
+  <div class="note">No liveness dot — session ended. User can close or trigger a review.</div></div>
+
+  <div><div class="lbl">E2 · Revised → needs code review</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#04</span><span class="ct-name">auth flow</span><span class="ct-ov">▾</span></div>
+    <div class="cs rdy">
+      <div class="cs-l"><span class="si">✓</span><span class="sl rdy">Revised</span><span class="ssep">·</span><span class="sagt">GG</span><span class="ssep">·</span><span class="sdur">9m</span></div>
+      <div class="cs-r"><span class="btn p">Close</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd">→ needs code review</div>
+  </div></div>
+
+  <div><div class="lbl">E3 · Code reviewed → agent will revise</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#08</span><span class="ct-name">rating filter</span><span class="ct-ov">▾</span></div>
+    <div class="cs rdy">
+      <div class="cs-l"><span class="si">✓</span><span class="sl rdy">Code reviewed</span><span class="ssep">·</span><span class="sagt">GG</span><span class="ssep">·</span><span class="sdur">4m</span></div>
+      <div class="cs-r"><span class="btn q">···</span></div>
+    </div>
+    <div class="cd">→ CC will revise based on findings</div>
+  </div>
+  <div class="note">No user CTA. Implementing agent picks up findings automatically and revises.</div></div>
+
+  <div><div class="lbl">E4 · Spec reviewed → agent will address</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#12</span><span class="ct-name">batch import</span><span class="ct-ov">▾</span></div>
+    <div class="cs rdy">
+      <div class="cs-l"><span class="si">✓</span><span class="sl rdy">Spec reviewed</span><span class="ssep">·</span><span class="sagt">CC</span></div>
+      <div class="cs-r"><span class="btn q">···</span></div>
+    </div>
+    <div class="cd">→ spec owner will address findings</div>
+  </div>
+  <div class="note">No user CTA. The spec owner agent decides what to do with the spec review.</div></div>
+
+  <div><div class="lbl">E5 · Research ready → you evaluate (single agent)</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">R·09</span><span class="ct-name">ble sensor options</span><span class="ct-ov">▾</span></div>
+    <div class="cs rdy">
+      <div class="cs-l"><span class="si">✓</span><span class="sl rdy">Research ready</span><span class="ssep">·</span><span class="sagt">CC</span><span class="ssep">·</span><span class="sdur">22m</span></div>
+      <div class="cs-r"><span class="btn p">Evaluate</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd">→ evaluate findings</div>
+  </div>
+  <div class="note">Research is the only handoff state where the user is the next actor.</div></div>
+
+</div>
+
+<!-- ── E-RESEARCH FLEET ── -->
+<div class="group-title" style="margin-top:24px;">E-rf — Research fleet · multiple agents researching in parallel</div>
+<div class="ann blue" style="margin-bottom:16px;">
+  The most common way to run research. Multiple agents investigate the same topic independently —
+  each produces its own findings report. The headline shows the aggregate state; per-agent rows
+  show individual progress and session links. When all are done, <strong>you</strong> evaluate
+  across all reports.
+</div>
+<div class="row">
+
+  <div><div class="lbl">RF1 · Multiple agents researching (mixed)</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">R·09</span><span class="ct-name">ble sensor options</span><span class="ct-ov">▾</span></div>
+    <div class="cs run" style="border-bottom:1px solid var(--border2)">
+      <div class="cs-l"><span class="si">●</span><span class="sl run">2 researching · 1 research ready</span></div>
+      <div class="cs-r"><span class="btn q">···</span></div>
+    </div>
+    <div class="cfleet">
+      <div class="cfrow"><span class="dot live"></span><span style="width:24px;color:var(--ink2)">CC</span><span class="sl run" style="font-size:11px">Researching</span><span class="ssep">·</span><span class="sdur">34m</span><span style="flex:1"></span><span class="term">&gt;_</span></div>
+      <div class="cfrow"><span class="dot live"></span><span style="width:24px;color:var(--ink2)">GG</span><span class="sl run" style="font-size:11px">Researching</span><span class="ssep">·</span><span class="sdur">29m</span><span style="flex:1"></span><span class="term">&gt;_</span></div>
+      <div class="cfrow dim"><span class="dot"></span><span style="width:24px">KM</span><span class="sl done" style="font-size:11px">Research ready</span><span class="ssep">·</span><span class="sdur">22m</span></div>
+    </div>
+  </div>
+  <div class="note">Done agents dimmed. Summary shows counts. Each active agent has its own &gt;_ link.</div></div>
+
+  <div><div class="lbl">RF2 · All research ready → you evaluate</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">R·09</span><span class="ct-name">ble sensor options</span><span class="ct-ov">▾</span></div>
+    <div class="cs rdy" style="border-bottom:1px solid var(--border2)">
+      <div class="cs-l"><span class="si">✓</span><span class="sl rdy">All research ready</span></div>
+      <div class="cs-r"><span class="btn p">Evaluate</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cfleet">
+      <div class="cfrow dim"><span style="width:24px">CC</span><span class="sl done" style="font-size:11px">Research ready</span><span class="ssep">·</span><span class="sdur">34m</span></div>
+      <div class="cfrow dim"><span style="width:24px">GG</span><span class="sl done" style="font-size:11px">Research ready</span><span class="ssep">·</span><span class="sdur">29m</span></div>
+      <div class="cfrow dim"><span style="width:24px">KM</span><span class="sl done" style="font-size:11px">Research ready</span><span class="ssep">·</span><span class="sdur">22m</span></div>
+    </div>
+  </div>
+  <div class="note">All done. Evaluate button opens your synthesis session — you read all 3 reports and decide which features to create. No AI cherry-pick; you own this step.</div></div>
+
+</div>
+
+<!-- ── F: ERRORS ── -->
+<div class="group-title">F — Errors &amp; warnings</div>
+<div class="row">
+
+  <div><div class="lbl">F1 · Error</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#13</span><span class="ct-name">push notifications</span><span class="ct-ov">▾</span></div>
+    <div class="cs warn">
+      <div class="cs-l"><span class="si">⚠</span><span class="sl warn">Error</span><span class="ssep">·</span><span class="sagt">CC</span></div>
+      <div class="cs-r"><span class="btn r">Retry</span><span class="btn q">···</span></div>
+    </div>
+  </div></div>
+
+  <div><div class="lbl">F2 · Close failed</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#02</span><span class="ct-name">brewery import</span><span class="ct-ov">▾</span></div>
+    <div class="cs warn">
+      <div class="cs-l"><span class="si">⚠</span><span class="sl warn">Close failed</span><span class="ssep">·</span><span class="sdur">3m ago</span></div>
+      <div class="cs-r"><span class="btn r">Retry</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd red">merge conflict — src/import.ts</div>
+  </div></div>
+
+  <div><div class="lbl">F3 · Rebase conflict</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#06</span><span class="ct-name">search autocomplete</span><span class="ct-ov">▾</span></div>
+    <div class="cs warn">
+      <div class="cs-l"><span class="si">⚠</span><span class="sl warn">Rebase conflict</span></div>
+      <div class="cs-r"><span class="btn q">···</span></div>
+    </div>
+    <div class="cd red">rebase before closing</div>
+  </div></div>
+
+  <div><div class="lbl">F4 · State drift</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#10</span><span class="ct-name">offline mode</span><span class="ct-ov">▾</span></div>
+    <div class="cs warn">
+      <div class="cs-l"><span class="si">⚠</span><span class="sl warn">State drift</span></div>
+      <div class="cs-r"><span class="btn a">Reconcile</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd red">run aigon doctor --fix</div>
+  </div></div>
+
+  <div><div class="lbl">F5 · No engine state</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#15</span><span class="ct-name">dark mode</span><span class="ct-ov">▾</span></div>
+    <div class="cs warn">
+      <div class="cs-l"><span class="si">⚠</span><span class="sl warn">No engine state</span></div>
+      <div class="cs-r"><span class="btn a">Fix</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd red">run aigon doctor --fix</div>
+  </div></div>
+
+</div>
+
+<!-- ── G: TERMINAL ── -->
+<div class="group-title">G — Terminal · lifecycle over</div>
+<div class="row">
+
+  <div><div class="lbl">G1 · Closed</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#01</span><span class="ct-name">format-date</span><span class="ct-ov">▾</span></div>
+    <div class="cs done">
+      <div class="cs-l"><span class="si">✓</span><span class="sl done">Closed</span><span class="ssep">·</span><span class="sdur">2d ago</span></div>
+      <div class="cs-r"><span class="btn q">···</span></div>
+    </div>
+  </div>
+  <div class="note">No CTA, no agent. feature-close ran. Just timestamp.</div></div>
+
+  <div><div class="lbl">G2 · Won't fix</div>
+  <div class="card">
+    <div class="ct"><span class="ct-id">#07</span><span class="ct-name">keg tracking</span><span class="ct-ov">▾</span></div>
+    <div class="cs done">
+      <div class="cs-l"><span class="si">✗</span><span class="sl done">Won't fix</span><span class="ssep">·</span><span class="sdur">5d ago</span></div>
+      <div class="cs-r"><span class="btn q">···</span></div>
+    </div>
+  </div>
+  <div class="note">✗ vs ✓ = deliberate rejection, not a successful close.</div></div>
+
+</div>
+
+<!-- ── H: FLEET ── -->
+<div class="group-title">H — Fleet · multiple agents in parallel (eval mode)</div>
+<div class="ann blue" style="margin-bottom:16px;">
+  <strong>Fleet vs sequential.</strong> Fleet = multiple agents implementing the same feature
+  independently in parallel for comparison. Uses full per-agent rows below a summary header.
+  Sequential pipeline uses inline chips instead (see B-seq).
+</div>
+<div class="row">
+
+  <div><div class="lbl">H1 · Fleet — mixed (some implementing, some done)</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#06</span><span class="ct-name">search autocomplete</span><span class="ct-ov">▾</span></div>
+    <div class="cs run" style="border-bottom:1px solid var(--border2)">
+      <div class="cs-l"><span class="si">●</span><span class="sl run">2 implementing · 1 implemented</span></div>
+      <div class="cs-r"><span class="btn q">···</span></div>
+    </div>
+    <div class="cfleet">
+      <div class="cfrow"><span class="dot live"></span><span style="width:24px;color:var(--ink2)">CC</span><span class="sl run" style="font-size:11px">Implementing</span><span class="ssep">·</span><span class="sdur">14m</span><span style="flex:1"></span><span class="term">&gt;_</span></div>
+      <div class="cfrow"><span class="dot live"></span><span style="width:24px;color:var(--ink2)">GG</span><span class="sl run" style="font-size:11px">Implementing</span><span class="ssep">·</span><span class="sdur">11m</span><span style="flex:1"></span><span class="term">&gt;_</span></div>
+      <div class="cfrow dim"><span class="dot"></span><span style="width:24px">KM</span><span class="sl done" style="font-size:11px">Implemented</span><span class="ssep">·</span><span class="sdur">8m</span></div>
+    </div>
+  </div>
+  <div class="note">Done agents dimmed. Each active agent has its own &gt;_ link.</div></div>
+
+  <div><div class="lbl">H2 · Fleet — all implemented, assign evaluator</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#06</span><span class="ct-name">search autocomplete</span><span class="ct-ov">▾</span></div>
+    <div class="cs rdy" style="border-bottom:1px solid var(--border2)">
+      <div class="cs-l"><span class="si">✓</span><span class="sl rdy">All implemented</span></div>
+      <div class="cs-r"><span class="btn p">Evaluate</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cfleet">
+      <div class="cfrow dim"><span style="width:24px">CC</span><span class="sl done" style="font-size:11px">Implemented</span><span class="ssep">·</span><span class="sdur">14m</span></div>
+      <div class="cfrow dim"><span style="width:24px">GG</span><span class="sl done" style="font-size:11px">Implemented</span><span class="ssep">·</span><span class="sdur">11m</span></div>
+      <div class="cfrow dim"><span style="width:24px">KM</span><span class="sl done" style="font-size:11px">Implemented</span><span class="ssep">·</span><span class="sdur">8m</span></div>
+    </div>
+  </div>
+  <div class="note">All done — waiting for you to assign an evaluator. Evaluate button starts that.</div></div>
+
+  <div><div class="lbl">H3 · Fleet — evaluating</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#06</span><span class="ct-name">search autocomplete</span><span class="ct-ov">▾</span></div>
+    <div class="cs run" style="border-bottom:1px solid var(--border2)">
+      <div class="cs-l"><span class="si">●</span><span class="sl run">Evaluating</span><span class="ssep">·</span><span class="dot live"></span><span class="sagt">CC</span><span class="ssep">·</span><span class="sdur">8m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cfleet">
+      <div class="cfrow dim"><span style="width:24px">CC</span><span class="sl done" style="font-size:11px">Implemented</span><span class="ssep">·</span><span class="sdur">14m</span></div>
+      <div class="cfrow dim"><span style="width:24px">GG</span><span class="sl done" style="font-size:11px">Implemented</span><span class="ssep">·</span><span class="sdur">11m</span></div>
+      <div class="cfrow dim"><span style="width:24px">KM</span><span class="sl done" style="font-size:11px">Implemented</span><span class="ssep">·</span><span class="sdur">8m</span></div>
+    </div>
+  </div>
+  <div class="note">Evaluator (CC) active in headline. Fleet agents all dimmed. &gt;_ opens evaluator session.</div></div>
+
+  <div><div class="lbl">H4 · Fleet — pick winner (after eval)</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#06</span><span class="ct-name">search autocomplete</span><span class="ct-ov">▾</span></div>
+    <div class="cs attn" style="border-bottom:1px solid var(--border2)">
+      <div class="cs-l"><span class="si">◐</span><span class="sl attn">Pick winner</span><span class="ssep">·</span><span class="sdur" style="color:var(--amber)">recommended: CC</span></div>
+      <div class="cs-r"><span class="btn a">Decide</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cfleet">
+      <div class="cfrow dim"><span style="width:24px">CC</span><span class="sl done" style="font-size:11px">Implemented</span><span class="ssep">·</span><span class="sdur">14m</span></div>
+      <div class="cfrow dim"><span style="width:24px">GG</span><span class="sl done" style="font-size:11px">Implemented</span><span class="ssep">·</span><span class="sdur">11m</span></div>
+    </div>
+  </div>
+  <div class="note">"Decide" opens the modal — pick a winner and optionally cherry-pick from others.</div></div>
+
+</div>
+
+<!-- ── I: AUTONOMOUS ── -->
+<div class="group-title">I — Autonomous stages · conductor orchestrates multi-step plan</div>
+<div class="ann blue" style="margin-bottom:16px;">
+  Autonomous mode is for features only, always starting with Implement. The conductor runs
+  automatically — no user gates between stages. The &gt;_ button opens the conductor's tmux session.
+  Stage track always visible: completed stages show ✓ with the agent that ran them.
+</div>
+<div class="row">
+
+  <div><div class="lbl">I1 · Implementing (stage 1 of 3, single agent)</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#18</span><span class="ct-name">tap list redesign</span><span class="ct-ov">▾</span></div>
+    <div class="cs run">
+      <div class="cs-l"><span class="si">▶</span><span class="sl run">Implementing · stage 1/3</span><span class="ssep">·</span><span class="dot live"></span><span class="sagt">CC</span><span class="ssep">·</span><span class="sdur">22m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd">conductor orchestrating · open &gt;_ to watch</div>
+    <div class="cstages">
+      <span class="st act">● Implement</span><span class="st-sep">→</span>
+      <span class="st">Review</span><span class="st-sep">→</span>
+      <span class="st">Close</span>
+    </div>
+  </div>
+  <div class="note">Stage 1 active. &gt;_ opens conductor session.</div></div>
+
+  <div><div class="lbl">I1b · Implementing (stage 1, fleet — 2 agents in parallel)</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#18</span><span class="ct-name">tap list redesign</span><span class="ct-ov">▾</span></div>
+    <div class="cs run" style="border-bottom:1px solid var(--border2)">
+      <div class="cs-l"><span class="si">▶</span><span class="sl run">Implementing · stage 1/3</span><span class="ssep">·</span><span class="sdur">2 agents</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cfleet">
+      <div class="cfrow"><span class="dot live"></span><span style="width:24px;color:var(--ink2)">CC</span><span class="sl run" style="font-size:11px">Implementing</span><span class="ssep">·</span><span class="sdur">22m</span><span style="flex:1"></span><span class="term">&gt;_</span></div>
+      <div class="cfrow"><span class="dot live"></span><span style="width:24px;color:var(--ink2)">GG</span><span class="sl run" style="font-size:11px">Implementing</span><span class="ssep">·</span><span class="sdur">19m</span><span style="flex:1"></span><span class="term">&gt;_</span></div>
+    </div>
+    <div class="cstages">
+      <span class="st act">● Implement (fleet)</span><span class="st-sep">→</span>
+      <span class="st">Eval</span><span class="st-sep">→</span>
+      <span class="st">Close</span>
+    </div>
+  </div>
+  <div class="note">Autonomous plan with fleet implement stage. Each agent gets its own &gt;_ link. Conductor &gt;_ in headline opens orchestrator session. After both finish → Eval stage.</div></div>
+
+  <div><div class="lbl">I2 · Reviewing (stage 2 of 3)</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#18</span><span class="ct-name">tap list redesign</span><span class="ct-ov">▾</span></div>
+    <div class="cs run">
+      <div class="cs-l"><span class="si">▶</span><span class="sl run">Reviewing · stage 2/3</span><span class="ssep">·</span><span class="dot live"></span><span class="sagt">GG</span><span class="ssep">·</span><span class="sdur">6m</span></div>
+      <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cstages">
+      <span class="st ok">✓ Implement · CC</span><span class="st-sep">→</span>
+      <span class="st act">● Review</span><span class="st-sep">→</span>
+      <span class="st">Close</span>
+    </div>
+  </div>
+  <div class="note">Stage 1 complete with agent attribution. Conductor automatically advanced to stage 2.</div></div>
+
+  <div><div class="lbl">I3 · All stages done — ready to close</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#18</span><span class="ct-name">tap list redesign</span><span class="ct-ov">▾</span></div>
+    <div class="cs rdy">
+      <div class="cs-l"><span class="si">✓</span><span class="sl rdy">All stages done</span></div>
+      <div class="cs-r"><span class="btn p">Close</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cstages">
+      <span class="st ok">✓ Implement · CC</span><span class="st-sep">→</span>
+      <span class="st ok">✓ Review · GG</span><span class="st-sep">→</span>
+      <span class="st ok">✓ Revise · CC</span><span class="st-sep">→</span>
+      <span class="st ok">✓ Close ready</span>
+    </div>
+  </div>
+  <div class="note">Every completed stage shows which agent ran it. Full audit trail in the stage track.</div></div>
+
+</div>
+
+<!-- ── J: FEATURE SETS ── -->
+<div class="group-title">J — Feature sets · lightweight wrapper around full feature cards</div>
+<div class="ann blue" style="margin-bottom:16px;">
+  A feature set is a teal-bordered container grouping related features. The set header shows
+  aggregate state counts and a progress bar. When expanded, each member feature renders as a
+  <strong>full feature card</strong> — identical to any standalone card — nested inside the wrapper.
+  No compact rows, no special child layout: the same card design throughout.
+</div>
+<div class="row" style="align-items:start;">
+
+  <div>
+  <div class="lbl">J1 · Set — in progress (collapsed)</div>
+  <div class="set-wrap" style="margin-top:8px">
+    <div class="set-hdr">
+      <span class="set-id">FS·01</span>
+      <span class="set-name">Auth system</span>
+      <span class="set-cnt">4 features</span>
+      <span class="set-ov">▾</span>
+    </div>
+    <div class="set-cs">
+      <span class="si">●</span>
+      <span class="sl run" style="font-size:11px">1 implementing</span>
+      <span class="ssep">·</span>
+      <span class="sl rdy" style="font-size:11px;font-weight:700">1 implemented</span>
+      <span class="ssep">·</span>
+      <span class="sdur">2 queued</span>
+      <span style="flex:1"></span>
+      <span class="btn q" style="font-size:10px;padding:2px 6px">···</span>
+    </div>
+    <div class="set-prog">
+      <div class="prog-track"><div class="prog-fill" style="width:25%"></div></div>
+      <div class="prog-lbl">1 / 4 closed</div>
+    </div>
+  </div>
+  <div class="note">Collapsed: aggregate status + progress bar. ▾ expands to show full feature cards.</div>
+  </div>
+
+  <div>
+  <div class="lbl">J2 · Set — in progress (expanded, full cards)</div>
+  <div class="set-wrap" style="margin-top:8px;width:430px">
+    <div class="set-hdr">
+      <span class="set-id">FS·01</span>
+      <span class="set-name">Auth system</span>
+      <span class="set-cnt">4 features</span>
+      <span class="set-ov">▴</span>
+    </div>
+    <div class="set-cs">
+      <span class="si">●</span>
+      <span class="sl run" style="font-size:11px">1 implementing</span>
+      <span class="ssep">·</span>
+      <span class="sl rdy" style="font-size:11px;font-weight:700">1 implemented</span>
+      <span class="ssep">·</span>
+      <span class="sdur">2 queued</span>
+      <span style="flex:1"></span>
+      <span class="btn q" style="font-size:10px;padding:2px 6px">···</span>
+    </div>
+    <div class="set-body">
+      <!-- #001 login form is Closed — lives in Done column, not shown here -->
+      <!-- implemented member — same card as E1 -->
+      <div class="card">
+        <div class="ct"><span class="ct-id">#002</span><span class="ct-name">password reset</span><span class="ct-ov">▾</span></div>
+        <div class="cs rdy">
+          <div class="cs-l"><span class="si">✓</span><span class="sl rdy">Implemented</span><span class="ssep">·</span><span class="sagt">CC</span><span class="ssep">·</span><span class="sdur">4m</span></div>
+          <div class="cs-r"><span class="btn p">Close</span><span class="btn q">···</span></div>
+        </div>
+        <div class="cd">→ needs code review</div>
+      </div>
+      <!-- implementing member — same card as B1 -->
+      <div class="card">
+        <div class="ct"><span class="ct-id">#003</span><span class="ct-name">OAuth integration</span><span class="ct-ov">▾</span></div>
+        <div class="cs run">
+          <div class="cs-l"><span class="si">●</span><span class="sl run">Implementing</span><span class="ssep">·</span><span class="dot live"></span><span class="sagt">GG</span><span class="ssep">·</span><span class="sdur">22m</span></div>
+          <div class="cs-r"><span class="term">&gt;_</span><span class="btn q">···</span></div>
+        </div>
+      </div>
+      <!-- backlog member — same card as A2 -->
+      <div class="card">
+        <div class="ct"><span class="ct-id">#004</span><span class="ct-name">2FA</span><span class="ct-ov">▾</span></div>
+        <div class="cs idle">
+          <div class="cs-l"></div>
+          <div class="cs-r"><span class="btn p">Start</span><span class="btn q">···</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="set-prog">
+      <div class="prog-track"><div class="prog-fill" style="width:25%"></div></div>
+      <div class="prog-lbl">1 / 4 closed</div>
+    </div>
+  </div>
+  <div class="note">Closed members (#001) are in the Done column — not shown here. The progress bar accounts for them numerically. Only features in active/in-progress lanes appear in this column's expanded view.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px;align-items:start;">
+
+  <div>
+  <div class="lbl">J3 · Set — error in child (collapsed)</div>
+  <div class="set-wrap" style="margin-top:8px;border-color:var(--rbr);background:color-mix(in srgb,var(--rbg) 8%,var(--paper))">
+    <div class="set-hdr">
+      <span class="set-id" style="color:var(--red)">FS·02</span>
+      <span class="set-name">Billing integration</span>
+      <span class="set-cnt" style="color:var(--red);background:var(--rbg);border-color:var(--rbr)">3 features</span>
+      <span class="set-ov">▾</span>
+    </div>
+    <div class="set-cs" style="border-color:var(--rbr);background:color-mix(in srgb,var(--rbg) 12%,transparent)">
+      <span class="si">⚠</span>
+      <span class="sl warn" style="font-size:11px">1 error</span>
+      <span class="ssep">·</span>
+      <span class="sdur">1 implementing · 1 queued</span>
+      <span style="flex:1"></span>
+      <span class="btn q" style="font-size:10px;padding:2px 6px">···</span>
+    </div>
+    <div class="cd red" style="padding:6px 14px 8px;font-size:11px;">#008 webhook handler — error</div>
+    <div class="set-prog">
+      <div class="prog-track"><div class="prog-fill" style="width:0%"></div></div>
+      <div class="prog-lbl">0 / 3 closed</div>
+    </div>
+  </div>
+  <div class="note">Worst child state surfaces to set header. Expand to see which card has the error.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+  <div>
+  <div class="lbl">J4a · Set — all closed (collapsed)</div>
+  <div class="set-wrap" style="margin-top:8px;border-color:var(--border2);background:var(--paper)">
+    <div class="set-hdr">
+      <span class="set-id" style="color:var(--ink3)">FS·03</span>
+      <span class="set-name" style="color:var(--ink3)">Tap management</span>
+      <span class="set-cnt" style="color:var(--ink3);background:var(--bg);border-color:var(--border2)">3 features</span>
+      <span class="set-ov">▾</span>
+    </div>
+    <div class="set-cs" style="border-color:var(--border2);background:transparent">
+      <span class="si">✓</span>
+      <span class="sl done" style="font-size:11px">All closed</span>
+      <span class="ssep">·</span>
+      <span class="sdur">3d ago</span>
+      <span style="flex:1"></span>
+      <span class="btn q" style="font-size:10px;padding:2px 6px">···</span>
+    </div>
+    <div class="set-prog">
+      <div class="prog-track"><div class="prog-fill" style="width:100%"></div></div>
+      <div class="prog-lbl">3 / 3 closed</div>
+    </div>
+  </div>
+  <div class="note">Grey border = dormant. ▾ expands to show individual closed cards.</div>
+  </div>
+
+  <div>
+  <div class="lbl">J4b · Set — all closed (expanded — drill into members)</div>
+  <div class="set-wrap" style="margin-top:8px;border-color:var(--border2);background:var(--paper);width:430px">
+    <div class="set-hdr">
+      <span class="set-id" style="color:var(--ink3)">FS·03</span>
+      <span class="set-name" style="color:var(--ink3)">Tap management</span>
+      <span class="set-cnt" style="color:var(--ink3);background:var(--bg);border-color:var(--border2)">3 features</span>
+      <span class="set-ov">▴</span>
+    </div>
+    <div class="set-cs" style="border-color:var(--border2);background:transparent">
+      <span class="si">✓</span>
+      <span class="sl done" style="font-size:11px">All closed</span>
+      <span class="ssep">·</span>
+      <span class="sdur">3d ago</span>
+      <span style="flex:1"></span>
+      <span class="btn q" style="font-size:10px;padding:2px 6px">···</span>
+    </div>
+    <div class="set-body">
+      <div class="card">
+        <div class="ct"><span class="ct-id">#010</span><span class="ct-name">tap list view</span><span class="ct-ov">▾</span></div>
+        <div class="cs done">
+          <div class="cs-l"><span class="si">✓</span><span class="sl done">Closed</span><span class="ssep">·</span><span class="sdur">4d ago</span></div>
+          <div class="cs-r"><span class="btn q">···</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ct"><span class="ct-id">#011</span><span class="ct-name">tap status badge</span><span class="ct-ov">▾</span></div>
+        <div class="cs done">
+          <div class="cs-l"><span class="si">✓</span><span class="sl done">Closed</span><span class="ssep">·</span><span class="sdur">3d ago</span></div>
+          <div class="cs-r"><span class="btn q">···</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ct"><span class="ct-id">#012</span><span class="ct-name">tap filter sidebar</span><span class="ct-ov">▾</span></div>
+        <div class="cs done">
+          <div class="cs-l"><span class="si">✓</span><span class="sl done">Closed</span><span class="ssep">·</span><span class="sdur">3d ago</span></div>
+          <div class="cs-r"><span class="btn q">···</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="set-prog">
+      <div class="prog-track"><div class="prog-fill" style="width:100%"></div></div>
+      <div class="prog-lbl">3 / 3 closed</div>
+    </div>
+  </div>
+  <div class="note">Expand to drill into any member card and access its ▾ detail drawer (spec, log, transcript).</div>
+  </div>
+
+  </div>
+
+  </div>
+
+</div>
+
+</div><!-- /page -->
+</body>
+</html>

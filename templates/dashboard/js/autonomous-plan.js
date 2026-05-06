@@ -22,7 +22,7 @@
   }
 
   function statusLabel(status) {
-    if (status === 'complete') return 'Complete';
+    if (status === 'complete') return 'Implemented';
     if (status === 'running') return 'Running';
     if (status === 'failed') return 'Failed';
     return 'Waiting';

@@ -3,7 +3,9 @@
 
 This project uses the Aigon development workflow.
 
-- Gemini-specific notes: `docs/agents/gemini.md`
-- Development workflow: `docs/development_workflow.md`
+- Architecture overview: `docs/architecture.md`
+
+- Agent-specific notes: `.aigon/docs/agents/*.md`
+- Development workflow: `.aigon/docs/development_workflow.md`
 
 <!-- AIGON_END -->

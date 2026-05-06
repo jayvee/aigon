@@ -299,6 +299,8 @@ Total LOC in `tests/` must stay ≤ **2,500** (default in `scripts/check-test-bu
 
 Process: invoke the skill → use shadcn/ui components where available → verify with a Playwright screenshot → compare side-by-side against the reference design if one exists. Never hand-write CSS or guess at Tailwind classes.
 
+**Pipeline card reference design**: `docs/card-design-wireframe.html` (branch `design/card-redesign`). Before touching card layout, card headline, agent-row, or status-row code, open this wireframe. It defines: the 2-row card structure (title row + status row), the full vocabulary (Implemented/Revised/Code reviewed/Spec reviewed/Research ready/Closed), the `>_` terminal peek button, multi-agent inline chip pattern for sequential pipelines, fleet vs sequential distinction, autonomous stage track with per-stage agent attribution, and feature set card layout. Serve it with `python3 -m http.server 7654 --directory docs` and open `http://localhost:7654/card-design-wireframe.html`.
+
 ## Common Agent Mistakes
 - **Inventing args**: adding `cc` or `--iterate` to a plain command → wrong mode (Drive vs Fleet)
 - **Breaking dashboard visually**: passing syntax check but not verifying rendered UI → ships broken tabs

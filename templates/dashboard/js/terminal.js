@@ -86,7 +86,21 @@
 
     function createXtermInstance(container) {
       const hasXterm = typeof Terminal !== 'undefined';
-      if (!hasXterm) return null;
+      if (!hasXterm) {
+        // xterm hasn't parsed yet — race between user click and script load.
+        // Show a loading hint instead of silent blank, then retry shortly.
+        if (container) {
+          container.innerHTML = '<div style="color:var(--text-secondary);padding:14px;font-family:var(--mono);font-size:12px">Loading terminal…</div>';
+        }
+        setTimeout(() => {
+          if (typeof Terminal === 'undefined') return;
+          if (!termState.sessionName) return;
+          const sn = termState.sessionName;
+          const result = createXtermInstance(container);
+          if (result) connectPtyStream(sn);
+        }, 250);
+        return null;
+      }
 
       const term = new Terminal({
         cursorBlink: localStorage.getItem('aigon.term.cursorBlink') === '1',

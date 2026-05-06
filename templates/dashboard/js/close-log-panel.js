@@ -83,7 +83,7 @@
         }
         setState(success ? 'success' : 'failure');
         const t = $id('close-log-title');
-        if (t) t.textContent = success ? 'Done' : 'Close failed';
+        if (t) t.textContent = success ? 'Closed' : 'Close failed';
         const f = $id('close-log-footer');
         if (f) {
           f.style.display = 'flex';
