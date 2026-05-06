@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline Card — Design Wireframe</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a1a;
+    --ink-2: #444;
+    --ink-3: #888;
+    --ink-4: #bbb;
+    --bg: #f7f5f2;
+    --bg-card: #fff;
+    --border: #c8c2b8;
+    --border-light: #e0dbd4;
+    --accent: #1a1a1a;
+    --green: #1a6b3a;
+    --green-bg: #e8f5ed;
+    --amber: #8b5e00;
+    --amber-bg: #fdf3e0;
+    --red: #8b1a1a;
+    --red-bg: #fde8e8;
+    --teal: #0d6b5e;
+    --teal-bg: #e0f5f2;
+    --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', ui-monospace, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    padding: 48px 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+       color: var(--ink-3); margin: 48px 0 20px; border-bottom: 1px solid var(--border-light);
+       padding-bottom: 8px; }
+  h3 { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+       color: var(--ink-4); margin: 28px 0 10px; }
+  p  { font-size: 13px; color: var(--ink-2); margin-bottom: 8px; max-width: 620px; }
+
+  .subtitle { font-size: 13px; color: var(--ink-3); margin-bottom: 40px; }
+
+  /* ─── Card wireframe shell ─────────────────────────────────────── */
+  .wf-card {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    font-family: var(--mono);
+    font-size: 11px;
+    width: 340px;
+    overflow: hidden;
+  }
+  .wf-card.w-wide { width: 420px; }
+  .wf-card.w-narrow { width: 280px; }
+
+  /* title row */
+  .wf-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px 7px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .wf-id   { color: var(--ink-3); font-size: 10px; flex-shrink: 0; }
+  .wf-name { color: var(--ink); font-weight: 600; flex: 1; white-space: nowrap;
+             overflow: hidden; text-overflow: ellipsis; }
+  .wf-overflow { color: var(--ink-3); font-size: 10px; flex-shrink: 0; border: 1px solid var(--border);
+                 border-radius: 4px; padding: 1px 5px; cursor: default; }
+
+  /* status row — the core of the new design */
+  .wf-status {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 6px 10px;
+    min-height: 30px;
+  }
+  .wf-status-left { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; }
+  .wf-status-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+
+  /* state icon + label */
+  .wf-icon  { font-size: 10px; width: 11px; text-align: center; flex-shrink: 0; }
+  .wf-label { font-weight: 700; letter-spacing: .04em; font-size: 11px; white-space: nowrap; }
+  .wf-sep   { color: var(--border); margin: 0 3px; }
+  .wf-agent { color: var(--ink-3); white-space: nowrap; font-size: 10px; }
+  .wf-dur   { color: var(--ink-4); white-space: nowrap; font-size: 10px; }
+
+  /* liveness dot embedded in agent token */
+  .wf-dot   { display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+               background: var(--ink-4); vertical-align: middle; margin-right: 3px; flex-shrink: 0; }
+  .wf-dot.live  { background: #22c55e; }
+  .wf-dot.stale { background: #f59e0b; }
+  .wf-dot.dead  { background: #ef4444; }
+
+  /* detail line — optional, only when needed */
+  .wf-detail {
+    padding: 0 10px 7px 26px;
+    font-size: 10px;
+    color: var(--ink-3);
+    font-style: italic;
+    line-height: 1.3;
+  }
+
+  /* CTA buttons */
+  .wf-btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    background: transparent;
+    color: var(--ink-2);
+    cursor: default;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .wf-btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .wf-btn.green   { background: var(--green-bg); color: var(--green); border-color: #a8d5b8; }
+  .wf-btn.red     { background: var(--red-bg);   color: var(--red);   border-color: #e8b4b4; }
+  .wf-btn.amber   { background: var(--amber-bg); color: var(--amber); border-color: #e8d4a0; }
+  .wf-btn.ghost   { border-color: transparent; color: var(--ink-3); }
+
+  .wf-eye { font-size: 12px; color: var(--ink-4); cursor: default; }
+
+  /* tone left-border (replaces the whole banner block) */
+  .wf-status.tone-running  { border-left: 3px solid #4ade80; }
+  .wf-status.tone-waiting  { border-left: 3px solid #fbbf24; }
+  .wf-status.tone-attention{ border-left: 3px solid #fb923c; }
+  .wf-status.tone-ready    { border-left: 3px solid #6ee7b7; }
+  .wf-status.tone-warn     { border-left: 3px solid #f87171; }
+  .wf-status.tone-done     { border-left: 3px solid var(--border-light); }
+  .wf-status.tone-idle     { border-left: 3px solid var(--border-light); }
+
+  .wf-label.tone-running   { color: #16a34a; }
+  .wf-label.tone-waiting   { color: #92400e; }
+  .wf-label.tone-attention { color: #c2410c; }
+  .wf-label.tone-ready     { color: var(--teal); }
+  .wf-label.tone-warn      { color: var(--red); }
+  .wf-label.tone-done      { color: var(--ink-3); }
+  .wf-label.tone-idle      { color: var(--ink-3); }
+
+  /* fleet agent rows */
+  .wf-fleet {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 5px 10px 6px 10px;
+  }
+  .wf-fleet-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    color: var(--ink-2);
+  }
+  .wf-fleet-row .wf-label { font-size: 10px; font-weight: 600; }
+
+  /* annotation callouts */
+  .ann {
+    font-family: var(--sans);
+    font-size: 11px;
+    color: #d97706;
+    background: #fef9ee;
+    border: 1px solid #fcd34d;
+    border-radius: 4px;
+    padding: 2px 7px;
+    display: inline-block;
+    margin: 2px 0;
+  }
+  .ann-block {
+    font-family: var(--sans);
+    font-size: 11px;
+    color: #d97706;
+    background: #fef9ee;
+    border-left: 3px solid #fcd34d;
+    padding: 6px 10px;
+    margin: 6px 0;
+    max-width: 620px;
+  }
+  .ann-block.good {
+    color: #166534; background: #f0fdf4; border-left-color: #4ade80;
+  }
+  .ann-arrow {
+    font-family: var(--sans); font-size: 11px; color: var(--ink-3);
+    display: flex; align-items: center; gap: 8px; margin: 4px 0;
+  }
+
+  /* layout helpers */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: start; }
+  .stack  { display: flex; flex-direction: column; gap: 10px; }
+  .row    { display: flex; gap: 12px; align-items: start; flex-wrap: wrap; }
+  .label-above { font-family: var(--sans); font-size: 10px; color: var(--ink-3);
+                 letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; font-weight: 600; }
+  .note   { font-family: var(--sans); font-size: 11px; color: var(--ink-3);
+            margin-top: 4px; max-width: 340px; }
+
+  /* problem annotation overlay */
+  .problem-tag {
+    font-family: var(--sans); font-size: 9px; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase; color: #c53030;
+    background: #fff5f5; border: 1px solid #feb2b2; border-radius: 3px;
+    padding: 1px 5px; vertical-align: middle; margin-left: 4px;
+  }
+
+  hr { border: none; border-top: 1px solid var(--border-light); margin: 40px 0; }
+
+  /* OLD card style (for before/after) */
+  .wf-old-banner {
+    margin: 5px 10px 4px;
+    border: 1px dashed #e0dbd4;
+    border-left: 3px solid #fbbf24;
+    background: rgba(251,191,36,.06);
+    border-radius: 0 4px 4px 0;
+    padding: 4px 8px;
+  }
+  .wf-old-agent-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 10px;
+    border-top: 1px solid var(--border-light);
+    font-family: var(--mono); font-size: 10px; color: var(--ink-2);
+  }
+  .wf-old-actions {
+    display: flex; gap: 5px;
+    padding: 6px 10px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  /* diff marker */
+  .removed { text-decoration: line-through; color: var(--ink-4); }
+  .badge-removed { background: #fde8e8; border: 1px dashed #e8b4b4; border-radius: 3px;
+                   padding: 1px 5px; font-size: 10px; font-family: var(--mono); color: #8b1a1a; }
+  .badge-kept { background: #e8f5ed; border: 1px solid #a8d5b8; border-radius: 3px;
+                padding: 1px 5px; font-size: 10px; font-family: var(--mono); color: var(--green); }
+
+  .section-intro { font-size: 12px; color: var(--ink-2); margin: -10px 0 16px; max-width: 580px; }
+</style>
+</head>
+<body>
+
+<h1>Pipeline Card — Design Wireframe</h1>
+<p class="subtitle">Proposed redesign · All states · 2026-05-06</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>1 · The Problem With the Current Card</h2>
+
+<p>The current card uses a <strong>headline banner block</strong> that duplicates what the agent row below it already says. Two UI zones, one piece of information.</p>
+
+<div class="row" style="margin-top:16px; align-items: start;">
+
+  <div>
+    <div class="label-above">Current (COMPLETE state)</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#01</span>
+        <span class="wf-name">format-date</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <!-- OLD banner -->
+      <div class="wf-old-banner" style="font-family:var(--mono); font-size:10px;">
+        <div style="display:flex; align-items:center; gap:5px; font-weight:700; color:#a16207;">
+          ✓ <span>COMPLETE</span>
+          <span class="problem-tag">redundant</span>
+        </div>
+        <div style="color:#888; font-size:10px; margin-top:2px;">CC · 7m</div>
+        <div style="color:#aaa; font-size:10px;">awaiting review</div>
+      </div>
+      <!-- OLD agent row -->
+      <div class="wf-old-agent-row">
+        <span>Claude Code</span>
+        <span style="color:var(--ink-4)">claud…</span>
+        <span>👁</span>
+        <span style="flex:1"></span>
+        <span style="color:#16a34a;">✓ Complete</span>
+        <span class="problem-tag">redundant</span>
+        <span style="color:var(--ink-4)">···</span>
+      </div>
+      <!-- OLD actions -->
+      <div class="wf-old-actions">
+        <span class="wf-btn primary">Close</span>
+        <span class="wf-btn">···</span>
+      </div>
+    </div>
+    <div class="note" style="margin-top:6px;">
+      3 visual zones → 2 state tokens saying identical things. Banner adds visual weight without adding meaning.
+    </div>
+  </div>
+
+  <div style="padding-top:60px; font-size:20px; color:var(--ink-4);">→</div>
+
+  <div>
+    <div class="label-above">Proposed (COMPLETE state)</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#01</span>
+        <span class="wf-name">format-date</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-ready">
+        <div class="wf-status-left">
+          <span class="wf-icon">✓</span>
+          <span class="wf-label tone-ready">Complete</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot live"></span>
+          <span class="wf-agent">CC</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">7m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn primary">Close</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail">→ awaiting review</div>
+    </div>
+    <div class="note" style="margin-top:6px;">
+      2 zones (title + status). State, agent, duration, and CTA in one scannable line.
+    </div>
+  </div>
+
+</div>
+
+<div class="ann-block" style="margin-top:20px;">
+  <strong>Key principles:</strong>
+  1 — One status row, not two. &nbsp;
+  2 — Liveness dot lives inside the agent token. &nbsp;
+  3 — Detail line (italic, dim) only when there is actionable context (message, next step hint). &nbsp;
+  4 — Primary CTA is always right-aligned in the status row — no separate action bar. &nbsp;
+  5 — Duration only for active/just-finished states; omit for static ones.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>2 · New Card Anatomy</h2>
+
+<div style="font-family:var(--mono); font-size:11px; background:var(--bg-card); border:1.5px solid var(--border);
+            border-radius:8px; padding:14px 16px; max-width:560px; line-height:2;">
+  <div style="display:flex; gap:8px; padding-bottom:8px; border-bottom:1px dashed var(--border-light);">
+    <span style="color:var(--ink-3);">[ID]</span>
+    <span style="flex:1; font-weight:700;">[Feature name]</span>
+    <span style="color:var(--ink-3);">[▾ overflow]</span>
+  </div>
+  <div style="display:flex; gap:6px; padding:7px 0 4px; border-left:3px solid var(--border); padding-left:8px; margin-top:6px;">
+    <span>[•]</span><!-- tone border replaces banner background -->
+    <span style="font-weight:700;">[State label]</span>
+    <span style="color:var(--ink-3);">·</span>
+    <span style="color:var(--ink-3);">⬤ [Agent]</span><!-- dot = liveness -->
+    <span style="color:var(--ink-3);">·</span>
+    <span style="color:var(--ink-4);">[Duration]</span>
+    <span style="flex:1;"></span>
+    <span>[👁]</span>
+    <span>[CTA]</span>
+    <span>[···]</span>
+  </div>
+  <div style="color:var(--ink-4); font-size:10px; padding-left:22px; font-style:italic;">
+    [detail line — only when needed]
+  </div>
+</div>
+
+<div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:12px;">
+  <div class="ann-block good" style="max-width:none; flex:1; min-width:200px;">
+    <strong>Removed:</strong><br>
+    × Headline banner block (separate card section)<br>
+    × Duplicate agent-status text below the banner<br>
+    × Separate action-button row at card bottom<br>
+    × "Drive" badge (belongs to column/toolbar level)
+  </div>
+  <div class="ann-block" style="max-width:none; flex:1; min-width:200px;">
+    <strong>Kept / moved:</strong><br>
+    ✓ Left-border tone colour (now on status row, not banner)<br>
+    ✓ Liveness dot (moved inside agent token)<br>
+    ✓ Eye icon / session link (right-aligned, visible only when session exists)<br>
+    ✓ Overflow (···) menu — stays right-aligned<br>
+    ✓ Primary CTA — now inline with status
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>3 · All States</h2>
+
+<!-- ─── A. PRE-START ──────────────────────────────────────── -->
+<h3>A — Pre-start (no agent assigned)</h3>
+<p class="section-intro">No session, no duration. Status row is minimal; CTA is the primary affordance.</p>
+
+<div class="row">
+
+  <div>
+    <div class="label-above">Inbox</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#—</span>
+        <span class="wf-name">add beer style filters</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-idle">
+        <div class="wf-status-left">
+          <span class="wf-icon">○</span>
+          <span class="wf-label tone-idle">Inbox</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn primary">Prioritise</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Backlog — no deps</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#03</span>
+        <span class="wf-name">user profiles</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-idle">
+        <div class="wf-status-left">
+          <span class="wf-icon">○</span>
+          <span class="wf-label tone-idle">Backlog</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn primary">Start</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Backlog — blocked by deps</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#05</span>
+        <span class="wf-name">recipe recommendations</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-idle">
+        <div class="wf-status-left">
+          <span class="wf-icon">○</span>
+          <span class="wf-label tone-idle">Backlog</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn">Start ↗</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail">blocked by #02, #03</div>
+    </div>
+    <div class="note">Deps in detail line; Start still reachable (↗ = override allowed).</div>
+  </div>
+
+  <div>
+    <div class="label-above">Paused</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#07</span>
+        <span class="wf-name">keg tracking</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-idle">
+        <div class="wf-status-left">
+          <span class="wf-icon">⏸</span>
+          <span class="wf-label tone-idle">Paused</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn">Resume</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── B. RUNNING ─────────────────────────────────────────── -->
+<h3>B — Running (agent actively working)</h3>
+<p class="section-intro">Liveness dot is green (live), amber (stale >5min), or red (dead). Duration is elapsed time. Eye icon links to session.</p>
+
+<div class="row">
+
+  <div>
+    <div class="label-above">Implementing</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#01</span>
+        <span class="wf-name">format-date</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-running">
+        <div class="wf-status-left">
+          <span class="wf-icon">●</span>
+          <span class="wf-label tone-running">Implementing</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot live"></span>
+          <span class="wf-agent">CC</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">14m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Reviewing (code)</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#08</span>
+        <span class="wf-name">rating-filter</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-running">
+        <div class="wf-status-left">
+          <span class="wf-icon">●</span>
+          <span class="wf-label tone-running">Reviewing</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot live"></span>
+          <span class="wf-agent">GG</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">6m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Spec reviewing</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#12</span>
+        <span class="wf-name">batch import</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-running">
+        <div class="wf-status-left">
+          <span class="wf-icon">●</span>
+          <span class="wf-label tone-running">Spec review</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot live"></span>
+          <span class="wf-agent">CC</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">3m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Researching</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">R·09</span>
+        <span class="wf-name">ble sensor options</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-running">
+        <div class="wf-status-left">
+          <span class="wf-icon">●</span>
+          <span class="wf-label tone-running">Researching</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot live"></span>
+          <span class="wf-agent">CC</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">22m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Revising</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#04</span>
+        <span class="wf-name">auth flow</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-running">
+        <div class="wf-status-left">
+          <span class="wf-icon">●</span>
+          <span class="wf-label tone-running">Revising</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot live"></span>
+          <span class="wf-agent">GG</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">9m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Evaluating (fleet)</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#06</span>
+        <span class="wf-name">search autocomplete</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-running">
+        <div class="wf-status-left">
+          <span class="wf-icon">●</span>
+          <span class="wf-label tone-running">Evaluating</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">11m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Closing</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#02</span>
+        <span class="wf-name">brewery import</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-running">
+        <div class="wf-status-left">
+          <span class="wf-icon">●</span>
+          <span class="wf-label tone-running">Closing</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot live"></span>
+          <span class="wf-agent">CC</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">1m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Running — liveness stale</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#11</span>
+        <span class="wf-name">export CSV</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-running">
+        <div class="wf-status-left">
+          <span class="wf-icon">●</span>
+          <span class="wf-label tone-running">Implementing</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot stale"></span>
+          <span class="wf-agent" style="color:#92400e;">CC</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">47m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail" style="color:#b45309;">↑ no signal 12m — consider nudging</div>
+    </div>
+    <div class="note">Stale dot = amber. Detail line appears when idle-ladder threshold crossed. No separate chip needed.</div>
+  </div>
+
+</div>
+
+<!-- ─── C. WAITING / PAUSED BY AGENT ─────────────────────── -->
+<h3>C — Waiting (agent paused, human action needed)</h3>
+<p class="section-intro">The most urgent card type. Detail line carries the agent's message. CTA is the nudge/respond action.</p>
+
+<div class="row">
+
+  <div>
+    <div class="label-above">Waiting for input</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#01</span>
+        <span class="wf-name">format-date</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-waiting">
+        <div class="wf-status-left">
+          <span class="wf-icon">◐</span>
+          <span class="wf-label tone-waiting">Needs you</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot stale"></span>
+          <span class="wf-agent">CC</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn amber">Respond</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail">"Which date format should I use — ISO or locale?"</div>
+    </div>
+    <div class="note">Message truncated to 1 line; full text on hover / click.</div>
+  </div>
+
+  <div>
+    <div class="label-above">Quota paused</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#08</span>
+        <span class="wf-name">rating filter</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-waiting">
+        <div class="wf-status-left">
+          <span class="wf-icon">⏸</span>
+          <span class="wf-label tone-waiting">Quota paused</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-agent">CC</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail">resets Wed 6 May · 3pm</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Token limit hit</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#14</span>
+        <span class="wf-name">batch export</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-attention">
+        <div class="wf-status-left">
+          <span class="wf-icon">⚠</span>
+          <span class="wf-label tone-attention">Token limit</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot dead"></span>
+          <span class="wf-agent">CC</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn amber">Nudge</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Finished — unconfirmed</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#09</span>
+        <span class="wf-name">tap list UI</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-attention">
+        <div class="wf-status-left">
+          <span class="wf-icon">◐</span>
+          <span class="wf-label tone-attention">Confirm?</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot stale"></span>
+          <span class="wf-agent">GG</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">18m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn amber">Confirm</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail">session ended without signal — confirm complete</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── D. COMPLETE / HANDOFF ──────────────────────────────── -->
+<h3>D — Complete / handoff (work done, your move)</h3>
+<p class="section-intro">Green tone. Duration shows how long the work took. Detail line describes the next step. No separate action bar needed.</p>
+
+<div class="row">
+
+  <div>
+    <div class="label-above">Implementation complete → awaiting review</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#01</span>
+        <span class="wf-name">format-date</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-ready">
+        <div class="wf-status-left">
+          <span class="wf-icon">✓</span>
+          <span class="wf-label tone-ready">Complete</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-agent">CC</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">7m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn primary">Close</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail">→ awaiting review</div>
+    </div>
+    <div class="note">No liveness dot after session ends — agent is done.</div>
+  </div>
+
+  <div>
+    <div class="label-above">Review done → apply or reject</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#08</span>
+        <span class="wf-name">rating filter</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-ready">
+        <div class="wf-status-left">
+          <span class="wf-icon">✓</span>
+          <span class="wf-label tone-ready">Review done</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-agent">GG</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">4m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn green">Apply</span>
+          <span class="wf-btn red">Reject</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail">→ apply or reject</div>
+    </div>
+    <div class="note">Two-action decision point: Apply (green) / Reject (red) are equal weight.</div>
+  </div>
+
+  <div>
+    <div class="label-above">Spec review done → apply or reject</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#12</span>
+        <span class="wf-name">batch import</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-ready">
+        <div class="wf-status-left">
+          <span class="wf-icon">✓</span>
+          <span class="wf-label tone-ready">Spec review done</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-agent">CC</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn green">Apply</span>
+          <span class="wf-btn red">Reject</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Revision done</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#04</span>
+        <span class="wf-name">auth flow</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-ready">
+        <div class="wf-status-left">
+          <span class="wf-icon">✓</span>
+          <span class="wf-label tone-ready">Revision done</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-agent">GG</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">9m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn primary">Close</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Research done</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">R·09</span>
+        <span class="wf-name">ble sensor options</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-ready">
+        <div class="wf-status-left">
+          <span class="wf-icon">✓</span>
+          <span class="wf-label tone-ready">Research done</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-agent">CC</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">22m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn primary">Evaluate</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── E. ERRORS / WARNINGS ──────────────────────────────── -->
+<h3>E — Errors &amp; warnings</h3>
+
+<div class="row">
+
+  <div>
+    <div class="label-above">Error</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#13</span>
+        <span class="wf-name">push notifications</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-warn">
+        <div class="wf-status-left">
+          <span class="wf-icon">⚠</span>
+          <span class="wf-label tone-warn">Error</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-agent">CC</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn red">Retry</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Close failed</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#02</span>
+        <span class="wf-name">brewery import</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-warn">
+        <div class="wf-status-left">
+          <span class="wf-icon">⚠</span>
+          <span class="wf-label tone-warn">Close failed</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">3m ago</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn red">Retry close</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail">merge conflict in src/import.ts</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Rebase needed</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#06</span>
+        <span class="wf-name">search autocomplete</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-warn">
+        <div class="wf-status-left">
+          <span class="wf-icon">⚠</span>
+          <span class="wf-label tone-warn">Rebase needed</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail">rebase before close</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Spec drift</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#10</span>
+        <span class="wf-name">offline mode</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-warn">
+        <div class="wf-status-left">
+          <span class="wf-icon">⚠</span>
+          <span class="wf-label tone-warn">Spec drift</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn amber">Reconcile</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail">use aigon doctor --fix</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">No engine state</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#15</span>
+        <span class="wf-name">dark mode</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-warn">
+        <div class="wf-status-left">
+          <span class="wf-icon">⚠</span>
+          <span class="wf-label tone-warn">No engine state</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn amber">Fix</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail">run aigon doctor --fix</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Close recovery</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#02</span>
+        <span class="wf-name">brewery import</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-warn">
+        <div class="wf-status-left">
+          <span class="wf-icon">●</span>
+          <span class="wf-label tone-warn">Close recovery</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot live"></span>
+          <span class="wf-agent">CC</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">2m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── F. DONE / CLOSED ───────────────────────────────────── -->
+<h3>F — Done / closed</h3>
+
+<div class="row">
+
+  <div>
+    <div class="label-above">Done</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#01</span>
+        <span class="wf-name">format-date</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-done">
+        <div class="wf-status-left">
+          <span class="wf-icon">✓</span>
+          <span class="wf-label tone-done">Done</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">2d ago</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+    <div class="note">Minimal presence. No agent, no CTA — just a timestamp.</div>
+  </div>
+
+  <div>
+    <div class="label-above">Won't fix</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#07</span>
+        <span class="wf-name">keg tracking</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-done">
+        <div class="wf-status-left">
+          <span class="wf-icon">✓</span>
+          <span class="wf-label tone-done">Won't fix</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">5d ago</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── G. FLEET MODE ─────────────────────────────────────── -->
+<h3>G — Fleet mode (multiple agents)</h3>
+<p class="section-intro">Summary status row at top; per-agent rows below — compact, no duplication.</p>
+
+<div class="row">
+
+  <div>
+    <div class="label-above">Fleet — mixed (some running, some done)</div>
+    <div class="wf-card w-wide">
+      <div class="wf-title">
+        <span class="wf-id">#06</span>
+        <span class="wf-name">search autocomplete</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <!-- summary row -->
+      <div class="wf-status tone-running" style="border-bottom:1px solid var(--border-light);">
+        <div class="wf-status-left">
+          <span class="wf-icon">●</span>
+          <span class="wf-label tone-running">2 running · 1 done</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <!-- per-agent rows -->
+      <div class="wf-fleet">
+        <div class="wf-fleet-row">
+          <span class="wf-dot live"></span>
+          <span style="color:var(--ink-2); width:24px;">CC</span>
+          <span class="wf-label tone-running" style="font-size:10px;">Implementing</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">14m</span>
+          <span style="flex:1"></span>
+          <span class="wf-eye" style="font-size:11px;">👁</span>
+        </div>
+        <div class="wf-fleet-row">
+          <span class="wf-dot live"></span>
+          <span style="color:var(--ink-2); width:24px;">GG</span>
+          <span class="wf-label tone-running" style="font-size:10px;">Implementing</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">11m</span>
+          <span style="flex:1"></span>
+          <span class="wf-eye" style="font-size:11px;">👁</span>
+        </div>
+        <div class="wf-fleet-row" style="opacity:.55;">
+          <span class="wf-dot" style="background:var(--border);"></span>
+          <span style="color:var(--ink-3); width:24px;">KM</span>
+          <span class="wf-label tone-done" style="font-size:10px;">Complete</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">8m</span>
+          <span style="flex:1"></span>
+          <span class="wf-eye" style="font-size:11px; opacity:.4;">👁</span>
+        </div>
+      </div>
+    </div>
+    <div class="note">Summary row = quick scan; agent rows = drill-down. Done agent is dimmed.</div>
+  </div>
+
+  <div>
+    <div class="label-above">Fleet — pick winner (eval complete)</div>
+    <div class="wf-card w-wide">
+      <div class="wf-title">
+        <span class="wf-id">#06</span>
+        <span class="wf-name">search autocomplete</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-attention" style="border-bottom:1px solid var(--border-light);">
+        <div class="wf-status-left">
+          <span class="wf-icon">◐</span>
+          <span class="wf-label tone-attention">Pick winner</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur" style="color:#92400e;">recommended: CC</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn amber">Decide</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-fleet">
+        <div class="wf-fleet-row">
+          <span style="color:var(--ink-2); width:24px;">CC</span>
+          <span class="wf-label tone-ready" style="font-size:10px;">Complete</span>
+          <span class="wf-sep">·</span><span class="wf-dur">14m</span>
+          <span style="flex:1"></span>
+          <span class="wf-btn green" style="font-size:9px; padding:1px 5px;">Pick</span>
+        </div>
+        <div class="wf-fleet-row">
+          <span style="color:var(--ink-2); width:24px;">GG</span>
+          <span class="wf-label tone-ready" style="font-size:10px;">Complete</span>
+          <span class="wf-sep">·</span><span class="wf-dur">11m</span>
+          <span style="flex:1"></span>
+          <span class="wf-btn" style="font-size:9px; padding:1px 5px;">Pick</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Fleet — all complete, awaiting eval</div>
+    <div class="wf-card w-wide">
+      <div class="wf-title">
+        <span class="wf-id">#06</span>
+        <span class="wf-name">search autocomplete</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-ready" style="border-bottom:1px solid var(--border-light);">
+        <div class="wf-status-left">
+          <span class="wf-icon">✓</span>
+          <span class="wf-label tone-ready">All complete</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn primary">Evaluate</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-fleet">
+        <div class="wf-fleet-row" style="opacity:.55;">
+          <span style="color:var(--ink-3); width:24px;">CC</span>
+          <span class="wf-label tone-done" style="font-size:10px;">Complete</span>
+          <span class="wf-sep">·</span><span class="wf-dur">14m</span>
+        </div>
+        <div class="wf-fleet-row" style="opacity:.55;">
+          <span style="color:var(--ink-3); width:24px;">GG</span>
+          <span class="wf-label tone-done" style="font-size:10px;">Complete</span>
+          <span class="wf-sep">·</span><span class="wf-dur">11m</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── H. AUTONOMOUS STAGES ──────────────────────────────── -->
+<h3>H — Autonomous stages (autopilot)</h3>
+<p class="section-intro">Stage label replaces generic verb. Gate states call out what's waiting. Stage rows show progress at a glance.</p>
+
+<div class="row">
+
+  <div>
+    <div class="label-above">Autonomous — running stage</div>
+    <div class="wf-card w-wide">
+      <div class="wf-title">
+        <span class="wf-id">R·09</span>
+        <span class="wf-name">ble sensor options</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-running" style="border-bottom:1px solid var(--border-light);">
+        <div class="wf-status-left">
+          <span class="wf-icon">▶</span>
+          <span class="wf-label tone-running">Running · Research</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot live"></span>
+          <span class="wf-agent">CC</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">stage 2/4</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <!-- compact stage track -->
+      <div style="display:flex; gap:0; padding:5px 10px; font-family:var(--mono); font-size:10px; color:var(--ink-4);">
+        <span style="color:var(--green);">✓ Plan</span>
+        <span style="margin:0 4px; color:var(--border);">→</span>
+        <span style="color:var(--green-bg); background:var(--green); padding:0 5px; border-radius:3px; color:#fff;">Research</span>
+        <span style="margin:0 4px; color:var(--border);">→</span>
+        <span>Eval</span>
+        <span style="margin:0 4px; color:var(--border);">→</span>
+        <span>Close</span>
+      </div>
+    </div>
+    <div class="note">Compact stage track replaces separate "stage progress" indicator. No extra height needed.</div>
+  </div>
+
+  <div>
+    <div class="label-above">Autonomous — gate (waiting to advance)</div>
+    <div class="wf-card w-wide">
+      <div class="wf-title">
+        <span class="wf-id">R·09</span>
+        <span class="wf-name">ble sensor options</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-waiting" style="border-bottom:1px solid var(--border-light);">
+        <div class="wf-status-left">
+          <span class="wf-icon">◐</span>
+          <span class="wf-label tone-waiting">Gate · Eval</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn amber">Continue</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:0; padding:5px 10px; font-family:var(--mono); font-size:10px;">
+        <span style="color:var(--green);">✓ Plan</span>
+        <span style="margin:0 4px; color:var(--border);">→</span>
+        <span style="color:var(--green);">✓ Research</span>
+        <span style="margin:0 4px; color:var(--border);">→</span>
+        <span style="color:#92400e; font-weight:700;">⏸ Eval</span>
+        <span style="margin:0 4px; color:var(--border);">→</span>
+        <span style="color:var(--ink-4);">Close</span>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label-above">Autonomous — ready to close</div>
+    <div class="wf-card w-wide">
+      <div class="wf-title">
+        <span class="wf-id">R·09</span>
+        <span class="wf-name">ble sensor options</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-ready" style="border-bottom:1px solid var(--border-light);">
+        <div class="wf-status-left">
+          <span class="wf-icon">✓</span>
+          <span class="wf-label tone-ready">Ready to close</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn primary">Close</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:0; padding:5px 10px; font-family:var(--mono); font-size:10px; color:var(--green);">
+        <span>✓ Plan</span>
+        <span style="margin:0 4px; color:var(--border);">→</span>
+        <span>✓ Research</span>
+        <span style="margin:0 4px; color:var(--border);">→</span>
+        <span>✓ Eval</span>
+        <span style="margin:0 4px; color:var(--border);">→</span>
+        <span style="color:var(--ink-4);">Close</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── I. OVERLAY STATES ──────────────────────────────────── -->
+<h3>I — Overlay states (modify any base state)</h3>
+<p class="section-intro">These layer on top of a running base state. In the new design they modify the status row in-place rather than adding a separate badge element.</p>
+
+<div class="row">
+
+  <div>
+    <div class="label-above">Idle ladder — silent (no badge, dim detail)</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#11</span>
+        <span class="wf-name">export CSV</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-running">
+        <div class="wf-status-left">
+          <span class="wf-icon">●</span>
+          <span class="wf-label tone-running">Implementing</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot stale"></span>
+          <span class="wf-agent" style="color:#92400e;">CC</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">47m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail" style="color:#b45309;">↑ silent 12m — nudge?</div>
+    </div>
+    <div class="note">Stale dot + amber agent name + detail hint. No separate badge DOM element needed.</div>
+  </div>
+
+  <div>
+    <div class="label-above">Idle ladder — needs attention (override label)</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#11</span>
+        <span class="wf-name">export CSV</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-attention">
+        <div class="wf-status-left">
+          <span class="wf-icon">⚠</span>
+          <span class="wf-label tone-attention">Agent silent</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot dead"></span>
+          <span class="wf-agent" style="color:var(--red);">CC</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dur">1h 4m</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-eye">👁</span>
+          <span class="wf-btn amber">Nudge</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail" style="color:#c53030;">no progress — agent may be stuck</div>
+    </div>
+    <div class="note">When idle-ladder escalates to needs-attention, label overrides to "Agent silent". Dead dot = red.</div>
+  </div>
+
+  <div>
+    <div class="label-above">Liveness dead (session lost)</div>
+    <div class="wf-card">
+      <div class="wf-title">
+        <span class="wf-id">#08</span>
+        <span class="wf-name">rating filter</span>
+        <span class="wf-overflow">▾</span>
+      </div>
+      <div class="wf-status tone-warn">
+        <div class="wf-status-left">
+          <span class="wf-icon">⚠</span>
+          <span class="wf-label tone-warn">Session lost</span>
+          <span class="wf-sep">·</span>
+          <span class="wf-dot dead"></span>
+          <span class="wf-agent" style="color:var(--red);">GG</span>
+        </div>
+        <div class="wf-status-right">
+          <span class="wf-btn red">Restart</span>
+          <span class="wf-btn ghost">···</span>
+        </div>
+      </div>
+      <div class="wf-detail" style="color:#c53030;">tmux session not found</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>4 · Design Decisions Summary</h2>
+
+<div style="font-family:var(--mono); font-size:11px; max-width:680px; border:1.5px solid var(--border); border-radius:8px; overflow:hidden; background:var(--bg-card);">
+  <div style="display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border-light); padding:8px 12px; font-weight:700; background:var(--bg); font-family:var(--sans); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3);">
+    <span>Was</span><span>Now</span>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; border-bottom:1px solid var(--border-light); gap:8px; align-items:start;">
+    <span class="badge-removed">headline banner block</span>
+    <span class="badge-kept">left-border on status row</span>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; border-bottom:1px solid var(--border-light); gap:8px; align-items:start;">
+    <span class="badge-removed">separate agent row below banner</span>
+    <span class="badge-kept">agent token inside status row</span>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; border-bottom:1px solid var(--border-light); gap:8px; align-items:start;">
+    <span class="badge-removed">separate action-button row</span>
+    <span class="badge-kept">CTAs right-aligned in status row</span>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; border-bottom:1px solid var(--border-light); gap:8px; align-items:start;">
+    <span class="badge-removed">awaiting-badge chip (separate DOM)</span>
+    <span class="badge-kept">label overrides to "Needs you" + detail line</span>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; border-bottom:1px solid var(--border-light); gap:8px; align-items:start;">
+    <span class="badge-removed">idle-ladder chip (separate DOM)</span>
+    <span class="badge-kept">stale/dead dot + detail line + label override</span>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; border-bottom:1px solid var(--border-light); gap:8px; align-items:start;">
+    <span class="badge-removed">liveness dot floating near title</span>
+    <span class="badge-kept">dot embedded in agent token ⬤ CC</span>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; gap:8px; align-items:start;">
+    <span class="badge-removed">Drive/Fleet badge on every card</span>
+    <span class="badge-kept">mode shown at column/toolbar level only</span>
+  </div>
+</div>
+
+<div style="margin-top:16px; font-family:var(--sans); font-size:12px; color:var(--ink-3);">
+  Card height: pre-start = 1 row · active (no detail) = 1 row · active with detail = 2 rows · fleet = 1 summary + N agent rows.
+  <br>Max card height is bounded: no state needs more than title + status + detail + (N fleet rows).
+</div>
+
+</body>
+</html>
