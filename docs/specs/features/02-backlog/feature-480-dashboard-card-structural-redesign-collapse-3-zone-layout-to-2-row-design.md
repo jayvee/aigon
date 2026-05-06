@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-06T23:14:51.305Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Dashboard card structural redesign — collapse 3-zone layout to 2-row design
