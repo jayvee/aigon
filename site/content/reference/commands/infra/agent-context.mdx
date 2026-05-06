@@ -11,18 +11,18 @@ aigon agent-context [--id-only] [--json]
 
 ## Description
 
-Detects and prints the current active Aigon agent session. This is useful inside agent prompts and slash commands that need to know which agent is running without parsing branch names or environment variables directly.
+Detects and prints the current Aigon agent host, such as `cc`, `gg`, `cx`, or `cu`. This is useful inside agent prompts and slash commands that need to bootstrap `AIGON_AGENT_ID` without parsing process names themselves.
 
-When launched via the dashboard or `feature-open`, the agent process already has `AIGON_AGENT_ID`, `AIGON_ENTITY_TYPE`, `AIGON_ENTITY_ID`, and `AIGON_PROJECT_PATH` set as environment variables. `agent-context` reads those values and falls back to tmux session name parsing when they are absent.
+Agent launchers also export `AIGON_AGENT_ID`, `AIGON_ENTITY_TYPE`, `AIGON_ENTITY_ID`, and `AIGON_PROJECT_PATH` for commands that need feature or research context. `agent-context` reports only the agent identity; callers that need entity values should read those environment variables directly.
 
 ## Options
 
 | Flag | Description |
 |------|-------------|
-| `--id-only` | Print only the agent ID (e.g. `cc`), exit 1 if no session detected |
-| `--json` | Print full session JSON; exit 1 if not detected |
+| `--id-only` | Print only the agent ID (e.g. `cc`), exit 1 if no agent host is detected |
+| `--json` | Print detection JSON; exit 1 if no agent host is detected |
 
-Default (no flags): prints `<agentId>\t<agentName>` on stdout; exits 1 if no session is detected.
+Default (no flags): prints `<agentId>\t<agentName>` on stdout; exits 1 if no agent host is detected.
 
 ## Usage
 
@@ -45,5 +45,6 @@ aigon agent-context --json
 
 ## Notes
 
-- Returns exit code 1 when no active session is detected; callers that use `|| true` get an empty string rather than a hard failure.
+- Returns exit code 1 when no active agent host is detected; callers that use `|| true` get an empty string rather than a hard failure.
+- Uses process ancestry and runtime hints for detection. It does not resolve the current feature or research ID.
 - The spec-review slash commands (`/aigon:feature-spec-review`, `/aigon:research-spec-review`) call this automatically to bootstrap `AIGON_AGENT_ID` when it is not already set.
