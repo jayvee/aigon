@@ -8,1506 +8,1008 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --ink: #1a1a1a;
+    --ink:   #1a1a1a;
     --ink-2: #444;
     --ink-3: #888;
     --ink-4: #bbb;
-    --bg: #f7f5f2;
-    --bg-card: #fff;
-    --border: #c8c2b8;
-    --border-light: #e0dbd4;
-    --accent: #1a1a1a;
-    --green: #1a6b3a;
-    --green-bg: #e8f5ed;
-    --amber: #8b5e00;
-    --amber-bg: #fdf3e0;
-    --red: #8b1a1a;
-    --red-bg: #fde8e8;
-    --teal: #0d6b5e;
-    --teal-bg: #e0f5f2;
-    --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', ui-monospace, monospace;
-    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --bg:         #f7f5f2;
+    --bg-card:    #fff;
+    --border:     #c8c2b8;
+    --border-lt:  #e0dbd4;
+    --green:   #166534; --green-bg:  #e8f5ed; --green-br:  #a8d5b8;
+    --amber:   #92400e; --amber-bg:  #fdf3e0; --amber-br:  #e8d4a0;
+    --red:     #8b1a1a; --red-bg:    #fde8e8; --red-br:    #e8b4b4;
+    --teal:    #0d6b5e; --teal-bg:   #e0f5f2; --teal-br:   #7dd3c8;
+    --mono: 'SF Mono','Cascadia Code','Fira Code',ui-monospace,monospace;
+    --sans: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   }
 
-  body {
-    font-family: var(--sans);
-    background: var(--bg);
-    color: var(--ink);
-    padding: 48px 40px;
-    max-width: 1100px;
-    margin: 0 auto;
-    line-height: 1.5;
-  }
+  body { font-family:var(--sans); background:var(--bg); color:var(--ink);
+         padding:48px 40px; max-width:1160px; margin:0 auto; line-height:1.5; }
 
-  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
-  h2 { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
-       color: var(--ink-3); margin: 48px 0 20px; border-bottom: 1px solid var(--border-light);
-       padding-bottom: 8px; }
-  h3 { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-       color: var(--ink-4); margin: 28px 0 10px; }
-  p  { font-size: 13px; color: var(--ink-2); margin-bottom: 8px; max-width: 620px; }
+  h1 { font-size:22px; font-weight:700; letter-spacing:-.02em; margin-bottom:4px; }
+  h2 { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+       color:var(--ink-3); margin:48px 0 18px; border-bottom:1px solid var(--border-lt);
+       padding-bottom:8px; }
+  h3 { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+       color:var(--ink-4); margin:28px 0 10px; }
+  p  { font-size:12px; color:var(--ink-2); margin-bottom:8px; max-width:640px; }
+  .sub { font-size:12px; color:var(--ink-3); margin-bottom:36px; }
+  .sec-note { font-size:11px; color:var(--ink-3); margin:-8px 0 14px; max-width:580px; }
 
-  .subtitle { font-size: 13px; color: var(--ink-3); margin-bottom: 40px; }
-
-  /* ─── Card wireframe shell ─────────────────────────────────────── */
-  .wf-card {
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    background: var(--bg-card);
-    font-family: var(--mono);
-    font-size: 11px;
-    width: 340px;
-    overflow: hidden;
-  }
-  .wf-card.w-wide { width: 420px; }
-  .wf-card.w-narrow { width: 280px; }
+  /* ── card shell ─────────────────────────── */
+  .card { border:1.5px solid var(--border); border-radius:8px; background:var(--bg-card);
+          font-family:var(--mono); font-size:11px; width:340px; overflow:hidden; }
+  .card.wide { width:430px; }
 
   /* title row */
-  .wf-title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 10px 7px;
-    border-bottom: 1px solid var(--border-light);
-  }
-  .wf-id   { color: var(--ink-3); font-size: 10px; flex-shrink: 0; }
-  .wf-name { color: var(--ink); font-weight: 600; flex: 1; white-space: nowrap;
-             overflow: hidden; text-overflow: ellipsis; }
-  .wf-overflow { color: var(--ink-3); font-size: 10px; flex-shrink: 0; border: 1px solid var(--border);
-                 border-radius: 4px; padding: 1px 5px; cursor: default; }
+  .t { display:flex; align-items:center; gap:6px; padding:8px 10px 7px;
+       border-bottom:1px solid var(--border-lt); }
+  .t-id   { color:var(--ink-3); font-size:10px; flex-shrink:0; }
+  .t-name { color:var(--ink); font-weight:600; flex:1; white-space:nowrap;
+            overflow:hidden; text-overflow:ellipsis; }
+  .t-ov   { color:var(--ink-3); font-size:10px; flex-shrink:0;
+            border:1px solid var(--border); border-radius:4px; padding:1px 5px; }
 
-  /* status row — the core of the new design */
-  .wf-status {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    padding: 6px 10px;
-    min-height: 30px;
-  }
-  .wf-status-left { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; }
-  .wf-status-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  /* status row — single row combining state + agent + duration + CTAs */
+  .s { display:flex; align-items:center; padding:6px 10px; min-height:30px; gap:0; }
+  .s-l { display:flex; align-items:center; gap:5px; flex:1; min-width:0; }
+  .s-r { display:flex; align-items:center; gap:5px; flex-shrink:0; }
 
-  /* state icon + label */
-  .wf-icon  { font-size: 10px; width: 11px; text-align: center; flex-shrink: 0; }
-  .wf-label { font-weight: 700; letter-spacing: .04em; font-size: 11px; white-space: nowrap; }
-  .wf-sep   { color: var(--border); margin: 0 3px; }
-  .wf-agent { color: var(--ink-3); white-space: nowrap; font-size: 10px; }
-  .wf-dur   { color: var(--ink-4); white-space: nowrap; font-size: 10px; }
+  .icon { font-size:10px; width:11px; text-align:center; flex-shrink:0; }
+  .lbl  { font-weight:700; letter-spacing:.04em; font-size:11px; white-space:nowrap; }
+  .sep  { color:var(--border); margin:0 2px; }
+  .agt  { color:var(--ink-3); font-size:10px; white-space:nowrap; }
+  .dur  { color:var(--ink-4); font-size:10px; white-space:nowrap; }
 
-  /* liveness dot embedded in agent token */
-  .wf-dot   { display: inline-block; width: 5px; height: 5px; border-radius: 50%;
-               background: var(--ink-4); vertical-align: middle; margin-right: 3px; flex-shrink: 0; }
-  .wf-dot.live  { background: #22c55e; }
-  .wf-dot.stale { background: #f59e0b; }
-  .wf-dot.dead  { background: #ef4444; }
+  /* liveness dot — embedded in agent token */
+  .dot { display:inline-block; width:5px; height:5px; border-radius:50%;
+         background:var(--ink-4); vertical-align:middle; margin-right:2px; flex-shrink:0; }
+  .dot.live  { background:#22c55e; }
+  .dot.stale { background:#f59e0b; }
+  .dot.dead  { background:#ef4444; }
 
-  /* detail line — optional, only when needed */
-  .wf-detail {
-    padding: 0 10px 7px 26px;
-    font-size: 10px;
-    color: var(--ink-3);
-    font-style: italic;
-    line-height: 1.3;
-  }
+  /* detail line — only when there is something actionable to communicate */
+  .d { padding:0 10px 7px 26px; font-size:10px; color:var(--ink-3);
+       font-style:italic; line-height:1.3; }
+  .d.urgent { color:var(--amber); }
+  .d.error  { color:var(--red); }
 
-  /* CTA buttons */
-  .wf-btn {
-    font-family: var(--mono);
-    font-size: 10px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 2px 7px;
-    background: transparent;
-    color: var(--ink-2);
-    cursor: default;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .wf-btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .wf-btn.green   { background: var(--green-bg); color: var(--green); border-color: #a8d5b8; }
-  .wf-btn.red     { background: var(--red-bg);   color: var(--red);   border-color: #e8b4b4; }
-  .wf-btn.amber   { background: var(--amber-bg); color: var(--amber); border-color: #e8d4a0; }
-  .wf-btn.ghost   { border-color: transparent; color: var(--ink-3); }
+  /* buttons */
+  .btn { font-family:var(--mono); font-size:10px; border:1px solid var(--border);
+         border-radius:4px; padding:2px 7px; background:transparent;
+         color:var(--ink-2); cursor:default; white-space:nowrap; flex-shrink:0; }
+  .btn.p { background:var(--ink);       color:#fff;         border-color:var(--ink); }
+  .btn.g { background:var(--green-bg);  color:var(--green); border-color:var(--green-br); }
+  .btn.r { background:var(--red-bg);    color:var(--red);   border-color:var(--red-br); }
+  .btn.a { background:var(--amber-bg);  color:var(--amber); border-color:var(--amber-br); }
+  .btn.q { border-color:transparent;    color:var(--ink-3); }
 
-  .wf-eye { font-size: 12px; color: var(--ink-4); cursor: default; }
+  .eye { font-size:11px; color:var(--ink-4); cursor:default; }
 
-  /* tone left-border (replaces the whole banner block) */
-  .wf-status.tone-running  { border-left: 3px solid #4ade80; }
-  .wf-status.tone-waiting  { border-left: 3px solid #fbbf24; }
-  .wf-status.tone-attention{ border-left: 3px solid #fb923c; }
-  .wf-status.tone-ready    { border-left: 3px solid #6ee7b7; }
-  .wf-status.tone-warn     { border-left: 3px solid #f87171; }
-  .wf-status.tone-done     { border-left: 3px solid var(--border-light); }
-  .wf-status.tone-idle     { border-left: 3px solid var(--border-light); }
+  /* tone — left border on the status row (not a separate banner) */
+  .s.run  { border-left:3px solid #4ade80; }
+  .s.wait { border-left:3px solid #fbbf24; }
+  .s.attn { border-left:3px solid #fb923c; }
+  .s.rdy  { border-left:3px solid #6ee7b7; }
+  .s.warn { border-left:3px solid #f87171; }
+  .s.done { border-left:3px solid var(--border-lt); }
+  .s.idle { border-left:3px solid var(--border-lt); }
 
-  .wf-label.tone-running   { color: #16a34a; }
-  .wf-label.tone-waiting   { color: #92400e; }
-  .wf-label.tone-attention { color: #c2410c; }
-  .wf-label.tone-ready     { color: var(--teal); }
-  .wf-label.tone-warn      { color: var(--red); }
-  .wf-label.tone-done      { color: var(--ink-3); }
-  .wf-label.tone-idle      { color: var(--ink-3); }
+  .lbl.run  { color:#15803d; }
+  .lbl.wait { color:var(--amber); }
+  .lbl.attn { color:#c2410c; }
+  .lbl.rdy  { color:var(--teal); }
+  .lbl.warn { color:var(--red); }
+  .lbl.done { color:var(--ink-3); }
+  .lbl.idle { color:var(--ink-3); }
+
+  /* stage track (autonomous) */
+  .stages { display:flex; gap:0; padding:5px 10px; font-size:10px;
+            border-top:1px solid var(--border-lt); }
+  .st { color:var(--ink-4); }
+  .st.done { color:#15803d; }
+  .st.active { background:var(--ink); color:#fff; padding:0 5px; border-radius:3px; }
+  .st.gate  { color:var(--amber); font-weight:700; }
+  .st-sep { margin:0 4px; color:var(--border-lt); }
 
   /* fleet agent rows */
-  .wf-fleet {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 5px 10px 6px 10px;
-  }
-  .wf-fleet-row {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 10px;
-    color: var(--ink-2);
-  }
-  .wf-fleet-row .wf-label { font-size: 10px; font-weight: 600; }
+  .fleet { display:flex; flex-direction:column; gap:2px;
+           padding:5px 10px 6px; border-top:1px solid var(--border-lt); }
+  .fa { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--ink-2); }
+  .fa .lbl { font-size:10px; }
+  .fa.dim { opacity:.5; }
 
-  /* annotation callouts */
-  .ann {
-    font-family: var(--sans);
-    font-size: 11px;
-    color: #d97706;
-    background: #fef9ee;
-    border: 1px solid #fcd34d;
-    border-radius: 4px;
-    padding: 2px 7px;
-    display: inline-block;
-    margin: 2px 0;
-  }
-  .ann-block {
-    font-family: var(--sans);
-    font-size: 11px;
-    color: #d97706;
-    background: #fef9ee;
-    border-left: 3px solid #fcd34d;
-    padding: 6px 10px;
-    margin: 6px 0;
-    max-width: 620px;
-  }
-  .ann-block.good {
-    color: #166534; background: #f0fdf4; border-left-color: #4ade80;
-  }
-  .ann-arrow {
-    font-family: var(--sans); font-size: 11px; color: var(--ink-3);
-    display: flex; align-items: center; gap: 8px; margin: 4px 0;
-  }
+  /* vocabulary table */
+  table { border-collapse:collapse; font-size:11px; font-family:var(--mono);
+          width:100%; max-width:780px; margin:12px 0; }
+  th { text-align:left; font-family:var(--sans); font-size:10px; font-weight:700;
+       letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);
+       border-bottom:2px solid var(--border); padding:6px 12px; }
+  td { padding:6px 12px; border-bottom:1px solid var(--border-lt); vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  td.old { color:var(--ink-4); text-decoration:line-through; }
+  td.new { color:var(--ink); font-weight:700; }
+  td.why { color:var(--ink-2); font-family:var(--sans); font-size:11px; }
 
-  /* layout helpers */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: start; }
-  .stack  { display: flex; flex-direction: column; gap: 10px; }
-  .row    { display: flex; gap: 12px; align-items: start; flex-wrap: wrap; }
-  .label-above { font-family: var(--sans); font-size: 10px; color: var(--ink-3);
-                 letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; font-weight: 600; }
-  .note   { font-family: var(--sans); font-size: 11px; color: var(--ink-3);
-            margin-top: 4px; max-width: 340px; }
+  /* layout */
+  .row  { display:flex; gap:12px; align-items:start; flex-wrap:wrap; }
+  .col  { display:flex; flex-direction:column; gap:10px; }
+  .lbl-above { font-family:var(--sans); font-size:10px; color:var(--ink-3);
+               letter-spacing:.08em; text-transform:uppercase; margin-bottom:4px; font-weight:600; }
+  .note { font-family:var(--sans); font-size:11px; color:var(--ink-3);
+          margin-top:4px; max-width:340px; }
 
-  /* problem annotation overlay */
-  .problem-tag {
-    font-family: var(--sans); font-size: 9px; font-weight: 700;
-    letter-spacing: .06em; text-transform: uppercase; color: #c53030;
-    background: #fff5f5; border: 1px solid #feb2b2; border-radius: 3px;
-    padding: 1px 5px; vertical-align: middle; margin-left: 4px;
-  }
+  /* change markers */
+  .tag-old { font-family:var(--sans); font-size:9px; font-weight:700; letter-spacing:.06em;
+             text-transform:uppercase; color:var(--red); background:var(--red-bg);
+             border:1px solid var(--red-br); border-radius:3px; padding:1px 5px; }
+  .tag-new { font-family:var(--sans); font-size:9px; font-weight:700; letter-spacing:.06em;
+             text-transform:uppercase; color:var(--green); background:var(--green-bg);
+             border:1px solid var(--green-br); border-radius:3px; padding:1px 5px; }
 
-  hr { border: none; border-top: 1px solid var(--border-light); margin: 40px 0; }
+  .callout { font-family:var(--sans); font-size:11px; border-radius:6px;
+             padding:10px 14px; max-width:680px; margin:10px 0; }
+  .callout.warn { background:var(--amber-bg); border-left:3px solid #fcd34d;
+                  color:var(--amber); }
+  .callout.info { background:var(--teal-bg);  border-left:3px solid var(--teal-br);
+                  color:var(--teal); }
+  .callout.good { background:var(--green-bg); border-left:3px solid var(--green-br);
+                  color:var(--green); }
 
-  /* OLD card style (for before/after) */
-  .wf-old-banner {
-    margin: 5px 10px 4px;
-    border: 1px dashed #e0dbd4;
-    border-left: 3px solid #fbbf24;
-    background: rgba(251,191,36,.06);
-    border-radius: 0 4px 4px 0;
-    padding: 4px 8px;
-  }
-  .wf-old-agent-row {
-    display: flex; align-items: center; gap: 6px;
-    padding: 5px 10px;
-    border-top: 1px solid var(--border-light);
-    font-family: var(--mono); font-size: 10px; color: var(--ink-2);
-  }
-  .wf-old-actions {
-    display: flex; gap: 5px;
-    padding: 6px 10px;
-    border-top: 1px solid var(--border-light);
-  }
+  hr { border:none; border-top:1px solid var(--border-lt); margin:36px 0; }
 
-  /* diff marker */
-  .removed { text-decoration: line-through; color: var(--ink-4); }
-  .badge-removed { background: #fde8e8; border: 1px dashed #e8b4b4; border-radius: 3px;
-                   padding: 1px 5px; font-size: 10px; font-family: var(--mono); color: #8b1a1a; }
-  .badge-kept { background: #e8f5ed; border: 1px solid #a8d5b8; border-radius: 3px;
-                padding: 1px 5px; font-size: 10px; font-family: var(--mono); color: var(--green); }
-
-  .section-intro { font-size: 12px; color: var(--ink-2); margin: -10px 0 16px; max-width: 580px; }
+  /* state index grid */
+  .index { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+           gap:4px; margin:12px 0; }
+  .index-item { font-family:var(--mono); font-size:10px; background:var(--bg-card);
+                border:1px solid var(--border-lt); border-radius:4px;
+                padding:4px 8px; color:var(--ink-2); }
+  .index-item .n { color:var(--ink-4); margin-right:5px; }
+  .index-item .lbl-s { font-weight:700; color:var(--ink); }
 </style>
 </head>
 <body>
 
-<h1>Pipeline Card — Design Wireframe</h1>
-<p class="subtitle">Proposed redesign · All states · 2026-05-06</p>
+<h1>Pipeline Card — Design Wireframe v2</h1>
+<p class="sub">Precise vocabulary + all states · branch design/card-redesign · 2026-05-06</p>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>1 · The Problem With the Current Card</h2>
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2>1 · Vocabulary — what each label actually means</h2>
 
-<p>The current card uses a <strong>headline banner block</strong> that duplicates what the agent row below it already says. Two UI zones, one piece of information.</p>
+<p>Every label must answer the question <em>"what happened?"</em> or <em>"what is happening?"</em>
+with no ambiguity. "Complete" and "Done" both fail that test — they say nothing specific about
+<em>what</em> is complete or done.</p>
 
-<div class="row" style="margin-top:16px; align-items: start;">
+<table>
+  <tr>
+    <th>Old label</th>
+    <th>New label</th>
+    <th>Precise meaning</th>
+  </tr>
+  <tr>
+    <td class="old">COMPLETE</td>
+    <td class="new">Implemented</td>
+    <td class="why">The implementation agent finished writing code and pushed the branch. Nothing else.</td>
+  </tr>
+  <tr>
+    <td class="old">REVISION DONE</td>
+    <td class="new">Revised</td>
+    <td class="why">The implementation agent addressed review feedback and pushed a new revision.</td>
+  </tr>
+  <tr>
+    <td class="old">REVIEW DONE</td>
+    <td class="new">Code reviewed</td>
+    <td class="why">A reviewer agent read the code and wrote findings. The code has been reviewed.</td>
+  </tr>
+  <tr>
+    <td class="old">SPEC REVIEW DONE</td>
+    <td class="new">Spec reviewed</td>
+    <td class="why">A reviewer agent read the spec and wrote findings. The spec has been reviewed.</td>
+  </tr>
+  <tr>
+    <td class="old">RESEARCH DONE</td>
+    <td class="new">Research ready</td>
+    <td class="why">A research agent produced findings. The findings exist and are ready to evaluate.</td>
+  </tr>
+  <tr>
+    <td class="old">Done (terminal)</td>
+    <td class="new">Closed</td>
+    <td class="why"><code>aigon feature-close</code> ran. The worktree was merged or discarded. The lifecycle is over.</td>
+  </tr>
+  <tr>
+    <td class="old">Needs you / Waiting</td>
+    <td class="new">Needs input</td>
+    <td class="why">The agent hit a decision it can't make alone and stopped to ask. A human must respond.</td>
+  </tr>
+  <tr>
+    <td class="old">awaiting review (detail)</td>
+    <td class="new">→ needs code review</td>
+    <td class="why">Imperative. Names the missing action. "Awaiting" is passive and says nothing about <em>what</em> is awaited.</td>
+  </tr>
+  <tr>
+    <td class="old">apply or reject (detail)</td>
+    <td class="new">→ apply or reject findings</td>
+    <td class="why">"Findings" clarifies what is being applied/rejected. Slightly more specific.</td>
+  </tr>
+  <tr>
+    <td class="old">All complete (fleet)</td>
+    <td class="new">All implemented</td>
+    <td class="why">Each agent has finished implementing. "Complete" is ambiguous at the feature level.</td>
+  </tr>
+  <tr>
+    <td class="old">Finished (unconfirmed)</td>
+    <td class="new">Unconfirmed</td>
+    <td class="why">The agent's session ended without a completion signal. State is unknown — human must confirm.</td>
+  </tr>
+</table>
 
-  <div>
-    <div class="label-above">Current (COMPLETE state)</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#01</span>
-        <span class="wf-name">format-date</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <!-- OLD banner -->
-      <div class="wf-old-banner" style="font-family:var(--mono); font-size:10px;">
-        <div style="display:flex; align-items:center; gap:5px; font-weight:700; color:#a16207;">
-          ✓ <span>COMPLETE</span>
-          <span class="problem-tag">redundant</span>
-        </div>
-        <div style="color:#888; font-size:10px; margin-top:2px;">CC · 7m</div>
-        <div style="color:#aaa; font-size:10px;">awaiting review</div>
-      </div>
-      <!-- OLD agent row -->
-      <div class="wf-old-agent-row">
-        <span>Claude Code</span>
-        <span style="color:var(--ink-4)">claud…</span>
-        <span>👁</span>
-        <span style="flex:1"></span>
-        <span style="color:#16a34a;">✓ Complete</span>
-        <span class="problem-tag">redundant</span>
-        <span style="color:var(--ink-4)">···</span>
-      </div>
-      <!-- OLD actions -->
-      <div class="wf-old-actions">
-        <span class="wf-btn primary">Close</span>
-        <span class="wf-btn">···</span>
-      </div>
-    </div>
-    <div class="note" style="margin-top:6px;">
-      3 visual zones → 2 state tokens saying identical things. Banner adds visual weight without adding meaning.
-    </div>
-  </div>
-
-  <div style="padding-top:60px; font-size:20px; color:var(--ink-4);">→</div>
-
-  <div>
-    <div class="label-above">Proposed (COMPLETE state)</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#01</span>
-        <span class="wf-name">format-date</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-ready">
-        <div class="wf-status-left">
-          <span class="wf-icon">✓</span>
-          <span class="wf-label tone-ready">Complete</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot live"></span>
-          <span class="wf-agent">CC</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">7m</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn primary">Close</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
-      </div>
-      <div class="wf-detail">→ awaiting review</div>
-    </div>
-    <div class="note" style="margin-top:6px;">
-      2 zones (title + status). State, agent, duration, and CTA in one scannable line.
-    </div>
-  </div>
-
+<div class="callout warn">
+  <strong>Rule:</strong> If you can swap the label with "Complete" and lose no information — the label is
+  wrong. Every label must name a specific act or specific resource: <em>Implemented</em>,
+  <em>Code reviewed</em>, <em>Research ready</em>, <em>Closed</em>.
 </div>
 
-<div class="ann-block" style="margin-top:20px;">
-  <strong>Key principles:</strong>
-  1 — One status row, not two. &nbsp;
-  2 — Liveness dot lives inside the agent token. &nbsp;
-  3 — Detail line (italic, dim) only when there is actionable context (message, next step hint). &nbsp;
-  4 — Primary CTA is always right-aligned in the status row — no separate action bar. &nbsp;
-  5 — Duration only for active/just-finished states; omit for static ones.
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2>2 · Full state index (37 distinct states)</h2>
+
+<div class="index">
+  <div class="index-item"><span class="n">01</span><span class="lbl-s">Inbox</span></div>
+  <div class="index-item"><span class="n">02</span><span class="lbl-s">Backlog</span></div>
+  <div class="index-item"><span class="n">03</span><span class="lbl-s">Backlog — blocked</span></div>
+  <div class="index-item"><span class="n">04</span><span class="lbl-s">Paused</span></div>
+  <div class="index-item"><span class="n">05</span><span class="lbl-s">Implementing</span></div>
+  <div class="index-item"><span class="n">06</span><span class="lbl-s">Reviewing code</span></div>
+  <div class="index-item"><span class="n">07</span><span class="lbl-s">Reviewing spec</span></div>
+  <div class="index-item"><span class="n">08</span><span class="lbl-s">Researching</span></div>
+  <div class="index-item"><span class="n">09</span><span class="lbl-s">Revising</span></div>
+  <div class="index-item"><span class="n">10</span><span class="lbl-s">Evaluating</span></div>
+  <div class="index-item"><span class="n">11</span><span class="lbl-s">Closing</span></div>
+  <div class="index-item"><span class="n">12</span><span class="lbl-s">Close recovery</span></div>
+  <div class="index-item"><span class="n">13</span><span class="lbl-s">Implementing — stale</span></div>
+  <div class="index-item"><span class="n">14</span><span class="lbl-s">Agent silent</span></div>
+  <div class="index-item"><span class="n">15</span><span class="lbl-s">Session lost</span></div>
+  <div class="index-item"><span class="n">16</span><span class="lbl-s">Needs input</span></div>
+  <div class="index-item"><span class="n">17</span><span class="lbl-s">Quota paused</span></div>
+  <div class="index-item"><span class="n">18</span><span class="lbl-s">Token limit</span></div>
+  <div class="index-item"><span class="n">19</span><span class="lbl-s">Unconfirmed</span></div>
+  <div class="index-item"><span class="n">20</span><span class="lbl-s">Implemented</span></div>
+  <div class="index-item"><span class="n">21</span><span class="lbl-s">Revised</span></div>
+  <div class="index-item"><span class="n">22</span><span class="lbl-s">Code reviewed</span></div>
+  <div class="index-item"><span class="n">23</span><span class="lbl-s">Spec reviewed</span></div>
+  <div class="index-item"><span class="n">24</span><span class="lbl-s">Research ready</span></div>
+  <div class="index-item"><span class="n">25</span><span class="lbl-s">Error</span></div>
+  <div class="index-item"><span class="n">26</span><span class="lbl-s">Close failed</span></div>
+  <div class="index-item"><span class="n">27</span><span class="lbl-s">Rebase conflict</span></div>
+  <div class="index-item"><span class="n">28</span><span class="lbl-s">State drift</span></div>
+  <div class="index-item"><span class="n">29</span><span class="lbl-s">Missing state</span></div>
+  <div class="index-item"><span class="n">30</span><span class="lbl-s">Closed</span></div>
+  <div class="index-item"><span class="n">31</span><span class="lbl-s">Won't fix</span></div>
+  <div class="index-item"><span class="n">32</span><span class="lbl-s">Fleet — mixed</span></div>
+  <div class="index-item"><span class="n">33</span><span class="lbl-s">Fleet — pick winner</span></div>
+  <div class="index-item"><span class="n">34</span><span class="lbl-s">Fleet — all implemented</span></div>
+  <div class="index-item"><span class="n">35</span><span class="lbl-s">Auto — running stage</span></div>
+  <div class="index-item"><span class="n">36</span><span class="lbl-s">Auto — gate</span></div>
+  <div class="index-item"><span class="n">37</span><span class="lbl-s">Auto — ready to close</span></div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>2 · New Card Anatomy</h2>
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2>3 · Card anatomy</h2>
 
-<div style="font-family:var(--mono); font-size:11px; background:var(--bg-card); border:1.5px solid var(--border);
-            border-radius:8px; padding:14px 16px; max-width:560px; line-height:2;">
-  <div style="display:flex; gap:8px; padding-bottom:8px; border-bottom:1px dashed var(--border-light);">
+<div style="font-family:var(--mono); font-size:11px; background:var(--bg-card);
+            border:1.5px solid var(--border); border-radius:8px; padding:14px 16px;
+            max-width:540px; line-height:2.2;">
+  <div style="display:flex; gap:8px; padding-bottom:8px; border-bottom:1px dashed var(--border-lt);">
     <span style="color:var(--ink-3);">[ID]</span>
     <span style="flex:1; font-weight:700;">[Feature name]</span>
-    <span style="color:var(--ink-3);">[▾ overflow]</span>
+    <span style="color:var(--ink-3);">[▾]</span>
   </div>
-  <div style="display:flex; gap:6px; padding:7px 0 4px; border-left:3px solid var(--border); padding-left:8px; margin-top:6px;">
-    <span>[•]</span><!-- tone border replaces banner background -->
+  <div style="display:flex; gap:6px; padding:7px 0 3px; border-left:3px solid var(--border); padding-left:8px; margin-top:4px;">
+    <span style="color:var(--ink-3);">[icon]</span>
     <span style="font-weight:700;">[State label]</span>
-    <span style="color:var(--ink-3);">·</span>
-    <span style="color:var(--ink-3);">⬤ [Agent]</span><!-- dot = liveness -->
-    <span style="color:var(--ink-3);">·</span>
-    <span style="color:var(--ink-4);">[Duration]</span>
-    <span style="flex:1;"></span>
-    <span>[👁]</span>
-    <span>[CTA]</span>
-    <span>[···]</span>
+    <span style="color:var(--ink-3);">· ⬤[Agent] · [Duration]</span>
+    <span style="flex:1"></span>
+    <span style="color:var(--ink-3);">[👁] [CTA] [···]</span>
   </div>
   <div style="color:var(--ink-4); font-size:10px; padding-left:22px; font-style:italic;">
-    [detail line — only when needed]
+    [detail — only when there is an actionable message, blocked-by, or error context]
   </div>
 </div>
 
-<div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:12px;">
-  <div class="ann-block good" style="max-width:none; flex:1; min-width:200px;">
-    <strong>Removed:</strong><br>
-    × Headline banner block (separate card section)<br>
-    × Duplicate agent-status text below the banner<br>
-    × Separate action-button row at card bottom<br>
-    × "Drive" badge (belongs to column/toolbar level)
-  </div>
-  <div class="ann-block" style="max-width:none; flex:1; min-width:200px;">
-    <strong>Kept / moved:</strong><br>
-    ✓ Left-border tone colour (now on status row, not banner)<br>
-    ✓ Liveness dot (moved inside agent token)<br>
-    ✓ Eye icon / session link (right-aligned, visible only when session exists)<br>
-    ✓ Overflow (···) menu — stays right-aligned<br>
-    ✓ Primary CTA — now inline with status
-  </div>
-</div>
+<p style="margin-top:10px;">
+  Two rows maximum for most states. The <strong>left-border colour</strong> encodes urgency at a glance
+  (green = running, teal = handoff, amber = waiting, red = error, grey = static).
+  The <strong>liveness dot</strong> (⬤) is embedded in the agent token — its colour shows
+  session health: green (alive), amber (stale &gt;5 min silent), red (dead / session gone).
+  The detail line appears only when there is something specific to communicate.
+</p>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>3 · All States</h2>
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2>4 · All states — wireframes</h2>
 
-<!-- ─── A. PRE-START ──────────────────────────────────────── -->
-<h3>A — Pre-start (no agent assigned)</h3>
-<p class="section-intro">No session, no duration. Status row is minimal; CTA is the primary affordance.</p>
-
+<!-- ── A. PRE-START ──────────────────────────────────────────── -->
+<h3>A — Pre-start · no agent assigned</h3>
+<p class="sec-note">No agent, no duration, no liveness dot. The CTA is the entire affordance.</p>
 <div class="row">
 
   <div>
-    <div class="label-above">Inbox</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#—</span>
-        <span class="wf-name">add beer style filters</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-idle">
-        <div class="wf-status-left">
-          <span class="wf-icon">○</span>
-          <span class="wf-label tone-idle">Inbox</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn primary">Prioritise</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+    <div class="lbl-above">01 · Inbox</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#—</span><span class="t-name">beer style filters</span><span class="t-ov">▾</span></div>
+      <div class="s idle">
+        <div class="s-l"><span class="icon">○</span><span class="lbl idle">Inbox</span></div>
+        <div class="s-r"><span class="btn p">Prioritise</span><span class="btn q">···</span></div>
       </div>
     </div>
   </div>
 
   <div>
-    <div class="label-above">Backlog — no deps</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#03</span>
-        <span class="wf-name">user profiles</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-idle">
-        <div class="wf-status-left">
-          <span class="wf-icon">○</span>
-          <span class="wf-label tone-idle">Backlog</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn primary">Start</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+    <div class="lbl-above">02 · Backlog — no deps</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#03</span><span class="t-name">user profiles</span><span class="t-ov">▾</span></div>
+      <div class="s idle">
+        <div class="s-l"><span class="icon">○</span><span class="lbl idle">Backlog</span></div>
+        <div class="s-r"><span class="btn p">Start</span><span class="btn q">···</span></div>
       </div>
     </div>
   </div>
 
   <div>
-    <div class="label-above">Backlog — blocked by deps</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#05</span>
-        <span class="wf-name">recipe recommendations</span>
-        <span class="wf-overflow">▾</span>
+    <div class="lbl-above">03 · Backlog — blocked by deps</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#05</span><span class="t-name">recipe recommendations</span><span class="t-ov">▾</span></div>
+      <div class="s idle">
+        <div class="s-l"><span class="icon">○</span><span class="lbl idle">Backlog</span></div>
+        <div class="s-r"><span class="btn">Start ↗</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-status tone-idle">
-        <div class="wf-status-left">
-          <span class="wf-icon">○</span>
-          <span class="wf-label tone-idle">Backlog</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn">Start ↗</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
-      </div>
-      <div class="wf-detail">blocked by #02, #03</div>
+      <div class="d">blocked by #02, #03</div>
     </div>
-    <div class="note">Deps in detail line; Start still reachable (↗ = override allowed).</div>
+    <div class="note">Start is still reachable (↗ = override); deps named in detail line, not the label.</div>
   </div>
 
   <div>
-    <div class="label-above">Paused</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#07</span>
-        <span class="wf-name">keg tracking</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-idle">
-        <div class="wf-status-left">
-          <span class="wf-icon">⏸</span>
-          <span class="wf-label tone-idle">Paused</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn">Resume</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+    <div class="lbl-above">04 · Paused</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#07</span><span class="t-name">keg tracking</span><span class="t-ov">▾</span></div>
+      <div class="s idle">
+        <div class="s-l"><span class="icon">⏸</span><span class="lbl idle">Paused</span></div>
+        <div class="s-r"><span class="btn">Resume</span><span class="btn q">···</span></div>
       </div>
     </div>
   </div>
 
 </div>
 
-<!-- ─── B. RUNNING ─────────────────────────────────────────── -->
-<h3>B — Running (agent actively working)</h3>
-<p class="section-intro">Liveness dot is green (live), amber (stale >5min), or red (dead). Duration is elapsed time. Eye icon links to session.</p>
-
+<!-- ── B. RUNNING ────────────────────────────────────────────── -->
+<h3>B — Running · agent actively working</h3>
+<p class="sec-note">
+  Liveness dot colour: green = alive (heartbeat within threshold), amber = stale (&gt;5 min silent),
+  red = dead (session gone). Duration = elapsed wall time since stage started.
+  No detail line unless idle-ladder threshold is crossed.
+</p>
 <div class="row">
 
   <div>
-    <div class="label-above">Implementing</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#01</span>
-        <span class="wf-name">format-date</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-running">
-        <div class="wf-status-left">
-          <span class="wf-icon">●</span>
-          <span class="wf-label tone-running">Implementing</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot live"></span>
-          <span class="wf-agent">CC</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">14m</span>
+    <div class="lbl-above">05 · Implementing</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#01</span><span class="t-name">format-date</span><span class="t-ov">▾</span></div>
+      <div class="s run">
+        <div class="s-l">
+          <span class="icon">●</span><span class="lbl run">Implementing</span>
+          <span class="sep">·</span><span class="dot live"></span><span class="agt">CC</span>
+          <span class="sep">·</span><span class="dur">14m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn q">···</span></div>
       </div>
     </div>
   </div>
 
   <div>
-    <div class="label-above">Reviewing (code)</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#08</span>
-        <span class="wf-name">rating-filter</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-running">
-        <div class="wf-status-left">
-          <span class="wf-icon">●</span>
-          <span class="wf-label tone-running">Reviewing</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot live"></span>
-          <span class="wf-agent">GG</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">6m</span>
+    <div class="lbl-above">06 · Reviewing code</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#08</span><span class="t-name">rating filter</span><span class="t-ov">▾</span></div>
+      <div class="s run">
+        <div class="s-l">
+          <span class="icon">●</span><span class="lbl run">Reviewing code</span>
+          <span class="sep">·</span><span class="dot live"></span><span class="agt">GG</span>
+          <span class="sep">·</span><span class="dur">6m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn q">···</span></div>
       </div>
     </div>
   </div>
 
   <div>
-    <div class="label-above">Spec reviewing</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#12</span>
-        <span class="wf-name">batch import</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-running">
-        <div class="wf-status-left">
-          <span class="wf-icon">●</span>
-          <span class="wf-label tone-running">Spec review</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot live"></span>
-          <span class="wf-agent">CC</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">3m</span>
+    <div class="lbl-above">07 · Reviewing spec</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#12</span><span class="t-name">batch import</span><span class="t-ov">▾</span></div>
+      <div class="s run">
+        <div class="s-l">
+          <span class="icon">●</span><span class="lbl run">Reviewing spec</span>
+          <span class="sep">·</span><span class="dot live"></span><span class="agt">CC</span>
+          <span class="sep">·</span><span class="dur">3m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn q">···</span></div>
       </div>
     </div>
   </div>
 
   <div>
-    <div class="label-above">Researching</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">R·09</span>
-        <span class="wf-name">ble sensor options</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-running">
-        <div class="wf-status-left">
-          <span class="wf-icon">●</span>
-          <span class="wf-label tone-running">Researching</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot live"></span>
-          <span class="wf-agent">CC</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">22m</span>
+    <div class="lbl-above">08 · Researching</div>
+    <div class="card">
+      <div class="t"><span class="t-id">R·09</span><span class="t-name">ble sensor options</span><span class="t-ov">▾</span></div>
+      <div class="s run">
+        <div class="s-l">
+          <span class="icon">●</span><span class="lbl run">Researching</span>
+          <span class="sep">·</span><span class="dot live"></span><span class="agt">CC</span>
+          <span class="sep">·</span><span class="dur">22m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn q">···</span></div>
       </div>
     </div>
   </div>
 
   <div>
-    <div class="label-above">Revising</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#04</span>
-        <span class="wf-name">auth flow</span>
-        <span class="wf-overflow">▾</span>
+    <div class="lbl-above">09 · Revising</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#04</span><span class="t-name">auth flow</span><span class="t-ov">▾</span></div>
+      <div class="s run">
+        <div class="s-l">
+          <span class="icon">●</span><span class="lbl run">Revising</span>
+          <span class="sep">·</span><span class="dot live"></span><span class="agt">GG</span>
+          <span class="sep">·</span><span class="dur">9m</span>
+        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-status tone-running">
-        <div class="wf-status-left">
-          <span class="wf-icon">●</span>
-          <span class="wf-label tone-running">Revising</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot live"></span>
-          <span class="wf-agent">GG</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">9m</span>
+    </div>
+    <div class="note">Revising = agent is addressing code-review feedback. Distinct from Implementing.</div>
+  </div>
+
+  <div>
+    <div class="lbl-above">10 · Evaluating</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#06</span><span class="t-name">search autocomplete</span><span class="t-ov">▾</span></div>
+      <div class="s run">
+        <div class="s-l">
+          <span class="icon">●</span><span class="lbl run">Evaluating</span>
+          <span class="sep">·</span><span class="dot live"></span><span class="agt">CC</span>
+          <span class="sep">·</span><span class="dur">11m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn q">···</span></div>
       </div>
     </div>
   </div>
 
   <div>
-    <div class="label-above">Evaluating (fleet)</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#06</span>
-        <span class="wf-name">search autocomplete</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-running">
-        <div class="wf-status-left">
-          <span class="wf-icon">●</span>
-          <span class="wf-label tone-running">Evaluating</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">11m</span>
+    <div class="lbl-above">11 · Closing</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#02</span><span class="t-name">brewery import</span><span class="t-ov">▾</span></div>
+      <div class="s run">
+        <div class="s-l">
+          <span class="icon">●</span><span class="lbl run">Closing</span>
+          <span class="sep">·</span><span class="dot live"></span><span class="agt">CC</span>
+          <span class="sep">·</span><span class="dur">1m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="btn q">···</span></div>
       </div>
     </div>
   </div>
 
   <div>
-    <div class="label-above">Closing</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#02</span>
-        <span class="wf-name">brewery import</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-running">
-        <div class="wf-status-left">
-          <span class="wf-icon">●</span>
-          <span class="wf-label tone-running">Closing</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot live"></span>
-          <span class="wf-agent">CC</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">1m</span>
+    <div class="lbl-above">12 · Close recovery</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#02</span><span class="t-name">brewery import</span><span class="t-ov">▾</span></div>
+      <div class="s warn">
+        <div class="s-l">
+          <span class="icon">●</span><span class="lbl warn">Close recovery</span>
+          <span class="sep">·</span><span class="dot live"></span><span class="agt">CC</span>
+          <span class="sep">·</span><span class="dur">2m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn q">···</span></div>
       </div>
     </div>
+    <div class="note">Red border signals something went wrong during close, even though agent is running.</div>
   </div>
 
   <div>
-    <div class="label-above">Running — liveness stale</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#11</span>
-        <span class="wf-name">export CSV</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-running">
-        <div class="wf-status-left">
-          <span class="wf-icon">●</span>
-          <span class="wf-label tone-running">Implementing</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot stale"></span>
-          <span class="wf-agent" style="color:#92400e;">CC</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">47m</span>
+    <div class="lbl-above">13 · Implementing — stale (idle ladder early)</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#11</span><span class="t-name">export CSV</span><span class="t-ov">▾</span></div>
+      <div class="s run">
+        <div class="s-l">
+          <span class="icon">●</span><span class="lbl run">Implementing</span>
+          <span class="sep">·</span><span class="dot stale"></span>
+          <span class="agt" style="color:var(--amber);">CC</span>
+          <span class="sep">·</span><span class="dur">47m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-detail" style="color:#b45309;">↑ no signal 12m — consider nudging</div>
+      <div class="d urgent">↑ no output 12m — nudge?</div>
     </div>
-    <div class="note">Stale dot = amber. Detail line appears when idle-ladder threshold crossed. No separate chip needed.</div>
+    <div class="note">
+      Stale dot + amber agent name signal the problem. Detail line appears only when idle-ladder
+      threshold is crossed. No separate chip needed.
+    </div>
   </div>
 
 </div>
 
-<!-- ─── C. WAITING / PAUSED BY AGENT ─────────────────────── -->
-<h3>C — Waiting (agent paused, human action needed)</h3>
-<p class="section-intro">The most urgent card type. Detail line carries the agent's message. CTA is the nudge/respond action.</p>
-
+<!-- ── C. AGENT SILENT / SESSION DEAD ──────────────────────── -->
+<h3>C — Agent silent / session lost · liveness escalated</h3>
+<p class="sec-note">
+  These override the base running label because the agent is no longer actually working.
+</p>
 <div class="row">
 
   <div>
-    <div class="label-above">Waiting for input</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#01</span>
-        <span class="wf-name">format-date</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-waiting">
-        <div class="wf-status-left">
-          <span class="wf-icon">◐</span>
-          <span class="wf-label tone-waiting">Needs you</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot stale"></span>
-          <span class="wf-agent">CC</span>
+    <div class="lbl-above">14 · Agent silent (idle-ladder escalated)</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#11</span><span class="t-name">export CSV</span><span class="t-ov">▾</span></div>
+      <div class="s attn">
+        <div class="s-l">
+          <span class="icon">⚠</span><span class="lbl attn">Agent silent</span>
+          <span class="sep">·</span><span class="dot dead"></span>
+          <span class="agt" style="color:var(--red);">CC</span>
+          <span class="sep">·</span><span class="dur">1h 4m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn amber">Respond</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn a">Nudge</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-detail">"Which date format should I use — ISO or locale?"</div>
+      <div class="d error">no output since start — may be stuck</div>
     </div>
-    <div class="note">Message truncated to 1 line; full text on hover / click.</div>
+    <div class="note">Label overrides from "Implementing" to "Agent silent" at the escalation threshold.</div>
   </div>
 
   <div>
-    <div class="label-above">Quota paused</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#08</span>
-        <span class="wf-name">rating filter</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-waiting">
-        <div class="wf-status-left">
-          <span class="wf-icon">⏸</span>
-          <span class="wf-label tone-waiting">Quota paused</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-agent">CC</span>
+    <div class="lbl-above">15 · Session lost (tmux dead)</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#08</span><span class="t-name">rating filter</span><span class="t-ov">▾</span></div>
+      <div class="s warn">
+        <div class="s-l">
+          <span class="icon">⚠</span><span class="lbl warn">Session lost</span>
+          <span class="sep">·</span><span class="dot dead"></span>
+          <span class="agt" style="color:var(--red);">GG</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="btn r">Restart</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-detail">resets Wed 6 May · 3pm</div>
-    </div>
-  </div>
-
-  <div>
-    <div class="label-above">Token limit hit</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#14</span>
-        <span class="wf-name">batch export</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-attention">
-        <div class="wf-status-left">
-          <span class="wf-icon">⚠</span>
-          <span class="wf-label tone-attention">Token limit</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot dead"></span>
-          <span class="wf-agent">CC</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn amber">Nudge</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div>
-    <div class="label-above">Finished — unconfirmed</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#09</span>
-        <span class="wf-name">tap list UI</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-attention">
-        <div class="wf-status-left">
-          <span class="wf-icon">◐</span>
-          <span class="wf-label tone-attention">Confirm?</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot stale"></span>
-          <span class="wf-agent">GG</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">18m</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn amber">Confirm</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
-      </div>
-      <div class="wf-detail">session ended without signal — confirm complete</div>
+      <div class="d error">tmux session not found</div>
     </div>
   </div>
 
 </div>
 
-<!-- ─── D. COMPLETE / HANDOFF ──────────────────────────────── -->
-<h3>D — Complete / handoff (work done, your move)</h3>
-<p class="section-intro">Green tone. Duration shows how long the work took. Detail line describes the next step. No separate action bar needed.</p>
-
+<!-- ── D. WAITING / PAUSED BY AGENT ────────────────────────── -->
+<h3>D — Waiting · agent stopped, human action needed</h3>
+<p class="sec-note">
+  Amber border. Detail line carries the agent's specific message or reason.
+  "Needs input" is precise: the agent cannot continue without a human decision.
+</p>
 <div class="row">
 
   <div>
-    <div class="label-above">Implementation complete → awaiting review</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#01</span>
-        <span class="wf-name">format-date</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-ready">
-        <div class="wf-status-left">
-          <span class="wf-icon">✓</span>
-          <span class="wf-label tone-ready">Complete</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-agent">CC</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">7m</span>
+    <div class="lbl-above">16 · Needs input (agent question)</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#01</span><span class="t-name">format-date</span><span class="t-ov">▾</span></div>
+      <div class="s wait">
+        <div class="s-l">
+          <span class="icon">◐</span><span class="lbl wait">Needs input</span>
+          <span class="sep">·</span><span class="dot stale"></span><span class="agt">CC</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn primary">Close</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn a">Respond</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-detail">→ awaiting review</div>
+      <div class="d urgent">"Which date format — ISO 8601 or locale-aware?"</div>
     </div>
-    <div class="note">No liveness dot after session ends — agent is done.</div>
+    <div class="note">Agent message truncated to 1 line; full text accessible via the session link.</div>
   </div>
 
   <div>
-    <div class="label-above">Review done → apply or reject</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#08</span>
-        <span class="wf-name">rating filter</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-ready">
-        <div class="wf-status-left">
-          <span class="wf-icon">✓</span>
-          <span class="wf-label tone-ready">Review done</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-agent">GG</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">4m</span>
+    <div class="lbl-above">17 · Quota paused</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#08</span><span class="t-name">rating filter</span><span class="t-ov">▾</span></div>
+      <div class="s wait">
+        <div class="s-l">
+          <span class="icon">⏸</span><span class="lbl wait">Quota paused</span>
+          <span class="sep">·</span><span class="agt">CC</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-btn green">Apply</span>
-          <span class="wf-btn red">Reject</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="btn q">···</span></div>
       </div>
-      <div class="wf-detail">→ apply or reject</div>
+      <div class="d">resets Wed 6 May · 3 pm</div>
     </div>
-    <div class="note">Two-action decision point: Apply (green) / Reject (red) are equal weight.</div>
+    <div class="note">The agent did not fail — the quota ran out. Label is precise; detail gives the reset time.</div>
   </div>
 
   <div>
-    <div class="label-above">Spec review done → apply or reject</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#12</span>
-        <span class="wf-name">batch import</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-ready">
-        <div class="wf-status-left">
-          <span class="wf-icon">✓</span>
-          <span class="wf-label tone-ready">Spec review done</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-agent">CC</span>
+    <div class="lbl-above">18 · Token limit</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#14</span><span class="t-name">batch export</span><span class="t-ov">▾</span></div>
+      <div class="s attn">
+        <div class="s-l">
+          <span class="icon">⚠</span><span class="lbl attn">Token limit</span>
+          <span class="sep">·</span><span class="dot dead"></span><span class="agt">CC</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-btn green">Apply</span>
-          <span class="wf-btn red">Reject</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn a">Nudge</span><span class="btn q">···</span></div>
       </div>
+      <div class="d urgent">context window full — agent cannot continue</div>
     </div>
+    <div class="note">Distinct from Quota paused: the token limit is per-session, not a plan quota.</div>
   </div>
 
   <div>
-    <div class="label-above">Revision done</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#04</span>
-        <span class="wf-name">auth flow</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-ready">
-        <div class="wf-status-left">
-          <span class="wf-icon">✓</span>
-          <span class="wf-label tone-ready">Revision done</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-agent">GG</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">9m</span>
+    <div class="lbl-above">19 · Unconfirmed (session ended, no signal)</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#09</span><span class="t-name">tap list UI</span><span class="t-ov">▾</span></div>
+      <div class="s attn">
+        <div class="s-l">
+          <span class="icon">◐</span><span class="lbl attn">Unconfirmed</span>
+          <span class="sep">·</span><span class="dot stale"></span><span class="agt">GG</span>
+          <span class="sep">·</span><span class="dur">18m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-btn primary">Close</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn a">Confirm</span><span class="btn q">···</span></div>
       </div>
+      <div class="d urgent">session ended without completion signal</div>
     </div>
-  </div>
-
-  <div>
-    <div class="label-above">Research done</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">R·09</span>
-        <span class="wf-name">ble sensor options</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-ready">
-        <div class="wf-status-left">
-          <span class="wf-icon">✓</span>
-          <span class="wf-label tone-ready">Research done</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-agent">CC</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">22m</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn primary">Evaluate</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
-      </div>
-    </div>
+    <div class="note">"Unconfirmed" = state is unknown. May be done; may have crashed. Human decides.</div>
   </div>
 
 </div>
 
-<!-- ─── E. ERRORS / WARNINGS ──────────────────────────────── -->
-<h3>E — Errors &amp; warnings</h3>
-
+<!-- ── E. HANDOFF ───────────────────────────────────────────── -->
+<h3>E — Handoff · specific work done, your move</h3>
+<p class="sec-note">
+  Teal border. No liveness dot (session ended). Duration shows how long the work took.
+  The detail line names the missing action precisely — not "awaiting" anything.
+</p>
 <div class="row">
 
   <div>
-    <div class="label-above">Error</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#13</span>
-        <span class="wf-name">push notifications</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-warn">
-        <div class="wf-status-left">
-          <span class="wf-icon">⚠</span>
-          <span class="wf-label tone-warn">Error</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-agent">CC</span>
+    <div class="lbl-above">20 · Implemented → needs code review</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#01</span><span class="t-name">format-date</span><span class="t-ov">▾</span></div>
+      <div class="s rdy">
+        <div class="s-l">
+          <span class="icon">✓</span><span class="lbl rdy">Implemented</span>
+          <span class="sep">·</span><span class="agt">CC</span>
+          <span class="sep">·</span><span class="dur">7m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-btn red">Retry</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn p">Close</span><span class="btn q">···</span></div>
       </div>
+      <div class="d">→ needs code review</div>
+    </div>
+    <div class="note">
+      "Implemented" = code was written and pushed. Not "complete" — the feature is not
+      complete; this step is done.
     </div>
   </div>
 
   <div>
-    <div class="label-above">Close failed</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#02</span>
-        <span class="wf-name">brewery import</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-warn">
-        <div class="wf-status-left">
-          <span class="wf-icon">⚠</span>
-          <span class="wf-label tone-warn">Close failed</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">3m ago</span>
+    <div class="lbl-above">21 · Revised → needs code review</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#04</span><span class="t-name">auth flow</span><span class="t-ov">▾</span></div>
+      <div class="s rdy">
+        <div class="s-l">
+          <span class="icon">✓</span><span class="lbl rdy">Revised</span>
+          <span class="sep">·</span><span class="agt">GG</span>
+          <span class="sep">·</span><span class="dur">9m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-btn red">Retry close</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn p">Close</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-detail">merge conflict in src/import.ts</div>
+      <div class="d">→ needs code review</div>
+    </div>
+    <div class="note">
+      "Revised" = the agent addressed review feedback. A new revision of the implementation exists.
     </div>
   </div>
 
   <div>
-    <div class="label-above">Rebase needed</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#06</span>
-        <span class="wf-name">search autocomplete</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-warn">
-        <div class="wf-status-left">
-          <span class="wf-icon">⚠</span>
-          <span class="wf-label tone-warn">Rebase needed</span>
+    <div class="lbl-above">22 · Code reviewed → apply or reject findings</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#08</span><span class="t-name">rating filter</span><span class="t-ov">▾</span></div>
+      <div class="s rdy">
+        <div class="s-l">
+          <span class="icon">✓</span><span class="lbl rdy">Code reviewed</span>
+          <span class="sep">·</span><span class="agt">GG</span>
+          <span class="sep">·</span><span class="dur">4m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="btn g">Apply</span><span class="btn r">Reject</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-detail">rebase before close</div>
+      <div class="d">→ apply or reject findings</div>
+    </div>
+    <div class="note">
+      "Code reviewed" = a reviewer read the code and produced findings. You decide what to do with them.
     </div>
   </div>
 
   <div>
-    <div class="label-above">Spec drift</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#10</span>
-        <span class="wf-name">offline mode</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-warn">
-        <div class="wf-status-left">
-          <span class="wf-icon">⚠</span>
-          <span class="wf-label tone-warn">Spec drift</span>
+    <div class="lbl-above">23 · Spec reviewed → apply or reject findings</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#12</span><span class="t-name">batch import</span><span class="t-ov">▾</span></div>
+      <div class="s rdy">
+        <div class="s-l">
+          <span class="icon">✓</span><span class="lbl rdy">Spec reviewed</span>
+          <span class="sep">·</span><span class="agt">CC</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-btn amber">Reconcile</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="btn g">Apply</span><span class="btn r">Reject</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-detail">use aigon doctor --fix</div>
+      <div class="d">→ apply or reject findings</div>
     </div>
+    <div class="note">"Spec reviewed" is unambiguous: the spec (not the code) was reviewed.</div>
   </div>
 
   <div>
-    <div class="label-above">No engine state</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#15</span>
-        <span class="wf-name">dark mode</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-warn">
-        <div class="wf-status-left">
-          <span class="wf-icon">⚠</span>
-          <span class="wf-label tone-warn">No engine state</span>
+    <div class="lbl-above">24 · Research ready → evaluate findings</div>
+    <div class="card">
+      <div class="t"><span class="t-id">R·09</span><span class="t-name">ble sensor options</span><span class="t-ov">▾</span></div>
+      <div class="s rdy">
+        <div class="s-l">
+          <span class="icon">✓</span><span class="lbl rdy">Research ready</span>
+          <span class="sep">·</span><span class="agt">CC</span>
+          <span class="sep">·</span><span class="dur">22m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-btn amber">Fix</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="btn p">Evaluate</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-detail">run aigon doctor --fix</div>
+      <div class="d">→ evaluate findings</div>
     </div>
-  </div>
-
-  <div>
-    <div class="label-above">Close recovery</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#02</span>
-        <span class="wf-name">brewery import</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-warn">
-        <div class="wf-status-left">
-          <span class="wf-icon">●</span>
-          <span class="wf-label tone-warn">Close recovery</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot live"></span>
-          <span class="wf-agent">CC</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">2m</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
-      </div>
+    <div class="note">
+      "Research ready" says what exists (findings), not what the agent did.
+      "Research done" would be ambiguous — done means nothing here.
     </div>
   </div>
 
 </div>
 
-<!-- ─── F. DONE / CLOSED ───────────────────────────────────── -->
-<h3>F — Done / closed</h3>
-
+<!-- ── F. ERRORS ─────────────────────────────────────────────── -->
+<h3>F — Errors &amp; warnings</h3>
+<p class="sec-note">Red border. Each label names a specific problem, not a generic "Error" where avoidable.</p>
 <div class="row">
 
   <div>
-    <div class="label-above">Done</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#01</span>
-        <span class="wf-name">format-date</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-done">
-        <div class="wf-status-left">
-          <span class="wf-icon">✓</span>
-          <span class="wf-label tone-done">Done</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">2d ago</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn ghost">···</span>
-        </div>
+    <div class="lbl-above">25 · Error (generic)</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#13</span><span class="t-name">push notifications</span><span class="t-ov">▾</span></div>
+      <div class="s warn">
+        <div class="s-l"><span class="icon">⚠</span><span class="lbl warn">Error</span><span class="sep">·</span><span class="agt">CC</span></div>
+        <div class="s-r"><span class="btn r">Retry</span><span class="btn q">···</span></div>
       </div>
     </div>
-    <div class="note">Minimal presence. No agent, no CTA — just a timestamp.</div>
   </div>
 
   <div>
-    <div class="label-above">Won't fix</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#07</span>
-        <span class="wf-name">keg tracking</span>
-        <span class="wf-overflow">▾</span>
+    <div class="lbl-above">26 · Close failed</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#02</span><span class="t-name">brewery import</span><span class="t-ov">▾</span></div>
+      <div class="s warn">
+        <div class="s-l"><span class="icon">⚠</span><span class="lbl warn">Close failed</span><span class="sep">·</span><span class="dur">3m ago</span></div>
+        <div class="s-r"><span class="btn r">Retry close</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-status tone-done">
-        <div class="wf-status-left">
-          <span class="wf-icon">✓</span>
-          <span class="wf-label tone-done">Won't fix</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">5d ago</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn ghost">···</span>
-        </div>
+      <div class="d error">merge conflict — src/import.ts</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="lbl-above">27 · Rebase conflict</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#06</span><span class="t-name">search autocomplete</span><span class="t-ov">▾</span></div>
+      <div class="s warn">
+        <div class="s-l"><span class="icon">⚠</span><span class="lbl warn">Rebase conflict</span></div>
+        <div class="s-r"><span class="btn q">···</span></div>
       </div>
+      <div class="d error">rebase before closing</div>
+    </div>
+    <div class="note">"Rebase needed" is even more specific but "Rebase conflict" names the actual problem.</div>
+  </div>
+
+  <div>
+    <div class="lbl-above">28 · State drift</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#10</span><span class="t-name">offline mode</span><span class="t-ov">▾</span></div>
+      <div class="s warn">
+        <div class="s-l"><span class="icon">⚠</span><span class="lbl warn">State drift</span></div>
+        <div class="s-r"><span class="btn a">Reconcile</span><span class="btn q">···</span></div>
+      </div>
+      <div class="d error">spec and engine state disagree — run aigon doctor --fix</div>
+    </div>
+    <div class="note">"State drift" is more precise than "Spec drift"; the drift is between spec and engine state.</div>
+  </div>
+
+  <div>
+    <div class="lbl-above">29 · Missing state</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#15</span><span class="t-name">dark mode</span><span class="t-ov">▾</span></div>
+      <div class="s warn">
+        <div class="s-l"><span class="icon">⚠</span><span class="lbl warn">Missing state</span></div>
+        <div class="s-r"><span class="btn a">Fix</span><span class="btn q">···</span></div>
+      </div>
+      <div class="d error">no engine snapshot — run aigon doctor --fix</div>
     </div>
   </div>
 
 </div>
 
-<!-- ─── G. FLEET MODE ─────────────────────────────────────── -->
-<h3>G — Fleet mode (multiple agents)</h3>
-<p class="section-intro">Summary status row at top; per-agent rows below — compact, no duplication.</p>
-
+<!-- ── G. TERMINAL ───────────────────────────────────────────── -->
+<h3>G — Terminal · feature lifecycle over</h3>
+<p class="sec-note">Grey border. Minimal — just what happened and when. No CTA.</p>
 <div class="row">
 
   <div>
-    <div class="label-above">Fleet — mixed (some running, some done)</div>
-    <div class="wf-card w-wide">
-      <div class="wf-title">
-        <span class="wf-id">#06</span>
-        <span class="wf-name">search autocomplete</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <!-- summary row -->
-      <div class="wf-status tone-running" style="border-bottom:1px solid var(--border-light);">
-        <div class="wf-status-left">
-          <span class="wf-icon">●</span>
-          <span class="wf-label tone-running">2 running · 1 done</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn ghost">···</span>
-        </div>
-      </div>
-      <!-- per-agent rows -->
-      <div class="wf-fleet">
-        <div class="wf-fleet-row">
-          <span class="wf-dot live"></span>
-          <span style="color:var(--ink-2); width:24px;">CC</span>
-          <span class="wf-label tone-running" style="font-size:10px;">Implementing</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">14m</span>
-          <span style="flex:1"></span>
-          <span class="wf-eye" style="font-size:11px;">👁</span>
-        </div>
-        <div class="wf-fleet-row">
-          <span class="wf-dot live"></span>
-          <span style="color:var(--ink-2); width:24px;">GG</span>
-          <span class="wf-label tone-running" style="font-size:10px;">Implementing</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">11m</span>
-          <span style="flex:1"></span>
-          <span class="wf-eye" style="font-size:11px;">👁</span>
-        </div>
-        <div class="wf-fleet-row" style="opacity:.55;">
-          <span class="wf-dot" style="background:var(--border);"></span>
-          <span style="color:var(--ink-3); width:24px;">KM</span>
-          <span class="wf-label tone-done" style="font-size:10px;">Complete</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">8m</span>
-          <span style="flex:1"></span>
-          <span class="wf-eye" style="font-size:11px; opacity:.4;">👁</span>
-        </div>
+    <div class="lbl-above">30 · Closed</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#01</span><span class="t-name">format-date</span><span class="t-ov">▾</span></div>
+      <div class="s done">
+        <div class="s-l"><span class="icon">✓</span><span class="lbl done">Closed</span><span class="sep">·</span><span class="dur">2d ago</span></div>
+        <div class="s-r"><span class="btn q">···</span></div>
       </div>
     </div>
-    <div class="note">Summary row = quick scan; agent rows = drill-down. Done agent is dimmed.</div>
-  </div>
-
-  <div>
-    <div class="label-above">Fleet — pick winner (eval complete)</div>
-    <div class="wf-card w-wide">
-      <div class="wf-title">
-        <span class="wf-id">#06</span>
-        <span class="wf-name">search autocomplete</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-attention" style="border-bottom:1px solid var(--border-light);">
-        <div class="wf-status-left">
-          <span class="wf-icon">◐</span>
-          <span class="wf-label tone-attention">Pick winner</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur" style="color:#92400e;">recommended: CC</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn amber">Decide</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
-      </div>
-      <div class="wf-fleet">
-        <div class="wf-fleet-row">
-          <span style="color:var(--ink-2); width:24px;">CC</span>
-          <span class="wf-label tone-ready" style="font-size:10px;">Complete</span>
-          <span class="wf-sep">·</span><span class="wf-dur">14m</span>
-          <span style="flex:1"></span>
-          <span class="wf-btn green" style="font-size:9px; padding:1px 5px;">Pick</span>
-        </div>
-        <div class="wf-fleet-row">
-          <span style="color:var(--ink-2); width:24px;">GG</span>
-          <span class="wf-label tone-ready" style="font-size:10px;">Complete</span>
-          <span class="wf-sep">·</span><span class="wf-dur">11m</span>
-          <span style="flex:1"></span>
-          <span class="wf-btn" style="font-size:9px; padding:1px 5px;">Pick</span>
-        </div>
-      </div>
+    <div class="note">
+      "Closed" = <code>aigon feature-close</code> ran successfully. The worktree is gone.
+      Not "Done" — done at what? Closed is unambiguous.
     </div>
   </div>
 
   <div>
-    <div class="label-above">Fleet — all complete, awaiting eval</div>
-    <div class="wf-card w-wide">
-      <div class="wf-title">
-        <span class="wf-id">#06</span>
-        <span class="wf-name">search autocomplete</span>
-        <span class="wf-overflow">▾</span>
+    <div class="lbl-above">31 · Won't fix</div>
+    <div class="card">
+      <div class="t"><span class="t-id">#07</span><span class="t-name">keg tracking</span><span class="t-ov">▾</span></div>
+      <div class="s done">
+        <div class="s-l"><span class="icon">✗</span><span class="lbl done">Won't fix</span><span class="sep">·</span><span class="dur">5d ago</span></div>
+        <div class="s-r"><span class="btn q">···</span></div>
       </div>
-      <div class="wf-status tone-ready" style="border-bottom:1px solid var(--border-light);">
-        <div class="wf-status-left">
-          <span class="wf-icon">✓</span>
-          <span class="wf-label tone-ready">All complete</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn primary">Evaluate</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
-      </div>
-      <div class="wf-fleet">
-        <div class="wf-fleet-row" style="opacity:.55;">
-          <span style="color:var(--ink-3); width:24px;">CC</span>
-          <span class="wf-label tone-done" style="font-size:10px;">Complete</span>
-          <span class="wf-sep">·</span><span class="wf-dur">14m</span>
-        </div>
-        <div class="wf-fleet-row" style="opacity:.55;">
-          <span style="color:var(--ink-3); width:24px;">GG</span>
-          <span class="wf-label tone-done" style="font-size:10px;">Complete</span>
-          <span class="wf-sep">·</span><span class="wf-dur">11m</span>
-        </div>
-      </div>
+    </div>
+    <div class="note">
+      ✗ glyph distinguishes from ✓ Closed — "won't fix" is a deliberate rejection, not a successful close.
     </div>
   </div>
 
 </div>
 
-<!-- ─── H. AUTONOMOUS STAGES ──────────────────────────────── -->
-<h3>H — Autonomous stages (autopilot)</h3>
-<p class="section-intro">Stage label replaces generic verb. Gate states call out what's waiting. Stage rows show progress at a glance.</p>
-
+<!-- ── H. FLEET ──────────────────────────────────────────────── -->
+<h3>H — Fleet · multiple agents</h3>
+<p class="sec-note">
+  Summary row gives the fast scan. Per-agent rows give the drill-down.
+  Done agents are dimmed — they are finished; the interesting agents are the running ones.
+</p>
 <div class="row">
 
   <div>
-    <div class="label-above">Autonomous — running stage</div>
-    <div class="wf-card w-wide">
-      <div class="wf-title">
-        <span class="wf-id">R·09</span>
-        <span class="wf-name">ble sensor options</span>
-        <span class="wf-overflow">▾</span>
+    <div class="lbl-above">32 · Fleet — mixed (some running, some implemented)</div>
+    <div class="card wide">
+      <div class="t"><span class="t-id">#06</span><span class="t-name">search autocomplete</span><span class="t-ov">▾</span></div>
+      <div class="s run">
+        <div class="s-l"><span class="icon">●</span><span class="lbl run">2 implementing · 1 implemented</span></div>
+        <div class="s-r"><span class="btn q">···</span></div>
       </div>
-      <div class="wf-status tone-running" style="border-bottom:1px solid var(--border-light);">
-        <div class="wf-status-left">
-          <span class="wf-icon">▶</span>
-          <span class="wf-label tone-running">Running · Research</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot live"></span>
-          <span class="wf-agent">CC</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">stage 2/4</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
-      </div>
-      <!-- compact stage track -->
-      <div style="display:flex; gap:0; padding:5px 10px; font-family:var(--mono); font-size:10px; color:var(--ink-4);">
-        <span style="color:var(--green);">✓ Plan</span>
-        <span style="margin:0 4px; color:var(--border);">→</span>
-        <span style="color:var(--green-bg); background:var(--green); padding:0 5px; border-radius:3px; color:#fff;">Research</span>
-        <span style="margin:0 4px; color:var(--border);">→</span>
-        <span>Eval</span>
-        <span style="margin:0 4px; color:var(--border);">→</span>
-        <span>Close</span>
+      <div class="fleet">
+        <div class="fa"><span class="dot live"></span><span style="width:22px;color:var(--ink-2)">CC</span><span class="lbl run" style="font-size:10px">Implementing</span><span class="sep">·</span><span class="dur">14m</span><span style="flex:1"></span><span class="eye" style="font-size:10px">👁</span></div>
+        <div class="fa"><span class="dot live"></span><span style="width:22px;color:var(--ink-2)">GG</span><span class="lbl run" style="font-size:10px">Implementing</span><span class="sep">·</span><span class="dur">11m</span><span style="flex:1"></span><span class="eye" style="font-size:10px">👁</span></div>
+        <div class="fa dim"><span class="dot"></span><span style="width:22px">KM</span><span class="lbl done" style="font-size:10px">Implemented</span><span class="sep">·</span><span class="dur">8m</span></div>
       </div>
     </div>
-    <div class="note">Compact stage track replaces separate "stage progress" indicator. No extra height needed.</div>
+    <div class="note">
+      "1 implemented" not "1 done" — "done" at what? The agent implemented its version.
+    </div>
   </div>
 
   <div>
-    <div class="label-above">Autonomous — gate (waiting to advance)</div>
-    <div class="wf-card w-wide">
-      <div class="wf-title">
-        <span class="wf-id">R·09</span>
-        <span class="wf-name">ble sensor options</span>
-        <span class="wf-overflow">▾</span>
+    <div class="lbl-above">33 · Fleet — pick winner (evaluation complete)</div>
+    <div class="card wide">
+      <div class="t"><span class="t-id">#06</span><span class="t-name">search autocomplete</span><span class="t-ov">▾</span></div>
+      <div class="s attn">
+        <div class="s-l"><span class="icon">◐</span><span class="lbl attn">Pick winner</span><span class="sep">·</span><span class="dur" style="color:var(--amber)">recommended: CC</span></div>
+        <div class="s-r"><span class="btn a">Decide</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-status tone-waiting" style="border-bottom:1px solid var(--border-light);">
-        <div class="wf-status-left">
-          <span class="wf-icon">◐</span>
-          <span class="wf-label tone-waiting">Gate · Eval</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn amber">Continue</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
-      </div>
-      <div style="display:flex; gap:0; padding:5px 10px; font-family:var(--mono); font-size:10px;">
-        <span style="color:var(--green);">✓ Plan</span>
-        <span style="margin:0 4px; color:var(--border);">→</span>
-        <span style="color:var(--green);">✓ Research</span>
-        <span style="margin:0 4px; color:var(--border);">→</span>
-        <span style="color:#92400e; font-weight:700;">⏸ Eval</span>
-        <span style="margin:0 4px; color:var(--border);">→</span>
-        <span style="color:var(--ink-4);">Close</span>
+      <div class="fleet">
+        <div class="fa"><span style="width:22px;color:var(--ink-2)">CC</span><span class="lbl rdy" style="font-size:10px">Implemented</span><span class="sep">·</span><span class="dur">14m</span><span style="flex:1"></span><span class="btn g" style="font-size:9px;padding:1px 5px">Pick CC</span></div>
+        <div class="fa"><span style="width:22px;color:var(--ink-2)">GG</span><span class="lbl rdy" style="font-size:10px">Implemented</span><span class="sep">·</span><span class="dur">11m</span><span style="flex:1"></span><span class="btn" style="font-size:9px;padding:1px 5px">Pick GG</span></div>
       </div>
     </div>
   </div>
 
   <div>
-    <div class="label-above">Autonomous — ready to close</div>
-    <div class="wf-card w-wide">
-      <div class="wf-title">
-        <span class="wf-id">R·09</span>
-        <span class="wf-name">ble sensor options</span>
-        <span class="wf-overflow">▾</span>
+    <div class="lbl-above">34 · Fleet — all implemented, needs evaluation</div>
+    <div class="card wide">
+      <div class="t"><span class="t-id">#06</span><span class="t-name">search autocomplete</span><span class="t-ov">▾</span></div>
+      <div class="s rdy">
+        <div class="s-l"><span class="icon">✓</span><span class="lbl rdy">All implemented</span></div>
+        <div class="s-r"><span class="btn p">Evaluate</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-status tone-ready" style="border-bottom:1px solid var(--border-light);">
-        <div class="wf-status-left">
-          <span class="wf-icon">✓</span>
-          <span class="wf-label tone-ready">Ready to close</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn primary">Close</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
-      </div>
-      <div style="display:flex; gap:0; padding:5px 10px; font-family:var(--mono); font-size:10px; color:var(--green);">
-        <span>✓ Plan</span>
-        <span style="margin:0 4px; color:var(--border);">→</span>
-        <span>✓ Research</span>
-        <span style="margin:0 4px; color:var(--border);">→</span>
-        <span>✓ Eval</span>
-        <span style="margin:0 4px; color:var(--border);">→</span>
-        <span style="color:var(--ink-4);">Close</span>
+      <div class="fleet">
+        <div class="fa dim"><span style="width:22px">CC</span><span class="lbl done" style="font-size:10px">Implemented</span><span class="sep">·</span><span class="dur">14m</span></div>
+        <div class="fa dim"><span style="width:22px">GG</span><span class="lbl done" style="font-size:10px">Implemented</span><span class="sep">·</span><span class="dur">11m</span></div>
       </div>
     </div>
+    <div class="note">"All implemented" — both agents have produced an implementation. Not "all done".</div>
   </div>
 
 </div>
 
-<!-- ─── I. OVERLAY STATES ──────────────────────────────────── -->
-<h3>I — Overlay states (modify any base state)</h3>
-<p class="section-intro">These layer on top of a running base state. In the new design they modify the status row in-place rather than adding a separate badge element.</p>
-
+<!-- ── I. AUTONOMOUS STAGES ──────────────────────────────────── -->
+<h3>I — Autonomous stages</h3>
+<p class="sec-note">
+  Stage label replaces the generic verb. A compact stage track below the status row shows
+  where in the pipeline this feature sits. No extra height needed for most states.
+</p>
 <div class="row">
 
   <div>
-    <div class="label-above">Idle ladder — silent (no badge, dim detail)</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#11</span>
-        <span class="wf-name">export CSV</span>
-        <span class="wf-overflow">▾</span>
-      </div>
-      <div class="wf-status tone-running">
-        <div class="wf-status-left">
-          <span class="wf-icon">●</span>
-          <span class="wf-label tone-running">Implementing</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot stale"></span>
-          <span class="wf-agent" style="color:#92400e;">CC</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">47m</span>
+    <div class="lbl-above">35 · Autonomous — running a stage</div>
+    <div class="card wide">
+      <div class="t"><span class="t-id">R·09</span><span class="t-name">ble sensor options</span><span class="t-ov">▾</span></div>
+      <div class="s run">
+        <div class="s-l">
+          <span class="icon">▶</span><span class="lbl run">Researching · stage 2/4</span>
+          <span class="sep">·</span><span class="dot live"></span><span class="agt">CC</span>
+          <span class="sep">·</span><span class="dur">22m</span>
         </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+        <div class="s-r"><span class="eye">👁</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-detail" style="color:#b45309;">↑ silent 12m — nudge?</div>
+      <div class="stages">
+        <span class="st done">✓ Plan</span><span class="st-sep">→</span>
+        <span class="st active">Research</span><span class="st-sep">→</span>
+        <span class="st">Eval</span><span class="st-sep">→</span>
+        <span class="st">Close</span>
+      </div>
     </div>
-    <div class="note">Stale dot + amber agent name + detail hint. No separate badge DOM element needed.</div>
   </div>
 
   <div>
-    <div class="label-above">Idle ladder — needs attention (override label)</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#11</span>
-        <span class="wf-name">export CSV</span>
-        <span class="wf-overflow">▾</span>
+    <div class="lbl-above">36 · Autonomous — gate (paused between stages)</div>
+    <div class="card wide">
+      <div class="t"><span class="t-id">R·09</span><span class="t-name">ble sensor options</span><span class="t-ov">▾</span></div>
+      <div class="s wait">
+        <div class="s-l"><span class="icon">◐</span><span class="lbl wait">Gate — waiting to advance</span></div>
+        <div class="s-r"><span class="btn a">Continue</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-status tone-attention">
-        <div class="wf-status-left">
-          <span class="wf-icon">⚠</span>
-          <span class="wf-label tone-attention">Agent silent</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot dead"></span>
-          <span class="wf-agent" style="color:var(--red);">CC</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dur">1h 4m</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-eye">👁</span>
-          <span class="wf-btn amber">Nudge</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+      <div class="stages">
+        <span class="st done">✓ Plan</span><span class="st-sep">→</span>
+        <span class="st done">✓ Research</span><span class="st-sep">→</span>
+        <span class="st gate">⏸ Eval</span><span class="st-sep">→</span>
+        <span class="st">Close</span>
       </div>
-      <div class="wf-detail" style="color:#c53030;">no progress — agent may be stuck</div>
     </div>
-    <div class="note">When idle-ladder escalates to needs-attention, label overrides to "Agent silent". Dead dot = red.</div>
+    <div class="note">"Gate — waiting to advance" is specific: the pipeline is paused at a gate between stages.</div>
   </div>
 
   <div>
-    <div class="label-above">Liveness dead (session lost)</div>
-    <div class="wf-card">
-      <div class="wf-title">
-        <span class="wf-id">#08</span>
-        <span class="wf-name">rating filter</span>
-        <span class="wf-overflow">▾</span>
+    <div class="lbl-above">37 · Autonomous — all stages done, ready to close</div>
+    <div class="card wide">
+      <div class="t"><span class="t-id">R·09</span><span class="t-name">ble sensor options</span><span class="t-ov">▾</span></div>
+      <div class="s rdy">
+        <div class="s-l"><span class="icon">✓</span><span class="lbl rdy">All stages finished — ready to close</span></div>
+        <div class="s-r"><span class="btn p">Close</span><span class="btn q">···</span></div>
       </div>
-      <div class="wf-status tone-warn">
-        <div class="wf-status-left">
-          <span class="wf-icon">⚠</span>
-          <span class="wf-label tone-warn">Session lost</span>
-          <span class="wf-sep">·</span>
-          <span class="wf-dot dead"></span>
-          <span class="wf-agent" style="color:var(--red);">GG</span>
-        </div>
-        <div class="wf-status-right">
-          <span class="wf-btn red">Restart</span>
-          <span class="wf-btn ghost">···</span>
-        </div>
+      <div class="stages">
+        <span class="st done">✓ Plan</span><span class="st-sep">→</span>
+        <span class="st done">✓ Research</span><span class="st-sep">→</span>
+        <span class="st done">✓ Eval</span><span class="st-sep">→</span>
+        <span class="st" style="color:var(--ink-3)">Close</span>
       </div>
-      <div class="wf-detail" style="color:#c53030;">tmux session not found</div>
     </div>
+    <div class="note">"All stages finished" — not "ready" in isolation. Ready for what? To close.</div>
   </div>
 
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>4 · Design Decisions Summary</h2>
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2>5 · Before / after · vocabulary comparison</h2>
 
-<div style="font-family:var(--mono); font-size:11px; max-width:680px; border:1.5px solid var(--border); border-radius:8px; overflow:hidden; background:var(--bg-card);">
-  <div style="display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border-light); padding:8px 12px; font-weight:700; background:var(--bg); font-family:var(--sans); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3);">
-    <span>Was</span><span>Now</span>
+<div style="font-family:var(--mono); font-size:11px; max-width:680px; border:1.5px solid var(--border);
+            border-radius:8px; overflow:hidden; background:var(--bg-card);">
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px;
+              font-family:var(--sans); font-size:10px; font-weight:700; letter-spacing:.08em;
+              text-transform:uppercase; color:var(--ink-3); background:var(--bg);
+              border-bottom:1px solid var(--border);">
+    <span>Old (ambiguous)</span><span>New (specific)</span>
   </div>
-  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; border-bottom:1px solid var(--border-light); gap:8px; align-items:start;">
-    <span class="badge-removed">headline banner block</span>
-    <span class="badge-kept">left-border on status row</span>
-  </div>
-  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; border-bottom:1px solid var(--border-light); gap:8px; align-items:start;">
-    <span class="badge-removed">separate agent row below banner</span>
-    <span class="badge-kept">agent token inside status row</span>
-  </div>
-  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; border-bottom:1px solid var(--border-light); gap:8px; align-items:start;">
-    <span class="badge-removed">separate action-button row</span>
-    <span class="badge-kept">CTAs right-aligned in status row</span>
-  </div>
-  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; border-bottom:1px solid var(--border-light); gap:8px; align-items:start;">
-    <span class="badge-removed">awaiting-badge chip (separate DOM)</span>
-    <span class="badge-kept">label overrides to "Needs you" + detail line</span>
-  </div>
-  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; border-bottom:1px solid var(--border-light); gap:8px; align-items:start;">
-    <span class="badge-removed">idle-ladder chip (separate DOM)</span>
-    <span class="badge-kept">stale/dead dot + detail line + label override</span>
-  </div>
-  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; border-bottom:1px solid var(--border-light); gap:8px; align-items:start;">
-    <span class="badge-removed">liveness dot floating near title</span>
-    <span class="badge-kept">dot embedded in agent token ⬤ CC</span>
-  </div>
-  <div style="display:grid; grid-template-columns:1fr 1fr; padding:8px 12px; gap:8px; align-items:start;">
-    <span class="badge-removed">Drive/Fleet badge on every card</span>
-    <span class="badge-kept">mode shown at column/toolbar level only</span>
-  </div>
-</div>
-
-<div style="margin-top:16px; font-family:var(--sans); font-size:12px; color:var(--ink-3);">
-  Card height: pre-start = 1 row · active (no detail) = 1 row · active with detail = 2 rows · fleet = 1 summary + N agent rows.
-  <br>Max card height is bounded: no state needs more than title + status + detail + (N fleet rows).
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px; border-bottom:1px solid var(--border-lt);"><span style="color:var(--ink-4); text-decoration:line-through">COMPLETE</span><span style="font-weight:700">Implemented</span></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px; border-bottom:1px solid var(--border-lt);"><span style="color:var(--ink-4); text-decoration:line-through">REVISION DONE</span><span style="font-weight:700">Revised</span></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px; border-bottom:1px solid var(--border-lt);"><span style="color:var(--ink-4); text-decoration:line-through">REVIEW DONE</span><span style="font-weight:700">Code reviewed</span></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px; border-bottom:1px solid var(--border-lt);"><span style="color:var(--ink-4); text-decoration:line-through">SPEC REVIEW DONE</span><span style="font-weight:700">Spec reviewed</span></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px; border-bottom:1px solid var(--border-lt);"><span style="color:var(--ink-4); text-decoration:line-through">RESEARCH DONE</span><span style="font-weight:700">Research ready</span></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px; border-bottom:1px solid var(--border-lt);"><span style="color:var(--ink-4); text-decoration:line-through">Done (terminal)</span><span style="font-weight:700">Closed</span></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px; border-bottom:1px solid var(--border-lt);"><span style="color:var(--ink-4); text-decoration:line-through">Needs you / Waiting</span><span style="font-weight:700">Needs input</span></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px; border-bottom:1px solid var(--border-lt);"><span style="color:var(--ink-4); text-decoration:line-through">awaiting review</span><span style="font-weight:700">→ needs code review</span></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px; border-bottom:1px solid var(--border-lt);"><span style="color:var(--ink-4); text-decoration:line-through">All complete</span><span style="font-weight:700">All implemented</span></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px; border-bottom:1px solid var(--border-lt);"><span style="color:var(--ink-4); text-decoration:line-through">Finished (unconfirmed)</span><span style="font-weight:700">Unconfirmed</span></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px; border-bottom:1px solid var(--border-lt);"><span style="color:var(--ink-4); text-decoration:line-through">Spec drift</span><span style="font-weight:700">State drift</span></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; padding:7px 12px;"><span style="color:var(--ink-4); text-decoration:line-through">Rebase needed</span><span style="font-weight:700">Rebase conflict</span></div>
 </div>
 
 </body>
