@@ -79,7 +79,7 @@
       return '<span class="spec-drift-wrap">' +
         '<button class="spec-drift-badge spec-drift-toggle" type="button" title="Spec folder drift detected">⚠ drift</button>' +
         '<div class="spec-drift-popover">' +
-          '<div class="spec-drift-title">Spec drift detected</div>' +
+          '<div class="spec-drift-title">State drift detected</div>' +
           '<div class="spec-drift-meta">Lifecycle: <strong>' + escHtml(drift.lifecycle || 'unknown') + '</strong></div>' +
           '<div class="spec-drift-label">Current</div>' +
           '<code class="spec-drift-path">' + escHtml(drift.currentPath || 'unknown') + '</code>' +

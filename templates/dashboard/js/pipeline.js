@@ -1,7 +1,7 @@
     // ── Pipeline / Kanban view ─────────────────────────────────────────────────
 
     const STAGE_ORDER = ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'];
-    const STAGE_LABELS = { inbox: 'Inbox', backlog: 'Backlog', 'in-progress': 'In-Progress', 'in-evaluation': 'Evaluation', done: 'Done', paused: 'Paused', triaged: 'Triaged', actionable: 'Actionable', 'wont-fix': "Won't Fix", duplicate: 'Duplicate' };
+    const STAGE_LABELS = { inbox: 'Inbox', backlog: 'Backlog', 'in-progress': 'In-Progress', 'in-evaluation': 'Evaluation', done: 'Closed', paused: 'Paused', triaged: 'Triaged', actionable: 'Actionable', 'wont-fix': "Won't Fix", duplicate: 'Duplicate' };
     const PIPELINE_STAGES_BASE = {
       features: ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'],
       research: ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'],
@@ -359,18 +359,18 @@
 
     // Baseline icon/label/cls per agent status — mirrors server STATE_RENDER_META for review states.
     const AGENT_STATUS_META = {
-      'revision-complete':    { icon: '✓', label: 'Revision complete',    cls: 'status-review-done' },
-      'revising':             { icon: '●', label: 'Revising',             cls: 'status-running'    },
-      'reviewing':            { icon: '●', label: 'Reviewing',            cls: 'status-reviewing'  },
-      'review-complete':      { icon: '✓', label: 'Review complete',      cls: 'status-review-done' },
-      'spec-reviewing':       { icon: '●', label: 'Spec reviewing',       cls: 'status-reviewing'  },
-      'spec-review-complete': { icon: '✓', label: 'Spec review complete', cls: 'status-review-done' },
-      'implementing':         { icon: '●', label: 'Implementing',         cls: 'status-running'    },
-      'implementation-complete': { icon: '✓', label: 'Complete',          cls: 'status-submitted' },
-      'ready':                { icon: '✓', label: 'Complete',             cls: 'status-submitted' },
-      'submitted':            { icon: '✓', label: 'Complete',             cls: 'status-submitted' },
-      'feedback-addressed':   { icon: '✓', label: 'Complete',             cls: 'status-submitted' },
-      'research-complete':    { icon: '✓', label: 'Research complete',    cls: 'status-submitted'  },
+      'revision-complete':    { icon: '✓', label: 'Revised',          cls: 'status-review-done' },
+      'revising':             { icon: '●', label: 'Revising',          cls: 'status-running'    },
+      'reviewing':            { icon: '●', label: 'Reviewing code',    cls: 'status-reviewing'  },
+      'review-complete':      { icon: '✓', label: 'Code reviewed',     cls: 'status-review-done' },
+      'spec-reviewing':       { icon: '●', label: 'Reviewing spec',    cls: 'status-reviewing'  },
+      'spec-review-complete': { icon: '✓', label: 'Spec reviewed',     cls: 'status-review-done' },
+      'implementing':         { icon: '●', label: 'Implementing',      cls: 'status-running'    },
+      'implementation-complete': { icon: '✓', label: 'Implemented',   cls: 'status-submitted' },
+      'ready':                { icon: '✓', label: 'Implemented',       cls: 'status-submitted' },
+      'submitted':            { icon: '✓', label: 'Implemented',       cls: 'status-submitted' },
+      'feedback-addressed':   { icon: '✓', label: 'Revised',           cls: 'status-submitted' },
+      'research-complete':    { icon: '✓', label: 'Research ready',    cls: 'status-submitted'  },
       'waiting':              { icon: '⏳', label: 'Needs input',         cls: 'status-waiting'    },
       'quota-paused':         { icon: '⏸', label: 'Quota paused',        cls: 'status-waiting'    },
       'needs-attention':      { icon: '⚠', label: 'Token limit hit',     cls: 'status-needs-attention' },
@@ -395,7 +395,7 @@
       } else if (drive && status === 'implementing') {
         icon = '●'; label = 'Implementing'; cls = 'status-running';
       } else if (status === 'implementing' && endedFlag) {
-        icon = '◐'; label = 'Finished (unconfirmed)'; cls = 'status-flagged';
+        icon = '◐'; label = 'Unconfirmed'; cls = 'status-flagged';
       }
       return { icon, label, cls, devServerUrl: agent.devServerUrl };
     }
@@ -789,7 +789,7 @@
       const closeReady = Array.isArray(feature.validActions) &&
         feature.validActions.some(a => a.action === 'feature-close' || a.action === 'feature-rebase');
       if (!closeReady) return '';
-      return '<div class="kcard-rebase-warning">⚠ Rebase needed before close</div>';
+      return '<div class="kcard-rebase-warning">⚠ Rebase conflict — rebase before closing</div>';
     }
 
     function buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn) {
