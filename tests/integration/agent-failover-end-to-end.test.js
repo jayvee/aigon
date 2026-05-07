@@ -16,6 +16,7 @@ const {
 } = require('../../lib/supervisor');
 const { chooseNextAgent } = require('../../lib/agent-exhaustion-detect');
 const { buildTmuxSessionName, createDetachedTmuxSession } = require('../../lib/worktree');
+const { _resetTmuxListCache } = require('../../lib/dashboard-status-helpers');
 
 const killSession = (name) => {
     try { spawnSync('tmux', ['kill-session', '-t', name], { stdio: 'ignore' }); } catch (_) {}
@@ -66,6 +67,9 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => {
             value: buildTmuxSessionName(featureId, 'cc', { repo: repoName, role: 'do', entityType: 'f' }),
         };
 
+        // Create an autonomous-mode tmux session so sweepEntity treats this feature
+        // as autonomous and calls the registered exhaustion handler.
+        const autoSessionName = buildTmuxSessionName(featureId, null, { repo: repoName, role: 'auto', entityType: 'f' });
         try {
             await wf.startFeature(repo, featureId, 'solo_worktree', ['cc'], {
                 agentFailover: { policy: 'switch', chain: ['cc', 'cx', 'gg'] },
@@ -80,6 +84,11 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => {
             }, 'feature');
 
             registerExhaustionHandler(makeSwitchHandler(sessionRef));
+
+            // Create the auto session and flush the tmux list cache so sweepEntity
+            // sees it and marks the feature autonomous (required for policy=switch).
+            createDetachedTmuxSession(autoSessionName, repo, 'tail -f /dev/null', {});
+            _resetTmuxListCache();
 
             const snapshot = await wf.showFeatureOrNull(repo, featureId);
             sweepEntity(repo, 'feature', featureId, snapshot, {});
@@ -106,6 +115,8 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => {
             );
         } finally {
             killSession(sessionRef.value);
+            killSession(autoSessionName);
+            _resetTmuxListCache();
             _resetExhaustionHandlers();
         }
     });
