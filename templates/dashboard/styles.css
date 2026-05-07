@@ -419,13 +419,16 @@
     .kcard-headline-glyph{font-size:11px;line-height:1;display:inline-block;width:10px;text-align:center}
     .kcard-headline-verb{color:var(--text-primary)}
     .kcard-headline-meta{margin-top:2px;font-size:10px;color:var(--text-secondary);letter-spacing:.02em}
-    /* Clamp the headline detail to two lines so long awaitingInput
-       messages (e.g. multi-line research-eval prompts) don't blow out the
-       card vertically while still showing enough text to read the gist.
-       Hover tooltip on the parent shows the full text. Single-line clamp
-       was too aggressive — cut off after 3-4 words on narrow columns. */
-    .kcard-headline-detail{margin-top:2px;font-size:10px;color:var(--text-tertiary);letter-spacing:.01em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35}
-    .kcard-headline-detail[title]{cursor:help}
+    /* Headline detail: render full text with reasonable wrapping. No
+       truncation, no tooltip — native title= tooltips are unreliable
+       and clamped detail forced the user to discover the rest. Long
+       awaitingInput messages grow the card vertically (rare; the card
+       SHOULD be loud when the user needs to respond). */
+    .kcard-headline-detail{margin-top:2px;font-size:10px;color:var(--text-tertiary);letter-spacing:.01em;line-height:1.4;word-break:break-word}
+    /* Action hint inside the detail line — for 'Needs you' state, points
+       the user at where to respond (eval terminal). Bright tone, distinct
+       from the secondary detail text so it reads as a directive. */
+    .kcard-headline-detail-action{display:block;margin-top:4px;color:#fcd34d;font-weight:600}
     .kcard-headline.tone-running{border-left-color:#4ADE80;background:rgba(74,222,128,.05)}
     .kcard-headline.tone-running .kcard-headline-verb,.kcard-headline.tone-running .kcard-headline-glyph{color:#4ADE80}
     .kcard-headline.tone-waiting{border-left-color:#fbbf24;background:rgba(251,191,36,.04)}

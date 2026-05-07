@@ -134,10 +134,19 @@
       if (ageStr) meta.push(escHtml(ageStr));
       const metaLine = meta.length ? '<div class="kcard-headline-meta">' + meta.join(' · ') + '</div>' : '';
       const detailText = h.detail ? _resolveAgentIdsInHeadlineText(h.detail) : null;
-      // Full text in title= attribute for tooltip; visible text is clamped
-      // to one line via CSS (.kcard-headline-detail). Long messages from
-      // awaitingInput etc. don't blow out the card vertically.
-      const detailLine = detailText ? '<div class="kcard-headline-detail" title="' + escHtml(detailText) + '">' + escHtml(detailText) + '</div>' : '';
+      // Render the detail in full (no clamping, no native title tooltip —
+      // both proved unreliable and forced the user to discover the rest).
+      // For 'Needs you' state, append an explicit action prompt so the user
+      // knows where to respond — the message tells them WHAT, this tells
+      // them WHERE.
+      let detailLine = '';
+      if (detailText) {
+        const isAwaitingInput = h.verb === 'Needs you';
+        const actionHint = isAwaitingInput
+          ? '<span class="kcard-headline-detail-action">→ Open eval terminal to respond</span>'
+          : '';
+        detailLine = '<div class="kcard-headline-detail">' + escHtml(detailText) + actionHint + '</div>';
+      }
       return '<div class="kcard-headline tone-' + tone + '" data-headline-tone="' + tone + '">' +
         '<div class="kcard-headline-top">' +
           '<span class="kcard-headline-glyph" aria-hidden="true">' + glyph + '</span>' +
