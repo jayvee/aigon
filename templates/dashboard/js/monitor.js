@@ -290,7 +290,7 @@
         handleMonitorClick(e) {
           const btn = e.target.closest('button');
           if (!btn) return;
-          if (btn.classList.contains('kcard-peek-btn') || (btn.classList.contains('term') && btn.hasAttribute('data-peek-session'))) {
+          if (btn.classList.contains('kcard-peek-btn')) {
             e.stopPropagation();
             const sessionName = btn.getAttribute('data-peek-session') || '';
             if (sessionName) openTerminalPanel(sessionName, null, sessionName, null, null);

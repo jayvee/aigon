@@ -17,7 +17,7 @@
 
     async function requestRefresh() {
       const btn = document.getElementById('refresh-btn');
-      if (btn) btn.classList.add('is-refreshing');
+      if (btn) btn.disabled = true;
       try {
         const res = await fetch('/api/refresh', { method: 'POST', cache: 'no-store' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -33,7 +33,7 @@
         setHealth();
         showToast('Refresh failed: ' + e.message, null, null, {error:true});
       } finally {
-        if (btn) btn.classList.remove('is-refreshing');
+        if (btn) btn.disabled = false;
       }
     }
 

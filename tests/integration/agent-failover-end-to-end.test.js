@@ -75,12 +75,6 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => {
                 agentFailover: { policy: 'switch', chain: ['cc', 'cx', 'gg'] },
             });
 
-            // Auto-failover runs only when an autonomous (-auto) tmux session is live (supervisor isAutonomous gate).
-            const autoSessionName = buildTmuxSessionName(featureId, 'solo', {
-                repo: repoName, role: 'auto', entityType: 'f',
-            });
-            createDetachedTmuxSession(autoSessionName, repo, 'tail -f /dev/null', {});
-
             writeAgentStatusAt(repo, featureId, 'cc', {
                 status: 'needs_attention',
                 worktreePath: repo,

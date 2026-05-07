@@ -520,7 +520,7 @@ function showDangerConfirm(opts) {
  * Implements 3-tier hierarchy:
  *   Primary: first high-priority action → btn-primary
  *   Secondary: other high-priority actions → btn-secondary
- *   Overflow: everything else → hidden in ··· dropdown
+ *   Overflow: everything else → hidden in ⋯ dropdown
  *
  * Special eval-done logic: when evalStatus === 'pick winner' and winnerAgent
  * exists, primary button becomes "Close & Merge [winner]".
@@ -535,8 +535,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   if (validActions.length === 0) return '';
 
   // Filter: non-per-agent, non-infra/view actions render as card-level buttons
-  // Per-agent actions are rendered in pipeline.js via buildAgentScopedActionHtml
-  // (status row for non-fleet, fleet row footers for multi-agent cards).
+  // Per-agent actions are handled by buildAgentSectionHtml.
   // Infra/view actions are rendered inline in agent sections or special UI elements.
   const evalRunning = feature.evalSession && feature.evalSession.running;
   // Collapse select-winner actions into a single "Close" button
@@ -663,7 +662,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
         + (disabledReason ? ' title="' + escHtml(disabledReason) + '"' : '')
         + '>' + escHtml(actionLabel(va)) + '</button>';
     }).join('');
-    html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">···</button><div class="kcard-overflow-menu">' + items + '</div></div>';
+    html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
   }
 
   return html;
