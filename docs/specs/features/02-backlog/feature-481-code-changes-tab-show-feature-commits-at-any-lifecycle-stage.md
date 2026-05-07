@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-07T00:04:23.543Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Code Changes tab — show feature commits at any lifecycle stage
