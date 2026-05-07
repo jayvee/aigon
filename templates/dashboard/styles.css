@@ -217,7 +217,7 @@
     .toggle-btn.active{background:var(--accent);color:#fff}
     /* Pipeline / Kanban */
     /* Cards are designed for 300-380px columns; wider viewports center leftover gutter. */
-    .kanban{display:grid;grid-template-columns:repeat(var(--kanban-cols,5),minmax(300px,380px));gap:10px;align-items:start;justify-content:center;overflow-x:auto;padding-bottom:8px;min-width:0}
+    .kanban{display:grid;grid-template-columns:repeat(var(--kanban-cols,5),minmax(300px,380px));gap:10px;align-items:start;justify-content:safe center;overflow-x:auto;padding-bottom:8px;min-width:0}
     .kanban-col{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden;min-height:120px;min-width:0}
     .kanban-col.drag-over{border-color:rgba(59,130,246,.6);background:rgba(59,130,246,.06)}
     .kanban-col.drag-blocked{border-color:rgba(239,68,68,.4)}
