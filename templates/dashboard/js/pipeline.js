@@ -1073,6 +1073,11 @@
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         innerHtml += buildCloseFailureHtml(feature);
       } else {
+        if (!isDone && agents.length === 1 && !isSoloDriveBranch) {
+          const agent = agents[0];
+          const agentActions = validActions.filter(va => va.agentId === agent.id && va.action !== 'select-winner');
+          innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType);
+        }
         const specReviews = feature.specReviewSessions || [];
         const specRevisions = feature.specRevisionSessions || feature.specCheckSessions || [];
         specReviews.forEach(r => { innerHtml += buildReviewerSectionHtml('Spec Review', r, { mode: 'spec' }); });
@@ -1196,6 +1201,22 @@
         dragState = null;
         document.querySelectorAll('.kanban-col').forEach(col => col.classList.remove('drag-over', 'drag-blocked'));
       });
+
+      card.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.kcard-va-btn');
+        if (!btn || !card.contains(btn)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        closeAllKcardOverflowMenus();
+        const vaAction = btn.getAttribute('data-va-action');
+        const vaAgentId = btn.getAttribute('data-agent') || null;
+        const va = (feature.validActions || []).find(a => a.action === vaAction && (a.agentId || null) === vaAgentId)
+          || (vaAction === 'feature-close' ? { action: 'feature-close', label: 'Close' } : null);
+        if (!va) return;
+        btn._origText = btn._origText || btn.textContent;
+        await handleFeatureAction(va, feature, repoPath, btn, pipelineType);
+      }, true);
 
       // Click to open spec drawer — skip if drag occurred or button clicked
       card.style.cursor = 'pointer';
