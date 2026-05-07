@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-07T08:35:37.142Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: patch-card-shell-duplicates
