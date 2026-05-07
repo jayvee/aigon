@@ -391,7 +391,7 @@
       // `needs-attention` (token-exhausted) is excluded from the override too —
       // tmux is alive but the agent is stuck at its prompt because of quota.
       if (tmuxRunning && status !== 'quota-paused' && status !== 'needs-attention' && !IMPLEMENTER_DONE_STATUSES.has(status) && !isCompleteStatus(status) && status !== 'waiting') {
-        icon = '●'; label = 'Implementing'; cls = 'status-running';
+        icon = '●'; label = 'Running'; cls = 'status-running';
       } else if (drive && status === 'implementing') {
         icon = '●'; label = 'Implementing'; cls = 'status-running';
       } else if (status === 'implementing' && endedFlag) {
