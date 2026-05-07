@@ -62,7 +62,7 @@ This table is the authoritative answer for "what tests do I run when I'm doing X
 | **`feature-close` (Drive mode)** | Triggers the **deploy gate** as part of the merge sequence. | Let it run. Watch for failures. | Don't bypass with `--no-verify`. Don't push past a red gate. |
 | **`feature-close` (Fleet, after adopting changes)** | Per `feature-close.md:114-117`: "After all adoptions are applied, run the project's test suite. Re-run tests until green." | Run `npm run test:core` after each adoption batch; full deploy gate before the merge. | Don't merge with adoptions unverified. |
 
-**Rule of thumb:** if you didn't change code in this turn, you don't need to run any tests. If you changed code, the iterate gate is enough until pre-push.
+**Rule of thumb:** if you didn't change code in this turn, you don't need to run any tests. If you changed code, the iterate gate is enough until the deploy gate.
 
 ---
 
@@ -72,7 +72,7 @@ These are anti-patterns that have repeatedly slowed the dev cycle. Don't:
 
 1. **Run the full Playwright suite mid-iteration.** It takes ~76s. If your diff doesn't touch `templates/dashboard/**` or `lib/(dashboard|server)*.js`, you have nothing to verify there. The iterate gate will auto-include Playwright when relevant — trust it.
 2. **Run `npm test` (full integration + workflow) "to be sure" between edits.** That's what `test:iterate` exists to scope. Re-running the full integration suite for a one-line change in `lib/scheduled-kickoff.js` runs 48 unrelated test files.
-3. **Run `bash scripts/check-test-budget.sh` mid-iteration.** Budget is a pre-push concern. Mid-iteration it just adds noise.
+3. **Run `bash scripts/check-test-budget.sh` mid-iteration.** Budget is a deploy-gate concern. Mid-iteration it just adds noise.
 4. **Re-run a green suite to "verify".** Per `feature-do.md:85`: "Ship within 60 seconds of green tests — don't re-run validation 'to be sure'."
 5. **Add a test for code that already has coverage.** Per `AGENTS.md` T3, the suite has a hard LOC ceiling (see `scripts/check-test-budget.sh` for the current value); before adding, check if coverage already exists.
 

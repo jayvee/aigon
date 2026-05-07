@@ -152,7 +152,7 @@ Examples: `fix(review): handle null user in profile lookup`, `fix(review): escap
 - If no code fixes: no tests.
 - If code fixes: no tests. Record `Validation not run by reviewer per policy` in the review log (Step 4).
 
-The implementing agent owns scoped validation after revision (`npm run test:iterate`). The pre-push / deploy gate owns full validation. The reviewer's job is diff review and targeted fixes — not validation.
+The implementing agent owns scoped validation after revision (`npm run test:iterate`). The deploy gate owns full validation. The reviewer's job is diff review and targeted fixes — not validation.
 
 ## Step 4: Update the implementation log and commit
 
