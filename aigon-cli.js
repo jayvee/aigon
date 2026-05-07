@@ -42,6 +42,7 @@ let createSignalHealthCommands;
 let createAigonEvalCommands;
 let checkForUpdate, getCachedUpdateCheck, formatUpdateNotice;
 let createSecurityScanCommands;
+let createProCommands;
 
 try {
     ({ COMMAND_ALIASES } = require('./lib/constants'));
@@ -59,6 +60,7 @@ try {
     ({ createSignalHealthCommands } = require('./lib/commands/signal-health'));
     ({ createAigonEvalCommands } = require('./lib/commands/aigon-eval'));
     ({ createSecurityScanCommands } = require('./lib/commands/security-scan'));
+    ({ createProCommands } = require('./lib/commands/pro'));
     ({ checkForUpdate, getCachedUpdateCheck, formatUpdateNotice } = require('./lib/npm-update-check'));
 } catch (error) {
     console.error(formatCliError(error));
@@ -89,6 +91,7 @@ const commands = {
     ...createSignalHealthCommands(),
     ...createAigonEvalCommands(),
     ...createSecurityScanCommands(),
+    ...createProCommands(),
 };
 
 const args = process.argv.slice(2);
