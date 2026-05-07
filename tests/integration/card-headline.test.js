@@ -71,7 +71,7 @@ test('rule 3: awaitingInput supersedes a running drive agent', () => {
 });
 
 // Rule 4
-test('rule 4: pendingCompletionSignal with !isWorking → Confirm <signal>', () => {
+test('rule 4: pendingCompletionSignal with !isWorking → friendly done label', () => {
     const agents = [{
         id: 'cc',
         status: 'submitted',
@@ -79,7 +79,9 @@ test('rule 4: pendingCompletionSignal with !isWorking → Confirm <signal>', () 
         pendingCompletionSignal: 'implementation-complete',
     }];
     const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Confirm implementation-complete');
+    assert.strictEqual(h.verb, 'Implementation done');
+    assert.strictEqual(h.tone, 'ready');
+    assert.strictEqual(h.detail, 'confirm to proceed');
     assert.strictEqual(h.owner, 'cc');
 });
 
