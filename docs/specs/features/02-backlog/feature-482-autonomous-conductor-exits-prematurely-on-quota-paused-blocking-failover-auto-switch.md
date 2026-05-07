@@ -23,8 +23,8 @@ The fix: the conductor should not unconditionally stop when it detects `quota-pa
 
 - [ ] When a solo autonomous run's implementer transitions to `quota-paused` AND `agentFailover.policy === 'switch'` AND a next agent exists in the chain, the conductor does NOT call `stopAutoSession()` — it stays alive.
 - [ ] The conductor's live tmux session remains present, so `safeFeatureAutoSessionExists` returns `{ running: true }` and `isAutonomous = true` when the supervisor fires the exhaustion handler.
-- [ ] The pro failover handler (`switchFeatureAgent`) is invoked automatically by the supervisor, spawning the next agent without a manual dashboard click.
-- [ ] After the failover switches the runtime agent, the conductor resumes its run loop polling the same cx slot (now executing cu) and continues to completion.
+- [ ] The conductor's live tmux session satisfies the supervisor's `isAutonomous` check, enabling the supervisor's exhaustion handler to invoke the pro failover path (`switchFeatureAgent`) automatically without requiring a manual dashboard click. (Full end-to-end verification requires aigon-pro; the OSS change guarantees the conductor stays alive so the supervisor *can* trigger it.)
+- [ ] After the failover switches the runtime agent, the conductor resumes its run loop polling the implementer slot (now running the next agent in the chain) and continues to completion.
 - [ ] If `agentFailover.policy !== 'switch'` (i.e. `pause` or `notify`), or no next agent exists in the chain, the conductor still exits immediately as before — no behaviour change for those cases.
 - [ ] `npm run test:iterate` passes.
 
@@ -54,7 +54,7 @@ The supervisor will detect token exhaustion from the implementer's tmux pane ind
 
 **Files to change:** `lib/feature-autonomous.js` only (OSS). No aigon-pro changes needed — the pro failover handler is already triggered by the supervisor's exhaustion detection path, which remains unchanged.
 
-**Timeout guard:** To avoid the conductor looping forever if pro isn't installed or the failover silently fails, add a counter: after `MAX_FAILOVER_WAIT_CYCLES` (e.g. 6 × 10s = 60s) of still seeing `quota-paused` on the slot, fall through to the original `finishAuto + stopAutoSession` path. Log a warning when this happens.
+**Timeout guard:** To avoid the conductor looping forever if pro isn't installed or the failover silently fails, add a counter: after `MAX_FAILOVER_WAIT_CYCLES` (e.g. 4 × `pollSeconds` ≈ 120 s by default) of still seeing `quota-paused` on the slot, fall through to the original `finishAuto + stopAutoSession` path. Log a warning when this happens.
 
 ## Dependencies
 
@@ -68,7 +68,7 @@ The supervisor will detect token exhaustion from the implementer's tmux pane ind
 
 ## Open Questions
 
-- Should the conductor emit a `feature.agent_failover_pending` workflow event when it enters the "staying alive for handoff" state? Useful for dashboard visibility but not strictly required for correctness.
+- Should the conductor emit a `feature.agent_failover_pending` workflow event when it enters the "staying alive for handoff" state? Defer — useful for dashboard visibility but not strictly required for correctness in this iteration.
 
 ## Related
 
