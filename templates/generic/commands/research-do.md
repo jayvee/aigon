@@ -102,9 +102,8 @@ This updates your agent state in the main repo so the dashboard and coordinator 
    ```
    If this exits non-zero because the session context wasn't detected (e.g. you're on `main`), run it with explicit args:
    ```bash
-   aigon agent-status research-complete <ID> {{AGENT_ID}}
+   aigon agent-status research-complete {{ARG_SYNTAX}} {{AGENT_ID}}
    ```
-   Replace `<ID>` with the numeric research ID (e.g. `36`).
 
    The command **must exit 0** before you can claim your research is complete.
 

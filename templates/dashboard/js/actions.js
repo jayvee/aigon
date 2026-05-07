@@ -954,7 +954,10 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
       await requestAction(va.action, [id, ...(agentId ? [agentId] : [])], repoPath, btn);
       break;
     case 'feature-nudge':
-      showNudgeModal(feature, repoPath, btn);
+      showNudgeModal(feature, repoPath, btn, 'feature');
+      break;
+    case 'research-nudge':
+      showNudgeModal(feature, repoPath, btn, 'research');
       break;
     default:
       // Generic handler: agent-mode actions get agent picker + terminal session
@@ -1055,6 +1058,7 @@ let closeModalPipelineType = null;
 let nudgeModalFeature = null;
 let nudgeModalRepoPath = null;
 let nudgeModalBtn = null;
+let nudgeModalEntityType = 'feature';
 let autonomousModalFeature = null;
 let autonomousModalRepoPath = null;
 let autonomousModalBtn = null;
@@ -1128,10 +1132,11 @@ function renderNudgeHistory(feature) {
   }).join('');
 }
 
-function showNudgeModal(feature, repoPath, btn) {
+function showNudgeModal(feature, repoPath, btn, entityType) {
   nudgeModalFeature = feature;
   nudgeModalRepoPath = repoPath;
   nudgeModalBtn = btn || null;
+  nudgeModalEntityType = entityType || 'feature';
   const modal = document.getElementById('nudge-modal');
   const desc = document.getElementById('nudge-modal-desc');
   const agentSelect = document.getElementById('nudge-modal-agent');
@@ -1158,9 +1163,41 @@ function showNudgeModal(feature, repoPath, btn) {
     roleSelect.value = 'do';
   }
   messageInput.value = '';
+  renderNudgeQuickItems(nudgeModalEntityType);
   renderNudgeHistory(feature);
   modal.style.display = 'flex';
   window.setTimeout(() => messageInput.focus(), 0);
+}
+
+function renderNudgeQuickItems(entityType) {
+  const box = document.getElementById('nudge-modal-quick');
+  if (!box) return;
+  const isResearch = entityType === 'research';
+  const items = isResearch
+    ? [
+        { label: 'research stuck', signal: 'research-complete', message: 'Complete your research now, write up your findings, then run: aigon agent-status research-complete (do not add any extra arguments — this marks YOUR slot complete)' },
+      ]
+    : [
+        { label: 'implementation stuck', signal: 'implementation-complete', message: 'Complete the implementation now, then run: aigon agent-status implementation-complete' },
+        { label: 'code review stuck', signal: 'review-complete', message: 'Please complete the code review now. Write up your findings and run: aigon agent-status review-complete' },
+        { label: 'revision stuck', signal: 'revision-complete', message: 'Complete the revision addressing all review feedback, then run: aigon agent-status revision-complete' },
+      ];
+  const rowStyle = 'display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;transition:border-color .12s';
+  box.innerHTML = items.map((item, i) =>
+    '<div style="' + rowStyle + '" data-quick-nudge-index="' + i + '"' +
+    ' onmouseover="this.style.borderColor=\'var(--border-default)\'" onmouseout="this.style.borderColor=\'\'">' +
+    '<span style="font-size:11px;color:var(--text-secondary);font-weight:600;flex-shrink:0;min-width:130px">' + escHtml(item.label) + '</span>' +
+    '<span style="font-size:11px;color:var(--text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-family:var(--mono)">' + escHtml(item.signal) + '</span>' +
+    '</div>'
+  ).join('');
+  // Wire clicks using JS (avoids quote-escaping issues in inline onclick)
+  box.querySelectorAll('[data-quick-nudge-index]').forEach(el => {
+    const idx = parseInt(el.getAttribute('data-quick-nudge-index'), 10);
+    el.onclick = () => {
+      const input = document.getElementById('nudge-modal-message');
+      if (input) input.value = items[idx].message;
+    };
+  });
 }
 
 function hideNudgeModal() {
@@ -1169,6 +1206,7 @@ function hideNudgeModal() {
   nudgeModalFeature = null;
   nudgeModalRepoPath = null;
   nudgeModalBtn = null;
+  nudgeModalEntityType = 'feature';
 }
 
 async function submitNudgeModal() {
@@ -1190,8 +1228,13 @@ async function submitNudgeModal() {
   const featureId = nudgeModalFeature.id;
   const repoPath = nudgeModalRepoPath;
   const btn = nudgeModalBtn;
+  const entityType = nudgeModalEntityType;
   hideNudgeModal();
-  await requestFeatureNudge(featureId, { agentId, role, message }, repoPath, btn);
+  if (entityType === 'research') {
+    await requestResearchNudge(featureId, { agentId, role, message }, repoPath, btn);
+  } else {
+    await requestFeatureNudge(featureId, { agentId, role, message }, repoPath, btn);
+  }
 }
 
 function renderAgentPickerRows(options) {

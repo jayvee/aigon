@@ -380,11 +380,18 @@
 
     function buildAgentStatusHtml(agent, options) {
       const opts = options || {};
+      const entityType = opts.entityType || 'feature';
+      const isResearch = entityType === 'research';
       const status = agent.status || 'idle';
       const tmuxRunning = agent.tmuxRunning || false;
       const drive = isSoloDrive(agent);
       const endedFlag = !!(agent.flags && agent.flags.sessionEnded);
-      let { icon, label, cls } = AGENT_STATUS_META[status] || AGENT_STATUS_DEFAULT;
+
+      // Research agents: remap done statuses that use feature terminology to research-appropriate labels
+      const effectiveStatus = isResearch && (status === 'submitted' || status === 'ready' || status === 'implementation-complete')
+        ? 'research-complete'
+        : status;
+      let { icon, label, cls } = AGENT_STATUS_META[effectiveStatus] || AGENT_STATUS_DEFAULT;
 
       // Compound overrides: tmux-alive only means "Implementing" when the agent has not signaled done.
       // Once the implementer is in a *_DONE_STATUSES state, the pane is just idling at its prompt —
@@ -392,9 +399,9 @@
       // `needs-attention` (token-exhausted) is excluded from the override too —
       // tmux is alive but the agent is stuck at its prompt because of quota.
       if (tmuxRunning && status !== 'quota-paused' && status !== 'needs-attention' && !IMPLEMENTER_DONE_STATUSES.has(status) && !isCompleteStatus(status) && status !== 'waiting') {
-        icon = '●'; label = 'Implementing'; cls = 'status-running';
+        icon = '●'; label = isResearch ? 'Researching' : 'Implementing'; cls = 'status-running';
       } else if (drive && status === 'implementing') {
-        icon = '●'; label = 'Implementing'; cls = 'status-running';
+        icon = '●'; label = isResearch ? 'Researching' : 'Implementing'; cls = 'status-running';
       } else if (status === 'implementing' && endedFlag) {
         icon = '◐'; label = 'Unconfirmed'; cls = 'status-flagged';
       }
@@ -614,10 +621,10 @@
       const displayName = runtimeId !== slotId
         ? runtimeName + ' (was ' + (AGENT_DISPLAY_NAMES[slotId] || slotId) + ')'
         : runtimeName;
-      const s = buildAgentStatusHtml(agent, { showDevLink: true });
+      const entityType = pipelineType === 'research' ? 'research' : 'feature';
+      const s = buildAgentStatusHtml(agent, { showDevLink: true, entityType });
       const devServerLink = buildDevServerLinkHtml(s.devServerUrl);
       const devSlot = devServerLink ? '<span class="kcard-dev-slot">' + devServerLink + '</span>' : '';
-      const entityType = pipelineType === 'research' ? 'research' : 'feature';
 
       const isQuotaChipVa = va => va.metadata && va.metadata.quotaPaused &&
         (va.action === 'agent-resume' || va.action === 'drop-agent');

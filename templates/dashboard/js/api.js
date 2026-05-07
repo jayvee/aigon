@@ -178,8 +178,8 @@
       }
     }
 
-    async function requestFeatureNudge(featureId, payload, repoPath, btn) {
-      const pendingKey = 'feature-nudge:' + String(featureId || '');
+    async function requestEntityNudge(entityType, entityId, payload, repoPath, btn) {
+      const pendingKey = entityType + '-nudge:' + String(entityId || '');
       if (state.pendingActions.has(pendingKey)) return null;
       state.pendingActions.add(pendingKey);
       const origText = btn ? btn.textContent : '';
@@ -189,7 +189,7 @@
       }
       const processingToast = showToast('Sending nudge…', null, null, { processing: true });
       try {
-        const res = await fetch('/api/feature/' + encodeURIComponent(String(featureId || '')) + '/nudge', {
+        const res = await fetch('/api/' + entityType + '/' + encodeURIComponent(String(entityId || '')) + '/nudge', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
@@ -220,6 +220,14 @@
           btn.textContent = origText || 'Send nudge';
         }
       }
+    }
+
+    function requestFeatureNudge(featureId, payload, repoPath, btn) {
+      return requestEntityNudge('feature', featureId, payload, repoPath, btn);
+    }
+
+    function requestResearchNudge(researchId, payload, repoPath, btn) {
+      return requestEntityNudge('research', researchId, payload, repoPath, btn);
     }
 
     async function requestFeatureAutonomousRun(featureId, options, repoPath, btn) {
