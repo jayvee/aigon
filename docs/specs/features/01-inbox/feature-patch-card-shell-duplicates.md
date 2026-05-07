@@ -25,12 +25,19 @@ revert F489.**
 
 ### Defect 1 — Triple state label on solo cards
 
-Image #6 shows `🔧 Implementing` (inline with title) AND `IMPLEMENTED · CC · 53s` (status row, uppercase) AND `✓ Implemented` (in agent section box) — three render paths for the same state on one solo card.
+Image #6 shows three independent render paths for the same state on one solo card:
 
-- [ ] On solo / single-agent cards (`agents.length === 1`), the state appears in **exactly one** location: the status row (`.kcard-status-row` left side). Reads like `[icon] Implemented · CC · 53s`.
-- [ ] The inline-with-title headline (`buildCardHeadlineHtml` glyph + verb in the title row, e.g. `🔧 Implementing`) is removed for solo cards. Glyph migrates into the status row's left side so the status icon is preserved.
-- [ ] The agent-section's per-agent status (`buildAgentSectionHtml` `✓ Implemented`) is hidden when the card is solo. Multi-agent (fleet) cards keep per-agent statuses.
-- [ ] No new server payload fields. State display continues to read from `feature.cardHeadline` (verb/glyph/owner/age) and per-agent `agent.status` only — and only one of those wins per card.
+| Visible text | Source | File:line | Server field |
+|---|---|---|---|
+| `🔧 Implementing` (inline with `#01 format date`) | `buildStateRenderBadgeHtml` | `templates/dashboard/js/utils.js:93-97` | `feature.stateRenderMeta.badge` (label as tooltip) |
+| `IMPLEMENTED · CC · 53s` (status row, uppercase) | `buildStatusLeftHtml` | `templates/dashboard/js/pipeline.js:862-890` | `feature.cardHeadline.verb` |
+| `✓ Implemented` (inside agent box) | `buildAgentSectionHtml` | `templates/dashboard/js/pipeline.js:604-…` | per-agent `agent.status` |
+
+- [ ] On solo (single-agent) cards, the state appears in **exactly one** location: the status row (`.kcard-status-row` left side via `buildStatusLeftHtml`). Reads like `[glyph] Implemented · CC · 53s`.
+- [ ] `buildStateRenderBadgeHtml` no longer renders the **lifecycle-verb** badge inline with the title on solo cards (the duplicate `🔧 Implementing`). The state-render badge slot stays available for genuinely orthogonal information (e.g. spec drift, scheduled run) — only the lifecycle-verb duplicate is suppressed. The implementer must read `lib/state-render-meta.js` (or equivalent) to identify which `stateRenderMeta` codes are lifecycle-verb duplicates of `cardHeadline.verb` and which are independent signals worth keeping.
+- [ ] The agent-section's per-agent status row (`✓ Implemented` in image #6) is hidden when `agents.length === 1`. The agent-section box itself may stay if it carries other content (model name, etc.), but its status pill is removed.
+- [ ] Status-row left side picks up the glyph from `feature.cardHeadline.glyph` (already populated by `lib/card-headline.js`) so the status icon is preserved when the inline state-render badge is suppressed.
+- [ ] No new server payload fields. The patch only suppresses redundant render paths; `stateRenderMeta`, `cardHeadline`, and per-agent `status` all remain populated server-side.
 
 ### Defect 2 — Casing drift across render paths
 
@@ -97,7 +104,19 @@ This patch only removes redundant DOM in the solo path and corrects two CSS alig
 - `templates/dashboard/styles.css` — two `justify-content` flips (lines 321 and 430), one `text-transform: uppercase` removal on `.kcard-status-left`, plus any selector updates required when the agent-section subtree is hidden on solo.
 - `tests/dashboard-snapshots/**` (or wherever Playwright fixtures live) — update casing-sensitive selectors.
 
-**Solo detection:** the relevant condition is **`agents.length === 1`** — every single-agent card has the same duplicate-render problem regardless of which agent is assigned. Confirm this assumption against fleet-promoted-from-solo edge cases (`feature-eval` flow) before relying on it.
+**Solo detection — important.** `pipeline.js` already has an `isSoloDriveBranch` predicate at line 970:
+```
+const isSoloDriveBranch = agents.length === 1 && agents[0].id === 'solo' && !agents[0].tmuxSession;
+```
+This is **too narrow** — it only matches `agent.id === 'solo'` with no tmux session. A normal **cc-in-worktree** card has `agents.length === 1` and a live tmux session but `agents[0].id === 'cc'`, so `isSoloDriveBranch === false` — and the card falls into the `agents.length === 1 && !isSoloDriveBranch` branch at line 1074, which renders `buildAgentSectionHtml` for the lone agent. **That is the duplicate eye/overflow source.**
+
+The patch should introduce a broader **`isSoloCard`** predicate:
+```
+const isSoloCard = agents.length === 1 && !isFleet;
+```
+…and use it to gate the agent-section render at line 1077, the inline state-render badge in the title row at line 1005 (lifecycle-verb cases only), and the agent-section's status/peek/overflow children for defects 1/3/4. The existing `isSoloDriveBranch` stays for whatever else uses it (it has a more specific meaning).
+
+**Edge case — eval-promoted from solo:** when a feature transitions through eval, `agents.length` may temporarily be 1 with `feature.evalSession.running === true`. Confirm by inspection that the `isFleet` flag at line 971 (`agents.length > 1 && (feature.evalSession || feature.winnerAgent)`) correctly classifies this case before relying on `isSoloCard`. If it doesn't, broaden `isSoloCard` to also require `!feature.evalSession`.
 
 **What this patch is NOT:**
 - It is not a re-redesign. The 2-row shell stays.
@@ -117,9 +136,8 @@ This patch only removes redundant DOM in the solo path and corrects two CSS alig
 
 ## Open Questions
 
-- **Glyph location after dropping the inline title-row headline**: drop the glyph entirely, or move it into the status row's left side (e.g. `🔧 Implemented · CC · 53s`)? Default: move into status row, prefix the label.
-- **Solo + autonomous (single agent + autonomous plan)**: do we still want the autonomous stage track below the status row? Yes — it carries plan information, not duplicate state. Verify it does not double-up with the status row's verb.
-- **Fleet sequential (`agents.length === 2`, one done + one active)**: fleet behaviour is preserved, but check the duplicate problem doesn't reappear on the *active* agent's row when the cardHeadline already names that agent. Default: per-agent rows always render their own status; the cardHeadline's owner field is the *primary* agent only.
+- **`stateRenderMeta` lifecycle-verb classification**: which `stateRenderMeta` codes count as duplicates of `cardHeadline.verb` and should be suppressed inline, vs which carry orthogonal information that should still render? Implementer must enumerate and decide. Default for ambiguous cases: suppress when the badge text and `cardHeadline.verb` map to the same lifecycle phase; keep when the badge surfaces a distinct condition (drift, schedule, error) not in the headline.
+- **Solo + autonomous (single agent + autonomous plan)**: keep the autonomous stage track below the status row — it carries plan information, not duplicate state. Verify the running stage's verb does not also render in the inline state-render badge. If it does, suppress the inline badge in this case too (autonomous run is still a "solo card" for purposes of this patch).
 
 ## Related
 
