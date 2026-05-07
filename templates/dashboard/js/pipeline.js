@@ -360,7 +360,8 @@
     // Baseline icon/label/cls per agent status — mirrors server STATE_RENDER_META for review states.
     const AGENT_STATUS_META = {
       'revision-complete':    { icon: '✓', label: 'Revised',          cls: 'status-review-done' },
-      'revising':             { icon: '●', label: 'Revising',          cls: 'status-running'    },
+      'addressing-code-review': { icon: '●', label: 'Addressing code review', cls: 'status-running'    },
+      'addressing-spec-review': { icon: '●', label: 'Addressing spec review', cls: 'status-reviewing'  },
       'reviewing':            { icon: '●', label: 'Reviewing code',    cls: 'status-reviewing'  },
       'review-complete':      { icon: '✓', label: 'Code reviewed',     cls: 'status-review-done' },
       'spec-reviewing':       { icon: '●', label: 'Reviewing spec',    cls: 'status-reviewing'  },
