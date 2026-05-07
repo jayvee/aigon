@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-07T01:45:58.310Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: km inject via /skill: command instead of tmux paste-buffer
