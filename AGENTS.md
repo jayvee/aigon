@@ -275,25 +275,33 @@ When `origin` is GitHub and `gh` is available, `feature-close` does a best-effor
 ### T1 — two distinct gates: iterate vs. pre-push
 The test suite runs at two tiers; do not collapse them into one.
 
-**Pre-push gate** (before `git push` / `aigon agent-status implementation-complete` / `feature-close`):
+**Deploy gate** (before `git push` / `aigon agent-status implementation-complete` / `feature-close`):
 ```bash
-npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh
+npm run test:deploy
 ```
-All three must pass. Do NOT push with a failing suite. Do NOT skip hooks with `--no-verify`.
+Equivalent to `npm run test:core && npm run test:browser && bash scripts/check-test-budget.sh`. All stages must pass. Do NOT push with a failing suite. Do NOT skip hooks with `--no-verify`.
 
 **Iterate-loop gate** (per autopilot iteration; `aigon feature-do <ID> --iterate`):
 ```bash
 npm run test:iterate
 ```
-Scoped: lint on changed `lib/` files, integration/workflow tests whose filename matches keywords from `git diff`, plus a 5-test smoke fallback. **No Playwright. No budget check.** Implementation lives in `lib/test-loop/scoped.js` and `scripts/iterate-validate.js`. Wall-time target <30s.
+Scoped: lint on changed `lib/` files, integration/workflow tests whose filename matches keywords from `git diff`, plus a 5-test smoke fallback. **No Playwright. No budget check.** When dashboard files are in the diff, the gate automatically runs `test:browser:smoke` (Playwright @smoke subset) instead of the full 2-minute browser suite. Implementation lives in `lib/test-loop/scoped.js` and `scripts/iterate-validate.js`. Wall-time target <30s.
 
-**Agents must NOT manually run `npm run test:ui` mid-iteration** unless the iteration touched `templates/dashboard/**`, `lib/dashboard*.js`, or `lib/server*.js`. The scoped runner will invoke Playwright automatically when those paths are in the diff. The `## Pre-authorised` template default authorises this skip.
+**Agents must NOT manually run `test:browser`, `test:deploy`, `test:ui`, or the full Playwright suite mid-iteration.** The scoped runner invokes the smoke browser subset automatically when dashboard paths are in the diff. The `## Pre-authorised` template default authorises skipping the full browser suite mid-iteration.
+
+**Test stage reference:**
+- `npm run test:quick` / `test:iterate` — iterate gate (alias)
+- `npm run test:core` — lint + diagrams + integration + workflow (no browser)
+- `npm run test:browser` — full Playwright E2E suite (MOCK_DELAY=fast)
+- `npm run test:browser:smoke` — Playwright @smoke subset (fast, auto-run in iterate gate)
+- `npm run test:deploy` — core + browser + budget (the deploy gate)
+- `npm run test:all` — alias for `test:deploy`
 
 ### T2 — new code ships with a test
 New modules, new exported functions with non-trivial logic, and bug fixes ship with a test in the same commit. Exceptions: pure config, pure docs, pure template edits, system-integration code (launchd, signals, sockets) — and state the exception in the commit message. Every new test includes a one-line comment naming the specific regression it prevents (`// REGRESSION: ...`).
 
 ### T3 — test suite hard ceiling
-Total LOC in `tests/` must stay ≤ **2,500** (default in `scripts/check-test-budget.sh`). Enforced by `scripts/check-test-budget.sh`. Before adding a test, first check whether an older one can be deleted (integration test subsumes unit; code rewritten; duplicated coverage). Forbidden patterns: snapshot tests, mock-heavy tests where mock setup > assertion count, trivial-getter tests, private-implementation tests. Escape valve: if you hit the ceiling and genuinely need to add, ask the user for a one-time bump — never raise the ceiling silently; raising the default requires deleting at least one test file in the same commit (enforced by the budget script).
+Total LOC in `tests/` must stay at or below the ceiling set in `scripts/check-test-budget.sh` (currently **10,550** — check the script for the live value). Enforced by `scripts/check-test-budget.sh`. Before adding a test, first check whether an older one can be deleted (integration test subsumes unit; code rewritten; duplicated coverage). Forbidden patterns: snapshot tests, mock-heavy tests where mock setup > assertion count, trivial-getter tests, private-implementation tests. Escape valve: if you hit the ceiling and genuinely need to add, ask the user for a one-time bump — never raise the ceiling silently; raising the default requires deleting at least one test file in the same commit (enforced by the budget script).
 
 ## Frontend & Visual Design Rules
 **MANDATORY: Always invoke `Skill(frontend-design)` before editing any visual component** — page layouts, CSS, component styling, colors, typography, spacing, borders, shadows.

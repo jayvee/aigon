@@ -63,7 +63,7 @@ const SCENARIOS = [
     },
 ];
 for (const s of SCENARIOS) {
-    test.describe(`Solo ${s.mode} lifecycle`, () => {
+    test.describe(`Solo ${s.mode} lifecycle @deploy`, () => {
         test(`full solo-${s.mode} lifecycle: inbox → start → submit → close → done`, async ({ page }) => {
             const ctx = readCtx();
             await gotoPipelineWithMockedSessions(page);

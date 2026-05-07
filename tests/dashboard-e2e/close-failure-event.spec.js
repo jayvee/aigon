@@ -72,7 +72,7 @@ async function seedCloseFailure(repoPath) {
     );
     return featureId;
 }
-test.describe('Close failure event dashboard rendering', () => {
+test.describe('Close failure event dashboard rendering @smoke', () => {
     test('snapshot with merge-conflict lastCloseFailure shows "Resolve & close" and failure info', async ({ page }) => {
         const ctx = readCtx();
         const repoPath = ctx.tmpDir;

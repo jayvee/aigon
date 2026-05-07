@@ -26,7 +26,7 @@ const {
 const FEATURE_NAME = 'e2e fleet feature';
 const FEATURE_DESC = 'e2e-fleet-feature';
 
-test('full fleet lifecycle: start (cc+gg) → both submit → eval → winner pick → close → done', async ({ page }) => {
+test('full fleet lifecycle: start (cc+gg) → both submit → eval → winner pick → close → done @deploy', async ({ page }) => {
     const ctx = readCtx();
     await gotoPipelineWithMockedSessions(page);
 
