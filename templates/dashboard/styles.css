@@ -419,10 +419,12 @@
     .kcard-headline-glyph{font-size:11px;line-height:1;display:inline-block;width:10px;text-align:center}
     .kcard-headline-verb{color:var(--text-primary)}
     .kcard-headline-meta{margin-top:2px;font-size:10px;color:var(--text-secondary);letter-spacing:.02em}
-    /* Clamp the headline detail to a single line so long awaitingInput
+    /* Clamp the headline detail to two lines so long awaitingInput
        messages (e.g. multi-line research-eval prompts) don't blow out the
-       card vertically. Hover tooltip on the parent shows the full text. */
-    .kcard-headline-detail{margin-top:2px;font-size:10px;color:var(--text-tertiary);letter-spacing:.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+       card vertically while still showing enough text to read the gist.
+       Hover tooltip on the parent shows the full text. Single-line clamp
+       was too aggressive — cut off after 3-4 words on narrow columns. */
+    .kcard-headline-detail{margin-top:2px;font-size:10px;color:var(--text-tertiary);letter-spacing:.01em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35}
     .kcard-headline-detail[title]{cursor:help}
     .kcard-headline.tone-running{border-left-color:#4ADE80;background:rgba(74,222,128,.05)}
     .kcard-headline.tone-running .kcard-headline-verb,.kcard-headline.tone-running .kcard-headline-glyph{color:#4ADE80}

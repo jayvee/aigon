@@ -622,9 +622,13 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   function renderBtn(va, cls) {
     const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
     const isBlocked = (va.action === 'feature-start') && feature.blockedBy && feature.blockedBy.length > 0;
-    // research-close is premature while an agent is awaiting input OR the
-    // eval session is still running — clicking now abandons the eval work.
-    // Dim the button + show a tooltip explaining when it'll unlock.
+    // research-close: when the eval session is still running OR an agent
+    // has awaitingInput, clicking now might abandon eval work in progress.
+    // BUT the dashboard can't reliably detect when it's safe to close
+    // (awaitingInput stays set until the agent's next status write, which
+    // may never happen). So this is a SOFT warning, not a hard disable —
+    // dim to btn-secondary, add an advisory tooltip, but keep clickable.
+    // The user knows whether their eval is done; the dashboard doesn't.
     const isResearchEvalInFlight = va.action === 'research-close' && (
       ((feature.agents || []).some(a => a && a.awaitingInput && a.awaitingInput.message))
       || (feature.evalSession && feature.evalSession.running)
@@ -637,8 +641,8 @@ function renderActionButtons(feature, repoPath, pipelineType) {
       return '<button class="' + waitCls + '" data-va-action="' + escHtml(va.action) + '"' + agentAttr + ' disabled title="Start unlocks when these are done: ' + escHtml(blockedIds) + '">' + escHtml(actionLabel(va)) + '</button>';
     }
     if (isResearchEvalInFlight) {
-      const waitCls = cls.indexOf('btn-primary') !== -1 ? 'btn btn-secondary kcard-va-btn' : cls;
-      return '<button class="' + waitCls + '" data-va-action="' + escHtml(va.action) + '"' + agentAttr + ' disabled title="Eval is still in progress — wait for the agent to finish creating features.">' + escHtml(actionLabel(va)) + '</button>';
+      const softCls = cls.indexOf('btn-primary') !== -1 ? 'btn btn-secondary kcard-va-btn' : cls + ' kcard-va-btn';
+      return '<button class="' + softCls + '" data-va-action="' + escHtml(va.action) + '"' + agentAttr + ' title="Eval may still be running. Make sure the agent has finished creating features before closing.">' + escHtml(actionLabel(va)) + '</button>';
     }
     return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(va.action) + '"' + agentAttr + (va.disabled ? ' disabled' : '') + titleAttr + '>' + escHtml(actionLabel(va)) + '</button>';
   }
