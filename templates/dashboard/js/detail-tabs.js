@@ -403,7 +403,9 @@
             : '<div class="commit-files-empty">No file diff available.</div>';
           return '<details class="commit-row" data-commit-idx="' + idx + '">' +
             '<summary class="commit-summary">' +
-              '<span class="commit-hash mono" data-copy-hash="' + escHtml(c.hash) + '" title="Click to copy">' + escHtml(c.hash) + '</span>' +
+              (payload.repoUrl && c.fullHash
+                ? '<a class="commit-hash mono" href="' + escHtml(payload.repoUrl + '/commit/' + c.fullHash) + '" target="_blank" rel="noopener noreferrer" title="View on GitHub">' + escHtml(c.hash) + '</a>'
+                : '<span class="commit-hash mono" data-copy-hash="' + escHtml(c.hash) + '" title="Click to copy">' + escHtml(c.hash) + '</span>') +
               '<span class="commit-message">' + escHtml(c.message || '') + '</span>' +
               '<span class="commit-meta">' + escHtml(c.author || '') + ' · ' + escHtml(formatRelativeTimestamp(c.timestamp)) + '</span>' +
             '</summary>' +
