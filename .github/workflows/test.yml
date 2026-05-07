@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  core:
+    name: Core (${{ matrix.node-version }})
     runs-on: ubuntu-latest
 
     strategy:
@@ -33,11 +34,32 @@ jobs:
           node -c lib/utils.js
           node -c lib/dashboard-server.js
 
-      - name: Workflow diagrams up-to-date
-        run: npm run workflow:diagrams:check
-
-      - name: Run unit tests
-        run: npm test
+      - name: Core suite (lint + diagrams + integration + workflow)
+        run: npm run test:core
 
       - name: Test budget under ceiling
         run: bash scripts/check-test-budget.sh
+
+  browser:
+    name: Browser E2E (deploy gate)
+    runs-on: ubuntu-latest
+    # Only run the slow browser tier on push to main, not on every PR.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser E2E suite
+        run: npm run test:browser

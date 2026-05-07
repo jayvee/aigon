@@ -31,7 +31,7 @@ const path = require('path');
 const FEATURE_NAME = 'wf e2e feature';
 const FEATURE_DESC = 'wf-e2e-feature';
 
-test.describe('Workflow E2E (full lifecycle)', () => {
+test.describe('Workflow E2E (full lifecycle) @deploy', () => {
     test('mock lifecycle: create → backlog → in-progress → submitted → closed', async ({ page }) => {
         const ctx = readCtx();
         await gotoPipelineWithMockedSessions(page);

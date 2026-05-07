@@ -25,7 +25,7 @@ const STAGE_ACTIONS = [
 ];
 
 test.describe('Dashboard state consistency', () => {
-    test('/api/status column counts match UI + response has required fields', async ({ page }) => {
+    test('/api/status column counts match UI + response has required fields @smoke', async ({ page }) => {
         await gotoPipelineWithMockedSessions(page);
 
         const resp = await page.request.get('/api/status');

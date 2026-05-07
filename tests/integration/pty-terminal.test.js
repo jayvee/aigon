@@ -55,8 +55,8 @@ testAsync('node-pty smoke: alt-screen + bracketed-paste transit', () => {
         const p = pty.spawn(process.execPath, ['-e', "process.stdout.write('\\x1b[?1049h\\x1b[?2004h\\x1b[?2004l\\x1b[?1049l');process.exit(0);"],
             { name: 'xterm-256color', cols: 80, rows: 24, cwd: process.cwd(), env: process.env });
         p.onData(d => chunks.push(d));
-        p.onExit(() => { const s = chunks.join(''); a.ok(s.includes('\x1b[?1049h')); a.ok(s.includes('\x1b[?2004h')); res(); });
-        setTimeout(() => rej(new Error('timeout')), 5000);
+        let guard = setTimeout(() => rej(new Error('timeout')), 5000);
+        p.onExit(() => { clearTimeout(guard); const s = chunks.join(''); a.ok(s.includes('\x1b[?1049h')); a.ok(s.includes('\x1b[?2004h')); res(); });
     });
 });
 
@@ -69,8 +69,8 @@ testAsync('node-pty soak: large output complete', () => {
         const p = pty.spawn(process.execPath, ['-e', `process.stdout.write(${JSON.stringify(payload)});process.exit(0);`],
             { name: 'xterm-256color', cols: 200, rows: 50, cwd: process.cwd(), env: process.env });
         p.onData(d => chunks.push(d));
-        p.onExit(() => { const marks = (chunks.join('').match(/SOAK/g) || []).length; a.ok(marks >= 4); res(); });
-        setTimeout(() => rej(new Error('timeout')), 10000);
+        let guard = setTimeout(() => rej(new Error('timeout')), 10000);
+        p.onExit(() => { clearTimeout(guard); const marks = (chunks.join('').match(/SOAK/g) || []).length; a.ok(marks >= 4); res(); });
     });
 });
 

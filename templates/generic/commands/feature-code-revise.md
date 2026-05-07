@@ -93,7 +93,7 @@ Pick **one** of these three options. Be honest — your job is correctness, not 
 npm run test:iterate
 ```
 
-Scoped to your changes, <30s. Do NOT run `npm test` or `npm run test:ui` here; the pre-push gate catches the rest. Fix any failures before reporting in Step 5. See `docs/testing.md` for the full rationale.
+Scoped to your changes, <30s. Do NOT run `npm run test:core`, `npm run test:browser`, or `npm run test:deploy` here; the deploy gate catches the rest. Fix any failures before reporting in Step 5. See `docs/testing.md` for the full rationale.
 
 ## Step 5: Report
 
