@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 530
+lines_removed: 1
+lines_changed: 531
+files_touched: 10
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 182
+output_tokens: 61736
+cache_creation_input_tokens: 317638
+cache_read_input_tokens: 13964341
+thinking_tokens: 0
+total_tokens: 14343897
+billable_tokens: 61918
+cost_usd: 31.5352
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 481 - code-changes-tab-show-feature-commits-at-any-lifecycle-stage
 Agent: cc
 
