@@ -762,15 +762,26 @@
         ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(agent.tmuxSession) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
         : '';
       const tripletBadge = buildAgentTripletBadge(agent);
+      // Solo cards: the headline banner already carries the lifecycle phase
+      // (Implementing / Reviewing / etc.). Suppress the agent-box status
+      // pill to avoid duplicating the same word twice on the card. Liveness
+      // moves inline with the agent name. Fleet cards (>1 agent) keep the
+      // per-agent status pills since each agent may be at a different phase.
+      const isSoloCard = (feature.agents || []).length === 1;
+      const headerLiveness = isSoloCard ? buildLivenessIndicator(agent) : '';
+      const statusRowHtml = isSoloCard
+        ? buildIdleLadderChip(agent) // solo: keep idle-ladder chip if present, drop the status pill
+        : '<div class="kcard-agent-status-row' + ((agent.idleLadder && agent.idleLadder.state !== 'active') ? ' is-idle-ladder' : '') + '">' + buildLivenessIndicator(agent) + '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span>' + buildIdleLadderChip(agent) + '</div>';
       return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
         '<div class="kcard-agent-header">' +
+          headerLiveness +
           '<span class="kcard-agent-name" title="' + escHtml(displayName) + '">' + escHtml(displayName) + '</span>' +
           tripletBadge +
           peekBtn +
           devSlot +
         '</div>' +
         quotaChipHtml +
-        '<div class="kcard-agent-status-row' + ((agent.idleLadder && agent.idleLadder.state !== 'active') ? ' is-idle-ladder' : '') + '">' + buildLivenessIndicator(agent) + '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span>' + buildIdleLadderChip(agent) + '</div>' +
+        statusRowHtml +
         (actionsHtml ? '<div class="kcard-agent-actions">' + actionsHtml + '</div>' : '') +
         '</div>';
     }
