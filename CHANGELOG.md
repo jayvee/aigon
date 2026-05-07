@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.64.0-beta.4] — 2026-05-07
+
+### Added
+
+- **Pro installation guide** — new docs page at `/docs/guides/pro-installation` covering GitHub PAT setup, `.npmrc` configuration, package install, and `pro.register(api)` wiring, plus a troubleshooting table for common 401/404/git errors.
+- **Node 24 CI matrix** — added `24.x` to the `node-version` matrix in `.github/workflows/test.yml`.
+
+### Changed
+
+- **README Pro section** — updated from "not yet available" to private beta status with a link to the installation guide.
+
 ## [2.63.0] — 2026-04-30
 
 Dashboard performance overhaul (F459, F460, F467–F469, F471), agent quota

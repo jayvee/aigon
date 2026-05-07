@@ -22,6 +22,7 @@ export default {
   // ────────────────────────────────────────────────────────────────────────
   //  Aigon Pro guides (grouped at the bottom)
   // ────────────────────────────────────────────────────────────────────────
+  "pro-installation": { title: withPro("Installing Aigon Pro") },
   "autonomous-mode": { title: withPro("Autonomous Mode") },
   "scheduling-features": { title: withPro("Scheduling Features") },
   "recurring-features": { title: withPro("Recurring Features") },
