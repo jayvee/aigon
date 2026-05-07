@@ -132,14 +132,6 @@
     .kcard-eval-section{border:1px solid rgba(167,139,250,.2);border-radius:6px;padding:8px 10px;margin-top:6px;background:rgba(167,139,250,.04)}
     .kcard-eval-section-header{display:flex;align-items:center;gap:6px}
     .kcard-eval-section-title{font-size:10px;letter-spacing:.02em;color:#c4b5fd;font-weight:600;flex:1;pointer-events:none}
-    /* Research-eval step indicator. Shows ① Reply · ② Eval creates · ③ Close
-       so users see the order they need to follow. Active step bolded, done
-       steps muted with ✓, pending steps grey. */
-    .kcard-eval-steps{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:4px 0 6px;font-size:10px;color:var(--text-tertiary);font-family:var(--mono)}
-    .kcard-eval-step{white-space:nowrap}
-    .kcard-eval-step.is-active{color:#c4b5fd;font-weight:700}
-    .kcard-eval-step.is-done{color:#86efac;opacity:.85}
-    .kcard-eval-step-sep{color:var(--border-subtle)}
     .kcard-verdict-btn{font-size:10px;padding:2px 7px;color:#86efac;border-color:rgba(134,239,172,.3);background:rgba(134,239,172,.06)}
     .kcard-verdict-btn:hover{background:rgba(134,239,172,.12);border-color:rgba(134,239,172,.5)}
     .kcard-eval-actions{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}

@@ -943,24 +943,10 @@
           }
           innerHtml += '</div>';
 
-          // Static workflow guidance for research-eval. No "active step"
-          // highlighting — the dashboard can't observe when the user replies
-          // in the eval tmux session (awaitingInput is set by the agent's
-          // initial `agent-status awaiting-input` and only clears on the
-          // agent's next status write, not on user reply). Marking step 1
-          // "active" while the user has already replied was misleading.
-          // Future fix: update the eval skill to clear awaitingInput when
-          // the agent receives the reply, so step transitions become
-          // observable. Until then, show the order as static guidance.
-          if (pipelineType === 'research') {
-            innerHtml += '<div class="kcard-eval-steps">' +
-              '<span class="kcard-eval-step">Reply in eval terminal</span>' +
-              '<span class="kcard-eval-step-sep">→</span>' +
-              '<span class="kcard-eval-step">Eval creates features</span>' +
-              '<span class="kcard-eval-step-sep">→</span>' +
-              '<span class="kcard-eval-step">Close research</span>' +
-              '</div>';
-          }
+          // (Static research-eval workflow guidance removed — the action
+          // hint in the headline detail ('→ Open eval terminal to respond'
+          // for Needs you state) carries the directive without duplicating
+          // the workflow inside the eval section.)
           // Action buttons on their own row so they always have full width
           const hasEvalActions = (evalRunning && evalSess.session && openEvalAction) || viewEvalAction;
           if (hasEvalActions) {
