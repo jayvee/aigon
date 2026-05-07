@@ -987,7 +987,10 @@
       const autonomousPlanHtml = buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn);
       const isDone = feature.stage === 'done';
       const isSoloDriveBranch = agents.length === 1 && agents[0].id === 'solo' && !agents[0].tmuxSession;
-      const isFleet = feature.mode === 'fleet' || (agents.length > 1 && (feature.evalSession || feature.winnerAgent));
+      const hasEvalSurface = !!(feature.evalSession && feature.evalSession.running) || !!feature.evalStatus;
+      const isFleet = feature.mode === 'fleet'
+        || (agents.length > 1 && (feature.evalSession || feature.winnerAgent))
+        || (agents.length === 1 && hasEvalSurface);
       const isSoloCard = agents.length === 1 && !isFleet;
       const reviews = feature.reviewSessionSummary || feature.reviewSessions || [];
 
