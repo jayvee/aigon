@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-07T00:55:08.132Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Autonomous conductor exits prematurely on quota-paused, blocking failover auto-switch
