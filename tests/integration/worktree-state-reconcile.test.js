@@ -95,9 +95,10 @@ test('OpenCode launches interactive TUI with prompt injected via tmux paste-buff
         else process.env.AIGON_TEST_MODE = prev;
     }
 });
-test('Kimi launches bare `kimi` TUI with prompt injected via tmux paste-buffer', () => {
+test('Kimi launches bare `kimi` TUI with prompt injected via tmux send-keys skill command', () => {
     // REGRESSION: `kimi term` was tried first but requires Python 3.14; bare
     // `kimi` is the native interactive TUI ("Welcome to Kimi Code CLI!").
+    // F483: km now uses injectViaTmuxSkillCommand — send-keys -l instead of paste-buffer.
     const prev = process.env.AIGON_TEST_MODE;
     delete process.env.AIGON_TEST_MODE;
     try {
@@ -112,7 +113,8 @@ test('Kimi launches bare `kimi` TUI with prompt injected via tmux paste-buffer',
         assert.ok(!/\bkimi\s+term\b/.test(cmd), `km should not use 'kimi term' (Python 3.14 dep): ${cmd}`);
         assert.ok(!cmd.includes('--print'), `km should not use --print: ${cmd}`);
         assert.ok(!cmd.includes('exec bash -l'), cmd);
-        assert.ok(cmd.includes('tmux paste-buffer'), cmd);
+        assert.ok(!cmd.includes('tmux paste-buffer'), `km should not use paste-buffer: ${cmd}`);
+        assert.ok(cmd.includes('tmux send-keys') && cmd.includes('-l') && cmd.includes('/skill:aigon-feature-do 05'), `km should inject via send-keys skill command: ${cmd}`);
     } finally {
         if (prev === undefined) delete process.env.AIGON_TEST_MODE;
         else process.env.AIGON_TEST_MODE = prev;

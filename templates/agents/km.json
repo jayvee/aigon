@@ -33,6 +33,7 @@
     "command": "kimi",
     "implementFlag": "--yolo",
     "injectPromptViaTmux": true,
+    "injectViaTmuxSkillCommand": true,
     "implementPrompt": "feature-do",
     "evalPrompt": "feature-eval",
     "reviewPrompt": "feature-code-review",
