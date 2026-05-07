@@ -73,4 +73,12 @@ test('readSpecSection: returns pre-authorised bullets only', () => withTempDir('
     a.deepStrictEqual(readSpecSection(spec, 'Open Questions'), []);
 }));
 
+test('supervisor notifications are async and do not shell out synchronously', () => {
+    const src = fs.readFileSync(path.join(__dirname, '../../lib/supervisor.js'), 'utf8');
+    const notificationBlock = src.slice(src.indexOf('function sendNotification'), src.indexOf('// ---------------------------------------------------------------------------\n// Logging'));
+    a.ok(notificationBlock.includes('deliverNotification(String(message), String(title)).catch'), 'sendNotification should fire async delivery');
+    a.ok(!notificationBlock.includes('execSync'), 'notification path must not use execSync');
+    a.ok(!notificationBlock.includes('spawnSync'), 'notification path must not use spawnSync');
+});
+
 report();

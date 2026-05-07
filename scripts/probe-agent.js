@@ -18,7 +18,7 @@
  * Agents without a headless CLI (cu) are skipped automatically.
  */
 
-const { spawnSync } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
@@ -78,47 +78,31 @@ function isQuarantined(opt) {
     return Boolean(opt && (opt.quarantined || opt.archived));
 }
 
-function runProbe(agentConfig, modelValue, modelLabel) {
-    const cmd = buildCmd(agentConfig, modelValue);
-    if (!cmd) {
-        return { skipped: true, reason: 'no headless CLI' };
-    }
-
-    const [bin, args] = cmd;
-    const start = Date.now();
-    const result = spawnSync(bin, args, {
-        timeout: TIMEOUT_MS,
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'pipe'],
-        env: process.env,
-    });
-    const elapsed = Date.now() - start;
-    // Capture both streams so the quota classifier can match patterns even when
-    // a CLI (e.g. opencode) exits with empty stdout because the upstream error
-    // ("Key limit exceeded (monthly limit)") only surfaced on stderr.
-    const stderr = (result.stderr || '').trim().slice(0, 4000);
-
-    if (result.error) {
-        const isTimeout = result.error.code === 'ETIMEDOUT' || result.error.killed;
+function normalizeProbeResult(outcome) {
+    const elapsed = outcome.elapsed || 0;
+    const stderr = (outcome.stderr || '').trim().slice(0, 4000);
+    if (outcome.error || outcome.timedOut) {
+        const err = outcome.error || {};
+        const isTimeout = outcome.timedOut || err.code === 'ETIMEDOUT' || err.killed;
         return {
             ok: false,
             elapsed,
-            error: isTimeout ? `TIMEOUT (>${Math.round(TIMEOUT_MS / 1000)}s)` : result.error.message,
+            error: isTimeout ? `TIMEOUT (>${Math.round(TIMEOUT_MS / 1000)}s)` : err.message,
             stderr,
         };
     }
-    if (result.status !== 0) {
-        const stdoutTrim = (result.stdout || '').trim();
+    if (outcome.status !== 0) {
+        const stdoutTrim = (outcome.stdout || '').trim();
         const firstLine = (stderr || stdoutTrim).split('\n')[0];
         return {
             ok: false,
             elapsed,
-            error: firstLine || `exit ${result.status}`,
+            error: firstLine || `exit ${outcome.status}`,
             stderr,
             stdout: stdoutTrim.slice(0, 4000),
         };
     }
-    const stdout = (result.stdout || '').trim();
+    const stdout = (outcome.stdout || '').trim();
     if (!stdout) {
         return {
             ok: false,
@@ -133,6 +117,86 @@ function runProbe(agentConfig, modelValue, modelLabel) {
         output: stdout.slice(0, 100),
         stderr,
     };
+}
+
+function runProbe(agentConfig, modelValue, modelLabel) {
+    const cmd = buildCmd(agentConfig, modelValue);
+    if (!cmd) {
+        return { skipped: true, reason: 'no headless CLI' };
+    }
+
+    const [bin, args] = cmd;
+    const start = Date.now();
+    const result = spawnSync(bin, args, {
+        timeout: TIMEOUT_MS,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: process.env,
+    });
+    return normalizeProbeResult({
+        elapsed: Date.now() - start,
+        error: result.error,
+        status: result.status,
+        stdout: result.stdout || '',
+        stderr: result.stderr || '',
+    });
+}
+
+function runProbeAsync(agentConfig, modelValue, modelLabel) {
+    const cmd = buildCmd(agentConfig, modelValue);
+    if (!cmd) {
+        return Promise.resolve({ skipped: true, reason: 'no headless CLI' });
+    }
+
+    const [bin, args] = cmd;
+    const start = Date.now();
+    return new Promise(resolve => {
+        let stdout = '';
+        let stderr = '';
+        let settled = false;
+        let timedOut = false;
+        let killTimer = null;
+        let timeoutTimer = null;
+
+        const finish = (outcome) => {
+            if (settled) return;
+            settled = true;
+            if (timeoutTimer) clearTimeout(timeoutTimer);
+            if (killTimer) clearTimeout(killTimer);
+            resolve(normalizeProbeResult({
+                ...outcome,
+                elapsed: Date.now() - start,
+                stdout,
+                stderr,
+                timedOut,
+            }));
+        };
+
+        let child;
+        try {
+            child = spawn(bin, args, {
+                stdio: ['ignore', 'pipe', 'pipe'],
+                env: process.env,
+            });
+        } catch (error) {
+            finish({ error, status: null });
+            return;
+        }
+        timeoutTimer = setTimeout(() => {
+            timedOut = true;
+            try { child.kill('SIGTERM'); } catch (_) {}
+            killTimer = setTimeout(() => {
+                try { child.kill('SIGKILL'); } catch (_) {}
+            }, 2000);
+            if (killTimer && typeof killTimer.unref === 'function') killTimer.unref();
+        }, TIMEOUT_MS);
+        if (typeof timeoutTimer.unref === 'function') timeoutTimer.unref();
+
+        if (child.stdout) child.stdout.on('data', chunk => { stdout += chunk.toString('utf8'); });
+        if (child.stderr) child.stderr.on('data', chunk => { stderr += chunk.toString('utf8'); });
+        child.on('error', error => finish({ error, status: null }));
+        child.on('close', (status, signal) => finish({ status, signal }));
+    });
 }
 
 function fmtMs(ms) {
@@ -212,6 +276,7 @@ module.exports = {
     getModelOptions,
     isQuarantined,
     runProbe,
+    runProbeAsync,
     resolveTargets,
     fmtMs,
     main,
