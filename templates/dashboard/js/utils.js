@@ -104,6 +104,23 @@
       return Math.floor(sec / 86400) + 'd';
     }
 
+    /**
+     * Replace whole-word agent IDs (cc, cu, gg, cx, etc.) in a string with
+     * their display names ('Claude Code', 'Cursor', etc.). Card-headline.js
+     * is pure server-side and has no access to AGENT_DISPLAY_NAMES, so the
+     * banner detail comes back as e.g. 'recommended: cu' even though the
+     * eval section right below uses 'Recommended: Cursor'. Resolve the
+     * display name client-side at render time so both stay in sync.
+     */
+    function _resolveAgentIdsInHeadlineText(text) {
+      const map = (typeof AGENT_DISPLAY_NAMES === 'object' && AGENT_DISPLAY_NAMES) || {};
+      const ids = Object.keys(map).filter(id => id && id !== 'solo');
+      if (ids.length === 0) return text;
+      // Match each id as a whole word so 'cc' inside 'cuisine' isn't replaced.
+      const pattern = new RegExp('\\b(' + ids.map(id => id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b', 'g');
+      return text.replace(pattern, m => map[m] || m);
+    }
+
     function buildCardHeadlineHtml(item) {
       const h = item && item.cardHeadline;
       if (!h || !h.verb) return '';
@@ -116,7 +133,8 @@
       const ageStr = _formatHeadlineAge(h.age);
       if (ageStr) meta.push(escHtml(ageStr));
       const metaLine = meta.length ? '<div class="kcard-headline-meta">' + meta.join(' · ') + '</div>' : '';
-      const detailLine = h.detail ? '<div class="kcard-headline-detail">' + escHtml(h.detail) + '</div>' : '';
+      const detailText = h.detail ? _resolveAgentIdsInHeadlineText(h.detail) : null;
+      const detailLine = detailText ? '<div class="kcard-headline-detail">' + escHtml(detailText) + '</div>' : '';
       return '<div class="kcard-headline tone-' + tone + '" data-headline-tone="' + tone + '">' +
         '<div class="kcard-headline-top">' +
           '<span class="kcard-headline-glyph" aria-hidden="true">' + glyph + '</span>' +
