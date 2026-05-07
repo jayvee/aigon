@@ -6,25 +6,23 @@ complexity: medium
 
 ## Summary
 
-Every Aigon worktree starts with one or more plumbing commits (worktree setup, spec sync, spec-review, spec-revise, review notes) that are Aigon machinery, not user code. The dashboard Code Changes tab currently filters these by fragile message-prefix patterns. This feature adds an `Aigon-Internal: true` git trailer to every plumbing commit at the point of creation, then replaces the pattern-matching filter in the commits API with a clean trailer check.
+Every Aigon worktree starts with one or two scaffolding commits (worktree setup, spec sync) that are pure filesystem machinery with no content value. The dashboard Code Changes tab currently filters these by fragile message-prefix patterns. This feature adds an `Aigon-Internal: true` git trailer to just those two commit types at the point of creation, then replaces the pattern-matching filter in the commits API with a clean trailer check.
+
+Spec-review, spec-revise, review notes, and research commits are **not** plumbing — they contain real content (reviewer analysis, author decisions, research findings) and must remain visible in Code Changes.
 
 ## User Stories
 
-- [ ] As a developer reviewing Code Changes, I only see commits that represent real code work — Aigon setup/review machinery is hidden.
-- [ ] As a future developer adding a new plumbing commit type, I mark it `Aigon-Internal: true` and it is automatically filtered without touching the filter logic.
+- [ ] As a developer reviewing Code Changes, worktree scaffolding commits are hidden, but all content-bearing commits (spec reviews, code review notes, research findings) remain visible.
+- [ ] As a future developer adding a new scaffolding commit type, I mark it `Aigon-Internal: true` and it is automatically filtered without touching the filter logic.
 
 ## Acceptance Criteria
 
 - [ ] `chore: worktree setup for <agent>` commits include `Aigon-Internal: true` trailer (`lib/worktree.js`).
 - [ ] `chore: sync feature N spec to worktree` commits include `Aigon-Internal: true` trailer (`lib/feature-start.js`).
-- [ ] `docs(review): add review notes to implementation log` commits include `Aigon-Internal: true` trailer (`templates/generic/commands/feature-code-review.md`).
-- [ ] `spec-review: feature/research N — ...` commits include `Aigon-Internal: true` trailer (templates `feature-spec-review.md`, `research-spec-review.md`).
-- [ ] `spec-revise: feature/research N — ...` commits include `Aigon-Internal: true` trailer (templates `feature-spec-revise.md`, `research-spec-revise.md`).
-- [ ] `docs: research findings for <agent>` commits include `Aigon-Internal: true` trailer (`templates/generic/commands/research-do.md`).
-- [ ] `docs: research evaluation for N` commits include `Aigon-Internal: true` trailer (`templates/generic/commands/research-eval.md`).
 - [ ] `lib/dashboard-routes/commits.js` `parseLogLines` reads the trailer field and sets `aigonInternal: true` on matching commits.
 - [ ] `collectFromWorktree` and `collectFromMerged` filter out commits where `aigonInternal === true`.
 - [ ] The `PLUMBING_PATTERNS` array and `isPlumbingCommit` helper are removed from `commits.js` (no longer needed).
+- [ ] `spec-review:`, `spec-revise:`, `docs(review):`, `docs: research findings`, and `docs: research evaluation` commits are **not** filtered and appear normally in Code Changes.
 - [ ] `npm test` passes.
 
 ## Validation
@@ -62,16 +60,7 @@ Use `--trailer "Aigon-Internal: true"` — it is the most explicit and portable 
 - `lib/worktree.js:2043` — `execSync('git commit -m "chore: worktree setup for ${agentId}"', ...)` → add `--trailer "Aigon-Internal: true"`.
 - `lib/feature-start.js:626` — `runGit('git -C ... commit -m "chore: sync feature N spec to worktree" ...')` → add `--trailer "Aigon-Internal: true"`.
 
-**Template write sites (agent shell commands):**
-
-Add `--trailer "Aigon-Internal: true"` to the `git commit` lines in:
-- `templates/generic/commands/feature-code-review.md` — `docs(review): add review notes...`
-- `templates/generic/commands/feature-spec-review.md` — `spec-review: feature N — ...`
-- `templates/generic/commands/research-spec-review.md` — `spec-review: research N — ...`
-- `templates/generic/commands/feature-spec-revise.md` — `spec-revise: feature N — ...`
-- `templates/generic/commands/research-spec-revise.md` — `spec-revise: research N — ...`
-- `templates/generic/commands/research-do.md` — `docs: research findings for...`
-- `templates/generic/commands/research-eval.md` — `docs: research evaluation for...`
+No template write sites — spec-review, spec-revise, review notes, and research commits contain real content and must not be marked internal.
 
 ### Read site — `lib/dashboard-routes/commits.js`
 
