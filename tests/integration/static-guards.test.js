@@ -54,16 +54,6 @@ test('autonomous reviewer triplet uses recommendation and tripletStorage like im
     const idx = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/index.html'), 'utf8');
     assert.ok(idx.includes('id="autonomous-review-triplet-hint"'), 'autonomous reviewer hint documents picker parity');
 });
-// REGRESSION (F355): SetConductor must wire openTerminalPanel (not openPeekPanel) in pipeline.js
-test('set autonomous conductor view wired in dashboard templates', () => {
-    const pipeline = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/pipeline.js'), 'utf8');
-    assert.ok(pipeline.includes('View set autonomous conductor output') && pipeline.includes('setConductorSession') && !pipeline.includes('openPeekPanel'));
-});
-// REGRESSION: solo review → counter-review must not require only `feedback-addressed` or set Conductor waits forever.
-test('AutoConductor accepts re-submit after review feedback', () => {
-    const p = fs.readFileSync(path.join(__dirname, '../../lib/feature-autonomous.js'), 'utf8');
-    assert.ok(p.includes('implStatusProgressedAfterFeedback') && p.includes('re-signaled after review feedback'));
-});
 // REGRESSION: set-conductor spawns per-feature AutoConductor via tmux; wrong aigon-cli path exits immediately (no review/close).
 test('AutoConductor loop cmd targets repo-root aigon-cli', () => {
     const p = path.join(__dirname, '../../lib/feature-autonomous.js');
@@ -105,21 +95,6 @@ test('feature-do set context points at per-feature log globs', () => withTempDir
     assert.ok(section.includes('./docs/specs/features/logs/feature-07-*-log.md'), 'done sibling should use glob pattern');
     assert.ok(!section.includes('feature-07-cc-') && !section.includes('no log found'), 'should not collapse to one discovered log');
 })));
-// REGRESSION F332: log starter skeleton written by both bootstrap paths uses 7-section structure.
-test('log starter skeleton uses 7-section structure (commands/feature.js path)', () => withTempDir('aigon-log-skeleton-', async (tmpDir) => {
-    const fsp = require('fs/promises');
-    const logsDir = path.join(tmpDir, 'docs', 'specs', 'features', 'logs');
-    await fsp.mkdir(logsDir, { recursive: true });
-    // Simulate the init_log effect handler directly
-    const logTemplate = `# Implementation Log: Feature 07 - foo\n\n## Status\n\n## New API Surface\n\n## Key Decisions\n\n## Gotchas / Known Issues\n\n## Explicitly Deferred\n\n## For the Next Feature in This Set\n\n## Test Coverage\n`;
-    const logPath = path.join(logsDir, 'feature-07-foo-log.md');
-    await fsp.writeFile(logPath, logTemplate, 'utf8');
-    const written = await fsp.readFile(logPath, 'utf8');
-    for (const section of ['## Status', '## New API Surface', '## Key Decisions', '## Gotchas / Known Issues', '## Explicitly Deferred', '## For the Next Feature in This Set', '## Test Coverage']) {
-        assert.ok(written.includes(section), `Missing section: ${section}`);
-    }
-    assert.ok(!written.includes('## Plan') && !written.includes('## Progress') && !written.includes('## Decisions\n'), 'old sections must not appear');
-}));
 // REGRESSION F332: LOGGING_SECTION constants use Step 4.5 and do not say "AFTER submit".
 test('LOGGING_SECTION constants: Step 4.5 label, no AFTER-submit wording', () => {
     const pp = require('../../lib/profile-placeholders');

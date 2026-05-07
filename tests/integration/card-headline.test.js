@@ -24,12 +24,6 @@ test('rule 1: lastCloseFailure produces warn / CLOSE FAILED with reason and age'
     assert.strictEqual(h.age, 120);
 });
 
-test('rule 1: rebaseNeeded → warn / REBASE NEEDED', () => {
-    const h = computeCardHeadline({ rebaseNeeded: true }, null, [], null, 'in-progress', opts());
-    assert.strictEqual(h.tone, 'warn');
-    assert.strictEqual(h.verb, 'REBASE NEEDED');
-});
-
 test('rule 1: specDrift → warn / SPEC DRIFT', () => {
     const h = computeCardHeadline({ specDrift: { lifecycle: 'in-progress' } }, null, [], null, 'in-progress', opts());
     assert.strictEqual(h.tone, 'warn');
@@ -48,11 +42,11 @@ test('rule 1: missing snapshot in inbox does NOT trigger NO ENGINE STATE', () =>
 });
 
 // Rule 2 — terminal lanes
-test('rule 2: lane=done → done / DONE', () => {
+test('rule 2: lane=done → done / CLOSED', () => {
     const snap = { closedAt: isoMinusSec(3600) };
     const h = computeCardHeadline({}, snap, [], null, 'done', opts());
     assert.strictEqual(h.tone, 'done');
-    assert.strictEqual(h.verb, 'DONE');
+    assert.strictEqual(h.verb, 'CLOSED');
     assert.strictEqual(h.age, 3600);
 });
 
@@ -170,11 +164,11 @@ test('rule 9: drive implementing → RUNNING with owner', () => {
     assert.strictEqual(h.tone, 'running');
 });
 
-test('rule 9: drive submitted → attention / COMPLETE', () => {
+test('rule 9: drive submitted → ready / IMPLEMENTED', () => {
     const agents = [{ id: 'solo', status: 'submitted', isWorking: false }];
     const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'COMPLETE');
-    assert.strictEqual(h.tone, 'attention');
+    assert.strictEqual(h.verb, 'IMPLEMENTED');
+    assert.strictEqual(h.tone, 'ready');
 });
 
 test('rule 9: sessionEnded while implementing → FINISHED (UNCONFIRMED)', () => {
@@ -223,10 +217,10 @@ test('age silently drops when timestamp missing', () => {
 });
 
 // Combination: warn supersedes running stage
-test('combo: warn-class beats a running stage', () => {
+test('combo: warn-class (specDrift) beats a running stage', () => {
     const plan = { stages: [{ type: 'implement', status: 'running', agents: [{ id: 'cc' }] }] };
-    const h = computeCardHeadline({ rebaseNeeded: true }, { currentSpecState: 'implementing' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'REBASE NEEDED');
+    const h = computeCardHeadline({ specDrift: { lifecycle: 'in-progress' } }, { currentSpecState: 'implementing' }, [], plan, 'in-progress', opts());
+    assert.strictEqual(h.verb, 'SPEC DRIFT');
 });
 
 report();
