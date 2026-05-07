@@ -425,10 +425,11 @@
        awaitingInput messages grow the card vertically (rare; the card
        SHOULD be loud when the user needs to respond). */
     .kcard-headline-detail{margin-top:2px;font-size:10px;color:var(--text-tertiary);letter-spacing:.01em;line-height:1.4;word-break:break-word}
-    /* Action hint inside the detail line — for 'Needs you' state, points
-       the user at where to respond (eval terminal). Bright tone, distinct
-       from the secondary detail text so it reads as a directive. */
-    .kcard-headline-detail-action{display:block;margin-top:4px;color:#fcd34d;font-weight:600}
+    /* Action hint shown for 'Needs you' state — points the user at where
+       to respond. Bright amber matches the attention tone, font-weight 600
+       so it reads as a directive. No display:block needed since it's the
+       sole content of the detail line. */
+    .kcard-headline-detail-action{color:#fcd34d;font-weight:600}
     .kcard-headline.tone-running{border-left-color:#4ADE80;background:rgba(74,222,128,.05)}
     .kcard-headline.tone-running .kcard-headline-verb,.kcard-headline.tone-running .kcard-headline-glyph{color:#4ADE80}
     .kcard-headline.tone-waiting{border-left-color:#fbbf24;background:rgba(251,191,36,.04)}

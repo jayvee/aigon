@@ -134,18 +134,19 @@
       if (ageStr) meta.push(escHtml(ageStr));
       const metaLine = meta.length ? '<div class="kcard-headline-meta">' + meta.join(' · ') + '</div>' : '';
       const detailText = h.detail ? _resolveAgentIdsInHeadlineText(h.detail) : null;
-      // Render the detail in full (no clamping, no native title tooltip —
-      // both proved unreliable and forced the user to discover the rest).
-      // For 'Needs you' state, append an explicit action prompt so the user
-      // knows where to respond — the message tells them WHAT, this tells
-      // them WHERE.
+      // For 'Needs you' state, the agent's awaitingInput.message is usually
+      // a verbose multi-line prompt the user will read in the terminal anyway.
+      // Suppress it on the card; show ONLY the action hint pointing them at
+      // the terminal. Dashboard signals "agent needs you, go look there" —
+      // the actual question lives where the answer goes.
+      // For other states, render the detail in full (it's typically a short
+      // descriptor like 'needs code review' or 'recommended: cc').
       let detailLine = '';
-      if (detailText) {
-        const isAwaitingInput = h.verb === 'Needs you';
-        const actionHint = isAwaitingInput
-          ? '<span class="kcard-headline-detail-action">→ Open eval terminal to respond</span>'
-          : '';
-        detailLine = '<div class="kcard-headline-detail">' + escHtml(detailText) + actionHint + '</div>';
+      const isAwaitingInput = h.verb === 'Needs you';
+      if (isAwaitingInput) {
+        detailLine = '<div class="kcard-headline-detail"><span class="kcard-headline-detail-action">→ Open eval terminal to respond</span></div>';
+      } else if (detailText) {
+        detailLine = '<div class="kcard-headline-detail">' + escHtml(detailText) + '</div>';
       }
       return '<div class="kcard-headline tone-' + tone + '" data-headline-tone="' + tone + '">' +
         '<div class="kcard-headline-top">' +
