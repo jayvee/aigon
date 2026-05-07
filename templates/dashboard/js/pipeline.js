@@ -865,6 +865,7 @@
       if (!label) return '<div class="kcard-status-left is-blank"></div>';
       const activeAgent = agents.find(a => a.isWorking || a.tmuxRunning || a.status === 'implementing' || a.status === 'running') || agents[0] || null;
       const dot = activeAgent ? buildLivenessIndicator(activeAgent) : '';
+      const glyphHtml = h.glyph ? '<span class="kcard-status-glyph" aria-hidden="true">' + escHtml(h.glyph) + '</span>' : '';
       let agentHtml = '';
       if (agents.length > 1) {
         agentHtml = '<span class="machips">' + agents.map(agent => {
@@ -883,6 +884,7 @@
       const age = formatCardAge(h.age);
       return '<div class="kcard-status-left">' +
         dot +
+        glyphHtml +
         '<span class="kcard-status-label">' + escHtml(label) + '</span>' +
         (agentHtml ? '<span class="kcard-status-meta">·</span>' + agentHtml : '') +
         (age ? '<span class="kcard-status-meta">· ' + escHtml(age) + '</span>' : '') +
@@ -918,13 +920,30 @@
         }
       }
       const overflow = actions.filter(va => va !== primary && va.action !== 'switch-agent');
-      if (overflow.length > 0) {
+      const COMPLETE_SIGNAL_LABELS = {
+        'implementation-complete': 'implementation',
+        'revision-complete': 'revision',
+        'review-complete': 'review',
+        'spec-review-complete': 'spec review',
+        'research-complete': 'research',
+      };
+      const markCompleteItem = (agent.pendingCompletionSignal && !agent.isWorking)
+        ? '<button class="kcard-overflow-item kcard-mark-complete-btn"' +
+          ' data-signal="' + escHtml(agent.pendingCompletionSignal) + '"' +
+          ' data-entity-type="' + escHtml(entityType) + '"' +
+          ' data-entity-id="' + escHtml(String(feature.id || '')) + '"' +
+          ' data-agent-id="' + escHtml(agent.id) + '"' +
+          ' data-repo-path="' + escHtml(repoPath || '') + '">Mark ' +
+          escHtml(COMPLETE_SIGNAL_LABELS[agent.pendingCompletionSignal] || agent.pendingCompletionSignal) +
+          ' complete</button>'
+        : '';
+      if (overflow.length > 0 || markCompleteItem) {
         const items = overflow.map(va => {
           const labelOverride = AGENT_ACTION_LABELS[va.action];
           const label = typeof labelOverride === 'function' ? labelOverride(va, { agents: [agent] }) : (labelOverride || va.label || 'End Session');
           return '<button class="kcard-overflow-item kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">' + escHtml(va.action === 'feature-stop' || va.action === 'research-stop' ? 'End Session' : label) + '</button>';
         }).join('');
-        html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
+        html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + markCompleteItem + '</div></div>';
       }
       return html;
     }
@@ -968,7 +987,11 @@
       const autonomousPlanHtml = buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn);
       const isDone = feature.stage === 'done';
       const isSoloDriveBranch = agents.length === 1 && agents[0].id === 'solo' && !agents[0].tmuxSession;
-      const isFleet = feature.mode === 'fleet' || (agents.length > 1 && (feature.evalSession || feature.winnerAgent));
+      const hasEvalSurface = !!(feature.evalSession && feature.evalSession.running) || !!feature.evalStatus;
+      const isFleet = feature.mode === 'fleet'
+        || (agents.length > 1 && (feature.evalSession || feature.winnerAgent))
+        || (agents.length === 1 && hasEvalSurface);
+      const isSoloCard = agents.length === 1 && !isFleet;
       const reviews = feature.reviewSessionSummary || feature.reviewSessions || [];
 
       const hasNumericId = /^\d+$/.test(String(feature.id || ''));
@@ -1002,7 +1025,7 @@
       let innerHtml =
         '<div class="kcard-title-row">' +
           (hasNumericId ? '<span class="kcard-id">#' + escHtml(feature.id) + '</span>' : '') +
-          '<span class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildStateRenderBadgeHtml(feature) + buildScheduledGlyphHtml(feature) + '</span>' +
+          '<span class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + (isSoloCard ? '' : buildStateRenderBadgeHtml(feature)) + buildScheduledGlyphHtml(feature) + '</span>' +
         '</div>' +
         buildStatusRowHtml(feature, agents, repoPath, pipelineType, (isSoloDriveBranch || isFleet) ? [] : agents);
 
@@ -1071,7 +1094,7 @@
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         innerHtml += buildCloseFailureHtml(feature);
       } else {
-        if (!isDone && agents.length === 1 && !isSoloDriveBranch) {
+        if (!isDone && agents.length === 1 && !isSoloDriveBranch && !isSoloCard) {
           const agent = agents[0];
           const agentActions = validActions.filter(va => va.agentId === agent.id && va.action !== 'select-winner');
           innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType);

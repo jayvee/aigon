@@ -44,18 +44,18 @@ test('mark-complete: renders menu item when signal missing; absent when present;
     const inProgressCol = page.locator('.kanban-col[data-stage="in-progress"]').first();
     await expect(inProgressCol).toContainText(FEATURE_NAME, { timeout: 8000 });
     const ipCard = inProgressCol.locator('.kcard').filter({ hasText: FEATURE_NAME }).first();
-    await expect(ipCard.locator('.kcard-agent.agent-cc')).toBeVisible({ timeout: 5000 });
+    await expect(ipCard.locator('.kcard-status-row')).toBeVisible({ timeout: 5000 });
 
     // ── Test 1: while tmux is up, escape hatch is hidden (isWorking = tmuxRunning) ─
     await forceRefresh(page);
-    const overflowToggle = ipCard.locator('.kcard-agent.agent-cc .kcard-overflow-toggle');
+    const overflowToggle = ipCard.locator('.kcard-status-right .kcard-overflow-toggle');
     if (await overflowToggle.isVisible({ timeout: 1000 }).catch(() => false)) {
         await overflowToggle.click();
         await expect(ipCard.locator('.kcard-mark-complete-btn')).toHaveCount(0);
         await overflowToggle.click(); // close
     }
 
-    const peekBtn = ipCard.locator('.kcard-agent.agent-cc .kcard-peek-btn[data-peek-session]');
+    const peekBtn = ipCard.locator('.kcard-status-right .kcard-peek-btn[data-peek-session]');
     await expect(peekBtn).toBeVisible({ timeout: 8000 });
     const tmuxSession = await peekBtn.getAttribute('data-peek-session');
     killTmuxSession(tmuxSession);
@@ -90,7 +90,7 @@ test('mark-complete: renders menu item when signal missing; absent when present;
         markBtn.click(),
     ]);
     expect(markResp.status(), 'mark-complete should return 200').toBe(200);
-    // Dashboard auto-refreshes after postMarkComplete; agent should show submitted
-    await expect(ipCard.locator('.kcard-agent.agent-cc .kcard-agent-status.status-submitted'))
-        .toBeVisible({ timeout: 8000 });
+    // Dashboard auto-refreshes after postMarkComplete; status row should show Implemented
+    await expect(ipCard.locator('.kcard-status-left'))
+        .toContainText('Implemented', { timeout: 8000 });
 });
