@@ -745,6 +745,26 @@
     .status-dot.status-dead{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.4)}
     .status-dot.status-completed{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.5)}
     @media(max-width:920px){.deep-status-grid{grid-template-columns:1fr}}
+    .commits-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin-bottom:10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-elevated);font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em}
+    .commits-source{font-weight:600;color:var(--text-secondary)}
+    .commits-count{color:var(--text-tertiary)}
+    .commits-list{display:flex;flex-direction:column;gap:6px}
+    .commit-row{border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-elevated);overflow:hidden}
+    .commit-row[open]{border-color:var(--accent)}
+    .commit-summary{display:grid;grid-template-columns:90px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;cursor:pointer;list-style:none;font-size:12px}
+    .commit-summary::-webkit-details-marker{display:none}
+    .commit-summary:hover{background:rgba(255,255,255,.02)}
+    .commit-hash{font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;padding:2px 4px;border-radius:4px}
+    .commit-hash:hover{background:rgba(96,165,250,.15)}
+    .commit-message{color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .commit-meta{font-size:11px;color:var(--text-tertiary);white-space:nowrap}
+    .commit-files{list-style:none;margin:0;padding:8px 12px 10px 12px;border-top:1px solid var(--border-subtle);display:flex;flex-direction:column;gap:4px}
+    .commit-files li{display:grid;grid-template-columns:minmax(0,1fr) 60px 60px;gap:8px;font-size:11px;align-items:center}
+    .commit-file-path{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary)}
+    .commit-file-stat{text-align:right;font-variant-numeric:tabular-nums}
+    .commit-file-add{color:#22c55e}
+    .commit-file-del{color:#ef4444}
+    .commit-files-empty{padding:8px 12px;border-top:1px solid var(--border-subtle);font-size:11px;color:var(--text-tertiary);font-style:italic}
     .control-wrap{display:grid;gap:10px}
     .control-block{border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-elevated);overflow:hidden}
     .control-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border-subtle)}

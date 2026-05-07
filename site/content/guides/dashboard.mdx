@@ -207,6 +207,18 @@ Pro also adds **Settings → Aigon Sync** for [vault push/pull](/docs/guides/aig
 
 These Pro features build on the same data the free Reports tab already collects — Pro adds deeper analysis and AI-powered interpretation. See the [Insights guide](/docs/guides/insights) for a full walkthrough.
 
+### Code Changes tab
+
+Open any feature spec drawer and the **Code Changes** tab (between Stats and Agent Log) lists the git commits that make up the feature. It works at every lifecycle stage:
+
+- **In-progress**: reads commits from the live worktree branch (everything ahead of `main`).
+- **Done / merged**: locates the `Merge feature {id}` commit on `main` and walks back its constituent commits.
+- **Empty**: when no commits exist yet, the tab shows "No commits yet."
+
+Each row shows the short hash (click to copy), commit message, author, and a relative timestamp. Expand a row to see the file list with `+`/`-` line counts. The tab is feature-only — research entities don't show it.
+
+{/* PLACEHOLDER: screenshot of Code Changes tab with a feature showing 3-5 commits, one row expanded to show the file list */}
+
 ## Logs and All Items
 
 View live agent output in Logs and the repo-wide All Items index for features, research, and feedback.
