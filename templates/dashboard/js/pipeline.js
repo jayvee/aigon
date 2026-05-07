@@ -943,25 +943,22 @@
           }
           innerHtml += '</div>';
 
-          // Workflow step indicator (research-eval flow).
-          //   ① Reply to eval   — any agent has awaitingInput
-          //   ② Eval creating features — !awaitingInput && eval session still running
-          //   ③ Close research   — eval session exited, ready to close
-          // Helps users understand the order: reply first, wait for the
-          // eval agent to create features, then close. Without this,
-          // clicking 'Close research' too early abandons the eval work.
+          // Static workflow guidance for research-eval. No "active step"
+          // highlighting — the dashboard can't observe when the user replies
+          // in the eval tmux session (awaitingInput is set by the agent's
+          // initial `agent-status awaiting-input` and only clears on the
+          // agent's next status write, not on user reply). Marking step 1
+          // "active" while the user has already replied was misleading.
+          // Future fix: update the eval skill to clear awaitingInput when
+          // the agent receives the reply, so step transitions become
+          // observable. Until then, show the order as static guidance.
           if (pipelineType === 'research') {
-            const anyAwaitingInput = (feature.agents || []).some(a => a && a.awaitingInput && a.awaitingInput.message);
-            let activeStep = 3;
-            if (anyAwaitingInput) activeStep = 1;
-            else if (evalRunning) activeStep = 2;
-            const stepClass = n => 'kcard-eval-step' + (n === activeStep ? ' is-active' : (n < activeStep ? ' is-done' : ''));
             innerHtml += '<div class="kcard-eval-steps">' +
-              '<span class="' + stepClass(1) + '">' + (1 < activeStep ? '✓' : '①') + ' Reply to eval</span>' +
-              '<span class="kcard-eval-step-sep">·</span>' +
-              '<span class="' + stepClass(2) + '">' + (2 < activeStep ? '✓' : '②') + ' Eval creates features</span>' +
-              '<span class="kcard-eval-step-sep">·</span>' +
-              '<span class="' + stepClass(3) + '">③ Close research</span>' +
+              '<span class="kcard-eval-step">Reply in eval terminal</span>' +
+              '<span class="kcard-eval-step-sep">→</span>' +
+              '<span class="kcard-eval-step">Eval creates features</span>' +
+              '<span class="kcard-eval-step-sep">→</span>' +
+              '<span class="kcard-eval-step">Close research</span>' +
               '</div>';
           }
           // Action buttons on their own row so they always have full width

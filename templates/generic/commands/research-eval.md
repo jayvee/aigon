@@ -94,7 +94,15 @@ Then ask the user:
 > - Enter `consensus` to include only consensus items
 > - Enter `none` to skip feature creation"
 
-Wait for user response before proceeding. The awaiting-input flag clears automatically on the next `agent-status` write.
+Wait for user response before proceeding.
+
+**As soon as the user replies, clear the awaiting-input flag** so the dashboard stops showing `Needs you` while you create features:
+
+```bash
+aigon agent-status implementing
+```
+
+Without this, the card's "Needs you" banner persists until you finish all feature-create work — misleading the user into thinking you're still waiting on them when in fact you're already executing on their reply.
 
 ### Feature Set Naming
 
