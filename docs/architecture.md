@@ -11,7 +11,7 @@ This document gives agents and contributors a fast map of the Aigon codebase. It
 - `lib/commands/`: command-family handlers. This is where most command behavior should live.
 - `templates/`: prompt, docs, agent, and spec templates used by install and scaffolding commands.
 - `templates/dashboard/index.html`: the dashboard UI — read fresh on every request, no restart needed for frontend changes.
-- `tests/`: automated test suites. `tests/dashboard/` contains Playwright tests for the dashboard.
+- `tests/`: automated test suites. `tests/integration/` and `tests/workflow-core/` are the core non-browser suites; `tests/dashboard-e2e/` contains Playwright E2E tests (the slow browser tier).
 - `docs/specs/`: workflow state for features, research, feedback, logs, and evaluations.
 - `.aigon/docs/`: aigon-vendored documentation installed into consumer projects (F421). Includes `development_workflow.md`, `feature-sets.md`, and `agents/<id>.md` per installed agent. Marker blocks in `agents/<id>.md` are updated by `install-agent`. The consumer's own `docs/` folder is never touched.
 - `AGENTS.md`, `CLAUDE.md`, `README.md`: user-owned. Aigon does not write or modify these (F420). Discovery happens via per-agent skill descriptions and always-loaded rule files installed under `.claude/`, `.cursor/`, etc.
@@ -557,52 +557,56 @@ Aigon has five test layers, each serving a different purpose:
 | **Mock E2E** | `npm run test:e2e:mock-solo` / `mock-fleet` | Custom runner | Full feature lifecycle with mock agents — no AI tokens burned |
 | **CLI E2E** | `npm run test:e2e` | Custom runner | Real git operations on fixture repos in `~/src/` |
 
-There is also a **Dashboard E2E** layer (`npm run test:dashboard:e2e`) that runs full lifecycle tests through the dashboard browser UI with mock agents.
+There is also a **Dashboard E2E** layer (`npm run test:browser`) that runs full lifecycle tests through the dashboard browser UI with mock agents. The full suite is slow (~90s) and runs only at the deploy gate; the `@smoke` subset (`npm run test:browser:smoke`) runs automatically in the iterate gate when dashboard files change.
 
-### What `npm test` runs
+### Test stages
+
+| Script | What it runs | When |
+|---|---|---|
+| `npm run test:iterate` / `test:quick` | scoped lint + matched integration/workflow + smoke fallback | every code change mid-iteration |
+| `npm test` / `npm run test:core` | lint + workflow diagram check + `tests/integration/` + `tests/workflow-core/` (parallelised, ~12s) | core non-browser suite |
+| `npm run test:browser` / `test:ui` | full Playwright E2E in `tests/dashboard-e2e/` (MOCK_DELAY=fast, ~90s) | deploy gate, CI push-to-main |
+| `npm run test:browser:smoke` | Playwright `@smoke` subset only | auto-run in iterate gate on dashboard changes |
+| `npm run test:deploy` / `test:all` | `test:core` + `test:browser` + `scripts/check-test-budget.sh` | before `git push` / `feature-close` |
+
+### Test directory layout
 
 ```
-node aigon-cli.test.js                          # Unit tests (~195 tests)
-node lib/workflow-core/workflow-core.test.js     # Workflow engine tests (~50 tests)
-node lib/workflow-signals.test.js               # Signal/heartbeat tests (~39 tests)
-node lib/shell-trap.test.js                     # Shell trap tests (~24 tests)
-npx playwright test ...                         # Dashboard UI tests (~30 tests)
+tests/
+├── _helpers.js              Shared test() / report() helpers
+├── commands/                CLI command-handler tests (run via integration glob)
+├── integration/             Engine + filesystem + workflow integration tests
+├── workflow-core/           XState machine core invariants
+├── utils/                   Shared test utilities
+└── dashboard-e2e/           Playwright browser E2E (the slow tier)
+    ├── playwright.config.js
+    ├── setup.js / teardown.js
+    ├── solo-lifecycle.spec.js    @deploy — full solo branch/worktree lifecycle
+    ├── fleet-lifecycle.spec.js   @deploy — fleet multi-agent lifecycle
+    ├── workflow-e2e.spec.js      @deploy — mock create→close lifecycle
+    ├── failure-modes.spec.js     @deploy — crash/recovery/idle states
+    ├── state-consistency.spec.js
+    ├── close-failure-event.spec.js  @smoke
+    ├── review-badges.spec.js        @smoke
+    └── set-agent-picker-reviewer.spec.js  @smoke
 ```
-
-All three must pass for `npm test` to succeed.
-
-### When tests run
-
-- **`npm test`** — run manually or by agents during feature implementation (via `## Validation` section in feature specs)
-- **Mock E2E** — run manually; exercises full feature lifecycle without AI tokens
-- **CLI E2E** — run manually; creates real fixture repos and tests real git operations
-- **No CI pipeline** — there are no GitHub Actions or pre-commit hooks; tests are run locally
-- **Iterate validation** — during `feature-do --iterate`, the agent runs commands from the spec's `## Validation` section after each iteration; all must exit 0
 
 ### Writing tests
 
-- **Unit tests** go in `aigon-cli.test.js` (core logic) or the relevant `lib/<name>.test.js` (module-specific)
-- **Dashboard UI tests** go in `tests/dashboard/<view>.spec.js` — they mock API responses via `page.route()` and test HTML rendering
-- **Dashboard E2E tests** go in `tests/dashboard-e2e/` — they use `setup.js` to create real fixtures and `mock-agent.js` to simulate agents
-- **Mock E2E tests** go in `test/e2e-mock-*.test.js` — they exercise the CLI with `test/mock-agent.js`
+- **Integration tests** go in `tests/integration/<name>.test.js` — standalone Node scripts using built-in `assert`; run individually with `node tests/integration/foo.test.js`
+- **Workflow-core tests** go in `tests/workflow-core/` — XState machine invariants
+- **Dashboard E2E tests** go in `tests/dashboard-e2e/` — use `setup.js` to create real fixtures and mock agents; tag with `@smoke` for fast subset, `@deploy` for lifecycle-heavy tests
 - **Feature-specific validation** goes in the spec's `## Validation` section as bash commands
-
-### Test utilities
-
-- `test/setup-fixture.js` — generates realistic fixture repos (brewboard, trailhead) with known feature/research/feedback IDs
-- `test/mock-agent.js` — `MockAgent` class that simulates agent work in a worktree (writes code, commits, updates status) with configurable delays
-- `tests/dashboard/server.js` — minimal HTTP server that serves the dashboard HTML at `:4109` for Playwright tests
 
 ### Quick reference
 
 ```bash
-npm test                        # Unit + workflow-core + dashboard UI (the default suite)
-npm run test:e2e:mock-solo      # Solo Drive lifecycle with mock agent
-npm run test:e2e:mock-fleet     # Fleet lifecycle with mock agents
-npm run test:e2e                # Full CLI E2E with real git repos
-npm run test:dashboard          # Dashboard Playwright tests only
-npm run test:dashboard:e2e      # Dashboard E2E lifecycle tests
-npm run test:migration          # Brewboard legacy→current migration test (see below)
+npm run test:iterate            # iterate gate — scoped, fast (<30s)
+npm run test:core               # full non-browser suite (~12s)
+npm run test:browser:smoke      # Playwright @smoke subset
+npm run test:browser            # full Playwright E2E (~90s)
+npm run test:deploy             # deploy gate — core + browser + budget
+npm run test:migration          # Brewboard legacy→current migration test
 node -c aigon-cli.js            # Quick syntax check (no tests)
 node -c lib/<module>.js         # Quick syntax check for a module
 ```

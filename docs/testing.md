@@ -6,9 +6,21 @@ If you remember nothing else: **default to scoped (`npm run test:iterate`); full
 
 ---
 
-## The two gates
+## Test stages
 
-There are exactly two test gates. Do not invent a third. Do not collapse them into one.
+There are four named stages. The iterate gate and deploy gate are the two lifecycle checkpoints. The others are building blocks.
+
+| Script | What it runs | When to use |
+|---|---|---|
+| `npm run test:quick` | alias for `test:iterate` | shorthand |
+| `npm run test:iterate` | scoped lint + matched integration/workflow tests + smoke fallback | every code change mid-iteration |
+| `npm run test:core` | lint + workflow diagram check + full integration + full workflow | when you need the full non-browser suite |
+| `npm run test:browser` | full Playwright E2E suite (`MOCK_DELAY=fast`) | deploy gate, CI on push-to-main |
+| `npm run test:browser:smoke` | Playwright @smoke subset only | auto-run by iterate gate on dashboard-file changes |
+| `npm run test:deploy` | `test:core` + `test:browser` + budget check | **deploy gate** — run before `git push` / `feature-close` |
+| `npm run test:all` | alias for `test:deploy` | |
+| `npm test` | same as `test:core` | backwards compat; kept for existing tooling |
+| `npm run test:ui` | same as `test:browser` | backwards compat; kept for existing tooling |
 
 ### Iterate gate — runs constantly during work
 
@@ -17,22 +29,23 @@ npm run test:iterate
 ```
 
 - **What it runs**: lint scoped to changed `lib/` files; integration + workflow tests whose filename matches keywords from `git diff`; a 5-test smoke fallback if no match. Lints + scoped tests + diagram check only when relevant.
-- **What it skips**: Playwright UI suite (auto-runs ONLY if the diff touches `templates/dashboard/**`, `lib/dashboard*.js`, `lib/server*.js`); the LOC budget check; tests unrelated to changed files.
+- **What it skips**: full Playwright suite (`test:browser`); LOC budget check; tests unrelated to changed files.
+- **Dashboard touch**: when the diff includes `templates/dashboard/**`, `lib/dashboard*.js`, or `lib/server*.js`, the iterate gate automatically runs `test:browser:smoke` (Playwright @smoke subset, ~fast) instead of the 2-minute full browser suite.
 - **Wall-time target**: <30s for the typical iteration; ~2s for `lib/`-only changes with no dashboard touches.
 - **Implementation**: `lib/test-loop/scoped.js`, `scripts/iterate-validate.js`.
 - **When it fires**: every iteration of the autopilot loop (`aigon feature-do <ID> --iterate`); after any non-trivial code change you make manually.
 
-### Pre-push gate — runs once, before `git push`
+### Deploy gate — runs once, before `git push`
 
 ```bash
-npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh
+npm run test:deploy
 ```
 
-- **What it runs**: full integration + workflow suite (parallelised, ~12s), full Playwright UI suite (~76s), LOC budget check (~0.1s). Total: ~90s.
+- **What it runs**: `test:core` (lint + diagrams + integration + workflow, ~12s) + `test:browser` (full Playwright suite, ~90s) + `scripts/check-test-budget.sh`.
 - **When it fires**: before `git push`, before `aigon agent-status implementation-complete`, before `feature-close` merges to main. Catches everything the iterate gate skipped.
 - **Failures here block the push.** Do not skip with `--no-verify`. Do not proceed past a real failure — fix it.
 
-The pre-push gate is the safety net that lets the iterate gate be aggressive. Trust it.
+The deploy gate is the safety net that lets the iterate gate be aggressive. Trust it.
 
 ---
 
@@ -42,12 +55,12 @@ This table is the authoritative answer for "what tests do I run when I'm doing X
 
 | Lifecycle step | Tests that run automatically | What you (the agent) should do | What you should NOT do |
 |---|---|---|---|
-| **`feature-do` iteration** | `npm run test:iterate` invoked by the autopilot loop after each iteration | Trust the iterate gate. Fix what it surfaces. | Don't manually run `npm test`, `npm run test:ui`, or the full suite mid-iteration. |
-| **`feature-do` end of work, before submit** | None automatic. Spec's `## Validation` block runs if present. | Quick sanity: `npm run test:iterate` once. If green, submit. | Don't re-run `npm test` "to be sure" — pre-push catches it. |
-| **`feature-code-review` finding bugs** | None automatic. | If you made fixes, run the scoped tests for the files you changed (e.g. `node tests/integration/foo.test.js` for `lib/foo.js`). If the fix is cross-cutting, run `npm test`. See `templates/generic/commands/feature-code-review.md` Step 3.5. | Don't run the full Playwright suite. Don't run `npm test:ui`. |
-| **`feature-code-revise` accepting/reverting/modifying** | None automatic. | If you accepted/modified, run scoped tests for changed files. Same logic as code-review. See `feature-code-revise.md` Step 4.5. | Same. |
-| **`feature-close` (Drive mode)** | Triggers the **pre-push gate** as part of the merge sequence. | Let it run. Watch for failures. | Don't bypass with `--no-verify`. Don't push past a red gate. |
-| **`feature-close` (Fleet, after adopting changes)** | Per `feature-close.md:114-117`: "After all adoptions are applied, run the project's test suite. Re-run tests until green." | Run `npm test` after each adoption batch; full pre-push gate before the merge. | Don't merge with adoptions unverified. |
+| **`feature-do` iteration** | `npm run test:iterate` invoked by the autopilot loop after each iteration | Trust the iterate gate. Fix what it surfaces. | Don't manually run `npm test`, `test:browser`, `test:deploy`, or `test:ui` mid-iteration. |
+| **`feature-do` end of work, before submit** | None automatic. Spec's `## Validation` block runs if present. | Quick sanity: `npm run test:iterate` once. If green, submit. | Don't re-run the full suite "to be sure" — the deploy gate catches it. |
+| **`feature-code-review` making fixes** | None automatic. | **Reviewers do not run tests.** Record `Validation not run by reviewer per policy` in the review log. The implementor owns validation after revision. | Don't run any test command — not even `test:iterate`. |
+| **`feature-code-revise` accepting/reverting/modifying** | None automatic. | Run `npm run test:iterate` for the files you changed after accepting/modifying. See `feature-code-revise.md` Step 4.5. | Don't run the full browser suite. |
+| **`feature-close` (Drive mode)** | Triggers the **deploy gate** as part of the merge sequence. | Let it run. Watch for failures. | Don't bypass with `--no-verify`. Don't push past a red gate. |
+| **`feature-close` (Fleet, after adopting changes)** | Per `feature-close.md:114-117`: "After all adoptions are applied, run the project's test suite. Re-run tests until green." | Run `npm run test:core` after each adoption batch; full deploy gate before the merge. | Don't merge with adoptions unverified. |
 
 **Rule of thumb:** if you didn't change code in this turn, you don't need to run any tests. If you changed code, the iterate gate is enough until pre-push.
 
@@ -61,7 +74,7 @@ These are anti-patterns that have repeatedly slowed the dev cycle. Don't:
 2. **Run `npm test` (full integration + workflow) "to be sure" between edits.** That's what `test:iterate` exists to scope. Re-running the full integration suite for a one-line change in `lib/scheduled-kickoff.js` runs 48 unrelated test files.
 3. **Run `bash scripts/check-test-budget.sh` mid-iteration.** Budget is a pre-push concern. Mid-iteration it just adds noise.
 4. **Re-run a green suite to "verify".** Per `feature-do.md:85`: "Ship within 60 seconds of green tests — don't re-run validation 'to be sure'."
-5. **Add a test for code that already has coverage.** Per `AGENTS.md` T3, the suite has a hard 2,500-LOC ceiling; before adding, check if coverage already exists.
+5. **Add a test for code that already has coverage.** Per `AGENTS.md` T3, the suite has a hard LOC ceiling (see `scripts/check-test-budget.sh` for the current value); before adding, check if coverage already exists.
 
 ---
 
@@ -69,15 +82,15 @@ These are anti-patterns that have repeatedly slowed the dev cycle. Don't:
 
 | Rule | Authoritative location |
 |---|---|
-| The two-gate system, exact commands | `CLAUDE.md` hot rule #6 |
+| Test stage commands | `CLAUDE.md` hot rule #6 |
 | Testing Discipline (T1/T2/T3 — gates, new-code rule, LOC ceiling) | `AGENTS.md` § Testing Discipline |
-| Per-iteration agent behaviour | `templates/generic/commands/feature-do.md:43–85` |
-| Code-review post-fix tests | `templates/generic/commands/feature-code-review.md` Step 3.5 |
+| Per-iteration agent behaviour | `templates/generic/commands/feature-do.md` |
+| Reviewer no-tests policy | `templates/generic/commands/feature-code-review.md` Step 3.5 |
 | Code-revise post-change tests | `templates/generic/commands/feature-code-revise.md` Step 4.5 |
-| Fleet-close adoption tests | `templates/generic/commands/feature-close.md:88–117` |
+| Fleet-close adoption tests | `templates/generic/commands/feature-close.md` |
 | Iterate gate implementation | `lib/test-loop/scoped.js`, `scripts/iterate-validate.js` |
 | Parallel test runner | `scripts/run-tests-parallel.js` |
-| LOC budget enforcement | `scripts/check-test-budget.sh` (default ceiling 2,500 LOC) |
+| LOC budget enforcement | `scripts/check-test-budget.sh` (ceiling in file header) |
 | Per-feature extra validation | The `## Validation` block in each feature spec |
 | **This summary doc** | `docs/testing.md` (you are here) |
 
@@ -91,7 +104,7 @@ Full rules in `AGENTS.md` § Testing Discipline. Summary:
 
 - **New non-trivial code or bug fix → ships with a test in the same commit.** Exceptions: pure config, pure docs, pure template edits, system-integration code (launchd, signals, sockets). State the exception in the commit message.
 - **Every test includes a `// REGRESSION:` comment** naming the specific bug or behaviour it pins. If you can't write that comment, the test isn't worth keeping.
-- **2,500-LOC ceiling on `tests/`.** Before adding, check whether an older test can be deleted (integration subsumes unit; code rewritten; duplicated coverage). Forbidden patterns: snapshot tests, mock-heavy tests where setup > assertions, trivial-getter tests, private-implementation tests.
+- **Hard LOC ceiling on `tests/`** (see `scripts/check-test-budget.sh` for the current value). Before adding, check whether an older test can be deleted (integration subsumes unit; code rewritten; duplicated coverage). Forbidden patterns: snapshot tests, mock-heavy tests where setup > assertions, trivial-getter tests, private-implementation tests.
 - **Hitting the ceiling**: ask the user for a one-time bump, or delete a less-valuable test. Never raise the default silently.
 
 ---
@@ -113,7 +126,7 @@ tests/
     └── state-consistency.spec.js
 ```
 
-`npm test` runs `lint → workflow-diagrams check → tests/integration → tests/workflow-core`, all parallelised. `npm run test:ui` runs `tests/dashboard-e2e/` via Playwright.
+`npm test` / `npm run test:core` runs `lint → workflow-diagrams check → tests/integration → tests/workflow-core`, all parallelised. `npm run test:browser` / `npm run test:ui` runs `tests/dashboard-e2e/` via Playwright (all tests). `npm run test:browser:smoke` runs only the `@smoke`-tagged browser tests. `npm run test:deploy` chains core + browser + budget.
 
 ---
 
@@ -145,7 +158,7 @@ For async tests, collect promises and `Promise.all()` them before reporting. Pla
 
 ## Common surprises (read these before complaining about test runtime)
 
-- **"Why is the iterate gate running Playwright?"** Your diff touched a dashboard file. The scoped runner auto-includes Playwright when `templates/dashboard/**` or `lib/(dashboard|server)*.js` change. If you didn't mean to touch them, check `git status`.
-- **"Why does my feature spec say `npm test && npm run test:ui` in Validation?"** That's the pre-push gate copied into a per-feature block. If your feature is `lib/`-only and you don't need UI verification per-iteration, **drop `npm run test:ui` from the spec's `## Validation` block** — keep it for the pre-push gate only. The default Pre-authorised template now includes "May skip `npm run test:ui` when this feature touches no dashboard assets" so this is the default, not opt-in.
-- **"Why is `npm test` taking 90s?"** It shouldn't anymore. F381 parallelised `tests/integration/` and `tests/workflow-core/` — `npm test` should be ~12s on a clean checkout. If it's slower, check whether someone re-introduced the serial `for f in ...; do node "$f"; done` pattern in `package.json` scripts.
-- **"The pre-push gate failed but my changes are unrelated."** Don't bypass it. Run the failing test in isolation (`node tests/integration/foo.test.js` or `npx playwright test tests/dashboard-e2e/foo.spec.js`) and either fix the regression or, if it's a flake, file a feature to de-flake it.
+- **"Why is the iterate gate running Playwright?"** Your diff touched a dashboard file. The scoped runner auto-includes the `@smoke` browser subset when `templates/dashboard/**` or `lib/(dashboard|server)*.js` change. If you didn't mean to touch them, check `git status`.
+- **"Why does my feature spec say `npm test && npm run test:ui` in Validation?"** That's the old pre-push gate. Update any such spec blocks to use `npm run test:deploy` — or drop `test:browser`/`test:ui` from the per-feature block if the feature is `lib/`-only and doesn't need browser verification mid-iteration. The Pre-authorised default authorises skipping browser tests mid-iteration.
+- **"Why is `npm test` taking 90s?"** It shouldn't. `npm test` (`test:core`) should be ~12s on a clean checkout. If it's slower, check whether someone re-introduced the serial runner pattern in `package.json` scripts. The slow tier is `test:browser` (~90s); it belongs at the deploy gate, not mid-iteration.
+- **"The deploy gate failed but my changes are unrelated."** Don't bypass it. Run the failing test in isolation (`node tests/integration/foo.test.js` or `npx playwright test tests/dashboard-e2e/foo.spec.js`) and either fix the regression or, if it's a flake, file a feature to de-flake it.
