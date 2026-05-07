@@ -1516,7 +1516,7 @@
       }
 
       const DONE_CAP = 6;
-      const OVERFLOW_CAP = 8;
+      const OVERFLOW_CAP = 12;
       const expandedColumns = state.expandedPipelineColumns || {};
       const columnKey = pipelineColumnKey(repo.path, pType, stage);
       const isExpanded = !!expandedColumns[columnKey];
