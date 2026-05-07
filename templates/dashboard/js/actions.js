@@ -598,25 +598,14 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     }
   });
 
-  // If no high-priority actions, promote first eligible normal action to primary.
-  // Excluded from auto-promotion: schedule actions (always-overflow per UX), and
-  // feature-nudge (exception-path action; surfacing it as primary on a healthy
-  // running card reads as "do this nudge now" when nothing is wrong).
-  if (primary.length === 0 && overflow.length > 0) {
-    const idx = overflow.findIndex(va =>
-      va.action !== 'feature-schedule' &&
-      va.action !== 'research-schedule' &&
-      va.action !== 'feature-nudge'
-    );
-    if (idx !== -1) {
-      primary.push(...overflow.splice(idx, 1));
-    } else {
-      // Last-resort fallback: schedule is OK, nudge is not.
-      const fallbackIdx = overflow.findIndex(va => va.action !== 'feature-nudge');
-      if (fallbackIdx !== -1) primary.push(...overflow.splice(fallbackIdx, 1));
-      // If only nudge remains, primary stays empty — user opens ··· to nudge.
-    }
-  }
+  // No auto-promotion: if no action has priority: 'high', primary stays empty.
+  // The card renders just the ··· overflow with all available actions inside.
+  // Auto-promoting normal-priority actions to primary surfaced exception-path
+  // actions (Nudge, Pause, Push, etc.) as bright blue defaults on healthy
+  // running cards, reading as "do this now" when the user should just be
+  // watching. High-priority transitions (Prioritise / Start / Eval / Close /
+  // Pick winner) remain primary because they're tagged priority: 'high' in
+  // HIGH_PRIORITY_ACTION_KINDS server-side.
 
   function actionLabel(va) {
     if (va.action === 'feature-close' && hasSelectWinner) {
