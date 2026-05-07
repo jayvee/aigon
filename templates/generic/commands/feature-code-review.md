@@ -118,7 +118,7 @@ Revert out-of-scope deletions before reviewing the rest of the diff.
 - Rewrite in your preferred style
 - Add comments/docs to code you didn't change
 - "Improve" code that already works
-- Run lint, tsc, or build checks — focus on diff review only
+- Run lint, tsc, build checks, or any test suite (`npm test`, `npm run test:iterate`, `npm run test:browser`, etc.) — validation belongs to the implementor and the deploy gate
 - **Add a regression test by default.** When a bug is found, first ask: can the producer API be hardened (stricter types, enums, removed dead branch) to make re-introduction impossible? If yes, fix the producer. Add a test only when the bug is subtle enough that PR review genuinely won't catch it.
 
 **Targeted fixes, not a rewrite.**
@@ -145,17 +145,14 @@ Examples: `fix(review): handle null user in profile lookup`, `fix(review): escap
 
 **Sanity check before moving on:** run `git -C "$WORKTREE" log --oneline -5`. If you classified any issues as FIX_NOW but see no `fix(review):` commits, stop and fix them now. Do not hand the implementer a to-do list for issues you could have fixed yourself.
 
-## Step 3.5: Run the iterate gate if you made code fixes
+## Step 3.5: Validation — reviewers do not run tests
 
-**If you committed no code fixes** (clean review or findings-only): skip this step entirely.
+**Reviewers do not run any test command**, whether or not they made code fixes.
 
-**If you committed code fixes:**
+- If no code fixes: no tests.
+- If code fixes: no tests. Record `Validation not run by reviewer per policy` in the review log (Step 4).
 
-```bash
-npm run test:iterate
-```
-
-That's it — scoped to your changes, <30s. Do NOT run `npm test` or `npm run test:ui` here; the pre-push gate catches the rest. Fix any failures before moving to Step 4. See `docs/testing.md` for the full rationale.
+The implementing agent owns scoped validation after revision (`npm run test:iterate`). The pre-push / deploy gate owns full validation. The reviewer's job is diff review and targeted fixes — not validation.
 
 ## Step 4: Update the implementation log and commit
 
@@ -169,6 +166,9 @@ Append:
 
 ### Fixes Applied
 - <commit SHA + message for each fix, or "None — implementation was clean">
+
+### Validation
+- Validation not run by reviewer per policy
 
 ### Escalated Issues (exceptions only)
 - <ESCALATE:category — issue description. If none, write "None".>
