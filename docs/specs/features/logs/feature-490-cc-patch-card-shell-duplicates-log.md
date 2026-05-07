@@ -26,6 +26,15 @@ Agent: cc
 
 ## Status
 
+**REVERTED 2026-05-07 (commit `8f0a5479`)** — F490 patched F489's card shell, but the
+underlying F489 design exhibited additional defects that surfaced during the same
+session (uppercase still present in eval/verdict section headers, engine-state
+vocabulary leaking through, missing autonomous stage track, ad-hoc tone palettes,
+section duplication). The user opted to revert F489 entirely rather than continue the
+patch path; F490's diff was reverted alongside since its purpose was to fix things F489
+broke, and reverting F489 makes those fixes unnecessary. Pre-F480 legacy card design is
+restored as the baseline. Vocabulary work (pre-F480 commits) remains intact.
+
 Implementation complete. 5 defects patched; all integration tests pass; 4 smoke tests pass.
 
 ## New API Surface

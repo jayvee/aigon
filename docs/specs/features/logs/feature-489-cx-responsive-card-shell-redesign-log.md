@@ -26,6 +26,18 @@ Agent: cx
 
 ## Status
 
+**REVERTED 2026-05-07 (commit `d83994c2`)** — together with F490 (`8f0a5479`), F489's
+merge was reverted to restore the pre-F480 legacy 3-zone card design. F489 was the
+re-attempt of F480 (also reverted), and despite F490's follow-up patch the result still
+exhibited multiple defects the user surfaced over the course of one extended session:
+triple state-label rendering on solo cards, casing inconsistencies between sections,
+duplicate eye/overflow on agent rows, ad-hoc tone palettes, missing autonomous stage
+track, and engine-internal vocabulary leaking into the UI. The user concluded — correctly
+— that pre-F480 legacy + the existing pre-F480 vocabulary work (commits `026058ff`,
+`263c5eb7`, `7dfb9d74`, `8b996224`, `4d07c653`, `9bfbd87e`, `234bf3a4`, `e7b2dc69`,
+`3aaab1e3`) was a better baseline than continuing to patch F489's shell. Card-redesign
+is parked; vocabulary work remains in place.
+
 ## New API Surface
 
 ## Key Decisions
