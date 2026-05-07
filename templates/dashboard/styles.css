@@ -360,17 +360,24 @@
     .monitor-dev-link:hover{opacity:1;border-color:var(--accent);color:var(--text-primary)}
     .kcard-agent-actions{display:flex;gap:4px;align-items:center;margin-top:3px;flex-wrap:wrap}
     .kcard-agent-actions .btn{font-size:11px;padding:3px 8px}
-    .kcard-autonomous-plan-rows{display:flex;flex-direction:column;gap:5px}
-    .kcard-autonomous-stage{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .kcard-autonomous-stage-main{display:flex;align-items:center;gap:8px;min-width:0}
-    .kcard-autonomous-stage-marker{font-size:11px;color:var(--text-tertiary);width:10px;flex-shrink:0}
-    .kcard-autonomous-stage.is-running .kcard-autonomous-stage-marker{color:#4ADE80}
-    .kcard-autonomous-stage.is-complete .kcard-autonomous-stage-marker{color:#86EFAC}
-    .kcard-autonomous-stage.is-waiting .kcard-autonomous-stage-marker{color:#FCD34D}
-    .kcard-autonomous-stage.is-failed .kcard-autonomous-stage-marker{color:#FB7185}
-    .kcard-autonomous-stage-label{font-size:11px;color:var(--text-primary);font-weight:600;white-space:nowrap}
-    .kcard-autonomous-stage-agents{font-size:10px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .kcard-autonomous-plan{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin-top:6px}
+    .kcard-stage-track{font-size:11px;line-height:1.35}
+    .kcard-stage{display:inline-flex;align-items:center;gap:4px;color:var(--text-tertiary)}
+    .kcard-stage-marker{font-size:11px;width:10px;flex-shrink:0;display:inline-flex;justify-content:center}
+    .kcard-stage-label{white-space:nowrap}
+    .kcard-stage-sep{color:var(--text-tertiary);opacity:.5;font-size:11px;margin:0 1px}
+    .kcard-stage.is-complete{color:var(--text-secondary)}
+    .kcard-stage.is-complete .kcard-stage-marker{color:#86EFAC}
+    .kcard-stage.is-running{color:var(--text-primary)}
+    .kcard-stage.is-running .kcard-stage-label{font-weight:600}
+    .kcard-stage.is-running .kcard-stage-marker{color:#4ADE80;animation:kcard-stage-pulse 1.6s ease-in-out infinite}
+    .kcard-stage.is-waiting{color:var(--text-tertiary)}
+    .kcard-stage.is-waiting .kcard-stage-marker{color:var(--text-tertiary)}
+    .kcard-stage.is-failed{color:#FB7185}
+    .kcard-stage.is-failed .kcard-stage-marker{color:#FB7185}
+    .kcard-autonomous-plan-error-wrap{display:flex;align-items:center;gap:6px}
     .kcard-autonomous-plan-error{font-size:10px;line-height:1.45;color:#FB7185}
+    @keyframes kcard-stage-pulse{0%,100%{opacity:1}50%{opacity:.55}}
     .kcard-gh-refresh{margin-left:auto;background:rgba(139,148,158,.12);border:1px solid rgba(139,148,158,.25);border-radius:4px;color:var(--text-secondary);font-family:var(--mono);font-size:10px;padding:2px 8px;cursor:pointer;transition:all .15s ease}
     .kcard-gh-refresh:hover{color:var(--text-primary);background:rgba(139,148,158,.22);border-color:rgba(139,148,158,.4)}
     .kcard-gh-refresh.is-loading{opacity:.65;animation:kcard-gh-pulse .8s ease-in-out infinite}
