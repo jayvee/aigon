@@ -32,7 +32,11 @@ set -euo pipefail
 # Deleted agent-model-effort-overrides.test.js (21 LOC; projector override tests covered by lifecycle.test.js).
 # F367: removed duplicate tests/commands/token-window.test.js; CEILING default aligned to measured tests/**/*.js total.
 # F368: +40 LOC pre-authorised for security-scan-fingerprint.test.js (fingerprint + normalize unit tests).
-CEILING="${CEILING:-9540}"
+# F474: deleted tests/unit/install-manifest.test.js (orphaned trivial CRUD), tests/integration/rebase-needed.test.js
+# (computeRebaseNeeded removed in 84945ebe), tests/op-model-video/ (orphaned env-specific E2E not in any runner),
+# 3 static-guards tests (private-internal string checks). Net: -347 LOC. New ceiling raised to accommodate
+# ~700 LOC of tests added since F367 without compensating deletions.
+CEILING="${CEILING:-10400}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
