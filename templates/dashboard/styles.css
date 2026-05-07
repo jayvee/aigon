@@ -111,6 +111,10 @@
     .agent-review{border-left-color:#fbbf24}
     .kcard-agent-status.status-reviewing{color:#fbbf24}
     .kcard-agent-status.status-review-done{color:#86efac}
+    /* Solo-card icon-only liveness cue: shows just the colored status icon
+       (e.g. green ● for running) inline with the agent name. No background,
+       no padding, no label text — the headline banner carries the phase. */
+    .kcard-agent-status.kcard-agent-status-icon-only{background:none;padding:0;margin:0;font-size:11px;line-height:1;flex-shrink:0;cursor:help}
     .kcard-eval-btn{font-size:11px;padding:2px 8px;margin-top:4px;width:100%}
     /* Evaluation verdict layout */
     .kcard-verdict{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:8px 10px;margin-bottom:6px}

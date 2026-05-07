@@ -764,17 +764,21 @@
       const tripletBadge = buildAgentTripletBadge(agent);
       // Solo cards: the headline banner already carries the lifecycle phase
       // (Implementing / Reviewing / etc.). Suppress the agent-box status
-      // pill to avoid duplicating the same word twice on the card. Liveness
-      // moves inline with the agent name. Fleet cards (>1 agent) keep the
-      // per-agent status pills since each agent may be at a different phase.
+      // pill TEXT to avoid duplicating the same word twice on the card,
+      // but keep the colored status icon (e.g. green ● for running) inline
+      // with the agent name as the liveness cue. Fleet cards (>1 agent)
+      // keep the full per-agent status pills since each agent may be at
+      // a different phase.
       const isSoloCard = (feature.agents || []).length === 1;
-      const headerLiveness = isSoloCard ? buildLivenessIndicator(agent) : '';
+      const soloLivenessIcon = isSoloCard
+        ? '<span class="kcard-agent-status kcard-agent-status-icon-only ' + s.cls + '" title="' + escHtml(s.label) + '">' + s.icon + '</span>'
+        : '';
       const statusRowHtml = isSoloCard
-        ? buildIdleLadderChip(agent) // solo: keep idle-ladder chip if present, drop the status pill
+        ? buildIdleLadderChip(agent) // solo: keep idle-ladder chip if present, drop the status pill text
         : '<div class="kcard-agent-status-row' + ((agent.idleLadder && agent.idleLadder.state !== 'active') ? ' is-idle-ladder' : '') + '">' + buildLivenessIndicator(agent) + '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span>' + buildIdleLadderChip(agent) + '</div>';
       return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
         '<div class="kcard-agent-header">' +
-          headerLiveness +
+          soloLivenessIcon +
           '<span class="kcard-agent-name" title="' + escHtml(displayName) + '">' + escHtml(displayName) + '</span>' +
           tripletBadge +
           peekBtn +
