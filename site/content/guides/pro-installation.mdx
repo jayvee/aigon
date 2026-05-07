@@ -1,0 +1,42 @@
+# Pro Installation
+
+Aigon Pro unlocks Fleet mode, autonomous pipelines, and other advanced features.
+
+## 3-Step Setup
+
+### 1. Install the package
+
+```bash
+npm install -g @senlabsai/aigon-pro
+```
+
+### 2. Activate your key
+
+```bash
+aigon pro activate <your-key>
+```
+
+This writes the key to `~/.aigon/config.json` once. It persists across shell sessions, launchd restarts, and new terminals — no env vars or shell profile edits required.
+
+### 3. Restart the server
+
+```bash
+aigon server restart
+```
+
+Pro is now active. Run `aigon pro status` at any time to confirm.
+
+## Verify
+
+```bash
+aigon pro status
+```
+
+Expected output when fully active:
+
+```
+Package @senlabsai/aigon-pro: ✅ installed
+Pro key (~/.aigon/config.json):  ✅ present
+
+Pro is active. Run `aigon server restart` if the server is running.
+```
