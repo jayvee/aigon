@@ -1,16 +1,6 @@
 // @ts-check
 'use strict';
-/**
- * E2E: Dashboard "Mark X complete" escape hatch (F405).
- *
- * Verifies that:
- *  1. The overflow ⋯ menu shows "Mark implementation complete" when an agent
- *     has a status file with taskType:'do' but no completion signal.
- *  2. The menu item is absent once the completion signal is present.
- *  3. Clicking the item advances the workflow state (agent shows submitted).
- *
- * Run: npx playwright test --config tests/dashboard-e2e/playwright.config.js mark-complete
- */
+/** E2E: F405 "Mark X complete" escape hatch — overflow menu visibility and workflow state advance. */
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');

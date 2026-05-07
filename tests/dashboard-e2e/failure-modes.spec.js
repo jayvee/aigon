@@ -43,7 +43,7 @@ async function waitForAgentStatus(page, card, agentClass, targetStatus, timeoutM
     throw new Error(`Timed out waiting for agent status "${targetStatus}"`);
 }
 
-test.describe('Dashboard failure modes', () => {
+test.describe('Dashboard failure modes @deploy', () => {
     test('crash mid-work: tmux kill-session → failed state + recovery actions', async ({ page }) => {
         // REGRESSION: external tmux kill should trigger the EXIT trap and
         // surface agent-status error so the dashboard shows recovery options.

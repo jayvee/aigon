@@ -3,7 +3,7 @@
 /** F344 STATE_RENDER_META badges + F355 xterm peek cutover. Run: npx playwright test … review-badges */
 const { test, expect } = require('@playwright/test');
 const { readCtx, gotoPipelineWithMockedSessions } = require('./_helpers');
-test('old specReview badge helpers absent; kcard-cycle-history CSS present', async ({ page }) => {
+test('old specReview badge helpers absent; kcard-cycle-history CSS present @smoke', async ({ page }) => {
     const ctx = readCtx();
     const pageErrors = [];
     page.on('pageerror', err => pageErrors.push(err.message));

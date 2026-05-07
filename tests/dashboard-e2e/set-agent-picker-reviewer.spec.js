@@ -12,7 +12,7 @@ const os = require('os');
 
 const CTX_FILE = path.join(os.tmpdir(), 'aigon-dashboard-e2e-ctx.json');
 
-test('set agent picker shows reviewer row (screenshot)', async ({ page, baseURL }) => {
+test('set agent picker shows reviewer row (screenshot) @smoke', async ({ page, baseURL }) => {
     const ctx = JSON.parse(fs.readFileSync(CTX_FILE, 'utf8'));
     const repoPath = ctx.tmpDir;
     await page.goto(baseURL || 'http://127.0.0.1:4119', { waitUntil: 'domcontentloaded' });
