@@ -195,7 +195,7 @@
       container.querySelectorAll('.logs-close-resolve-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
-          requestFeatureOpen(btn.dataset.featureId, btn.dataset.agentId, btn.dataset.repoPath, btn, 'features', 'close-resolve');
+          handleCloseWithAgent(btn.dataset.featureId, btn.dataset.agentId, btn.dataset.repoPath, btn);
         });
       });
 

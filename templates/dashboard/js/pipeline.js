@@ -1303,7 +1303,7 @@
           const info = state.closeFailedFeatures && state.closeFailedFeatures.get(String(feature.id));
           if (!info) return;
           state.closeFailedFeatures.delete(String(feature.id));
-          await requestFeatureOpen(feature.id, info.agentId, info.repoPath, btn, pipelineType, 'close-resolve');
+          await handleCloseWithAgent(feature.id, info.agentId, info.repoPath, btn);
         };
       });
 
@@ -1493,6 +1493,39 @@
 
       return card;
     }
+
+    // ── Close-with-agent: exhaustion-aware handler ────────────────────────────
+    // Shared by the card button, close-log-panel, and logs view. If the stored
+    // agent is token-exhausted or quota-paused, shows the agent picker so the
+    // user can choose a different agent before opening the worktree for close.
+    async function handleCloseWithAgent(featureId, storedAgentId, repoPath, btn) {
+      const fid = String(featureId);
+      let resolveAgent = storedAgentId;
+      let featureName = '#' + fid;
+      outer: for (const repo of (state.data && state.data.repos || [])) {
+        for (const f of (repo.features || [])) {
+          if (String(f.id) === fid) {
+            if (f.name) featureName = f.name;
+            const agentData = (f.agents || []).find(a => a.id === storedAgentId);
+            const isExhausted = agentData && (agentData.status === 'quota-paused' || agentData.tokenExhausted != null);
+            if (isExhausted) {
+              const picked = await showAgentPicker(featureId, featureName, {
+                single: true,
+                title: storedAgentId.toUpperCase() + ' is out of tokens — pick agent to resolve & close',
+                submitLabel: 'Open for close',
+                preselect: window.__AIGON_DEFAULT_AGENT__ || 'cc',
+                repoPath,
+              });
+              if (!picked || picked.length === 0) return;
+              resolveAgent = picked[0];
+            }
+            break outer;
+          }
+        }
+      }
+      await requestFeatureOpen(featureId, resolveAgent, repoPath, btn || null, 'features', 'close-resolve');
+    }
+    window.handleCloseWithAgent = handleCloseWithAgent;
 
     // ── Pipeline view — Alpine component ─────────────────────────────────────
 
