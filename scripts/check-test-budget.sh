@@ -34,9 +34,11 @@ set -euo pipefail
 # F368: +40 LOC pre-authorised for security-scan-fingerprint.test.js (fingerprint + normalize unit tests).
 # F474: deleted tests/unit/install-manifest.test.js (orphaned trivial CRUD), tests/integration/rebase-needed.test.js
 # (computeRebaseNeeded removed in 84945ebe), tests/op-model-video/ (orphaned env-specific E2E not in any runner),
-# 3 static-guards tests (private-internal string checks). Net: -347 LOC. New ceiling raised to accommodate
-# ~700 LOC of tests added since F367 without compensating deletions.
-CEILING="${CEILING:-10400}"
+# 3 static-guards tests (private-internal string checks). Net: -347 LOC. Ceiling 9540→10400.
+# F474 post-review: review restored dashboard-commits-route.test.js (F481, 200 LOC) that was missing from
+# worktree baseline; deleted perf-bench.test.js (78 LOC, non-standard format, narrow helper coverage).
+# Net ceiling raise 10400→10550.
+CEILING="${CEILING:-10550}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
