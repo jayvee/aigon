@@ -25,6 +25,14 @@ tokens_per_line_changed: null
 
 ## Status
 
+**REVERTED 2026-05-07 (commit `66c69e32`)** — the merge `4b40e167` was reverted in full because the
+shipped design was tested at the wireframe's 380px card width but the production kanban columns
+render at a 220px floor, which clipped the cs-l status text invisibly, pushed cs-r buttons past
+the card edge (e.g. `Nudge…` cut off on in-progress cards), and left dead air on inbox/backlog
+cards. The 8 Playwright e2e failures the reviewer escalated were never resolved before merge.
+Redo lives in `feature-responsive-card-shell-redesign.md` (filed 2026-05-07) with column-width
+sizing as a first-class acceptance criterion.
+
 In progress — 2-row card shell and agent-scoped `validActions` restored; integration suite green. Playwright e2e and test-budget script were flaky/over ceiling in this worktree at commit time (see below).
 
 ## Agents
