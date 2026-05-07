@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-07T05:39:14.140Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: test suite tiering and browser test reduction
