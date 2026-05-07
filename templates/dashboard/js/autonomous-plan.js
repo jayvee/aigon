@@ -42,6 +42,14 @@
     }).filter(Boolean).join(', ');
   }
 
+  function stageLabel(stage) {
+    if (!stage) return 'Stage';
+    if (stage.label) return String(stage.label);
+    const type = stage.type ? String(stage.type) : '';
+    if (!type) return 'Stage';
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  }
+
   function buildAutonomousPlanHtml(plan, options) {
     const opts = options || {};
     if (!plan) return '';
@@ -49,29 +57,36 @@
     const peekButtonHtml = opts.peekButtonHtml || '';
     if (plan.error) {
       const message = plan.error.message || 'Autonomous plan unavailable.';
-      return '<div class="kcard-agent kcard-autonomous-plan">' +
-        '<div class="kcard-agent-header"><span class="kcard-agent-name">Autonomous plan</span>' + peekButtonHtml + '</div>' +
-        '<div class="kcard-autonomous-plan-error">' + escHtml(message) + '</div>' +
+      return '<div class="kcard-autonomous-plan kcard-autonomous-plan-error-wrap">' +
+        '<span class="kcard-autonomous-plan-error">' + escHtml(message) + '</span>' +
+        peekButtonHtml +
         '</div>';
     }
 
-    const rows = (Array.isArray(plan.stages) ? plan.stages : []).map(function(stage) {
+    const stages = Array.isArray(plan.stages) ? plan.stages : [];
+    if (stages.length === 0) return '';
+
+    const items = stages.map(function(stage, idx) {
       const status = stage && stage.status ? String(stage.status) : 'waiting';
-      const statusText = statusLabel(status);
-      const agentText = stageAgentSummary(stage, opts);
-      return '<div class="kcard-autonomous-stage is-' + escHtml(status) + '">' +
-        '<div class="kcard-autonomous-stage-main">' +
-          '<span class="kcard-autonomous-stage-marker">' + escHtml(stageMarker(status)) + '</span>' +
-          '<span class="kcard-autonomous-stage-label">' + escHtml(stage && stage.label ? stage.label : stage && stage.type ? stage.type : 'Stage') + '</span>' +
-          (agentText ? '<span class="kcard-autonomous-stage-agents">' + escHtml(agentText) + '</span>' : '') +
-        '</div>' +
-        '<span class="kcard-agent-status status-' + escHtml(status) + '">' + escHtml(statusText) + '</span>' +
-      '</div>';
+      const label = stageLabel(stage);
+      const titleBits = [label, statusLabel(status)];
+      const agentSummary = stageAgentSummary(stage, opts);
+      if (agentSummary) titleBits.push(agentSummary);
+      // Completed stages get the agent attribution inline (per wireframe I3:
+      // ✓ Implement · CC) so the track doubles as an audit trail.
+      const inlineAgent = (status === 'complete' && agentSummary)
+        ? ' <span class="kcard-stage-agent">· ' + escHtml(agentSummary.split(' (')[0]) + '</span>'
+        : '';
+      const sep = idx > 0 ? '<span class="kcard-stage-sep" aria-hidden="true">›</span>' : '';
+      return sep + '<span class="kcard-stage is-' + escHtml(status) + '" title="' + escHtml(titleBits.join(' — ')) + '">' +
+        '<span class="kcard-stage-marker">' + escHtml(stageMarker(status)) + '</span>' +
+        '<span class="kcard-stage-label">' + escHtml(label) + inlineAgent + '</span>' +
+        '</span>';
     }).join('');
 
-    return '<div class="kcard-agent kcard-autonomous-plan">' +
-      '<div class="kcard-agent-header"><span class="kcard-agent-name">Autonomous plan</span>' + peekButtonHtml + '</div>' +
-      '<div class="kcard-autonomous-plan-rows">' + rows + '</div>' +
+    return '<div class="kcard-autonomous-plan kcard-stage-track" role="list" aria-label="Autonomous plan stages">' +
+      items +
+      peekButtonHtml +
       '</div>';
   }
 
