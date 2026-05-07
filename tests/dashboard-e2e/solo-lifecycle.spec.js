@@ -79,7 +79,9 @@ for (const s of SCENARIOS) {
             const inProgressCol = page.locator('.kanban-col[data-stage="in-progress"]').first();
             await expect(inProgressCol).toContainText(s.featureName, { timeout: 8000 });
             const inProgressCard = inProgressCol.locator('.kcard').filter({ hasText: s.featureName }).first();
-            await expect(inProgressCard.locator('.kcard-status-row')).toBeVisible({ timeout: 5000 });
+            const agentSection = inProgressCard.locator(`.kcard-agent.agent-${s.agentBadge}`);
+            await expect(agentSection).toBeVisible({ timeout: 5000 });
+            if (s.mode === 'branch') await expect(agentSection).toContainText('Drive');
             if (s.mode === 'worktree') {
                 const worktreePath = path.join(ctx.worktreeBase, `feature-${paddedId}-cc-${s.desc}`);
                 await waitForPath(worktreePath, 15000);
@@ -92,7 +94,8 @@ for (const s of SCENARIOS) {
             }
             await forceRefresh(page);
             await page.waitForTimeout(500);
-            await expect(inProgressCard.locator('.kcard-status-left')).toContainText('Implemented', { timeout: 8000 });
+            const submittedBadge = inProgressCard.locator(`.kcard-agent.agent-${s.agentBadge} .kcard-agent-status.status-submitted`);
+            await expect(submittedBadge).toBeVisible({ timeout: 8000 });
             // Solo mode (both variants): no eval action, only close.
             await expect(inProgressCard.locator('.kcard-va-btn[data-va-action="feature-eval"]')).toHaveCount(0);
             await clickCardAction(page, inProgressCard, 'feature-close', 'feature-close');
