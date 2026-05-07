@@ -134,7 +134,10 @@
       if (ageStr) meta.push(escHtml(ageStr));
       const metaLine = meta.length ? '<div class="kcard-headline-meta">' + meta.join(' · ') + '</div>' : '';
       const detailText = h.detail ? _resolveAgentIdsInHeadlineText(h.detail) : null;
-      const detailLine = detailText ? '<div class="kcard-headline-detail">' + escHtml(detailText) + '</div>' : '';
+      // Full text in title= attribute for tooltip; visible text is clamped
+      // to one line via CSS (.kcard-headline-detail). Long messages from
+      // awaitingInput etc. don't blow out the card vertically.
+      const detailLine = detailText ? '<div class="kcard-headline-detail" title="' + escHtml(detailText) + '">' + escHtml(detailText) + '</div>' : '';
       return '<div class="kcard-headline tone-' + tone + '" data-headline-tone="' + tone + '">' +
         '<div class="kcard-headline-top">' +
           '<span class="kcard-headline-glyph" aria-hidden="true">' + glyph + '</span>' +

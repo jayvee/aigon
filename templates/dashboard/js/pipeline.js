@@ -942,6 +942,28 @@
             innerHtml += '<button class="kcard-peek-btn" data-peek-session="' + escHtml(evalSess.session) + '" title="Peek at live eval output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>';
           }
           innerHtml += '</div>';
+
+          // Workflow step indicator (research-eval flow).
+          //   ① Reply to eval   — any agent has awaitingInput
+          //   ② Eval creating features — !awaitingInput && eval session still running
+          //   ③ Close research   — eval session exited, ready to close
+          // Helps users understand the order: reply first, wait for the
+          // eval agent to create features, then close. Without this,
+          // clicking 'Close research' too early abandons the eval work.
+          if (pipelineType === 'research') {
+            const anyAwaitingInput = (feature.agents || []).some(a => a && a.awaitingInput && a.awaitingInput.message);
+            let activeStep = 3;
+            if (anyAwaitingInput) activeStep = 1;
+            else if (evalRunning) activeStep = 2;
+            const stepClass = n => 'kcard-eval-step' + (n === activeStep ? ' is-active' : (n < activeStep ? ' is-done' : ''));
+            innerHtml += '<div class="kcard-eval-steps">' +
+              '<span class="' + stepClass(1) + '">' + (1 < activeStep ? '✓' : '①') + ' Reply to eval</span>' +
+              '<span class="kcard-eval-step-sep">·</span>' +
+              '<span class="' + stepClass(2) + '">' + (2 < activeStep ? '✓' : '②') + ' Eval creates features</span>' +
+              '<span class="kcard-eval-step-sep">·</span>' +
+              '<span class="' + stepClass(3) + '">③ Close research</span>' +
+              '</div>';
+          }
           // Action buttons on their own row so they always have full width
           const hasEvalActions = (evalRunning && evalSess.session && openEvalAction) || viewEvalAction;
           if (hasEvalActions) {
